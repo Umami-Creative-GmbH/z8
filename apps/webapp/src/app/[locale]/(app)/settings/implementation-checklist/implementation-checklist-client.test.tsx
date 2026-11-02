@@ -291,7 +291,12 @@ describe("ImplementationChecklistClient", () => {
 					...checklist,
 					goLive: {
 						...readyGoLive,
-						readiness: { status: "not-ready", affectedMemberCount: 13, warnings: [] },
+						readiness: {
+							status: "not-ready",
+							cause: "members",
+							affectedMemberCount: 13,
+							warnings: [],
+						},
 					},
 					items: [failingWorkPolicyItem],
 				}}
@@ -300,6 +305,51 @@ describe("ImplementationChecklistClient", () => {
 
 		expect(screen.getByText("Not ready: 13 employees need attention")).toBeTruthy();
 		expect(screen.getAllByText("Needs attention").length).toBeGreaterThan(0);
+	});
+
+	it("names the failing checks, never a count of nobody, when a check fails for the whole organization", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					goLive: {
+						...readyGoLive,
+						readiness: {
+							status: "not-ready",
+							cause: "organization",
+							failingItemIds: ["payroll-readiness"],
+							warnings: [],
+						},
+					},
+					items: [{ ...failingWorkPolicyItem, id: "payroll-readiness", title: "Payroll export" }],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Not ready: Payroll export doesn't pass")).toBeTruthy();
+		expect(screen.queryByText(/0 employees/)).toBeNull();
+	});
+
+	it("is not ready when nobody is in the go-live group to check", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					goLive: {
+						...readyGoLive,
+						readiness: { status: "not-ready", cause: "empty-group", warnings: [] },
+						memberCount: 0,
+					},
+				}}
+			/>,
+		);
+
+		expect(screen.queryByText("Ready to go live")).toBeNull();
+		expect(screen.getByText("Not ready: no one is in the go-live group to check.")).toBeTruthy();
 	});
 
 	it("offers a retry and never a pass when a check is unavailable", async () => {
@@ -358,6 +408,8 @@ describe("ImplementationChecklistClient", () => {
 							title: "Payroll export",
 							canManualComplete: true,
 							canToggleManualCompletion: true,
+							confirmationLabel: "Confirm our payroll export setup is agreed",
+							confirmedLabel: "Confirmed: our payroll export setup is agreed",
 							status: "not-set-up",
 							goLive: {
 								checkId: "payroll-setup",
@@ -383,7 +435,64 @@ describe("ImplementationChecklistClient", () => {
 
 		expect(screen.getByText("Optional")).toBeTruthy();
 		expect(screen.getByText("Payroll export is an optional integration.")).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Mark complete" })).toBeTruthy();
+		// A payroll confirmation is a sign-off; it never completes the item.
+		expect(screen.queryByRole("button", { name: "Mark complete" })).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Confirm our payroll export setup is agreed" }),
+		).toBeTruthy();
+	});
+
+	it("shows a go-live item's status from its check, never as manually complete", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...failingWorkPolicyItem,
+							id: "approval-rules",
+							title: "Approval rules",
+							canToggleManualCompletion: true,
+							confirmationLabel: "Confirm our approval process is agreed",
+							confirmedLabel: "Confirmed: our approval process is agreed",
+							status: "configured",
+							completionSource: "manual",
+							goLive: {
+								...failingWorkPolicyItem.goLive,
+								checkId: "approver",
+								itemId: "approval-rules",
+								outcome: "passed",
+								checkedMemberCount: 0,
+								failures: [],
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.queryByText("Manually complete")).toBeNull();
+		expect(screen.getAllByText("Configured").length).toBeGreaterThan(0);
+	});
+
+	it("leaves the payroll export line out of first workflows when it doesn't apply", async () => {
+		const { FirstWorkflowsPanel } = await import("./first-workflows-panel");
+
+		render(
+			<FirstWorkflowsPanel
+				evidence={{
+					clockIn: { state: "not-yet" },
+					decidedApproval: { state: "not-yet" },
+					payrollExport: { state: "not-applicable" },
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("First clock-in")).toBeTruthy();
+		expect(screen.queryByText("First successful payroll export")).toBeNull();
+		expect(screen.getAllByText("Not yet")).toHaveLength(2);
 	});
 
 	it("shows first-workflow evidence with when and who, or not yet", async () => {

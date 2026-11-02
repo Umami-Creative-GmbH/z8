@@ -8,19 +8,13 @@ import { Button } from "@/components/ui/button";
 import {
 	type GoLiveCheckResult,
 	type GoLiveFailureGroup,
-	type GoLiveMessage,
 	goLiveMemberKey,
 } from "@/lib/implementation-checklist/go-live/types";
 import { Link } from "@/navigation";
+import { goLiveMessage } from "./go-live-message";
 import { GoLiveRehearsalButton } from "./go-live-rehearsal";
 
 const MEMBERS_PER_PAGE = 10;
-
-type Translate = ReturnType<typeof useTranslate>["t"];
-
-function message(t: Translate, text: GoLiveMessage) {
-	return t(text.key, text.fallback, text.params);
-}
 
 /**
  * The generic view of one go-live check result: failure groups (reason, paged
@@ -56,7 +50,7 @@ export function GoLiveCheckPanel({ result }: { result: GoLiveCheckResult }) {
 			{result.notes.length ? (
 				<ul className="space-y-1 text-muted-foreground text-sm">
 					{result.notes.map((note) => (
-						<li key={note.key}>{message(t, note)}</li>
+						<li key={note.key}>{goLiveMessage(t, note)}</li>
 					))}
 				</ul>
 			) : null}
@@ -90,7 +84,7 @@ export function GoLiveFailureGroupView({
 							: "mt-0.5 size-4 shrink-0 text-destructive"
 					}
 				/>
-				<p className="font-medium text-sm">{message(t, group.reason)}</p>
+				<p className="font-medium text-sm">{goLiveMessage(t, group.reason)}</p>
 			</div>
 			<ul className="space-y-1 pl-6 text-sm">
 				{visible.map(({ member, detail }) => (
@@ -101,7 +95,9 @@ export function GoLiveFailureGroupView({
 								{t("settings.implementationChecklist.goLive.panel.invited", "Invited")}
 							</Badge>
 						) : null}
-						{detail ? <span className="text-muted-foreground">{message(t, detail)}</span> : null}
+						{detail ? (
+							<span className="text-muted-foreground">{goLiveMessage(t, detail)}</span>
+						) : null}
 						<GoLiveRehearsalButton member={member} />
 					</li>
 				))}
@@ -149,7 +145,7 @@ export function GoLiveFailureGroupView({
 				)}
 				{group.fix ? (
 					<Button asChild size="sm" variant="outline">
-						<Link href={group.fix.href}>{message(t, group.fix.label)}</Link>
+						<Link href={group.fix.href}>{goLiveMessage(t, group.fix.label)}</Link>
 					</Button>
 				) : null}
 			</div>

@@ -224,7 +224,7 @@ export async function loadEffectiveWorkPolicies(
 /** The `assignedVia` label the single-employee resolver gives each level. */
 export function assignedViaLabel(
 	assignmentType: "organization" | "team" | "employee",
-	teamName: string | null | undefined,
+	teamName?: string | null,
 ): string {
 	if (assignmentType === "employee") return "Individual";
 	if (assignmentType === "team") return teamName ?? "Team";

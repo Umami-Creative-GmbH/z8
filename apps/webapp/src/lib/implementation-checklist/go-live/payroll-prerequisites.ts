@@ -1,4 +1,6 @@
+import { employee } from "@/db/schema";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { findPersonnelIdentifierClashes } from "@/lib/payroll-export/personnel-identifier-store";
 import {
@@ -27,27 +29,40 @@ export type PayrollPrerequisites = {
 
 /**
  * Payroll readiness's setup checks as of today in the organization's timezone,
- * for the given employees: confirmed terms covering today, and personnel
- * identifier clashes among these employees. Read-only.
+ * for the given employees: confirmed terms covering today, and the personnel
+ * identifier clashes they are part of. Identifiers are compared with the whole
+ * current roster, since an export merges anyone sharing one, going live yet or
+ * not; only clashes involving one of `employeeIds` are kept. Read-only.
  */
 export function loadGoLivePayrollSetup(
 	db: DatabaseClient,
 	input: { organizationId: string; asOf: GoLiveAsOf; employeeIds: readonly string[] },
 ): Promise<PayrollSetupChecks> {
+	const { organizationId, asOf } = input;
 	// Terms dates are stored as UTC midnight of the calendar date, so today is that UTC day.
-	const start = utcMidnight(input.asOf.today);
-	const end = new Date(utcMidnight(input.asOf.today.add({ days: 1 })).getTime() - 1);
+	const start = utcMidnight(asOf.today);
+	const end = new Date(utcMidnight(asOf.today.add({ days: 1 })).getTime() - 1);
+	const checked = new Set(input.employeeIds);
 	return loadPayrollSetupChecks(db, {
-		organizationId: input.organizationId,
+		organizationId,
 		employees: input.employeeIds.map((id) => ({ id })),
 		termsWindow: { start, end },
-		findIdentifierClashes: (configs) =>
-			findPersonnelIdentifierClashes(db, {
-				organizationId: input.organizationId,
+		findIdentifierClashes: async (configs) => {
+			if (configs.length === 0 || checked.size === 0) return [];
+			const roster = await db
+				.select({ id: employee.id })
+				.from(employee)
+				.where(onCurrentRoster(organizationId, employee, asOf.instant));
+			const clashes = await findPersonnelIdentifierClashes(db, {
+				organizationId,
 				configs,
-				employeeIds: input.employeeIds,
-				asOf: input.asOf.today,
-			}),
+				employeeIds: [...new Set([...input.employeeIds, ...roster.map((row) => row.id)])],
+				asOf: asOf.today,
+			});
+			return clashes.filter((clash) =>
+				clash.employees.some((holder) => checked.has(holder.employeeId)),
+			);
+		},
 	});
 }
 
@@ -100,24 +115,18 @@ function identifierOf(
 }
 
 /**
- * One member's payroll prerequisites today, for the go-live rehearsal. Personnel
- * identifiers are compared among `groupEmployeeIds` (the go-live group's
- * employees), so pass the group to see clashes with other members. Read-only.
+ * One member's payroll prerequisites today, for the go-live rehearsal, with
+ * personnel identifiers compared with the whole current roster as the payroll
+ * setup check compares them. Read-only.
  */
 export async function readPayrollPrerequisites(
 	db: DatabaseClient,
-	input: {
-		organizationId: string;
-		asOf: GoLiveAsOf;
-		member: GoLiveMember;
-		groupEmployeeIds?: readonly string[];
-	},
+	input: { organizationId: string; asOf: GoLiveAsOf; member: GoLiveMember },
 ): Promise<PayrollPrerequisites> {
-	const own = input.member.kind === "employee" ? [input.member.employeeId] : [];
 	const setup = await loadGoLivePayrollSetup(db, {
 		organizationId: input.organizationId,
 		asOf: input.asOf,
-		employeeIds: [...new Set([...own, ...(input.groupEmployeeIds ?? [])])],
+		employeeIds: input.member.kind === "employee" ? [input.member.employeeId] : [],
 	});
 	return payrollPrerequisitesOf(setup, input.member);
 }

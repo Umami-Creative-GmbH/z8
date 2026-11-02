@@ -195,8 +195,9 @@ describe("go-live checks (PostgreSQL)", () => {
 			goLiveResults: [result],
 		});
 		expect(items.find((item) => item.id === "work-policies")?.status).toBe("needs-attention");
-		expect(resolveGoLiveReadiness([result])).toEqual({
+		expect(resolveGoLiveReadiness([result], result.checkedMemberCount)).toEqual({
 			status: "not-ready",
+			cause: "members",
 			affectedMemberCount: 4,
 			warnings: [],
 		});
@@ -226,6 +227,11 @@ describe("go-live checks (PostgreSQL)", () => {
 
 		expect(result).toMatchObject({ outcome: "passed", configured: true, checkedMemberCount: 0 });
 		expect(items.find((item) => item.id === "work-policies")?.status).toBe("configured");
+		// Nobody to check is never ready to go live.
+		expect(resolveGoLiveReadiness([result], 0)).toMatchObject({
+			status: "not-ready",
+			cause: "empty-group",
+		});
 	});
 
 	it("needs attention for an unassigned work policy once someone is on the roster", async () => {
@@ -261,7 +267,7 @@ describe("go-live checks (PostgreSQL)", () => {
 
 		expect(workPolicyResult(results)).toMatchObject({ outcome: "passed", checkedMemberCount: 2 });
 		expect(items.find((item) => item.id === "work-policies")?.status).toBe("verified");
-		expect(resolveGoLiveReadiness(results)).toEqual({ status: "ready", warnings: [] });
+		expect(resolveGoLiveReadiness(results, 2)).toEqual({ status: "ready", warnings: [] });
 	});
 
 	it("is unavailable, never passing, when a lookup fails", async () => {
@@ -279,7 +285,7 @@ describe("go-live checks (PostgreSQL)", () => {
 		const results = await run(organizationId, allowEveryLink, broken);
 
 		expect(workPolicyResult(results).outcome).toBe("unavailable");
-		expect(resolveGoLiveReadiness(results)).toEqual({ status: "unavailable" });
+		expect(resolveGoLiveReadiness(results, null)).toEqual({ status: "unavailable" });
 		expect(
 			resolveImplementationChecklistItems({
 				detectedCompleteIds: new Set(["work-policies"]),

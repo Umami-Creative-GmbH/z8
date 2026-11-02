@@ -129,7 +129,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 				</div>
 			</div>
 
-			<GoLiveReadinessCard goLive={checklist.goLive} />
+			<GoLiveReadinessCard goLive={checklist.goLive} items={checklist.items} />
 
 			{checklist.goLive.group !== undefined ? (
 				<GoLiveGroupCard
@@ -405,7 +405,8 @@ function getStatusLabel(item: ImplementationChecklistItem, t: Translate) {
 		}
 	}
 
-	if (item.status === "configured" && item.completionSource === "manual") {
+	// A confirmation never completes a go-live item: its badge comes from the check.
+	if (!item.goLive && item.status === "configured" && item.completionSource === "manual") {
 		return t("settings.implementationChecklist.status.manuallyComplete", "Manually complete");
 	}
 

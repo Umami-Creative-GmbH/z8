@@ -37,9 +37,10 @@ describe("implementation checklist status resolver", () => {
 	it("exposes translation keys while preserving fallback copy", () => {
 		expect(IMPLEMENTATION_CHECKLIST_ITEMS[0]).toMatchObject({
 			title: "Organization structure",
-			description: "Confirm members, teams, and responsibility boundaries before rollout.",
+			description: "Confirm members, teams, and responsibility boundaries before going live.",
 			titleKey: "settings.implementationChecklist.items.organizationStructure.title",
-			descriptionKey: "settings.implementationChecklist.items.organizationStructure.description",
+			descriptionKey:
+				"settings.implementationChecklist.items.organizationStructure.goLiveDescription",
 		});
 	});
 
@@ -233,6 +234,18 @@ describe("implementation checklist status resolver", () => {
 		});
 	});
 
+	it("labels every confirmable go-live item's confirmation as a sign-off, never as completing it", () => {
+		const confirmable = IMPLEMENTATION_CHECKLIST_ITEMS.filter(
+			(item) => item.detector === "go-live" && item.canManualComplete,
+		);
+
+		expect(confirmable.map((item) => item.id)).toEqual(["approval-rules", "payroll-readiness"]);
+		for (const item of confirmable) {
+			expect(item.confirmationLabel, item.id).toBeTruthy();
+			expect(item.confirmedLabel, item.id).toBeTruthy();
+		}
+	});
+
 	it("declares which configuration each confirmation's fingerprint covers", () => {
 		expect(
 			Object.fromEntries(
@@ -301,6 +314,73 @@ describe("implementation checklist status resolver", () => {
 			totalCount: 9,
 		});
 	});
+
+	describe("payroll export without an active payroll export target", () => {
+		const notApplicable = workPolicyResult({
+			checkId: "payroll-setup",
+			itemId: "payroll-readiness",
+			severity: "advisory",
+			configured: false,
+			applies: false,
+		} as Partial<GoLiveCheckResult>);
+
+		it("leaves the progress total, so the checklist can reach 100%", () => {
+			const items = resolveImplementationChecklistItems({
+				detectedCompleteIds: new Set(),
+				manualCompleteIds: new Set(),
+				goLiveResults: [notApplicable],
+			});
+
+			expect(items.find((item) => item.id === "payroll-readiness")).toMatchObject({
+				status: "not-set-up",
+				countsTowardProgress: false,
+				countsTowardTotal: false,
+			});
+			expect(summarizeImplementationChecklist(items).totalCount).toBe(8);
+		});
+
+		it("keeps a manual confirmation, which changes nothing", () => {
+			const items = resolveImplementationChecklistItems({
+				detectedCompleteIds: new Set(),
+				manualCompleteIds: new Set(["payroll-readiness"]),
+				goLiveResults: [notApplicable],
+			});
+
+			expect(items.find((item) => item.id === "payroll-readiness")).toMatchObject({
+				status: "not-set-up",
+				countsTowardProgress: false,
+				countsTowardTotal: false,
+			});
+			expect(summarizeImplementationChecklist(items)).toEqual({ completedCount: 0, totalCount: 8 });
+		});
+
+		it("still counts with a target, and while the check couldn't tell", () => {
+			const withTarget = resolveImplementationChecklistItems({
+				detectedCompleteIds: new Set(),
+				manualCompleteIds: new Set(),
+				goLiveResults: [
+					workPolicyResult({ checkId: "payroll-setup", itemId: "payroll-readiness" }),
+				],
+			});
+			expect(summarizeImplementationChecklist(withTarget)).toEqual({
+				completedCount: 1,
+				totalCount: 9,
+			});
+
+			const unavailable = resolveImplementationChecklistItems({
+				detectedCompleteIds: new Set(),
+				manualCompleteIds: new Set(),
+				goLiveResults: [
+					workPolicyResult({
+						checkId: "payroll-setup",
+						itemId: "payroll-readiness",
+						outcome: "unavailable",
+					} as Partial<GoLiveCheckResult>),
+				],
+			});
+			expect(summarizeImplementationChecklist(unavailable).totalCount).toBe(9);
+		});
+	});
 });
 
 describe("first workflows item", () => {
@@ -356,6 +436,32 @@ describe("first workflows item", () => {
 		});
 	});
 
+	it("is verified once the lines that apply were seen, without payroll export when it doesn't apply", () => {
+		const notApplicable = { state: "not-applicable" } as const;
+
+		expect(
+			firstWorkflowsItem({
+				clockIn: seen("2026-06-01T07:00:00Z"),
+				decidedApproval: seen("2026-06-02T07:00:00Z"),
+				payrollExport: notApplicable,
+			}),
+		).toMatchObject({ status: "verified", countsTowardProgress: true });
+		expect(
+			firstWorkflowsItem({
+				clockIn: seen("2026-06-01T07:00:00Z"),
+				decidedApproval: notYet,
+				payrollExport: notApplicable,
+			}),
+		).toMatchObject({ status: "configured", countsTowardProgress: false });
+		expect(
+			firstWorkflowsItem({
+				clockIn: notYet,
+				decidedApproval: notYet,
+				payrollExport: notApplicable,
+			}),
+		).toMatchObject({ status: "not-set-up" });
+	});
+
 	it("is unavailable, never seen, when a lookup failed", () => {
 		expect(
 			firstWorkflowsItem({
@@ -376,7 +482,10 @@ describe("first workflows item", () => {
 
 		expect(items.find((item) => item.id === "first-workflows")?.goLive).toBeNull();
 		expect(
-			resolveGoLiveReadiness(items.flatMap((item) => (item.goLive ? [item.goLive] : []))),
+			resolveGoLiveReadiness(
+				items.flatMap((item) => (item.goLive ? [item.goLive] : [])),
+				3,
+			),
 		).toEqual({ status: "ready", warnings: [] });
 	});
 });

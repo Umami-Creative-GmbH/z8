@@ -1,5 +1,8 @@
 import type { ImplementationChecklistItemRole } from "./go-live/types";
 
+/** The implementation checklist settings page, which actions revalidate after a change. */
+export const IMPLEMENTATION_CHECKLIST_PATH = "/settings/implementation-checklist";
+
 export type ImplementationChecklistItemId =
 	| "organization-structure"
 	| "holidays"
@@ -64,10 +67,12 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		id: "organization-structure",
 		title: "Organization structure",
 		titleKey: "settings.implementationChecklist.items.organizationStructure.title",
-		description: "Confirm members, teams, and responsibility boundaries before rollout.",
-		descriptionKey: "settings.implementationChecklist.items.organizationStructure.description",
-		helperText: "Manual review: Z8 cannot know whether your rollout structure is final.",
-		helperTextKey: "settings.implementationChecklist.items.organizationStructure.helperText",
+		description: "Confirm members, teams, and responsibility boundaries before going live.",
+		descriptionKey:
+			"settings.implementationChecklist.items.organizationStructure.goLiveDescription",
+		helperText:
+			"Manual review: Z8 cannot know whether your organization structure is final. Adding or removing people, teams or managers makes the confirmation stale.",
+		helperTextKey: "settings.implementationChecklist.items.organizationStructure.goLiveHelperText",
 		actionLabel: "Review organization",
 		actionLabelKey: "settings.implementationChecklist.items.organizationStructure.actionLabel",
 		confirmationCovers: "organization-structure",
@@ -117,8 +122,8 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		description: "Review who approves corrections, absences, and policy-sensitive changes.",
 		descriptionKey: "settings.implementationChecklist.items.approvalRules.description",
 		helperText:
-			"Z8 checks that every employee on the current roster can get each kind of request decided. Confirming that your approval process is agreed is optional.",
-		helperTextKey: "settings.implementationChecklist.items.approvalRules.goLiveHelperText",
+			"Z8 checks that everyone in the go-live group can get each kind of request decided. Time corrections always need an approver, because deletion requests and date changes go to approval. Confirming that your approval process is agreed is optional.",
+		helperTextKey: "settings.implementationChecklist.items.approvalRules.goLiveGroupHelperText",
 		actionLabel: "Review approval rules",
 		actionLabelKey: "settings.implementationChecklist.items.approvalRules.actionLabel",
 		confirmationCovers: "approval-rules",
@@ -138,8 +143,8 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		description: "Confirm payroll readiness checks and export operations before the first pay run.",
 		descriptionKey: "settings.implementationChecklist.items.payrollReadiness.description",
 		helperText:
-			"Z8 checks the payroll setup for everyone on the current roster: export target, wage-type mappings, confirmed employment terms and personnel identifiers. Without an active payroll export target, payroll export is an optional integration.",
-		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.goLiveHelperText",
+			"Z8 checks the payroll setup for everyone in the go-live group: export target, wage-type mappings, confirmed employment terms and personnel identifiers. Without an active payroll export target, payroll export is an optional integration and doesn't count toward checklist progress.",
+		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.goLiveGroupHelperText",
 		actionLabel: "Review payroll readiness",
 		actionLabelKey: "settings.implementationChecklist.items.payrollReadiness.actionLabel",
 		confirmationCovers: "payroll-export",
@@ -149,6 +154,11 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		canManualComplete: true,
 		// Advisory for a run without an active payroll export target (the check's outcome says so).
 		role: "mandatory",
+		confirmationLabel: "Confirm our payroll export setup is agreed",
+		confirmationLabelKey:
+			"settings.implementationChecklist.items.payrollReadiness.confirmationLabel",
+		confirmedLabel: "Confirmed: our payroll export setup is agreed",
+		confirmedLabelKey: "settings.implementationChecklist.items.payrollReadiness.confirmedLabel",
 	},
 	{
 		id: "integrations",

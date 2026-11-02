@@ -5,7 +5,7 @@ import {
 	type ImplementationChecklistItemId,
 } from "./definition";
 import { type FirstWorkflowEvidence, firstWorkflowsItemStatus } from "./go-live/first-workflows";
-import { goLiveItemStatus } from "./go-live/readiness";
+import { goLiveItemStatus, goLiveResultApplies } from "./go-live/readiness";
 import type { GoLiveCheckResult, ImplementationChecklistItemStatus } from "./go-live/types";
 
 export type ImplementationChecklistStatus = ImplementationChecklistItemStatus;
@@ -36,6 +36,8 @@ export interface ResolvedImplementationChecklistItem extends ImplementationCheck
 	firstWorkflows: FirstWorkflowEvidence | null;
 	/** Verified go-live and evidence items, and configured other items. */
 	countsTowardProgress: boolean;
+	/** False for an item that doesn't apply to the organization: it leaves the progress total. */
+	countsTowardTotal: boolean;
 	/** The stored manual confirmation, counting or not; null when there is none. */
 	manualConfirmation: ManualConfirmation | null;
 }
@@ -66,6 +68,7 @@ export function resolveImplementationChecklistItems({
 				goLive: null,
 				firstWorkflows: firstWorkflows ?? null,
 				countsTowardProgress: status === "verified",
+				countsTowardTotal: true,
 				manualConfirmation: null,
 			};
 		}
@@ -85,6 +88,7 @@ export function resolveImplementationChecklistItems({
 				goLive,
 				firstWorkflows: null,
 				countsTowardProgress: status === "verified",
+				countsTowardTotal: goLiveResultApplies(goLive),
 				manualConfirmation,
 			};
 		}
@@ -98,6 +102,7 @@ export function resolveImplementationChecklistItems({
 				goLive: null,
 				firstWorkflows: null,
 				countsTowardProgress: true,
+				countsTowardTotal: true,
 				manualConfirmation: null,
 			};
 		}
@@ -111,6 +116,7 @@ export function resolveImplementationChecklistItems({
 				goLive: null,
 				firstWorkflows: null,
 				countsTowardProgress: true,
+				countsTowardTotal: true,
 				manualConfirmation,
 			};
 		}
@@ -123,17 +129,19 @@ export function resolveImplementationChecklistItems({
 			goLive: null,
 			firstWorkflows: null,
 			countsTowardProgress: false,
+			countsTowardTotal: true,
 			manualConfirmation,
 		};
 	});
 }
 
-/** Checklist progress: how many items are done out of all items. */
+/** Checklist progress: how many items are done out of the items that apply. */
 export function summarizeImplementationChecklist(
 	items: readonly ResolvedImplementationChecklistItem[],
 ): { completedCount: number; totalCount: number } {
+	const counted = items.filter((item) => item.countsTowardTotal);
 	return {
-		completedCount: items.filter((item) => item.countsTowardProgress).length,
-		totalCount: items.length,
+		completedCount: counted.filter((item) => item.countsTowardProgress).length,
+		totalCount: counted.length,
 	};
 }

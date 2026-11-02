@@ -27,14 +27,17 @@ type Candidate = { employeeId: string; at: Date } | undefined;
 /**
  * First-workflow evidence for the organization, read live from real records.
  * Clock-ins and decided requests count only for go-live group members; the
- * payroll export is organization-wide. Read-only, a bounded number of queries,
- * and a failed lookup makes only its own line unavailable.
+ * payroll export is organization-wide, and left out (not applicable) when
+ * payroll export doesn't apply. Read-only, a bounded number of queries, and a
+ * failed lookup makes only its own line unavailable.
  */
 export async function loadFirstWorkflowEvidence(input: {
 	db: DatabaseClient;
 	organizationId: string;
 	group: GoLiveGroup;
 	asOf: GoLiveAsOf;
+	/** False without an active payroll export target; applies when absent. */
+	payrollExportApplies?: boolean;
 }): Promise<FirstWorkflowEvidence> {
 	const members = new Map<string, string>();
 	for (const member of input.group.members) {
@@ -52,9 +55,11 @@ export async function loadFirstWorkflowEvidence(input: {
 				await firstDecidedApproval(input.db, input.organizationId, [...members.keys()]),
 			),
 		),
-		line(input.organizationId, "payroll-export", () =>
-			firstPayrollExport(input.db, input.organizationId, input.asOf.instant),
-		),
+		input.payrollExportApplies === false
+			? ({ state: "not-applicable" } as const)
+			: line(input.organizationId, "payroll-export", () =>
+					firstPayrollExport(input.db, input.organizationId, input.asOf.instant),
+				),
 	]);
 	return { clockIn, decidedApproval, payrollExport };
 }

@@ -1,10 +1,11 @@
+import { readOnlyTransaction } from "@/db/read-only-transaction";
 import {
+	type ApproverDirectChange,
 	type ApproverGoLiveKind,
 	type ApproverSkipReason,
 	type ApproverUnroutableCause,
 	loadApproverRouting,
 } from "../approver-routing";
-import { readOnlyGoLive } from "../read-only";
 import type {
 	GoLiveFailureGroup,
 	GoLiveFixLink,
@@ -33,15 +34,17 @@ export const APPROVER_KIND_LABEL: Record<ApproverGoLiveKind, string> = {
 /**
  * Approver (mandatory): every member of the go-live group can get each covered approval kind
  * decided, as submitting would route it now. Kinds switched off are not checked; built-in skips
- * pass with a note. Failures are grouped by kind and cause; a member failing several kinds is
- * listed under each. Worked out in one read-only transaction, so nothing can be written.
+ * pass with a note. Time corrections a change policy lets members make directly get a note but
+ * still need an approver: deletion requests and date changes always go to approval. Failures are
+ * grouped by kind and cause; a member failing several kinds is listed under each. Worked out in
+ * one read-only transaction, so nothing can be written.
  */
 export const approverGoLiveCheck: GoLiveCheck = {
 	id: "approver",
 	itemId: "approval-rules",
 	severity: "mandatory",
 	async run({ db, organizationId, asOf, group, fixLink }) {
-		return readOnlyGoLive(db, async (reader) => {
+		return readOnlyTransaction(db, async (reader) => {
 			const routing = await loadApproverRouting(reader, {
 				organizationId,
 				asOf,
@@ -52,9 +55,16 @@ export const approverGoLiveCheck: GoLiveCheck = {
 				string,
 				{ kind: ApproverGoLiveKind; reason: ApproverSkipReason; count: number }
 			>();
+			const directChanges = new Map<ApproverDirectChange, number>();
 			for (const member of group.members) {
 				const resolutions = await routing.resolve(member);
 				for (const [kind, resolution] of resolutions) {
+					if (resolution.directChange) {
+						directChanges.set(
+							resolution.directChange,
+							(directChanges.get(resolution.directChange) ?? 0) + 1,
+						);
+					}
 					if (resolution.status === "unroutable") {
 						const key = bucketKey(kind, resolution.cause, member);
 						const bucket = failures.get(key) ?? {
@@ -83,6 +93,7 @@ export const approverGoLiveCheck: GoLiveCheck = {
 				notes: [
 					...routing.offKinds.map(offKindNote),
 					...[...skips.values()].map((skip) => skipNote(skip.kind, skip.reason, skip.count)),
+					...[...directChanges].map(([reason, count]) => directChangeNote(reason, count)),
 				],
 			};
 		});
@@ -286,13 +297,6 @@ function skipNote(
 					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: {count, plural, one {# employee} other {# employees}} need no approval, because their change policy is in trust mode.",
 				params,
 			};
-		case "change_policy_within_self_service":
-			return {
-				key: "settings.implementationChecklist.goLive.approver.skipSelfService",
-				fallback:
-					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: {count, plural, one {# employee} other {# employees}} need no approval, because their change policy only allows changes within its self-service days.",
-				params,
-			};
 		case "owner_admin_self":
 			return {
 				key: "settings.implementationChecklist.goLive.approver.skipOwnerAdmin",
@@ -312,11 +316,46 @@ function skipNote(
 					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: {count, plural, one {# employee} other {# employees}} are their own approver.",
 				params,
 			};
+		case "requester_only_decider":
+			return {
+				key: "settings.implementationChecklist.goLive.approver.skipOwnDecider",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: {count, plural, one {# employee is} other {# employees are}} the only one who can decide them, so their own requests wait for their own approval.",
+				params,
+			};
 		case "owner_self_approval":
 			return {
 				key: "settings.implementationChecklist.goLive.approver.skipOwnerSelfApproval",
 				fallback:
 					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: the owner approves their own reports, because nobody else can.",
+				params,
+			};
+	}
+}
+
+/** Time corrections members make directly: a note only, as deletions still go to an approver. */
+function directChangeNote(reason: ApproverDirectChange, count: number): GoLiveMessage {
+	const params = { count };
+	switch (reason) {
+		case "change_policy_no_policy":
+			return {
+				key: "settings.implementationChecklist.goLive.approver.correctionDirectNoPolicy",
+				fallback:
+					"Time corrections: {count, plural, one {# employee edits} other {# employees edit}} their own entries directly, because no change policy applies. Deletion requests and date changes still go to an approver, so they are checked.",
+				params,
+			};
+		case "change_policy_trust_mode":
+			return {
+				key: "settings.implementationChecklist.goLive.approver.correctionDirectTrustMode",
+				fallback:
+					"Time corrections: {count, plural, one {# employee edits} other {# employees edit}} their own entries directly, because their change policy is in trust mode. Deletion requests and date changes still go to an approver, so they are checked.",
+				params,
+			};
+		case "change_policy_within_self_service":
+			return {
+				key: "settings.implementationChecklist.goLive.approver.correctionDirectSelfService",
+				fallback:
+					"Time corrections: {count, plural, one {# employee edits} other {# employees edit}} their own entries directly within their change policy's self-service days, and can't change older ones. Deletion requests and date changes still go to an approver, so they are checked.",
 				params,
 			};
 	}

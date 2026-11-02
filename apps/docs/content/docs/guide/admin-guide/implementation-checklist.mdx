@@ -18,7 +18,7 @@ From top to bottom:
 
 1. **Go-live readiness**: whether the mandatory go-live checks pass, and when they were checked.
 2. **Go-live group**: who is checked, the teams going live and the go-live exclusions.
-3. **Setup progress**: how many of the nine checklist items are done.
+3. **Setup progress**: how many of the checklist items that apply are done: nine, or eight when payroll export doesn't apply.
 4. **The checklist items**, each with its status, what Z8 checks and a link to the setting. The First workflows item holds the go-live rehearsal.
 
 ---
@@ -31,7 +31,7 @@ From top to bottom:
 | **Holidays** | Presence: an active holiday preset, a preset assignment or a custom holiday. | No |
 | **Work policies** | Go-live check: everyone in the go-live group has an effective work policy today. | Yes, mandatory |
 | **Approval rules** | Go-live check: everyone in the go-live group can get each kind of request decided. Confirming that your approval process is agreed is optional. | Yes, mandatory |
-| **Payroll export** | Go-live check: the payroll setup for the go-live group. Confirming it is optional. | Mandatory with an active payroll export target, otherwise optional |
+| **Payroll export** | Go-live check: the payroll setup for the go-live group. Confirming it is optional. | Mandatory with an active payroll export target. Without one it doesn't apply: optional, and left out of setup progress |
 | **Integrations** | Presence: an active Slack, Discord, Teams, Telegram or webhook configuration. | No |
 | **Notifications** | Presence: notification preferences or a configured notification channel. | No |
 | **First employee import** | Presence: the organization has more employees than the founding admin. | No |
@@ -48,7 +48,7 @@ Presence items tell you something is set up, not that it works. Z8 doesn't test 
 | **Verified** | The go-live check passed for everyone in the go-live group. Only go-live checks can verify an item. Settings that exist and a manual confirmation never do. |
 | **Needs attention** | The go-live check failed for at least one person, or for the whole organization. |
 | **Unavailable** | A lookup failed, so Z8 can't say. Use **Retry checks**. An unavailable check never counts as passed. |
-| **Manually complete** | Organization structure, confirmed by an admin. |
+| **Manually complete** | Organization structure, confirmed by an admin. A go-live item never shows it: its status always comes from its check. |
 
 The First workflows item has its own statuses: **Not started**, **Under way** (some first workflows seen) and **All seen**.
 
@@ -63,6 +63,8 @@ Setup progress counts an item when:
 
 A manual confirmation on Approval rules or Payroll export doesn't count toward progress. Only a passing check does.
 
+Without an active payroll export target, payroll export doesn't apply to your organization. The Payroll export item leaves the progress total, so the checklist can still reach 100%, and First workflows needs only its first two lines. With a target, Payroll export counts like any other go-live item.
+
 ---
 
 ## Go-Live Readiness
@@ -72,8 +74,10 @@ Go-live readiness combines the mandatory go-live checks for everyone in the go-l
 | Readiness | Meaning |
 |-----------|---------|
 | **Ready to go live** | Every mandatory go-live check passed. |
-| **Not ready** | At least one mandatory check failed. The header counts the people who need attention; someone who fails several checks is counted once. An organization-wide failure, such as a missing wage-type mapping, also makes readiness Not ready. |
+| **Not ready** | At least one mandatory check failed. The header counts the people who need attention; someone who fails several checks is counted once. A failure for the whole organization that lists nobody also makes readiness Not ready; the header then names the failing check instead of a count. |
 | **Unavailable** | A check could not be completed, so nothing counts as passed. |
+
+With nobody in the go-live group, every check would pass with nobody to check, so readiness shows **Not ready: no one is in the go-live group to check.** This happens before anyone is added, or when the teams going live have no members yet.
 
 Advisory results are shown as warnings ("1 advisory warning below") and never block going live.
 
@@ -86,7 +90,7 @@ Go-live readiness describes your setup. It doesn't check whether recorded time o
 | Work policy | Mandatory |
 | Approver | Mandatory |
 | Payroll setup, with an active payroll export target | Mandatory, except missing employment terms, which are advisory warnings |
-| Payroll setup, without an active payroll export target | Optional: the item shows **Not set up** with an **Optional** badge and never blocks |
+| Payroll setup, without an active payroll export target | Optional: the item shows **Not set up** with an **Optional** badge, never blocks and is left out of setup progress |
 | Organization structure, holidays, integrations, notifications, first employee import, first workflows | Not part of go-live readiness |
 
 ### Failures and Fix Links
@@ -138,24 +142,27 @@ Typical failures:
 
 Some people need no approval for a kind. These count as passes and are listed as notes:
 
-- no change policy applies to them, their change policy is in trust mode, or it only allows changes within its self-service days;
+- for work-period submissions, no change policy applies to them or their change policy is in trust mode;
 - owners and admins record their own work directly;
 - no absence category requires approval;
 - they are their own approver, so their requests complete at once;
+- for shift requests, they are the only manager or admin who can decide them, so their own requests wait until they approve them;
 - the owner approves their own expense reports, because nobody else can.
+
+**Time corrections always need an approver.** When no change policy applies, the change policy is in trust mode, or it only allows changes within its self-service days, people edit their own entries directly, and a note says so. But deletion requests and edits that change an entry's date always go to approval, so Z8 still checks that someone would decide them.
 
 ### Payroll Setup
 
 The payroll setup check reuses payroll readiness's own setup checks: export target, wage-type mappings, confirmed employment terms and personnel identifiers. The pay-period checks of [payroll readiness](/docs/guide/admin-guide/payroll-export) are left out, because go-live readiness is about setup, not about a pay run.
 
-**A payroll setup failure blocks going live only when the organization has an active payroll export target.** Without one, payroll export is an optional integration: the item shows **Not set up** with an **Optional** badge and never affects readiness.
+**A payroll setup failure blocks going live only when the organization has an active payroll export target.** Without one, payroll export is an optional integration: the item shows **Not set up** with an **Optional** badge, never affects readiness and is left out of setup progress.
 
 With an active target:
 
 | Result | Weight |
 |--------|--------|
 | No active wage-type mappings, so exports can't classify hours | Failure; lists everyone in the go-live group |
-| Employees share a personnel identifier, so exports would merge them | Failure; each person shows the identifier and who shares it |
+| Someone in the go-live group shares a personnel identifier with anyone on the current roster, so exports would merge them | Failure; each person in the go-live group shows the identifier and who shares it. People outside the go-live group count too, because an export still includes them |
 | No confirmed employment terms covering today | Advisory warning |
 
 Invited people are skipped for employment terms and personnel identifiers until they join.
@@ -207,7 +214,7 @@ The go-live rehearsal shows what Z8 would do for one person in the go-live group
 Start it from the First workflows item: choose a person and select **Rehearse**. You can also select **Rehearse** next to anyone in a failure list. A side panel shows:
 
 - **Work policy**: the effective policy today, where it is assigned (to them, their team or the organization), the hours per week or other cycle, and the working days. If none applies, it says so and links to the fix.
-- **Approvals**: for each covered kind, whether it needs approval, and if so the stages and the people who would decide each one. It shows when a stage starts only after earlier stages decide, when someone stands in for an approver who has left, when a stage's fallback decides, and when the person is their own approver. A kind that needs no approval says why; a kind that can't be routed gives the reason and a fix link. Absence categories and expense report totals that route differently are shown separately.
+- **Approvals**: for each covered kind, whether it needs approval, and if so the stages and the people who would decide each one. For time corrections it also says when they edit their own entries directly; deletion requests and date changes still go to the approver shown. It shows when a stage starts only after earlier stages decide, when someone stands in for an approver who has left, when a stage's fallback decides, and when the person is their own approver. A kind that needs no approval says why; a kind that can't be routed gives the reason and a fix link. Absence categories and expense report totals that route differently are shown separately.
 - **Payroll**: with an active payroll export target, their personnel number (unique or shared, and with whom), whether employment terms are confirmed for today, and whether wage types are mapped. Without one, it says there are no payroll prerequisites.
 
 The rehearsal shows the same result as the go-live checks for that person, traced step by step.
@@ -222,13 +229,15 @@ Some things Z8 can't judge, such as whether your organization structure is final
 |------|--------|------------------------------|
 | Organization structure | **Mark complete** | Teams, team memberships, primary teams, manager links, member roles and custom role assignments |
 | Approval rules | **Confirm our approval process is agreed** (optional) | Change policies and their assignments, approval policies with their stages, conditions and employee groups, and which absence categories require approval |
-| Payroll export | **Mark complete** (optional) | Payroll export configurations, wage-type mappings and expense wage-type mappings |
+| Payroll export | **Confirm our payroll export setup is agreed** (optional) | Payroll export configurations, wage-type mappings and expense wage-type mappings |
 
-On Approval rules and Payroll export, a confirmation is a business sign-off only. The item's status still comes from its go-live check, so a confirmation never makes it Verified.
+On Approval rules and Payroll export, a confirmation is a business sign-off only. The item's status still comes from its go-live check, so a confirmation never makes it Verified. Without an active payroll export target, a Payroll export confirmation is kept but changes nothing.
 
 ### When a Confirmation Goes Stale
 
 When you confirm, Z8 records a fingerprint of the configuration the confirmation covers. On each view it compares the current configuration with that fingerprint. Deleting something counts as a change, for example removing a team member or a wage-type mapping. Unrelated changes, such as adding a holiday or renaming an absence category, don't.
+
+**Adding or removing people makes an Organization structure confirmation stale.** It covers every employee's role and primary team and every member, so each new hire or removed member changes it. Confirm it again once the people going live are in place.
 
 | Note under the item | Counts toward progress |
 |---------------------|------------------------|
@@ -253,9 +262,11 @@ The First workflows item shows first-workflow evidence: proof, noticed from real
 | **First decided request** | The first request by someone in the go-live group that was approved or rejected. Pending requests don't count. |
 | **First successful payroll export** | The organization's first completed payroll export. Failed runs don't count. |
 
-Each line shows when it happened and who did it, or **Not yet**. If the person has since left, they are marked **Former employee**. Because the first two lines follow the go-live group, they change when you choose teams, exclude someone or an employee leaves.
+Each line shows when it happened and who did it, or **Not yet**. On the payroll export line, someone who has since left is marked **Former employee**. Because the first two lines follow the go-live group, they change when you choose teams, exclude someone or an employee leaves.
 
-First workflows never affects go-live readiness. It counts toward setup progress once all three lines are seen.
+Without an active payroll export target, payroll export doesn't apply, so the payroll export line is left out.
+
+First workflows never affects go-live readiness. It counts toward setup progress once every line that applies is seen.
 
 ---
 
@@ -263,7 +274,7 @@ First workflows never affects go-live readiness. It counts toward setup progress
 
 1. Work through the checklist items until go-live readiness shows **Ready to go live** for the people you want to start with.
 2. Use the go-live rehearsal on a few people from different teams, and anyone the checks flagged, to confirm their work policy, approvers and payroll prerequisites look right.
-3. For a phased go-live, narrow the go-live group to your pilot teams under **Teams going live**. Exclude anyone who won't use Z8, with a reason.
+3. For a phased go-live, narrow the go-live group to the teams going live first under **Teams going live**. Exclude anyone who won't use Z8, with a reason.
 4. Let those teams start working. First workflows shows their first clock-in, decided request and payroll export as they happen.
 5. Add the next teams. The checks cover them as soon as you save.
 

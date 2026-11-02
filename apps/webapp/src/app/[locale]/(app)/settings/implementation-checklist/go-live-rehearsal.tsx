@@ -34,17 +34,11 @@ import type {
 import {
 	type GoLiveFixLink,
 	type GoLiveMember,
-	type GoLiveMessage,
 	goLiveMemberKey,
 } from "@/lib/implementation-checklist/go-live/types";
 import { Link } from "@/navigation";
+import { goLiveMessage } from "./go-live-message";
 import { rehearseGoLiveMemberAction } from "./go-live-rehearsal-actions";
-
-type Translate = ReturnType<typeof useTranslate>["t"];
-
-function message(t: Translate, text: GoLiveMessage) {
-	return t(text.key, text.fallback, text.params);
-}
 
 interface GoLiveRehearsalControls {
 	candidates: readonly GoLiveRehearsalCandidate[];
@@ -279,7 +273,7 @@ function FixLink({ fix }: { fix: GoLiveFixLink | null }) {
 	if (!fix) return null;
 	return (
 		<Button asChild size="sm" variant="outline">
-			<Link href={fix.href}>{message(t, fix.label)}</Link>
+			<Link href={fix.href}>{goLiveMessage(t, fix.label)}</Link>
 		</Button>
 	);
 }
@@ -439,11 +433,14 @@ function KindTrace({ kind }: { kind: GoLiveRehearsalKind }) {
 	return (
 		<div className="space-y-2 rounded-md border p-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h4 className="font-medium text-sm">{message(t, kind.label)}</h4>
+				<h4 className="font-medium text-sm">{goLiveMessage(t, kind.label)}</h4>
 				<KindBadge status={kind.status} />
 			</div>
 			{kind.reason ? (
-				<p className="text-muted-foreground text-sm">{message(t, kind.reason)}</p>
+				<p className="text-muted-foreground text-sm">{goLiveMessage(t, kind.reason)}</p>
+			) : null}
+			{kind.note ? (
+				<p className="text-muted-foreground text-sm">{goLiveMessage(t, kind.note)}</p>
 			) : null}
 			<FixLink fix={kind.fix} />
 			{kind.status === "routed"
@@ -452,12 +449,12 @@ function KindTrace({ kind }: { kind: GoLiveRehearsalKind }) {
 						<div className="space-y-1" key={variant.label ? JSON.stringify(variant.label) : "only"}>
 							{variant.label ? (
 								<p className="font-medium text-muted-foreground text-xs">
-									{message(t, variant.label)}
+									{goLiveMessage(t, variant.label)}
 								</p>
 							) : null}
 							{variant.route ? <RouteTrace route={variant.route} /> : null}
 							{variant.reason ? (
-								<p className="text-muted-foreground text-sm">{message(t, variant.reason)}</p>
+								<p className="text-muted-foreground text-sm">{goLiveMessage(t, variant.reason)}</p>
 							) : null}
 						</div>
 					))

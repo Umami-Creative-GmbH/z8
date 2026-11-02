@@ -435,7 +435,6 @@ describe("implementation checklist actions", () => {
 		expect(result.data.goLive).toEqual({
 			readiness: { status: "ready", warnings: [] },
 			checkedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
-			timezone: "Europe/Berlin",
 			memberCount: 3,
 			group: goLiveGroupSettings,
 			// The members checked are who a go-live rehearsal can be run for (#1517).
