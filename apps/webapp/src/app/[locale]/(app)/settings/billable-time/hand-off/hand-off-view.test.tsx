@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { itemMarkVersion } from "@/lib/billable-time/hand-off/resolution";
 import { render } from "@/test/render-with-translations";
 import type { HandOffOverview } from "./actions";
 
@@ -98,7 +99,7 @@ const overview: HandOffOverview = {
 			carried: false,
 			changedAfterInvoicingAt: "2026-04-02T08:00:00Z",
 			changedFields: ["times"],
-			markVersion: "iw-1:1",
+			markVersion: itemMarkVersion([{ id: "iw-1", markVersion: 1 }]),
 			openWhenReleased: false,
 			history: [],
 			comparison: {

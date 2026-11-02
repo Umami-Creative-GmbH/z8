@@ -8,7 +8,7 @@
  *   is priced as (its hours − the handed-off hours) × the one frozen rate. The
  *   draft line was rounded on its own, so this may be a few cents off it.
  *   Hand-offs priced across several rates can't be repeated without today's
- *   rates: unknown, unless the hours are unchanged.
+ *   rates: unknown, unless the times and hours are unchanged.
  * - Nothing of it is left (removed, non-billable, or its project now belongs to
  *   another customer or none): the whole handed-off amount reverses, the sum
  *   of the shares' frozen amounts. A share without one (older rows) stands in
@@ -20,6 +20,11 @@
  * not the difference of two rounded amounts.
  */
 
+import {
+	compareInstants,
+	instantToCanonicalString,
+	parseInstant,
+} from "@/lib/datetime/temporal-core";
 import { type AccruedAmount, formatRate, rateFromStored, roundAccruedAmount } from "../money";
 import type { ComparedPiece } from "./comparison";
 import type {
@@ -38,12 +43,17 @@ export interface FrozenShare {
 	amount?: string;
 }
 
+/** The span work covers and its recorded minutes. */
+interface WorkTimes {
+	startedAt: string;
+	endedAt: string;
+	durationMinutes: number;
+}
+
 /** What the hand-off froze for a comparison item. */
-export interface FrozenPricing {
+export interface FrozenPricing extends WorkTimes {
 	/** The handed-off row's shares; pieces split off later have none. */
 	shares: readonly FrozenShare[];
-	/** Recorded minutes as handed off. */
-	durationMinutes: number;
 	projectId: string;
 	/** The draft's customer. */
 	customerId: string;
@@ -68,10 +78,42 @@ type Accrued =
 			reason: PricedDifferenceReason;
 			roundingCaveat: boolean;
 	  }
-	| { priced: false; reason: UnknownDifferenceReason };
+	| {
+			priced: false;
+			reason: UnknownDifferenceReason;
+			/** The times priced across several rates: the same times have the same amount. */
+			times?: WorkTimes;
+	  };
 
 const MS_PER_MINUTE = BigInt(60_000);
 const MS_PER_HOUR = BigInt(3_600_000);
+
+const NO_DIFFERENCE: Accrued = {
+	priced: true,
+	amount: BigInt(0),
+	estimated: false,
+	reason: "frozen_rate",
+	roundingCaveat: false,
+};
+
+/** The span of ended pieces and their minutes. */
+function timesOf(pieces: readonly (ComparedPiece & { endedAt: string })[]): WorkTimes {
+	const starts = pieces.map((piece) => parseInstant(piece.startedAt)).sort(compareInstants);
+	const ends = pieces.map((piece) => parseInstant(piece.endedAt)).sort(compareInstants);
+	return {
+		startedAt: instantToCanonicalString(starts[0]),
+		endedAt: instantToCanonicalString(ends[ends.length - 1]),
+		durationMinutes: pieces.reduce((sum, piece) => sum + (piece.durationMinutes ?? 0), 0),
+	};
+}
+
+function sameTimes(a: WorkTimes, b: WorkTimes): boolean {
+	return (
+		a.durationMinutes === b.durationMinutes &&
+		parseInstant(a.startedAt).equals(parseInstant(b.startedAt)) &&
+		parseInstant(a.endedAt).equals(parseInstant(b.endedAt))
+	);
+}
 
 /** The work that still belongs on the draft: billable for the draft's customer. */
 function stillInvoiced(frozen: FrozenPricing, pieces: readonly ComparedPiece[]) {
@@ -106,25 +148,24 @@ function accrue(frozen: FrozenPricing, pieces: readonly ComparedPiece[]): Accrue
 	if (frozen.shares.length === 0) return { priced: false, reason: "no_frozen_rate" };
 	const kept = stillInvoiced(frozen, pieces);
 	if (kept.length === 0) return reversal(frozen, pieces);
-	if (kept.some((piece) => piece.durationMinutes === null)) {
-		return { priced: false, reason: "running" };
-	}
+	const ended = kept.filter(
+		(piece): piece is ComparedPiece & { endedAt: string } =>
+			piece.endedAt !== null && piece.durationMinutes !== null,
+	);
+	if (ended.length < kept.length) return { priced: false, reason: "running" };
 	if (kept.some((piece) => piece.projectId !== frozen.projectId)) {
 		return { priced: false, reason: "other_project" };
 	}
-	const minutes = kept.reduce((sum, piece) => sum + (piece.durationMinutes ?? 0), 0);
-	const changedMinutes = minutes - frozen.durationMinutes;
-	if (changedMinutes === 0) {
-		return {
-			priced: true,
-			amount: BigInt(0),
-			estimated: false,
-			reason: "frozen_rate",
-			roundingCaveat: false,
-		};
-	}
+	const times = timesOf(ended);
 	const rates = new Set(frozen.shares.map((share) => rateFromStored(share.rate)));
-	if (rates.size > 1) return { priced: false, reason: "several_rates" };
+	// Moved times fall differently into the rates, even with the same hours.
+	if (rates.size > 1) {
+		return sameTimes(times, frozen)
+			? NO_DIFFERENCE
+			: { priced: false, reason: "several_rates", times };
+	}
+	const changedMinutes = times.durationMinutes - frozen.durationMinutes;
+	if (changedMinutes === 0) return NO_DIFFERENCE;
 	const [rate] = rates;
 	return {
 		priced: true,
@@ -137,6 +178,9 @@ function accrue(frozen: FrozenPricing, pieces: readonly ComparedPiece[]): Accrue
 
 /** `current` against `previous`, both against the same hand-off. */
 function since(current: Accrued, previous: Accrued): Accrued {
+	if (!current.priced && current.times && !previous.priced && previous.times) {
+		return sameTimes(current.times, previous.times) ? NO_DIFFERENCE : current;
+	}
 	if (!current.priced) return current;
 	if (!previous.priced) return previous;
 	const bothReversed = current.reason !== "frozen_rate" && previous.reason !== "frozen_rate";

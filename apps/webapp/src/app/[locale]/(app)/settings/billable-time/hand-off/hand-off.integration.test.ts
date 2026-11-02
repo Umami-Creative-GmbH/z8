@@ -1552,6 +1552,113 @@ describe("hand-off on PostgreSQL", () => {
 			]);
 		});
 
+		async function splitWebsite() {
+			const { db } = await import("@/db");
+			const { carryInvoicedWorkToSplit } = await import(
+				"@/lib/billable-time/hand-off/invoiced-work"
+			);
+			// Split 08:00–09:30 at 09:00: the source keeps 60 minutes, the piece takes 30.
+			await admin.query(
+				"update work_period set end_time = '2026-09-02T09:00:00Z', duration_minutes = 60 where id = $1",
+				[work.website],
+			);
+			const piece = await addWork({
+				projectId: ids.website,
+				start: "2026-09-02T09:00:00Z",
+				end: "2026-09-02T09:30:00Z",
+				minutes: 30,
+			});
+			await carryInvoicedWorkToSplit(db, {
+				organizationId: ids.organization,
+				sourceWorkPeriodId: work.website,
+				newWorkPeriodId: piece,
+			});
+			return piece;
+		}
+
+		it("shows one earlier clear of a split item that the old Clear all cleared piece by piece", async () => {
+			const { draftId } = await unwrap(confirm());
+			await splitWebsite();
+			// "Clear all marks" cleared each row on its own, with one now().
+			await admin.query(
+				`update invoiced_work set mark_cleared_at = '2026-10-01T10:00:00Z', mark_cleared_by = $2
+				 where organization_id = $1`,
+				[ids.organization, ids.ownerUser],
+			);
+
+			const detail = await unwrap(getInvoiceDraftAction({ draftId }));
+			const entries = detail.resolutionHistory.map((entry) => entry.kind);
+			// One per item: the split Website item and the App item.
+			expect(entries).toEqual([
+				"cleared_before_resolutions",
+				"cleared_before_resolutions",
+			]);
+			expect(
+				new Set(detail.resolutionHistory.map((entry) => entry.invoicedWorkId)).size,
+			).toBe(2);
+		});
+
+		it("refuses a split piece's id as unknown, not as changed", async () => {
+			await unwrap(confirm());
+			const piece = await splitWebsite();
+			const loaded = itemOf(await markedItems(), work.website);
+			const { rows } = await admin.query<{ id: string }>(
+				"select id from invoiced_work where organization_id = $1 and work_period_id = $2",
+				[ids.organization, piece],
+			);
+
+			await expect(
+				resolveChangedAfterInvoicingAction({
+					items: [{ ...loaded, invoicedWorkId: rows[0]?.id ?? "" }],
+					explanation: "Handled",
+				}),
+			).resolves.toMatchObject({ success: false, code: "NotFoundError" });
+			expect(await resolutions()).toEqual([]);
+		});
+
+		it("lets a draft's or an organization's deletion take its resolutions along", async () => {
+			const { draftId } = await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 80 where id = $1",
+				[work.website],
+			);
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [itemOf(await markedItems(), work.website)],
+					explanation: "Handled",
+				}),
+			);
+			expect(await resolutions()).toHaveLength(1);
+
+			await admin.query(
+				"delete from invoice_draft where organization_id = $1 and id = $2",
+				[ids.organization, draftId],
+			);
+			expect(await resolutions()).toEqual([]);
+
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 85 where id = $1",
+				[work.website],
+			);
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [itemOf(await markedItems(), work.website)],
+					explanation: "Handled again",
+				}),
+			);
+			expect(await resolutions()).toHaveLength(1);
+
+			await admin.query("delete from organization where id = $1", [
+				ids.organization,
+			]);
+			const { rows } = await admin.query(
+				"select id from invoiced_work_resolution where organization_id = $1",
+				[ids.organization],
+			);
+			expect(rows).toEqual([]);
+		});
+
 		it("keeps resolutions append-only, apart from the actor's deletion", async () => {
 			await unwrap(confirm());
 			await admin.query(

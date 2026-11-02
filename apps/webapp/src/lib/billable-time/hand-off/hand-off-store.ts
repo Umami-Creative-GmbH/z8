@@ -1431,6 +1431,18 @@ export type InvoicedWorkRowView = InvoicedWorkView & {
 	};
 };
 
+/** The row as the views show it, with its draft: without what only grouping and comparing need. */
+export function toInvoicedWorkView({
+	timesheet: _timesheet,
+	carriedFromWorkPeriodId: _source,
+	markVersion: _version,
+	released: _released,
+	handedOff: _handedOff,
+	...view
+}: InvoicedWorkRowView): InvoicedWorkView & { invoiceDraftId: string } {
+	return view;
+}
+
 /** Invoiced work rows with names, for a draft or for all marked work. */
 export async function invoicedWorkViews(
 	reader: Reader,
@@ -1573,17 +1585,10 @@ export async function getInvoiceDraftDetail(
 			rate: line.unitPrice,
 			amount: line.amount,
 		})),
-		work: work.map(
-			({
-				timesheet: _timesheet,
-				invoiceDraftId: _draftId,
-				carriedFromWorkPeriodId: _source,
-				markVersion: _version,
-				released: _released,
-				handedOff: _handedOff,
-				...view
-			}) => view,
-		),
+		work: work.map((row) => {
+			const { invoiceDraftId: _draftId, ...view } = toInvoicedWorkView(row);
+			return view;
+		}),
 		timesheet: work.flatMap((item) => (item.timesheet ? [item.timesheet] : [])),
 		releaseReason: draft.releaseReason,
 		endedAt: draft.endedAt?.toISOString() ?? null,

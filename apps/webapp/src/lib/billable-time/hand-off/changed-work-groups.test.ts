@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { groupChangedWork } from "./changed-work-groups";
+import { itemMarkVersion } from "./resolution";
 import type {
 	AmountDifferenceView,
 	ComparedWorkValuesView,
@@ -64,7 +65,7 @@ function item(
 		changedFields: ["times"],
 		invoiceDraftId: draftId,
 		draft,
-		markVersion: `${id}:1`,
+		markVersion: itemMarkVersion([{ id, markVersion: 1 }]),
 		history: [],
 		comparison: {
 			amountDifference: {

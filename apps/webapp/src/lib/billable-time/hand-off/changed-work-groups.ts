@@ -9,6 +9,7 @@
 import { formatUnits, parseUnits, sumUnits } from "@/lib/money/exact-decimal";
 import { RATE_SCALE } from "../money";
 import { openAmountDifference } from "./amount-difference";
+import { compareIsoInstants } from "./instant-order";
 import type { MarkedWorkDraftView, MarkedWorkItemView } from "./views";
 
 export interface ChangedWorkDraftGroup {
@@ -33,10 +34,14 @@ export interface ChangedWorkCustomerGroup {
 	drafts: ChangedWorkDraftGroup[];
 }
 
-/** ISO instants of one format: the smaller string is the earlier change. */
+/** Oldest change first; an item without an open mark first of all. */
 function byOldestChange(a: MarkedWorkItemView, b: MarkedWorkItemView): number {
-	const at = (item: MarkedWorkItemView) => item.changedAfterInvoicingAt ?? "";
-	if (at(a) !== at(b)) return at(a) < at(b) ? -1 : 1;
+	const [aAt, bAt] = [a.changedAfterInvoicingAt, b.changedAfterInvoicingAt];
+	const byChange =
+		aAt === null || bAt === null
+			? Number(bAt === null) - Number(aAt === null)
+			: compareIsoInstants(aAt, bAt);
+	if (byChange !== 0) return byChange;
 	return a.invoicedWorkId < b.invoicedWorkId ? -1 : a.invoicedWorkId > b.invoicedWorkId ? 1 : 0;
 }
 

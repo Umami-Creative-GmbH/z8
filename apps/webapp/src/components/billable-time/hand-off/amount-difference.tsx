@@ -15,14 +15,14 @@ export function useAmountDifferenceLabels() {
 	const { locale } = useDisplayContext();
 
 	/** A signed amount in the draft's currency: "+€25.00", "-€150.00". */
-	const amount = (value: string, currency: string): string =>
-		formatBillableAmount(locale, value, currency, { signDisplay: "exceptZero" });
+	const signedAmount = (amount: string, currency: string): string =>
+		formatBillableAmount(locale, amount, currency, { signDisplay: "exceptZero" });
 
 	/** The difference's amount, or "Unknown" (never zero). */
-	const value = (difference: AmountDifferenceView, currency: string): string =>
+	const differenceText = (difference: AmountDifferenceView, currency: string): string =>
 		difference.kind === "unknown"
 			? t("settings.billableTime.handOff.amount.unknown", "Unknown")
-			: amount(difference.amount, currency);
+			: signedAmount(difference.amount, currency);
 
 	const reason = (difference: AmountDifferenceView): string => {
 		switch (difference.reason) {
@@ -69,7 +69,7 @@ export function useAmountDifferenceLabels() {
 		}
 	};
 
-	return { amount, value, reason };
+	return { signedAmount, differenceText, reason };
 }
 
 /**
@@ -81,9 +81,11 @@ export function AmountDifference({ difference }: { difference: ItemAmountDiffere
 	const { t } = useTranslate();
 	const labels = useAmountDifferenceLabels();
 	const { currency, fromHandOff, sinceResolution } = difference;
-	const shown = [fromHandOff, ...(sinceResolution ? [sinceResolution] : [])];
-	const estimated = shown.some((entry) => entry.kind === "estimated");
-	const roundingCaveat = shown.some((entry) => entry.kind !== "unknown" && entry.roundingCaveat);
+	const differences = [fromHandOff, ...(sinceResolution ? [sinceResolution] : [])];
+	const estimated = differences.some((entry) => entry.kind === "estimated");
+	const roundingCaveat = differences.some(
+		(entry) => entry.kind !== "unknown" && entry.roundingCaveat,
+	);
 	const unknownSince =
 		sinceResolution?.kind === "unknown" && sinceResolution.reason !== fromHandOff.reason
 			? sinceResolution
@@ -95,13 +97,15 @@ export function AmountDifference({ difference }: { difference: ItemAmountDiffere
 				<span className="text-muted-foreground">
 					{t("settings.billableTime.handOff.amount.title", "Amount difference")}
 				</span>
-				<span className="font-medium tabular-nums">{labels.value(fromHandOff, currency)}</span>
+				<span className="font-medium tabular-nums">
+					{labels.differenceText(fromHandOff, currency)}
+				</span>
 				{sinceResolution && (
 					<span className="text-muted-foreground">
 						{t(
 							"settings.billableTime.handOff.amount.sinceResolution",
 							"Since the last resolution: {amount}",
-							{ amount: labels.value(sinceResolution, currency) },
+							{ amount: labels.differenceText(sinceResolution, currency) },
 						)}
 					</span>
 				)}
@@ -129,10 +133,7 @@ export function AmountDifference({ difference }: { difference: ItemAmountDiffere
 				)}
 			</p>
 			{difference.notOnHandOffForNewCustomer && (
-				<p
-					role="status"
-					className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs"
-				>
+				<p className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs">
 					<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
 					<span>
 						{t(

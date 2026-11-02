@@ -92,9 +92,6 @@ export class TravelExpenseExportContentError extends Error {
 	}
 }
 
-// The formula-safe cells are shared (`@/lib/export/csv-cells`).
-export { csvText };
-
 /** An unquoted money cell: a signed decimal at the stored scale, nothing else. */
 export function csvDecimal(value: string): string {
 	if (!isCsvDecimal(value)) {

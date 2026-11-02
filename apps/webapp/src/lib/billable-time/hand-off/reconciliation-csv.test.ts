@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { reconciliationCsv } from "./reconciliation-csv";
+import { itemMarkVersion } from "./resolution";
 import type {
 	ComparedWorkValuesView,
 	ItemAmountDifferenceView,
@@ -117,7 +118,7 @@ function item(overrides: {
 		changedFields: overrides.changedFields ?? ["times"],
 		invoiceDraftId: "draft-1",
 		draft: { ...draft, ...overrides.draft },
-		markVersion: `${id}:1`,
+		markVersion: itemMarkVersion([{ id, markVersion: 1 }]),
 		openWhenReleased: overrides.openWhenReleased ?? false,
 		history: overrides.history ?? [],
 		comparison: {

@@ -95,7 +95,7 @@ export function WorkComparison({
 			preset: "time",
 		});
 		const ownDay = workDayOf(instant, value.offsetMinutes).toString();
-		const shown =
+		const clockOnDay =
 			day !== null && ownDay !== day
 				? t("settings.billableTime.handOff.comparison.timeOnDay", "{day} {time}", {
 						day: labels.day(ownDay),
@@ -104,10 +104,10 @@ export function WorkComparison({
 				: clock;
 		return showOffsets
 			? t("settings.billableTime.handOff.comparison.timeWithOffset", "{time} ({offset})", {
-					time: shown,
+					time: clockOnDay,
 					offset: formatUtcOffset(value.offsetMinutes),
 				})
-			: shown;
+			: clockOnDay;
 	};
 
 	const references = (
@@ -119,7 +119,8 @@ export function WorkComparison({
 			.map((reference) => (reference.id === null ? none : (reference.name ?? unknown)))
 			.join(", ");
 
-	const value = (field: ComparedField, values: ComparedWorkValuesView): string => {
+	/** A field's value in one column. */
+	const cellText = (field: ComparedField, values: ComparedWorkValuesView): string => {
 		if (field === "removed") {
 			if (values.removed) return t("settings.billableTime.handOff.comparison.removedYes", "Yes");
 			if (values.removedPieceCount > 0) {
@@ -247,7 +248,7 @@ export function WorkComparison({
 												changed && "bg-amber-500/10 font-medium",
 											)}
 										>
-											{value(field, column.values)}
+											{cellText(field, column.values)}
 											{since && (
 												<IconPointFilled
 													aria-hidden="true"

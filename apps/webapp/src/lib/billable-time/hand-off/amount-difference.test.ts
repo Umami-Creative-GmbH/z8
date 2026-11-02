@@ -8,6 +8,8 @@ const website = { projectId: "p-web", projectName: "Website" };
 /** 90 minutes on Website for Acme, handed off at 100.00 an hour for 150.00. */
 const frozen: FrozenPricing = {
 	shares: [{ durationMs: 90 * 60_000, rate: "100.00", amount: "150.00" }],
+	startedAt: "2026-09-02T08:00:00.000Z",
+	endedAt: "2026-09-02T09:30:00.000Z",
 	durationMinutes: 90,
 	projectId: "p-web",
 	customerId: "c-acme",
@@ -77,7 +79,7 @@ describe("amountDifferenceOf", () => {
 		expect(difference.fromHandOff).toEqual({ kind: "unknown", reason: "several_rates" });
 	});
 
-	it("has no difference when the hours are unchanged, even across several rates", () => {
+	it("can't price moved times across several rates, even when the hours are unchanged", () => {
 		const difference = amountDifferenceOf({
 			frozen: {
 				...frozen,
@@ -87,7 +89,44 @@ describe("amountDifferenceOf", () => {
 				],
 			},
 			lastResolved: null,
-			// Moved by an hour, same length.
+			// Moved by an hour, same length: other parts of it fall in each rate.
+			current: [
+				piece({
+					startedAt: "2026-09-02T09:00:00.000Z",
+					endedAt: "2026-09-02T10:30:00.000Z",
+				}),
+			],
+		});
+
+		expect(difference.fromHandOff).toEqual({ kind: "unknown", reason: "several_rates" });
+	});
+
+	it("has no difference across several rates when neither times nor hours changed", () => {
+		const difference = amountDifferenceOf({
+			frozen: {
+				...frozen,
+				shares: [
+					{ durationMs: 60 * 60_000, rate: "100.00", amount: "100.00" },
+					{ durationMs: 30 * 60_000, rate: "120.00", amount: "60.00" },
+				],
+			},
+			lastResolved: null,
+			// Marked for another change (say, a note); times and hours as handed off.
+			current: [piece()],
+		});
+
+		expect(difference.fromHandOff).toEqual({
+			kind: "known",
+			amount: "0.00",
+			reason: "frozen_rate",
+			roundingCaveat: false,
+		});
+	});
+
+	it("has no difference at the one frozen rate when moved times keep the hours", () => {
+		const difference = amountDifferenceOf({
+			frozen,
+			lastResolved: null,
 			current: [
 				piece({
 					startedAt: "2026-09-02T09:00:00.000Z",
@@ -295,6 +334,61 @@ describe("amountDifferenceOf", () => {
 				amount: "-100.00",
 				reason: "removed",
 				roundingCaveat: true,
+			});
+		});
+
+		describe("across several rates", () => {
+			const acrossRateChange: FrozenPricing = {
+				...frozen,
+				shares: [
+					{ durationMs: 60 * 60_000, rate: "100.00", amount: "100.00" },
+					{ durationMs: 30 * 60_000, rate: "120.00", amount: "60.00" },
+				],
+			};
+			const moved = {
+				startedAt: "2026-09-02T09:00:00.000Z",
+				endedAt: "2026-09-02T10:30:00.000Z",
+			};
+
+			it("has no difference since the resolution when the resolved times are unchanged", () => {
+				const difference = amountDifferenceOf({
+					frozen: acrossRateChange,
+					lastResolved: [piece(moved)],
+					current: [piece(moved)],
+				});
+
+				expect(difference.fromHandOff).toEqual({ kind: "unknown", reason: "several_rates" });
+				expect(difference.sinceResolution).toEqual({
+					kind: "known",
+					amount: "0.00",
+					reason: "frozen_rate",
+					roundingCaveat: false,
+				});
+			});
+
+			it("can't price times moved since the resolution, even with the same hours", () => {
+				const difference = amountDifferenceOf({
+					frozen: acrossRateChange,
+					lastResolved: [piece(moved)],
+					current: [
+						piece({
+							startedAt: "2026-09-02T10:00:00.000Z",
+							endedAt: "2026-09-02T11:30:00.000Z",
+						}),
+					],
+				});
+
+				expect(difference.sinceResolution).toEqual({ kind: "unknown", reason: "several_rates" });
+			});
+
+			it("can't price times moved since a resolution that kept the hand-off's times", () => {
+				const difference = amountDifferenceOf({
+					frozen: acrossRateChange,
+					lastResolved: [piece()],
+					current: [piece(moved)],
+				});
+
+				expect(difference.sinceResolution).toEqual({ kind: "unknown", reason: "several_rates" });
 			});
 		});
 

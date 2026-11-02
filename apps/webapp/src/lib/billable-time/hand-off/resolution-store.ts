@@ -26,8 +26,15 @@ import {
 	type InvoicedWorkRowView,
 	invoicedWorkViews,
 	lockHandOffs,
+	toInvoicedWorkView,
 } from "./hand-off-store";
-import { comparisonItems, itemMarkVersion, type ResolutionInput } from "./resolution";
+import { compareIsoInstants, newestFirst } from "./instant-order";
+import {
+	comparisonItems,
+	itemChangedFields,
+	itemMarkVersion,
+	type ResolutionInput,
+} from "./resolution";
 import type {
 	MarkedWorkDraftView,
 	MarkedWorkItemView,
@@ -101,6 +108,7 @@ async function historyOf(
 			.select({
 				invoicedWorkId: invoicedWork.id,
 				at: invoicedWork.markClearedAt,
+				actorId: invoicedWork.markClearedBy,
 				actorName: user.name,
 			})
 			.from(invoicedWork)
@@ -113,6 +121,22 @@ async function historyOf(
 				),
 			),
 	]);
+	// The old "Clear all marks" cleared each piece of a split item on its own,
+	// with one time and actor: one clear of the item.
+	const clears = new Map<string, ResolutionHistoryEntryView>();
+	for (const row of cleared) {
+		if (!row.at) continue;
+		const root = rootOf.get(row.invoicedWorkId) ?? row.invoicedWorkId;
+		const at = row.at.toISOString();
+		const key = JSON.stringify([root, at, row.actorId]);
+		if (clears.has(key)) continue;
+		clears.set(key, {
+			kind: "cleared_before_resolutions",
+			invoicedWorkId: root,
+			at,
+			actorName: row.actorName,
+		});
+	}
 	const entries: ResolutionHistoryEntryView[] = [
 		...resolutions.map(
 			(row): ResolutionHistoryEntryView => ({
@@ -126,20 +150,9 @@ async function historyOf(
 				resolvedFields: changedFieldsOf(row.resolvedFields),
 			}),
 		),
-		...cleared.flatMap((row): ResolutionHistoryEntryView[] =>
-			row.at
-				? [
-						{
-							kind: "cleared_before_resolutions",
-							invoicedWorkId: rootOf.get(row.invoicedWorkId) ?? row.invoicedWorkId,
-							at: row.at.toISOString(),
-							actorName: row.actorName,
-						},
-					]
-				: [],
-		),
+		...clears.values(),
 	];
-	entries.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+	entries.sort(newestFirst);
 	const byItem = new Map<string, ResolutionHistoryEntryView[]>();
 	for (const entry of entries) {
 		const list = byItem.get(entry.invoicedWorkId) ?? [];
@@ -149,11 +162,9 @@ async function historyOf(
 	const lastResolved: ItemHistory["lastResolved"] = new Map();
 	for (const row of resolutions) {
 		const latest = lastResolved.get(row.invoicedWorkId);
-		if (!latest || latest.resolvedAt < row.at.toISOString()) {
-			lastResolved.set(row.invoicedWorkId, {
-				resolvedAt: row.at.toISOString(),
-				snapshot: row.snapshot,
-			});
+		const resolvedAt = row.at.toISOString();
+		if (!latest || compareIsoInstants(latest.resolvedAt, resolvedAt) < 0) {
+			lastResolved.set(row.invoicedWorkId, { resolvedAt, snapshot: row.snapshot });
 		}
 	}
 	return { history: byItem, lastResolved };
@@ -262,6 +273,8 @@ async function comparisonsOf(
 				amountDifference: amountDifferenceOf({
 					frozen: {
 						shares: frozen.shares,
+						startedAt: frozen.startedAt,
+						endedAt: frozen.endedAt,
 						durationMinutes: frozen.durationMinutes,
 						projectId: frozen.projectId,
 						customerId: draft.customerId,
@@ -296,21 +309,14 @@ function markedItemsOf(
 		const open = rows.filter((row) => row.changedAfterInvoicingAt !== null);
 		const compared = comparisons.get(rootId);
 		if (!compared) continue;
-		const {
-			id: _id,
-			timesheet: _timesheet,
-			carriedFromWorkPeriodId: _source,
-			markVersion: _version,
-			released: _released,
-			handedOff: _handedOff,
-			...root
-		} = rows[0];
+		const { id: _id, ...root } = rows[0];
 		marked.push({
-			...root,
-			// ISO instants of one format: the smallest string is the earliest.
+			...toInvoicedWorkView(root),
 			changedAfterInvoicingAt:
-				open.map((row) => row.changedAfterInvoicingAt as string).sort()[0] ?? null,
-			changedFields: [...new Set(open.flatMap((row) => row.changedFields))].sort(),
+				open
+					.flatMap((row) => (row.changedAfterInvoicingAt ? [row.changedAfterInvoicingAt] : []))
+					.sort(compareIsoInstants)[0] ?? null,
+			changedFields: itemChangedFields(open),
 			markVersion: itemMarkVersion(rows),
 			draft: compared.draft,
 			// Release returns every row of a draft at once.
@@ -390,9 +396,7 @@ export async function readDraftReconciliation(
 	const history = await historyOf(reader, input.organizationId, items);
 	return {
 		marked: await markedItemsWithComparisons(reader, input.organizationId, items, history),
-		resolutionHistory: [...history.history.values()]
-			.flat()
-			.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)),
+		resolutionHistory: [...history.history.values()].flat().sort(newestFirst),
 	};
 }
 
@@ -445,7 +449,7 @@ export async function readDraftReconciliationItems(
 
 export type ResolveResult =
 	| { ok: true; resolved: number }
-	/** An item is not invoiced work of the organization. */
+	/** An item is not a comparison item of the organization's invoiced work. */
 	| { ok: false; reason: "not_found" }
 	/** These items changed since they were loaded; nothing was resolved. */
 	| { ok: false; reason: "stale"; invoicedWorkIds: string[] }
@@ -568,10 +572,9 @@ export async function resolveChangedAfterInvoicing(
 			)
 			.orderBy(asc(invoicedWork.id))
 			.for("update");
-		const known = new Set(rows.map((row) => row.id));
-		if (requestedIds.some((id) => !known.has(id))) return { ok: false, reason: "not_found" };
-
 		const items = comparisonItems(rows);
+		// Items are named by their handed-off row: a piece split off one is not an item.
+		if (requestedIds.some((id) => !items.has(id))) return { ok: false, reason: "not_found" };
 		// Release keeps a draft's history read-only (#1503). The hand-off lock
 		// serializes this check with release.
 		const released = requestedIds.filter((id) =>
@@ -593,7 +596,7 @@ export async function resolveChangedAfterInvoicing(
 				id: randomUUID(),
 				root: members[0],
 				members,
-				resolvedFields: [...new Set(members.flatMap((row) => row.changedFields))].sort(),
+				resolvedFields: itemChangedFields(members),
 			};
 		});
 		const members = resolved.flatMap((item) => item.members);

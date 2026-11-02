@@ -20,6 +20,8 @@ import {
 import { reconciliationCsv } from "@/lib/billable-time/hand-off/reconciliation-csv";
 import {
 	parseResolutionInput,
+	RESOLUTION_EXPLANATION_MAX_LENGTH,
+	RESOLUTION_REFERENCE_MAX_LENGTH,
 	type ResolutionFieldError,
 	type ResolveItem,
 } from "@/lib/billable-time/hand-off/resolution";
@@ -412,6 +414,16 @@ export interface ReconciliationCsvFile {
 }
 
 /**
+ * Builds a reconciliation CSV from what was read. A value it can't write (a
+ * stored amount that isn't one) is logged with its detail, never shown.
+ */
+const reconciliationCsvOf = (build: () => string) =>
+	Effect.try({
+		try: build,
+		catch: (cause) => new Error("The reconciliation CSV could not be built", { cause }),
+	}).pipe(Effect.orDie);
+
+/**
  * A draft's reconciliation CSV (#1504): its items marked or resolved, released
  * drafts included. Works while the module is off.
  */
@@ -431,7 +443,7 @@ export async function downloadDraftReconciliationCsvAction(input: {
 		const { period, items } = reconciliation;
 		return {
 			fileName: `reconciliation-${period.from}_${period.to}.csv`,
-			content: reconciliationCsv(items),
+			content: yield* reconciliationCsvOf(() => reconciliationCsv(items)),
 		};
 	});
 	return runServerActionSafe(effect);
@@ -450,13 +462,20 @@ export async function downloadChangedWorkCsvAction(): Promise<
 		const marked = yield* dbService.query("billableTime.handOff.changedWorkCsv", () =>
 			listMarkedItems(dbService.db, organizationId),
 		);
-		const ordered = groupChangedWork(marked).flatMap((customer) =>
-			customer.drafts.flatMap((draft) => draft.items),
+		const content = yield* reconciliationCsvOf(() =>
+			reconciliationCsv(
+				groupChangedWork(marked).flatMap((customer) =>
+					customer.drafts.flatMap((draft) => draft.items),
+				),
+			),
 		);
-		return { fileName: "changed-after-invoicing.csv", content: reconciliationCsv(ordered) };
+		return { fileName: "changed-after-invoicing.csv", content };
 	});
 	return runServerActionSafe(effect);
 }
+
+/** Server messages are English; the dialog shows its own copy per refusal. */
+const characterCount = (count: number) => count.toLocaleString("en-US");
 
 function resolutionInputError(error: ResolutionFieldError) {
 	const refusal = `${error.field}.${error.code}`;
@@ -469,13 +488,13 @@ function resolutionInputError(error: ResolutionFieldError) {
 			});
 		case "explanation.too_long":
 			return new ValidationError({
-				message: "Keep the explanation to 2,000 characters",
+				message: `Keep the explanation to ${characterCount(RESOLUTION_EXPLANATION_MAX_LENGTH)} characters`,
 				field: error.field,
 				refusal,
 			});
 		case "accountingReference.too_long":
 			return new ValidationError({
-				message: "Keep the accounting reference to 200 characters",
+				message: `Keep the accounting reference to ${characterCount(RESOLUTION_REFERENCE_MAX_LENGTH)} characters`,
 				field: error.field,
 				refusal,
 			});
