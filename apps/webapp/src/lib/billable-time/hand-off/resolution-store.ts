@@ -101,6 +101,7 @@ async function historyOf(
 			.select({
 				invoicedWorkId: invoicedWork.id,
 				at: invoicedWork.markClearedAt,
+				actorId: invoicedWork.markClearedBy,
 				actorName: user.name,
 			})
 			.from(invoicedWork)
@@ -113,6 +114,22 @@ async function historyOf(
 				),
 			),
 	]);
+	// The old "Clear all marks" cleared each piece of a split item on its own,
+	// with one time and actor: one clear of the item.
+	const clears = new Map<string, ResolutionHistoryEntryView>();
+	for (const row of cleared) {
+		if (!row.at) continue;
+		const root = rootOf.get(row.invoicedWorkId) ?? row.invoicedWorkId;
+		const at = row.at.toISOString();
+		const key = JSON.stringify([root, at, row.actorId]);
+		if (clears.has(key)) continue;
+		clears.set(key, {
+			kind: "cleared_before_resolutions",
+			invoicedWorkId: root,
+			at,
+			actorName: row.actorName,
+		});
+	}
 	const entries: ResolutionHistoryEntryView[] = [
 		...resolutions.map(
 			(row): ResolutionHistoryEntryView => ({
@@ -126,18 +143,7 @@ async function historyOf(
 				resolvedFields: changedFieldsOf(row.resolvedFields),
 			}),
 		),
-		...cleared.flatMap((row): ResolutionHistoryEntryView[] =>
-			row.at
-				? [
-						{
-							kind: "cleared_before_resolutions",
-							invoicedWorkId: rootOf.get(row.invoicedWorkId) ?? row.invoicedWorkId,
-							at: row.at.toISOString(),
-							actorName: row.actorName,
-						},
-					]
-				: [],
-		),
+		...clears.values(),
 	];
 	entries.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
 	const byItem = new Map<string, ResolutionHistoryEntryView[]>();
@@ -447,7 +453,7 @@ export async function readDraftReconciliationItems(
 
 export type ResolveResult =
 	| { ok: true; resolved: number }
-	/** An item is not invoiced work of the organization. */
+	/** An item is not a comparison item of the organization's invoiced work. */
 	| { ok: false; reason: "not_found" }
 	/** These items changed since they were loaded; nothing was resolved. */
 	| { ok: false; reason: "stale"; invoicedWorkIds: string[] }
@@ -570,10 +576,9 @@ export async function resolveChangedAfterInvoicing(
 			)
 			.orderBy(asc(invoicedWork.id))
 			.for("update");
-		const known = new Set(rows.map((row) => row.id));
-		if (requestedIds.some((id) => !known.has(id))) return { ok: false, reason: "not_found" };
-
 		const items = comparisonItems(rows);
+		// Items are named by their handed-off row: a piece split off one is not an item.
+		if (requestedIds.some((id) => !items.has(id))) return { ok: false, reason: "not_found" };
 		// Release keeps a draft's history read-only (#1503). The hand-off lock
 		// serializes this check with release.
 		const released = requestedIds.filter((id) =>
