@@ -5,11 +5,10 @@ import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-
-type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
+import type { ServerActionResult } from "@/lib/effect/result";
 
 export type DownloadReconciliationCsv = () => Promise<
-	ActionResult<{ fileName: string; content: string }>
+	ServerActionResult<{ fileName: string; content: string }>
 >;
 
 /**

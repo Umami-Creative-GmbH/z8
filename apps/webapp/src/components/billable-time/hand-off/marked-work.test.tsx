@@ -3,6 +3,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { itemMarkVersion } from "@/lib/billable-time/hand-off/resolution";
 import type {
 	ItemAmountDifferenceView,
 	MarkedWorkItemView,
@@ -60,7 +61,7 @@ const item = (overrides: Partial<MarkedWorkItemView> = {}): MarkedWorkItemView =
 	carried: false,
 	changedAfterInvoicingAt: "2026-04-02T08:00:00Z",
 	changedFields: ["times"],
-	markVersion: "11111111-1111-4111-8111-111111111111:2",
+	markVersion: itemMarkVersion([{ id: "11111111-1111-4111-8111-111111111111", markVersion: 2 }]),
 	openWhenReleased: false,
 	history: [],
 	comparison: {
@@ -87,7 +88,7 @@ const linus = item({
 	employeeName: "Linus",
 	projectName: "App",
 	changedFields: ["billability"],
-	markVersion: "22222222-2222-4222-8222-222222222222:1",
+	markVersion: itemMarkVersion([{ id: "22222222-2222-4222-8222-222222222222", markVersion: 1 }]),
 });
 
 function setup(
@@ -104,11 +105,54 @@ function setup(
 
 async function openFor(user: ReturnType<typeof userEvent.setup>, name: string) {
 	const row = screen.getByText(name).closest("li") as HTMLElement;
-	await user.click(within(row).getByRole("button", { name: "Resolve" }));
+	await user.click(within(row).getByRole("button", { name: /^Resolve / }));
 	return screen.findByRole("dialog");
 }
 
 describe("MarkedWork", () => {
+	it("names the item each row button acts on", () => {
+		setup();
+		const row = screen.getByText("Grace").closest("li") as HTMLElement;
+
+		for (const name of [/^Compare .*Grace · Website$/, /^Resolve .*Grace · Website$/]) {
+			expect(within(row).getByRole("button", { name })).toBeTruthy();
+		}
+	});
+
+	it("names the item of the history button", () => {
+		setup(undefined, [
+			item({
+				history: [
+					{
+						kind: "cleared_before_resolutions",
+						invoicedWorkId: grace.invoicedWorkId,
+						at: "2026-03-20T09:00:00Z",
+						actorName: "Bob",
+					},
+				],
+			}),
+		]);
+
+		expect(screen.getByRole("button", { name: /^History \(1\) .*Grace · Website$/ })).toBeTruthy();
+	});
+
+	it("gives each of two lists on a page its own Select all", async () => {
+		const resolve = vi.fn();
+		render(
+			<>
+				<MarkedWork marked={[grace]} resolve={resolve} onResolved={vi.fn()} />
+				<MarkedWork marked={[linus]} resolve={resolve} onResolved={vi.fn()} />
+			</>,
+		);
+		const user = userEvent.setup();
+
+		await user.click(screen.getAllByText("Select all")[1] as HTMLElement);
+
+		const [first, second] = screen.getAllByRole("checkbox", { name: "Select all" });
+		expect(first?.getAttribute("aria-checked")).toBe("false");
+		expect(second?.getAttribute("aria-checked")).toBe("true");
+	});
+
 	it("resolves one item with its loaded mark version, explanation and reference", async () => {
 		const { resolve, onResolved, user } = setup();
 		const dialog = await openFor(user, "Grace");
@@ -208,14 +252,14 @@ describe("MarkedWork", () => {
 		expect(screen.getByText(/can no longer be resolved/)).toBeTruthy();
 
 		const row = screen.getByText("Grace").closest("li") as HTMLElement;
-		await user.click(within(row).getByRole("button", { name: "Compare" }));
+		await user.click(within(row).getByRole("button", { name: /^Compare / }));
 		expect(within(row).getByRole("table", { name: /Comparison of/ })).toBeTruthy();
 	});
 
 	it("compares an item with its hand-off values on request", async () => {
 		const { user } = setup();
 		const row = screen.getByText("Grace").closest("li") as HTMLElement;
-		const compare = within(row).getByRole("button", { name: "Compare" });
+		const compare = within(row).getByRole("button", { name: /^Compare / });
 		expect(compare.getAttribute("aria-expanded")).toBe("false");
 
 		await user.click(compare);
@@ -251,7 +295,7 @@ describe("MarkedWork", () => {
 			}),
 		]);
 
-		await user.click(screen.getByRole("button", { name: "History (2)" }));
+		await user.click(screen.getByRole("button", { name: /^History \(2\)/ }));
 
 		expect(screen.getByText("Credit note CN-7")).toBeTruthy();
 		expect(screen.getByText("Cleared before resolutions were recorded")).toBeTruthy();
@@ -315,8 +359,10 @@ describe("MarkedWork", () => {
 				}),
 			]);
 
-			const warning = within(rowOf("Grace")).getByRole("status");
-			expect(warning.textContent).toContain("not on any hand-off");
+			const row = rowOf("Grace");
+			expect(row.textContent).toContain("not on any hand-off");
+			// Static copy shown with the row, not an announcement.
+			expect(within(row).queryByRole("status")).toBeNull();
 		});
 
 		it("also shows the difference since the last resolution", () => {

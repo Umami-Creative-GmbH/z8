@@ -3,7 +3,7 @@
 import { IconAlertTriangle, IconArrowsDiff, IconHistory, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -37,17 +37,17 @@ import {
 	type ResolveItem,
 } from "@/lib/billable-time/hand-off/resolution";
 import type {
+	ChangedField,
 	MarkedWorkItemView,
 	ResolutionHistoryEntryView,
 	ResolveOutcomeView,
 } from "@/lib/billable-time/hand-off/views";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
+import type { ServerActionResult } from "@/lib/effect/result";
 import { AmountDifference, useAmountDifferenceLabels } from "./amount-difference";
 import { useHandOffLabels } from "./hand-off-labels";
 import { WorkComparison } from "./work-comparison";
-
-type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
 
 export interface ResolveMarksInput {
 	items: ResolveItem[];
@@ -55,7 +55,9 @@ export interface ResolveMarksInput {
 	accountingReference: string;
 }
 
-export type ResolveMarks = (input: ResolveMarksInput) => Promise<ActionResult<ResolveOutcomeView>>;
+export type ResolveMarks = (
+	input: ResolveMarksInput,
+) => Promise<ServerActionResult<ResolveOutcomeView>>;
 
 type ItemLabel = Pick<MarkedWorkItemView, "day" | "employeeName" | "projectName">;
 
@@ -103,6 +105,8 @@ export function MarkedWork({
 	const [resolving, setResolving] = useState<readonly MarkedWorkItemView[] | null>(null);
 	const [historyOpen, setHistoryOpen] = useState<ReadonlySet<string>>(new Set());
 	const [compareOpen, setCompareOpen] = useState<ReadonlySet<string>>(new Set());
+	// The overview and an open draft both list marked work.
+	const selectAllId = useId();
 	if (marked.length === 0) return null;
 
 	// Open when released (#1503): read-only, never selectable or resolvable.
@@ -118,7 +122,7 @@ export function MarkedWork({
 	const selectAll = resolvable.length > 0 && (
 		<div className="flex items-center gap-3 p-2">
 			<Checkbox
-				id="marked-work-select-all"
+				id={selectAllId}
 				checked={all ? true : chosen.length > 0 ? "indeterminate" : false}
 				onCheckedChange={(checked) =>
 					setSelected(
@@ -126,7 +130,7 @@ export function MarkedWork({
 					)
 				}
 			/>
-			<label htmlFor="marked-work-select-all" className="text-muted-foreground">
+			<label htmlFor={selectAllId} className="text-muted-foreground">
 				{t("settings.billableTime.handOff.marks.selectAll", "Select all")}
 			</label>
 		</div>
@@ -152,13 +156,7 @@ export function MarkedWork({
 					<span className="tabular-nums">{labels.day(item.day)}</span>
 					<span>{item.employeeName}</span>
 					<span className="text-muted-foreground">{item.projectName}</span>
-					<span className="flex flex-wrap gap-1">
-						{item.changedFields.map((field) => (
-							<Badge key={field} variant="outline">
-								{labels.changedField(field)}
-							</Badge>
-						))}
-					</span>
+					<ChangedFieldBadges fields={item.changedFields} />
 					{item.openWhenReleased && (
 						<Badge variant="secondary">
 							{t("settings.billableTime.handOff.marks.openWhenReleased", "Open when released")}
@@ -169,6 +167,9 @@ export function MarkedWork({
 							size="sm"
 							variant="ghost"
 							aria-expanded={showComparison}
+							aria-label={t("settings.billableTime.handOff.marks.compareItem", "Compare {item}", {
+								item: itemLabel(item),
+							})}
 							onClick={() =>
 								setCompareOpen((current) => toggle(current, item.invoicedWorkId, !showComparison))
 							}
@@ -181,6 +182,11 @@ export function MarkedWork({
 								size="sm"
 								variant="ghost"
 								aria-expanded={showHistory}
+								aria-label={t(
+									"settings.billableTime.handOff.marks.historyItem",
+									"History ({count}) of {item}",
+									{ count: item.history.length, item: itemLabel(item) },
+								)}
 								onClick={() =>
 									setHistoryOpen((current) => toggle(current, item.invoicedWorkId, !showHistory))
 								}
@@ -192,7 +198,14 @@ export function MarkedWork({
 							</Button>
 						)}
 						{!item.openWhenReleased && (
-							<Button size="sm" variant="ghost" onClick={() => setResolving([item])}>
+							<Button
+								size="sm"
+								variant="ghost"
+								aria-label={t("settings.billableTime.handOff.marks.resolveItem", "Resolve {item}", {
+									item: itemLabel(item),
+								})}
+								onClick={() => setResolving([item])}
+							>
 								{t("settings.billableTime.handOff.marks.resolve", "Resolve")}
 							</Button>
 						)}
@@ -277,12 +290,12 @@ export function MarkedWork({
 														? t(
 																"settings.billableTime.handOff.amount.subtotalEstimated",
 																"Known amount differences: {amount} (includes estimates)",
-																{ amount: amounts.amount(draft.subtotal, draft.currency) },
+																{ amount: amounts.signedAmount(draft.subtotal, draft.currency) },
 															)
 														: t(
 																"settings.billableTime.handOff.amount.subtotal",
 																"Known amount differences: {amount}",
-																{ amount: amounts.amount(draft.subtotal, draft.currency) },
+																{ amount: amounts.signedAmount(draft.subtotal, draft.currency) },
 															)}
 											</span>
 											{draft.unknownCount > 0 && (
@@ -326,6 +339,8 @@ export function MarkedWork({
 
 function useFieldMessage() {
 	const { t } = useTranslate();
+	const { locale } = useDisplayContext();
+	const count = (value: number) => new Intl.NumberFormat(locale).format(value);
 	return (error: ResolutionFieldError): string => {
 		switch (error.field) {
 			case "explanation":
@@ -337,13 +352,13 @@ function useFieldMessage() {
 					: t(
 							"settings.billableTime.handOff.resolve.explanationTooLong",
 							"Keep the explanation to {max} characters.",
-							{ max: RESOLUTION_EXPLANATION_MAX_LENGTH },
+							{ max: count(RESOLUTION_EXPLANATION_MAX_LENGTH) },
 						);
 			case "accountingReference":
 				return t(
 					"settings.billableTime.handOff.resolve.referenceTooLong",
 					"Keep the reference to {max} characters.",
-					{ max: RESOLUTION_REFERENCE_MAX_LENGTH },
+					{ max: count(RESOLUTION_REFERENCE_MAX_LENGTH) },
 				);
 			case "items":
 				return t(
@@ -600,6 +615,20 @@ function ResolveMarksForm({
 	);
 }
 
+/** An item's changed fields, or a resolution's resolved ones. */
+function ChangedFieldBadges({ fields }: { fields: readonly ChangedField[] }) {
+	const labels = useHandOffLabels();
+	return (
+		<span className="flex flex-wrap gap-1">
+			{fields.map((field) => (
+				<Badge key={field} variant="outline">
+					{labels.changedField(field)}
+				</Badge>
+			))}
+		</span>
+	);
+}
+
 /**
  * Resolutions and earlier clears, newest first. `itemLabel` names each entry's
  * item when the list covers several items.
@@ -613,7 +642,6 @@ export function ResolutionHistoryList({
 }) {
 	const { t } = useTranslate();
 	const display = useDisplayContext();
-	const labels = useHandOffLabels();
 	const when = (at: string) => formatInstant(parseInstant(at), display, "dateTimeMedium");
 	const actor = (name: string | null) =>
 		name ?? t("settings.billableTime.handOff.history.deletedUser", "a deleted user");
@@ -648,13 +676,7 @@ export function ResolutionHistoryList({
 									</p>
 								)}
 								{entry.resolvedFields.length > 0 && (
-									<span className="flex flex-wrap gap-1">
-										{entry.resolvedFields.map((field) => (
-											<Badge key={field} variant="outline">
-												{labels.changedField(field)}
-											</Badge>
-										))}
-									</span>
+									<ChangedFieldBadges fields={entry.resolvedFields} />
 								)}
 							</>
 						) : (

@@ -51,12 +51,11 @@ import type {
 	DraftToolStatusView,
 	InvoiceDraftDetailView,
 } from "@/lib/billable-time/hand-off/views";
+import type { ServerActionResult as ActionResult } from "@/lib/effect/result";
 import { queryKeys } from "@/lib/query/keys";
 import { useHandOffLabels } from "./hand-off-labels";
 import { MarkedWork, ResolutionHistoryList, type ResolveMarks, useItemLabel } from "./marked-work";
 import { ReconciliationCsvButton } from "./reconciliation-csv-button";
-
-type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
 
 /** The server actions the panel calls (injected so the page owns them). */
 export interface InvoiceDraftPanelActions {
