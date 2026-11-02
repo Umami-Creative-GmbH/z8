@@ -175,27 +175,28 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="Umami Creative GmbH" name="author" />
 				<meta content="#000000" name="theme-color" />
 				<meta content="light dark" name="color-scheme" />
-				<link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
+				{/* `?v=2`: the service worker serves icons cache-first, so a new query string is what makes existing installs fetch the redesigned files. */}
+				<link href="/favicon.ico?v=2" rel="icon" sizes="any" type="image/x-icon" />
 				<link
-					href="/apple-touch-icon.png"
+					href="/apple-touch-icon.png?v=2"
 					rel="apple-touch-icon"
 					sizes="180x180"
 				/>
 				<link
-					href="/favicon-32x32.png"
+					href="/favicon-32x32.png?v=2"
 					rel="icon"
 					sizes="32x32"
 					type="image/png"
 				/>
 				<link
-					href="/favicon-16x16.png"
+					href="/favicon-16x16.png?v=2"
 					rel="icon"
 					sizes="16x16"
 					type="image/png"
 				/>
 				<link href="/site.webmanifest" rel="manifest" />
 				<link color="#000000" href="/safari-pinned-tab.svg" rel="mask-icon" />
-				<meta content="#000000" name="msapplication-TileColor" />
+				<meta content="#3860c6" name="msapplication-TileColor" />
 				<meta content="z8" name="apple-mobile-web-app-title" />
 				<meta content="z8" name="application-name" />
 				<meta content="yes" name="mobile-web-app-capable" />
