@@ -290,7 +290,9 @@ export enum AuditAction {
 	INVOICE_DRAFT_CREATED = "billable_time.invoice_draft_created",
 	INVOICE_DRAFT_FAILED = "billable_time.invoice_draft_failed",
 	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",
+	/** Written before resolutions existed (#1499); kept for the history. */
 	INVOICED_WORK_MARK_CLEARED = "billable_time.invoiced_work_mark_cleared",
+	INVOICED_WORK_MARK_RESOLVED = "billable_time.invoiced_work_mark_resolved",
 
 	// Custom field definitions (#817)
 	CUSTOM_FIELD_CREATED = "custom_field.created",
