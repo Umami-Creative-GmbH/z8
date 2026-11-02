@@ -274,9 +274,11 @@ describe("SectionCards", () => {
 		vi.stubGlobal("IntersectionObserver", Observer);
 		const request = vi.fn();
 		vi.stubGlobal("fetch", request);
+		// The saved layout must stay newer than the seed, however slow the runner is.
+		const seededAt = Date.now();
 		vi.mocked(updateWidgetOrder).mockResolvedValue({
 			success: true,
-			data: { success: true, updatedAt: Date.now() + 1 },
+			data: { success: true, updatedAt: seededAt + 1 },
 		});
 		render(
 			<QueryClientProvider client={new QueryClient()}>
@@ -285,7 +287,7 @@ describe("SectionCards", () => {
 				<SectionCards
 					initialLayout={{
 						scope: { userId: "user-a", organizationId: "org-a" },
-						updatedAt: Date.now(),
+						updatedAt: seededAt,
 						settings: { dashboardWidgetOrder: { order: ["quick-stats"], version: 1 } },
 					}}
 					widgetSlots={{ "quick-stats": <p>Primary hours</p> }}
