@@ -102,7 +102,6 @@ function createPng(width, height, color) {
 const colors = {
   gray: { r: 156, g: 163, b: 175 },   // #9CA3AF
   green: { r: 34, g: 197, b: 94 },    // #22C55E
-  blue: { r: 59, g: 130, b: 246 },    // #3B82F6 (app icon)
 };
 
 // Generate tray icons (32x32)
@@ -112,16 +111,5 @@ writeFileSync(join(iconsDir, 'tray-gray.png'), createPng(32, 32, colors.gray));
 console.log('Generating tray-green.png (32x32)...');
 writeFileSync(join(iconsDir, 'tray-green.png'), createPng(32, 32, colors.green));
 
-// Generate app icons
-console.log('Generating 32x32.png...');
-writeFileSync(join(iconsDir, '32x32.png'), createPng(32, 32, colors.blue));
-
-console.log('Generating 128x128.png...');
-writeFileSync(join(iconsDir, '128x128.png'), createPng(128, 128, colors.blue));
-
-console.log('Generating 128x128@2x.png (256x256)...');
-writeFileSync(join(iconsDir, '128x128@2x.png'), createPng(256, 256, colors.blue));
-
-console.log('\nPlaceholder icons generated!');
-console.log('Note: For production, replace these with properly designed icons.');
-console.log('\nFor .ico and .icns files, use: pnpm tauri icon path/to/source.png');
+console.log('\nPlaceholder tray icons generated!');
+console.log('App icons are designed: regenerate them with pnpm tauri icon src-tauri/icons/app-icon.json');

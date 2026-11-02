@@ -1,12 +1,15 @@
 # z8 Timer icons
 
-The app icon is a white Tabler-style clock on the existing blue background.
-The tray uses the same clock in gray when clocked out and green when working.
+The app icon is the z8 brand mark: the white z8 glyph on brand blue (#3860c6),
+matching the web app's favicons and PWA icons.
+The tray uses a clock in gray when clocked out and green when working.
 
-The source is app-icon.svg. Generate app assets with:
+The sources are app-icon.png (rounded square, desktop default),
+app-icon-android-fg.png and app-icon-android-bg.png (adaptive layers), tied
+together by app-icon.json. Generate app assets with:
 
 ~~~powershell
-pnpm --filter desktop tauri icon src-tauri/icons/app-icon.svg
+pnpm --filter desktop tauri icon src-tauri/icons/app-icon.json
 ~~~
 
 Tray icons are 32 × 32 PNGs with a transparent background, white clock face and
