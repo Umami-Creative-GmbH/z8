@@ -99,6 +99,11 @@ export interface GoLiveRehearsalKind {
 	status: "routed" | "skipped" | "unroutable";
 	/** Why no approval is needed, or why it can't be routed. */
 	reason: GoLiveMessage | null;
+	/**
+	 * Time corrections they make directly, whatever the status: deletion requests and date
+	 * changes still go to the approver shown. Null for other kinds.
+	 */
+	note: GoLiveMessage | null;
 	/** Where an unroutable kind is fixed, when the viewer may open it. */
 	fix: GoLiveFixLink | null;
 	variants: GoLiveRehearsalVariant[];

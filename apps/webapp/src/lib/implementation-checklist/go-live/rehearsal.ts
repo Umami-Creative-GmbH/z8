@@ -1,11 +1,13 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
+import { readOnlyTransaction } from "@/db/read-only-transaction";
 import { absenceCategory, employee } from "@/db/schema";
 import { scheduledWeekdays, type WeekdayName } from "@/lib/absences/working-days";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
 import { loadEffectiveWorkPolicies } from "@/lib/work-policy/effective-work-policies";
 import {
+	type ApproverDirectChange,
 	type ApproverGoLiveKind,
 	type ApproverKindResolution,
 	type ApproverRoute,
@@ -20,7 +22,6 @@ import { EMPLOYEES_SETTINGS_HREF, PAYROLL_EXPORT_SETTINGS_HREF } from "./checks/
 import { WORK_POLICY_ASSIGNMENTS_HREF, workPolicySubject } from "./checks/work-policy";
 import { resolveGoLiveGroup } from "./group";
 import { readPayrollPrerequisites } from "./payroll-prerequisites";
-import { readOnlyGoLive } from "./read-only";
 import type {
 	GoLiveRehearsal,
 	GoLiveRehearsalKind,
@@ -71,7 +72,7 @@ export async function rehearseGoLiveMember(
 	},
 ): Promise<GoLiveRehearsalResult> {
 	const { organizationId, asOf, fixLink } = input;
-	return readOnlyGoLive(db, async (reader) => {
+	return readOnlyTransaction(db, async (reader) => {
 		const group = await resolveGoLiveGroup(reader, organizationId, asOf);
 		const member = group.members.find(
 			(candidate) => goLiveMemberKey(candidate) === input.memberKey,
@@ -90,15 +91,8 @@ export async function rehearseGoLiveMember(
 			traceStages: true,
 		});
 		const resolutions = await routing.resolve(member);
-		const prerequisites = await readPayrollPrerequisites(reader, {
-			organizationId,
-			asOf,
-			member,
-			groupEmployeeIds: group.members.flatMap((candidate) =>
-				candidate.kind === "employee" ? [candidate.employeeId] : [],
-			),
-		});
-		// One query at a time: they share the transaction's connection.
+		const prerequisites = await readPayrollPrerequisites(reader, { organizationId, asOf, member });
+		// Awaited in turn for readability; the transaction's one connection queues queries anyway.
 		const people = await loadPeople(reader, organizationId, employeeIdsIn(resolutions));
 		const categories = await loadCategoryNames(reader, organizationId, categoryIdsIn(resolutions));
 
@@ -211,6 +205,7 @@ function kindTrace(
 				: resolution.status === "unroutable"
 					? unroutableReason(resolution.cause, teamId, context.group)
 					: null,
+		note: resolution.directChange ? directChangeNote(resolution.directChange) : null,
 		fix:
 			resolution.status === "unroutable"
 				? approverFixLink(resolution.cause, teamId, context.fixLink)
@@ -378,11 +373,6 @@ function skipReason(reason: ApproverSkipReason): GoLiveMessage {
 				key: "settings.implementationChecklist.rehearsal.approvals.skip.trustMode",
 				fallback: "Their change policy is in trust mode.",
 			};
-		case "change_policy_within_self_service":
-			return {
-				key: "settings.implementationChecklist.rehearsal.approvals.skip.selfService",
-				fallback: "Their change policy only allows changes within its self-service days.",
-			};
 		case "owner_admin_self":
 			return {
 				key: "settings.implementationChecklist.rehearsal.approvals.skip.ownerAdmin",
@@ -398,10 +388,40 @@ function skipReason(reason: ApproverSkipReason): GoLiveMessage {
 				key: "settings.implementationChecklist.rehearsal.approvals.skip.ownApprover",
 				fallback: "They are their own approver, so their requests complete at once.",
 			};
+		case "requester_only_decider":
+			return {
+				key: "settings.implementationChecklist.rehearsal.approvals.skip.ownDecider",
+				fallback:
+					"They are the only manager or admin who can decide shift requests, so theirs stay pending until they approve them.",
+			};
 		case "owner_self_approval":
 			return {
 				key: "settings.implementationChecklist.rehearsal.approvals.skip.ownerSelfApproval",
 				fallback: "As the owner, they approve their own reports, because nobody else can.",
+			};
+	}
+}
+
+/** Why they correct their own entries directly; deletions and date changes still need approval. */
+function directChangeNote(reason: ApproverDirectChange): GoLiveMessage {
+	switch (reason) {
+		case "change_policy_no_policy":
+			return {
+				key: "settings.implementationChecklist.rehearsal.approvals.direct.noChangePolicy",
+				fallback:
+					"No change policy applies, so they edit their own entries directly. Deletion requests and date changes still go to the approver below.",
+			};
+		case "change_policy_trust_mode":
+			return {
+				key: "settings.implementationChecklist.rehearsal.approvals.direct.trustMode",
+				fallback:
+					"Their change policy is in trust mode, so they edit their own entries directly. Deletion requests and date changes still go to the approver below.",
+			};
+		case "change_policy_within_self_service":
+			return {
+				key: "settings.implementationChecklist.rehearsal.approvals.direct.selfService",
+				fallback:
+					"They edit their own entries directly within their change policy's self-service days. Deletion requests and date changes still go to the approver below.",
 			};
 	}
 }

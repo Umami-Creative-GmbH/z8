@@ -1,16 +1,9 @@
 "use client";
 
-import {
-	IconCircleCheck,
-	IconCircleDashed,
-	IconCloudOff,
-	IconLoader2,
-	IconRefresh,
-} from "@tabler/icons-react";
+import { IconCircleCheck, IconCircleDashed, IconCloudOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, useTransition } from "react";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
@@ -18,7 +11,7 @@ import type {
 	FirstWorkflowEvidence,
 	FirstWorkflowEvidenceLine,
 } from "@/lib/implementation-checklist/go-live/first-workflows";
-import { useRouter } from "@/navigation";
+import { GoLiveRetryButton } from "./go-live-retry-button";
 
 interface FirstWorkflowsPanelProps {
 	evidence: FirstWorkflowEvidence;
@@ -29,11 +22,9 @@ interface FirstWorkflowsPanelProps {
 	rehearsal?: ReactNode;
 }
 
-/** First-workflow evidence: three lines, each with when and who, or "not yet". */
+/** First-workflow evidence: the lines that apply, each with when and who, or "not yet". */
 export function FirstWorkflowsPanel({ evidence, rehearsal }: FirstWorkflowsPanelProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
-	const [isRetrying, startRetry] = useTransition();
 	const lines = [
 		{
 			id: "clock-in",
@@ -56,7 +47,8 @@ export function FirstWorkflowsPanel({ evidence, rehearsal }: FirstWorkflowsPanel
 			),
 			line: evidence.payrollExport,
 		},
-	];
+		// Payroll export is left out without an active payroll export target.
+	].filter(({ line }) => line.state !== "not-applicable");
 	const anyUnavailable = lines.some(({ line }) => line.state === "unavailable");
 
 	return (
@@ -75,20 +67,9 @@ export function FirstWorkflowsPanel({ evidence, rehearsal }: FirstWorkflowsPanel
 				))}
 			</dl>
 			{anyUnavailable ? (
-				<Button
-					disabled={isRetrying}
-					onClick={() => startRetry(() => router.refresh())}
-					size="sm"
-					type="button"
-					variant="outline"
-				>
-					{isRetrying ? (
-						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-					) : (
-						<IconRefresh aria-hidden="true" className="size-4" />
-					)}
+				<GoLiveRetryButton>
 					{t("settings.implementationChecklist.firstWorkflows.retry", "Check again")}
-				</Button>
+				</GoLiveRetryButton>
 			) : null}
 			{rehearsal ? <div data-slot="go-live-rehearsal">{rehearsal}</div> : null}
 		</div>
@@ -107,6 +88,8 @@ function EvidenceValue({ line }: { line: FirstWorkflowEvidenceLine }) {
 			</span>
 		);
 	}
+
+	if (line.state === "not-applicable") return null;
 
 	if (line.state === "not-yet") {
 		return (

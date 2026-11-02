@@ -289,6 +289,28 @@ describe("first-workflow evidence (PostgreSQL)", () => {
 		});
 	});
 
+	it("leaves the payroll export line out when payroll export doesn't apply, even after an export", async () => {
+		const {
+			organizationId,
+			people: [ada],
+		} = await organizationWith("Ada");
+		await exportJob(organizationId, ada, {
+			status: "completed",
+			completedAt: "2026-06-05T16:00:00Z",
+		});
+
+		const result = await loadFirstWorkflowEvidence({
+			db,
+			organizationId,
+			group: await resolveGoLiveGroup(db, organizationId, AS_OF),
+			asOf: AS_OF,
+			payrollExportApplies: false,
+		});
+
+		expect(result.payrollExport).toEqual({ state: "not-applicable" });
+		expect(result.clockIn).toEqual({ state: "not-yet" });
+	});
+
 	it("is unavailable, never not yet, when a lookup fails", async () => {
 		const {
 			organizationId,

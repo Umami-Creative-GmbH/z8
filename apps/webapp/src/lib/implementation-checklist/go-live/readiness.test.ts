@@ -84,46 +84,72 @@ describe("go-live item status", () => {
 
 describe("go-live readiness", () => {
 	it("is ready when every mandatory check passes", () => {
-		expect(resolveGoLiveReadiness([passed()])).toEqual({ status: "ready", warnings: [] });
+		expect(resolveGoLiveReadiness([passed()], 2)).toEqual({ status: "ready", warnings: [] });
 	});
 
 	it("is not ready with the number of distinct affected members", () => {
-		const readiness = resolveGoLiveReadiness([
-			failed([group(ada), group(ada, bea)]),
-			failed([group(bea)], { checkId: "other" }),
-		]);
+		const readiness = resolveGoLiveReadiness(
+			[failed([group(ada), group(ada, bea)]), failed([group(bea)], { checkId: "other" })],
+			2,
+		);
 
-		expect(readiness).toEqual({ status: "not-ready", affectedMemberCount: 2, warnings: [] });
-	});
-
-	it("is not ready when a mandatory organization-level failure lists nobody", () => {
-		expect(resolveGoLiveReadiness([failed([group()])])).toEqual({
+		expect(readiness).toEqual({
 			status: "not-ready",
-			affectedMemberCount: 0,
+			cause: "members",
+			affectedMemberCount: 2,
 			warnings: [],
 		});
 	});
 
+	it("names the failing items when a mandatory organization-level failure lists nobody", () => {
+		expect(
+			resolveGoLiveReadiness(
+				[passed(), failed([group()], { checkId: "payroll-setup", itemId: "payroll-readiness" })],
+				2,
+			),
+		).toEqual({
+			status: "not-ready",
+			cause: "organization",
+			failingItemIds: ["payroll-readiness"],
+			warnings: [],
+		});
+	});
+
+	it("is never ready with nobody in the go-live group, even when every check passes vacuously", () => {
+		expect(resolveGoLiveReadiness([passed({ checkedMemberCount: 0 })], 0)).toEqual({
+			status: "not-ready",
+			cause: "empty-group",
+			warnings: [],
+		});
+		expect(resolveGoLiveReadiness([failed([group()], { checkedMemberCount: 0 })], 0)).toMatchObject(
+			{ status: "not-ready", cause: "empty-group" },
+		);
+	});
+
 	it("is unavailable when any mandatory check is unavailable, even next to failures", () => {
 		expect(
-			resolveGoLiveReadiness([failed([group(ada)]), unavailable({ checkId: "other" })]),
+			resolveGoLiveReadiness([failed([group(ada)]), unavailable({ checkId: "other" })], 2),
 		).toEqual({ status: "unavailable" });
+		expect(resolveGoLiveReadiness([unavailable()], 0)).toEqual({ status: "unavailable" });
 	});
 
 	it("never blocks on advisory checks and shows their failures as warnings", () => {
 		const advisoryFailure = group(bea);
-		const readiness = resolveGoLiveReadiness([
-			passed(),
-			failed([advisoryFailure], { checkId: "payroll", severity: "advisory" }),
-			unavailable({ checkId: "advisory-lookup", severity: "advisory" }),
-		]);
+		const readiness = resolveGoLiveReadiness(
+			[
+				passed(),
+				failed([advisoryFailure], { checkId: "payroll", severity: "advisory" }),
+				unavailable({ checkId: "advisory-lookup", severity: "advisory" }),
+			],
+			2,
+		);
 
 		expect(readiness).toEqual({ status: "ready", warnings: [advisoryFailure] });
 	});
 
 	it("keeps advisory warnings of passing mandatory checks", () => {
 		const warning = group(ada);
-		expect(resolveGoLiveReadiness([passed({ warnings: [warning] })])).toEqual({
+		expect(resolveGoLiveReadiness([passed({ warnings: [warning] })], 2)).toEqual({
 			status: "ready",
 			warnings: [warning],
 		});

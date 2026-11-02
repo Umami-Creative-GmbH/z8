@@ -180,6 +180,7 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 			outcome: "passed",
 			configured: false,
 			severity: "advisory",
+			applies: false,
 			failures: [],
 			warnings: [],
 		});
@@ -187,8 +188,16 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 		expect(result.notes.map((note) => note.key)).toContain(
 			"settings.implementationChecklist.goLive.payrollSetup.optional",
 		);
-		expect(resolveGoLiveReadiness([result])).toEqual({ status: "ready", warnings: [] });
-		expect(payrollItem(result)?.status).toBe("not-set-up");
+		expect(resolveGoLiveReadiness([result], result.checkedMemberCount)).toEqual({
+			status: "ready",
+			warnings: [],
+		});
+		// Not applicable: it leaves checklist progress, a confirmation included.
+		expect(payrollItem(result, true)).toMatchObject({
+			status: "not-set-up",
+			countsTowardProgress: false,
+			countsTowardTotal: false,
+		});
 	});
 
 	it("blocks with a missing wage-type mapping or a personnel-number clash, matching payroll readiness", async () => {
@@ -243,8 +252,9 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 			)?.detail,
 		).toMatchObject({ params: { identifier: "LG-7", others: "Ben" } });
 		expect(memberIds(terms?.members ?? [])).toEqual([cleo.employeeId]);
-		expect(resolveGoLiveReadiness([result])).toMatchObject({
+		expect(resolveGoLiveReadiness([result], result.checkedMemberCount)).toMatchObject({
 			status: "not-ready",
+			cause: "members",
 			affectedMemberCount: 4,
 		});
 
@@ -292,7 +302,10 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 
 		expect(result).toMatchObject({ outcome: "passed", configured: true, severity: "mandatory" });
 		expect(payrollItem(result)?.status).toBe("verified");
-		expect(resolveGoLiveReadiness([result])).toEqual({ status: "ready", warnings: [] });
+		expect(resolveGoLiveReadiness([result], result.checkedMemberCount)).toEqual({
+			status: "ready",
+			warnings: [],
+		});
 	});
 
 	it("skips invitees for per-employee prerequisites, with a note", async () => {
@@ -338,8 +351,55 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 		});
 	});
 
-	it("reads one member's payroll prerequisites against the group", async () => {
-		const { organizationId, owner } = await createOrganizationWithOwner();
+	it("compares personnel identifiers with the whole current roster, listing only go-live group members", async () => {
+		const { organizationId } = await createOrganizationWithOwner();
+		const [pilot, later] = await Promise.all(
+			["Pilot", "Later"].map(async (name) => {
+				const { rows } = await fixture.pool.query(
+					`insert into team (organization_id, name, updated_at) values ($1, $2, now()) returning id`,
+					[organizationId, name],
+				);
+				return rows[0].id as string;
+			}),
+		);
+		const anna = await seedNamed(organizationId, "Anna");
+		const ben = await seedNamed(organizationId, "Ben");
+		await fixture.pool.query(`update employee set team_id = $1 where id = $2`, [
+			pilot,
+			anna.employeeId,
+		]);
+		await fixture.pool.query(`update employee set team_id = $1 where id = $2`, [
+			later,
+			ben.employeeId,
+		]);
+		await fixture.pool.query(
+			`insert into go_live_group_team (organization_id, team_id, created_by) values ($1, $2, $3)`,
+			[organizationId, pilot, fixture.ownerUserId],
+		);
+		await activeTarget(
+			organizationId,
+			await identifierField(organizationId, [
+				[anna.employeeId, "LG-7"],
+				[ben.employeeId, "LG-7"],
+			]),
+		);
+		await wageTypeMapping(organizationId);
+
+		const result = await run(organizationId);
+
+		if (result.outcome === "unavailable") throw new Error("unexpected");
+		// Ben isn't going live yet, but an export would still merge him with Anna.
+		const clashes = result.failures.find(
+			(failure) => failure.cause === "payroll-setup:personnel-identifiers",
+		);
+		expect(memberIds(clashes?.members ?? [])).toEqual([anna.employeeId]);
+		expect(clashes?.members[0]?.detail).toMatchObject({
+			params: { identifier: "LG-7", others: "Ben" },
+		});
+	});
+
+	it("reads one member's payroll prerequisites against the current roster", async () => {
+		const { organizationId } = await createOrganizationWithOwner();
 		const anna = await seedNamed(organizationId, "Anna");
 		const ben = await seedNamed(organizationId, "Ben");
 		await confirmedTerms(organizationId, anna);
@@ -358,7 +418,6 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 			organizationId,
 			asOf: AS_OF,
 			member,
-			groupEmployeeIds: [owner.employeeId, anna.employeeId, ben.employeeId],
 		});
 
 		expect(prerequisites).toEqual({
@@ -396,7 +455,9 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 			]);
 
 			expect(result.outcome).toBe("unavailable");
-			expect(resolveGoLiveReadiness([result])).toEqual({ status: "unavailable" });
+			expect(resolveGoLiveReadiness([result], result.checkedMemberCount)).toEqual({
+				status: "unavailable",
+			});
 			expect(payrollItem(result)?.status).toBe("unavailable");
 		}
 	});

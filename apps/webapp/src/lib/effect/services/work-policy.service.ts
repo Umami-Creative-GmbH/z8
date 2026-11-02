@@ -11,7 +11,7 @@ import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { applicableBreakRule } from "@/lib/time-tracking/break-due";
 import {
-	loadEffectiveWorkPolicies,
+	assignedViaLabel,
 	orderEffectiveAssignments,
 	toEffectiveWorkPolicy,
 	WORK_POLICY_DETAILS_WITH,
@@ -267,17 +267,6 @@ export class WorkPolicyService extends Context.Service<
 		}) => Effect.Effect<EffectiveWorkPolicy | null, NotFoundError | DatabaseError>;
 
 		/**
-		 * Many employees' work policies as of `at`, resolved like
-		 * `getEffectivePolicyAt` in one organization-scoped query. The caller gives
-		 * each employee's primary team. Keyed by employee id.
-		 */
-		readonly getEffectivePolicies: (input: {
-			organizationId: string;
-			employees: readonly { id: string; teamId: string | null }[];
-			at: Instant;
-		}) => Effect.Effect<Map<string, EffectiveWorkPolicy | null>, DatabaseError>;
-
-		/**
 		 * Check compliance for a working session against the policy in force at
 		 * `policyAt`. The result names that policy. Fails when the employee is not
 		 * in the organization.
@@ -449,7 +438,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 					return toEffectiveWorkPolicy(
 						employeeAssignment.policy as WorkPolicyWithDetails,
 						"employee",
-						"Individual",
+						assignedViaLabel("employee"),
 					);
 				}
 
@@ -468,7 +457,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 						return toEffectiveWorkPolicy(
 							teamAssignment.policy as WorkPolicyWithDetails,
 							"team",
-							emp.team?.name ?? "Team",
+							assignedViaLabel("team", emp.team?.name),
 						);
 					}
 				}
@@ -490,7 +479,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 					return toEffectiveWorkPolicy(
 						orgAssignment.policy as WorkPolicyWithDetails,
 						"organization",
-						"Organization Default",
+						assignedViaLabel("organization"),
 					);
 				}
 
@@ -524,11 +513,6 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 			getEffectivePolicyAt: (input) =>
 				effectivePolicyOf(input.employeeId, input.organizationId, dateFromInstant(input.at)),
-
-			getEffectivePolicies: (input) =>
-				dbService.query("workPolicy.effectivePolicies", () =>
-					loadEffectiveWorkPolicies(dbService.db, input),
-				),
 
 			checkCompliance: (input) =>
 				Effect.gen(function* () {

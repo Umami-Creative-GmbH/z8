@@ -196,6 +196,7 @@ describe("approver go-live check (PostgreSQL)", () => {
 			| { type: "employee"; employeeId: string };
 		noApprovalRequired?: boolean;
 		approvalDays?: number;
+		effectiveUntil?: string;
 	}) {
 		const { rows } = await sql(
 			`insert into change_policy (organization_id, name, self_service_days, approval_days, no_approval_required, created_by, updated_at)
@@ -210,16 +211,24 @@ describe("approver go-live check (PostgreSQL)", () => {
 		);
 		await sql(
 			`insert into change_policy_assignment
-			 (policy_id, organization_id, assignment_type, team_id, employee_id, priority, created_by, updated_at)
-			 values ($1, $2, $3, $4, $5, 0, $6, now())`,
+			 (policy_id, organization_id, assignment_type, team_id, employee_id, priority, effective_until, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, 0, $6::timestamptz, $7, now())`,
 			[
 				rows[0].id,
 				organizationId,
 				input.target.type,
 				input.target.type === "team" ? input.target.teamId : null,
 				input.target.type === "employee" ? input.target.employeeId : null,
+				input.effectiveUntil ?? null,
 				owner.userId,
 			],
+		);
+	}
+
+	async function appendPathActive() {
+		await sql(
+			`insert into time_entry_append_control (organization_id, mode, updated_at) values ($1, 'active', now())`,
+			[organizationId],
 		);
 	}
 
@@ -389,7 +398,6 @@ describe("approver go-live check (PostgreSQL)", () => {
 		expect(noteKeys(result)).toEqual(
 			expect.arrayContaining([
 				"settings.implementationChecklist.goLive.approver.skipNoCategoryRequiresApproval",
-				"settings.implementationChecklist.goLive.approver.skipSelfService",
 				"settings.implementationChecklist.goLive.approver.skipTrustMode",
 				"settings.implementationChecklist.goLive.approver.skipOwnerAdmin",
 				"settings.implementationChecklist.goLive.approver.skipOwnApprover",
@@ -400,7 +408,7 @@ describe("approver go-live check (PostgreSQL)", () => {
 			status: "skipped",
 			reason: "requester_is_approver",
 		});
-		expect(await kindStatus(relaxed.employeeId, "time_correction")).toMatchObject({
+		expect(await kindStatus(relaxed.employeeId, "manual_time_submission")).toMatchObject({
 			status: "skipped",
 			reason: "change_policy_trust_mode",
 		});
@@ -415,7 +423,77 @@ describe("approver go-live check (PostgreSQL)", () => {
 		const note = passedOrFailed(result).notes.find(
 			(entry) => entry.key === "settings.implementationChecklist.goLive.approver.skipTrustMode",
 		);
-		expect(note?.params).toEqual({ kind: "timeCorrection", count: 1 });
+		expect(note?.params).toEqual({ kind: "workPeriod", count: 1 });
+	});
+
+	it("still needs an approver for time corrections a change policy lets employees make directly", async () => {
+		// Deletion requests and date-changing edits always go to approval (U1).
+		const trusted = await createTeam("Trusted");
+		const lead = await seed({ role: "manager" });
+		await managedBy(lead.employeeId, owner.employeeId);
+		await managedBy(owner.employeeId, lead.employeeId);
+		await changePolicy({ target: { type: "organization" }, approvalDays: 0 });
+		await changePolicy({ target: { type: "team", teamId: trusted }, noApprovalRequired: true });
+		const relaxed = await seed({ teamId: trusted });
+		await managedBy(relaxed.employeeId, lead.employeeId);
+		const unmanaged = await seed({ teamId: trusted });
+
+		const result = await check();
+
+		expect(await kindStatus(relaxed.employeeId, "time_correction")).toMatchObject({
+			status: "routed",
+			directChange: "change_policy_trust_mode",
+		});
+		expect(await kindStatus(lead.employeeId, "time_correction")).toMatchObject({
+			status: "routed",
+			directChange: "change_policy_within_self_service",
+		});
+		// Trust mode is no pass: without a manager, a deletion request would find no approver.
+		expect(ids(failure(result, `approver:time_correction:no-manager:team:${trusted}`))).toEqual([
+			unmanaged.employeeId,
+		]);
+		const notes = passedOrFailed(result).notes;
+		expect(
+			notes.find(
+				(entry) =>
+					entry.key ===
+					"settings.implementationChecklist.goLive.approver.correctionDirectTrustMode",
+			)?.params,
+		).toEqual({ count: 2 });
+		expect(
+			notes.find(
+				(entry) =>
+					entry.key ===
+					"settings.implementationChecklist.goLive.approver.correctionDirectSelfService",
+			)?.params,
+		).toEqual({ count: 2 });
+		expect(noteKeys(result)).not.toContain(
+			"settings.implementationChecklist.goLive.approver.skipSelfService",
+		);
+	});
+
+	it("resolves manual work's change policy on the path the organization records it through", async () => {
+		// The legacy manual entry ignores an assignment with an end date; the append path honours it.
+		const manager = await seed({ role: "manager" });
+		await managedBy(manager.employeeId, owner.employeeId);
+		await changePolicy({ target: { type: "organization" } });
+		const subject = await seed();
+		await managedBy(subject.employeeId, manager.employeeId);
+		await changePolicy({
+			target: { type: "employee", employeeId: subject.employeeId },
+			noApprovalRequired: true,
+			effectiveUntil: "2026-12-31T23:00:00Z",
+		});
+
+		expect(await kindStatus(subject.employeeId, "manual_time_submission")).toMatchObject({
+			status: "routed",
+		});
+
+		await appendPathActive();
+		expect(await kindStatus(subject.employeeId, "manual_time_submission")).toMatchObject({
+			status: "skipped",
+			reason: "change_policy_trust_mode",
+		});
 	});
 
 	it("routes a legacy policy as legacy does: a departed named approver is not replaced", async () => {

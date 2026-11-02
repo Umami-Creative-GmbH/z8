@@ -1,4 +1,5 @@
 import type { db } from "@/db";
+import { readOnlyTransaction } from "@/db/read-only-transaction";
 import { type Clock, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import type { EmployeePeriodViewRow } from "./employee-period-view";
 import { loadEmployeePeriodViewWithPeriods } from "./employee-period-view-store";
@@ -62,18 +63,6 @@ const NOT_EXPECTED: PeriodSubmissionReadiness = {
 	opensOn: null,
 };
 
-/**
- * Reads in one read-only transaction: one snapshot for every period, and PostgreSQL itself
- * refuses any write. The loaders take the application database type; the transaction has the
- * same query surface.
- */
-function readOnly<T>(database: Database, read: (reader: Database) => Promise<T>): Promise<T> {
-	return database.transaction((tx) => read(tx as unknown as Database), {
-		accessMode: "read only",
-		isolationLevel: "repeatable read",
-	});
-}
-
 /** Asked once per read, when first needed: the answer is the same for every period. */
 function once<T>(ask: () => Promise<T>): () => Promise<T> {
 	let answer: Promise<T> | null = null;
@@ -132,7 +121,7 @@ export async function loadEmployeePeriodReadinessView(
 	dependencies: { database: Database; clock?: Clock },
 ): Promise<EmployeePeriodReadinessView | null> {
 	const now = (dependencies.clock ?? systemClock).nowInstant();
-	return readOnly(dependencies.database, async (reader) => {
+	return readOnlyTransaction(dependencies.database, async (reader) => {
 		const submitter = await findPeriodSubmitter(reader, input);
 		if (!submitter) return null;
 		const view = await loadEmployeePeriodViewWithPeriods(reader, {

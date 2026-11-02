@@ -114,6 +114,11 @@ export type GoLiveCheckOutcome =
 			notes: GoLiveMessage[];
 			/** Overrides the check's declared severity for this run. */
 			severity?: GoLiveCheckSeverity;
+			/**
+			 * False when the item doesn't apply to the organization (payroll export without an
+			 * active payroll export target): it leaves checklist progress. Applies when absent.
+			 */
+			applies?: boolean;
 	  }
 	| { outcome: "unavailable" };
 
@@ -126,10 +131,26 @@ export type GoLiveCheckResult = GoLiveCheckOutcome & {
 	checkedMemberCount: number;
 };
 
-/** Overall go-live readiness for the header. */
+/**
+ * Overall go-live readiness for the header. Not ready says why: members fail a check, a check
+ * fails for the whole organization (it lists nobody), or nobody is in the go-live group to check.
+ */
 export type GoLiveReadiness =
 	| { status: "ready"; warnings: GoLiveFailureGroup[] }
-	| { status: "not-ready"; affectedMemberCount: number; warnings: GoLiveFailureGroup[] }
+	| {
+			status: "not-ready";
+			cause: "members";
+			affectedMemberCount: number;
+			warnings: GoLiveFailureGroup[];
+	  }
+	| {
+			status: "not-ready";
+			cause: "organization";
+			/** The items whose mandatory checks fail. */
+			failingItemIds: ImplementationChecklistItemId[];
+			warnings: GoLiveFailureGroup[];
+	  }
+	| { status: "not-ready"; cause: "empty-group"; warnings: GoLiveFailureGroup[] }
 	| { status: "unavailable" };
 
 /** A stable key for a member across checks. */

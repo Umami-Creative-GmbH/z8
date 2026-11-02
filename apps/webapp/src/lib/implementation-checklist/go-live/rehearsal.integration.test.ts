@@ -5,12 +5,19 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { readOnlyTransaction } from "@/db/read-only-transaction";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	type ApproverGoLiveKind,
+	type ApproverKindResolution,
+	loadApproverRouting,
+} from "./approver-routing";
+import { APPROVER_KIND_LABEL } from "./checks/approver";
 import { createGoLiveExclusion, liftGoLiveExclusion } from "./group-settings";
 import { rehearseGoLiveMember } from "./rehearsal";
 import type { GoLiveRehearsal, GoLiveRehearsalKind } from "./rehearsal-types";
@@ -89,11 +96,11 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 		return rows[0].id as string;
 	}
 
-	async function changePolicy() {
+	async function changePolicy(noApprovalRequired = false) {
 		const { rows } = await sql(
 			`insert into change_policy (organization_id, name, self_service_days, approval_days, no_approval_required, created_by, updated_at)
-			 values ($1, $2, 0, 7, false, $3, now()) returning id`,
-			[organizationId, `Changes ${randomUUID()}`, owner.userId],
+			 values ($1, $2, 0, 7, $3, $4, now()) returning id`,
+			[organizationId, `Changes ${randomUUID()}`, noApprovalRequired, owner.userId],
 		);
 		await sql(
 			`insert into change_policy_assignment
@@ -223,6 +230,43 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 		expect(rehearsal.workPolicy).toMatchObject({
 			status: "none",
 			fix: { href: "/settings/work-policies?tab=work&view=assignments" },
+		});
+	});
+
+	it("routes time corrections a trust-mode change policy lets them make directly, with a note", async () => {
+		const manager = await seed({ role: "manager", name: "Mia Manager" });
+		await managedBy(manager.employeeId, owner.employeeId);
+		await changePolicy(true);
+		const subject = await seed();
+		await managedBy(subject.employeeId, manager.employeeId);
+
+		const rehearsal = await rehearse(`employee:${subject.employeeId}`);
+
+		const corrections = kind(rehearsal, "time_correction");
+		expect(corrections).toMatchObject({
+			status: "routed",
+			reason: null,
+			note: {
+				key: "settings.implementationChecklist.rehearsal.approvals.direct.trustMode",
+			},
+		});
+		expect(approverIdsOf(corrections)).toEqual([manager.employeeId]);
+		expect(kind(rehearsal, "manual_time_submission")).toMatchObject({
+			status: "skipped",
+			note: null,
+		});
+	});
+
+	it("says a lone shift decider's own requests wait for their approval", async () => {
+		await sql(`update organization set shifts_enabled = true where id = $1`, [organizationId]);
+		const lead = await seed({ role: "manager" });
+		await sql(`update employee set role = 'employee' where id = $1`, [owner.employeeId]);
+
+		const shifts = kind(await rehearse(`employee:${lead.employeeId}`), "shift_request");
+
+		expect(shifts).toMatchObject({
+			status: "skipped",
+			reason: { key: "settings.implementationChecklist.rehearsal.approvals.skip.ownDecider" },
 		});
 	});
 
@@ -427,6 +471,34 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 			);
 		const members = run.group?.members ?? [];
 		expect(members.length).toBe(5);
+		// What the check resolved for each member: routed, skipped or not, and who decides first.
+		const checked = await readOnlyTransaction(db, async (reader) => {
+			const routing = await loadApproverRouting(reader, { organizationId, asOf: AS_OF, members });
+			const byMember = new Map<string, Map<ApproverGoLiveKind, ApproverKindResolution>>();
+			for (const member of members) {
+				byMember.set(goLiveMemberKey(member), await routing.resolve(member));
+			}
+			return byMember;
+		});
+		const firstApprovers = (resolution: ApproverKindResolution | undefined) =>
+			new Set(
+				(resolution?.variants ?? []).flatMap(({ result }) =>
+					result.status === "unroutable"
+						? []
+						: result.route.stages
+								.filter((stage) => stage.activation !== "not_activated")
+								.flatMap((stage) => stage.approverEmployeeIds),
+				),
+			);
+		const rehearsedApprovers = (entry: GoLiveRehearsalKind) =>
+			new Set(
+				entry.variants.flatMap(({ route }) =>
+					(route?.stages ?? [])
+						.filter((stage) => stage.activates === "at_submission")
+						.flatMap((stage) => stage.approvers.map((person) => person.employeeId)),
+				),
+			);
+		const skippedInRehearsals = new Map<string, number>();
 
 		for (const member of members) {
 			const key = goLiveMemberKey(member);
@@ -437,14 +509,37 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 			for (const entry of rehearsal.approvals.kinds) {
 				const failing = failingKeys("approver", `approver:${entry.kind}:`).has(key);
 				expect(entry.status === "unroutable", `${entry.kind} ${key}`).toBe(failing);
+				const resolution = checked.get(key)?.get(entry.kind);
+				expect(entry.status, `${entry.kind} ${key}`).toBe(resolution?.status);
+				expect(rehearsedApprovers(entry), `${entry.kind} ${key}`).toEqual(
+					firstApprovers(resolution),
+				);
+				if (entry.status === "skipped") {
+					const label = APPROVER_KIND_LABEL[entry.kind];
+					skippedInRehearsals.set(label, (skippedInRehearsals.get(label) ?? 0) + 1);
+				}
 			}
 			expect(rehearsal.payroll?.prerequisites.wageTypeMappings === "missing").toBe(
 				failingKeys("payroll-setup", "payroll-setup:wage-type-mappings").has(key),
 			);
 		}
-		// Both sides found failures, so the agreement is not vacuous.
+		// The check's skip notes count the members the rehearsals show as skipped, kind by kind.
+		const skippedInCheck = new Map<string, number>();
+		for (const note of result("approver").notes) {
+			if (!note.key.includes(".approver.skip")) continue;
+			const label = String(note.params?.kind);
+			skippedInCheck.set(label, (skippedInCheck.get(label) ?? 0) + Number(note.params?.count));
+		}
+		expect(skippedInCheck).toEqual(skippedInRehearsals);
+		// Both sides found failures, skips and routes, so the agreement is not vacuous.
 		expect(failingKeys("work-policy").size).toBeGreaterThan(0);
 		expect(failingKeys("approver").size).toBeGreaterThan(0);
+		expect(skippedInRehearsals.size).toBeGreaterThan(0);
+		expect(
+			[...checked.values()].some((kinds) =>
+				[...kinds.values()].some((resolution) => resolution.status === "routed"),
+			),
+		).toBe(true);
 	});
 
 	it("refuses former employees, other organizations' employees and unknown ids", async () => {

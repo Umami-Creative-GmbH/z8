@@ -33,7 +33,10 @@ import {
 	type GoLiveGroupSettings,
 	loadGoLiveGroupSettings,
 } from "@/lib/implementation-checklist/go-live/group-settings";
-import { resolveGoLiveReadiness } from "@/lib/implementation-checklist/go-live/readiness";
+import {
+	goLiveResultApplies,
+	resolveGoLiveReadiness,
+} from "@/lib/implementation-checklist/go-live/readiness";
 import {
 	type GoLiveRehearsalCandidate,
 	goLiveRehearsalCandidates,
@@ -67,8 +70,6 @@ export interface ImplementationChecklistViewModel {
 		readiness: GoLiveReadiness;
 		/** When the go-live checks ran, as an ISO instant. */
 		checkedAt: string;
-		/** The organization's timezone, for showing `checkedAt`. */
-		timezone: string;
 		/** How many members the go-live group has; null when it could not be resolved. */
 		memberCount: number | null;
 		/** Chosen teams and exclusions; null when they could not be loaded. */
@@ -249,9 +250,8 @@ export async function loadImplementationChecklistForContext({
 			items,
 			...summarizeImplementationChecklist(items),
 			goLive: {
-				readiness: resolveGoLiveReadiness(goLive.run.results),
+				readiness: resolveGoLiveReadiness(goLive.run.results, goLive.run.memberCount),
 				checkedAt: goLive.checkedAt,
-				timezone: goLive.timezone,
 				memberCount: goLive.run.memberCount,
 				group: goLive.group,
 				rehearsalCandidates: goLiveRehearsalCandidates(goLive.run.group?.members ?? []),
@@ -269,7 +269,6 @@ async function runGoLive(organizationId: string): Promise<{
 	run: GoLiveRun;
 	group: GoLiveGroupSettings | null;
 	checkedAt: string;
-	timezone: string;
 	/** Null when the organization could not be loaded. */
 	asOf: GoLiveAsOf | null;
 }> {
@@ -283,7 +282,6 @@ async function runGoLive(organizationId: string): Promise<{
 			run: unavailableGoLiveRun(),
 			group: null,
 			checkedAt: instant.toString(),
-			timezone: "UTC",
 			asOf: null,
 		};
 	}
@@ -296,7 +294,7 @@ async function runGoLive(organizationId: string): Promise<{
 			return null;
 		}),
 	]);
-	return { run, group, checkedAt: instant.toString(), timezone: asOf.timezone, asOf };
+	return { run, group, checkedAt: instant.toString(), asOf };
 }
 
 export interface GoLiveViewer {
@@ -337,12 +335,21 @@ export async function loadGoLiveViewer(
 /**
  * First-workflow evidence over the same go-live group the checks ran over. It
  * is informational: it never feeds go-live readiness. Without a group there is
- * nothing to look at, so every line is unavailable rather than "not yet".
+ * nothing to look at, so every line is unavailable rather than "not yet". The
+ * payroll export line is left out when the payroll check says payroll export
+ * doesn't apply (no active payroll export target).
  */
 async function loadFirstWorkflows(
 	organizationId: string,
 	{ run, asOf }: Awaited<ReturnType<typeof runGoLive>>,
 ): Promise<FirstWorkflowEvidence> {
 	if (!run.group || !asOf) return UNAVAILABLE_FIRST_WORKFLOW_EVIDENCE;
-	return loadFirstWorkflowEvidence({ db, organizationId, group: run.group, asOf });
+	const payroll = run.results.find((result) => result.itemId === "payroll-readiness");
+	return loadFirstWorkflowEvidence({
+		db,
+		organizationId,
+		group: run.group,
+		asOf,
+		payrollExportApplies: !payroll || goLiveResultApplies(payroll),
+	});
 }

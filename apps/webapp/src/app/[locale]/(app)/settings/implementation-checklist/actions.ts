@@ -10,6 +10,7 @@ import {
 } from "@/lib/implementation-checklist/confirmation/store";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
+	IMPLEMENTATION_CHECKLIST_PATH,
 	type ImplementationChecklistItemId,
 	isImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
@@ -26,7 +27,6 @@ export type {
 	ImplementationChecklistViewModel,
 } from "./queries";
 
-const IMPLEMENTATION_CHECKLIST_PATH = "/settings/implementation-checklist";
 const IMPLEMENTATION_CHECKLIST_MUTATION_ERROR = "Failed to update checklist item.";
 const logger = createLogger("ImplementationChecklist");
 

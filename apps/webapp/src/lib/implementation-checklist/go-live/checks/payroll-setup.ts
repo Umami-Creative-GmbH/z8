@@ -18,7 +18,8 @@ type EmployeeMember = Extract<GoLiveMember, { kind: "employee" }>;
  * Payroll setup: payroll readiness's setup checks (export target, wage-type
  * mappings, confirmed employment terms, personnel identifier clashes), never
  * its period-bound ones. Mandatory only while the organization has an active
- * payroll export target; otherwise an optional integration that never blocks.
+ * payroll export target; otherwise an optional integration that never blocks
+ * and doesn't apply, so it leaves checklist progress.
  * Missing terms are advisory, as payroll readiness rates them. Invitees are
  * skipped for the per-employee checks until they join.
  */
@@ -52,6 +53,8 @@ export const payrollSetupGoLiveCheck: GoLiveCheck = {
 					},
 				],
 				severity: "advisory",
+				// Not applicable: the item leaves checklist progress (U2).
+				applies: false,
 			};
 		}
 

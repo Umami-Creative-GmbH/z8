@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { IMPLEMENTATION_CHECKLIST_PATH } from "@/lib/implementation-checklist/definition";
 import {
 	chooseGoLiveGroupTeams,
 	createGoLiveExclusion,
@@ -13,8 +14,6 @@ import {
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("GoLiveGroupActions");
-
-const IMPLEMENTATION_CHECKLIST_PATH = "/settings/implementation-checklist";
 
 export type GoLiveGroupActionResult =
 	| { success: true }
