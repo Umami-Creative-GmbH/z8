@@ -1,3 +1,5 @@
+import type { ImplementationChecklistItemRole } from "./go-live/types";
+
 export type ImplementationChecklistItemId =
 	| "organization-structure"
 	| "holidays"
@@ -6,9 +8,29 @@ export type ImplementationChecklistItemId =
 	| "payroll-readiness"
 	| "integrations"
 	| "notifications"
-	| "employee-import";
+	| "employee-import"
+	| "first-workflows";
 
-export type ImplementationChecklistDetector = "automatic" | "manual";
+/**
+ * How an item is completed: a presence detector, a manual confirmation, a go-live check
+ * registered in go-live/checks for the item, or first-workflow evidence noticed from real use.
+ */
+export type ImplementationChecklistDetector = "automatic" | "manual" | "go-live" | "evidence";
+
+/**
+ * The configuration a manual confirmation vouches for. Confirming stores its
+ * fingerprint, and the confirmation goes stale when the fingerprint changes (#1516):
+ * - `organization-structure`: teams, team memberships, primary teams, manager links,
+ *   member roles and custom role assignments;
+ * - `approval-rules`: change policies and their assignments, approval routing
+ *   policies with stages, conditions and the employee groups they name, and which
+ *   absence categories require approval;
+ * - `payroll-export`: payroll export configs, wage-type and expense wage-type mappings.
+ */
+export type ImplementationChecklistCoveredConfiguration =
+	| "organization-structure"
+	| "approval-rules"
+	| "payroll-export";
 
 export interface ImplementationChecklistDefinition {
 	id: ImplementationChecklistItemId;
@@ -20,9 +42,21 @@ export interface ImplementationChecklistDefinition {
 	helperTextKey: string;
 	actionLabel: string;
 	actionLabelKey: string;
+	/** What a manual confirmation of the item covers; null when it can't be confirmed. */
+	confirmationCovers: ImplementationChecklistCoveredConfiguration | null;
 	href: string;
 	detector: ImplementationChecklistDetector;
 	canManualComplete: boolean;
+	/** How the item counts for go-live readiness and checklist progress. */
+	role: ImplementationChecklistItemRole;
+	/**
+	 * The optional business confirmation of a go-live item ("our approval process is agreed"):
+	 * the action that records it and the text shown once recorded. It never verifies the item.
+	 */
+	confirmationLabel?: string;
+	confirmationLabelKey?: string;
+	confirmedLabel?: string;
+	confirmedLabelKey?: string;
 }
 
 export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[] = [
@@ -36,9 +70,11 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.organizationStructure.helperText",
 		actionLabel: "Review organization",
 		actionLabelKey: "settings.implementationChecklist.items.organizationStructure.actionLabel",
+		confirmationCovers: "organization-structure",
 		href: "/settings/organizations",
 		detector: "manual",
 		canManualComplete: true,
+		role: "manual-only",
 	},
 	{
 		id: "holidays",
@@ -51,9 +87,11 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.holidays.helperText",
 		actionLabel: "Configure holidays",
 		actionLabelKey: "settings.implementationChecklist.items.holidays.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/holidays",
 		detector: "automatic",
 		canManualComplete: false,
+		role: "informational",
 	},
 	{
 		id: "work-policies",
@@ -61,13 +99,16 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		titleKey: "settings.implementationChecklist.items.workPolicies.title",
 		description: "Set schedules, working time rules, and policy assignments for the organization.",
 		descriptionKey: "settings.implementationChecklist.items.workPolicies.description",
-		helperText: "Z8 checks for active work policies or active work policy assignments.",
-		helperTextKey: "settings.implementationChecklist.items.workPolicies.helperText",
+		helperText:
+			"Z8 checks that everyone in the go-live group has an effective work policy today. Invited people are checked by the team their invitation names.",
+		helperTextKey: "settings.implementationChecklist.items.workPolicies.goLiveGroupHelperText",
 		actionLabel: "Configure work policies",
 		actionLabelKey: "settings.implementationChecklist.items.workPolicies.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/work-policies",
-		detector: "automatic",
+		detector: "go-live",
 		canManualComplete: false,
+		role: "mandatory",
 	},
 	{
 		id: "approval-rules",
@@ -75,13 +116,20 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		titleKey: "settings.implementationChecklist.items.approvalRules.title",
 		description: "Review who approves corrections, absences, and policy-sensitive changes.",
 		descriptionKey: "settings.implementationChecklist.items.approvalRules.description",
-		helperText: "Manual review: approval readiness depends on your internal process.",
-		helperTextKey: "settings.implementationChecklist.items.approvalRules.helperText",
+		helperText:
+			"Z8 checks that every employee on the current roster can get each kind of request decided. Confirming that your approval process is agreed is optional.",
+		helperTextKey: "settings.implementationChecklist.items.approvalRules.goLiveHelperText",
 		actionLabel: "Review approval rules",
 		actionLabelKey: "settings.implementationChecklist.items.approvalRules.actionLabel",
+		confirmationCovers: "approval-rules",
 		href: "/settings/change-policies",
-		detector: "manual",
+		detector: "go-live",
 		canManualComplete: true,
+		role: "mandatory",
+		confirmationLabel: "Confirm our approval process is agreed",
+		confirmationLabelKey: "settings.implementationChecklist.items.approvalRules.confirmationLabel",
+		confirmedLabel: "Confirmed: our approval process is agreed",
+		confirmedLabelKey: "settings.implementationChecklist.items.approvalRules.confirmedLabel",
 	},
 	{
 		id: "payroll-readiness",
@@ -90,13 +138,17 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		description: "Confirm payroll readiness checks and export operations before the first pay run.",
 		descriptionKey: "settings.implementationChecklist.items.payrollReadiness.description",
 		helperText:
-			"Manual review: export readiness should be confirmed by an admin before payroll cutoff.",
-		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.helperText",
+			"Z8 checks the payroll setup for everyone on the current roster: export target, wage-type mappings, confirmed employment terms and personnel identifiers. Without an active payroll export target, payroll export is an optional integration.",
+		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.goLiveHelperText",
 		actionLabel: "Review payroll readiness",
 		actionLabelKey: "settings.implementationChecklist.items.payrollReadiness.actionLabel",
+		confirmationCovers: "payroll-export",
 		href: "/settings/payroll-readiness",
-		detector: "manual",
+		detector: "go-live",
+		// An optional business confirmation; it never verifies the item.
 		canManualComplete: true,
+		// Advisory for a run without an active payroll export target (the check's outcome says so).
+		role: "mandatory",
 	},
 	{
 		id: "integrations",
@@ -108,9 +160,11 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.integrations.helperText",
 		actionLabel: "Review integrations",
 		actionLabelKey: "settings.implementationChecklist.items.integrations.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/webhooks",
 		detector: "automatic",
 		canManualComplete: false,
+		role: "informational",
 	},
 	{
 		id: "notifications",
@@ -122,9 +176,11 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.notifications.helperText",
 		actionLabel: "Configure notifications",
 		actionLabelKey: "settings.implementationChecklist.items.notifications.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/notifications",
 		detector: "automatic",
 		canManualComplete: false,
+		role: "informational",
 	},
 	{
 		id: "employee-import",
@@ -137,9 +193,28 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.employeeImport.helperText",
 		actionLabel: "Import employees",
 		actionLabelKey: "settings.implementationChecklist.items.employeeImport.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/import",
 		detector: "automatic",
 		canManualComplete: false,
+		role: "informational",
+	},
+	{
+		id: "first-workflows",
+		title: "First workflows",
+		titleKey: "settings.implementationChecklist.items.firstWorkflows.title",
+		description: "See that your organization has really started working with Z8.",
+		descriptionKey: "settings.implementationChecklist.items.firstWorkflows.description",
+		helperText:
+			"Z8 notices the first clock-in, the first decided request and the first successful payroll export from real activity. This never affects go-live readiness.",
+		helperTextKey: "settings.implementationChecklist.items.firstWorkflows.helperText",
+		actionLabel: "Open time tracking",
+		actionLabelKey: "settings.implementationChecklist.items.firstWorkflows.actionLabel",
+		confirmationCovers: null,
+		href: "/time-tracking",
+		detector: "evidence",
+		canManualComplete: false,
+		role: "informational",
 	},
 ];
 

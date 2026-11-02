@@ -891,21 +891,25 @@ export type PlanApprovalWorkflowStartInput = Pick<
 	contextSnapshot: JsonObject;
 	displaySnapshot: JsonObject;
 	now: Instant;
+	/**
+	 * The organization's active policies for this workflow type, as
+	 * `loadApprovalWorkflowStartPolicies` read them; read here when absent. A
+	 * read-only caller planning many starts (the approver go-live check, #1514)
+	 * reads them once.
+	 */
+	policies?: readonly ApprovalPolicyDraft[];
 };
 
 /**
- * Plans a new workflow's start without persisting anything: reads the organization's active
- * policies, matches one (else the default approver) and activates the first stages with the
- * stage activation resolver. Throws `ApprovalWorkflowStartError` as `startApprovalWorkflow` does
- * (`NO_DEFAULT_APPROVER`, `ACTIVATION_FAILED`, ...). `startApprovalWorkflow` persists the plan; a
- * read-only caller (period submission readiness, #1348) asks whether a start would route.
+ * The organization's active approval policies a workflow start of `workflowType` matches
+ * against, decoded and bounded as a start reads them. A pure SELECT. Throws
+ * `ApprovalWorkflowStartError` `INVALID_POLICY` for malformed or oversized policy data.
  */
-export async function planApprovalWorkflowStart(
-	input: PlanApprovalWorkflowStartInput,
-): Promise<{ snapshot: ApprovalWorkflowSnapshot; events: ApprovalWorkflowEventSnapshot[] }> {
-	// A read-only caller plans without a start's own validation in front of it.
-	validatePlanningInput(input);
-	const policyResult = await input.context.dbService.db.execute(sql`
+export async function loadApprovalWorkflowStartPolicies(
+	db: Pick<ApprovalWorkflowTransactionContext["dbService"]["db"], "execute">,
+	input: { organizationId: string; workflowType: ApprovalWorkflowType },
+): Promise<ApprovalPolicyDraft[]> {
+	const policyResult = await db.execute(sql`
 		select coalesce(json_agg(policy_row.value order by policy_row.priority, policy_row.id), '[]'::json) as policies
 		from (
 			select policy.priority, policy.id, jsonb_build_object(
@@ -983,14 +987,32 @@ export async function planApprovalWorkflowStart(
 	if (policyJsonBytes > APPROVAL_WORKFLOW_START_POLICY_LIMITS.maxJsonBytes) {
 		return fail("INVALID_POLICY", { field: "policy.json" });
 	}
-	let policies: ApprovalPolicyDraft[];
+	try {
+		return decodePolicies(policyResult.rows[0].policies, input.organizationId);
+	} catch (error) {
+		if (error instanceof ApprovalWorkflowStartError) throw error;
+		return fail("INVALID_POLICY", {}, error);
+	}
+}
+
+/**
+ * Plans a new workflow's start without persisting anything: reads the organization's active
+ * policies, matches one (else the default approver) and activates the first stages with the
+ * stage activation resolver. Throws `ApprovalWorkflowStartError` as `startApprovalWorkflow` does
+ * (`NO_DEFAULT_APPROVER`, `ACTIVATION_FAILED`, ...). `startApprovalWorkflow` persists the plan; a
+ * read-only caller (period submission readiness, #1348) asks whether a start would route.
+ */
+export async function planApprovalWorkflowStart(
+	input: PlanApprovalWorkflowStartInput,
+): Promise<{ snapshot: ApprovalWorkflowSnapshot; events: ApprovalWorkflowEventSnapshot[] }> {
+	// A read-only caller plans without a start's own validation in front of it.
+	validatePlanningInput(input);
+	const policies =
+		input.policies ??
+		(await loadApprovalWorkflowStartPolicies(input.context.dbService.db, input));
 	let matchedPolicy: ApprovalPolicyDraft | null;
 	try {
-		policies = decodePolicies(
-			policyResult.rows[0].policies,
-			input.organizationId
-		);
-		matchedPolicy = findMatchingRoutingPolicy(input.routingContext, policies);
+		matchedPolicy = findMatchingRoutingPolicy(input.routingContext, [...policies]);
 	} catch (error) {
 		if (error instanceof ApprovalWorkflowStartError) throw error;
 		return fail("INVALID_POLICY", {}, error);

@@ -20,6 +20,9 @@ export const implementationChecklistManualState = pgTable(
 		completedByUserId: text("completed_by_user_id").references(() => user.id, {
 			onDelete: "set null",
 		}),
+		// Fingerprint of the configuration the confirmation covers (#1516); null for
+		// confirmations made before change tracking.
+		configurationFingerprint: text("configuration_fingerprint"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())

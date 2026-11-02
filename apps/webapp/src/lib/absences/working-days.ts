@@ -59,7 +59,7 @@ const LEVELS: WorkingDayPolicyAssignment["assignmentType"][] = ["employee", "tea
  * The ISO weekdays a schedule works. Simple presets name them; a custom preset or a detailed
  * schedule lists them as work days. The cycle and `cycleWeek` are ignored (Absences ADR 0001).
  */
-function scheduledWeekdays(schedule: WorkingDaySchedule): ReadonlySet<number> {
+export function scheduledWeekdays(schedule: WorkingDaySchedule): ReadonlySet<number> {
 	if (schedule.scheduleType === "simple" && schedule.workingDaysPreset !== "custom") {
 		return new Set(PRESET_WEEKDAYS[schedule.workingDaysPreset]);
 	}

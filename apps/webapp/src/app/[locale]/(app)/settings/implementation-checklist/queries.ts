@@ -8,29 +8,74 @@ import {
 	holiday,
 	holidayAssignment,
 	holidayPresetAssignment,
-	implementationChecklistManualState,
 	notificationPreference,
 	slackWorkspaceConfig,
 	teamsTenantConfig,
 	telegramBotConfig,
 	webhookEndpoint,
-	workPolicy,
-	workPolicyAssignment,
 } from "@/db/schema";
+import { env } from "@/env";
+import { organizationSettingsForDisplay } from "@/lib/auth/organization-display";
 import type { AuthContext } from "@/lib/auth-helpers";
+import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { loadManualConfirmations } from "@/lib/implementation-checklist/confirmation/load";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
 	type ImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
 import {
+	type FirstWorkflowEvidence,
+	UNAVAILABLE_FIRST_WORKFLOW_EVIDENCE,
+} from "@/lib/implementation-checklist/go-live/first-workflows";
+import { loadFirstWorkflowEvidence } from "@/lib/implementation-checklist/go-live/first-workflows-evidence";
+import { goLiveFixLinks } from "@/lib/implementation-checklist/go-live/fix-links";
+import {
+	type GoLiveGroupSettings,
+	loadGoLiveGroupSettings,
+} from "@/lib/implementation-checklist/go-live/group-settings";
+import { resolveGoLiveReadiness } from "@/lib/implementation-checklist/go-live/readiness";
+import {
+	type GoLiveRehearsalCandidate,
+	goLiveRehearsalCandidates,
+} from "@/lib/implementation-checklist/go-live/rehearsal-types";
+import {
+	type GoLiveRun,
+	goLiveAsOf,
+	runGoLiveChecks,
+	unavailableGoLiveRun,
+} from "@/lib/implementation-checklist/go-live/run";
+import type {
+	GoLiveAsOf,
+	GoLiveFixLinkResolver,
+	GoLiveReadiness,
+} from "@/lib/implementation-checklist/go-live/types";
+import {
 	type ResolvedImplementationChecklistItem,
 	resolveImplementationChecklistItems,
+	summarizeImplementationChecklist,
 } from "@/lib/implementation-checklist/status";
+import { createLogger } from "@/lib/logger";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
+
+const logger = createLogger("ImplementationChecklist");
 
 export interface ImplementationChecklistViewModel {
 	items: ResolvedImplementationChecklistItem[];
 	completedCount: number;
 	totalCount: number;
+	goLive: {
+		readiness: GoLiveReadiness;
+		/** When the go-live checks ran, as an ISO instant. */
+		checkedAt: string;
+		/** The organization's timezone, for showing `checkedAt`. */
+		timezone: string;
+		/** How many members the go-live group has; null when it could not be resolved. */
+		memberCount: number | null;
+		/** Chosen teams and exclusions; null when they could not be loaded. */
+		group: GoLiveGroupSettings | null;
+		/** Who a go-live rehearsal can be run for: the members checked; empty without a group. */
+		rehearsalCandidates: GoLiveRehearsalCandidate[];
+	};
 }
 
 type ImplementationChecklistActionFailure = { success: false; error: string };
@@ -125,21 +170,8 @@ async function detectCompleteIds(
 
 			return Boolean(customHoliday || holidayPreset || assignedHoliday);
 		}),
-		"work-policies": detectorComplete(async () => {
-			const [policy, assignment] = await Promise.all([
-				db.query.workPolicy.findFirst({
-					where: and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isActive, true)),
-				}),
-				db.query.workPolicyAssignment.findFirst({
-					where: and(
-						eq(workPolicyAssignment.organizationId, organizationId),
-						eq(workPolicyAssignment.isActive, true),
-					),
-				}),
-			]);
-
-			return Boolean(policy || assignment);
-		}),
+		// A go-live check, never a presence detector: settings alone don't verify it.
+		"work-policies": null,
 		"approval-rules": null,
 		"payroll-readiness": null,
 		integrations: activeIntegration,
@@ -153,6 +185,8 @@ async function detectCompleteIds(
 
 			return Boolean(preference || (await activeIntegration));
 		}),
+		// First-workflow evidence, never a presence detector.
+		"first-workflows": null,
 		"employee-import": detectorComplete(async () => {
 			const activeImportedEmployee = await db.query.employee.findFirst({
 				where: and(
@@ -183,51 +217,132 @@ async function detectCompleteIds(
 	return detectedCompleteIds;
 }
 
-async function loadManualCompleteIds(
-	organizationId: string,
-): Promise<Set<ImplementationChecklistItemId>> {
-	const manualCompleteIds = new Set<ImplementationChecklistItemId>();
-	await Promise.all(
-		IMPLEMENTATION_CHECKLIST_ITEMS.map(async (item) => {
-			if (!item.canManualComplete) {
-				return;
-			}
-
-			const manualState = await db.query.implementationChecklistManualState.findFirst({
-				where: and(
-					eq(implementationChecklistManualState.organizationId, organizationId),
-					eq(implementationChecklistManualState.itemId, item.id),
-					eq(implementationChecklistManualState.status, "complete"),
-				),
-			});
-
-			if (manualState) {
-				manualCompleteIds.add(item.id);
-			}
-		}),
-	);
-
-	return manualCompleteIds;
-}
-
 export async function loadImplementationChecklistForContext({
 	authContext,
 	organizationId,
 }: ImplementationChecklistLoaderContext): Promise<
 	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
 > {
-	const [detectedCompleteIds, manualCompleteIds] = await Promise.all([
+	const [
+		detectedCompleteIds,
+		{ manualCompleteIds, manualConfirmations },
+		{ goLive, firstWorkflows },
+	] = await Promise.all([
 		detectCompleteIds(organizationId, authContext.user.id),
-		loadManualCompleteIds(organizationId),
+		loadManualConfirmations(db, organizationId),
+		runGoLive(organizationId).then(async (goLive) => ({
+			goLive,
+			firstWorkflows: await loadFirstWorkflows(organizationId, goLive),
+		})),
 	]);
-	const items = resolveImplementationChecklistItems({ detectedCompleteIds, manualCompleteIds });
+	const items = resolveImplementationChecklistItems({
+		detectedCompleteIds,
+		manualCompleteIds,
+		manualConfirmations,
+		goLiveResults: goLive.run.results,
+		firstWorkflows,
+	});
 
 	return {
 		success: true,
 		data: {
 			items,
-			completedCount: items.filter((item) => item.status === "complete").length,
-			totalCount: items.length,
+			...summarizeImplementationChecklist(items),
+			goLive: {
+				readiness: resolveGoLiveReadiness(goLive.run.results),
+				checkedAt: goLive.checkedAt,
+				timezone: goLive.timezone,
+				memberCount: goLive.run.memberCount,
+				group: goLive.group,
+				rehearsalCandidates: goLiveRehearsalCandidates(goLive.run.group?.members ?? []),
+			},
 		},
 	};
+}
+
+/**
+ * The go-live checks, worked out live for the organization as of now. Callers
+ * have already authorized an org admin, so fix links are gated for that tier
+ * and the organization's feature flags. A failed lookup is unavailable, never a pass.
+ */
+async function runGoLive(organizationId: string): Promise<{
+	run: GoLiveRun;
+	group: GoLiveGroupSettings | null;
+	checkedAt: string;
+	timezone: string;
+	/** Null when the organization could not be loaded. */
+	asOf: GoLiveAsOf | null;
+}> {
+	const instant = systemClock.nowInstant();
+	let viewer: GoLiveViewer;
+	try {
+		viewer = await loadGoLiveViewer(organizationId, instant);
+	} catch (error) {
+		logger.error({ organizationId, error }, "Go-live checks could not load the organization");
+		return {
+			run: unavailableGoLiveRun(),
+			group: null,
+			checkedAt: instant.toString(),
+			timezone: "UTC",
+			asOf: null,
+		};
+	}
+
+	const { asOf, fixLink } = viewer;
+	const [run, group] = await Promise.all([
+		runGoLiveChecks({ db, organizationId, asOf, fixLink }),
+		loadGoLiveGroupSettings(db, organizationId, asOf).catch((error: unknown) => {
+			logger.error({ organizationId, error }, "Go-live group settings could not be loaded");
+			return null;
+		}),
+	]);
+	return { run, group, checkedAt: instant.toString(), timezone: asOf.timezone, asOf };
+}
+
+export interface GoLiveViewer {
+	asOf: GoLiveAsOf;
+	fixLink: GoLiveFixLinkResolver;
+}
+
+/**
+ * The moment go-live work is done for ("today" in the organization's timezone) and fix links
+ * gated for an org admin and the organization's feature flags. Callers have already authorized
+ * an org admin. Throws when the organization can't be loaded.
+ */
+export async function loadGoLiveViewer(
+	organizationId: string,
+	instant: Instant,
+): Promise<GoLiveViewer> {
+	const record = await db.query.organization.findFirst({
+		where: (organization, { eq: equals }) => equals(organization.id, organizationId),
+	});
+	if (!record) throw new Error("Organization not found");
+	const {
+		organizationId: _id,
+		timezone: storedTimezone,
+		deletedAt: _deletedAt,
+		...featureFlags
+	} = organizationSettingsForDisplay(record);
+	const { timezone } = resolveOrganizationTimezone(storedTimezone);
+	return {
+		asOf: goLiveAsOf(instant, timezone),
+		fixLink: goLiveFixLinks({
+			accessTier: "orgAdmin",
+			billingEnabled: env.BILLING_ENABLED === "true",
+			featureFlags,
+		}),
+	};
+}
+
+/**
+ * First-workflow evidence over the same go-live group the checks ran over. It
+ * is informational: it never feeds go-live readiness. Without a group there is
+ * nothing to look at, so every line is unavailable rather than "not yet".
+ */
+async function loadFirstWorkflows(
+	organizationId: string,
+	{ run, asOf }: Awaited<ReturnType<typeof runGoLive>>,
+): Promise<FirstWorkflowEvidence> {
+	if (!run.group || !asOf) return UNAVAILABLE_FIRST_WORKFLOW_EVIDENCE;
+	return loadFirstWorkflowEvidence({ db, organizationId, group: run.group, asOf });
 }

@@ -17,12 +17,23 @@ const mocks = vi.hoisted(() => ({
 		notificationPreference: vi.fn(),
 		employee: vi.fn(),
 		implementationChecklistManualState: vi.fn(),
+		organization: vi.fn(),
 	},
-	insert: vi.fn(),
-	values: vi.fn(),
-	onConflictDoUpdate: vi.fn(),
-	delete: vi.fn(),
-	where: vi.fn(),
+	runGoLiveChecks: vi.fn(),
+	loadGoLiveGroupSettings: vi.fn(),
+	loadFirstWorkflowEvidence: vi.fn(),
+	computeConfirmationFingerprint: vi.fn(),
+	confirm: vi.fn(),
+	unconfirm: vi.fn(),
+}));
+
+vi.mock("@/lib/implementation-checklist/confirmation/fingerprint", () => ({
+	computeConfirmationFingerprint: mocks.computeConfirmationFingerprint,
+}));
+
+vi.mock("@/lib/implementation-checklist/confirmation/store", () => ({
+	confirmImplementationChecklistItem: mocks.confirm,
+	unconfirmImplementationChecklistItem: mocks.unconfirm,
 }));
 
 vi.mock("next/cache", () => ({
@@ -30,6 +41,34 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("server-only", () => ({}));
+
+vi.mock("@/env", () => ({ env: { BILLING_ENABLED: "false" } }));
+
+vi.mock("@/lib/implementation-checklist/go-live/run", () => ({
+	goLiveAsOf: (instant: unknown, timezone: string) => ({ instant, timezone, today: null }),
+	runGoLiveChecks: mocks.runGoLiveChecks,
+	unavailableGoLiveRun: () => ({
+		results: [
+			{
+				outcome: "unavailable",
+				checkId: "work-policy",
+				itemId: "work-policies",
+				severity: "mandatory",
+				checkedMemberCount: 0,
+			},
+		],
+		memberCount: null,
+		group: null,
+	}),
+}));
+
+vi.mock("@/lib/implementation-checklist/go-live/group-settings", () => ({
+	loadGoLiveGroupSettings: mocks.loadGoLiveGroupSettings,
+}));
+
+vi.mock("@/lib/implementation-checklist/go-live/first-workflows-evidence", () => ({
+	loadFirstWorkflowEvidence: mocks.loadFirstWorkflowEvidence,
+}));
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => ({ and: conditions })),
@@ -55,9 +94,8 @@ vi.mock("@/db", () => ({
 			implementationChecklistManualState: {
 				findFirst: mocks.findFirst.implementationChecklistManualState,
 			},
+			organization: { findFirst: mocks.findFirst.organization },
 		},
-		insert: mocks.insert,
-		delete: mocks.delete,
 	},
 }));
 
@@ -121,6 +159,31 @@ import { loadImplementationChecklistForContext } from "./queries";
 
 const checklistPath = "/settings/implementation-checklist";
 
+const passingWorkPolicyCheck = {
+	outcome: "passed",
+	configured: true,
+	failures: [],
+	warnings: [],
+	notes: [],
+	checkId: "work-policy",
+	itemId: "work-policies",
+	severity: "mandatory",
+	checkedMemberCount: 3,
+};
+
+const goLiveGroupSettings = {
+	teams: [{ id: "team-1", name: "Warehouse" }],
+	chosenTeamIds: ["team-1"],
+	exclusions: [],
+};
+
+const goLiveGroup = {
+	members: [
+		{ kind: "employee", employeeId: "employee-1", primaryTeamId: null, displayName: "Ada" },
+	],
+	teamNames: new Map(),
+};
+
 describe("implementation checklist actions", () => {
 	beforeEach(() => {
 		mocks.revalidatePath.mockReset();
@@ -135,17 +198,38 @@ describe("implementation checklist actions", () => {
 			findFirst.mockResolvedValue(undefined);
 		}
 
-		mocks.insert.mockReset();
-		mocks.values.mockReset();
-		mocks.onConflictDoUpdate.mockReset();
-		mocks.delete.mockReset();
-		mocks.where.mockReset();
+		mocks.findFirst.organization.mockResolvedValue({
+			id: "org-active",
+			timezone: "Europe/Berlin",
+			shiftsEnabled: false,
+			projectsEnabled: false,
+			surchargesEnabled: false,
+			demoDataEnabled: true,
+			worksCouncilEnabled: false,
+			billableTimeEnabled: false,
+			personnelFilesEnabled: false,
+			deletedAt: null,
+		});
+		mocks.loadGoLiveGroupSettings.mockReset();
+		mocks.loadGoLiveGroupSettings.mockResolvedValue(goLiveGroupSettings);
+		mocks.runGoLiveChecks.mockReset();
+		mocks.runGoLiveChecks.mockResolvedValue({
+			results: [passingWorkPolicyCheck],
+			memberCount: 3,
+			group: goLiveGroup,
+		});
+		mocks.loadFirstWorkflowEvidence.mockReset();
+		mocks.loadFirstWorkflowEvidence.mockResolvedValue({
+			clockIn: { state: "not-yet" },
+			decidedApproval: { state: "not-yet" },
+			payrollExport: { state: "not-yet" },
+		});
 
-		mocks.onConflictDoUpdate.mockResolvedValue(undefined);
-		mocks.values.mockReturnValue({ onConflictDoUpdate: mocks.onConflictDoUpdate });
-		mocks.insert.mockReturnValue({ values: mocks.values });
-		mocks.where.mockResolvedValue(undefined);
-		mocks.delete.mockReturnValue({ where: mocks.where });
+		mocks.computeConfirmationFingerprint.mockReset();
+		mocks.confirm.mockReset();
+		mocks.confirm.mockResolvedValue(undefined);
+		mocks.unconfirm.mockReset();
+		mocks.unconfirm.mockResolvedValue({ removed: true });
 	});
 
 	it("loads statuses scoped to the active organization", async () => {
@@ -165,11 +249,11 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "holidays")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(result.data.items.find((item) => item.id === "organization-structure")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "manual",
 		});
 		expect(mocks.findFirst.holiday).toHaveBeenCalledWith(
@@ -225,9 +309,8 @@ describe("implementation checklist actions", () => {
 		);
 	});
 
-	it("automatically completes holidays, work policies, and employee import from org-scoped data", async () => {
+	it("detects holidays and employee import from org-scoped data", async () => {
 		mocks.findFirst.holidayAssignment.mockResolvedValue({ id: "holiday-assignment-1" });
-		mocks.findFirst.workPolicyAssignment.mockResolvedValue({ id: "policy-assignment-1" });
 		mocks.findFirst.employee.mockResolvedValue({ id: "employee-1" });
 
 		const result = await getImplementationChecklist();
@@ -237,15 +320,11 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "holidays")).toMatchObject({
-			status: "complete",
-			completionSource: "automatic",
-		});
-		expect(result.data.items.find((item) => item.id === "work-policies")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(result.data.items.find((item) => item.id === "employee-import")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(mocks.findFirst.employee).toHaveBeenCalledWith(
@@ -271,11 +350,11 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "integrations")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(result.data.items.find((item) => item.id === "notifications")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(mocks.findFirst.discordBotConfig).toHaveBeenCalledWith(
@@ -300,7 +379,7 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "notifications")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(mocks.findFirst.notificationPreference).toHaveBeenCalledWith(
@@ -325,8 +404,136 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "holidays")).toMatchObject({
-			status: "not-started",
+			status: "not-set-up",
 			completionSource: null,
+		});
+	});
+
+	it("runs the go-live checks for the active organization and reports readiness", async () => {
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.runGoLiveChecks).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-active",
+				asOf: expect.objectContaining({ timezone: "Europe/Berlin" }),
+			}),
+		);
+		const { fixLink } = mocks.runGoLiveChecks.mock.calls[0]?.[0] ?? {};
+		const label = { key: "k", fallback: "f" };
+		expect(fixLink("/settings/work-policies?tab=work&view=assignments", label)).toEqual({
+			href: "/settings/work-policies?tab=work&view=assignments",
+			label,
+		});
+		expect(result.data.items.find((item) => item.id === "work-policies")).toMatchObject({
+			status: "verified",
+			goLive: { checkId: "work-policy", outcome: "passed" },
+		});
+		expect(result.data.goLive).toEqual({
+			readiness: { status: "ready", warnings: [] },
+			checkedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+			timezone: "Europe/Berlin",
+			memberCount: 3,
+			group: goLiveGroupSettings,
+			// The members checked are who a go-live rehearsal can be run for (#1517).
+			rehearsalCandidates: [{ key: "employee:employee-1", displayName: "Ada", invited: false }],
+		});
+		expect(mocks.loadGoLiveGroupSettings).toHaveBeenCalledWith(
+			expect.anything(),
+			"org-active",
+			expect.objectContaining({ timezone: "Europe/Berlin" }),
+		);
+		expect(mocks.findFirst.workPolicy).not.toHaveBeenCalled();
+		expect(mocks.findFirst.workPolicyAssignment).not.toHaveBeenCalled();
+	});
+
+	it("reports go-live readiness unavailable, never ready, when the organization lookup fails", async () => {
+		mocks.findFirst.organization.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.runGoLiveChecks).not.toHaveBeenCalled();
+		expect(result.data.goLive.readiness).toEqual({ status: "unavailable" });
+		expect(result.data.items.find((item) => item.id === "work-policies")?.status).toBe(
+			"unavailable",
+		);
+	});
+
+	it("leaves the group settings out, but keeps the checks, when they can't be loaded", async () => {
+		mocks.loadGoLiveGroupSettings.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getImplementationChecklist();
+
+		if (!result.success) throw new Error(result.error);
+		expect(result.data.goLive.group).toBeNull();
+		expect(result.data.goLive.readiness).toEqual({ status: "ready", warnings: [] });
+	});
+
+	it("never runs go-live checks for a viewer without org-admin settings access", async () => {
+		mocks.requireAccess.mockRejectedValue(new Error("NEXT_REDIRECT"));
+
+		await expect(getImplementationChecklist()).rejects.toThrow("NEXT_REDIRECT");
+		expect(mocks.runGoLiveChecks).not.toHaveBeenCalled();
+		expect(mocks.findFirst.organization).not.toHaveBeenCalled();
+		expect(mocks.loadFirstWorkflowEvidence).not.toHaveBeenCalled();
+	});
+
+	it("shows first-workflow evidence for the go-live group without affecting readiness", async () => {
+		const clockIn = {
+			state: "seen",
+			at: "2026-06-02T07:30:00Z",
+			actor: { employeeId: "employee-1", displayName: "Ada", former: false },
+		};
+		mocks.loadFirstWorkflowEvidence.mockResolvedValue({
+			clockIn,
+			decidedApproval: { state: "not-yet" },
+			payrollExport: { state: "unavailable" },
+		});
+
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.loadFirstWorkflowEvidence).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-active",
+				group: goLiveGroup,
+				asOf: expect.objectContaining({ timezone: "Europe/Berlin" }),
+			}),
+		);
+		expect(result.data.items.find((item) => item.id === "first-workflows")).toMatchObject({
+			status: "unavailable",
+			firstWorkflows: { clockIn, payrollExport: { state: "unavailable" } },
+		});
+		expect(result.data.goLive.readiness).toEqual({ status: "ready", warnings: [] });
+	});
+
+	it("shows first-workflow evidence as unavailable when the go-live group could not be resolved", async () => {
+		mocks.findFirst.organization.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.loadFirstWorkflowEvidence).not.toHaveBeenCalled();
+		expect(result.data.items.find((item) => item.id === "first-workflows")).toMatchObject({
+			status: "unavailable",
+			firstWorkflows: {
+				clockIn: { state: "unavailable" },
+				decidedApproval: { state: "unavailable" },
+				payrollExport: { state: "unavailable" },
+			},
 		});
 	});
 
@@ -344,38 +551,77 @@ describe("implementation checklist actions", () => {
 			error: "Implementation checklist item cannot be manually completed",
 		});
 		expect(mocks.requireAccess).toHaveBeenCalledTimes(3);
-		expect(mocks.insert).not.toHaveBeenCalled();
-		expect(mocks.delete).not.toHaveBeenCalled();
+		expect(mocks.confirm).not.toHaveBeenCalled();
+		expect(mocks.unconfirm).not.toHaveBeenCalled();
 	});
 
 	it("marks a manual item complete with active organization and completing user", async () => {
 		const result = await markImplementationChecklistItemComplete("approval-rules");
 
 		expect(result).toEqual({ success: true });
-		expect(mocks.values).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-active",
-				itemId: "approval-rules",
-				status: "complete",
-				completedAt: expect.any(Date),
-				completedByUserId: "user-admin",
-			}),
-		);
-		expect(mocks.onConflictDoUpdate).toHaveBeenCalledWith(
-			expect.objectContaining({
-				target: ["manualState.organizationId", "manualState.itemId"],
-				set: expect.objectContaining({
-					status: "complete",
-					completedAt: expect.any(Date),
-					completedByUserId: "user-admin",
-				}),
-			}),
-		);
+		expect(mocks.confirm).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-active",
+			itemId: "approval-rules",
+			actorUserId: "user-admin",
+			confirmedAt: expect.any(Date),
+		});
 		expect(mocks.revalidatePath).toHaveBeenCalledWith(checklistPath);
 	});
 
+	it("shows a confirmation whose settings changed as stale and stops counting it", async () => {
+		mocks.findFirst.implementationChecklistManualState.mockImplementation(({ where }) =>
+			Promise.resolve(
+				JSON.stringify(where).includes("organization-structure")
+					? {
+							itemId: "organization-structure",
+							completedAt: new Date("2026-10-30T09:00:00Z"),
+							configurationFingerprint: "confirmed-fingerprint",
+						}
+					: undefined,
+			),
+		);
+		mocks.computeConfirmationFingerprint.mockResolvedValue("changed-fingerprint");
+
+		const result = await getImplementationChecklist();
+
+		if (!result.success) throw new Error(result.error);
+		expect(mocks.computeConfirmationFingerprint).toHaveBeenCalledWith(
+			expect.anything(),
+			"org-active",
+			"organization-structure",
+		);
+		expect(result.data.items.find((item) => item.id === "organization-structure")).toMatchObject({
+			status: "not-set-up",
+			countsTowardProgress: false,
+			manualConfirmation: { confirmedAt: "2026-10-30T09:00:00.000Z", freshness: "stale" },
+		});
+	});
+
+	it("fails closed when a confirmation's fingerprint can't be worked out", async () => {
+		mocks.findFirst.implementationChecklistManualState.mockImplementation(({ where }) =>
+			Promise.resolve(
+				JSON.stringify(where).includes("payroll-readiness")
+					? {
+							itemId: "payroll-readiness",
+							completedAt: new Date("2026-10-30T09:00:00Z"),
+							configurationFingerprint: "confirmed-fingerprint",
+						}
+					: undefined,
+			),
+		);
+		mocks.computeConfirmationFingerprint.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getImplementationChecklist();
+
+		if (!result.success) throw new Error(result.error);
+		expect(result.data.items.find((item) => item.id === "payroll-readiness")).toMatchObject({
+			status: "not-set-up",
+			manualConfirmation: { freshness: "unchecked" },
+		});
+	});
+
 	it("returns a failure result without revalidating when marking complete fails", async () => {
-		mocks.onConflictDoUpdate.mockRejectedValue(new Error("duplicate key details"));
+		mocks.confirm.mockRejectedValue(new Error("duplicate key details"));
 
 		const result = await markImplementationChecklistItemComplete("approval-rules");
 
@@ -386,21 +632,20 @@ describe("implementation checklist actions", () => {
 		expect(mocks.revalidatePath).not.toHaveBeenCalled();
 	});
 
-	it("marks a manual item incomplete by deleting only active organization state", async () => {
+	it("marks a manual item incomplete for the active organization only", async () => {
 		const result = await markImplementationChecklistItemIncomplete("payroll-readiness");
 
 		expect(result).toEqual({ success: true });
-		expect(mocks.where).toHaveBeenCalledWith({
-			and: [
-				{ eq: ["manualState.organizationId", "org-active"] },
-				{ eq: ["manualState.itemId", "payroll-readiness"] },
-			],
+		expect(mocks.unconfirm).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-active",
+			itemId: "payroll-readiness",
+			actorUserId: "user-admin",
 		});
 		expect(mocks.revalidatePath).toHaveBeenCalledWith(checklistPath);
 	});
 
 	it("returns a failure result without revalidating when marking incomplete fails", async () => {
-		mocks.where.mockRejectedValue(new Error("delete failed"));
+		mocks.unconfirm.mockRejectedValue(new Error("delete failed"));
 
 		const result = await markImplementationChecklistItemIncomplete("payroll-readiness");
 

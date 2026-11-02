@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const markComplete = vi.fn();
 const markIncomplete = vi.fn();
 const toastError = vi.fn();
+const refresh = vi.fn();
 
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
@@ -14,6 +15,11 @@ vi.mock("@/navigation", () => ({
 			{children}
 		</a>
 	),
+	useRouter: () => ({ refresh }),
+}));
+
+vi.mock("@/hooks/use-display-context", () => ({
+	useDisplayContext: () => ({ locale: "en-US", timezone: "UTC", timeFormat: "24h" }),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -24,7 +30,14 @@ vi.mock("@tolgee/react", () => ({
 			}
 
 			return Object.entries(values).reduce(
-				(text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+				(text, [name, value]) =>
+					text
+						.replace(
+							new RegExp(`\\{${name}, plural, one \\{([^}]*)\\} other \\{([^}]*)\\}\\}`),
+							(_match, one: string, other: string) =>
+								(value === 1 ? one : other).replaceAll("#", String(value)),
+						)
+						.replaceAll(`{${name}}`, String(value)),
 				fallback,
 			);
 		},
@@ -67,7 +80,9 @@ vi.mock("@/components/ui/card", () => ({
 }));
 
 vi.mock("@/components/ui/progress", () => ({
-	Progress: ({ value, ...props }: React.ComponentProps<"progress">) => <progress value={value} {...props} />,
+	Progress: ({ value, ...props }: React.ComponentProps<"progress">) => (
+		<progress value={value} {...props} />
+	),
 }));
 
 vi.mock("sonner", () => ({
@@ -81,9 +96,19 @@ vi.mock("./actions", () => ({
 	markImplementationChecklistItemIncomplete: markIncomplete,
 }));
 
+vi.mock("./go-live-rehearsal-actions", () => ({ rehearseGoLiveMemberAction: vi.fn() }));
+
+const readyGoLive = {
+	readiness: { status: "ready", warnings: [] },
+	checkedAt: "2026-06-15T10:05:00Z",
+	timezone: "Europe/Berlin",
+	memberCount: 3,
+} as const;
+
 const checklist = {
 	completedCount: 1,
 	totalCount: 2,
+	goLive: readyGoLive,
 	items: [
 		{
 			id: "organization-structure",
@@ -94,9 +119,12 @@ const checklist = {
 			href: "/settings/organizations",
 			detector: "manual",
 			canManualComplete: true,
-			status: "not-started",
+			role: "manual-only",
+			status: "not-set-up",
 			completionSource: null,
 			canToggleManualCompletion: true,
+			goLive: null,
+			countsTowardProgress: false,
 		},
 		{
 			id: "holidays",
@@ -108,11 +136,107 @@ const checklist = {
 			href: "/settings/holidays",
 			detector: "automatic",
 			canManualComplete: false,
-			status: "complete",
+			role: "informational",
+			status: "configured",
 			completionSource: "automatic",
 			canToggleManualCompletion: false,
+			goLive: null,
+			countsTowardProgress: true,
 		},
 	],
+} as const;
+
+function employee(index: number) {
+	return {
+		member: {
+			kind: "employee",
+			employeeId: `employee-${index}`,
+			primaryTeamId: "team-warehouse",
+			displayName: `Picker ${index}`,
+		},
+	} as const;
+}
+
+const failingWorkPolicyItem = {
+	id: "work-policies",
+	title: "Work policies",
+	description: "Set schedules, working time rules, and policy assignments for the organization.",
+	helperText:
+		"Z8 checks that every employee on the current roster has an effective work policy today.",
+	actionLabel: "Configure work policies",
+	href: "/settings/work-policies",
+	detector: "go-live",
+	canManualComplete: false,
+	role: "mandatory",
+	status: "needs-attention",
+	completionSource: null,
+	canToggleManualCompletion: false,
+	countsTowardProgress: false,
+	goLive: {
+		checkId: "work-policy",
+		itemId: "work-policies",
+		severity: "mandatory",
+		checkedMemberCount: 14,
+		outcome: "failed",
+		configured: true,
+		warnings: [],
+		notes: [],
+		failures: [
+			{
+				cause: "work-policy:team:team-warehouse",
+				reason: {
+					key: "settings.implementationChecklist.goLive.workPolicy.teamWithoutPolicy",
+					fallback: "Team {team} has no work policy: {count} employees",
+					params: { team: "Warehouse", count: 12 },
+				},
+				members: Array.from({ length: 12 }, (_, index) => employee(index + 1)),
+				fix: {
+					href: "/settings/work-policies?tab=work&view=assignments",
+					label: {
+						key: "settings.implementationChecklist.goLive.workPolicy.fix",
+						fallback: "Assign work policies",
+					},
+				},
+			},
+			{
+				cause: null,
+				reason: { key: "settings.implementationChecklist.test.individual", fallback: "Other" },
+				members: [
+					{
+						member: {
+							kind: "invitee",
+							draftId: "draft-1",
+							email: "new@example.com",
+							teamId: null,
+							displayName: "New Hire",
+						},
+						detail: {
+							key: "settings.implementationChecklist.test.detail",
+							fallback: "No team yet",
+						},
+					},
+				],
+				fix: null,
+			},
+		],
+	},
+} as const;
+
+const firstWorkflowsItem = {
+	id: "first-workflows",
+	title: "First workflows",
+	description: "See that your organization has really started working with Z8.",
+	helperText:
+		"Z8 notices the first clock-in, the first decided request and the first successful payroll export from real activity. This never affects go-live readiness.",
+	actionLabel: "Open time tracking",
+	href: "/time-tracking",
+	detector: "evidence",
+	canManualComplete: false,
+	role: "informational",
+	completionSource: null,
+	canToggleManualCompletion: false,
+	countsTowardProgress: false,
+	goLive: null,
 } as const;
 
 describe("ImplementationChecklistClient", () => {
@@ -143,6 +267,391 @@ describe("ImplementationChecklistClient", () => {
 		);
 		expect(screen.getByRole("button", { name: "Mark complete" })).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Mark incomplete" })).toBeNull();
+		expect(screen.getAllByText("Not set up").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Configured").length).toBeGreaterThan(0);
+	});
+
+	it("shows go-live readiness with when the checks ran", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(<ImplementationChecklistClient checklist={checklist} />);
+
+		expect(screen.getByRole("heading", { name: "Go-live readiness" })).toBeTruthy();
+		expect(screen.getByText("Ready to go live")).toBeTruthy();
+		expect(screen.getByText("Checked Jun 15, 2026, 10:05")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Retry checks" })).toBeNull();
+	});
+
+	it("shows how many employees keep the organization from going live", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					goLive: {
+						...readyGoLive,
+						readiness: { status: "not-ready", affectedMemberCount: 13, warnings: [] },
+					},
+					items: [failingWorkPolicyItem],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Not ready: 13 employees need attention")).toBeTruthy();
+		expect(screen.getAllByText("Needs attention").length).toBeGreaterThan(0);
+	});
+
+	it("offers a retry and never a pass when a check is unavailable", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					goLive: { ...readyGoLive, readiness: { status: "unavailable" }, memberCount: null },
+				}}
+			/>,
+		);
+
+		expect(screen.queryByText("Ready to go live")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Retry checks" }));
+		await waitFor(() => expect(refresh).toHaveBeenCalled());
+	});
+
+	it("lists failures by cause with a paged member list and the fix link", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{ ...checklist, items: [failingWorkPolicyItem] }}
+			/>,
+		);
+
+		expect(screen.getByText("Team Warehouse has no work policy: 12 employees")).toBeTruthy();
+		expect(screen.getByText("Picker 1")).toBeTruthy();
+		expect(screen.getByText("Picker 10")).toBeTruthy();
+		expect(screen.queryByText("Picker 11")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+		expect(screen.getByText("Picker 11")).toBeTruthy();
+		expect(screen.queryByText("Picker 1")).toBeNull();
+		expect(screen.getByRole("link", { name: "Assign work policies" }).getAttribute("href")).toBe(
+			"/settings/work-policies?tab=work&view=assignments",
+		);
+		expect(screen.getByText("New Hire")).toBeTruthy();
+		expect(screen.getByText("Invited")).toBeTruthy();
+		expect(screen.getByText("No team yet")).toBeTruthy();
+		expect(screen.getAllByRole("link", { name: "Assign work policies" })).toHaveLength(1);
+	});
+
+	it("labels payroll export as optional without an active payroll export target", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...failingWorkPolicyItem,
+							id: "payroll-readiness",
+							title: "Payroll export",
+							canManualComplete: true,
+							canToggleManualCompletion: true,
+							status: "not-set-up",
+							goLive: {
+								checkId: "payroll-setup",
+								itemId: "payroll-readiness",
+								severity: "advisory",
+								checkedMemberCount: 3,
+								outcome: "passed",
+								configured: false,
+								failures: [],
+								warnings: [],
+								notes: [
+									{
+										key: "settings.implementationChecklist.goLive.payrollSetup.optional",
+										fallback: "Payroll export is an optional integration.",
+									},
+								],
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Optional")).toBeTruthy();
+		expect(screen.getByText("Payroll export is an optional integration.")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Mark complete" })).toBeTruthy();
+	});
+
+	it("shows first-workflow evidence with when and who, or not yet", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...firstWorkflowsItem,
+							status: "configured",
+							firstWorkflows: {
+								clockIn: { state: "not-yet" },
+								decidedApproval: {
+									state: "seen",
+									at: "2026-06-03T09:00:00Z",
+									actor: { employeeId: "employee-2", displayName: "Ben", former: false },
+								},
+								payrollExport: {
+									state: "seen",
+									at: "2026-06-30T16:00:00Z",
+									actor: { employeeId: "employee-3", displayName: "Cleo", former: true },
+								},
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole("heading", { name: "First workflows" })).toBeTruthy();
+		expect(screen.getByText("Under way")).toBeTruthy();
+		expect(screen.getByText("First clock-in")).toBeTruthy();
+		expect(screen.getByText("Not yet")).toBeTruthy();
+		expect(screen.getByText("First decided request")).toBeTruthy();
+		expect(screen.getByText("Jun 3, 2026, 09:00 by Ben")).toBeTruthy();
+		expect(screen.getByText("First successful payroll export")).toBeTruthy();
+		expect(screen.getByText("Jun 30, 2026, 16:00 by Cleo")).toBeTruthy();
+		expect(screen.getByText("Former employee")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Mark complete" })).toBeNull();
+	});
+
+	it("offers a retry when first-workflow evidence could not be looked up", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...firstWorkflowsItem,
+							status: "unavailable",
+							firstWorkflows: {
+								clockIn: { state: "unavailable" },
+								decidedApproval: { state: "not-yet" },
+								payrollExport: { state: "not-yet" },
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Couldn't be checked")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+		await waitFor(() => expect(refresh).toHaveBeenCalled());
+	});
+
+	it("leaves a slot for the go-live rehearsal in the first workflows panel", async () => {
+		const { FirstWorkflowsPanel } = await import("./first-workflows-panel");
+
+		render(
+			<FirstWorkflowsPanel
+				evidence={{
+					clockIn: { state: "not-yet" },
+					decidedApproval: { state: "not-yet" },
+					payrollExport: { state: "not-yet" },
+				}}
+				rehearsal={<p>Rehearsal goes here</p>}
+			/>,
+		);
+
+		expect(screen.getAllByText("Not yet")).toHaveLength(3);
+		expect(screen.getByText("Rehearsal goes here")).toBeTruthy();
+	});
+
+	const organizationStructure = checklist.items[0];
+
+	it("shows when a counting confirmation was made, and offers to remove it", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...organizationStructure,
+							status: "configured",
+							completionSource: "manual",
+							countsTowardProgress: true,
+							manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "current" },
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Confirmed Oct 30, 2026")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Mark incomplete" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Confirm again" })).toBeNull();
+	});
+
+	it("labels a confirmation made before change tracking", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...organizationStructure,
+							status: "configured",
+							completionSource: "manual",
+							countsTowardProgress: true,
+							manualConfirmation: {
+								confirmedAt: "2026-01-05T08:00:00Z",
+								freshness: "before-change-tracking",
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Confirmed Jan 5, 2026, before change tracking")).toBeTruthy();
+	});
+
+	it("shows a stale confirmation and confirms it again", async () => {
+		markComplete.mockResolvedValue({ success: true });
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...organizationStructure,
+							manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "stale" },
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Settings changed since confirmed on Oct 30, 2026")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Mark incomplete" })).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Confirm again" }));
+		await waitFor(() => expect(markComplete).toHaveBeenCalledWith("organization-structure"));
+	});
+
+	it("says when Z8 couldn't check a confirmation", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...organizationStructure,
+							manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "unchecked" },
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(
+			screen.getByText("Couldn't check for settings changes since confirmed on Oct 30, 2026"),
+		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Confirm again" })).toBeTruthy();
+	});
+
+	it("shows an approval rules confirmation next to the approver check, never as verified", async () => {
+		markIncomplete.mockResolvedValue({ success: true });
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+		const approvalRules = {
+			...failingWorkPolicyItem,
+			id: "approval-rules",
+			title: "Approval rules",
+			actionLabel: "Review approval rules",
+			href: "/settings/change-policies",
+			canManualComplete: true,
+			canToggleManualCompletion: true,
+			confirmationLabel: "Confirm our approval process is agreed",
+			confirmedLabel: "Confirmed: our approval process is agreed",
+			completionSource: "manual",
+			goLive: {
+				...failingWorkPolicyItem.goLive,
+				checkId: "approver",
+				itemId: "approval-rules",
+				failures: [],
+			},
+		} as const;
+
+		const { rerender } = render(
+			<ImplementationChecklistClient checklist={{ ...checklist, items: [approvalRules] }} />,
+		);
+
+		expect(screen.getByText("Confirmed: our approval process is agreed")).toBeTruthy();
+		expect(screen.getByText("Needs attention")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Remove confirmation" }));
+		await waitFor(() => expect(markIncomplete).toHaveBeenCalledWith("approval-rules"));
+
+		rerender(
+			<ImplementationChecklistClient
+				checklist={{ ...checklist, items: [{ ...approvalRules, completionSource: null }] }}
+			/>,
+		);
+		expect(screen.queryByText("Confirmed: our approval process is agreed")).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Confirm our approval process is agreed" }),
+		).toBeTruthy();
+	});
+
+	it("offers to confirm a stale approval rules confirmation again or remove it", async () => {
+		markComplete.mockResolvedValue({ success: true });
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...failingWorkPolicyItem,
+							id: "approval-rules",
+							title: "Approval rules",
+							actionLabel: "Review approval rules",
+							href: "/settings/change-policies",
+							canToggleManualCompletion: true,
+							confirmationLabel: "Confirm our approval process is agreed",
+							confirmedLabel: "Confirmed: our approval process is agreed",
+							completionSource: null,
+							manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "stale" },
+							goLive: {
+								...failingWorkPolicyItem.goLive,
+								checkId: "approver",
+								itemId: "approval-rules",
+								failures: [],
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Settings changed since confirmed on Oct 30, 2026")).toBeTruthy();
+		expect(screen.queryByText("Confirmed: our approval process is agreed")).toBeNull();
+		expect(screen.getByRole("button", { name: "Remove confirmation" })).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Confirm again" }));
+		await waitFor(() => expect(markComplete).toHaveBeenCalledWith("approval-rules"));
 	});
 
 	it("marks manual items complete and shows an error toast on failure", async () => {
