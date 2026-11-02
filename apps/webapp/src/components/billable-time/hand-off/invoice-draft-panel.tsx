@@ -50,12 +50,12 @@ import { buildTimesheetDocument } from "@/lib/billable-time/hand-off/timesheet-d
 import type {
 	DraftToolStatusView,
 	InvoiceDraftDetailView,
-	InvoicedWorkView,
 } from "@/lib/billable-time/hand-off/views";
+import type { ServerActionResult as ActionResult } from "@/lib/effect/result";
 import { queryKeys } from "@/lib/query/keys";
 import { useHandOffLabels } from "./hand-off-labels";
-
-type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
+import { MarkedWork, ResolutionHistoryList, type ResolveMarks, useItemLabel } from "./marked-work";
+import { ReconciliationCsvButton } from "./reconciliation-csv-button";
 
 /** The server actions the panel calls (injected so the page owns them). */
 export interface InvoiceDraftPanelActions {
@@ -63,7 +63,10 @@ export interface InvoiceDraftPanelActions {
 	checkStatus(draftId: string): Promise<ActionResult<DraftToolStatusView>>;
 	retry(draftId: string): Promise<ActionResult<{ status: "created" | "pending" }>>;
 	release(draftId: string, reason: string): Promise<ActionResult<{ workReturned: number }>>;
-	clearMarks(invoicedWorkIds: string[]): Promise<ActionResult<{ cleared: number }>>;
+	resolveMarks: ResolveMarks;
+	downloadReconciliationCsv(
+		draftId: string,
+	): Promise<ActionResult<{ fileName: string; content: string }>>;
 }
 
 async function unwrap<T>(result: Promise<ActionResult<T>>): Promise<T> {
@@ -165,7 +168,12 @@ function useInvoiceDraftDetail({
 	});
 	const gone = toolStatus.data?.kind === "gone";
 	const releasable = draft.status === "created" || draft.status === "pending";
-	const marked = draft.work.filter((item) => item.changedAfterInvoicingAt !== null);
+	const itemLabel = useItemLabel();
+	const work = new Map(draft.work.map((item) => [item.invoicedWorkId, item]));
+	const workLabel = (invoicedWorkId: string) => {
+		const item = work.get(invoicedWorkId);
+		return item ? itemLabel(item) : null;
+	};
 
 	function run<T>(action: () => Promise<ActionResult<T>>, success: (data: T) => string) {
 		startTransition(async () => {
@@ -189,7 +197,7 @@ function useInvoiceDraftDetail({
 		run,
 		actions,
 		money,
-		marked,
+		workLabel,
 		releasable,
 		setReleasing,
 		releasing,
@@ -215,7 +223,7 @@ function DraftDetail({
 		isPending,
 		run,
 		money,
-		marked,
+		workLabel,
 		releasable,
 		setReleasing,
 		releasing,
@@ -348,21 +356,22 @@ function DraftDetail({
 				/>
 			</section>
 
-			<MarkedWork
-				marked={marked}
-				disabled={isPending}
-				onClear={(ids) =>
-					run(
-						() => actions.clearMarks(ids),
-						(data) =>
-							t(
-								"settings.billableTime.handOff.marks.cleared",
-								"{count, plural, one {# mark cleared} other {# marks cleared}}",
-								{ count: data.cleared },
-							),
-					)
-				}
-			/>
+			<MarkedWork marked={draft.marked} resolve={actions.resolveMarks} onResolved={onChanged} />
+
+			{draft.resolutionHistory.length > 0 && (
+				<section className="space-y-2">
+					<h3 className="font-medium text-sm">
+						{t("settings.billableTime.handOff.history.title", "Resolution history")}
+					</h3>
+					<ResolutionHistoryList entries={draft.resolutionHistory} itemLabel={workLabel} />
+				</section>
+			)}
+
+			{(draft.marked.length > 0 || draft.resolutionHistory.length > 0) && (
+				<div className="flex justify-end">
+					<ReconciliationCsvButton download={() => actions.downloadReconciliationCsv(draft.id)} />
+				</div>
+			)}
 
 			{releasable && (
 				<div className="flex justify-end border-t pt-4">
@@ -419,69 +428,6 @@ function DraftDetail({
 				</AlertDialogContent>
 			</AlertDialog>
 		</div>
-	);
-}
-
-/** Invoiced work marked as changed after invoicing, with clearing. */
-export function MarkedWork({
-	marked,
-	disabled,
-	onClear,
-}: {
-	marked: readonly InvoicedWorkView[];
-	disabled: boolean;
-	onClear: (invoicedWorkIds: string[]) => void;
-}) {
-	const { t } = useTranslate();
-	const labels = useHandOffLabels();
-	if (marked.length === 0) return null;
-	return (
-		<section className="space-y-2">
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h3 className="font-medium text-sm">
-					{t("settings.billableTime.handOff.marks.title", "Changed after invoicing")}
-				</h3>
-				<Button
-					size="sm"
-					variant="outline"
-					disabled={disabled}
-					onClick={() => onClear(marked.map((item) => item.invoicedWorkId))}
-				>
-					{t("settings.billableTime.handOff.marks.clearAll", "Clear all marks")}
-				</Button>
-			</div>
-			<p className="text-muted-foreground text-sm">
-				{t(
-					"settings.billableTime.handOff.marks.help",
-					"This invoiced work was corrected after its hand-off. Correct the invoice in the accounting tool if needed (for example with a credit note), then clear the mark.",
-				)}
-			</p>
-			<ul className="divide-y rounded-md border text-sm">
-				{marked.map((item) => (
-					<li key={item.invoicedWorkId} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-2">
-						<span className="tabular-nums">{labels.day(item.day)}</span>
-						<span>{item.employeeName}</span>
-						<span className="text-muted-foreground">{item.projectName}</span>
-						<span className="flex flex-wrap gap-1">
-							{item.changedFields.map((field) => (
-								<Badge key={field} variant="outline">
-									{labels.changedField(field)}
-								</Badge>
-							))}
-						</span>
-						<Button
-							size="sm"
-							variant="ghost"
-							className="ml-auto"
-							disabled={disabled}
-							onClick={() => onClear([item.invoicedWorkId])}
-						>
-							{t("settings.billableTime.handOff.marks.clear", "Clear mark")}
-						</Button>
-					</li>
-				))}
-			</ul>
-		</section>
 	);
 }
 

@@ -14,11 +14,16 @@ import {
 	invoiceDraft,
 	invoiceDraftLine,
 	invoicedWork,
+	invoicedWorkResolution,
 	project,
 } from "@/db/schema";
 import { ACCOUNTING_PROVIDER_KINDS } from "@/lib/billable-time/accounting/provider";
 import { TAX_TREATMENT_KINDS } from "@/lib/billable-time/accounting/tax-treatment";
 import { RATE_LEVELS } from "@/lib/billable-time/applicable-rate";
+import {
+	RESOLUTION_EXPLANATION_MAX_LENGTH,
+	RESOLUTION_REFERENCE_MAX_LENGTH,
+} from "@/lib/billable-time/hand-off/resolution";
 
 function compositeForeignKeys(table: Parameters<typeof getTableConfig>[0]) {
 	return getTableConfig(table).foreignKeys.map((foreignKey) => {
@@ -229,5 +234,70 @@ describe("hand-off schema (#903)", () => {
 			`CREATE TRIGGER "invoiced_work_mark_changed" AFTER UPDATE OF "start_time", "end_time", "duration_minutes", "project_id", "is_billable", "deleted_at" ON "work_period"`,
 		);
 		expect(sql).toContain('DROP TRIGGER IF EXISTS "invoiced_work_mark_changed" ON "work_period"');
+	});
+
+	it("marks invoiced work from every writer of a project's customer (#1500)", () => {
+		const sql = readFileSync(
+			new URL("../../../../drizzle/0289_invoiced_work_customer_mark.sql", import.meta.url),
+			"utf8",
+		);
+		expect(sql).toContain(
+			`CREATE TRIGGER "invoiced_work_mark_customer_changed" AFTER UPDATE OF "customer_id" ON "project" FOR EACH ROW WHEN (OLD."customer_id" IS DISTINCT FROM NEW."customer_id")`,
+		);
+		expect(sql).toContain(
+			'DROP TRIGGER IF EXISTS "invoiced_work_mark_customer_changed" ON "project"',
+		);
+		expect(sql).toContain("LANGUAGE plpgsql");
+	});
+});
+
+describe("invoiced work resolutions (#1499)", () => {
+	const migration = () =>
+		readFileSync(
+			new URL("../../../../drizzle/0290_invoiced_work_resolution.sql", import.meta.url),
+			"utf8",
+		);
+
+	it("scopes a resolution's invoiced work and draft to its organization", () => {
+		expect(compositeForeignKeys(invoicedWorkResolution)).toEqual(
+			expect.arrayContaining([
+				{
+					columns: ["invoiced_work_id", "organization_id"],
+					target: "invoiced_work",
+					foreignColumns: ["id", "organization_id"],
+				},
+				{
+					columns: ["invoice_draft_id", "organization_id"],
+					target: "invoice_draft",
+					foreignColumns: ["id", "organization_id"],
+				},
+			]),
+		);
+		expect(
+			getTableConfig(invoicedWork).uniqueConstraints.map((constraint) =>
+				constraint.columns.map((column) => column.name),
+			),
+		).toContainEqual(["id", "organization_id"]);
+	});
+
+	it("checks the same explanation and reference limits as the code", () => {
+		expect(
+			checkSql(invoicedWorkResolution, "invoiced_work_resolution_explanation_check"),
+		).toContain(String(RESOLUTION_EXPLANATION_MAX_LENGTH));
+		expect(checkSql(invoicedWorkResolution, "invoiced_work_resolution_reference_check")).toContain(
+			String(RESOLUTION_REFERENCE_MAX_LENGTH),
+		);
+	});
+
+	it("bumps the mark version on every write of a mark, whoever writes it", () => {
+		expect(migration()).toContain(
+			`CREATE TRIGGER "invoiced_work_bump_mark_version" BEFORE UPDATE OF "changed_after_invoicing_at", "changed_fields" ON "invoiced_work"`,
+		);
+	});
+
+	it("keeps resolutions append-only", () => {
+		expect(migration()).toContain(
+			`CREATE TRIGGER "invoiced_work_resolution_append_only" BEFORE UPDATE OR DELETE ON "invoiced_work_resolution"`,
+		);
 	});
 });

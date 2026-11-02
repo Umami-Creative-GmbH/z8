@@ -3,8 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import {
 	HandOffForm,
 	type HandOffFormActions,
@@ -13,8 +12,9 @@ import { useHandOffLabels } from "@/components/billable-time/hand-off/hand-off-l
 import {
 	InvoiceDraftPanel,
 	type InvoiceDraftPanelActions,
-	MarkedWork,
 } from "@/components/billable-time/hand-off/invoice-draft-panel";
+import { MarkedWork } from "@/components/billable-time/hand-off/marked-work";
+import { ReconciliationCsvButton } from "@/components/billable-time/hand-off/reconciliation-csv-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,13 +32,15 @@ import { CHANGED_AFTER_INVOICING_ANCHOR } from "@/lib/billable-time/hand-off/vie
 import { queryKeys } from "@/lib/query/keys";
 import {
 	checkInvoiceDraftStatusAction,
-	clearChangedAfterInvoicingAction,
 	confirmHandOffAction,
+	downloadChangedWorkCsvAction,
+	downloadDraftReconciliationCsvAction,
 	getHandOffOverview,
 	getInvoiceDraftAction,
 	type HandOffOverview,
 	previewHandOffAction,
 	releaseInvoiceDraftAction,
+	resolveChangedAfterInvoicingAction,
 	retryHandOffAction,
 } from "./actions";
 
@@ -60,7 +62,8 @@ const panelActions: InvoiceDraftPanelActions = {
 	checkStatus: (draftId) => checkInvoiceDraftStatusAction({ draftId }),
 	retry: (draftId) => retryHandOffAction({ draftId }),
 	release: (draftId, reason) => releaseInvoiceDraftAction({ draftId, reason }),
-	clearMarks: (invoicedWorkIds) => clearChangedAfterInvoicingAction({ invoicedWorkIds }),
+	resolveMarks: resolveChangedAfterInvoicingAction,
+	downloadReconciliationCsv: (draftId) => downloadDraftReconciliationCsvAction({ draftId }),
 };
 
 /** Billable Time → Hand-off (#903): new hand-offs, past hand-offs and marked work. */
@@ -70,7 +73,6 @@ export function HandOffView() {
 	const labels = useHandOffLabels();
 	const queryClient = useQueryClient();
 	const [openDraftId, setOpenDraftId] = useState<string | null>(null);
-	const [isClearing, startClearing] = useTransition();
 
 	const overview = useQuery({
 		queryKey: queryKeys.billableTime.handOffOverview(),
@@ -127,25 +129,13 @@ export function HandOffView() {
 					<CardContent className="pt-6">
 						<MarkedWork
 							marked={changedAfterInvoicing}
-							disabled={isClearing}
-							onClear={(invoicedWorkIds) =>
-								startClearing(async () => {
-									const result = await clearChangedAfterInvoicingAction({ invoicedWorkIds });
-									if (!result.success) {
-										toast.error(result.error);
-										return;
-									}
-									toast.success(
-										t(
-											"settings.billableTime.handOff.marks.cleared",
-											"{count, plural, one {# mark cleared} other {# marks cleared}}",
-											{ count: result.data.cleared },
-										),
-									);
-									refresh();
-								})
-							}
+							resolve={resolveChangedAfterInvoicingAction}
+							onResolved={refresh}
+							grouped
 						/>
+						<div className="mt-4 flex justify-end">
+							<ReconciliationCsvButton download={downloadChangedWorkCsvAction} />
+						</div>
 					</CardContent>
 				</Card>
 			)}

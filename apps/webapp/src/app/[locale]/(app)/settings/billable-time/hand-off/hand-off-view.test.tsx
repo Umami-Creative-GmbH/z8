@@ -1,9 +1,10 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { itemMarkVersion } from "@/lib/billable-time/hand-off/resolution";
 import { render } from "@/test/render-with-translations";
 import type { HandOffOverview } from "./actions";
 
@@ -11,12 +12,14 @@ const mocks = vi.hoisted(() => ({ getHandOffOverview: vi.fn() }));
 
 vi.mock("./actions", () => ({
 	checkInvoiceDraftStatusAction: vi.fn(),
-	clearChangedAfterInvoicingAction: vi.fn(),
 	confirmHandOffAction: vi.fn(),
+	downloadChangedWorkCsvAction: vi.fn(),
+	downloadDraftReconciliationCsvAction: vi.fn(),
 	getHandOffOverview: mocks.getHandOffOverview,
 	getInvoiceDraftAction: vi.fn(),
 	previewHandOffAction: vi.fn(),
 	releaseInvoiceDraftAction: vi.fn(),
+	resolveChangedAfterInvoicingAction: vi.fn(),
 	retryHandOffAction: vi.fn(),
 }));
 
@@ -36,6 +39,20 @@ vi.mock("@/hooks/use-display-context", () => ({
 }));
 
 import { HandOffView } from "./hand-off-view";
+
+const comparedValues: HandOffOverview["changedAfterInvoicing"][number]["comparison"]["handOff"] = {
+	removed: false,
+	pieceCount: 1,
+	removedPieceCount: 0,
+	day: "2026-03-02",
+	start: { at: "2026-03-02T08:00:00.000Z", offsetMinutes: 0 },
+	end: { at: "2026-03-02T10:30:00.000Z", offsetMinutes: 0 },
+	durationMinutes: 150,
+	hours: "2.50",
+	projects: [{ id: "p-web", name: "Website" }],
+	customers: [{ id: "customer-1", name: "Acme" }],
+	billability: "billable",
+};
 
 const overview: HandOffOverview = {
 	customers: [],
@@ -64,6 +81,15 @@ const overview: HandOffOverview = {
 	changedAfterInvoicing: [
 		{
 			invoiceDraftId: "draft-1",
+			draft: {
+				customerId: "customer-1",
+				customerName: "Acme",
+				currency: "EUR",
+				period: { from: "2026-03-01", to: "2026-03-31" },
+				title: "Acme March",
+				externalId: "x-1",
+				createdAt: "2026-04-01T08:00:00Z",
+			},
 			invoicedWorkId: "iw-1",
 			workPeriodId: "wp-1",
 			day: "2026-03-02",
@@ -73,6 +99,31 @@ const overview: HandOffOverview = {
 			carried: false,
 			changedAfterInvoicingAt: "2026-04-02T08:00:00Z",
 			changedFields: ["times"],
+			markVersion: itemMarkVersion([{ id: "iw-1", markVersion: 1 }]),
+			openWhenReleased: false,
+			history: [],
+			comparison: {
+				amountDifference: {
+					currency: "EUR",
+					fromHandOff: {
+						kind: "known",
+						amount: "25.00",
+						reason: "frozen_rate",
+						roundingCaveat: true,
+					},
+					sinceResolution: null,
+					notOnHandOffForNewCustomer: false,
+				},
+				handOff: comparedValues,
+				lastResolved: null,
+				current: {
+					...comparedValues,
+					durationMinutes: 165,
+					hours: "2.75",
+					changedFromHandOff: ["hours"],
+					changedSinceResolution: null,
+				},
+			},
 		},
 	],
 };
@@ -111,5 +162,19 @@ describe("HandOffView", () => {
 		await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
 		const section = document.getElementById("changed-after-invoicing");
 		expect(section?.textContent).toContain("Grace");
+	});
+
+	it("offers the marked work as a reconciliation CSV", async () => {
+		mocks.getHandOffOverview.mockResolvedValue({ success: true, data: overview });
+		renderView();
+
+		const section = await waitFor(() => {
+			const found = document.getElementById("changed-after-invoicing");
+			if (!found) throw new Error("No changed-work section");
+			return found;
+		});
+		expect(
+			within(section).getByRole("button", { name: "Download reconciliation CSV" }),
+		).toBeTruthy();
 	});
 });
