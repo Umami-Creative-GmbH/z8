@@ -262,6 +262,8 @@ async function comparisonsOf(
 				amountDifference: amountDifferenceOf({
 					frozen: {
 						shares: frozen.shares,
+						startedAt: frozen.startedAt,
+						endedAt: frozen.endedAt,
 						durationMinutes: frozen.durationMinutes,
 						projectId: frozen.projectId,
 						customerId: draft.customerId,
