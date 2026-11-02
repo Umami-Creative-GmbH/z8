@@ -22,7 +22,8 @@ export function useKioskIdleReturn(input: {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: `activity` restarts the idle timer
 	useEffect(() => {
 		if (flow.step === "home" || busy) return;
-		const timeout = flow.step === "done" ? KIOSK_CONFIRMATION_MS : KIOSK_IDLE_MS;
+		const confirmation = flow.step === "done" || flow.step === "fob-registered";
+		const timeout = confirmation ? KIOSK_CONFIRMATION_MS : KIOSK_IDLE_MS;
 		const timer = window.setTimeout(() => returnHome(), timeout);
 		return () => window.clearTimeout(timer);
 	}, [flow, busy, activity]);

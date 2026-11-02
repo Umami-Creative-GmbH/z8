@@ -41,6 +41,8 @@ export type KioskData = {
 	badgeScannerEnabled: boolean;
 	/** Whether badges read with the kiosk's own camera identify employees (#1367). */
 	badgeCameraEnabled: boolean;
+	/** Whether kiosk fobs read by an attached NFC reader select employees (#1505). */
+	nfcFobReaderEnabled: boolean;
 	status: KioskStatus;
 	/** ISO instants. */
 	pairingCodeExpiresAt: string | null;
@@ -101,6 +103,7 @@ export type UpdateKioskInput = {
 	offlineModeEnabled?: boolean;
 	badgeScannerEnabled?: boolean;
 	badgeCameraEnabled?: boolean;
+	nfcFobReaderEnabled?: boolean;
 };
 
 const SETTINGS_PATH = "/settings/kiosks";
@@ -132,6 +135,7 @@ export async function getKioskAdminDataAction(): Promise<
 				offlineModeEnabled: row.offlineModeEnabled,
 				badgeScannerEnabled: row.badgeScannerEnabled,
 				badgeCameraEnabled: row.badgeCameraEnabled,
+				nfcFobReaderEnabled: row.nfcFobReaderEnabled,
 				status: row.status,
 				pairingCodeExpiresAt: row.pairingCodeExpiresAt?.toISOString() ?? null,
 				pairedAt: row.pairedAt?.toISOString() ?? null,
@@ -201,6 +205,12 @@ export async function updateKioskAction(
 		if (input?.badgeCameraEnabled !== undefined && typeof input.badgeCameraEnabled !== "boolean") {
 			throw new KioskSettingsRefusal("invalid_selection", "Camera input must be on or off.");
 		}
+		if (
+			input?.nfcFobReaderEnabled !== undefined &&
+			typeof input.nfcFobReaderEnabled !== "boolean"
+		) {
+			throw new KioskSettingsRefusal("invalid_selection", "The NFC fob reader must be on or off.");
+		}
 		await withAuditTrail((audit) =>
 			db.transaction((tx) =>
 				updateKiosk(tx, audit, {
@@ -215,6 +225,7 @@ export async function updateKioskAction(
 						offlineModeEnabled: input.offlineModeEnabled,
 						badgeScannerEnabled: input.badgeScannerEnabled,
 						badgeCameraEnabled: input.badgeCameraEnabled,
+						nfcFobReaderEnabled: input.nfcFobReaderEnabled,
 					},
 				}),
 			),

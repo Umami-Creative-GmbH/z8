@@ -92,6 +92,8 @@ export function useHandOffLabels() {
 				return t("settings.billableTime.handOff.changed.removed", "Deleted");
 			case "split":
 				return t("settings.billableTime.handOff.changed.split", "Split");
+			case "customer":
+				return t("settings.billableTime.handOff.changed.customer", "Customer");
 		}
 	};
 

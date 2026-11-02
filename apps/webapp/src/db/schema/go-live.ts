@@ -45,7 +45,7 @@ export const goLiveGroupTeam = pgTable(
  * A go-live exclusion (#1513): an admin's recorded decision, with a reason, to
  * leave one employee out of the go-live group. Open until lifted
  * (`lifted_at`/`lifted_by`) or until the employee becomes a former employee,
- * when the 0290 trigger stamps `ended_at`. A rehired employee needs a new one.
+ * when the 0294 trigger stamps `ended_at`. A rehired employee needs a new one.
  */
 export const goLiveExclusion = pgTable(
 	"go_live_exclusion",

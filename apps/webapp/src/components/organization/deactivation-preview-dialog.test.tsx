@@ -395,6 +395,7 @@ describe("DeactivationPreviewDialog", () => {
 						{ authorizationId: "d-2", state: "suspended" },
 					],
 					kioskBadges: [{ badgeId: "b-1" }],
+					kioskFobs: [{ fobId: "f-1" }],
 					shareLinks: [
 						{ linkId: "l-1", kind: "report" },
 						{ linkId: "l-2", kind: "report" },
@@ -413,6 +414,7 @@ describe("DeactivationPreviewDialog", () => {
 			section.getByText("2 driving authorizations end, including suspended ones"),
 		).toBeTruthy();
 		expect(section.getByText("1 kiosk badge is revoked")).toBeTruthy();
+		expect(section.getByText("1 kiosk fob stops working")).toBeTruthy();
 		expect(section.getByText("3 report share links are revoked")).toBeTruthy();
 	});
 

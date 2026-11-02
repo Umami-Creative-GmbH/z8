@@ -11,7 +11,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useTolgee, type useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Temporal } from "temporal-polyfill";
 import {
 	type EmployeeKioskBadgeState,
 	type IssuedKioskBadgePdf,
@@ -22,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { KioskBadgeActionResult } from "@/lib/time-tracking/kiosk/badge-errors";
 import { kioskBadgeErrorMessage } from "./kiosk-badge-error-message";
+import { kioskDateLabel, kioskDayLabel } from "./kiosk-date-labels";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -30,19 +30,6 @@ type IssuedFile = { url: string; filename: string };
 
 /** Which change of the active badge waits for its confirmation. */
 type Confirming = "replace" | "revoke" | null;
-
-/** An instant's date in the organization's zone, in the UI language. */
-function dateLabel(iso: string, zone: string, locale: string): string {
-	return Temporal.Instant.from(iso)
-		.toZonedDateTimeISO(zone)
-		.toPlainDate()
-		.toLocaleString(locale, { dateStyle: "medium" });
-}
-
-/** A calendar day (ISO date) as it is, in the UI language. */
-function dayLabel(day: string, locale: string): string {
-	return Temporal.PlainDate.from(day).toLocaleString(locale, { dateStyle: "medium" });
-}
 
 const SPINNER = "mr-2 size-4 animate-spin motion-reduce:animate-none";
 
@@ -63,7 +50,7 @@ function BadgeStatus({
 }) {
 	if (badge.activeIssuedAt) {
 		return t("settings.employees.kioskBadge.active", "Active since {date}.", {
-			date: dateLabel(badge.activeIssuedAt, badge.timezone, locale),
+			date: kioskDateLabel(badge.activeIssuedAt, badge.timezone, locale),
 		});
 	}
 	if (badge.lastRevokedAt && badge.lastRevokedReason === "employee_departure") {
@@ -73,8 +60,8 @@ function BadgeStatus({
 			{
 				// The departure date people know is the last working day, not the cutoff after it.
 				date: badge.departureLastWorkingDay
-					? dayLabel(badge.departureLastWorkingDay, locale)
-					: dateLabel(badge.lastRevokedAt, badge.timezone, locale),
+					? kioskDayLabel(badge.departureLastWorkingDay, locale)
+					: kioskDateLabel(badge.lastRevokedAt, badge.timezone, locale),
 			},
 		);
 	}
@@ -82,7 +69,7 @@ function BadgeStatus({
 		return t(
 			"settings.employees.kioskBadge.revokedOn",
 			"No active kiosk badge. The last one was revoked on {date}.",
-			{ date: dateLabel(badge.lastRevokedAt, badge.timezone, locale) },
+			{ date: kioskDateLabel(badge.lastRevokedAt, badge.timezone, locale) },
 		);
 	}
 	return t("settings.employees.kioskBadge.none", "No kiosk badge yet.");

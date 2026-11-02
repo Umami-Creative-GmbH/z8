@@ -295,7 +295,9 @@ export enum AuditAction {
 	INVOICE_DRAFT_CREATED = "billable_time.invoice_draft_created",
 	INVOICE_DRAFT_FAILED = "billable_time.invoice_draft_failed",
 	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",
+	/** Written before resolutions existed (#1499); kept for the history. */
 	INVOICED_WORK_MARK_CLEARED = "billable_time.invoiced_work_mark_cleared",
+	INVOICED_WORK_MARK_RESOLVED = "billable_time.invoiced_work_mark_resolved",
 
 	// Custom field definitions (#817)
 	CUSTOM_FIELD_CREATED = "custom_field.created",
@@ -345,6 +347,10 @@ export enum AuditAction {
 	KIOSK_BADGE_ISSUED = "kiosk_badge.issued",
 	KIOSK_BADGE_REPLACED = "kiosk_badge.replaced",
 	KIOSK_BADGE_REVOKED = "kiosk_badge.revoked",
+
+	// Kiosk fobs (#1505); never the full serial number
+	KIOSK_FOB_REGISTERED = "kiosk_fob.registered",
+	KIOSK_FOB_ENDED = "kiosk_fob.ended",
 
 	// Kiosk enrolment (#859)
 	KIOSK_CREATED = "kiosk.created",
@@ -459,6 +465,7 @@ export interface AuditLogEntry {
 		| "user"
 		| "kiosk_pin"
 		| "kiosk_badge"
+		| "kiosk_fob"
 		| "audit_pack_request"
 		| "works_council_settings"
 		| "works_council_export"

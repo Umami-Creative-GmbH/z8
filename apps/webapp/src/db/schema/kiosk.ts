@@ -41,6 +41,10 @@ import { employee, location } from "./organization";
  *   the kiosk's own camera ("Scan badge" on the home screen), off by default and
  *   independent of the scanner switch. Frames are decoded on the device and
  *   never leave it.
+ * - `nfc_fob_reader_enabled` (#1505, spec #1358, ADR 0014) accepts kiosk fob
+ *   serial numbers typed by an attached keyboard-style NFC reader on the
+ *   kiosk's home screen (off by default, independent of both badge switches).
+ *   A fob only selects the employee; the kiosk PIN still proves.
  */
 export const kiosk = pgTable(
 	"kiosk",
@@ -56,6 +60,7 @@ export const kiosk = pgTable(
 		offlineModeEnabled: boolean("offline_mode_enabled").default(false).notNull(),
 		badgeScannerEnabled: boolean("badge_scanner_enabled").default(false).notNull(),
 		badgeCameraEnabled: boolean("badge_camera_enabled").default(false).notNull(),
+		nfcFobReaderEnabled: boolean("nfc_fob_reader_enabled").default(false).notNull(),
 		tokenHash: text("token_hash"),
 		pairedAt: timestamp("paired_at", { withTimezone: true }),
 		pairingCodeHash: text("pairing_code_hash"),

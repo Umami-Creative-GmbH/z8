@@ -47,6 +47,8 @@ export type KioskListing = {
 	badgeScannerEnabled: boolean;
 	/** Whether badges read with the kiosk's own camera identify employees (#1367). */
 	badgeCameraEnabled: boolean;
+	/** Whether kiosk fobs read by an attached NFC reader select employees (#1505). */
+	nfcFobReaderEnabled: boolean;
 	status: KioskStatus;
 	pairingCodeExpiresAt: Date | null;
 	pairedAt: Date | null;
@@ -126,6 +128,7 @@ export async function listKiosks(
 			offlineModeEnabled: kiosk.offlineModeEnabled,
 			badgeScannerEnabled: kiosk.badgeScannerEnabled,
 			badgeCameraEnabled: kiosk.badgeCameraEnabled,
+			nfcFobReaderEnabled: kiosk.nfcFobReaderEnabled,
 			hasToken: kiosk.tokenHash,
 			pairingCodeExpiresAt: kiosk.pairingCodeExpiresAt,
 			pairedAt: kiosk.pairedAt,
@@ -189,6 +192,7 @@ export async function createKiosk(
 				offlineModeEnabled: false,
 				badgeScannerEnabled: false,
 				badgeCameraEnabled: false,
+				nfcFobReaderEnabled: false,
 			},
 		},
 	});
@@ -207,6 +211,7 @@ async function lockManagedKiosk(tx: KioskClient, organizationId: string, kioskId
 			offlineModeEnabled: kiosk.offlineModeEnabled,
 			badgeScannerEnabled: kiosk.badgeScannerEnabled,
 			badgeCameraEnabled: kiosk.badgeCameraEnabled,
+			nfcFobReaderEnabled: kiosk.nfcFobReaderEnabled,
 			tokenHash: kiosk.tokenHash,
 			revokedAt: kiosk.revokedAt,
 		})
@@ -227,12 +232,13 @@ export type KioskConfigurationChange = Partial<{
 	offlineModeEnabled: boolean;
 	badgeScannerEnabled: boolean;
 	badgeCameraEnabled: boolean;
+	nfcFobReaderEnabled: boolean;
 }>;
 
 /**
  * Renames a kiosk, moves it to another location of the organization, changes
- * its zone, board, offline mode, attached-scanner badge input (#1366) or camera
- * badge input (#1367), each switch on its own. Offline mode can be switched on
+ * its zone, board, offline mode, attached-scanner badge input (#1366), camera
+ * badge input (#1367) or NFC fob reader (#1505), each switch on its own. Offline mode can be switched on
  * only while the organization is adopted (`append` admission, ADR 0002); switching it off
  * is always allowed, also after a pilot rollback returned the organization to
  * `legacy`.
@@ -265,6 +271,10 @@ export async function updateKiosk(
 			change.badgeCameraEnabled === undefined
 				? current.badgeCameraEnabled
 				: change.badgeCameraEnabled,
+		nfcFobReaderEnabled:
+			change.nfcFobReaderEnabled === undefined
+				? current.nfcFobReaderEnabled
+				: change.nfcFobReaderEnabled,
 	};
 	if (
 		next.offlineModeEnabled &&
@@ -286,6 +296,7 @@ export async function updateKiosk(
 		"offlineModeEnabled",
 		"badgeScannerEnabled",
 		"badgeCameraEnabled",
+		"nfcFobReaderEnabled",
 	] as const) {
 		if (next[key] !== current[key]) {
 			from[key] = current[key];
@@ -411,7 +422,7 @@ export async function readKioskDeviceInfo(
 	client: KioskClient,
 	authenticated: PairedKiosk,
 ): Promise<KioskDeviceInfo> {
-	const [[site], offlineMode, badgeInputs] = await Promise.all([
+	const [[site], offlineMode, badgeInputs, nfcFobReaderEnabled] = await Promise.all([
 		client
 			.select({ name: location.name, language: organizationNotificationSettings.defaultLanguage })
 			.from(location)
@@ -434,6 +445,10 @@ export async function readKioskDeviceInfo(
 			organizationId: authenticated.organizationId,
 			kioskId: authenticated.kioskId,
 		}),
+		readKioskFobReader(client, {
+			organizationId: authenticated.organizationId,
+			kioskId: authenticated.kioskId,
+		}),
 	]);
 	return {
 		id: authenticated.kioskId,
@@ -445,7 +460,25 @@ export async function readKioskDeviceInfo(
 		language: kioskLanguage(site?.language),
 		offlineMode,
 		...badgeInputs,
+		nfcFobReaderEnabled,
 	};
+}
+
+/**
+ * Whether a kiosk accepts kiosk fobs from an attached NFC reader (#1505), read
+ * afresh; independent of both badge inputs. A kiosk of another organization
+ * reads as off. The fob endpoints refuse every call while it is off.
+ */
+export async function readKioskFobReader(
+	client: Pick<KioskClient, "select">,
+	input: { organizationId: string; kioskId: string },
+): Promise<boolean> {
+	const [found] = await client
+		.select({ enabled: kiosk.nfcFobReaderEnabled })
+		.from(kiosk)
+		.where(and(eq(kiosk.organizationId, input.organizationId), eq(kiosk.id, input.kioskId)))
+		.limit(1);
+	return found?.enabled === true;
 }
 
 /**

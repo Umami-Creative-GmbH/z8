@@ -202,5 +202,33 @@ export const integrationsFieldGuide: PersonalDataFieldGuide = (t) => {
 				),
 			},
 		},
+		kiosk_fobs: {
+			summary: t(
+				"personalDataExport.readme.fields.integrations.kioskFobs.summary",
+				"The NFC cards or fobs you registered at a kiosk, current and ended. Tapping one selects you at the kiosk; your kiosk PIN still proves it is you.",
+			),
+			fields: {
+				serial_number: t(
+					"personalDataExport.readme.fields.integrations.kioskFobs.serialNumber",
+					"The chip's serial number, as the kiosk's reader read it.",
+				),
+				registered_at: t(
+					"personalDataExport.readme.fields.integrations.kioskFobs.registeredAt",
+					"When you registered it (UTC).",
+				),
+				kiosk: t(
+					"personalDataExport.readme.fields.integrations.kioskFobs.kiosk",
+					"The kiosk you registered it at, empty once that kiosk was deleted.",
+				),
+				ended_at: t(
+					"personalDataExport.readme.fields.integrations.kioskFobs.endedAt",
+					"When it stopped selecting you (UTC), empty while it still does.",
+				),
+				ended_reason: t(
+					"personalDataExport.readme.fields.integrations.kioskFobs.endedReason",
+					"replaced when you registered another one, removed when you or a manager removed it or you were deactivated, departure when your employment ended.",
+				),
+			},
+		},
 	};
 };

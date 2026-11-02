@@ -192,12 +192,14 @@ export type AccessEndsPlan = {
 	}>;
 	drivingAuthorizations: Array<{ authorizationId: string; state: string }>;
 	kioskBadges: Array<{ badgeId: string }>;
+	kioskFobs: Array<{ fobId: string }>;
 	shareLinks: Array<{ linkId: string; kind: string }>;
 };
 export type AccessEndsApplied = {
 	grantIds: string[];
 	drivingAuthorizationIds: string[];
 	kioskBadgeIds: string[];
+	kioskFobIds: string[];
 	shareLinkIds: string[];
 };
 
