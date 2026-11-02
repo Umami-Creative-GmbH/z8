@@ -28,6 +28,7 @@ import {
 import { FirstWorkflowsPanel } from "./first-workflows-panel";
 import { GoLiveCheckPanel } from "./go-live-check-panel";
 import { GoLiveReadinessCard, type GoLiveReadinessView } from "./go-live-readiness-card";
+import { GoLiveRehearsalPicker } from "./go-live-rehearsal";
 import { ManualConfirmationNote, manualConfirmationLapsed } from "./manual-confirmation-note";
 
 /** The group card brings the employee picker; load it only when the card is shown. */
@@ -236,7 +237,12 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 								{showsGoLiveDetail && item.goLive ? (
 									<GoLiveCheckPanel result={item.goLive} />
 								) : null}
-								{firstWorkflows ? <FirstWorkflowsPanel evidence={firstWorkflows} /> : null}
+								{firstWorkflows ? (
+									<FirstWorkflowsPanel
+										evidence={firstWorkflows}
+										rehearsal={<GoLiveRehearsalPicker />}
+									/>
+								) : null}
 								{item.goLive &&
 								item.confirmedLabel &&
 								hasManualConfirmation(item) &&

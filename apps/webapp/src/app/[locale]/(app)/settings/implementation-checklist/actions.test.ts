@@ -438,6 +438,8 @@ describe("implementation checklist actions", () => {
 			timezone: "Europe/Berlin",
 			memberCount: 3,
 			group: goLiveGroupSettings,
+			// The members checked are who a go-live rehearsal can be run for (#1517).
+			rehearsalCandidates: [{ key: "employee:employee-1", displayName: "Ada", invited: false }],
 		});
 		expect(mocks.loadGoLiveGroupSettings).toHaveBeenCalledWith(
 			expect.anything(),

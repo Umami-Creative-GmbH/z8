@@ -35,7 +35,10 @@ import type {
 	ApprovalPolicyDraft,
 	ApprovalPolicyEvaluationContext,
 } from "@/lib/approvals/policies/types";
-import type { ApprovalStageReviewerDirectory } from "@/lib/approvals/routing/approver-resolver";
+import {
+	ApprovalStageActivationError,
+	type ApprovalStageReviewerDirectory,
+} from "@/lib/approvals/routing/approver-resolver";
 import {
 	ApprovalRoutingPolicyValidationError,
 	findMatchingRoutingPolicy,
@@ -127,6 +130,21 @@ export interface ApproverRouteStage {
 	fallbackBehavior: string | null;
 	approverEmployeeIds: string[];
 	activation: "human" | "requester_auto_approve" | "not_activated";
+	/** How the stage resolves, every stage included; only when loaded with `traceStages`. */
+	trace?: ApproverStageTrace;
+}
+
+/**
+ * A canonical stage resolved as it would activate, later stages included (the go-live rehearsal).
+ * A later stage resolves as the transition engine activates it once the stages before it decide.
+ */
+export interface ApproverStageTrace {
+	resolution: "human" | "requester_auto_approve" | "unresolvable";
+	approverEmployeeIds: string[];
+	/** The approvers come from the stage's fallback: with a `fail` fallback it would find nobody else. */
+	viaFallback: boolean;
+	/** The approver the stage names, if any, and whether they are still active. */
+	namedApprover: { employeeId: string; active: boolean } | null;
 }
 
 export interface ApproverRoute {
@@ -219,11 +237,18 @@ type ChangePolicyFacts = Pick<
 
 /**
  * Loads what routing the given members reads, once for the organization. `db` must be a
- * read-only transaction: a member is resolved later through it.
+ * read-only transaction: a member is resolved later through it. With `traceStages` every
+ * canonical stage also gets a `trace`, later stages resolved too (one member at a time: it reads
+ * more per stage).
  */
 export async function loadApproverRouting(
 	db: DatabaseClient,
-	input: { organizationId: string; asOf: GoLiveAsOf; members: readonly GoLiveMember[] },
+	input: {
+		organizationId: string;
+		asOf: GoLiveAsOf;
+		members: readonly GoLiveMember[];
+		traceStages?: boolean;
+	},
 ): Promise<ApproverRouting> {
 	const { organizationId, asOf } = input;
 	const at = new Date(asOf.instant.epochMilliseconds);
@@ -530,6 +555,7 @@ export async function loadApproverRouting(
 				policies,
 			});
 			const route = canonicalRoute(planned.snapshot, matched, defaultApproverEmployeeId);
+			if (input.traceStages) await traceCanonicalStages(route, planned.snapshot, routingContext);
 			if (planned.snapshot.status === "approved") {
 				return { status: "skipped", reason: "requester_is_approver", route };
 			}
@@ -567,6 +593,92 @@ export async function loadApproverRouting(
 				};
 			}
 			throw error;
+		}
+	}
+
+	type StageResolution = Pick<ApproverStageTrace, "resolution" | "approverEmployeeIds">;
+
+	/**
+	 * Resolves one planned stage through the same activation resolver the plan used. A waiting
+	 * stage activates once the earlier ones decide, so it resolves as the transition engine
+	 * activates a persisted workflow's stage.
+	 */
+	async function resolvePlannedStage(
+		snapshot: ApprovalWorkflowSnapshot,
+		stage: ApprovalWorkflowSnapshot["stages"][number],
+		routingContext: JsonObject,
+		resolverSnapshot: JsonObject,
+	): Promise<StageResolution> {
+		try {
+			const resolved = await activationResolver.resolve({
+				dbService: { db: db as never },
+				organizationId,
+				workflow: snapshot,
+				stage: { ...stage, resolverSnapshot },
+				actor: { kind: "system", employeeId: null, userId: null },
+				routingContext,
+				...(stage.status === "waiting" ? { requesterMode: "existing_workflow" as const } : {}),
+			});
+			return resolved.activationMode === "requester_auto_approve"
+				? { resolution: "requester_auto_approve", approverEmployeeIds: [] }
+				: {
+						resolution: "human",
+						approverEmployeeIds: resolved.assignments.map(
+							(assignment) => assignment.approverEmployeeId,
+						),
+					};
+		} catch (error) {
+			if (error instanceof ApprovalStageActivationError) {
+				return { resolution: "unresolvable", approverEmployeeIds: [] };
+			}
+			throw error;
+		}
+	}
+
+	/** Every stage of a planned route, later ones included, with fallbacks and stand-ins named. */
+	async function traceCanonicalStages(
+		route: ApproverRoute,
+		snapshot: ApprovalWorkflowSnapshot,
+		routingContext: ApprovalRoutingContext,
+	) {
+		const context = normalizeStableData(routingContext) as JsonObject;
+		for (const [index, stage] of snapshot.stages.entries()) {
+			const routeStage = route.stages[index];
+			if (!routeStage) continue;
+			const resolved: StageResolution =
+				stage.status === "waiting"
+					? await resolvePlannedStage(snapshot, stage, context, stage.resolverSnapshot)
+					: {
+							resolution:
+								stage.activationMode === "requester_auto_approve"
+									? "requester_auto_approve"
+									: "human",
+							approverEmployeeIds: stage.assignments.map(
+								(assignment) => assignment.approverEmployeeId,
+							),
+						};
+			const fallback = stage.resolverSnapshot.fallbackBehavior;
+			// Without its fallback, would the stage still find the same people?
+			const viaFallback =
+				resolved.resolution !== "unresolvable" &&
+				typeof fallback === "string" &&
+				fallback !== "fail" &&
+				!sameResolution(
+					resolved,
+					await resolvePlannedStage(snapshot, stage, context, {
+						...stage.resolverSnapshot,
+						fallbackBehavior: "fail",
+					}),
+				);
+			const named = stage.resolverSnapshot.approverEmployeeId;
+			routeStage.trace = {
+				...resolved,
+				viaFallback,
+				namedApprover:
+					typeof named === "string"
+						? { employeeId: named, active: activeCanonicalIds.has(named) }
+						: null,
+			};
 		}
 	}
 
@@ -988,6 +1100,18 @@ function combine(
 		return { status: "skipped", reason: firstSkip, variants };
 	}
 	return { status: "routed", variants };
+}
+
+function sameResolution(
+	left: Pick<ApproverStageTrace, "resolution" | "approverEmployeeIds">,
+	right: Pick<ApproverStageTrace, "resolution" | "approverEmployeeIds">,
+) {
+	if (left.resolution !== right.resolution) return false;
+	const rightIds = new Set(right.approverEmployeeIds);
+	return (
+		left.approverEmployeeIds.length === rightIds.size &&
+		left.approverEmployeeIds.every((id) => rightIds.has(id))
+	);
 }
 
 function legacyDefaultRoute(approverEmployeeId: string, self: boolean): ApproverRoute {
