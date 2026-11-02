@@ -18,10 +18,18 @@ export const MAX_RESOLVED_ITEMS = 1000;
 /** Bounds the untrusted mark version (one `id:version` per row of the item). */
 const MAX_MARK_VERSION_LENGTH = 20_000;
 
+declare const markVersion: unique symbol;
+
+/**
+ * The opaque version of an item's mark that the client round-trips. Only
+ * `itemMarkVersion` and `parseResolutionInput` make one.
+ */
+export type MarkVersion = string & { readonly [markVersion]: true };
+
 /** An item to resolve: its handed-off row and the mark version the admin saw. */
 export interface ResolveItem {
 	invoicedWorkId: string;
-	markVersion: string;
+	markVersion: MarkVersion;
 }
 
 export interface ResolutionInput {
@@ -55,7 +63,8 @@ function parseItems(value: unknown): ResolveItem[] | null {
 		const id = invoicedWorkId.toLowerCase();
 		if (seen.has(id)) return null;
 		seen.add(id);
-		items.push({ invoicedWorkId: id, markVersion });
+		// Untrusted: it only ever compares equal to the item's current version.
+		items.push({ invoicedWorkId: id, markVersion: markVersion as MarkVersion });
 	}
 	return items;
 }
@@ -136,10 +145,17 @@ export function comparisonItems<Row extends ItemRow>(rows: readonly Row[]): Map<
 	return items;
 }
 
+/** The fields an item's rows are marked with, once each, sorted. */
+export function itemChangedFields<Field extends string>(
+	rows: readonly { changedFields: readonly Field[] }[],
+): Field[] {
+	return [...new Set(rows.flatMap((row) => row.changedFields))].sort();
+}
+
 /** The version of an item's mark: every row's id and mark version, sorted. */
-export function itemMarkVersion(rows: readonly Pick<ItemRow, "id" | "markVersion">[]): string {
+export function itemMarkVersion(rows: readonly Pick<ItemRow, "id" | "markVersion">[]): MarkVersion {
 	return rows
 		.map((row) => `${row.id}:${row.markVersion}`)
 		.sort()
-		.join(",");
+		.join(",") as MarkVersion;
 }

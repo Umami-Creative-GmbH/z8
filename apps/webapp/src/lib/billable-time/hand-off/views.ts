@@ -5,6 +5,7 @@
 
 import type { AccountingProviderKind, InvoiceDraftToolStatus } from "../accounting/provider";
 import type { TaxTreatmentView } from "../accounting/views";
+import type { MarkVersion } from "./resolution";
 
 /** The hand-off area's section listing work changed after invoicing. */
 export const CHANGED_AFTER_INVOICING_ANCHOR = "changed-after-invoicing";
@@ -204,14 +205,7 @@ export interface ComparedWorkValuesView {
  * handed-off amount: the work was removed, became non-billable, or its
  * project now belongs to another customer or to none.
  */
-export const PRICED_DIFFERENCE_REASONS = [
-	"frozen_rate",
-	"removed",
-	"non_billable",
-	"customer",
-] as const;
-
-export type PricedDifferenceReason = (typeof PRICED_DIFFERENCE_REASONS)[number];
+export type PricedDifferenceReason = "frozen_rate" | "removed" | "non_billable" | "customer";
 
 /**
  * Why an amount difference is unknown (#1502): the hand-off priced the work
@@ -219,14 +213,11 @@ export type PricedDifferenceReason = (typeof PRICED_DIFFERENCE_REASONS)[number];
  * frozen rate), a piece is still running, or no frozen rate was handed off
  * with it.
  */
-export const UNKNOWN_DIFFERENCE_REASONS = [
-	"several_rates",
-	"other_project",
-	"running",
-	"no_frozen_rate",
-] as const;
-
-export type UnknownDifferenceReason = (typeof UNKNOWN_DIFFERENCE_REASONS)[number];
+export type UnknownDifferenceReason =
+	| "several_rates"
+	| "other_project"
+	| "running"
+	| "no_frozen_rate";
 
 /**
  * An amount difference (#1502): what a correction changes in the amount the
@@ -309,7 +300,7 @@ export interface MarkedWorkItemView extends InvoicedWorkView {
 	/** The invoice draft the item was handed off with (#1502). */
 	draft: MarkedWorkDraftView;
 	/** Send it back when resolving: the item is refused when it changed since. */
-	markVersion: string;
+	markVersion: MarkVersion;
 	/**
 	 * Its draft was released while the mark was open (#1503): shown read-only,
 	 * it can no longer be resolved. Its marks stay as they were at release; the
