@@ -29,6 +29,10 @@ import {
 } from "@/lib/implementation-checklist/go-live/first-workflows";
 import { loadFirstWorkflowEvidence } from "@/lib/implementation-checklist/go-live/first-workflows-evidence";
 import { goLiveFixLinks } from "@/lib/implementation-checklist/go-live/fix-links";
+import {
+	type GoLiveGroupSettings,
+	loadGoLiveGroupSettings,
+} from "@/lib/implementation-checklist/go-live/group-settings";
 import { resolveGoLiveReadiness } from "@/lib/implementation-checklist/go-live/readiness";
 import {
 	type GoLiveRehearsalCandidate,
@@ -67,6 +71,8 @@ export interface ImplementationChecklistViewModel {
 		timezone: string;
 		/** How many members the go-live group has; null when it could not be resolved. */
 		memberCount: number | null;
+		/** Chosen teams and exclusions; null when they could not be loaded. */
+		group: GoLiveGroupSettings | null;
 		/** Who a go-live rehearsal can be run for: the members checked; empty without a group. */
 		rehearsalCandidates: GoLiveRehearsalCandidate[];
 	};
@@ -247,6 +253,7 @@ export async function loadImplementationChecklistForContext({
 				checkedAt: goLive.checkedAt,
 				timezone: goLive.timezone,
 				memberCount: goLive.run.memberCount,
+				group: goLive.group,
 				rehearsalCandidates: goLiveRehearsalCandidates(goLive.run.group?.members ?? []),
 			},
 		},
@@ -260,6 +267,7 @@ export async function loadImplementationChecklistForContext({
  */
 async function runGoLive(organizationId: string): Promise<{
 	run: GoLiveRun;
+	group: GoLiveGroupSettings | null;
 	checkedAt: string;
 	timezone: string;
 	/** Null when the organization could not be loaded. */
@@ -273,6 +281,7 @@ async function runGoLive(organizationId: string): Promise<{
 		logger.error({ organizationId, error }, "Go-live checks could not load the organization");
 		return {
 			run: unavailableGoLiveRun(),
+			group: null,
 			checkedAt: instant.toString(),
 			timezone: "UTC",
 			asOf: null,
@@ -280,8 +289,14 @@ async function runGoLive(organizationId: string): Promise<{
 	}
 
 	const { asOf, fixLink } = viewer;
-	const run = await runGoLiveChecks({ db, organizationId, asOf, fixLink });
-	return { run, checkedAt: instant.toString(), timezone: asOf.timezone, asOf };
+	const [run, group] = await Promise.all([
+		runGoLiveChecks({ db, organizationId, asOf, fixLink }),
+		loadGoLiveGroupSettings(db, organizationId, asOf).catch((error: unknown) => {
+			logger.error({ organizationId, error }, "Go-live group settings could not be loaded");
+			return null;
+		}),
+	]);
+	return { run, group, checkedAt: instant.toString(), timezone: asOf.timezone, asOf };
 }
 
 export interface GoLiveViewer {

@@ -78,6 +78,7 @@ export * from "./enterprise-identity-setup";
 export * from "./enums";
 export * from "./expense-officer";
 export * from "./export";
+export * from "./go-live";
 export * from "./holiday";
 // Identity management (role templates, lifecycle)
 export * from "./identity";

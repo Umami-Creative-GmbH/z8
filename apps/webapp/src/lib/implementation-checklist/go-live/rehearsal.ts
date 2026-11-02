@@ -17,7 +17,7 @@ import {
 } from "./approver-routing";
 import { APPROVER_KIND_LABEL, approverFixLink } from "./checks/approver";
 import { EMPLOYEES_SETTINGS_HREF, PAYROLL_EXPORT_SETTINGS_HREF } from "./checks/payroll-setup";
-import { WORK_POLICY_ASSIGNMENTS_HREF } from "./checks/work-policy";
+import { WORK_POLICY_ASSIGNMENTS_HREF, workPolicySubject } from "./checks/work-policy";
 import { resolveGoLiveGroup } from "./group";
 import { readPayrollPrerequisites } from "./payroll-prerequisites";
 import { readOnlyGoLive } from "./read-only";
@@ -80,7 +80,7 @@ export async function rehearseGoLiveMember(
 
 		const policies = await loadEffectiveWorkPolicies(reader, {
 			organizationId,
-			employees: [workPolicyPerson(member)],
+			employees: [workPolicySubject(member)],
 			at: asOf.instant,
 		});
 		const routing = await loadApproverRouting(reader, {
@@ -109,7 +109,7 @@ export async function rehearseGoLiveMember(
 				timezone: asOf.timezone,
 				today: asOf.today.toString(),
 			},
-			workPolicy: workPolicyTrace(policies.get(workPolicyPerson(member).id) ?? null, fixLink),
+			workPolicy: workPolicyTrace(policies.get(workPolicySubject(member).id) ?? null, fixLink),
 			approvals: {
 				kinds: [...resolutions].map(([kind, resolution]) =>
 					kindTrace(kind, resolution, { member, group, people, categories, fixLink }),
@@ -132,13 +132,6 @@ export async function rehearseGoLiveMember(
 		};
 		return { ok: true, rehearsal };
 	});
-}
-
-/** Who work policies resolve for: an invitee as a person of their draft team (#1513). */
-function workPolicyPerson(member: GoLiveMember) {
-	return member.kind === "employee"
-		? { id: member.employeeId, teamId: member.primaryTeamId }
-		: { id: member.draftId, teamId: member.teamId };
 }
 
 function workPolicyTrace(

@@ -11,6 +11,7 @@ import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { createGoLiveExclusion, liftGoLiveExclusion } from "./group-settings";
 import { rehearseGoLiveMember } from "./rehearsal";
 import type { GoLiveRehearsal, GoLiveRehearsalKind } from "./rehearsal-types";
 import { goLiveAsOf, runGoLiveChecks } from "./run";
@@ -471,6 +472,82 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 				memberKey,
 			).resolves.toEqual({ ok: false, refusal: "member_not_checked" });
 		}
+	});
+
+	it("refuses an excluded employee until the exclusion is lifted", async () => {
+		const director = await seed();
+		const created = await createGoLiveExclusion(db, {
+			organizationId,
+			actorUserId: owner.userId,
+			employeeId: director.employeeId,
+			reason: "Director, doesn't track time",
+		});
+		if (!created.ok) throw new Error(`exclusion refused: ${created.refusal}`);
+		const memberKey = `employee:${director.employeeId}`;
+
+		await expect(
+			rehearseGoLiveMember(db, { organizationId, asOf: AS_OF, memberKey, fixLink: allowEveryLink }),
+		).resolves.toEqual({ ok: false, refusal: "member_not_checked" });
+
+		const { rows } = await sql(`select id from go_live_exclusion where employee_id = $1`, [
+			director.employeeId,
+		]);
+		await expect(
+			liftGoLiveExclusion(db, {
+				organizationId,
+				actorUserId: owner.userId,
+				exclusionId: rows[0].id,
+			}),
+		).resolves.toEqual({ ok: true });
+		expect((await rehearse(memberKey)).member).toMatchObject({ employeeId: director.employeeId });
+	});
+
+	it("rehearses an invitee as a member of their draft team, with no payroll identity yet", async () => {
+		const manager = await seed({ role: "manager", name: "Mia Manager" });
+		await managedBy(manager.employeeId, owner.employeeId);
+		const floor = await createTeam("Floor", manager.employeeId);
+		await workPolicy("Floor hours", { type: "team", teamId: floor });
+		await category();
+		const invitationId = randomUUID();
+		await sql(
+			`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id, created_at)
+			 values ($1, $2, 'ina@invite.test', 'member', 'pending', '2026-07-01T00:00:00Z', $3, now())`,
+			[invitationId, organizationId, owner.userId],
+		);
+		const { rows } = await sql(
+			`insert into employee_invitation_draft
+			 (invitation_id, organization_id, normalized_email, team_id, first_name, last_name, updated_at)
+			 values ($1, $2, 'ina@invite.test', $3, 'Ina', 'Invitee', now()) returning id`,
+			[invitationId, organizationId, floor],
+		);
+		await sql(
+			`insert into payroll_export_format (id, name, version, updated_at)
+			 values ('datev_lohn', 'DATEV Lohn & Gehalt', '2024.1', now()) on conflict (id) do nothing`,
+		);
+		await sql(
+			`insert into payroll_export_config (organization_id, format_id, config, created_by, updated_at)
+			 values ($1, 'datev_lohn', $2::jsonb, $3, now())`,
+			[
+				organizationId,
+				JSON.stringify({
+					mandantennummer: "12345",
+					beraternummer: "1234567",
+					includeZeroHours: false,
+				}),
+				owner.userId,
+			],
+		);
+
+		const rehearsal = await rehearse(`invitee:${rows[0].id}`);
+
+		expect(rehearsal.member).toMatchObject({ kind: "invitee", displayName: "Ina Invitee" });
+		expect(rehearsal.workPolicy).toMatchObject({ status: "resolved", policyName: "Floor hours" });
+		expect(kind(rehearsal, "absence").status).toBe("routed");
+		expect(approverIdsOf(kind(rehearsal, "absence"))).toEqual([manager.employeeId]);
+		expect(rehearsal.payroll?.prerequisites).toMatchObject({
+			employmentTerms: "not-applicable",
+			personnelIdentifier: { status: "not-applicable" },
+		});
 	});
 
 	it("leaves no new rows in any table: no work records, approvals, notifications, deliveries or audit entries", async () => {

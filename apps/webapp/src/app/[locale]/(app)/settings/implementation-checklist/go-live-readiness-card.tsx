@@ -47,8 +47,8 @@ export function GoLiveReadinessCard({ goLive }: { goLive: GoLiveReadinessView })
 				</CardTitle>
 				<CardDescription>
 					{t(
-						"settings.implementationChecklist.goLive.description",
-						"Worked out from the mandatory go-live checks for everyone on the current roster each time you open this page.",
+						"settings.implementationChecklist.goLive.groupDescription",
+						"Worked out from the mandatory go-live checks for everyone in the go-live group each time you open this page.",
 					)}
 				</CardDescription>
 			</CardHeader>

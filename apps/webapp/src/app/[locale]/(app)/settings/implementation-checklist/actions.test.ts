@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
 		organization: vi.fn(),
 	},
 	runGoLiveChecks: vi.fn(),
+	loadGoLiveGroupSettings: vi.fn(),
 	loadFirstWorkflowEvidence: vi.fn(),
 	computeConfirmationFingerprint: vi.fn(),
 	confirm: vi.fn(),
@@ -59,6 +60,10 @@ vi.mock("@/lib/implementation-checklist/go-live/run", () => ({
 		memberCount: null,
 		group: null,
 	}),
+}));
+
+vi.mock("@/lib/implementation-checklist/go-live/group-settings", () => ({
+	loadGoLiveGroupSettings: mocks.loadGoLiveGroupSettings,
 }));
 
 vi.mock("@/lib/implementation-checklist/go-live/first-workflows-evidence", () => ({
@@ -166,6 +171,12 @@ const passingWorkPolicyCheck = {
 	checkedMemberCount: 3,
 };
 
+const goLiveGroupSettings = {
+	teams: [{ id: "team-1", name: "Warehouse" }],
+	chosenTeamIds: ["team-1"],
+	exclusions: [],
+};
+
 const goLiveGroup = {
 	members: [
 		{ kind: "employee", employeeId: "employee-1", primaryTeamId: null, displayName: "Ada" },
@@ -199,6 +210,8 @@ describe("implementation checklist actions", () => {
 			personnelFilesEnabled: false,
 			deletedAt: null,
 		});
+		mocks.loadGoLiveGroupSettings.mockReset();
+		mocks.loadGoLiveGroupSettings.mockResolvedValue(goLiveGroupSettings);
 		mocks.runGoLiveChecks.mockReset();
 		mocks.runGoLiveChecks.mockResolvedValue({
 			results: [passingWorkPolicyCheck],
@@ -424,9 +437,15 @@ describe("implementation checklist actions", () => {
 			checkedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
 			timezone: "Europe/Berlin",
 			memberCount: 3,
+			group: goLiveGroupSettings,
 			// The members checked are who a go-live rehearsal can be run for (#1517).
 			rehearsalCandidates: [{ key: "employee:employee-1", displayName: "Ada", invited: false }],
 		});
+		expect(mocks.loadGoLiveGroupSettings).toHaveBeenCalledWith(
+			expect.anything(),
+			"org-active",
+			expect.objectContaining({ timezone: "Europe/Berlin" }),
+		);
 		expect(mocks.findFirst.workPolicy).not.toHaveBeenCalled();
 		expect(mocks.findFirst.workPolicyAssignment).not.toHaveBeenCalled();
 	});
@@ -445,6 +464,16 @@ describe("implementation checklist actions", () => {
 		expect(result.data.items.find((item) => item.id === "work-policies")?.status).toBe(
 			"unavailable",
 		);
+	});
+
+	it("leaves the group settings out, but keeps the checks, when they can't be loaded", async () => {
+		mocks.loadGoLiveGroupSettings.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getImplementationChecklist();
+
+		if (!result.success) throw new Error(result.error);
+		expect(result.data.goLive.group).toBeNull();
+		expect(result.data.goLive.readiness).toEqual({ status: "ready", warnings: [] });
 	});
 
 	it("never runs go-live checks for a viewer without org-admin settings access", async () => {
