@@ -40,22 +40,24 @@ export const ENTERPRISE_IDENTITY_PROVIDER_PRESETS: Record<
 	"microsoft-entra": {
 		id: "microsoft-entra",
 		name: "Microsoft Entra ID",
-		description: "Use Microsoft Entra ID for enterprise SSO and optional provisioning.",
+		description:
+			"Use Microsoft Entra ID for enterprise SSO and optional provisioning.",
 		supportedProtocols: ["oidc", "saml"],
 		defaultProtocol: "oidc",
 		issuerPlaceholder: "https://login.microsoftonline.com/{tenant-id}/v2.0",
 		domainHelp: "Use the verified email domain for the Entra tenant.",
 		setupHints: [
-			"Register an enterprise application in Entra ID.",
+			"Register a single-tenant Web application under Entra ID → App registrations.",
 			"Use the Z8 redirect URI for the selected protocol.",
-			"Grant admin consent before running the SSO test.",
+			"Check tenant consent policies with your Entra administrator before pilot sign-in.",
 		],
 		defaultOidcScopes: ["openid", "email", "profile"],
 	},
 	"google-workspace": {
 		id: "google-workspace",
 		name: "Google Workspace",
-		description: "Use Google Workspace OIDC for SSO and optional directory sync.",
+		description:
+			"Use Google Workspace OIDC for SSO and optional directory sync.",
 		supportedProtocols: ["oidc"],
 		defaultProtocol: "oidc",
 		issuerPlaceholder: "https://accounts.google.com",
@@ -70,11 +72,13 @@ export const ENTERPRISE_IDENTITY_PROVIDER_PRESETS: Record<
 	generic: {
 		id: "generic",
 		name: "Generic SAML/OIDC",
-		description: "Use any standards-compliant OIDC or SAML 2.0 identity provider.",
+		description:
+			"Use any standards-compliant OIDC or SAML 2.0 identity provider.",
 		supportedProtocols: ["oidc", "saml"],
 		defaultProtocol: "oidc",
 		issuerPlaceholder: "https://idp.example.com",
-		domainHelp: "Use the corporate email domain controlled by this identity provider.",
+		domainHelp:
+			"Use the corporate email domain controlled by this identity provider.",
 		setupHints: [
 			"Confirm the provider supports OIDC authorization code flow or SAML 2.0.",
 			"Use SHA-256 or stronger signing algorithms.",
@@ -86,5 +90,9 @@ export const ENTERPRISE_IDENTITY_PROVIDER_PRESETS: Record<
 
 export function getEnterpriseIdentityPreset(id: string | null | undefined) {
 	if (!id) return null;
-	return ENTERPRISE_IDENTITY_PROVIDER_PRESETS[id as EnterpriseIdentityProviderPresetId] ?? null;
+	return (
+		ENTERPRISE_IDENTITY_PROVIDER_PRESETS[
+			id as EnterpriseIdentityProviderPresetId
+		] ?? null
+	);
 }

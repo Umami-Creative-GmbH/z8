@@ -243,6 +243,7 @@ function configuredSetup(
 function renderWizard(initialSetup = setupResponse()) {
 	return render(
 		<IdentitySetupWizard
+			callbackBaseUrl="https://acme.z8.test"
 			initialSetup={initialSetup}
 			organizationId="org_123"
 		/>,
@@ -452,8 +453,53 @@ describe("IdentitySetupWizard behavior", () => {
 		expect(screen.queryByText("/api/auth/sso/callback")).toBeNull();
 	});
 
-	it("records a passed live SSO test", async () => {
+	it("shares the Entra guide and derives the issuer using the organization's callback", async () => {
+		renderWizard(
+			configuredSetup({
+				provider: {
+					preset: "microsoft-entra",
+					protocol: "oidc",
+					providerId: "acme-entra",
+				},
+			}),
+		);
+		expect(screen.getByText("Set up Microsoft Entra ID")).toBeTruthy();
+		expect(
+			screen.getByText("https://acme.z8.test/api/auth/sso/callback"),
+		).toBeTruthy();
+		expect(
+			screen.queryByText("https://example.test/api/auth/sso/callback"),
+		).toBeNull();
+		setInput("Directory (tenant) ID", "11111111-2222-3333-4444-555555555555");
+		expect(screen.getByLabelText("Aussteller")).toHaveProperty(
+			"value",
+			"https://login.microsoftonline.com/11111111-2222-3333-4444-555555555555/v2.0",
+		);
+		setInput("Client-ID", "entra-client");
+		setInput("Client-Geheimnis", "entra-secret");
+		fireEvent.click(
+			screen.getByRole("button", { name: "SSO-Anbieter registrieren" }),
+		);
+		await waitFor(() =>
+			expect(
+				registerEnterpriseIdentitySSOProviderActionMock,
+			).toHaveBeenCalledWith(
+				expect.objectContaining({
+					providerId: "acme-entra",
+					issuer:
+						"https://login.microsoftonline.com/11111111-2222-3333-4444-555555555555/v2.0",
+					clientId: "entra-client",
+					clientSecret: "entra-secret",
+				}),
+			),
+		);
+	});
+
+	it("records an administrator-reported successful sign-in", async () => {
 		renderWizard(configuredSetup());
+		expect(
+			screen.getByText(/This is an administrator-reported sign-in result/),
+		).toBeTruthy();
 
 		setInput("Testbenutzer-E-Mail", "admin@example.com");
 		fireEvent.click(screen.getByRole("button", { name: "Erfolg erfassen" }));
@@ -535,6 +581,7 @@ describe("IdentitySetupWizard behavior", () => {
 	it("guards activation until readiness checks pass", () => {
 		const { rerender } = render(
 			<IdentitySetupWizard
+				callbackBaseUrl="https://acme.z8.test"
 				initialSetup={configuredSetup()}
 				organizationId="org_123"
 			/>,
@@ -548,6 +595,7 @@ describe("IdentitySetupWizard behavior", () => {
 
 		rerender(
 			<IdentitySetupWizard
+				callbackBaseUrl="https://acme.z8.test"
 				key="ready"
 				initialSetup={configuredSetup({
 					domain: {

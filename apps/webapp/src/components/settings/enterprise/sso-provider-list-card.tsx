@@ -39,7 +39,8 @@ interface SsoProviderListCardProps {
 
 function getProviderDisplayName(issuer: string) {
 	if (issuer.includes("okta")) return "Okta";
-	if (issuer.includes("azure") || issuer.includes("microsoft")) return "Microsoft Entra ID";
+	if (issuer.includes("azure") || issuer.includes("microsoft"))
+		return "Microsoft Entra ID";
 	if (issuer.includes("google")) return "Google Workspace";
 	if (issuer.includes("auth0")) return "Auth0";
 	if (issuer.includes("onelogin")) return "OneLogin";
@@ -63,35 +64,59 @@ export function SsoProviderListCard({
 				<TableRow>
 					<TableHead>{t("settings.enterprise.provider", "Provider")}</TableHead>
 					<TableHead>{t("settings.enterprise.domain", "Domain")}</TableHead>
-					<TableHead>{t("common.status", "Status")}</TableHead>
-					<TableHead>{t("settings.enterprise.sso.issuerUrl", "Issuer URL")}</TableHead>
-					<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
+					<TableHead>
+						{t(
+							"settings.enterprise.sso.guide.domainStatus",
+							"Domain verification",
+						)}
+					</TableHead>
+					<TableHead>
+						{t("settings.enterprise.sso.issuerUrl", "Issuer URL")}
+					</TableHead>
+					<TableHead className="text-right">
+						{t("common.actions", "Actions")}
+					</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
 				{providers.map((provider) => {
 					const dnsToken =
-						tokenByProviderId[provider.providerId] ?? provider.domainVerificationToken;
+						tokenByProviderId[provider.providerId] ??
+						provider.domainVerificationToken;
 
 					return (
 						<TableRow key={provider.id}>
-							<TableCell className="font-medium">{getProviderDisplayName(provider.issuer)}</TableCell>
+							<TableCell className="font-medium">
+								{getProviderDisplayName(provider.issuer)}
+								<p className="mt-1 max-w-56 whitespace-normal break-all text-xs font-normal text-muted-foreground">
+									<span className="sr-only">
+										{t("settings.enterprise.sso.providerId", "Provider ID")}:{" "}
+									</span>
+									<code translate="no">{provider.providerId}</code>
+								</p>
+							</TableCell>
 							<TableCell>{provider.domain}</TableCell>
 							<TableCell>
 								{provider.domainVerified ? (
 									<Badge variant="default" className="bg-green-600">
 										<IconCheck className="mr-1 size-3" />
-										{t("settings.enterprise.sso.verified", "Verified")}
+										{t(
+											"settings.enterprise.sso.guide.domainVerified",
+											"Domain verified",
+										)}
 									</Badge>
 								) : (
 									<Badge variant="secondary">
 										<IconX className="mr-1 size-3" />
-										{t("common.pending", "Pending")}
+										{t(
+											"settings.enterprise.sso.guide.domainPending",
+											"Domain not verified",
+										)}
 									</Badge>
 								)}
 								{!provider.domainVerified && dnsToken ? (
 									<p className="mt-1 text-xs text-muted-foreground">
-										{t("settings.enterprise.sso.txtToken", "TXT token:")} {" "}
+										{t("settings.enterprise.sso.txtToken", "TXT token:")}{" "}
 										<code className="bg-muted px-1 rounded">{dnsToken}</code>
 									</p>
 								) : null}
@@ -103,7 +128,9 @@ export function SsoProviderListCard({
 									rel="noopener noreferrer"
 									className="flex items-center text-sm text-muted-foreground hover:text-foreground"
 								>
-									<span className="max-w-[200px] truncate">{provider.issuer}</span>
+									<span className="max-w-[200px] truncate">
+										{provider.issuer}
+									</span>
 									<IconExternalLink className="ml-1 size-3" />
 								</a>
 							</TableCell>
@@ -141,7 +168,10 @@ export function SsoProviderListCard({
 										size="sm"
 										onClick={() => onDelete(provider)}
 									>
-										<IconTrash className="size-4 text-destructive" aria-hidden="true" />
+										<IconTrash
+											className="size-4 text-destructive"
+											aria-hidden="true"
+										/>
 									</Button>
 								</div>
 							</TableCell>
