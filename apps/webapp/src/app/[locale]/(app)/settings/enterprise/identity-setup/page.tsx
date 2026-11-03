@@ -65,6 +65,7 @@ async function IdentitySettingsContent() {
 					),
 					panel: (
 						<IdentitySetupWizard
+							callbackBaseUrl={callbackBaseUrl}
 							initialSetup={setup}
 							organizationId={organizationId}
 						/>
