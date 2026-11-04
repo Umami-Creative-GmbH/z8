@@ -28,6 +28,7 @@ import {
 	ReceiveEquipmentForm,
 } from "./equipment-handovers";
 import { EquipmentReadiness } from "./equipment-readiness";
+import { TransferEquipmentForm } from "./equipment-transfer";
 
 export function EquipmentOverview({
 	data,
@@ -83,6 +84,7 @@ type EquipmentScope =
 type HandoverSelection =
 	| { kind: "issue" }
 	| { kind: "receipt"; assignmentId: string }
+	| { kind: "transfer"; assignmentId: string }
 	| null;
 
 function useEquipmentCommands() {
@@ -167,13 +169,25 @@ function equipmentSelection(
 						assignment.id === selection.assignmentId && assignment.canReceive,
 				)
 			: undefined;
+	const selectedTransfer =
+		selection?.kind === "transfer"
+			? data.assignments.find(
+					(assignment) =>
+						assignment.id === selection.assignmentId && assignment.transfer,
+				)
+			: undefined;
 	const unavailableReason =
 		data.canManage && !canIssue
 			? currentEmployee?.former
 				? "former"
 				: "setup"
 			: null;
-	return { canIssue, selectedReceipt, unavailableReason } as const;
+	return {
+		canIssue,
+		selectedReceipt,
+		selectedTransfer,
+		unavailableReason,
+	} as const;
 }
 
 function EquipmentWorkspace({
@@ -196,11 +210,8 @@ function EquipmentWorkspace({
 		submit,
 		router,
 	} = useEquipmentCommands();
-	const { canIssue, selectedReceipt, unavailableReason } = equipmentSelection(
-		data,
-		scope,
-		selection,
-	);
+	const { canIssue, selectedReceipt, selectedTransfer, unavailableReason } =
+		equipmentSelection(data, scope, selection);
 	return (
 		<section
 			className="min-w-0 space-y-4"
@@ -288,12 +299,26 @@ function EquipmentWorkspace({
 					onCancel={() => setSelection(null)}
 				/>
 			) : null}
+			{selectedTransfer ? (
+				<TransferEquipmentForm
+					key={`${selectedTransfer.id}:${selectedTransfer.revision}:${selectedTransfer.transfer?.expectedIssuanceRevision}`}
+					assignment={selectedTransfer}
+					data={data}
+					submit={submit}
+					pending={pending}
+					onCancel={() => setSelection(null)}
+				/>
+			) : null}
 			<EquipmentAssignments
 				data={data}
 				pending={pending || !!selection}
 				onReceive={(assignmentId) => {
 					setFeedback(null);
 					setSelection({ kind: "receipt", assignmentId });
+				}}
+				onTransfer={(assignmentId) => {
+					setFeedback(null);
+					setSelection({ kind: "transfer", assignmentId });
 				}}
 			/>
 			<IssuanceAvailability reason={unavailableReason} />
@@ -305,10 +330,12 @@ function EquipmentAssignments({
 	data,
 	pending,
 	onReceive,
+	onTransfer,
 }: {
 	data: EquipmentView;
 	pending: boolean;
 	onReceive: (assignmentId: string) => void;
+	onTransfer: (assignmentId: string) => void;
 }) {
 	const { t } = useTranslate();
 	if (!data.assignments.length)
@@ -329,15 +356,31 @@ function EquipmentAssignments({
 					timezone={data.timezone}
 					staff={data.canManage}
 					receiptAction={
-						assignment.canReceive ? (
-							<Button
-								variant="outline"
-								disabled={pending}
-								onClick={() => onReceive(assignment.id)}
-							>
-								{t("settings.equipment.handover.receive", "Record receipt")}
-							</Button>
-						) : null
+						<div className="flex flex-wrap gap-2">
+							{assignment.canReceive ? (
+								<Button
+									variant="outline"
+									disabled={pending}
+									onClick={() => onReceive(assignment.id)}
+								>
+									{t("settings.equipment.handover.receive", "Record receipt")}
+								</Button>
+							) : null}
+							{data.canManage &&
+							assignment.transfer &&
+							data.employees.some(
+								(employee) =>
+									!employee.former && employee.id !== assignment.employeeId,
+							) ? (
+								<Button
+									variant="outline"
+									disabled={pending}
+									onClick={() => onTransfer(assignment.id)}
+								>
+									{t("settings.equipment.transfer.title", "Transfer equipment")}
+								</Button>
+							) : null}
+						</div>
 					}
 				/>
 			))}
