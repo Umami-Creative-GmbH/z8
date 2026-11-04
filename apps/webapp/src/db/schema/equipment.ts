@@ -15,7 +15,10 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
-import { employeeEmploymentPeriod } from "./employee-lifecycle";
+import {
+	employeeDeparture,
+	employeeEmploymentPeriod,
+} from "./employee-lifecycle";
 import { employee } from "./organization";
 
 export const equipmentPolicy = pgTable(
@@ -192,11 +195,18 @@ export const equipmentAssignment = pgTable(
 		employmentPeriodId: uuid("employment_period_id"),
 		returnRequired: boolean("return_required").notNull(),
 		explicitDeadline: date("explicit_deadline"),
+		departureDeadline: date("departure_deadline"),
+		departureId: uuid("departure_id"),
 		received: boolean("received").notNull().default(false),
 		revision: integer("revision").notNull().default(1),
 	},
 	(t) => [
 		unique("equipment_assignment_id_org_unique").on(t.id, t.organizationId),
+		foreignKey({
+			name: "equipment_assignment_departure_org_fk",
+			columns: [t.departureId, t.organizationId],
+			foreignColumns: [employeeDeparture.id, employeeDeparture.organizationId],
+		}),
 		foreignKey({
 			name: "equipment_assignment_type_org_fk",
 			columns: [t.typeId, t.organizationId],
@@ -246,7 +256,7 @@ export const equipmentAssignment = pgTable(
 		}),
 		check(
 			"equipment_assignment_deadline_check",
-			sql`${t.returnRequired} or ${t.explicitDeadline} is null`,
+			sql`${t.returnRequired} or (${t.explicitDeadline} is null and ${t.departureDeadline} is null)`,
 		),
 		check("equipment_assignment_revision_positive", sql`${t.revision} > 0`),
 	],

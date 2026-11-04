@@ -4,7 +4,11 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db as database } from "@/db";
 import { organization, user } from "@/db/auth-schema";
-import { employee, employeeEmploymentPeriod } from "@/db/schema";
+import {
+	employee,
+	employeeDeparture,
+	employeeEmploymentPeriod,
+} from "@/db/schema";
 import {
 	equipmentAssignment,
 	equipmentCommand,
@@ -36,6 +40,10 @@ import {
 	type EquipmentView,
 	equipmentChangeSchema,
 } from "./contracts";
+import {
+	effectiveEquipmentDeadline,
+	equipmentDepartureDeadline,
+} from "./deadlines";
 import { applyItemReadiness, readItemReadiness } from "./readiness";
 import {
 	type EquipmentTransaction,
@@ -560,6 +568,19 @@ async function performHandover(
 					eq(employeeEmploymentPeriod.status, "open"),
 				),
 			);
+		const [departure] = period
+			? await tx
+					.select()
+					.from(employeeDeparture)
+					.where(
+						and(
+							eq(employeeDeparture.organizationId, actor.organizationId),
+							eq(employeeDeparture.employeeId, change.employeeId),
+							eq(employeeDeparture.employmentPeriodId, period.id),
+							eq(employeeDeparture.status, "pending"),
+						),
+					)
+			: [];
 		const [assignment] = await tx
 			.insert(equipmentAssignment)
 			.values({
@@ -571,6 +592,15 @@ async function performHandover(
 				employmentPeriodId: period?.id ?? null,
 				returnRequired: change.returnRequired,
 				explicitDeadline: change.explicitDeadline ?? null,
+				departureDeadline:
+					change.returnRequired && departure
+						? equipmentDepartureDeadline(
+								instantFromDate(departure.cutoffAt),
+								departure.timezone,
+								departure.mode,
+							)
+						: null,
+				departureId: change.returnRequired ? (departure?.id ?? null) : null,
 			})
 			.returning();
 		await tx.insert(equipmentHandover).values({
@@ -959,13 +989,15 @@ export async function readEquipment(
 					assignment.exceptionReceivedQuantity
 				: 0;
 			const outstanding = outstandingQuantity > 0;
+			const effectiveDeadline = effectiveEquipmentDeadline(
+				assignment.explicitDeadline,
+				assignment.departureDeadline,
+			);
 			const overdue =
 				outstanding &&
-				!!assignment.explicitDeadline &&
-				Temporal.PlainDate.compare(
-					parsePlainDate(assignment.explicitDeadline),
-					today,
-				) < 0;
+				!!effectiveDeadline &&
+				Temporal.PlainDate.compare(parsePlainDate(effectiveDeadline), today) <
+					0;
 			if (
 				(filters.holderId && holder.id !== filters.holderId) ||
 				(filters.typeId && type.id !== filters.typeId) ||
@@ -1007,6 +1039,10 @@ export async function readEquipment(
 				former: holder.former,
 				returnRequired: assignment.returnRequired,
 				explicitDeadline: assignment.explicitDeadline,
+				departureDeadline: assignment.departureDeadline,
+				effectiveDeadline,
+				employmentPeriodId: assignment.employmentPeriodId,
+				departureId: assignment.departureId,
 				outstanding,
 				overdue,
 				held: !assignment.received,

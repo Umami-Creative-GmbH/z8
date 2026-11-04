@@ -18,6 +18,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { lockDrivingLicenceOrganization } from "@/lib/organization/driving-licence/checks";
 import { endDrivingLicenceEmployment } from "@/lib/organization/driving-licence/lifecycle";
+import { endEquipmentEmployment } from "@/lib/organization/equipment/lifecycle";
 import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
 import { cancelDocumentRequestsForDeparture } from "@/lib/personnel-file/document-request-store";
 import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/officer-grant-store";
@@ -124,6 +125,13 @@ export async function executeDepartureInTransaction(
 		cutoff,
 		now,
 	);
+	await endEquipmentEmployment(tx, {
+		...identity,
+		actorUserId: departure.createdBy,
+		cutoff,
+		timezone: departure.timezone,
+		mode: departure.mode,
+	});
 	await tx.execute(sql`
 		UPDATE employee_departure
 		SET status = 'effective', effective_at = cutoff_at, processed_at = ${nowDate}, updated_at = ${nowDate}

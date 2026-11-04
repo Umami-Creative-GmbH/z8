@@ -368,6 +368,27 @@ other officers that *name* the departed employee in their scope are untouched,
 so that employee's last reports can still be reimbursed and their personnel
 file stays manageable (the departed employee keeps no access to it).
 
+## Equipment returns
+
+The departure preview lists outstanding required equipment, quantities and effective
+return dates. The server recomputes the equipment state when saving. Required returns
+are due by the last working day in the departure's frozen organization timezone,
+unless an explicit deadline is earlier. Moving or cancelling the schedule changes
+only its derived deadline; explicit agreements and recorded handovers remain.
+
+At the cutoff the employee's equipment officer grant ends and their teams are
+captured for authorized follow-up before roster cleanup. Currently authorized
+officers can continue receiving former employees' equipment within that scope;
+owners and admins remain the fallback. **Equipment → Former employees / Outstanding
+returns** shows unresolved returns. Lost or waived quantities close the obligation
+without claiming physical receipt, and recovery never settles the same quantity twice.
+
+A missing item never delays employment, access or paid-seat ending. Physical key or
+fob receipt does not restore its credential. Rehire preserves old equipment
+obligations and their original employment lineage, and does not restore a grant.
+
+See the [equipment implementation reference](equipment-return-tracking.md#scheduled-departure-implementation-1545).
+
 ## Driving licence control
 
 Driving authorizations, including suspended classes and person-wide suspension
