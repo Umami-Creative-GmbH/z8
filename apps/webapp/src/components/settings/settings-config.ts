@@ -334,6 +334,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "organization",
 	},
 	{
+		id: "equipment",
+		titleKey: "settings.equipment.title",
+		titleDefault: "Equipment",
+		descriptionKey: "settings.equipment.description",
+		descriptionDefault: "Configure equipment types, item identities and record retention.",
+		href: "/settings/equipment",
+		icon: "briefcase",
+		minimumTier: "orgAdmin",
+		group: "organization",
+	},
+	{
 		id: "personnel-files",
 		titleKey: "settings.personnelFiles.settings.title",
 		titleDefault: "Personnel Files",

@@ -336,6 +336,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.vehicleUse.title",
 		"settings.vehicles.description",
 		"settings.vehicles.title",
+		"settings.equipment.title",
+		"settings.equipment.description",
 		"settings.webhooks.description",
 		"settings.webhooks.title",
 		"settings.wellness.description",

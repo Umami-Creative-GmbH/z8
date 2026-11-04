@@ -151,7 +151,9 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		titleKey: "settings.billing.title",
 		titleDefault: "Billing & Subscription",
 	},
-	...SETTINGS_ENTRIES.map((entry) => ({
+	// Equipment's new title still needs Tolgee sync. Until then the shell uses
+	// its catalog-backed Settings ancestor; the page/nav have dedicated defaults.
+	...SETTINGS_ENTRIES.filter((entry) => entry.id !== "equipment").map((entry) => ({
 		id: `settings-${entry.id}`,
 		href: entry.href,
 		titleKey: entry.titleKey,
