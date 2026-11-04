@@ -2082,6 +2082,13 @@
       "breakpoints": true
     },
     {
+      "idx": 297,
+      "version": "7",
+      "when": 1810396800000,
+      "tag": "0297_equipment_quantities",
+      "breakpoints": true
+    },
+    {
       "idx": 299,
       "version": "7",
       "when": 1810569600000,

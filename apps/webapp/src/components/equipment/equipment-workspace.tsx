@@ -157,7 +157,8 @@ function equipmentSelection(
 	const canIssue =
 		data.canManage &&
 		data.policyConfigured &&
-		data.availableItems.length > 0 &&
+		(data.availableItems.length > 0 ||
+			data.availableQuantityTypes.length > 0) &&
 		(scope.kind !== "employee" || currentEmployee?.former === false);
 	const selectedReceipt =
 		selection?.kind === "receipt"
@@ -266,7 +267,7 @@ function EquipmentWorkspace({
 			) : null}
 			{selection?.kind === "issue" && canIssue ? (
 				<IssueEquipmentForm
-					key={data.availableItems
+					key={[...data.availableItems, ...data.availableQuantityTypes]
 						.map((item) => `${item.id}:${item.revision}`)
 						.join(",")}
 					data={data}
@@ -359,7 +360,7 @@ function IssuanceAvailability({
 					)
 				: t(
 						"settings.equipment.custody.noItems",
-						"To issue equipment, configure retention and register an available individual item in Equipment settings.",
+						"To issue equipment, configure retention and add a quantity type or available individual item in Equipment settings.",
 					)}
 		</p>
 	);
@@ -483,7 +484,11 @@ function EquipmentAssignmentCard({
 			<div className="flex flex-wrap justify-between gap-3">
 				<div className="min-w-0 space-y-1">
 					<h3 className="break-words font-semibold">
-						<span translate="no">{assignment.identifier}</span> ·{" "}
+						{assignment.trackingMode === "individual" ? (
+							<>
+								<span translate="no">{assignment.identifier}</span> ·{" "}
+							</>
+						) : null}
 						{assignment.typeName}
 					</h3>
 					<p className="break-words text-sm">
@@ -505,22 +510,41 @@ function EquipmentAssignmentCard({
 					) : null}
 				</div>
 				<div className="flex flex-wrap items-start gap-2">
-					<Badge variant={assignment.overdue ? "destructive" : "secondary"}>
-						{assignment.receipt
-							? t("settings.equipment.custody.received", "Physically received")
-							: assignment.overdue
-								? t("settings.equipment.custody.overdue", "Overdue")
-								: assignment.outstanding
-									? t(
-											"settings.equipment.custody.outstanding",
-											"Outstanding return",
-										)
-									: t("settings.equipment.custody.keep", "Issued to keep")}
-					</Badge>
+					<AssignmentStatus assignment={assignment} />
 					{receiptAction}
 				</div>
 			</div>
 			<dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+				<div>
+					<dt className="text-muted-foreground">
+						{t("settings.equipment.custody.issuedQuantity", "Issued quantity")}
+					</dt>
+					<dd className="tabular-nums">
+						{assignment.quantity.toLocaleString(locale)}
+					</dd>
+				</div>
+				<div>
+					<dt className="text-muted-foreground">
+						{t(
+							"settings.equipment.custody.receivedQuantity",
+							"Physically received quantity",
+						)}
+					</dt>
+					<dd className="tabular-nums">
+						{assignment.physicallyReceivedQuantity.toLocaleString(locale)}
+					</dd>
+				</div>
+				<div>
+					<dt className="text-muted-foreground">
+						{t(
+							"settings.equipment.custody.outstandingQuantity",
+							"Outstanding quantity",
+						)}
+					</dt>
+					<dd className="tabular-nums">
+						{assignment.outstandingQuantity.toLocaleString(locale)}
+					</dd>
+				</div>
 				<div>
 					<dt className="text-muted-foreground">
 						{t("settings.equipment.custody.agreement", "Agreed return terms")}
@@ -576,7 +600,8 @@ function EquipmentAssignmentCard({
 					</dd>
 				</div>
 			</dl>
-			{assignment.receipt?.condition === "damaged" ? (
+			{assignment.trackingMode === "individual" &&
+			assignment.receipt?.condition === "damaged" ? (
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.equipment.custody.damageHelp",
@@ -594,18 +619,39 @@ function EquipmentAssignmentCard({
 						timezone={timezone}
 						kind="issue"
 					/>
-					{assignment.receipt ? (
+					{assignment.receipts.map((receipt) => (
 						<HandoverEvidence
-							handover={assignment.receipt}
+							key={receipt.id}
+							handover={receipt}
 							timezone={timezone}
 							kind="receipt"
 						/>
-					) : null}
+					))}
 				</ol>
 			</details>
 		</article>
 	);
 }
+function AssignmentStatus({
+	assignment,
+}: {
+	assignment: EquipmentAssignmentView;
+}) {
+	const { t } = useTranslate();
+	const label = !assignment.held
+		? t("settings.equipment.custody.received", "Physically received")
+		: assignment.overdue
+			? t("settings.equipment.custody.overdue", "Overdue")
+			: assignment.outstanding
+				? t("settings.equipment.custody.outstanding", "Outstanding return")
+				: t("settings.equipment.custody.keep", "Issued to keep");
+	return (
+		<Badge variant={assignment.overdue ? "destructive" : "secondary"}>
+			{label}
+		</Badge>
+	);
+}
+
 function HandoverEvidence({
 	handover,
 	timezone,
@@ -630,6 +676,10 @@ function HandoverEvidence({
 					})}
 				</time>{" "}
 				· {conditionLabel(handover.condition, t)}
+			</p>
+			<p className="tabular-nums">
+				{t("settings.equipment.handover.quantity", "Quantity")}:{" "}
+				{handover.quantity.toLocaleString(locale)}
 			</p>
 			<p className="text-muted-foreground">
 				{t("settings.equipment.custody.recordedBy", "Recorded by")}{" "}

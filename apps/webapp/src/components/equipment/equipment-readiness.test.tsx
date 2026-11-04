@@ -56,6 +56,7 @@ const view: EquipmentView = {
 	types: [],
 	assignments: [],
 	availableItems: [],
+	availableQuantityTypes: [],
 	readinessItems: [damaged],
 };
 it("confirms explicit clearance, keeps uncertain retries identical and shows stale conflicts with reload guidance", async () => {

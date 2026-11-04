@@ -116,6 +116,11 @@ const handoverFields = {
 	condition: equipmentConditionSchema,
 	notes: z.string().trim().max(4000).optional(),
 };
+export const equipmentQuantitySchema = z
+	.number()
+	.int()
+	.positive()
+	.max(2147483647);
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
 		kind: z.literal("clear_item"),
@@ -134,6 +139,21 @@ export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 		...request,
 		...revision,
 		itemId: z.uuid(),
+	}),
+	z.strictObject({
+		kind: z.literal("issue_quantity"),
+		...handoverFields,
+		typeId: z.uuid(),
+		employeeId: z.uuid(),
+		quantity: equipmentQuantitySchema,
+		returnRequired: z.boolean(),
+		explicitDeadline: calendarDate.nullable().optional(),
+	}),
+	z.strictObject({
+		kind: z.literal("receive_quantity"),
+		...handoverFields,
+		assignmentId: z.uuid(),
+		quantity: equipmentQuantitySchema,
 	}),
 	z.strictObject({
 		kind: z.literal("issue_individual"),
@@ -160,6 +180,8 @@ export type EquipmentRefusal =
 	| "readiness_unchanged"
 	| "self_receipt"
 	| "already_received"
+	| "quantity_required"
+	| "excess_quantity"
 	| "future_date"
 	| "conflicting_history";
 export type EquipmentOutcome =
@@ -174,6 +196,8 @@ export const equipmentFiltersSchema = z.strictObject({
 });
 export type EquipmentFilters = z.infer<typeof equipmentFiltersSchema>;
 export interface EquipmentHandoverView {
+	id: string;
+	quantity: number;
 	actualDate: string;
 	condition: EquipmentCondition;
 	notes: string | null;
@@ -183,7 +207,11 @@ export interface EquipmentHandoverView {
 }
 export interface EquipmentAssignmentView {
 	id: string;
-	itemId: string;
+	itemId: string | null;
+	trackingMode: "individual" | "quantity";
+	quantity: number;
+	physicallyReceivedQuantity: number;
+	outstandingQuantity: number;
 	typeId: string;
 	typeName: string;
 	identifier: string;
@@ -198,7 +226,9 @@ export interface EquipmentAssignmentView {
 	revision: number;
 	canReceive: boolean;
 	issue: EquipmentHandoverView;
+	/** Latest physical receipt, retained for individual consumers. */
 	receipt: EquipmentHandoverView | null;
+	receipts: EquipmentHandoverView[];
 }
 export interface EquipmentReadinessEventView {
 	id: string;
@@ -221,6 +251,12 @@ export interface EquipmentView {
 	timezone: string;
 	today: string;
 	assignments: EquipmentAssignmentView[];
+	availableQuantityTypes: {
+		id: string;
+		name: string;
+		defaultReturnRequired: boolean;
+		revision: number;
+	}[];
 	availableItems: {
 		id: string;
 		identifier: string;
