@@ -1,6 +1,5 @@
 import { db } from "@/db";
 import { env } from "@/env";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	getRenderAuthContext as getAuthContext,
 	getRenderSettingsAccessTier as getCurrentSettingsAccessTier,
@@ -16,6 +15,7 @@ import {
 	showsDrivingLicenceNavigation,
 	showsDrivingLicenceSettings,
 } from "@/lib/organization/driving-licence/visibility-rules";
+import { readEquipmentNavigation } from "@/lib/organization/equipment/access";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { resolvePersonnelFileAccessForIdentity } from "@/lib/personnel-file/access-store";
@@ -149,6 +149,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		showTeamPresenceNav,
 		drivingLicenceVisibility,
 		managesProject,
+		equipmentAccess,
 	] = await Promise.all([
 		capability(
 			showWorksCouncilNav && featureFlags.worksCouncilEnabled && identity
@@ -219,6 +220,12 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 				: false,
 			false,
 		),
+		capability(
+			identity
+				? readEquipmentNavigation(db, identity)
+				: { personal: false, staff: false },
+			{ personal: false, staff: false },
+		),
 	]);
 	const showFinanceNav = financeActor?.canRead ?? false;
 	const showPersonnelFilesNav =
@@ -248,12 +255,6 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		authContext,
 		canCreateOrganizations,
 		capabilitiesUnavailable,
-		equipmentAccess: {
-			personal: !!identity?.employee,
-			staff:
-				!!identity &&
-				(hasOrganizationRole(identity.membershipRole, "owner") ||
-					hasOrganizationRole(identity.membershipRole, "admin")),
-		},
+		equipmentAccess,
 	};
 }

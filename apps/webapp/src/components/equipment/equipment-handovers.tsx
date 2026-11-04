@@ -186,6 +186,9 @@ function useIssueEquipmentForm({
 		defaultValues: {
 			...handoverDefaults,
 			itemId: "",
+			typeId: "",
+			identifier: "",
+			serialNumber: "",
 			employeeId: employeeId ?? "",
 			returnRequired: true,
 			explicitDeadline: "",
@@ -198,12 +201,22 @@ function useIssueEquipmentForm({
 			const item = data.availableItems.find(
 				(candidate) => candidate.id === value.itemId,
 			);
-			if (!item) return;
+			if (!item && value.itemId !== "new") return;
 			const payload = {
-				kind: "issue_individual",
-				itemId: item.id,
+				...(!item
+					? {
+							kind: "register_and_issue_individual" as const,
+							typeId: value.typeId,
+							identifier: value.identifier,
+							serialNumber: value.serialNumber,
+							expectedRevision: 0 as const,
+						}
+					: {
+							kind: "issue_individual" as const,
+							itemId: item.id,
+							expectedRevision: item.revision,
+						}),
 				employeeId: value.employeeId,
-				expectedRevision: item.revision,
 				actualDate: value.actualDate,
 				condition: value.condition,
 				notes: value.notes,
@@ -302,6 +315,14 @@ export function IssueEquipmentForm({
 											"Select an available item…",
 										)}
 									</option>
+									{data.registrationTypes.length ? (
+										<option value="new">
+											{t(
+												"settings.equipment.handover.registerNew",
+												"Register a new item during issuance",
+											)}
+										</option>
+									) : null}
 									{data.availableItems.map((item) => (
 										<option key={item.id} value={item.id}>
 											{item.identifier} · {item.typeName}
@@ -388,6 +409,13 @@ export function IssueEquipmentForm({
 					)}
 				</form.Field>
 			</fieldset>
+			<form.Subscribe selector={(state) => state.values.itemId}>
+				{(itemId) =>
+					itemId === "new" ? (
+						<RegistrationFields form={form} data={data} pending={pending} />
+					) : null
+				}
+			</form.Subscribe>
 			<ReturnAgreementFields form={form} pending={pending} />
 			<form.Field name="notes">
 				{(field) => <NotesField field={field} pending={pending} t={t} />}
@@ -408,6 +436,143 @@ export function IssueEquipmentForm({
 				</Button>
 			</div>
 		</form>
+	);
+}
+
+function RegistrationFields({
+	form,
+	data,
+	pending,
+}: {
+	form: ReturnType<typeof useIssueEquipmentForm>["form"];
+	data: EquipmentView;
+	pending: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<fieldset
+			disabled={pending}
+			className="grid gap-4 rounded-md border p-3 sm:grid-cols-2"
+		>
+			<legend className="px-1 text-sm font-medium">
+				{t("settings.equipment.handover.newIdentity", "New item identity")}
+			</legend>
+			<form.Field
+				name="typeId"
+				validators={{
+					onSubmit: ({ value }) =>
+						!value
+							? t(
+									"settings.equipment.handover.typeRequired",
+									"Select an equipment type.",
+								)
+							: undefined,
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel required>
+							{t("settings.equipment.handover.type", "Equipment type")}
+						</TFormLabel>
+						<TFormControl hasError={field.state.meta.errors.length > 0}>
+							<select
+								aria-label={t(
+									"settings.equipment.handover.type",
+									"Equipment type",
+								)}
+								className={equipmentSelectClass}
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(e) => {
+									field.handleChange(e.target.value);
+									const type = data.registrationTypes.find(
+										(type) => type.id === e.target.value,
+									);
+									if (type) {
+										form.setFieldValue(
+											"returnRequired",
+											type.defaultReturnRequired,
+										);
+										form.setFieldValue("explicitDeadline", "");
+									}
+								}}
+							>
+								<option value="">
+									{t(
+										"settings.equipment.handover.selectType",
+										"Select an equipment type…",
+									)}
+								</option>
+								{data.registrationTypes.map((type) => (
+									<option key={type.id} value={type.id}>
+										{type.name}
+									</option>
+								))}
+							</select>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+			<form.Field
+				name="identifier"
+				validators={{
+					onSubmit: ({ value }) =>
+						!value.trim()
+							? t(
+									"settings.equipment.handover.identifierRequired",
+									"Enter an equipment identifier.",
+								)
+							: undefined,
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel required>
+							{t(
+								"settings.equipment.handover.identifier",
+								"Equipment identifier",
+							)}
+						</TFormLabel>
+						<TFormControl hasError={field.state.meta.errors.length > 0}>
+							<Input
+								name={field.name}
+								spellCheck={false}
+								value={field.state.value}
+								maxLength={100}
+								autoComplete="off"
+								onBlur={field.handleBlur}
+								onChange={(e) => field.handleChange(e.target.value)}
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+			<form.Field name="serialNumber">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel>
+							{t(
+								"settings.equipment.handover.serial",
+								"Manufacturer serial number (optional)",
+							)}
+						</TFormLabel>
+						<TFormControl>
+							<Input
+								name={field.name}
+								spellCheck={false}
+								value={field.state.value}
+								maxLength={200}
+								autoComplete="off"
+								onBlur={field.handleBlur}
+								onChange={(e) => field.handleChange(e.target.value)}
+							/>
+						</TFormControl>
+					</TFormItem>
+				)}
+			</form.Field>
+		</fieldset>
 	);
 }
 

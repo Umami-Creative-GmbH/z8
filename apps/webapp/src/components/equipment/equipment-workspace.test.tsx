@@ -42,6 +42,8 @@ afterEach(() => {
 });
 const view: EquipmentView = {
 	canManage: true,
+	canAdminister: true,
+	registrationTypes: [],
 	policyConfigured: true,
 	timezone: "Europe/Berlin",
 	today: "2026-11-05",
@@ -70,6 +72,52 @@ const view: EquipmentView = {
 	],
 	assignments: [],
 };
+it("lets scoped officers register while issuing without offering unrestricted setup", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				canAdminister: false,
+				availableItems: [],
+				registrationTypes: [
+					{ id: view.types[0].id, name: "Laptop", defaultReturnRequired: true },
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	expect(
+		screen.queryByRole("link", {
+			name: "Manage types, item identities and retention",
+		}),
+	).toBeNull();
+	await user.click(screen.getByRole("button", { name: "Issue equipment" }));
+	await user.selectOptions(screen.getByLabelText("Equipment item"), "new");
+	await user.selectOptions(
+		screen.getByLabelText(/Equipment type/),
+		view.types[0].id,
+	);
+	await user.type(screen.getByLabelText(/Equipment identifier/), "L-NEW");
+	await user.selectOptions(
+		screen.getByLabelText("Current employee"),
+		view.employees[0].id,
+	);
+	await user.type(screen.getByLabelText(/Actual handover date/), "2026-11-04");
+	await user.click(screen.getByRole("button", { name: "Record issuance" }));
+	await waitFor(() =>
+		expect(api.change).toHaveBeenCalledWith(
+			expect.objectContaining({
+				kind: "register_and_issue_individual",
+				typeId: view.types[0].id,
+				identifier: "L-NEW",
+				employeeId: view.employees[0].id,
+				expectedRevision: 0,
+			}),
+		),
+	);
+});
 const heldAssignment: EquipmentAssignmentView = {
 	id: "15370000-0000-4000-8000-000000000030",
 	itemId: view.availableItems[0].id,

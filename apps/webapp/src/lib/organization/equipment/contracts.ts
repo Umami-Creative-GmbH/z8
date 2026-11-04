@@ -118,6 +118,17 @@ const handoverFields = {
 };
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
+		kind: z.literal("register_and_issue_individual"),
+		...handoverFields,
+		expectedRevision: z.literal(0),
+		typeId: z.uuid(),
+		identifier: z.string().trim().min(1).max(100),
+		serialNumber: z.string().trim().max(200).optional(),
+		employeeId: z.uuid(),
+		returnRequired: z.boolean(),
+		explicitDeadline: calendarDate.nullable().optional(),
+	}),
+	z.strictObject({
 		kind: z.literal("issue_individual"),
 		...handoverFields,
 		itemId: z.uuid(),
@@ -181,6 +192,12 @@ export interface EquipmentAssignmentView {
 }
 export interface EquipmentView {
 	canManage: boolean;
+	canAdminister: boolean;
+	registrationTypes: {
+		id: string;
+		name: string;
+		defaultReturnRequired: boolean;
+	}[];
 	policyConfigured: boolean;
 	timezone: string;
 	today: string;
@@ -195,4 +212,39 @@ export interface EquipmentView {
 	}[];
 	employees: { id: string; name: string; former: boolean }[];
 	types: { id: string; name: string }[];
+}
+
+export const equipmentOfficerChangeSchema = z.discriminatedUnion("kind", [
+	z.strictObject({
+		kind: z.literal("set_officer_grant"),
+		...request,
+		...revision,
+		employeeId: z.uuid(),
+		scope: z.enum(["all", "selected"]),
+		teamIds: z.array(z.uuid()).max(500),
+		employeeIds: z.array(z.uuid()).max(1000),
+	}),
+	z.strictObject({
+		kind: z.literal("revoke_officer_grant"),
+		...request,
+		...revision,
+		employeeId: z.uuid(),
+	}),
+]);
+export type EquipmentOfficerChange = z.infer<
+	typeof equipmentOfficerChangeSchema
+>;
+export interface EquipmentOfficerView {
+	grants: {
+		employeeId: string;
+		name: string;
+		scope: "all" | "selected";
+		teamIds: string[];
+		employeeIds: string[];
+		revoked: boolean;
+		current: boolean;
+		revision: number;
+	}[];
+	employees: { id: string; name: string; current: boolean }[];
+	teams: { id: string; name: string }[];
 }

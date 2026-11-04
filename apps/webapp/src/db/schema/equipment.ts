@@ -281,3 +281,60 @@ export const equipmentCommand = pgTable(
 	},
 	(t) => [primaryKey({ columns: [t.organizationId, t.requestId] })],
 );
+
+/** One revisioned responsibility per officer; revocation keeps its stale-form fence. */
+export const equipmentOfficerGrant = pgTable(
+	"equipment_officer_grant",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		scope: text("scope", { enum: ["all", "selected"] }).notNull(),
+		teamIds: uuid("team_ids").array().notNull().default(sql`'{}'::uuid[]`),
+		employeeIds: uuid("employee_ids")
+			.array()
+			.notNull()
+			.default(sql`'{}'::uuid[]`),
+		revokedAt: timestamp("revoked_at", { withTimezone: true }),
+		revision: integer("revision").notNull().default(1),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedBy: text("updated_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+	},
+	(t) => [
+		primaryKey({ columns: [t.organizationId, t.employeeId] }),
+		foreignKey({
+			columns: [t.employeeId, t.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		check(
+			"equipment_officer_scope_check",
+			sql`(${t.scope} = 'all' and cardinality(${t.teamIds}) = 0 and cardinality(${t.employeeIds}) = 0) or (${t.scope} = 'selected' and cardinality(${t.teamIds}) + cardinality(${t.employeeIds}) > 0)`,
+		),
+		check("equipment_officer_revision_positive", sql`${t.revision} > 0`),
+	],
+);
+
+/** Lifecycle supplies this before roster cleanup. Never infer former scope from the live roster. */
+export const equipmentFormerTeamScope = pgTable(
+	"equipment_former_team_scope",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		teamIds: uuid("team_ids").array().notNull(),
+		capturedAt: timestamp("captured_at", { withTimezone: true }).notNull(),
+	},
+	(t) => [
+		primaryKey({ columns: [t.organizationId, t.employeeId] }),
+		foreignKey({
+			columns: [t.employeeId, t.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+	],
+);

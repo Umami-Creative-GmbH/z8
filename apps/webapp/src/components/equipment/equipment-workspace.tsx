@@ -43,15 +43,17 @@ export function EquipmentOverview({
 				data={data}
 				filters={filters}
 			/>
-			<Link
-				className="text-sm text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-				href="/settings/equipment"
-			>
-				{t(
-					"settings.equipment.manageSetup",
-					"Manage types, item identities and retention",
-				)}
-			</Link>
+			{data.canAdminister ? (
+				<Link
+					className="text-sm text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+					href="/settings/equipment"
+				>
+					{t(
+						"settings.equipment.manageSetup",
+						"Manage types, item identities and retention",
+					)}
+				</Link>
+			) : null}
 		</EquipmentWorkspace>
 	);
 }
@@ -150,7 +152,7 @@ function equipmentSelection(
 	const canIssue =
 		data.canManage &&
 		data.policyConfigured &&
-		data.availableItems.length > 0 &&
+		(data.availableItems.length > 0 || data.registrationTypes.length > 0) &&
 		(scope.kind !== "employee" || currentEmployee?.former === false);
 	const selectedReceipt =
 		selection?.kind === "receipt"
@@ -483,7 +485,7 @@ function EquipmentAssignmentCard({
 						{staff ? (
 							<Link
 								className="text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-								href={`/settings/employees/${assignment.employeeId}`}
+								href={`/equipment/employees/${assignment.employeeId}`}
 							>
 								{assignment.holderName}
 							</Link>
