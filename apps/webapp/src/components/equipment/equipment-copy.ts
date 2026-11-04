@@ -24,6 +24,21 @@ export function handoverRefusalMessage(
 	t: EquipmentTranslate,
 ) {
 	switch (reason) {
+		case "item_in_custody":
+			return t(
+				"settings.equipment.readiness.inCustody",
+				"Receive this item physically before clearing it. Clearance cannot release employee custody.",
+			);
+		case "item_retired":
+			return t(
+				"settings.equipment.readiness.isRetired",
+				"This item is retired. Its identifier stays reserved and it cannot be cleared for issue.",
+			);
+		case "readiness_unchanged":
+			return t(
+				"settings.equipment.readiness.unchanged",
+				"This availability state is already recorded. Reload equipment to review its history.",
+			);
 		case "forbidden":
 			return t(
 				"settings.equipment.handover.forbidden",
