@@ -1,18 +1,29 @@
 "use client";
+
 import { IconPackage, IconPlus, IconRefresh } from "@tabler/icons-react";
+
 import { useForm } from "@tanstack/react-form";
+
 import { useTranslate } from "@tolgee/react";
+
 import { useLocale } from "next-intl";
+
 import { type ReactNode, useState, useTransition } from "react";
+
 import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
+
 import {
 	TFormControl,
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
+
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+
 import { changeEquipment } from "@/lib/organization/equipment/actions";
+
 import type {
 	EquipmentAssignmentView,
 	EquipmentChange,
@@ -20,24 +31,33 @@ import type {
 	EquipmentHandoverView,
 	EquipmentView,
 } from "@/lib/organization/equipment/contracts";
+
 import { Link, useRouter } from "@/navigation";
+
 import { conditionLabel, handoverRefusalMessage } from "./equipment-copy";
+
 import {
 	equipmentSelectClass,
+	HistoricalEquipmentForm,
 	IssueEquipmentForm,
 	ReceiveEquipmentForm,
 } from "./equipment-handovers";
+
 import { EquipmentReadiness } from "./equipment-readiness";
+
 import { TransferEquipmentForm } from "./equipment-transfer";
 
 export function EquipmentOverview({
 	data,
+
 	filters,
 }: {
 	data: EquipmentView;
+
 	filters: EquipmentFilters;
 }) {
 	const { t } = useTranslate();
+
 	return (
 		<EquipmentWorkspace data={data} scope={{ kind: "overview" }}>
 			<EquipmentFiltersForm
@@ -52,6 +72,7 @@ export function EquipmentOverview({
 				>
 					{t(
 						"settings.equipment.manageSetup",
+
 						"Manage types, item identities and retention",
 					)}
 				</Link>
@@ -65,106 +86,149 @@ export function EquipmentOverview({
 		</EquipmentWorkspace>
 	);
 }
+
 export function EmployeeEquipment({
 	data,
+
 	employeeId,
 }: {
 	data: EquipmentView;
+
 	employeeId: string;
 }) {
 	return (
 		<EquipmentWorkspace data={data} scope={{ kind: "employee", employeeId }} />
 	);
 }
+
 export function PersonalEquipment({ data }: { data: EquipmentView }) {
 	return <EquipmentWorkspace data={data} scope={{ kind: "personal" }} />;
 }
+
 type EquipmentScope =
 	| { kind: "overview" }
 	| { kind: "employee"; employeeId: string }
 	| { kind: "personal" };
+
 type HandoverSelection =
 	| { kind: "issue" }
+	| { kind: "historical" }
 	| { kind: "receipt"; assignmentId: string }
 	| { kind: "transfer"; assignmentId: string }
 	| null;
 
 function useEquipmentCommands() {
 	const { t } = useTranslate();
+
 	const router = useRouter();
+
 	const [selection, setSelection] = useState<HandoverSelection>(null);
+
 	const [feedback, setFeedback] = useState<{
 		kind: "error" | "success";
+
 		text: string;
 	} | null>(null);
+
 	const [pending, startTransition] = useTransition();
+
 	async function submit(change: EquipmentChange) {
 		startTransition(async () => {
 			setFeedback(null);
+
 			try {
 				const result = await changeEquipment(change);
+
 				if (!result.success) {
 					setFeedback({
 						kind: "error",
+
 						text: t(
 							"settings.equipment.handover.failed",
+
 							"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
 						),
 					});
+
 					return;
 				}
+
 				if (!result.data.ok) {
 					setFeedback({
 						kind: "error",
+
 						text: handoverRefusalMessage(result.data.reason, t),
 					});
+
 					return;
 				}
+
 				setSelection(null);
+
 				setFeedback({
 					kind: "success",
+
 					text: t("settings.equipment.handover.saved", "Handover recorded."),
 				});
+
 				router.refresh();
 			} catch {
 				setFeedback({
 					kind: "error",
+
 					text: t(
 						"settings.equipment.handover.failed",
+
 						"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
 					),
 				});
 			}
 		});
 	}
+
 	return {
 		selection,
+
 		setSelection,
+
 		feedback,
+
 		setFeedback,
+
 		pending,
+
 		startTransition,
+
 		submit,
+
 		router,
 	};
 }
 
 function equipmentSelection(
 	data: EquipmentView,
+
 	scope: EquipmentScope,
+
 	selection: HandoverSelection,
 ) {
 	const currentEmployee =
 		scope.kind === "employee"
 			? data.employees.find((employee) => employee.id === scope.employeeId)
 			: undefined;
-	const canIssue =
+
+	const canRecordHistorical =
 		data.canManage &&
 		data.policyConfigured &&
 		(data.availableItems.length > 0 ||
 			data.availableQuantityTypes.length > 0 ||
 			data.registrationTypes.length > 0) &&
+		(scope.kind !== "employee" || !!currentEmployee);
+
+	const canIssue =
+		canRecordHistorical &&
 		(scope.kind !== "employee" || currentEmployee?.former === false);
+
 	const selectedReceipt =
 		selection?.kind === "receipt"
 			? data.assignments.find(
@@ -172,6 +236,7 @@ function equipmentSelection(
 						assignment.id === selection.assignmentId && assignment.canReceive,
 				)
 			: undefined;
+
 	const selectedTransfer =
 		selection?.kind === "transfer"
 			? data.assignments.find(
@@ -179,45 +244,69 @@ function equipmentSelection(
 						assignment.id === selection.assignmentId && assignment.transfer,
 				)
 			: undefined;
+
 	const unavailableReason =
 		data.canManage && !canIssue
 			? currentEmployee?.former
 				? "former"
 				: "setup"
 			: null;
+
 	return {
+		canRecordHistorical,
+
 		canIssue,
+
 		selectedReceipt,
+
 		selectedTransfer,
+
 		unavailableReason,
 	} as const;
 }
 
 function EquipmentWorkspace({
 	data,
+
 	scope,
+
 	children,
 }: {
 	data: EquipmentView;
+
 	scope: EquipmentScope;
+
 	children?: ReactNode;
 }) {
 	const { t } = useTranslate();
+
 	const {
 		selection,
+
 		setSelection,
+
 		feedback,
+
 		setFeedback,
+
 		pending,
+
 		startTransition,
+
 		submit,
+
 		router,
 	} = useEquipmentCommands();
-	const { canIssue, unavailableReason } = equipmentSelection(
-		data,
-		scope,
-		selection,
-	);
+
+	const { canIssue, canRecordHistorical, unavailableReason } =
+		equipmentSelection(
+			data,
+
+			scope,
+
+			selection,
+		);
+
 	return (
 		<section
 			className="min-w-0 space-y-4"
@@ -237,6 +326,7 @@ function EquipmentWorkspace({
 					<p className="mt-1 text-sm text-muted-foreground">
 						{t(
 							"settings.equipment.custody.description",
+
 							"Who holds each item, what must come back, and the recorded handover history.",
 						)}
 					</p>
@@ -250,11 +340,27 @@ function EquipmentWorkspace({
 						<IconRefresh className="size-4" aria-hidden="true" />
 						{t("settings.equipment.custody.reload", "Reload equipment")}
 					</Button>
+					{canRecordHistorical ? (
+						<Button
+							variant="outline"
+							disabled={pending || !!selection}
+							onClick={() => {
+								setFeedback(null);
+								setSelection({ kind: "historical" });
+							}}
+						>
+							{t(
+								"settings.equipment.historical.title",
+								"Record existing holding",
+							)}
+						</Button>
+					) : null}
 					{canIssue ? (
 						<Button
 							disabled={pending || !!selection}
 							onClick={() => {
 								setFeedback(null);
+
 								setSelection({ kind: "issue" });
 							}}
 						>
@@ -295,10 +401,12 @@ function EquipmentWorkspace({
 				pending={pending || !!selection}
 				onReceive={(assignmentId) => {
 					setFeedback(null);
+
 					setSelection({ kind: "receipt", assignmentId });
 				}}
 				onTransfer={(assignmentId) => {
 					setFeedback(null);
+
 					setSelection({ kind: "transfer", assignmentId });
 				}}
 			/>
@@ -309,28 +417,56 @@ function EquipmentWorkspace({
 
 function EquipmentHandoverEditor({
 	data,
+
 	scope,
+
 	selection,
+
 	pending,
+
 	submit,
+
 	onCancel,
 }: {
 	data: EquipmentView;
+
 	scope: EquipmentScope;
+
 	selection: HandoverSelection;
+
 	pending: boolean;
+
 	submit: (change: EquipmentChange) => Promise<void>;
+
 	onCancel: () => void;
 }) {
-	const { canIssue, selectedReceipt, selectedTransfer } = equipmentSelection(
-		data,
-		scope,
-		selection,
-	);
+	const { canIssue, canRecordHistorical, selectedReceipt, selectedTransfer } =
+		equipmentSelection(
+			data,
+
+			scope,
+
+			selection,
+		);
+
 	return (
 		<>
 			{selection?.kind === "issue" && canIssue ? (
 				<IssueEquipmentForm
+					key={[...data.availableItems, ...data.availableQuantityTypes]
+
+						.map((item) => `${item.id}:${item.revision}`)
+
+						.join(",")}
+					data={data}
+					employeeId={scope.kind === "employee" ? scope.employeeId : undefined}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+			{selection?.kind === "historical" && canRecordHistorical ? (
+				<HistoricalEquipmentForm
 					key={[...data.availableItems, ...data.availableQuantityTypes]
 						.map((item) => `${item.id}:${item.revision}`)
 						.join(",")}
@@ -368,25 +504,34 @@ function EquipmentHandoverEditor({
 
 function EquipmentAssignments({
 	data,
+
 	pending,
+
 	onReceive,
+
 	onTransfer,
 }: {
 	data: EquipmentView;
+
 	pending: boolean;
+
 	onReceive: (assignmentId: string) => void;
+
 	onTransfer: (assignmentId: string) => void;
 }) {
 	const { t } = useTranslate();
+
 	if (!data.assignments.length)
 		return (
 			<p className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
 				{t(
 					"settings.equipment.custody.empty",
+
 					"No equipment assignments match this view.",
 				)}
 			</p>
 		);
+
 	return (
 		<div className="space-y-3">
 			{data.assignments.map((assignment) => (
@@ -427,22 +572,27 @@ function EquipmentAssignments({
 		</div>
 	);
 }
+
 function IssuanceAvailability({
 	reason,
 }: {
 	reason: "former" | "setup" | null;
 }) {
 	const { t } = useTranslate();
+
 	if (!reason) return null;
+
 	return (
 		<p className="text-sm text-muted-foreground">
 			{reason === "former"
 				? t(
 						"settings.equipment.custody.formerHelp",
-						"Former employees remain available for returns and history. New issuance is unavailable.",
+
+						"Former employees remain available for returns, history and recording existing holdings. New issuance is unavailable.",
 					)
 				: t(
 						"settings.equipment.custody.noItems",
+
 						"To issue equipment, configure retention and add a quantity type or available individual item in Equipment settings.",
 					)}
 		</p>
@@ -451,44 +601,62 @@ function IssuanceAvailability({
 
 function EquipmentFiltersForm({
 	data,
+
 	filters,
 }: {
 	data: EquipmentView;
+
 	filters: EquipmentFilters;
 }) {
 	const { t } = useTranslate();
+
 	const router = useRouter();
+
 	const form = useForm({
 		defaultValues: {
 			holderId: filters.holderId ?? "",
+
 			typeId: filters.typeId ?? "",
+
 			outstanding:
 				filters.outstanding === undefined ? "" : String(filters.outstanding),
+
 			overdue: filters.overdue === undefined ? "" : String(filters.overdue),
+
 			former: filters.former === undefined ? "" : String(filters.former),
 		},
+
 		onSubmit: ({ value }) => {
 			const query = new URLSearchParams(
 				Object.entries(value).filter(([, value]) => value !== ""),
 			);
+
 			router.replace(`/equipment${query.size ? `?${query}` : ""}`);
 		},
 	});
+
 	const labels = {
 		holderId: t("settings.equipment.filters.holder", "Holder"),
+
 		typeId: t("settings.equipment.filters.type", "Type"),
+
 		outstanding: t(
 			"settings.equipment.filters.outstanding",
+
 			"Outstanding returns",
 		),
+
 		overdue: t("settings.equipment.filters.overdue", "Overdue returns"),
+
 		former: t("settings.equipment.filters.former", "Former employees"),
 	};
+
 	return (
 		<form
 			className="grid min-w-0 gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2 lg:grid-cols-3"
 			onSubmit={(e) => {
 				e.preventDefault();
+
 				void form.handleSubmit();
 			}}
 		>
@@ -549,19 +717,28 @@ function EquipmentFiltersForm({
 
 function EquipmentAssignmentCard({
 	assignment,
+
 	timezone,
+
 	staff,
+
 	receiptAction,
 }: {
 	assignment: EquipmentAssignmentView;
+
 	timezone: string;
+
 	staff: boolean;
+
 	receiptAction: ReactNode;
 }) {
 	const { t } = useTranslate();
+
 	const locale = useLocale();
+
 	const date = (value: string) =>
 		parsePlainDate(value).toLocaleString(locale, { dateStyle: "medium" });
+
 	return (
 		<article className="min-w-0 space-y-4 rounded-lg border bg-card p-4 [content-visibility:auto]">
 			<div className="flex flex-wrap justify-between gap-3">
@@ -610,6 +787,7 @@ function EquipmentAssignmentCard({
 					<dt className="text-muted-foreground">
 						{t(
 							"settings.equipment.custody.receivedQuantity",
+
 							"Physically received quantity",
 						)}
 					</dt>
@@ -621,6 +799,7 @@ function EquipmentAssignmentCard({
 					<dt className="text-muted-foreground">
 						{t(
 							"settings.equipment.custody.outstandingQuantity",
+
 							"Outstanding quantity",
 						)}
 					</dt>
@@ -636,6 +815,7 @@ function EquipmentAssignmentCard({
 						{assignment.returnRequired
 							? t(
 									"settings.equipment.handover.returnRequired",
+
 									"Return required",
 								)
 							: t("settings.equipment.custody.keep", "Issued to keep")}
@@ -655,6 +835,7 @@ function EquipmentAssignmentCard({
 					<dt className="text-muted-foreground">
 						{t(
 							"settings.equipment.custody.deadline",
+
 							"Explicit return deadline",
 						)}
 					</dt>
@@ -672,12 +853,14 @@ function EquipmentAssignmentCard({
 					<dt className="text-muted-foreground">
 						{t(
 							"settings.equipment.custody.latestCondition",
+
 							"Latest recorded condition",
 						)}
 					</dt>
 					<dd>
 						{conditionLabel(
 							assignment.receipt?.condition ?? assignment.issue.condition,
+
 							t,
 						)}
 					</dd>
@@ -688,6 +871,7 @@ function EquipmentAssignmentCard({
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.equipment.custody.damageHelp",
+
 						"Return fulfilled. Damaged receipt requires separate clearance before reissue; see current item availability.",
 					)}
 				</p>
@@ -715,12 +899,14 @@ function EquipmentAssignmentCard({
 		</article>
 	);
 }
+
 function AssignmentStatus({
 	assignment,
 }: {
 	assignment: EquipmentAssignmentView;
 }) {
 	const { t } = useTranslate();
+
 	const label = !assignment.held
 		? t("settings.equipment.custody.received", "Physically received")
 		: assignment.overdue
@@ -728,6 +914,7 @@ function AssignmentStatus({
 			: assignment.outstanding
 				? t("settings.equipment.custody.outstanding", "Outstanding return")
 				: t("settings.equipment.custody.keep", "Issued to keep");
+
 	return (
 		<Badge variant={assignment.overdue ? "destructive" : "secondary"}>
 			{label}
@@ -737,27 +924,44 @@ function AssignmentStatus({
 
 function HandoverEvidence({
 	handover,
+
 	timezone,
+
 	kind,
 }: {
 	handover: EquipmentHandoverView;
+
 	timezone: string;
+
 	kind: "issue" | "receipt";
 }) {
 	const { t } = useTranslate();
+
 	const locale = useLocale();
+
 	return (
 		<li className="space-y-1 break-words text-sm">
 			<p className="font-medium">
-				{kind === "issue"
-					? t("settings.equipment.custody.issuance", "Issuance")
-					: t("settings.equipment.custody.receipt", "Physical receipt")}{" "}
+				{handover.historical
+					? t("settings.equipment.historical.evidence", "Historical issuance")
+					: kind === "issue"
+						? t("settings.equipment.custody.issuance", "Issuance")
+						: t("settings.equipment.custody.receipt", "Physical receipt")}{" "}
 				·{" "}
-				<time dateTime={handover.actualDate}>
-					{parsePlainDate(handover.actualDate).toLocaleString(locale, {
-						dateStyle: "medium",
-					})}
-				</time>{" "}
+				{handover.actualDate ? (
+					<time dateTime={handover.actualDate}>
+						{parsePlainDate(handover.actualDate).toLocaleString(locale, {
+							dateStyle: "medium",
+						})}
+					</time>
+				) : (
+					<span>
+						{t(
+							"settings.equipment.historical.dateUnknown",
+							"Actual issue date unknown",
+						)}
+					</span>
+				)}{" "}
 				· {conditionLabel(handover.condition, t)}
 			</p>
 			<p className="tabular-nums">
@@ -773,9 +977,12 @@ function HandoverEvidence({
 				·{" "}
 				<time dateTime={handover.recordedAt}>
 					{parseInstant(handover.recordedAt)
+
 						.toZonedDateTimeISO(timezone)
+
 						.toLocaleString(locale, {
 							dateStyle: "medium",
+
 							timeStyle: "short",
 						})}
 				</time>{" "}

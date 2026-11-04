@@ -1,20 +1,29 @@
 "use client";
+
 import { useForm } from "@tanstack/react-form";
+
 import { useTranslate } from "@tolgee/react";
+
 import { useRef } from "react";
+
 import { Button } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
+
 import {
 	TFormControl,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+
 import { Textarea } from "@/components/ui/textarea";
+
 import {
 	comparePlainDates,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+
 import {
 	type EquipmentAssignmentView,
 	type EquipmentChange,
@@ -22,7 +31,9 @@ import {
 	type EquipmentView,
 	equipmentConditionSchema,
 } from "@/lib/organization/equipment/contracts";
+
 import { conditionLabel, type EquipmentTranslate } from "./equipment-copy";
+
 import {
 	actualDateError,
 	quantityError,
@@ -30,43 +41,65 @@ import {
 
 export const equipmentSelectClass =
 	"h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+
 export type SubmitHandover = (change: EquipmentChange) => Promise<void>;
+
 interface HandoverActions {
 	submit: SubmitHandover;
+
 	pending: boolean;
+
 	onCancel: () => void;
 }
+
 const handoverDefaults = {
 	actualDate: "",
+
 	condition: "unknown" as EquipmentCondition,
+
 	notes: "",
 };
 
 /** Preserve identity on uncertain retries; editing an unsaved payload starts a new command. */
+
 export function useCommandIdentity() {
 	const request = useRef<{ payload: string; id: string } | null>(null);
+
 	return (payload: unknown) => {
 		const serialized = JSON.stringify(payload);
+
 		if (request.current?.payload !== serialized)
 			request.current = { payload: serialized, id: crypto.randomUUID() };
+
 		return request.current.id;
 	};
 }
+
 interface StringField {
 	name: string;
+
 	state: { value: string; meta: { errors: unknown[] } };
+
 	handleChange: (value: string) => void;
+
 	handleBlur: () => void;
 }
+
 export function ActualDateField({
 	field,
+
 	today,
+
 	pending,
+
 	t,
 }: {
 	field: StringField;
+
 	today: string;
+
 	pending: boolean;
+
 	t: EquipmentTranslate;
 }) {
 	return (
@@ -90,15 +123,22 @@ export function ActualDateField({
 		</TFormItem>
 	);
 }
+
 export function ConditionField({
 	value,
+
 	onChange,
+
 	disabled,
+
 	t,
 }: {
 	value: EquipmentCondition;
+
 	onChange: (value: EquipmentCondition) => void;
+
 	disabled: boolean;
+
 	t: EquipmentTranslate;
 }) {
 	return (
@@ -127,13 +167,18 @@ export function ConditionField({
 		</TFormItem>
 	);
 }
+
 export function NotesField({
 	field,
+
 	pending,
+
 	t,
 }: {
 	field: StringField;
+
 	pending: boolean;
+
 	t: EquipmentTranslate;
 }) {
 	return (
@@ -159,13 +204,19 @@ export function NotesField({
 
 export function QuantityField({
 	field,
+
 	pending,
+
 	maximum,
+
 	t,
 }: {
 	field: StringField;
+
 	pending: boolean;
+
 	maximum?: number;
+
 	t: EquipmentTranslate;
 }) {
 	return (
@@ -193,94 +244,212 @@ export function QuantityField({
 	);
 }
 
+type IssueMode = "new" | "historical";
+
 function useIssueEquipmentForm({
+	mode,
+
 	data,
+
 	employeeId,
+
 	submit,
 }: {
+	mode: IssueMode;
+
 	data: EquipmentView;
+
 	employeeId?: string;
+
 	submit: SubmitHandover;
 }) {
 	const identity = useCommandIdentity();
+
 	const element = useRef<HTMLFormElement>(null);
+
 	const form = useForm({
 		defaultValues: {
 			...handoverDefaults,
+
+			unknownDate: false,
+
 			itemId: "",
+
 			typeId: "",
+
 			identifier: "",
+
 			serialNumber: "",
+
 			quantity: "1",
+
 			employeeId: employeeId ?? "",
+
 			returnRequired: true,
+
 			explicitDeadline: "",
 		},
+
 		onSubmitInvalid: () =>
 			element.current
+
 				?.querySelector<HTMLElement>('[aria-invalid="true"]')
+
 				?.focus(),
+
 		onSubmit: async ({ value }) => {
 			const item = data.availableItems.find(
 				(candidate) => candidate.id === value.itemId,
 			);
+
 			const type = data.availableQuantityTypes.find(
 				(candidate) => candidate.id === value.itemId,
 			);
+
 			if (!item && !type && value.itemId !== "new") return;
+
 			const common = {
 				employeeId: value.employeeId,
+
 				actualDate: value.actualDate,
+
 				condition: value.condition,
+
 				notes: value.notes,
+
 				returnRequired: value.returnRequired,
+
 				explicitDeadline:
 					value.returnRequired && value.explicitDeadline
 						? value.explicitDeadline
 						: null,
 			};
+
+			if (mode === "historical") {
+				const evidence = {
+					...common,
+					actualDate: value.unknownDate ? null : value.actualDate,
+				};
+
+				if (value.itemId === "new") {
+					const payload = {
+						...evidence,
+						kind: "register_historical_individual" as const,
+						typeId: value.typeId,
+						identifier: value.identifier,
+						serialNumber: value.serialNumber,
+						expectedRevision: 0 as const,
+					};
+
+					await submit({ ...payload, requestId: identity(payload) });
+				} else if (type) {
+					const payload = {
+						...evidence,
+						kind: "record_historical_quantity" as const,
+						typeId: type.id,
+						quantity: Number(value.quantity),
+						expectedRevision: type.revision,
+					};
+
+					await submit({ ...payload, requestId: identity(payload) });
+				} else if (item) {
+					const payload = {
+						...evidence,
+						kind: "record_historical_individual" as const,
+						itemId: item.id,
+						expectedRevision: item.revision,
+					};
+
+					await submit({ ...payload, requestId: identity(payload) });
+				}
+
+				return;
+			}
+
 			if (value.itemId === "new") {
 				const payload = {
 					...common,
+
 					kind: "register_and_issue_individual" as const,
+
 					typeId: value.typeId,
+
 					identifier: value.identifier,
+
 					serialNumber: value.serialNumber,
+
 					expectedRevision: 0 as const,
 				};
+
 				await submit({ ...payload, requestId: identity(payload) });
 			} else if (type) {
 				const payload = {
 					...common,
+
 					kind: "issue_quantity" as const,
+
 					typeId: type.id,
+
 					quantity: Number(value.quantity),
+
 					expectedRevision: type.revision,
 				};
+
 				await submit({ ...payload, requestId: identity(payload) });
 			} else if (item) {
 				const payload = {
 					...common,
+
 					kind: "issue_individual" as const,
+
 					itemId: item.id,
+
 					expectedRevision: item.revision,
 				};
+
 				await submit({ ...payload, requestId: identity(payload) });
 			}
 		},
 	});
+
 	return { form, element };
 }
 
-export function IssueEquipmentForm({
+type IssueFormProps = HandoverActions & {
+	data: EquipmentView;
+	employeeId?: string;
+};
+
+export function IssueEquipmentForm(props: IssueFormProps) {
+	return <EquipmentIssueForm {...props} mode="new" />;
+}
+
+export function HistoricalEquipmentForm(props: IssueFormProps) {
+	return <EquipmentIssueForm {...props} mode="historical" />;
+}
+
+function EquipmentIssueForm({
+	mode,
+
 	data,
+
 	employeeId,
+
 	submit,
+
 	pending,
+
 	onCancel,
-}: HandoverActions & { data: EquipmentView; employeeId?: string }) {
+}: IssueFormProps & { mode: IssueMode }) {
 	const { t } = useTranslate();
-	const { form, element } = useIssueEquipmentForm({ data, employeeId, submit });
+
+	const { form, element } = useIssueEquipmentForm({
+		mode,
+		data,
+		employeeId,
+		submit,
+	});
+
 	return (
 		<form
 			ref={element}
@@ -288,19 +457,31 @@ export function IssueEquipmentForm({
 			className="space-y-4 rounded-lg border bg-card p-4"
 			onSubmit={(e) => {
 				e.preventDefault();
+
 				void form.handleSubmit();
 			}}
 		>
 			<h3 className="font-semibold">
-				{t("settings.equipment.handover.issueTitle", "Issue equipment")}
+				{mode === "historical"
+					? t("settings.equipment.historical.title", "Record existing holding")
+					: t("settings.equipment.handover.issueTitle", "Issue equipment")}
 			</h3>
 			<p className="text-sm text-muted-foreground">
 				{t(
 					"settings.equipment.handover.zone",
+
 					"Handover dates and deadlines use the organization’s timezone.",
 				)}{" "}
 				<span translate="no">{data.timezone}</span>
 			</p>
+			{mode === "historical" ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.equipment.historical.help",
+						"Record equipment already held by a current or former employee. Entry time and recorder are saved separately from the actual issue date. This creates no physical receipt.",
+					)}
+				</p>
+			) : null}
 			<fieldset
 				disabled={pending}
 				className="grid min-w-0 gap-4 sm:grid-cols-2"
@@ -312,6 +493,7 @@ export function IssueEquipmentForm({
 							!value
 								? t(
 										"settings.equipment.handover.itemRequired",
+
 										"Select an available item or quantity type.",
 									)
 								: undefined,
@@ -327,6 +509,7 @@ export function IssueEquipmentForm({
 									name={field.name}
 									aria-label={t(
 										"settings.equipment.handover.item",
+
 										"Equipment item",
 									)}
 									className={equipmentSelectClass}
@@ -334,6 +517,7 @@ export function IssueEquipmentForm({
 									onBlur={field.handleBlur}
 									onChange={(e) => {
 										field.handleChange(e.target.value);
+
 										const selected =
 											data.availableItems.find(
 												(item) => item.id === e.target.value,
@@ -341,11 +525,14 @@ export function IssueEquipmentForm({
 											data.availableQuantityTypes.find(
 												(type) => type.id === e.target.value,
 											);
+
 										if (selected) {
 											form.setFieldValue(
 												"returnRequired",
+
 												selected.defaultReturnRequired,
 											);
+
 											form.setFieldValue("explicitDeadline", "");
 										}
 									}}
@@ -353,6 +540,7 @@ export function IssueEquipmentForm({
 									<option value="">
 										{t(
 											"settings.equipment.handover.selectItem",
+
 											"Select an item or quantity type…",
 										)}
 									</option>
@@ -360,6 +548,7 @@ export function IssueEquipmentForm({
 										<option value="new">
 											{t(
 												"settings.equipment.handover.registerNew",
+
 												"Register a new item during issuance",
 											)}
 										</option>
@@ -369,6 +558,7 @@ export function IssueEquipmentForm({
 											{type.name} ·{" "}
 											{t(
 												"settings.equipment.handover.quantityType",
+
 												"Quantity",
 											)}
 										</option>
@@ -407,25 +597,46 @@ export function IssueEquipmentForm({
 					validators={{
 						onSubmit: ({ value }) =>
 							!value
-								? t(
-										"settings.equipment.handover.employeeRequired",
-										"Select a current employee.",
-									)
+								? mode === "historical"
+									? t(
+											"settings.equipment.historical.employeeRequired",
+											"Select a current or former employee.",
+										)
+									: t(
+											"settings.equipment.handover.employeeRequired",
+
+											"Select a current employee.",
+										)
 								: undefined,
 					}}
 				>
 					{(field) => (
 						<TFormItem>
 							<TFormLabel required>
-								{t("settings.equipment.handover.employee", "Current employee")}
+								{mode === "historical"
+									? t(
+											"settings.equipment.historical.employee",
+											"Current or former employee",
+										)
+									: t(
+											"settings.equipment.handover.employee",
+											"Current employee",
+										)}
 							</TFormLabel>
 							<TFormControl hasError={field.state.meta.errors.length > 0}>
 								<select
 									name={field.name}
-									aria-label={t(
-										"settings.equipment.handover.employee",
-										"Current employee",
-									)}
+									aria-label={
+										mode === "historical"
+											? t(
+													"settings.equipment.historical.employee",
+													"Current or former employee",
+												)
+											: t(
+													"settings.equipment.handover.employee",
+													"Current employee",
+												)
+									}
 									className={equipmentSelectClass}
 									value={field.state.value}
 									onChange={(e) => field.handleChange(e.target.value)}
@@ -435,14 +646,22 @@ export function IssueEquipmentForm({
 									<option value="">
 										{t(
 											"settings.equipment.handover.selectEmployee",
+
 											"Select a current employee…",
 										)}
 									</option>
 									{data.employees
-										.filter((employee) => !employee.former)
+
+										.filter(
+											(employee) => mode === "historical" || !employee.former,
+										)
+
 										.map((employee) => (
 											<option key={employee.id} value={employee.id}>
 												{employee.name}
+												{employee.former
+													? ` · ${t("settings.equipment.custody.former", "Former employee")}`
+													: ""}
 											</option>
 										))}
 								</select>
@@ -451,21 +670,59 @@ export function IssueEquipmentForm({
 						</TFormItem>
 					)}
 				</form.Field>
-				<form.Field
-					name="actualDate"
-					validators={{
-						onSubmit: ({ value }) => actualDateError(value, data.today, t),
-					}}
-				>
-					{(field) => (
-						<ActualDateField
-							field={field}
-							today={data.today}
-							pending={pending}
-							t={t}
-						/>
-					)}
-				</form.Field>
+				{mode === "historical" ? (
+					<form.Field name="unknownDate">
+						{(field) => (
+							<label className="flex items-center gap-2 text-sm">
+								<input
+									type="checkbox"
+									name={field.name}
+									checked={field.state.value}
+									disabled={pending}
+									onChange={(event) => {
+										field.handleChange(event.target.checked);
+										form.setFieldValue("actualDate", "");
+									}}
+								/>
+								{t(
+									"settings.equipment.historical.unknownDate",
+									"Actual issue date is unknown",
+								)}
+							</label>
+						)}
+					</form.Field>
+				) : null}
+				<form.Subscribe selector={(state) => state.values.unknownDate}>
+					{(unknown) =>
+						mode === "historical" && unknown ? (
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"settings.equipment.historical.unknownHelp",
+									"The actual issue date will remain unknown; the entry date will not replace it.",
+								)}
+							</p>
+						) : (
+							<form.Field
+								name="actualDate"
+								validators={{
+									onSubmit: ({ value }) =>
+										mode === "historical" && form.getFieldValue("unknownDate")
+											? undefined
+											: actualDateError(value, data.today, t),
+								}}
+							>
+								{(field) => (
+									<ActualDateField
+										field={field}
+										today={data.today}
+										pending={pending}
+										t={t}
+									/>
+								)}
+							</form.Field>
+						)
+					}
+				</form.Subscribe>
 				<form.Field name="condition">
 					{(field) => (
 						<ConditionField
@@ -492,7 +749,12 @@ export function IssueEquipmentForm({
 				<Button type="submit" disabled={pending}>
 					{pending
 						? t("settings.equipment.handover.saving", "Saving…")
-						: t("settings.equipment.handover.issue", "Record issuance")}
+						: mode === "historical"
+							? t(
+									"settings.equipment.historical.save",
+									"Save historical holding",
+								)
+							: t("settings.equipment.handover.issue", "Record issuance")}
 				</Button>
 				<Button
 					type="button"
@@ -509,14 +771,19 @@ export function IssueEquipmentForm({
 
 function RegistrationFields({
 	form,
+
 	data,
+
 	pending,
 }: {
 	form: ReturnType<typeof useIssueEquipmentForm>["form"];
+
 	data: EquipmentView;
+
 	pending: boolean;
 }) {
 	const { t } = useTranslate();
+
 	return (
 		<fieldset
 			disabled={pending}
@@ -532,6 +799,7 @@ function RegistrationFields({
 						!value
 							? t(
 									"settings.equipment.handover.typeRequired",
+
 									"Select an equipment type.",
 								)
 							: undefined,
@@ -546,6 +814,7 @@ function RegistrationFields({
 							<select
 								aria-label={t(
 									"settings.equipment.handover.type",
+
 									"Equipment type",
 								)}
 								className={equipmentSelectClass}
@@ -553,14 +822,18 @@ function RegistrationFields({
 								onBlur={field.handleBlur}
 								onChange={(e) => {
 									field.handleChange(e.target.value);
+
 									const type = data.registrationTypes.find(
 										(type) => type.id === e.target.value,
 									);
+
 									if (type) {
 										form.setFieldValue(
 											"returnRequired",
+
 											type.defaultReturnRequired,
 										);
+
 										form.setFieldValue("explicitDeadline", "");
 									}
 								}}
@@ -568,6 +841,7 @@ function RegistrationFields({
 								<option value="">
 									{t(
 										"settings.equipment.handover.selectType",
+
 										"Select an equipment type…",
 									)}
 								</option>
@@ -589,6 +863,7 @@ function RegistrationFields({
 						!value.trim()
 							? t(
 									"settings.equipment.handover.identifierRequired",
+
 									"Enter an equipment identifier.",
 								)
 							: undefined,
@@ -599,6 +874,7 @@ function RegistrationFields({
 						<TFormLabel required>
 							{t(
 								"settings.equipment.handover.identifier",
+
 								"Equipment identifier",
 							)}
 						</TFormLabel>
@@ -623,6 +899,7 @@ function RegistrationFields({
 						<TFormLabel>
 							{t(
 								"settings.equipment.handover.serial",
+
 								"Manufacturer serial number (optional)",
 							)}
 						</TFormLabel>
@@ -646,12 +923,15 @@ function RegistrationFields({
 
 function ReturnAgreementFields({
 	form,
+
 	pending,
 }: {
 	form: ReturnType<typeof useIssueEquipmentForm>["form"];
+
 	pending: boolean;
 }) {
 	const { t } = useTranslate();
+
 	return (
 		<>
 			<form.Field name="returnRequired">
@@ -664,6 +944,7 @@ function ReturnAgreementFields({
 							disabled={pending}
 							onChange={(e) => {
 								field.handleChange(e.target.checked);
+
 								if (!e.target.checked)
 									form.setFieldValue("explicitDeadline", "");
 							}}
@@ -680,21 +961,26 @@ function ReturnAgreementFields({
 							validators={{
 								onSubmit: ({ value }) => {
 									if (!value) return undefined;
+
 									try {
 										parsePlainDate(value);
 									} catch {
 										return t(
 											"settings.equipment.handover.dateInvalid",
+
 											"Enter a valid calendar date.",
 										);
 									}
+
 									return form.getFieldValue("actualDate") &&
 										comparePlainDates(
 											parsePlainDate(value),
+
 											parsePlainDate(form.getFieldValue("actualDate")),
 										) < 0
 										? t(
 												"settings.equipment.handover.deadlineInvalid",
+
 												"The return deadline must be on or after the handover date.",
 											)
 										: undefined;
@@ -706,6 +992,7 @@ function ReturnAgreementFields({
 									<TFormLabel>
 										{t(
 											"settings.equipment.handover.deadline",
+
 											"Explicit return deadline (optional)",
 										)}
 									</TFormLabel>
@@ -728,6 +1015,7 @@ function ReturnAgreementFields({
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"settings.equipment.handover.keepHelp",
+
 								"Issued to keep: no deadline or return obligation. Equipment remains held until physically received back.",
 							)}
 						</p>
@@ -740,43 +1028,65 @@ function ReturnAgreementFields({
 
 export function ReceiveEquipmentForm({
 	assignment,
+
 	today,
+
 	timezone,
+
 	submit,
+
 	pending,
+
 	onCancel,
 }: HandoverActions & {
 	assignment: EquipmentAssignmentView;
+
 	today: string;
+
 	timezone: string;
 }) {
 	const { t } = useTranslate();
+
 	const identity = useCommandIdentity();
+
 	const element = useRef<HTMLFormElement>(null);
+
 	const form = useForm({
 		defaultValues: { ...handoverDefaults, quantity: "1" },
+
 		onSubmitInvalid: () =>
 			element.current
+
 				?.querySelector<HTMLElement>('[aria-invalid="true"]')
+
 				?.focus(),
+
 		onSubmit: async ({ value }) => {
 			const { quantity, ...handover } = value;
+
 			const common = {
 				assignmentId: assignment.id,
+
 				expectedRevision: assignment.revision,
+
 				...handover,
 			};
+
 			const payload =
 				assignment.trackingMode === "quantity"
 					? {
 							...common,
+
 							kind: "receive_quantity" as const,
+
 							quantity: Number(quantity),
 						}
 					: { ...common, kind: "receive_individual" as const };
+
 			await submit({ ...payload, requestId: identity(payload) });
 		},
 	});
+
 	return (
 		<form
 			ref={element}
@@ -784,12 +1094,14 @@ export function ReceiveEquipmentForm({
 			className="space-y-4 rounded-lg border bg-card p-4"
 			onSubmit={(e) => {
 				e.preventDefault();
+
 				void form.handleSubmit();
 			}}
 		>
 			<h3 className="font-semibold">
 				{t(
 					"settings.equipment.handover.receiveTitle",
+
 					"Confirm physical receipt",
 				)}{" "}
 				· <span translate="no">{assignment.identifier}</span>
@@ -805,7 +1117,9 @@ export function ReceiveEquipmentForm({
 							onSubmit: ({ value }) =>
 								quantityError(
 									value,
+
 									t,
+
 									assignment.quantity - assignment.physicallyReceivedQuantity,
 								),
 						}}
@@ -828,12 +1142,15 @@ export function ReceiveEquipmentForm({
 						onSubmit: ({ value }) =>
 							actualDateError(value, today, t) ??
 							(value &&
+							assignment.issue.actualDate &&
 							comparePlainDates(
 								parsePlainDate(value),
+
 								parsePlainDate(assignment.issue.actualDate),
 							) < 0
 								? t(
 										"settings.equipment.handover.receiptBeforeIssue",
+
 										"Receipt cannot precede the recorded issuance.",
 									)
 								: undefined),
@@ -865,6 +1182,7 @@ export function ReceiveEquipmentForm({
 			<p className="text-sm text-muted-foreground">
 				{t(
 					"settings.equipment.handover.receiptHelp",
+
 					"Record only the quantity physically received, with its own condition and notes. Damaged individual items stay unavailable pending clearance.",
 				)}
 			</p>

@@ -103,6 +103,9 @@ export async function applyEquipmentChange(
 		.transaction(async (tx): Promise<EquipmentOutcome> => {
 			// Route before locks, then confirm under them. Employee user identity must not drift.
 			const [target] =
+				change.kind === "record_historical_individual" ||
+				change.kind === "record_historical_quantity" ||
+				change.kind === "register_historical_individual" ||
 				change.kind === "issue_individual" ||
 				change.kind === "issue_quantity" ||
 				change.kind === "register_and_issue_individual" ||
@@ -232,6 +235,9 @@ type HandoverChange = Extract<
 	EquipmentChange,
 	{
 		kind:
+			| "record_historical_individual"
+			| "record_historical_quantity"
+			| "register_historical_individual"
 			| "register_and_issue_individual"
 			| "issue_individual"
 			| "issue_quantity"
@@ -347,20 +353,31 @@ async function performHandover(
 	today: Temporal.PlainDate,
 	now: Temporal.Instant,
 ): Promise<EquipmentOutcome> {
-	const actualDate = parsePlainDate(change.actualDate);
-	if (Temporal.PlainDate.compare(actualDate, today) > 0)
+	const historical =
+		change.kind === "record_historical_individual" ||
+		change.kind === "record_historical_quantity" ||
+		change.kind === "register_historical_individual";
+	const individual =
+		change.kind === "issue_individual" ||
+		change.kind === "record_historical_individual";
+	const quantityIssue =
+		change.kind === "issue_quantity" ||
+		change.kind === "record_historical_quantity";
+	const registration =
+		change.kind === "register_and_issue_individual" ||
+		change.kind === "register_historical_individual";
+	const actualDate =
+		change.actualDate === null ? null : parsePlainDate(change.actualDate);
+	if (actualDate && Temporal.PlainDate.compare(actualDate, today) > 0)
 		return { ok: false, reason: "future_date" };
 	const recordedAt = dateFromInstant(now);
 	let result: { id: string; revision: number };
-	if (
-		change.kind === "issue_individual" ||
-		change.kind === "issue_quantity" ||
-		change.kind === "register_and_issue_individual"
-	) {
+	if (individual || quantityIssue || registration) {
 		if (!change.returnRequired && change.explicitDeadline)
 			return { ok: false, reason: "invalid_input" };
 		if (
 			change.explicitDeadline &&
+			actualDate &&
 			Temporal.PlainDate.compare(
 				parsePlainDate(change.explicitDeadline),
 				actualDate,
@@ -386,16 +403,15 @@ async function performHandover(
 			userId: current.userId,
 			now,
 		});
-		if (!current.current || !employeeAccess.allowed)
+		if (!historical && (!current.current || !employeeAccess.allowed))
 			return { ok: false, reason: "employee_not_current" };
-		let [item] =
-			change.kind === "issue_individual"
-				? await tx
-						.select()
-						.from(equipmentItem)
-						.where(scoped(actor.organizationId, change.itemId))
-				: [];
-		if (change.kind === "issue_individual") {
+		let [item] = individual
+			? await tx
+					.select()
+					.from(equipmentItem)
+					.where(scoped(actor.organizationId, change.itemId))
+			: [];
+		if (individual) {
 			if (!item) return { ok: false, reason: "not_found" };
 			if (item.revision !== change.expectedRevision)
 				return { ok: false, reason: "stale_revision" };
@@ -403,18 +419,15 @@ async function performHandover(
 				return { ok: false, reason: "item_unavailable" };
 			if (
 				item.lastHandoverDate &&
-				Temporal.PlainDate.compare(
-					actualDate,
-					parsePlainDate(item.lastHandoverDate),
-				) < 0
+				(!actualDate ||
+					Temporal.PlainDate.compare(
+						actualDate,
+						parsePlainDate(item.lastHandoverDate),
+					) < 0)
 			)
 				return { ok: false, reason: "conflicting_history" };
 		}
-		const typeId =
-			change.kind === "issue_quantity" ||
-			change.kind === "register_and_issue_individual"
-				? change.typeId
-				: item?.typeId;
+		const typeId = quantityIssue || registration ? change.typeId : item?.typeId;
 		if (!typeId) return { ok: false, reason: "not_found" };
 		const [type] = await tx
 			.select()
@@ -426,23 +439,14 @@ async function performHandover(
 				),
 			);
 		if (!type) return { ok: false, reason: "not_found" };
-		if (
-			change.kind === "issue_quantity" &&
-			type.revision !== change.expectedRevision
-		)
+		if (quantityIssue && type.revision !== change.expectedRevision)
 			return { ok: false, reason: "stale_revision" };
-		if (
-			type.trackingMode !==
-			(change.kind === "issue_quantity" ? "quantity" : "individual")
-		)
+		if (type.trackingMode !== (quantityIssue ? "quantity" : "individual"))
 			return {
 				ok: false,
-				reason:
-					change.kind === "issue_quantity"
-						? "quantity_required"
-						: "individual_required",
+				reason: quantityIssue ? "quantity_required" : "individual_required",
 			};
-		if (change.kind === "register_and_issue_individual") {
+		if (registration) {
 			const [duplicate] = await tx
 				.select({ id: equipmentItem.id })
 				.from(equipmentItem)
@@ -459,7 +463,7 @@ async function performHandover(
 			typeId,
 		});
 		if (!prepared.ok) return prepared;
-		if (change.kind === "register_and_issue_individual") {
+		if (registration) {
 			[item] = await tx
 				.insert(equipmentItem)
 				.values({
@@ -474,7 +478,7 @@ async function performHandover(
 				})
 				.returning();
 		}
-		const quantity = change.kind === "issue_quantity" ? change.quantity : 1;
+		const quantity = quantityIssue ? change.quantity : 1;
 		const [period] = await tx
 			.select({ id: employeeEmploymentPeriod.id })
 			.from(employeeEmploymentPeriod)
@@ -504,6 +508,7 @@ async function performHandover(
 			kind: "issue",
 			quantity,
 			actualDate: change.actualDate,
+			historical,
 			condition: change.condition,
 			notes: change.notes || null,
 			actorId: actor.userId,
@@ -565,8 +570,11 @@ async function performHandover(
 			);
 		if (
 			!issue ||
-			Temporal.PlainDate.compare(actualDate, parsePlainDate(issue.actualDate)) <
-				0
+			(issue.actualDate !== null &&
+				Temporal.PlainDate.compare(
+					parsePlainDate(change.actualDate),
+					parsePlainDate(issue.actualDate),
+				) < 0)
 		)
 			return { ok: false, reason: "conflicting_history" };
 		const [item] = assignment.itemId
@@ -777,6 +785,7 @@ export async function readEquipment(
 				id: record.id,
 				quantity: record.quantity,
 				actualDate: record.actualDate,
+				historical: record.historical,
 				condition: record.condition,
 				notes: record.notes,
 				actorId: record.actorId,

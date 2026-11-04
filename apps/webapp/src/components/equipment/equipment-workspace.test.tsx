@@ -602,3 +602,45 @@ it("keeps all partial receipts visible on personal history without offering staf
 	expect(screen.queryByRole("button", { name: "Record receipt" })).toBeNull();
 	expect(screen.queryByRole("button", { name: "Issue equipment" })).toBeNull();
 });
+
+it("records an explicitly unknown historical holding for a former employee and preserves retry identity", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: false, code: "DatabaseError" });
+	render(<EmployeeEquipment data={view} employeeId={view.employees[1].id} />);
+	expect(screen.queryByRole("button", { name: "Issue equipment" })).toBeNull();
+	await user.click(
+		screen.getByRole("button", { name: "Record existing holding" }),
+	);
+	expect(
+		screen.getByText(/Entry time and recorder are saved separately/),
+	).toBeTruthy();
+	await user.selectOptions(
+		screen.getByLabelText(/Equipment item/),
+		view.availableItems[0].id,
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Save historical holding" }),
+	);
+	expect(
+		await screen.findByText("Enter the actual handover date."),
+	).toBeTruthy();
+	await user.click(screen.getByLabelText("Actual issue date is unknown"));
+	expect(screen.queryByLabelText(/Actual handover date/)).toBeNull();
+	await user.click(
+		screen.getByRole("button", { name: "Save historical holding" }),
+	);
+	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(1));
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "record_historical_individual",
+		actualDate: null,
+		employeeId: view.employees[1].id,
+		condition: "unknown",
+		returnRequired: false,
+		explicitDeadline: null,
+	});
+	await user.click(
+		screen.getByRole("button", { name: "Save historical holding" }),
+	);
+	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(2));
+	expect(api.change.mock.calls[1][0]).toEqual(api.change.mock.calls[0][0]);
+});

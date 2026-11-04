@@ -165,7 +165,8 @@ export function TransferEquipmentForm({
 						validators={{
 							onSubmit: ({ value }) =>
 								actualDateError(value, data.today, t) ??
-								(comparePlainDates(
+								(assignment.issue.actualDate &&
+								comparePlainDates(
 									parsePlainDate(value),
 									parsePlainDate(assignment.issue.actualDate),
 								) < 0

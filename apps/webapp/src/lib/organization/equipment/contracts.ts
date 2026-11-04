@@ -116,6 +116,14 @@ const handoverFields = {
 	condition: equipmentConditionSchema,
 	notes: z.string().trim().max(4000).optional(),
 };
+const historicalFields = {
+	...handoverFields,
+	/** Explicit null means the actual historical issue date is unknown. */
+	actualDate: calendarDate.nullable(),
+	employeeId: z.uuid(),
+	returnRequired: z.boolean(),
+	explicitDeadline: calendarDate.nullable().optional(),
+};
 const transferEvidence = {
 	actualDate: calendarDate,
 	condition: equipmentConditionSchema,
@@ -127,6 +135,25 @@ export const equipmentQuantitySchema = z
 	.positive()
 	.max(2147483647);
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
+	z.strictObject({
+		kind: z.literal("record_historical_individual"),
+		...historicalFields,
+		itemId: z.uuid(),
+	}),
+	z.strictObject({
+		kind: z.literal("record_historical_quantity"),
+		...historicalFields,
+		typeId: z.uuid(),
+		quantity: equipmentQuantitySchema,
+	}),
+	z.strictObject({
+		kind: z.literal("register_historical_individual"),
+		...historicalFields,
+		expectedRevision: z.literal(0),
+		typeId: z.uuid(),
+		identifier: z.string().trim().min(1).max(100),
+		serialNumber: z.string().trim().max(200).optional(),
+	}),
 	z.strictObject({
 		kind: z.literal("transfer_equipment"),
 		...request,
@@ -229,7 +256,8 @@ export type EquipmentFilters = z.infer<typeof equipmentFiltersSchema>;
 export interface EquipmentHandoverView {
 	id: string;
 	quantity: number;
-	actualDate: string;
+	actualDate: string | null;
+	historical?: boolean;
 	condition: EquipmentCondition;
 	notes: string | null;
 	actorId: string | null;

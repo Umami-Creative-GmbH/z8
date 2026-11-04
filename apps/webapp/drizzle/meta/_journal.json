@@ -2101,6 +2101,13 @@
       "when": 1810569600000,
       "tag": "0299_equipment_readiness",
       "breakpoints": true
+    },
+    {
+      "idx": 301,
+      "version": "7",
+      "when": 1810742400000,
+      "tag": "0301_equipment_historical",
+      "breakpoints": true
     }
   ]
 }
