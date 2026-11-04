@@ -27,7 +27,10 @@ export function EquipmentDepartureSummary({
 			{equipment.length ? (
 				<ul className="space-y-3 text-sm">
 					{equipment.map((item) => (
-						<li key={item.assignmentId} className="flex flex-wrap justify-between gap-2">
+						<li
+							key={item.assignmentId}
+							className="flex flex-wrap justify-between gap-2 [content-visibility:auto]"
+						>
 							<span className="min-w-0 break-words">
 								<span translate="no">{item.identifier}</span>
 								{item.identifier !== item.typeName ? ` · ${item.typeName}` : ""} ·{" "}
@@ -63,7 +66,7 @@ export function EquipmentDepartureSummary({
 			</p>
 			<Link
 				href={`/equipment/employees/${employeeId}`}
-				className="text-sm text-primary underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring"
+				className="text-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring"
 			>
 				{t("settings.equipment.departure.followUp", "Open equipment follow-up")}
 			</Link>

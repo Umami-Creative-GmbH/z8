@@ -2,6 +2,10 @@ import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toServerActionResult } from "@/lib/effect/result";
 
+vi.mock("next/cache", async (original) =>
+	(await import("@/test/integration-harness")).nextCache(original),
+);
+
 const mocks = vi.hoisted(() => ({
 	gate: { released: false },
 	getEmployeeSettingsActorContext: vi.fn(),

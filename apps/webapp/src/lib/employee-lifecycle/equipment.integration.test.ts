@@ -192,6 +192,23 @@ it("previews current required returns, recomputes on schedule, and preserves exp
 		kind: "ok",
 		preview: { cutoff: "2026-10-26T23:00:00Z", timezone: "Europe/Berlin" },
 	});
+	const immediatePreview = await previewEmployeeDeparture(fixture.db, {
+		...actor(),
+		actorUserId: fixture.ownerUserId,
+		employeeId: target.employeeId,
+		lastWorkingDay: null,
+		replacementEmployeeId: null,
+		now: parseInstant(context.now),
+	});
+	expect(immediatePreview).toMatchObject({
+		kind: "ok",
+		preview: {
+			timezone: "America/Los_Angeles",
+			equipment: expect.arrayContaining([
+				expect.objectContaining({ assignmentId: later.id, effectiveDeadline: "2026-10-20" }),
+			]),
+		},
+	});
 	expect(await equipment(target.employeeId)).toEqual(
 		expect.arrayContaining([
 			expect.objectContaining({
@@ -494,4 +511,110 @@ it("new issuance during a pending departure inherits the frozen deadline; issuan
 			now: parseInstant(context.now),
 		}),
 	).toBeNull();
+});
+
+it("departure summaries exclude lost or waived obligations and recovery does not settle remaining quantities twice", async () => {
+	const target = await fixture.seedEmployee();
+	const assignment = await issue(target.employeeId);
+	expect(
+		await actions.changeEquipment({
+			kind: "close_return",
+			assignmentId: assignment.id,
+			requestId: randomUUID(),
+			expectedRevision: 1,
+			quantity: 1,
+			outcome: "lost",
+			reason: "Missing laptop",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	const preview = () =>
+		previewEmployeeDeparture(fixture.db, {
+			...actor(),
+			actorUserId: context.userId,
+			employeeId: target.employeeId,
+			lastWorkingDay: "2026-10-25",
+			replacementEmployeeId: null,
+			now: parseInstant(context.now),
+		});
+	expect(await preview()).toMatchObject({
+		kind: "ok",
+		preview: { equipment: [{ assignmentId: assignment.id, outstandingQuantity: 2 }] },
+	});
+	const lost = (await equipment(target.employeeId))[0];
+	expect(
+		await actions.changeEquipment({
+			kind: "receive_exception",
+			assignmentId: assignment.id,
+			exceptionId: lost.exceptions[0].id,
+			requestId: randomUUID(),
+			expectedRevision: lost.revision,
+			quantity: 1,
+			actualDate: "2026-10-20",
+			condition: "good",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	expect(await preview()).toMatchObject({
+		kind: "ok",
+		preview: { equipment: [{ assignmentId: assignment.id, outstandingQuantity: 2 }] },
+	});
+	const recovered = (await equipment(target.employeeId))[0];
+	expect(
+		await actions.changeEquipment({
+			kind: "close_return",
+			assignmentId: assignment.id,
+			requestId: randomUUID(),
+			expectedRevision: recovered.revision,
+			quantity: 2,
+			outcome: "waived",
+			reason: "Employee may keep the rest",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	expect(await preview()).toMatchObject({ kind: "ok", preview: { equipment: [] } });
+	await schedule(target.employeeId);
+	expect(await equipment(target.employeeId)).toMatchObject([
+		{
+			outstandingQuantity: 0,
+			physicallyReceivedQuantity: 1,
+			lostQuantity: 1,
+			waivedQuantity: 2,
+			recoveredQuantity: 1,
+		},
+	]);
+});
+
+it("a staff-confirmed transfer to a scheduled employee inherits that employment's deadline", async () => {
+	const source = await fixture.seedEmployee();
+	const target = await fixture.seedEmployee();
+	const assignment = await issue(source.employeeId);
+	const departure = await schedule(target.employeeId);
+	const sourceAssignment = (await equipment(source.employeeId))[0];
+	if (!sourceAssignment.transfer)
+		throw new Error("Transfer must be offered to the equipment administrator.");
+	const transferred = await actions.changeEquipment({
+		kind: "transfer_equipment",
+		assignmentId: assignment.id,
+		employeeId: target.employeeId,
+		requestId: randomUUID(),
+		expectedRevision: sourceAssignment.revision,
+		expectedIssuanceRevision: sourceAssignment.transfer.expectedIssuanceRevision,
+		quantity: 2,
+		receipt: { actualDate: "2026-10-20", condition: "good" },
+		issue: { actualDate: "2026-10-20", condition: "good", returnRequired: true },
+	});
+	expect(transferred, JSON.stringify(transferred)).toMatchObject({
+		success: true,
+		data: { ok: true },
+	});
+	expect(await equipment(target.employeeId)).toMatchObject([
+		{
+			quantity: 2,
+			outstandingQuantity: 2,
+			employmentPeriodId: target.employmentPeriodId,
+			departureId: departure.departureId,
+			effectiveDeadline: "2026-10-25",
+		},
+	]);
+	expect(await equipment(source.employeeId)).toMatchObject([
+		{ physicallyReceivedQuantity: 2, outstandingQuantity: 1, departureId: null },
+	]);
 });

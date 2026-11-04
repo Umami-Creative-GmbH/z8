@@ -569,12 +569,18 @@ async function performHandover(
 				),
 			);
 		const [departure] = period
-			? await tx.select().from(employeeDeparture).where(and(
-				eq(employeeDeparture.organizationId, actor.organizationId),
-				eq(employeeDeparture.employeeId, change.employeeId),
-				eq(employeeDeparture.employmentPeriodId, period.id),
-				eq(employeeDeparture.status, "pending"),
-			)) : [];
+			? await tx
+					.select()
+					.from(employeeDeparture)
+					.where(
+						and(
+							eq(employeeDeparture.organizationId, actor.organizationId),
+							eq(employeeDeparture.employeeId, change.employeeId),
+							eq(employeeDeparture.employmentPeriodId, period.id),
+							eq(employeeDeparture.status, "pending"),
+						),
+					)
+			: [];
 		const [assignment] = await tx
 			.insert(equipmentAssignment)
 			.values({
@@ -586,9 +592,15 @@ async function performHandover(
 				employmentPeriodId: period?.id ?? null,
 				returnRequired: change.returnRequired,
 				explicitDeadline: change.explicitDeadline ?? null,
-				departureDeadline: change.returnRequired && departure
-					? equipmentDepartureDeadline(instantFromDate(departure.cutoffAt), departure.timezone, departure.mode) : null,
-				departureId: change.returnRequired ? departure?.id ?? null : null,
+				departureDeadline:
+					change.returnRequired && departure
+						? equipmentDepartureDeadline(
+								instantFromDate(departure.cutoffAt),
+								departure.timezone,
+								departure.mode,
+							)
+						: null,
+				departureId: change.returnRequired ? (departure?.id ?? null) : null,
 			})
 			.returning();
 		await tx.insert(equipmentHandover).values({

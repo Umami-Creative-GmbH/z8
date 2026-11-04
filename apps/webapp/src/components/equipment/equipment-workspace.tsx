@@ -739,7 +739,7 @@ function EquipmentAssignmentCard({
 				<div>
 					<dt className="text-muted-foreground">
 						{t(
-							"settings.equipment.custody.deadline",
+							"settings.equipment.custody.effectiveDeadline",
 							"Effective return deadline",
 						)}
 					</dt>

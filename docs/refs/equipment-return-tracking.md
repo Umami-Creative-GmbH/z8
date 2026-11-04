@@ -1,6 +1,6 @@
 # Equipment issue and return tracking
 
-Status: design confirmed on 2026-11-04. Equipment setup (#1536), individual issuance/receipt (#1537), quantity issuance/partial receipts (#1538), scoped officers (#1539), item readiness/clearance (#1541), and staff-confirmed transfers (#1542) are implemented. Reasoned loss/waiver and recovery (#1540) are implemented; later lifecycle, reminder, export and retention slices remain pending.
+Status: design confirmed on 2026-11-04. Equipment setup (#1536), individual issuance/receipt (#1537), quantity issuance/partial receipts (#1538), scoped officers (#1539), item readiness/clearance (#1541), staff-confirmed transfers (#1542), reasoned loss/waiver and recovery (#1540), and scheduled departures (#1545) are implemented. Immediate deactivation, historical entry, corrections, reminders, exports and retention remain pending.
 
 
 Specification: [#1535 — Equipment issue and return tracking](https://github.com/Umami-Creative-GmbH/z8/issues/1535).

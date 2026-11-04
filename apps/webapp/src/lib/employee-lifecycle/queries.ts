@@ -531,6 +531,7 @@ export async function previewEmployeeDeparture(
 	}>(sql`
 		SELECT e.user_id, coalesce((SELECT d.timezone FROM employee_departure d
 		 WHERE d.organization_id=e.organization_id AND d.employee_id=e.id AND d.status IN ('pending','blocked')
+		  AND ${input.lastWorkingDay}::text IS NOT NULL
 		 ORDER BY d.created_at DESC LIMIT 1), o.timezone) AS timezone FROM employee e
 		JOIN organization o ON o.id = e.organization_id
 		WHERE e.organization_id = ${input.organizationId} AND e.id = ${input.employeeId}::uuid
