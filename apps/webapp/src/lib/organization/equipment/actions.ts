@@ -10,11 +10,13 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { resolveEmployeeOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
+import { withEquipmentAdministration } from "./access";
 import {
 	equipmentFiltersSchema,
 	equipmentSetupDetailSchema,
 } from "./contracts";
 import { applyEquipmentChange, readEquipment } from "./custody";
+import { applyEquipmentOfficerChange, readEquipmentOfficers } from "./officers";
 import {
 	applyEquipmentSetupChange,
 	readEquipmentSetup,
@@ -50,7 +52,7 @@ const administrator = Effect.gen(function* () {
 		}),
 	);
 	if (!access.allowed) return yield* Effect.fail(denied());
-	return { organizationId, userId: session.user.id };
+	return { organizationId, userId: session.user.id, session: session.session };
 });
 
 /** Every read resolves the actor and active organization on the server. Includes retained archived identities. */
@@ -59,9 +61,17 @@ export async function getEquipmentSetup() {
 		Effect.gen(function* () {
 			const actor = yield* administrator;
 			const database = yield* DatabaseService;
-			return yield* database.query("equipment.setup.read", () =>
-				readEquipmentSetup(database.db, actor.organizationId),
-			);
+			return yield* database
+				.query("equipment.setup.read", () =>
+					withEquipmentAdministration(database.db, actor, (tx) =>
+						readEquipmentSetup(tx, actor.organizationId),
+					),
+				)
+				.pipe(
+					Effect.mapError((error) =>
+						error.cause instanceof AuthorizationError ? error.cause : error,
+					),
+				);
 		}),
 	);
 }
@@ -71,9 +81,15 @@ export async function changeEquipmentSetup(input: unknown) {
 		Effect.gen(function* () {
 			const actor = yield* administrator;
 			const database = yield* DatabaseService;
-			const outcome = yield* database.query("equipment.setup.change", () =>
-				applyEquipmentSetupChange(database.db, actor, input),
-			);
+			const outcome = yield* database
+				.query("equipment.setup.change", () =>
+					applyEquipmentSetupChange(database.db, actor, input),
+				)
+				.pipe(
+					Effect.mapError((error) =>
+						error.cause instanceof AuthorizationError ? error.cause : error,
+					),
+				);
 			if (outcome.ok) revalidatePath("/settings/equipment");
 			return outcome;
 		}),
@@ -92,13 +108,17 @@ export async function getEquipmentSetupDetail(input: unknown) {
 					}),
 				);
 			const database = yield* DatabaseService;
-			return yield* database.query("equipment.setup.detail", () =>
-				readEquipmentSetupDetail(
-					database.db,
-					actor.organizationId,
-					parsed.data,
-				),
-			);
+			return yield* database
+				.query("equipment.setup.detail", () =>
+					withEquipmentAdministration(database.db, actor, (tx) =>
+						readEquipmentSetupDetail(tx, actor.organizationId, parsed.data),
+					),
+				)
+				.pipe(
+					Effect.mapError((error) =>
+						error.cause instanceof AuthorizationError ? error.cause : error,
+					),
+				);
 		}),
 	);
 }
@@ -216,6 +236,48 @@ export async function getMyEquipment() {
 						error.cause instanceof AuthorizationError ? error.cause : error,
 					),
 				);
+		}),
+	);
+}
+
+export async function getEquipmentOfficerGrants() {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const actor = yield* equipmentActor;
+			const database = yield* DatabaseService;
+			return yield* database
+				.query("equipment.officers.read", () =>
+					readEquipmentOfficers(database.db, actor),
+				)
+				.pipe(
+					Effect.mapError((error) =>
+						error.cause instanceof AuthorizationError ? error.cause : error,
+					),
+				);
+		}),
+	);
+}
+
+export async function changeEquipmentOfficerGrant(input: unknown) {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const actor = yield* equipmentActor;
+			const database = yield* DatabaseService;
+			const result = yield* database
+				.query("equipment.officers.change", () =>
+					applyEquipmentOfficerChange(database.db, actor, input),
+				)
+				.pipe(
+					Effect.mapError((error) =>
+						error.cause instanceof AuthorizationError ? error.cause : error,
+					),
+				);
+			if (result.ok) {
+				revalidatePath("/settings/equipment");
+				revalidatePath("/equipment");
+				revalidatePath("/", "layout");
+			}
+			return result;
 		}),
 	);
 }
