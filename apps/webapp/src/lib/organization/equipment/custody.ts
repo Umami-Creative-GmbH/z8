@@ -8,6 +8,7 @@ import { employee, employeeEmploymentPeriod } from "@/db/schema";
 import {
 	equipmentAssignment,
 	equipmentCommand,
+	equipmentException,
 	equipmentHandover,
 	equipmentItem,
 	equipmentPolicy,
@@ -40,6 +41,7 @@ import {
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import {
 	type EquipmentAssignmentView,
+	type EquipmentExceptionView,
 	type EquipmentFilters,
 	type EquipmentHandoverView,
 	type EquipmentOutcome,
@@ -121,7 +123,11 @@ async function equipmentAccess(
 				eq(member.status, "approved"),
 			),
 		);
+	const canAdminister =
+		hasOrganizationRole(membership?.role, "owner") ||
+		hasOrganizationRole(membership?.role, "admin");
 	return {
+		canCloseExceptions: canAdminister,
 		employeeId: access.employeeId,
 		canManage:
 			hasOrganizationRole(membership?.role, "owner") ||
@@ -196,7 +202,10 @@ export async function applyEquipmentChange(
 			return replay.fingerprint === fingerprint
 				? replay.result
 				: { ok: false, reason: "request_conflict" };
-		const { today, now } = await organizationCalendar(tx, actor.organizationId);
+		const { today, now, timezone } = await organizationCalendar(
+			tx,
+			actor.organizationId,
+		);
 		if (
 			change.kind === "clear_item" ||
 			change.kind === "mark_item_unavailable" ||
@@ -215,6 +224,71 @@ export async function applyEquipmentChange(
 					fingerprint,
 					result: outcome,
 				});
+			return outcome;
+		}
+		if (change.kind === "close_return") {
+			if (!access.canCloseExceptions) return { ok: false, reason: "forbidden" };
+			const [assignment] = await tx
+				.select()
+				.from(equipmentAssignment)
+				.where(assignmentScope(actor.organizationId, change.assignmentId));
+			if (!assignment) return { ok: false, reason: "not_found" };
+			const [holder] = await tx
+				.select({ userId: employee.userId })
+				.from(employee)
+				.where(
+					and(
+						eq(employee.organizationId, actor.organizationId),
+						eq(
+							employee.id,
+							assignment.employeeId ?? "00000000-0000-0000-0000-000000000000",
+						),
+					),
+				);
+			if (holder?.userId === actor.userId)
+				return { ok: false, reason: "self_exception" };
+			if (assignment.revision !== change.expectedRevision)
+				return { ok: false, reason: "stale_revision" };
+			if (!assignment.returnRequired)
+				return { ok: false, reason: "return_not_required" };
+			if (
+				change.quantity >
+				assignment.quantity -
+					assignment.receivedQuantity -
+					assignment.lostQuantity -
+					assignment.waivedQuantity +
+					assignment.exceptionReceivedQuantity
+			)
+				return { ok: false, reason: "excess_quantity" };
+			await tx.insert(equipmentException).values({
+				organizationId: actor.organizationId,
+				assignmentId: assignment.id,
+				kind: change.outcome,
+				quantity: change.quantity,
+				reason: change.reason,
+				actorId: actor.userId,
+				recordedAt: dateFromInstant(now),
+			});
+			const revision = assignment.revision + 1;
+			await tx
+				.update(equipmentAssignment)
+				.set({
+					lostQuantity:
+						assignment.lostQuantity +
+						(change.outcome === "lost" ? change.quantity : 0),
+					waivedQuantity:
+						assignment.waivedQuantity +
+						(change.outcome === "waived" ? change.quantity : 0),
+					revision,
+				})
+				.where(assignmentScope(actor.organizationId, assignment.id));
+			const outcome = { ok: true, id: assignment.id, revision } as const;
+			await tx.insert(equipmentCommand).values({
+				organizationId: actor.organizationId,
+				requestId: change.requestId,
+				fingerprint,
+				result: outcome,
+			});
 			return outcome;
 		}
 		const actualDate = parsePlainDate(change.actualDate);
@@ -367,8 +441,8 @@ export async function applyEquipmentChange(
 				.where(assignmentScope(actor.organizationId, change.assignmentId));
 			if (!assignment) return { ok: false, reason: "not_found" };
 			if (
-				(change.kind === "receive_individual") !==
-				(assignment.itemId !== null)
+				change.kind !== "receive_exception" &&
+				(change.kind === "receive_individual") !== (assignment.itemId !== null)
 			)
 				return {
 					ok: false,
@@ -393,9 +467,44 @@ export async function applyEquipmentChange(
 			if (assignment.revision !== change.expectedRevision)
 				return { ok: false, reason: "stale_revision" };
 			if (assignment.received) return { ok: false, reason: "already_received" };
-			const quantity = change.kind === "receive_quantity" ? change.quantity : 1;
+			const quantity =
+				change.kind === "receive_individual" ? 1 : change.quantity;
+			const [exception] =
+				change.kind === "receive_exception"
+					? await tx
+							.select()
+							.from(equipmentException)
+							.where(
+								and(
+									eq(equipmentException.organizationId, actor.organizationId),
+									eq(equipmentException.assignmentId, assignment.id),
+									eq(equipmentException.id, change.exceptionId),
+								),
+							)
+					: [];
+			if (change.kind === "receive_exception") {
+				if (!exception) return { ok: false, reason: "not_found" };
+				if (quantity > exception.quantity - exception.receivedQuantity)
+					return { ok: false, reason: "excess_quantity" };
+				if (
+					Temporal.PlainDate.compare(
+						actualDate,
+						instantFromDate(exception.recordedAt)
+							.toZonedDateTimeISO(timezone)
+							.toPlainDate(),
+					) < 0
+				)
+					return { ok: false, reason: "conflicting_history" };
+			}
 			const receivedQuantity = assignment.receivedQuantity + quantity;
-			if (receivedQuantity > assignment.quantity)
+			if (
+				!exception &&
+				receivedQuantity +
+					assignment.lostQuantity +
+					assignment.waivedQuantity -
+					assignment.exceptionReceivedQuantity >
+					assignment.quantity
+			)
 				return { ok: false, reason: "excess_quantity" };
 			const [issue] = await tx
 				.select()
@@ -427,6 +536,7 @@ export async function applyEquipmentChange(
 				organizationId: actor.organizationId,
 				assignmentId: assignment.id,
 				kind: "receipt",
+				exceptionId: exception?.id ?? null,
 				quantity,
 				actualDate: change.actualDate,
 				condition: change.condition,
@@ -434,11 +544,23 @@ export async function applyEquipmentChange(
 				actorId: actor.userId,
 				recordedAt,
 			});
+			if (exception)
+				await tx
+					.update(equipmentException)
+					.set({ receivedQuantity: exception.receivedQuantity + quantity })
+					.where(
+						and(
+							eq(equipmentException.organizationId, actor.organizationId),
+							eq(equipmentException.id, exception.id),
+						),
+					);
 			const [updated] = await tx
 				.update(equipmentAssignment)
 				.set({
 					received: receivedQuantity === assignment.quantity,
 					receivedQuantity,
+					exceptionReceivedQuantity:
+						assignment.exceptionReceivedQuantity + (exception ? quantity : 0),
 					revision: assignment.revision + 1,
 				})
 				.where(assignmentScope(actor.organizationId, assignment.id))
@@ -602,12 +724,44 @@ export async function readEquipment(
 						asc(equipmentHandover.id),
 					)
 			: [];
+		const exceptionRows = rows.length
+			? await tx
+					.select({ record: equipmentException, actorName: user.name })
+					.from(equipmentException)
+					.leftJoin(user, eq(user.id, equipmentException.actorId))
+					.where(
+						and(
+							eq(equipmentException.organizationId, actor.organizationId),
+							inArray(
+								equipmentException.assignmentId,
+								rows.map((r) => r.assignment.id),
+							),
+						),
+					)
+					.orderBy(
+						asc(equipmentException.recordedAt),
+						asc(equipmentException.id),
+					)
+			: [];
+		const exceptionEvidence = new Map<string, EquipmentExceptionView[]>();
+		for (const { record, actorName } of exceptionRows) {
+			const list = exceptionEvidence.get(record.assignmentId) ?? [];
+			list.push({
+				...record,
+				receivedQuantity: record.receivedQuantity,
+				actorName,
+				recordedAt: instantFromDate(record.recordedAt).toString(),
+				canReceive: false,
+			});
+			exceptionEvidence.set(record.assignmentId, list);
+		}
 		const evidence = new Map<string, EquipmentHandoverView[]>();
 		for (const { record, actorName } of handovers) {
 			const key = `${record.assignmentId}:${record.kind}`;
 			const records = evidence.get(key) ?? [];
 			records.push({
 				id: record.id,
+				exceptionId: record.exceptionId,
 				quantity: record.quantity,
 				actualDate: record.actualDate,
 				condition: record.condition,
@@ -625,10 +779,13 @@ export async function readEquipment(
 			const issue = evidence.get(`${assignment.id}:issue`)?.[0];
 			const receipts = evidence.get(`${assignment.id}:receipt`) ?? [];
 			if (!holder || !issue) continue;
-			// Physical receipts alone reduce this slice's return balance. Later exception
-			// outcomes must reduce obligations separately, never receivedQuantity.
+			// Exception closure settles the obligation without pretending physical receipt.
 			const outstandingQuantity = assignment.returnRequired
-				? assignment.quantity - assignment.receivedQuantity
+				? assignment.quantity -
+					assignment.receivedQuantity -
+					assignment.lostQuantity -
+					assignment.waivedQuantity +
+					assignment.exceptionReceivedQuantity
 				: 0;
 			const outstanding = outstandingQuantity > 0;
 			const overdue =
@@ -648,6 +805,24 @@ export async function readEquipment(
 			)
 				continue;
 			assignments.push({
+				lostQuantity: assignment.lostQuantity,
+				waivedQuantity: assignment.waivedQuantity,
+				recoveredQuantity: (exceptionEvidence.get(assignment.id) ?? [])
+					.filter((e) => e.kind === "lost")
+					.reduce((sum, e) => sum + e.receivedQuantity, 0),
+				exceptions: (exceptionEvidence.get(assignment.id) ?? []).map((e) => ({
+					...e,
+					canReceive:
+						scope.kind !== "personal" &&
+						access.canManage &&
+						holder.userId !== actor.userId &&
+						e.receivedQuantity < e.quantity,
+				})),
+				canCloseException:
+					scope.kind !== "personal" &&
+					access.canCloseExceptions &&
+					outstanding &&
+					holder.userId !== actor.userId,
 				id: assignment.id,
 				itemId: item?.id ?? null,
 				trackingMode: type.trackingMode,
@@ -667,8 +842,9 @@ export async function readEquipment(
 				held: !assignment.received,
 				revision: assignment.revision,
 				canReceive:
+					scope.kind !== "personal" &&
 					access.canManage &&
-					!assignment.received &&
+					(!assignment.returnRequired ? !assignment.received : outstanding) &&
 					holder.userId !== actor.userId,
 				issue,
 				receipt: receipts.at(-1) ?? null,

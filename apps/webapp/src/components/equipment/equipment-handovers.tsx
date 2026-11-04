@@ -40,7 +40,7 @@ const handoverDefaults = {
 };
 
 /** Preserve identity on uncertain retries; editing an unsaved payload starts a new command. */
-function useCommandIdentity() {
+export function useCommandIdentity() {
 	const request = useRef<{ payload: string; id: string } | null>(null);
 	return (payload: unknown) => {
 		const serialized = JSON.stringify(payload);
@@ -49,7 +49,11 @@ function useCommandIdentity() {
 		return request.current.id;
 	};
 }
-function actualDateError(value: string, today: string, t: EquipmentTranslate) {
+export function actualDateError(
+	value: string,
+	today: string,
+	t: EquipmentTranslate,
+) {
 	if (!value)
 		return t(
 			"settings.equipment.handover.dateRequired",
@@ -76,7 +80,7 @@ interface StringField {
 	handleChange: (value: string) => void;
 	handleBlur: () => void;
 }
-function ActualDateField({
+export function ActualDateField({
 	field,
 	today,
 	pending,
@@ -108,7 +112,7 @@ function ActualDateField({
 		</TFormItem>
 	);
 }
-function ConditionField({
+export function ConditionField({
 	value,
 	onChange,
 	disabled,
@@ -145,7 +149,7 @@ function ConditionField({
 		</TFormItem>
 	);
 }
-function NotesField({
+export function NotesField({
 	field,
 	pending,
 	t,
@@ -175,7 +179,11 @@ function NotesField({
 	);
 }
 
-function quantityError(value: string, t: EquipmentTranslate, maximum?: number) {
+export function quantityError(
+	value: string,
+	t: EquipmentTranslate,
+	maximum?: number,
+) {
 	const quantity = Number(value);
 	if (!equipmentQuantitySchema.safeParse(quantity).success)
 		return t(
@@ -189,7 +197,7 @@ function quantityError(value: string, t: EquipmentTranslate, maximum?: number) {
 		);
 	return undefined;
 }
-function QuantityField({
+export function QuantityField({
 	field,
 	pending,
 	maximum,
@@ -673,7 +681,10 @@ export function ReceiveEquipmentForm({
 								quantityError(
 									value,
 									t,
-									assignment.quantity - assignment.physicallyReceivedQuantity,
+									assignment.returnRequired
+										? assignment.outstandingQuantity
+										: assignment.quantity -
+												assignment.physicallyReceivedQuantity,
 								),
 						}}
 					>
@@ -682,7 +693,10 @@ export function ReceiveEquipmentForm({
 								field={field}
 								pending={pending}
 								maximum={
-									assignment.quantity - assignment.physicallyReceivedQuantity
+									assignment.returnRequired
+										? assignment.outstandingQuantity
+										: assignment.quantity -
+											assignment.physicallyReceivedQuantity
 								}
 								t={t}
 							/>
