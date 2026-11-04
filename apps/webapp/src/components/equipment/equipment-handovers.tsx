@@ -21,9 +21,12 @@ import {
 	type EquipmentCondition,
 	type EquipmentView,
 	equipmentConditionSchema,
-	equipmentQuantitySchema,
 } from "@/lib/organization/equipment/contracts";
 import { conditionLabel, type EquipmentTranslate } from "./equipment-copy";
+import {
+	actualDateError,
+	quantityError,
+} from "./equipment-handover-validation";
 
 export const equipmentSelectClass =
 	"h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
@@ -40,7 +43,7 @@ const handoverDefaults = {
 };
 
 /** Preserve identity on uncertain retries; editing an unsaved payload starts a new command. */
-function useCommandIdentity() {
+export function useCommandIdentity() {
 	const request = useRef<{ payload: string; id: string } | null>(null);
 	return (payload: unknown) => {
 		const serialized = JSON.stringify(payload);
@@ -49,34 +52,13 @@ function useCommandIdentity() {
 		return request.current.id;
 	};
 }
-function actualDateError(value: string, today: string, t: EquipmentTranslate) {
-	if (!value)
-		return t(
-			"settings.equipment.handover.dateRequired",
-			"Enter the actual handover date.",
-		);
-	try {
-		const date = parsePlainDate(value);
-		if (comparePlainDates(date, parsePlainDate(today)) > 0)
-			return t(
-				"settings.equipment.handover.futureDate",
-				"The actual handover date cannot be in the future in the organization’s timezone.",
-			);
-	} catch {
-		return t(
-			"settings.equipment.handover.dateInvalid",
-			"Enter a valid calendar date.",
-		);
-	}
-	return undefined;
-}
 interface StringField {
 	name: string;
 	state: { value: string; meta: { errors: unknown[] } };
 	handleChange: (value: string) => void;
 	handleBlur: () => void;
 }
-function ActualDateField({
+export function ActualDateField({
 	field,
 	today,
 	pending,
@@ -108,7 +90,7 @@ function ActualDateField({
 		</TFormItem>
 	);
 }
-function ConditionField({
+export function ConditionField({
 	value,
 	onChange,
 	disabled,
@@ -145,7 +127,7 @@ function ConditionField({
 		</TFormItem>
 	);
 }
-function NotesField({
+export function NotesField({
 	field,
 	pending,
 	t,
@@ -175,21 +157,7 @@ function NotesField({
 	);
 }
 
-function quantityError(value: string, t: EquipmentTranslate, maximum?: number) {
-	const quantity = Number(value);
-	if (!equipmentQuantitySchema.safeParse(quantity).success)
-		return t(
-			"settings.equipment.handover.quantityInvalid",
-			"Enter a positive whole quantity.",
-		);
-	if (maximum !== undefined && quantity > maximum)
-		return t(
-			"settings.equipment.handover.quantityExcess",
-			"Quantity exceeds the remaining physical balance.",
-		);
-	return undefined;
-}
-function QuantityField({
+export function QuantityField({
 	field,
 	pending,
 	maximum,

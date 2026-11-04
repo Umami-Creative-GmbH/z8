@@ -125,12 +125,32 @@ const handoverFields = {
 	condition: equipmentConditionSchema,
 	notes: z.string().trim().max(4000).optional(),
 };
+const transferEvidence = {
+	actualDate: calendarDate,
+	condition: equipmentConditionSchema,
+	notes: z.string().trim().max(4000).optional(),
+};
 export const equipmentQuantitySchema = z
 	.number()
 	.int()
 	.positive()
 	.max(2147483647);
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
+	z.strictObject({
+		kind: z.literal("transfer_equipment"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		employeeId: z.uuid(),
+		quantity: equipmentQuantitySchema,
+		expectedIssuanceRevision: z.number().int().positive(),
+		receipt: z.strictObject(transferEvidence),
+		issue: z.strictObject({
+			...transferEvidence,
+			returnRequired: z.boolean(),
+			explicitDeadline: calendarDate.nullable().optional(),
+		}),
+	}),
 	z.strictObject({
 		kind: z.literal("register_and_issue_individual"),
 		...handoverFields,
@@ -249,6 +269,11 @@ export interface EquipmentAssignmentView {
 	held: boolean;
 	revision: number;
 	canReceive: boolean;
+	/** Present only when the current actor can receive and the equipment is issuable after receipt. */
+	transfer?: {
+		expectedIssuanceRevision: number;
+		defaultReturnRequired: boolean;
+	};
 	issue: EquipmentHandoverView;
 	/** Latest physical receipt, retained for individual consumers. */
 	receipt: EquipmentHandoverView | null;
