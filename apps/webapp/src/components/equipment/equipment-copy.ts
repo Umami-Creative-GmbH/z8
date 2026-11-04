@@ -56,7 +56,7 @@ export function handoverRefusalMessage(
 			);
 		case "excess_quantity":
 			return t(
-				"settings.equipment.handover.quantityExcess",
+				"settings.equipment.exception.quantityExcess",
 				"Quantity exceeds the remaining balance for this action.",
 			);
 		case "forbidden":

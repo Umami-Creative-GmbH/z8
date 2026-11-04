@@ -6,7 +6,11 @@ import type {
 	EquipmentAssignmentView,
 	EquipmentView,
 } from "@/lib/organization/equipment/contracts";
-import { EquipmentOverview, PersonalEquipment } from "./equipment-workspace";
+import {
+	EmployeeEquipment,
+	EquipmentOverview,
+	PersonalEquipment,
+} from "./equipment-workspace";
 
 const api = vi.hoisted(() => ({
 	change: vi.fn(),
@@ -31,6 +35,8 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 const view: EquipmentView = {
+	canAdminister: true,
+	registrationTypes: [],
 	readinessItems: [],
 	canManage: true,
 	policyConfigured: true,
@@ -130,6 +136,15 @@ it("requires a reason for partial loss/waiver and preserves command identity on 
 	await user.selectOptions(screen.getByLabelText(/^Outcome/), "waived");
 	await user.type(screen.getByLabelText(/^Reason/), "Uniform allowance");
 	const quantity = screen.getByLabelText(/^Quantity/);
+	await user.clear(quantity);
+	await user.type(quantity, "4");
+	await user.click(screen.getByRole("button", { name: "Record closure" }));
+	expect(
+		await screen.findByText(
+			"Quantity exceeds the remaining balance for this action.",
+		),
+	).toBeTruthy();
+	expect(api.change).not.toHaveBeenCalled();
 	await user.clear(quantity);
 	await user.type(quantity, "2");
 	await user.click(screen.getByRole("button", { name: "Record closure" }));
@@ -255,4 +270,80 @@ it("shows received, lost, waived and recovered quantities without calling a clos
 	expect(screen.queryByText("Issued to keep")).toBeNull();
 	expect(screen.queryByRole("button", { name: "Close return" })).toBeNull();
 	expect(screen.queryByRole("button", { name: "Record recovery" })).toBeNull();
+});
+
+it("offers closure on the employee profile and leaves stale feedback with a reload path", async () => {
+	api.change.mockResolvedValue({
+		success: true,
+		data: { ok: false, reason: "stale_revision" },
+	});
+	const user = userEvent.setup();
+	render(
+		<EmployeeEquipment
+			employeeId={heldAssignment.employeeId}
+			data={{ ...view, assignments: [heldAssignment] }}
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Close return" }));
+	await user.type(screen.getByLabelText(/^Reason/), "Missing laptop");
+	await user.click(screen.getByRole("button", { name: "Record closure" }));
+	expect(await screen.findByRole("alert")).toHaveProperty(
+		"textContent",
+		"This record changed. Reload equipment and review it before submitting again.",
+	);
+	expect(screen.getByLabelText(/^Reason/)).toHaveProperty(
+		"value",
+		"Missing laptop",
+	);
+	await user.click(screen.getByRole("button", { name: "Cancel" }));
+	expect(screen.queryByLabelText(/^Reason/)).toBeNull();
+	await user.click(screen.getByRole("button", { name: "Reload equipment" }));
+	expect(api.refresh).toHaveBeenCalled();
+});
+it("receives waived equipment through its linked decision without relabeling it as a loss recovery", async () => {
+	api.change.mockResolvedValue({ success: false });
+	const user = userEvent.setup();
+	const waiver = {
+		...loss,
+		kind: "waived" as const,
+		quantity: 1,
+		reason: "Permission to keep",
+	};
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				assignments: [
+					{
+						...heldAssignment,
+						canCloseException: false,
+						canReceive: false,
+						outstanding: false,
+						outstandingQuantity: 0,
+						lostQuantity: 0,
+						waivedQuantity: 1,
+						exceptions: [waiver],
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	await user.click(screen.getByText("Handover history"));
+	expect(screen.queryByRole("button", { name: "Record recovery" })).toBeNull();
+	await user.click(
+		screen.getByRole("button", { name: "Record waived receipt" }),
+	);
+	expect(screen.getByText(/Receive waived equipment/)).toBeTruthy();
+	await user.type(screen.getByLabelText(/^Actual handover date/), "2026-11-05");
+	await user.click(
+		screen.getByRole("button", { name: "Confirm waived receipt" }),
+	);
+	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(1));
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "receive_exception",
+		assignmentId: heldAssignment.id,
+		exceptionId: waiver.id,
+		quantity: 1,
+	});
 });

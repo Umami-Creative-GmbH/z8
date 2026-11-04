@@ -74,7 +74,7 @@ export function CloseReturnForm({
 		<form
 			ref={element}
 			noValidate
-			className="space-y-4 rounded-lg border bg-card p-4"
+			className="min-w-0 space-y-4 break-words rounded-lg border bg-card p-4"
 			onSubmit={(e) => {
 				e.preventDefault();
 				void form.handleSubmit();
@@ -129,7 +129,13 @@ export function CloseReturnForm({
 					name="quantity"
 					validators={{
 						onSubmit: ({ value }) =>
-							quantityError(value, t, assignment.outstandingQuantity),
+							quantityError(value, t) ??
+							(Number(value) > assignment.outstandingQuantity
+								? t(
+										"settings.equipment.exception.quantityExcess",
+										"Quantity exceeds the remaining balance for this action.",
+									)
+								: undefined),
 					}}
 				>
 					{(field) => (
@@ -235,7 +241,7 @@ export function ReceiveExceptionForm({
 		<form
 			ref={element}
 			noValidate
-			className="space-y-4 rounded-lg border bg-card p-4"
+			className="min-w-0 space-y-4 break-words rounded-lg border bg-card p-4"
 			onSubmit={(e) => {
 				e.preventDefault();
 				void form.handleSubmit();
@@ -378,14 +384,24 @@ export function EquipmentExceptionTotals({
 	];
 	if (!assignment.exceptions?.length) return null;
 	return (
-		<dl className="grid gap-3 text-sm sm:grid-cols-3">
-			{totals.map((total) => (
-				<div key={total.label}>
-					<dt className="text-muted-foreground">{total.label}</dt>
-					<dd className="tabular-nums">{total.value.toLocaleString(locale)}</dd>
-				</div>
-			))}
-		</dl>
+		<div className="space-y-2">
+			<dl className="grid gap-3 text-sm sm:grid-cols-3">
+				{totals.map((total) => (
+					<div key={total.label}>
+						<dt className="text-muted-foreground">{total.label}</dt>
+						<dd className="tabular-nums">
+							{total.value.toLocaleString(locale)}
+						</dd>
+					</div>
+				))}
+			</dl>
+			<p className="text-sm text-muted-foreground">
+				{t(
+					"settings.equipment.exception.totalsHelp",
+					"Recovered quantities are included in physical receipts. Lost and waived totals preserve the original decisions.",
+				)}
+			</p>
+		</div>
 	);
 }
 

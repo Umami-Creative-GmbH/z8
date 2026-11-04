@@ -183,6 +183,7 @@ export const equipmentAssignment = pgTable(
 		quantity: integer("quantity").notNull().default(1),
 		receivedQuantity: integer("received_quantity").notNull().default(0),
 		lostQuantity: integer("lost_quantity").notNull().default(0),
+		/** Physical receipts linked to an already settled exception: exclude their overlap from obligation arithmetic. */
 		exceptionReceivedQuantity: integer("exception_received_quantity")
 			.notNull()
 			.default(0),

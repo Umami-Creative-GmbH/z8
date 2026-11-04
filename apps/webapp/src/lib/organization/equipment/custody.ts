@@ -836,13 +836,12 @@ export async function readEquipment(
 				exceptions: (exceptionEvidence.get(assignment.id) ?? []).map((e) => ({
 					...e,
 					canReceive:
-						scope.kind !== "personal" &&
-						access.canManage &&
+						staffView &&
 						holder.userId !== actor.userId &&
 						e.receivedQuantity < e.quantity,
 				})),
 				canCloseException:
-					scope.kind !== "personal" &&
+					staffView &&
 					access.canAdminister &&
 					outstanding &&
 					holder.userId !== actor.userId,
@@ -865,11 +864,9 @@ export async function readEquipment(
 				held: !assignment.received,
 				revision: assignment.revision,
 				canReceive:
-					scope.kind !== "personal" &&
-					access.canManage &&
+					staffView &&
 					(!assignment.returnRequired ? !assignment.received : outstanding) &&
 					holder.userId !== actor.userId,
-
 				issue,
 				receipt: receipts.at(-1) ?? null,
 				receipts,

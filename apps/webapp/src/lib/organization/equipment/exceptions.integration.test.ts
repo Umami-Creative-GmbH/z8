@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
-import { integrationAdminPool } from "@/test/integration-database";
+import {
+	integrationAdminPool,
+	openIntegrationPool,
+} from "@/test/integration-database";
 
 const session = vi.hoisted(() => ({
 	userId: "t1540-owner",
@@ -84,6 +87,9 @@ beforeEach(async () => {
 	session.userId = "t1540-owner";
 	session.organizationId = "t1540-org";
 	clock.now = "2026-11-04T23:30:00Z";
+	await pool.query(
+		"delete from equipment_officer_grant where organization_id='t1540-org'",
+	);
 	await pool.query(
 		"delete from equipment_assignment where organization_id='t1540-org'",
 	);
@@ -710,4 +716,312 @@ it("rejects unauthorized and foreign references and validates recovery dates in 
 		outstandingQuantity: 2,
 		receipts: [],
 	});
+});
+
+const officerId = "15400000-0000-4000-8000-000000000003";
+function grant(extra: Record<string, unknown> = {}) {
+	return actions.changeEquipmentOfficerGrant({
+		kind: "set_officer_grant",
+		requestId: crypto.randomUUID(),
+		employeeId: officerId,
+		expectedRevision: 0,
+		scope: "selected",
+		employeeIds: [holderId],
+		teamIds: [],
+		...extra,
+	});
+}
+it("allows currently scoped officers to recover loss but reserves closure for owners/admins", async () => {
+	const { assignment } = await issued();
+	await close(assignment.id);
+	const loss = (await overview()).assignments[0].exceptions[0];
+	expect(await grant()).toMatchObject({ success: true, data: { ok: true } });
+	session.userId = "t1540-manager";
+	expect((await overview()).assignments[0]).toMatchObject({
+		canCloseException: false,
+		exceptions: [{ canReceive: true }],
+	});
+	expect(await close(assignment.id, { expectedRevision: 2 })).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "forbidden" },
+	});
+	const requestId = crypto.randomUUID();
+	const recovered = await recover(assignment.id, loss.id, { requestId });
+	expect(recovered).toMatchObject({
+		success: true,
+		data: { ok: true, revision: 3 },
+	});
+	session.userId = "t1540-owner";
+	expect(
+		await grant({ expectedRevision: 1, employeeIds: [ownerId] }),
+	).toMatchObject({ success: true, data: { ok: true } });
+	session.userId = "t1540-manager";
+	expect((await overview()).assignments).toEqual([]);
+	expect(await recover(assignment.id, loss.id, { requestId })).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "forbidden" },
+	});
+	session.userId = "t1540-owner";
+	await actions.changeEquipmentOfficerGrant({
+		kind: "revoke_officer_grant",
+		requestId: crypto.randomUUID(),
+		employeeId: officerId,
+		expectedRevision: 2,
+	});
+	session.userId = "t1540-manager";
+	expect(
+		await recover(assignment.id, loss.id, { expectedRevision: 3 }),
+	).toMatchObject({ success: true, data: { ok: false, reason: "forbidden" } });
+});
+it("rechecks exception authority after waiting for the organization lock", async () => {
+	const { assignment } = await issued();
+	const blocker = await openIntegrationPool({ max: 1 }).connect();
+	let pending: ReturnType<typeof close> | undefined;
+	try {
+		await blocker.query("begin");
+		await blocker.query(
+			"select id from organization where id='t1540-org' for update",
+		);
+		session.userId = "t1540-admin";
+		pending = close(assignment.id);
+		await vi.waitFor(async () => {
+			const waiting = await pool.query(
+				"select 1 from pg_stat_activity where datname=current_database() and wait_event_type='Lock' and query like '%organization%' and pid <> pg_backend_pid()",
+			);
+			expect(waiting.rows.length).toBeGreaterThan(0);
+		});
+		await blocker.query(
+			"update member set role='member' where id='t1540-admin'",
+		);
+		await blocker.query("commit");
+		expect(await pending).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "forbidden" },
+		});
+	} finally {
+		await blocker.query("rollback");
+		blocker.release();
+		await pending;
+	}
+	session.userId = "t1540-owner";
+	expect((await overview()).assignments[0]).toMatchObject({
+		lostQuantity: 0,
+		outstandingQuantity: 3,
+		revision: 1,
+		exceptions: [],
+	});
+});
+it("rolls closure and physical recovery back with replay failure, allowing unchanged retries", async () => {
+	const { item, assignment } = await individual();
+	const requestId = crypto.randomUUID();
+	const install = () =>
+		pool.query(`CREATE FUNCTION t1540_fail_command() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+ IF NEW.organization_id = 't1540-org' THEN RAISE EXCEPTION 'simulated command failure'; END IF;
+ RETURN NEW; END $$; CREATE TRIGGER t1540_fail_command BEFORE INSERT ON equipment_command FOR EACH ROW EXECUTE FUNCTION t1540_fail_command()`);
+	const uninstall = () =>
+		pool.query(
+			"drop trigger t1540_fail_command on equipment_command; drop function t1540_fail_command()",
+		);
+	await install();
+	try {
+		expect(await close(assignment.id, { requestId })).toMatchObject({
+			success: false,
+			code: "DatabaseError",
+		});
+		expect((await overview()).assignments[0]).toMatchObject({
+			lostQuantity: 0,
+			outstandingQuantity: 1,
+			exceptions: [],
+			revision: 1,
+		});
+	} finally {
+		await uninstall();
+	}
+	expect(await close(assignment.id, { requestId })).toMatchObject({
+		success: true,
+		data: { ok: true, revision: 2 },
+	});
+	const loss = (await overview()).assignments[0].exceptions[0];
+	const recoveryId = crypto.randomUUID();
+	await install();
+	try {
+		expect(
+			await recover(assignment.id, loss.id, {
+				requestId: recoveryId,
+				condition: "damaged",
+			}),
+		).toMatchObject({ success: false, code: "DatabaseError" });
+		const unchanged = await overview();
+		expect(unchanged.assignments[0]).toMatchObject({
+			lostQuantity: 1,
+			recoveredQuantity: 0,
+			outstandingQuantity: 0,
+			physicallyReceivedQuantity: 0,
+			receipts: [],
+			revision: 2,
+			exceptions: [{ receivedQuantity: 0 }],
+		});
+		expect(unchanged.readinessItems).toMatchObject([
+			{ id: item.id, inCustody: true, status: "available", revision: 2 },
+		]);
+	} finally {
+		await uninstall();
+	}
+	expect(
+		await recover(assignment.id, loss.id, {
+			requestId: recoveryId,
+			condition: "damaged",
+		}),
+	).toMatchObject({ success: true, data: { ok: true, revision: 3 } });
+	const done = await overview();
+	expect(done.assignments[0].receipts).toHaveLength(1);
+	expect(done.readinessItems).toMatchObject([
+		{ inCustody: false, status: "unavailable" },
+	]);
+});
+it("keeps distinct partial loss and waiver evidence after both are physically received", async () => {
+	const { assignment } = await issued();
+	await receive(assignment.id, { quantity: 1 });
+	await close(assignment.id, { expectedRevision: 2 });
+	await close(assignment.id, {
+		expectedRevision: 3,
+		outcome: "waived",
+		reason: "Uniform allowance",
+	});
+	const before = (await overview()).assignments[0];
+	expect(before).toMatchObject({
+		physicallyReceivedQuantity: 1,
+		lostQuantity: 1,
+		waivedQuantity: 1,
+		outstandingQuantity: 0,
+	});
+	const loss = before.exceptions.find((e) => e.kind === "lost");
+	const waiver = before.exceptions.find((e) => e.kind === "waived");
+	if (!loss || !waiver)
+		throw new Error("Expected independent loss and waiver decisions");
+	await recover(assignment.id, loss.id, {
+		expectedRevision: 4,
+		condition: "good",
+	});
+	expect((await overview()).assignments[0]).toMatchObject({
+		outstandingQuantity: 0,
+		physicallyReceivedQuantity: 2,
+		lostQuantity: 1,
+		recoveredQuantity: 1,
+		waivedQuantity: 1,
+	});
+	await recover(assignment.id, waiver.id, {
+		expectedRevision: 5,
+		condition: "damaged",
+	});
+	expect(await close(assignment.id, { expectedRevision: 6 })).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "excess_quantity" },
+	});
+	expect((await overview()).assignments[0]).toMatchObject({
+		outstandingQuantity: 0,
+		physicallyReceivedQuantity: 3,
+		lostQuantity: 1,
+		recoveredQuantity: 1,
+		waivedQuantity: 1,
+		held: false,
+		exceptions: expect.arrayContaining([
+			{ ...loss, receivedQuantity: 1, canReceive: false },
+			{ ...waiver, receivedQuantity: 1, canReceive: false },
+		]),
+		receipts: expect.arrayContaining([
+			expect.objectContaining({ exceptionId: loss.id, condition: "good" }),
+			expect.objectContaining({ exceptionId: waiver.id, condition: "damaged" }),
+		]),
+	});
+});
+
+it("refuses a recovery whose officer grant is revoked while it waits", async () => {
+	const { assignment } = await issued();
+	await close(assignment.id);
+	const loss = (await overview()).assignments[0].exceptions[0];
+	await grant();
+	const blocker = await openIntegrationPool({ max: 1 }).connect();
+	let pending: ReturnType<typeof recover> | undefined;
+	try {
+		await blocker.query("begin");
+		await blocker.query(
+			"select id from organization where id='t1540-org' for update",
+		);
+		session.userId = "t1540-manager";
+		pending = recover(assignment.id, loss.id);
+		await vi.waitFor(async () => {
+			const waiting = await pool.query(
+				"select 1 from pg_stat_activity where datname=current_database() and wait_event_type='Lock' and query like '%organization%' and pid <> pg_backend_pid()",
+			);
+			expect(waiting.rows.length).toBeGreaterThan(0);
+		});
+		await blocker.query(
+			"update equipment_officer_grant set revoked_at=now() where organization_id='t1540-org'",
+		);
+		await blocker.query("commit");
+		expect(await pending).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "forbidden" },
+		});
+	} finally {
+		await blocker.query("rollback");
+		blocker.release();
+		await pending;
+	}
+	session.userId = "t1540-owner";
+	expect((await overview()).assignments[0]).toMatchObject({
+		revision: 2,
+		recoveredQuantity: 0,
+		physicallyReceivedQuantity: 0,
+		exceptions: [{ receivedQuantity: 0 }],
+	});
+});
+it("keeps former-holder loss history discoverable and recoverable after item/type archival", async () => {
+	const { item, assignment } = await individual();
+	await close(assignment.id);
+	const setupView = await actions.getEquipmentSetup();
+	if (!setupView.success) throw new Error(JSON.stringify(setupView));
+	const type = setupView.data.types.find(
+		(t) => t.trackingMode === "individual",
+	);
+	if (!type) throw new Error("Expected individual type");
+	await setup({
+		kind: "archive_type",
+		id: type.id,
+		expectedRevision: type.revision,
+	});
+	await setup({ kind: "archive_item", id: item.id, expectedRevision: 2 });
+	await pool.query("update employee set is_active=false where id=$1", [
+		holderId,
+	]);
+	const former = await overview({ former: true });
+	expect(former.assignments[0]).toMatchObject({
+		former: true,
+		lostQuantity: 1,
+		outstandingQuantity: 0,
+		held: true,
+	});
+	const loss = former.assignments[0].exceptions[0];
+	expect(await recover(assignment.id, loss.id)).toMatchObject({
+		success: true,
+		data: { ok: true },
+	});
+	const employeeView = await actions.getEmployeeEquipment(holderId);
+	expect(employeeView).toMatchObject({
+		success: true,
+		data: {
+			assignments: [
+				{
+					lostQuantity: 1,
+					recoveredQuantity: 1,
+					physicallyReceivedQuantity: 1,
+					held: false,
+					former: true,
+					exceptions: [{ reason: "Missing after site move" }],
+				},
+			],
+		},
+	});
+	expect((await overview()).availableItems).toEqual([]);
 });
