@@ -2103,6 +2103,13 @@
       "breakpoints": true
     },
     {
+      "idx": 300,
+      "version": "7",
+      "when": 1810656000000,
+      "tag": "0300_equipment_exceptions",
+      "breakpoints": true
+    },
+    {
       "idx": 302,
       "version": "7",
       "when": 1810828800000,

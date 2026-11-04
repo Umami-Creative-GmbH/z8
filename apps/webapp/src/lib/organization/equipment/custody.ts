@@ -12,6 +12,7 @@ import {
 import {
 	equipmentAssignment,
 	equipmentCommand,
+	equipmentException,
 	equipmentHandover,
 	equipmentItem,
 	equipmentPolicy,
@@ -32,6 +33,7 @@ import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import {
 	type EquipmentAssignmentView,
 	type EquipmentChange,
+	type EquipmentExceptionView,
 	type EquipmentFilters,
 	type EquipmentHandoverView,
 	type EquipmentOutcome,
@@ -127,7 +129,11 @@ export async function applyEquipmentChange(
 					: [];
 			await lockEquipmentContext(tx, actor, target);
 			const access = await equipmentAccess(tx, actor);
-			if (!access.canManage) return { ok: false, reason: "forbidden" };
+			if (
+				!access.canManage ||
+				(change.kind === "close_return" && !access.canAdminister)
+			)
+				return { ok: false, reason: "forbidden" };
 			if (
 				change.kind === "clear_item" ||
 				change.kind === "mark_item_unavailable" ||
@@ -146,8 +152,10 @@ export async function applyEquipmentChange(
 					return { ok: false, reason: access.all ? "not_found" : "forbidden" };
 			} else {
 				const subjectId =
-					change.kind !== "receive_individual" &&
-					change.kind !== "receive_quantity"
+					change.kind === "issue_individual" ||
+					change.kind === "issue_quantity" ||
+					change.kind === "register_and_issue_individual" ||
+					change.kind === "transfer_equipment"
 						? change.employeeId
 						: (
 								await tx
@@ -218,9 +226,11 @@ export async function applyEquipmentChange(
 				return outcome;
 			}
 			const outcome =
-				change.kind === "transfer_equipment"
-					? await transferEquipment(tx, actor, change, target, today, now)
-					: await performHandover(tx, actor, change, target, today, now);
+				change.kind === "close_return"
+					? await closeEquipmentReturn(tx, actor, change, now)
+					: change.kind === "transfer_equipment"
+						? await transferEquipment(tx, actor, change, target, today, now)
+						: await performHandover(tx, actor, change, target, today, now);
 			if (!outcome.ok) return outcome;
 			await tx.insert(equipmentCommand).values({
 				organizationId: actor.organizationId,
@@ -244,10 +254,75 @@ type HandoverChange = Extract<
 			| "issue_individual"
 			| "issue_quantity"
 			| "receive_individual"
-			| "receive_quantity";
+			| "receive_quantity"
+			| "receive_exception";
 	}
 >;
 type HandoverTarget = { id: string; userId: string } | undefined;
+
+async function closeEquipmentReturn(
+	tx: EquipmentTransaction,
+	actor: EquipmentActor,
+	change: Extract<EquipmentChange, { kind: "close_return" }>,
+	now: Temporal.Instant,
+): Promise<EquipmentOutcome> {
+	const [assignment] = await tx
+		.select()
+		.from(equipmentAssignment)
+		.where(assignmentScope(actor.organizationId, change.assignmentId));
+	if (!assignment) return { ok: false, reason: "not_found" };
+	const [holder] = await tx
+		.select({ userId: employee.userId })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, actor.organizationId),
+				eq(
+					employee.id,
+					assignment.employeeId ?? "00000000-0000-0000-0000-000000000000",
+				),
+			),
+		);
+	if (holder?.userId === actor.userId)
+		return { ok: false, reason: "self_exception" };
+	if (assignment.revision !== change.expectedRevision)
+		return { ok: false, reason: "stale_revision" };
+	if (!assignment.returnRequired)
+		return { ok: false, reason: "return_not_required" };
+	if (
+		change.quantity >
+		assignment.quantity -
+			assignment.receivedQuantity -
+			assignment.lostQuantity -
+			assignment.waivedQuantity +
+			assignment.exceptionReceivedQuantity
+	)
+		return { ok: false, reason: "excess_quantity" };
+	await tx.insert(equipmentException).values({
+		organizationId: actor.organizationId,
+		assignmentId: assignment.id,
+		kind: change.outcome,
+		quantity: change.quantity,
+		reason: change.reason,
+		actorId: actor.userId,
+		recordedAt: dateFromInstant(now),
+	});
+	const revision = assignment.revision + 1;
+	await tx
+		.update(equipmentAssignment)
+		.set({
+			lostQuantity:
+				assignment.lostQuantity +
+				(change.outcome === "lost" ? change.quantity : 0),
+			waivedQuantity:
+				assignment.waivedQuantity +
+				(change.outcome === "waived" ? change.quantity : 0),
+			revision,
+		})
+		.where(assignmentScope(actor.organizationId, assignment.id));
+	const outcome = { ok: true, id: assignment.id, revision } as const;
+	return outcome;
+}
 
 class TransferRefusal extends Error {
 	constructor(readonly outcome: Extract<EquipmentOutcome, { ok: false }>) {
@@ -545,7 +620,10 @@ async function performHandover(
 			.from(equipmentAssignment)
 			.where(assignmentScope(actor.organizationId, change.assignmentId));
 		if (!assignment) return { ok: false, reason: "not_found" };
-		if ((change.kind === "receive_individual") !== (assignment.itemId !== null))
+		if (
+			change.kind !== "receive_exception" &&
+			(change.kind === "receive_individual") !== (assignment.itemId !== null)
+		)
 			return {
 				ok: false,
 				reason: assignment.itemId ? "individual_required" : "quantity_required",
@@ -567,9 +645,44 @@ async function performHandover(
 		if (assignment.revision !== change.expectedRevision)
 			return { ok: false, reason: "stale_revision" };
 		if (assignment.received) return { ok: false, reason: "already_received" };
-		const quantity = change.kind === "receive_quantity" ? change.quantity : 1;
+		const quantity = change.kind === "receive_individual" ? 1 : change.quantity;
+		const [exception] =
+			change.kind === "receive_exception"
+				? await tx
+						.select()
+						.from(equipmentException)
+						.where(
+							and(
+								eq(equipmentException.organizationId, actor.organizationId),
+								eq(equipmentException.assignmentId, assignment.id),
+								eq(equipmentException.id, change.exceptionId),
+							),
+						)
+				: [];
+		if (change.kind === "receive_exception") {
+			const { timezone } = await organizationCalendar(tx, actor.organizationId);
+			if (!exception) return { ok: false, reason: "not_found" };
+			if (quantity > exception.quantity - exception.receivedQuantity)
+				return { ok: false, reason: "excess_quantity" };
+			if (
+				Temporal.PlainDate.compare(
+					actualDate,
+					instantFromDate(exception.recordedAt)
+						.toZonedDateTimeISO(timezone)
+						.toPlainDate(),
+				) < 0
+			)
+				return { ok: false, reason: "conflicting_history" };
+		}
 		const receivedQuantity = assignment.receivedQuantity + quantity;
-		if (receivedQuantity > assignment.quantity)
+		if (
+			!exception &&
+			receivedQuantity +
+				assignment.lostQuantity +
+				assignment.waivedQuantity -
+				assignment.exceptionReceivedQuantity >
+				assignment.quantity
+		)
 			return { ok: false, reason: "excess_quantity" };
 		const [issue] = await tx
 			.select()
@@ -599,6 +712,7 @@ async function performHandover(
 			organizationId: actor.organizationId,
 			assignmentId: assignment.id,
 			kind: "receipt",
+			exceptionId: exception?.id ?? null,
 			quantity,
 			actualDate: change.actualDate,
 			condition: change.condition,
@@ -606,11 +720,23 @@ async function performHandover(
 			actorId: actor.userId,
 			recordedAt,
 		});
+		if (exception)
+			await tx
+				.update(equipmentException)
+				.set({ receivedQuantity: exception.receivedQuantity + quantity })
+				.where(
+					and(
+						eq(equipmentException.organizationId, actor.organizationId),
+						eq(equipmentException.id, exception.id),
+					),
+				);
 		const [updated] = await tx
 			.update(equipmentAssignment)
 			.set({
 				received: receivedQuantity === assignment.quantity,
 				receivedQuantity,
+				exceptionReceivedQuantity:
+					assignment.exceptionReceivedQuantity + (exception ? quantity : 0),
 				revision: assignment.revision + 1,
 			})
 			.where(assignmentScope(actor.organizationId, assignment.id))
@@ -787,12 +913,44 @@ export async function readEquipment(
 						asc(equipmentHandover.id),
 					)
 			: [];
+		const exceptionRows = rows.length
+			? await tx
+					.select({ record: equipmentException, actorName: user.name })
+					.from(equipmentException)
+					.leftJoin(user, eq(user.id, equipmentException.actorId))
+					.where(
+						and(
+							eq(equipmentException.organizationId, actor.organizationId),
+							inArray(
+								equipmentException.assignmentId,
+								rows.map((r) => r.assignment.id),
+							),
+						),
+					)
+					.orderBy(
+						asc(equipmentException.recordedAt),
+						asc(equipmentException.id),
+					)
+			: [];
+		const exceptionEvidence = new Map<string, EquipmentExceptionView[]>();
+		for (const { record, actorName } of exceptionRows) {
+			const list = exceptionEvidence.get(record.assignmentId) ?? [];
+			list.push({
+				...record,
+				receivedQuantity: record.receivedQuantity,
+				actorName,
+				recordedAt: instantFromDate(record.recordedAt).toString(),
+				canReceive: false,
+			});
+			exceptionEvidence.set(record.assignmentId, list);
+		}
 		const evidence = new Map<string, EquipmentHandoverView[]>();
 		for (const { record, actorName } of handovers) {
 			const key = `${record.assignmentId}:${record.kind}`;
 			const records = evidence.get(key) ?? [];
 			records.push({
 				id: record.id,
+				exceptionId: record.exceptionId,
 				quantity: record.quantity,
 				actualDate: record.actualDate,
 				condition: record.condition,
@@ -810,10 +968,13 @@ export async function readEquipment(
 			const issue = evidence.get(`${assignment.id}:issue`)?.[0];
 			const receipts = evidence.get(`${assignment.id}:receipt`) ?? [];
 			if (!holder || !issue) continue;
-			// Physical receipts alone reduce this slice's return balance. Later exception
-			// outcomes must reduce obligations separately, never receivedQuantity.
+			// Exception closure settles the obligation without pretending physical receipt.
 			const outstandingQuantity = assignment.returnRequired
-				? assignment.quantity - assignment.receivedQuantity
+				? assignment.quantity -
+					assignment.receivedQuantity -
+					assignment.lostQuantity -
+					assignment.waivedQuantity +
+					assignment.exceptionReceivedQuantity
 				: 0;
 			const outstanding = outstandingQuantity > 0;
 			const effectiveDeadline = effectiveEquipmentDeadline(
@@ -835,6 +996,23 @@ export async function readEquipment(
 			)
 				continue;
 			assignments.push({
+				lostQuantity: assignment.lostQuantity,
+				waivedQuantity: assignment.waivedQuantity,
+				recoveredQuantity: (exceptionEvidence.get(assignment.id) ?? [])
+					.filter((e) => e.kind === "lost")
+					.reduce((sum, e) => sum + e.receivedQuantity, 0),
+				exceptions: (exceptionEvidence.get(assignment.id) ?? []).map((e) => ({
+					...e,
+					canReceive:
+						staffView &&
+						holder.userId !== actor.userId &&
+						e.receivedQuantity < e.quantity,
+				})),
+				canCloseException:
+					staffView &&
+					access.canAdminister &&
+					outstanding &&
+					holder.userId !== actor.userId,
 				id: assignment.id,
 				itemId: item?.id ?? null,
 				trackingMode: type.trackingMode,
@@ -858,11 +1036,13 @@ export async function readEquipment(
 				held: !assignment.received,
 				revision: assignment.revision,
 				canReceive:
-					staffView && !assignment.received && holder.userId !== actor.userId,
+					staffView &&
+					(!assignment.returnRequired ? !assignment.received : outstanding) &&
+					holder.userId !== actor.userId,
 				transfer:
 					staffView &&
 					policyConfigured &&
-					!assignment.received &&
+					(!assignment.returnRequired ? !assignment.received : outstanding) &&
 					holder.userId !== actor.userId &&
 					!type.archivedAt &&
 					(!item ||

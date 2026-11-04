@@ -24,6 +24,16 @@ export function handoverRefusalMessage(
 	t: EquipmentTranslate,
 ) {
 	switch (reason) {
+		case "self_exception":
+			return t(
+				"settings.equipment.exception.self",
+				"Another owner or admin must close your own return obligation.",
+			);
+		case "return_not_required":
+			return t(
+				"settings.equipment.exception.notRequired",
+				"Only outstanding required returns can be closed as lost or waived.",
+			);
 		case "item_in_custody":
 			return t(
 				"settings.equipment.readiness.inCustody",
@@ -46,8 +56,8 @@ export function handoverRefusalMessage(
 			);
 		case "excess_quantity":
 			return t(
-				"settings.equipment.handover.quantityExcess",
-				"Quantity exceeds the remaining physical balance.",
+				"settings.equipment.exception.quantityExcess",
+				"Quantity exceeds the remaining balance for this action.",
 			);
 		case "forbidden":
 			return t(
