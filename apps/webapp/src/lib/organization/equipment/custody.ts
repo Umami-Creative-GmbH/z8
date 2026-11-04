@@ -46,6 +46,7 @@ import {
 	type EquipmentView,
 	equipmentChangeSchema,
 } from "./contracts";
+import { applyItemReadiness, readItemReadiness } from "./readiness";
 import {
 	type EquipmentTransaction,
 	lockEquipmentOrganization,
@@ -196,6 +197,26 @@ export async function applyEquipmentChange(
 				? replay.result
 				: { ok: false, reason: "request_conflict" };
 		const { today, now } = await organizationCalendar(tx, actor.organizationId);
+		if (
+			change.kind === "clear_item" ||
+			change.kind === "mark_item_unavailable" ||
+			change.kind === "retire_item"
+		) {
+			const outcome = await applyItemReadiness(
+				tx,
+				actor,
+				change,
+				dateFromInstant(now),
+			);
+			if (outcome.ok)
+				await tx.insert(equipmentCommand).values({
+					organizationId: actor.organizationId,
+					requestId: change.requestId,
+					fingerprint,
+					result: outcome,
+				});
+			return outcome;
+		}
 		const actualDate = parsePlainDate(change.actualDate);
 		if (Temporal.PlainDate.compare(actualDate, today) > 0)
 			return { ok: false, reason: "future_date" };
@@ -365,7 +386,10 @@ export async function applyEquipmentChange(
 				.set({
 					inCustody: false,
 					lastHandoverDate: change.actualDate,
-					status: change.condition === "damaged" ? "unavailable" : item.status,
+					status:
+						change.condition === "damaged" && item.status !== "retired"
+							? "unavailable"
+							: item.status,
 					revision: item.revision + 1,
 					updatedBy: actor.userId,
 					updatedAt: recordedAt,
@@ -603,6 +627,9 @@ export async function readEquipment(
 						.orderBy(asc(equipmentItem.identifier))
 				: [];
 		return {
+			readinessItems: staffView
+				? await readItemReadiness(tx, actor.organizationId)
+				: [],
 			canManage: staffView,
 			policyConfigured,
 			timezone,

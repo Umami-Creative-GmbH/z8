@@ -118,6 +118,24 @@ const handoverFields = {
 };
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
+		kind: z.literal("clear_item"),
+		...request,
+		...revision,
+		itemId: z.uuid(),
+	}),
+	z.strictObject({
+		kind: z.literal("mark_item_unavailable"),
+		...request,
+		...revision,
+		itemId: z.uuid(),
+	}),
+	z.strictObject({
+		kind: z.literal("retire_item"),
+		...request,
+		...revision,
+		itemId: z.uuid(),
+	}),
+	z.strictObject({
 		kind: z.literal("issue_individual"),
 		...handoverFields,
 		itemId: z.uuid(),
@@ -137,6 +155,9 @@ export type EquipmentRefusal =
 	| "forbidden"
 	| "employee_not_current"
 	| "item_unavailable"
+	| "item_in_custody"
+	| "item_retired"
+	| "readiness_unchanged"
 	| "self_receipt"
 	| "already_received"
 	| "future_date"
@@ -179,7 +200,22 @@ export interface EquipmentAssignmentView {
 	issue: EquipmentHandoverView;
 	receipt: EquipmentHandoverView | null;
 }
+export interface EquipmentReadinessEventView {
+	id: string;
+	kind: "clearance" | "unavailable" | "retired";
+	actorId: string | null;
+	actorName: string | null;
+	recordedAt: string;
+}
+export interface EquipmentReadinessItemView extends EquipmentItemView {
+	typeName: string;
+	canClear: boolean;
+	canMarkUnavailable: boolean;
+	canRetire: boolean;
+	history: EquipmentReadinessEventView[];
+}
 export interface EquipmentView {
+	readinessItems: EquipmentReadinessItemView[];
 	canManage: boolean;
 	policyConfigured: boolean;
 	timezone: string;
