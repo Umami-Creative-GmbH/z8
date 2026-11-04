@@ -13,6 +13,11 @@ vi.mock("@/lib/organization/equipment/actions", () => ({
 	getEquipmentSetup: api.read,
 	getEquipmentSetupDetail: api.detail,
 	changeEquipmentSetup: vi.fn(),
+	getEquipmentOfficerGrants: async () => ({
+		success: true,
+		data: { employees: [], teams: [], grants: [] },
+	}),
+	changeEquipmentOfficerGrant: vi.fn(),
 }));
 vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
@@ -21,6 +26,7 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh: vi.fn() }),
 	Link: ({ children, ...props }: React.ComponentProps<"a">) => (
 		<a {...props}>{children}</a>
 	),

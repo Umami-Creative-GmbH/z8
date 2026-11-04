@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db as database } from "@/db";
-import { member, organization, user } from "@/db/auth-schema";
+import { organization, user } from "@/db/auth-schema";
 import { employee, employeeEmploymentPeriod } from "@/db/schema";
 import {
 	equipmentAssignment,
@@ -13,7 +13,6 @@ import {
 	equipmentPolicy,
 	equipmentType,
 } from "@/db/schema/equipment";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	dateFromInstant,
 	instantFromDate,
@@ -25,18 +24,6 @@ import {
 	employeeHasOrganizationAccess,
 	resolveEmployeeOrganizationAccess,
 } from "@/lib/employee-lifecycle/access";
-import {
-	assertReadCommitted,
-	lockLifecycleOrganization,
-} from "@/lib/employee-lifecycle/locks";
-import type { MfaSession } from "@/lib/organization-mfa/access";
-import { withMfaDatabase } from "@/lib/organization-mfa/database-context";
-import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
-import {
-	employeeCoordinationGuard,
-	holdGuard,
-	userConfigurationAccessGuard,
-} from "@/lib/time-tracking/work-transaction/ranks";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import {
 	type EquipmentAssignmentView,
@@ -49,15 +36,9 @@ import {
 import { applyItemReadiness, readItemReadiness } from "./readiness";
 import {
 	type EquipmentTransaction,
-	lockEquipmentOrganization,
 	prepareEquipmentTypeForIssuance,
 } from "./setup";
 
-export type EquipmentActor = {
-	organizationId: string;
-	userId: string;
-	session: MfaSession;
-};
 const scoped = (organizationId: string, id: string) =>
 	and(
 		eq(equipmentItem.organizationId, organizationId),
@@ -69,65 +50,16 @@ const assignmentScope = (organizationId: string, id: string) =>
 		eq(equipmentAssignment.id, id),
 	);
 
-/**
- * Lifecycle/access user guards (sorted), employee coordination, organization row,
- * then equipment. Never acquire a lifecycle guard while holding equipment. The
- * shared user guards also protect an actor recording equipment for someone else.
- */
-async function lockEquipmentContext(
-	tx: EquipmentTransaction,
-	actor: EquipmentActor,
-	target?: { id: string; userId: string },
-) {
-	await assertReadCommitted(tx);
-	const [firstUserId, secondUserId] = [
-		...new Set([actor.userId, ...(target ? [target.userId] : [])]),
-	].sort();
-	await holdGuard(tx, userConfigurationAccessGuard(firstUserId));
-	if (secondUserId)
-		await holdGuard(tx, userConfigurationAccessGuard(secondUserId));
-	if (target) await holdGuard(tx, employeeCoordinationGuard(target.id));
-	await lockLifecycleOrganization(tx, actor.organizationId);
-	await lockEquipmentOrganization(tx, actor.organizationId);
-}
+import {
+	type EquipmentActor,
+	equipmentAccess,
+	equipmentCoversEmployee,
+	equipmentItemScope,
+	equipmentSubjectScope,
+	lockEquipmentContext,
+} from "./access";
 
-/** Shared permission decision for reads and every command; managers gain no staff scope. */
-async function equipmentAccess(
-	tx: EquipmentTransaction,
-	actor: EquipmentActor,
-) {
-	const denied = () =>
-		new AuthorizationError({
-			message: "Equipment access is not available.",
-			resource: "equipment",
-			action: "read",
-		});
-	const authenticated = await withMfaDatabase(tx, () =>
-		canAccessOrganization(actor.session, actor.organizationId),
-	);
-	if (!authenticated) throw denied();
-	const access = await resolveEmployeeOrganizationAccess(tx, {
-		...actor,
-		now: systemClock.nowInstant(),
-	});
-	if (!access.allowed) throw denied();
-	const [membership] = await tx
-		.select({ role: member.role })
-		.from(member)
-		.where(
-			and(
-				eq(member.organizationId, actor.organizationId),
-				eq(member.userId, actor.userId),
-				eq(member.status, "approved"),
-			),
-		);
-	return {
-		employeeId: access.employeeId,
-		canManage:
-			hasOrganizationRole(membership?.role, "owner") ||
-			hasOrganizationRole(membership?.role, "admin"),
-	};
-}
+export type { EquipmentActor } from "./access";
 
 async function organizationCalendar(
 	tx: EquipmentTransaction,
@@ -169,7 +101,9 @@ export async function applyEquipmentChange(
 	return db.transaction(async (tx): Promise<EquipmentOutcome> => {
 		// Route before locks, then confirm under them. Employee user identity must not drift.
 		const [target] =
-			change.kind === "issue_individual" || change.kind === "issue_quantity"
+			change.kind === "issue_individual" ||
+			change.kind === "issue_quantity" ||
+			change.kind === "register_and_issue_individual"
 				? await tx
 						.select({ id: employee.id, userId: employee.userId })
 						.from(employee)
@@ -183,6 +117,44 @@ export async function applyEquipmentChange(
 		await lockEquipmentContext(tx, actor, target);
 		const access = await equipmentAccess(tx, actor);
 		if (!access.canManage) return { ok: false, reason: "forbidden" };
+		if (
+			change.kind === "clear_item" ||
+			change.kind === "mark_item_unavailable" ||
+			change.kind === "retire_item"
+		) {
+			const [covered] = await tx
+				.select({ id: equipmentItem.id })
+				.from(equipmentItem)
+				.where(
+					and(
+						scoped(actor.organizationId, change.itemId),
+						equipmentItemScope(access),
+					),
+				);
+			if (!covered)
+				return { ok: false, reason: access.all ? "not_found" : "forbidden" };
+		} else {
+			const subjectId =
+				change.kind !== "receive_individual" &&
+				change.kind !== "receive_quantity"
+					? change.employeeId
+					: (
+							await tx
+								.select({ employeeId: equipmentAssignment.employeeId })
+								.from(equipmentAssignment)
+								.where(
+									assignmentScope(actor.organizationId, change.assignmentId),
+								)
+						)[0]?.employeeId;
+			if (
+				!subjectId ||
+				!(await equipmentCoversEmployee(tx, actor, access, subjectId))
+			)
+				return {
+					ok: false,
+					reason: access.canAdminister ? "not_found" : "forbidden",
+				};
+		}
 		const [replay] = await tx
 			.select()
 			.from(equipmentCommand)
@@ -224,7 +196,8 @@ export async function applyEquipmentChange(
 		let result: { id: string; revision: number };
 		if (
 			change.kind === "issue_individual" ||
-			change.kind === "issue_quantity"
+			change.kind === "issue_quantity" ||
+			change.kind === "register_and_issue_individual"
 		) {
 			if (!change.returnRequired && change.explicitDeadline)
 				return { ok: false, reason: "invalid_input" };
@@ -257,7 +230,7 @@ export async function applyEquipmentChange(
 			});
 			if (!current.current || !employeeAccess.allowed)
 				return { ok: false, reason: "employee_not_current" };
-			const [item] =
+			let [item] =
 				change.kind === "issue_individual"
 					? await tx
 							.select()
@@ -280,7 +253,10 @@ export async function applyEquipmentChange(
 					return { ok: false, reason: "conflicting_history" };
 			}
 			const typeId =
-				change.kind === "issue_quantity" ? change.typeId : item?.typeId;
+				change.kind === "issue_quantity" ||
+				change.kind === "register_and_issue_individual"
+					? change.typeId
+					: item?.typeId;
 			if (!typeId) return { ok: false, reason: "not_found" };
 			const [type] = await tx
 				.select()
@@ -308,11 +284,38 @@ export async function applyEquipmentChange(
 							? "quantity_required"
 							: "individual_required",
 				};
+			if (change.kind === "register_and_issue_individual") {
+				const [duplicate] = await tx
+					.select({ id: equipmentItem.id })
+					.from(equipmentItem)
+					.where(
+						and(
+							eq(equipmentItem.organizationId, actor.organizationId),
+							sql`${equipmentItem.identifierKey} = lower(regexp_replace(${change.identifier}, '^[[:space:]]+|[[:space:]]+$', '', 'g'))`,
+						),
+					);
+				if (duplicate) return { ok: false, reason: "identifier_taken" };
+			}
 			const prepared = await prepareEquipmentTypeForIssuance(tx, {
 				organizationId: actor.organizationId,
 				typeId,
 			});
 			if (!prepared.ok) return prepared;
+			if (change.kind === "register_and_issue_individual") {
+				[item] = await tx
+					.insert(equipmentItem)
+					.values({
+						organizationId: actor.organizationId,
+						typeId,
+						identifier: change.identifier,
+						serialNumber: change.serialNumber || null,
+						createdBy: actor.userId,
+						updatedBy: actor.userId,
+						createdAt: recordedAt,
+						updatedAt: recordedAt,
+					})
+					.returning();
+			}
 			const quantity = change.kind === "issue_quantity" ? change.quantity : 1;
 			const [period] = await tx
 				.select({ id: employeeEmploymentPeriod.id })
@@ -493,11 +496,25 @@ export async function readEquipment(
 				: scope.kind === "employee"
 					? scope.employeeId
 					: undefined;
+		const coversSubject = employeeId
+			? access.canManage &&
+				(await equipmentCoversEmployee(tx, actor, access, employeeId))
+			: false;
 		if (
 			(scope.kind === "overview" && !access.canManage) ||
 			(scope.kind === "employee" &&
-				!access.canManage &&
-				employeeId !== access.employeeId)
+				!access.canAdminister &&
+				!coversSubject &&
+				employeeId !== access.employeeId) ||
+			(scope.kind === "overview" &&
+				!access.canAdminister &&
+				scope.filters.holderId &&
+				!(await equipmentCoversEmployee(
+					tx,
+					actor,
+					access,
+					scope.filters.holderId,
+				)))
 		)
 			throw new AuthorizationError({
 				message: "You cannot read these equipment records.",
@@ -506,6 +523,9 @@ export async function readEquipment(
 			});
 		const calendar = await organizationCalendar(tx, actor.organizationId);
 		const { timezone, today, policyConfigured } = calendar;
+		const staffView =
+			scope.kind !== "personal" &&
+			(scope.kind === "overview" ? access.canManage : coversSubject);
 		const employees = await tx
 			.select({
 				id: employee.id,
@@ -520,8 +540,8 @@ export async function readEquipment(
 			.where(
 				and(
 					eq(employee.organizationId, actor.organizationId),
-					access.canManage && scope.kind !== "personal"
-						? undefined
+					staffView
+						? equipmentSubjectScope(access)
 						: eq(
 								employee.id,
 								employeeId ?? "00000000-0000-0000-0000-000000000000",
@@ -573,6 +593,9 @@ export async function readEquipment(
 						.where(
 							and(
 								eq(equipmentAssignment.organizationId, actor.organizationId),
+								inArray(equipmentAssignment.employeeId, [
+									...employeeMap.keys(),
+								]),
 								employeeId
 									? eq(equipmentAssignment.employeeId, employeeId)
 									: undefined,
@@ -667,15 +690,12 @@ export async function readEquipment(
 				held: !assignment.received,
 				revision: assignment.revision,
 				canReceive:
-					access.canManage &&
-					!assignment.received &&
-					holder.userId !== actor.userId,
+					staffView && !assignment.received && holder.userId !== actor.userId,
 				issue,
 				receipt: receipts.at(-1) ?? null,
 				receipts,
 			});
 		}
-		const staffView = access.canManage && scope.kind !== "personal";
 		const types = staffView
 			? await tx
 					.select({ id: equipmentType.id, name: equipmentType.name })
@@ -735,10 +755,33 @@ export async function readEquipment(
 				: [];
 		return {
 			readinessItems: staffView
-				? await readItemReadiness(tx, actor.organizationId)
+				? await readItemReadiness(
+						tx,
+						actor.organizationId,
+						equipmentItemScope(access),
+					)
 				: [],
 			availableQuantityTypes,
 			canManage: staffView,
+			canAdminister: access.canAdminister && scope.kind !== "personal",
+			registrationTypes:
+				staffView && policyConfigured
+					? await tx
+							.select({
+								id: equipmentType.id,
+								name: equipmentType.name,
+								defaultReturnRequired: equipmentType.defaultReturnRequired,
+							})
+							.from(equipmentType)
+							.where(
+								and(
+									eq(equipmentType.organizationId, actor.organizationId),
+									eq(equipmentType.trackingMode, "individual"),
+									sql`${equipmentType.archivedAt} is null`,
+								),
+							)
+							.orderBy(asc(equipmentType.name))
+					: [],
 			policyConfigured,
 			timezone,
 			today: today.toString(),

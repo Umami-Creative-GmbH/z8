@@ -9,11 +9,13 @@ import {
 	equipmentType,
 } from "@/db/schema/equipment";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { AuthorizationError } from "@/lib/effect/errors";
 import { lockLifecycleOrganization } from "@/lib/employee-lifecycle/locks";
 import {
 	holdGuard,
 	userConfigurationAccessGuard,
 } from "@/lib/time-tracking/work-transaction/ranks";
+import { type EquipmentActor, equipmentAccess } from "./access";
 import {
 	type EquipmentItemView,
 	type EquipmentSetupDetail,
@@ -49,7 +51,7 @@ function itemView(item: typeof equipmentItem.$inferSelect): EquipmentItemView {
 }
 
 export async function readEquipmentSetupDetail(
-	db: typeof database,
+	db: Pick<typeof database, "select">,
 	organizationId: string,
 	input: EquipmentSetupDetailInput,
 ): Promise<EquipmentSetupDetail | null> {
@@ -91,7 +93,7 @@ export async function lockEquipmentOrganization(
 }
 
 export async function readEquipmentSetup(
-	db: typeof database,
+	db: Pick<typeof database, "select">,
 	organizationId: string,
 ): Promise<EquipmentSetupView> {
 	const [policies, types, items] = await Promise.all([
@@ -172,14 +174,14 @@ export async function prepareEquipmentTypeForIssuance(
 
 export async function applyEquipmentSetupChange(
 	db: typeof database,
-	actor: { organizationId: string; userId: string },
+	actor: EquipmentActor,
 	input: unknown,
 ): Promise<EquipmentSetupOutcome> {
 	const parsed = equipmentSetupChangeSchema.safeParse(input);
 	if (!parsed.success) return { ok: false, reason: "invalid_input" };
 	const change = parsed.data;
 	const fingerprint = createHash("sha256")
-		.update(JSON.stringify(change))
+		.update(JSON.stringify({ actor: actor.userId, change }))
 		.digest("hex");
 	try {
 		return await db.transaction(async (tx): Promise<EquipmentSetupOutcome> => {
@@ -187,6 +189,12 @@ export async function applyEquipmentSetupChange(
 			await holdGuard(tx, userConfigurationAccessGuard(actor.userId));
 			await lockLifecycleOrganization(tx, actor.organizationId);
 			await lockEquipmentOrganization(tx, actor.organizationId);
+			if (!(await equipmentAccess(tx, actor)).canAdminister)
+				throw new AuthorizationError({
+					message: "Equipment setup is not available.",
+					resource: "equipment",
+					action: "manage",
+				});
 			const [replay] = await tx
 				.select()
 				.from(equipmentSetupCommand)

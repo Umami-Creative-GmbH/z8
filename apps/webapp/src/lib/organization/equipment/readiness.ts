@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, type SQL } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import {
 	equipmentItem,
@@ -71,6 +71,7 @@ export async function applyItemReadiness(
 export async function readItemReadiness(
 	tx: EquipmentTransaction,
 	organizationId: string,
+	itemScope?: SQL<boolean>,
 ): Promise<EquipmentReadinessItemView[]> {
 	const items = await tx
 		.select({ item: equipmentItem, typeName: equipmentType.name })
@@ -82,7 +83,7 @@ export async function readItemReadiness(
 				eq(equipmentType.organizationId, equipmentItem.organizationId),
 			),
 		)
-		.where(eq(equipmentItem.organizationId, organizationId))
+		.where(and(eq(equipmentItem.organizationId, organizationId), itemScope))
 		.orderBy(asc(equipmentItem.identifier));
 	const events = items.length
 		? await tx
