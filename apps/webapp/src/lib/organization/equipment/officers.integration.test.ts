@@ -402,6 +402,55 @@ it("registers and issues atomically within an employee grant, without opening se
 		success: true,
 		data: { assignments: [{ identifier: "L-OFFICER", canReceive: true }] },
 	});
+	const originalHistory = await actions.getEmployeeEquipment(ids.subject);
+	if (!originalHistory.success) throw new Error("equipment read failed");
+	const originalItem = originalHistory.data.assignments[0].itemId;
+	if (!result.success || !result.data.ok) throw new Error("issue failed");
+	expect(
+		await actions.changeEquipment({
+			kind: "receive_individual",
+			assignmentId: result.data.id,
+			expectedRevision: 1,
+			requestId: crypto.randomUUID(),
+			actualDate: "2026-11-02",
+			condition: "damaged",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	expect(
+		await actions.changeEquipment({
+			kind: "clear_item",
+			itemId: originalItem,
+			expectedRevision: 3,
+			requestId: crypto.randomUUID(),
+		}),
+	).toMatchObject({ success: true, data: { ok: true, revision: 4 } });
+	session.userId = "t1539-owner";
+	expect(
+		await actions.changeEquipment({
+			kind: "issue_individual",
+			itemId: originalItem,
+			employeeId: ids.other,
+			expectedRevision: 4,
+			requestId: crypto.randomUUID(),
+			actualDate: "2026-11-03",
+			condition: "good",
+			returnRequired: true,
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	session.userId = "t1539-officer";
+	const afterTransfer = await actions.getEquipmentOverview();
+	if (!afterTransfer.success) throw new Error("scope read failed");
+	expect(
+		afterTransfer.data.readinessItems.map((item) => item.id),
+	).not.toContain(originalItem);
+	expect(
+		await actions.changeEquipment({
+			kind: "retire_item",
+			itemId: originalItem,
+			expectedRevision: 5,
+			requestId: crypto.randomUUID(),
+		}),
+	).toMatchObject({ success: true, data: { ok: false, reason: "forbidden" } });
 	expect(
 		await actions.changeEquipment({
 			...command,
@@ -422,6 +471,19 @@ it("registers and issues atomically within an employee grant, without opening se
 		employeeIds: [ids.officer],
 	});
 	session.userId = "t1539-officer";
+	const scopedOverview = await actions.getEquipmentOverview();
+	if (!scopedOverview.success) throw new Error("overview failed");
+	expect(
+		scopedOverview.data.readinessItems.map((item) => item.id),
+	).not.toContain(originalItem);
+	expect(
+		await actions.changeEquipment({
+			kind: "retire_item",
+			itemId: originalItem,
+			expectedRevision: 2,
+			requestId: crypto.randomUUID(),
+		}),
+	).toMatchObject({ success: true, data: { ok: false, reason: "forbidden" } });
 	expect(await actions.changeEquipment(command)).toMatchObject({
 		success: true,
 		data: { ok: false, reason: "forbidden" },
@@ -444,6 +506,17 @@ it("registers and issues atomically within an employee grant, without opening se
 		requestId: crypto.randomUUID(),
 	});
 	if (!own.success || !own.data.ok) throw new Error("self issuance failed");
+	const ownEquipment = await actions.getMyEquipment();
+	if (!ownEquipment.success) throw new Error("self history failed");
+	const ownItem = ownEquipment.data.assignments[0].itemId;
+	expect(
+		await actions.changeEquipment({
+			kind: "mark_item_unavailable",
+			itemId: ownItem,
+			expectedRevision: 2,
+			requestId: crypto.randomUUID(),
+		}),
+	).toMatchObject({ success: true, data: { ok: true, revision: 3 } });
 	expect(
 		await actions.changeEquipment({
 			kind: "receive_individual",

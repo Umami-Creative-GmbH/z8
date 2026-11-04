@@ -27,6 +27,7 @@ import {
 	IssueEquipmentForm,
 	ReceiveEquipmentForm,
 } from "./equipment-handovers";
+import { EquipmentReadiness } from "./equipment-readiness";
 
 export function EquipmentOverview({
 	data,
@@ -53,6 +54,12 @@ export function EquipmentOverview({
 						"Manage types, item identities and retention",
 					)}
 				</Link>
+			) : null}
+			{data.canManage ? (
+				<EquipmentReadiness
+					items={data.readinessItems ?? []}
+					timezone={data.timezone}
+				/>
 			) : null}
 		</EquipmentWorkspace>
 	);
@@ -575,7 +582,7 @@ function EquipmentAssignmentCard({
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.equipment.custody.damageHelp",
-						"Return fulfilled. The damaged item remains unavailable pending clearance.",
+						"Return fulfilled. Damaged receipt requires separate clearance before reissue; see current item availability.",
 					)}
 				</p>
 			) : null}

@@ -41,6 +41,7 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 const view: EquipmentView = {
+	readinessItems: [],
 	canManage: true,
 	canAdminister: true,
 	registrationTypes: [],

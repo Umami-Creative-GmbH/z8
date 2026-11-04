@@ -2087,6 +2087,13 @@
       "when": 1810483200000,
       "tag": "0298_equipment_officers",
       "breakpoints": true
+    },
+    {
+      "idx": 299,
+      "version": "7",
+      "when": 1810569600000,
+      "tag": "0299_equipment_readiness",
+      "breakpoints": true
     }
   ]
 }

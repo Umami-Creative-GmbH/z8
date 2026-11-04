@@ -3,7 +3,7 @@ import { and, eq, type SQL, sql } from "drizzle-orm";
 import type { db as database } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { equipmentOfficerGrant } from "@/db/schema/equipment";
+import { equipmentItem, equipmentOfficerGrant } from "@/db/schema/equipment";
 import type { AuthorizedOrganizationIdentity } from "@/lib/auth/organization-identity";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { systemClock } from "@/lib/datetime/temporal-core";
@@ -148,6 +148,16 @@ export async function equipmentCoversEmployee(
 			),
 		);
 	return !!subject;
+}
+
+/** Shared items can be managed after a covered handover, but another current holder fences old scope. */
+export function equipmentItemScope(
+	access: Awaited<ReturnType<typeof equipmentAccess>>,
+): SQL<boolean> {
+	if (access.all) return sql`true`;
+	return sql`exists (select 1 from equipment_assignment ea inner join employee on employee.id = ea.employee_id and employee.organization_id = ea.organization_id
+ where ea.organization_id = ${equipmentItem.organizationId} and ea.item_id = ${equipmentItem.id}
+ and (not ${equipmentItem.inCustody} or not ea.received) and (${equipmentSubjectScope(access)}))`;
 }
 
 /** Navigation consumes the same live authority without loading any equipment history. */

@@ -338,3 +338,42 @@ export const equipmentFormerTeamScope = pgTable(
 		}).onDelete("cascade"),
 	],
 );
+
+/** Readiness decisions supplement physical handovers; they never rewrite receipt evidence. */
+export const equipmentItemReadinessEvent = pgTable(
+	"equipment_item_readiness_event",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		itemId: uuid("item_id").notNull(),
+		itemRevision: integer("item_revision").notNull(),
+		kind: text("kind", {
+			enum: ["clearance", "unavailable", "retired"],
+		}).notNull(),
+		actorId: text("actor_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		recordedAt: timestamp("recorded_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		foreignKey({
+			name: "equipment_readiness_item_org_fk",
+			columns: [t.itemId, t.organizationId],
+			foreignColumns: [equipmentItem.id, equipmentItem.organizationId],
+		}).onDelete("cascade"),
+		unique("equipment_readiness_item_revision_unique").on(
+			t.organizationId,
+			t.itemId,
+			t.itemRevision,
+		),
+		check(
+			"equipment_readiness_kind_check",
+			sql`${t.kind} in ('clearance', 'unavailable', 'retired')`,
+		),
+		check("equipment_readiness_revision_positive", sql`${t.itemRevision} > 0`),
+	],
+);

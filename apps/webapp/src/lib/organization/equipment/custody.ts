@@ -33,6 +33,7 @@ import {
 	type EquipmentView,
 	equipmentChangeSchema,
 } from "./contracts";
+import { applyItemReadiness, readItemReadiness } from "./readiness";
 import {
 	type EquipmentTransaction,
 	prepareEquipmentTypeForIssuance,
@@ -53,6 +54,7 @@ import {
 	type EquipmentActor,
 	equipmentAccess,
 	equipmentCoversEmployee,
+	equipmentItemScope,
 	equipmentSubjectScope,
 	lockEquipmentContext,
 } from "./access";
@@ -99,7 +101,8 @@ export async function applyEquipmentChange(
 	return db.transaction(async (tx): Promise<EquipmentOutcome> => {
 		// Route before locks, then confirm under them. Employee user identity must not drift.
 		const [target] =
-			change.kind !== "receive_individual"
+			change.kind === "issue_individual" ||
+			change.kind === "register_and_issue_individual"
 				? await tx
 						.select({ id: employee.id, userId: employee.userId })
 						.from(employee)
@@ -113,23 +116,43 @@ export async function applyEquipmentChange(
 		await lockEquipmentContext(tx, actor, target);
 		const access = await equipmentAccess(tx, actor);
 		if (!access.canManage) return { ok: false, reason: "forbidden" };
-		const subjectId =
-			change.kind !== "receive_individual"
-				? change.employeeId
-				: (
-						await tx
-							.select({ employeeId: equipmentAssignment.employeeId })
-							.from(equipmentAssignment)
-							.where(assignmentScope(actor.organizationId, change.assignmentId))
-					)[0]?.employeeId;
 		if (
-			!subjectId ||
-			!(await equipmentCoversEmployee(tx, actor, access, subjectId))
-		)
-			return {
-				ok: false,
-				reason: access.canAdminister ? "not_found" : "forbidden",
-			};
+			change.kind === "clear_item" ||
+			change.kind === "mark_item_unavailable" ||
+			change.kind === "retire_item"
+		) {
+			const [covered] = await tx
+				.select({ id: equipmentItem.id })
+				.from(equipmentItem)
+				.where(
+					and(
+						scoped(actor.organizationId, change.itemId),
+						equipmentItemScope(access),
+					),
+				);
+			if (!covered)
+				return { ok: false, reason: access.all ? "not_found" : "forbidden" };
+		} else {
+			const subjectId =
+				change.kind !== "receive_individual"
+					? change.employeeId
+					: (
+							await tx
+								.select({ employeeId: equipmentAssignment.employeeId })
+								.from(equipmentAssignment)
+								.where(
+									assignmentScope(actor.organizationId, change.assignmentId),
+								)
+						)[0]?.employeeId;
+			if (
+				!subjectId ||
+				!(await equipmentCoversEmployee(tx, actor, access, subjectId))
+			)
+				return {
+					ok: false,
+					reason: access.canAdminister ? "not_found" : "forbidden",
+				};
+		}
 		const [replay] = await tx
 			.select()
 			.from(equipmentCommand)
@@ -144,6 +167,26 @@ export async function applyEquipmentChange(
 				? replay.result
 				: { ok: false, reason: "request_conflict" };
 		const { today, now } = await organizationCalendar(tx, actor.organizationId);
+		if (
+			change.kind === "clear_item" ||
+			change.kind === "mark_item_unavailable" ||
+			change.kind === "retire_item"
+		) {
+			const outcome = await applyItemReadiness(
+				tx,
+				actor,
+				change,
+				dateFromInstant(now),
+			);
+			if (outcome.ok)
+				await tx.insert(equipmentCommand).values({
+					organizationId: actor.organizationId,
+					requestId: change.requestId,
+					fingerprint,
+					result: outcome,
+				});
+			return outcome;
+		}
 		const actualDate = parsePlainDate(change.actualDate);
 		if (Temporal.PlainDate.compare(actualDate, today) > 0)
 			return { ok: false, reason: "future_date" };
@@ -183,6 +226,17 @@ export async function applyEquipmentChange(
 				return { ok: false, reason: "employee_not_current" };
 			let item: typeof equipmentItem.$inferSelect;
 			if (change.kind === "register_and_issue_individual") {
+				const [registrationType] = await tx
+					.select({ trackingMode: equipmentType.trackingMode })
+					.from(equipmentType)
+					.where(
+						and(
+							eq(equipmentType.organizationId, actor.organizationId),
+							eq(equipmentType.id, change.typeId),
+						),
+					);
+				if (registrationType && registrationType.trackingMode !== "individual")
+					return { ok: false, reason: "individual_required" };
 				const [duplicate] = await tx
 					.select({ id: equipmentItem.id })
 					.from(equipmentItem)
@@ -348,7 +402,10 @@ export async function applyEquipmentChange(
 				.set({
 					inCustody: false,
 					lastHandoverDate: change.actualDate,
-					status: change.condition === "damaged" ? "unavailable" : item.status,
+					status:
+						change.condition === "damaged" && item.status !== "retired"
+							? "unavailable"
+							: item.status,
 					revision: item.revision + 1,
 					updatedBy: actor.userId,
 					updatedAt: recordedAt,
@@ -603,6 +660,13 @@ export async function readEquipment(
 						.orderBy(asc(equipmentItem.identifier))
 				: [];
 		return {
+			readinessItems: staffView
+				? await readItemReadiness(
+						tx,
+						actor.organizationId,
+						equipmentItemScope(access),
+					)
+				: [],
 			canManage: staffView,
 			canAdminister: access.canAdminister && scope.kind !== "personal",
 			registrationTypes:
