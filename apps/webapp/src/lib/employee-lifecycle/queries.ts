@@ -6,6 +6,8 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
+import { equipmentDepartureDeadline } from "@/lib/organization/equipment/deadlines";
+import { readEquipmentDepartureReturns } from "@/lib/organization/equipment/lifecycle";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { departureCutoff } from "./cutoff";
@@ -73,10 +75,18 @@ export function deriveOffboardingState(input: {
 			departure.status === "blocked" && departure.employmentPeriodId === input.openPeriodId,
 	);
 	if (input.openPeriodId && blocked) {
-		return { state: "blocked", departure: blocked, previousEmploymentPeriodId: null };
+		return {
+			state: "blocked",
+			departure: blocked,
+			previousEmploymentPeriodId: null,
+		};
 	}
 	if (input.openPeriodId || input.employeeActive) {
-		return { state: "active", departure: null, previousEmploymentPeriodId: null };
+		return {
+			state: "active",
+			departure: null,
+			previousEmploymentPeriodId: null,
+		};
 	}
 	const effective = input.departures
 		.filter((departure) => departure.status === "effective" && departure.effectiveAt)
@@ -90,7 +100,11 @@ export function deriveOffboardingState(input: {
 			previousEmploymentPeriodId: effective.employmentPeriodId,
 		};
 	}
-	return { state: "legacy_inactive", departure: null, previousEmploymentPeriodId: null };
+	return {
+		state: "legacy_inactive",
+		departure: null,
+		previousEmploymentPeriodId: null,
+	};
 }
 
 /**
@@ -148,9 +162,17 @@ export type LifecycleFollowUp = Pick<
 /** Follow-up progress of one anchor (a departure or a deactivation) from its tasks and reviews. */
 async function loadFollowUp(
 	database: QueryDatabase,
-	input: { organizationId: string; employeeId: string; anchor: ReturnType<typeof sql> },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		anchor: ReturnType<typeof sql>;
+	},
 ): Promise<LifecycleFollowUp> {
-	const tasks = await database.execute<{ id: string; kind: string; status: string }>(sql`
+	const tasks = await database.execute<{
+		id: string;
+		kind: string;
+		status: string;
+	}>(sql`
 		SELECT id, kind, status FROM employee_departure_task
 		WHERE organization_id = ${input.organizationId} AND ${input.anchor}
 		ORDER BY created_at, id
@@ -167,7 +189,10 @@ async function loadFollowUp(
 	`);
 	const failedTasks = tasks.rows
 		.filter((task) => task.status === "failed")
-		.map((task) => ({ id: task.id, kind: task.kind as OffboardingFollowUpTaskKind }));
+		.map((task) => ({
+			id: task.id,
+			kind: task.kind as OffboardingFollowUpTaskKind,
+		}));
 	const reviews = reviewRows.rows.map((review) => ({
 		id: review.id,
 		kind: review.kind,
@@ -224,7 +249,12 @@ export type EmployeeOffboardingViewResult =
 
 async function resolveViewer(
 	database: QueryDatabase,
-	input: { organizationId: string; employeeId: string; actorUserId: string; now: Instant },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		now: Instant;
+	},
 ): Promise<"admin" | "manager" | null> {
 	if (
 		await actorMayResolveDepartureWork(database, input.organizationId, input.actorUserId, input.now)
@@ -251,7 +281,12 @@ async function resolveViewer(
  */
 export async function getEmployeeOffboardingView(
 	database: QueryDatabase,
-	input: { organizationId: string; employeeId: string; actorUserId: string; now: Instant },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		now: Instant;
+	},
 ): Promise<EmployeeOffboardingViewResult> {
 	const employees = await database.execute<{
 		user_id: string;
@@ -490,8 +525,14 @@ export async function previewEmployeeDeparture(
 	) {
 		return { kind: "forbidden" };
 	}
-	const targets = await database.execute<{ user_id: string; timezone: string | null }>(sql`
-		SELECT e.user_id, o.timezone FROM employee e
+	const targets = await database.execute<{
+		user_id: string;
+		timezone: string | null;
+	}>(sql`
+		SELECT e.user_id, coalesce((SELECT d.timezone FROM employee_departure d
+		 WHERE d.organization_id=e.organization_id AND d.employee_id=e.id AND d.status IN ('pending','blocked')
+		  AND ${input.lastWorkingDay}::text IS NOT NULL
+		 ORDER BY d.created_at DESC LIMIT 1), o.timezone) AS timezone FROM employee e
 		JOIN organization o ON o.id = e.organization_id
 		WHERE e.organization_id = ${input.organizationId} AND e.id = ${input.employeeId}::uuid
 	`);
@@ -499,9 +540,17 @@ export async function previewEmployeeDeparture(
 	if (!target) return { kind: "not_found" };
 	if (target.user_id === input.actorUserId) return { kind: "forbidden" };
 
-	let cutoff: { lastWorkingDay: string | null; timezone: string; cutoff: Instant };
+	let cutoff: {
+		lastWorkingDay: string | null;
+		timezone: string;
+		cutoff: Instant;
+	};
 	if (input.lastWorkingDay === null) {
-		cutoff = { lastWorkingDay: null, timezone: target.timezone ?? "UTC", cutoff: input.now };
+		cutoff = {
+			lastWorkingDay: null,
+			timezone: target.timezone ?? "UTC",
+			cutoff: input.now,
+		};
 	} else {
 		try {
 			cutoff = departureCutoff({
@@ -568,7 +617,10 @@ export async function previewEmployeeDeparture(
 					AND a.end_date >= ${cutoffDate}::date AND a.status IN ('pending', 'approved')) AS future_absences
 	`);
 	const fact = facts.rows[0];
-	const options = await database.execute<{ id: string; name: string | null }>(sql`
+	const options = await database.execute<{
+		id: string;
+		name: string | null;
+	}>(sql`
 		SELECT e.id, u.name FROM employee e
 		JOIN member m ON m.user_id = e.user_id AND m.organization_id = e.organization_id
 		JOIN "user" u ON u.id = e.user_id
@@ -616,6 +668,15 @@ export async function previewEmployeeDeparture(
 	return {
 		kind: "ok",
 		preview: {
+			equipment: await readEquipmentDepartureReturns(
+				database,
+				input,
+				equipmentDepartureDeadline(
+					cutoff.cutoff,
+					cutoff.timezone,
+					input.lastWorkingDay === null ? "immediate" : "scheduled",
+				),
+			),
 			lastWorkingDay: cutoff.lastWorkingDay,
 			cutoff: cutoff.cutoff.toString(),
 			timezone: cutoff.timezone,

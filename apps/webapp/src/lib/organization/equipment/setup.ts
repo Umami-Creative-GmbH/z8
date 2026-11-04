@@ -84,7 +84,7 @@ export type EquipmentTransaction = Parameters<
 >[0];
 /** Serialize equipment writes. Cross-context writers must take lifecycle locks before this lock. */
 export async function lockEquipmentOrganization(
-	tx: EquipmentTransaction,
+	tx: Pick<EquipmentTransaction, "execute">,
 	organizationId: string,
 ) {
 	await tx.execute(

@@ -136,6 +136,10 @@ const heldAssignment: EquipmentAssignmentView = {
 	former: false,
 	returnRequired: true,
 	explicitDeadline: "2026-11-04",
+	departureDeadline: null,
+	effectiveDeadline: "2026-11-04",
+	employmentPeriodId: null,
+	departureId: null,
 	outstanding: true,
 	overdue: true,
 	held: true,
@@ -153,6 +157,33 @@ const heldAssignment: EquipmentAssignmentView = {
 	},
 	receipt: null,
 };
+it("shows the effective and independent explicit/departure dates on former-employee follow-up", () => {
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				assignments: [
+					{
+						...heldAssignment,
+						former: true,
+						effectiveDeadline: "2026-11-03",
+						departureDeadline: "2026-11-03",
+					},
+				],
+			}}
+			filters={{ former: true, outstanding: true }}
+		/>,
+	);
+	const card = screen.getByRole("article");
+	expect(within(card).getByText("Effective return deadline")).toBeTruthy();
+	expect(within(card).getByText("Departure return deadline")).toBeTruthy();
+	expect(within(card).getByText("Explicit return deadline")).toBeTruthy();
+	expect(within(card).getAllByText("Nov 3, 2026")).toHaveLength(2);
+	expect(within(card).getByText("Nov 4, 2026")).toBeTruthy();
+	expect(
+		within(card).getByRole("button", { name: "Record receipt" }),
+	).toBeTruthy();
+});
 it("requires an actual handover date, snapshots the selected type default, and retries the same handover identity", async () => {
 	api.change.mockResolvedValue({ success: false, code: "DatabaseError" });
 	const user = userEvent.setup();
