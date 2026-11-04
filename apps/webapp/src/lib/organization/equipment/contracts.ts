@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 
+export type EquipmentDepartureReturn = {
+	assignmentId: string;
+	identifier: string;
+	typeName: string;
+	outstandingQuantity: number;
+	explicitDeadline: string | null;
+	effectiveDeadline: string | null;
+};
+
 const request = { requestId: z.uuid() };
 const revision = { expectedRevision: z.number().int().nonnegative() };
 const typeFields = {
@@ -231,6 +240,10 @@ export interface EquipmentAssignmentView {
 	former: boolean;
 	returnRequired: boolean;
 	explicitDeadline: string | null;
+	departureDeadline: string | null;
+	effectiveDeadline: string | null;
+	employmentPeriodId: string | null;
+	departureId: string | null;
 	outstanding: boolean;
 	overdue: boolean;
 	held: boolean;

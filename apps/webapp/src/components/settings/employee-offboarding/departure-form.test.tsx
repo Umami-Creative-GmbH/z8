@@ -5,6 +5,9 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const previewMock = vi.hoisted(() => vi.fn());
+vi.mock("@/navigation", () => ({
+	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -98,6 +101,43 @@ describe("DepartureForm", () => {
 		expect(await screen.findByText("Choose the last working day.")).toBeTruthy();
 		expect(props.scheduleDeparture).not.toHaveBeenCalled();
 	});
+	it("shows outstanding equipment quantities and deadlines while access ending remains independent", () => {
+		previewMock.mockReturnValue({
+			data: {
+				lastWorkingDay: "2026-10-25",
+				cutoff: "2026-10-25T23:00:00Z",
+				timezone: "Europe/Berlin",
+				pendingDutyCount: 0,
+				replacementOptions: [],
+				exceptions: [],
+				equipment: [
+					{
+						assignmentId: "laptop-1",
+						identifier: "IT-42",
+						typeName: "Laptop",
+						outstandingQuantity: 1,
+						explicitDeadline: "2026-10-23",
+						effectiveDeadline: "2026-10-23",
+					},
+				],
+			},
+			isFetching: false,
+			error: null,
+		});
+		renderForm();
+		expect(
+			screen.getByRole("region", { name: "Outstanding equipment returns" }).textContent,
+		).toContain("IT-42");
+		expect(screen.getByText("Oct 23, 2026").getAttribute("datetime")).toBe("2026-10-23");
+		expect(
+			screen.getByRole("link", { name: "Open equipment follow-up" }).getAttribute("href"),
+		).toContain(employeeId);
+		expect(
+			screen.getByText(
+				"Outstanding equipment never delays employment, access or paid-seat ending. Returning a key or fob does not restore its credential.",
+			),
+		).toBeTruthy();
+	});
 
 	it("keeps entered values, focuses the server guidance and retries with the same request id", async () => {
 		const user = userEvent.setup();
@@ -168,7 +208,10 @@ describe("DepartureForm", () => {
 
 		await waitFor(() =>
 			expect(props.scheduleDeparture).toHaveBeenCalledWith(
-				expect.objectContaining({ expectedRevision: 3, lastWorkingDay: "2026-09-30" }),
+				expect.objectContaining({
+					expectedRevision: 3,
+					lastWorkingDay: "2026-09-30",
+				}),
 			),
 		);
 	});
@@ -224,7 +267,9 @@ describe("DepartureForm", () => {
 		expect(props.scheduleDeparture).not.toHaveBeenCalled();
 
 		await user.click(
-			screen.getByRole("checkbox", { name: "Admins will resolve the 2 open approval duties." }),
+			screen.getByRole("checkbox", {
+				name: "Admins will resolve the 2 open approval duties.",
+			}),
 		);
 		await user.click(screen.getByRole("button", { name: "Schedule departure" }));
 

@@ -575,19 +575,52 @@ function EquipmentAssignmentCard({
 					<dt className="text-muted-foreground">
 						{t(
 							"settings.equipment.custody.deadline",
-							"Explicit return deadline",
+							"Effective return deadline",
 						)}
 					</dt>
 					<dd>
-						{assignment.explicitDeadline ? (
-							<time dateTime={assignment.explicitDeadline}>
-								{date(assignment.explicitDeadline)}
+						{assignment.effectiveDeadline ? (
+							<time dateTime={assignment.effectiveDeadline}>
+								{date(assignment.effectiveDeadline)}
 							</time>
 						) : (
-							t("settings.equipment.custody.noDeadline", "No explicit deadline")
+							t(
+								"settings.equipment.custody.noEffectiveDeadline",
+								"No return deadline",
+							)
 						)}
 					</dd>
 				</div>
+				{assignment.departureDeadline ? (
+					<div>
+						<dt className="text-muted-foreground">
+							{t(
+								"settings.equipment.custody.departureDeadline",
+								"Departure return deadline",
+							)}
+						</dt>
+						<dd>
+							<time dateTime={assignment.departureDeadline}>
+								{date(assignment.departureDeadline)}
+							</time>
+						</dd>
+					</div>
+				) : null}
+				{assignment.explicitDeadline ? (
+					<div>
+						<dt className="text-muted-foreground">
+							{t(
+								"settings.equipment.custody.explicitDeadline",
+								"Explicit return deadline",
+							)}
+						</dt>
+						<dd>
+							<time dateTime={assignment.explicitDeadline}>
+								{date(assignment.explicitDeadline)}
+							</time>
+						</dd>
+					</div>
+				) : null}
 				<div>
 					<dt className="text-muted-foreground">
 						{t(

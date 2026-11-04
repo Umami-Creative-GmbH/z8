@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
+import { EquipmentDepartureSummary } from "@/components/equipment/equipment-departure-summary";
 import { Alert } from "@/components/ui/alert";
 import { AlertDescription } from "@/components/ui/alert-description";
 import { Button } from "@/components/ui/button";
@@ -125,7 +126,10 @@ export function DepartureForm(props: DepartureFormProps) {
 		};
 		return props.offboardNow({
 			...intent,
-			requestId: requestIdentity.forPayload({ command: "offboard_now", ...intent }),
+			requestId: requestIdentity.forPayload({
+				command: "offboard_now",
+				...intent,
+			}),
 		});
 	}
 
@@ -354,6 +358,13 @@ function DeparturePreviewFields({
 						<li key={exception}>{labels.exception(exception)}</li>
 					))}
 				</ul>
+			)}
+			{data && (
+				<EquipmentDepartureSummary
+					equipment={data.equipment ?? []}
+					employeeId={employeeId}
+					locale={locale}
+				/>
 			)}
 
 			<form.Field name="replacementEmployeeId">
