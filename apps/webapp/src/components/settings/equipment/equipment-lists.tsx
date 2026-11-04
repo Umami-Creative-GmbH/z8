@@ -155,14 +155,19 @@ export function EquipmentItemList({
 											"settings.equipment.items.archivedAvailability",
 											"Archived; unavailable for new assignments",
 										)
-									: item.status === "available"
-										? t("settings.equipment.items.available", "Available")
-										: item.status === "retired"
-											? t("settings.equipment.items.retired", "Retired")
-											: t(
-													"settings.equipment.items.unavailable",
-													"Unavailable",
-												)}
+									: item.inCustody
+										? t(
+												"settings.equipment.items.held",
+												"Held by employee; unavailable for new issuance",
+											)
+										: item.status === "available"
+											? t("settings.equipment.items.available", "Available")
+											: item.status === "retired"
+												? t("settings.equipment.items.retired", "Retired")
+												: t(
+														"settings.equipment.items.unavailable",
+														"Unavailable",
+													)}
 							</dd>
 						</dl>
 						{!item.archived ? (

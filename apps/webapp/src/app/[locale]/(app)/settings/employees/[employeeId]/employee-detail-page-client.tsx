@@ -8,6 +8,7 @@ import { use, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { BillableRateSeries } from "@/components/billable-time/billable-rate-series";
 import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
+import { EmployeeEquipment } from "@/components/equipment/equipment-workspace";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { ReactivationChecklistCard } from "@/components/organization/reactivation-checklist";
@@ -34,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { EmployeeReadSnapshot } from "@/lib/organization/employee-read-types";
+import type { EquipmentView } from "@/lib/organization/equipment/contracts";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query";
 import { type EmployeeDetail, useEmployee } from "@/lib/query/use-employee";
@@ -144,6 +146,7 @@ export function EmployeeDetailPageClient({
 	initialSnapshot,
 	highlightedReviewId = null,
 	personnelFile = null,
+	equipment = null,
 }: {
 	params: Promise<{ employeeId: string }>;
 	accessTier: SettingsAccessTier;
@@ -154,6 +157,7 @@ export function EmployeeDetailPageClient({
 	highlightedReviewId?: string | null;
 	/** Decided on the server by the personnel file access resolver (#865). */
 	personnelFile?: PersonnelFilePanelCapability | null;
+	equipment?: EquipmentView | null;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
@@ -367,6 +371,13 @@ export function EmployeeDetailPageClient({
 				accessTier={accessTier}
 				currentMemberRole={currentMemberRole}
 			/>
+			{equipment && canShowRealEmployeeSections ? (
+				<EmployeeEquipment
+					key={`${organizationId}:${employeeId}`}
+					data={equipment}
+					employeeId={employeeId}
+				/>
+			) : null}
 
 			{canShowRealEmployeeSections && (
 				<EmployeeRecordSections

@@ -2,6 +2,7 @@ import { type SQL, sql } from "drizzle-orm";
 import {
 	boolean,
 	check,
+	date,
 	foreignKey,
 	integer,
 	jsonb,
@@ -14,6 +15,8 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
+import { employeeEmploymentPeriod } from "./employee-lifecycle";
+import { employee } from "./organization";
 
 export const equipmentPolicy = pgTable(
 	"equipment_policy",
@@ -95,6 +98,9 @@ export const equipmentItem = pgTable(
 					sql`lower(regexp_replace(${equipmentItem.identifier}, '^[[:space:]]+|[[:space:]]+$', '', 'g'))`,
 			),
 		serialNumber: text("serial_number"),
+		/** Nonpersonal custody survives deletion of retained employee history. */
+		inCustody: boolean("in_custody").notNull().default(false),
+		lastHandoverDate: date("last_handover_date"),
 		status: text("status", { enum: ["available", "unavailable", "retired"] })
 			.notNull()
 			.default("available"),
@@ -143,6 +149,123 @@ export const equipmentItem = pgTable(
 /** Stores only a command digest and nonpersonal result, never the submitted free text. */
 export const equipmentSetupCommand = pgTable(
 	"equipment_setup_command",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		requestId: uuid("request_id").notNull(),
+		fingerprint: text("fingerprint").notNull(),
+		result: jsonb("result")
+			.$type<{ ok: true; id: string; revision: number }>()
+			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [primaryKey({ columns: [t.organizationId, t.requestId] })],
+);
+
+/** An agreement is personal history; it is never the source of item availability. */
+export const equipmentAssignment = pgTable(
+	"equipment_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		itemId: uuid("item_id").notNull(),
+		employeeId: uuid("employee_id"),
+		employmentPeriodId: uuid("employment_period_id"),
+		returnRequired: boolean("return_required").notNull(),
+		explicitDeadline: date("explicit_deadline"),
+		received: boolean("received").notNull().default(false),
+		revision: integer("revision").notNull().default(1),
+	},
+	(t) => [
+		unique("equipment_assignment_id_org_unique").on(t.id, t.organizationId),
+		uniqueIndex("equipment_assignment_one_holder")
+			.on(t.organizationId, t.itemId)
+			.where(sql`${t.received} = false`),
+		foreignKey({
+			name: "equipment_assignment_item_org_fk",
+			columns: [t.itemId, t.organizationId],
+			foreignColumns: [equipmentItem.id, equipmentItem.organizationId],
+		}),
+		foreignKey({
+			name: "equipment_assignment_employee_org_fk",
+			columns: [t.employeeId, t.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}),
+		foreignKey({
+			name: "equipment_assignment_period_org_employee_fk",
+			columns: [t.employmentPeriodId, t.organizationId, t.employeeId],
+			foreignColumns: [
+				employeeEmploymentPeriod.id,
+				employeeEmploymentPeriod.organizationId,
+				employeeEmploymentPeriod.employeeId,
+			],
+		}),
+		check(
+			"equipment_assignment_deadline_check",
+			sql`${t.returnRequired} or ${t.explicitDeadline} is null`,
+		),
+		check("equipment_assignment_revision_positive", sql`${t.revision} > 0`),
+	],
+);
+
+export const equipmentHandover = pgTable(
+	"equipment_handover",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		assignmentId: uuid("assignment_id").notNull(),
+		kind: text("kind", { enum: ["issue", "receipt"] }).notNull(),
+		actualDate: date("actual_date").notNull(),
+		condition: text("condition", {
+			enum: ["good", "worn", "damaged", "unknown"],
+		}).notNull(),
+		notes: text("notes"),
+		actorId: text("actor_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		recordedAt: timestamp("recorded_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		foreignKey({
+			name: "equipment_handover_assignment_org_fk",
+			columns: [t.assignmentId, t.organizationId],
+			foreignColumns: [
+				equipmentAssignment.id,
+				equipmentAssignment.organizationId,
+			],
+		}).onDelete("cascade"),
+		unique("equipment_handover_individual_once").on(
+			t.organizationId,
+			t.assignmentId,
+			t.kind,
+		),
+		check(
+			"equipment_handover_kind_check",
+			sql`${t.kind} in ('issue', 'receipt')`,
+		),
+		check(
+			"equipment_handover_condition_check",
+			sql`${t.condition} in ('good', 'worn', 'damaged', 'unknown')`,
+		),
+		check(
+			"equipment_handover_notes_check",
+			sql`${t.notes} is null or length(${t.notes}) <= 4000`,
+		),
+	],
+);
+
+/** Actor-bound replay stores no handover free text. */
+export const equipmentCommand = pgTable(
+	"equipment_command",
 	{
 		organizationId: text("organization_id")
 			.notNull()

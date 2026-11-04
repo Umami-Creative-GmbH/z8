@@ -16,6 +16,19 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		titleDefault: "Dashboard",
 	},
 	{ id: "today", href: "/today", titleKey: "nav.today", titleDefault: "Today" },
+	// Equipment titles await Tolgee sync; keep the translated Settings shell fallback.
+	{
+		id: "equipment",
+		href: "/equipment",
+		titleKey: "nav.settings",
+		titleDefault: "Settings",
+	},
+	{
+		id: "my-equipment",
+		href: "/my-equipment",
+		titleKey: "nav.settings",
+		titleDefault: "Settings",
+	},
 	{
 		id: "notifications",
 		href: "/notifications",
@@ -153,12 +166,14 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 	},
 	// Equipment's new title still needs Tolgee sync. Until then the shell uses
 	// its catalog-backed Settings ancestor; the page/nav have dedicated defaults.
-	...SETTINGS_ENTRIES.filter((entry) => entry.id !== "equipment").map((entry) => ({
-		id: `settings-${entry.id}`,
-		href: entry.href,
-		titleKey: entry.titleKey,
-		titleDefault: entry.titleDefault,
-	})),
+	...SETTINGS_ENTRIES.filter((entry) => entry.id !== "equipment").map(
+		(entry) => ({
+			id: `settings-${entry.id}`,
+			href: entry.href,
+			titleKey: entry.titleKey,
+			titleDefault: entry.titleDefault,
+		}),
+	),
 	{
 		id: "settings",
 		href: "/settings",

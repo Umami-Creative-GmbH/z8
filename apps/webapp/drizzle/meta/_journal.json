@@ -2073,6 +2073,13 @@
       "when": 1810224000000,
       "tag": "0295_equipment_setup",
       "breakpoints": true
+    },
+    {
+      "idx": 296,
+      "version": "7",
+      "when": 1810310400000,
+      "tag": "0296_equipment_custody",
+      "breakpoints": true
     }
   ]
 }

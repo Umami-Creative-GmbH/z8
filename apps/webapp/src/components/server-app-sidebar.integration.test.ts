@@ -238,6 +238,23 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 			boundary.queries.filter((query) => query.includes('from "employee"')),
 		).toHaveLength(1);
 	});
+	it("offers equipment staff navigation to owners/admins and only self-history to managers and employees", async () => {
+		for (const role of ["owner", "admin", "manager", "employee"] as const) {
+			const person = await fixture.seedEmployee({
+				role: role === "owner" || role === "admin" ? role : "member",
+			});
+			if (role === "manager")
+				await fixture.pool.query(
+					"update employee set role='manager' where id=$1",
+					[person.employeeId],
+				);
+			const output = await render(subject(person.userId));
+			expect(output).toContain('"href":"/myEquipment"');
+			if (role === "owner" || role === "admin")
+				expect(output).toContain('"href":"/equipment"');
+			else expect(output).not.toContain('"href":"/equipment"');
+		}
+	});
 	it("offers presence only for an active own-organization location, using a bounded existence read", async () => {
 		const otherOrg = await fixture.createOrganization();
 		const id = (await import("node:crypto")).randomUUID();

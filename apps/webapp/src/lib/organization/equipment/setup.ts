@@ -9,6 +9,11 @@ import {
 	equipmentType,
 } from "@/db/schema/equipment";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { lockLifecycleOrganization } from "@/lib/employee-lifecycle/locks";
+import {
+	holdGuard,
+	userConfigurationAccessGuard,
+} from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	type EquipmentItemView,
 	type EquipmentSetupDetail,
@@ -37,6 +42,7 @@ function itemView(item: typeof equipmentItem.$inferSelect): EquipmentItemView {
 		identifier: item.identifier,
 		serialNumber: item.serialNumber,
 		status: item.status,
+		inCustody: item.inCustody,
 		archived: item.archivedAt !== null,
 		revision: item.revision,
 	};
@@ -177,6 +183,9 @@ export async function applyEquipmentSetupChange(
 		.digest("hex");
 	try {
 		return await db.transaction(async (tx): Promise<EquipmentSetupOutcome> => {
+			// Organization FK inserts must not wait for lifecycle while holding equipment.
+			await holdGuard(tx, userConfigurationAccessGuard(actor.userId));
+			await lockLifecycleOrganization(tx, actor.organizationId);
 			await lockEquipmentOrganization(tx, actor.organizationId);
 			const [replay] = await tx
 				.select()
