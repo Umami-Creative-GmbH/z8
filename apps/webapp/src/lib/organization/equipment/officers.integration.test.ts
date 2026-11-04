@@ -583,6 +583,86 @@ it("registers and issues atomically within an employee grant, without opening se
 	});
 });
 
+it("applies live officer scope to quantity issuance and partial receipts", async () => {
+	await actions.changeEquipmentSetup({
+		kind: "configure_policy",
+		requestId: crypto.randomUUID(),
+		expectedRevision: 0,
+		retentionMonths: 24,
+	});
+	const type = await actions.changeEquipmentSetup({
+		kind: "create_type",
+		requestId: crypto.randomUUID(),
+		name: "Shirts",
+		trackingMode: "quantity",
+		defaultReturnRequired: true,
+	});
+	if (!type.success || !type.data.ok) throw new Error("quantity setup failed");
+	await grant({ scope: "selected", employeeIds: [ids.subject] });
+	session.userId = "t1539-officer";
+	const command = {
+		kind: "issue_quantity",
+		requestId: crypto.randomUUID(),
+		expectedRevision: type.data.revision,
+		typeId: type.data.id,
+		employeeId: ids.subject,
+		quantity: 3,
+		actualDate: "2026-11-01",
+		condition: "good",
+		returnRequired: true,
+	};
+	const result = await actions.changeEquipment(command);
+	expect(result).toMatchObject({ success: true, data: { ok: true } });
+	expect(
+		await actions.changeEquipment({
+			...command,
+			requestId: crypto.randomUUID(),
+			employeeId: ids.other,
+		}),
+	).toMatchObject({ success: true, data: { ok: false, reason: "forbidden" } });
+	if (!result.success || !result.data.ok)
+		throw new Error("quantity issue failed");
+	const receipt = {
+		kind: "receive_quantity",
+		requestId: crypto.randomUUID(),
+		assignmentId: result.data.id,
+		expectedRevision: 1,
+		quantity: 2,
+		actualDate: "2026-11-02",
+		condition: "good",
+	};
+	session.userId = "t1539-owner";
+	await grant({
+		expectedRevision: 1,
+		scope: "selected",
+		employeeIds: [ids.other],
+	});
+	session.userId = "t1539-officer";
+	expect(await actions.changeEquipment(receipt)).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "forbidden" },
+	});
+	session.userId = "t1539-owner";
+	await grant({
+		expectedRevision: 2,
+		scope: "selected",
+		employeeIds: [ids.subject],
+	});
+	session.userId = "t1539-officer";
+	expect(await actions.changeEquipment(receipt)).toMatchObject({
+		success: true,
+		data: { ok: true, revision: 2 },
+	});
+	expect(await actions.getEmployeeEquipment(ids.subject)).toMatchObject({
+		success: true,
+		data: {
+			assignments: [
+				{ quantity: 3, physicallyReceivedQuantity: 2, outstandingQuantity: 1 },
+			],
+		},
+	});
+});
+
 it("denies officer authority at a pending departure's live cutoff before follow-up runs", async () => {
 	await grant();
 	const { db } = await import("@/db");

@@ -121,6 +121,11 @@ export const equipmentItem = pgTable(
 	},
 	(t) => [
 		unique("equipment_item_id_org_unique").on(t.id, t.organizationId),
+		unique("equipment_item_id_org_type_unique").on(
+			t.id,
+			t.organizationId,
+			t.typeId,
+		),
 		uniqueIndex("equipment_item_identifier_org_unique").on(
 			t.organizationId,
 			t.identifierKey,
@@ -173,7 +178,10 @@ export const equipmentAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		itemId: uuid("item_id").notNull(),
+		itemId: uuid("item_id"),
+		typeId: uuid("type_id").notNull(),
+		quantity: integer("quantity").notNull().default(1),
+		receivedQuantity: integer("received_quantity").notNull().default(0),
 		employeeId: uuid("employee_id"),
 		employmentPeriodId: uuid("employment_period_id"),
 		returnRequired: boolean("return_required").notNull(),
@@ -183,13 +191,34 @@ export const equipmentAssignment = pgTable(
 	},
 	(t) => [
 		unique("equipment_assignment_id_org_unique").on(t.id, t.organizationId),
+		foreignKey({
+			name: "equipment_assignment_type_org_fk",
+			columns: [t.typeId, t.organizationId],
+			foreignColumns: [equipmentType.id, equipmentType.organizationId],
+		}),
+		check(
+			"equipment_assignment_quantity_check",
+			sql`${t.quantity} > 0 and (${t.itemId} is null or ${t.quantity} = 1)`,
+		),
+		check(
+			"equipment_assignment_received_quantity_check",
+			sql`${t.receivedQuantity} >= 0 and ${t.receivedQuantity} <= ${t.quantity}`,
+		),
+		check(
+			"equipment_assignment_received_check",
+			sql`${t.received} = (${t.receivedQuantity} = ${t.quantity})`,
+		),
 		uniqueIndex("equipment_assignment_one_holder")
 			.on(t.organizationId, t.itemId)
 			.where(sql`${t.received} = false`),
 		foreignKey({
 			name: "equipment_assignment_item_org_fk",
-			columns: [t.itemId, t.organizationId],
-			foreignColumns: [equipmentItem.id, equipmentItem.organizationId],
+			columns: [t.itemId, t.organizationId, t.typeId],
+			foreignColumns: [
+				equipmentItem.id,
+				equipmentItem.organizationId,
+				equipmentItem.typeId,
+			],
 		}),
 		foreignKey({
 			name: "equipment_assignment_employee_org_fk",
@@ -222,6 +251,7 @@ export const equipmentHandover = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		assignmentId: uuid("assignment_id").notNull(),
 		kind: text("kind", { enum: ["issue", "receipt"] }).notNull(),
+		quantity: integer("quantity").notNull().default(1),
 		actualDate: date("actual_date").notNull(),
 		condition: text("condition", {
 			enum: ["good", "worn", "damaged", "unknown"],
@@ -243,11 +273,10 @@ export const equipmentHandover = pgTable(
 				equipmentAssignment.organizationId,
 			],
 		}).onDelete("cascade"),
-		unique("equipment_handover_individual_once").on(
-			t.organizationId,
-			t.assignmentId,
-			t.kind,
-		),
+		uniqueIndex("equipment_handover_issue_once")
+			.on(t.organizationId, t.assignmentId)
+			.where(sql`${t.kind} = 'issue'`),
+		check("equipment_handover_quantity_positive", sql`${t.quantity} > 0`),
 		check(
 			"equipment_handover_kind_check",
 			sql`${t.kind} in ('issue', 'receipt')`,

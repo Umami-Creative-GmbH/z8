@@ -39,6 +39,16 @@ export function handoverRefusalMessage(
 				"settings.equipment.readiness.unchanged",
 				"This availability state is already recorded. Reload equipment to review its history.",
 			);
+		case "quantity_required":
+			return t(
+				"settings.equipment.handover.quantityRequired",
+				"Select a quantity-tracked type for this handover.",
+			);
+		case "excess_quantity":
+			return t(
+				"settings.equipment.handover.quantityExcess",
+				"Quantity exceeds the remaining physical balance.",
+			);
 		case "forbidden":
 			return t(
 				"settings.equipment.handover.forbidden",

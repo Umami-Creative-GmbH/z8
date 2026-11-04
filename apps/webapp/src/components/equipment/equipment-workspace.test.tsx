@@ -61,6 +61,7 @@ const view: EquipmentView = {
 		},
 	],
 	types: [{ id: "15370000-0000-4000-8000-000000000010", name: "Laptop" }],
+	availableQuantityTypes: [],
 	availableItems: [
 		{
 			id: "15370000-0000-4000-8000-000000000020",
@@ -95,7 +96,7 @@ it("lets scoped officers register while issuing without offering unrestricted se
 		}),
 	).toBeNull();
 	await user.click(screen.getByRole("button", { name: "Issue equipment" }));
-	await user.selectOptions(screen.getByLabelText("Equipment item"), "new");
+	await user.selectOptions(screen.getByLabelText(/Equipment item/), "new");
 	await user.selectOptions(
 		screen.getByLabelText(/Equipment type/),
 		view.types[0].id,
@@ -120,6 +121,11 @@ it("lets scoped officers register while issuing without offering unrestricted se
 	);
 });
 const heldAssignment: EquipmentAssignmentView = {
+	trackingMode: "individual",
+	quantity: 1,
+	physicallyReceivedQuantity: 0,
+	outstandingQuantity: 1,
+	receipts: [],
 	id: "15370000-0000-4000-8000-000000000030",
 	itemId: view.availableItems[0].id,
 	typeId: view.types[0].id,
@@ -136,6 +142,8 @@ const heldAssignment: EquipmentAssignmentView = {
 	revision: 7,
 	canReceive: true,
 	issue: {
+		id: "issue",
+		quantity: 1,
 		actualDate: "2026-11-01",
 		condition: "good",
 		notes: "Initial handover",
@@ -199,6 +207,22 @@ it("keeps personal history read-only and shows returned condition separately fro
 		assignments: [
 			{
 				id: "assignment",
+				trackingMode: "individual",
+				quantity: 1,
+				physicallyReceivedQuantity: 1,
+				outstandingQuantity: 0,
+				receipts: [
+					{
+						id: "receipt",
+						quantity: 1,
+						actualDate: "2026-11-04",
+						condition: "damaged",
+						notes: "Cracked screen",
+						actorId: "admin",
+						actorName: "Sam Admin",
+						recordedAt: "2026-11-05T10:00:00Z",
+					},
+				],
 				itemId: "item",
 				typeId: "type",
 				typeName: "Laptop",
@@ -214,6 +238,8 @@ it("keeps personal history read-only and shows returned condition separately fro
 				revision: 2,
 				canReceive: false,
 				issue: {
+					id: "issue",
+					quantity: 1,
 					actualDate: "2026-11-01",
 					condition: "good",
 					notes: "Initial handover",
@@ -222,6 +248,8 @@ it("keeps personal history read-only and shows returned condition separately fro
 					recordedAt: "2026-11-02T12:00:00Z",
 				},
 				receipt: {
+					id: "receipt",
+					quantity: 1,
 					actualDate: "2026-11-04",
 					condition: "damaged",
 					notes: "Cracked screen",
@@ -335,4 +363,242 @@ it("keeps holder, type, outstanding, overdue and former filters in the overview 
 		overdue: "true",
 		former: "true",
 	});
+});
+
+const quantityType = {
+	id: "15380000-0000-4000-8000-000000000010",
+	name: "Shirt size M",
+	defaultReturnRequired: true,
+	revision: 2,
+};
+const partialAssignment: EquipmentAssignmentView = {
+	...heldAssignment,
+	itemId: null,
+	trackingMode: "quantity",
+	quantity: 3,
+	physicallyReceivedQuantity: 2,
+	outstandingQuantity: 1,
+	identifier: quantityType.name,
+	typeId: quantityType.id,
+	typeName: quantityType.name,
+	issue: { ...heldAssignment.issue, quantity: 3 },
+	receipts: [
+		{
+			id: "partial",
+			quantity: 2,
+			actualDate: "2026-11-03",
+			condition: "good",
+			notes: "Two shirts back",
+			actorId: "admin",
+			actorName: "Sam Admin",
+			recordedAt: "2026-11-04T10:00:00Z",
+		},
+	],
+	receipt: {
+		id: "partial",
+		quantity: 2,
+		actualDate: "2026-11-03",
+		condition: "good",
+		notes: "Two shirts back",
+		actorId: "admin",
+		actorName: "Sam Admin",
+		recordedAt: "2026-11-04T10:00:00Z",
+	},
+};
+it("issues a positive whole quantity without requiring an artificial individual identity", async () => {
+	api.change.mockResolvedValue({
+		success: true,
+		data: { ok: true, id: "new", revision: 1 },
+	});
+	const user = userEvent.setup();
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				availableItems: [],
+				availableQuantityTypes: [quantityType],
+			}}
+			filters={{}}
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Issue equipment" }));
+	await user.selectOptions(
+		screen.getByLabelText(/^Equipment item/),
+		quantityType.id,
+	);
+	await user.selectOptions(
+		screen.getByLabelText(/^Current employee/),
+		view.employees[0].id,
+	);
+	await user.type(screen.getByLabelText(/^Actual handover date/), "2026-11-04");
+	const quantity = screen.getByLabelText(/^Quantity/);
+	await user.clear(quantity);
+	await user.type(quantity, "1.5");
+	await user.click(screen.getByRole("button", { name: "Record issuance" }));
+	expect(
+		await screen.findByText("Enter a positive whole quantity."),
+	).toBeTruthy();
+	expect(document.activeElement).toBe(quantity);
+	expect(api.change).not.toHaveBeenCalled();
+	await user.clear(quantity);
+	await user.type(quantity, "3");
+	await user.click(screen.getByRole("button", { name: "Record issuance" }));
+	await waitFor(() => expect(api.change).toHaveBeenCalled());
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "issue_quantity",
+		typeId: quantityType.id,
+		quantity: 3,
+		expectedRevision: 2,
+		returnRequired: true,
+	});
+	expect(api.change.mock.calls[0][0]).not.toHaveProperty("itemId");
+});
+it("shows independent partial receipt totals and caps a subsequent receipt at the physical balance", async () => {
+	api.change.mockResolvedValue({
+		success: true,
+		data: { ok: true, id: partialAssignment.id, revision: 8 },
+	});
+	const user = userEvent.setup();
+	render(
+		<EquipmentOverview
+			data={{ ...view, assignments: [partialAssignment] }}
+			filters={{}}
+		/>,
+	);
+	const article = screen.getByRole("article");
+	expect(
+		within(article).getByText("Issued quantity").nextElementSibling
+			?.textContent,
+	).toBe("3");
+	expect(
+		within(article).getByText("Physically received quantity").nextElementSibling
+			?.textContent,
+	).toBe("2");
+	expect(
+		within(article).getByText("Outstanding quantity").nextElementSibling
+			?.textContent,
+	).toBe("1");
+	expect(within(article).getByText("Overdue")).toBeTruthy();
+	expect(within(article).getByText("Two shirts back")).toBeTruthy();
+	await user.click(screen.getByRole("button", { name: "Record receipt" }));
+	const form = screen
+		.getByRole("heading", { name: /Confirm physical receipt/ })
+		.closest("form");
+	if (!form) throw new Error("Expected receipt form");
+	await user.type(screen.getByLabelText(/^Actual handover date/), "2026-11-04");
+	const quantity = screen.getByLabelText(/^Quantity/);
+	await user.clear(quantity);
+	await user.type(quantity, "2");
+	await user.click(
+		within(form).getByRole("button", { name: "Record receipt" }),
+	);
+	expect(
+		await screen.findByText("Quantity exceeds the remaining physical balance."),
+	).toBeTruthy();
+	expect(api.change).not.toHaveBeenCalled();
+	await user.clear(quantity);
+	await user.type(quantity, "1");
+	await user.selectOptions(screen.getByLabelText("Condition"), "damaged");
+	await user.type(screen.getByLabelText("Notes (optional)"), "Torn sleeve");
+	await user.click(
+		within(form).getByRole("button", { name: "Record receipt" }),
+	);
+	await waitFor(() => expect(api.change).toHaveBeenCalled());
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "receive_quantity",
+		assignmentId: partialAssignment.id,
+		quantity: 1,
+		expectedRevision: 7,
+		condition: "damaged",
+		notes: "Torn sleeve",
+	});
+});
+
+it("keeps individual issuance usable after correcting an invalid quantity by selecting an individual item", async () => {
+	api.change.mockResolvedValue({
+		success: true,
+		data: { ok: true, id: "new", revision: 1 },
+	});
+	const user = userEvent.setup();
+	render(
+		<EquipmentOverview
+			data={{ ...view, availableQuantityTypes: [quantityType] }}
+			filters={{}}
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Issue equipment" }));
+	await user.selectOptions(
+		screen.getByLabelText(/^Equipment item/),
+		quantityType.id,
+	);
+	await user.selectOptions(
+		screen.getByLabelText(/^Current employee/),
+		view.employees[0].id,
+	);
+	await user.type(screen.getByLabelText(/^Actual handover date/), "2026-11-04");
+	await user.clear(screen.getByLabelText(/^Quantity/));
+	await user.type(screen.getByLabelText(/^Quantity/), "0");
+	await user.click(screen.getByRole("button", { name: "Record issuance" }));
+	expect(
+		await screen.findByText("Enter a positive whole quantity."),
+	).toBeTruthy();
+	await user.selectOptions(
+		screen.getByLabelText(/^Equipment item/),
+		view.availableItems[0].id,
+	);
+	expect(screen.queryByLabelText(/^Quantity/)).toBeNull();
+	await user.click(screen.getByRole("button", { name: "Record issuance" }));
+	await waitFor(() => expect(api.change).toHaveBeenCalled());
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "issue_individual",
+		itemId: view.availableItems[0].id,
+		expectedRevision: 3,
+	});
+	expect(api.change.mock.calls[0][0]).not.toHaveProperty("quantity");
+});
+it("keeps all partial receipts visible on personal history without offering staff actions", () => {
+	render(
+		<PersonalEquipment
+			data={{
+				...view,
+				canManage: false,
+				availableItems: [],
+				availableQuantityTypes: [],
+				employees: [],
+				types: [],
+				assignments: [
+					{
+						...partialAssignment,
+						canReceive: false,
+						receipts: [
+							...partialAssignment.receipts,
+							{
+								id: "last",
+								quantity: 1,
+								condition: "damaged",
+								actualDate: "2026-11-04",
+								notes: "One torn shirt",
+								actorName: "Pat Owner",
+								actorId: "owner",
+								recordedAt: "2026-11-05T10:00:00Z",
+							},
+						],
+						quantity: 3,
+						physicallyReceivedQuantity: 3,
+						outstandingQuantity: 0,
+						held: false,
+						outstanding: false,
+						overdue: false,
+					},
+				],
+			}}
+		/>,
+	);
+	expect(screen.getByText("Two shirts back")).toBeTruthy();
+	expect(screen.getByText("One torn shirt")).toBeTruthy();
+	expect(
+		screen.getByText("Outstanding quantity").nextElementSibling?.textContent,
+	).toBe("0");
+	expect(screen.queryByRole("button", { name: "Record receipt" })).toBeNull();
+	expect(screen.queryByRole("button", { name: "Issue equipment" })).toBeNull();
 });
