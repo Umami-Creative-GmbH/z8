@@ -56,7 +56,7 @@ Implementation is split into 14 native sub-issues of the specification (#1536–
 - `readiness.integration.test.ts` exercises the public actions and reads with disposable PostgreSQL: receipt versus readiness, evidence preservation, terminal retirement and identity reservation, stale/racing issuance, concurrent replay, actor/tenant restrictions, authority changes while waiting, and transactional rollback/retry. `equipment-readiness.test.tsx` covers confirmations, uncertain retries, stale feedback, organization-zone evidence, item selection and personal read-only behavior.
 - Authenticated live Next/browser smoke remains unavailable without Phase database/auth credentials. Remote Tolgee synchronization/pull remains unavailable without Tolgee system credentials; new text retains static English defaults and is covered by local extraction checks. Local React Doctor runs use `--no-score --no-supply-chain`, without diagnostic upload; its TanStack `preventDefault` warning reflects the required client form pattern.
 
-The migration journal temporarily skips index 298: `0298` (timestamp 1810483200000) is reserved for equipment officer scope (#1539). Quantity 0297 precedes readiness 0299 in the journal; keep all three in ascending order when officer scope lands.
+The migration journal includes quantity `0297`, officer scope `0298` (timestamp 1810483200000), and readiness `0299` in ascending order.
 
 ## Agreed scope
 
