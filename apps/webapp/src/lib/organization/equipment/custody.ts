@@ -28,6 +28,7 @@ import {
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import {
 	type EquipmentAssignmentView,
+	type EquipmentChange,
 	type EquipmentExceptionView,
 	type EquipmentFilters,
 	type EquipmentHandoverView,
@@ -100,161 +101,129 @@ export async function applyEquipmentChange(
 	const fingerprint = createHash("sha256")
 		.update(JSON.stringify({ actor: actor.userId, change }))
 		.digest("hex");
-	return db.transaction(async (tx): Promise<EquipmentOutcome> => {
-		// Route before locks, then confirm under them. Employee user identity must not drift.
-		const [target] =
-			change.kind === "issue_individual" ||
-			change.kind === "issue_quantity" ||
-			change.kind === "register_and_issue_individual"
-				? await tx
-						.select({ id: employee.id, userId: employee.userId })
-						.from(employee)
-						.where(
-							and(
-								eq(employee.organizationId, actor.organizationId),
-								eq(employee.id, change.employeeId),
-							),
-						)
-				: [];
-		await lockEquipmentContext(tx, actor, target);
-		const access = await equipmentAccess(tx, actor);
-		if (
-			!access.canManage ||
-			(change.kind === "close_return" && !access.canAdminister)
-		)
-			return { ok: false, reason: "forbidden" };
-		if (
-			change.kind === "clear_item" ||
-			change.kind === "mark_item_unavailable" ||
-			change.kind === "retire_item"
-		) {
-			const [covered] = await tx
-				.select({ id: equipmentItem.id })
-				.from(equipmentItem)
-				.where(
-					and(
-						scoped(actor.organizationId, change.itemId),
-						equipmentItemScope(access),
-					),
-				);
-			if (!covered)
-				return { ok: false, reason: access.all ? "not_found" : "forbidden" };
-		} else {
-			const subjectId =
+	return db
+		.transaction(async (tx): Promise<EquipmentOutcome> => {
+			// Route before locks, then confirm under them. Employee user identity must not drift.
+			const [target] =
 				change.kind === "issue_individual" ||
 				change.kind === "issue_quantity" ||
-				change.kind === "register_and_issue_individual"
-					? change.employeeId
-					: (
-							await tx
-								.select({ employeeId: equipmentAssignment.employeeId })
-								.from(equipmentAssignment)
-								.where(
-									assignmentScope(actor.organizationId, change.assignmentId),
-								)
-						)[0]?.employeeId;
+				change.kind === "register_and_issue_individual" ||
+				change.kind === "transfer_equipment"
+					? await tx
+							.select({ id: employee.id, userId: employee.userId })
+							.from(employee)
+							.where(
+								and(
+									eq(employee.organizationId, actor.organizationId),
+									eq(employee.id, change.employeeId),
+								),
+							)
+					: [];
+			await lockEquipmentContext(tx, actor, target);
+			const access = await equipmentAccess(tx, actor);
 			if (
-				!subjectId ||
-				!(await equipmentCoversEmployee(tx, actor, access, subjectId))
+				!access.canManage ||
+				(change.kind === "close_return" && !access.canAdminister)
 			)
-				return {
-					ok: false,
-					reason: access.canAdminister ? "not_found" : "forbidden",
-				};
-		}
-		const [replay] = await tx
-			.select()
-			.from(equipmentCommand)
-			.where(
-				and(
-					eq(equipmentCommand.organizationId, actor.organizationId),
-					eq(equipmentCommand.requestId, change.requestId),
-				),
-			);
-		if (replay)
-			return replay.fingerprint === fingerprint
-				? replay.result
-				: { ok: false, reason: "request_conflict" };
-		const { today, now, timezone } = await organizationCalendar(
-			tx,
-			actor.organizationId,
-		);
-		if (
-			change.kind === "clear_item" ||
-			change.kind === "mark_item_unavailable" ||
-			change.kind === "retire_item"
-		) {
-			const outcome = await applyItemReadiness(
-				tx,
-				actor,
-				change,
-				dateFromInstant(now),
-			);
-			if (outcome.ok)
-				await tx.insert(equipmentCommand).values({
-					organizationId: actor.organizationId,
-					requestId: change.requestId,
-					fingerprint,
-					result: outcome,
-				});
-			return outcome;
-		}
-		if (change.kind === "close_return") {
-			const [assignment] = await tx
+				return { ok: false, reason: "forbidden" };
+			if (
+				change.kind === "clear_item" ||
+				change.kind === "mark_item_unavailable" ||
+				change.kind === "retire_item"
+			) {
+				const [covered] = await tx
+					.select({ id: equipmentItem.id })
+					.from(equipmentItem)
+					.where(
+						and(
+							scoped(actor.organizationId, change.itemId),
+							equipmentItemScope(access),
+						),
+					);
+				if (!covered)
+					return { ok: false, reason: access.all ? "not_found" : "forbidden" };
+			} else {
+				const subjectId =
+					change.kind === "issue_individual" ||
+					change.kind === "issue_quantity" ||
+					change.kind === "register_and_issue_individual" ||
+					change.kind === "transfer_equipment"
+						? change.employeeId
+						: (
+								await tx
+									.select({ employeeId: equipmentAssignment.employeeId })
+									.from(equipmentAssignment)
+									.where(
+										assignmentScope(actor.organizationId, change.assignmentId),
+									)
+							)[0]?.employeeId;
+				const sourceId =
+					change.kind === "transfer_equipment"
+						? (
+								await tx
+									.select({ employeeId: equipmentAssignment.employeeId })
+									.from(equipmentAssignment)
+									.where(
+										assignmentScope(actor.organizationId, change.assignmentId),
+									)
+							)[0]?.employeeId
+						: subjectId;
+				if (
+					!subjectId ||
+					!sourceId ||
+					!(await equipmentCoversEmployee(tx, actor, access, subjectId)) ||
+					(sourceId !== subjectId &&
+						!(await equipmentCoversEmployee(tx, actor, access, sourceId)))
+				)
+					return {
+						ok: false,
+						reason: access.canAdminister ? "not_found" : "forbidden",
+					};
+			}
+			const [replay] = await tx
 				.select()
-				.from(equipmentAssignment)
-				.where(assignmentScope(actor.organizationId, change.assignmentId));
-			if (!assignment) return { ok: false, reason: "not_found" };
-			const [holder] = await tx
-				.select({ userId: employee.userId })
-				.from(employee)
+				.from(equipmentCommand)
 				.where(
 					and(
-						eq(employee.organizationId, actor.organizationId),
-						eq(
-							employee.id,
-							assignment.employeeId ?? "00000000-0000-0000-0000-000000000000",
-						),
+						eq(equipmentCommand.organizationId, actor.organizationId),
+						eq(equipmentCommand.requestId, change.requestId),
 					),
 				);
-			if (holder?.userId === actor.userId)
-				return { ok: false, reason: "self_exception" };
-			if (assignment.revision !== change.expectedRevision)
-				return { ok: false, reason: "stale_revision" };
-			if (!assignment.returnRequired)
-				return { ok: false, reason: "return_not_required" };
+			if (replay)
+				return replay.fingerprint === fingerprint
+					? replay.result
+					: { ok: false, reason: "request_conflict" };
+			const { today, now } = await organizationCalendar(
+				tx,
+				actor.organizationId,
+			);
 			if (
-				change.quantity >
-				assignment.quantity -
-					assignment.receivedQuantity -
-					assignment.lostQuantity -
-					assignment.waivedQuantity +
-					assignment.exceptionReceivedQuantity
-			)
-				return { ok: false, reason: "excess_quantity" };
-			await tx.insert(equipmentException).values({
-				organizationId: actor.organizationId,
-				assignmentId: assignment.id,
-				kind: change.outcome,
-				quantity: change.quantity,
-				reason: change.reason,
-				actorId: actor.userId,
-				recordedAt: dateFromInstant(now),
-			});
-			const revision = assignment.revision + 1;
-			await tx
-				.update(equipmentAssignment)
-				.set({
-					lostQuantity:
-						assignment.lostQuantity +
-						(change.outcome === "lost" ? change.quantity : 0),
-					waivedQuantity:
-						assignment.waivedQuantity +
-						(change.outcome === "waived" ? change.quantity : 0),
-					revision,
-				})
-				.where(assignmentScope(actor.organizationId, assignment.id));
-			const outcome = { ok: true, id: assignment.id, revision } as const;
+				change.kind === "clear_item" ||
+				change.kind === "mark_item_unavailable" ||
+				change.kind === "retire_item"
+			) {
+				const outcome = await applyItemReadiness(
+					tx,
+					actor,
+					change,
+					dateFromInstant(now),
+				);
+				if (outcome.ok)
+					await tx.insert(equipmentCommand).values({
+						organizationId: actor.organizationId,
+						requestId: change.requestId,
+						fingerprint,
+						result: outcome,
+					});
+				return outcome;
+			}
+			const outcome =
+				change.kind === "close_return"
+					? await closeEquipmentReturn(tx, actor, change, now)
+					: change.kind === "transfer_equipment"
+						? await transferEquipment(tx, actor, change, target, today, now)
+						: await performHandover(tx, actor, change, target, today, now);
+			if (!outcome.ok) return outcome;
 			await tx.insert(equipmentCommand).values({
 				organizationId: actor.organizationId,
 				requestId: change.requestId,
@@ -262,342 +231,521 @@ export async function applyEquipmentChange(
 				result: outcome,
 			});
 			return outcome;
-		}
-		const actualDate = parsePlainDate(change.actualDate);
-		if (Temporal.PlainDate.compare(actualDate, today) > 0)
-			return { ok: false, reason: "future_date" };
-		const recordedAt = dateFromInstant(now);
-		let result: { id: string; revision: number };
+		})
+		.catch((error: unknown) => {
+			if (error instanceof TransferRefusal) return error.outcome;
+			throw error;
+		});
+}
+
+type HandoverChange = Extract<
+	EquipmentChange,
+	{
+		kind:
+			| "register_and_issue_individual"
+			| "issue_individual"
+			| "issue_quantity"
+			| "receive_individual"
+			| "receive_quantity"
+			| "receive_exception";
+	}
+>;
+type HandoverTarget = { id: string; userId: string } | undefined;
+
+async function closeEquipmentReturn(
+	tx: EquipmentTransaction,
+	actor: EquipmentActor,
+	change: Extract<EquipmentChange, { kind: "close_return" }>,
+	now: Temporal.Instant,
+): Promise<EquipmentOutcome> {
+	const [assignment] = await tx
+		.select()
+		.from(equipmentAssignment)
+		.where(assignmentScope(actor.organizationId, change.assignmentId));
+	if (!assignment) return { ok: false, reason: "not_found" };
+	const [holder] = await tx
+		.select({ userId: employee.userId })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, actor.organizationId),
+				eq(
+					employee.id,
+					assignment.employeeId ?? "00000000-0000-0000-0000-000000000000",
+				),
+			),
+		);
+	if (holder?.userId === actor.userId)
+		return { ok: false, reason: "self_exception" };
+	if (assignment.revision !== change.expectedRevision)
+		return { ok: false, reason: "stale_revision" };
+	if (!assignment.returnRequired)
+		return { ok: false, reason: "return_not_required" };
+	if (
+		change.quantity >
+		assignment.quantity -
+			assignment.receivedQuantity -
+			assignment.lostQuantity -
+			assignment.waivedQuantity +
+			assignment.exceptionReceivedQuantity
+	)
+		return { ok: false, reason: "excess_quantity" };
+	await tx.insert(equipmentException).values({
+		organizationId: actor.organizationId,
+		assignmentId: assignment.id,
+		kind: change.outcome,
+		quantity: change.quantity,
+		reason: change.reason,
+		actorId: actor.userId,
+		recordedAt: dateFromInstant(now),
+	});
+	const revision = assignment.revision + 1;
+	await tx
+		.update(equipmentAssignment)
+		.set({
+			lostQuantity:
+				assignment.lostQuantity +
+				(change.outcome === "lost" ? change.quantity : 0),
+			waivedQuantity:
+				assignment.waivedQuantity +
+				(change.outcome === "waived" ? change.quantity : 0),
+			revision,
+		})
+		.where(assignmentScope(actor.organizationId, assignment.id));
+	const outcome = { ok: true, id: assignment.id, revision } as const;
+	return outcome;
+}
+
+class TransferRefusal extends Error {
+	constructor(readonly outcome: Extract<EquipmentOutcome, { ok: false }>) {
+		super("Equipment transfer refused");
+	}
+}
+
+/** No second public writer: both legs use the normal rules under one lock/replay boundary. */
+async function transferEquipment(
+	tx: EquipmentTransaction,
+	actor: EquipmentActor,
+	change: Extract<EquipmentChange, { kind: "transfer_equipment" }>,
+	target: HandoverTarget,
+	today: Temporal.PlainDate,
+	now: Temporal.Instant,
+): Promise<EquipmentOutcome> {
+	if (
+		Temporal.PlainDate.compare(
+			parsePlainDate(change.issue.actualDate),
+			parsePlainDate(change.receipt.actualDate),
+		) < 0
+	)
+		return { ok: false, reason: "conflicting_history" };
+	const [source] = await tx
+		.select()
+		.from(equipmentAssignment)
+		.where(assignmentScope(actor.organizationId, change.assignmentId));
+	if (!source) return { ok: false, reason: "not_found" };
+	if (source.employeeId === change.employeeId)
+		return { ok: false, reason: "invalid_input" };
+	if (source.itemId && change.quantity !== 1)
+		return { ok: false, reason: "excess_quantity" };
+	const [item] = source.itemId
+		? await tx
+				.select()
+				.from(equipmentItem)
+				.where(scoped(actor.organizationId, source.itemId))
+		: [];
+	const [type] = await tx
+		.select()
+		.from(equipmentType)
+		.where(
+			and(
+				eq(equipmentType.organizationId, actor.organizationId),
+				eq(equipmentType.id, source.typeId),
+			),
+		);
+	if (!type || (source.itemId && !item))
+		return { ok: false, reason: "not_found" };
+	if ((item?.revision ?? type.revision) !== change.expectedIssuanceRevision)
+		return { ok: false, reason: "stale_revision" };
+	const receipt = await performHandover(
+		tx,
+		actor,
+		{
+			...change.receipt,
+			requestId: change.requestId,
+			expectedRevision: change.expectedRevision,
+			assignmentId: source.id,
+			...(source.itemId
+				? { kind: "receive_individual" }
+				: { kind: "receive_quantity", quantity: change.quantity }),
+		},
+		target,
+		today,
+		now,
+	);
+	if (!receipt.ok) throw new TransferRefusal(receipt);
+	const common = {
+		...change.issue,
+		requestId: change.requestId,
+		employeeId: change.employeeId,
+	};
+	const issued = await performHandover(
+		tx,
+		actor,
+		item
+			? {
+					...common,
+					kind: "issue_individual",
+					itemId: item.id,
+					expectedRevision: item.revision + 1,
+				}
+			: {
+					...common,
+					kind: "issue_quantity",
+					typeId: type.id,
+					quantity: change.quantity,
+					expectedRevision: type.revision,
+				},
+		target,
+		today,
+		now,
+	);
+	if (!issued.ok) throw new TransferRefusal(issued);
+	return issued;
+}
+
+/** Transaction primitive shared by ordinary handovers and both transfer legs. */
+async function performHandover(
+	tx: EquipmentTransaction,
+	actor: EquipmentActor,
+	change: HandoverChange,
+	target: HandoverTarget,
+	today: Temporal.PlainDate,
+	now: Temporal.Instant,
+): Promise<EquipmentOutcome> {
+	const actualDate = parsePlainDate(change.actualDate);
+	if (Temporal.PlainDate.compare(actualDate, today) > 0)
+		return { ok: false, reason: "future_date" };
+	const recordedAt = dateFromInstant(now);
+	let result: { id: string; revision: number };
+	if (
+		change.kind === "issue_individual" ||
+		change.kind === "issue_quantity" ||
+		change.kind === "register_and_issue_individual"
+	) {
+		if (!change.returnRequired && change.explicitDeadline)
+			return { ok: false, reason: "invalid_input" };
 		if (
-			change.kind === "issue_individual" ||
-			change.kind === "issue_quantity" ||
-			change.kind === "register_and_issue_individual"
-		) {
-			if (!change.returnRequired && change.explicitDeadline)
-				return { ok: false, reason: "invalid_input" };
-			if (
-				change.explicitDeadline &&
-				Temporal.PlainDate.compare(
-					parsePlainDate(change.explicitDeadline),
-					actualDate,
-				) < 0
-			)
-				return { ok: false, reason: "conflicting_history" };
-			const [current] = await tx
-				.select({
-					userId: employee.userId,
-					current: employeeHasOrganizationAccess(now),
-				})
-				.from(employee)
-				.where(
-					and(
-						eq(employee.organizationId, actor.organizationId),
-						eq(employee.id, change.employeeId),
-					),
-				);
-			if (!current || !target || current.userId !== target.userId)
-				return { ok: false, reason: "not_found" };
-			const employeeAccess = await resolveEmployeeOrganizationAccess(tx, {
-				organizationId: actor.organizationId,
-				userId: current.userId,
-				now,
-			});
-			if (!current.current || !employeeAccess.allowed)
-				return { ok: false, reason: "employee_not_current" };
-			let [item] =
-				change.kind === "issue_individual"
-					? await tx
-							.select()
-							.from(equipmentItem)
-							.where(scoped(actor.organizationId, change.itemId))
-					: [];
-			if (change.kind === "issue_individual") {
-				if (!item) return { ok: false, reason: "not_found" };
-				if (item.revision !== change.expectedRevision)
-					return { ok: false, reason: "stale_revision" };
-				if (item.archivedAt || item.inCustody || item.status !== "available")
-					return { ok: false, reason: "item_unavailable" };
-				if (
-					item.lastHandoverDate &&
-					Temporal.PlainDate.compare(
-						actualDate,
-						parsePlainDate(item.lastHandoverDate),
-					) < 0
-				)
-					return { ok: false, reason: "conflicting_history" };
-			}
-			const typeId =
-				change.kind === "issue_quantity" ||
-				change.kind === "register_and_issue_individual"
-					? change.typeId
-					: item?.typeId;
-			if (!typeId) return { ok: false, reason: "not_found" };
-			const [type] = await tx
-				.select()
-				.from(equipmentType)
-				.where(
-					and(
-						eq(equipmentType.organizationId, actor.organizationId),
-						eq(equipmentType.id, typeId),
-					),
-				);
-			if (!type) return { ok: false, reason: "not_found" };
-			if (
-				change.kind === "issue_quantity" &&
-				type.revision !== change.expectedRevision
-			)
-				return { ok: false, reason: "stale_revision" };
-			if (
-				type.trackingMode !==
-				(change.kind === "issue_quantity" ? "quantity" : "individual")
-			)
-				return {
-					ok: false,
-					reason:
-						change.kind === "issue_quantity"
-							? "quantity_required"
-							: "individual_required",
-				};
-			if (change.kind === "register_and_issue_individual") {
-				const [duplicate] = await tx
-					.select({ id: equipmentItem.id })
-					.from(equipmentItem)
-					.where(
-						and(
-							eq(equipmentItem.organizationId, actor.organizationId),
-							sql`${equipmentItem.identifierKey} = lower(regexp_replace(${change.identifier}, '^[[:space:]]+|[[:space:]]+$', '', 'g'))`,
-						),
-					);
-				if (duplicate) return { ok: false, reason: "identifier_taken" };
-			}
-			const prepared = await prepareEquipmentTypeForIssuance(tx, {
-				organizationId: actor.organizationId,
-				typeId,
-			});
-			if (!prepared.ok) return prepared;
-			if (change.kind === "register_and_issue_individual") {
-				[item] = await tx
-					.insert(equipmentItem)
-					.values({
-						organizationId: actor.organizationId,
-						typeId,
-						identifier: change.identifier,
-						serialNumber: change.serialNumber || null,
-						createdBy: actor.userId,
-						updatedBy: actor.userId,
-						createdAt: recordedAt,
-						updatedAt: recordedAt,
-					})
-					.returning();
-			}
-			const quantity = change.kind === "issue_quantity" ? change.quantity : 1;
-			const [period] = await tx
-				.select({ id: employeeEmploymentPeriod.id })
-				.from(employeeEmploymentPeriod)
-				.where(
-					and(
-						eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
-						eq(employeeEmploymentPeriod.employeeId, change.employeeId),
-						eq(employeeEmploymentPeriod.status, "open"),
-					),
-				);
-			const [assignment] = await tx
-				.insert(equipmentAssignment)
-				.values({
-					organizationId: actor.organizationId,
-					itemId: item?.id ?? null,
-					typeId,
-					quantity,
-					employeeId: change.employeeId,
-					employmentPeriodId: period?.id ?? null,
-					returnRequired: change.returnRequired,
-					explicitDeadline: change.explicitDeadline ?? null,
-				})
-				.returning();
-			await tx.insert(equipmentHandover).values({
-				organizationId: actor.organizationId,
-				assignmentId: assignment.id,
-				kind: "issue",
-				quantity,
-				actualDate: change.actualDate,
-				condition: change.condition,
-				notes: change.notes || null,
-				actorId: actor.userId,
-				recordedAt,
-			});
-			if (item)
-				await tx
-					.update(equipmentItem)
-					.set({
-						inCustody: true,
-						lastHandoverDate: change.actualDate,
-						revision: item.revision + 1,
-						updatedBy: actor.userId,
-						updatedAt: recordedAt,
-					})
-					.where(scoped(actor.organizationId, item.id));
-			result = assignment;
-		} else {
-			const [assignment] = await tx
-				.select()
-				.from(equipmentAssignment)
-				.where(assignmentScope(actor.organizationId, change.assignmentId));
-			if (!assignment) return { ok: false, reason: "not_found" };
-			if (
-				change.kind !== "receive_exception" &&
-				(change.kind === "receive_individual") !== (assignment.itemId !== null)
-			)
-				return {
-					ok: false,
-					reason: assignment.itemId
-						? "individual_required"
-						: "quantity_required",
-				};
-			const [holder] = await tx
-				.select({ userId: employee.userId })
-				.from(employee)
-				.where(
-					and(
-						eq(employee.organizationId, actor.organizationId),
-						eq(
-							employee.id,
-							assignment.employeeId ?? "00000000-0000-0000-0000-000000000000",
-						),
-					),
-				);
-			if (holder?.userId === actor.userId)
-				return { ok: false, reason: "self_receipt" };
-			if (assignment.revision !== change.expectedRevision)
-				return { ok: false, reason: "stale_revision" };
-			if (assignment.received) return { ok: false, reason: "already_received" };
-			const quantity =
-				change.kind === "receive_individual" ? 1 : change.quantity;
-			const [exception] =
-				change.kind === "receive_exception"
-					? await tx
-							.select()
-							.from(equipmentException)
-							.where(
-								and(
-									eq(equipmentException.organizationId, actor.organizationId),
-									eq(equipmentException.assignmentId, assignment.id),
-									eq(equipmentException.id, change.exceptionId),
-								),
-							)
-					: [];
-			if (change.kind === "receive_exception") {
-				if (!exception) return { ok: false, reason: "not_found" };
-				if (quantity > exception.quantity - exception.receivedQuantity)
-					return { ok: false, reason: "excess_quantity" };
-				if (
-					Temporal.PlainDate.compare(
-						actualDate,
-						instantFromDate(exception.recordedAt)
-							.toZonedDateTimeISO(timezone)
-							.toPlainDate(),
-					) < 0
-				)
-					return { ok: false, reason: "conflicting_history" };
-			}
-			const receivedQuantity = assignment.receivedQuantity + quantity;
-			if (
-				!exception &&
-				receivedQuantity +
-					assignment.lostQuantity +
-					assignment.waivedQuantity -
-					assignment.exceptionReceivedQuantity >
-					assignment.quantity
-			)
-				return { ok: false, reason: "excess_quantity" };
-			const [issue] = await tx
-				.select()
-				.from(equipmentHandover)
-				.where(
-					and(
-						eq(equipmentHandover.organizationId, actor.organizationId),
-						eq(equipmentHandover.assignmentId, assignment.id),
-						eq(equipmentHandover.kind, "issue"),
-					),
-				);
-			if (
-				!issue ||
-				Temporal.PlainDate.compare(
-					actualDate,
-					parsePlainDate(issue.actualDate),
-				) < 0
-			)
-				return { ok: false, reason: "conflicting_history" };
-			const [item] = assignment.itemId
+			change.explicitDeadline &&
+			Temporal.PlainDate.compare(
+				parsePlainDate(change.explicitDeadline),
+				actualDate,
+			) < 0
+		)
+			return { ok: false, reason: "conflicting_history" };
+		const [current] = await tx
+			.select({
+				userId: employee.userId,
+				current: employeeHasOrganizationAccess(now),
+			})
+			.from(employee)
+			.where(
+				and(
+					eq(employee.organizationId, actor.organizationId),
+					eq(employee.id, change.employeeId),
+				),
+			);
+		if (!current || !target || current.userId !== target.userId)
+			return { ok: false, reason: "not_found" };
+		const employeeAccess = await resolveEmployeeOrganizationAccess(tx, {
+			organizationId: actor.organizationId,
+			userId: current.userId,
+			now,
+		});
+		if (!current.current || !employeeAccess.allowed)
+			return { ok: false, reason: "employee_not_current" };
+		let [item] =
+			change.kind === "issue_individual"
 				? await tx
 						.select()
 						.from(equipmentItem)
-						.where(scoped(actor.organizationId, assignment.itemId))
+						.where(scoped(actor.organizationId, change.itemId))
 				: [];
-			if (assignment.itemId && !item?.inCustody)
+		if (change.kind === "issue_individual") {
+			if (!item) return { ok: false, reason: "not_found" };
+			if (item.revision !== change.expectedRevision)
+				return { ok: false, reason: "stale_revision" };
+			if (item.archivedAt || item.inCustody || item.status !== "available")
 				return { ok: false, reason: "item_unavailable" };
-			await tx.insert(equipmentHandover).values({
-				organizationId: actor.organizationId,
-				assignmentId: assignment.id,
-				kind: "receipt",
-				exceptionId: exception?.id ?? null,
-				quantity,
-				actualDate: change.actualDate,
-				condition: change.condition,
-				notes: change.notes || null,
-				actorId: actor.userId,
-				recordedAt,
-			});
-			if (exception)
-				await tx
-					.update(equipmentException)
-					.set({ receivedQuantity: exception.receivedQuantity + quantity })
-					.where(
-						and(
-							eq(equipmentException.organizationId, actor.organizationId),
-							eq(equipmentException.id, exception.id),
-						),
-					);
-			const [updated] = await tx
-				.update(equipmentAssignment)
-				.set({
-					received: receivedQuantity === assignment.quantity,
-					receivedQuantity,
-					exceptionReceivedQuantity:
-						assignment.exceptionReceivedQuantity + (exception ? quantity : 0),
-					revision: assignment.revision + 1,
-				})
-				.where(assignmentScope(actor.organizationId, assignment.id))
-				.returning();
-			if (item)
-				await tx
-					.update(equipmentItem)
-					.set({
-						inCustody: false,
-						lastHandoverDate: change.actualDate,
-						status:
-							change.condition === "damaged" && item.status !== "retired"
-								? "unavailable"
-								: item.status,
-						revision: item.revision + 1,
-						updatedBy: actor.userId,
-						updatedAt: recordedAt,
-					})
-					.where(scoped(actor.organizationId, item.id));
-			result = updated;
+			if (
+				item.lastHandoverDate &&
+				Temporal.PlainDate.compare(
+					actualDate,
+					parsePlainDate(item.lastHandoverDate),
+				) < 0
+			)
+				return { ok: false, reason: "conflicting_history" };
 		}
-		const outcome = {
-			ok: true,
-			id: result.id,
-			revision: result.revision,
-		} as const;
-		await tx.insert(equipmentCommand).values({
+		const typeId =
+			change.kind === "issue_quantity" ||
+			change.kind === "register_and_issue_individual"
+				? change.typeId
+				: item?.typeId;
+		if (!typeId) return { ok: false, reason: "not_found" };
+		const [type] = await tx
+			.select()
+			.from(equipmentType)
+			.where(
+				and(
+					eq(equipmentType.organizationId, actor.organizationId),
+					eq(equipmentType.id, typeId),
+				),
+			);
+		if (!type) return { ok: false, reason: "not_found" };
+		if (
+			change.kind === "issue_quantity" &&
+			type.revision !== change.expectedRevision
+		)
+			return { ok: false, reason: "stale_revision" };
+		if (
+			type.trackingMode !==
+			(change.kind === "issue_quantity" ? "quantity" : "individual")
+		)
+			return {
+				ok: false,
+				reason:
+					change.kind === "issue_quantity"
+						? "quantity_required"
+						: "individual_required",
+			};
+		if (change.kind === "register_and_issue_individual") {
+			const [duplicate] = await tx
+				.select({ id: equipmentItem.id })
+				.from(equipmentItem)
+				.where(
+					and(
+						eq(equipmentItem.organizationId, actor.organizationId),
+						sql`${equipmentItem.identifierKey} = lower(regexp_replace(${change.identifier}, '^[[:space:]]+|[[:space:]]+$', '', 'g'))`,
+					),
+				);
+			if (duplicate) return { ok: false, reason: "identifier_taken" };
+		}
+		const prepared = await prepareEquipmentTypeForIssuance(tx, {
 			organizationId: actor.organizationId,
-			requestId: change.requestId,
-			fingerprint,
-			result: outcome,
+			typeId,
 		});
-		return outcome;
-	});
+		if (!prepared.ok) return prepared;
+		if (change.kind === "register_and_issue_individual") {
+			[item] = await tx
+				.insert(equipmentItem)
+				.values({
+					organizationId: actor.organizationId,
+					typeId,
+					identifier: change.identifier,
+					serialNumber: change.serialNumber || null,
+					createdBy: actor.userId,
+					updatedBy: actor.userId,
+					createdAt: recordedAt,
+					updatedAt: recordedAt,
+				})
+				.returning();
+		}
+		const quantity = change.kind === "issue_quantity" ? change.quantity : 1;
+		const [period] = await tx
+			.select({ id: employeeEmploymentPeriod.id })
+			.from(employeeEmploymentPeriod)
+			.where(
+				and(
+					eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
+					eq(employeeEmploymentPeriod.employeeId, change.employeeId),
+					eq(employeeEmploymentPeriod.status, "open"),
+				),
+			);
+		const [assignment] = await tx
+			.insert(equipmentAssignment)
+			.values({
+				organizationId: actor.organizationId,
+				itemId: item?.id ?? null,
+				typeId,
+				quantity,
+				employeeId: change.employeeId,
+				employmentPeriodId: period?.id ?? null,
+				returnRequired: change.returnRequired,
+				explicitDeadline: change.explicitDeadline ?? null,
+			})
+			.returning();
+		await tx.insert(equipmentHandover).values({
+			organizationId: actor.organizationId,
+			assignmentId: assignment.id,
+			kind: "issue",
+			quantity,
+			actualDate: change.actualDate,
+			condition: change.condition,
+			notes: change.notes || null,
+			actorId: actor.userId,
+			recordedAt,
+		});
+		if (item)
+			await tx
+				.update(equipmentItem)
+				.set({
+					inCustody: true,
+					lastHandoverDate: change.actualDate,
+					revision: item.revision + 1,
+					updatedBy: actor.userId,
+					updatedAt: recordedAt,
+				})
+				.where(scoped(actor.organizationId, item.id));
+		result = assignment;
+	} else {
+		const [assignment] = await tx
+			.select()
+			.from(equipmentAssignment)
+			.where(assignmentScope(actor.organizationId, change.assignmentId));
+		if (!assignment) return { ok: false, reason: "not_found" };
+		if (
+			change.kind !== "receive_exception" &&
+			(change.kind === "receive_individual") !== (assignment.itemId !== null)
+		)
+			return {
+				ok: false,
+				reason: assignment.itemId ? "individual_required" : "quantity_required",
+			};
+		const [holder] = await tx
+			.select({ userId: employee.userId })
+			.from(employee)
+			.where(
+				and(
+					eq(employee.organizationId, actor.organizationId),
+					eq(
+						employee.id,
+						assignment.employeeId ?? "00000000-0000-0000-0000-000000000000",
+					),
+				),
+			);
+		if (holder?.userId === actor.userId)
+			return { ok: false, reason: "self_receipt" };
+		if (assignment.revision !== change.expectedRevision)
+			return { ok: false, reason: "stale_revision" };
+		if (assignment.received) return { ok: false, reason: "already_received" };
+		const quantity = change.kind === "receive_individual" ? 1 : change.quantity;
+		const [exception] =
+			change.kind === "receive_exception"
+				? await tx
+						.select()
+						.from(equipmentException)
+						.where(
+							and(
+								eq(equipmentException.organizationId, actor.organizationId),
+								eq(equipmentException.assignmentId, assignment.id),
+								eq(equipmentException.id, change.exceptionId),
+							),
+						)
+				: [];
+		if (change.kind === "receive_exception") {
+			const { timezone } = await organizationCalendar(tx, actor.organizationId);
+			if (!exception) return { ok: false, reason: "not_found" };
+			if (quantity > exception.quantity - exception.receivedQuantity)
+				return { ok: false, reason: "excess_quantity" };
+			if (
+				Temporal.PlainDate.compare(
+					actualDate,
+					instantFromDate(exception.recordedAt)
+						.toZonedDateTimeISO(timezone)
+						.toPlainDate(),
+				) < 0
+			)
+				return { ok: false, reason: "conflicting_history" };
+		}
+		const receivedQuantity = assignment.receivedQuantity + quantity;
+		if (
+			!exception &&
+			receivedQuantity +
+				assignment.lostQuantity +
+				assignment.waivedQuantity -
+				assignment.exceptionReceivedQuantity >
+				assignment.quantity
+		)
+			return { ok: false, reason: "excess_quantity" };
+		const [issue] = await tx
+			.select()
+			.from(equipmentHandover)
+			.where(
+				and(
+					eq(equipmentHandover.organizationId, actor.organizationId),
+					eq(equipmentHandover.assignmentId, assignment.id),
+					eq(equipmentHandover.kind, "issue"),
+				),
+			);
+		if (
+			!issue ||
+			Temporal.PlainDate.compare(actualDate, parsePlainDate(issue.actualDate)) <
+				0
+		)
+			return { ok: false, reason: "conflicting_history" };
+		const [item] = assignment.itemId
+			? await tx
+					.select()
+					.from(equipmentItem)
+					.where(scoped(actor.organizationId, assignment.itemId))
+			: [];
+		if (assignment.itemId && !item?.inCustody)
+			return { ok: false, reason: "item_unavailable" };
+		await tx.insert(equipmentHandover).values({
+			organizationId: actor.organizationId,
+			assignmentId: assignment.id,
+			kind: "receipt",
+			exceptionId: exception?.id ?? null,
+			quantity,
+			actualDate: change.actualDate,
+			condition: change.condition,
+			notes: change.notes || null,
+			actorId: actor.userId,
+			recordedAt,
+		});
+		if (exception)
+			await tx
+				.update(equipmentException)
+				.set({ receivedQuantity: exception.receivedQuantity + quantity })
+				.where(
+					and(
+						eq(equipmentException.organizationId, actor.organizationId),
+						eq(equipmentException.id, exception.id),
+					),
+				);
+		const [updated] = await tx
+			.update(equipmentAssignment)
+			.set({
+				received: receivedQuantity === assignment.quantity,
+				receivedQuantity,
+				exceptionReceivedQuantity:
+					assignment.exceptionReceivedQuantity + (exception ? quantity : 0),
+				revision: assignment.revision + 1,
+			})
+			.where(assignmentScope(actor.organizationId, assignment.id))
+			.returning();
+		if (item)
+			await tx
+				.update(equipmentItem)
+				.set({
+					inCustody: false,
+					lastHandoverDate: change.actualDate,
+					status:
+						change.condition === "damaged" && item.status !== "retired"
+							? "unavailable"
+							: item.status,
+					revision: item.revision + 1,
+					updatedBy: actor.userId,
+					updatedAt: recordedAt,
+				})
+				.where(scoped(actor.organizationId, item.id));
+		result = updated;
+	}
+	const outcome = {
+		ok: true,
+		id: result.id,
+		revision: result.revision,
+	} as const;
+	return outcome;
 }
 
 /** Staff overview, scoped employee history and self history share one permission/read model. */
@@ -867,6 +1015,19 @@ export async function readEquipment(
 					staffView &&
 					(!assignment.returnRequired ? !assignment.received : outstanding) &&
 					holder.userId !== actor.userId,
+				transfer:
+					staffView &&
+					policyConfigured &&
+					(!assignment.returnRequired ? !assignment.received : outstanding) &&
+					holder.userId !== actor.userId &&
+					!type.archivedAt &&
+					(!item ||
+						(!item.archivedAt && item.inCustody && item.status === "available"))
+						? {
+								expectedIssuanceRevision: item?.revision ?? type.revision,
+								defaultReturnRequired: type.defaultReturnRequired,
+							}
+						: undefined,
 				issue,
 				receipt: receipts.at(-1) ?? null,
 				receipts,

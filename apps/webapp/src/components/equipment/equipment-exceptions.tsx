@@ -21,13 +21,15 @@ import type {
 	EquipmentExceptionView,
 } from "@/lib/organization/equipment/contracts";
 import {
-	ActualDateField,
 	actualDateError,
+	quantityError,
+} from "./equipment-handover-validation";
+import {
+	ActualDateField,
 	ConditionField,
 	equipmentSelectClass,
 	NotesField,
 	QuantityField,
-	quantityError,
 	type SubmitHandover,
 	useCommandIdentity,
 } from "./equipment-handovers";

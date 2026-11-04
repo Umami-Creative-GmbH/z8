@@ -1025,3 +1025,60 @@ it("keeps former-holder loss history discoverable and recoverable after item/typ
 	});
 	expect((await overview()).availableItems).toEqual([]);
 });
+
+it("transfers only the unsettled balance and preserves loss evidence through later recovery", async () => {
+	const { assignment } = await issued();
+	await close(assignment.id, { quantity: 2 });
+	const before = (await overview()).assignments[0];
+	const loss = before.exceptions[0];
+	if (!before.transfer)
+		throw new Error("Expected one outstanding shirt eligible for transfer");
+	const transfer = (quantity: number) =>
+		actions.changeEquipment({
+			kind: "transfer_equipment",
+			requestId: crypto.randomUUID(),
+			assignmentId: assignment.id,
+			employeeId: ownerId,
+			expectedRevision: 2,
+			expectedIssuanceRevision: before.transfer?.expectedIssuanceRevision,
+			quantity,
+			receipt: { actualDate: "2026-11-05", condition: "good" },
+			issue: {
+				actualDate: "2026-11-05",
+				condition: "good",
+				returnRequired: true,
+			},
+		});
+	expect(await transfer(2)).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "excess_quantity" },
+	});
+	expect((await overview()).assignments).toHaveLength(1);
+	expect(await transfer(1)).toMatchObject({
+		success: true,
+		data: { ok: true },
+	});
+	const transferred = (await overview()).assignments.find(
+		(a) => a.id === assignment.id,
+	);
+	expect(transferred).toMatchObject({
+		lostQuantity: 2,
+		physicallyReceivedQuantity: 1,
+		outstandingQuantity: 0,
+		held: true,
+		canReceive: false,
+	});
+	expect(transferred?.transfer).toBeUndefined();
+	expect(
+		await recover(assignment.id, loss.id, { expectedRevision: 3, quantity: 2 }),
+	).toMatchObject({ success: true, data: { ok: true, revision: 4 } });
+	expect(
+		(await overview()).assignments.find((a) => a.id === assignment.id),
+	).toMatchObject({
+		lostQuantity: 2,
+		recoveredQuantity: 2,
+		physicallyReceivedQuantity: 3,
+		outstandingQuantity: 0,
+		held: false,
+	});
+});

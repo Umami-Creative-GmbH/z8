@@ -34,6 +34,7 @@ import {
 	ReceiveEquipmentForm,
 } from "./equipment-handovers";
 import { EquipmentReadiness } from "./equipment-readiness";
+import { TransferEquipmentForm } from "./equipment-transfer";
 
 export function EquipmentOverview({
 	data,
@@ -91,6 +92,7 @@ type EquipmentScope =
 type HandoverSelection =
 	| { kind: "issue" }
 	| { kind: "receipt"; assignmentId: string }
+	| { kind: "transfer"; assignmentId: string }
 	| { kind: "closure"; assignmentId: string }
 	| { kind: "exception_receipt"; assignmentId: string; exceptionId: string }
 	| null;
@@ -185,13 +187,25 @@ function equipmentSelection(
 						assignment.id === selection.assignmentId && assignment.canReceive,
 				)
 			: undefined;
+	const selectedTransfer =
+		selection?.kind === "transfer"
+			? data.assignments.find(
+					(assignment) =>
+						assignment.id === selection.assignmentId && assignment.transfer,
+				)
+			: undefined;
 	const unavailableReason =
 		data.canManage && !canIssue
 			? currentEmployee?.former
 				? "former"
 				: "setup"
 			: null;
-	return { canIssue, selectedReceipt, unavailableReason } as const;
+	return {
+		canIssue,
+		selectedReceipt,
+		selectedTransfer,
+		unavailableReason,
+	} as const;
 }
 
 function EquipmentWorkspace({
@@ -214,27 +228,11 @@ function EquipmentWorkspace({
 		submit,
 		router,
 	} = useEquipmentCommands();
-	const { canIssue, selectedReceipt, unavailableReason } = equipmentSelection(
+	const { canIssue, unavailableReason } = equipmentSelection(
 		data,
 		scope,
 		selection,
 	);
-	const selectedClosure =
-		selection?.kind === "closure"
-			? data.assignments.find(
-					(a) => a.id === selection.assignmentId && a.canCloseException,
-				)
-			: undefined;
-	const exceptionAssignment =
-		selection?.kind === "exception_receipt"
-			? data.assignments.find((a) => a.id === selection.assignmentId)
-			: undefined;
-	const selectedException =
-		selection?.kind === "exception_receipt"
-			? exceptionAssignment?.exceptions.find(
-					(e) => e.id === selection.exceptionId && e.canReceive,
-				)
-			: undefined;
 	return (
 		<section
 			className="min-w-0 space-y-4"
@@ -299,50 +297,14 @@ function EquipmentWorkspace({
 					{t("settings.equipment.custody.updating", "Updating equipment…")}
 				</p>
 			) : null}
-			{selection?.kind === "issue" && canIssue ? (
-				<IssueEquipmentForm
-					key={[...data.availableItems, ...data.availableQuantityTypes]
-						.map((item) => `${item.id}:${item.revision}`)
-						.join(",")}
-					data={data}
-					employeeId={scope.kind === "employee" ? scope.employeeId : undefined}
-					submit={submit}
-					pending={pending}
-					onCancel={() => setSelection(null)}
-				/>
-			) : null}
-			{selectedReceipt ? (
-				<ReceiveEquipmentForm
-					key={`${selectedReceipt.id}:${selectedReceipt.revision}`}
-					assignment={selectedReceipt}
-					timezone={data.timezone}
-					today={data.today}
-					submit={submit}
-					pending={pending}
-					onCancel={() => setSelection(null)}
-				/>
-			) : null}
-			{selectedClosure ? (
-				<CloseReturnForm
-					key={`${selectedClosure.id}:${selectedClosure.revision}`}
-					assignment={selectedClosure}
-					submit={submit}
-					pending={pending}
-					onCancel={() => setSelection(null)}
-				/>
-			) : null}
-			{exceptionAssignment && selectedException ? (
-				<ReceiveExceptionForm
-					key={`${exceptionAssignment.id}:${exceptionAssignment.revision}:${selectedException.id}`}
-					assignment={exceptionAssignment}
-					exception={selectedException}
-					today={data.today}
-					timezone={data.timezone}
-					submit={submit}
-					pending={pending}
-					onCancel={() => setSelection(null)}
-				/>
-			) : null}
+			<EquipmentHandoverEditor
+				data={data}
+				scope={scope}
+				selection={selection}
+				pending={pending}
+				submit={submit}
+				onCancel={() => setSelection(null)}
+			/>
 			<EquipmentAssignments
 				data={data}
 				pending={pending || !!selection}
@@ -362,9 +324,109 @@ function EquipmentWorkspace({
 					setFeedback(null);
 					setSelection({ kind: "receipt", assignmentId });
 				}}
+				onTransfer={(assignmentId) => {
+					setFeedback(null);
+					setSelection({ kind: "transfer", assignmentId });
+				}}
 			/>
 			<IssuanceAvailability reason={unavailableReason} />
 		</section>
+	);
+}
+
+function EquipmentHandoverEditor({
+	data,
+	scope,
+	selection,
+	pending,
+	submit,
+	onCancel,
+}: {
+	data: EquipmentView;
+	scope: EquipmentScope;
+	selection: HandoverSelection;
+	pending: boolean;
+	submit: (change: EquipmentChange) => Promise<void>;
+	onCancel: () => void;
+}) {
+	const { canIssue, selectedReceipt, selectedTransfer } = equipmentSelection(
+		data,
+		scope,
+		selection,
+	);
+	const selectedClosure =
+		selection?.kind === "closure"
+			? data.assignments.find(
+					(a) => a.id === selection.assignmentId && a.canCloseException,
+				)
+			: undefined;
+	const exceptionAssignment =
+		selection?.kind === "exception_receipt"
+			? data.assignments.find((a) => a.id === selection.assignmentId)
+			: undefined;
+	const selectedException =
+		selection?.kind === "exception_receipt"
+			? exceptionAssignment?.exceptions.find(
+					(e) => e.id === selection.exceptionId && e.canReceive,
+				)
+			: undefined;
+	return (
+		<>
+			{selection?.kind === "issue" && canIssue ? (
+				<IssueEquipmentForm
+					key={[...data.availableItems, ...data.availableQuantityTypes]
+						.map((item) => `${item.id}:${item.revision}`)
+						.join(",")}
+					data={data}
+					employeeId={scope.kind === "employee" ? scope.employeeId : undefined}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+			{selectedReceipt ? (
+				<ReceiveEquipmentForm
+					key={`${selectedReceipt.id}:${selectedReceipt.revision}`}
+					assignment={selectedReceipt}
+					timezone={data.timezone}
+					today={data.today}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+			{selectedClosure ? (
+				<CloseReturnForm
+					key={`${selectedClosure.id}:${selectedClosure.revision}`}
+					assignment={selectedClosure}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+			{exceptionAssignment && selectedException ? (
+				<ReceiveExceptionForm
+					key={`${exceptionAssignment.id}:${exceptionAssignment.revision}:${selectedException.id}`}
+					assignment={exceptionAssignment}
+					exception={selectedException}
+					today={data.today}
+					timezone={data.timezone}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+			{selectedTransfer ? (
+				<TransferEquipmentForm
+					key={`${selectedTransfer.id}:${selectedTransfer.revision}:${selectedTransfer.transfer?.expectedIssuanceRevision}`}
+					assignment={selectedTransfer}
+					data={data}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+		</>
 	);
 }
 
@@ -372,14 +434,16 @@ function EquipmentAssignments({
 	data,
 	pending,
 	onReceive,
+	onTransfer,
 	onClose,
 	onReceiveException,
 }: {
-	data: EquipmentView;
-	pending: boolean;
 	onClose: (assignmentId: string) => void;
 	onReceiveException: (assignmentId: string, exceptionId: string) => void;
+	data: EquipmentView;
+	pending: boolean;
 	onReceive: (assignmentId: string) => void;
+	onTransfer: (assignmentId: string) => void;
 }) {
 	const { t } = useTranslate();
 	if (!data.assignments.length)
@@ -404,7 +468,7 @@ function EquipmentAssignments({
 						onReceiveException(assignment.id, exceptionId)
 					}
 					receiptAction={
-						<>
+						<div className="flex flex-wrap gap-2">
 							{assignment.canCloseException ? (
 								<Button
 									variant="outline"
@@ -423,7 +487,21 @@ function EquipmentAssignments({
 									{t("settings.equipment.handover.receive", "Record receipt")}
 								</Button>
 							) : null}
-						</>
+							{data.canManage &&
+							assignment.transfer &&
+							data.employees.some(
+								(employee) =>
+									!employee.former && employee.id !== assignment.employeeId,
+							) ? (
+								<Button
+									variant="outline"
+									disabled={pending}
+									onClick={() => onTransfer(assignment.id)}
+								>
+									{t("settings.equipment.transfer.title", "Transfer equipment")}
+								</Button>
+							) : null}
+						</div>
 					}
 				/>
 			))}
