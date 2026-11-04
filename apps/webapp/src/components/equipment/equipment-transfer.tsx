@@ -43,7 +43,9 @@ function useTransferEquipmentForm({
 }) {
 	const identity = useCommandIdentity();
 	const element = useRef<HTMLFormElement>(null);
-	const maximum = assignment.quantity - assignment.physicallyReceivedQuantity;
+	const maximum = assignment.returnRequired
+		? assignment.outstandingQuantity
+		: assignment.quantity - assignment.physicallyReceivedQuantity;
 	const form = useForm({
 		defaultValues: {
 			employeeId: "",

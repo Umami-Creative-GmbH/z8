@@ -806,7 +806,10 @@ export function ReceiveEquipmentForm({
 								quantityError(
 									value,
 									t,
-									assignment.quantity - assignment.physicallyReceivedQuantity,
+									assignment.returnRequired
+										? assignment.outstandingQuantity
+										: assignment.quantity -
+												assignment.physicallyReceivedQuantity,
 								),
 						}}
 					>
@@ -815,7 +818,10 @@ export function ReceiveEquipmentForm({
 								field={field}
 								pending={pending}
 								maximum={
-									assignment.quantity - assignment.physicallyReceivedQuantity
+									assignment.returnRequired
+										? assignment.outstandingQuantity
+										: assignment.quantity -
+											assignment.physicallyReceivedQuantity
 								}
 								t={t}
 							/>

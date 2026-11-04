@@ -23,6 +23,12 @@ import type {
 import { Link, useRouter } from "@/navigation";
 import { conditionLabel, handoverRefusalMessage } from "./equipment-copy";
 import {
+	CloseReturnForm,
+	EquipmentExceptionEvidence,
+	EquipmentExceptionTotals,
+	ReceiveExceptionForm,
+} from "./equipment-exceptions";
+import {
 	equipmentSelectClass,
 	IssueEquipmentForm,
 	ReceiveEquipmentForm,
@@ -87,6 +93,8 @@ type HandoverSelection =
 	| { kind: "issue" }
 	| { kind: "receipt"; assignmentId: string }
 	| { kind: "transfer"; assignmentId: string }
+	| { kind: "closure"; assignmentId: string }
+	| { kind: "exception_receipt"; assignmentId: string; exceptionId: string }
 	| null;
 
 function useEquipmentCommands() {
@@ -123,7 +131,14 @@ function useEquipmentCommands() {
 				setSelection(null);
 				setFeedback({
 					kind: "success",
-					text: t("settings.equipment.handover.saved", "Handover recorded."),
+					text:
+						change.kind === "close_return" ||
+						change.kind === "receive_exception"
+							? t(
+									"settings.equipment.exception.saved",
+									"Equipment action recorded.",
+								)
+							: t("settings.equipment.handover.saved", "Handover recorded."),
 				});
 				router.refresh();
 			} catch {
@@ -293,6 +308,18 @@ function EquipmentWorkspace({
 			<EquipmentAssignments
 				data={data}
 				pending={pending || !!selection}
+				onClose={(assignmentId) => {
+					setFeedback(null);
+					setSelection({ kind: "closure", assignmentId });
+				}}
+				onReceiveException={(assignmentId, exceptionId) => {
+					setFeedback(null);
+					setSelection({
+						kind: "exception_receipt",
+						assignmentId,
+						exceptionId,
+					});
+				}}
 				onReceive={(assignmentId) => {
 					setFeedback(null);
 					setSelection({ kind: "receipt", assignmentId });
@@ -327,6 +354,22 @@ function EquipmentHandoverEditor({
 		scope,
 		selection,
 	);
+	const selectedClosure =
+		selection?.kind === "closure"
+			? data.assignments.find(
+					(a) => a.id === selection.assignmentId && a.canCloseException,
+				)
+			: undefined;
+	const exceptionAssignment =
+		selection?.kind === "exception_receipt"
+			? data.assignments.find((a) => a.id === selection.assignmentId)
+			: undefined;
+	const selectedException =
+		selection?.kind === "exception_receipt"
+			? exceptionAssignment?.exceptions.find(
+					(e) => e.id === selection.exceptionId && e.canReceive,
+				)
+			: undefined;
 	return (
 		<>
 			{selection?.kind === "issue" && canIssue ? (
@@ -352,6 +395,27 @@ function EquipmentHandoverEditor({
 					onCancel={onCancel}
 				/>
 			) : null}
+			{selectedClosure ? (
+				<CloseReturnForm
+					key={`${selectedClosure.id}:${selectedClosure.revision}`}
+					assignment={selectedClosure}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+			{exceptionAssignment && selectedException ? (
+				<ReceiveExceptionForm
+					key={`${exceptionAssignment.id}:${exceptionAssignment.revision}:${selectedException.id}`}
+					assignment={exceptionAssignment}
+					exception={selectedException}
+					today={data.today}
+					timezone={data.timezone}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
 			{selectedTransfer ? (
 				<TransferEquipmentForm
 					key={`${selectedTransfer.id}:${selectedTransfer.revision}:${selectedTransfer.transfer?.expectedIssuanceRevision}`}
@@ -371,7 +435,11 @@ function EquipmentAssignments({
 	pending,
 	onReceive,
 	onTransfer,
+	onClose,
+	onReceiveException,
 }: {
+	onClose: (assignmentId: string) => void;
+	onReceiveException: (assignmentId: string, exceptionId: string) => void;
 	data: EquipmentView;
 	pending: boolean;
 	onReceive: (assignmentId: string) => void;
@@ -395,8 +463,21 @@ function EquipmentAssignments({
 					assignment={assignment}
 					timezone={data.timezone}
 					staff={data.canManage}
+					pending={pending}
+					onReceiveException={(exceptionId) =>
+						onReceiveException(assignment.id, exceptionId)
+					}
 					receiptAction={
 						<div className="flex flex-wrap gap-2">
+							{assignment.canCloseException ? (
+								<Button
+									variant="outline"
+									disabled={pending}
+									onClick={() => onClose(assignment.id)}
+								>
+									{t("settings.equipment.exception.close", "Close return")}
+								</Button>
+							) : null}
 							{assignment.canReceive ? (
 								<Button
 									variant="outline"
@@ -552,7 +633,11 @@ function EquipmentAssignmentCard({
 	timezone,
 	staff,
 	receiptAction,
+	pending,
+	onReceiveException,
 }: {
+	pending: boolean;
+	onReceiveException: (exceptionId: string) => void;
 	assignment: EquipmentAssignmentView;
 	timezone: string;
 	staff: boolean;
@@ -683,6 +768,7 @@ function EquipmentAssignmentCard({
 					</dd>
 				</div>
 			</dl>
+			<EquipmentExceptionTotals assignment={assignment} />
 			{assignment.trackingMode === "individual" &&
 			assignment.receipt?.condition === "damaged" ? (
 				<p className="text-sm text-muted-foreground">
@@ -702,12 +788,27 @@ function EquipmentAssignmentCard({
 						timezone={timezone}
 						kind="issue"
 					/>
+					{(assignment.exceptions ?? []).map((exception) => (
+						<EquipmentExceptionEvidence
+							key={exception.id}
+							exception={{
+								...exception,
+								canReceive: staff && exception.canReceive,
+							}}
+							timezone={timezone}
+							pending={pending}
+							onReceive={() => onReceiveException(exception.id)}
+						/>
+					))}
 					{assignment.receipts.map((receipt) => (
 						<HandoverEvidence
 							key={receipt.id}
 							handover={receipt}
 							timezone={timezone}
 							kind="receipt"
+							exception={assignment.exceptions?.find(
+								(e) => e.id === receipt.exceptionId,
+							)}
 						/>
 					))}
 				</ol>
@@ -727,7 +828,9 @@ function AssignmentStatus({
 			? t("settings.equipment.custody.overdue", "Overdue")
 			: assignment.outstanding
 				? t("settings.equipment.custody.outstanding", "Outstanding return")
-				: t("settings.equipment.custody.keep", "Issued to keep");
+				: assignment.returnRequired
+					? t("settings.equipment.exception.closed", "Return obligation closed")
+					: t("settings.equipment.custody.keep", "Issued to keep");
 	return (
 		<Badge variant={assignment.overdue ? "destructive" : "secondary"}>
 			{label}
@@ -739,7 +842,9 @@ function HandoverEvidence({
 	handover,
 	timezone,
 	kind,
+	exception,
 }: {
+	exception?: import("@/lib/organization/equipment/contracts").EquipmentExceptionView;
 	handover: EquipmentHandoverView;
 	timezone: string;
 	kind: "issue" | "receipt";
@@ -751,7 +856,17 @@ function HandoverEvidence({
 			<p className="font-medium">
 				{kind === "issue"
 					? t("settings.equipment.custody.issuance", "Issuance")
-					: t("settings.equipment.custody.receipt", "Physical receipt")}{" "}
+					: exception?.kind === "lost"
+						? t("settings.equipment.exception.recovery", "Physical recovery")
+						: exception?.kind === "waived"
+							? t(
+									"settings.equipment.exception.waivedReceipt",
+									"Physical receipt after waiver",
+								)
+							: t(
+									"settings.equipment.custody.receipt",
+									"Physical receipt",
+								)}{" "}
 				·{" "}
 				<time dateTime={handover.actualDate}>
 					{parsePlainDate(handover.actualDate).toLocaleString(locale, {
@@ -781,6 +896,12 @@ function HandoverEvidence({
 				</time>{" "}
 				<span translate="no">{timezone}</span>
 			</p>
+			{exception ? (
+				<p className="text-muted-foreground">
+					{t("settings.equipment.exception.linkedDecision", "Linked decision")}:{" "}
+					{exception.reason}
+				</p>
+			) : null}
 			{handover.notes ? (
 				<p className="whitespace-pre-wrap">{handover.notes}</p>
 			) : null}
