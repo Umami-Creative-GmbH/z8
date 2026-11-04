@@ -168,7 +168,7 @@ export async function applyEquipmentChange(
 	return db.transaction(async (tx): Promise<EquipmentOutcome> => {
 		// Route before locks, then confirm under them. Employee user identity must not drift.
 		const [target] =
-			change.kind === "issue_individual"
+			change.kind === "issue_individual" || change.kind === "issue_quantity"
 				? await tx
 						.select({ id: employee.id, userId: employee.userId })
 						.from(employee)
@@ -201,7 +201,10 @@ export async function applyEquipmentChange(
 			return { ok: false, reason: "future_date" };
 		const recordedAt = dateFromInstant(now);
 		let result: { id: string; revision: number };
-		if (change.kind === "issue_individual") {
+		if (
+			change.kind === "issue_individual" ||
+			change.kind === "issue_quantity"
+		) {
 			if (!change.returnRequired && change.explicitDeadline)
 				return { ok: false, reason: "invalid_input" };
 			if (
@@ -233,30 +236,63 @@ export async function applyEquipmentChange(
 			});
 			if (!current.current || !employeeAccess.allowed)
 				return { ok: false, reason: "employee_not_current" };
-			const [item] = await tx
+			const [item] =
+				change.kind === "issue_individual"
+					? await tx
+							.select()
+							.from(equipmentItem)
+							.where(scoped(actor.organizationId, change.itemId))
+					: [];
+			if (change.kind === "issue_individual") {
+				if (!item) return { ok: false, reason: "not_found" };
+				if (item.revision !== change.expectedRevision)
+					return { ok: false, reason: "stale_revision" };
+				if (item.archivedAt || item.inCustody || item.status !== "available")
+					return { ok: false, reason: "item_unavailable" };
+				if (
+					item.lastHandoverDate &&
+					Temporal.PlainDate.compare(
+						actualDate,
+						parsePlainDate(item.lastHandoverDate),
+					) < 0
+				)
+					return { ok: false, reason: "conflicting_history" };
+			}
+			const typeId =
+				change.kind === "issue_quantity" ? change.typeId : item?.typeId;
+			if (!typeId) return { ok: false, reason: "not_found" };
+			const [type] = await tx
 				.select()
-				.from(equipmentItem)
-				.where(scoped(actor.organizationId, change.itemId));
-			if (!item) return { ok: false, reason: "not_found" };
-			if (item.revision !== change.expectedRevision)
-				return { ok: false, reason: "stale_revision" };
-			if (item.archivedAt || item.inCustody || item.status !== "available")
-				return { ok: false, reason: "item_unavailable" };
+				.from(equipmentType)
+				.where(
+					and(
+						eq(equipmentType.organizationId, actor.organizationId),
+						eq(equipmentType.id, typeId),
+					),
+				);
+			if (!type) return { ok: false, reason: "not_found" };
 			if (
-				item.lastHandoverDate &&
-				Temporal.PlainDate.compare(
-					actualDate,
-					parsePlainDate(item.lastHandoverDate),
-				) < 0
+				change.kind === "issue_quantity" &&
+				type.revision !== change.expectedRevision
 			)
-				return { ok: false, reason: "conflicting_history" };
+				return { ok: false, reason: "stale_revision" };
+			if (
+				type.trackingMode !==
+				(change.kind === "issue_quantity" ? "quantity" : "individual")
+			)
+				return {
+					ok: false,
+					reason:
+						change.kind === "issue_quantity"
+							? "quantity_required"
+							: "individual_required",
+				};
 			const prepared = await prepareEquipmentTypeForIssuance(tx, {
 				organizationId: actor.organizationId,
-				typeId: item.typeId,
+				typeId,
 			});
 			if (!prepared.ok) return prepared;
-			if (prepared.trackingMode !== "individual")
-				return { ok: false, reason: "individual_required" };
+			const quantity = change.kind === "issue_quantity" ? change.quantity : 1;
 			const [period] = await tx
 				.select({ id: employeeEmploymentPeriod.id })
 				.from(employeeEmploymentPeriod)
@@ -271,7 +307,9 @@ export async function applyEquipmentChange(
 				.insert(equipmentAssignment)
 				.values({
 					organizationId: actor.organizationId,
-					itemId: item.id,
+					itemId: item?.id ?? null,
+					typeId,
+					quantity,
 					employeeId: change.employeeId,
 					employmentPeriodId: period?.id ?? null,
 					returnRequired: change.returnRequired,
@@ -282,22 +320,24 @@ export async function applyEquipmentChange(
 				organizationId: actor.organizationId,
 				assignmentId: assignment.id,
 				kind: "issue",
+				quantity,
 				actualDate: change.actualDate,
 				condition: change.condition,
 				notes: change.notes || null,
 				actorId: actor.userId,
 				recordedAt,
 			});
-			await tx
-				.update(equipmentItem)
-				.set({
-					inCustody: true,
-					lastHandoverDate: change.actualDate,
-					revision: item.revision + 1,
-					updatedBy: actor.userId,
-					updatedAt: recordedAt,
-				})
-				.where(scoped(actor.organizationId, item.id));
+			if (item)
+				await tx
+					.update(equipmentItem)
+					.set({
+						inCustody: true,
+						lastHandoverDate: change.actualDate,
+						revision: item.revision + 1,
+						updatedBy: actor.userId,
+						updatedAt: recordedAt,
+					})
+					.where(scoped(actor.organizationId, item.id));
 			result = assignment;
 		} else {
 			const [assignment] = await tx
@@ -305,6 +345,16 @@ export async function applyEquipmentChange(
 				.from(equipmentAssignment)
 				.where(assignmentScope(actor.organizationId, change.assignmentId));
 			if (!assignment) return { ok: false, reason: "not_found" };
+			if (
+				(change.kind === "receive_individual") !==
+				(assignment.itemId !== null)
+			)
+				return {
+					ok: false,
+					reason: assignment.itemId
+						? "individual_required"
+						: "quantity_required",
+				};
 			const [holder] = await tx
 				.select({ userId: employee.userId })
 				.from(employee)
@@ -322,6 +372,10 @@ export async function applyEquipmentChange(
 			if (assignment.revision !== change.expectedRevision)
 				return { ok: false, reason: "stale_revision" };
 			if (assignment.received) return { ok: false, reason: "already_received" };
+			const quantity = change.kind === "receive_quantity" ? change.quantity : 1;
+			const receivedQuantity = assignment.receivedQuantity + quantity;
+			if (receivedQuantity > assignment.quantity)
+				return { ok: false, reason: "excess_quantity" };
 			const [issue] = await tx
 				.select()
 				.from(equipmentHandover)
@@ -340,15 +394,19 @@ export async function applyEquipmentChange(
 				) < 0
 			)
 				return { ok: false, reason: "conflicting_history" };
-			const [item] = await tx
-				.select()
-				.from(equipmentItem)
-				.where(scoped(actor.organizationId, assignment.itemId));
-			if (!item?.inCustody) return { ok: false, reason: "item_unavailable" };
+			const [item] = assignment.itemId
+				? await tx
+						.select()
+						.from(equipmentItem)
+						.where(scoped(actor.organizationId, assignment.itemId))
+				: [];
+			if (assignment.itemId && !item?.inCustody)
+				return { ok: false, reason: "item_unavailable" };
 			await tx.insert(equipmentHandover).values({
 				organizationId: actor.organizationId,
 				assignmentId: assignment.id,
 				kind: "receipt",
+				quantity,
 				actualDate: change.actualDate,
 				condition: change.condition,
 				notes: change.notes || null,
@@ -357,20 +415,26 @@ export async function applyEquipmentChange(
 			});
 			const [updated] = await tx
 				.update(equipmentAssignment)
-				.set({ received: true, revision: assignment.revision + 1 })
+				.set({
+					received: receivedQuantity === assignment.quantity,
+					receivedQuantity,
+					revision: assignment.revision + 1,
+				})
 				.where(assignmentScope(actor.organizationId, assignment.id))
 				.returning();
-			await tx
-				.update(equipmentItem)
-				.set({
-					inCustody: false,
-					lastHandoverDate: change.actualDate,
-					status: change.condition === "damaged" ? "unavailable" : item.status,
-					revision: item.revision + 1,
-					updatedBy: actor.userId,
-					updatedAt: recordedAt,
-				})
-				.where(scoped(actor.organizationId, item.id));
+			if (item)
+				await tx
+					.update(equipmentItem)
+					.set({
+						inCustody: false,
+						lastHandoverDate: change.actualDate,
+						status:
+							change.condition === "damaged" ? "unavailable" : item.status,
+						revision: item.revision + 1,
+						updatedBy: actor.userId,
+						updatedAt: recordedAt,
+					})
+					.where(scoped(actor.organizationId, item.id));
 			result = updated;
 		}
 		const outcome = {
@@ -463,7 +527,7 @@ export async function readEquipment(
 							type: equipmentType,
 						})
 						.from(equipmentAssignment)
-						.innerJoin(
+						.leftJoin(
 							equipmentItem,
 							and(
 								eq(equipmentItem.id, equipmentAssignment.itemId),
@@ -476,8 +540,11 @@ export async function readEquipment(
 						.innerJoin(
 							equipmentType,
 							and(
-								eq(equipmentType.id, equipmentItem.typeId),
-								eq(equipmentType.organizationId, equipmentItem.organizationId),
+								eq(equipmentType.id, equipmentAssignment.typeId),
+								eq(
+									equipmentType.organizationId,
+									equipmentAssignment.organizationId,
+								),
 							),
 						)
 						.where(
@@ -506,10 +573,19 @@ export async function readEquipment(
 							),
 						),
 					)
+					.orderBy(
+						asc(equipmentHandover.actualDate),
+						asc(equipmentHandover.recordedAt),
+						asc(equipmentHandover.id),
+					)
 			: [];
-		const evidence = new Map<string, EquipmentHandoverView>();
-		for (const { record, actorName } of handovers)
-			evidence.set(`${record.assignmentId}:${record.kind}`, {
+		const evidence = new Map<string, EquipmentHandoverView[]>();
+		for (const { record, actorName } of handovers) {
+			const key = `${record.assignmentId}:${record.kind}`;
+			const records = evidence.get(key) ?? [];
+			records.push({
+				id: record.id,
+				quantity: record.quantity,
 				actualDate: record.actualDate,
 				condition: record.condition,
 				notes: record.notes,
@@ -517,13 +593,21 @@ export async function readEquipment(
 				actorName,
 				recordedAt: instantFromDate(record.recordedAt).toString(),
 			});
+			evidence.set(key, records);
+		}
 		const filters = scope.kind === "overview" ? scope.filters : {};
 		const assignments: EquipmentAssignmentView[] = [];
 		for (const { assignment, item, type } of rows) {
 			const holder = employeeMap.get(assignment.employeeId ?? "");
-			const issue = evidence.get(`${assignment.id}:issue`);
+			const issue = evidence.get(`${assignment.id}:issue`)?.[0];
+			const receipts = evidence.get(`${assignment.id}:receipt`) ?? [];
 			if (!holder || !issue) continue;
-			const outstanding = assignment.returnRequired && !assignment.received;
+			// Physical receipts alone reduce this slice's return balance. Later exception
+			// outcomes must reduce obligations separately, never receivedQuantity.
+			const outstandingQuantity = assignment.returnRequired
+				? assignment.quantity - assignment.receivedQuantity
+				: 0;
+			const outstanding = outstandingQuantity > 0;
 			const overdue =
 				outstanding &&
 				!!assignment.explicitDeadline &&
@@ -542,10 +626,14 @@ export async function readEquipment(
 				continue;
 			assignments.push({
 				id: assignment.id,
-				itemId: item.id,
+				itemId: item?.id ?? null,
+				trackingMode: type.trackingMode,
+				quantity: assignment.quantity,
+				physicallyReceivedQuantity: assignment.receivedQuantity,
+				outstandingQuantity,
 				typeId: type.id,
 				typeName: type.name,
-				identifier: item.identifier,
+				identifier: item?.identifier ?? type.name,
 				employeeId: holder.id,
 				holderName: holder.name,
 				former: holder.former,
@@ -560,7 +648,8 @@ export async function readEquipment(
 					!assignment.received &&
 					holder.userId !== actor.userId,
 				issue,
-				receipt: evidence.get(`${assignment.id}:receipt`) ?? null,
+				receipt: receipts.at(-1) ?? null,
+				receipts,
 			});
 		}
 		const staffView = access.canManage && scope.kind !== "personal";
@@ -602,7 +691,27 @@ export async function readEquipment(
 						)
 						.orderBy(asc(equipmentItem.identifier))
 				: [];
+		const availableQuantityTypes =
+			staffView && policyConfigured
+				? await tx
+						.select({
+							id: equipmentType.id,
+							name: equipmentType.name,
+							defaultReturnRequired: equipmentType.defaultReturnRequired,
+							revision: equipmentType.revision,
+						})
+						.from(equipmentType)
+						.where(
+							and(
+								eq(equipmentType.organizationId, actor.organizationId),
+								eq(equipmentType.trackingMode, "quantity"),
+								sql`${equipmentType.archivedAt} is null`,
+							),
+						)
+						.orderBy(asc(equipmentType.name), asc(equipmentType.id))
+				: [];
 		return {
+			availableQuantityTypes,
 			canManage: staffView,
 			policyConfigured,
 			timezone,

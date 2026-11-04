@@ -11,13 +11,17 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	comparePlainDates,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import {
 	type EquipmentAssignmentView,
 	type EquipmentChange,
 	type EquipmentCondition,
 	type EquipmentView,
 	equipmentConditionSchema,
+	equipmentQuantitySchema,
 } from "@/lib/organization/equipment/contracts";
 import { conditionLabel, type EquipmentTranslate } from "./equipment-copy";
 
@@ -53,7 +57,7 @@ function actualDateError(value: string, today: string, t: EquipmentTranslate) {
 		);
 	try {
 		const date = parsePlainDate(value);
-		if (date.toString() > today)
+		if (comparePlainDates(date, parsePlainDate(today)) > 0)
 			return t(
 				"settings.equipment.handover.futureDate",
 				"The actual handover date cannot be in the future in the organization’s timezone.",
@@ -171,6 +175,56 @@ function NotesField({
 	);
 }
 
+function quantityError(value: string, t: EquipmentTranslate, maximum?: number) {
+	const quantity = Number(value);
+	if (!equipmentQuantitySchema.safeParse(quantity).success)
+		return t(
+			"settings.equipment.handover.quantityInvalid",
+			"Enter a positive whole quantity.",
+		);
+	if (maximum !== undefined && quantity > maximum)
+		return t(
+			"settings.equipment.handover.quantityExcess",
+			"Quantity exceeds the remaining physical balance.",
+		);
+	return undefined;
+}
+function QuantityField({
+	field,
+	pending,
+	maximum,
+	t,
+}: {
+	field: StringField;
+	pending: boolean;
+	maximum?: number;
+	t: EquipmentTranslate;
+}) {
+	return (
+		<TFormItem>
+			<TFormLabel required>
+				{t("settings.equipment.handover.quantity", "Quantity")}
+			</TFormLabel>
+			<TFormControl hasError={field.state.meta.errors.length > 0}>
+				<Input
+					type="number"
+					inputMode="numeric"
+					autoComplete="off"
+					name={field.name}
+					min={1}
+					step={1}
+					max={maximum ?? 2147483647}
+					value={field.state.value}
+					onChange={(event) => field.handleChange(event.target.value)}
+					onBlur={field.handleBlur}
+					disabled={pending}
+				/>
+			</TFormControl>
+			<TFormMessage field={field} />
+		</TFormItem>
+	);
+}
+
 function useIssueEquipmentForm({
 	data,
 	employeeId,
@@ -186,6 +240,7 @@ function useIssueEquipmentForm({
 		defaultValues: {
 			...handoverDefaults,
 			itemId: "",
+			quantity: "1",
 			employeeId: employeeId ?? "",
 			returnRequired: true,
 			explicitDeadline: "",
@@ -198,12 +253,12 @@ function useIssueEquipmentForm({
 			const item = data.availableItems.find(
 				(candidate) => candidate.id === value.itemId,
 			);
-			if (!item) return;
-			const payload = {
-				kind: "issue_individual",
-				itemId: item.id,
+			const type = data.availableQuantityTypes.find(
+				(candidate) => candidate.id === value.itemId,
+			);
+			if (!item && !type) return;
+			const common = {
 				employeeId: value.employeeId,
-				expectedRevision: item.revision,
 				actualDate: value.actualDate,
 				condition: value.condition,
 				notes: value.notes,
@@ -212,8 +267,25 @@ function useIssueEquipmentForm({
 					value.returnRequired && value.explicitDeadline
 						? value.explicitDeadline
 						: null,
-			} as const;
-			await submit({ ...payload, requestId: identity(payload) });
+			};
+			if (type) {
+				const payload = {
+					...common,
+					kind: "issue_quantity" as const,
+					typeId: type.id,
+					quantity: Number(value.quantity),
+					expectedRevision: type.revision,
+				};
+				await submit({ ...payload, requestId: identity(payload) });
+			} else if (item) {
+				const payload = {
+					...common,
+					kind: "issue_individual" as const,
+					itemId: item.id,
+					expectedRevision: item.revision,
+				};
+				await submit({ ...payload, requestId: identity(payload) });
+			}
 		},
 	});
 	return { form, element };
@@ -239,10 +311,7 @@ export function IssueEquipmentForm({
 			}}
 		>
 			<h3 className="font-semibold">
-				{t(
-					"settings.equipment.handover.issueTitle",
-					"Issue an individual item",
-				)}
+				{t("settings.equipment.handover.issueTitle", "Issue equipment")}
 			</h3>
 			<p className="text-sm text-muted-foreground">
 				{t(
@@ -262,7 +331,7 @@ export function IssueEquipmentForm({
 							!value
 								? t(
 										"settings.equipment.handover.itemRequired",
-										"Select an available item.",
+										"Select an available item or quantity type.",
 									)
 								: undefined,
 					}}
@@ -284,9 +353,13 @@ export function IssueEquipmentForm({
 									onBlur={field.handleBlur}
 									onChange={(e) => {
 										field.handleChange(e.target.value);
-										const selected = data.availableItems.find(
-											(item) => item.id === e.target.value,
-										);
+										const selected =
+											data.availableItems.find(
+												(item) => item.id === e.target.value,
+											) ??
+											data.availableQuantityTypes.find(
+												(type) => type.id === e.target.value,
+											);
 										if (selected) {
 											form.setFieldValue(
 												"returnRequired",
@@ -299,9 +372,18 @@ export function IssueEquipmentForm({
 									<option value="">
 										{t(
 											"settings.equipment.handover.selectItem",
-											"Select an available item…",
+											"Select an item or quantity type…",
 										)}
 									</option>
+									{data.availableQuantityTypes.map((type) => (
+										<option key={type.id} value={type.id}>
+											{type.name} ·{" "}
+											{t(
+												"settings.equipment.handover.quantityType",
+												"Quantity",
+											)}
+										</option>
+									))}
 									{data.availableItems.map((item) => (
 										<option key={item.id} value={item.id}>
 											{item.identifier} · {item.typeName}
@@ -313,6 +395,24 @@ export function IssueEquipmentForm({
 						</TFormItem>
 					)}
 				</form.Field>
+				<form.Subscribe selector={(state) => state.values.itemId}>
+					{(selectedId) =>
+						data.availableQuantityTypes.some(
+							(type) => type.id === selectedId,
+						) ? (
+							<form.Field
+								name="quantity"
+								validators={{
+									onSubmit: ({ value }) => quantityError(value, t),
+								}}
+							>
+								{(field) => (
+									<QuantityField field={field} pending={pending} t={t} />
+								)}
+							</form.Field>
+						) : null
+					}
+				</form.Subscribe>
 				<form.Field
 					name="employeeId"
 					validators={{
@@ -455,7 +555,11 @@ function ReturnAgreementFields({
 											"Enter a valid calendar date.",
 										);
 									}
-									return value < form.getFieldValue("actualDate")
+									return form.getFieldValue("actualDate") &&
+										comparePlainDates(
+											parsePlainDate(value),
+											parsePlainDate(form.getFieldValue("actualDate")),
+										) < 0
 										? t(
 												"settings.equipment.handover.deadlineInvalid",
 												"The return deadline must be on or after the handover date.",
@@ -491,7 +595,7 @@ function ReturnAgreementFields({
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"settings.equipment.handover.keepHelp",
-								"Issued to keep: no deadline or return obligation. This item remains held until physically received back.",
+								"Issued to keep: no deadline or return obligation. Equipment remains held until physically received back.",
 							)}
 						</p>
 					)
@@ -517,18 +621,26 @@ export function ReceiveEquipmentForm({
 	const identity = useCommandIdentity();
 	const element = useRef<HTMLFormElement>(null);
 	const form = useForm({
-		defaultValues: { ...handoverDefaults },
+		defaultValues: { ...handoverDefaults, quantity: "1" },
 		onSubmitInvalid: () =>
 			element.current
 				?.querySelector<HTMLElement>('[aria-invalid="true"]')
 				?.focus(),
 		onSubmit: async ({ value }) => {
-			const payload = {
-				kind: "receive_individual",
+			const { quantity, ...handover } = value;
+			const common = {
 				assignmentId: assignment.id,
 				expectedRevision: assignment.revision,
-				...value,
-			} as const;
+				...handover,
+			};
+			const payload =
+				assignment.trackingMode === "quantity"
+					? {
+							...common,
+							kind: "receive_quantity" as const,
+							quantity: Number(quantity),
+						}
+					: { ...common, kind: "receive_individual" as const };
 			await submit({ ...payload, requestId: identity(payload) });
 		},
 	});
@@ -553,12 +665,40 @@ export function ReceiveEquipmentForm({
 				{assignment.holderName} · <span translate="no">{timezone}</span>
 			</p>
 			<div className="grid gap-4 sm:grid-cols-2">
+				{assignment.trackingMode === "quantity" ? (
+					<form.Field
+						name="quantity"
+						validators={{
+							onSubmit: ({ value }) =>
+								quantityError(
+									value,
+									t,
+									assignment.quantity - assignment.physicallyReceivedQuantity,
+								),
+						}}
+					>
+						{(field) => (
+							<QuantityField
+								field={field}
+								pending={pending}
+								maximum={
+									assignment.quantity - assignment.physicallyReceivedQuantity
+								}
+								t={t}
+							/>
+						)}
+					</form.Field>
+				) : null}
 				<form.Field
 					name="actualDate"
 					validators={{
 						onSubmit: ({ value }) =>
 							actualDateError(value, today, t) ??
-							(value && value < assignment.issue.actualDate
+							(value &&
+							comparePlainDates(
+								parsePlainDate(value),
+								parsePlainDate(assignment.issue.actualDate),
+							) < 0
 								? t(
 										"settings.equipment.handover.receiptBeforeIssue",
 										"Receipt cannot precede the recorded issuance.",
@@ -592,7 +732,7 @@ export function ReceiveEquipmentForm({
 			<p className="text-sm text-muted-foreground">
 				{t(
 					"settings.equipment.handover.receiptHelp",
-					"Record receipt only after the item is physically back. Damaged equipment stays unavailable pending clearance.",
+					"Record only the quantity physically received, with its own condition and notes. Damaged individual items stay unavailable pending clearance.",
 				)}
 			</p>
 			<div className="flex flex-wrap gap-2">
