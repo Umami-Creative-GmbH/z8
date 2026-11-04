@@ -182,6 +182,12 @@ export const equipmentAssignment = pgTable(
 		typeId: uuid("type_id").notNull(),
 		quantity: integer("quantity").notNull().default(1),
 		receivedQuantity: integer("received_quantity").notNull().default(0),
+		lostQuantity: integer("lost_quantity").notNull().default(0),
+		/** Physical receipts linked to an already settled exception: exclude their overlap from obligation arithmetic. */
+		exceptionReceivedQuantity: integer("exception_received_quantity")
+			.notNull()
+			.default(0),
+		waivedQuantity: integer("waived_quantity").notNull().default(0),
 		employeeId: uuid("employee_id"),
 		employmentPeriodId: uuid("employment_period_id"),
 		returnRequired: boolean("return_required").notNull(),
@@ -203,6 +209,10 @@ export const equipmentAssignment = pgTable(
 		check(
 			"equipment_assignment_received_quantity_check",
 			sql`${t.receivedQuantity} >= 0 and ${t.receivedQuantity} <= ${t.quantity}`,
+		),
+		check(
+			"equipment_assignment_settlement_check",
+			sql`${t.lostQuantity} >= 0 and ${t.waivedQuantity} >= 0 and ${t.exceptionReceivedQuantity} >= 0 and ${t.exceptionReceivedQuantity} <= ${t.receivedQuantity} and ${t.exceptionReceivedQuantity}::bigint <= ${t.lostQuantity}::bigint + ${t.waivedQuantity} and ${t.receivedQuantity}::bigint + ${t.lostQuantity} + ${t.waivedQuantity} - ${t.exceptionReceivedQuantity} <= ${t.quantity} and (${t.returnRequired} or (${t.lostQuantity} = 0 and ${t.waivedQuantity} = 0))`,
 		),
 		check(
 			"equipment_assignment_received_check",
@@ -242,6 +252,56 @@ export const equipmentAssignment = pgTable(
 	],
 );
 
+/** Reasoned obligation closure, independent of physical handover evidence. */
+export const equipmentException = pgTable(
+	"equipment_exception",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		assignmentId: uuid("assignment_id").notNull(),
+		kind: text("kind", { enum: ["lost", "waived"] }).notNull(),
+		quantity: integer("quantity").notNull(),
+		receivedQuantity: integer("received_quantity").notNull().default(0),
+		reason: text("reason").notNull(),
+		actorId: text("actor_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		recordedAt: timestamp("recorded_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		unique("equipment_exception_id_org_assignment_unique").on(
+			t.id,
+			t.organizationId,
+			t.assignmentId,
+		),
+		foreignKey({
+			name: "equipment_exception_assignment_org_fk",
+			columns: [t.assignmentId, t.organizationId],
+			foreignColumns: [
+				equipmentAssignment.id,
+				equipmentAssignment.organizationId,
+			],
+		}).onDelete("cascade"),
+		check(
+			"equipment_exception_kind_check",
+			sql`${t.kind} in ('lost', 'waived')`,
+		),
+		check("equipment_exception_quantity_positive", sql`${t.quantity} > 0`),
+		check(
+			"equipment_exception_received_check",
+			sql`${t.receivedQuantity} >= 0 and ${t.receivedQuantity} <= ${t.quantity}`,
+		),
+		check(
+			"equipment_exception_reason_check",
+			sql`length(btrim(${t.reason})) between 1 and 4000`,
+		),
+	],
+);
+
 export const equipmentHandover = pgTable(
 	"equipment_handover",
 	{
@@ -250,6 +310,7 @@ export const equipmentHandover = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		assignmentId: uuid("assignment_id").notNull(),
+		exceptionId: uuid("exception_id"),
 		kind: text("kind", { enum: ["issue", "receipt"] }).notNull(),
 		quantity: integer("quantity").notNull().default(1),
 		actualDate: date("actual_date"),
@@ -274,6 +335,19 @@ export const equipmentHandover = pgTable(
 				equipmentAssignment.organizationId,
 			],
 		}).onDelete("cascade"),
+		foreignKey({
+			name: "equipment_handover_exception_org_assignment_fk",
+			columns: [t.exceptionId, t.organizationId, t.assignmentId],
+			foreignColumns: [
+				equipmentException.id,
+				equipmentException.organizationId,
+				equipmentException.assignmentId,
+			],
+		}),
+		check(
+			"equipment_handover_exception_receipt_check",
+			sql`${t.exceptionId} is null or ${t.kind} = 'receipt'`,
+		),
 		uniqueIndex("equipment_handover_issue_once")
 			.on(t.organizationId, t.assignmentId)
 			.where(sql`${t.kind} = 'issue'`),

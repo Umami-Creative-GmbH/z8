@@ -217,6 +217,7 @@ it("validates a partial quantity and date order before submitting the new return
 		trackingMode: "quantity" as const,
 		quantity: 3,
 		physicallyReceivedQuantity: 1,
+		outstandingQuantity: 2,
 	};
 	render(
 		<EmployeeEquipment

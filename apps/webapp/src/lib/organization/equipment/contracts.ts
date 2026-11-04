@@ -155,6 +155,22 @@ export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 		serialNumber: z.string().trim().max(200).optional(),
 	}),
 	z.strictObject({
+		kind: z.literal("receive_exception"),
+		...handoverFields,
+		assignmentId: z.uuid(),
+		exceptionId: z.uuid(),
+		quantity: equipmentQuantitySchema,
+	}),
+	z.strictObject({
+		kind: z.literal("close_return"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		outcome: z.enum(["lost", "waived"]),
+		quantity: equipmentQuantitySchema,
+		reason: z.string().trim().min(1).max(4000),
+	}),
+	z.strictObject({
 		kind: z.literal("transfer_equipment"),
 		...request,
 		...revision,
@@ -237,6 +253,8 @@ export type EquipmentRefusal =
 	| "item_retired"
 	| "readiness_unchanged"
 	| "self_receipt"
+	| "self_exception"
+	| "return_not_required"
 	| "already_received"
 	| "quantity_required"
 	| "excess_quantity"
@@ -254,6 +272,7 @@ export const equipmentFiltersSchema = z.strictObject({
 });
 export type EquipmentFilters = z.infer<typeof equipmentFiltersSchema>;
 export interface EquipmentHandoverView {
+	exceptionId: string | null;
 	id: string;
 	quantity: number;
 	actualDate: string | null;
@@ -264,7 +283,23 @@ export interface EquipmentHandoverView {
 	actorName: string | null;
 	recordedAt: string;
 }
+export interface EquipmentExceptionView {
+	id: string;
+	kind: "lost" | "waived";
+	quantity: number;
+	receivedQuantity: number;
+	reason: string;
+	actorId: string | null;
+	actorName: string | null;
+	recordedAt: string;
+	canReceive: boolean;
+}
 export interface EquipmentAssignmentView {
+	lostQuantity: number;
+	waivedQuantity: number;
+	recoveredQuantity: number;
+	exceptions: EquipmentExceptionView[];
+	canCloseException: boolean;
 	id: string;
 	itemId: string | null;
 	trackingMode: "individual" | "quantity";
