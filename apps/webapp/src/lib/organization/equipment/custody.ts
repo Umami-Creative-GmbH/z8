@@ -147,6 +147,9 @@ export async function applyEquipmentChange(
 					return { ok: false, reason: access.all ? "not_found" : "forbidden" };
 			} else {
 				const subjectId =
+					change.kind === "record_historical_individual" ||
+					change.kind === "record_historical_quantity" ||
+					change.kind === "register_historical_individual" ||
 					change.kind === "issue_individual" ||
 					change.kind === "issue_quantity" ||
 					change.kind === "register_and_issue_individual" ||
@@ -480,6 +483,49 @@ async function performHandover(
 		});
 		if (!historical && (!current.current || !employeeAccess.allowed))
 			return { ok: false, reason: "employee_not_current" };
+		const periods = await tx
+			.select()
+			.from(employeeEmploymentPeriod)
+			.where(
+				and(
+					eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
+					eq(employeeEmploymentPeriod.employeeId, change.employeeId),
+				),
+			);
+		const { timezone } = await organizationCalendar(tx, actor.organizationId);
+		const dayStart = actualDate?.toZonedDateTime(timezone).toInstant();
+		const dayEnd = actualDate
+			?.add({ days: 1 })
+			.toZonedDateTime(timezone)
+			.toInstant();
+		const candidates = historical
+			? periods.filter(
+					(period) =>
+						(!change.employmentPeriodId ||
+							period.id === change.employmentPeriodId) &&
+						(!dayStart ||
+							!dayEnd ||
+							((!period.startedAt ||
+								Temporal.Instant.compare(
+									instantFromDate(period.startedAt),
+									dayEnd,
+								) < 0) &&
+								(!period.endedAt ||
+									Temporal.Instant.compare(
+										dayStart,
+										instantFromDate(period.endedAt),
+									) < 0))),
+				)
+			: periods.filter((period) => period.status === "open");
+		// Unknown dates never silently attach old equipment to a later rehire period.
+		if (
+			historical &&
+			(candidates.length > 1 ||
+				(periods.length > 0 && candidates.length === 0) ||
+				(change.employmentPeriodId && candidates.length === 0))
+		)
+			return { ok: false, reason: "conflicting_history" };
+		const period = candidates[0];
 		let [item] = individual
 			? await tx
 					.select()
@@ -554,16 +600,6 @@ async function performHandover(
 				.returning();
 		}
 		const quantity = quantityIssue ? change.quantity : 1;
-		const [period] = await tx
-			.select({ id: employeeEmploymentPeriod.id })
-			.from(employeeEmploymentPeriod)
-			.where(
-				and(
-					eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
-					eq(employeeEmploymentPeriod.employeeId, change.employeeId),
-					eq(employeeEmploymentPeriod.status, "open"),
-				),
-			);
 		const [assignment] = await tx
 			.insert(equipmentAssignment)
 			.values({
@@ -653,7 +689,7 @@ async function performHandover(
 				return { ok: false, reason: "excess_quantity" };
 			if (
 				Temporal.PlainDate.compare(
-					actualDate,
+					parsePlainDate(change.actualDate),
 					instantFromDate(exception.recordedAt)
 						.toZonedDateTimeISO(timezone)
 						.toPlainDate(),
@@ -1003,6 +1039,7 @@ export async function readEquipment(
 					outstanding &&
 					holder.userId !== actor.userId,
 				id: assignment.id,
+				employmentPeriodId: assignment.employmentPeriodId,
 				itemId: item?.id ?? null,
 				trackingMode: type.trackingMode,
 				quantity: assignment.quantity,
@@ -1099,7 +1136,40 @@ export async function readEquipment(
 						)
 						.orderBy(asc(equipmentType.name), asc(equipmentType.id))
 				: [];
+		const employmentPeriods =
+			staffView && employeeMap.size
+				? await tx
+						.select()
+						.from(employeeEmploymentPeriod)
+						.where(
+							and(
+								eq(
+									employeeEmploymentPeriod.organizationId,
+									actor.organizationId,
+								),
+								inArray(employeeEmploymentPeriod.employeeId, [
+									...employeeMap.keys(),
+								]),
+							),
+						)
+				: [];
 		return {
+			employmentPeriods: employmentPeriods.map((period) => ({
+				id: period.id,
+				employeeId: period.employeeId,
+				startedOn: period.startedAt
+					? instantFromDate(period.startedAt)
+							.toZonedDateTimeISO(timezone)
+							.toPlainDate()
+							.toString()
+					: null,
+				endedOn: period.endedAt
+					? instantFromDate(period.endedAt)
+							.toZonedDateTimeISO(timezone)
+							.toPlainDate()
+							.toString()
+					: null,
+			})),
 			readinessItems: staffView
 				? await readItemReadiness(
 						tx,

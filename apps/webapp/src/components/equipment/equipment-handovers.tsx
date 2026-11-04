@@ -207,6 +207,7 @@ function useIssueEquipmentForm({
 		defaultValues: {
 			...handoverDefaults,
 			unknownDate: false,
+			employmentPeriodId: "",
 			itemId: "",
 			typeId: "",
 			identifier: "",
@@ -243,6 +244,9 @@ function useIssueEquipmentForm({
 				const evidence = {
 					...common,
 					actualDate: value.unknownDate ? null : value.actualDate,
+					...(value.employmentPeriodId
+						? { employmentPeriodId: value.employmentPeriodId }
+						: {}),
 				};
 				if (value.itemId === "new") {
 					const payload = {
@@ -365,230 +369,19 @@ function EquipmentIssueForm({
 				disabled={pending}
 				className="grid min-w-0 gap-4 sm:grid-cols-2"
 			>
-				<form.Field
-					name="itemId"
-					validators={{
-						onSubmit: ({ value }) =>
-							!value
-								? t(
-										"settings.equipment.handover.itemRequired",
-										"Select an available item or quantity type.",
-									)
-								: undefined,
-					}}
-				>
-					{(field) => (
-						<TFormItem>
-							<TFormLabel required>
-								{t("settings.equipment.handover.item", "Equipment item")}
-							</TFormLabel>
-							<TFormControl hasError={field.state.meta.errors.length > 0}>
-								<select
-									name={field.name}
-									aria-label={t(
-										"settings.equipment.handover.item",
-										"Equipment item",
-									)}
-									className={equipmentSelectClass}
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => {
-										field.handleChange(e.target.value);
-										const selected =
-											data.availableItems.find(
-												(item) => item.id === e.target.value,
-											) ??
-											data.availableQuantityTypes.find(
-												(type) => type.id === e.target.value,
-											);
-										if (selected) {
-											form.setFieldValue(
-												"returnRequired",
-												selected.defaultReturnRequired,
-											);
-											form.setFieldValue("explicitDeadline", "");
-										}
-									}}
-								>
-									<option value="">
-										{t(
-											"settings.equipment.handover.selectItem",
-											"Select an item or quantity type…",
-										)}
-									</option>
-									{data.registrationTypes.length ? (
-										<option value="new">
-											{t(
-												"settings.equipment.handover.registerNew",
-												"Register a new item during issuance",
-											)}
-										</option>
-									) : null}
-									{data.availableQuantityTypes.map((type) => (
-										<option key={type.id} value={type.id}>
-											{type.name} ·{" "}
-											{t(
-												"settings.equipment.handover.quantityType",
-												"Quantity",
-											)}
-										</option>
-									))}
-									{data.availableItems.map((item) => (
-										<option key={item.id} value={item.id}>
-											{item.identifier} · {item.typeName}
-										</option>
-									))}
-								</select>
-							</TFormControl>
-							<TFormMessage field={field} />
-						</TFormItem>
-					)}
-				</form.Field>
-				<form.Subscribe selector={(state) => state.values.itemId}>
-					{(selectedId) =>
-						data.availableQuantityTypes.some(
-							(type) => type.id === selectedId,
-						) ? (
-							<form.Field
-								name="quantity"
-								validators={{
-									onSubmit: ({ value }) => quantityError(value, t),
-								}}
-							>
-								{(field) => (
-									<QuantityField field={field} pending={pending} t={t} />
-								)}
-							</form.Field>
-						) : null
-					}
-				</form.Subscribe>
-				<form.Field
-					name="employeeId"
-					validators={{
-						onSubmit: ({ value }) =>
-							!value
-								? mode === "historical"
-									? t(
-											"settings.equipment.historical.employeeRequired",
-											"Select a current or former employee.",
-										)
-									: t(
-											"settings.equipment.handover.employeeRequired",
-											"Select a current employee.",
-										)
-								: undefined,
-					}}
-				>
-					{(field) => (
-						<TFormItem>
-							<TFormLabel required>
-								{mode === "historical"
-									? t(
-											"settings.equipment.historical.employee",
-											"Current or former employee",
-										)
-									: t(
-											"settings.equipment.handover.employee",
-											"Current employee",
-										)}
-							</TFormLabel>
-							<TFormControl hasError={field.state.meta.errors.length > 0}>
-								<select
-									name={field.name}
-									aria-label={
-										mode === "historical"
-											? t(
-													"settings.equipment.historical.employee",
-													"Current or former employee",
-												)
-											: t(
-													"settings.equipment.handover.employee",
-													"Current employee",
-												)
-									}
-									className={equipmentSelectClass}
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-									disabled={!!employeeId}
-								>
-									<option value="">
-										{t(
-											"settings.equipment.handover.selectEmployee",
-											"Select a current employee…",
-										)}
-									</option>
-									{data.employees
-										.filter(
-											(employee) => mode === "historical" || !employee.former,
-										)
-										.map((employee) => (
-											<option key={employee.id} value={employee.id}>
-												{employee.name}
-												{employee.former
-													? ` · ${t("settings.equipment.custody.former", "Former employee")}`
-													: ""}
-											</option>
-										))}
-								</select>
-							</TFormControl>
-							<TFormMessage field={field} />
-						</TFormItem>
-					)}
-				</form.Field>
-				{mode === "historical" ? (
-					<form.Field name="unknownDate">
-						{(field) => (
-							<label className="flex items-center gap-2 text-sm">
-								<input
-									type="checkbox"
-									name={field.name}
-									checked={field.state.value}
-									disabled={pending}
-									onChange={(event) => {
-										field.handleChange(event.target.checked);
-										form.setFieldValue("actualDate", "");
-									}}
-								/>
-								{t(
-									"settings.equipment.historical.unknownDate",
-									"Actual issue date is unknown",
-								)}
-							</label>
-						)}
-					</form.Field>
-				) : null}
-				<form.Subscribe selector={(state) => state.values.unknownDate}>
-					{(unknown) =>
-						mode === "historical" && unknown ? (
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.equipment.historical.unknownHelp",
-									"The actual issue date will remain unknown; the entry date will not replace it.",
-								)}
-							</p>
-						) : (
-							<form.Field
-								name="actualDate"
-								validators={{
-									onSubmit: ({ value }) =>
-										mode === "historical" && form.getFieldValue("unknownDate")
-											? undefined
-											: actualDateError(value, data.today, t),
-								}}
-							>
-								{(field) => (
-									<ActualDateField
-										field={field}
-										today={data.today}
-										pending={pending}
-										t={t}
-									/>
-								)}
-							</form.Field>
-						)
-					}
-				</form.Subscribe>
+				<EquipmentChoiceFields form={form} data={data} pending={pending} />
+				<IssueSubjectField
+					form={form}
+					data={data}
+					mode={mode}
+					employeeId={employeeId}
+				/>
+				<IssueDateFields
+					form={form}
+					data={data}
+					mode={mode}
+					pending={pending}
+				/>
 				<form.Field name="condition">
 					{(field) => (
 						<ConditionField
@@ -1016,5 +809,348 @@ export function ReceiveEquipmentForm({
 				</Button>
 			</div>
 		</form>
+	);
+}
+
+type IssueFieldsProps = {
+	form: ReturnType<typeof useIssueEquipmentForm>["form"];
+	data: EquipmentView;
+	pending: boolean;
+	mode: IssueMode;
+	employeeId?: string;
+};
+function EquipmentChoiceFields({
+	form,
+	data,
+	pending,
+}: Pick<IssueFieldsProps, "form" | "data" | "pending">) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{" "}
+			<form.Field
+				name="itemId"
+				validators={{
+					onSubmit: ({ value }) =>
+						!value
+							? t(
+									"settings.equipment.handover.itemRequired",
+									"Select an available item or quantity type.",
+								)
+							: undefined,
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel required>
+							{t("settings.equipment.handover.item", "Equipment item")}
+						</TFormLabel>
+						<TFormControl hasError={field.state.meta.errors.length > 0}>
+							<select
+								name={field.name}
+								aria-label={t(
+									"settings.equipment.handover.item",
+									"Equipment item",
+								)}
+								className={equipmentSelectClass}
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(e) => {
+									field.handleChange(e.target.value);
+									const selected =
+										data.availableItems.find(
+											(item) => item.id === e.target.value,
+										) ??
+										data.availableQuantityTypes.find(
+											(type) => type.id === e.target.value,
+										);
+									if (selected) {
+										form.setFieldValue(
+											"returnRequired",
+											selected.defaultReturnRequired,
+										);
+										form.setFieldValue("explicitDeadline", "");
+									}
+								}}
+							>
+								<option value="">
+									{t(
+										"settings.equipment.handover.selectItem",
+										"Select an item or quantity type…",
+									)}
+								</option>
+								{data.registrationTypes.length ? (
+									<option value="new">
+										{t(
+											"settings.equipment.handover.registerNew",
+											"Register a new item during issuance",
+										)}
+									</option>
+								) : null}
+								{data.availableQuantityTypes.map((type) => (
+									<option key={type.id} value={type.id}>
+										{type.name} ·{" "}
+										{t("settings.equipment.handover.quantityType", "Quantity")}
+									</option>
+								))}
+								{data.availableItems.map((item) => (
+									<option key={item.id} value={item.id}>
+										{item.identifier} · {item.typeName}
+									</option>
+								))}
+							</select>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+			<form.Subscribe selector={(state) => state.values.itemId}>
+				{(selectedId) =>
+					data.availableQuantityTypes.some((type) => type.id === selectedId) ? (
+						<form.Field
+							name="quantity"
+							validators={{
+								onSubmit: ({ value }) => quantityError(value, t),
+							}}
+						>
+							{(field) => (
+								<QuantityField field={field} pending={pending} t={t} />
+							)}
+						</form.Field>
+					) : null
+				}
+			</form.Subscribe>
+		</>
+	);
+}
+function IssueSubjectField({
+	form,
+	data,
+	mode,
+	employeeId,
+}: Omit<IssueFieldsProps, "pending">) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{" "}
+			<form.Field
+				name="employeeId"
+				validators={{
+					onSubmit: ({ value }) =>
+						!value
+							? mode === "historical"
+								? t(
+										"settings.equipment.historical.employeeRequired",
+										"Select a current or former employee.",
+									)
+								: t(
+										"settings.equipment.handover.employeeRequired",
+										"Select a current employee.",
+									)
+							: undefined,
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel required>
+							{mode === "historical"
+								? t(
+										"settings.equipment.historical.employee",
+										"Current or former employee",
+									)
+								: t("settings.equipment.handover.employee", "Current employee")}
+						</TFormLabel>
+						<TFormControl hasError={field.state.meta.errors.length > 0}>
+							<select
+								name={field.name}
+								aria-label={
+									mode === "historical"
+										? t(
+												"settings.equipment.historical.employee",
+												"Current or former employee",
+											)
+										: t(
+												"settings.equipment.handover.employee",
+												"Current employee",
+											)
+								}
+								className={equipmentSelectClass}
+								value={field.state.value}
+								onChange={(e) => {
+									field.handleChange(e.target.value);
+									form.setFieldValue("employmentPeriodId", "");
+								}}
+								onBlur={field.handleBlur}
+								disabled={!!employeeId}
+							>
+								<option value="">
+									{mode === "historical"
+										? t(
+												"settings.equipment.historical.selectEmployee",
+												"Select a current or former employee…",
+											)
+										: t(
+												"settings.equipment.handover.selectEmployee",
+												"Select a current employee…",
+											)}
+								</option>
+								{data.employees
+									.filter(
+										(employee) => mode === "historical" || !employee.former,
+									)
+									.map((employee) => (
+										<option key={employee.id} value={employee.id}>
+											{employee.name}
+											{employee.former
+												? ` · ${t("settings.equipment.custody.former", "Former employee")}`
+												: ""}
+										</option>
+									))}
+							</select>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+		</>
+	);
+}
+function IssueDateFields({
+	form,
+	data,
+	mode,
+	pending,
+}: Omit<IssueFieldsProps, "employeeId">) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{" "}
+			{mode === "historical" ? (
+				<form.Subscribe selector={(state) => state.values.employeeId}>
+					{(subjectId) => {
+						const periods = (data.employmentPeriods ?? []).filter(
+							(period) => period.employeeId === subjectId,
+						);
+						return periods.length > 1 ? (
+							<form.Field
+								name="employmentPeriodId"
+								validators={{
+									onSubmit: ({ value }) =>
+										!value
+											? t(
+													"settings.equipment.historical.periodRequired",
+													"Select the original employment period.",
+												)
+											: undefined,
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<TFormLabel required>
+											{t(
+												"settings.equipment.historical.period",
+												"Original employment period",
+											)}
+										</TFormLabel>
+										<TFormControl hasError={field.state.meta.errors.length > 0}>
+											<select
+												aria-label={t(
+													"settings.equipment.historical.period",
+													"Original employment period",
+												)}
+												autoComplete="off"
+												name={field.name}
+												className={equipmentSelectClass}
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(event) =>
+													field.handleChange(event.target.value)
+												}
+											>
+												<option value="">
+													{t(
+														"settings.equipment.historical.selectPeriod",
+														"Select the original employment period…",
+													)}
+												</option>
+												{periods.map((period) => (
+													<option key={period.id} value={period.id}>
+														{period.startedOn ??
+															t(
+																"settings.equipment.historical.startUnknown",
+																"Start unknown",
+															)}{" "}
+														–{" "}
+														{period.endedOn ??
+															t(
+																"settings.equipment.historical.periodOpen",
+																"Current period",
+															)}
+													</option>
+												))}
+											</select>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						) : null;
+					}}
+				</form.Subscribe>
+			) : null}
+			{mode === "historical" ? (
+				<form.Field name="unknownDate">
+					{(field) => (
+						<label className="flex items-center gap-2 text-sm">
+							<input
+								type="checkbox"
+								name={field.name}
+								checked={field.state.value}
+								disabled={pending}
+								onChange={(event) => {
+									field.handleChange(event.target.checked);
+									form.setFieldValue("actualDate", "");
+								}}
+							/>
+							{t(
+								"settings.equipment.historical.unknownDate",
+								"Actual issue date is unknown",
+							)}
+						</label>
+					)}
+				</form.Field>
+			) : null}
+			<form.Subscribe selector={(state) => state.values.unknownDate}>
+				{(unknown) =>
+					mode === "historical" && unknown ? (
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.equipment.historical.unknownHelp",
+								"The actual issue date will remain unknown; the entry date will not replace it.",
+							)}
+						</p>
+					) : (
+						<form.Field
+							name="actualDate"
+							validators={{
+								onSubmit: ({ value }) =>
+									mode === "historical" && form.getFieldValue("unknownDate")
+										? undefined
+										: actualDateError(value, data.today, t),
+							}}
+						>
+							{(field) => (
+								<ActualDateField
+									field={field}
+									today={data.today}
+									pending={pending}
+									t={t}
+								/>
+							)}
+						</form.Field>
+					)
+				}
+			</form.Subscribe>
+		</>
 	);
 }

@@ -120,6 +120,7 @@ const historicalFields = {
 	...handoverFields,
 	/** Explicit null means the actual historical issue date is unknown. */
 	actualDate: calendarDate.nullable(),
+	employmentPeriodId: z.uuid().optional(),
 	employeeId: z.uuid(),
 	returnRequired: z.boolean(),
 	explicitDeadline: calendarDate.nullable().optional(),
@@ -295,6 +296,7 @@ export interface EquipmentExceptionView {
 	canReceive: boolean;
 }
 export interface EquipmentAssignmentView {
+	employmentPeriodId?: string | null;
 	lostQuantity: number;
 	waivedQuantity: number;
 	recoveredQuantity: number;
@@ -344,6 +346,12 @@ export interface EquipmentReadinessItemView extends EquipmentItemView {
 	history: EquipmentReadinessEventView[];
 }
 export interface EquipmentView {
+	employmentPeriods?: {
+		id: string;
+		employeeId: string;
+		startedOn: string | null;
+		endedOn: string | null;
+	}[];
 	readinessItems: EquipmentReadinessItemView[];
 	canManage: boolean;
 	canAdminister: boolean;

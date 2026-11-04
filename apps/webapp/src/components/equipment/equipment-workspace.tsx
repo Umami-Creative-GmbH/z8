@@ -364,93 +364,102 @@ function EquipmentHandoverEditor({
 }) {
 	const { canIssue, canRecordHistorical, selectedReceipt, selectedTransfer } =
 		equipmentSelection(data, scope, selection);
-	const selectedClosure =
-		selection?.kind === "closure"
-			? data.assignments.find(
-					(a) => a.id === selection.assignmentId && a.canCloseException,
-				)
-			: undefined;
-	const exceptionAssignment =
-		selection?.kind === "exception_receipt"
-			? data.assignments.find((a) => a.id === selection.assignmentId)
-			: undefined;
-	const selectedException =
-		selection?.kind === "exception_receipt"
-			? exceptionAssignment?.exceptions.find(
-					(e) => e.id === selection.exceptionId && e.canReceive,
-				)
-			: undefined;
-	return (
-		<>
-			{selection?.kind === "issue" && canIssue ? (
+	if (!selection) return null;
+	const actions = { submit, pending, onCancel };
+	const employeeId = scope.kind === "employee" ? scope.employeeId : undefined;
+	const issuanceKey = [...data.availableItems, ...data.availableQuantityTypes]
+		.map((item) => `${item.id}:${item.revision}`)
+		.join(",");
+	switch (selection.kind) {
+		case "issue":
+			return canIssue ? (
 				<IssueEquipmentForm
-					key={[...data.availableItems, ...data.availableQuantityTypes]
-						.map((item) => `${item.id}:${item.revision}`)
-						.join(",")}
+					key={issuanceKey}
 					data={data}
-					employeeId={scope.kind === "employee" ? scope.employeeId : undefined}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
+					employeeId={employeeId}
+					{...actions}
 				/>
-			) : null}
-			{selection?.kind === "historical" && canRecordHistorical ? (
+			) : null;
+		case "historical":
+			return canRecordHistorical ? (
 				<HistoricalEquipmentForm
-					key={[...data.availableItems, ...data.availableQuantityTypes]
-						.map((item) => `${item.id}:${item.revision}`)
-						.join(",")}
+					key={issuanceKey}
 					data={data}
-					employeeId={scope.kind === "employee" ? scope.employeeId : undefined}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
+					employeeId={employeeId}
+					{...actions}
 				/>
-			) : null}
-			{selectedReceipt ? (
+			) : null;
+		case "receipt":
+			return selectedReceipt ? (
 				<ReceiveEquipmentForm
 					key={`${selectedReceipt.id}:${selectedReceipt.revision}`}
 					assignment={selectedReceipt}
 					timezone={data.timezone}
 					today={data.today}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
+					{...actions}
 				/>
-			) : null}
-			{selectedClosure ? (
-				<CloseReturnForm
-					key={`${selectedClosure.id}:${selectedClosure.revision}`}
-					assignment={selectedClosure}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
-				/>
-			) : null}
-			{exceptionAssignment && selectedException ? (
-				<ReceiveExceptionForm
-					key={`${exceptionAssignment.id}:${exceptionAssignment.revision}:${selectedException.id}`}
-					assignment={exceptionAssignment}
-					exception={selectedException}
-					today={data.today}
-					timezone={data.timezone}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
-				/>
-			) : null}
-			{selectedTransfer ? (
+			) : null;
+		case "transfer":
+			return selectedTransfer ? (
 				<TransferEquipmentForm
 					key={`${selectedTransfer.id}:${selectedTransfer.revision}:${selectedTransfer.transfer?.expectedIssuanceRevision}`}
 					assignment={selectedTransfer}
 					data={data}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
+					{...actions}
 				/>
-			) : null}
-		</>
-	);
+			) : null;
+		case "closure":
+		case "exception_receipt":
+			return (
+				<EquipmentExceptionEditor
+					data={data}
+					selection={selection}
+					{...actions}
+				/>
+			);
+	}
 }
+function EquipmentExceptionEditor({
+	data,
+	selection,
+	...actions
+}: {
+	data: EquipmentView;
+	selection: Extract<
+		NonNullable<HandoverSelection>,
+		{ kind: "closure" | "exception_receipt" }
+	>;
+	pending: boolean;
+	submit: (change: EquipmentChange) => Promise<void>;
+	onCancel: () => void;
+}) {
+	const assignment = data.assignments.find(
+		(a) => a.id === selection.assignmentId,
+	);
+	if (!assignment) return null;
+	if (selection.kind === "closure")
+		return assignment.canCloseException ? (
+			<CloseReturnForm
+				key={`${assignment.id}:${assignment.revision}`}
+				assignment={assignment}
+				{...actions}
+			/>
+		) : null;
+	const exception = assignment.exceptions.find(
+		(e) => e.id === selection.exceptionId && e.canReceive,
+	);
+	return exception ? (
+		<ReceiveExceptionForm
+			key={`${assignment.id}:${assignment.revision}:${exception.id}`}
+			assignment={assignment}
+			exception={exception}
+			today={data.today}
+			timezone={data.timezone}
+			{...actions}
+		/>
+	) : null;
+}
+
 function EquipmentAssignments({
 	data,
 	pending,
