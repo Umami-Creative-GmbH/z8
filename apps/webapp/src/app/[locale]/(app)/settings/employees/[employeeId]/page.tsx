@@ -3,6 +3,7 @@ import { SettingsContentLoading } from "@/components/shells/settings-content-loa
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import type { EmployeeReadScope } from "@/lib/organization/employee-read-types";
+import { getEmployeeEquipment } from "@/lib/organization/equipment/actions";
 import { loadPersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { type EmployeeDetailRecord, getEmployee } from "../actions";
@@ -58,14 +59,19 @@ async function EmployeeDetailPageContent({
 		return redirectWithLocale("/settings");
 	}
 
-	const [employeeResult, personnelFile] = await Promise.all([
+	const [employeeResult, personnelFile, equipment] = await Promise.all([
 		getEmployee(employeeId),
 		// Decided by the personnel file access resolver, never by the settings tier:
 		// managers reach this page but not the personnel file (#865, ADR 0001).
 		loadPersonnelFilePanelCapability(employeeId),
+		// Equipment authority is independent of the settings tier and manager role.
+		getEmployeeEquipment(employeeId),
 	]);
 
-	if (!employeeResult.success || employeeResult.data.organizationId !== organizationId) {
+	if (
+		!employeeResult.success ||
+		employeeResult.data.organizationId !== organizationId
+	) {
 		return redirectWithLocale("/settings/employees");
 	}
 
@@ -82,6 +88,7 @@ async function EmployeeDetailPageContent({
 			currentMemberRole={currentMember.role}
 			highlightedReviewId={highlightedReviewId}
 			personnelFile={personnelFile}
+			equipment={equipment.success ? equipment.data : null}
 		/>
 	);
 }

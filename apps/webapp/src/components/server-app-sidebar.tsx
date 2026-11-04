@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { env } from "@/env";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	getRenderAuthContext as getAuthContext,
 	getRenderSettingsAccessTier as getCurrentSettingsAccessTier,
@@ -70,6 +71,7 @@ export async function ServerAppSidebar({
 		authContext,
 		canCreateOrganizations,
 		capabilitiesUnavailable,
+		equipmentAccess,
 	} = await resolveSidebarAccess(showWorksCouncilNav);
 	return (
 		<AppSidebar
@@ -91,6 +93,8 @@ export async function ServerAppSidebar({
 						activeEmployee &&
 							activeEmployee.organizationId === activeOrganizationId,
 					),
+				myEquipment: equipmentAccess.personal,
+				equipment: equipmentAccess.staff,
 				personnelFiles: showPersonnelFilesNav,
 				periodSubmissions: showPeriodSubmissionsNav,
 				teamPresence: showTeamPresenceNav,
@@ -244,5 +248,12 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		authContext,
 		canCreateOrganizations,
 		capabilitiesUnavailable,
+		equipmentAccess: {
+			personal: !!identity?.employee,
+			staff:
+				!!identity &&
+				(hasOrganizationRole(identity.membershipRole, "owner") ||
+					hasOrganizationRole(identity.membershipRole, "admin")),
+		},
 	};
 }

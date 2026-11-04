@@ -15,6 +15,7 @@ import {
 	IconHelp,
 	IconHierarchy,
 	IconMessageCircle,
+	IconPackage,
 	IconReceipt,
 	IconReport,
 	IconReportMoney,
@@ -36,6 +37,10 @@ export interface NavigationCapabilities {
 	worksCouncil: boolean;
 	/** The employee's own shared documents while personnel files are on (#865). */
 	myDocuments?: boolean;
+	/** Current employee self-history; no staff authority. */
+	myEquipment?: boolean;
+	/** Explicit equipment staff capability; a manager role alone never grants it. */
+	equipment?: boolean;
 	/** Owners, admins and active personnel file officers while personnel files are on (#866). */
 	personnelFiles?: boolean;
 	/** Managers and above while the organization collects period submissions (#1075). */
@@ -140,6 +145,15 @@ export function buildPersonalNav(
 			url: "/reports",
 			icon: IconReport,
 		},
+		...(navigationCapabilities.myEquipment
+			? [
+					{
+						title: t("settings.equipment.personal.title", "My equipment"),
+						url: "/my-equipment",
+						icon: IconPackage,
+					},
+				]
+			: []),
 		{
 			title: t("nav.org-explorer", "Org Explorer"),
 			url: "/organization",
@@ -215,6 +229,15 @@ export function buildSecondaryNav(
 	navigationCapabilities: NavigationCapabilities,
 ) {
 	return [
+		...(navigationCapabilities.equipment
+			? [
+					{
+						title: t("settings.equipment.title", "Equipment"),
+						url: "/equipment",
+						icon: IconPackage,
+					},
+				]
+			: []),
 		...(navigationCapabilities.compliance
 			? [
 					{

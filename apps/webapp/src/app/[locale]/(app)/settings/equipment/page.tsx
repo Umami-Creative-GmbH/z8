@@ -3,6 +3,7 @@ import { EquipmentSettings } from "@/components/settings/equipment/equipment-set
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getEquipmentSetup } from "@/lib/organization/equipment/actions";
+import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
 async function EquipmentSettingsContent() {
@@ -21,6 +22,12 @@ async function EquipmentSettingsContent() {
 							"Configure equipment types, item identities and record retention.",
 						)}
 					</p>
+					<Link
+						href="/equipment"
+						className="mt-2 inline-block text-sm text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+					>
+						{t("settings.equipment.openOverview", "Open equipment overview")}
+					</Link>
 				</header>
 				{result.success ? (
 					<EquipmentSettings key={organizationId} initialData={result.data} />

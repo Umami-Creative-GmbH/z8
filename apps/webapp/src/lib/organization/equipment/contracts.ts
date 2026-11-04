@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 
 const request = { requestId: z.uuid() };
 const revision = { expectedRevision: z.number().int().nonnegative() };
@@ -81,6 +82,7 @@ export interface EquipmentItemView {
 	identifier: string;
 	serialNumber: string | null;
 	status: "available" | "unavailable" | "retired";
+	inCustody: boolean;
 	archived: boolean;
 	revision: number;
 }
@@ -90,4 +92,107 @@ export interface EquipmentSetupView {
 	/** Only these types can be selected for registration or future issuance. */
 	selectableTypes: EquipmentTypeView[];
 	items: EquipmentItemView[];
+}
+
+const calendarDate = z.string().refine((value) => {
+	try {
+		parsePlainDate(value);
+		return true;
+	} catch {
+		return false;
+	}
+}, "Enter a valid calendar date.");
+export const equipmentConditionSchema = z.enum([
+	"good",
+	"worn",
+	"damaged",
+	"unknown",
+]);
+export type EquipmentCondition = z.infer<typeof equipmentConditionSchema>;
+const handoverFields = {
+	...request,
+	...revision,
+	actualDate: calendarDate,
+	condition: equipmentConditionSchema,
+	notes: z.string().trim().max(4000).optional(),
+};
+export const equipmentChangeSchema = z.discriminatedUnion("kind", [
+	z.strictObject({
+		kind: z.literal("issue_individual"),
+		...handoverFields,
+		itemId: z.uuid(),
+		employeeId: z.uuid(),
+		returnRequired: z.boolean(),
+		explicitDeadline: calendarDate.nullable().optional(),
+	}),
+	z.strictObject({
+		kind: z.literal("receive_individual"),
+		...handoverFields,
+		assignmentId: z.uuid(),
+	}),
+]);
+export type EquipmentChange = z.infer<typeof equipmentChangeSchema>;
+export type EquipmentRefusal =
+	| EquipmentSetupRefusal
+	| "forbidden"
+	| "employee_not_current"
+	| "item_unavailable"
+	| "self_receipt"
+	| "already_received"
+	| "future_date"
+	| "conflicting_history";
+export type EquipmentOutcome =
+	| { ok: true; id: string; revision: number }
+	| { ok: false; reason: EquipmentRefusal };
+export const equipmentFiltersSchema = z.strictObject({
+	holderId: z.uuid().optional(),
+	typeId: z.uuid().optional(),
+	outstanding: z.boolean().optional(),
+	overdue: z.boolean().optional(),
+	former: z.boolean().optional(),
+});
+export type EquipmentFilters = z.infer<typeof equipmentFiltersSchema>;
+export interface EquipmentHandoverView {
+	actualDate: string;
+	condition: EquipmentCondition;
+	notes: string | null;
+	actorId: string | null;
+	actorName: string | null;
+	recordedAt: string;
+}
+export interface EquipmentAssignmentView {
+	id: string;
+	itemId: string;
+	typeId: string;
+	typeName: string;
+	identifier: string;
+	employeeId: string;
+	holderName: string;
+	former: boolean;
+	returnRequired: boolean;
+	explicitDeadline: string | null;
+	outstanding: boolean;
+	overdue: boolean;
+	held: boolean;
+	revision: number;
+	canReceive: boolean;
+	issue: EquipmentHandoverView;
+	receipt: EquipmentHandoverView | null;
+}
+export interface EquipmentView {
+	canManage: boolean;
+	policyConfigured: boolean;
+	timezone: string;
+	today: string;
+	assignments: EquipmentAssignmentView[];
+	availableItems: {
+		id: string;
+		identifier: string;
+		typeId: string;
+		typeName: string;
+		defaultReturnRequired: boolean;
+		revision: number;
+	}[];
+	employees: { id: string; name: string; former: boolean }[];
+	types: { id: string; name: string }[];
 }

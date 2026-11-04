@@ -45,6 +45,33 @@ const configured: EquipmentSetupView = {
 	selectableTypes: [laptopType],
 };
 
+it("does not label a held identity as available for another assignment", async () => {
+	const user = userEvent.setup();
+	render(
+		<EquipmentSettings
+			initialData={{
+				...configured,
+				items: [
+					{
+						id: "15370000-0000-4000-8000-000000000020",
+						typeId: laptopType.id,
+						identifier: "L-01",
+						serialNumber: null,
+						status: "available",
+						inCustody: true,
+						archived: false,
+						revision: 2,
+					},
+				],
+			}}
+		/>,
+	);
+	await user.click(screen.getByText("L-01"));
+	expect(
+		screen.getByText("Held by employee; unavailable for new issuance"),
+	).toBeTruthy();
+});
+
 it("submits item identities, displays server validation, and preserves request identity for retry", async () => {
 	const user = userEvent.setup();
 	api.change.mockResolvedValue({

@@ -1,0 +1,622 @@
+import "server-only";
+import { createHash } from "node:crypto";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
+import type { db as database } from "@/db";
+import { member, organization, user } from "@/db/auth-schema";
+import { employee, employeeEmploymentPeriod } from "@/db/schema";
+import {
+	equipmentAssignment,
+	equipmentCommand,
+	equipmentHandover,
+	equipmentItem,
+	equipmentPolicy,
+	equipmentType,
+} from "@/db/schema/equipment";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import {
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { AuthorizationError } from "@/lib/effect/errors";
+import {
+	employeeHasOrganizationAccess,
+	resolveEmployeeOrganizationAccess,
+} from "@/lib/employee-lifecycle/access";
+import {
+	assertReadCommitted,
+	lockLifecycleOrganization,
+} from "@/lib/employee-lifecycle/locks";
+import type { MfaSession } from "@/lib/organization-mfa/access";
+import { withMfaDatabase } from "@/lib/organization-mfa/database-context";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
+import {
+	employeeCoordinationGuard,
+	holdGuard,
+	userConfigurationAccessGuard,
+} from "@/lib/time-tracking/work-transaction/ranks";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
+import {
+	type EquipmentAssignmentView,
+	type EquipmentFilters,
+	type EquipmentHandoverView,
+	type EquipmentOutcome,
+	type EquipmentView,
+	equipmentChangeSchema,
+} from "./contracts";
+import {
+	type EquipmentTransaction,
+	lockEquipmentOrganization,
+	prepareEquipmentTypeForIssuance,
+} from "./setup";
+
+export type EquipmentActor = {
+	organizationId: string;
+	userId: string;
+	session: MfaSession;
+};
+const scoped = (organizationId: string, id: string) =>
+	and(
+		eq(equipmentItem.organizationId, organizationId),
+		eq(equipmentItem.id, id),
+	);
+const assignmentScope = (organizationId: string, id: string) =>
+	and(
+		eq(equipmentAssignment.organizationId, organizationId),
+		eq(equipmentAssignment.id, id),
+	);
+
+/**
+ * Lifecycle/access user guards (sorted), employee coordination, organization row,
+ * then equipment. Never acquire a lifecycle guard while holding equipment. The
+ * shared user guards also protect an actor recording equipment for someone else.
+ */
+async function lockEquipmentContext(
+	tx: EquipmentTransaction,
+	actor: EquipmentActor,
+	target?: { id: string; userId: string },
+) {
+	await assertReadCommitted(tx);
+	const [firstUserId, secondUserId] = [
+		...new Set([actor.userId, ...(target ? [target.userId] : [])]),
+	].sort();
+	await holdGuard(tx, userConfigurationAccessGuard(firstUserId));
+	if (secondUserId)
+		await holdGuard(tx, userConfigurationAccessGuard(secondUserId));
+	if (target) await holdGuard(tx, employeeCoordinationGuard(target.id));
+	await lockLifecycleOrganization(tx, actor.organizationId);
+	await lockEquipmentOrganization(tx, actor.organizationId);
+}
+
+/** Shared permission decision for reads and every command; managers gain no staff scope. */
+async function equipmentAccess(
+	tx: EquipmentTransaction,
+	actor: EquipmentActor,
+) {
+	const denied = () =>
+		new AuthorizationError({
+			message: "Equipment access is not available.",
+			resource: "equipment",
+			action: "read",
+		});
+	const authenticated = await withMfaDatabase(tx, () =>
+		canAccessOrganization(actor.session, actor.organizationId),
+	);
+	if (!authenticated) throw denied();
+	const access = await resolveEmployeeOrganizationAccess(tx, {
+		...actor,
+		now: systemClock.nowInstant(),
+	});
+	if (!access.allowed) throw denied();
+	const [membership] = await tx
+		.select({ role: member.role })
+		.from(member)
+		.where(
+			and(
+				eq(member.organizationId, actor.organizationId),
+				eq(member.userId, actor.userId),
+				eq(member.status, "approved"),
+			),
+		);
+	return {
+		employeeId: access.employeeId,
+		canManage:
+			hasOrganizationRole(membership?.role, "owner") ||
+			hasOrganizationRole(membership?.role, "admin"),
+	};
+}
+
+async function organizationCalendar(
+	tx: EquipmentTransaction,
+	organizationId: string,
+) {
+	const [org] = await tx
+		.select({
+			timezone: organization.timezone,
+			policyOrganizationId: equipmentPolicy.organizationId,
+		})
+		.from(organization)
+		.leftJoin(
+			equipmentPolicy,
+			eq(equipmentPolicy.organizationId, organization.id),
+		)
+		.where(eq(organization.id, organizationId));
+	const timezone = resolveOrganizationTimezone(org?.timezone).timezone;
+	const now = systemClock.nowInstant();
+	return {
+		timezone,
+		now,
+		policyConfigured: !!org?.policyOrganizationId,
+		today: now.toZonedDateTimeISO(timezone).toPlainDate(),
+	};
+}
+
+/** The command boundary owns authorization, replay, chronology and all writes together. */
+export async function applyEquipmentChange(
+	db: typeof database,
+	actor: EquipmentActor,
+	input: unknown,
+): Promise<EquipmentOutcome> {
+	const parsed = equipmentChangeSchema.safeParse(input);
+	if (!parsed.success) return { ok: false, reason: "invalid_input" };
+	const change = parsed.data;
+	const fingerprint = createHash("sha256")
+		.update(JSON.stringify({ actor: actor.userId, change }))
+		.digest("hex");
+	return db.transaction(async (tx): Promise<EquipmentOutcome> => {
+		// Route before locks, then confirm under them. Employee user identity must not drift.
+		const [target] =
+			change.kind === "issue_individual"
+				? await tx
+						.select({ id: employee.id, userId: employee.userId })
+						.from(employee)
+						.where(
+							and(
+								eq(employee.organizationId, actor.organizationId),
+								eq(employee.id, change.employeeId),
+							),
+						)
+				: [];
+		await lockEquipmentContext(tx, actor, target);
+		const access = await equipmentAccess(tx, actor);
+		if (!access.canManage) return { ok: false, reason: "forbidden" };
+		const [replay] = await tx
+			.select()
+			.from(equipmentCommand)
+			.where(
+				and(
+					eq(equipmentCommand.organizationId, actor.organizationId),
+					eq(equipmentCommand.requestId, change.requestId),
+				),
+			);
+		if (replay)
+			return replay.fingerprint === fingerprint
+				? replay.result
+				: { ok: false, reason: "request_conflict" };
+		const { today, now } = await organizationCalendar(tx, actor.organizationId);
+		const actualDate = parsePlainDate(change.actualDate);
+		if (Temporal.PlainDate.compare(actualDate, today) > 0)
+			return { ok: false, reason: "future_date" };
+		const recordedAt = dateFromInstant(now);
+		let result: { id: string; revision: number };
+		if (change.kind === "issue_individual") {
+			if (!change.returnRequired && change.explicitDeadline)
+				return { ok: false, reason: "invalid_input" };
+			if (
+				change.explicitDeadline &&
+				Temporal.PlainDate.compare(
+					parsePlainDate(change.explicitDeadline),
+					actualDate,
+				) < 0
+			)
+				return { ok: false, reason: "conflicting_history" };
+			const [current] = await tx
+				.select({
+					userId: employee.userId,
+					current: employeeHasOrganizationAccess(now),
+				})
+				.from(employee)
+				.where(
+					and(
+						eq(employee.organizationId, actor.organizationId),
+						eq(employee.id, change.employeeId),
+					),
+				);
+			if (!current || !target || current.userId !== target.userId)
+				return { ok: false, reason: "not_found" };
+			const employeeAccess = await resolveEmployeeOrganizationAccess(tx, {
+				organizationId: actor.organizationId,
+				userId: current.userId,
+				now,
+			});
+			if (!current.current || !employeeAccess.allowed)
+				return { ok: false, reason: "employee_not_current" };
+			const [item] = await tx
+				.select()
+				.from(equipmentItem)
+				.where(scoped(actor.organizationId, change.itemId));
+			if (!item) return { ok: false, reason: "not_found" };
+			if (item.revision !== change.expectedRevision)
+				return { ok: false, reason: "stale_revision" };
+			if (item.archivedAt || item.inCustody || item.status !== "available")
+				return { ok: false, reason: "item_unavailable" };
+			if (
+				item.lastHandoverDate &&
+				Temporal.PlainDate.compare(
+					actualDate,
+					parsePlainDate(item.lastHandoverDate),
+				) < 0
+			)
+				return { ok: false, reason: "conflicting_history" };
+			const prepared = await prepareEquipmentTypeForIssuance(tx, {
+				organizationId: actor.organizationId,
+				typeId: item.typeId,
+			});
+			if (!prepared.ok) return prepared;
+			if (prepared.trackingMode !== "individual")
+				return { ok: false, reason: "individual_required" };
+			const [period] = await tx
+				.select({ id: employeeEmploymentPeriod.id })
+				.from(employeeEmploymentPeriod)
+				.where(
+					and(
+						eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
+						eq(employeeEmploymentPeriod.employeeId, change.employeeId),
+						eq(employeeEmploymentPeriod.status, "open"),
+					),
+				);
+			const [assignment] = await tx
+				.insert(equipmentAssignment)
+				.values({
+					organizationId: actor.organizationId,
+					itemId: item.id,
+					employeeId: change.employeeId,
+					employmentPeriodId: period?.id ?? null,
+					returnRequired: change.returnRequired,
+					explicitDeadline: change.explicitDeadline ?? null,
+				})
+				.returning();
+			await tx.insert(equipmentHandover).values({
+				organizationId: actor.organizationId,
+				assignmentId: assignment.id,
+				kind: "issue",
+				actualDate: change.actualDate,
+				condition: change.condition,
+				notes: change.notes || null,
+				actorId: actor.userId,
+				recordedAt,
+			});
+			await tx
+				.update(equipmentItem)
+				.set({
+					inCustody: true,
+					lastHandoverDate: change.actualDate,
+					revision: item.revision + 1,
+					updatedBy: actor.userId,
+					updatedAt: recordedAt,
+				})
+				.where(scoped(actor.organizationId, item.id));
+			result = assignment;
+		} else {
+			const [assignment] = await tx
+				.select()
+				.from(equipmentAssignment)
+				.where(assignmentScope(actor.organizationId, change.assignmentId));
+			if (!assignment) return { ok: false, reason: "not_found" };
+			const [holder] = await tx
+				.select({ userId: employee.userId })
+				.from(employee)
+				.where(
+					and(
+						eq(employee.organizationId, actor.organizationId),
+						eq(
+							employee.id,
+							assignment.employeeId ?? "00000000-0000-0000-0000-000000000000",
+						),
+					),
+				);
+			if (holder?.userId === actor.userId)
+				return { ok: false, reason: "self_receipt" };
+			if (assignment.revision !== change.expectedRevision)
+				return { ok: false, reason: "stale_revision" };
+			if (assignment.received) return { ok: false, reason: "already_received" };
+			const [issue] = await tx
+				.select()
+				.from(equipmentHandover)
+				.where(
+					and(
+						eq(equipmentHandover.organizationId, actor.organizationId),
+						eq(equipmentHandover.assignmentId, assignment.id),
+						eq(equipmentHandover.kind, "issue"),
+					),
+				);
+			if (
+				!issue ||
+				Temporal.PlainDate.compare(
+					actualDate,
+					parsePlainDate(issue.actualDate),
+				) < 0
+			)
+				return { ok: false, reason: "conflicting_history" };
+			const [item] = await tx
+				.select()
+				.from(equipmentItem)
+				.where(scoped(actor.organizationId, assignment.itemId));
+			if (!item?.inCustody) return { ok: false, reason: "item_unavailable" };
+			await tx.insert(equipmentHandover).values({
+				organizationId: actor.organizationId,
+				assignmentId: assignment.id,
+				kind: "receipt",
+				actualDate: change.actualDate,
+				condition: change.condition,
+				notes: change.notes || null,
+				actorId: actor.userId,
+				recordedAt,
+			});
+			const [updated] = await tx
+				.update(equipmentAssignment)
+				.set({ received: true, revision: assignment.revision + 1 })
+				.where(assignmentScope(actor.organizationId, assignment.id))
+				.returning();
+			await tx
+				.update(equipmentItem)
+				.set({
+					inCustody: false,
+					lastHandoverDate: change.actualDate,
+					status: change.condition === "damaged" ? "unavailable" : item.status,
+					revision: item.revision + 1,
+					updatedBy: actor.userId,
+					updatedAt: recordedAt,
+				})
+				.where(scoped(actor.organizationId, item.id));
+			result = updated;
+		}
+		const outcome = {
+			ok: true,
+			id: result.id,
+			revision: result.revision,
+		} as const;
+		await tx.insert(equipmentCommand).values({
+			organizationId: actor.organizationId,
+			requestId: change.requestId,
+			fingerprint,
+			result: outcome,
+		});
+		return outcome;
+	});
+}
+
+/** Staff overview, scoped employee history and self history share one permission/read model. */
+export async function readEquipment(
+	db: typeof database,
+	actor: EquipmentActor,
+	scope:
+		| { kind: "overview"; filters: EquipmentFilters }
+		| { kind: "employee"; employeeId: string }
+		| { kind: "personal" },
+): Promise<EquipmentView> {
+	return db.transaction(async (tx) => {
+		await lockEquipmentContext(tx, actor);
+		const access = await equipmentAccess(tx, actor);
+		const employeeId =
+			scope.kind === "personal"
+				? access.employeeId
+				: scope.kind === "employee"
+					? scope.employeeId
+					: undefined;
+		if (
+			(scope.kind === "overview" && !access.canManage) ||
+			(scope.kind === "employee" &&
+				!access.canManage &&
+				employeeId !== access.employeeId)
+		)
+			throw new AuthorizationError({
+				message: "You cannot read these equipment records.",
+				resource: "equipment",
+				action: "read",
+			});
+		const calendar = await organizationCalendar(tx, actor.organizationId);
+		const { timezone, today, policyConfigured } = calendar;
+		const employees = await tx
+			.select({
+				id: employee.id,
+				userId: employee.userId,
+				firstName: employee.firstName,
+				lastName: employee.lastName,
+				name: user.name,
+				current: employeeHasOrganizationAccess(calendar.now),
+			})
+			.from(employee)
+			.innerJoin(user, eq(user.id, employee.userId))
+			.where(
+				and(
+					eq(employee.organizationId, actor.organizationId),
+					access.canManage && scope.kind !== "personal"
+						? undefined
+						: eq(
+								employee.id,
+								employeeId ?? "00000000-0000-0000-0000-000000000000",
+							),
+				),
+			)
+			.orderBy(asc(user.name), asc(employee.id));
+		const employeeMap = new Map(
+			employees.map((e) => [
+				e.id,
+				{
+					id: e.id,
+					userId: e.userId,
+					name: [e.firstName, e.lastName].filter(Boolean).join(" ") || e.name,
+					former: !e.current,
+				},
+			]),
+		);
+		const rows =
+			employeeId === null
+				? []
+				: await tx
+						.select({
+							assignment: equipmentAssignment,
+							item: equipmentItem,
+							type: equipmentType,
+						})
+						.from(equipmentAssignment)
+						.innerJoin(
+							equipmentItem,
+							and(
+								eq(equipmentItem.id, equipmentAssignment.itemId),
+								eq(
+									equipmentItem.organizationId,
+									equipmentAssignment.organizationId,
+								),
+							),
+						)
+						.innerJoin(
+							equipmentType,
+							and(
+								eq(equipmentType.id, equipmentItem.typeId),
+								eq(equipmentType.organizationId, equipmentItem.organizationId),
+							),
+						)
+						.where(
+							and(
+								eq(equipmentAssignment.organizationId, actor.organizationId),
+								employeeId
+									? eq(equipmentAssignment.employeeId, employeeId)
+									: undefined,
+							),
+						)
+						.orderBy(
+							asc(equipmentItem.identifier),
+							asc(equipmentAssignment.id),
+						);
+		const handovers = rows.length
+			? await tx
+					.select({ record: equipmentHandover, actorName: user.name })
+					.from(equipmentHandover)
+					.leftJoin(user, eq(user.id, equipmentHandover.actorId))
+					.where(
+						and(
+							eq(equipmentHandover.organizationId, actor.organizationId),
+							inArray(
+								equipmentHandover.assignmentId,
+								rows.map((r) => r.assignment.id),
+							),
+						),
+					)
+			: [];
+		const evidence = new Map<string, EquipmentHandoverView>();
+		for (const { record, actorName } of handovers)
+			evidence.set(`${record.assignmentId}:${record.kind}`, {
+				actualDate: record.actualDate,
+				condition: record.condition,
+				notes: record.notes,
+				actorId: record.actorId,
+				actorName,
+				recordedAt: instantFromDate(record.recordedAt).toString(),
+			});
+		const filters = scope.kind === "overview" ? scope.filters : {};
+		const assignments: EquipmentAssignmentView[] = [];
+		for (const { assignment, item, type } of rows) {
+			const holder = employeeMap.get(assignment.employeeId ?? "");
+			const issue = evidence.get(`${assignment.id}:issue`);
+			if (!holder || !issue) continue;
+			const outstanding = assignment.returnRequired && !assignment.received;
+			const overdue =
+				outstanding &&
+				!!assignment.explicitDeadline &&
+				Temporal.PlainDate.compare(
+					parsePlainDate(assignment.explicitDeadline),
+					today,
+				) < 0;
+			if (
+				(filters.holderId && holder.id !== filters.holderId) ||
+				(filters.typeId && type.id !== filters.typeId) ||
+				(filters.outstanding !== undefined &&
+					filters.outstanding !== outstanding) ||
+				(filters.overdue !== undefined && filters.overdue !== overdue) ||
+				(filters.former !== undefined && filters.former !== holder.former)
+			)
+				continue;
+			assignments.push({
+				id: assignment.id,
+				itemId: item.id,
+				typeId: type.id,
+				typeName: type.name,
+				identifier: item.identifier,
+				employeeId: holder.id,
+				holderName: holder.name,
+				former: holder.former,
+				returnRequired: assignment.returnRequired,
+				explicitDeadline: assignment.explicitDeadline,
+				outstanding,
+				overdue,
+				held: !assignment.received,
+				revision: assignment.revision,
+				canReceive:
+					access.canManage &&
+					!assignment.received &&
+					holder.userId !== actor.userId,
+				issue,
+				receipt: evidence.get(`${assignment.id}:receipt`) ?? null,
+			});
+		}
+		const staffView = access.canManage && scope.kind !== "personal";
+		const types = staffView
+			? await tx
+					.select({ id: equipmentType.id, name: equipmentType.name })
+					.from(equipmentType)
+					.where(eq(equipmentType.organizationId, actor.organizationId))
+					.orderBy(asc(equipmentType.name))
+			: [];
+		const availableItems =
+			staffView && policyConfigured
+				? await tx
+						.select({
+							id: equipmentItem.id,
+							identifier: equipmentItem.identifier,
+							typeId: equipmentType.id,
+							typeName: equipmentType.name,
+							defaultReturnRequired: equipmentType.defaultReturnRequired,
+							revision: equipmentItem.revision,
+						})
+						.from(equipmentItem)
+						.innerJoin(
+							equipmentType,
+							and(
+								eq(equipmentType.id, equipmentItem.typeId),
+								eq(equipmentType.organizationId, equipmentItem.organizationId),
+							),
+						)
+						.where(
+							and(
+								eq(equipmentItem.organizationId, actor.organizationId),
+								eq(equipmentItem.inCustody, false),
+								eq(equipmentItem.status, "available"),
+								sql`${equipmentItem.archivedAt} is null`,
+								sql`${equipmentType.archivedAt} is null`,
+								eq(equipmentType.trackingMode, "individual"),
+							),
+						)
+						.orderBy(asc(equipmentItem.identifier))
+				: [];
+		return {
+			canManage: staffView,
+			policyConfigured,
+			timezone,
+			today: today.toString(),
+			assignments,
+			availableItems,
+			employees: staffView
+				? [...employeeMap.values()].map(({ id, name, former }) => ({
+						id,
+						name,
+						former,
+					}))
+				: [],
+			types,
+		};
+	});
+}

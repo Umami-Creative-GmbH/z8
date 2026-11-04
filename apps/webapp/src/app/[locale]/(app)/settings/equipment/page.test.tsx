@@ -20,6 +20,11 @@ vi.mock("@/tolgee/server", () => ({
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, ...props }: React.ComponentProps<"a">) => (
+		<a {...props}>{children}</a>
+	),
+}));
 
 import Page from "./page";
 
