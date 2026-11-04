@@ -20,10 +20,21 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { useServerDataState } from "@/hooks/use-server-data-state";
+import { getOidcCallbackUrl } from "@/lib/enterprise-identity/entra-setup";
 import { SSOProviderDialog } from "./sso-provider-dialog";
-import { type SsoProvider, SsoProviderListCard } from "./sso-provider-list-card";
+import { SsoCallbackUrl, SsoSetupNextSteps } from "./sso-provider-guide";
+import {
+	type SsoProvider,
+	SsoProviderListCard,
+} from "./sso-provider-list-card";
 
 type SSOProvider = SsoProvider;
 
@@ -37,9 +48,12 @@ export function SSOProviderManagement({
 	callbackBaseUrl,
 }: SSOProviderManagementProps) {
 	const { t } = useTranslate();
-	const [providers, setProviders] = useServerDataState<SSOProvider[]>(initialProviders);
+	const [providers, setProviders] =
+		useServerDataState<SSOProvider[]>(initialProviders);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-	const [tokenByProviderId, setTokenByProviderId] = useState<Record<string, string>>(() =>
+	const [tokenByProviderId, setTokenByProviderId] = useState<
+		Record<string, string>
+	>(() =>
 		initialProviders.reduce<Record<string, string>>((tokens, provider) => {
 			if (provider.domainVerificationToken) {
 				tokens[provider.providerId] = provider.domainVerificationToken;
@@ -52,7 +66,7 @@ export function SSOProviderManagement({
 		isOpen: boolean;
 		provider: SSOProvider | null;
 	}>({ isOpen: false, provider: null });
-	const callbackUrl = `${callbackBaseUrl.replace(/\/$/, "")}/api/auth/sso/callback`;
+	const callbackUrl = getOidcCallbackUrl(callbackBaseUrl);
 
 	const handleProviderAdded = (newProvider: SSOProvider) => {
 		setProviders((prev) => [...prev, newProvider]);
@@ -74,7 +88,10 @@ export function SSOProviderManagement({
 
 		if (!result.ok || !result.response.domainVerificationToken) {
 			toast.error(
-				t("settings.enterprise.sso.tokenError", "Failed to generate domain verification token"),
+				t(
+					"settings.enterprise.sso.tokenError",
+					"Failed to generate domain verification token",
+				),
 			);
 			setBusyProviderId(null);
 			return;
@@ -84,7 +101,12 @@ export function SSOProviderManagement({
 			...prev,
 			[provider.providerId]: result.response.domainVerificationToken,
 		}));
-		toast.success(t("settings.enterprise.sso.tokenGenerated", "Verification token generated"));
+		toast.success(
+			t(
+				"settings.enterprise.sso.tokenGenerated",
+				"Verification token generated",
+			),
+		);
 		setBusyProviderId(null);
 	};
 
@@ -117,7 +139,9 @@ export function SSOProviderManagement({
 			delete next[provider.providerId];
 			return next;
 		});
-		toast.success(t("settings.enterprise.sso.domainVerified", "Domain verified"));
+		toast.success(
+			t("settings.enterprise.sso.domainVerified", "Domain verified"),
+		);
 		setBusyProviderId(null);
 	};
 
@@ -136,9 +160,16 @@ export function SSOProviderManagement({
 				delete next[provider.providerId];
 				return next;
 			});
-			toast.success(t("settings.enterprise.sso.deleteSuccess", "SSO provider deleted"));
+			toast.success(
+				t("settings.enterprise.sso.deleteSuccess", "SSO provider deleted"),
+			);
 		} else {
-			toast.error(t("settings.enterprise.sso.deleteError", "Failed to delete SSO provider"));
+			toast.error(
+				t(
+					"settings.enterprise.sso.deleteError",
+					"Failed to delete SSO provider",
+				),
+			);
 		}
 
 		setDeleteDialog({ isOpen: false, provider: null });
@@ -149,7 +180,9 @@ export function SSOProviderManagement({
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between">
 					<div>
-						<CardTitle>{t("settings.enterprise.sso.title", "Identity Providers")}</CardTitle>
+						<CardTitle>
+							{t("settings.enterprise.sso.title", "Identity Providers")}
+						</CardTitle>
 						<CardDescription>
 							{t(
 								"settings.enterprise.sso.description",
@@ -165,7 +198,12 @@ export function SSOProviderManagement({
 				<CardContent>
 					{providers.length === 0 ? (
 						<div className="text-center py-8 text-muted-foreground">
-							<p>{t("settings.enterprise.sso.empty", "No SSO providers configured yet.")}</p>
+							<p>
+								{t(
+									"settings.enterprise.sso.empty",
+									"No SSO providers configured yet.",
+								)}
+							</p>
 							<p className="text-sm">
 								{t(
 									"settings.enterprise.sso.emptyDescription",
@@ -178,7 +216,9 @@ export function SSOProviderManagement({
 							busyProviderId={busyProviderId}
 							providers={providers}
 							tokenByProviderId={tokenByProviderId}
-							onDelete={(provider) => setDeleteDialog({ isOpen: true, provider })}
+							onDelete={(provider) =>
+								setDeleteDialog({ isOpen: true, provider })
+							}
 							onRequestVerificationToken={handleRequestVerificationToken}
 							onVerifyDomain={handleVerifyDomain}
 						/>
@@ -186,37 +226,52 @@ export function SSOProviderManagement({
 				</CardContent>
 			</Card>
 
-			<div className="mt-6 p-4 bg-muted rounded-lg">
-				<h3 className="font-medium mb-2">
-					{t("settings.enterprise.sso.setupInstructions", "Setup Instructions")}
-				</h3>
-				<ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-					<li>
+			<Card className="mt-6">
+				<CardHeader>
+					<CardTitle>
 						{t(
-							"settings.enterprise.sso.instructions.createApp",
-							"Create an OIDC application in your identity provider (Okta, Azure AD, etc.)",
+							"settings.enterprise.sso.guide.getStarted",
+							"Connect your team's sign-in",
 						)}
-					</li>
-					<li>
-						{t("settings.enterprise.configureCallbackUrl", "Configure the callback URL:")}{" "}
-						<code className="bg-background px-1 rounded">{callbackUrl}</code>
-					</li>
-					<li>
+					</CardTitle>
+					<CardDescription>
 						{t(
-							"settings.enterprise.sso.instructions.copyCredentials",
-							"Copy the Issuer URL, Client ID, and Client Secret from your IdP",
+							"settings.enterprise.sso.guide.getStartedDescription",
+							"Follow a provider-specific walkthrough without piecing together the configuration yourself.",
 						)}
-					</li>
-					<li>
-						{t(
-							"settings.enterprise.sso.instructions.verifyDomain",
-							"Add the provider here and verify the email domain via DNS TXT record",
-						)}
-					</li>
-				</ol>
-			</div>
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="grid min-w-0 items-start gap-6 lg:grid-cols-2">
+					<div className="space-y-4 rounded-lg border bg-primary/5 p-5">
+						<h3 className="font-semibold">Microsoft Entra ID</h3>
+						<p className="text-sm leading-relaxed text-muted-foreground">
+							{t(
+								"settings.enterprise.sso.guide.entra.introduction",
+								"Create a Web app registration, copy your tenant and application IDs, and add a client secret. Z8 generates the issuer URL and guides you through each step.",
+							)}
+						</p>
+						<Button onClick={() => setIsAddDialogOpen(true)}>
+							{t(
+								"settings.enterprise.sso.guide.entra.start",
+								"Set up Microsoft Entra ID",
+							)}
+						</Button>
+						<p className="text-xs leading-relaxed text-muted-foreground">
+							{t(
+								"settings.enterprise.sso.guide.manualAvailable",
+								"Using another provider? Choose manual OIDC configuration in the setup panel.",
+							)}
+						</p>
+					</div>
+					<div className="min-w-0 space-y-5">
+						<SsoCallbackUrl callbackUrl={callbackUrl} />
+						<SsoSetupNextSteps />
+					</div>
+				</CardContent>
+			</Card>
 
 			<SSOProviderDialog
+				callbackUrl={callbackUrl}
 				open={isAddDialogOpen}
 				onOpenChange={setIsAddDialogOpen}
 				onProviderAdded={handleProviderAdded}
@@ -224,12 +279,17 @@ export function SSOProviderManagement({
 
 			<AlertDialog
 				open={deleteDialog.isOpen}
-				onOpenChange={(open) => setDeleteDialog({ isOpen: open, provider: deleteDialog.provider })}
+				onOpenChange={(open) =>
+					setDeleteDialog({ isOpen: open, provider: deleteDialog.provider })
+				}
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("settings.enterprise.sso.deleteDialogTitle", "Delete SSO Provider")}
+							{t(
+								"settings.enterprise.sso.deleteDialogTitle",
+								"Delete SSO Provider",
+							)}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
@@ -239,7 +299,9 @@ export function SSOProviderManagement({
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogCancel>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDelete}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { BillingPageClient } from "@/components/billing/billing-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,7 +30,8 @@ const billingCheckFailedAccess: BillingAccessResult = {
 };
 
 async function BillingSettingsContent() {
-	// Check if billing is enabled
+	// The billing deployment setting must be read per request, not while prerendering.
+	await connection();
 	if (env.BILLING_ENABLED !== "true") {
 		return redirectWithLocale("/settings");
 	}

@@ -1081,7 +1081,10 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "billing/page.tsx"), "utf8"),
 		);
 
-		expect(billingSource).not.toContain("connection(");
+		expect(billingSource).toContain("await connection()");
+		expect(billingSource.indexOf("await connection()")).toBeLessThan(
+			billingSource.indexOf('if (env.BILLING_ENABLED !== "true")'),
+		);
 		expect(billingSource).toContain("async function BillingSettingsContent()");
 		expect(billingSource).toContain(
 			"<Suspense fallback={<BillingSettingsLoading />}>\n\t\t\t<BillingSettingsContent />\n\t\t</Suspense>",

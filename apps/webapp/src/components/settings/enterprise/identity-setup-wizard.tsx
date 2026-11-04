@@ -36,6 +36,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useServerDataState } from "@/hooks/use-server-data-state";
 import {
+	getEntraIssuer,
+	getOidcCallbackUrl,
+} from "@/lib/enterprise-identity/entra-setup";
+import {
 	ENTERPRISE_IDENTITY_PROVIDER_PRESETS,
 	type EnterpriseIdentityProtocol,
 	type EnterpriseIdentityProviderPresetId,
@@ -46,8 +50,10 @@ import {
 	getEnterpriseIdentityReadiness,
 } from "@/lib/enterprise-identity/setup-state";
 import { ScimStep as ManagedScimStep } from "./scim/scim-step";
+import { SsoProviderGuide } from "./sso-provider-guide";
 
 interface IdentitySetupWizardProps {
+	callbackBaseUrl: string;
 	initialSetup: EnterpriseIdentitySetupResponse;
 	organizationId: string;
 }
@@ -346,6 +352,7 @@ function readinessRequirementLabel(
 }
 
 function useIdentitySetupController({
+	callbackBaseUrl,
 	initialSetup,
 	organizationId,
 }: IdentitySetupWizardProps) {
@@ -410,6 +417,7 @@ function useIdentitySetupController({
 
 	const ssoForm = useForm({
 		defaultValues: {
+			tenantId: "",
 			issuer: "",
 			clientId: "",
 			clientSecret: "",
@@ -632,6 +640,7 @@ function useIdentitySetupController({
 		setTestError,
 		setup,
 		ssoForm,
+		callbackBaseUrl,
 		t,
 		testEmail,
 		testError,
@@ -955,7 +964,16 @@ function DomainStep({ controller }: { controller: IdentitySetupController }) {
 }
 
 function SsoStep({ controller }: { controller: IdentitySetupController }) {
-	const { isPending, presetId, protocol, providerId, ssoForm, t } = controller;
+	const {
+		isPending,
+		presetId,
+		protocol,
+		providerId,
+		ssoForm,
+		callbackBaseUrl,
+		setup,
+		t,
+	} = controller;
 	const browserOrigin = useSyncExternalStore(
 		subscribeBrowserOrigin,
 		getBrowserOriginSnapshot,
@@ -977,7 +995,70 @@ function SsoStep({ controller }: { controller: IdentitySetupController }) {
 				"Register the external IdP using OIDC client credentials or SAML metadata.",
 			)}
 		>
+			{protocol === "oidc" ? (
+				<SsoProviderGuide
+					kind={presetId === "microsoft-entra" ? "microsoft-entra" : "generic"}
+					callbackUrl={getOidcCallbackUrl(callbackBaseUrl)}
+					domain={setup.domain?.domain}
+				/>
+			) : null}
 			<form className="space-y-4" action={() => ssoForm.handleSubmit()}>
+				{presetId === "microsoft-entra" && protocol === "oidc" ? (
+					<ssoForm.Field
+						name="tenantId"
+						validators={{
+							onChange: ({ value }) =>
+								!value || getEntraIssuer(value)
+									? undefined
+									: t(
+											"settings.enterprise.sso.guide.entra.tenantInvalid",
+											"Enter the Directory (tenant) ID as a complete UUID.",
+										),
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="wizard-entra-tenant">
+									{t(
+										"settings.enterprise.sso.guide.entra.tenantId",
+										"Directory (tenant) ID",
+									)}
+								</Label>
+								<Input
+									id="wizard-entra-tenant"
+									name={field.name}
+									autoComplete="off"
+									spellCheck={false}
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									aria-invalid={field.state.meta.errors.length > 0}
+									aria-describedby="wizard-entra-tenant-help"
+									onChange={(event) => {
+										field.handleChange(event.target.value);
+										ssoForm.setFieldValue(
+											"issuer",
+											getEntraIssuer(event.target.value) ?? "",
+										);
+									}}
+								/>
+								<p
+									id="wizard-entra-tenant-help"
+									className="text-sm text-muted-foreground"
+								>
+									{t(
+										"settings.enterprise.sso.guide.entra.tenantHelp",
+										"App registrations → your app → Overview. Use your tenant ID, not common or organizations.",
+									)}
+								</p>
+								{field.state.meta.errors.length > 0 ? (
+									<p role="alert" className="text-sm text-destructive">
+										{field.state.meta.errors.join(" ")}
+									</p>
+								) : null}
+							</div>
+						)}
+					</ssoForm.Field>
+				) : null}
 				<ssoForm.Field name="issuer">
 					{(field) => (
 						<div className="space-y-2">
@@ -1149,8 +1230,8 @@ function SsoTestStep({ controller }: { controller: IdentitySetupController }) {
 			</div>
 			<p className="text-muted-foreground text-sm">
 				{t(
-					"settings.enterprise.identity.ssoTest.help",
-					"This records a live external SSO test result. Run the login in the IdP first, then capture pass or fail here for the activation guard.",
+					"settings.enterprise.sso.guide.manualTestHelp",
+					"This is an administrator-reported sign-in result, not an automatically verified connection test. Pilot sign-in with an intended user in a separate browser session, keep this administrator session open, then record the observed pass or failure here. Saving the provider and verifying DNS do not prove sign-in works.",
 				)}
 			</p>
 			<div className="flex flex-wrap gap-2">

@@ -19,6 +19,7 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/organization/page.tsx",
 	"src/app/[locale]/(app)/page.tsx",
 	"src/app/[locale]/(app)/payroll/page.tsx",
+	"src/app/[locale]/(app)/settings/billing/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-access/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
 	"src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
@@ -156,6 +157,15 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		operation: "const result = await getPayrollAccessAdminDataAction();",
 	},
 	{
+		file: "src/app/[locale]/(app)/settings/billing/page.tsx",
+		contentComponent: "BillingSettingsContent",
+		fallbackComponent: "BillingSettingsLoading",
+		reasonCategory: "deployment-config",
+		reason:
+			"The billing deployment setting must be read per request, not while prerendering.",
+		operation: 'if (env.BILLING_ENABLED !== "true") {',
+	},
+	{
 		file: "src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
 		contentComponent: "PayrollReadinessContent",
 		fallbackComponent: "SettingsContentLoading",
@@ -208,6 +218,7 @@ const APPROVED_CONNECTION_REASON_CATEGORIES = new Set([
 	"authorization-audit",
 	"current-calendar",
 	"current-period",
+	"deployment-config",
 	"effect-current-time",
 	"instrumentation-randomness",
 	"random-selection",
@@ -1380,7 +1391,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(19);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(20);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
