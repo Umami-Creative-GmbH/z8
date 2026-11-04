@@ -1,10 +1,21 @@
 # Equipment issue and return tracking
 
-Status: design confirmed on 2026-11-04. Implementation is pending.
+Status: design confirmed on 2026-11-04. Equipment setup (#1536) is implemented; the assignment and return slices remain pending.
 
 Specification: [#1535 — Equipment issue and return tracking](https://github.com/Umami-Creative-GmbH/z8/issues/1535).
 
 Implementation is split into 14 native sub-issues of the specification (#1536–#1549). Start with [equipment setup #1536](https://github.com/Umami-Creative-GmbH/z8/issues/1536); the issue tracker holds the verified blocking relationships.
+
+## Setup implementation (#1536)
+
+- `/settings/equipment` gives accessible organization owners and admins retention, reusable type, identity registration and archive forms. Managers have no implied access. Archived records remain readable.
+- The server entry points are `getEquipmentSetup`, `getEquipmentSetupDetail` and `changeEquipmentSetup` in `apps/webapp/src/lib/organization/equipment/actions.ts`. They resolve the active organization and actor on every call. Contracts and refusal codes live alongside them in `contracts.ts`.
+- Mutations carry a UUID `requestId`; accepted requests replay their result and reject changed payloads. Policy/type/archive edits carry `expectedRevision`; a new policy uses revision zero. Reload before retrying a stale edit.
+- `setup.ts` exposes `prepareEquipmentTypeForIssuance(tx, { organizationId, typeId })` for the next slice. Call it inside the authorized assignment transaction. It requires a policy and active type, permanently records type use, and returns the tracking mode and return default to copy onto the assignment. Registration also records use, so an existing individual identity cannot become quantity equipment. Rolling the transaction back rolls the marker back.
+- All equipment state changes serialize with `lockEquipmentOrganization`. Later lifecycle/issuance writers must use a consistent order for lifecycle locks and this equipment lock, and retain the lock through the assignment write. Never save an assignment after committing the type-use transaction separately.
+- `src/db/schema/equipment.ts` and migration `0295_equipment_setup.sql` define policy, types, identities and command replay. Item/type references include the organization. The generated normalized identity key is unique without an archive/retirement filter; later cleanup must preserve that row and key.
+- Public-action PostgreSQL coverage lives in `src/lib/organization/equipment/setup.integration.test.ts`. Focused form and guarded-route runtime tests live beside the equipment settings components and route.
+- All UI copy uses Tolgee keys with static English defaults. Remote `tolgee sync --remove-unused` and `pnpm i18n:pull` still require system Tolgee credentials. Until the new title is synced, the shell uses the existing translated Settings ancestor; remove the equipment exclusion in `src/lib/navigation/route-metadata.ts` after catalog synchronization.
 
 ## Agreed scope
 

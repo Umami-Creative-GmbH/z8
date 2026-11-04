@@ -2066,6 +2066,13 @@
       "when": 1810137600000,
       "tag": "0294_go_live_group",
       "breakpoints": true
+    },
+    {
+      "idx": 295,
+      "version": "7",
+      "when": 1810224000000,
+      "tag": "0295_equipment_setup",
+      "breakpoints": true
     }
   ]
 }

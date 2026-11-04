@@ -82,6 +82,7 @@ export * from "./go-live";
 export * from "./holiday";
 // Identity management (role templates, lifecycle)
 export * from "./identity";
+export * from "./equipment";
 export * from "./implementation-checklist";
 // Import review staging and audit tables
 export * from "./import-review";
