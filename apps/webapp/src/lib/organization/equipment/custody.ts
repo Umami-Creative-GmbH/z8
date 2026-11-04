@@ -164,7 +164,8 @@ export async function applyEquipmentChange(
 					!subjectId ||
 					!sourceId ||
 					!(await equipmentCoversEmployee(tx, actor, access, subjectId)) ||
-					!(await equipmentCoversEmployee(tx, actor, access, sourceId))
+					(sourceId !== subjectId &&
+						!(await equipmentCoversEmployee(tx, actor, access, sourceId)))
 				)
 					return {
 						ok: false,

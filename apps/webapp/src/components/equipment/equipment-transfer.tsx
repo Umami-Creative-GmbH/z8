@@ -21,31 +21,26 @@ import type {
 	EquipmentView,
 } from "@/lib/organization/equipment/contracts";
 import {
-	ActualDateField,
 	actualDateError,
+	quantityError,
+} from "./equipment-handover-validation";
+import {
+	ActualDateField,
 	ConditionField,
 	equipmentSelectClass,
 	NotesField,
 	QuantityField,
-	quantityError,
 	type SubmitHandover,
 	useCommandIdentity,
 } from "./equipment-handovers";
 
-export function TransferEquipmentForm({
+function useTransferEquipmentForm({
 	assignment,
-	data,
 	submit,
-	pending,
-	onCancel,
 }: {
 	assignment: EquipmentAssignmentView;
-	data: EquipmentView;
 	submit: SubmitHandover;
-	pending: boolean;
-	onCancel: () => void;
 }) {
-	const { t } = useTranslate();
 	const identity = useCommandIdentity();
 	const element = useRef<HTMLFormElement>(null);
 	const maximum = assignment.quantity - assignment.physicallyReceivedQuantity;
@@ -91,6 +86,28 @@ export function TransferEquipmentForm({
 			await submit({ ...payload, requestId: identity(payload) });
 		},
 	});
+	return { form, element, maximum };
+}
+
+export function TransferEquipmentForm({
+	assignment,
+	data,
+	submit,
+	pending,
+	onCancel,
+}: {
+	assignment: EquipmentAssignmentView;
+	data: EquipmentView;
+	submit: SubmitHandover;
+	pending: boolean;
+	onCancel: () => void;
+}) {
+	const { t } = useTranslate();
+	const { form, element, maximum } = useTransferEquipmentForm({
+		assignment,
+		submit,
+	});
+
 	return (
 		<form
 			ref={element}
@@ -105,7 +122,8 @@ export function TransferEquipmentForm({
 				{t("settings.equipment.transfer.title", "Transfer equipment")}
 			</h3>
 			<p className="break-words text-sm">
-				<span translate="no">{assignment.identifier}</span> · {assignment.holderName}
+				<span translate="no">{assignment.identifier}</span> ·{" "}
+				{assignment.holderName}
 			</p>
 			<p className="text-sm text-muted-foreground">
 				{t(
@@ -216,6 +234,10 @@ export function TransferEquipmentForm({
 							</TFormLabel>
 							<TFormControl hasError={field.state.meta.errors.length > 0}>
 								<select
+									aria-label={t(
+										"settings.equipment.handover.employee",
+										"Current employee",
+									)}
 									name={field.name}
 									className={equipmentSelectClass}
 									value={field.state.value}
@@ -288,90 +310,7 @@ export function TransferEquipmentForm({
 						)}
 					</form.Field>
 				</div>
-				<form.Field name="issue.returnRequired">
-					{(field) => (
-						<label className="flex items-center gap-2 text-sm">
-							<input
-								type="checkbox"
-								name={field.name}
-								autoComplete="off"
-								checked={field.state.value}
-								onChange={(event) => {
-									field.handleChange(event.target.checked);
-									if (!event.target.checked)
-										form.setFieldValue("issue.explicitDeadline", "");
-								}}
-							/>
-							{t(
-								"settings.equipment.handover.returnRequired",
-								"Return required",
-							)}
-						</label>
-					)}
-				</form.Field>
-				<form.Subscribe selector={(state) => state.values.issue.returnRequired}>
-					{(required) =>
-						required ? (
-							<form.Field
-								name="issue.explicitDeadline"
-								validators={{
-									onSubmit: ({ value }) => {
-										if (!value) return undefined;
-										try {
-											const deadline = parsePlainDate(value);
-											const date = form.getFieldValue("issue.actualDate");
-											if (
-												date &&
-												comparePlainDates(deadline, parsePlainDate(date)) < 0
-											)
-												return t(
-													"settings.equipment.handover.deadlineInvalid",
-													"The return deadline must be on or after the handover date.",
-												);
-										} catch {
-											return t(
-												"settings.equipment.handover.dateInvalid",
-												"Enter a valid calendar date.",
-											);
-										}
-										return undefined;
-									},
-								}}
-							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel>
-											{t(
-												"settings.equipment.handover.deadline",
-												"Explicit return deadline (optional)",
-											)}
-										</TFormLabel>
-										<TFormControl hasError={field.state.meta.errors.length > 0}>
-											<Input
-												type="date"
-												name={field.name}
-										autoComplete="off"
-												value={field.state.value}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
-												onBlur={field.handleBlur}
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
-						) : (
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.equipment.handover.keepHelp",
-									"Issued to keep: no deadline or return obligation. Equipment remains held until physically received back.",
-								)}
-							</p>
-						)
-					}
-				</form.Subscribe>
+				<TransferReturnTerms form={form} />
 				<form.Field name="issue.notes">
 					{(field) => <NotesField field={field} pending={pending} t={t} />}
 				</form.Field>
@@ -395,5 +334,98 @@ export function TransferEquipmentForm({
 				</Button>
 			</div>
 		</form>
+	);
+}
+
+function TransferReturnTerms({
+	form,
+}: {
+	form: ReturnType<typeof useTransferEquipmentForm>["form"];
+}) {
+	const { t } = useTranslate();
+	return (
+		<>
+			<form.Field name="issue.returnRequired">
+				{(field) => (
+					<label className="flex items-center gap-2 text-sm">
+						<input
+							type="checkbox"
+							name={field.name}
+							autoComplete="off"
+							checked={field.state.value}
+							onChange={(event) => {
+								field.handleChange(event.target.checked);
+								if (!event.target.checked)
+									form.setFieldValue("issue.explicitDeadline", "");
+							}}
+						/>
+						{t("settings.equipment.handover.returnRequired", "Return required")}
+					</label>
+				)}
+			</form.Field>
+			<form.Subscribe selector={(state) => state.values.issue.returnRequired}>
+				{(required) =>
+					required ? (
+						<form.Field
+							name="issue.explicitDeadline"
+							validators={{
+								onSubmit: ({ value }) => {
+									if (!value) return undefined;
+									try {
+										const deadline = parsePlainDate(value);
+										const date = form.getFieldValue("issue.actualDate");
+										if (
+											date &&
+											comparePlainDates(deadline, parsePlainDate(date)) < 0
+										)
+											return t(
+												"settings.equipment.handover.deadlineInvalid",
+												"The return deadline must be on or after the handover date.",
+											);
+									} catch {
+										return t(
+											"settings.equipment.handover.dateInvalid",
+											"Enter a valid calendar date.",
+										);
+									}
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<TFormItem>
+									<TFormLabel>
+										{t(
+											"settings.equipment.handover.deadline",
+											"Explicit return deadline (optional)",
+										)}
+									</TFormLabel>
+									<TFormControl hasError={field.state.meta.errors.length > 0}>
+										<Input
+											type="date"
+											name={field.name}
+											autoComplete="off"
+											value={field.state.value}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
+											onBlur={field.handleBlur}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+					) : (
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.equipment.handover.keepHelp",
+								"Issued to keep: no deadline or return obligation. Equipment remains held until physically received back.",
+							)}
+						</p>
+					)
+				}
+			</form.Subscribe>
+		</>
 	);
 }

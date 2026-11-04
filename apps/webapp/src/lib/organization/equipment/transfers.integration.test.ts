@@ -73,10 +73,16 @@ beforeAll(async () => {
 		[holderId, "holder", "employee"],
 		[ownerId, "owner", "employee"],
 		["15420000-0000-4000-8000-000000000003", "manager", "manager"],
+		["15420000-0000-4000-8000-000000000004", "foreign", "employee"],
 	])
 		await pool.query(
-			"insert into employee(id,user_id,organization_id,role,is_active,updated_at) values($1,$2,'t1542-org',$3,true,now())",
-			[id, `t1542-${name}`, role],
+			"insert into employee(id,user_id,organization_id,role,is_active,updated_at) values($1,$2,$4,$3,true,now())",
+			[
+				id,
+				`t1542-${name}`,
+				role,
+				name === "foreign" ? "t1542-other" : "t1542-org",
+			],
 		);
 });
 afterAll(clean);
@@ -84,6 +90,9 @@ beforeEach(async () => {
 	session.userId = "t1542-owner";
 	session.organizationId = "t1542-org";
 	clock.now = "2026-11-04T23:30:00Z";
+	await pool.query(
+		"delete from equipment_officer_grant where organization_id='t1542-org'",
+	);
 	await pool.query(
 		"delete from equipment_assignment where organization_id='t1542-org'",
 	);
@@ -107,6 +116,21 @@ beforeEach(async () => {
 	);
 	await pool.query("update member set role='admin' where id='t1542-admin'");
 });
+
+async function grantOfficer(employeeIds: string[], expectedRevision = 0) {
+	const result = await actions.changeEquipmentOfficerGrant({
+		kind: "set_officer_grant",
+		requestId: crypto.randomUUID(),
+		employeeId: "15420000-0000-4000-8000-000000000003",
+		expectedRevision,
+		scope: "selected",
+		teamIds: [],
+		employeeIds,
+	});
+	if (!result.success || !result.data.ok)
+		throw new Error(JSON.stringify(result));
+	return result.data;
+}
 async function setup(input: Record<string, unknown>) {
 	const result = await actions.changeEquipmentSetup({
 		requestId: crypto.randomUUID(),
@@ -392,6 +416,7 @@ it("rolls back source receipt on invalid target references, employment, dates an
 	const id = await quantityAssignment();
 	for (const extra of [
 		{ employeeId: "15420000-0000-4000-8000-000000000099" },
+		{ employeeId: "15420000-0000-4000-8000-000000000004" },
 		{
 			issue: {
 				actualDate: "2026-11-06",
@@ -659,4 +684,87 @@ it("rolls back receipt and request identity on a target database failure so the 
 		data: { ok: true },
 	});
 	expect((await overview()).assignments).toHaveLength(2);
+});
+
+it.each([holderId, ownerId])(
+	"rechecks current officer scope on subject %s before execution and replay",
+	async (revokedSubject) => {
+		const id = await quantityAssignment();
+		const command = await transferCommand(id);
+		await grantOfficer([holderId, ownerId]);
+		session.userId = "t1542-manager";
+		const visible = await overview();
+		expect(visible.assignments[0].transfer).toBeDefined();
+		expect(visible.employees.map((e) => e.id)).toEqual(
+			expect.arrayContaining([holderId, ownerId]),
+		);
+		session.userId = "t1542-owner";
+		await grantOfficer(
+			[holderId, ownerId].filter((subject) => subject !== revokedSubject),
+			1,
+		);
+		session.userId = "t1542-manager";
+		expect(await actions.changeEquipment(command)).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "forbidden" },
+		});
+		session.userId = "t1542-owner";
+		expect((await overview()).assignments).toMatchObject([
+			{ id, revision: 1, receipts: [] },
+		]);
+		await grantOfficer([holderId, ownerId], 2);
+		session.userId = "t1542-manager";
+		const result = await actions.changeEquipment(command);
+		expect(result).toMatchObject({ success: true, data: { ok: true } });
+		session.userId = "t1542-owner";
+		await grantOfficer(
+			[holderId, ownerId].filter((subject) => subject !== revokedSubject),
+			3,
+		);
+		session.userId = "t1542-manager";
+		expect(await actions.changeEquipment(command)).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "forbidden" },
+		});
+		session.userId = "t1542-owner";
+		expect((await overview()).assignments).toHaveLength(2);
+	},
+);
+
+it("serializes an individual transfer against physical return without creating overlapping holders", async () => {
+	const { assignmentId } = await individualAssignment();
+	const command = await transferCommand(assignmentId);
+	const results = await Promise.all([
+		actions.changeEquipment(command),
+		actions.changeEquipment({
+			kind: "receive_individual",
+			requestId: crypto.randomUUID(),
+			assignmentId,
+			expectedRevision: 1,
+			actualDate: "2026-11-03",
+			condition: "good",
+		}),
+	]);
+	expect(
+		results.filter((result) => result.success && result.data.ok),
+	).toHaveLength(1);
+	expect(
+		results.filter(
+			(result) =>
+				result.success &&
+				!result.data.ok &&
+				result.data.reason === "stale_revision",
+		),
+	).toHaveLength(1);
+	const current = await overview();
+	expect(
+		current.assignments.find((assignment) => assignment.id === assignmentId),
+	).toMatchObject({ held: false, physicallyReceivedQuantity: 1 });
+	expect(
+		current.assignments.find((assignment) => assignment.id === assignmentId)
+			?.receipts,
+	).toHaveLength(1);
+	expect(
+		current.assignments.filter((assignment) => assignment.held),
+	).toHaveLength(results[0].success && results[0].data.ok ? 1 : 0);
 });

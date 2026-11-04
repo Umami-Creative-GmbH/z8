@@ -213,8 +213,11 @@ function EquipmentWorkspace({
 		submit,
 		router,
 	} = useEquipmentCommands();
-	const { canIssue, selectedReceipt, selectedTransfer, unavailableReason } =
-		equipmentSelection(data, scope, selection);
+	const { canIssue, unavailableReason } = equipmentSelection(
+		data,
+		scope,
+		selection,
+	);
 	return (
 		<section
 			className="min-w-0 space-y-4"
@@ -279,39 +282,14 @@ function EquipmentWorkspace({
 					{t("settings.equipment.custody.updating", "Updating equipment…")}
 				</p>
 			) : null}
-			{selection?.kind === "issue" && canIssue ? (
-				<IssueEquipmentForm
-					key={[...data.availableItems, ...data.availableQuantityTypes]
-						.map((item) => `${item.id}:${item.revision}`)
-						.join(",")}
-					data={data}
-					employeeId={scope.kind === "employee" ? scope.employeeId : undefined}
-					submit={submit}
-					pending={pending}
-					onCancel={() => setSelection(null)}
-				/>
-			) : null}
-			{selectedReceipt ? (
-				<ReceiveEquipmentForm
-					key={`${selectedReceipt.id}:${selectedReceipt.revision}`}
-					assignment={selectedReceipt}
-					timezone={data.timezone}
-					today={data.today}
-					submit={submit}
-					pending={pending}
-					onCancel={() => setSelection(null)}
-				/>
-			) : null}
-			{selectedTransfer ? (
-				<TransferEquipmentForm
-					key={`${selectedTransfer.id}:${selectedTransfer.revision}:${selectedTransfer.transfer?.expectedIssuanceRevision}`}
-					assignment={selectedTransfer}
-					data={data}
-					submit={submit}
-					pending={pending}
-					onCancel={() => setSelection(null)}
-				/>
-			) : null}
+			<EquipmentHandoverEditor
+				data={data}
+				scope={scope}
+				selection={selection}
+				pending={pending}
+				submit={submit}
+				onCancel={() => setSelection(null)}
+			/>
 			<EquipmentAssignments
 				data={data}
 				pending={pending || !!selection}
@@ -326,6 +304,65 @@ function EquipmentWorkspace({
 			/>
 			<IssuanceAvailability reason={unavailableReason} />
 		</section>
+	);
+}
+
+function EquipmentHandoverEditor({
+	data,
+	scope,
+	selection,
+	pending,
+	submit,
+	onCancel,
+}: {
+	data: EquipmentView;
+	scope: EquipmentScope;
+	selection: HandoverSelection;
+	pending: boolean;
+	submit: (change: EquipmentChange) => Promise<void>;
+	onCancel: () => void;
+}) {
+	const { canIssue, selectedReceipt, selectedTransfer } = equipmentSelection(
+		data,
+		scope,
+		selection,
+	);
+	return (
+		<>
+			{selection?.kind === "issue" && canIssue ? (
+				<IssueEquipmentForm
+					key={[...data.availableItems, ...data.availableQuantityTypes]
+						.map((item) => `${item.id}:${item.revision}`)
+						.join(",")}
+					data={data}
+					employeeId={scope.kind === "employee" ? scope.employeeId : undefined}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+			{selectedReceipt ? (
+				<ReceiveEquipmentForm
+					key={`${selectedReceipt.id}:${selectedReceipt.revision}`}
+					assignment={selectedReceipt}
+					timezone={data.timezone}
+					today={data.today}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+			{selectedTransfer ? (
+				<TransferEquipmentForm
+					key={`${selectedTransfer.id}:${selectedTransfer.revision}:${selectedTransfer.transfer?.expectedIssuanceRevision}`}
+					assignment={selectedTransfer}
+					data={data}
+					submit={submit}
+					pending={pending}
+					onCancel={onCancel}
+				/>
+			) : null}
+		</>
 	);
 }
 

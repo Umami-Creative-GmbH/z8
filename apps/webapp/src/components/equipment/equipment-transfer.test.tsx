@@ -43,6 +43,8 @@ afterEach(() => {
 const view: EquipmentView = {
 	readinessItems: [],
 	canManage: true,
+	canAdminister: true,
+	registrationTypes: [],
 	policyConfigured: true,
 	timezone: "Europe/Berlin",
 	today: "2026-11-05",
@@ -128,7 +130,13 @@ it("records separate receipt and issuance evidence, new terms, and a stable requ
 	const user = userEvent.setup();
 	render(<EquipmentOverview data={transferView} filters={{}} />);
 	await user.click(screen.getByRole("button", { name: "Transfer equipment" }));
-	expect(screen.getByText("L-02 · Alex Current")).toBeTruthy();
+	expect(
+		screen.getByText(
+			(_text, element) =>
+				element?.tagName === "P" &&
+				element.textContent === "L-02 · Alex Current",
+		),
+	).toBeTruthy();
 	const receipt = within(
 		screen.getByRole("group", { name: "Receipt from current holder" }),
 	);
@@ -198,58 +206,135 @@ it("records separate receipt and issuance evidence, new terms, and a stable requ
 });
 
 it("validates a partial quantity and date order before submitting the new return agreement", async () => {
-	api.change.mockResolvedValue({ success: true, data: { ok: true, id: "new-assignment", revision: 1 } });
+	api.change.mockResolvedValue({
+		success: true,
+		data: { ok: true, id: "new-assignment", revision: 1 },
+	});
 	const user = userEvent.setup();
-	const source = { ...transferView.assignments[0], itemId: null, trackingMode: "quantity" as const, quantity: 3, physicallyReceivedQuantity: 1 };
-	render(<EmployeeEquipment data={{ ...transferView, assignments: [source] }} employeeId={source.employeeId} />);
+	const source = {
+		...transferView.assignments[0],
+		itemId: null,
+		trackingMode: "quantity" as const,
+		quantity: 3,
+		physicallyReceivedQuantity: 1,
+	};
+	render(
+		<EmployeeEquipment
+			data={{ ...transferView, assignments: [source] }}
+			employeeId={source.employeeId}
+		/>,
+	);
 	await user.click(screen.getByRole("button", { name: "Transfer equipment" }));
-	const receipt = within(screen.getByRole("group", { name: "Receipt from current holder" }));
+	const receipt = within(
+		screen.getByRole("group", { name: "Receipt from current holder" }),
+	);
 	const issue = within(screen.getByRole("group", { name: "New issuance" }));
-	await user.selectOptions(issue.getByLabelText(/^Current employee/), transferView.employees[2].id);
-	await user.type(receipt.getByLabelText(/^Actual handover date/), "2026-11-04");
+	await user.selectOptions(
+		issue.getByLabelText(/^Current employee/),
+		transferView.employees[2].id,
+	);
+	await user.type(
+		receipt.getByLabelText(/^Actual handover date/),
+		"2026-11-04",
+	);
 	await user.type(issue.getByLabelText(/^Actual handover date/), "2026-11-03");
 	await user.clear(receipt.getByLabelText(/^Quantity/));
 	await user.type(receipt.getByLabelText(/^Quantity/), "3");
-	await user.click(screen.getByRole("button", { name: "Confirm receipt and issuance" }));
-	expect(await screen.findByText("Quantity exceeds the remaining physical balance.")).toBeTruthy();
-	expect(screen.getByText("New issuance cannot precede physical receipt.")).toBeTruthy();
+	await user.click(
+		screen.getByRole("button", { name: "Confirm receipt and issuance" }),
+	);
+	expect(
+		await screen.findByText("Quantity exceeds the remaining physical balance."),
+	).toBeTruthy();
+	expect(
+		screen.getByText("New issuance cannot precede physical receipt."),
+	).toBeTruthy();
 	expect(api.change).not.toHaveBeenCalled();
 	await user.clear(receipt.getByLabelText(/^Quantity/));
 	await user.type(receipt.getByLabelText(/^Quantity/), "2");
 	await user.clear(issue.getByLabelText(/^Actual handover date/));
 	await user.type(issue.getByLabelText(/^Actual handover date/), "2026-11-04");
 	await user.click(issue.getByLabelText("Return required"));
-	await user.type(issue.getByLabelText("Explicit return deadline (optional)"), "2026-11-05");
-	await user.click(screen.getByRole("button", { name: "Confirm receipt and issuance" }));
+	await user.type(
+		issue.getByLabelText("Explicit return deadline (optional)"),
+		"2026-11-05",
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Confirm receipt and issuance" }),
+	);
 	await waitFor(() => expect(api.refresh).toHaveBeenCalledOnce());
-	expect(api.change.mock.calls[0][0]).toMatchObject({ quantity: 2, issue: { returnRequired: true, explicitDeadline: "2026-11-05" } });
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		quantity: 2,
+		issue: { returnRequired: true, explicitDeadline: "2026-11-05" },
+	});
 	expect(screen.queryByRole("group", { name: "New issuance" })).toBeNull();
 });
 
 it("keeps a stale transfer reviewable and uses a new identity after editing the refused payload", async () => {
-	api.change.mockResolvedValue({ success: true, data: { ok: false, reason: "stale_revision" } });
+	api.change.mockResolvedValue({
+		success: true,
+		data: { ok: false, reason: "stale_revision" },
+	});
 	const user = userEvent.setup();
 	render(<EquipmentOverview data={transferView} filters={{}} />);
 	await user.click(screen.getByRole("button", { name: "Transfer equipment" }));
-	const receipt = within(screen.getByRole("group", { name: "Receipt from current holder" }));
+	const receipt = within(
+		screen.getByRole("group", { name: "Receipt from current holder" }),
+	);
 	const issue = within(screen.getByRole("group", { name: "New issuance" }));
-	await user.type(receipt.getByLabelText(/^Actual handover date/), "2026-11-03");
+	await user.type(
+		receipt.getByLabelText(/^Actual handover date/),
+		"2026-11-03",
+	);
 	await user.type(issue.getByLabelText(/^Actual handover date/), "2026-11-04");
-	await user.selectOptions(issue.getByLabelText(/^Current employee/), transferView.employees[2].id);
-	await user.click(screen.getByRole("button", { name: "Confirm receipt and issuance" }));
-	expect((await screen.findByRole("alert")).textContent).toContain("This record changed.");
-	await user.type(receipt.getByLabelText("Notes (optional)"), "Clarified receipt");
-	await user.click(screen.getByRole("button", { name: "Confirm receipt and issuance" }));
+	await user.selectOptions(
+		issue.getByLabelText(/^Current employee/),
+		transferView.employees[2].id,
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Confirm receipt and issuance" }),
+	);
+	expect((await screen.findByRole("alert")).textContent).toContain(
+		"This record changed.",
+	);
+	await user.type(
+		receipt.getByLabelText("Notes (optional)"),
+		"Clarified receipt",
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Confirm receipt and issuance" }),
+	);
 	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(2));
-	expect(api.change.mock.calls[1][0].requestId).not.toBe(api.change.mock.calls[0][0].requestId);
+	expect(api.change.mock.calls[1][0].requestId).not.toBe(
+		api.change.mock.calls[0][0].requestId,
+	);
 	expect(api.refresh).not.toHaveBeenCalled();
 });
 
 it("hides transfer when receipt authority or an authorized current target is absent and keeps personal history read only", () => {
-	const { rerender } = render(<EquipmentOverview data={{ ...transferView, assignments: [{ ...heldAssignment, canReceive: false }] }} filters={{}} />);
-	expect(screen.queryByRole("button", { name: "Transfer equipment" })).toBeNull();
-	rerender(<EquipmentOverview data={{ ...transferView, employees: view.employees }} filters={{}} />);
-	expect(screen.queryByRole("button", { name: "Transfer equipment" })).toBeNull();
+	const { rerender } = render(
+		<EquipmentOverview
+			data={{
+				...transferView,
+				assignments: [{ ...heldAssignment, canReceive: false }],
+			}}
+			filters={{}}
+		/>,
+	);
+	expect(
+		screen.queryByRole("button", { name: "Transfer equipment" }),
+	).toBeNull();
+	rerender(
+		<EquipmentOverview
+			data={{ ...transferView, employees: view.employees }}
+			filters={{}}
+		/>,
+	);
+	expect(
+		screen.queryByRole("button", { name: "Transfer equipment" }),
+	).toBeNull();
 	rerender(<PersonalEquipment data={{ ...transferView, canManage: false }} />);
-	expect(screen.queryByRole("button", { name: "Transfer equipment" })).toBeNull();
+	expect(
+		screen.queryByRole("button", { name: "Transfer equipment" }),
+	).toBeNull();
 });
