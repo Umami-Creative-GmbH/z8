@@ -255,6 +255,26 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 			else expect(output).not.toContain('"href":"/equipment"');
 		}
 	});
+	it("offers equipment navigation for a current officer grant and removes it on revocation", async () => {
+		const officer = await fixture.seedEmployee({ role: "member" });
+		expect(await render(subject(officer.userId))).not.toContain(
+			'"href":"/equipment"',
+		);
+		await fixture.pool.query(
+			"insert into equipment_officer_grant(organization_id,employee_id,scope) values($1,$2,'all')",
+			[fixture.organizationId, officer.employeeId],
+		);
+		expect(await render(subject(officer.userId))).toContain(
+			'"href":"/equipment"',
+		);
+		await fixture.pool.query(
+			"update equipment_officer_grant set revoked_at=now() where organization_id=$1 and employee_id=$2",
+			[fixture.organizationId, officer.employeeId],
+		);
+		expect(await render(subject(officer.userId))).not.toContain(
+			'"href":"/equipment"',
+		);
+	});
 	it("offers presence only for an active own-organization location, using a bounded existence read", async () => {
 		const otherOrg = await fixture.createOrganization();
 		const id = (await import("node:crypto")).randomUUID();

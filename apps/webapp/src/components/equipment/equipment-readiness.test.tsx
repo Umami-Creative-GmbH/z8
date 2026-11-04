@@ -49,6 +49,8 @@ const damaged: EquipmentReadinessItemView = {
 };
 const view: EquipmentView = {
 	canManage: true,
+	canAdminister: true,
+	registrationTypes: [],
 	policyConfigured: true,
 	timezone: "Europe/Berlin",
 	today: "2026-11-05",

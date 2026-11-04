@@ -1,14 +1,22 @@
 import { Suspense } from "react";
+import { EquipmentOfficers } from "@/components/settings/equipment/equipment-officers";
 import { EquipmentSettings } from "@/components/settings/equipment/equipment-settings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getEquipmentSetup } from "@/lib/organization/equipment/actions";
+import {
+	getEquipmentOfficerGrants,
+	getEquipmentSetup,
+} from "@/lib/organization/equipment/actions";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
 async function EquipmentSettingsContent() {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const [t, result] = await Promise.all([getTranslate(), getEquipmentSetup()]);
+	const [t, result, officers] = await Promise.all([
+		getTranslate(),
+		getEquipmentSetup(),
+		getEquipmentOfficerGrants(),
+	]);
 	return (
 		<div className="p-4 sm:p-6">
 			<div className="mx-auto min-w-0 max-w-4xl space-y-6">
@@ -36,6 +44,16 @@ async function EquipmentSettingsContent() {
 						{t(
 							"settings.equipment.errors.load",
 							"Equipment setup could not be loaded. Reload the page.",
+						)}
+					</p>
+				)}
+				{officers.success ? (
+					<EquipmentOfficers data={officers.data} />
+				) : (
+					<p role="alert">
+						{t(
+							"settings.equipment.officers.loadFailed",
+							"Equipment responsibilities could not be loaded. Reload the page.",
 						)}
 					</p>
 				)}
