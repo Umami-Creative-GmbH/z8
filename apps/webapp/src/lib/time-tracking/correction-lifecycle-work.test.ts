@@ -16,13 +16,23 @@ import { sealWorkTransactionScope } from "./work-transaction";
 
 describe("correction lifecycle receipt identity", () => {
 	it("is stable per organization, stage and lifecycle key", () => {
-		const input = { organizationId: "org-1", stage: "finalize" as const, key: "canonical:wf-1" };
+		const input = {
+			organizationId: "org-1",
+			stage: "finalize" as const,
+			key: "canonical:wf-1",
+		};
 		const id = deriveTimeCorrectionOperationId(input);
 
-		expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+		expect(id).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+		);
 		expect(deriveTimeCorrectionOperationId(input)).toBe(id);
-		expect(deriveTimeCorrectionOperationId({ ...input, stage: "cancel" })).not.toBe(id);
-		expect(deriveTimeCorrectionOperationId({ ...input, organizationId: "org-2" })).not.toBe(id);
+		expect(
+			deriveTimeCorrectionOperationId({ ...input, stage: "cancel" }),
+		).not.toBe(id);
+		expect(
+			deriveTimeCorrectionOperationId({ ...input, organizationId: "org-2" }),
+		).not.toBe(id);
 	});
 
 	it("keys a legacy chain lifecycle by its chain and a direct request by the request", () => {
@@ -42,9 +52,12 @@ describe("correction lifecycle receipt identity", () => {
 				observedWorkflowId: "wf-observed",
 			}),
 		).toBe("legacy:request-1");
-		expect(timeCorrectionLifecycleKey({ authority: "canonical", workflowId: "wf-1" })).toBe(
-			"canonical:wf-1",
-		);
+		expect(
+			timeCorrectionLifecycleKey({
+				authority: "canonical",
+				workflowId: "wf-1",
+			}),
+		).toBe("canonical:wf-1");
 	});
 });
 
@@ -52,14 +65,44 @@ describe("approved correction minutes", () => {
 	const start = parseInstant("2026-09-01T08:00:00Z");
 
 	it("rounds fresh adopted minutes half up from the exact UTC endpoints", () => {
-		expect(correctedDurationMinutes(true, start, parseInstant("2026-09-01T09:00:40Z"))).toBe(61);
-		expect(correctedDurationMinutes(true, start, parseInstant("2026-09-01T08:00:29Z"))).toBe(0);
-		expect(correctedDurationMinutes(true, start, parseInstant("2026-09-01T08:00:30Z"))).toBe(1);
+		expect(
+			correctedDurationMinutes(
+				true,
+				start,
+				parseInstant("2026-09-01T09:00:40Z"),
+			),
+		).toBe(61);
+		expect(
+			correctedDurationMinutes(
+				true,
+				start,
+				parseInstant("2026-09-01T08:00:29Z"),
+			),
+		).toBe(0);
+		expect(
+			correctedDurationMinutes(
+				true,
+				start,
+				parseInstant("2026-09-01T08:00:30Z"),
+			),
+		).toBe(1);
 	});
 
 	it("keeps the legacy floor for organizations that have not adopted", () => {
-		expect(correctedDurationMinutes(false, start, parseInstant("2026-09-01T09:00:40Z"))).toBe(60);
-		expect(correctedDurationMinutes(false, start, parseInstant("2026-09-01T08:00:30Z"))).toBe(0);
+		expect(
+			correctedDurationMinutes(
+				false,
+				start,
+				parseInstant("2026-09-01T09:00:40Z"),
+			),
+		).toBe(60);
+		expect(
+			correctedDurationMinutes(
+				false,
+				start,
+				parseInstant("2026-09-01T08:00:30Z"),
+			),
+		).toBe(0);
 	});
 });
 
@@ -79,7 +122,9 @@ describe("adopted correction scope", () => {
 		});
 		const route = { organizationId: "org-1", employeeId: "employee-1" };
 
-		expect(resolveCorrectionWorkScope(appendClient, route)?.admission).toBe("append");
+		expect(resolveCorrectionWorkScope(appendClient, route)?.admission).toBe(
+			"append",
+		);
 		expect(resolveCorrectionWorkScope(legacyClient, route)).toBeNull();
 		expect(resolveCorrectionWorkScope({}, route)).toBeNull();
 	});
@@ -95,15 +140,47 @@ describe("adopted correction scope", () => {
 		});
 
 		expect(() =>
-			resolveCorrectionWorkScope(client, { organizationId: "org-1", employeeId: "employee-2" }),
+			resolveCorrectionWorkScope(client, {
+				organizationId: "org-1",
+				employeeId: "employee-2",
+			}),
 		).toThrow("outside scope");
 	});
 });
 
 describe("adopted correction outcomes", () => {
+	it("preserves occupied intervals so the reviewer can inspect the conflict", () => {
+		const error = translateCorrectionWorkError(
+			new WorkOccupancyConflictError([
+				{
+					kind: "work_period",
+					id: "earlier-work",
+					startAt: parseInstant("2026-11-02T12:00:00Z"),
+					endAt: parseInstant("2026-11-02T13:30:00Z"),
+				},
+			]),
+		);
+		expect(error).toMatchObject({
+			details: {
+				overlaps: [
+					{
+						kind: "work_period",
+						id: "earlier-work",
+						startAt: "2026-11-02T12:00:00Z",
+						endAt: "2026-11-02T13:30:00Z",
+					},
+				],
+			},
+		});
+	});
+
 	it("answers collisions, occupied intervals and held appends as typed conflicts", () => {
-		const collision = translateCorrectionWorkError(new CompletedWorkCollisionError());
-		const occupied = translateCorrectionWorkError(new WorkOccupancyConflictError([]));
+		const collision = translateCorrectionWorkError(
+			new CompletedWorkCollisionError(),
+		);
+		const occupied = translateCorrectionWorkError(
+			new WorkOccupancyConflictError([]),
+		);
 		const held = translateCorrectionWorkError(
 			new TimeEntryAppendReviewRequiredError({
 				organizationId: "org-1",
@@ -113,12 +190,16 @@ describe("adopted correction outcomes", () => {
 		);
 
 		expect(collision).toBeInstanceOf(ConflictError);
-		expect(collision).toMatchObject({ conflictType: "completed_work_collision" });
+		expect(collision).toMatchObject({
+			conflictType: "completed_work_collision",
+		});
 		expect(occupied).toMatchObject({
 			conflictType: "work_interval_occupied",
 			message: "The time range overlaps other recorded work",
 		});
-		expect(held).toMatchObject({ conflictType: "completed_work_review_required" });
+		expect(held).toMatchObject({
+			conflictType: "completed_work_review_required",
+		});
 	});
 
 	it("passes other errors through", () => {
@@ -127,11 +208,11 @@ describe("adopted correction outcomes", () => {
 	});
 
 	it("answers a collision an Effect program rejected with", async () => {
-		const correction = Effect.runPromise(Effect.die(new CompletedWorkCollisionError())).catch(
-			(error: unknown) => {
-				throw translateCorrectionWorkError(error);
-			},
-		);
+		const correction = Effect.runPromise(
+			Effect.die(new CompletedWorkCollisionError()),
+		).catch((error: unknown) => {
+			throw translateCorrectionWorkError(error);
+		});
 
 		await expect(correction).rejects.toMatchObject({
 			_tag: "ConflictError",

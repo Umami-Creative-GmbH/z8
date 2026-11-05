@@ -4,10 +4,12 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { EMPTY_ORGANIZATION_PROFILE } from "@/lib/organization/profile";
 
 const mocks = vi.hoisted(() => ({
+	connection: vi.fn(),
 	profile: vi.fn(),
 	access: vi.fn(),
 	billing: "true",
 }));
+vi.mock("next/server", () => ({ connection: mocks.connection }));
 vi.mock("@/env", () => ({
 	env: {
 		get BILLING_ENABLED() {
@@ -52,6 +54,7 @@ const minimal = {
 const pageContent = () => Page().props.children.type();
 beforeEach(() => {
 	vi.clearAllMocks();
+	mocks.connection.mockResolvedValue(undefined);
 	mocks.billing = "true";
 	mocks.access.mockResolvedValue({
 		organizationId: "org-1",
@@ -60,6 +63,21 @@ beforeEach(() => {
 	mocks.profile.mockResolvedValue({ success: true, data: minimal });
 });
 afterEach(cleanup);
+
+it("defers the billing decision until a request instead of prerendering a redirect", async () => {
+	mocks.billing = "false";
+	mocks.connection.mockRejectedValueOnce(new Error("request-time boundary"));
+	await expect(pageContent()).rejects.toThrow("request-time boundary");
+	expect(mocks.access).not.toHaveBeenCalled();
+	expect(mocks.profile).not.toHaveBeenCalled();
+});
+
+it("renders for an authorized organization when billing is enabled at runtime", async () => {
+	await expect(pageContent()).resolves.toBeTruthy();
+	expect(mocks.connection).toHaveBeenCalledOnce();
+	expect(mocks.access).toHaveBeenCalledOnce();
+	expect(mocks.profile).toHaveBeenCalledWith("org-1");
+});
 
 it("shows the legal identity and full address with a profile editor link", async () => {
 	mocks.profile.mockResolvedValue({
@@ -145,6 +163,8 @@ it("allows a Hong Kong address without postal code and explains a missing German
 it("redirects without exposing legal details when billing is disabled", async () => {
 	mocks.billing = "false";
 	await expect(pageContent()).rejects.toThrow("redirect:/settings");
+	expect(mocks.connection).toHaveBeenCalledOnce();
+	expect(mocks.access).not.toHaveBeenCalled();
 	expect(mocks.profile).not.toHaveBeenCalled();
 });
 

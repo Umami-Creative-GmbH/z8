@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button";
 import {
@@ -21,6 +22,8 @@ import { getTranslate } from "@/tolgee/server";
 import { getOrganizationProfile } from "../organizations/profile-actions";
 
 async function AvvPageContent() {
+	// Deployment flags must be evaluated per request, as on the billing page.
+	await connection();
 	if (env.BILLING_ENABLED !== "true") {
 		return redirectWithLocale("/settings");
 	}
