@@ -1,6 +1,7 @@
 import { type SQL, sql } from "drizzle-orm";
 import {
 	boolean,
+	bigint,
 	check,
 	date,
 	foreignKey,
@@ -273,6 +274,10 @@ export const equipmentException = pgTable(
 		assignmentId: uuid("assignment_id").notNull(),
 		kind: text("kind", { enum: ["lost", "waived"] }).notNull(),
 		quantity: integer("quantity").notNull(),
+		/** Current projection; immutable original decision fields remain above/below. */
+		effective: jsonb("effective").$type<{
+			kind: "lost" | "waived"; quantity: number; reason: string;
+		}>(),
 		receivedQuantity: integer("received_quantity").notNull().default(0),
 		reason: text("reason").notNull(),
 		actorId: text("actor_id").references(() => user.id, {
@@ -303,7 +308,7 @@ export const equipmentException = pgTable(
 		check("equipment_exception_quantity_positive", sql`${t.quantity} > 0`),
 		check(
 			"equipment_exception_received_check",
-			sql`${t.receivedQuantity} >= 0 and ${t.receivedQuantity} <= ${t.quantity}`,
+			sql`${t.receivedQuantity} >= 0 and ${t.receivedQuantity} <= coalesce((${t.effective}->>'quantity')::integer, ${t.quantity})`,
 		),
 		check(
 			"equipment_exception_reason_check",
@@ -315,6 +320,7 @@ export const equipmentException = pgTable(
 export const equipmentHandover = pgTable(
 	"equipment_handover",
 	{
+		sequence: bigint("sequence", {mode:"number"}).notNull().generatedAlwaysAsIdentity(),
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id")
 			.notNull()
@@ -325,6 +331,11 @@ export const equipmentHandover = pgTable(
 		quantity: integer("quantity").notNull().default(1),
 		actualDate: date("actual_date"),
 		historical: boolean("historical").notNull().default(false),
+		/** Amendments never overwrite the original physical handover evidence. */
+		effective: jsonb("effective").$type<{
+			quantity: number; actualDate: string | null;
+			condition: "good" | "worn" | "damaged" | "unknown"; notes: string | null;
+		}>(),
 		condition: text("condition", {
 			enum: ["good", "worn", "damaged", "unknown"],
 		}).notNull(),
@@ -337,6 +348,7 @@ export const equipmentHandover = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		unique("equipment_handover_id_org_unique").on(t.id, t.organizationId),
 		foreignKey({
 			name: "equipment_handover_assignment_org_fk",
 			columns: [t.assignmentId, t.organizationId],
@@ -499,3 +511,37 @@ export const equipmentItemReadinessEvent = pgTable(
 		check("equipment_readiness_revision_positive", sql`${t.itemRevision} > 0`),
 	],
 );
+/** Personal amendment evidence follows the assignment's finite retention lifecycle. */
+export const equipmentCorrection = pgTable("equipment_correction", {
+ id: uuid("id").primaryKey().defaultRandom(),
+ organizationId: text("organization_id").notNull().references(() => organization.id, {onDelete:"cascade"}),
+ assignmentId: uuid("assignment_id").notNull(),
+ handoverId: uuid("handover_id"),
+ exceptionId: uuid("exception_id"),
+ expectedRevision: integer("expected_revision").notNull(),
+ reason: text("reason").notNull(),
+ before: jsonb("before").$type<Record<string, string | number | boolean | null>>().notNull(),
+ after: jsonb("after").$type<Record<string, string | number | boolean | null>>().notNull(),
+ actorId: text("actor_id").references(() => user.id, {onDelete:"set null"}),
+ recordedAt: timestamp("recorded_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+ foreignKey({name:"equipment_correction_assignment_org_fk",columns:[t.assignmentId,t.organizationId],foreignColumns:[equipmentAssignment.id,equipmentAssignment.organizationId]}).onDelete("cascade"),
+ foreignKey({name:"equipment_correction_handover_org_fk",columns:[t.handoverId,t.organizationId],foreignColumns:[equipmentHandover.id,equipmentHandover.organizationId]}).onDelete("cascade"),
+ foreignKey({name:"equipment_correction_exception_org_fk",columns:[t.exceptionId,t.organizationId,t.assignmentId],foreignColumns:[equipmentException.id,equipmentException.organizationId,equipmentException.assignmentId]}).onDelete("cascade"),
+ unique("equipment_correction_assignment_revision_unique").on(t.organizationId,t.assignmentId,t.expectedRevision),
+ check("equipment_correction_revision_positive",sql`${t.expectedRevision} > 0`),
+ check("equipment_correction_reason_check",sql`length(btrim(${t.reason})) between 1 and 4000`),
+ check("equipment_correction_target_check",sql`(${t.handoverId} is null) <> (${t.exceptionId} is null)`),
+]);
+
+/** Both physical legs remain linked even after either assignment is amended. */
+export const equipmentTransfer = pgTable("equipment_transfer", {
+ organizationId: text("organization_id").notNull().references(() => organization.id, {onDelete:"cascade"}),
+ receiptId: uuid("receipt_id").notNull(),
+ issueId: uuid("issue_id").notNull(),
+}, t => [
+ primaryKey({columns:[t.organizationId,t.receiptId,t.issueId]}),
+ foreignKey({name:"equipment_transfer_receipt_org_fk",columns:[t.receiptId,t.organizationId],foreignColumns:[equipmentHandover.id,equipmentHandover.organizationId]}).onDelete("cascade"),
+ foreignKey({name:"equipment_transfer_issue_org_fk",columns:[t.issueId,t.organizationId],foreignColumns:[equipmentHandover.id,equipmentHandover.organizationId]}).onDelete("cascade"),
+ check("equipment_transfer_distinct_check",sql`${t.receiptId} <> ${t.issueId}`),
+]);

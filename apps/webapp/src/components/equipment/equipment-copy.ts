@@ -24,6 +24,12 @@ export function handoverRefusalMessage(
 	t: EquipmentTranslate,
 ) {
 	switch (reason) {
+		case "transfer_conflict":
+			return t("settings.equipment.correction.transferConflict", "This amendment conflicts with the linked transfer. Correct both handovers together when changing the transferred quantity.");
+		case "recovery_conflict":
+			return t("settings.equipment.correction.recoveryConflict", "The decision must still cover its physical recoveries. Correct the recovery before reducing the decision further.");
+		case "readiness_conflict":
+			return t("settings.equipment.correction.readinessConflict", "This condition amendment conflicts with a later clearance or issuance. Review readiness and the later history first.");
 		case "self_exception":
 			return t(
 				"settings.equipment.exception.self",

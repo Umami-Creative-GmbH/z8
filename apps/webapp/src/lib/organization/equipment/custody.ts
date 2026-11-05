@@ -22,11 +22,13 @@ import {
 import {
 	equipmentAssignment,
 	equipmentCommand,
+	equipmentCorrection,
 	equipmentException,
 	equipmentHandover,
 	equipmentItem,
 	equipmentPolicy,
 	equipmentType,
+	equipmentTransfer,
 } from "@/db/schema/equipment";
 import {
 	dateFromInstant,
@@ -55,6 +57,7 @@ import {
 	equipmentDepartureDeadline,
 } from "./deadlines";
 import { applyItemReadiness, readItemReadiness } from "./readiness";
+import { correctEquipment, correctEquipmentTransfer, correctionRefusal, effectiveException, effectiveHandover } from "./corrections";
 import {
 	type EquipmentTransaction,
 	prepareEquipmentTypeForIssuance,
@@ -144,7 +147,7 @@ export async function applyEquipmentChange(
 			const access = await equipmentAccess(tx, actor);
 			if (
 				!access.canManage ||
-				(change.kind === "close_return" && !access.canAdminister)
+				((change.kind === "close_return" || change.kind === "correct_exception") && !access.canAdminister)
 			)
 				return { ok: false, reason: "forbidden" };
 			if (
@@ -217,7 +220,7 @@ export async function applyEquipmentChange(
 				return replay.fingerprint === fingerprint
 					? replay.result
 					: { ok: false, reason: "request_conflict" };
-			const { today, now } = await organizationCalendar(
+			const { today, now, timezone } = await organizationCalendar(
 				tx,
 				actor.organizationId,
 			);
@@ -242,7 +245,11 @@ export async function applyEquipmentChange(
 				return outcome;
 			}
 			const outcome =
-				change.kind === "close_return"
+				change.kind === "correct_transfer"
+                    ? await correctEquipmentTransfer(tx, actor, change, today, now, timezone)
+                    : change.kind === "correct_issue" || change.kind === "correct_receipt" || change.kind === "correct_exception"
+					? await correctEquipment(tx, actor, change, today, now, timezone)
+					: change.kind === "close_return"
 					? await closeEquipmentReturn(tx, actor, change, now)
 					: change.kind === "transfer_equipment"
 						? await transferEquipment(tx, actor, change, target, today, now)
@@ -258,6 +265,8 @@ export async function applyEquipmentChange(
 		})
 		.catch((error: unknown) => {
 			if (error instanceof TransferRefusal) return error.outcome;
+            const correction = correctionRefusal(error);
+            if (correction) return correction;
 			throw error;
 		});
 }
@@ -393,6 +402,7 @@ async function transferEquipment(
 		return { ok: false, reason: "not_found" };
 	if ((item?.revision ?? type.revision) !== change.expectedIssuanceRevision)
 		return { ok: false, reason: "stale_revision" };
+	const priorReceipts = await tx.select({id: equipmentHandover.id}).from(equipmentHandover).where(and(eq(equipmentHandover.organizationId, actor.organizationId), eq(equipmentHandover.assignmentId, source.id), eq(equipmentHandover.kind, "receipt")));
 	const receipt = await performHandover(
 		tx,
 		actor,
@@ -437,6 +447,14 @@ async function transferEquipment(
 		now,
 	);
 	if (!issued.ok) throw new TransferRefusal(issued);
+	const [issuedEvidence] = await tx.select().from(equipmentHandover).where(and(eq(equipmentHandover.organizationId, actor.organizationId), eq(equipmentHandover.assignmentId, issued.id), eq(equipmentHandover.kind, "issue")));
+	const sourceEvidence = await tx.select().from(equipmentHandover).where(and(eq(equipmentHandover.organizationId, actor.organizationId), eq(equipmentHandover.assignmentId, source.id), eq(equipmentHandover.kind, "receipt"))).orderBy(desc(equipmentHandover.recordedAt), desc(equipmentHandover.id));
+	// The receipt just written has the transaction timestamp. Obtain its identity
+	// from this command rather than inferring linkage from equal handover dates.
+	const priorReceiptIds = new Set(priorReceipts.map(h => h.id));
+	const receiptEvidence = sourceEvidence.find(h => !priorReceiptIds.has(h.id));
+	if (!issuedEvidence || !receiptEvidence) throw new Error("Missing transfer evidence");
+	await tx.insert(equipmentTransfer).values({organizationId: actor.organizationId, receiptId: receiptEvidence.id, issueId: issuedEvidence.id});
 	return issued;
 }
 
@@ -722,7 +740,7 @@ async function performHandover(
 			return { ok: false, reason: "stale_revision" };
 		if (assignment.received) return { ok: false, reason: "already_received" };
 		const quantity = change.kind === "receive_individual" ? 1 : change.quantity;
-		const [exception] =
+		const [originalException] =
 			change.kind === "receive_exception"
 				? await tx
 						.select()
@@ -735,6 +753,7 @@ async function performHandover(
 							),
 						)
 				: [];
+		const exception = originalException ? effectiveException(originalException) : undefined;
 		if (change.kind === "receive_exception") {
 			const { timezone } = await organizationCalendar(tx, actor.organizationId);
 			if (!exception) return { ok: false, reason: "not_found" };
@@ -760,7 +779,7 @@ async function performHandover(
 				assignment.quantity
 		)
 			return { ok: false, reason: "excess_quantity" };
-		const [issue] = await tx
+		const [originalIssue] = await tx
 			.select()
 			.from(equipmentHandover)
 			.where(
@@ -770,6 +789,7 @@ async function performHandover(
 					eq(equipmentHandover.kind, "issue"),
 				),
 			);
+		const issue = originalIssue ? effectiveHandover(originalIssue) : undefined;
 		if (
 			!issue ||
 			(issue.actualDate !== null &&
@@ -846,7 +866,7 @@ async function performHandover(
 }
 
 /** Preserve the original ending date even when equipment is first entered after exit. */
-async function historicalEndingDeadline(
+export async function historicalEndingDeadline(
 	tx: EquipmentTransaction,
 	organizationId: string,
 	employeeId: string,
@@ -1067,7 +1087,8 @@ export async function readEquipment(
 					)
 			: [];
 		const exceptionEvidence = new Map<string, EquipmentExceptionView[]>();
-		for (const { record, actorName } of exceptionRows) {
+		for (const { record: original, actorName } of exceptionRows) {
+            const record = effectiveException(original);
 			const list = exceptionEvidence.get(record.assignmentId) ?? [];
 			list.push({
 				...record,
@@ -1079,7 +1100,8 @@ export async function readEquipment(
 			exceptionEvidence.set(record.assignmentId, list);
 		}
 		const evidence = new Map<string, EquipmentHandoverView[]>();
-		for (const { record, actorName } of handovers) {
+		for (const { record: original, actorName } of handovers) {
+            const record = effectiveHandover(original);
 			const key = `${record.assignmentId}:${record.kind}`;
 			const records = evidence.get(key) ?? [];
 			records.push({
@@ -1096,7 +1118,8 @@ export async function readEquipment(
 			});
 			evidence.set(key, records);
 		}
-		const filters = scope.kind === "overview" ? scope.filters : {};
+		const correctionRows = rows.length ? await tx.select({record:equipmentCorrection,actorName:user.name}).from(equipmentCorrection).leftJoin(user,eq(user.id,equipmentCorrection.actorId)).where(and(eq(equipmentCorrection.organizationId,actor.organizationId),inArray(equipmentCorrection.assignmentId,rows.map(r=>r.assignment.id)))).orderBy(asc(equipmentCorrection.expectedRevision)) : [];
+        const filters = scope.kind === "overview" ? scope.filters : {};
 		const assignments: EquipmentAssignmentView[] = [];
 		for (const { assignment, item, type } of rows) {
 			const holder = employeeMap.get(assignment.employeeId ?? "");
@@ -1131,6 +1154,10 @@ export async function readEquipment(
 			)
 				continue;
 			assignments.push({
+                canCorrect:staffView,
+                canCorrectReceipt:staffView && holder.userId !== actor.userId,
+                canCorrectException:staffView && access.canAdminister && holder.userId !== actor.userId,
+                corrections:correctionRows.filter(c=>c.record.assignmentId===assignment.id).map(({record,actorName})=>({...record,actorName,recordedAt:instantFromDate(record.recordedAt).toString()})),
 				lostQuantity: assignment.lostQuantity,
 				waivedQuantity: assignment.waivedQuantity,
 				recoveredQuantity: (exceptionEvidence.get(assignment.id) ?? [])
@@ -1327,3 +1354,5 @@ export async function readEquipment(
 		};
 	});
 }
+
+
