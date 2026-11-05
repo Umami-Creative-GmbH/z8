@@ -56,7 +56,11 @@ const rateLimitHeaders = {
 const problemResponse = (description: string, extraHeaders: Record<string, unknown> = {}) => ({
 	description,
 	headers: { ...rateLimitHeaders, ...extraHeaders },
-	content: { [PROBLEM_CONTENT_TYPE]: { schema: { $ref: "#/components/schemas/Problem" } } },
+	content: {
+		[PROBLEM_CONTENT_TYPE]: {
+			schema: { $ref: "#/components/schemas/Problem" },
+		},
+	},
 });
 
 function parametersOf(endpoint: PublicApiEndpoint) {
@@ -85,7 +89,11 @@ function operationOf(endpoint: PublicApiEndpoint) {
 			"200": {
 				description: "OK",
 				headers: rateLimitHeaders,
-				content: { "application/json": { schema: jsonSchema(endpoint.response, "output") } },
+				content: {
+					"application/json": {
+						schema: jsonSchema(endpoint.response, "output"),
+					},
+				},
 			},
 			"400": problemResponse("`validation_failed`: a query parameter is invalid."),
 			"401": problemResponse("`invalid_key`: the API key is missing, unknown, revoked or expired."),
@@ -99,6 +107,9 @@ function operationOf(endpoint: PublicApiEndpoint) {
 						schema: { type: "integer" },
 					},
 				},
+			),
+			"500": problemResponse(
+				"`server_error`: an unexpected error occurred while processing the request.",
 			),
 		},
 		"x-z8-scope": endpoint.scope,
@@ -120,6 +131,7 @@ export function buildOpenApiDocument(endpoints: readonly PublicApiEndpoint[]) {
 			version: "1.0.0",
 			description: [
 				"Read your organization's data from your own systems with an organization API key.",
+				"Use the base URL of your own Z8 installation. Download /api/v1/openapi.json from that installation to retain its API target when importing this document into a client.",
 				"",
 				"Send the key as `Authorization: Bearer <key>`. A key acts as its organization, limited to its key scopes.",
 				"Errors are `application/problem+json` (RFC 9457). Within `/api/v1`, changes only add fields or endpoints.",
