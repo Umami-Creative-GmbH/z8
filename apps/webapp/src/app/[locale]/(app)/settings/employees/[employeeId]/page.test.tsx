@@ -12,6 +12,7 @@ const mockState = vi.hoisted(() => ({
 	getCurrentSettingsRouteContext: vi.fn(),
 	getEmployee: vi.fn(),
 	loadPersonnelFilePanelCapability: vi.fn(),
+	getEmployeeEquipment: vi.fn(),
 	redirect: vi.fn((path: string) => {
 		throw new Error(`redirect:${path}`);
 	}),
@@ -29,6 +30,9 @@ vi.mock("../actions", () => ({ getEmployee: mockState.getEmployee }));
 vi.mock("@/lib/personnel-file/panel", () => ({
 	loadPersonnelFilePanelCapability: mockState.loadPersonnelFilePanelCapability,
 }));
+vi.mock("@/lib/organization/equipment/actions", () => ({
+	getEmployeeEquipment: mockState.getEmployeeEquipment,
+}));
 vi.mock("./employee-detail-page-client", () => ({
 	EmployeeDetailPageClient: "EmployeeDetailPageClient",
 }));
@@ -42,6 +46,10 @@ function getContentElement(page: ReturnType<typeof EmployeeDetailPage>) {
 describe("EmployeeDetailPage actor membership", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.getEmployeeEquipment.mockResolvedValue({
+			success: false,
+			code: "AuthorizationError",
+		});
 		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
 			authContext: {
 				user: { id: "user-1" },
@@ -90,6 +98,23 @@ describe("EmployeeDetailPage actor membership", () => {
 				updatedAt: expect.any(Number),
 			},
 		});
+	});
+	it("loads equipment through its independent permission boundary for an employee profile", async () => {
+		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "owner" });
+		const equipment = {
+			assignments: [{ identifier: "L-01" }],
+			canManage: true,
+		};
+		mockState.getEmployeeEquipment.mockResolvedValue({
+			success: true,
+			data: equipment,
+		});
+		const element = EmployeeDetailPage({
+			params: Promise.resolve({ employeeId: "employee-1" }),
+		}).props.children;
+		const detail = await element.type(element.props);
+		expect(mockState.getEmployeeEquipment).toHaveBeenCalledWith("employee-1");
+		expect(detail.props.equipment).toEqual(equipment);
 	});
 
 	it("passes the personnel file panel only when the resolver grants it (#865)", async () => {

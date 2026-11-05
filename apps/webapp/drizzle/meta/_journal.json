@@ -2066,6 +2066,97 @@
       "when": 1810137600000,
       "tag": "0294_go_live_group",
       "breakpoints": true
+    },
+    {
+      "idx": 295,
+      "version": "7",
+      "when": 1810224000000,
+      "tag": "0295_equipment_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 296,
+      "version": "7",
+      "when": 1810310400000,
+      "tag": "0296_equipment_custody",
+      "breakpoints": true
+    },
+    {
+      "idx": 297,
+      "version": "7",
+      "when": 1810396800000,
+      "tag": "0297_equipment_quantities",
+      "breakpoints": true
+    },
+    {
+      "idx": 298,
+      "version": "7",
+      "when": 1810483200000,
+      "tag": "0298_equipment_officers",
+      "breakpoints": true
+    },
+    {
+      "idx": 299,
+      "version": "7",
+      "when": 1810569600000,
+      "tag": "0299_equipment_readiness",
+      "breakpoints": true
+    },
+    {
+      "idx": 300,
+      "version": "7",
+      "when": 1810656000000,
+      "tag": "0300_equipment_exceptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 301,
+      "version": "7",
+      "when": 1810742400000,
+      "tag": "0301_equipment_historical",
+      "breakpoints": true
+    },
+    {
+      "idx": 302,
+      "version": "7",
+      "when": 1810828800000,
+      "tag": "0302_equipment_departure",
+      "breakpoints": true
+    },
+    {
+      "idx": 303,
+      "version": "7",
+      "when": 1810915200000,
+      "tag": "0303_equipment_deactivation",
+      "breakpoints": true
+    },
+    {
+      "idx": 304,
+      "version": "7",
+      "when": 1811001600000,
+      "tag": "0304_equipment_corrections",
+      "breakpoints": true
+    },
+    {
+      "idx": 305,
+      "version": "7",
+      "when": 1811088000000,
+      "tag": "0305_equipment_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 306,
+      "version": "7",
+      "when": 1811174400000,
+      "tag": "0306_equipment_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 307,
+      "version": "7",
+      "when": 1811260800000,
+      "tag": "0307_equipment_review_fixes",
+      "breakpoints": true
     }
   ]
 }

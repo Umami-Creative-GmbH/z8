@@ -90,6 +90,7 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	period_submission_decided: layout("/time-tracking"),
 	driving_details_missing_reminder: layout("/time-tracking"),
 	driving_licence_reminder: layout("/driving-licence"),
+	equipment_return_reminder: layout("/equipment", "/my-equipment"),
 	driving_authorization_suspended: layout("/driving-licence"),
 	// Record the refused kiosk clocking again (#1290).
 	kiosk_command_refused: layout("/time-tracking"),
@@ -104,7 +105,10 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	personnel_file_document_request_decided: layout("/my-documents"),
 	personnel_file_document_request_reminder: layout("/my-documents"),
 	personnel_file_document_request_submitted: layout("/personnel-files/"),
-	personnel_file_document_request_overdue: layout("/personnel-files/", "/my-documents"),
+	personnel_file_document_request_overdue: layout(
+		"/personnel-files/",
+		"/my-documents",
+	),
 	// The deputy's dashboard, which shows whom they cover (#1013).
 	absence_deputy_assigned: layout("/"),
 	absence_deputy_removed: layout("/"),

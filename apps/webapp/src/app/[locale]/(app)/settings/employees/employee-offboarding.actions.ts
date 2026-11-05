@@ -1,6 +1,7 @@
 "use server";
 
 import { Effect } from "effect";
+import { revalidatePath } from "next/cache";
 import type { ZodType } from "zod";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import {
@@ -162,6 +163,9 @@ function runDepartureCommand<TInput, TResult>(options: {
 					)
 					.pipe(Effect.mapError((error) => toAppError(error, actor, options.name)));
 				revalidateEmployeesCache(actor.organizationId);
+				revalidatePath("/equipment", "layout");
+				revalidatePath("/my-equipment");
+				revalidatePath("/settings/equipment");
 				return result;
 			}),
 	});

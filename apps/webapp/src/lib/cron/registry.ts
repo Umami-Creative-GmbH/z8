@@ -256,16 +256,28 @@ export interface SlackEscalationResult {
  * - defaultJobOptions: BullMQ options for retry, priority, etc.
  */
 export const CRON_JOBS = {
+	"cron:equipment-retention": {
+		schedule: "35 2 * * *",
+		description:
+			"Remove expired closed equipment personal history, protecting outstanding returns and case holds",
+		processor: async () =>
+			(
+				await import("@/lib/jobs/equipment-retention")
+			).runEquipmentRetentionJob(),
+		defaultJobOptions: { attempts: 3, priority: 5 },
+	},
 	"cron:payroll-baseline-cleanup": {
 		schedule: "17 * * * *",
 		description:
 			"Remove expired payroll comparison evidence and short-lived reviewed results",
 		processor: async (): Promise<{ expired: number }> => {
-			const [{ cleanupExpiredPayrollBaselines }, { cleanupExpiredPayrollComparisons }] =
-				await Promise.all([
-					import("@/lib/payroll-export/baseline-evidence"),
-					import("@/lib/payroll-export/comparison-service"),
-				]);
+			const [
+				{ cleanupExpiredPayrollBaselines },
+				{ cleanupExpiredPayrollComparisons },
+			] = await Promise.all([
+				import("@/lib/payroll-export/baseline-evidence"),
+				import("@/lib/payroll-export/comparison-service"),
+			]);
 			await cleanupExpiredPayrollComparisons();
 			return { expired: await cleanupExpiredPayrollBaselines() };
 		},
@@ -280,6 +292,18 @@ export const CRON_JOBS = {
 				"@/lib/jobs/driving-licence-retention"
 			);
 			return runDrivingLicenceRetentionJob();
+		},
+		defaultJobOptions: { attempts: 3, priority: 5 },
+	},
+	"cron:equipment-reminders": {
+		schedule: "*/15 * * * *",
+		description:
+			"Remind employees of equipment deadlines and authorized staff of outstanding overdue returns",
+		processor: async () => {
+			const { runEquipmentRemindersJob } = await import(
+				"@/lib/jobs/equipment-reminders"
+			);
+			return runEquipmentRemindersJob();
 		},
 		defaultJobOptions: { attempts: 3, priority: 5 },
 	},
@@ -534,12 +558,13 @@ export const CRON_JOBS = {
 		schedule: "0 * * * *", // Hourly, so each organization's day starts soon after its midnight
 		description:
 			"Remind employees of open document requests 3 days before and on the deadline, and tell them and the officers on the first overdue day",
-		processor: async (): Promise<PersonnelFileDocumentRequestRemindersJobResult> => {
-			const { runPersonnelFileDocumentRequestRemindersJob } = await import(
-				"@/lib/jobs/personnel-file-document-request-reminders"
-			);
-			return runPersonnelFileDocumentRequestRemindersJob();
-		},
+		processor:
+			async (): Promise<PersonnelFileDocumentRequestRemindersJobResult> => {
+				const { runPersonnelFileDocumentRequestRemindersJob } = await import(
+					"@/lib/jobs/personnel-file-document-request-reminders"
+				);
+				return runPersonnelFileDocumentRequestRemindersJob();
+			},
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},
 
@@ -612,12 +637,13 @@ export const CRON_JOBS = {
 		schedule: "15 * * * *", // Hourly, so each organization's day starts soon after its midnight
 		description:
 			"Delete closed document requests without documents once their category's retention period has passed (deletes data)",
-		processor: async (): Promise<PersonnelFileDocumentRequestRetentionJobResult> => {
-			const { runPersonnelFileDocumentRequestRetentionJob } = await import(
-				"@/lib/jobs/personnel-file-document-request-retention"
-			);
-			return runPersonnelFileDocumentRequestRetentionJob();
-		},
+		processor:
+			async (): Promise<PersonnelFileDocumentRequestRetentionJobResult> => {
+				const { runPersonnelFileDocumentRequestRetentionJob } = await import(
+					"@/lib/jobs/personnel-file-document-request-retention"
+				);
+				return runPersonnelFileDocumentRequestRetentionJob();
+			},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 

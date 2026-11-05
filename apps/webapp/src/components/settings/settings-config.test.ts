@@ -16,6 +16,12 @@ import settingsGenericEn from "../../../messages/settings/generic/en.json";
 import settingsPeopleEn from "../../../messages/settings/people/en.json";
 
 describe("settings visibility tiers", () => {
+	it("offers equipment setup only to organization administrators", () => {
+		for (const tier of ["member", "manager", "orgAdmin"] as const) {
+			expect(getVisibleSettings(tier, true).some((entry) => entry.href === "/settings/equipment")).toBe(tier === "orgAdmin");
+			expect(canResolvedTierAccessRoute(tier, "/settings/equipment")).toBe(tier === "orgAdmin");
+		}
+	});
 	it("shows only member entries for the member tier", () => {
 		const entries = getVisibleSettings("member", false);
 
@@ -116,6 +122,7 @@ describe("settings visibility tiers", () => {
 			"identity-access",
 			"locations",
 			"vehicles",
+			"equipment",
 			"personnel-files",
 			"custom-fields",
 			"custom-domains",

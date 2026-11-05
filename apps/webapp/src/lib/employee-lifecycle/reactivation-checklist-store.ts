@@ -141,6 +141,7 @@ const checklistPlanSchema: z.ZodType<ChecklistPlan> = z.object({
 					"payroll_access",
 					"personnel_file_officer",
 					"driving_licence_verifier",
+					"equipment_officer",
 				]),
 				grantId: z.string(),
 			}),

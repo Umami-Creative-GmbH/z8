@@ -145,6 +145,88 @@ _Avoid_: line-management scope, payroll access, personnel file access
 The organization's justified period for keeping a check record once it no longer supports an active driving authorization. A documented hold for a specific legal case postpones deletion.
 _Avoid_: permanent archive, statutory three-year retention
 
+### Equipment (confirmed design)
+
+These terms describe the confirmed equipment design; see the
+[equipment tracking reference](../../../../../docs/refs/equipment-return-tracking.md)
+for the agreed rules and implementation status.
+
+**Equipment assignment**:
+A record of equipment issued to one employee, including its condition and whether it must be returned.
+_Avoid_: equipment issue (can mean a fault), asset ownership
+
+**Individually identified equipment item**:
+A particular physical item distinguished from other items of the same kind, such as a laptop with an equipment identifier.
+_Avoid_: equipment type, quantity assignment
+
+**Quantity assignment**:
+Equipment issued as a count of interchangeable items, such as three shirts of the same size, which may be returned in parts.
+_Avoid_: individually identified equipment item, stock balance
+
+**Equipment officer**:
+A person the organization explicitly authorizes to manage employee equipment assignments. Being an employee's manager does not itself make someone an equipment officer.
+_Avoid_: manager (as an implied equipment officer), equipment owner
+
+**Return requirement**:
+The statement on an equipment assignment of whether the issued equipment must be returned or the employee may keep it.
+_Avoid_: return deadline, outstanding return
+
+**Equipment return**:
+An authorized receiver's record that a quantity of assigned equipment was physically received, with its condition.
+_Avoid_: return waiver, lost equipment, access revocation
+
+**Outstanding return**:
+The required quantity on an equipment assignment that has neither been physically returned nor closed as lost or return waived. It can remain outstanding after the employee leaves or is rehired.
+_Avoid_: active assignment, overdue return (an outstanding return may not yet be due)
+
+**Return deadline**:
+The calendar date in the organization's timezone by which assigned equipment must be returned.
+_Avoid_: actual return date, departure cutoff
+
+**Return waiver**:
+An owner's or admin's recorded decision, with a reason, to close a required return without receiving the equipment.
+_Avoid_: equipment return, loss, deletion
+
+**Lost equipment**:
+Assigned equipment whose return obligation an owner or admin has closed as lost, with a reason. It has not been physically returned.
+_Avoid_: equipment return, return waiver
+
+**Equipment officer scope**:
+The employees whose equipment an officer is authorized to manage, covering the whole organization or selected teams and employees.
+_Avoid_: manager's team, personnel file access
+
+**Equipment type**:
+An organization's reusable description of a kind of equipment, defining whether items are tracked individually or by quantity and whether return is normally required.
+_Avoid_: equipment item, stock category
+
+**Equipment identifier**:
+The organization's unique identifier for one individually tracked physical item, separate from its optional manufacturer serial number.
+_Avoid_: serial number, assignment identifier
+
+**Equipment recovery**:
+A record of physically receiving equipment previously recorded as lost, with its received condition. It supplements rather than erases the original loss decision.
+_Avoid_: loss reversal, return waiver, new assignment
+
+**Equipment correction**:
+A reasoned amendment to an equipment record that preserves what was recorded before and identifies the correcting person.
+_Avoid_: deletion, overwrite
+
+**Equipment issued to keep**:
+Equipment an employee is permitted to retain without a return obligation. Its issuance remains part of the employee's equipment history while that record is retained.
+_Avoid_: outstanding return, returned equipment, lost equipment
+
+**Equipment transfer**:
+Moving equipment from one employee to another through an authorized receipt and a new issuance, preserving both handovers.
+_Avoid_: changing the holder, employee-to-employee handover
+
+**Equipment clearance**:
+An officer's recorded decision that a damaged item may be issued again. It is separate from the condition recorded when the item was received.
+_Avoid_: repair record, condition overwrite
+
+**Equipment record retention**:
+The organization's finite period for keeping closed assignment records, counted from their latest activity. Outstanding obligations and documented case holds prevent cleanup.
+_Avoid_: permanent employee history, item availability
+
 ### Going live
 
 **Go-live group**:

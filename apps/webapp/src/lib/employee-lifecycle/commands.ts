@@ -17,6 +17,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
+import { synchronizeEquipmentDeparture } from "@/lib/organization/equipment/lifecycle";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { departureCutoff } from "./cutoff";
 import { queueDataExportReminder } from "./data-export-reminder";
@@ -166,7 +167,14 @@ async function scheduleDeparture(
 		await assertActorMayDepart(tx, actor, target);
 		await assertReplacementChoice(tx, actor.organizationId, target.id, input);
 		const periodId = await ensureOpenEmploymentPeriod(tx, actor.organizationId, target.id);
-		const cutoff = await resolveCutoff(tx, actor.organizationId, input.lastWorkingDay, now);
+		const cutoff = await resolveCutoff(
+			tx,
+			actor.organizationId,
+			input.lastWorkingDay,
+			now,
+			target.id,
+			input.expectedRevision,
+		);
 		const nowDate = dateFromInstant(now);
 		if (input.expectedRevision !== null) {
 			return reviseDeparture(tx, {
@@ -219,6 +227,12 @@ async function scheduleDeparture(
 		if (!created) throw new Error("departure_not_created");
 
 		const result = { departureId: created.id, revision: created.revision };
+		await synchronizeEquipmentDeparture(tx, {
+			...actor,
+			employeeId: target.id,
+			employmentPeriodId: periodId,
+			departureId: created.id,
+		});
 		await persistDispatchIntent(tx, {
 			organizationId: actor.organizationId,
 			employeeId: target.id,
@@ -307,6 +321,12 @@ async function reviseDeparture(
 	if (!departure) throw new DepartureCommandError("departure_revision_conflict");
 
 	const result = { departureId: departure.id, revision: departure.revision };
+	await synchronizeEquipmentDeparture(tx, {
+		...actor,
+		employeeId: input.targetId,
+		employmentPeriodId: input.periodId,
+		departureId: departure.id,
+	});
 	await persistDispatchIntent(tx, {
 		organizationId: actor.organizationId,
 		employeeId: input.targetId,
@@ -380,6 +400,12 @@ async function cancelDeparture(
 		`);
 		const revision = canceled.rows[0]?.revision;
 		if (revision === undefined) throw new DepartureCommandError("departure_revision_conflict");
+		await synchronizeEquipmentDeparture(tx, {
+			...actor,
+			employeeId: target.id,
+			employmentPeriodId: departure.employmentPeriodId,
+			departureId: input.departureId,
+		});
 
 		await writeReceipt(tx, {
 			actor,
@@ -408,7 +434,10 @@ async function offboardNow(
 	input: OffboardNow,
 ): Promise<ExecuteDepartureResult> {
 	const fingerprint = requestFingerprint(actor, "offboard_now", input);
-	const departing = { organizationId: actor.organizationId, employeeId: input.employeeId };
+	const departing = {
+		organizationId: actor.organizationId,
+		employeeId: input.employeeId,
+	};
 	return runDepartureTransaction(deps.db, departing, async (scope) => {
 		const tx = scope.db;
 		const now = deps.clock.nowInstant();
@@ -716,7 +745,9 @@ async function rehireEmployee(
 			kind: "employee_rehired",
 			occurredAt: nowDate,
 			result,
-			metadata: { previousEmploymentPeriodId: input.previousEmploymentPeriodId },
+			metadata: {
+				previousEmploymentPeriodId: input.previousEmploymentPeriodId,
+			},
 		});
 		return result;
 	});
@@ -833,7 +864,10 @@ async function ensureOpenEmploymentPeriod(
 	organizationId: string,
 	employeeId: string,
 ): Promise<string> {
-	const period = await resolveCurrentEmploymentPeriod(tx, { organizationId, employeeId });
+	const period = await resolveCurrentEmploymentPeriod(tx, {
+		organizationId,
+		employeeId,
+	});
 	if (period?.status !== "open") throw new DepartureCommandError("no_open_employment_period");
 	return period.id;
 }
@@ -843,15 +877,31 @@ async function resolveCutoff(
 	organizationId: string,
 	lastWorkingDay: string,
 	now: Instant,
+	employeeId: string,
+	expectedRevision: number | null,
 ) {
 	const [org] = await tx
 		.select({ timezone: organization.timezone })
 		.from(organization)
 		.where(eq(organization.id, organizationId));
+	const [previous] =
+		expectedRevision === null
+			? []
+			: await tx
+					.select({ timezone: employeeDeparture.timezone })
+					.from(employeeDeparture)
+					.where(
+						and(
+							eq(employeeDeparture.organizationId, organizationId),
+							eq(employeeDeparture.employeeId, employeeId),
+							eq(employeeDeparture.revision, expectedRevision),
+							inArray(employeeDeparture.status, ["pending", "blocked"]),
+						),
+					);
 	try {
 		return departureCutoff({
 			lastWorkingDay,
-			timezone: org?.timezone ?? null,
+			timezone: previous?.timezone ?? org?.timezone ?? null,
 			now,
 		});
 	} catch (error) {

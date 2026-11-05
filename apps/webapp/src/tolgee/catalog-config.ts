@@ -113,6 +113,8 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],
+	"/equipment": ["common", "settings/generic"],
+	"/my-equipment": ["common", "settings/generic"],
 	// settings/generic: the verifier responsibility panel (settings.drivingLicence.verifiers).
 	"/driving-licence": ["common", "settings/generic"],
 	"/personnel-files": ["common", "settings/people"],
@@ -240,6 +242,7 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/webhooks": ["common", "settings/generic", "webhooks"],
 	"/settings/work-categories": ["common", "settings/generic", "settings/rules"],
 	"/settings/vehicles": ["common", "settings/generic", "settings/workPolicies"],
+	"/settings/equipment": ["common", "settings/generic"],
 	"/settings/vehicle-use": [
 		"common",
 		"settings/generic",

@@ -15,6 +15,7 @@ import {
 	showsDrivingLicenceNavigation,
 	showsDrivingLicenceSettings,
 } from "@/lib/organization/driving-licence/visibility-rules";
+import { readEquipmentNavigation } from "@/lib/organization/equipment/access";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { resolvePersonnelFileAccessForIdentity } from "@/lib/personnel-file/access-store";
@@ -70,6 +71,7 @@ export async function ServerAppSidebar({
 		authContext,
 		canCreateOrganizations,
 		capabilitiesUnavailable,
+		equipmentAccess,
 	} = await resolveSidebarAccess(showWorksCouncilNav);
 	return (
 		<AppSidebar
@@ -91,6 +93,8 @@ export async function ServerAppSidebar({
 						activeEmployee &&
 							activeEmployee.organizationId === activeOrganizationId,
 					),
+				myEquipment: equipmentAccess.personal,
+				equipment: equipmentAccess.staff,
 				personnelFiles: showPersonnelFilesNav,
 				periodSubmissions: showPeriodSubmissionsNav,
 				teamPresence: showTeamPresenceNav,
@@ -145,6 +149,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		showTeamPresenceNav,
 		drivingLicenceVisibility,
 		managesProject,
+		equipmentAccess,
 	] = await Promise.all([
 		capability(
 			showWorksCouncilNav && featureFlags.worksCouncilEnabled && identity
@@ -215,6 +220,12 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 				: false,
 			false,
 		),
+		capability(
+			identity
+				? readEquipmentNavigation(db, identity)
+				: { personal: false, staff: false },
+			{ personal: false, staff: false },
+		),
 	]);
 	const showFinanceNav = financeActor?.canRead ?? false;
 	const showPersonnelFilesNav =
@@ -244,5 +255,6 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		authContext,
 		canCreateOrganizations,
 		capabilitiesUnavailable,
+		equipmentAccess,
 	};
 }
