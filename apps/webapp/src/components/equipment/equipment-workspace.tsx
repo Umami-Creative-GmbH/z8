@@ -22,6 +22,7 @@ import type {
 } from "@/lib/organization/equipment/contracts";
 import { Link, useRouter } from "@/navigation";
 import { conditionLabel, handoverRefusalMessage } from "./equipment-copy";
+import { EquipmentCorrections } from "./equipment-corrections";
 import {
 	CloseReturnForm,
 	EquipmentExceptionEvidence,
@@ -132,13 +133,18 @@ function useEquipmentCommands() {
 				setFeedback({
 					kind: "success",
 					text:
-						change.kind === "close_return" ||
-						change.kind === "receive_exception"
-							? t(
-									"settings.equipment.exception.saved",
-									"Equipment action recorded.",
-								)
-							: t("settings.equipment.handover.saved", "Handover recorded."),
+						change.kind === "correct_issue" ||
+						change.kind === "correct_receipt" ||
+						change.kind === "correct_exception" ||
+						change.kind === "correct_transfer"
+							? t("settings.equipment.correction.saved", "Amendment recorded.")
+							: change.kind === "close_return" ||
+									change.kind === "receive_exception"
+								? t(
+										"settings.equipment.exception.saved",
+										"Equipment action recorded.",
+									)
+								: t("settings.equipment.handover.saved", "Handover recorded."),
 				});
 				router.refresh();
 			} catch {
@@ -321,6 +327,7 @@ function EquipmentWorkspace({
 			/>
 			<EquipmentAssignments
 				data={data}
+				submit={submit}
 				pending={pending || !!selection}
 				onClose={(assignmentId) => {
 					setFeedback(null);
@@ -462,12 +469,14 @@ function EquipmentExceptionEditor({
 
 function EquipmentAssignments({
 	data,
+	submit,
 	pending,
 	onReceive,
 	onTransfer,
 	onClose,
 	onReceiveException,
 }: {
+	submit: (change: EquipmentChange) => Promise<void>;
 	onClose: (assignmentId: string) => void;
 	onReceiveException: (assignmentId: string, exceptionId: string) => void;
 	data: EquipmentView;
@@ -491,6 +500,23 @@ function EquipmentAssignments({
 				<EquipmentAssignmentCard
 					key={assignment.id}
 					assignment={assignment}
+					amendments={
+						<EquipmentCorrections
+							key={`${assignment.id}:${assignment.revision}`}
+							assignment={{
+								...assignment,
+								canCorrect: data.canManage && assignment.canCorrect,
+								canCorrectReceipt:
+									data.canManage && assignment.canCorrectReceipt,
+								canCorrectException:
+									data.canManage && assignment.canCorrectException,
+							}}
+							today={data.today}
+							timezone={data.timezone}
+							pending={pending}
+							submit={submit}
+						/>
+					}
 					timezone={data.timezone}
 					staff={data.canManage}
 					pending={pending}
@@ -658,12 +684,14 @@ function EquipmentFiltersForm({
 }
 function EquipmentAssignmentCard({
 	assignment,
+	amendments,
 	timezone,
 	staff,
 	receiptAction,
 	pending,
 	onReceiveException,
 }: {
+	amendments: ReactNode;
 	pending: boolean;
 	onReceiveException: (exceptionId: string) => void;
 	assignment: EquipmentAssignmentView;
@@ -874,6 +902,7 @@ function EquipmentAssignmentCard({
 					))}
 				</ol>
 			</details>
+			{amendments}
 		</article>
 	);
 }
@@ -898,6 +927,30 @@ function AssignmentStatus({
 		</Badge>
 	);
 }
+function handoverTitle(
+	handover: EquipmentHandoverView,
+	kind: "issue" | "receipt",
+	exceptionKind: "lost" | "waived" | undefined,
+	t: (key: string, fallback: string) => string,
+) {
+	if (kind === "receipt" && handover.quantity === 0)
+		return t(
+			"settings.equipment.correction.voidedReceipt",
+			"Receipt reversed by amendment",
+		);
+	if (handover.historical)
+		return t("settings.equipment.historical.evidence", "Historical issuance");
+	if (kind === "issue")
+		return t("settings.equipment.custody.issuance", "Issuance");
+	if (exceptionKind === "lost")
+		return t("settings.equipment.exception.recovery", "Physical recovery");
+	if (exceptionKind === "waived")
+		return t(
+			"settings.equipment.exception.waivedReceipt",
+			"Physical receipt after waiver",
+		);
+	return t("settings.equipment.custody.receipt", "Physical receipt");
+}
 function HandoverEvidence({
 	handover,
 	timezone,
@@ -914,22 +967,7 @@ function HandoverEvidence({
 	return (
 		<li className="space-y-1 break-words text-sm">
 			<p className="font-medium">
-				{handover.historical
-					? t("settings.equipment.historical.evidence", "Historical issuance")
-					: kind === "issue"
-						? t("settings.equipment.custody.issuance", "Issuance")
-						: exception?.kind === "lost"
-							? t("settings.equipment.exception.recovery", "Physical recovery")
-							: exception?.kind === "waived"
-								? t(
-										"settings.equipment.exception.waivedReceipt",
-										"Physical receipt after waiver",
-									)
-								: t(
-										"settings.equipment.custody.receipt",
-										"Physical receipt",
-									)}{" "}
-				·{" "}
+				{handoverTitle(handover, kind, exception?.kind, t)} ·{" "}
 				{handover.actualDate ? (
 					<time dateTime={handover.actualDate}>
 						{parsePlainDate(handover.actualDate).toLocaleString(locale, {

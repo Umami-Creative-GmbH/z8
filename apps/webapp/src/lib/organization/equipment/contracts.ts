@@ -146,30 +146,47 @@ export const equipmentQuantitySchema = z
 	.max(2147483647);
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
-		kind: z.literal("correct_transfer"), ...request, ...revision,
-		assignmentId: z.uuid(), destinationAssignmentId: z.uuid(),
+		kind: z.literal("correct_transfer"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		destinationAssignmentId: z.uuid(),
 		expectedDestinationRevision: z.number().int().positive(),
 		quantity: equipmentQuantitySchema,
-		receipt: z.strictObject(transferEvidence), issue: z.strictObject(transferEvidence),
+		receipt: z.strictObject(transferEvidence),
+		issue: z.strictObject(transferEvidence),
 		reason: z.string().trim().min(1).max(4000),
 	}),
 	z.strictObject({
-		kind: z.literal("correct_issue"), ...request, ...revision,
-		assignmentId: z.uuid(), reason: z.string().trim().min(1).max(4000),
-		quantity: equipmentQuantitySchema, actualDate: calendarDate.nullable(),
-		condition: equipmentConditionSchema, notes: z.string().trim().max(4000),
-		returnRequired: z.boolean(), explicitDeadline: calendarDate.nullable(),
+		kind: z.literal("correct_issue"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		reason: z.string().trim().min(1).max(4000),
+		quantity: equipmentQuantitySchema,
+		actualDate: calendarDate.nullable(),
+		condition: equipmentConditionSchema,
+		notes: z.string().trim().max(4000),
+		returnRequired: z.boolean(),
+		explicitDeadline: calendarDate.nullable(),
 		employmentPeriodId: z.uuid().nullable(),
 	}),
 	z.strictObject({
-		kind: z.literal("correct_receipt"), ...request, ...revision,
-		assignmentId: z.uuid(), handoverId: z.uuid(),
+		kind: z.literal("correct_receipt"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		handoverId: z.uuid(),
 		reason: z.string().trim().min(1).max(4000),
-		quantity: z.number().int().nonnegative().max(2147483647), ...transferEvidence,
+		quantity: z.number().int().nonnegative().max(2147483647),
+		...transferEvidence,
 	}),
 	z.strictObject({
-		kind: z.literal("correct_exception"), ...request, ...revision,
-		assignmentId: z.uuid(), exceptionId: z.uuid(),
+		kind: z.literal("correct_exception"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		exceptionId: z.uuid(),
 		reason: z.string().trim().min(1).max(4000),
 		quantity: z.number().int().nonnegative().max(2147483647),
 		outcome: z.enum(["lost", "waived"]),
@@ -298,6 +315,7 @@ export type EquipmentRefusal =
 	| "self_receipt"
 	| "self_exception"
 	| "return_not_required"
+	| "waiver_required"
 	| "already_received"
 	| "quantity_required"
 	| "excess_quantity"
@@ -338,6 +356,12 @@ export interface EquipmentExceptionView {
 	canReceive: boolean;
 }
 export interface EquipmentAssignmentView {
+	correctionTransfers?: {
+		destinationAssignmentId: string;
+		expectedDestinationRevision: number;
+		receiptId: string;
+		issue: EquipmentHandoverView;
+	}[];
 	canCorrect?: boolean;
 	canCorrectReceipt?: boolean;
 	canCorrectException?: boolean;

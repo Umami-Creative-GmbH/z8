@@ -27,8 +27,8 @@ import {
 	equipmentHandover,
 	equipmentItem,
 	equipmentPolicy,
-	equipmentType,
 	equipmentTransfer,
+	equipmentType,
 } from "@/db/schema/equipment";
 import {
 	dateFromInstant,
@@ -53,11 +53,18 @@ import {
 	equipmentChangeSchema,
 } from "./contracts";
 import {
+	canCorrectEquipmentHistory,
+	correctEquipment,
+	correctEquipmentTransfer,
+	correctionRefusal,
+	effectiveException,
+	effectiveHandover,
+} from "./corrections";
+import {
 	effectiveEquipmentDeadline,
 	equipmentDepartureDeadline,
 } from "./deadlines";
 import { applyItemReadiness, readItemReadiness } from "./readiness";
-import { correctEquipment, correctEquipmentTransfer, correctionRefusal, effectiveException, effectiveHandover } from "./corrections";
 import {
 	type EquipmentTransaction,
 	prepareEquipmentTypeForIssuance,
@@ -147,7 +154,9 @@ export async function applyEquipmentChange(
 			const access = await equipmentAccess(tx, actor);
 			if (
 				!access.canManage ||
-				((change.kind === "close_return" || change.kind === "correct_exception") && !access.canAdminister)
+				((change.kind === "close_return" ||
+					change.kind === "correct_exception") &&
+					!access.canAdminister)
 			)
 				return { ok: false, reason: "forbidden" };
 			if (
@@ -207,6 +216,19 @@ export async function applyEquipmentChange(
 						reason: access.canAdminister ? "not_found" : "forbidden",
 					};
 			}
+			if (
+				(change.kind === "correct_issue" ||
+					change.kind === "correct_receipt" ||
+					change.kind === "correct_exception" ||
+					change.kind === "correct_transfer") &&
+				!(await canCorrectEquipmentHistory(
+					tx,
+					actor,
+					access,
+					change.assignmentId,
+				))
+			)
+				return { ok: false, reason: "forbidden" };
 			const [replay] = await tx
 				.select()
 				.from(equipmentCommand)
@@ -246,14 +268,23 @@ export async function applyEquipmentChange(
 			}
 			const outcome =
 				change.kind === "correct_transfer"
-                    ? await correctEquipmentTransfer(tx, actor, change, today, now, timezone)
-                    : change.kind === "correct_issue" || change.kind === "correct_receipt" || change.kind === "correct_exception"
-					? await correctEquipment(tx, actor, change, today, now, timezone)
-					: change.kind === "close_return"
-					? await closeEquipmentReturn(tx, actor, change, now)
-					: change.kind === "transfer_equipment"
-						? await transferEquipment(tx, actor, change, target, today, now)
-						: await performHandover(tx, actor, change, target, today, now);
+					? await correctEquipmentTransfer(
+							tx,
+							actor,
+							change,
+							today,
+							now,
+							timezone,
+						)
+					: change.kind === "correct_issue" ||
+							change.kind === "correct_receipt" ||
+							change.kind === "correct_exception"
+						? await correctEquipment(tx, actor, change, today, now, timezone)
+						: change.kind === "close_return"
+							? await closeEquipmentReturn(tx, actor, change, now)
+							: change.kind === "transfer_equipment"
+								? await transferEquipment(tx, actor, change, target, today, now)
+								: await performHandover(tx, actor, change, target, today, now);
 			if (!outcome.ok) return outcome;
 			await tx.insert(equipmentCommand).values({
 				organizationId: actor.organizationId,
@@ -265,8 +296,8 @@ export async function applyEquipmentChange(
 		})
 		.catch((error: unknown) => {
 			if (error instanceof TransferRefusal) return error.outcome;
-            const correction = correctionRefusal(error);
-            if (correction) return correction;
+			const correction = correctionRefusal(error);
+			if (correction) return correction;
 			throw error;
 		});
 }
@@ -402,7 +433,16 @@ async function transferEquipment(
 		return { ok: false, reason: "not_found" };
 	if ((item?.revision ?? type.revision) !== change.expectedIssuanceRevision)
 		return { ok: false, reason: "stale_revision" };
-	const priorReceipts = await tx.select({id: equipmentHandover.id}).from(equipmentHandover).where(and(eq(equipmentHandover.organizationId, actor.organizationId), eq(equipmentHandover.assignmentId, source.id), eq(equipmentHandover.kind, "receipt")));
+	const priorReceipts = await tx
+		.select({ id: equipmentHandover.id })
+		.from(equipmentHandover)
+		.where(
+			and(
+				eq(equipmentHandover.organizationId, actor.organizationId),
+				eq(equipmentHandover.assignmentId, source.id),
+				eq(equipmentHandover.kind, "receipt"),
+			),
+		);
 	const receipt = await performHandover(
 		tx,
 		actor,
@@ -447,14 +487,40 @@ async function transferEquipment(
 		now,
 	);
 	if (!issued.ok) throw new TransferRefusal(issued);
-	const [issuedEvidence] = await tx.select().from(equipmentHandover).where(and(eq(equipmentHandover.organizationId, actor.organizationId), eq(equipmentHandover.assignmentId, issued.id), eq(equipmentHandover.kind, "issue")));
-	const sourceEvidence = await tx.select().from(equipmentHandover).where(and(eq(equipmentHandover.organizationId, actor.organizationId), eq(equipmentHandover.assignmentId, source.id), eq(equipmentHandover.kind, "receipt"))).orderBy(desc(equipmentHandover.recordedAt), desc(equipmentHandover.id));
+	const [issuedEvidence] = await tx
+		.select()
+		.from(equipmentHandover)
+		.where(
+			and(
+				eq(equipmentHandover.organizationId, actor.organizationId),
+				eq(equipmentHandover.assignmentId, issued.id),
+				eq(equipmentHandover.kind, "issue"),
+			),
+		);
+	const sourceEvidence = await tx
+		.select()
+		.from(equipmentHandover)
+		.where(
+			and(
+				eq(equipmentHandover.organizationId, actor.organizationId),
+				eq(equipmentHandover.assignmentId, source.id),
+				eq(equipmentHandover.kind, "receipt"),
+			),
+		)
+		.orderBy(desc(equipmentHandover.recordedAt), desc(equipmentHandover.id));
 	// The receipt just written has the transaction timestamp. Obtain its identity
 	// from this command rather than inferring linkage from equal handover dates.
-	const priorReceiptIds = new Set(priorReceipts.map(h => h.id));
-	const receiptEvidence = sourceEvidence.find(h => !priorReceiptIds.has(h.id));
-	if (!issuedEvidence || !receiptEvidence) throw new Error("Missing transfer evidence");
-	await tx.insert(equipmentTransfer).values({organizationId: actor.organizationId, receiptId: receiptEvidence.id, issueId: issuedEvidence.id});
+	const priorReceiptIds = new Set(priorReceipts.map((h) => h.id));
+	const receiptEvidence = sourceEvidence.find(
+		(h) => !priorReceiptIds.has(h.id),
+	);
+	if (!issuedEvidence || !receiptEvidence)
+		throw new Error("Missing transfer evidence");
+	await tx.insert(equipmentTransfer).values({
+		organizationId: actor.organizationId,
+		receiptId: receiptEvidence.id,
+		issueId: issuedEvidence.id,
+	});
 	return issued;
 }
 
@@ -759,7 +825,9 @@ async function performHandover(
 							),
 						)
 				: [];
-		const exception = originalException ? effectiveException(originalException) : undefined;
+		const exception = originalException
+			? effectiveException(originalException)
+			: undefined;
 		if (change.kind === "receive_exception") {
 			const { timezone } = await organizationCalendar(tx, actor.organizationId);
 			if (!exception) return { ok: false, reason: "not_found" };
@@ -1079,11 +1147,7 @@ export async function readEquipment(
 							),
 						),
 					)
-					.orderBy(
-						asc(equipmentHandover.actualDate),
-						asc(equipmentHandover.recordedAt),
-						asc(equipmentHandover.id),
-					)
+					.orderBy(asc(equipmentHandover.sequence))
 			: [];
 		const exceptionRows = rows.length
 			? await tx
@@ -1106,7 +1170,7 @@ export async function readEquipment(
 			: [];
 		const exceptionEvidence = new Map<string, EquipmentExceptionView[]>();
 		for (const { record: original, actorName } of exceptionRows) {
-            const record = effectiveException(original);
+			const record = effectiveException(original);
 			const list = exceptionEvidence.get(record.assignmentId) ?? [];
 			list.push({
 				...record,
@@ -1119,7 +1183,7 @@ export async function readEquipment(
 		}
 		const evidence = new Map<string, EquipmentHandoverView[]>();
 		for (const { record: original, actorName } of handovers) {
-            const record = effectiveHandover(original);
+			const record = effectiveHandover(original);
 			const key = `${record.assignmentId}:${record.kind}`;
 			const records = evidence.get(key) ?? [];
 			records.push({
@@ -1136,8 +1200,45 @@ export async function readEquipment(
 			});
 			evidence.set(key, records);
 		}
-		const correctionRows = rows.length ? await tx.select({record:equipmentCorrection,actorName:user.name}).from(equipmentCorrection).leftJoin(user,eq(user.id,equipmentCorrection.actorId)).where(and(eq(equipmentCorrection.organizationId,actor.organizationId),inArray(equipmentCorrection.assignmentId,rows.map(r=>r.assignment.id)))).orderBy(asc(equipmentCorrection.expectedRevision)) : [];
-        const filters = scope.kind === "overview" ? scope.filters : {};
+		for (const records of evidence.values()) {
+			records.sort((a, b) => {
+				const dayOrder =
+					a.actualDate === null
+						? b.actualDate === null
+							? 0
+							: -1
+						: b.actualDate === null
+							? 1
+							: Temporal.PlainDate.compare(
+									parsePlainDate(a.actualDate),
+									parsePlainDate(b.actualDate),
+								);
+				return (
+					dayOrder ||
+					Temporal.Instant.compare(
+						Temporal.Instant.from(a.recordedAt),
+						Temporal.Instant.from(b.recordedAt),
+					)
+				);
+			});
+		}
+		const correctionRows = rows.length
+			? await tx
+					.select({ record: equipmentCorrection, actorName: user.name })
+					.from(equipmentCorrection)
+					.leftJoin(user, eq(user.id, equipmentCorrection.actorId))
+					.where(
+						and(
+							eq(equipmentCorrection.organizationId, actor.organizationId),
+							inArray(
+								equipmentCorrection.assignmentId,
+								rows.map((r) => r.assignment.id),
+							),
+						),
+					)
+					.orderBy(asc(equipmentCorrection.expectedRevision))
+			: [];
+		const filters = scope.kind === "overview" ? scope.filters : {};
 		const assignments: EquipmentAssignmentView[] = [];
 		for (const { assignment, item, type } of rows) {
 			const holder = employeeMap.get(assignment.employeeId ?? "");
@@ -1171,11 +1272,91 @@ export async function readEquipment(
 				(filters.former !== undefined && filters.former !== holder.former)
 			)
 				continue;
+			const correctionAllowed =
+				staffView &&
+				(await canCorrectEquipmentHistory(tx, actor, access, assignment.id));
+			const correctionTransfers: NonNullable<
+				EquipmentAssignmentView["correctionTransfers"]
+			> = [];
+			if (
+				correctionAllowed &&
+				holder.userId !== actor.userId &&
+				receipts.length
+			) {
+				const links = await tx
+					.select()
+					.from(equipmentTransfer)
+					.where(
+						and(
+							eq(equipmentTransfer.organizationId, actor.organizationId),
+							inArray(
+								equipmentTransfer.receiptId,
+								receipts.map((h) => h.id),
+							),
+						),
+					);
+				for (const link of links) {
+					const [peer] = await tx
+						.select({
+							handover: equipmentHandover,
+							assignment: equipmentAssignment,
+							actorName: user.name,
+						})
+						.from(equipmentHandover)
+						.innerJoin(
+							equipmentAssignment,
+							and(
+								eq(equipmentAssignment.id, equipmentHandover.assignmentId),
+								eq(
+									equipmentAssignment.organizationId,
+									equipmentHandover.organizationId,
+								),
+							),
+						)
+						.leftJoin(user, eq(user.id, equipmentHandover.actorId))
+						.where(
+							and(
+								eq(equipmentHandover.organizationId, actor.organizationId),
+								eq(equipmentHandover.id, link.issueId),
+							),
+						);
+					if (peer) {
+						const h = effectiveHandover(peer.handover);
+						correctionTransfers.push({
+							destinationAssignmentId: peer.assignment.id,
+							expectedDestinationRevision: peer.assignment.revision,
+							receiptId: link.receiptId,
+							issue: {
+								id: h.id,
+								exceptionId: h.exceptionId,
+								quantity: h.quantity,
+								actualDate: h.actualDate,
+								condition: h.condition,
+								notes: h.notes,
+								historical: h.historical,
+								actorId: h.actorId,
+								actorName: peer.actorName,
+								recordedAt: instantFromDate(h.recordedAt).toString(),
+							},
+						});
+					}
+				}
+			}
 			assignments.push({
-                canCorrect:staffView,
-                canCorrectReceipt:staffView && holder.userId !== actor.userId,
-                canCorrectException:staffView && access.canAdminister && holder.userId !== actor.userId,
-                corrections:correctionRows.filter(c=>c.record.assignmentId===assignment.id).map(({record,actorName})=>({...record,actorName,recordedAt:instantFromDate(record.recordedAt).toString()})),
+				correctionTransfers,
+				canCorrect: correctionAllowed,
+				canCorrectReceipt: correctionAllowed && holder.userId !== actor.userId,
+				canCorrectException:
+					correctionAllowed &&
+					access.canAdminister &&
+					holder.userId !== actor.userId,
+				corrections: correctionRows
+					.filter((c) => c.record.assignmentId === assignment.id)
+					.map(({ record, actorName }) => ({
+						...record,
+						actorName,
+						recordedAt: instantFromDate(record.recordedAt).toString(),
+					})),
 				lostQuantity: assignment.lostQuantity,
 				waivedQuantity: assignment.waivedQuantity,
 				recoveredQuantity: (exceptionEvidence.get(assignment.id) ?? [])
@@ -1234,7 +1415,7 @@ export async function readEquipment(
 							}
 						: undefined,
 				issue,
-				receipt: receipts.at(-1) ?? null,
+				receipt: receipts.filter((h) => h.quantity > 0).at(-1) ?? null,
 				receipts,
 			});
 		}
@@ -1373,5 +1554,3 @@ export async function readEquipment(
 		};
 	});
 }
-
-

@@ -1,6 +1,7 @@
 ALTER TABLE equipment_handover ADD COLUMN effective jsonb;
 ALTER TABLE equipment_exception ADD COLUMN effective jsonb;
 ALTER TABLE equipment_handover ADD CONSTRAINT equipment_handover_id_org_unique UNIQUE (id, organization_id);
+ALTER TABLE equipment_handover ADD CONSTRAINT equipment_handover_id_org_assignment_unique UNIQUE (id, organization_id, assignment_id);
 --> statement-breakpoint
 CREATE TABLE equipment_correction (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -15,7 +16,7 @@ CREATE TABLE equipment_correction (
  actor_id text REFERENCES "user"(id) ON DELETE SET NULL,
  recorded_at timestamptz NOT NULL DEFAULT now(),
  CONSTRAINT equipment_correction_assignment_org_fk FOREIGN KEY(assignment_id,organization_id) REFERENCES equipment_assignment(id,organization_id) ON DELETE CASCADE,
- CONSTRAINT equipment_correction_handover_org_fk FOREIGN KEY(handover_id,organization_id) REFERENCES equipment_handover(id,organization_id) ON DELETE CASCADE,
+ CONSTRAINT equipment_correction_handover_org_fk FOREIGN KEY(handover_id,organization_id,assignment_id) REFERENCES equipment_handover(id,organization_id,assignment_id) ON DELETE CASCADE,
  CONSTRAINT equipment_correction_exception_org_fk FOREIGN KEY(exception_id,organization_id,assignment_id) REFERENCES equipment_exception(id,organization_id,assignment_id) ON DELETE CASCADE,
  CONSTRAINT equipment_correction_assignment_revision_unique UNIQUE(organization_id,assignment_id,expected_revision),
  CONSTRAINT equipment_correction_revision_positive CHECK(expected_revision > 0),
