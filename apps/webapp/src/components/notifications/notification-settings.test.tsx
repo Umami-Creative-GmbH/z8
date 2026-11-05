@@ -40,7 +40,9 @@ const matrix = Object.fromEntries(
 	]),
 ) as Record<NotificationType, Record<NotificationChannel, boolean>>;
 
-function mockNotificationPreferences(availableChannels: Record<NotificationChannel, boolean>) {
+function mockNotificationPreferences(
+	availableChannels: Record<NotificationChannel, boolean>,
+) {
 	useNotificationPreferencesMock.mockReturnValue({
 		preferences: [],
 		matrix,
@@ -57,12 +59,33 @@ function mockNotificationPreferences(availableChannels: Record<NotificationChann
 }
 
 describe("NotificationSettings", () => {
+	it("offers optional equipment return reminders with independent available channel switches", () => {
+		render(<NotificationSettings />);
+		for (const channel of ["In-App", "Email", "Push"])
+			expect(
+				screen.getByLabelText(
+					`${channel} notifications for Equipment return reminders`,
+				),
+			).toBeTruthy();
+		expect(
+			screen.queryByLabelText(
+				"Slack notifications for Equipment return reminders",
+			),
+		).toBeNull();
+	});
 	it("explains mandatory automatic clock-out inbox delivery without a disable switch", () => {
 		render(<NotificationSettings />);
-		const row = screen.getByText("Automatic clock-out").parentElement as HTMLElement;
-		expect(within(row).getByText("Always delivered to your inbox")).toBeTruthy();
-		expect(screen.queryByLabelText("In-App notifications for Automatic clock-out")).toBeNull();
-		expect(screen.getByLabelText("Email notifications for Automatic clock-out")).toBeTruthy();
+		const row = screen.getByText("Automatic clock-out")
+			.parentElement as HTMLElement;
+		expect(
+			within(row).getByText("Always delivered to your inbox"),
+		).toBeTruthy();
+		expect(
+			screen.queryByLabelText("In-App notifications for Automatic clock-out"),
+		).toBeNull();
+		expect(
+			screen.getByLabelText("Email notifications for Automatic clock-out"),
+		).toBeTruthy();
 	});
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -94,10 +117,14 @@ describe("NotificationSettings", () => {
 		render(<NotificationSettings />);
 		for (const channel of ["In-App", "Push", "Email"]) {
 			expect(
-				screen.getByLabelText(`${channel} notifications for Approved absence cancelled`),
+				screen.getByLabelText(
+					`${channel} notifications for Approved absence cancelled`,
+				),
 			).toBeTruthy();
 			expect(
-				screen.getAllByLabelText(`${channel} notifications for Request approved`).length,
+				screen.getAllByLabelText(
+					`${channel} notifications for Request approved`,
+				).length,
 			).toBeGreaterThan(0);
 		}
 	});
@@ -108,7 +135,9 @@ describe("NotificationSettings", () => {
 		expect(screen.getByText("Push")).toBeTruthy();
 		expect(screen.getByText("Email")).toBeTruthy();
 		expect(screen.queryByText("Slack")).toBeNull();
-		expect(screen.queryByLabelText("Slack notifications for Request submitted")).toBeNull();
+		expect(
+			screen.queryByLabelText("Slack notifications for Request submitted"),
+		).toBeNull();
 	});
 
 	it("always renders baseline channel switches", () => {
@@ -124,9 +153,15 @@ describe("NotificationSettings", () => {
 
 		render(<NotificationSettings />);
 
-		expect(screen.getAllByLabelText("In-App notifications for Request submitted")).toHaveLength(2);
-		expect(screen.getAllByLabelText("Push notifications for Request submitted")).toHaveLength(2);
-		expect(screen.getAllByLabelText("Email notifications for Request submitted")).toHaveLength(2);
+		expect(
+			screen.getAllByLabelText("In-App notifications for Request submitted"),
+		).toHaveLength(2);
+		expect(
+			screen.getAllByLabelText("Push notifications for Request submitted"),
+		).toHaveLength(2);
+		expect(
+			screen.getAllByLabelText("Email notifications for Request submitted"),
+		).toHaveLength(2);
 	});
 
 	it("renders configured third-party channel switches", () => {
@@ -142,21 +177,37 @@ describe("NotificationSettings", () => {
 
 		render(<NotificationSettings />);
 
-		expect(screen.getAllByLabelText("Teams notifications for Request submitted")).toHaveLength(2);
-		expect(screen.getAllByLabelText("Telegram notifications for Request submitted")).toHaveLength(
-			2,
-		);
-		expect(screen.getAllByLabelText("Discord notifications for Request submitted")).toHaveLength(2);
-		expect(screen.getAllByLabelText("Slack notifications for Request submitted")).toHaveLength(2);
+		expect(
+			screen.getAllByLabelText("Teams notifications for Request submitted"),
+		).toHaveLength(2);
+		expect(
+			screen.getAllByLabelText("Telegram notifications for Request submitted"),
+		).toHaveLength(2);
+		expect(
+			screen.getAllByLabelText("Discord notifications for Request submitted"),
+		).toHaveLength(2);
+		expect(
+			screen.getAllByLabelText("Slack notifications for Request submitted"),
+		).toHaveLength(2);
 	});
 
 	it("lets an employee switch individual channels of clocking reminders", () => {
 		render(<NotificationSettings />);
 
-		for (const label of ["Missed clock-in", "Forgotten clock-out", "Break due"]) {
-			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
-			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
-			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
+		for (const label of [
+			"Missed clock-in",
+			"Forgotten clock-out",
+			"Break due",
+		]) {
+			expect(
+				screen.getByLabelText(`In-App notifications for ${label}`),
+			).toBeTruthy();
+			expect(
+				screen.getByLabelText(`Push notifications for ${label}`),
+			).toBeTruthy();
+			expect(
+				screen.getByLabelText(`Email notifications for ${label}`),
+			).toBeTruthy();
 		}
 	});
 
@@ -169,9 +220,15 @@ describe("NotificationSettings", () => {
 			"Absence deputy dates changed",
 			"Absence cover starts tomorrow",
 		]) {
-			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
-			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
-			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
+			expect(
+				screen.getByLabelText(`In-App notifications for ${label}`),
+			).toBeTruthy();
+			expect(
+				screen.getByLabelText(`Push notifications for ${label}`),
+			).toBeTruthy();
+			expect(
+				screen.getByLabelText(`Email notifications for ${label}`),
+			).toBeTruthy();
 		}
 	});
 
@@ -179,9 +236,15 @@ describe("NotificationSettings", () => {
 		render(<NotificationSettings />);
 
 		for (const label of ["Skill expires soon", "Skill expires today"]) {
-			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
-			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
-			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
+			expect(
+				screen.getByLabelText(`In-App notifications for ${label}`),
+			).toBeTruthy();
+			expect(
+				screen.getByLabelText(`Push notifications for ${label}`),
+			).toBeTruthy();
+			expect(
+				screen.getByLabelText(`Email notifications for ${label}`),
+			).toBeTruthy();
 		}
 	});
 

@@ -2136,6 +2136,13 @@
       "when": 1811001600000,
       "tag": "0304_equipment_corrections",
       "breakpoints": true
+    },
+    {
+      "idx": 305,
+      "version": "7",
+      "when": 1811088000000,
+      "tag": "0305_equipment_reminders",
+      "breakpoints": true
     }
   ]
 }

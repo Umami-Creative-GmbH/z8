@@ -6,7 +6,7 @@ import { employee } from "@/db/schema";
 import { equipmentItem, equipmentOfficerGrant } from "@/db/schema/equipment";
 import type { AuthorizedOrganizationIdentity } from "@/lib/auth/organization-identity";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError } from "@/lib/effect/errors";
 import {
 	employeeHasOrganizationAccess,
@@ -37,7 +37,7 @@ export type EquipmentActor = {
  */
 export async function lockEquipmentContext(
 	tx: EquipmentTransaction,
-	actor: EquipmentActor,
+	actor: Pick<EquipmentActor, "organizationId" | "userId">,
 	target?: { id: string; userId: string },
 ) {
 	await assertReadCommitted(tx);
@@ -67,11 +67,26 @@ export async function equipmentAccess(
 		canAccessOrganization(actor.session, actor.organizationId),
 	);
 	if (!authenticated) throw denied();
+	const access = await equipmentWorkerAccess(
+		tx,
+		actor,
+		systemClock.nowInstant(),
+	);
+	if (!access) throw denied();
+	return access;
+}
+
+/** Scheduled delivery has no browser session; membership, employment and grant stay live. */
+export async function equipmentWorkerAccess(
+	tx: EquipmentTransaction,
+	actor: Pick<EquipmentActor, "organizationId" | "userId">,
+	now: Instant,
+) {
 	const access = await resolveEmployeeOrganizationAccess(tx, {
 		...actor,
-		now: systemClock.nowInstant(),
+		now,
 	});
-	if (!access.allowed) throw denied();
+	if (!access.allowed) return null;
 	const [membership] = await tx
 		.select({ role: member.role })
 		.from(member)
@@ -99,6 +114,7 @@ export async function equipmentAccess(
 		: [];
 	return {
 		employeeId: access.employeeId,
+		isOfficer: !!grant,
 		canAdminister,
 		canManage: canAdminister || !!grant,
 		all: canAdminister || grant?.scope === "all",
@@ -110,6 +126,7 @@ export async function equipmentAccess(
 /** Predicate is evaluated on the subject employee in the same statement as each read. */
 export function equipmentSubjectScope(
 	access: Awaited<ReturnType<typeof equipmentAccess>>,
+	now: Instant = systemClock.nowInstant(),
 ): SQL<boolean> {
 	if (access.all) return sql`true`;
 	const direct = access.employeeIds.length
@@ -124,9 +141,9 @@ export function equipmentSubjectScope(
 		sql`,`,
 	);
 	return sql`(${direct} or (
-  (${employeeHasOrganizationAccess(systemClock.nowInstant())} and (
+  (${employeeHasOrganizationAccess(now)} and (
    ${employee.teamId} in (${teams}) or exists (select 1 from team_membership tm where tm.organization_id = ${employee.organizationId} and tm.employee_id = ${employee.id} and tm.team_id in (${teams}))
-  )) or (not ${employeeHasOrganizationAccess(systemClock.nowInstant())} and exists (
+  )) or (not ${employeeHasOrganizationAccess(now)} and exists (
    select 1 from equipment_former_team_scope fs where fs.organization_id = ${employee.organizationId} and fs.employee_id = ${employee.id} and fs.team_ids && ARRAY[${teams}]::uuid[]
   ))
  ))`;

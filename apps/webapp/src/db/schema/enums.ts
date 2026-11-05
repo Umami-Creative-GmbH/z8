@@ -334,6 +334,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
 	"driving_details_missing_reminder",
 	"driving_licence_reminder",
+	"equipment_return_reminder",
 	"driving_authorization_suspended",
 	// A clocking queued on an offline kiosk was refused on arrival (#1290)
 	"kiosk_command_refused",
