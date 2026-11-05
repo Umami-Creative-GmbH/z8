@@ -1,4 +1,3 @@
-import { and, eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button";
 import {
@@ -9,41 +8,34 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { avvHostingDetails } from "@/lib/avv/avv-details";
+import {
+	getAvvMissingFields,
+	getRegisteredAddressLines,
+} from "@/lib/avv/profile";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
+import { getOrganizationProfile } from "../organizations/profile-actions";
 
 async function AvvPageContent() {
 	if (env.BILLING_ENABLED !== "true") {
 		return redirectWithLocale("/settings");
 	}
 
-	const [{ authContext, organizationId }, t] = await Promise.all([
+	const [{ organizationId }, t] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
 	]);
 
-	// These reads depend on the org access guard above for authContext and organizationId.
-	// eslint-disable-next-line react-doctor/server-sequential-independent-await
-	const [_memberRecord, organization] = await Promise.all([
-		db.query.member.findFirst({
-			where: and(
-				eq(authSchema.member.userId, authContext.user.id),
-				eq(authSchema.member.organizationId, organizationId),
-			),
-		}),
-		db.query.organization.findFirst({
-			where: eq(authSchema.organization.id, organizationId),
-		}),
-	]);
-
-	if (!organization) {
+	const result = await getOrganizationProfile(organizationId);
+	if (!result.success) {
 		return redirectWithLocale("/settings");
 	}
+	const profile = result.data;
+	const missingFields = getAvvMissingFields(profile);
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -74,14 +66,33 @@ async function AvvPageContent() {
 				</CardHeader>
 				<CardContent className="space-y-6">
 					<div className="grid gap-6 sm:grid-cols-2">
-						<div className="space-y-1">
+						<div className="min-w-0 space-y-1 break-words">
 							<h2 className="text-sm font-medium text-muted-foreground">
 								{t(
 									"settings.avv.contractDetails.controller",
 									"Auftraggeber (Verantwortlicher)",
 								)}
 							</h2>
-							<p className="font-medium">{organization.name}</p>
+							{profile.legalCompanyName.trim() && (
+								<p className="font-medium">{profile.legalCompanyName.trim()}</p>
+							)}
+							<address className="text-sm not-italic">
+								{getRegisteredAddressLines(profile).map(({ field, value }) => (
+									<p key={field}>{value}</p>
+								))}
+							</address>
+							{profile.vatId.trim() && (
+								<dl className="text-sm">
+									<dt>{t("settings.avv.profile.vatId", "VAT ID")}</dt>
+									<dd>{profile.vatId.trim()}</dd>
+								</dl>
+							)}
+							<Link
+								href="/settings/organizations#organization-profile"
+								className="text-sm text-primary underline underline-offset-4"
+							>
+								{t("settings.avv.profile.edit", "Edit organization profile")}
+							</Link>
 						</div>
 
 						<div className="space-y-1">
@@ -125,7 +136,10 @@ async function AvvPageContent() {
 					</div>
 
 					<div className="border-t pt-6">
-						<AvvDownloadButton organizationName={organization.name} />
+						<AvvDownloadButton
+							organizationId={organizationId}
+							missingFields={missingFields}
+						/>
 					</div>
 				</CardContent>
 			</Card>

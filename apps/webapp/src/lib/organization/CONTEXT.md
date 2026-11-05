@@ -273,7 +273,7 @@ _Avoid_: rehearsal record, test data
 
 ## Confirmed design references
 
-- [Organization profile and AVV](../../../../../docs/refs/organization-profile.md): the profile editor, persistence and authenticated settings actions are implemented in #1566; AVV consumption remains pending in #1567.
+- [Organization profile and AVV](../../../../../docs/refs/organization-profile.md): profile editing, persistence and authenticated actions are implemented in #1566; AVV settings, country-aware readiness and current-profile PDF downloads are implemented in #1567.
 - [AVVs use the current organization profile](./docs/adr/0009-avv-uses-current-organization-profile.md): why downloads use current master data rather than a stored agreement version.
 - [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules and their implementation status.
 - [Driving authorization and check evidence have their own lifecycle](./docs/adr/0004-driving-authorization-and-check-evidence-have-their-own-lifecycle.md): why permission and check evidence stay separate from vehicle attribution, skill certificates and generic audit retention.

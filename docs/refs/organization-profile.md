@@ -1,8 +1,8 @@
 # Organization profile and AVV
 
 Status: profile persistence, authenticated settings actions and the organization-settings
-editor are implemented in #1566. AVV consumption and download readiness remain pending
-in #1567; AVV behavior is unchanged by the settings slice.
+editor are implemented in #1566. AVV settings, current-profile download preparation,
+country-aware readiness and structured PDF party details are implemented in #1567.
 
 Published specification: [GitHub issue #1563](https://github.com/Umami-Creative-GmbH/z8/issues/1563).
 
@@ -88,6 +88,34 @@ this first release.
 - Each download generates a fresh PDF using the current profile. A profile
   change affects future downloads.
 - Acceptance, signatures and stored document versions are separate work.
+- `lib/avv/profile.ts` owns the shared readiness rule and address presentation.
+  Postal applicability is explicit for each country offered by the profile editor;
+  Germany requires a postal code, while Hong Kong does not. The documented country
+  policy uses Google's libaddressinput address-format metadata and conservatively
+  requires a code for new or unknown countries.
+- AVV settings load through the same authenticated profile action as the editor.
+  Each download calls `settings/avv/actions.ts` to recheck billing availability,
+  current owner/admin authorization, active-organization scope and the latest
+  persisted profile. A stale page cannot bypass missing details or revoked access.
+- The public PDF exporter accepts the structured profile and refuses invalid or
+  incomplete party details. Empty optional rows and labels are omitted. Party
+  boxes grow with wrapped text, and fixed footers show actual page totals as the
+  agreement flows across pages. Existing agreement wording, processor details and
+  conditional subprocessor disclosures are retained.
+
+## Verification
+
+- The authenticated profile integration suite covers save-to-AVV preparation,
+  changed and cleared addresses, whitespace, postal applicability, revoked admin
+  access, tenant boundaries and billing-enabled/disabled deployments against
+  disposable PostgreSQL.
+- Page and button tests cover visible legal details, missing-field explanations,
+  editor navigation, optional values, readiness changes, permissions, deployment
+  gates and current-profile downloads from stale pages.
+- Public exporter tests cover minimal and full profiles, VAT, different legal and
+  display names, absent optional details, changed addresses and maximum-length
+  party details. Minimal/full/long PDFs were rendered and reviewed on all pages,
+  including text bounds, overlap and page footers.
 
 ## Acceptance scenarios
 
