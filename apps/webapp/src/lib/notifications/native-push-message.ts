@@ -108,6 +108,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	period_submission_decided: "request_update",
 	driving_details_missing_reminder: "reminder",
 	driving_licence_reminder: "reminder",
+	equipment_return_reminder: "reminder",
 	driving_authorization_suspended: "attention",
 	scheduled_export_paused: "attention",
 	personal_data_export_ready: "attention",

@@ -63,6 +63,7 @@ import {
 import {
 	effectiveEquipmentDeadline,
 	equipmentDepartureDeadline,
+	outstandingEquipmentQuantity,
 } from "./deadlines";
 import { applyItemReadiness, readItemReadiness } from "./readiness";
 import {
@@ -1246,13 +1247,7 @@ export async function readEquipment(
 			const receipts = evidence.get(`${assignment.id}:receipt`) ?? [];
 			if (!holder || !issue) continue;
 			// Exception closure settles the obligation without pretending physical receipt.
-			const outstandingQuantity = assignment.returnRequired
-				? assignment.quantity -
-					assignment.receivedQuantity -
-					assignment.lostQuantity -
-					assignment.waivedQuantity +
-					assignment.exceptionReceivedQuantity
-				: 0;
+			const outstandingQuantity = outstandingEquipmentQuantity(assignment);
 			const outstanding = outstandingQuantity > 0;
 			const effectiveDeadline = effectiveEquipmentDeadline(
 				assignment.explicitDeadline,

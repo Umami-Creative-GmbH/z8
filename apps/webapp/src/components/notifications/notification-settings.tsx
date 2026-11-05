@@ -197,6 +197,7 @@ const NOTIFICATION_CATEGORIES = [
 			"period_submission_reminder",
 			"driving_details_missing_reminder",
 			"driving_licence_reminder",
+			"equipment_return_reminder",
 			"driving_authorization_suspended",
 			"period_submission_sent_back",
 			"personal_data_export_reminder",
@@ -242,6 +243,7 @@ type StaticallyLabelledType =
 	| "skill_expiry_upcoming"
 	| "skill_expired_today"
 	| "driving_licence_reminder"
+	| "equipment_return_reminder"
 	| "driving_authorization_suspended"
 	| "kiosk_command_refused"
 	| "kiosk_fob_registered"
@@ -475,6 +477,11 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.driving_licence_reminder",
 					"Driving licence check due",
+				);
+			case "equipment_return_reminder":
+				return t(
+					"common:notifications.preferences.types.equipment_return_reminder",
+					"Equipment return reminders",
 				);
 			// Also carries the notice that an authorization ended (no longer an intended driver, #1425).
 			case "driving_authorization_suspended":
