@@ -11,6 +11,11 @@ export function useGrantKindLabel(): (kind: ChecklistGrantKind) => string {
 	const { t } = useTranslate();
 	return (kind) => {
 		switch (kind) {
+			case "equipment_officer":
+				return t(
+					"settings.employees.lifecycle.deactivationPreview.grants.equipmentOfficer",
+					"Equipment officer",
+				);
 			case "expense_officer":
 				return t(
 					"settings.employees.lifecycle.deactivationPreview.grants.expenseOfficer",

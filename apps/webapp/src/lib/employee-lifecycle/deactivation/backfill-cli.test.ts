@@ -34,6 +34,7 @@ const EMPTY_PLAN: DeactivationPlan = {
 		kioskFobs: [],
 		shareLinks: [],
 	},
+	equipment: [],
 	retentionStarts: true,
 	seatReleased: true,
 	refusals: [],

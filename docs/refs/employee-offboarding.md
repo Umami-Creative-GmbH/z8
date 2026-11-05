@@ -208,7 +208,7 @@ departure's code paths; the area modules live in
    until it is reopened. The deputy release (#1014) still runs. The after-commit
    work (sick note cleanup, deputy notices) runs on the caller's database client.
 6. **Access** ends as at a departure: held expense officer, payroll access,
-   personnel file officer and driving licence verifier grants, driving
+   personnel file officer, driving licence verifier and equipment officer grants, driving
    authorizations (also suspended ones), kiosk badges, the kiosk fob and the
    person's report share links. `applied` records the grant ids actually revoked.
    A badge stores the reason `revoked` and a fob `removed`; their audit rows name
@@ -216,6 +216,14 @@ departure's code paths; the area modules live in
    employmentPeriodId }`).
 7. **Retention**: the instant counts as the end of employment (see Personnel
    file retention). The paid seat is released (see Billing reconciliation).
+8. **Equipment**: outstanding required returns become due on the organization-local
+   deactivation day unless an explicit date is earlier. Primary and secondary teams
+   are captured before removal so currently authorized officers can follow up former
+   employees. Equipment capture runs before the active-state trigger closes the
+   period. Reactivation restores no grant and preserves old equipment deadlines and
+   deactivation lineage, including historical holdings entered after the employee left.
+   Physical key/fob receipt never restores its revoked credential. See the
+   [equipment reference](equipment-return-tracking.md).
 
 **Preview.** *Deactivate* opens a dialog served by
 `previewEmployeeDeactivationAction` (`deactivation/preview.ts`): the same
