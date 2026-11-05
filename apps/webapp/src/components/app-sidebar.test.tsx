@@ -31,6 +31,7 @@ const {
 	loadCollectsPeriodSubmissionsMock,
 	listWhoIsInLocationsMock,
 	readDrivingLicenceVisibilityMock,
+	readEquipmentNavigationMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -49,6 +50,7 @@ const {
 	loadCollectsPeriodSubmissionsMock: vi.fn(),
 	listWhoIsInLocationsMock: vi.fn(),
 	readDrivingLicenceVisibilityMock: vi.fn(),
+	readEquipmentNavigationMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -112,6 +114,10 @@ vi.mock("@/lib/time-tracking/who-is-in/queries", () => ({
 
 vi.mock("@/lib/organization/driving-licence/visibility", () => ({
 	readDrivingLicenceVisibilityForIdentity: readDrivingLicenceVisibilityMock,
+}));
+
+vi.mock("@/lib/organization/equipment/access", () => ({
+	readEquipmentNavigation: readEquipmentNavigationMock,
 }));
 
 vi.mock("@/components/travel-expenses/finance/finance-nav-badge", () => ({
@@ -241,6 +247,11 @@ describe("app sidebar compliance navigation", () => {
 		listWhoIsInLocationsMock.mockReset();
 		listWhoIsInLocationsMock.mockResolvedValue([]);
 		readDrivingLicenceVisibilityMock.mockReset();
+		readEquipmentNavigationMock.mockReset();
+		readEquipmentNavigationMock.mockResolvedValue({
+			personal: false,
+			staff: false,
+		});
 		readDrivingLicenceVisibilityMock.mockResolvedValue({
 			featureEnabled: false,
 			intendedDriver: false,

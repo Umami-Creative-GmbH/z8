@@ -17,6 +17,7 @@ import {
 	equipmentTransfer,
 	equipmentType,
 } from "@/db/schema/equipment";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import {
 	dateFromInstant,
 	instantFromDate,
@@ -1057,8 +1058,8 @@ export async function readEquipment(
 			.select({
 				id: employee.id,
 				userId: employee.userId,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
+				firstName: user.firstName,
+				lastName: user.lastName,
 				name: user.name,
 				current: employeeHasOrganizationAccess(calendar.now),
 				currentScope: equipmentSubjectScope(access, calendar.now, false),
@@ -1084,7 +1085,7 @@ export async function readEquipment(
 				{
 					id: e.id,
 					userId: e.userId,
-					name: [e.firstName, e.lastName].filter(Boolean).join(" ") || e.name,
+					name: buildAuthUserDisplayName(e),
 					former: !e.current,
 					canIssue: staffView && e.current && e.currentScope,
 				},
