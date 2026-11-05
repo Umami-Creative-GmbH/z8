@@ -5,6 +5,13 @@ Status: design confirmed on 2026-11-04. Equipment setup (#1536), individual issu
 
 Specification: [#1535 — Equipment issue and return tracking](https://github.com/Umami-Creative-GmbH/z8/issues/1535).
 
+## Final integration verification
+
+- All 14 implementation tickets (#1536–#1549) are integrated. The independent standards/spec review findings are resolved: per-ending officer scope, chronology-aware historical entry, independent receipt after personal cleanup, and shared settlement arithmetic.
+- Review-fix verification passed 183 PostgreSQL tests across public equipment/lifecycle actions, reminder/retention workers and generated export ZIPs. The final combined UI/unit run passed 271 tests, and both isolated Redis scheduler tests passed. All three TypeScript projects, source lint, migration recovery/journal checks and integration whitespace checks passed.
+- The full CI-mode webapp production build passed with `CIRCLE_NODE_TOTAL=3` (two prerender workers). Compilation, TypeScript and all prerendering completed. Existing `my-documents` prerender logs occurred without failing the build. The default machine-wide worker count consumed excessive memory, so the bounded build was used without changing application configuration.
+- Authenticated live application and real delivery smoke checks, and remote Tolgee sync/pull, remain unrun because Phase/auth, delivery and Tolgee system credentials are unavailable. English defaults and local extraction checks are verified. No live retention cleanup ran.
+
 ## Review corrections for spec #1535
 
 - Former-team capture is now an immutable snapshot per ending (`equipment_former_team_scope.ending_id`), using the deactivation identity when reactivation reopens the same employment period. `access.ts` separates employee discoverability from assignment/context authority. Reads, receipts, command replays, corrections and both transfer legs, item readiness and queued reminder dispatch authorize the assignment's own ending; fresh issues use current scope. Explicit employee and whole-organization grants retain their breadth. Historical choices expose only covered contexts, including on former employee equipment profiles. Cleanup expires each orphan snapshot independently after its own retained assignments are gone.
