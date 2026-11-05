@@ -1,11 +1,21 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	inArray,
+	isNotNull,
+	isNull,
+	sql,
+} from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db as database } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import {
 	employee,
+	employeeDeactivation,
 	employeeDeparture,
 	employeeEmploymentPeriod,
 } from "@/db/schema";
@@ -113,6 +123,9 @@ export async function applyEquipmentChange(
 		.transaction(async (tx): Promise<EquipmentOutcome> => {
 			// Route before locks, then confirm under them. Employee user identity must not drift.
 			const [target] =
+				change.kind === "record_historical_individual" ||
+				change.kind === "record_historical_quantity" ||
+				change.kind === "register_historical_individual" ||
 				change.kind === "issue_individual" ||
 				change.kind === "issue_quantity" ||
 				change.kind === "register_and_issue_individual" ||
@@ -152,6 +165,9 @@ export async function applyEquipmentChange(
 					return { ok: false, reason: access.all ? "not_found" : "forbidden" };
 			} else {
 				const subjectId =
+					change.kind === "record_historical_individual" ||
+					change.kind === "record_historical_quantity" ||
+					change.kind === "register_historical_individual" ||
 					change.kind === "issue_individual" ||
 					change.kind === "issue_quantity" ||
 					change.kind === "register_and_issue_individual" ||
@@ -250,6 +266,9 @@ type HandoverChange = Extract<
 	EquipmentChange,
 	{
 		kind:
+			| "record_historical_individual"
+			| "record_historical_quantity"
+			| "register_historical_individual"
 			| "register_and_issue_individual"
 			| "issue_individual"
 			| "issue_quantity"
@@ -430,20 +449,31 @@ async function performHandover(
 	today: Temporal.PlainDate,
 	now: Temporal.Instant,
 ): Promise<EquipmentOutcome> {
-	const actualDate = parsePlainDate(change.actualDate);
-	if (Temporal.PlainDate.compare(actualDate, today) > 0)
+	const historical =
+		change.kind === "record_historical_individual" ||
+		change.kind === "record_historical_quantity" ||
+		change.kind === "register_historical_individual";
+	const individual =
+		change.kind === "issue_individual" ||
+		change.kind === "record_historical_individual";
+	const quantityIssue =
+		change.kind === "issue_quantity" ||
+		change.kind === "record_historical_quantity";
+	const registration =
+		change.kind === "register_and_issue_individual" ||
+		change.kind === "register_historical_individual";
+	const actualDate =
+		change.actualDate === null ? null : parsePlainDate(change.actualDate);
+	if (actualDate && Temporal.PlainDate.compare(actualDate, today) > 0)
 		return { ok: false, reason: "future_date" };
 	const recordedAt = dateFromInstant(now);
 	let result: { id: string; revision: number };
-	if (
-		change.kind === "issue_individual" ||
-		change.kind === "issue_quantity" ||
-		change.kind === "register_and_issue_individual"
-	) {
+	if (individual || quantityIssue || registration) {
 		if (!change.returnRequired && change.explicitDeadline)
 			return { ok: false, reason: "invalid_input" };
 		if (
 			change.explicitDeadline &&
+			actualDate &&
 			Temporal.PlainDate.compare(
 				parsePlainDate(change.explicitDeadline),
 				actualDate,
@@ -454,6 +484,7 @@ async function performHandover(
 			.select({
 				userId: employee.userId,
 				current: employeeHasOrganizationAccess(now),
+				deactivatedAt: employee.deactivatedAt,
 			})
 			.from(employee)
 			.where(
@@ -469,16 +500,58 @@ async function performHandover(
 			userId: current.userId,
 			now,
 		});
-		if (!current.current || !employeeAccess.allowed)
+		if (!historical && (!current.current || !employeeAccess.allowed))
 			return { ok: false, reason: "employee_not_current" };
-		let [item] =
-			change.kind === "issue_individual"
-				? await tx
-						.select()
-						.from(equipmentItem)
-						.where(scoped(actor.organizationId, change.itemId))
-				: [];
-		if (change.kind === "issue_individual") {
+		const periods = await tx
+			.select()
+			.from(employeeEmploymentPeriod)
+			.where(
+				and(
+					eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
+					eq(employeeEmploymentPeriod.employeeId, change.employeeId),
+				),
+			);
+		const { timezone } = await organizationCalendar(tx, actor.organizationId);
+		const dayStart = actualDate?.toZonedDateTime(timezone).toInstant();
+		const dayEnd = actualDate
+			?.add({ days: 1 })
+			.toZonedDateTime(timezone)
+			.toInstant();
+		const candidates = historical
+			? periods.filter(
+					(period) =>
+						(!change.employmentPeriodId ||
+							period.id === change.employmentPeriodId) &&
+						(!dayStart ||
+							!dayEnd ||
+							((!period.startedAt ||
+								Temporal.Instant.compare(
+									instantFromDate(period.startedAt),
+									dayEnd,
+								) < 0) &&
+								(!period.endedAt ||
+									Temporal.Instant.compare(
+										dayStart,
+										instantFromDate(period.endedAt),
+									) < 0))),
+				)
+			: periods.filter((period) => period.status === "open");
+		// Unknown dates never silently attach old equipment to a later rehire period.
+		if (
+			historical &&
+			(candidates.length > 1 ||
+				(periods.length > 0 && candidates.length === 0) ||
+				(change.employmentPeriodId && candidates.length === 0))
+		)
+			return { ok: false, reason: "conflicting_history" };
+		const period = candidates[0];
+		let [item] = individual
+			? await tx
+					.select()
+					.from(equipmentItem)
+					.where(scoped(actor.organizationId, change.itemId))
+			: [];
+		if (individual) {
 			if (!item) return { ok: false, reason: "not_found" };
 			if (item.revision !== change.expectedRevision)
 				return { ok: false, reason: "stale_revision" };
@@ -486,18 +559,15 @@ async function performHandover(
 				return { ok: false, reason: "item_unavailable" };
 			if (
 				item.lastHandoverDate &&
-				Temporal.PlainDate.compare(
-					actualDate,
-					parsePlainDate(item.lastHandoverDate),
-				) < 0
+				(!actualDate ||
+					Temporal.PlainDate.compare(
+						actualDate,
+						parsePlainDate(item.lastHandoverDate),
+					) < 0)
 			)
 				return { ok: false, reason: "conflicting_history" };
 		}
-		const typeId =
-			change.kind === "issue_quantity" ||
-			change.kind === "register_and_issue_individual"
-				? change.typeId
-				: item?.typeId;
+		const typeId = quantityIssue || registration ? change.typeId : item?.typeId;
 		if (!typeId) return { ok: false, reason: "not_found" };
 		const [type] = await tx
 			.select()
@@ -509,23 +579,14 @@ async function performHandover(
 				),
 			);
 		if (!type) return { ok: false, reason: "not_found" };
-		if (
-			change.kind === "issue_quantity" &&
-			type.revision !== change.expectedRevision
-		)
+		if (quantityIssue && type.revision !== change.expectedRevision)
 			return { ok: false, reason: "stale_revision" };
-		if (
-			type.trackingMode !==
-			(change.kind === "issue_quantity" ? "quantity" : "individual")
-		)
+		if (type.trackingMode !== (quantityIssue ? "quantity" : "individual"))
 			return {
 				ok: false,
-				reason:
-					change.kind === "issue_quantity"
-						? "quantity_required"
-						: "individual_required",
+				reason: quantityIssue ? "quantity_required" : "individual_required",
 			};
-		if (change.kind === "register_and_issue_individual") {
+		if (registration) {
 			const [duplicate] = await tx
 				.select({ id: equipmentItem.id })
 				.from(equipmentItem)
@@ -542,7 +603,7 @@ async function performHandover(
 			typeId,
 		});
 		if (!prepared.ok) return prepared;
-		if (change.kind === "register_and_issue_individual") {
+		if (registration) {
 			[item] = await tx
 				.insert(equipmentItem)
 				.values({
@@ -557,17 +618,7 @@ async function performHandover(
 				})
 				.returning();
 		}
-		const quantity = change.kind === "issue_quantity" ? change.quantity : 1;
-		const [period] = await tx
-			.select({ id: employeeEmploymentPeriod.id })
-			.from(employeeEmploymentPeriod)
-			.where(
-				and(
-					eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
-					eq(employeeEmploymentPeriod.employeeId, change.employeeId),
-					eq(employeeEmploymentPeriod.status, "open"),
-				),
-			);
+		const quantity = quantityIssue ? change.quantity : 1;
 		const [departure] = period
 			? await tx
 					.select()
@@ -577,10 +628,29 @@ async function performHandover(
 							eq(employeeDeparture.organizationId, actor.organizationId),
 							eq(employeeDeparture.employeeId, change.employeeId),
 							eq(employeeDeparture.employmentPeriodId, period.id),
-							eq(employeeDeparture.status, "pending"),
+							inArray(
+								employeeDeparture.status,
+								historical ? ["pending", "blocked", "effective"] : ["pending"],
+							),
 						),
 					)
 			: [];
+		const endingDeadline = departure
+			? equipmentDepartureDeadline(
+					instantFromDate(departure.cutoffAt),
+					departure.timezone,
+					departure.mode,
+				)
+			: historical
+				? await historicalEndingDeadline(
+						tx,
+						actor.organizationId,
+						change.employeeId,
+						period?.id ?? null,
+						timezone,
+						!period ? current.deactivatedAt : null,
+					)
+				: null;
 		const [assignment] = await tx
 			.insert(equipmentAssignment)
 			.values({
@@ -592,14 +662,7 @@ async function performHandover(
 				employmentPeriodId: period?.id ?? null,
 				returnRequired: change.returnRequired,
 				explicitDeadline: change.explicitDeadline ?? null,
-				departureDeadline:
-					change.returnRequired && departure
-						? equipmentDepartureDeadline(
-								instantFromDate(departure.cutoffAt),
-								departure.timezone,
-								departure.mode,
-							)
-						: null,
+				departureDeadline: change.returnRequired ? endingDeadline : null,
 				departureId: change.returnRequired ? (departure?.id ?? null) : null,
 			})
 			.returning();
@@ -609,6 +672,7 @@ async function performHandover(
 			kind: "issue",
 			quantity,
 			actualDate: change.actualDate,
+			historical,
 			condition: change.condition,
 			notes: change.notes || null,
 			actorId: actor.userId,
@@ -678,7 +742,7 @@ async function performHandover(
 				return { ok: false, reason: "excess_quantity" };
 			if (
 				Temporal.PlainDate.compare(
-					actualDate,
+					parsePlainDate(change.actualDate),
 					instantFromDate(exception.recordedAt)
 						.toZonedDateTimeISO(timezone)
 						.toPlainDate(),
@@ -708,8 +772,11 @@ async function performHandover(
 			);
 		if (
 			!issue ||
-			Temporal.PlainDate.compare(actualDate, parsePlainDate(issue.actualDate)) <
-				0
+			(issue.actualDate !== null &&
+				Temporal.PlainDate.compare(
+					parsePlainDate(change.actualDate),
+					parsePlainDate(issue.actualDate),
+				) < 0)
 		)
 			return { ok: false, reason: "conflicting_history" };
 		const [item] = assignment.itemId
@@ -776,6 +843,61 @@ async function performHandover(
 		revision: result.revision,
 	} as const;
 	return outcome;
+}
+
+/** Preserve the original ending date even when equipment is first entered after exit. */
+async function historicalEndingDeadline(
+	tx: EquipmentTransaction,
+	organizationId: string,
+	employeeId: string,
+	periodId: string | null,
+	timezone: string,
+	legacyDeactivatedAt: Date | null,
+): Promise<string | null> {
+	const periodScope = periodId
+		? eq(equipmentAssignment.employmentPeriodId, periodId)
+		: isNull(equipmentAssignment.employmentPeriodId);
+	const [existing] = await tx
+		.select({ deadline: equipmentAssignment.departureDeadline })
+		.from(equipmentAssignment)
+		.where(
+			and(
+				eq(equipmentAssignment.organizationId, organizationId),
+				eq(equipmentAssignment.employeeId, employeeId),
+				periodScope,
+				isNotNull(equipmentAssignment.departureDeadline),
+			),
+		)
+		.limit(1);
+	if (existing?.deadline) return existing.deadline;
+	const [deactivation] = await tx
+		.select({
+			at: employeeDeactivation.deactivatedAt,
+			plan: employeeDeactivation.plan,
+		})
+		.from(employeeDeactivation)
+		.where(
+			and(
+				eq(employeeDeactivation.organizationId, organizationId),
+				eq(employeeDeactivation.employeeId, employeeId),
+				periodId
+					? eq(employeeDeactivation.employmentPeriodId, periodId)
+					: isNull(employeeDeactivation.employmentPeriodId),
+			),
+		)
+		.orderBy(desc(employeeDeactivation.deactivatedAt))
+		.limit(1);
+	const at = deactivation?.at ?? legacyDeactivatedAt;
+	if (!at) return null;
+	const frozenTimezone =
+		typeof deactivation?.plan?.timeZone === "string"
+			? resolveOrganizationTimezone(deactivation.plan.timeZone).timezone
+			: timezone;
+	return equipmentDepartureDeadline(
+		instantFromDate(at),
+		frozenTimezone,
+		"immediate",
+	);
 }
 
 /** Staff overview, scoped employee history and self history share one permission/read model. */
@@ -965,6 +1087,7 @@ export async function readEquipment(
 				exceptionId: record.exceptionId,
 				quantity: record.quantity,
 				actualDate: record.actualDate,
+				historical: record.historical,
 				condition: record.condition,
 				notes: record.notes,
 				actorId: record.actorId,
@@ -1127,7 +1250,40 @@ export async function readEquipment(
 						)
 						.orderBy(asc(equipmentType.name), asc(equipmentType.id))
 				: [];
+		const employmentPeriods =
+			staffView && employeeMap.size
+				? await tx
+						.select()
+						.from(employeeEmploymentPeriod)
+						.where(
+							and(
+								eq(
+									employeeEmploymentPeriod.organizationId,
+									actor.organizationId,
+								),
+								inArray(employeeEmploymentPeriod.employeeId, [
+									...employeeMap.keys(),
+								]),
+							),
+						)
+				: [];
 		return {
+			employmentPeriods: employmentPeriods.map((period) => ({
+				id: period.id,
+				employeeId: period.employeeId,
+				startedOn: period.startedAt
+					? instantFromDate(period.startedAt)
+							.toZonedDateTimeISO(timezone)
+							.toPlainDate()
+							.toString()
+					: null,
+				endedOn: period.endedAt
+					? instantFromDate(period.endedAt)
+							.toZonedDateTimeISO(timezone)
+							.toPlainDate()
+							.toString()
+					: null,
+			})),
 			readinessItems: staffView
 				? await readItemReadiness(
 						tx,

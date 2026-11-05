@@ -30,12 +30,12 @@ import {
 } from "./equipment-exceptions";
 import {
 	equipmentSelectClass,
+	HistoricalEquipmentForm,
 	IssueEquipmentForm,
 	ReceiveEquipmentForm,
 } from "./equipment-handovers";
 import { EquipmentReadiness } from "./equipment-readiness";
 import { TransferEquipmentForm } from "./equipment-transfer";
-
 export function EquipmentOverview({
 	data,
 	filters,
@@ -91,12 +91,12 @@ type EquipmentScope =
 	| { kind: "personal" };
 type HandoverSelection =
 	| { kind: "issue" }
+	| { kind: "historical" }
 	| { kind: "receipt"; assignmentId: string }
 	| { kind: "transfer"; assignmentId: string }
 	| { kind: "closure"; assignmentId: string }
 	| { kind: "exception_receipt"; assignmentId: string; exceptionId: string }
 	| null;
-
 function useEquipmentCommands() {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -163,7 +163,6 @@ function useEquipmentCommands() {
 		router,
 	};
 }
-
 function equipmentSelection(
 	data: EquipmentView,
 	scope: EquipmentScope,
@@ -173,12 +172,15 @@ function equipmentSelection(
 		scope.kind === "employee"
 			? data.employees.find((employee) => employee.id === scope.employeeId)
 			: undefined;
-	const canIssue =
+	const canRecordHistorical =
 		data.canManage &&
 		data.policyConfigured &&
 		(data.availableItems.length > 0 ||
 			data.availableQuantityTypes.length > 0 ||
 			data.registrationTypes.length > 0) &&
+		(scope.kind !== "employee" || !!currentEmployee);
+	const canIssue =
+		canRecordHistorical &&
 		(scope.kind !== "employee" || currentEmployee?.former === false);
 	const selectedReceipt =
 		selection?.kind === "receipt"
@@ -201,13 +203,13 @@ function equipmentSelection(
 				: "setup"
 			: null;
 	return {
+		canRecordHistorical,
 		canIssue,
 		selectedReceipt,
 		selectedTransfer,
 		unavailableReason,
 	} as const;
 }
-
 function EquipmentWorkspace({
 	data,
 	scope,
@@ -228,11 +230,8 @@ function EquipmentWorkspace({
 		submit,
 		router,
 	} = useEquipmentCommands();
-	const { canIssue, unavailableReason } = equipmentSelection(
-		data,
-		scope,
-		selection,
-	);
+	const { canIssue, canRecordHistorical, unavailableReason } =
+		equipmentSelection(data, scope, selection);
 	return (
 		<section
 			className="min-w-0 space-y-4"
@@ -265,6 +264,21 @@ function EquipmentWorkspace({
 						<IconRefresh className="size-4" aria-hidden="true" />
 						{t("settings.equipment.custody.reload", "Reload equipment")}
 					</Button>
+					{canRecordHistorical ? (
+						<Button
+							variant="outline"
+							disabled={pending || !!selection}
+							onClick={() => {
+								setFeedback(null);
+								setSelection({ kind: "historical" });
+							}}
+						>
+							{t(
+								"settings.equipment.historical.title",
+								"Record existing holding",
+							)}
+						</Button>
+					) : null}
 					{canIssue ? (
 						<Button
 							disabled={pending || !!selection}
@@ -333,7 +347,6 @@ function EquipmentWorkspace({
 		</section>
 	);
 }
-
 function EquipmentHandoverEditor({
 	data,
 	scope,
@@ -349,85 +362,102 @@ function EquipmentHandoverEditor({
 	submit: (change: EquipmentChange) => Promise<void>;
 	onCancel: () => void;
 }) {
-	const { canIssue, selectedReceipt, selectedTransfer } = equipmentSelection(
-		data,
-		scope,
-		selection,
-	);
-	const selectedClosure =
-		selection?.kind === "closure"
-			? data.assignments.find(
-					(a) => a.id === selection.assignmentId && a.canCloseException,
-				)
-			: undefined;
-	const exceptionAssignment =
-		selection?.kind === "exception_receipt"
-			? data.assignments.find((a) => a.id === selection.assignmentId)
-			: undefined;
-	const selectedException =
-		selection?.kind === "exception_receipt"
-			? exceptionAssignment?.exceptions.find(
-					(e) => e.id === selection.exceptionId && e.canReceive,
-				)
-			: undefined;
-	return (
-		<>
-			{selection?.kind === "issue" && canIssue ? (
+	const { canIssue, canRecordHistorical, selectedReceipt, selectedTransfer } =
+		equipmentSelection(data, scope, selection);
+	if (!selection) return null;
+	const actions = { submit, pending, onCancel };
+	const employeeId = scope.kind === "employee" ? scope.employeeId : undefined;
+	const issuanceKey = [...data.availableItems, ...data.availableQuantityTypes]
+		.map((item) => `${item.id}:${item.revision}`)
+		.join(",");
+	switch (selection.kind) {
+		case "issue":
+			return canIssue ? (
 				<IssueEquipmentForm
-					key={[...data.availableItems, ...data.availableQuantityTypes]
-						.map((item) => `${item.id}:${item.revision}`)
-						.join(",")}
+					key={issuanceKey}
 					data={data}
-					employeeId={scope.kind === "employee" ? scope.employeeId : undefined}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
+					employeeId={employeeId}
+					{...actions}
 				/>
-			) : null}
-			{selectedReceipt ? (
+			) : null;
+		case "historical":
+			return canRecordHistorical ? (
+				<HistoricalEquipmentForm
+					key={issuanceKey}
+					data={data}
+					employeeId={employeeId}
+					{...actions}
+				/>
+			) : null;
+		case "receipt":
+			return selectedReceipt ? (
 				<ReceiveEquipmentForm
 					key={`${selectedReceipt.id}:${selectedReceipt.revision}`}
 					assignment={selectedReceipt}
 					timezone={data.timezone}
 					today={data.today}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
+					{...actions}
 				/>
-			) : null}
-			{selectedClosure ? (
-				<CloseReturnForm
-					key={`${selectedClosure.id}:${selectedClosure.revision}`}
-					assignment={selectedClosure}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
-				/>
-			) : null}
-			{exceptionAssignment && selectedException ? (
-				<ReceiveExceptionForm
-					key={`${exceptionAssignment.id}:${exceptionAssignment.revision}:${selectedException.id}`}
-					assignment={exceptionAssignment}
-					exception={selectedException}
-					today={data.today}
-					timezone={data.timezone}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
-				/>
-			) : null}
-			{selectedTransfer ? (
+			) : null;
+		case "transfer":
+			return selectedTransfer ? (
 				<TransferEquipmentForm
 					key={`${selectedTransfer.id}:${selectedTransfer.revision}:${selectedTransfer.transfer?.expectedIssuanceRevision}`}
 					assignment={selectedTransfer}
 					data={data}
-					submit={submit}
-					pending={pending}
-					onCancel={onCancel}
+					{...actions}
 				/>
-			) : null}
-		</>
+			) : null;
+		case "closure":
+		case "exception_receipt":
+			return (
+				<EquipmentExceptionEditor
+					data={data}
+					selection={selection}
+					{...actions}
+				/>
+			);
+	}
+}
+function EquipmentExceptionEditor({
+	data,
+	selection,
+	...actions
+}: {
+	data: EquipmentView;
+	selection: Extract<
+		NonNullable<HandoverSelection>,
+		{ kind: "closure" | "exception_receipt" }
+	>;
+	pending: boolean;
+	submit: (change: EquipmentChange) => Promise<void>;
+	onCancel: () => void;
+}) {
+	const assignment = data.assignments.find(
+		(a) => a.id === selection.assignmentId,
 	);
+	if (!assignment) return null;
+	if (selection.kind === "closure")
+		return assignment.canCloseException ? (
+			<CloseReturnForm
+				key={`${assignment.id}:${assignment.revision}`}
+				assignment={assignment}
+				{...actions}
+			/>
+		) : null;
+	const exception = assignment.exceptions.find(
+		(e) => e.id === selection.exceptionId && e.canReceive,
+	);
+	return exception ? (
+		<ReceiveExceptionForm
+			key={`${assignment.id}:${assignment.revision}:${exception.id}`}
+			assignment={assignment}
+			exception={exception}
+			today={data.today}
+			timezone={data.timezone}
+			{...actions}
+		/>
+	) : null;
 }
 
 function EquipmentAssignments({
@@ -520,7 +550,7 @@ function IssuanceAvailability({
 			{reason === "former"
 				? t(
 						"settings.equipment.custody.formerHelp",
-						"Former employees remain available for returns and history. New issuance is unavailable.",
+						"Former employees remain available for returns, history and recording existing holdings. New issuance is unavailable.",
 					)
 				: t(
 						"settings.equipment.custody.noItems",
@@ -529,7 +559,6 @@ function IssuanceAvailability({
 		</p>
 	);
 }
-
 function EquipmentFiltersForm({
 	data,
 	filters,
@@ -627,7 +656,6 @@ function EquipmentFiltersForm({
 		</form>
 	);
 }
-
 function EquipmentAssignmentCard({
 	assignment,
 	timezone,
@@ -870,7 +898,6 @@ function AssignmentStatus({
 		</Badge>
 	);
 }
-
 function HandoverEvidence({
 	handover,
 	timezone,
@@ -887,25 +914,36 @@ function HandoverEvidence({
 	return (
 		<li className="space-y-1 break-words text-sm">
 			<p className="font-medium">
-				{kind === "issue"
-					? t("settings.equipment.custody.issuance", "Issuance")
-					: exception?.kind === "lost"
-						? t("settings.equipment.exception.recovery", "Physical recovery")
-						: exception?.kind === "waived"
-							? t(
-									"settings.equipment.exception.waivedReceipt",
-									"Physical receipt after waiver",
-								)
-							: t(
-									"settings.equipment.custody.receipt",
-									"Physical receipt",
-								)}{" "}
+				{handover.historical
+					? t("settings.equipment.historical.evidence", "Historical issuance")
+					: kind === "issue"
+						? t("settings.equipment.custody.issuance", "Issuance")
+						: exception?.kind === "lost"
+							? t("settings.equipment.exception.recovery", "Physical recovery")
+							: exception?.kind === "waived"
+								? t(
+										"settings.equipment.exception.waivedReceipt",
+										"Physical receipt after waiver",
+									)
+								: t(
+										"settings.equipment.custody.receipt",
+										"Physical receipt",
+									)}{" "}
 				·{" "}
-				<time dateTime={handover.actualDate}>
-					{parsePlainDate(handover.actualDate).toLocaleString(locale, {
-						dateStyle: "medium",
-					})}
-				</time>{" "}
+				{handover.actualDate ? (
+					<time dateTime={handover.actualDate}>
+						{parsePlainDate(handover.actualDate).toLocaleString(locale, {
+							dateStyle: "medium",
+						})}
+					</time>
+				) : (
+					<span>
+						{t(
+							"settings.equipment.historical.dateUnknown",
+							"Actual issue date unknown",
+						)}
+					</span>
+				)}{" "}
 				· {conditionLabel(handover.condition, t)}
 			</p>
 			<p className="tabular-nums">

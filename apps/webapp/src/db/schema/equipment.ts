@@ -335,7 +335,8 @@ export const equipmentHandover = pgTable(
 		exceptionId: uuid("exception_id"),
 		kind: text("kind", { enum: ["issue", "receipt"] }).notNull(),
 		quantity: integer("quantity").notNull().default(1),
-		actualDate: date("actual_date").notNull(),
+		actualDate: date("actual_date"),
+		historical: boolean("historical").notNull().default(false),
 		condition: text("condition", {
 			enum: ["good", "worn", "damaged", "unknown"],
 		}).notNull(),
@@ -372,6 +373,14 @@ export const equipmentHandover = pgTable(
 		uniqueIndex("equipment_handover_issue_once")
 			.on(t.organizationId, t.assignmentId)
 			.where(sql`${t.kind} = 'issue'`),
+		check(
+			"equipment_handover_actual_date_check",
+			sql`${t.actualDate} is not null or (${t.historical} and ${t.kind} = 'issue')`,
+		),
+		check(
+			"equipment_handover_historical_check",
+			sql`not ${t.historical} or ${t.kind} = 'issue'`,
+		),
 		check("equipment_handover_quantity_positive", sql`${t.quantity} > 0`),
 		check(
 			"equipment_handover_kind_check",
