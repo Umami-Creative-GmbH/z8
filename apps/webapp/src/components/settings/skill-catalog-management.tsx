@@ -488,7 +488,7 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 					}}
 					className="flex min-h-0 flex-1 flex-col"
 				>
-					<ActionPanelBody className="grid gap-4">
+					<ActionPanelBody className="grid content-start gap-4">
 						{/* Name */}
 						<form.Field name="name">
 							{(field) => (

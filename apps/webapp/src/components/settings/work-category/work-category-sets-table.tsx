@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -187,89 +188,100 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 
 	return (
 		<>
-			<div className="space-y-4">
-				{canManage ? (
-					<div className="flex justify-end">
-						<Button onClick={() => setCreateDialogOpen(true)}>
-							<IconPlus className="mr-2 size-4" />
-							{t("settings.workCategories.createSet", "Create Set")}
-						</Button>
-					</div>
-				) : null}
-
-				{sets.length === 0 ? (
-					<div className="py-12 text-center">
-						<IconTag className="mx-auto size-12 text-muted-foreground/50" />
-						<h3 className="mt-4 text-lg font-medium">
-							{t("settings.workCategories.noSets", "No category sets")}
-						</h3>
-						<p className="mt-2 text-sm text-muted-foreground">
-							{t(
-								"settings.workCategories.noSetsDescription",
-								"Create your first category set to define work types with time factors",
-							)}
-						</p>
+			<Card>
+				<CardHeader>
+					<div className="flex flex-wrap items-start justify-between gap-4">
+						<div className="space-y-1.5">
+							<CardTitle className="flex items-center gap-2">
+								<IconTag className="size-5" aria-hidden="true" />
+								{t("settings.workCategories.tab.sets", "Category Sets")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"settings.workCategories.createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes",
+									"Create category sets with different time factors for various work types",
+								)}
+							</CardDescription>
+						</div>
 						{canManage ? (
-							<Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
-								<IconPlus className="mr-2 size-4" />
-								{t("settings.workCategories.createFirstSet", "Create First Set")}
-							</Button>
+							<div className="shrink-0">
+								<Button onClick={() => setCreateDialogOpen(true)}>
+									<IconPlus className="mr-2 size-4" />
+									{t("settings.workCategories.createSet", "Create Set")}
+								</Button>
+							</div>
 						) : null}
 					</div>
-				) : (
-					<div className="rounded-md border">
-						<Table mobileLayout="stacked">
-							<TableHeader>
-								<TableRow>
-									<TableHead>{t("settings.workCategories.setName", "Name")}</TableHead>
-									<TableHead>
-										{t("settings.workCategories.setDescription", "Description")}
-									</TableHead>
-									<TableHead>{t("settings.workCategories.categories", "Categories")}</TableHead>
-									{canManage ? <TableHead className="w-[100px]" /> : null}
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{sets.map((set) => (
-									<TableRow key={set.id}>
-										<TableCell className="font-medium">{set.name}</TableCell>
-										<TableCell className="text-muted-foreground">
-											{set.description || "-"}
-										</TableCell>
-										<TableCell>
-											<Badge variant="secondary">{set.categoryCount}</Badge>
-										</TableCell>
-										{canManage ? (
-											<TableCell>
-												<div className="flex items-center gap-1">
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-8"
-														onClick={() => handleEditClick(set)}
-														aria-label={t("common.edit", "Edit")}
-													>
-														<IconEdit className="size-4" />
-													</Button>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-8 text-muted-foreground hover:text-destructive"
-														onClick={() => handleDeleteClick(set)}
-														aria-label={t("common.delete", "Delete")}
-													>
-														<IconTrash className="size-4" />
-													</Button>
-												</div>
-											</TableCell>
-										) : null}
+				</CardHeader>
+				<CardContent>
+					{sets.length === 0 ? (
+						<div className="py-12 text-center">
+							<IconTag className="mx-auto size-12 text-muted-foreground/50" />
+							<h3 className="mt-4 text-lg font-medium">
+								{t("settings.workCategories.noSets", "No category sets")}
+							</h3>
+							<p className="mt-2 text-sm text-muted-foreground">
+								{t(
+									"settings.workCategories.noSetsDescription",
+									"Create your first category set to define work types with time factors",
+								)}
+							</p>
+						</div>
+					) : (
+						<div className="rounded-md border">
+							<Table mobileLayout="stacked">
+								<TableHeader>
+									<TableRow>
+										<TableHead>{t("settings.workCategories.setName", "Name")}</TableHead>
+										<TableHead>
+											{t("settings.workCategories.setDescription", "Description")}
+										</TableHead>
+										<TableHead>{t("settings.workCategories.categories", "Categories")}</TableHead>
+										{canManage ? <TableHead className="w-[100px]" /> : null}
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</div>
-				)}
-			</div>
+								</TableHeader>
+								<TableBody>
+									{sets.map((set) => (
+										<TableRow key={set.id}>
+											<TableCell className="font-medium">{set.name}</TableCell>
+											<TableCell className="text-muted-foreground">
+												{set.description || "-"}
+											</TableCell>
+											<TableCell>
+												<Badge variant="secondary">{set.categoryCount}</Badge>
+											</TableCell>
+											{canManage ? (
+												<TableCell>
+													<div className="flex items-center gap-1">
+														<Button
+															variant="ghost"
+															size="icon"
+															className="size-8"
+															onClick={() => handleEditClick(set)}
+															aria-label={t("common.edit", "Edit")}
+														>
+															<IconEdit className="size-4" />
+														</Button>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="size-8 text-muted-foreground hover:text-destructive"
+															onClick={() => handleDeleteClick(set)}
+															aria-label={t("common.delete", "Delete")}
+														>
+															<IconTrash className="size-4" />
+														</Button>
+													</div>
+												</TableCell>
+											) : null}
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					)}
+				</CardContent>
+			</Card>
 
 			{/* Create Dialog */}
 			{canManage ? (

@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button";
 import {
@@ -18,6 +19,8 @@ import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 
 async function AvvPageContent() {
+	// Deployment flags must be evaluated per request, as on the billing page.
+	await connection();
 	if (env.BILLING_ENABLED !== "true") {
 		return redirectWithLocale("/settings");
 	}
