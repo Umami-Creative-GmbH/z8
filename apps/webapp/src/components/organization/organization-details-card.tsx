@@ -172,8 +172,8 @@ export function OrganizationDetailsCard({
 								className="shrink-0 px-2 sm:px-3"
 								onClick={() => setEditDialogOpen(true)}
 							>
-								<IconEdit className="size-4 sm:mr-2" />
-								<span className="sr-only sm:not-sr-only">{t("common.edit", "Edit")}</span>
+								<IconEdit className="size-4" aria-hidden="true" />
+								{t("common.edit", "Edit")}
 							</Button>
 						)}
 					</div>

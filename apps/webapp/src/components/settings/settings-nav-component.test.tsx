@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import userEvent from "@testing-library/user-event";
+import type { ComponentProps } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { SettingsNav } from "./settings-nav";
@@ -11,9 +12,7 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href }: { children: ReactNode; href: string }) => (
-		<a href={href}>{children}</a>
-	),
+	Link: (props: ComponentProps<"a">) => <a {...props} />,
 	usePathname: () => "/settings/profile",
 }));
 
@@ -36,6 +35,24 @@ beforeAll(() => {
 });
 
 describe("SettingsNav", () => {
+	it("preserves the current active route when searching and clearing settings", async () => {
+		const user = userEvent.setup();
+		render(
+			<SidebarProvider>
+				<SettingsNav accessTier="orgAdmin" billingEnabled={true} />
+			</SidebarProvider>,
+		);
+		expect(screen.getByRole("link", { name: "Profile" }).getAttribute("data-active")).toBe("true");
+
+		const search = screen.getByRole("searchbox", { name: "Search settings" });
+		await user.type(search, "/settings/security");
+		expect(screen.queryByRole("link", { name: "Profile" })).toBeNull();
+		expect(screen.getByRole("link", { name: "Security" }).getAttribute("data-active")).toBe("false");
+
+		await user.clear(search);
+		expect(screen.getByRole("link", { name: "Profile" }).getAttribute("data-active")).toBe("true");
+	});
+
 	it("lists Driving licence control only when the visibility reader offers it (#1420)", () => {
 		const { unmount } = render(
 			<SidebarProvider>

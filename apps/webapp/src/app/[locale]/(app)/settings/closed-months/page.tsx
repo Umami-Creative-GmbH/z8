@@ -13,7 +13,7 @@ async function ClosedMonthsSettingsPageContent() {
 
 	return (
 		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+			<div className="min-w-0 space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">
 						{t("settings.closedMonths.title", "Closed months")}
@@ -40,7 +40,7 @@ async function ClosedMonthsSettingsPageContent() {
 function ClosedMonthsSettingsPageLoading() {
 	return (
 		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+			<div className="min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />
