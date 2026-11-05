@@ -6,6 +6,12 @@ icon: Code
 
 The Z8 Public API v1 lets your organization's own systems read its data. It is read-only and lives under `/api/v1`. The pages in this section are generated from the [OpenAPI document](https://ui.z8-time.app/api/v1/openapi.json) the API itself serves.
 
+## Your installation's base URL
+
+Use the base URL of your own Z8 installation for API requests. The hosted examples here use `https://ui.z8-time.app`; if you self-host Z8, replace that origin with your installation's public origin, for example `https://workforce.example.org`. The documentation site at `https://docs.z8-time.app` is not an API server.
+
+In your installation, open **Settings → Enterprise → Developer Access → API Keys** and choose **Download OpenAPI spec**, or retrieve `/api/v1/openapi.json` directly from that installation. Both the reference and the spec are public: you do not need a Z8 session or an API key to read them. The download contains the deployed contract and an absolute server URL for that installation, so importing the JSON file into a client keeps API requests pointed there. It contains no credentials or organization records; configure your API key separately in the client.
+
 ## Authentication
 
 Create an API key under **Settings → Enterprise → API Keys** (see [API Keys](/docs/guide/admin-guide/api-keys)) and send it as a Bearer token:
