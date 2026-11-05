@@ -494,7 +494,16 @@ function ApiKeyPageView({
 							})}
 						</p>
 					</div>
-					<div className="flex flex-wrap gap-2">
+					<Button
+						onClick={() => setCreateDialogOpen(true)}
+						disabled={!canCreateMore}
+					>
+						<IconPlus className="mr-2 size-4" />
+						{t("settings.apiKeys.create", "Create Key")}
+					</Button>
+				</div>
+				<div className="space-y-6">
+					<ApiKeyDocumentation>
 						<Button variant="outline" asChild>
 							<a
 								href="/api/v1/openapi.json"
@@ -504,17 +513,7 @@ function ApiKeyPageView({
 								{t("settings.apiKeys.downloadOpenApi", "Download OpenAPI spec")}
 							</a>
 						</Button>
-						<Button
-							onClick={() => setCreateDialogOpen(true)}
-							disabled={!canCreateMore}
-						>
-							<IconPlus className="mr-2 size-4" />
-							{t("settings.apiKeys.create", "Create Key")}
-						</Button>
-					</div>
-				</div>
-				<div className="space-y-6">
-					<ApiKeyDocumentation />
+					</ApiKeyDocumentation>
 					<ApiKeysCard viewModel={viewModel} />
 
 					{/* Security Notice */}
