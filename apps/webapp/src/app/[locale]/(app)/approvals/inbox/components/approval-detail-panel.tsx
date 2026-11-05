@@ -458,6 +458,16 @@ function ApprovalDecisionFooter({
 	);
 }
 
+function useApprovalPanelDetail(approval: ApprovalInboxItem | null) {
+	const { data: detail } = useApprovalDetail(approval?.id ?? null);
+	const item = detail?.item ?? approval;
+	return {
+		item,
+		actions: detail?.actions ?? item?.capabilities,
+		sections: detail?.sections ?? [],
+	};
+}
+
 export function ApprovalDetailPanel({
 	approval,
 	open,
@@ -487,7 +497,7 @@ export function ApprovalDetailPanel({
 		itemIds: string[];
 	}>({ approvalId: null, itemIds: [] });
 
-	const { data: detail } = useApprovalDetail(approval?.id ?? null);
+	const { item, actions, sections } = useApprovalPanelDetail(approval);
 	const approveMutation = useApproveApproval();
 	const rejectMutation = useRejectApproval();
 	const presence = useEmployeeClockStatuses(
@@ -496,9 +506,6 @@ export function ApprovalDetailPanel({
 			polling: false,
 		},
 	);
-	const item = detail?.item ?? approval;
-	const actions = detail?.actions ?? item?.capabilities;
-	const sections = detail?.sections ?? [];
 	const isPending =
 		approveMutation.isPending || rejectMutation.isPending || revisionActive;
 	// Expense report missing-receipt exceptions to accept before approving (#604).

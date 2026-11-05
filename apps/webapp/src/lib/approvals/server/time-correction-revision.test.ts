@@ -1,3 +1,4 @@
+import { PgDialect } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prepareTimeCorrectionRevision } from "./time-correction-revision";
 
@@ -86,7 +87,10 @@ describe("preparing a time correction revision", () => {
 			session: { activeOrganizationId: "org-1" },
 		});
 		mocks.detail.mockResolvedValue(detail);
-		mocks.actor.mockResolvedValue({ id: "actor" });
+		mocks.actor
+			.mockReset()
+			.mockResolvedValue({ id: "owner" })
+			.mockResolvedValueOnce({ id: "actor" });
 		mocks.membership.mockResolvedValue({ role: "admin" });
 		mocks.period.mockResolvedValue(period);
 		mocks.request.mockResolvedValue({
@@ -118,6 +122,12 @@ describe("preparing a time correction revision", () => {
 			},
 		});
 		expect(mocks.zone).toHaveBeenCalledWith("owner-user");
+		for (const [query] of mocks.actor.mock.calls) {
+			const { sql, params } = new PgDialect().sqlToQuery(query.where);
+			expect(sql).toContain("employee_departure_denies_access");
+			expect(params).toContain("org-1");
+		}
+		expect(mocks.actor).toHaveBeenCalledTimes(2);
 		expect(mocks.authority).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-1",
@@ -126,6 +136,20 @@ describe("preparing a time correction revision", () => {
 			}),
 		);
 	});
+	it.each(["actor", "owner"])(
+		"refuses a %s outside the current roster",
+		async (who) => {
+			mocks.actor.mockReset().mockResolvedValue(null);
+			if (who === "owner") mocks.actor.mockResolvedValueOnce({ id: "actor" });
+			expect(
+				await prepareTimeCorrectionRevision(
+					"22222222-2222-4222-8222-222222222222",
+				),
+			).toMatchObject({ success: false });
+			expect(mocks.authority).not.toHaveBeenCalled();
+			expect(mocks.request).not.toHaveBeenCalled();
+		},
+	);
 	it("refuses unauthorized detail access before reading source work", async () => {
 		mocks.detail.mockResolvedValue({ status: "not_found" });
 		expect(

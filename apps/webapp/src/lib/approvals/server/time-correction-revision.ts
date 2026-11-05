@@ -16,6 +16,7 @@ import {
 } from "@/db/schema";
 import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
 import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { createLogger } from "@/lib/logger";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { loadAuthorizedApprovalDetail } from "../inbox/authorized-detail";
@@ -65,8 +66,7 @@ export async function prepareTimeCorrectionRevision(approvalId: string) {
 		const actor = await db.query.employee.findFirst({
 			where: and(
 				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
+				onCurrentRoster(organizationId),
 			),
 		});
 		const membership = await db.query.member.findFirst({
@@ -82,9 +82,19 @@ export async function prepareTimeCorrectionRevision(approvalId: string) {
 			),
 			with: { employee: true },
 		});
+		const owner = period
+			? await db.query.employee.findFirst({
+					where: and(
+						eq(employee.id, period.employeeId),
+						onCurrentRoster(organizationId),
+					),
+					columns: { id: true },
+				})
+			: null;
 		if (
 			!actor ||
-			!period?.employee.isActive ||
+			!owner ||
+			!period?.employee ||
 			period.employee.organizationId !== organizationId ||
 			!period.endTime ||
 			period.deletedAt ||

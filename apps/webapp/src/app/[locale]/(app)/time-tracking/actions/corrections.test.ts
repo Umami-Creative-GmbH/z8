@@ -91,6 +91,7 @@ describe("time correction request safety", () => {
 		].map((match) => match[1]);
 
 		expect(exportedFunctions).toEqual([
+			"prepareTimeCorrectionRevision",
 			"editSameDayTimeEntry",
 			"requestTimeCorrectionEffect",
 			"requestTimeEntryDeletion",
@@ -141,9 +142,7 @@ describe("time correction request safety", () => {
 		expect(transactionBody).toContain(
 			"lockTimeCorrectionSubmissionActorAndPeriodInTransaction",
 		);
-		expect(outerLockBody).toContain(
-			"lockTrustedTimeCorrectionEmployeeTeamId",
-		);
+		expect(outerLockBody).toContain("lockTrustedTimeCorrectionEmployeeTeamId");
 		expect(outerLockBody).toContain("lockedEmployee.teamId");
 		expect(outerLockBody).not.toContain("input.teamId");
 		expect(teamEvidenceBody).toContain("teamMembership.organizationId");
@@ -201,7 +200,9 @@ describe("time correction request safety", () => {
 		const submissionBody = functionBody(modularSource, "submitCorrection");
 
 		// The amendment validates and writes the same-day metadata through work records (#1226).
-		expect(directBody).toContain("replayOrAmendCompletedWork(scope, amendment)");
+		expect(directBody).toContain(
+			"replayOrAmendCompletedWork(scope, amendment)",
+		);
 		expect(directBody).not.toContain("timeRecordWork");
 		expect(submissionBody).toContain("validateCorrectionWorkMetadata");
 		expect(submissionBody).toContain("input.workLocationType");
@@ -392,7 +393,10 @@ describe("time correction request safety", () => {
 	});
 
 	it("keeps one project mutation: the modular export delegates to the calendar action", () => {
-		const body = functionBody(modularMutationsSource, "updateWorkPeriodProject");
+		const body = functionBody(
+			modularMutationsSource,
+			"updateWorkPeriodProject",
+		);
 
 		expect(body).toContain(
 			"updateWorkPeriodProjectAction(workPeriodId, projectId, taskId, options)",
