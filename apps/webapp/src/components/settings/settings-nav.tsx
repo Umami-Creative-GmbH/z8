@@ -2,6 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { activeNavHref } from "@/components/nav-active";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -15,7 +16,6 @@ import { Link, usePathname } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { type FeatureFlag, getResolvedSettingsVisibility } from "./settings-config";
 import { SETTINGS_ICON_MAP } from "./settings-icons";
-import { isSettingsNavItemActive } from "./settings-nav-utils";
 import { SettingsSearch, useSettingsSearch } from "./settings-search";
 
 interface SettingsNavProps {
@@ -48,6 +48,11 @@ export function SettingsNav({
 
 	const { query, setQuery, matchingGroups } = useSettingsSearch(visibleSettings, visibleGroups);
 
+	const activeHref = activeNavHref(
+		pathname,
+		visibleSettings.map((entry) => entry.href),
+	);
+
 	const isFeatureEnabled = (feature: FeatureFlag | undefined): boolean => {
 		if (!feature) return true;
 		return orgSettings[feature] ?? false;
@@ -72,7 +77,7 @@ export function SettingsNav({
 						<SidebarGroupContent className="px-2 pb-2">
 							<SidebarMenu>
 								{group.entries.map((item) => {
-									const isActive = isSettingsNavItemActive(pathname, item.href);
+									const isActive = activeHref === item.href;
 									const title = t(item.titleKey, item.titleDefault);
 									const Icon = SETTINGS_ICON_MAP[item.icon];
 									const hasFeatureFlag = !!item.requiredFeature;

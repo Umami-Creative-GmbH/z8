@@ -16,10 +16,86 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 }));
 
 function event(type: CalendarEvent["type"], date: string, title: string): CalendarEvent {
-	return { id: title, type, date: new Date(date), title, color: "#2563eb", metadata: {} };
+	return {
+		id: title,
+		type,
+		date: new Date(date),
+		title,
+		color: "#2563eb",
+		metadata: {},
+	};
 }
 
 describe("YearCalendarView", () => {
+	it("keeps all-day spans on logical dates across leap days and year boundaries", () => {
+		const holiday = {
+			...event("holiday", "2028-02-28T00:00:00.000Z", "Holiday"),
+			endDate: new Date("2028-03-01T00:00:00.000Z"),
+		};
+		const vacation = {
+			...event("absence", "2026-12-31T00:00:00.000Z", "Vacation"),
+			endDate: new Date("2027-01-02T00:00:00.000Z"),
+		};
+
+		expect([...groupYearCalendarEventsByDate([holiday, vacation], "America/New_York")]).toEqual([
+			["2028-02-28", [holiday]],
+			["2028-02-29", [holiday]],
+			["2028-03-01", [holiday]],
+			["2026-12-31", [vacation]],
+			["2027-01-01", [vacation]],
+			["2027-01-02", [vacation]],
+		]);
+	});
+
+	it("keeps timed work on its employee-local start date rather than expanding its end date", () => {
+		const work = {
+			...event("work_period", "2026-06-01T02:00:00.000Z", "Work"),
+			endDate: new Date("2026-06-01T06:00:00.000Z"),
+		};
+
+		expect([...groupYearCalendarEventsByDate([work], "America/New_York")]).toEqual([
+			["2026-05-31", [work]],
+		]);
+	});
+
+	it("highlights every vacation day across a month boundary, including the final day", () => {
+		const vacation = {
+			...event("absence", "2026-08-31T00:00:00.000Z", "Vacation"),
+			endDate: new Date("2026-09-05T00:00:00.000Z"),
+			metadata: { status: "approved" },
+		};
+
+		render(
+			<YearCalendarView
+				events={[vacation]}
+				year={2026}
+				viewMode="year"
+				onYearChange={vi.fn()}
+				onViewModeChange={vi.fn()}
+				timeZone="America/New_York"
+			/>,
+		);
+
+		for (const label of [
+			"August 31",
+			"September 1",
+			"September 2",
+			"September 3",
+			"September 4",
+			"September 5",
+		]) {
+			expect(screen.getByRole("button", { name: `${label}, 2026` }).className).toContain(
+				"bg-blue-100",
+			);
+		}
+		expect(screen.getByRole("button", { name: "August 30, 2026" }).className).not.toContain(
+			"bg-blue-100",
+		);
+		expect(screen.getByRole("button", { name: "September 6, 2026" }).className).not.toContain(
+			"bg-blue-100",
+		);
+	});
+
 	it("keeps all timeframe tabs visible in a full-width mobile row", () => {
 		render(
 			<YearCalendarView

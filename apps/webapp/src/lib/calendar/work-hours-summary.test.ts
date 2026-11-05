@@ -1,5 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
+import { applyAbsenceAdjustmentsToRequirements } from "./absence-adjusted-requirements";
 import type { CalendarEvent, DailyWorkRequirements } from "./types";
 import {
 	buildDailyActualMinutes,
@@ -69,8 +70,58 @@ describe("buildDailyActualMinutes", () => {
 
 describe("buildDailyWorkHoursSummaries", () => {
 	const requirements: DailyWorkRequirements = {
-		"2026-05-04": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" },
+		"2026-05-04": {
+			requiredMinutes: 480,
+			policyId: "policy-1",
+			policyName: "Standard",
+		},
 	};
+
+	it("marks a fully covered vacation day as met when no work is recorded", () => {
+		const dailyRequirements = applyAbsenceAdjustmentsToRequirements(requirements, [
+			{
+				startDate: "2026-05-04",
+				endDate: "2026-05-04",
+				startPeriod: "full_day",
+				endPeriod: "full_day",
+			},
+		]);
+
+		const summaries = buildDailyWorkHoursSummaries({
+			dailyRequirements,
+			dailyActualMinutes: {},
+		});
+
+		expect(summaries.get("2026-05-04")).toMatchObject({
+			actualMinutes: 0,
+			requirement: { requiredMinutes: 0, deltaMinutes: 0, status: "met" },
+		});
+	});
+
+	it("still marks the uncovered half of a vacation day as missing", () => {
+		const dailyRequirements = applyAbsenceAdjustmentsToRequirements(requirements, [
+			{
+				startDate: "2026-05-04",
+				endDate: "2026-05-04",
+				startPeriod: "am",
+				endPeriod: "am",
+			},
+		]);
+
+		const summaries = buildDailyWorkHoursSummaries({
+			dailyRequirements,
+			dailyActualMinutes: {},
+		});
+
+		expect(summaries.get("2026-05-04")).toMatchObject({
+			actualMinutes: 0,
+			requirement: {
+				requiredMinutes: 240,
+				deltaMinutes: -240,
+				status: "missing",
+			},
+		});
+	});
 
 	it("marks over when actual is above required", () => {
 		const summaries = buildDailyWorkHoursSummaries({
@@ -122,8 +173,16 @@ describe("buildDailyWorkHoursSummaries", () => {
 		});
 
 		expect(Object.fromEntries(summaries)).toEqual({
-			"2026-05-09": { actualMinutes: 150, includesLiveWork: false, requirement: null },
-			"2026-05-11": { actualMinutes: 20, includesLiveWork: true, requirement: null },
+			"2026-05-09": {
+				actualMinutes: 150,
+				includesLiveWork: false,
+				requirement: null,
+			},
+			"2026-05-11": {
+				actualMinutes: 20,
+				includesLiveWork: true,
+				requirement: null,
+			},
 		});
 	});
 
@@ -141,7 +200,11 @@ describe("buildDailyWorkHoursSummaries", () => {
 });
 
 describe("buildDailyWorkHoursSummaries with live work", () => {
-	const standard = { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" };
+	const standard = {
+		requiredMinutes: 480,
+		policyId: "policy-1",
+		policyName: "Standard",
+	};
 
 	it("adds the elapsed whole minutes of live work to the day total", () => {
 		const summaries = buildDailyWorkHoursSummaries({
