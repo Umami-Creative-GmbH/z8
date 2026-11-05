@@ -45,6 +45,18 @@ describe("Public API OpenAPI document", () => {
 		}
 	});
 
+	it("explains which installation developers should target in the contract and public reference", () => {
+		const document = buildOpenApiDocument(PUBLIC_API_ENDPOINTS);
+		expect(document.info.description).toContain("base URL of your own Z8 installation");
+		const reference = readFileSync(
+			join(import.meta.dirname, "../../../../docs/content/docs/api-reference/index.mdx"),
+			"utf8",
+		);
+		expect(reference).toContain("base URL of your own Z8 installation");
+		expect(reference).toContain("/api/v1/openapi.json");
+		expect(reference).toContain("Download OpenAPI spec");
+	});
+
 	it("changes when a route's query or response schema changes", () => {
 		const [first, ...rest] = PUBLIC_API_ENDPOINTS;
 		const before = serializeOpenApiDocument(buildOpenApiDocument(PUBLIC_API_ENDPOINTS));

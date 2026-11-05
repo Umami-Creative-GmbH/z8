@@ -120,6 +120,7 @@ export function buildOpenApiDocument(endpoints: readonly PublicApiEndpoint[]) {
 			version: "1.0.0",
 			description: [
 				"Read your organization's data from your own systems with an organization API key.",
+				"Use the base URL of your own Z8 installation. Download /api/v1/openapi.json from that installation to retain its API target when importing this document into a client.",
 				"",
 				"Send the key as `Authorization: Bearer <key>`. A key acts as its organization, limited to its key scopes.",
 				"Errors are `application/problem+json` (RFC 9457). Within `/api/v1`, changes only add fields or endpoints.",

@@ -3,6 +3,7 @@
 import {
 	IconCheck,
 	IconCopy,
+	IconDownload,
 	IconKey,
 	IconLoader2,
 	IconPlus,
@@ -474,7 +475,7 @@ function ApiKeyPageView({
 	return (
 		<div className="min-w-0">
 			<div className="mx-auto max-w-4xl">
-				<div className="mb-6 flex items-start justify-between">
+				<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
 					<div>
 						<h2 className="text-lg font-semibold">
 							{t("settings.apiKeys.title", "API Keys")}
@@ -492,13 +493,24 @@ function ApiKeyPageView({
 							})}
 						</p>
 					</div>
-					<Button
-						onClick={() => setCreateDialogOpen(true)}
-						disabled={!canCreateMore}
-					>
-						<IconPlus className="mr-2 size-4" />
-						{t("settings.apiKeys.create", "Create Key")}
-					</Button>
+					<div className="flex flex-wrap gap-2">
+						<Button variant="outline" asChild>
+							<a
+								href="/api/v1/openapi.json"
+								download="z8-public-api-v1.openapi.json"
+							>
+								<IconDownload className="size-4" aria-hidden="true" />
+								{t("settings.apiKeys.downloadOpenApi", "Download OpenAPI spec")}
+							</a>
+						</Button>
+						<Button
+							onClick={() => setCreateDialogOpen(true)}
+							disabled={!canCreateMore}
+						>
+							<IconPlus className="mr-2 size-4" />
+							{t("settings.apiKeys.create", "Create Key")}
+						</Button>
+					</div>
 				</div>
 				<div className="space-y-6">
 					<ApiKeysCard viewModel={viewModel} />
