@@ -9,22 +9,37 @@ import {
 	requestEmployeePersonalDataExportAction,
 } from "@/app/[locale]/(app)/settings/employees/personal-data-export.actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
 import { queryKeys } from "@/lib/query";
 import {
 	PersonalDataExportList,
 	type PersonalDataExportListLabels,
 } from "./personal-data-export-list";
-import { isBuilding, REFRESH_WHILE_BUILDING_MS } from "./personal-data-export-status";
+import {
+	isBuilding,
+	REFRESH_WHILE_BUILDING_MS,
+} from "./personal-data-export-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-function statusLabel(t: Translate, status: PersonalDataExportSummary["status"]): string {
+function statusLabel(
+	t: Translate,
+	status: PersonalDataExportSummary["status"],
+): string {
 	switch (status) {
 		case "pending":
 		case "processing":
-			return t("settings.employees.personalDataExport.statusPreparing", "Being prepared");
+			return t(
+				"settings.employees.personalDataExport.statusPreparing",
+				"Being prepared",
+			);
 		case "completed":
 			return t("settings.employees.personalDataExport.statusReady", "Ready");
 		case "failed":
@@ -34,13 +49,24 @@ function statusLabel(t: Translate, status: PersonalDataExportSummary["status"]):
 
 function listLabels(t: Translate): PersonalDataExportListLabels {
 	return {
-		list: t("settings.employees.personalDataExport.listLabel", "Past admin exports"),
+		list: t(
+			"settings.employees.personalDataExport.listLabel",
+			"Past admin exports",
+		),
 		requestedAt: (date) =>
-			t("settings.employees.personalDataExport.requestedAt", "Requested {date}", { date }),
+			t(
+				"settings.employees.personalDataExport.requestedAt",
+				"Requested {date}",
+				{ date },
+			),
 		availableUntil: (date) =>
-			t("settings.employees.personalDataExport.availableUntil", "Available until {date}", {
-				date,
-			}),
+			t(
+				"settings.employees.personalDataExport.availableUntil",
+				"Available until {date}",
+				{
+					date,
+				},
+			),
 		status: (status) => statusLabel(t, status),
 		download: t("settings.employees.personalDataExport.download", "Download"),
 		downloadFailed: t(
@@ -90,7 +116,10 @@ export function EmployeePersonalDataExportCard({
 }: EmployeePersonalDataExportCardProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const queryKey = queryKeys.employees.personalDataExports(organizationId, employeeId);
+	const queryKey = queryKeys.employees.personalDataExports(
+		organizationId,
+		employeeId,
+	);
 
 	const exportsQuery = useQuery({
 		queryKey,
@@ -132,7 +161,10 @@ export function EmployeePersonalDataExportCard({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<IconDatabaseExport className="size-5" aria-hidden="true" />
-					{t("settings.employees.personalDataExport.title", "Personal data export")}
+					{t(
+						"settings.employees.personalDataExport.title",
+						"Personal data export",
+					)}
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -142,6 +174,12 @@ export function EmployeePersonalDataExportCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.employees.personalDataExport.aboutEquipment",
+						"Includes the same retained equipment records as the employee's own export, including corrections, lost or waived outcomes, and recoveries. Former employees' records use this export too.",
+					)}
+				</p>
 				<div className="space-y-2">
 					<Button
 						onClick={() => requestExport.mutate()}
@@ -152,7 +190,10 @@ export function EmployeePersonalDataExportCard({
 						) : (
 							<IconDatabaseExport className="size-4" aria-hidden="true" />
 						)}
-						{t("settings.employees.personalDataExport.request", "Request export")}
+						{t(
+							"settings.employees.personalDataExport.request",
+							"Request export",
+						)}
 					</Button>
 					{isOwnRecord ? (
 						<p className="text-sm text-muted-foreground">

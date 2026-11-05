@@ -208,7 +208,7 @@ departure's code paths; the area modules live in
    until it is reopened. The deputy release (#1014) still runs. The after-commit
    work (sick note cleanup, deputy notices) runs on the caller's database client.
 6. **Access** ends as at a departure: held expense officer, payroll access,
-   personnel file officer and driving licence verifier grants, driving
+   personnel file officer, driving licence verifier and equipment officer grants, driving
    authorizations (also suspended ones), kiosk badges, the kiosk fob and the
    person's report share links. `applied` records the grant ids actually revoked.
    A badge stores the reason `revoked` and a fob `removed`; their audit rows name
@@ -216,6 +216,14 @@ departure's code paths; the area modules live in
    employmentPeriodId }`).
 7. **Retention**: the instant counts as the end of employment (see Personnel
    file retention). The paid seat is released (see Billing reconciliation).
+8. **Equipment**: outstanding required returns become due on the organization-local
+   deactivation day unless an explicit date is earlier. Primary and secondary teams
+   are captured before removal so currently authorized officers can follow up former
+   employees. Equipment capture runs before the active-state trigger closes the
+   period. Reactivation restores no grant and preserves old equipment deadlines and
+   deactivation lineage, including historical holdings entered after the employee left.
+   Physical key/fob receipt never restores its revoked credential. See the
+   [equipment reference](equipment-return-tracking.md).
 
 **Preview.** *Deactivate* opens a dialog served by
 `previewEmployeeDeactivationAction` (`deactivation/preview.ts`): the same
@@ -367,6 +375,27 @@ the departure's transaction (#750, #866). Each revocation is audited as
 other officers that *name* the departed employee in their scope are untouched,
 so that employee's last reports can still be reimbursed and their personnel
 file stays manageable (the departed employee keeps no access to it).
+
+## Equipment returns
+
+The departure preview lists outstanding required equipment, quantities and effective
+return dates. The server recomputes the equipment state when saving. Required returns
+are due by the last working day in the departure's frozen organization timezone,
+unless an explicit deadline is earlier. Moving or cancelling the schedule changes
+only its derived deadline; explicit agreements and recorded handovers remain.
+
+At the cutoff the employee's equipment officer grant ends and their teams are
+captured for authorized follow-up before roster cleanup. Currently authorized
+officers can continue receiving former employees' equipment within that scope;
+owners and admins remain the fallback. **Equipment → Former employees / Outstanding
+returns** shows unresolved returns. Lost or waived quantities close the obligation
+without claiming physical receipt, and recovery never settles the same quantity twice.
+
+A missing item never delays employment, access or paid-seat ending. Physical key or
+fob receipt does not restore its credential. Rehire preserves old equipment
+obligations and their original employment lineage, and does not restore a grant.
+
+See the [equipment implementation reference](equipment-return-tracking.md#scheduled-departure-implementation-1545).
 
 ## Driving licence control
 

@@ -89,6 +89,40 @@ describe("DeactivationPreviewDialog", () => {
 		vi.clearAllMocks();
 	});
 
+	it("shows required returns and their deadlines without blocking deactivation for missing equipment", async () => {
+		const user = userEvent.setup();
+		const { props } = renderDialog({
+			plan: emptyPlan({
+				equipment: [
+					{
+						assignmentId: "assignment",
+						identifier: "L-01",
+						typeName: "Laptop",
+						outstandingQuantity: 2,
+						explicitDeadline: "2026-10-20",
+						effectiveDeadline: "2026-10-20",
+					},
+				],
+				accessEnds: {
+					grants: [{ kind: "equipment_officer", grantId: "grant" }],
+					drivingAuthorizations: [],
+					kioskBadges: [],
+					kioskFobs: [],
+					shareLinks: [],
+				},
+			}),
+		});
+		const section = within(screen.getByRole("region", { name: "Outstanding equipment returns" }));
+		expect(section.getByText(/L-01/).textContent).toContain("2 outstanding");
+		expect(section.getByText(/L-01/).textContent).toContain("Oct 20, 2026");
+		expect(
+			section.getByText(/Employment and access end even while equipment is missing/),
+		).toBeTruthy();
+		expect(screen.getByText("Equipment officer")).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Deactivate" }));
+		expect(props.onConfirm).toHaveBeenCalledWith({});
+	});
+
 	it("confirms with the replacement manager picked for each report left without one", async () => {
 		const user = userEvent.setup();
 		const { props } = renderDialog({ plan: planWithReport() });
@@ -102,7 +136,12 @@ describe("DeactivationPreviewDialog", () => {
 	});
 
 	it("states the previewed instant in the organization's zone, not the viewer's", () => {
-		renderDialog({ plan: emptyPlan({ at: "2026-10-24T08:00:00Z", timeZone: "Europe/Berlin" }) });
+		renderDialog({
+			plan: emptyPlan({
+				at: "2026-10-24T08:00:00Z",
+				timeZone: "Europe/Berlin",
+			}),
+		});
 
 		// 08:00 UTC is 10:00 in Berlin (summer time).
 		expect(screen.getByText(/previewed for .*10:00.*Europe\/Berlin/)).toBeTruthy();
@@ -124,13 +163,18 @@ describe("DeactivationPreviewDialog", () => {
 
 		await pick(user, "New manager for Rita Report", "Anna Admin");
 
-		expect(props.onReplacementsChange).toHaveBeenLastCalledWith({ [REPORT]: ANNA });
+		expect(props.onReplacementsChange).toHaveBeenLastCalledWith({
+			[REPORT]: ANNA,
+		});
 	});
 
 	it("never offers a report as their own manager", async () => {
 		const user = userEvent.setup();
 		const plan = planWithReport();
-		plan.managerLinks.replacementOptions.push({ employeeId: REPORT, name: "Rita Report" });
+		plan.managerLinks.replacementOptions.push({
+			employeeId: REPORT,
+			name: "Rita Report",
+		});
 		renderDialog({ plan });
 
 		await user.click(screen.getByRole("combobox", { name: /New manager for Rita Report/ }));
@@ -174,7 +218,11 @@ describe("DeactivationPreviewDialog", () => {
 	it("explains a failed preview and offers to load it again", async () => {
 		const user = userEvent.setup();
 		const onRetry = vi.fn();
-		renderDialog({ plan: null, loadError: "The preview could not be loaded.", onRetry });
+		renderDialog({
+			plan: null,
+			loadError: "The preview could not be loaded.",
+			onRetry,
+		});
 
 		expect(screen.getByRole("alert").textContent).toContain("The preview could not be loaded.");
 		expect((screen.getByRole("button", { name: "Deactivate" }) as HTMLButtonElement).disabled).toBe(
@@ -207,12 +255,16 @@ describe("DeactivationPreviewDialog", () => {
 	it("locks the dialog while the deactivation is submitted", () => {
 		const { props } = renderDialog({ isSubmitting: true });
 
-		const confirm = screen.getByRole("button", { name: "Deactivating..." }) as HTMLButtonElement;
+		const confirm = screen.getByRole("button", {
+			name: "Deactivating...",
+		}) as HTMLButtonElement;
 		expect(confirm.disabled).toBe(true);
 		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
 			true,
 		);
-		fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+		fireEvent.keyDown(document.activeElement ?? document.body, {
+			key: "Escape",
+		});
 		expect(props.onOpenChange).not.toHaveBeenCalled();
 	});
 
@@ -222,8 +274,16 @@ describe("DeactivationPreviewDialog", () => {
 				managerLinks: {
 					reportsNeedingReplacement: [],
 					reportsKeepingAnotherManager: [
-						{ employeeId: REPORT, name: "Rita Report", newPrimaryManagerId: ANNA },
-						{ employeeId: SECOND_REPORT, name: "Sam Second", newPrimaryManagerId: null },
+						{
+							employeeId: REPORT,
+							name: "Rita Report",
+							newPrimaryManagerId: ANNA,
+						},
+						{
+							employeeId: SECOND_REPORT,
+							name: "Sam Second",
+							newPrimaryManagerId: null,
+						},
 					],
 					formerReports: [{ employeeId: "former-report", name: "Flo Former" }],
 					ownManagerLinks: [{ employeeId: BEN, name: "Ben Manager", isPrimary: true }],
@@ -308,8 +368,18 @@ describe("DeactivationPreviewDialog", () => {
 			plan: emptyPlan({
 				shifts: {
 					shiftsToOpen: [
-						{ shiftId: "shift-1", date: "2026-10-26", startTime: "08:00", endTime: "16:00" },
-						{ shiftId: "shift-2", date: "2026-10-27", startTime: "22:00", endTime: "06:00" },
+						{
+							shiftId: "shift-1",
+							date: "2026-10-26",
+							startTime: "08:00",
+							endTime: "16:00",
+						},
+						{
+							shiftId: "shift-2",
+							date: "2026-10-27",
+							startTime: "22:00",
+							endTime: "06:00",
+						},
 					],
 				},
 			}),
@@ -427,7 +497,9 @@ describe("DeactivationPreviewDialog", () => {
 	});
 
 	it("leaves out areas the deactivation does not touch", () => {
-		renderDialog({ plan: emptyPlan({ retentionStarts: false, seatReleased: false }) });
+		renderDialog({
+			plan: emptyPlan({ retentionStarts: false, seatReleased: false }),
+		});
 
 		expect(screen.queryAllByRole("region")).toHaveLength(0);
 		expect(screen.getByText("Nothing else changes.")).toBeTruthy();

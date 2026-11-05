@@ -142,6 +142,7 @@ export type DeparturePreviewException =
 
 /** Advisory, side-effect free; submission recomputes everything. */
 export interface EmployeeDeparturePreview {
+	equipment: import("@/lib/organization/equipment/contracts").EquipmentDepartureReturn[];
 	lastWorkingDay: string | null;
 	cutoff: string;
 	timezone: string;

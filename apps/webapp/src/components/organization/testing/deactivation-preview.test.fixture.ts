@@ -20,7 +20,11 @@ export function emptyDeactivationPreview(
 		teamLinks: { teams: [], projectAssignments: [], projectManagerLinks: [] },
 		approvalDuties: { handovers: [], reviews: [] },
 		shifts: { shiftsToOpen: [] },
-		absences: { absencesToCancel: [], absencesSpanning: [], absencesInClosedMonths: [] },
+		absences: {
+			absencesToCancel: [],
+			absencesSpanning: [],
+			absencesInClosedMonths: [],
+		},
 		accessEnds: {
 			grants: [],
 			drivingAuthorizations: [],
@@ -28,6 +32,7 @@ export function emptyDeactivationPreview(
 			kioskFobs: [],
 			shareLinks: [],
 		},
+		equipment: [],
 		retentionStarts: true,
 		seatReleased: true,
 		refusals: [],

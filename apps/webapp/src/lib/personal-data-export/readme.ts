@@ -94,6 +94,11 @@ function categoryDescription(
 				"personalDataExport.readme.category.drivingLicence",
 				"Driving licence checks, original confirmations and declarations, attributed supplements, class authorizations and their history, enrolment and your verifier responsibility. Retained evidence only; no licence scans, document numbers or medical notes.",
 			);
+		case "equipment":
+			return t(
+				"personalDataExport.readme.category.equipment",
+				"Your retained equipment assignments, original and corrected conditions and notes, physical receipts, lost and waived decisions, recovery and employment/ending lineage. Unknown historical issue dates stay unknown; actual calendar dates are separate from UTC entry timestamps. Equipment records are included in both employee and admin exports while retained.",
+			);
 		case "time":
 			return t(
 				"personalDataExport.readme.category.time",

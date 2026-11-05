@@ -54,9 +54,19 @@ export type ReactivationChecklistItem =
 			name: string | null;
 			href: string;
 	  }
-	| { group: "grants"; kind: "grant"; grant: ChecklistGrantKind | null; href: string }
+	| {
+			group: "grants";
+			kind: "grant";
+			grant: ChecklistGrantKind | null;
+			href: string;
+	  }
 	| { group: "access"; kind: "kiosk_badges"; count: number; href: string }
-	| { group: "access"; kind: "driving_authorizations"; count: number; href: string }
+	| {
+			group: "access";
+			kind: "driving_authorizations";
+			count: number;
+			href: string;
+	  }
 	| {
 			group: "teams";
 			kind: "team" | "project_assignment" | "project_manager";
@@ -99,6 +109,7 @@ export type ReactivationChecklist = {
 };
 
 const GRANT_PAGES: Record<ChecklistGrantKind, string> = {
+	equipment_officer: "/settings/equipment",
 	expense_officer: "/settings/travel-expenses?tab=access",
 	payroll_access: "/settings/payroll-access",
 	personnel_file_officer: "/settings/personnel-files?tab=access",
