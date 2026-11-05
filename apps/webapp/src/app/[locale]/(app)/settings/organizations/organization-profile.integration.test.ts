@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
+import { env } from "@/env";
 import { integrationAdminPool } from "@/test/integration-database";
+import { prepareAvvDownload } from "../avv/actions";
 
 const session = vi.hoisted(() => ({
 	userId: "t1566-owner" as string | null,
@@ -108,6 +110,113 @@ it("starts empty and lets the owner save and reload a partial legal profile", as
 	});
 });
 
+it("prepares each AVV from the current saved profile and refuses cleared required details", async () => {
+	if (env.BILLING_ENABLED !== "true") {
+		expect(await prepareAvvDownload("t1566-org")).toMatchObject({
+			success: false,
+			code: "BillingError",
+		});
+		return;
+	}
+	expect(await prepareAvvDownload("t1566-org")).toMatchObject({
+		success: true,
+		data: {
+			ready: false,
+			missingFields: ["legalCompanyName", "addressLine1", "city", "country"],
+		},
+	});
+	const profile = {
+		...emptyProfile,
+		legalCompanyName: "Legal GmbH",
+		addressLine1: "Old Street 1",
+		city: "Berlin",
+		country: "DE",
+		postalCode: "10115",
+	};
+	await saveOrganizationProfile("t1566-org", profile);
+	expect(await prepareAvvDownload("t1566-org")).toEqual({
+		success: true,
+		data: { ready: true, profile },
+	});
+	await saveOrganizationProfile("t1566-org", {
+		...profile,
+		addressLine1: "New Street 2",
+	});
+	expect(await prepareAvvDownload("t1566-org")).toMatchObject({
+		success: true,
+		data: { ready: true, profile: { addressLine1: "New Street 2" } },
+	});
+	await saveOrganizationProfile("t1566-org", { ...profile, postalCode: "  " });
+	expect(await prepareAvvDownload("t1566-org")).toEqual({
+		success: true,
+		data: { ready: false, missingFields: ["postalCode"] },
+	});
+});
+
+it("uses country-specific postal applicability for persisted profiles and checks every required field", async () => {
+	const profile = {
+		...emptyProfile,
+		legalCompanyName: "Legal Ltd",
+		addressLine1: "Central Tower 7",
+		city: "Hong Kong",
+		country: "HK",
+	};
+	await saveOrganizationProfile("t1566-org", profile);
+	if (env.BILLING_ENABLED !== "true") {
+		expect(await getOrganizationProfile("t1566-org")).toEqual({
+			success: true,
+			data: profile,
+		});
+		expect(await prepareAvvDownload("t1566-org")).toMatchObject({
+			success: false,
+			code: "BillingError",
+		});
+		return;
+	}
+	session.userId = "t1566-admin";
+	expect(await prepareAvvDownload("t1566-org")).toEqual({
+		success: true,
+		data: { ready: true, profile },
+	});
+	const germanProfile = {
+		...profile,
+		city: "Berlin",
+		country: "DE",
+		postalCode: "10115",
+	};
+	for (const field of [
+		"legalCompanyName",
+		"addressLine1",
+		"city",
+		"country",
+		"postalCode",
+	]) {
+		await saveOrganizationProfile("t1566-org", {
+			...germanProfile,
+			[field]: "   ",
+		});
+		expect(await prepareAvvDownload("t1566-org")).toEqual({
+			success: true,
+			data: { ready: false, missingFields: [field] },
+		});
+	}
+});
+
+it("rechecks authorization after a profile was loaded", async () => {
+	session.userId = "t1566-admin";
+	await getOrganizationProfile("t1566-org");
+	await pool.query("update member set role='member' where id='t1566-admin'");
+	try {
+		expect(await prepareAvvDownload("t1566-org")).toMatchObject({
+			success: false,
+			code:
+				env.BILLING_ENABLED === "true" ? "AuthorizationError" : "BillingError",
+		});
+	} finally {
+		await pool.query("update member set role='admin' where id='t1566-admin'");
+	}
+});
+
 it("validates supplied profile values at the authenticated boundary without replacing saved values", async () => {
 	await saveOrganizationProfile("t1566-org", {
 		...emptyProfile,
@@ -202,6 +311,11 @@ it.each(["member", "pending", "inactive"])(
 			success: false,
 			code: "AuthorizationError",
 		});
+		expect(await prepareAvvDownload("t1566-org")).toMatchObject({
+			success: false,
+			code:
+				env.BILLING_ENABLED === "true" ? "AuthorizationError" : "BillingError",
+		});
 		expect(
 			await saveOrganizationProfile("t1566-org", {
 				...emptyProfile,
@@ -228,6 +342,9 @@ it("denies unauthenticated, missing-active-organization and nonmember access", a
 			await getOrganizationProfile(organizationId ?? "t1566-org"),
 		).toMatchObject({ success: false });
 		expect(
+			await prepareAvvDownload(organizationId ?? "t1566-org"),
+		).toMatchObject({ success: false });
+		expect(
 			await saveOrganizationProfile(
 				organizationId ?? "t1566-org",
 				emptyProfile,
@@ -247,6 +364,11 @@ it("keeps two organizations independent and rejects another organization's ident
 	expect(await getOrganizationProfile("t1566-other")).toMatchObject({
 		success: false,
 		code: "AuthorizationError",
+	});
+	expect(await prepareAvvDownload("t1566-other")).toMatchObject({
+		success: false,
+		code:
+			env.BILLING_ENABLED === "true" ? "AuthorizationError" : "BillingError",
 	});
 	expect(
 		await saveOrganizationProfile("t1566-other", {

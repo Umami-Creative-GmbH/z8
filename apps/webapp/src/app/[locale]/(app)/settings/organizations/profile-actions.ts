@@ -86,6 +86,7 @@ export async function saveOrganizationProfile(
 					}),
 			);
 			revalidatePath("/[locale]/(app)/settings/organizations", "page");
+			revalidatePath("/[locale]/(app)/settings/avv", "page");
 			return { ok: true as const, profile };
 		}),
 	);
