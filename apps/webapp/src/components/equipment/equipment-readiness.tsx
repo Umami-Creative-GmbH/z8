@@ -150,6 +150,14 @@ function ItemReadiness({
 					onCancel={() => setSelection(null)}
 				/>
 			) : null}
+			{item.personalHistoryCleaned ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.equipment.retention.cleanedItem",
+						"Expired personal history was removed. Item identity, custody and availability remain recorded; cleanup does not confirm physical receipt.",
+					)}
+				</p>
+			) : null}
 			{item.history.length ? (
 				<details className="border-t pt-3">
 					<summary className="cursor-pointer text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring">

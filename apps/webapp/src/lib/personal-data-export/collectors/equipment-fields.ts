@@ -231,6 +231,27 @@ export const equipmentFieldGuide: PersonalDataFieldGuide = (t) => {
 				),
 			},
 		},
+		case_holds: {
+			summary: t(
+				"personalDataExport.readme.fields.equipment.holds.summary",
+				"Documented case hold placements and releases on your retained equipment history. An active hold protects the evidence from cleanup; it never records physical receipt.",
+			),
+			fields: {
+				...evidence,
+				kind: t(
+					"personalDataExport.readme.fields.equipment.holds.kind",
+					"Whether the case hold was placed or released.",
+				),
+				reason: t(
+					"personalDataExport.readme.fields.equipment.holds.reason",
+					"The mandatory reason documented by the organization administrator for this specific case action.",
+				),
+				revision: t(
+					"personalDataExport.readme.fields.equipment.holds.revision",
+					"The assignment revision created by this case hold action.",
+				),
+			},
+		},
 		corrections: {
 			summary: t(
 				"personalDataExport.readme.fields.equipment.corrections.summary",

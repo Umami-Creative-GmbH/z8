@@ -103,6 +103,10 @@ export function EquipmentRetentionForm({
 							{t(
 								"settings.equipment.retention.help",
 								"Choose your organization's justified retention period. It starts at the latest activity on fully closed assignments. Outstanding returns and documented case holds prevent cleanup.",
+							)}{" "}
+							{t(
+								"settings.equipment.retention.calendarBoundary",
+								"Cleanup becomes eligible at organization-local midnight after the full anniversary day. Later activity, including releasing a case hold, starts the period again.",
 							)}
 						</TFormDescription>
 						<TFormMessage field={field} />

@@ -202,6 +202,10 @@ export const equipmentAssignment = pgTable(
 		/** Immutable equipment lineage even when reactivation reopens the employment period. */
 		deactivationId: uuid("deactivation_id"),
 		received: boolean("received").notNull().default(false),
+		lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		caseHeld: boolean("case_held").notNull().default(false),
 		revision: integer("revision").notNull().default(1),
 	},
 	(t) => [
@@ -342,6 +346,10 @@ export const equipmentHandover = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		assignmentId: uuid("assignment_id").notNull(),
+		/** A removed transfer peer cannot be reconstructed or amended through this leg. */
+		transferHistoryCleaned: boolean("transfer_history_cleaned")
+			.notNull()
+			.default(false),
 		exceptionId: uuid("exception_id"),
 		kind: text("kind", { enum: ["issue", "receipt"] }).notNull(),
 		quantity: integer("quantity").notNull().default(1),
@@ -428,15 +436,107 @@ export const equipmentCommand = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		requestId: uuid("request_id").notNull(),
-		fingerprint: text("fingerprint").notNull(),
-		result: jsonb("result")
-			.$type<{ ok: true; id: string; revision: number }>()
-			.notNull(),
+		fingerprint: text("fingerprint"),
+		result: jsonb("result").$type<{ ok: true; id: string; revision: number }>(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
 	},
-	(t) => [primaryKey({ columns: [t.organizationId, t.requestId] })],
+	(t) => [
+		primaryKey({ columns: [t.organizationId, t.requestId] }),
+		check(
+			"equipment_command_minimized_check",
+			sql`(${t.fingerprint} is null) = (${t.result} is null)`,
+		),
+	],
+);
+
+/** After cleanup only request identity remains, preventing a late retry recreating evidence. */
+export const equipmentCommandAssignment = pgTable(
+	"equipment_command_assignment",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		requestId: uuid("request_id").notNull(),
+		assignmentId: uuid("assignment_id").notNull(),
+	},
+	(t) => [
+		primaryKey({ columns: [t.organizationId, t.requestId, t.assignmentId] }),
+		foreignKey({
+			columns: [t.organizationId, t.requestId],
+			foreignColumns: [
+				equipmentCommand.organizationId,
+				equipmentCommand.requestId,
+			],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [t.assignmentId, t.organizationId],
+			foreignColumns: [
+				equipmentAssignment.id,
+				equipmentAssignment.organizationId,
+			],
+		}).onDelete("cascade"),
+	],
+);
+
+/** Deliberately has no assignment, employee, actor, reason, condition or command reference. */
+export const equipmentItemCustodyHistory = pgTable(
+	"equipment_item_custody_history",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		itemId: uuid("item_id").notNull(),
+		issueSequence: bigint("issue_sequence", { mode: "number" }).notNull(),
+		issueDate: date("issue_date"),
+		receiptDate: date("receipt_date"),
+	},
+	(t) => [
+		primaryKey({ columns: [t.organizationId, t.itemId, t.issueSequence] }),
+		foreignKey({
+			columns: [t.itemId, t.organizationId],
+			foreignColumns: [equipmentItem.id, equipmentItem.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+export const equipmentCaseHoldEvent = pgTable(
+	"equipment_case_hold_event",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		assignmentId: uuid("assignment_id").notNull(),
+		kind: text("kind", { enum: ["place", "release"] }).notNull(),
+		reason: text("reason").notNull(),
+		actorId: text("actor_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+		revision: integer("revision").notNull(),
+	},
+	(t) => [
+		foreignKey({
+			columns: [t.assignmentId, t.organizationId],
+			foreignColumns: [
+				equipmentAssignment.id,
+				equipmentAssignment.organizationId,
+			],
+		}).onDelete("cascade"),
+		unique("equipment_hold_assignment_revision_unique").on(
+			t.organizationId,
+			t.assignmentId,
+			t.revision,
+		),
+		check("equipment_hold_kind_check", sql`${t.kind} in ('place', 'release')`),
+		check(
+			"equipment_hold_reason_check",
+			sql`length(btrim(${t.reason})) between 1 and 4000`,
+		),
+		check("equipment_hold_revision_positive", sql`${t.revision} > 0`),
+	],
 );
 
 /** One revisioned responsibility per officer; revocation keeps its stale-form fence. */

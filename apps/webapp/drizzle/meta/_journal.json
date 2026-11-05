@@ -2143,6 +2143,13 @@
       "when": 1811088000000,
       "tag": "0305_equipment_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 306,
+      "version": "7",
+      "when": 1811174400000,
+      "tag": "0306_equipment_retention",
+      "breakpoints": true
     }
   ]
 }

@@ -146,6 +146,20 @@ export const equipmentQuantitySchema = z
 	.max(2147483647);
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
+		kind: z.literal("place_case_hold"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		reason: z.string().trim().min(1).max(4000),
+	}),
+	z.strictObject({
+		kind: z.literal("release_case_hold"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		reason: z.string().trim().min(1).max(4000),
+	}),
+	z.strictObject({
 		kind: z.literal("correct_transfer"),
 		...request,
 		...revision,
@@ -303,6 +317,8 @@ export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 export type EquipmentChange = z.infer<typeof equipmentChangeSchema>;
 export type EquipmentRefusal =
 	| EquipmentSetupRefusal
+	| "hold_unchanged"
+	| "history_removed"
 	| "transfer_conflict"
 	| "recovery_conflict"
 	| "readiness_conflict"
@@ -356,6 +372,14 @@ export interface EquipmentExceptionView {
 	canReceive: boolean;
 }
 export interface EquipmentAssignmentView {
+	retention?: EquipmentRetentionView;
+	caseHolds?: {
+		id: string;
+		kind: "place" | "release";
+		reason: string;
+		actorName: string | null;
+		recordedAt: string;
+	}[];
 	correctionTransfers?: {
 		destinationAssignmentId: string;
 		expectedDestinationRevision: number;
@@ -405,6 +429,12 @@ export interface EquipmentAssignmentView {
 	receipt: EquipmentHandoverView | null;
 	receipts: EquipmentHandoverView[];
 }
+export interface EquipmentRetentionView {
+	lastActivityAt: string;
+	expiresAt: string | null;
+	caseHeld: boolean;
+	status: "outstanding" | "case_hold" | "policy_required" | "due" | "retained";
+}
 export interface EquipmentCorrectionView {
 	id: string;
 	handoverId: string | null;
@@ -425,6 +455,7 @@ export interface EquipmentReadinessEventView {
 	recordedAt: string;
 }
 export interface EquipmentReadinessItemView extends EquipmentItemView {
+	personalHistoryCleaned?: boolean;
 	typeName: string;
 	canClear: boolean;
 	canMarkUnavailable: boolean;

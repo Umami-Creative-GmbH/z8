@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, inArray, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import {
 	equipmentItem,
@@ -74,7 +74,11 @@ export async function readItemReadiness(
 	itemScope?: SQL<boolean>,
 ): Promise<EquipmentReadinessItemView[]> {
 	const items = await tx
-		.select({ item: equipmentItem, typeName: equipmentType.name })
+		.select({
+			item: equipmentItem,
+			typeName: equipmentType.name,
+			personalHistoryCleaned: sql<boolean>`exists (select 1 from equipment_item_custody_history h where h.organization_id=${equipmentItem.organizationId} and h.item_id=${equipmentItem.id})`,
+		})
 		.from(equipmentItem)
 		.innerJoin(
 			equipmentType,
@@ -113,7 +117,8 @@ export async function readItemReadiness(
 		});
 		history.set(event.itemId, entries);
 	}
-	return items.map(({ item, typeName }) => ({
+	return items.map(({ item, typeName, personalHistoryCleaned }) => ({
+		personalHistoryCleaned,
 		id: item.id,
 		typeId: item.typeId,
 		typeName,

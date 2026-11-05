@@ -61,6 +61,31 @@ const view: EquipmentView = {
 	availableQuantityTypes: [],
 	readinessItems: [damaged],
 };
+it("explains cleaned personal history while keeping physical custody and readiness controls independent", () => {
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				readinessItems: [
+					{
+						...damaged,
+						inCustody: true,
+						personalHistoryCleaned: true,
+						canClear: false,
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	expect(
+		screen.getByText(
+			"Expired personal history was removed. Item identity, custody and availability remain recorded; cleanup does not confirm physical receipt.",
+		),
+	).toBeTruthy();
+	expect(screen.queryByRole("button", { name: "Clear for issue" })).toBeNull();
+	expect(screen.getByText("Held by employee")).toBeTruthy();
+});
 it("confirms explicit clearance, keeps uncertain retries identical and shows stale conflicts with reload guidance", async () => {
 	api.change.mockResolvedValueOnce({ success: false }).mockResolvedValue({
 		success: true,

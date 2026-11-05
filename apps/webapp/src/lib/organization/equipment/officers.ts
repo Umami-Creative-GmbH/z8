@@ -113,7 +113,7 @@ export async function applyEquipmentOfficerChange(
 				),
 			);
 		if (replay)
-			return replay.fingerprint === fingerprint
+			return replay.result && replay.fingerprint === fingerprint
 				? replay.result
 				: { ok: false, reason: "request_conflict" };
 		const [existing] = await tx
