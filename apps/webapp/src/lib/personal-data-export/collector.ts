@@ -111,6 +111,7 @@ export const PERSONAL_DATA_CATEGORIES = [
 	"integrations",
 	"audit_log",
 	"driving_licence",
+	"equipment",
 	"account",
 ] as const;
 export type PersonalDataCategoryKey = (typeof PERSONAL_DATA_CATEGORIES)[number];

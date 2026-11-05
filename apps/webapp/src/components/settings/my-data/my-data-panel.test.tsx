@@ -1,5 +1,11 @@
 /* @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MyDataPanel } from "./my-data-panel";
 
@@ -34,6 +40,20 @@ vi.mock("@/app/[locale]/(app)/settings/my-data/actions", () => ({
 describe("personal data export transport failures", () => {
 	beforeEach(() => vi.clearAllMocks());
 	afterEach(cleanup);
+	it("describes retained equipment and requests it through the existing export action", async () => {
+		mocks.request.mockResolvedValue({
+			success: true,
+			data: { exportId: "equipment-export" },
+		});
+		render(<MyDataPanel exports={[]} />);
+		expect(
+			screen.getByText(/Includes retained equipment assignments/),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Request export" }));
+		await waitFor(() => expect(mocks.refresh).toHaveBeenCalled());
+		expect(mocks.request).toHaveBeenCalledWith();
+		expect(mocks.success).toHaveBeenCalled();
+	});
 	it("reports a rejected export request and enables retry", async () => {
 		mocks.request.mockRejectedValue(new Error("offline"));
 		render(<MyDataPanel exports={[]} />);
