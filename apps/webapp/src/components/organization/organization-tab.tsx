@@ -5,16 +5,20 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type * as authSchema from "@/db/auth-schema";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
+import type { OrganizationProfile } from "@/lib/organization/profile";
 import { CreateOrganizationDialog } from "./create-organization-dialog";
 import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
 import { OrganizationLanguageCard } from "./organization-language-card";
+import { OrganizationProfileCard } from "./organization-profile-card";
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
 
 interface OrganizationTabProps {
+	organizationProfile: OrganizationProfile;
 	trackingSuggestedAt: string;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
@@ -26,6 +30,7 @@ interface OrganizationTabProps {
 }
 
 export function OrganizationTab({
+	organizationProfile,
 	trackingSuggestedAt,
 	organization,
 	memberCount,
@@ -59,6 +64,15 @@ export function OrganizationTab({
 				memberCount={memberCount}
 				currentMemberRole={currentMemberRole}
 			/>
+
+			{(hasOrganizationRole(currentMemberRole, "owner") ||
+				hasOrganizationRole(currentMemberRole, "admin")) && (
+				<OrganizationProfileCard
+					key={organization.id}
+					organizationId={organization.id}
+					profile={organizationProfile}
+				/>
+			)}
 
 			{/* Organization Features Card */}
 			<OrganizationFeaturesCard

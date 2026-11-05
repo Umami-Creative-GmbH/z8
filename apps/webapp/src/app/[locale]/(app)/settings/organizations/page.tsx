@@ -12,6 +12,7 @@ import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { readDrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
 import { getTranslate } from "@/tolgee/server";
+import { getOrganizationProfile } from "./profile-actions";
 
 async function OrganizationsPageContent() {
 	const [settingsRouteContext, t] = await Promise.all([
@@ -42,6 +43,7 @@ async function OrganizationsPageContent() {
 		organizationNotificationSettingsRecord,
 		billableTimeSettings,
 		drivingLicence,
+		profileResult,
 	] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
@@ -69,9 +71,11 @@ async function OrganizationsPageContent() {
 		}),
 		getBillableTimeSettings(organizationId, db),
 		readDrivingLicenceFeatureState(organizationId),
+		getOrganizationProfile(organizationId),
 	]);
 
 	const [currentMemberRecord] = currentMember;
+	if (!profileResult.success) throw new Error(profileResult.error);
 
 	if (!organization || !currentMemberRecord) {
 		return (
@@ -96,6 +100,7 @@ async function OrganizationsPageContent() {
 
 	return (
 		<OrganizationsPageClient
+			organizationProfile={profileResult.data}
 			trackingSuggestedAt={systemClock.nowInstant().toString()}
 			organization={organization}
 			memberCount={memberCountRows[0]?.value ?? 0}
