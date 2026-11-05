@@ -30,6 +30,42 @@ beforeEach(() => {
 	vi.clearAllMocks();
 });
 
+it("warns before leaving with unsaved edits and adopts the successfully saved profile as its baseline", async () => {
+	save.mockImplementation(async (_id, profile) => ({
+		success: true,
+		data: { ok: true, profile },
+	}));
+	const { unmount } = render(
+		<OrganizationProfileCard
+			organizationId="org-1"
+			profile={EMPTY_ORGANIZATION_PROFILE}
+		/>,
+	);
+	const leavingWouldWarn = () => {
+		const event = new Event("beforeunload", { cancelable: true });
+		window.dispatchEvent(event);
+		return event.defaultPrevented;
+	};
+	expect(leavingWouldWarn()).toBe(false);
+	const city = screen.getByLabelText("City");
+	fireEvent.change(city, { target: { value: "Berlin" } });
+	expect(leavingWouldWarn()).toBe(true);
+	fireEvent.change(city, { target: { value: "" } });
+	expect(leavingWouldWarn()).toBe(false);
+	fireEvent.change(city, { target: { value: " Berlin " } });
+	fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
+	await screen.findByRole("status");
+	expect(city).toHaveProperty("value", "Berlin");
+	expect(leavingWouldWarn()).toBe(false);
+	fireEvent.change(city, { target: { value: "Hamburg" } });
+	expect(leavingWouldWarn()).toBe(true);
+	fireEvent.change(city, { target: { value: "Berlin" } });
+	expect(leavingWouldWarn()).toBe(false);
+	fireEvent.change(city, { target: { value: "Hamburg" } });
+	unmount();
+	expect(leavingWouldWarn()).toBe(false);
+});
+
 it("lets an admin edit the registered address and save a partial profile with visible feedback", async () => {
 	save.mockImplementation(async (_id, profile) => ({
 		success: true,
@@ -151,6 +187,9 @@ it.each(["denied", "network"])(
 		);
 		expect(screen.getByLabelText("City")).toHaveProperty("value", "Berlin");
 		expect(screen.queryByRole("status")).toBeNull();
+		const leaving = new Event("beforeunload", { cancelable: true });
+		window.dispatchEvent(leaving);
+		expect(leaving.defaultPrevented).toBe(true);
 	},
 );
 

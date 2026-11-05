@@ -79,8 +79,13 @@ export async function exportAvvToPDF(
 		throw new Error("Organization profile is incomplete or invalid");
 	}
 	const controller = validation.profile;
-	const { Document, Page, pdf, StyleSheet, Text, View } = await import(
-		"@react-pdf/renderer"
+	const [
+		{ Document, Page, pdf, StyleSheet, Text, View, Font },
+		{ loadAvvControllerFonts },
+	] = await Promise.all([import("@react-pdf/renderer"), import("./avv-fonts")]);
+	const controllerFontFamily = await loadAvvControllerFonts(
+		Font,
+		Object.values(controller),
 	);
 
 	const styles = StyleSheet.create(styleDefinitions);
@@ -106,11 +111,19 @@ export async function exportAvvToPDF(
 					<Text style={styles.partyLabel}>
 						Auftraggeber (Verantwortlicher):
 					</Text>
-					<Text>{controller.legalCompanyName}</Text>
+					<Text style={{ fontFamily: controllerFontFamily }}>
+						{controller.legalCompanyName}
+					</Text>
 					{getRegisteredAddressLines(controller).map(({ field, value }) => (
-						<Text key={field}>{value}</Text>
+						<Text key={field} style={{ fontFamily: controllerFontFamily }}>
+							{value}
+						</Text>
 					))}
-					{controller.vatId && <Text>USt-IdNr.: {controller.vatId}</Text>}
+					{controller.vatId && (
+						<Text style={{ fontFamily: controllerFontFamily }}>
+							USt-IdNr.: {controller.vatId}
+						</Text>
+					)}
 					<Text style={{ fontSize: 9, color: "#666666", marginTop: 4 }}>
 						- nachfolgend &quot;Auftraggeber&quot; genannt -
 					</Text>
