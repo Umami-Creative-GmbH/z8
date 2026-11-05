@@ -2150,6 +2150,13 @@
       "when": 1811174400000,
       "tag": "0306_equipment_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 307,
+      "version": "7",
+      "when": 1811260800000,
+      "tag": "0307_equipment_review_fixes",
+      "breakpoints": true
     }
   ]
 }

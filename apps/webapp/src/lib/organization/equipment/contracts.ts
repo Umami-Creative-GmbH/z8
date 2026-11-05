@@ -130,6 +130,7 @@ const historicalFields = {
 	/** Explicit null means the actual historical issue date is unknown. */
 	actualDate: calendarDate.nullable(),
 	employmentPeriodId: z.uuid().optional(),
+	endingContext: z.union([z.uuid(), z.literal("current")]).optional(),
 	employeeId: z.uuid(),
 	returnRequired: z.boolean(),
 	explicitDeadline: calendarDate.nullable().optional(),
@@ -145,6 +146,21 @@ export const equipmentQuantitySchema = z
 	.positive()
 	.max(2147483647);
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
+	z.strictObject({
+		kind: z.literal("propose_custody_receipt"),
+		...request,
+		...revision,
+		itemId: z.uuid(),
+		actualDate: calendarDate,
+		condition: equipmentConditionSchema,
+	}),
+	z.strictObject({
+		kind: z.literal("confirm_custody_receipt"),
+		...request,
+		...revision,
+		itemId: z.uuid(),
+		proposalId: z.uuid(),
+	}),
 	z.strictObject({
 		kind: z.literal("place_case_hold"),
 		...request,
@@ -456,6 +472,19 @@ export interface EquipmentReadinessEventView {
 }
 export interface EquipmentReadinessItemView extends EquipmentItemView {
 	personalHistoryCleaned?: boolean;
+	canProposeCustodyReceipt?: boolean;
+	custodyReceipt?: {
+		id: string;
+		actualDate: string;
+		condition: EquipmentCondition;
+		proposedBy: string | null;
+		proposedByName?: string | null;
+		confirmedByName?: string | null;
+		proposedAt: string;
+		confirmedBy: string | null;
+		confirmedAt: string | null;
+		canConfirm: boolean;
+	};
 	typeName: string;
 	canClear: boolean;
 	canMarkUnavailable: boolean;
@@ -463,6 +492,13 @@ export interface EquipmentReadinessItemView extends EquipmentItemView {
 	history: EquipmentReadinessEventView[];
 }
 export interface EquipmentView {
+	historicalContexts?: {
+		id: string;
+		employeeId: string;
+		employmentPeriodId: string | null;
+		startedOn: string | null;
+		endedOn: string | null;
+	}[];
 	employmentPeriods?: {
 		id: string;
 		employeeId: string;
@@ -495,7 +531,12 @@ export interface EquipmentView {
 		defaultReturnRequired: boolean;
 		revision: number;
 	}[];
-	employees: { id: string; name: string; former: boolean }[];
+	employees: {
+		id: string;
+		name: string;
+		former: boolean;
+		canIssue?: boolean;
+	}[];
 	types: { id: string; name: string }[];
 }
 

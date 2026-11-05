@@ -67,6 +67,7 @@ export function EquipmentOverview({
 			{data.canManage ? (
 				<EquipmentReadiness
 					items={data.readinessItems ?? []}
+					today={data.today}
 					timezone={data.timezone}
 				/>
 			) : null}
@@ -197,7 +198,9 @@ function equipmentSelection(
 		(scope.kind !== "employee" || !!currentEmployee);
 	const canIssue =
 		canRecordHistorical &&
-		(scope.kind !== "employee" || currentEmployee?.former === false);
+		(scope.kind !== "employee" ||
+			(currentEmployee?.former === false &&
+				currentEmployee.canIssue !== false));
 	const selectedReceipt =
 		selection?.kind === "receipt"
 			? data.assignments.find(
@@ -213,7 +216,9 @@ function equipmentSelection(
 				)
 			: undefined;
 	const unavailableReason =
-		data.canManage && !canIssue
+		data.canManage &&
+		!canIssue &&
+		!(currentEmployee?.former === false && currentEmployee.canIssue === false)
 			? currentEmployee?.former
 				? "former"
 				: "setup"
@@ -571,7 +576,9 @@ function EquipmentAssignments({
 							assignment.transfer &&
 							data.employees.some(
 								(employee) =>
-									!employee.former && employee.id !== assignment.employeeId,
+									!employee.former &&
+									employee.canIssue !== false &&
+									employee.id !== assignment.employeeId,
 							) ? (
 								<Button
 									variant="outline"

@@ -317,7 +317,12 @@ it("revalidates selected teams and employees on every read, and uses only captur
 		success: true,
 		data: {
 			employees: expect.arrayContaining([
-				{ id: ids.subject, name: "t1539-subject", former: false },
+				{
+					id: ids.subject,
+					name: "t1539-subject",
+					former: false,
+					canIssue: true,
+				},
 			]),
 		},
 	});
@@ -360,7 +365,12 @@ it("revalidates selected teams and employees on every read, and uses only captur
 		success: true,
 		data: {
 			employees: expect.arrayContaining([
-				{ id: ids.subject, name: "t1539-subject", former: true },
+				{
+					id: ids.subject,
+					name: "t1539-subject",
+					former: true,
+					canIssue: false,
+				},
 			]),
 		},
 	});

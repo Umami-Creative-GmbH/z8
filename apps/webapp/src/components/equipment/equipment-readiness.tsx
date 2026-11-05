@@ -13,6 +13,7 @@ import type {
 	EquipmentReadinessItemView,
 } from "@/lib/organization/equipment/contracts";
 import { useRouter } from "@/navigation";
+import { EquipmentAnonymousReceipt } from "./equipment-anonymous-receipt";
 import {
 	type EquipmentTranslate,
 	handoverRefusalMessage,
@@ -25,8 +26,10 @@ type ReadinessKind = Extract<
 export function EquipmentReadiness({
 	items,
 	timezone,
+	today,
 }: {
 	items: EquipmentReadinessItemView[];
+	today: string;
 	timezone: string;
 }) {
 	const { t } = useTranslate();
@@ -49,6 +52,7 @@ export function EquipmentReadiness({
 					<ItemReadiness
 						key={`${item.id}:${item.revision}`}
 						item={item}
+						today={today}
 						timezone={timezone}
 					/>
 				))
@@ -75,9 +79,11 @@ function readinessLabel(
 }
 function ItemReadiness({
 	item,
+	today,
 	timezone,
 }: {
 	item: EquipmentReadinessItemView;
+	today: string;
 	timezone: string;
 }) {
 	const { t } = useTranslate();
@@ -150,6 +156,11 @@ function ItemReadiness({
 					onCancel={() => setSelection(null)}
 				/>
 			) : null}
+			<EquipmentAnonymousReceipt
+				item={item}
+				today={today}
+				timezone={timezone}
+			/>
 			{item.personalHistoryCleaned ? (
 				<p className="text-sm text-muted-foreground">
 					{t(

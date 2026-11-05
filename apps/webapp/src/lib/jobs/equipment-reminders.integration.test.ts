@@ -656,3 +656,79 @@ it("honors channel availability without sending through an unavailable email tra
 	await runEquipmentRemindersJob();
 	expect(await inbox()).toHaveLength(1);
 });
+
+it("dispatches queued former-team reminders only for their own employment ending after rehire", async () => {
+	const officer = await fixture.seedEmployee();
+	const teamA = crypto.randomUUID(),
+		teamB = crypto.randomUUID();
+	for (const team of [teamA, teamB])
+		await fixture.pool.query(
+			"insert into team(id,organization_id,name,updated_at) values($1,$2,'Returns',now())",
+			[team, fixture.organizationId],
+		);
+	await fixture.pool.query("update employee set team_id=$1 where id=$2", [
+		teamA,
+		fixture.employeeId,
+	]);
+	await grant(officer.employeeId, { employeeIds: [], teamIds: [teamA] });
+	const old = await issue({ explicitDeadline: null });
+	harness.now = "2026-03-20T12:00:00Z";
+	expect(
+		await departures().offboardNow(actor(), {
+			employeeId: fixture.employeeId,
+			requestId: crypto.randomUUID(),
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: false,
+		}),
+	).toMatchObject({ status: "effective" });
+	const policy = await fixture.pool.query(
+		"insert into work_policy(organization_id,name,created_by,updated_at) values($1,'Rehire policy',$2,now()) returning id",
+		[fixture.organizationId, fixture.ownerUserId],
+	);
+	harness.now = "2026-03-21T12:00:00Z";
+	await departures().rehireEmployee(actor(), {
+		employeeId: fixture.employeeId,
+		requestId: crypto.randomUUID(),
+		previousEmploymentPeriodId: fixture.employmentPeriodId,
+		role: "employee",
+		teamId: teamB,
+		primaryManagerId: null,
+		workPolicyId: policy.rows[0].id,
+		weeklyContractMinutes: 2400,
+		contractType: "fixed",
+		workModel: "onsite",
+		hourlyRate: null,
+		currency: "EUR",
+		probationStartsOn: null,
+		probationEndsOn: null,
+		changeReason: "Return",
+	});
+	const fresh = await issue({
+		actualDate: "2026-03-21",
+		explicitDeadline: null,
+	});
+	harness.now = "2026-03-27T12:00:00Z";
+	expect(
+		await departures().offboardNow(actor(), {
+			employeeId: fixture.employeeId,
+			requestId: crypto.randomUUID(),
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: false,
+		}),
+	).toMatchObject({ status: "effective" });
+	// A stale pending external attempt for B must not inherit this officer's A grant.
+	await pending(fresh.id, officer.userId, "staff", "2026-03-28", "2026-03-27");
+	harness.now = "2026-03-28T12:00:00Z";
+	await runEquipmentRemindersJob();
+	const notices = await inbox(officer.userId);
+	expect(notices).toHaveLength(1);
+	expect(notices[0].entityId).toBe(old.id);
+	expect((await inbox(fixture.ownerUserId)).map((n) => n.entityId)).toEqual([
+		fresh.id,
+	]);
+	expect(
+		harness.mail.mock.calls.filter(
+			([m]) => m.to === `${officer.userId}@lifecycle.test`,
+		),
+	).toHaveLength(1);
+});

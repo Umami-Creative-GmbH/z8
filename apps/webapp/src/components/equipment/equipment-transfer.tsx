@@ -257,6 +257,7 @@ export function TransferEquipmentForm({
 										.filter(
 											(employee) =>
 												!employee.former &&
+												employee.canIssue !== false &&
 												employee.id !== assignment.employeeId,
 										)
 										.map((employee) => (

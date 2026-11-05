@@ -1135,3 +1135,121 @@ it("submits both transfer handovers together and offers receipt correction witho
 		reason: "One shirt moved in this transfer",
 	});
 });
+
+it("requires an explicit ending for an unknown date in a reopened historical period", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	const ending = "15370000-0000-4000-8000-000000000099";
+	render(
+		<EmployeeEquipment
+			employeeId={view.employees[0].id}
+			data={{
+				...view,
+				historicalContexts: [
+					{
+						id: ending,
+						employeeId: view.employees[0].id,
+						employmentPeriodId: null,
+						startedOn: null,
+						endedOn: "2026-10-20",
+					},
+					{
+						id: "current",
+						employeeId: view.employees[0].id,
+						employmentPeriodId: null,
+						startedOn: "2026-10-22",
+						endedOn: null,
+					},
+				],
+			}}
+		/>,
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Record existing holding" }),
+	);
+	await user.selectOptions(
+		screen.getByLabelText(/Equipment item/),
+		view.availableItems[0].id,
+	);
+	await user.click(screen.getByLabelText("Actual issue date is unknown"));
+	await user.click(
+		screen.getByRole("button", { name: "Save historical holding" }),
+	);
+	expect(
+		await screen.findByText(
+			"Select the original ending or current employment context.",
+		),
+	).toBeTruthy();
+	expect(api.change).not.toHaveBeenCalled();
+	await user.selectOptions(
+		screen.getByLabelText("Original ending or current context"),
+		ending,
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Save historical holding" }),
+	);
+	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(1));
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		actualDate: null,
+		endingContext: ending,
+	});
+});
+
+it.each(["2026-10-19", "2026-10-22"])(
+	"submits known historical handover %s for server chronology selection",
+	async (actualDate) => {
+		const user = userEvent.setup();
+		api.change.mockResolvedValue({ success: true, data: { ok: true } });
+		render(
+			<EmployeeEquipment
+				employeeId={view.employees[0].id}
+				data={{
+					...view,
+					historicalContexts: [
+						{
+							id: "15370000-0000-4000-8000-000000000099",
+							employeeId: view.employees[0].id,
+							employmentPeriodId: null,
+							startedOn: null,
+							endedOn: "2026-10-20",
+						},
+						{
+							id: "current",
+							employeeId: view.employees[0].id,
+							employmentPeriodId: null,
+							startedOn: "2026-10-22",
+							endedOn: null,
+						},
+					],
+				}}
+			/>,
+		);
+		await user.click(
+			screen.getByRole("button", { name: "Record existing holding" }),
+		);
+		await user.selectOptions(
+			screen.getByLabelText(/Equipment item/),
+			view.availableItems[0].id,
+		);
+		await user.type(screen.getByLabelText(/Actual handover date/), actualDate);
+		await user.click(
+			screen.getByRole("button", { name: "Save historical holding" }),
+		);
+		await waitFor(() => expect(api.change).toHaveBeenCalledTimes(1));
+		expect(api.change.mock.calls[0][0]).toMatchObject({ actualDate });
+		expect(api.change.mock.calls[0][0]).not.toHaveProperty("endingContext");
+	},
+);
+
+it("keeps historical follow-up available without offering fresh issuance outside current scope", () => {
+	render(
+		<EmployeeEquipment
+			employeeId={view.employees[0].id}
+			data={{ ...view, employees: [{ ...view.employees[0], canIssue: false }] }}
+		/>,
+	);
+	expect(screen.queryByRole("button", { name: "Issue equipment" })).toBeNull();
+	expect(
+		screen.getByRole("button", { name: "Record existing holding" }),
+	).toBeTruthy();
+});

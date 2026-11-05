@@ -1,24 +1,10 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import {
-	and,
-	asc,
-	desc,
-	eq,
-	inArray,
-	isNotNull,
-	isNull,
-	sql,
-} from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db as database } from "@/db";
 import { organization, user } from "@/db/auth-schema";
-import {
-	employee,
-	employeeDeactivation,
-	employeeDeparture,
-	employeeEmploymentPeriod,
-} from "@/db/schema";
+import { employee, employeeEmploymentPeriod } from "@/db/schema";
 import {
 	equipmentAssignment,
 	equipmentCaseHoldEvent,
@@ -44,6 +30,11 @@ import {
 } from "@/lib/employee-lifecycle/access";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import {
+	authorizeCustodyConfirmation,
+	receiptProposer,
+	receiveAnonymousCustody,
+} from "./anonymous-custody";
+import {
 	type EquipmentAssignmentView,
 	type EquipmentChange,
 	type EquipmentExceptionView,
@@ -63,9 +54,9 @@ import {
 } from "./corrections";
 import {
 	effectiveEquipmentDeadline,
-	equipmentDepartureDeadline,
 	outstandingEquipmentQuantity,
 } from "./deadlines";
+import { equipmentCoversContext, readEquipmentEndingContexts } from "./endings";
 import { applyItemReadiness, readItemReadiness } from "./readiness";
 import {
 	changeEquipmentCaseHold,
@@ -91,6 +82,8 @@ const assignmentScope = (organizationId: string, id: string) =>
 import {
 	type EquipmentActor,
 	equipmentAccess,
+	equipmentAssignmentScope,
+	equipmentCoversAssignment,
 	equipmentCoversEmployee,
 	equipmentItemScope,
 	equipmentSubjectScope,
@@ -159,7 +152,16 @@ export async function applyEquipmentChange(
 								),
 							)
 					: [];
-			await lockEquipmentContext(tx, actor, target);
+			const proposer =
+				change.kind === "confirm_custody_receipt"
+					? await receiptProposer(tx, actor.organizationId, change.proposalId)
+					: null;
+			await lockEquipmentContext(
+				tx,
+				actor,
+				target,
+				proposer?.proposedBy ? [proposer.proposedBy] : [],
+			);
 			const access = await equipmentAccess(tx, actor);
 			if (
 				!access.canManage ||
@@ -171,10 +173,27 @@ export async function applyEquipmentChange(
 			)
 				return { ok: false, reason: "forbidden" };
 			if (
+				change.kind === "propose_custody_receipt" ||
+				change.kind === "confirm_custody_receipt" ||
 				change.kind === "clear_item" ||
 				change.kind === "mark_item_unavailable" ||
 				change.kind === "retire_item"
 			) {
+				if (
+					(change.kind === "propose_custody_receipt" ||
+						change.kind === "confirm_custody_receipt") &&
+					!access.all
+				)
+					return { ok: false, reason: "forbidden" };
+				if (change.kind === "confirm_custody_receipt") {
+					const refusal = await authorizeCustodyConfirmation(
+						tx,
+						actor,
+						change.proposalId,
+						systemClock.nowInstant(),
+					);
+					if (refusal) return refusal;
+				}
 				const [covered] = await tx
 					.select({ id: equipmentItem.id })
 					.from(equipmentItem)
@@ -228,6 +247,16 @@ export async function applyEquipmentChange(
 					};
 			}
 			if (
+				"assignmentId" in change &&
+				!(await equipmentCoversAssignment(
+					tx,
+					actor,
+					access,
+					change.assignmentId,
+				))
+			)
+				return { ok: false, reason: access.all ? "not_found" : "forbidden" };
+			if (
 				(change.kind === "correct_issue" ||
 					change.kind === "correct_receipt" ||
 					change.kind === "correct_exception" ||
@@ -249,6 +278,12 @@ export async function applyEquipmentChange(
 						eq(equipmentCommand.requestId, change.requestId),
 					),
 				);
+			if (
+				replay?.result &&
+				"employeeId" in change &&
+				!(await equipmentCoversAssignment(tx, actor, access, replay.result.id))
+			)
+				return { ok: false, reason: "forbidden" };
 			if (replay)
 				return !replay.result
 					? { ok: false, reason: "history_removed" }
@@ -260,16 +295,17 @@ export async function applyEquipmentChange(
 				actor.organizationId,
 			);
 			if (
+				change.kind === "propose_custody_receipt" ||
+				change.kind === "confirm_custody_receipt" ||
 				change.kind === "clear_item" ||
 				change.kind === "mark_item_unavailable" ||
 				change.kind === "retire_item"
 			) {
-				const outcome = await applyItemReadiness(
-					tx,
-					actor,
-					change,
-					dateFromInstant(now),
-				);
+				const outcome =
+					change.kind === "propose_custody_receipt" ||
+					change.kind === "confirm_custody_receipt"
+						? await receiveAnonymousCustody(tx, actor, change, today, now)
+						: await applyItemReadiness(tx, actor, change, dateFromInstant(now));
 				if (outcome.ok)
 					await tx.insert(equipmentCommand).values({
 						organizationId: actor.organizationId,
@@ -386,14 +422,7 @@ async function closeEquipmentReturn(
 		return { ok: false, reason: "stale_revision" };
 	if (!assignment.returnRequired)
 		return { ok: false, reason: "return_not_required" };
-	if (
-		change.quantity >
-		assignment.quantity -
-			assignment.receivedQuantity -
-			assignment.lostQuantity -
-			assignment.waivedQuantity +
-			assignment.exceptionReceivedQuantity
-	)
+	if (change.quantity > outstandingEquipmentQuantity(assignment))
 		return { ok: false, reason: "excess_quantity" };
 	await tx.insert(equipmentException).values({
 		organizationId: actor.organizationId,
@@ -720,6 +749,41 @@ async function performHandover(
 				);
 			if (duplicate) return { ok: false, reason: "identifier_taken" };
 		}
+		const quantity = quantityIssue ? change.quantity : 1;
+		const contexts = await readEquipmentEndingContexts(
+			tx,
+			actor.organizationId,
+			change.employeeId,
+			period,
+			timezone,
+			!period ? current.deactivatedAt : null,
+		);
+		const eligible = contexts.filter(
+			(context) =>
+				(!historical ||
+					!change.endingContext ||
+					context.id === change.endingContext) &&
+				(!actualDate ||
+					((!context.startedOn ||
+						Temporal.PlainDate.compare(actualDate, context.startedOn) >= 0) &&
+						(!context.endedOn ||
+							Temporal.PlainDate.compare(actualDate, context.endedOn) <= 0))),
+		);
+		const ending = historical
+			? eligible.length === 1
+				? eligible[0]
+				: null
+			: eligible.find((c) => !c.deactivationId);
+		if (!ending) return { ok: false, reason: "conflicting_history" };
+		if (
+			!(await equipmentCoversContext(
+				tx,
+				actor.organizationId,
+				await equipmentAccess(tx, actor),
+				ending,
+			))
+		)
+			return { ok: false, reason: "forbidden" };
 		const prepared = await prepareEquipmentTypeForIssuance(tx, {
 			organizationId: actor.organizationId,
 			typeId,
@@ -740,42 +804,6 @@ async function performHandover(
 				})
 				.returning();
 		}
-		const quantity = quantityIssue ? change.quantity : 1;
-		const [departure] = period
-			? await tx
-					.select()
-					.from(employeeDeparture)
-					.where(
-						and(
-							eq(employeeDeparture.organizationId, actor.organizationId),
-							eq(employeeDeparture.employeeId, change.employeeId),
-							eq(employeeDeparture.employmentPeriodId, period.id),
-							inArray(
-								employeeDeparture.status,
-								historical ? ["pending", "blocked", "effective"] : ["pending"],
-							),
-						),
-					)
-			: [];
-		const ending = departure
-			? {
-					deadline: equipmentDepartureDeadline(
-						instantFromDate(departure.cutoffAt),
-						departure.timezone,
-						departure.mode,
-					),
-					deactivationId: null,
-				}
-			: historical
-				? await historicalEndingDeadline(
-						tx,
-						actor.organizationId,
-						change.employeeId,
-						period?.id ?? null,
-						timezone,
-						!period ? current.deactivatedAt : null,
-					)
-				: null;
 		const [assignment] = await tx
 			.insert(equipmentAssignment)
 			.values({
@@ -791,7 +819,7 @@ async function performHandover(
 					? (ending?.deadline ?? null)
 					: null,
 				deactivationId: ending?.deactivationId ?? null,
-				departureId: change.returnRequired ? (departure?.id ?? null) : null,
+				departureId: ending.departureId,
 			})
 			.returning();
 		await tx.insert(equipmentHandover).values({
@@ -977,73 +1005,6 @@ async function performHandover(
 	return outcome;
 }
 
-/** Preserve the original ending date even when equipment is first entered after exit. */
-export async function historicalEndingDeadline(
-	tx: EquipmentTransaction,
-	organizationId: string,
-	employeeId: string,
-	periodId: string | null,
-	timezone: string,
-	legacyDeactivatedAt: Date | null,
-): Promise<{ deadline: string | null; deactivationId: string | null }> {
-	const periodScope = periodId
-		? eq(equipmentAssignment.employmentPeriodId, periodId)
-		: isNull(equipmentAssignment.employmentPeriodId);
-	const [existing] = await tx
-		.select({
-			deadline: equipmentAssignment.departureDeadline,
-			deactivationId: equipmentAssignment.deactivationId,
-		})
-		.from(equipmentAssignment)
-		.where(
-			and(
-				eq(equipmentAssignment.organizationId, organizationId),
-				eq(equipmentAssignment.employeeId, employeeId),
-				periodScope,
-				isNotNull(equipmentAssignment.departureDeadline),
-			),
-		)
-		.limit(1);
-	const [deactivation] = await tx
-		.select({
-			at: employeeDeactivation.deactivatedAt,
-			id: employeeDeactivation.id,
-			plan: employeeDeactivation.plan,
-		})
-		.from(employeeDeactivation)
-		.where(
-			and(
-				eq(employeeDeactivation.organizationId, organizationId),
-				eq(employeeDeactivation.employeeId, employeeId),
-				periodId
-					? eq(employeeDeactivation.employmentPeriodId, periodId)
-					: isNull(employeeDeactivation.employmentPeriodId),
-			),
-		)
-		.orderBy(desc(employeeDeactivation.deactivatedAt))
-		.limit(1);
-	const at = deactivation?.at ?? legacyDeactivatedAt;
-	if (!at)
-		return {
-			deadline: existing?.deadline ?? null,
-			deactivationId: existing?.deactivationId ?? null,
-		};
-	const frozenTimezone =
-		typeof deactivation?.plan?.timeZone === "string"
-			? resolveOrganizationTimezone(deactivation.plan.timeZone).timezone
-			: timezone;
-	return {
-		deactivationId: existing?.deactivationId ?? deactivation?.id ?? null,
-		deadline:
-			existing?.deadline ??
-			equipmentDepartureDeadline(
-				instantFromDate(at),
-				frozenTimezone,
-				"immediate",
-			),
-	};
-}
-
 /** Staff overview, scoped employee history and self history share one permission/read model. */
 export async function readEquipment(
 	db: typeof database,
@@ -1100,6 +1061,8 @@ export async function readEquipment(
 				lastName: employee.lastName,
 				name: user.name,
 				current: employeeHasOrganizationAccess(calendar.now),
+				currentScope: equipmentSubjectScope(access, calendar.now, false),
+				deactivatedAt: employee.deactivatedAt,
 			})
 			.from(employee)
 			.innerJoin(user, eq(user.id, employee.userId))
@@ -1123,6 +1086,7 @@ export async function readEquipment(
 					userId: e.userId,
 					name: [e.firstName, e.lastName].filter(Boolean).join(" ") || e.name,
 					former: !e.current,
+					canIssue: staffView && e.current && e.currentScope,
 				},
 			]),
 		);
@@ -1159,6 +1123,7 @@ export async function readEquipment(
 						.where(
 							and(
 								eq(equipmentAssignment.organizationId, actor.organizationId),
+								staffView ? equipmentAssignmentScope(access) : undefined,
 								inArray(equipmentAssignment.employeeId, [
 									...employeeMap.keys(),
 								]),
@@ -1556,28 +1521,85 @@ export async function readEquipment(
 							),
 						)
 				: [];
+		const historicalContexts: Awaited<
+			ReturnType<typeof readEquipmentEndingContexts>
+		> = [];
+		for (const period of employmentPeriods) {
+			for (const context of await readEquipmentEndingContexts(
+				tx,
+				actor.organizationId,
+				period.employeeId,
+				period,
+				timezone,
+			)) {
+				if (
+					await equipmentCoversContext(
+						tx,
+						actor.organizationId,
+						access,
+						context,
+					)
+				)
+					historicalContexts.push(context);
+			}
+		}
+
+		if (staffView)
+			for (const person of employees.filter(
+				(person) => !employmentPeriods.some((p) => p.employeeId === person.id),
+			)) {
+				for (const context of await readEquipmentEndingContexts(
+					tx,
+					actor.organizationId,
+					person.id,
+					undefined,
+					timezone,
+					person.deactivatedAt,
+				)) {
+					if (
+						await equipmentCoversContext(
+							tx,
+							actor.organizationId,
+							access,
+							context,
+						)
+					)
+						historicalContexts.push(context);
+				}
+			}
+
 		return {
-			employmentPeriods: employmentPeriods.map((period) => ({
-				id: period.id,
-				employeeId: period.employeeId,
-				startedOn: period.startedAt
-					? instantFromDate(period.startedAt)
-							.toZonedDateTimeISO(timezone)
-							.toPlainDate()
-							.toString()
-					: null,
-				endedOn: period.endedAt
-					? instantFromDate(period.endedAt)
-							.toZonedDateTimeISO(timezone)
-							.toPlainDate()
-							.toString()
-					: null,
-			})),
+			historicalContexts: historicalContexts.map(
+				({ id, employeeId, employmentPeriodId, startedOn, endedOn }) => ({
+					id,
+					employeeId,
+					employmentPeriodId,
+					startedOn,
+					endedOn,
+				}),
+			),
+			employmentPeriods: employmentPeriods
+				.filter((period) =>
+					historicalContexts.some((c) => c.employmentPeriodId === period.id),
+				)
+				.map((period) => {
+					const contexts = historicalContexts.filter(
+						(c) => c.employmentPeriodId === period.id,
+					);
+					return {
+						id: period.id,
+						employeeId: period.employeeId,
+						startedOn: contexts[0]?.startedOn ?? null,
+						endedOn: contexts.at(-1)?.endedOn ?? null,
+					};
+				}),
 			readinessItems: staffView
 				? await readItemReadiness(
 						tx,
 						actor.organizationId,
 						equipmentItemScope(access),
+						actor.userId,
+						access.all,
 					)
 				: [],
 			availableQuantityTypes,
@@ -1607,10 +1629,11 @@ export async function readEquipment(
 			assignments,
 			availableItems,
 			employees: staffView
-				? [...employeeMap.values()].map(({ id, name, former }) => ({
+				? [...employeeMap.values()].map(({ id, name, former, canIssue }) => ({
 						id,
 						name,
 						former,
+						canIssue,
 					}))
 				: [],
 			types,

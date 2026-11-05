@@ -4,7 +4,6 @@ import { Temporal } from "temporal-polyfill";
 import {
 	employee,
 	employeeDeactivation,
-	employeeDeparture,
 	employeeEmploymentPeriod,
 } from "@/db/schema";
 import {
@@ -26,7 +25,7 @@ import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import {
 	type EquipmentActor,
 	equipmentAccess,
-	equipmentCoversEmployee,
+	equipmentCoversAssignment,
 	equipmentItemScope,
 } from "./access";
 import type {
@@ -34,8 +33,8 @@ import type {
 	EquipmentOutcome,
 	EquipmentRefusal,
 } from "./contracts";
-import { historicalEndingDeadline } from "./custody";
 import { equipmentDepartureDeadline } from "./deadlines";
+import { readEquipmentEndingContexts } from "./endings";
 import type { EquipmentTransaction } from "./setup";
 
 type Handover = typeof equipmentHandover.$inferSelect;
@@ -285,6 +284,29 @@ export async function correctEquipment(
 				)
 					return refused("conflicting_history");
 			}
+			const originalContext = (
+				await readEquipmentEndingContexts(
+					tx,
+					actor.organizationId,
+					assignment.employeeId,
+					period,
+					timezone,
+					!period ? (holder?.deactivatedAt ?? null) : null,
+				)
+			).find((c) =>
+				assignment.deactivationId
+					? c.deactivationId === assignment.deactivationId
+					: !c.deactivationId,
+			);
+			if (
+				!originalContext ||
+				(change.actualDate &&
+					((originalContext.startedOn &&
+						earlier(change.actualDate, originalContext.startedOn)) ||
+						(originalContext.endedOn &&
+							earlier(originalContext.endedOn, change.actualDate))))
+			)
+				return refused("conflicting_history");
 			before = {
 				...before,
 				returnRequired: assignment.returnRequired,
@@ -311,85 +333,8 @@ export async function correctEquipment(
 			});
 			// Turning a keep agreement into a required return needs its original ending terms.
 			if (!assignment.returnRequired && change.returnRequired) {
-				const [departure] = assignment.departureId
-					? await tx
-							.select()
-							.from(employeeDeparture)
-							.where(
-								and(
-									eq(employeeDeparture.organizationId, actor.organizationId),
-									eq(employeeDeparture.id, assignment.departureId),
-								),
-							)
-					: assignment.employmentPeriodId
-						? await tx
-								.select()
-								.from(employeeDeparture)
-								.where(
-									and(
-										eq(employeeDeparture.organizationId, actor.organizationId),
-										eq(employeeDeparture.employeeId, assignment.employeeId),
-										eq(
-											employeeDeparture.employmentPeriodId,
-											assignment.employmentPeriodId,
-										),
-										inArray(employeeDeparture.status, [
-											"pending",
-											"blocked",
-											"effective",
-										]),
-									),
-								)
-						: [];
-				const [deactivation] = assignment.deactivationId
-					? await tx
-							.select()
-							.from(employeeDeactivation)
-							.where(
-								and(
-									eq(employeeDeactivation.organizationId, actor.organizationId),
-									eq(employeeDeactivation.id, assignment.deactivationId),
-									eq(employeeDeactivation.employeeId, assignment.employeeId),
-								),
-							)
-					: [];
-				const [employeeRecord] = await tx
-					.select()
-					.from(employee)
-					.where(
-						and(
-							eq(employee.organizationId, actor.organizationId),
-							eq(employee.id, assignment.employeeId),
-						),
-					);
-				const ending = issue.historical
-					? await historicalEndingDeadline(
-							tx,
-							actor.organizationId,
-							assignment.employeeId,
-							assignment.employmentPeriodId,
-							timezone,
-							assignment.employmentPeriodId
-								? null
-								: (employeeRecord?.deactivatedAt ?? null),
-						)
-					: { deadline: null };
-				proposed.departureDeadline = deactivation
-					? equipmentDepartureDeadline(
-							instantFromDate(deactivation.deactivatedAt),
-							typeof deactivation.plan?.timeZone === "string"
-								? deactivation.plan.timeZone
-								: timezone,
-							"immediate",
-						)
-					: departure && departure.status !== "canceled"
-						? equipmentDepartureDeadline(
-								instantFromDate(departure.cutoffAt),
-								departure.timezone,
-								departure.mode,
-							)
-						: ending.deadline;
-				proposed.departureId = departure?.id ?? assignment.departureId;
+				proposed.departureDeadline = originalContext.deadline;
+				proposed.departureId = originalContext.departureId;
 			}
 			after = {
 				...after,
@@ -502,7 +447,7 @@ export async function correctEquipment(
 				.where(assignmentWhere(actor.organizationId, p.assignmentId));
 			if (
 				!other?.employeeId ||
-				!(await equipmentCoversEmployee(tx, actor, access, other.employeeId))
+				!(await equipmentCoversAssignment(tx, actor, access, other.id))
 			)
 				return refused("forbidden");
 			const [otherHolder] = await tx
@@ -891,7 +836,7 @@ export async function canCorrectEquipmentHistory(
 	if (
 		!a?.employeeId ||
 		!access.canManage ||
-		!(await equipmentCoversEmployee(tx, actor, access, a.employeeId))
+		!(await equipmentCoversAssignment(tx, actor, access, a.id))
 	)
 		return false;
 	if (a.itemId) {
@@ -932,7 +877,10 @@ export async function canCorrectEquipmentHistory(
 		);
 	if (!links.length) return true;
 	const peers = await tx
-		.select({ employeeId: equipmentAssignment.employeeId })
+		.select({
+			id: equipmentAssignment.id,
+			employeeId: equipmentAssignment.employeeId,
+		})
 		.from(equipmentHandover)
 		.innerJoin(
 			equipmentAssignment,
@@ -955,7 +903,7 @@ export async function canCorrectEquipmentHistory(
 	for (const p of peers)
 		if (
 			!p.employeeId ||
-			!(await equipmentCoversEmployee(tx, actor, access, p.employeeId))
+			!(await equipmentCoversAssignment(tx, actor, access, p.id))
 		)
 			return false;
 	return true;

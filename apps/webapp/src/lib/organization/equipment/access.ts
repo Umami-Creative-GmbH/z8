@@ -3,7 +3,11 @@ import { and, eq, type SQL, sql } from "drizzle-orm";
 import type { db as database } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { equipmentItem, equipmentOfficerGrant } from "@/db/schema/equipment";
+import {
+	equipmentAssignment,
+	equipmentItem,
+	equipmentOfficerGrant,
+} from "@/db/schema/equipment";
 import type { AuthorizedOrganizationIdentity } from "@/lib/auth/organization-identity";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
@@ -39,14 +43,17 @@ export async function lockEquipmentContext(
 	tx: EquipmentTransaction,
 	actor: Pick<EquipmentActor, "organizationId" | "userId">,
 	target?: { id: string; userId: string },
+	additionalUserIds: string[] = [],
 ) {
 	await assertReadCommitted(tx);
-	const [firstUserId, secondUserId] = [
-		...new Set([actor.userId, ...(target ? [target.userId] : [])]),
-	].sort();
-	await holdGuard(tx, userConfigurationAccessGuard(firstUserId));
-	if (secondUserId)
-		await holdGuard(tx, userConfigurationAccessGuard(secondUserId));
+	for (const userId of [
+		...new Set([
+			actor.userId,
+			...additionalUserIds,
+			...(target ? [target.userId] : []),
+		]),
+	].sort())
+		await holdGuard(tx, userConfigurationAccessGuard(userId));
 	if (target) await holdGuard(tx, employeeCoordinationGuard(target.id));
 	await lockLifecycleOrganization(tx, actor.organizationId);
 	await lockEquipmentOrganization(tx, actor.organizationId);
@@ -123,30 +130,95 @@ export async function equipmentWorkerAccess(
 	};
 }
 
-/** Predicate is evaluated on the subject employee in the same statement as each read. */
+/** Current roster coverage and discoverability never authorize all of a person's history. */
 export function equipmentSubjectScope(
 	access: Awaited<ReturnType<typeof equipmentAccess>>,
 	now: Instant = systemClock.nowInstant(),
+	includeFormer = true,
 ): SQL<boolean> {
 	if (access.all) return sql`true`;
 	const direct = access.employeeIds.length
-		? sql`${employee.id} in (${sql.join(
+		? sql`${employee.id} = any(ARRAY[${sql.join(
 				access.employeeIds.map((id) => sql`${id}::uuid`),
 				sql`,`,
-			)})`
+			)}]::uuid[])`
 		: sql`false`;
-	if (!access.teamIds.length) return sql`${direct}`;
+	if (!access.teamIds.length) return sql<boolean>`${direct}`;
 	const teams = sql.join(
 		access.teamIds.map((id) => sql`${id}::uuid`),
 		sql`,`,
 	);
-	return sql`(${direct} or (
-  (${employeeHasOrganizationAccess(now)} and (
-   ${employee.teamId} in (${teams}) or exists (select 1 from team_membership tm where tm.organization_id = ${employee.organizationId} and tm.employee_id = ${employee.id} and tm.team_id in (${teams}))
-  )) or (not ${employeeHasOrganizationAccess(now)} and exists (
-   select 1 from equipment_former_team_scope fs where fs.organization_id = ${employee.organizationId} and fs.employee_id = ${employee.id} and fs.team_ids && ARRAY[${teams}]::uuid[]
-  ))
- ))`;
+	return sql`(${direct} or (${employeeHasOrganizationAccess(now)} and (${employee.teamId} in (${teams}) or exists(select 1 from team_membership tm where tm.organization_id=${employee.organizationId} and tm.employee_id=${employee.id} and tm.team_id in (${teams})))) or ${includeFormer ? sql`exists(select 1 from equipment_former_team_scope fs where fs.organization_id=${employee.organizationId} and fs.employee_id=${employee.id} and fs.team_ids && ARRAY[${teams}]::uuid[])` : sql`false`})`;
+}
+
+/** An ending snapshot belongs to one assignment context, including a reopened period's deactivation. */
+export function equipmentContextScope(
+	access: Awaited<ReturnType<typeof equipmentAccess>>,
+	context: {
+		organizationId: SQL;
+		employeeId: SQL;
+		periodId: SQL;
+		deactivationId: SQL;
+		departureId: SQL;
+	},
+	now: Instant = systemClock.nowInstant(),
+): SQL<boolean> {
+	if (access.all) return sql`true`;
+	const { organizationId, employeeId, periodId, deactivationId, departureId } =
+		context;
+	const direct = access.employeeIds.length
+		? sql`${employee.id} = any(ARRAY[${sql.join(
+				access.employeeIds.map((id) => sql`${id}::uuid`),
+				sql`,`,
+			)}]::uuid[])`
+		: sql`false`;
+	const teams = sql.join(
+		access.teamIds.map((id) => sql`${id}::uuid`),
+		sql`,`,
+	);
+	const teamScope = !access.teamIds.length
+		? sql`false`
+		: sql`(
+ exists(select 1 from equipment_former_team_scope fs where fs.organization_id=${employee.organizationId} and fs.employee_id=${employee.id} and fs.ending_id is not distinct from coalesce(${deactivationId},${departureId},${periodId}) and fs.team_ids && ARRAY[${teams}]::uuid[])
+ or (${deactivationId} is null and not exists(select 1 from equipment_former_team_scope fs where fs.organization_id=${employee.organizationId} and fs.employee_id=${employee.id} and fs.ending_id is not distinct from coalesce(${departureId},${periodId}))
+ and not exists(select 1 from employee_employment_period p where p.organization_id=${employee.organizationId} and p.employee_id=${employee.id} and p.id=${periodId} and p.status='closed')
+ and ${employeeHasOrganizationAccess(now)} and (${employee.teamId} in (${teams}) or exists(select 1 from team_membership tm where tm.organization_id=${employee.organizationId} and tm.employee_id=${employee.id} and tm.team_id in (${teams})))))`;
+	return sql`exists(select 1 from employee where ${employee.id}=${employeeId} and ${employee.organizationId}=${organizationId} and (${direct} or ${teamScope}))`;
+}
+export function equipmentAssignmentScope(
+	access: Awaited<ReturnType<typeof equipmentAccess>>,
+	alias: SQL = sql`equipment_assignment`,
+	now: Instant = systemClock.nowInstant(),
+) {
+	return equipmentContextScope(
+		access,
+		{
+			organizationId: sql`${alias}.organization_id`,
+			employeeId: sql`${alias}.employee_id`,
+			periodId: sql`${alias}.employment_period_id`,
+			deactivationId: sql`${alias}.deactivation_id`,
+			departureId: sql`${alias}.departure_id`,
+		},
+		now,
+	);
+}
+export async function equipmentCoversAssignment(
+	tx: EquipmentTransaction,
+	actor: EquipmentActor,
+	access: Awaited<ReturnType<typeof equipmentAccess>>,
+	assignmentId: string,
+) {
+	const [covered] = await tx
+		.select({ id: equipmentAssignment.id })
+		.from(equipmentAssignment)
+		.where(
+			and(
+				eq(equipmentAssignment.organizationId, actor.organizationId),
+				eq(equipmentAssignment.id, assignmentId),
+				equipmentAssignmentScope(access),
+			),
+		);
+	return !!covered;
 }
 export async function equipmentCoversEmployee(
 	tx: EquipmentTransaction,
@@ -174,7 +246,7 @@ export function equipmentItemScope(
 	if (access.all) return sql`true`;
 	return sql`exists (select 1 from equipment_assignment ea inner join employee on employee.id = ea.employee_id and employee.organization_id = ea.organization_id
  where ea.organization_id = ${equipmentItem.organizationId} and ea.item_id = ${equipmentItem.id}
- and (not ${equipmentItem.inCustody} or not ea.received) and (${equipmentSubjectScope(access)}))`;
+ and (not ${equipmentItem.inCustody} or not ea.received) and (${equipmentAssignmentScope(access, sql`ea`)}))`;
 }
 
 /** Navigation consumes the same live authority without loading any equipment history. */

@@ -22,6 +22,9 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 vi.mock("next/headers", async () =>
 	(await import("@/test/integration-harness")).nextHeaders(),
 );
+vi.mock("next/cache", async (original) =>
+	(await import("@/test/integration-harness")).nextCache(original),
+);
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -800,4 +803,93 @@ it("requests, builds and downloads retained equipment with original/corrected ev
 	const { _metadata: _employeeMetadata, ...employeeRecords } = equipment;
 	const { _metadata: _adminMetadata, ...adminRecords } = assisted.equipment;
 	expect(adminRecords).toEqual(employeeRecords);
+});
+
+it("does not reconstruct erased holder exports from a later anonymous custody receipt", async () => {
+	harness.userId = "t1548-owner";
+	const equipmentActions = await import("@/lib/organization/equipment/actions");
+	const setup = async (input: Record<string, unknown>) => {
+		const r = await equipmentActions.changeEquipmentSetup({
+			requestId: crypto.randomUUID(),
+			...input,
+		});
+		if (!r.success || !r.data.ok) throw new Error(JSON.stringify(r));
+		return r.data;
+	};
+	const change = async (input: Record<string, unknown>) => {
+		const r = await equipmentActions.changeEquipment({
+			requestId: crypto.randomUUID(),
+			...input,
+		});
+		if (!r.success || !r.data.ok) throw new Error(JSON.stringify(r));
+		return r.data;
+	};
+	await setup({
+		kind: "configure_policy",
+		retentionMonths: 1,
+		expectedRevision: 0,
+	});
+	const type = await setup({
+		kind: "create_type",
+		name: "Erased laptop",
+		trackingMode: "individual",
+		defaultReturnRequired: false,
+	});
+	const item = await setup({
+		kind: "register_item",
+		typeId: type.id,
+		identifier: "ERASED-IDENTITY",
+	});
+	await change({
+		kind: "issue_individual",
+		itemId: item.id,
+		employeeId: id(1),
+		expectedRevision: 1,
+		actualDate: "2026-11-05",
+		condition: "good",
+		notes: "Erased holder private evidence",
+		returnRequired: false,
+	});
+	retentionClock.now = "2026-12-07T00:00:00Z";
+	const { runEquipmentRetentionJob } = await import(
+		"@/lib/jobs/equipment-retention"
+	);
+	await runEquipmentRetentionJob();
+	await change({
+		kind: "propose_custody_receipt",
+		itemId: item.id,
+		expectedRevision: 2,
+		actualDate: "2026-12-06",
+		condition: "worn",
+	});
+	const overview = await equipmentActions.getEquipmentOverview();
+	if (!overview.success) throw new Error(JSON.stringify(overview));
+	const proposal = overview.data.readinessItems.find(
+		(i) => i.id === item.id,
+	)?.custodyReceipt;
+	if (!proposal) throw new Error("No receipt proposal");
+	await pool.query(
+		"update member set role='admin' where organization_id=$1 and user_id='t1548-bob'",
+		[ORG],
+	);
+	harness.userId = "t1548-bob";
+	await change({
+		kind: "confirm_custody_receipt",
+		itemId: item.id,
+		proposalId: proposal.id,
+		expectedRevision: 3,
+	});
+	harness.userId = "t1548-ada";
+	const own = await build("employee");
+	harness.userId = "t1548-owner";
+	const admin = await build("admin");
+	for (const archive of [own, admin])
+		for (const erased of [
+			"ERASED-IDENTITY",
+			"Erased holder private evidence",
+			proposal.id,
+		])
+			expect(Object.values(archive.files).join("\n")).not.toContain(erased);
+	expect(own.equipment.assignments).toEqual([]);
+	expect(admin.equipment.assignments).toEqual([]);
 });
