@@ -400,8 +400,8 @@ export function EquipmentExceptionTotals({
 			</dl>
 			<p className="text-sm text-muted-foreground">
 				{t(
-					"settings.equipment.exception.totalsHelp",
-					"Recovered quantities are included in physical receipts. Lost and waived totals preserve the original decisions.",
+					"settings.equipment.exception.effectiveTotalsHelp",
+					"Recovered quantities are included in physical receipts. Lost and waived totals reflect effective decisions; original decisions remain in amendment history.",
 				)}
 			</p>
 		</div>

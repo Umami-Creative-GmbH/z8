@@ -877,3 +877,261 @@ it("requires a dated physical receipt when the original historical issue date is
 		),
 	);
 });
+it("requires a correction reason and keeps a rejected amendment open with actionable errors", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({
+		success: true,
+		data: { ok: false, reason: "stale_revision" },
+	});
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				assignments: [
+					{
+						...heldAssignment,
+						canCorrect: true,
+						canCorrectReceipt: false,
+						canCorrectException: false,
+						corrections: [],
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Correct issuance" }));
+	expect(screen.getByLabelText("Return required")).toHaveProperty(
+		"disabled",
+		true,
+	);
+	expect(
+		screen.getByText(
+			"Permission to keep required equipment uses the owner/admin waiver action. This amendment keeps the return requirement.",
+		),
+	).toBeTruthy();
+	await user.click(screen.getByRole("button", { name: "Save amendment" }));
+	expect(
+		await screen.findByText("Enter a reason for this amendment."),
+	).toBeTruthy();
+	expect(api.change).not.toHaveBeenCalled();
+	await user.type(
+		screen.getByLabelText(/^Amendment reason/),
+		"Signed agreement lists worn condition",
+	);
+	await user.selectOptions(screen.getByLabelText("Condition"), "worn");
+	await user.click(screen.getByRole("button", { name: "Save amendment" }));
+	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(1));
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "correct_issue",
+		assignmentId: heldAssignment.id,
+		expectedRevision: heldAssignment.revision,
+		condition: "worn",
+		reason: "Signed agreement lists worn condition",
+	});
+	expect(await screen.findByRole("alert")).toHaveProperty(
+		"textContent",
+		expect.stringContaining("Reload equipment"),
+	);
+	expect(screen.getByLabelText(/^Amendment reason/)).toHaveProperty(
+		"value",
+		"Signed agreement lists worn condition",
+	);
+	expect(
+		screen.queryByRole("button", { name: "Correct exception" }),
+	).toBeNull();
+});
+it("shows original and amended evidence with attribution in personal read-only history", () => {
+	const correction = {
+		id: "correction",
+		handoverId: heldAssignment.issue.id,
+		exceptionId: null,
+		expectedRevision: 6,
+		reason: "Signed agreement corrected the condition",
+		actorId: "admin",
+		actorName: "Sam Admin",
+		recordedAt: "2026-11-05T09:00:00Z",
+		before: {
+			quantity: 1,
+			condition: "good",
+			notes: "Original signed evidence",
+			actualDate: "2026-11-01",
+		},
+		after: {
+			quantity: 1,
+			condition: "worn",
+			notes: "Effective signed evidence",
+			actualDate: "2026-11-02",
+		},
+	};
+	render(
+		<PersonalEquipment
+			data={{
+				...view,
+				canManage: false,
+				canAdminister: false,
+				assignments: [
+					{
+						...heldAssignment,
+						canCorrect: false,
+						canCorrectReceipt: false,
+						canCorrectException: false,
+						corrections: [correction],
+					},
+				],
+			}}
+		/>,
+	);
+	expect(
+		screen.getByText("Original records and amendments", {
+			selector: "summary",
+		}),
+	).toBeTruthy();
+	expect(screen.getByText("Original signed evidence")).toBeTruthy();
+	expect(screen.getByText("Effective signed evidence")).toBeTruthy();
+	expect(screen.getByText(correction.reason)).toBeTruthy();
+	expect(screen.getByText(/Sam Admin/)).toBeTruthy();
+	expect(screen.queryByRole("button", { name: "Correct issuance" })).toBeNull();
+});
+it("amends explicitly unknown historical dates without inventing a date or changing employment context", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				assignments: [
+					{
+						...heldAssignment,
+						canCorrect: true,
+						issue: {
+							...heldAssignment.issue,
+							historical: true,
+							actualDate: null,
+						},
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Correct issuance" }));
+	expect(screen.getByLabelText("Actual issue date unknown")).toHaveProperty(
+		"checked",
+		true,
+	);
+	expect(screen.queryByLabelText(/^Actual handover date/)).toBeNull();
+	await user.type(
+		screen.getByLabelText(/^Amendment reason/),
+		"Original issue date remains unknown",
+	);
+	await user.click(screen.getByRole("button", { name: "Save amendment" }));
+	await waitFor(() => expect(api.change).toHaveBeenCalled());
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "correct_issue",
+		actualDate: null,
+		employmentPeriodId: null,
+		quantity: 1,
+	});
+});
+it("offers an admin an effective exception quantity including a complete reversal", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				assignments: [
+					{
+						...heldAssignment,
+						canCorrect: true,
+						canCorrectException: true,
+						exceptions: [
+							{
+								id: "exception",
+								kind: "lost",
+								quantity: 1,
+								receivedQuantity: 0,
+								reason: "Missing",
+								actorId: "admin",
+								actorName: "Sam Admin",
+								recordedAt: "2026-11-03T10:00:00Z",
+								canReceive: false,
+							},
+						],
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Correct exception 1" }));
+	await user.clear(screen.getByLabelText(/^Quantity/));
+	await user.type(screen.getByLabelText(/^Quantity/), "0");
+	await user.type(
+		screen.getByLabelText(/^Amendment reason/),
+		"Loss was recorded against the wrong count",
+	);
+	await user.click(screen.getByRole("button", { name: "Save amendment" }));
+	await waitFor(() => expect(api.change).toHaveBeenCalled());
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "correct_exception",
+		quantity: 0,
+		exceptionId: "exception",
+		outcome: "lost",
+		decisionReason: "Missing",
+	});
+});
+it("submits both transfer handovers together and offers receipt correction without exception authority", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	const source = {
+		...partialAssignment,
+		canCorrect: true,
+		canCorrectReceipt: true,
+		canCorrectException: false,
+		correctionTransfers: [
+			{
+				destinationAssignmentId: "destination",
+				expectedDestinationRevision: 4,
+				receiptId: partialAssignment.receipts[0].id,
+				issue: {
+					...partialAssignment.issue,
+					id: "destination-issue",
+					quantity: 2,
+					actualDate: "2026-11-04",
+				},
+			},
+		],
+	};
+	render(
+		<EquipmentOverview
+			data={{ ...view, canAdminister: false, assignments: [source] }}
+			filters={{}}
+		/>,
+	);
+	expect(
+		screen.getByRole("button", { name: "Correct receipt 1" }),
+	).toBeTruthy();
+	expect(
+		screen.queryByRole("button", { name: "Correct exception 1" }),
+	).toBeNull();
+	await user.click(screen.getByRole("button", { name: "Correct transfer 1" }));
+	await user.clear(screen.getByLabelText(/^Quantity/));
+	await user.type(screen.getByLabelText(/^Quantity/), "1");
+	await user.type(
+		screen.getByLabelText(/^Amendment reason/),
+		"One shirt moved in this transfer",
+	);
+	await user.click(screen.getByRole("button", { name: "Save amendment" }));
+	await waitFor(() => expect(api.change).toHaveBeenCalled());
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "correct_transfer",
+		quantity: 1,
+		destinationAssignmentId: "destination",
+		expectedDestinationRevision: 4,
+		receipt: { actualDate: partialAssignment.receipts[0].actualDate },
+		issue: { actualDate: "2026-11-04" },
+		reason: "One shirt moved in this transfer",
+	});
+});

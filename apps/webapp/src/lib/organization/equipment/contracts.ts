@@ -146,6 +146,53 @@ export const equipmentQuantitySchema = z
 	.max(2147483647);
 export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
+		kind: z.literal("correct_transfer"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		destinationAssignmentId: z.uuid(),
+		expectedDestinationRevision: z.number().int().positive(),
+		quantity: equipmentQuantitySchema,
+		receipt: z.strictObject(transferEvidence),
+		issue: z.strictObject(transferEvidence),
+		reason: z.string().trim().min(1).max(4000),
+	}),
+	z.strictObject({
+		kind: z.literal("correct_issue"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		reason: z.string().trim().min(1).max(4000),
+		quantity: equipmentQuantitySchema,
+		actualDate: calendarDate.nullable(),
+		condition: equipmentConditionSchema,
+		notes: z.string().trim().max(4000),
+		returnRequired: z.boolean(),
+		explicitDeadline: calendarDate.nullable(),
+		employmentPeriodId: z.uuid().nullable(),
+	}),
+	z.strictObject({
+		kind: z.literal("correct_receipt"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		handoverId: z.uuid(),
+		reason: z.string().trim().min(1).max(4000),
+		quantity: z.number().int().nonnegative().max(2147483647),
+		...transferEvidence,
+	}),
+	z.strictObject({
+		kind: z.literal("correct_exception"),
+		...request,
+		...revision,
+		assignmentId: z.uuid(),
+		exceptionId: z.uuid(),
+		reason: z.string().trim().min(1).max(4000),
+		quantity: z.number().int().nonnegative().max(2147483647),
+		outcome: z.enum(["lost", "waived"]),
+		decisionReason: z.string().trim().min(1).max(4000),
+	}),
+	z.strictObject({
 		kind: z.literal("record_historical_individual"),
 		...historicalFields,
 		itemId: z.uuid(),
@@ -256,6 +303,9 @@ export const equipmentChangeSchema = z.discriminatedUnion("kind", [
 export type EquipmentChange = z.infer<typeof equipmentChangeSchema>;
 export type EquipmentRefusal =
 	| EquipmentSetupRefusal
+	| "transfer_conflict"
+	| "recovery_conflict"
+	| "readiness_conflict"
 	| "forbidden"
 	| "employee_not_current"
 	| "item_unavailable"
@@ -265,6 +315,7 @@ export type EquipmentRefusal =
 	| "self_receipt"
 	| "self_exception"
 	| "return_not_required"
+	| "waiver_required"
 	| "already_received"
 	| "quantity_required"
 	| "excess_quantity"
@@ -305,6 +356,16 @@ export interface EquipmentExceptionView {
 	canReceive: boolean;
 }
 export interface EquipmentAssignmentView {
+	correctionTransfers?: {
+		destinationAssignmentId: string;
+		expectedDestinationRevision: number;
+		receiptId: string;
+		issue: EquipmentHandoverView;
+	}[];
+	canCorrect?: boolean;
+	canCorrectReceipt?: boolean;
+	canCorrectException?: boolean;
+	corrections?: EquipmentCorrectionView[];
 	lostQuantity: number;
 	waivedQuantity: number;
 	recoveredQuantity: number;
@@ -343,6 +404,18 @@ export interface EquipmentAssignmentView {
 	/** Latest physical receipt, retained for individual consumers. */
 	receipt: EquipmentHandoverView | null;
 	receipts: EquipmentHandoverView[];
+}
+export interface EquipmentCorrectionView {
+	id: string;
+	handoverId: string | null;
+	exceptionId: string | null;
+	expectedRevision: number;
+	reason: string;
+	before: Record<string, string | number | boolean | null>;
+	after: Record<string, string | number | boolean | null>;
+	actorId: string | null;
+	actorName: string | null;
+	recordedAt: string;
 }
 export interface EquipmentReadinessEventView {
 	id: string;

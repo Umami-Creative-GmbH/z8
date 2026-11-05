@@ -24,15 +24,35 @@ export function handoverRefusalMessage(
 	t: EquipmentTranslate,
 ) {
 	switch (reason) {
+		case "transfer_conflict":
+			return t(
+				"settings.equipment.correction.transferConflict",
+				"This amendment conflicts with the linked transfer. Correct both handovers together when changing the transferred quantity.",
+			);
+		case "recovery_conflict":
+			return t(
+				"settings.equipment.correction.recoveryConflict",
+				"This amendment would reduce or reclassify quantities already physically received under this decision. Review the linked recovery history first.",
+			);
+		case "readiness_conflict":
+			return t(
+				"settings.equipment.correction.readinessConflict",
+				"This condition amendment conflicts with a later clearance or issuance. Review readiness and the later history first.",
+			);
 		case "self_exception":
 			return t(
-				"settings.equipment.exception.self",
-				"Another owner or admin must close your own return obligation.",
+				"settings.equipment.correction.independentDecision",
+				"Another owner or admin must confirm changes that reduce or amend your own return obligation.",
 			);
 		case "return_not_required":
 			return t(
 				"settings.equipment.exception.notRequired",
 				"Only outstanding required returns can be closed as lost or waived.",
+			);
+		case "waiver_required":
+			return t(
+				"settings.equipment.correction.waiverRequired",
+				"Use the owner/admin waiver action to permit keeping required equipment. Amendments cannot replace that decision.",
 			);
 		case "item_in_custody":
 			return t(
