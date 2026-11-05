@@ -102,6 +102,7 @@ vi.mock("@/lib/notifications/triggers", () => ({
 }));
 
 // Exercise real submission notification fan-out, mocking only external transports.
+vi.mock("@/lib/notifications/email-notifications", { spy: true });
 vi.mock("@/lib/events", () => ({ publishEventAsync: vi.fn() }));
 vi.mock("@/lib/notifications/push-service", () => ({
 	isPushAvailable: () => false,
@@ -380,6 +381,9 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 	it.each([true, false])(
 		"emails the employee and the manager through the notification channel only when email is enabled (%s)",
 		async (emailEnabled) => {
+			const { sendEmailNotification } = await import(
+				"@/lib/notifications/email-notifications"
+			);
 			const approvalLifecycle = configureAbsenceCallerTransaction();
 			callerMocks.notificationPreferenceFindMany.mockResolvedValue([
 				{ channel: "email", enabled: emailEnabled },
@@ -427,9 +431,14 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 			// One notification each for the employee and the manager; each email
 			// honors the recipient's preference and uses the organization's transport.
 			expect(callerMocks.notificationInsert).toHaveBeenCalledTimes(2);
-			await vi.waitFor(() => {
-				expect(callerMocks.sendEmail).toHaveBeenCalledTimes(emailEnabled ? 2 : 0);
-			});
+			// Delivery is fire-and-forget: settle its lazy import, then await the
+			// actual sends so assertions cannot race cold CI imports or rendering.
+			await vi.dynamicImportSettled();
+			expect(sendEmailNotification).toHaveBeenCalledTimes(emailEnabled ? 2 : 0);
+			await Promise.all(
+				vi.mocked(sendEmailNotification).mock.results.map(({ value }) => value),
+			);
+			expect(callerMocks.sendEmail).toHaveBeenCalledTimes(emailEnabled ? 2 : 0);
 			for (const [message] of callerMocks.sendEmail.mock.calls) {
 				expect(message).toEqual(expect.objectContaining({ organizationId: "org-1" }));
 			}
