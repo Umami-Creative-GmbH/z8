@@ -3,8 +3,9 @@
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { ApprovalCorrectionOverlap } from "@/components/approvals/approval-correction-overlap";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
 import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
 import {
@@ -39,6 +40,10 @@ import {
 	useApproveApproval,
 	useRejectApproval,
 } from "@/lib/query/use-approval-inbox";
+import {
+	type CorrectionOverlap,
+	correctionOverlapsSchema,
+} from "@/lib/time-tracking/correction-overlaps";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { ApprovalTriageReasons } from "./approval-triage-reasons";
@@ -463,6 +468,19 @@ export function ApprovalDetailPanel({
 	const text = useApprovalInboxText();
 	const locale = useLocale();
 	const [isRejecting, setIsRejecting] = useState(false);
+	const [overlapFailure, setOverlapFailure] = useState<{
+		approvalId: string;
+		overlaps: CorrectionOverlap[];
+	} | null>(null);
+	const [revisionApprovalId, setRevisionApprovalId] = useState<string | null>(
+		null,
+	);
+	const overlapConflicts =
+		overlapFailure && overlapFailure.approvalId === approval?.id
+			? overlapFailure.overlaps
+			: [];
+	const revisionRejectedId = useRef<string | null>(null);
+	const revisionActive = revisionApprovalId === approval?.id;
 	const [rejectionReason, setRejectionReason] = useState("");
 	const [acceptedExceptions, setAcceptedExceptions] = useState<{
 		approvalId: string | null;
@@ -481,7 +499,8 @@ export function ApprovalDetailPanel({
 	const item = detail?.item ?? approval;
 	const actions = detail?.actions ?? item?.capabilities;
 	const sections = detail?.sections ?? [];
-	const isPending = approveMutation.isPending || rejectMutation.isPending;
+	const isPending =
+		approveMutation.isPending || rejectMutation.isPending || revisionActive;
 	// Expense report missing-receipt exceptions to accept before approving (#604).
 	const receiptExceptions = findReceiptExceptionAcceptance(sections);
 	const acceptedExceptionIds =
@@ -497,6 +516,7 @@ export function ApprovalDetailPanel({
 		if (!approval || !actions?.canApprove || isPending || !exceptionsAccepted)
 			return;
 
+		setOverlapFailure(null);
 		const result = await approveMutation.mutateAsync(
 			receiptExceptions
 				? {
@@ -510,6 +530,17 @@ export function ApprovalDetailPanel({
 			onOpenChange(false);
 			onActioned();
 		} else {
+			const conflicts = correctionOverlapsSchema.safeParse(result.overlaps);
+			if (
+				conflicts.success &&
+				conflicts.data.length > 0 &&
+				item?.type === "time_entry"
+			) {
+				setOverlapFailure({
+					approvalId: approval.id,
+					overlaps: conflicts.data,
+				});
+			}
 			toast.error(
 				result.error ||
 					t("approvals:approvals.approveFailed", "Failed to approve"),
@@ -545,6 +576,10 @@ export function ApprovalDetailPanel({
 	};
 
 	const handleClose = () => {
+		if (revisionRejectedId.current === approval?.id) onActioned();
+		revisionRejectedId.current = null;
+		setOverlapFailure(null);
+		setRevisionApprovalId(null);
 		setIsRejecting(false);
 		setRejectionReason("");
 		onOpenChange(false);
@@ -599,6 +634,22 @@ export function ApprovalDetailPanel({
 					{item?.triage.reasons?.length ? (
 						<ApprovalTriageReasons triage={item.triage} />
 					) : null}
+					<ApprovalCorrectionOverlap
+						approvalId={approval.id}
+						overlaps={overlapConflicts}
+						sections={sections}
+						canRevise={panelActions.canReject}
+						onActiveChange={(active) =>
+							setRevisionApprovalId(active ? approval.id : null)
+						}
+						onRejected={() => {
+							revisionRejectedId.current = approval.id;
+						}}
+						onComplete={() => {
+							onOpenChange(false);
+							onActioned();
+						}}
+					/>
 					{sections.map((section) =>
 						section.type === "receipt_exception_acceptance" ? (
 							<ReceiptExceptionAcceptance

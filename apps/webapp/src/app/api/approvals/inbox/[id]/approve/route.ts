@@ -30,14 +30,15 @@ import {
 	ForbiddenError,
 	toHttpError,
 } from "@/lib/authorization";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { correctionOverlapsSchema } from "@/lib/time-tracking/correction-overlaps";
 
 // Ensure handlers are registered
 import "@/lib/approvals/init";
@@ -46,7 +47,17 @@ const logger = createLogger("ApproveAPI");
 
 function toApprovalErrorResponse(error: unknown) {
 	if (error instanceof ConflictError) {
-		return NextResponse.json({ error: error.message }, { status: 409 });
+		const overlaps =
+			error.conflictType === "work_interval_occupied"
+				? correctionOverlapsSchema.safeParse(error.details?.overlaps)
+				: null;
+		return NextResponse.json(
+			{
+				error: error.message,
+				...(overlaps?.success ? { overlaps: overlaps.data } : {}),
+			},
+			{ status: 409 },
+		);
 	}
 
 	if (error instanceof AuthorizationError) {
@@ -171,7 +182,12 @@ export async function POST(
 				at: systemClock.nowInstant(),
 			}));
 
-		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals && !isCoveringDeputy) {
+		if (
+			!isAssignedApprover &&
+			!isEligibleManager &&
+			!canManageApprovals &&
+			!isCoveringDeputy
+		) {
 			return NextResponse.json(
 				{ error: "Approval not found" },
 				{ status: 404 },
@@ -194,7 +210,10 @@ export async function POST(
 		// Expense reports: the missing-receipt exceptions the approver accepts (#604).
 		const acceptance = await readReceiptExceptionAcceptanceBody(httpRequest);
 		if (!acceptance.ok) {
-			return NextResponse.json({ error: "Invalid approval request" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid approval request" },
+				{ status: 400 },
+			);
 		}
 
 		decisionStage = "decision";
@@ -203,7 +222,10 @@ export async function POST(
 			actorEmployeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 			...(acceptance.acceptedReceiptExceptionItemIds
-				? { acceptedReceiptExceptionItemIds: acceptance.acceptedReceiptExceptionItemIds }
+				? {
+						acceptedReceiptExceptionItemIds:
+							acceptance.acceptedReceiptExceptionItemIds,
+					}
 				: {}),
 			includeAllApprovers: canManageApprovals || undefined,
 			eligibleApprovalScopes:

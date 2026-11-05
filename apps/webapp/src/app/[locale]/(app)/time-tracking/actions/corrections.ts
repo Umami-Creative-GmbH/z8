@@ -11,6 +11,13 @@ import type {
 	TimeEntryDeletionRequest,
 } from "./types";
 
+export async function prepareTimeCorrectionRevision(approvalId: string) {
+	const { prepareTimeCorrectionRevision: prepare } = await import(
+		"@/lib/approvals/server/time-correction-revision"
+	);
+	return prepare(approvalId);
+}
+
 export async function editSameDayTimeEntry(data: SameDayEditRequest) {
 	return editSameDayTimeEntryInternal(data);
 }

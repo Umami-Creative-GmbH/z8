@@ -409,6 +409,11 @@ export function useApprovalDetail(approvalId: string | null) {
 /**
  * Hook for approving a single approval.
  */
+export function useInvalidateApprovalInbox() {
+	const queryClient = useQueryClient();
+	return () => queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
+}
+
 export function useApproveApproval() {
 	const queryClient = useQueryClient();
 

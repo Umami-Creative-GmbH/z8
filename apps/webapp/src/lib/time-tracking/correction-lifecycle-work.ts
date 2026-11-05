@@ -28,7 +28,10 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
 import { canonicalJson } from "./canonical-json";
 import type { CompletedWorkFollowUp } from "./close-active-work";
-import { CompletedWorkCollisionError, CompletedWorkIntegrityError } from "./close-active-work";
+import {
+	CompletedWorkCollisionError,
+	CompletedWorkIntegrityError,
+} from "./close-active-work";
 import {
 	admitTimeEntryAppend,
 	type TimeEntryAppend,
@@ -138,7 +141,10 @@ export type SubmitTimeCorrectionResult = {
 		vehicleUse?: WorkVehicleUse | null;
 	};
 	corrections: Array<
-		TimeCorrectionEntryEvidence & { previousEntryId: string | null; previousHash: string | null }
+		TimeCorrectionEntryEvidence & {
+			previousEntryId: string | null;
+			previousHash: string | null;
+		}
 	>;
 	revisions: { workPeriod: { source: number; result: number } };
 	approval: {
@@ -185,19 +191,30 @@ export type CancelTimeCorrectionResult = {
 	revisions: { workPeriod: { source: number; result: number } };
 };
 
-type ReceiptKind = "submit_time_correction" | "finalize_time_correction" | "cancel_time_correction";
+type ReceiptKind =
+	| "submit_time_correction"
+	| "finalize_time_correction"
+	| "cancel_time_correction";
 
 const RECEIPT: Record<
 	TimeCorrectionOperationStage,
 	{ kind: ReceiptKind; writer: CompletedWorkWriter }
 > = {
 	submit: { kind: "submit_time_correction", writer: "time_correction_request" },
-	finalize: { kind: "finalize_time_correction", writer: "time_correction_decision" },
-	cancel: { kind: "cancel_time_correction", writer: "time_correction_cancellation" },
+	finalize: {
+		kind: "finalize_time_correction",
+		writer: "time_correction_decision",
+	},
+	cancel: {
+		kind: "cancel_time_correction",
+		writer: "time_correction_cancellation",
+	},
 };
 
 function uuidFromDigest(value: string): string {
-	const bytes = new Uint8Array(createHash("sha1").update(value).digest().subarray(0, 16));
+	const bytes = new Uint8Array(
+		createHash("sha1").update(value).digest().subarray(0, 16),
+	);
 	bytes[6] = ((bytes[6] as number) & 0x0f) | 0x50;
 	bytes[8] = ((bytes[8] as number) & 0x3f) | 0x80;
 	const hex = Buffer.from(bytes).toString("hex");
@@ -220,7 +237,9 @@ export function deriveTimeCorrectionOperationId(input: {
 	);
 }
 
-export function timeCorrectionLifecycleKey(lifecycle: TimeCorrectionLifecycleReference): string {
+export function timeCorrectionLifecycleKey(
+	lifecycle: TimeCorrectionLifecycleReference,
+): string {
 	return lifecycle.authority === "canonical"
 		? `canonical:${lifecycle.workflowId}`
 		: `legacy:${lifecycle.chainInstanceId ?? lifecycle.approvalRequestId}`;
@@ -248,7 +267,11 @@ export async function admitTimeCorrectionAppend(
 	input: { organizationId: string; employeeId: string },
 ): Promise<TimeEntryAppend> {
 	scope.assertEmployee(input.organizationId, input.employeeId);
-	const admission = await admitTimeEntryAppend(scope.db, input, "time_correction_submission");
+	const admission = await admitTimeEntryAppend(
+		scope.db,
+		input,
+		"time_correction_submission",
+	);
 	if (admission.kind === "review_required") {
 		throw new TimeEntryAppendReviewRequiredError(admission.requirement);
 	}
@@ -256,7 +279,11 @@ export async function admitTimeCorrectionAppend(
 }
 
 /** Approved correction minutes: fresh half-up rounding when adopted, legacy floor otherwise. */
-export function correctedDurationMinutes(adopted: boolean, start: Instant, end: Instant): number {
+export function correctedDurationMinutes(
+	adopted: boolean,
+	start: Instant,
+	end: Instant,
+): number {
 	if (adopted) return deriveWorkDurationMinutes(start, end);
 	return Math.floor(start.until(end).total("minutes"));
 }
@@ -277,7 +304,8 @@ export async function readCorrectionWorkRevision(
 			),
 		)
 		.limit(1);
-	if (!row) throw new CompletedWorkIntegrityError("Corrected work period is missing");
+	if (!row)
+		throw new CompletedWorkIntegrityError("Corrected work period is missing");
 	return row.graphRevision;
 }
 
@@ -291,7 +319,10 @@ export async function insertTimeCorrectionReceipt(
 		operationId: string;
 		workPeriodId: string;
 		command: Record<string, unknown>;
-		result: SubmitTimeCorrectionResult | FinalizeTimeCorrectionResult | CancelTimeCorrectionResult;
+		result:
+			| SubmitTimeCorrectionResult
+			| FinalizeTimeCorrectionResult
+			| CancelTimeCorrectionResult;
 	},
 ): Promise<void> {
 	const [existing] = await tx
@@ -309,7 +340,10 @@ export async function insertTimeCorrectionReceipt(
 		writer,
 		writerVersion: TIME_CORRECTION_WRITER_VERSION,
 		commandVersion: TIME_CORRECTION_OPERATION_COMMAND_VERSION,
-		command: { version: TIME_CORRECTION_OPERATION_COMMAND_VERSION, ...input.command },
+		command: {
+			version: TIME_CORRECTION_OPERATION_COMMAND_VERSION,
+			...input.command,
+		},
 		appendAdmission: "append",
 		actorKind: "human",
 		actorUserId: input.actorUserId,
@@ -350,7 +384,9 @@ export async function loadTimeCorrectionReceipt(
 		throw new CompletedWorkCollisionError();
 	}
 	if (receipt.resultVersion !== TIME_CORRECTION_OPERATION_RESULT_VERSION) {
-		throw new CompletedWorkIntegrityError("Unsupported time correction receipt version");
+		throw new CompletedWorkIntegrityError(
+			"Unsupported time correction receipt version",
+		);
 	}
 	return receipt;
 }
@@ -368,7 +404,18 @@ export function translateCorrectionWorkError(error: unknown): unknown {
 		});
 	}
 	if (error instanceof WorkOccupancyConflictError) {
-		return new ConflictError({ message: error.message, conflictType: "work_interval_occupied" });
+		return new ConflictError({
+			message: error.message,
+			conflictType: "work_interval_occupied",
+			details: {
+				overlaps: error.conflicts.map((conflict) => ({
+					kind: conflict.kind,
+					id: conflict.id,
+					startAt: conflict.startAt.toString(),
+					endAt: conflict.endAt?.toString() ?? null,
+				})),
+			},
+		});
 	}
 	if (error instanceof TimeEntryAppendReviewRequiredError) {
 		return new ConflictError({
@@ -386,6 +433,9 @@ export function sameCorrectionCommand(
 ): boolean {
 	return (
 		canonicalJson(receipt.command) ===
-		canonicalJson({ version: TIME_CORRECTION_OPERATION_COMMAND_VERSION, ...command })
+		canonicalJson({
+			version: TIME_CORRECTION_OPERATION_COMMAND_VERSION,
+			...command,
+		})
 	);
 }
