@@ -78,7 +78,7 @@ export function CalendarMainContent({
 		<div
 			className={
 				viewMode === "year"
-					? "flex-1 min-h-0"
+					? "flex flex-col flex-1 min-h-0"
 					: "grid gap-4 md:grid-cols-[250px_1fr] flex-1 min-h-0"
 			}
 		>
