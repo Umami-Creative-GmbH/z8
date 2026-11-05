@@ -1,6 +1,12 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
@@ -14,9 +20,15 @@ vi.mock("@tolgee/react", () => ({
 				(text, [key, value]) =>
 					text
 						.replace(
-							new RegExp(`\\{${key}, plural, one \\{([^}]*)\\} other \\{([^}]*)\\}\\}`, "g"),
+							new RegExp(
+								`\\{${key}, plural, one \\{([^}]*)\\} other \\{([^}]*)\\}\\}`,
+								"g",
+							),
 							(_match, one: string, other: string) =>
-								(Number(value) === 1 ? one : other).replaceAll("#", String(value)),
+								(Number(value) === 1 ? one : other).replaceAll(
+									"#",
+									String(value),
+								),
 						)
 						.replaceAll(`{${key}}`, String(value)),
 				fallback,
@@ -79,7 +91,11 @@ function renderDialog(overrides: Partial<DeactivationPreviewDialogProps> = {}) {
 	return { props, ...view };
 }
 
-async function pick(user: ReturnType<typeof userEvent.setup>, label: string, option: string) {
+async function pick(
+	user: ReturnType<typeof userEvent.setup>,
+	label: string,
+	option: string,
+) {
 	await user.click(screen.getByRole("combobox", { name: new RegExp(label) }));
 	await user.click(await screen.findByRole("option", { name: option }));
 }
@@ -89,23 +105,74 @@ describe("DeactivationPreviewDialog", () => {
 		vi.clearAllMocks();
 	});
 
+	it("shows required returns and their deadlines without blocking deactivation for missing equipment", async () => {
+		const user = userEvent.setup();
+		const { props } = renderDialog({
+			plan: emptyPlan({
+				equipment: [
+					{
+						assignmentId: "assignment",
+						identifier: "L-01",
+						typeName: "Laptop",
+						outstandingQuantity: 2,
+						explicitDeadline: "2026-10-20",
+						effectiveDeadline: "2026-10-20",
+					},
+				],
+				accessEnds: {
+					grants: [{ kind: "equipment_officer", grantId: "grant" }],
+					drivingAuthorizations: [],
+					kioskBadges: [],
+					kioskFobs: [],
+					shareLinks: [],
+				},
+			}),
+		});
+		const section = within(
+			screen.getByRole("region", { name: "Outstanding equipment returns" }),
+		);
+		expect(section.getByText(/L-01/).textContent).toContain("2 outstanding");
+		expect(section.getByText(/L-01/).textContent).toContain("Oct 20, 2026");
+		expect(
+			section.getByText(
+				/Employment and access end even while equipment is missing/,
+			),
+		).toBeTruthy();
+		expect(screen.getByText("Equipment officer")).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Deactivate" }));
+		expect(props.onConfirm).toHaveBeenCalledWith({});
+	});
+
 	it("confirms with the replacement manager picked for each report left without one", async () => {
 		const user = userEvent.setup();
 		const { props } = renderDialog({ plan: planWithReport() });
 
-		const section = within(screen.getByRole("region", { name: "Reports who need a new manager" }));
-		expect(section.getByText(/would have no current manager left/)).toBeTruthy();
+		const section = within(
+			screen.getByRole("region", { name: "Reports who need a new manager" }),
+		);
+		expect(
+			section.getByText(/would have no current manager left/),
+		).toBeTruthy();
 		await pick(user, "New manager for Rita Report", "Ben Manager");
 		await user.click(screen.getByRole("button", { name: "Deactivate" }));
 
-		await waitFor(() => expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: BEN }));
+		await waitFor(() =>
+			expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: BEN }),
+		);
 	});
 
 	it("states the previewed instant in the organization's zone, not the viewer's", () => {
-		renderDialog({ plan: emptyPlan({ at: "2026-10-24T08:00:00Z", timeZone: "Europe/Berlin" }) });
+		renderDialog({
+			plan: emptyPlan({
+				at: "2026-10-24T08:00:00Z",
+				timeZone: "Europe/Berlin",
+			}),
+		});
 
 		// 08:00 UTC is 10:00 in Berlin (summer time).
-		expect(screen.getByText(/previewed for .*10:00.*Europe\/Berlin/)).toBeTruthy();
+		expect(
+			screen.getByText(/previewed for .*10:00.*Europe\/Berlin/),
+		).toBeTruthy();
 	});
 
 	it("refuses to confirm until every report left without a manager has a replacement", async () => {
@@ -114,7 +181,9 @@ describe("DeactivationPreviewDialog", () => {
 
 		await user.click(screen.getByRole("button", { name: "Deactivate" }));
 
-		expect(await screen.findByText("Choose a new manager for Rita Report.")).toBeTruthy();
+		expect(
+			await screen.findByText("Choose a new manager for Rita Report."),
+		).toBeTruthy();
 		expect(props.onConfirm).not.toHaveBeenCalled();
 	});
 
@@ -124,18 +193,27 @@ describe("DeactivationPreviewDialog", () => {
 
 		await pick(user, "New manager for Rita Report", "Anna Admin");
 
-		expect(props.onReplacementsChange).toHaveBeenLastCalledWith({ [REPORT]: ANNA });
+		expect(props.onReplacementsChange).toHaveBeenLastCalledWith({
+			[REPORT]: ANNA,
+		});
 	});
 
 	it("never offers a report as their own manager", async () => {
 		const user = userEvent.setup();
 		const plan = planWithReport();
-		plan.managerLinks.replacementOptions.push({ employeeId: REPORT, name: "Rita Report" });
+		plan.managerLinks.replacementOptions.push({
+			employeeId: REPORT,
+			name: "Rita Report",
+		});
 		renderDialog({ plan });
 
-		await user.click(screen.getByRole("combobox", { name: /New manager for Rita Report/ }));
+		await user.click(
+			screen.getByRole("combobox", { name: /New manager for Rita Report/ }),
+		);
 
-		expect(await screen.findByRole("option", { name: "Anna Admin" })).toBeTruthy();
+		expect(
+			await screen.findByRole("option", { name: "Anna Admin" }),
+		).toBeTruthy();
 		expect(screen.queryByRole("option", { name: "Rita Report" })).toBeNull();
 	});
 
@@ -150,7 +228,8 @@ describe("DeactivationPreviewDialog", () => {
 		plan.refusals = ["replacement_ineligible"];
 		const { props } = renderDialog({ plan });
 
-		const message = "Ben Manager can no longer manage Rita Report. Choose someone else.";
+		const message =
+			"Ben Manager can no longer manage Rita Report. Choose someone else.";
 		expect(screen.getByText(message)).toBeTruthy();
 
 		await user.click(screen.getByRole("button", { name: "Deactivate" }));
@@ -159,27 +238,39 @@ describe("DeactivationPreviewDialog", () => {
 		await pick(user, "New manager for Rita Report", "Anna Admin");
 		expect(screen.queryByText(message)).toBeNull();
 		await user.click(screen.getByRole("button", { name: "Deactivate" }));
-		await waitFor(() => expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: ANNA }));
+		await waitFor(() =>
+			expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: ANNA }),
+		);
 	});
 
 	it("cannot confirm before the preview has loaded", () => {
 		renderDialog({ plan: null, isLoading: true });
 
-		expect(screen.getByRole("status").textContent).toBe("Calculating what changes…");
-		expect((screen.getByRole("button", { name: "Deactivate" }) as HTMLButtonElement).disabled).toBe(
-			true,
+		expect(screen.getByRole("status").textContent).toBe(
+			"Calculating what changes…",
 		);
+		expect(
+			(screen.getByRole("button", { name: "Deactivate" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
 	});
 
 	it("explains a failed preview and offers to load it again", async () => {
 		const user = userEvent.setup();
 		const onRetry = vi.fn();
-		renderDialog({ plan: null, loadError: "The preview could not be loaded.", onRetry });
+		renderDialog({
+			plan: null,
+			loadError: "The preview could not be loaded.",
+			onRetry,
+		});
 
-		expect(screen.getByRole("alert").textContent).toContain("The preview could not be loaded.");
-		expect((screen.getByRole("button", { name: "Deactivate" }) as HTMLButtonElement).disabled).toBe(
-			true,
+		expect(screen.getByRole("alert").textContent).toContain(
+			"The preview could not be loaded.",
 		);
+		expect(
+			(screen.getByRole("button", { name: "Deactivate" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
 		await user.click(screen.getByRole("button", { name: "Try again" }));
 		expect(onRetry).toHaveBeenCalled();
 	});
@@ -197,22 +288,30 @@ describe("DeactivationPreviewDialog", () => {
 		);
 
 		const alert = screen.getByRole("alert");
-		expect(alert.textContent).toContain("Choose a current manager for every report");
-		await waitFor(() => expect(document.activeElement).toBe(alert));
-		expect(screen.getByRole("combobox", { name: /New manager for Rita Report/ }).textContent).toBe(
-			"Ben Manager",
+		expect(alert.textContent).toContain(
+			"Choose a current manager for every report",
 		);
+		await waitFor(() => expect(document.activeElement).toBe(alert));
+		expect(
+			screen.getByRole("combobox", { name: /New manager for Rita Report/ })
+				.textContent,
+		).toBe("Ben Manager");
 	});
 
 	it("locks the dialog while the deactivation is submitted", () => {
 		const { props } = renderDialog({ isSubmitting: true });
 
-		const confirm = screen.getByRole("button", { name: "Deactivating..." }) as HTMLButtonElement;
+		const confirm = screen.getByRole("button", {
+			name: "Deactivating...",
+		}) as HTMLButtonElement;
 		expect(confirm.disabled).toBe(true);
-		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
-			true,
-		);
-		fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+		expect(
+			(screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
+		fireEvent.keyDown(document.activeElement ?? document.body, {
+			key: "Escape",
+		});
 		expect(props.onOpenChange).not.toHaveBeenCalled();
 	});
 
@@ -222,23 +321,41 @@ describe("DeactivationPreviewDialog", () => {
 				managerLinks: {
 					reportsNeedingReplacement: [],
 					reportsKeepingAnotherManager: [
-						{ employeeId: REPORT, name: "Rita Report", newPrimaryManagerId: ANNA },
-						{ employeeId: SECOND_REPORT, name: "Sam Second", newPrimaryManagerId: null },
+						{
+							employeeId: REPORT,
+							name: "Rita Report",
+							newPrimaryManagerId: ANNA,
+						},
+						{
+							employeeId: SECOND_REPORT,
+							name: "Sam Second",
+							newPrimaryManagerId: null,
+						},
 					],
 					formerReports: [{ employeeId: "former-report", name: "Flo Former" }],
-					ownManagerLinks: [{ employeeId: BEN, name: "Ben Manager", isPrimary: true }],
+					ownManagerLinks: [
+						{ employeeId: BEN, name: "Ben Manager", isPrimary: true },
+					],
 					replacementOptions: [{ employeeId: ANNA, name: "Anna Admin" }],
 				},
 			}),
 		});
 
-		const section = within(screen.getByRole("region", { name: "Manager links that end" }));
+		const section = within(
+			screen.getByRole("region", { name: "Manager links that end" }),
+		);
 		// A former report just loses the link; nobody is asked for.
-		expect(section.getByText("Flo Former is a former employee; the link just ends.")).toBeTruthy();
 		expect(
-			section.getByText("Rita Report keeps Anna Admin, who becomes the primary manager."),
+			section.getByText("Flo Former is a former employee; the link just ends."),
 		).toBeTruthy();
-		expect(section.getByText("Sam Second keeps their other manager.")).toBeTruthy();
+		expect(
+			section.getByText(
+				"Rita Report keeps Anna Admin, who becomes the primary manager.",
+			),
+		).toBeTruthy();
+		expect(
+			section.getByText("Sam Second keeps their other manager."),
+		).toBeTruthy();
 		expect(section.getByText("Ben Manager (primary manager)")).toBeTruthy();
 	});
 
@@ -253,7 +370,9 @@ describe("DeactivationPreviewDialog", () => {
 			}),
 		});
 
-		const section = within(screen.getByRole("region", { name: "Teams and projects" }));
+		const section = within(
+			screen.getByRole("region", { name: "Teams and projects" }),
+		);
 		expect(section.getByText("Team: Warehouse")).toBeTruthy();
 		expect(section.getByText("Project member: Relaunch")).toBeTruthy();
 		expect(section.getByText("Project manager: Audit 2026")).toBeTruthy();
@@ -290,17 +409,25 @@ describe("DeactivationPreviewDialog", () => {
 			}),
 		});
 
-		const section = within(screen.getByRole("region", { name: "Approval duties" }));
-		expect(section.getByText("2 pending approvals move to Anna Admin.")).toBeTruthy();
+		const section = within(
+			screen.getByRole("region", { name: "Approval duties" }),
+		);
 		expect(
-			section.getByText("1 pending approval moves to the workflow's fallback approver."),
+			section.getByText("2 pending approvals move to Anna Admin."),
+		).toBeTruthy();
+		expect(
+			section.getByText(
+				"1 pending approval moves to the workflow's fallback approver.",
+			),
 		).toBeTruthy();
 		expect(
 			section.getByText(
 				"2 approval duties need a replacement and are listed for review (Approval duties need a replacement).",
 			),
 		).toBeTruthy();
-		expect(section.getByText(/A later approval stage is routed only to this person/)).toBeTruthy();
+		expect(
+			section.getByText(/A later approval stage is routed only to this person/),
+		).toBeTruthy();
 	});
 
 	it("lists the future shifts that become open", () => {
@@ -308,14 +435,26 @@ describe("DeactivationPreviewDialog", () => {
 			plan: emptyPlan({
 				shifts: {
 					shiftsToOpen: [
-						{ shiftId: "shift-1", date: "2026-10-26", startTime: "08:00", endTime: "16:00" },
-						{ shiftId: "shift-2", date: "2026-10-27", startTime: "22:00", endTime: "06:00" },
+						{
+							shiftId: "shift-1",
+							date: "2026-10-26",
+							startTime: "08:00",
+							endTime: "16:00",
+						},
+						{
+							shiftId: "shift-2",
+							date: "2026-10-27",
+							startTime: "22:00",
+							endTime: "06:00",
+						},
 					],
 				},
 			}),
 		});
 
-		const section = within(screen.getByRole("region", { name: "Shifts that become open" }));
+		const section = within(
+			screen.getByRole("region", { name: "Shifts that become open" }),
+		);
 		expect(
 			section.getByText(
 				"2 future shifts are unassigned and stay as open shifts. Planners are notified once.",
@@ -369,15 +508,25 @@ describe("DeactivationPreviewDialog", () => {
 
 		const section = within(screen.getByRole("region", { name: "Absences" }));
 		expect(section.getByText("Cancelled, allowance restored")).toBeTruthy();
-		expect(section.getByText("Vacation, Nov 2 – 6, 2026 (approved)")).toBeTruthy();
+		expect(
+			section.getByText("Vacation, Nov 2 – 6, 2026 (approved)"),
+		).toBeTruthy();
 		expect(section.getByText("Training, Dec 1, 2026 (pending)")).toBeTruthy();
-		expect(section.getByText("Kept, because they have already started")).toBeTruthy();
-		expect(section.getByText("Sick leave, Oct 22 – 28, 2026 (approved)")).toBeTruthy();
+		expect(
+			section.getByText("Kept, because they have already started"),
+		).toBeTruthy();
+		expect(
+			section.getByText("Sick leave, Oct 22 – 28, 2026 (approved)"),
+		).toBeTruthy();
 		// A closed month refuses the cancellation, so the absence is kept and said so.
 		expect(
-			section.getByText("Kept, because they touch a closed month (reopen it to cancel them)"),
+			section.getByText(
+				"Kept, because they touch a closed month (reopen it to cancel them)",
+			),
 		).toBeTruthy();
-		expect(section.getByText("Vacation, Oct 29 – 30, 2026 (approved)")).toBeTruthy();
+		expect(
+			section.getByText("Vacation, Oct 29 – 30, 2026 (approved)"),
+		).toBeTruthy();
 	});
 
 	it("lists the access that ends", () => {
@@ -405,13 +554,17 @@ describe("DeactivationPreviewDialog", () => {
 			}),
 		});
 
-		const section = within(screen.getByRole("region", { name: "Access that ends" }));
+		const section = within(
+			screen.getByRole("region", { name: "Access that ends" }),
+		);
 		expect(section.getByText("Travel expense officer")).toBeTruthy();
 		expect(section.getByText("Payroll access")).toBeTruthy();
 		expect(section.getByText("Personnel file officer")).toBeTruthy();
 		expect(section.getByText("Driving licence verifier")).toBeTruthy();
 		expect(
-			section.getByText("2 driving authorizations end, including suspended ones"),
+			section.getByText(
+				"2 driving authorizations end, including suspended ones",
+			),
 		).toBeTruthy();
 		expect(section.getByText("1 kiosk badge is revoked")).toBeTruthy();
 		expect(section.getByText("1 kiosk fob stops working")).toBeTruthy();
@@ -421,13 +574,19 @@ describe("DeactivationPreviewDialog", () => {
 	it("says that retention starts and the paid seat is released", () => {
 		renderDialog({ plan: emptyPlan() });
 
-		const section = within(screen.getByRole("region", { name: "Records and billing" }));
-		expect(section.getByText("Personnel file retention starts now.")).toBeTruthy();
+		const section = within(
+			screen.getByRole("region", { name: "Records and billing" }),
+		);
+		expect(
+			section.getByText("Personnel file retention starts now."),
+		).toBeTruthy();
 		expect(section.getByText("Their paid seat is released.")).toBeTruthy();
 	});
 
 	it("leaves out areas the deactivation does not touch", () => {
-		renderDialog({ plan: emptyPlan({ retentionStarts: false, seatReleased: false }) });
+		renderDialog({
+			plan: emptyPlan({ retentionStarts: false, seatReleased: false }),
+		});
 
 		expect(screen.queryAllByRole("region")).toHaveLength(0);
 		expect(screen.getByText("Nothing else changes.")).toBeTruthy();
@@ -441,7 +600,9 @@ describe("DeactivationPreviewDialog", () => {
 		rerender(<DeactivationPreviewDialog {...props} plan={planWithReport()} />);
 		await user.click(screen.getByRole("button", { name: "Deactivate" }));
 
-		await waitFor(() => expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: BEN }));
+		await waitFor(() =>
+			expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: BEN }),
+		);
 	});
 
 	it("validates a kept pick against the recalculated preview", async () => {
@@ -459,13 +620,17 @@ describe("DeactivationPreviewDialog", () => {
 		rerender(<DeactivationPreviewDialog {...props} plan={plan} />);
 
 		expect(
-			screen.getByText("Ben Manager can no longer manage Rita Report. Choose someone else."),
+			screen.getByText(
+				"Ben Manager can no longer manage Rita Report. Choose someone else.",
+			),
 		).toBeTruthy();
 		await user.click(screen.getByRole("button", { name: "Deactivate" }));
 		expect(props.onConfirm).not.toHaveBeenCalled();
 
 		await pick(user, "New manager for Rita Report", "Anna Admin");
 		await user.click(screen.getByRole("button", { name: "Deactivate" }));
-		await waitFor(() => expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: ANNA }));
+		await waitFor(() =>
+			expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: ANNA }),
+		);
 	});
 });

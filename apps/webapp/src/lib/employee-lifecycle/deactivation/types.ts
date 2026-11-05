@@ -1,6 +1,7 @@
 import type { db as appDb } from "@/db";
 import type { AuditTrail } from "@/lib/audit-trail";
 import type { Clock, Instant } from "@/lib/datetime/temporal-core";
+import type { EquipmentDepartureReturn } from "@/lib/organization/equipment/contracts";
 import type { LifecycleClient } from "../types";
 
 /**
@@ -26,7 +27,9 @@ import type { LifecycleClient } from "../types";
  */
 
 /** Audit reason of an admin's deactivation. The backfill (#1442) uses its own. */
-export type DeactivationReason = "employee_deactivated" | "employee_deactivation_backfill";
+export type DeactivationReason =
+	| "employee_deactivated"
+	| "employee_deactivation_backfill";
 
 /** What every plan function receives. */
 export type DeactivationPlanContext = {
@@ -92,7 +95,9 @@ export type ManagerLinksPlan = {
 		}
 	>;
 	/** Reports who keep another current manager and just lose this one. */
-	reportsKeepingAnotherManager: Array<NamedEmployee & { newPrimaryManagerId: string | null }>;
+	reportsKeepingAnotherManager: Array<
+		NamedEmployee & { newPrimaryManagerId: string | null }
+	>;
 	/** Reports who are former employees themselves: the link ends, nobody replaces it. */
 	formerReports: NamedEmployee[];
 	/** The deactivated person's own manager links, which end. */
@@ -102,7 +107,11 @@ export type ManagerLinksPlan = {
 };
 export type ManagerLinksApplied = {
 	removedLinks: Array<{ employeeId: string; managerId: string }>;
-	addedLinks: Array<{ employeeId: string; managerId: string; isPrimary: boolean }>;
+	addedLinks: Array<{
+		employeeId: string;
+		managerId: string;
+		isPrimary: boolean;
+	}>;
 	/** Remaining links made primary (`reportsKeepingAnotherManager[].newPrimaryManagerId`). */
 	promotedLinks: Array<{ employeeId: string; managerId: string }>;
 };
@@ -145,13 +154,21 @@ export type ApprovalDutiesPlan = {
 		reason: string;
 	}>;
 };
-export type ApprovalDutiesApplied = { handoverTaskIds: string[]; reviewIds: string[] };
+export type ApprovalDutiesApplied = {
+	handoverTaskIds: string[];
+	reviewIds: string[];
+};
 
 // ---- shifts.ts -------------------------------------------------------------
 
 export type ShiftsPlan = {
 	/** Shifts starting after `at`; they become open shifts. */
-	shiftsToOpen: Array<{ shiftId: string; date: string; startTime: string; endTime: string }>;
+	shiftsToOpen: Array<{
+		shiftId: string;
+		date: string;
+		startTime: string;
+		endTime: string;
+	}>;
 	/** Planners told once, captured before the manager links end. */
 	plannerRecipientUserIds: string[];
 };
@@ -187,7 +204,8 @@ export type AccessEndsPlan = {
 			| "expense_officer"
 			| "payroll_access"
 			| "personnel_file_officer"
-			| "driving_licence_verifier";
+			| "driving_licence_verifier"
+			| "equipment_officer";
 		grantId: string;
 	}>;
 	drivingAuthorizations: Array<{ authorizationId: string; state: string }>;
@@ -216,6 +234,8 @@ export type DeactivationPlan = {
 	shifts: ShiftsPlan;
 	absences: AbsencesPlan;
 	accessEnds: AccessEndsPlan;
+	/** Required returns remain actionable independently of employment and access. */
+	equipment: EquipmentDepartureReturn[];
 	/** Personnel file retention starts at `at`. */
 	retentionStarts: boolean;
 	/** The paid seat is released. */
@@ -231,7 +251,9 @@ export type DeactivationPreview = Omit<DeactivationPlan, "shifts"> & {
 	shifts: Omit<ShiftsPlan, "plannerRecipientUserIds">;
 };
 
-export function toDeactivationPreview(plan: DeactivationPlan): DeactivationPreview {
+export function toDeactivationPreview(
+	plan: DeactivationPlan,
+): DeactivationPreview {
 	const { plannerRecipientUserIds: _serverOnly, ...shifts } = plan.shifts;
 	return { ...plan, shifts };
 }

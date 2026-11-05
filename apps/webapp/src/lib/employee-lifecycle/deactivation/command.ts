@@ -6,6 +6,7 @@ import { employee } from "@/db/schema";
 import { AuditTrail } from "@/lib/audit-trail";
 import type { AuthorizationMutationScope } from "@/lib/authorization/authorization-mutation";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { endEquipmentEmployment } from "@/lib/organization/equipment/lifecycle";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
@@ -24,9 +25,16 @@ import {
 } from "../receipts";
 import { acquireAbsenceCancellationGuards } from "./absences";
 import { applyDeactivationConsequences } from "./apply";
-import { managerLinkAuthorizationEmployeeIds, validatedReplacementManagers } from "./manager-links";
+import {
+	managerLinkAuthorizationEmployeeIds,
+	validatedReplacementManagers,
+} from "./manager-links";
 import { planDeactivationConsequences } from "./plan";
-import { type DeactivationPlannerNotice, loadPlannerNotice, sendPlannerNotice } from "./shifts";
+import {
+	type DeactivationPlannerNotice,
+	loadPlannerNotice,
+	sendPlannerNotice,
+} from "./shifts";
 import type {
 	DeactivationAfterCommit,
 	DeactivationApplied,
@@ -55,11 +63,16 @@ export type DeactivationCommand = {
 };
 
 /** The payload a request ID stands for; a retry with other picks is a conflict. */
-export function deactivationRequestFingerprint(command: DeactivationCommand): string {
+export function deactivationRequestFingerprint(
+	command: DeactivationCommand,
+): string {
 	return requestFingerprint(
 		{ userId: command.actorUserId, organizationId: command.organizationId },
 		DEACTIVATE_EMPLOYEE_COMMAND,
-		{ employeeId: command.employeeId, replacementManagers: { ...command.replacementManagers } },
+		{
+			employeeId: command.employeeId,
+			replacementManagers: { ...command.replacementManagers },
+		},
 	);
 }
 
@@ -77,14 +90,18 @@ export function deactivationProtectionScope(
 	return {
 		organizationId: command.organizationId,
 		organizationWide: true,
-		employeeIds: [command.employeeId, ...Object.values(command.replacementManagers)],
+		employeeIds: [
+			command.employeeId,
+			...Object.values(command.replacementManagers),
+		],
 		route: async (tx) => ({
 			employeeIds: await managerLinkAuthorizationEmployeeIds(tx, {
 				organizationId: command.organizationId,
 				employeeId: command.employeeId,
 			}),
 		}),
-		beforeProtection: (tx) => acquireAbsenceCancellationGuards(tx, command.organizationId),
+		beforeProtection: (tx) =>
+			acquireAbsenceCancellationGuards(tx, command.organizationId),
 	};
 }
 
@@ -97,7 +114,10 @@ export type DeactivationResult = {
 	/** The planner notice, keyed by the deactivation, so sending it again sends nothing new. */
 	plannerNotice: DeactivationPlannerNotice | null;
 	/** Absences the person stopped covering as deputy; their notices are keyed by `eventKey`. */
-	releasedDeputies: { eventKey: string; assignments: DeputyAssignment[] } | null;
+	releasedDeputies: {
+		eventKey: string;
+		assignments: DeputyAssignment[];
+	} | null;
 	cancelledAbsenceIds: string[];
 };
 
@@ -106,7 +126,11 @@ export type DeactivationExecution =
 			kind: "refused";
 			plan: DeactivationPlan;
 			/** Reports whose replacement is missing or not eligible. */
-			reports: Array<NamedEmployee & { refusal: "replacement_missing" | "replacement_ineligible" }>;
+			reports: Array<
+				NamedEmployee & {
+					refusal: "replacement_missing" | "replacement_ineligible";
+				}
+			>;
 	  }
 	| {
 			kind: "applied";
@@ -133,9 +157,15 @@ export async function executeDeactivation(
 	command: DeactivationCommand &
 		DeactivationApplyDependencies & { at: Instant; requestFingerprint: string },
 ): Promise<DeactivationExecution> {
-	const scope = { organizationId: command.organizationId, employeeId: command.employeeId };
+	const scope = {
+		organizationId: command.organizationId,
+		employeeId: command.employeeId,
+	};
 	const period = await resolveCurrentEmploymentPeriod(tx, scope);
-	const organizationTimeZone = await loadOrganizationTimezone(tx, command.organizationId);
+	const organizationTimeZone = await loadOrganizationTimezone(
+		tx,
+		command.organizationId,
+	);
 	const planContext = {
 		...scope,
 		at: command.at,
@@ -151,20 +181,17 @@ export async function executeDeactivation(
 			plan,
 			reports: plan.managerLinks.reportsNeedingReplacement.flatMap((report) =>
 				report.refusal
-					? [{ employeeId: report.employeeId, name: report.name, refusal: report.refusal }]
+					? [
+							{
+								employeeId: report.employeeId,
+								name: report.name,
+								refusal: report.refusal,
+							},
+						]
 					: [],
 			),
 		};
 	}
-
-	const [person] = await tx
-		.update(employee)
-		.set({ isActive: false, deactivatedAt: dateFromInstant(command.at) })
-		.where(
-			and(eq(employee.id, command.employeeId), eq(employee.organizationId, command.organizationId)),
-		)
-		.returning({ id: employee.id, userId: employee.userId });
-	if (!person) throw new Error("The deactivated employee was not found");
 
 	const { id: deactivationId } = await insertDeactivation(tx, {
 		...scope,
@@ -177,6 +204,30 @@ export async function executeDeactivation(
 		// Only the validated picks: stage activation routes later stages by them.
 		replacementManagers: validatedReplacementManagers(plan.managerLinks),
 	});
+
+	// Capture scope and end equipment responsibility before the active-state trigger
+	// closes the period and the consequence areas remove team membership.
+	const equipment = await endEquipmentEmployment(tx, {
+		...scope,
+		employmentPeriodId: planContext.employmentPeriodId,
+		deactivationId,
+		actorUserId: command.actorUserId,
+		cutoff: command.at,
+		timezone: organizationTimeZone,
+		mode: "immediate",
+	});
+
+	const [person] = await tx
+		.update(employee)
+		.set({ isActive: false, deactivatedAt: dateFromInstant(command.at) })
+		.where(
+			and(
+				eq(employee.id, command.employeeId),
+				eq(employee.organizationId, command.organizationId),
+			),
+		)
+		.returning({ id: employee.id, userId: employee.userId });
+	if (!person) throw new Error("The deactivated employee was not found");
 
 	const audit = new AuditTrail();
 	const { applied, afterCommit } = await applyDeactivationConsequences(
@@ -192,13 +243,19 @@ export async function executeDeactivation(
 		{ clock: command.clock, database: command.database },
 	);
 
+	applied.accessEnds.grantIds.push(...equipment.revokedOfficerGrantIds);
+
 	// The deactivated employee stops being anyone's deputy (#1014).
-	const releasedDeputies = await releaseDeputyAssignmentsOnDeactivation(tx, new AuditTrail(), {
-		...scope,
-		actorUserId: command.actorUserId,
-		at: command.at,
-		reason: "employee_deactivated",
-	});
+	const releasedDeputies = await releaseDeputyAssignmentsOnDeactivation(
+		tx,
+		new AuditTrail(),
+		{
+			...scope,
+			actorUserId: command.actorUserId,
+			at: command.at,
+			reason: "employee_deactivated",
+		},
+	);
 
 	const plannerNotice = await loadPlannerNotice(tx, scope, {
 		openedShiftIds: applied.shifts.openedShiftIds,
@@ -211,7 +268,10 @@ export async function executeDeactivation(
 		deactivatedAt: command.at.toString(),
 		plannerNotice,
 		releasedDeputies: releasedDeputies
-			? { eventKey: releasedDeputies.eventKey, assignments: releasedDeputies.assignments }
+			? {
+					eventKey: releasedDeputies.eventKey,
+					assignments: releasedDeputies.assignments,
+				}
 			: null,
 		cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
 	};
@@ -226,7 +286,10 @@ export async function executeDeactivation(
 	if (period) {
 		// The employment history event (#1441 shows it); its period is required.
 		await writeReceipt(tx, {
-			actor: { userId: command.actorUserId, organizationId: command.organizationId },
+			actor: {
+				userId: command.actorUserId,
+				organizationId: command.organizationId,
+			},
 			employeeId: command.employeeId,
 			employmentPeriodId: period.id,
 			departureId: null,
@@ -260,7 +323,9 @@ export async function executeDeactivation(
  * notices are not repeated. A deactivation that was reactivated since replays
  * nothing.
  */
-export function rebuildDeactivationAfterCommit(entry: DeactivationLedgerEntry): {
+export function rebuildDeactivationAfterCommit(
+	entry: DeactivationLedgerEntry,
+): {
 	result: DeactivationResult | null;
 	afterCommit: DeactivationAfterCommit[];
 	releasedDeputies: ReleasedDeputyAssignments | null;
@@ -273,7 +338,9 @@ export function rebuildDeactivationAfterCommit(entry: DeactivationLedgerEntry): 
 	const afterCommit: DeactivationAfterCommit[] = [];
 	const { plannerNotice } = result;
 	if (plannerNotice) {
-		afterCommit.push(sendPlannerNotice(entry.organizationId, entry.id, plannerNotice));
+		afterCommit.push(
+			sendPlannerNotice(entry.organizationId, entry.id, plannerNotice),
+		);
 	}
 	if (result.cancelledAbsenceIds.length > 0) {
 		afterCommit.push(async () => {

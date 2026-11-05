@@ -1043,6 +1043,7 @@ export async function readEquipment(
 				effectiveDeadline,
 				employmentPeriodId: assignment.employmentPeriodId,
 				departureId: assignment.departureId,
+				deactivationId: assignment.deactivationId,
 				outstanding,
 				overdue,
 				held: !assignment.received,

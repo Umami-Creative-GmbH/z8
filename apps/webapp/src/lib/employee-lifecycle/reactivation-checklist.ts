@@ -54,9 +54,19 @@ export type ReactivationChecklistItem =
 			name: string | null;
 			href: string;
 	  }
-	| { group: "grants"; kind: "grant"; grant: ChecklistGrantKind | null; href: string }
+	| {
+			group: "grants";
+			kind: "grant";
+			grant: ChecklistGrantKind | null;
+			href: string;
+	  }
 	| { group: "access"; kind: "kiosk_badges"; count: number; href: string }
-	| { group: "access"; kind: "driving_authorizations"; count: number; href: string }
+	| {
+			group: "access";
+			kind: "driving_authorizations";
+			count: number;
+			href: string;
+	  }
 	| {
 			group: "teams";
 			kind: "team" | "project_assignment" | "project_manager";
@@ -99,20 +109,24 @@ export type ReactivationChecklist = {
 };
 
 const GRANT_PAGES: Record<ChecklistGrantKind, string> = {
+	equipment_officer: "/settings/equipment",
 	expense_officer: "/settings/travel-expenses?tab=access",
 	payroll_access: "/settings/payroll-access",
 	personnel_file_officer: "/settings/personnel-files?tab=access",
 	driving_licence_verifier: "/settings/driving-licence?tab=verifiers",
 };
 
-const employeePage = (employeeId: string) => `/settings/employees/${employeeId}`;
+const employeePage = (employeeId: string) =>
+	`/settings/employees/${employeeId}`;
 
 /**
  * The plan as stored on the ledger row: everything the checklist names, but
  * of the replacement options only the chosen replacements (the options list
  * the whole current roster of admins and managers).
  */
-export function checklistPlanSnapshot(plan: DeactivationPlan): DeactivationPlan {
+export function checklistPlanSnapshot(
+	plan: DeactivationPlan,
+): DeactivationPlan {
 	const chosen = new Set(
 		plan.managerLinks.reportsNeedingReplacement.flatMap((report) =>
 			report.replacementEmployeeId ? [report.replacementEmployeeId] : [],
@@ -122,8 +136,8 @@ export function checklistPlanSnapshot(plan: DeactivationPlan): DeactivationPlan 
 		...plan,
 		managerLinks: {
 			...plan.managerLinks,
-			replacementOptions: plan.managerLinks.replacementOptions.filter((option) =>
-				chosen.has(option.employeeId),
+			replacementOptions: plan.managerLinks.replacementOptions.filter(
+				(option) => chosen.has(option.employeeId),
 			),
 		},
 	};
@@ -168,7 +182,9 @@ export function buildReactivationChecklistItems(input: {
 	}
 	const nameOf = (employeeId: string) => names.get(employeeId) ?? null;
 
-	const moved = new Set(applied.managerLinks.addedLinks.map((link) => link.employeeId));
+	const moved = new Set(
+		applied.managerLinks.addedLinks.map((link) => link.employeeId),
+	);
 	for (const link of applied.managerLinks.addedLinks) {
 		items.push({
 			group: "managers",
@@ -202,7 +218,9 @@ export function buildReactivationChecklistItems(input: {
 		}
 	}
 
-	const grantKinds = new Map(plan?.accessEnds.grants.map((grant) => [grant.grantId, grant.kind]));
+	const grantKinds = new Map(
+		plan?.accessEnds.grants.map((grant) => [grant.grantId, grant.kind]),
+	);
 	for (const grantId of applied.accessEnds.grantIds) {
 		const grant = grantKinds.get(grantId) ?? null;
 		items.push({
@@ -232,7 +250,9 @@ export function buildReactivationChecklistItems(input: {
 		});
 	}
 
-	const teamNames = new Map(plan?.teamLinks.teams.map((team) => [team.teamId, team.name]));
+	const teamNames = new Map(
+		plan?.teamLinks.teams.map((team) => [team.teamId, team.name]),
+	);
 	for (const teamId of applied.teamLinks.teamIds) {
 		items.push({
 			group: "teams",
@@ -267,7 +287,9 @@ export function buildReactivationChecklistItems(input: {
 		});
 	}
 
-	const shifts = new Map(plan?.shifts.shiftsToOpen.map((shift) => [shift.shiftId, shift]));
+	const shifts = new Map(
+		plan?.shifts.shiftsToOpen.map((shift) => [shift.shiftId, shift]),
+	);
 	for (const shiftId of applied.shifts.openedShiftIds) {
 		const shift = shifts.get(shiftId);
 		items.push({
@@ -282,7 +304,10 @@ export function buildReactivationChecklistItems(input: {
 	}
 
 	const absences = new Map(
-		plan?.absences.absencesToCancel.map((absence) => [absence.absenceId, absence]),
+		plan?.absences.absencesToCancel.map((absence) => [
+			absence.absenceId,
+			absence,
+		]),
 	);
 	for (const absenceId of applied.absences.cancelledAbsenceIds) {
 		const absence = absences.get(absenceId);

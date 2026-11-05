@@ -4,7 +4,10 @@ import { useTolgee, useTranslate } from "@tolgee/react";
 import { type ReactNode, useId } from "react";
 import { useOffboardingLabels } from "@/components/settings/employee-offboarding/labels";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { formatPlainDate, formatPlainDateRange } from "@/lib/datetime/temporal-format";
+import {
+	formatPlainDate,
+	formatPlainDateRange,
+} from "@/lib/datetime/temporal-format";
 import type {
 	AbsencePlanItem,
 	AccessEndsPlan,
@@ -14,7 +17,11 @@ import type {
 import { useGrantKindLabel } from "./use-grant-kind-label";
 
 /** Every consequence of the plan except the replacement pickers; empty areas are left out. */
-export function DeactivationConsequences({ plan }: { plan: DeactivationPreview }) {
+export function DeactivationConsequences({
+	plan,
+}: {
+	plan: DeactivationPreview;
+}) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() || "en";
@@ -23,7 +30,10 @@ export function DeactivationConsequences({ plan }: { plan: DeactivationPreview }
 	if (!hasConsequences(plan)) {
 		return (
 			<p className="text-sm text-muted-foreground">
-				{t("settings.employees.lifecycle.deactivationPreview.nothingElse", "Nothing else changes.")}
+				{t(
+					"settings.employees.lifecycle.deactivationPreview.nothingElse",
+					"Nothing else changes.",
+				)}
 			</p>
 		);
 	}
@@ -36,13 +46,21 @@ export function DeactivationConsequences({ plan }: { plan: DeactivationPreview }
 			<ShiftsSection plan={plan} locale={locale} />
 			<AbsencesSection plan={plan} locale={locale} />
 			<AccessEndsSection access={plan.accessEnds} />
+			<EquipmentSection plan={plan} locale={locale} />
 			<RecordsSection plan={plan} />
 		</div>
 	);
 }
 
 function hasConsequences(plan: DeactivationPreview): boolean {
-	const { managerLinks, teamLinks, approvalDuties, shifts, absences, accessEnds } = plan;
+	const {
+		managerLinks,
+		teamLinks,
+		approvalDuties,
+		shifts,
+		absences,
+		accessEnds,
+	} = plan;
 	return (
 		[
 			managerLinks.reportsNeedingReplacement,
@@ -63,6 +81,7 @@ function hasConsequences(plan: DeactivationPreview): boolean {
 			accessEnds.kioskBadges,
 			accessEnds.kioskFobs,
 			accessEnds.shareLinks,
+			plan.equipment,
 		].some((items) => items.length > 0) ||
 		plan.retentionStarts ||
 		plan.seatReleased
@@ -100,7 +119,9 @@ function PreviewSection({
 			<h3 id={headingId} className="text-sm font-semibold">
 				{title}
 			</h3>
-			{description && <p className="text-sm text-muted-foreground">{description}</p>}
+			{description && (
+				<p className="text-sm text-muted-foreground">{description}</p>
+			)}
 			{children}
 		</section>
 	);
@@ -118,8 +139,14 @@ function ManagerLinksSection({
 	names: ReadonlyMap<string, string>;
 }) {
 	const { t } = useTranslate();
-	const { reportsKeepingAnotherManager, formerReports, ownManagerLinks } = plan.managerLinks;
-	if (reportsKeepingAnotherManager.length + formerReports.length + ownManagerLinks.length === 0) {
+	const { reportsKeepingAnotherManager, formerReports, ownManagerLinks } =
+		plan.managerLinks;
+	if (
+		reportsKeepingAnotherManager.length +
+			formerReports.length +
+			ownManagerLinks.length ===
+		0
+	) {
 		return null;
 	}
 
@@ -197,7 +224,11 @@ function ManagerLinksSection({
 function TeamLinksSection({ plan }: { plan: DeactivationPreview }) {
 	const { t } = useTranslate();
 	const { teams, projectAssignments, projectManagerLinks } = plan.teamLinks;
-	if (teams.length + projectAssignments.length + projectManagerLinks.length === 0) return null;
+	if (
+		teams.length + projectAssignments.length + projectManagerLinks.length ===
+		0
+	)
+		return null;
 
 	return (
 		<PreviewSection
@@ -213,9 +244,13 @@ function TeamLinksSection({ plan }: { plan: DeactivationPreview }) {
 			<ItemList>
 				{teams.map((team) => (
 					<li key={`team:${team.teamId}`}>
-						{t("settings.employees.lifecycle.deactivationPreview.team", "Team: {name}", {
-							name: team.name,
-						})}
+						{t(
+							"settings.employees.lifecycle.deactivationPreview.team",
+							"Team: {name}",
+							{
+								name: team.name,
+							},
+						)}
 					</li>
 				))}
 				{projectAssignments.map((project) => (
@@ -259,14 +294,19 @@ function ApprovalDutiesSection({
 		if (!handover.targetEmployeeId) {
 			reviewCount += 1;
 		} else if (names.has(handover.targetEmployeeId)) {
-			byTarget.set(handover.targetEmployeeId, (byTarget.get(handover.targetEmployeeId) ?? 0) + 1);
+			byTarget.set(
+				handover.targetEmployeeId,
+				(byTarget.get(handover.targetEmployeeId) ?? 0) + 1,
+			);
 		} else {
 			fallbackCount += 1;
 		}
 	}
 	const reasons = [
 		...new Set(
-			duties.reviews.map((review) => labels.reason(review.reason)).filter((text) => text !== null),
+			duties.reviews
+				.map((review) => labels.reason(review.reason))
+				.filter((text) => text !== null),
 		),
 	];
 
@@ -305,7 +345,10 @@ function ApprovalDutiesSection({
 						{t(
 							"settings.employees.lifecycle.deactivationPreview.approvalsToReview",
 							"{count, plural, one {# approval duty needs a replacement and is listed for review} other {# approval duties need a replacement and are listed for review}} ({review}).",
-							{ count: reviewCount, review: labels.review("approval_handover") },
+							{
+								count: reviewCount,
+								review: labels.review("approval_handover"),
+							},
 						)}
 						{reasons.length > 0 && (
 							<ul className="mt-1 list-[circle] space-y-1 pl-5 text-muted-foreground">
@@ -321,7 +364,13 @@ function ApprovalDutiesSection({
 	);
 }
 
-function ShiftsSection({ plan, locale }: { plan: DeactivationPreview; locale: string }) {
+function ShiftsSection({
+	plan,
+	locale,
+}: {
+	plan: DeactivationPreview;
+	locale: string;
+}) {
 	const { t } = useTranslate();
 	const shifts = plan.shifts.shiftsToOpen;
 	if (shifts.length === 0) return null;
@@ -345,7 +394,11 @@ function ShiftsSection({ plan, locale }: { plan: DeactivationPreview; locale: st
 							"settings.employees.lifecycle.deactivationPreview.shiftItem",
 							"{date}, {start}–{end}",
 							{
-								date: formatPlainDate(parsePlainDate(shift.date), locale, "dateMedium"),
+								date: formatPlainDate(
+									parsePlainDate(shift.date),
+									locale,
+									"dateMedium",
+								),
 								start: shift.startTime,
 								end: shift.endTime,
 							},
@@ -357,16 +410,31 @@ function ShiftsSection({ plan, locale }: { plan: DeactivationPreview; locale: st
 	);
 }
 
-function AbsencesSection({ plan, locale }: { plan: DeactivationPreview; locale: string }) {
+function AbsencesSection({
+	plan,
+	locale,
+}: {
+	plan: DeactivationPreview;
+	locale: string;
+}) {
 	const { t } = useTranslate();
-	const { absencesToCancel, absencesSpanning, absencesInClosedMonths } = plan.absences;
-	if (absencesToCancel.length + absencesSpanning.length + absencesInClosedMonths.length === 0) {
+	const { absencesToCancel, absencesSpanning, absencesInClosedMonths } =
+		plan.absences;
+	if (
+		absencesToCancel.length +
+			absencesSpanning.length +
+			absencesInClosedMonths.length ===
+		0
+	) {
 		return null;
 	}
 
 	return (
 		<PreviewSection
-			title={t("settings.employees.lifecycle.deactivationPreview.absencesTitle", "Absences")}
+			title={t(
+				"settings.employees.lifecycle.deactivationPreview.absencesTitle",
+				"Absences",
+			)}
 		>
 			{absencesToCancel.length > 0 && (
 				<>
@@ -405,7 +473,13 @@ function AbsencesSection({ plan, locale }: { plan: DeactivationPreview; locale: 
 	);
 }
 
-function AbsenceList({ absences, locale }: { absences: AbsencePlanItem[]; locale: string }) {
+function AbsenceList({
+	absences,
+	locale,
+}: {
+	absences: AbsencePlanItem[];
+	locale: string;
+}) {
 	const { t } = useTranslate();
 	return (
 		<ItemList>
@@ -454,7 +528,10 @@ function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
 
 	return (
 		<PreviewSection
-			title={t("settings.employees.lifecycle.deactivationPreview.accessTitle", "Access that ends")}
+			title={t(
+				"settings.employees.lifecycle.deactivationPreview.accessTitle",
+				"Access that ends",
+			)}
 		>
 			<ItemList>
 				{grantKinds.map((kind) => (
@@ -496,6 +573,60 @@ function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
 						)}
 					</li>
 				)}
+			</ItemList>
+		</PreviewSection>
+	);
+}
+
+function EquipmentSection({
+	plan,
+	locale,
+}: {
+	plan: DeactivationPreview;
+	locale: string;
+}) {
+	const { t } = useTranslate();
+	if (plan.equipment.length === 0) return null;
+	return (
+		<PreviewSection
+			title={t(
+				"settings.employees.lifecycle.deactivationPreview.equipmentTitle",
+				"Outstanding equipment returns",
+			)}
+			description={t(
+				"settings.employees.lifecycle.deactivationPreview.equipmentDescription",
+				"Employment and access end even while equipment is missing. Authorized staff can follow up in Equipment, including former employees. Returning a physical key or fob does not restore its credential.",
+			)}
+		>
+			<ItemList>
+				{plan.equipment.map((item) => (
+					<li key={item.assignmentId}>
+						{item.effectiveDeadline
+							? t(
+									"settings.employees.lifecycle.deactivationPreview.equipmentDue",
+									"{identifier} ({type}): {count} outstanding, due {date}",
+									{
+										identifier: item.identifier,
+										type: item.typeName,
+										count: item.outstandingQuantity,
+										date: formatPlainDate(
+											parsePlainDate(item.effectiveDeadline),
+											locale,
+											"dateMedium",
+										),
+									},
+								)
+							: t(
+									"settings.employees.lifecycle.deactivationPreview.equipmentUndated",
+									"{identifier} ({type}): {count} outstanding, no recorded deadline",
+									{
+										identifier: item.identifier,
+										type: item.typeName,
+										count: item.outstandingQuantity,
+									},
+								)}
+					</li>
+				))}
 			</ItemList>
 		</PreviewSection>
 	);

@@ -2,13 +2,22 @@ import "server-only";
 
 import { and, eq, isNull, or } from "drizzle-orm";
 import { employeeEmploymentPeriod } from "@/db/schema";
+import { equipmentDepartureDeadline } from "@/lib/organization/equipment/deadlines";
+import { readEquipmentDepartureReturns } from "@/lib/organization/equipment/lifecycle";
 import { planAbsences } from "./absences";
 import { planAccessEnds } from "./access-ends";
 import { planApprovalDuties } from "./approval-duties";
-import { planManagerLinks, validatedReplacementManagers } from "./manager-links";
+import {
+	planManagerLinks,
+	validatedReplacementManagers,
+} from "./manager-links";
 import { planShiftsToOpen } from "./shifts";
 import { planTeamLinks } from "./team-links";
-import type { DeactivationPlan, DeactivationPlanContext, DeactivationReader } from "./types";
+import type {
+	DeactivationPlan,
+	DeactivationPlanContext,
+	DeactivationReader,
+} from "./types";
 
 /**
  * Everything a deactivation changes (#1440, Organization ADR 0006), composed
@@ -36,6 +45,11 @@ export async function planDeactivationConsequences(
 	const shifts = await planShiftsToOpen(reader, ctx);
 	const absences = await planAbsences(reader, ctx);
 	const accessEnds = await planAccessEnds(reader, ctx);
+	const equipment = await readEquipmentDepartureReturns(
+		reader,
+		ctx,
+		equipmentDepartureDeadline(ctx.at, ctx.organizationTimeZone, "immediate"),
+	);
 	const refusals = [
 		...new Set(
 			managerLinks.reportsNeedingReplacement.flatMap((report) =>
@@ -52,6 +66,7 @@ export async function planDeactivationConsequences(
 		shifts,
 		absences,
 		accessEnds,
+		equipment,
 		retentionStarts: true,
 		seatReleased: true,
 		refusals,
@@ -70,7 +85,10 @@ export async function readCurrentEmploymentPeriodId(
 	input: { organizationId: string; employeeId: string },
 ): Promise<string | null> {
 	const rows = await reader
-		.select({ id: employeeEmploymentPeriod.id, status: employeeEmploymentPeriod.status })
+		.select({
+			id: employeeEmploymentPeriod.id,
+			status: employeeEmploymentPeriod.status,
+		})
 		.from(employeeEmploymentPeriod)
 		.where(
 			and(

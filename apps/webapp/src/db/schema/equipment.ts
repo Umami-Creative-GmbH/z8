@@ -16,6 +16,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
 import {
+	employeeDeactivation,
 	employeeDeparture,
 	employeeEmploymentPeriod,
 } from "./employee-lifecycle";
@@ -197,11 +198,22 @@ export const equipmentAssignment = pgTable(
 		explicitDeadline: date("explicit_deadline"),
 		departureDeadline: date("departure_deadline"),
 		departureId: uuid("departure_id"),
+		/** Immutable equipment lineage even when reactivation reopens the employment period. */
+		deactivationId: uuid("deactivation_id"),
 		received: boolean("received").notNull().default(false),
 		revision: integer("revision").notNull().default(1),
 	},
 	(t) => [
 		unique("equipment_assignment_id_org_unique").on(t.id, t.organizationId),
+		foreignKey({
+			name: "equipment_assignment_deactivation_org_employee_fk",
+			columns: [t.deactivationId, t.organizationId, t.employeeId],
+			foreignColumns: [
+				employeeDeactivation.id,
+				employeeDeactivation.organizationId,
+				employeeDeactivation.employeeId,
+			],
+		}),
 		foreignKey({
 			name: "equipment_assignment_departure_org_fk",
 			columns: [t.departureId, t.organizationId],

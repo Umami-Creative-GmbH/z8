@@ -1,5 +1,10 @@
-import { and, eq } from "drizzle-orm";
-import { expenseOfficerGrant, payrollAccessGrant, personnelFileOfficerGrant } from "@/db/schema";
+import { and, eq, isNull } from "drizzle-orm";
+import {
+	expenseOfficerGrant,
+	payrollAccessGrant,
+	personnelFileOfficerGrant,
+} from "@/db/schema";
+import { equipmentOfficerGrant } from "@/db/schema/equipment";
 import { lockDrivingLicenceOrganization } from "@/lib/organization/driving-licence/checks";
 import {
 	endDrivingLicenceEmployment,
@@ -15,7 +20,10 @@ import {
 	liveKioskBadgesOfEmploymentPeriod,
 	revokeKioskBadgesOfEmploymentPeriod,
 } from "@/lib/time-tracking/kiosk/badge-store";
-import { endKioskFobLinks, liveKioskFobsOfEmployment } from "@/lib/time-tracking/kiosk/fob-store";
+import {
+	endKioskFobLinks,
+	liveKioskFobsOfEmployment,
+} from "@/lib/time-tracking/kiosk/fob-store";
 import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import {
 	type AccessEndsApplied,
@@ -83,6 +91,16 @@ export async function planAccessEnds(
 				eq(personnelFileOfficerGrant.isActive, true),
 			),
 		);
+	const equipment = await reader
+		.select({ id: equipmentOfficerGrant.employeeId })
+		.from(equipmentOfficerGrant)
+		.where(
+			and(
+				eq(equipmentOfficerGrant.organizationId, ctx.organizationId),
+				eq(equipmentOfficerGrant.employeeId, ctx.employeeId),
+				isNull(equipmentOfficerGrant.revokedAt),
+			),
+		);
 	const driving = await liveDrivingLicenceEmployment(reader, employment);
 	const badgeIds = await liveKioskBadgesOfEmploymentPeriod(reader, employment);
 	const fobIds = await liveKioskFobsOfEmployment(reader, employment);
@@ -91,13 +109,19 @@ export async function planAccessEnds(
 		creatorEmployeeId: ctx.employeeId,
 		now: ctx.at,
 	});
-	const grant = (kind: GrantKind) => (row: { id: string }) => ({ kind, grantId: row.id });
+	const grant = (kind: GrantKind) => (row: { id: string }) => ({
+		kind,
+		grantId: row.id,
+	});
 	return {
 		grants: [
 			...expense.map(grant("expense_officer")),
+			...equipment.map(grant("equipment_officer")),
 			...payroll.map(grant("payroll_access")),
 			...personnelFile.map(grant("personnel_file_officer")),
-			...driving.verifierGrantIds.map((id) => grant("driving_licence_verifier")({ id })),
+			...driving.verifierGrantIds.map((id) =>
+				grant("driving_licence_verifier")({ id }),
+			),
 		],
 		drivingAuthorizations: driving.authorizations.map((row) => ({
 			authorizationId: row.id,
