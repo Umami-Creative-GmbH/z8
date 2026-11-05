@@ -4,9 +4,11 @@ import { useTranslate } from "@tolgee/react";
 import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
+import type { OrganizationProfile } from "@/lib/organization/profile";
 import { OrganizationTab } from "./organization-tab";
 
 interface OrganizationsPageClientProps {
+	organizationProfile: OrganizationProfile;
 	trackingSuggestedAt: string;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
@@ -18,6 +20,7 @@ interface OrganizationsPageClientProps {
 }
 
 export function OrganizationsPageClient({
+	organizationProfile,
 	trackingSuggestedAt,
 	organization,
 	memberCount,
@@ -43,6 +46,7 @@ export function OrganizationsPageClient({
 				</div>
 
 				<OrganizationTab
+					organizationProfile={organizationProfile}
 					trackingSuggestedAt={trackingSuggestedAt}
 					organization={organization}
 					memberCount={memberCount}

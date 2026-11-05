@@ -1,6 +1,8 @@
 # Organization profile and AVV
 
-Status: design confirmed. Implementation has not started.
+Status: profile persistence, authenticated settings actions and the organization-settings
+editor are implemented in #1566. AVV consumption and download readiness remain pending
+in #1567; AVV behavior is unchanged by the settings slice.
 
 Published specification: [GitHub issue #1563](https://github.com/Umami-Creative-GmbH/z8/issues/1563).
 
@@ -8,6 +10,25 @@ Implementation tickets:
 
 1. [Maintain the organization legal profile #1566](https://github.com/Umami-Creative-GmbH/z8/issues/1566).
 2. [Use the profile in AVV settings and downloads #1567](https://github.com/Umami-Creative-GmbH/z8/issues/1567), blocked by #1566.
+
+## Profile implementation
+
+- One optional `organization_profile` row belongs to each organization. An absent
+  row reads as eight empty strings; no existing metadata is backfilled.
+- Organization settings load and save through `getOrganizationProfile` and
+  `saveOrganizationProfile` in `settings/organizations/profile-actions.ts`. Both
+  require an approved, active owner/admin and reject any requested organization
+  ID that differs from the authenticated session's active organization.
+- Saves replace the eight profile fields only. Empty and partial profiles are
+  valid, with omitted fields saved as empty values. Text is trimmed, country and
+  VAT codes are uppercased, and supplied values have length/type/control-character
+  checks. VAT IDs use a two-letter
+  prefix followed by 2–14 letters or digits; this is a format check only.
+- The registered-address country is selected independently of operational
+  country/region. The profile has no billing deployment gate or Stripe writes.
+- Authenticated-action integration tests use disposable PostgreSQL and real
+  permissions, validation and tenant filtering. Form tests exercise editing,
+  accessible errors, pending state and save feedback.
 
 ## Confirmed scope
 
