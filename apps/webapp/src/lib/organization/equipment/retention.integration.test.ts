@@ -95,6 +95,9 @@ beforeAll(async () => {
 afterAll(clean);
 beforeEach(async () => {
 	transport.mail.mockClear();
+	await pool.query(
+		"update member set role=case when id='t1549-owner' then 'owner' else 'member' end,status='approved' where id in ('t1549-owner','t1549-manager')",
+	);
 	session.userId = "t1549-owner";
 	session.organizationId = "t1549-org";
 	clock.now = "2026-01-31T22:30:00Z";
@@ -869,4 +872,375 @@ it("keeps anonymous individual custody chronology when older retained assignment
 		success: true,
 		data: { ok: false, reason: "conflicting_history" },
 	});
+});
+
+it.each(["keep", "lost", "waived"])(
+	"receives purged %s custody with two independent live authorized staff and keeps personal history erased",
+	async (outcome) => {
+		await setup({
+			kind: "configure_policy",
+			retentionMonths: 1,
+			expectedRevision: 0,
+		});
+		const type = await setup({
+			kind: "create_type",
+			name: "Recoverable laptop",
+			trackingMode: "individual",
+			defaultReturnRequired: true,
+		});
+		const item = await setup({
+			kind: "register_item",
+			typeId: type.id,
+			identifier: "ANONYMOUS-RECEIPT",
+		});
+		const held = await command({
+			kind: "issue_individual",
+			itemId: item.id,
+			employeeId: holderId,
+			returnRequired: outcome !== "keep",
+			actualDate: "2026-01-31",
+			condition: "good",
+			notes: "Erase private holder note",
+			expectedRevision: 1,
+		});
+		if (outcome !== "keep")
+			await command({
+				kind: "close_return",
+				assignmentId: held.id,
+				quantity: 1,
+				outcome,
+				reason: "Erase private exception",
+				expectedRevision: 1,
+			});
+		clock.now = "2026-03-01T23:00:00Z";
+		const { runEquipmentRetentionJob } = await import(
+			"@/lib/jobs/equipment-retention"
+		);
+		expect((await runEquipmentRetentionJob()).deletedCount).toBe(1);
+		const overview = await actions.getEquipmentOverview();
+		if (!overview.success) throw new Error(JSON.stringify(overview));
+		const cleaned = overview.data.readinessItems.find((i) => i.id === item.id);
+		if (!cleaned) throw new Error("Missing anonymous item");
+		const proposal = {
+			kind: "propose_custody_receipt",
+			itemId: item.id,
+			requestId: crypto.randomUUID(),
+			expectedRevision: cleaned.revision,
+			actualDate: "2026-03-01",
+			condition: "damaged",
+		};
+		const proposed = await actions.changeEquipment(proposal);
+		expect(proposed).toMatchObject({ success: true, data: { ok: true } });
+		expect(await actions.changeEquipment(proposal)).toEqual(proposed);
+		const pending = await actions.getEquipmentOverview();
+		if (!pending.success) throw new Error(JSON.stringify(pending));
+		const current = pending.data.readinessItems.find((i) => i.id === item.id);
+		if (!current?.custodyReceipt) throw new Error("Missing receipt proposal");
+		expect(current).toMatchObject({
+			inCustody: true,
+			canClear: false,
+			custodyReceipt: {
+				actualDate: "2026-03-01",
+				condition: "damaged",
+				confirmedAt: null,
+				canConfirm: false,
+			},
+		});
+		const confirm = {
+			kind: "confirm_custody_receipt",
+			itemId: item.id,
+			proposalId: current.custodyReceipt?.id,
+			requestId: crypto.randomUUID(),
+			expectedRevision: current.revision,
+		};
+		expect(await actions.changeEquipment(confirm)).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "self_receipt" },
+		});
+		await pool.query("update member set role='admin' where id='t1549-manager'");
+		session.userId = "t1549-manager";
+		expect(await actions.changeEquipment(confirm)).toMatchObject({
+			success: true,
+			data: { ok: true },
+		});
+		expect(await actions.changeEquipment(confirm)).toMatchObject({
+			success: true,
+			data: { ok: true },
+		});
+		expect((await view()).assignments).toEqual([]);
+		const received = await actions.getEquipmentOverview();
+		if (!received.success) throw new Error(JSON.stringify(received));
+		const ready = received.data.readinessItems.find((i) => i.id === item.id);
+		if (!ready) throw new Error("Missing received item");
+		expect(ready).toMatchObject({
+			inCustody: false,
+			status: "unavailable",
+			canClear: true,
+			custodyReceipt: {
+				condition: "damaged",
+				actualDate: "2026-03-01",
+				proposedBy: "t1549-owner",
+				confirmedBy: "t1549-manager",
+				confirmedAt: expect.any(String),
+			},
+		});
+		const reissue = {
+			kind: "issue_individual",
+			itemId: item.id,
+			employeeId: holderId,
+			returnRequired: true,
+			actualDate: "2026-03-01",
+			condition: "good",
+			expectedRevision: ready.revision,
+			requestId: crypto.randomUUID(),
+		};
+		expect(await actions.changeEquipment(reissue)).toMatchObject({
+			success: true,
+			data: { ok: false, reason: "item_unavailable" },
+		});
+		await command({
+			kind: "clear_item",
+			itemId: item.id,
+			expectedRevision: ready.revision,
+		});
+		expect(
+			await actions.changeEquipment({
+				...reissue,
+				expectedRevision: ready.revision + 1,
+			}),
+		).toMatchObject({ success: true, data: { ok: true } });
+		await pool.query(
+			"update member set role='member' where id='t1549-manager'",
+		);
+	},
+);
+
+async function purgedCustody() {
+	await setup({
+		kind: "configure_policy",
+		retentionMonths: 1,
+		expectedRevision: 0,
+	});
+	const type = await setup({
+		kind: "create_type",
+		name: "Late recovery",
+		trackingMode: "individual",
+		defaultReturnRequired: false,
+	});
+	const item = await setup({
+		kind: "register_item",
+		typeId: type.id,
+		identifier: "LATE-RECOVERY",
+	});
+	const held = await command({
+		kind: "issue_individual",
+		itemId: item.id,
+		employeeId: holderId,
+		returnRequired: false,
+		actualDate: "2026-01-31",
+		condition: "good",
+		expectedRevision: 1,
+	});
+	// Anonymous receipt cannot bypass a surviving holder's ordinary receipt boundary.
+	expect(
+		await actions.changeEquipment({
+			kind: "propose_custody_receipt",
+			itemId: item.id,
+			requestId: crypto.randomUUID(),
+			expectedRevision: 2,
+			actualDate: "2026-01-31",
+			condition: "good",
+		}),
+	).toMatchObject({ success: true, data: { ok: false, reason: "forbidden" } });
+	clock.now = "2026-03-01T23:00:00Z";
+	const { runEquipmentRetentionJob } = await import(
+		"@/lib/jobs/equipment-retention"
+	);
+	expect((await runEquipmentRetentionJob()).deletedCount).toBe(1);
+	return { item, held };
+}
+async function custodyItem(id: string) {
+	const r = await actions.getEquipmentOverview();
+	if (!r.success) throw new Error(JSON.stringify(r));
+	const item = r.data.readinessItems.find((i) => i.id === id);
+	if (!item) throw new Error("Missing custody item");
+	return item;
+}
+it("keeps anonymous receipts organization-wide, live-authorized, dated and serialized with reissue", async () => {
+	const { item } = await purgedCustody();
+	const propose = {
+		kind: "propose_custody_receipt",
+		itemId: item.id,
+		requestId: crypto.randomUUID(),
+		expectedRevision: 2,
+		actualDate: "2026-03-01",
+		condition: "good",
+	};
+	expect(
+		await actions.changeEquipment({ ...propose, actualDate: "2026-03-03" }),
+	).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "future_date" },
+	});
+	expect(
+		await actions.changeEquipment({ ...propose, actualDate: "2026-01-30" }),
+	).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "conflicting_history" },
+	});
+	session.userId = "t1549-manager";
+	expect(await actions.changeEquipment(propose)).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "forbidden" },
+	});
+	session.userId = "t1549-owner";
+	await command(propose);
+	const proposal = (await custodyItem(item.id)).custodyReceipt;
+	if (!proposal) throw new Error("Missing proposal");
+	const confirm = {
+		kind: "confirm_custody_receipt",
+		itemId: item.id,
+		proposalId: proposal.id,
+		requestId: crypto.randomUUID(),
+		expectedRevision: 3,
+	};
+	session.organizationId = "t1549-other";
+	session.userId = "t1549-foreign";
+	expect(await actions.changeEquipment(confirm)).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "not_found" },
+	});
+	session.organizationId = "t1549-org";
+	session.userId = "t1549-manager";
+	await pool.query(
+		"update member set role='admin',status='pending' where id='t1549-manager'",
+	);
+	expect(await actions.changeEquipment(confirm)).toMatchObject({
+		success: false,
+		code: "AuthorizationError",
+	});
+	await pool.query(
+		"update member set status='approved' where id='t1549-manager'",
+	);
+	await pool.query("update member set role='owner' where id='t1549-manager'");
+	await pool.query("update member set role='member' where id='t1549-owner'");
+	expect(await actions.changeEquipment(confirm)).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "forbidden" },
+	});
+	await pool.query("update member set role='owner' where id='t1549-owner'");
+	expect(
+		await actions.changeEquipment({ ...confirm, expectedRevision: 2 }),
+	).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "stale_revision" },
+	});
+	const retry = { ...confirm, requestId: crypto.randomUUID() };
+	const [one, two, issue] = await Promise.all([
+		actions.changeEquipment(confirm),
+		actions.changeEquipment(retry),
+		actions.changeEquipment({
+			kind: "issue_individual",
+			requestId: crypto.randomUUID(),
+			itemId: item.id,
+			employeeId: holderId,
+			expectedRevision: 4,
+			actualDate: "2026-03-01",
+			condition: "good",
+			returnRequired: true,
+		}),
+	]);
+	expect([one, two].filter((r) => r.success && r.data.ok)).toHaveLength(1);
+	expect([one, two].filter((r) => r.success && !r.data.ok)).toHaveLength(1);
+	expect(issue.success).toBe(true);
+	const overview = await actions.getEquipmentOverview();
+	if (!overview.success) throw new Error(JSON.stringify(overview));
+	expect(
+		overview.data.assignments.filter((a) => a.itemId === item.id).length,
+	).toBeLessThanOrEqual(1);
+	await pool.query("update member set role='member' where id='t1549-manager'");
+	expect(
+		await actions.changeEquipment(one.success && one.data.ok ? confirm : retry),
+	).toMatchObject({ success: true, data: { ok: false, reason: "forbidden" } });
+});
+it("expires receipt actors and pending proposals without releasing custody or reviving history", async () => {
+	const { item } = await purgedCustody();
+	await command({
+		kind: "propose_custody_receipt",
+		itemId: item.id,
+		expectedRevision: 2,
+		actualDate: "2026-03-01",
+		condition: "worn",
+	});
+	clock.now = "2026-04-03T00:00:00Z";
+	const { runEquipmentRetentionJob } = await import(
+		"@/lib/jobs/equipment-retention"
+	);
+	await runEquipmentRetentionJob();
+	expect(await custodyItem(item.id)).toMatchObject({
+		inCustody: true,
+		canProposeCustodyReceipt: true,
+		custodyReceipt: undefined,
+	});
+	await command({
+		kind: "propose_custody_receipt",
+		itemId: item.id,
+		expectedRevision: 3,
+		actualDate: "2026-04-01",
+		condition: "good",
+	});
+	const pending = await custodyItem(item.id);
+	await pool.query("update member set role='admin' where id='t1549-manager'");
+	session.userId = "t1549-manager";
+	await command({
+		kind: "confirm_custody_receipt",
+		itemId: item.id,
+		proposalId: pending.custodyReceipt?.id,
+		expectedRevision: 4,
+	});
+	clock.now = "2026-05-04T00:00:00Z";
+	await runEquipmentRetentionJob();
+	expect(await custodyItem(item.id)).toMatchObject({
+		inCustody: false,
+		custodyReceipt: undefined,
+	});
+	expect((await view()).assignments).toEqual([]);
+	await pool.query("update member set role='member' where id='t1549-manager'");
+});
+it("receives retired anonymous custody without restoring readiness", async () => {
+	const { item } = await purgedCustody();
+	await command({ kind: "retire_item", itemId: item.id, expectedRevision: 2 });
+	await command({
+		kind: "propose_custody_receipt",
+		itemId: item.id,
+		expectedRevision: 3,
+		actualDate: "2026-03-01",
+		condition: "good",
+	});
+	const pending = await custodyItem(item.id);
+	await pool.query("update member set role='admin' where id='t1549-manager'");
+	session.userId = "t1549-manager";
+	await command({
+		kind: "confirm_custody_receipt",
+		itemId: item.id,
+		proposalId: pending.custodyReceipt?.id,
+		expectedRevision: 4,
+	});
+	expect(await custodyItem(item.id)).toMatchObject({
+		inCustody: false,
+		status: "retired",
+		canClear: false,
+	});
+	expect(
+		await actions.changeEquipment({
+			kind: "clear_item",
+			itemId: item.id,
+			expectedRevision: 5,
+			requestId: crypto.randomUUID(),
+		}),
+	).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "item_retired" },
+	});
+	await pool.query("update member set role='member' where id='t1549-manager'");
 });

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
 import {
@@ -34,7 +34,7 @@ import {
 	type NotificationChannel,
 } from "@/lib/notifications/types";
 import {
-	equipmentSubjectScope,
+	equipmentAssignmentScope,
 	equipmentWorkerAccess,
 	lockEquipmentContext,
 } from "./access";
@@ -117,7 +117,7 @@ type Occasion = NonNullable<Awaited<ReturnType<typeof readOccasion>>>;
 async function staffRecipients(
 	tx: EquipmentTransaction,
 	organizationId: string,
-	subjectId: string,
+	assignmentId: string,
 	now: Instant,
 ) {
 	const candidates = await tx
@@ -155,19 +155,20 @@ async function staffRecipients(
 			);
 		if (!grant) continue;
 		const [covered] = await tx
-			.select({ id: employee.id })
-			.from(employee)
+			.select({ id: equipmentAssignment.id })
+			.from(equipmentAssignment)
 			.where(
 				and(
-					eq(employee.organizationId, organizationId),
-					eq(employee.id, subjectId),
-					equipmentSubjectScope(
+					eq(equipmentAssignment.organizationId, organizationId),
+					eq(equipmentAssignment.id, assignmentId),
+					equipmentAssignmentScope(
 						{
 							...access,
 							all: grant.scope === "all",
 							teamIds: grant.teamIds,
 							employeeIds: grant.employeeIds,
 						},
+						sql`equipment_assignment`,
 						now,
 					),
 				),
@@ -187,7 +188,7 @@ async function recipientAllowed(
 			await staffRecipients(
 				tx,
 				occasion.assignment.organizationId,
-				occasion.subject.id,
+				occasion.assignment.id,
 				now,
 			)
 		).includes(recipientUserId);
@@ -373,7 +374,12 @@ export async function runEquipmentReminders(clock: Clock) {
 			if (!occasion) return [];
 			return occasion.audience === "employee"
 				? [subject.userId]
-				: staffRecipients(tx, organizationId, subject.id, clock.nowInstant());
+				: staffRecipients(
+						tx,
+						organizationId,
+						assignment.id,
+						clock.nowInstant(),
+					);
 		});
 		for (const userId of candidates)
 			await db.transaction(async (tx) => {

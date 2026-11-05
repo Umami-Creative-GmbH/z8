@@ -21,7 +21,10 @@ import {
 	effectiveException,
 	effectiveHandover,
 } from "@/lib/organization/equipment/corrections";
-import { effectiveEquipmentDeadline } from "@/lib/organization/equipment/deadlines";
+import {
+	effectiveEquipmentDeadline,
+	outstandingEquipmentQuantity,
+} from "@/lib/organization/equipment/deadlines";
 import { type PersonalDataCollector, tablePart } from "../collector";
 import { instantText, jsonText, loadSubjectEmployee } from "../values";
 import { equipmentFieldGuide } from "./equipment-fields";
@@ -312,13 +315,7 @@ export const equipmentCollector: PersonalDataCollector = {
 									lost_quantity: a.lostQuantity,
 									waived_quantity: a.waivedQuantity,
 									exception_received_quantity: a.exceptionReceivedQuantity,
-									outstanding_quantity: a.returnRequired
-										? a.quantity -
-											a.receivedQuantity -
-											a.lostQuantity -
-											a.waivedQuantity +
-											a.exceptionReceivedQuantity
-										: 0,
+									outstanding_quantity: outstandingEquipmentQuantity(a),
 									explicit_deadline: a.explicitDeadline,
 									departure_deadline: a.departureDeadline,
 									effective_deadline: effectiveEquipmentDeadline(

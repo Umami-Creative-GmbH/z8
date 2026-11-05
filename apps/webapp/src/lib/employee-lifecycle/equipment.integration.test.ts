@@ -126,7 +126,7 @@ async function issue(
 		expectedRevision: 1,
 		returnRequired: true,
 		explicitDeadline,
-		actualDate: "2026-10-20",
+		actualDate: context.now.slice(0, 10),
 		condition: "good",
 	});
 	if (!result.success || !result.data.ok)
@@ -721,7 +721,7 @@ it("historical holdings entered after departure retain that original employment'
 	);
 	expect(rows.find((a) => !a.returnRequired)).toMatchObject({
 		employmentPeriodId: target.employmentPeriodId,
-		departureId: null,
+		departureId: departure.departureId,
 		departureDeadline: null,
 		effectiveDeadline: null,
 		outstandingQuantity: 0,

@@ -208,6 +208,7 @@ function useIssueEquipmentForm({
 			...handoverDefaults,
 			unknownDate: false,
 			employmentPeriodId: "",
+			endingContext: "",
 			itemId: "",
 			typeId: "",
 			identifier: "",
@@ -243,6 +244,9 @@ function useIssueEquipmentForm({
 			if (mode === "historical") {
 				const evidence = {
 					...common,
+					...(value.endingContext
+						? { endingContext: value.endingContext }
+						: {}),
 					actualDate: value.unknownDate ? null : value.actualDate,
 					...(value.employmentPeriodId
 						? { employmentPeriodId: value.employmentPeriodId }
@@ -979,6 +983,7 @@ function IssueSubjectField({
 								onChange={(e) => {
 									field.handleChange(e.target.value);
 									form.setFieldValue("employmentPeriodId", "");
+									form.setFieldValue("endingContext", "");
 								}}
 								onBlur={field.handleBlur}
 								disabled={!!employeeId}
@@ -996,7 +1001,9 @@ function IssueSubjectField({
 								</option>
 								{data.employees
 									.filter(
-										(employee) => mode === "historical" || !employee.former,
+										(employee) =>
+											mode === "historical" ||
+											(!employee.former && employee.canIssue !== false),
 									)
 									.map((employee) => (
 										<option key={employee.id} value={employee.id}>
@@ -1082,6 +1089,89 @@ function IssueDateFields({
 															)}{" "}
 														–{" "}
 														{period.endedOn ??
+															t(
+																"settings.equipment.historical.periodOpen",
+																"Current period",
+															)}
+													</option>
+												))}
+											</select>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						) : null;
+					}}
+				</form.Subscribe>
+			) : null}
+			{mode === "historical" ? (
+				<form.Subscribe
+					selector={(state) => ({
+						employeeId: state.values.employeeId,
+						periodId: state.values.employmentPeriodId,
+						unknownDate: state.values.unknownDate,
+					})}
+				>
+					{({ employeeId, periodId, unknownDate }) => {
+						const contexts = (data.historicalContexts ?? []).filter(
+							(c) =>
+								c.employeeId === employeeId &&
+								(!periodId || c.employmentPeriodId === periodId),
+						);
+						return contexts.length > 1 ||
+							(unknownDate && contexts.length > 0) ? (
+							<form.Field
+								name="endingContext"
+								validators={{
+									onSubmit: ({ value }) =>
+										unknownDate && !value
+											? t(
+													"settings.equipment.historical.contextRequired",
+													"Select the original ending or current employment context.",
+												)
+											: undefined,
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<TFormLabel>
+											{t(
+												"settings.equipment.historical.context",
+												"Original ending or current context",
+											)}
+										</TFormLabel>
+										<TFormControl hasError={field.state.meta.errors.length > 0}>
+											<select
+												className={equipmentSelectClass}
+												name={field.name}
+												value={field.state.value}
+												disabled={pending}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												aria-label={t(
+													"settings.equipment.historical.context",
+													"Original ending or current context",
+												)}
+											>
+												<option value="">
+													{t(
+														"settings.equipment.historical.contextAutomatic",
+														"Use known handover date, or select context…",
+													)}
+												</option>
+												{contexts.map((c) => (
+													<option
+														key={`${c.employmentPeriodId}:${c.id}`}
+														value={c.id}
+													>
+														{c.startedOn ??
+															t(
+																"settings.equipment.historical.startUnknown",
+																"Start unknown",
+															)}{" "}
+														–{" "}
+														{c.endedOn ??
 															t(
 																"settings.equipment.historical.periodOpen",
 																"Current period",

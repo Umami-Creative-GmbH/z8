@@ -1,7 +1,8 @@
 import "server-only";
-import { and, asc, eq, inArray, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import {
+	equipmentCustodyReceipt,
 	equipmentItem,
 	equipmentItemReadinessEvent,
 	equipmentType,
@@ -72,11 +73,14 @@ export async function readItemReadiness(
 	tx: EquipmentTransaction,
 	organizationId: string,
 	itemScope?: SQL<boolean>,
+	actorUserId?: string,
+	wholeOrganization = false,
 ): Promise<EquipmentReadinessItemView[]> {
 	const items = await tx
 		.select({
 			item: equipmentItem,
 			typeName: equipmentType.name,
+			anonymousHeld: sql<boolean>`not exists(select 1 from equipment_assignment a where a.organization_id=${equipmentItem.organizationId} and a.item_id=${equipmentItem.id} and not a.received)`,
 			personalHistoryCleaned: sql<boolean>`exists (select 1 from equipment_item_custody_history h where h.organization_id=${equipmentItem.organizationId} and h.item_id=${equipmentItem.id})`,
 		})
 		.from(equipmentItem)
@@ -117,21 +121,91 @@ export async function readItemReadiness(
 		});
 		history.set(event.itemId, entries);
 	}
-	return items.map(({ item, typeName, personalHistoryCleaned }) => ({
-		personalHistoryCleaned,
-		id: item.id,
-		typeId: item.typeId,
-		typeName,
-		identifier: item.identifier,
-		serialNumber: item.serialNumber,
-		status: item.status,
-		inCustody: item.inCustody,
-		archived: !!item.archivedAt,
-		revision: item.revision,
-		canClear:
-			!item.archivedAt && !item.inCustody && item.status === "unavailable",
-		canMarkUnavailable: !item.archivedAt && item.status === "available",
-		canRetire: !item.archivedAt && item.status !== "retired",
-		history: history.get(item.id) ?? [],
-	}));
+	const receipts =
+		items.length && wholeOrganization
+			? await tx
+					.select()
+					.from(equipmentCustodyReceipt)
+					.where(
+						and(
+							eq(equipmentCustodyReceipt.organizationId, organizationId),
+							inArray(
+								equipmentCustodyReceipt.itemId,
+								items.map(({ item }) => item.id),
+							),
+						),
+					)
+					.orderBy(desc(equipmentCustodyReceipt.itemRevision))
+			: [];
+	const receiptActorIds = [
+		...new Set(
+			receipts
+				.flatMap((r) => [r.proposedBy, r.confirmedBy])
+				.filter((id): id is string => !!id),
+		),
+	];
+	const receiptActors = receiptActorIds.length
+		? await tx
+				.select({ id: user.id, name: user.name })
+				.from(user)
+				.where(inArray(user.id, receiptActorIds))
+		: [];
+	const actorNames = new Map(
+		receiptActors.map((actor) => [actor.id, actor.name]),
+	);
+	return items.map(
+		({ item, typeName, personalHistoryCleaned, anonymousHeld }) => {
+			const receipt = receipts.find(
+				(r) =>
+					r.itemId === item.id &&
+					(r.confirmedAt || r.itemRevision === item.revision),
+			);
+			return {
+				canProposeCustodyReceipt:
+					wholeOrganization &&
+					item.inCustody &&
+					personalHistoryCleaned &&
+					anonymousHeld,
+				custodyReceipt: receipt
+					? {
+							id: receipt.id,
+							actualDate: receipt.actualDate,
+							condition: receipt.condition,
+							proposedBy: receipt.proposedBy,
+							proposedByName: receipt.proposedBy
+								? (actorNames.get(receipt.proposedBy) ?? null)
+								: null,
+							confirmedByName: receipt.confirmedBy
+								? (actorNames.get(receipt.confirmedBy) ?? null)
+								: null,
+							proposedAt: instantFromDate(receipt.proposedAt).toString(),
+							confirmedBy: receipt.confirmedBy,
+							confirmedAt: receipt.confirmedAt
+								? instantFromDate(receipt.confirmedAt).toString()
+								: null,
+							canConfirm:
+								!receipt.confirmedAt &&
+								!!receipt.proposedBy &&
+								receipt.proposedBy !== actorUserId &&
+								item.inCustody,
+						}
+					: undefined,
+				personalHistoryCleaned,
+				id: item.id,
+				typeId: item.typeId,
+				typeName,
+				identifier: item.identifier,
+				serialNumber: item.serialNumber,
+				status: item.status,
+				inCustody: item.inCustody,
+				archived: !!item.archivedAt,
+				revision: item.revision,
+				canClear:
+					!item.archivedAt && !item.inCustody && item.status === "unavailable",
+				canMarkUnavailable: !item.archivedAt && item.status === "available",
+				canRetire: !item.archivedAt && item.status !== "retired",
+				history: history.get(item.id) ?? [],
+			};
+		},
+	);
 }

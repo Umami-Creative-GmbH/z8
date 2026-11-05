@@ -114,7 +114,7 @@ async function issue(employeeId: string, explicitDeadline: string | null = null)
 		expectedRevision: 1,
 		returnRequired: true,
 		explicitDeadline,
-		actualDate: "2026-10-20",
+		actualDate: context.now.slice(0, 10),
 		condition: "good",
 	});
 	if (!result.success || !result.data.ok) throw new Error(JSON.stringify(result));
@@ -671,4 +671,307 @@ it("deactivation summaries distinguish lost, waived and recovered quantities fro
 			recoveredQuantity: 1,
 		},
 	]);
+});
+
+it("keeps former team authority on each ending across a reopened period and second departure", async () => {
+	const target = await fixture.seedEmployee();
+	const officer = await fixture.seedEmployee();
+	const teamA = randomUUID(),
+		teamB = randomUUID();
+	for (const id of [teamA, teamB])
+		await fixture.pool.query(
+			"insert into team(id,organization_id,name,updated_at) values($1,$2,'Returns',now())",
+			[id, context.organizationId],
+		);
+	await fixture.pool.query("update employee set team_id=$1 where id=$2", [
+		teamA,
+		target.employeeId,
+	]);
+	expect(
+		await actions.changeEquipmentOfficerGrant({
+			kind: "set_officer_grant",
+			requestId: randomUUID(),
+			expectedRevision: 0,
+			employeeId: officer.employeeId,
+			scope: "selected",
+			teamIds: [teamA],
+			employeeIds: [],
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	const old = await issue(target.employeeId);
+	expect(await deactivate(target.employeeId)).toMatchObject({ success: true });
+	context.now = "2026-10-21T08:00:00Z";
+	expect(await reactivateEmployeeAction(target.employeeId)).toMatchObject({
+		success: true,
+	});
+	await fixture.pool.query("update employee set team_id=$1 where id=$2", [
+		teamB,
+		target.employeeId,
+	]);
+	const freshType = await setup({
+		kind: "create_type",
+		name: "B shirts",
+		trackingMode: "quantity",
+		defaultReturnRequired: true,
+	});
+	const freshResult = await actions.changeEquipment({
+		kind: "issue_quantity",
+		requestId: randomUUID(),
+		employeeId: target.employeeId,
+		typeId: freshType.id,
+		quantity: 3,
+		expectedRevision: 1,
+		returnRequired: true,
+		actualDate: "2026-10-21",
+		condition: "good",
+	});
+	if (!freshResult.success || !freshResult.data.ok)
+		throw new Error(JSON.stringify(freshResult));
+	const fresh = freshResult.data;
+	context.userId = officer.userId;
+	expect((await equipment(target.employeeId)).map((a) => a.id)).toEqual([
+		old.id,
+	]);
+	const reactivatedView = await actions.getEmployeeEquipment(target.employeeId);
+	if (!reactivatedView.success)
+		throw new Error(JSON.stringify(reactivatedView));
+	expect(
+		reactivatedView.data.employees.find((e) => e.id === target.employeeId),
+	).toMatchObject({ former: false, canIssue: false });
+
+	const oldView = (await equipment(target.employeeId))[0];
+	expect(
+		await actions.changeEquipment({
+			kind: "issue_quantity",
+			requestId: randomUUID(),
+			employeeId: target.employeeId,
+			typeId: oldView.typeId,
+			expectedRevision: 2,
+			quantity: 1,
+			actualDate: "2026-10-21",
+			condition: "good",
+			returnRequired: true,
+		}),
+	).toMatchObject({ success: true, data: { ok: false, reason: "forbidden" } });
+	context.userId = fixture.ownerUserId;
+	context.now = "2026-10-22T08:00:00Z";
+	expect(await deactivate(target.employeeId)).toMatchObject({ success: true });
+	context.userId = officer.userId;
+	expect((await equipment(target.employeeId)).map((a) => a.id)).toEqual([
+		old.id,
+	]);
+	const denied = {
+		kind: "receive_quantity",
+		requestId: randomUUID(),
+		assignmentId: fresh.id,
+		expectedRevision: 2,
+		quantity: 1,
+		actualDate: "2026-10-22",
+		condition: "good",
+	};
+	expect(await actions.changeEquipment(denied)).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "forbidden" },
+	});
+	const scopedView = await actions.getEmployeeEquipment(target.employeeId);
+	if (!scopedView.success) throw new Error(JSON.stringify(scopedView));
+	expect(scopedView.data.historicalContexts?.map((c) => c.id)).toEqual([
+		(await equipment(target.employeeId))[0].deactivationId,
+	]);
+	expect(
+		await actions.changeEquipment({
+			kind: "correct_issue",
+			requestId: randomUUID(),
+			assignmentId: fresh.id,
+			expectedRevision: 2,
+			quantity: 3,
+			actualDate: "2026-10-20",
+			condition: "good",
+			returnRequired: true,
+			explicitDeadline: null,
+			employmentPeriodId: target.employmentPeriodId,
+			reason: "Try B correction",
+			notes: "",
+		}),
+	).toMatchObject({ success: true, data: { ok: false, reason: "forbidden" } });
+	expect(
+		await actions.changeEquipment({
+			kind: "record_historical_quantity",
+			requestId: randomUUID(),
+			employeeId: target.employeeId,
+			employmentPeriodId: target.employmentPeriodId,
+			typeId: (await equipment(target.employeeId))[0].typeId,
+			expectedRevision: 2,
+			quantity: 1,
+			actualDate: null,
+			endingContext: "current",
+			condition: "unknown",
+			returnRequired: true,
+		}),
+	).toMatchObject({ success: true, data: { ok: false } });
+	const retained = (await equipment(target.employeeId))[0];
+	expect(
+		await actions.changeEquipment({
+			...denied,
+			requestId: randomUUID(),
+			assignmentId: old.id,
+			expectedRevision: retained.revision,
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	const followup = await actions.changeEquipment({
+		kind: "record_historical_quantity",
+		requestId: randomUUID(),
+		employeeId: target.employeeId,
+		employmentPeriodId: target.employmentPeriodId,
+		typeId: retained.typeId,
+		expectedRevision: 2,
+		quantity: 1,
+		actualDate: null,
+		endingContext: retained.deactivationId,
+		condition: "unknown",
+		returnRequired: false,
+	});
+	expect(followup).toMatchObject({ success: true, data: { ok: true } });
+	context.userId = fixture.ownerUserId;
+	await actions.changeEquipmentOfficerGrant({
+		kind: "set_officer_grant",
+		requestId: randomUUID(),
+		employeeId: officer.employeeId,
+		expectedRevision: 1,
+		scope: "selected",
+		teamIds: [],
+		employeeIds: [target.employeeId],
+	});
+	context.userId = officer.userId;
+	expect((await equipment(target.employeeId)).map((a) => a.id)).toContain(
+		fresh.id,
+	);
+	context.userId = fixture.ownerUserId;
+	await actions.changeEquipmentOfficerGrant({
+		kind: "revoke_officer_grant",
+		requestId: randomUUID(),
+		employeeId: officer.employeeId,
+		expectedRevision: 2,
+	});
+	context.userId = officer.userId;
+	expect(await actions.changeEquipment(denied)).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "forbidden" },
+	});
+});
+
+it("selects original historical ending by handover chronology after reactivation and requires unknown context", async () => {
+	const target = await fixture.seedEmployee();
+	expect(await deactivate(target.employeeId)).toMatchObject({ success: true });
+	context.now = "2026-10-22T08:00:00Z";
+	expect(await reactivateEmployeeAction(target.employeeId)).toMatchObject({
+		success: true,
+	});
+	const departure = await schedule(target.employeeId, "2026-10-28");
+	if (!("departureId" in departure)) throw new Error(JSON.stringify(departure));
+	const type = await setup({
+		kind: "create_type",
+		name: "Historical shirts",
+		trackingMode: "quantity",
+		defaultReturnRequired: true,
+	});
+	const record = (
+		actualDate: string | null,
+		extra: Record<string, unknown> = {},
+	) =>
+		actions.changeEquipment({
+			kind: "record_historical_quantity",
+			requestId: randomUUID(),
+			employeeId: target.employeeId,
+			employmentPeriodId: target.employmentPeriodId,
+			typeId: type.id,
+			quantity: 1,
+			expectedRevision: 2,
+			actualDate,
+			condition: "unknown",
+			returnRequired: true,
+			...extra,
+		});
+	// First use marks the type used, later commands use its next revision.
+	expect(await record("2026-10-19", { expectedRevision: 1 })).toMatchObject({
+		success: true,
+		data: { ok: true },
+	});
+	const old = (await equipment(target.employeeId))[0];
+	expect(old).toMatchObject({
+		effectiveDeadline: "2026-10-20",
+		departureId: null,
+		deactivationId: expect.any(String),
+	});
+	expect(await record("2026-10-22")).toMatchObject({
+		success: true,
+		data: { ok: true },
+	});
+	expect(await record(null)).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "conflicting_history" },
+	});
+	expect(
+		await record(null, { endingContext: old.deactivationId }),
+	).toMatchObject({ success: true, data: { ok: true } });
+	expect(await record(null, { endingContext: "current" })).toMatchObject({
+		success: true,
+		data: { ok: true },
+	});
+	expect(
+		await record("2026-10-19", { endingContext: "current" }),
+	).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "conflicting_history" },
+	});
+	expect(
+		await record("2026-10-19", { explicitDeadline: "2026-10-19" }),
+	).toMatchObject({ success: true, data: { ok: true } });
+	const afterContext = (await equipment(target.employeeId)).find(
+		(a) => a.issue.actualDate === "2026-10-22",
+	);
+	if (!afterContext) throw new Error("Missing post-reactivation holding");
+	expect(
+		await actions.changeEquipment({
+			kind: "correct_issue",
+			requestId: randomUUID(),
+			assignmentId: afterContext.id,
+			expectedRevision: afterContext.revision,
+			quantity: 1,
+			actualDate: "2026-10-19",
+			condition: "unknown",
+			notes: "",
+			returnRequired: true,
+			explicitDeadline: null,
+			employmentPeriodId: target.employmentPeriodId,
+			reason: "Move across ending",
+		}),
+	).toMatchObject({
+		success: true,
+		data: { ok: false, reason: "conflicting_history" },
+	});
+
+	await commands().cancelDeparture(actor(), {
+		employeeId: target.employeeId,
+		departureId: departure.departureId,
+		expectedRevision: 1,
+		requestId: randomUUID(),
+	});
+	const history = await equipment(target.employeeId);
+	expect(
+		history.filter((a) => a.deactivationId === old.deactivationId),
+	).toHaveLength(3);
+	expect(
+		history
+			.filter((a) => a.deactivationId === old.deactivationId)
+			.every(
+				(a) => a.effectiveDeadline === (a.explicitDeadline ?? "2026-10-20"),
+			),
+	).toBe(true);
+	expect(
+		history
+			.filter((a) => !a.deactivationId)
+			.every((a) => a.effectiveDeadline === null),
+	).toBe(true);
+	expect(history.filter((a) => a.issue.actualDate === null)).toHaveLength(2);
 });

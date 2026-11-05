@@ -256,3 +256,110 @@ it("keeps personal history free of item management controls", () => {
 	).toBeNull();
 	expect(screen.queryByRole("button", { name: "Clear for issue" })).toBeNull();
 });
+
+it("proposes a dated anonymous custody receipt and displays independent confirmation status", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				readinessItems: [
+					{
+						...damaged,
+						inCustody: true,
+						canClear: false,
+						personalHistoryCleaned: true,
+						canProposeCustodyReceipt: true,
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Propose physical receipt" }),
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Record receipt proposal" }),
+	);
+	expect(
+		await screen.findByText("Enter the actual handover date."),
+	).toBeTruthy();
+	await user.type(screen.getByLabelText(/Actual handover date/), "2026-11-04");
+	await user.selectOptions(screen.getByLabelText("Condition"), "damaged");
+	await user.click(
+		screen.getByRole("button", { name: "Record receipt proposal" }),
+	);
+	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(1));
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "propose_custody_receipt",
+		itemId: damaged.id,
+		actualDate: "2026-11-04",
+		condition: "damaged",
+		expectedRevision: 3,
+	});
+	expect(await screen.findByRole("status")).toBeTruthy();
+});
+it("offers anonymous receipt confirmation only to an independent authorized actor", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	const receipt = {
+		id: "15410000-0000-4000-8000-000000000099",
+		actualDate: "2026-11-04",
+		condition: "damaged" as const,
+		proposedBy: "first",
+		proposedAt: "2026-11-04T12:00:00Z",
+		confirmedBy: null,
+		confirmedAt: null,
+		canConfirm: true,
+	};
+	const { rerender } = render(
+		<EquipmentOverview
+			data={{
+				...view,
+				readinessItems: [
+					{
+						...damaged,
+						inCustody: true,
+						canClear: false,
+						custodyReceipt: receipt,
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	expect(
+		screen.getByText(/A different authorized staff member must confirm/),
+	).toBeTruthy();
+	await user.click(
+		screen.getByRole("button", { name: "Confirm physical receipt" }),
+	);
+	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(1));
+	expect(api.change.mock.calls[0][0]).toMatchObject({
+		kind: "confirm_custody_receipt",
+		itemId: damaged.id,
+		proposalId: receipt.id,
+		expectedRevision: 3,
+	});
+	rerender(
+		<EquipmentOverview
+			data={{
+				...view,
+				readinessItems: [
+					{
+						...damaged,
+						inCustody: true,
+						canClear: false,
+						custodyReceipt: { ...receipt, canConfirm: false },
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	expect(
+		screen.queryByRole("button", { name: "Confirm physical receipt" }),
+	).toBeNull();
+});

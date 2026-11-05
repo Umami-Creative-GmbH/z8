@@ -8,6 +8,7 @@ import {
 	equipmentCaseHoldEvent,
 	equipmentCommand,
 	equipmentCommandAssignment,
+	equipmentCustodyReceipt,
 	equipmentHandover,
 	equipmentItem,
 	equipmentItemCustodyHistory,
@@ -275,6 +276,31 @@ export async function cleanupEquipmentHistory(
 						),
 					);
 		}
+		const custodyReceipts = await tx
+			.select()
+			.from(equipmentCustodyReceipt)
+			.where(
+				and(
+					eq(equipmentCustodyReceipt.organizationId, organizationId),
+					sql`not exists(select 1 from equipment_assignment a where a.organization_id=${organizationId} and a.item_id=${equipmentCustodyReceipt.itemId} and a.case_held)`,
+				),
+			);
+		for (const receipt of custodyReceipts) {
+			const end = expiry(
+				receipt.confirmedAt ?? receipt.proposedAt,
+				config.months,
+				timezone,
+			);
+			if (end && Temporal.Instant.compare(now, end) >= 0)
+				await tx
+					.delete(equipmentCustodyReceipt)
+					.where(
+						and(
+							eq(equipmentCustodyReceipt.organizationId, organizationId),
+							eq(equipmentCustodyReceipt.id, receipt.id),
+						),
+					);
+		}
 		// Availability commands point at the identity, rather than an assignment.
 		// Their original actor-bound digests also have a finite lifetime.
 		const itemCommands = await tx
@@ -316,15 +342,15 @@ export async function cleanupEquipmentHistory(
 		// Keep recent departure scope usable for historical completion. With no retained
 		// assignment it expires from capture, rather than becoming an indefinite orphan.
 		const formerScopes = await tx.execute<{
-			employee_id: string;
+			id: string;
 			captured_at: Date;
-		}>(sql`SELECT f.employee_id, f.captured_at FROM equipment_former_team_scope f WHERE f.organization_id=${organizationId}
- AND NOT EXISTS (SELECT 1 FROM equipment_assignment a WHERE a.organization_id=f.organization_id AND a.employee_id=f.employee_id)`);
+		}>(sql`SELECT f.id, f.captured_at FROM equipment_former_team_scope f WHERE f.organization_id=${organizationId}
+ AND NOT EXISTS (SELECT 1 FROM equipment_assignment a WHERE a.organization_id=f.organization_id AND a.employee_id=f.employee_id AND coalesce(a.deactivation_id,a.departure_id,a.employment_period_id) IS NOT DISTINCT FROM f.ending_id)`);
 		for (const scope of formerScopes.rows) {
 			const end = expiry(new Date(scope.captured_at), config.months, timezone);
 			if (end && Temporal.Instant.compare(now, end) >= 0)
 				await tx.execute(
-					sql`DELETE FROM equipment_former_team_scope WHERE organization_id=${organizationId} AND employee_id=${scope.employee_id}::uuid`,
+					sql`DELETE FROM equipment_former_team_scope WHERE organization_id=${organizationId} AND id=${scope.id}::uuid`,
 				);
 		}
 		return { deletedCount };

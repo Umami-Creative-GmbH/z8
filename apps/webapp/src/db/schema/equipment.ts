@@ -583,12 +583,16 @@ export const equipmentFormerTeamScope = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		id: uuid("id").primaryKey().defaultRandom(),
+		endingId: uuid("ending_id"),
 		employeeId: uuid("employee_id").notNull(),
 		teamIds: uuid("team_ids").array().notNull(),
 		capturedAt: timestamp("captured_at", { withTimezone: true }).notNull(),
 	},
 	(t) => [
-		primaryKey({ columns: [t.organizationId, t.employeeId] }),
+		unique("equipment_former_ending_unique")
+			.on(t.organizationId, t.employeeId, t.endingId)
+			.nullsNotDistinct(),
 		foreignKey({
 			columns: [t.employeeId, t.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
@@ -732,6 +736,50 @@ export const equipmentTransfer = pgTable(
 		check(
 			"equipment_transfer_distinct_check",
 			sql`${t.receiptId} <> ${t.issueId}`,
+		),
+	],
+);
+
+/** Finite receipt evidence for custody whose former holder has been erased. No subject/lineage/free text. */
+export const equipmentCustodyReceipt = pgTable(
+	"equipment_custody_receipt",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		itemId: uuid("item_id").notNull(),
+		itemRevision: integer("item_revision").notNull(),
+		actualDate: date("actual_date").notNull(),
+		condition: text("condition", {
+			enum: ["good", "worn", "damaged", "unknown"],
+		}).notNull(),
+		proposedBy: text("proposed_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		proposedAt: timestamp("proposed_at", { withTimezone: true }).notNull(),
+		confirmedBy: text("confirmed_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+	},
+	(t) => [
+		foreignKey({
+			columns: [t.itemId, t.organizationId],
+			foreignColumns: [equipmentItem.id, equipmentItem.organizationId],
+		}).onDelete("cascade"),
+		unique("equipment_custody_receipt_revision_unique").on(
+			t.organizationId,
+			t.itemId,
+			t.itemRevision,
+		),
+		check(
+			"equipment_custody_receipt_independent",
+			sql`${t.proposedBy} is null or ${t.confirmedBy} is null or ${t.proposedBy} <> ${t.confirmedBy}`,
+		),
+		check(
+			"equipment_custody_receipt_condition",
+			sql`${t.condition} in ('good','worn','damaged','unknown')`,
 		),
 	],
 );
