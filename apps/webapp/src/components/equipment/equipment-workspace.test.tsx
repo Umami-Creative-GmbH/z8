@@ -772,17 +772,108 @@ it("records known historical quantities for a scoped former subject with an inde
 });
 
 it("requires the original employment period for ambiguous historical holdings after rehire", async () => {
- const user = userEvent.setup();
- api.change.mockResolvedValue({ success: true, data: { ok: true } });
- const oldPeriod = "15370000-0000-4000-8000-000000000050";
- render(<EmployeeEquipment data={{ ...view, employmentPeriods: [ { id: oldPeriod, employeeId: view.employees[0].id, startedOn: "2025-01-01", endedOn: "2026-05-01" }, { id: "15370000-0000-4000-8000-000000000051", employeeId: view.employees[0].id, startedOn: "2026-10-01", endedOn: null } ] }} employeeId={view.employees[0].id} />);
- await user.click(screen.getByRole("button", { name: "Record existing holding" }));
- await user.selectOptions(screen.getByLabelText(/Equipment item/), view.availableItems[0].id);
- await user.click(screen.getByLabelText("Actual issue date is unknown"));
- await user.click(screen.getByRole("button", { name: "Save historical holding" }));
- expect(await screen.findByText("Select the original employment period.")).toBeTruthy();
- expect(api.change).not.toHaveBeenCalled();
- await user.selectOptions(screen.getByLabelText(/Original employment period/), oldPeriod);
- await user.click(screen.getByRole("button", { name: "Save historical holding" }));
- await waitFor(() => expect(api.change).toHaveBeenCalledWith(expect.objectContaining({ kind: "record_historical_individual", actualDate: null, employmentPeriodId: oldPeriod })));
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	const oldPeriod = "15370000-0000-4000-8000-000000000050";
+	render(
+		<EmployeeEquipment
+			data={{
+				...view,
+				employmentPeriods: [
+					{
+						id: oldPeriod,
+						employeeId: view.employees[0].id,
+						startedOn: "2025-01-01",
+						endedOn: "2026-05-01",
+					},
+					{
+						id: "15370000-0000-4000-8000-000000000051",
+						employeeId: view.employees[0].id,
+						startedOn: "2026-10-01",
+						endedOn: null,
+					},
+				],
+			}}
+			employeeId={view.employees[0].id}
+		/>,
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Record existing holding" }),
+	);
+	await user.selectOptions(
+		screen.getByLabelText(/Equipment item/),
+		view.availableItems[0].id,
+	);
+	await user.click(screen.getByLabelText("Actual issue date is unknown"));
+	await user.click(
+		screen.getByRole("button", { name: "Save historical holding" }),
+	);
+	expect(
+		await screen.findByText("Select the original employment period."),
+	).toBeTruthy();
+	expect(api.change).not.toHaveBeenCalled();
+	await user.selectOptions(
+		screen.getByLabelText(/Original employment period/),
+		oldPeriod,
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Save historical holding" }),
+	);
+	await waitFor(() =>
+		expect(api.change).toHaveBeenCalledWith(
+			expect.objectContaining({
+				kind: "record_historical_individual",
+				actualDate: null,
+				employmentPeriodId: oldPeriod,
+			}),
+		),
+	);
+});
+
+it("requires a dated physical receipt when the original historical issue date is unknown", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	render(
+		<EquipmentOverview
+			data={{
+				...view,
+				assignments: [
+					{
+						...heldAssignment,
+						issue: {
+							...heldAssignment.issue,
+							actualDate: null,
+							historical: true,
+						},
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Record receipt" }));
+	const receiptForm = screen
+		.getByLabelText(/Actual handover date/)
+		.closest("form");
+	if (!receiptForm) throw new Error("Receipt form is unavailable");
+	const save = within(receiptForm).getByRole("button", {
+		name: "Record receipt",
+	});
+
+	await user.click(save);
+	expect(
+		await screen.findByText("Enter the actual handover date."),
+	).toBeTruthy();
+	expect(screen.queryByLabelText("Actual issue date is unknown")).toBeNull();
+	await user.type(screen.getByLabelText(/Actual handover date/), "2026-11-04");
+	await user.click(save);
+	await waitFor(() =>
+		expect(api.change).toHaveBeenCalledWith(
+			expect.objectContaining({
+				kind: "receive_individual",
+				actualDate: "2026-11-04",
+				assignmentId: heldAssignment.id,
+			}),
+		),
+	);
 });

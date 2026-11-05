@@ -1,11 +1,21 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	inArray,
+	isNotNull,
+	isNull,
+	sql,
+} from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db as database } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import {
 	employee,
+	employeeDeactivation,
 	employeeDeparture,
 	employeeEmploymentPeriod,
 } from "@/db/schema";
@@ -474,6 +484,7 @@ async function performHandover(
 			.select({
 				userId: employee.userId,
 				current: employeeHasOrganizationAccess(now),
+				deactivatedAt: employee.deactivatedAt,
 			})
 			.from(employee)
 			.where(
@@ -617,10 +628,29 @@ async function performHandover(
 							eq(employeeDeparture.organizationId, actor.organizationId),
 							eq(employeeDeparture.employeeId, change.employeeId),
 							eq(employeeDeparture.employmentPeriodId, period.id),
-							eq(employeeDeparture.status, "pending"),
+							inArray(
+								employeeDeparture.status,
+								historical ? ["pending", "blocked", "effective"] : ["pending"],
+							),
 						),
 					)
 			: [];
+		const endingDeadline = departure
+			? equipmentDepartureDeadline(
+					instantFromDate(departure.cutoffAt),
+					departure.timezone,
+					departure.mode,
+				)
+			: historical
+				? await historicalEndingDeadline(
+						tx,
+						actor.organizationId,
+						change.employeeId,
+						period?.id ?? null,
+						timezone,
+						!period ? current.deactivatedAt : null,
+					)
+				: null;
 		const [assignment] = await tx
 			.insert(equipmentAssignment)
 			.values({
@@ -632,14 +662,7 @@ async function performHandover(
 				employmentPeriodId: period?.id ?? null,
 				returnRequired: change.returnRequired,
 				explicitDeadline: change.explicitDeadline ?? null,
-				departureDeadline:
-					change.returnRequired && departure
-						? equipmentDepartureDeadline(
-								instantFromDate(departure.cutoffAt),
-								departure.timezone,
-								departure.mode,
-							)
-						: null,
+				departureDeadline: change.returnRequired ? endingDeadline : null,
 				departureId: change.returnRequired ? (departure?.id ?? null) : null,
 			})
 			.returning();
@@ -820,6 +843,61 @@ async function performHandover(
 		revision: result.revision,
 	} as const;
 	return outcome;
+}
+
+/** Preserve the original ending date even when equipment is first entered after exit. */
+async function historicalEndingDeadline(
+	tx: EquipmentTransaction,
+	organizationId: string,
+	employeeId: string,
+	periodId: string | null,
+	timezone: string,
+	legacyDeactivatedAt: Date | null,
+): Promise<string | null> {
+	const periodScope = periodId
+		? eq(equipmentAssignment.employmentPeriodId, periodId)
+		: isNull(equipmentAssignment.employmentPeriodId);
+	const [existing] = await tx
+		.select({ deadline: equipmentAssignment.departureDeadline })
+		.from(equipmentAssignment)
+		.where(
+			and(
+				eq(equipmentAssignment.organizationId, organizationId),
+				eq(equipmentAssignment.employeeId, employeeId),
+				periodScope,
+				isNotNull(equipmentAssignment.departureDeadline),
+			),
+		)
+		.limit(1);
+	if (existing?.deadline) return existing.deadline;
+	const [deactivation] = await tx
+		.select({
+			at: employeeDeactivation.deactivatedAt,
+			plan: employeeDeactivation.plan,
+		})
+		.from(employeeDeactivation)
+		.where(
+			and(
+				eq(employeeDeactivation.organizationId, organizationId),
+				eq(employeeDeactivation.employeeId, employeeId),
+				periodId
+					? eq(employeeDeactivation.employmentPeriodId, periodId)
+					: isNull(employeeDeactivation.employmentPeriodId),
+			),
+		)
+		.orderBy(desc(employeeDeactivation.deactivatedAt))
+		.limit(1);
+	const at = deactivation?.at ?? legacyDeactivatedAt;
+	if (!at) return null;
+	const frozenTimezone =
+		typeof deactivation?.plan?.timeZone === "string"
+			? resolveOrganizationTimezone(deactivation.plan.timeZone).timezone
+			: timezone;
+	return equipmentDepartureDeadline(
+		instantFromDate(at),
+		frozenTimezone,
+		"immediate",
+	);
 }
 
 /** Staff overview, scoped employee history and self history share one permission/read model. */

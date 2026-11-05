@@ -115,7 +115,7 @@ beforeEach(async () => {
 		"delete from equipment_policy where organization_id='t1543-org'",
 	);
 	await pool.query(
-		"update employee set is_active=true where organization_id='t1543-org'",
+		"update employee set is_active=true, deactivated_at=null where organization_id='t1543-org'",
 	);
 	await pool.query("update member set role='admin' where id='t1543-admin'");
 });
@@ -655,4 +655,39 @@ it("refuses a known historical date after an employment period ended at organiza
 		success: true,
 		data: { ok: true },
 	});
+});
+
+it("uses recorded original deactivation timezone for historical return deadlines after the organization zone changed", async () => {
+	const type = await quantityType();
+	const period = "15430000-0000-4000-8000-000000000011";
+	await pool.query(
+		"insert into employee_employment_period(id,organization_id,employee_id,status,started_at,ended_at,start_provenance) values($1,'t1543-org',$2,'closed','2026-01-01T00:00Z','2026-10-30T22:30Z','recorded')",
+		[period, holderId],
+	);
+	await pool.query(
+		"insert into employee_deactivation(organization_id,employee_id,employment_period_id,deactivated_at,created_by,reason,request_id,request_fingerprint,plan) values('t1543-org',$1,$2,'2026-10-30T22:30Z','t1543-owner','employee_deactivated',$3,'historical-fixture',$4)",
+		[
+			holderId,
+			period,
+			crypto.randomUUID(),
+			JSON.stringify({ timeZone: "Pacific/Auckland" }),
+		],
+	);
+	await pool.query(
+		"update employee set is_active=false, deactivated_at='2026-10-30T22:30Z' where id=$1",
+		[holderId],
+	);
+	expect(await issue(type.id, { explicitDeadline: null })).toMatchObject({
+		success: true,
+		data: { ok: true },
+	});
+	expect((await overview()).assignments).toMatchObject([
+		{
+			employmentPeriodId: period,
+			departureId: null,
+			departureDeadline: "2026-10-31",
+			effectiveDeadline: "2026-10-31",
+			issue: { actualDate: null },
+		},
+	]);
 });

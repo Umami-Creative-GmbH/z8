@@ -339,3 +339,49 @@ it("hides transfer when receipt authority or an authorized current target is abs
 		screen.queryByRole("button", { name: "Transfer equipment" }),
 	).toBeNull();
 });
+
+it("records a dated transfer from an unknown-date historical holding without inventing its earlier issuance", async () => {
+	const user = userEvent.setup();
+	api.change.mockResolvedValue({ success: true, data: { ok: true } });
+	const source = transferView.assignments[0];
+	render(
+		<EquipmentOverview
+			data={{
+				...transferView,
+				assignments: [
+					{
+						...source,
+						issue: { ...source.issue, actualDate: null, historical: true },
+					},
+				],
+			}}
+			filters={{}}
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Transfer equipment" }));
+	const receipt = within(
+		screen.getByRole("group", { name: "Receipt from current holder" }),
+	);
+	const issue = within(screen.getByRole("group", { name: "New issuance" }));
+	await user.type(
+		receipt.getByLabelText(/^Actual handover date/),
+		"2026-11-03",
+	);
+	await user.selectOptions(
+		issue.getByLabelText(/^Current employee/),
+		transferView.employees[2].id,
+	);
+	await user.type(issue.getByLabelText(/^Actual handover date/), "2026-11-04");
+	await user.click(
+		screen.getByRole("button", { name: "Confirm receipt and issuance" }),
+	);
+	await waitFor(() =>
+		expect(api.change).toHaveBeenCalledWith(
+			expect.objectContaining({
+				kind: "transfer_equipment",
+				receipt: expect.objectContaining({ actualDate: "2026-11-03" }),
+				issue: expect.objectContaining({ actualDate: "2026-11-04" }),
+			}),
+		),
+	);
+});
