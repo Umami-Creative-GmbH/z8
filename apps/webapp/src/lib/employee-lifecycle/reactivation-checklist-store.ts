@@ -1,11 +1,7 @@
 import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { employeeDeactivation } from "@/db/schema/employee-lifecycle";
-import {
-	dateFromInstant,
-	instantFromDate,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { dateFromInstant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { DeactivationApplied } from "./deactivation/types";
 import {
@@ -43,20 +39,14 @@ export async function loadReactivationChecklist(
 				eq(employeeDeactivation.employeeId, input.employeeId),
 			),
 		)
-		.orderBy(
-			desc(employeeDeactivation.deactivatedAt),
-			desc(employeeDeactivation.createdAt),
-		)
+		.orderBy(desc(employeeDeactivation.deactivatedAt), desc(employeeDeactivation.createdAt))
 		.limit(1);
 	if (!latest?.reactivatedAt || latest.dismissedAt) return null;
 	const applied = appliedSchema.safeParse(latest.applied);
 	if (!applied.success) return null;
 	const plan = checklistPlanSchema.safeParse(latest.plan);
 
-	const timeZone = await loadOrganizationTimezone(
-		database,
-		input.organizationId,
-	);
+	const timeZone = await loadOrganizationTimezone(database, input.organizationId);
 	return {
 		deactivationId: latest.id,
 		employeeId: input.employeeId,

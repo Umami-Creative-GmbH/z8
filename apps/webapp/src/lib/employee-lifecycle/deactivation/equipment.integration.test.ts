@@ -2,13 +2,9 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
-import {
-	registerKioskFob,
-	resolveActiveKioskFob,
-} from "@/lib/time-tracking/kiosk/fob-store";
+import { registerKioskFob, resolveActiveKioskFob } from "@/lib/time-tracking/kiosk/fob-store";
 import { resolveEmployeeOrganizationAccess } from "../access";
 import { createDepartureCommands } from "../commands";
-import { previewEmployeeDeparture } from "../queries";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -22,9 +18,7 @@ const context = vi.hoisted(() => ({
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/cache", async (original) =>
 	(await import("@/test/integration-harness")).nextCache(original),
 );
@@ -43,8 +37,7 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 vi.mock("@/lib/datetime/temporal-core", async (original) => {
-	const actual =
-		await original<typeof import("@/lib/datetime/temporal-core")>();
+	const actual = await original<typeof import("@/lib/datetime/temporal-core")>();
 	return {
 		...actual,
 		systemClock: { nowInstant: () => actual.parseInstant(context.now) },
@@ -56,10 +49,9 @@ beforeAll(async () => {
 	fixture = await createLifecycleDatabaseFixture();
 	context.userId = fixture.ownerUserId;
 	context.organizationId = fixture.organizationId;
-	await fixture.pool.query(
-		"update organization set timezone='Europe/Berlin' where id=$1",
-		[context.organizationId],
-	);
+	await fixture.pool.query("update organization set timezone='Europe/Berlin' where id=$1", [
+		context.organizationId,
+	]);
 	await setup({
 		kind: "configure_policy",
 		expectedRevision: 0,
@@ -103,14 +95,10 @@ async function setup(input: Record<string, unknown>) {
 		requestId: randomUUID(),
 		...input,
 	});
-	if (!result.success || !result.data.ok)
-		throw new Error(JSON.stringify(result));
+	if (!result.success || !result.data.ok) throw new Error(JSON.stringify(result));
 	return result.data;
 }
-async function issue(
-	employeeId: string,
-	explicitDeadline: string | null = null,
-) {
+async function issue(employeeId: string, explicitDeadline: string | null = null) {
 	const type = await setup({
 		kind: "create_type",
 		name: "Laptop",
@@ -129,8 +117,7 @@ async function issue(
 		actualDate: "2026-10-20",
 		condition: "good",
 	});
-	if (!result.success || !result.data.ok)
-		throw new Error(JSON.stringify(result));
+	if (!result.success || !result.data.ok) throw new Error(JSON.stringify(result));
 	return result.data;
 }
 async function equipment(employeeId: string) {
@@ -142,9 +129,7 @@ async function equipment(employeeId: string) {
 vi.mock("@/lib/auth-helpers", async (original) => {
 	const actual = await original<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
-	const { loadOrganizationPrincipalContext } = await import(
-		"@/lib/authorization/principal-loader"
-	);
+	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
 	return {
 		...actual,
 		getAuthContext: async () => ({
@@ -167,12 +152,10 @@ vi.mock("@/lib/queue", async (original) =>
 vi.mock("@/lib/approvals/delivery/kick", async () =>
 	(await import("@/test/integration-harness")).deliveryKick(),
 );
-const {
-	deactivateEmployeeAction,
-	previewEmployeeDeactivationAction,
-	reactivateEmployeeAction,
-} = await import(
-	"@/app/[locale]/(app)/settings/employees/employee-lifecycle.actions"
+const { deactivateEmployeeAction, previewEmployeeDeactivationAction, reactivateEmployeeAction } =
+	await import("@/app/[locale]/(app)/settings/employees/employee-lifecycle.actions");
+const { getReactivationChecklistAction } = await import(
+	"@/app/[locale]/(app)/settings/employees/employee-reactivation.actions"
 );
 function deactivate(employeeId: string, requestId = randomUUID()) {
 	return deactivateEmployeeAction({
@@ -405,9 +388,8 @@ it("ends the officer grant, access and seat with equipment missing while primary
 			},
 		});
 	}
-	const current = (await equipment(target.employeeId)).find(
-		(a) => a.id === held.id,
-	)!;
+	const current = (await equipment(target.employeeId)).find((a) => a.id === held.id);
+	if (!current) throw new Error("Former assignment must remain readable");
 	expect(
 		await actions.changeEquipment({
 			kind: "receive_quantity",
@@ -420,11 +402,21 @@ it("ends the officer grant, access and seat with equipment missing while primary
 		}),
 	).toMatchObject({ success: true, data: { ok: true } });
 	context.userId = fixture.ownerUserId;
-	expect(await equipment(target.employeeId)).toMatchObject([
-		{ outstandingQuantity: 2 },
-	]);
+	expect(await equipment(target.employeeId)).toMatchObject([{ outstandingQuantity: 2 }]);
 	expect(await reactivateEmployeeAction(target.employeeId)).toMatchObject({
 		success: true,
+	});
+	expect(await getReactivationChecklistAction(target.employeeId)).toMatchObject({
+		success: true,
+		data: {
+			items: expect.arrayContaining([
+				expect.objectContaining({
+					group: "grants",
+					grant: "equipment_officer",
+					href: "/settings/equipment",
+				}),
+			]),
+		},
 	});
 	context.userId = target.userId;
 	expect(await actions.getEquipmentOverview()).toMatchObject({
@@ -458,4 +450,225 @@ it("ends the officer grant, access and seat with equipment missing while primary
 			]),
 		},
 	});
+});
+
+it("historical unknown-date holdings recorded after deactivation keep its frozen day and identity across reactivation", async () => {
+	const target = await fixture.seedEmployee();
+	context.now = "2026-10-20T22:30:00Z";
+	expect(await deactivate(target.employeeId)).toMatchObject({ success: true });
+	await fixture.pool.query("update organization set timezone='America/Los_Angeles' where id=$1", [
+		context.organizationId,
+	]);
+	const type = await setup({
+		kind: "create_type",
+		name: "Old shirts",
+		trackingMode: "quantity",
+		defaultReturnRequired: true,
+	});
+	const recorded = await actions.changeEquipment({
+		kind: "record_historical_quantity",
+		requestId: randomUUID(),
+		employeeId: target.employeeId,
+		employmentPeriodId: target.employmentPeriodId,
+		typeId: type.id,
+		quantity: 2,
+		expectedRevision: 1,
+		actualDate: null,
+		condition: "unknown",
+		returnRequired: true,
+	});
+	expect(recorded).toMatchObject({ success: true, data: { ok: true } });
+	expect(await equipment(target.employeeId)).toMatchObject([
+		{
+			effectiveDeadline: "2026-10-21",
+			deactivationId: expect.any(String),
+			issue: { actualDate: null, historical: true },
+		},
+	]);
+	expect(await reactivateEmployeeAction(target.employeeId)).toMatchObject({ success: true });
+	await schedule(target.employeeId, "2026-10-28");
+	expect(await equipment(target.employeeId)).toMatchObject([
+		{
+			effectiveDeadline: "2026-10-21",
+			departureId: null,
+			deactivationId: expect.any(String),
+			employmentPeriodId: target.employmentPeriodId,
+		},
+	]);
+	await fixture.pool.query("update organization set timezone='Europe/Berlin' where id=$1", [
+		context.organizationId,
+	]);
+});
+
+it("fresh issuance racing deactivation serializes and physical fob receipt never restores the credential", async () => {
+	const target = await fixture.seedEmployee();
+	const type = await setup({
+		kind: "create_type",
+		name: "Access fob",
+		trackingMode: "individual",
+		defaultReturnRequired: true,
+	});
+	const item = await setup({
+		kind: "register_item",
+		typeId: type.id,
+		identifier: `FOB-${randomUUID()}`,
+	});
+	const location = randomUUID(),
+		kiosk = randomUUID();
+	await fixture.pool.query(
+		"insert into location(id,organization_id,name,created_by,updated_at) values($1,$2,'Entrance',$3,now())",
+		[location, context.organizationId, context.userId],
+	);
+	await fixture.pool.query(
+		"insert into kiosk(id,organization_id,location_id,name,timezone,updated_at) values($1,$2,$3,'Entrance','Europe/Berlin',now())",
+		[kiosk, context.organizationId, location],
+	);
+	const serial = "04A1B2C3D4E5F6";
+	await registerKioskFob(
+		fixture.db,
+		{
+			organizationId: context.organizationId,
+			employeeId: target.employeeId,
+			kioskId: kiosk,
+			serial,
+		},
+		{ nowInstant: () => parseInstant(context.now) },
+	);
+	expect(
+		await actions.changeEquipment({
+			kind: "issue_individual",
+			requestId: randomUUID(),
+			employeeId: target.employeeId,
+			itemId: item.id,
+			expectedRevision: 1,
+			returnRequired: true,
+			actualDate: "2026-10-20",
+			condition: "good",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	const quantity = await setup({
+		kind: "create_type",
+		name: "Racing shirt",
+		trackingMode: "quantity",
+		defaultReturnRequired: true,
+	});
+	const [deactivated, issued] = await Promise.all([
+		deactivate(target.employeeId),
+		actions.changeEquipment({
+			kind: "issue_quantity",
+			requestId: randomUUID(),
+			employeeId: target.employeeId,
+			typeId: quantity.id,
+			quantity: 1,
+			expectedRevision: 1,
+			returnRequired: true,
+			actualDate: "2026-10-20",
+			condition: "good",
+		}),
+	]);
+	expect(deactivated).toMatchObject({ success: true });
+	expect(issued).toMatchObject({ success: true });
+	if (!issued.success) throw new Error("Equipment action must return a domain result");
+	if (issued.data.ok) {
+		expect(await equipment(target.employeeId)).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: issued.data.id,
+					former: true,
+					effectiveDeadline: "2026-10-20",
+					deactivationId: expect.any(String),
+				}),
+			]),
+		);
+	} else expect(issued.data.reason).toBe("employee_not_current");
+	const fob = (await equipment(target.employeeId)).find((a) => a.itemId === item.id);
+	if (!fob) throw new Error("Physical fob must remain actionable");
+	expect(fob.outstanding).toBe(true);
+	expect(
+		await resolveActiveKioskFob(fixture.db, {
+			organizationId: context.organizationId,
+			serial,
+			now: parseInstant(context.now),
+		}),
+	).toBeNull();
+	expect(
+		await actions.changeEquipment({
+			kind: "receive_individual",
+			assignmentId: fob.id,
+			expectedRevision: fob.revision,
+			requestId: randomUUID(),
+			actualDate: "2026-10-20",
+			condition: "good",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	expect(
+		await resolveActiveKioskFob(fixture.db, {
+			organizationId: context.organizationId,
+			serial,
+			now: parseInstant(context.now),
+		}),
+	).toBeNull();
+	expect(await reactivateEmployeeAction(target.employeeId)).toMatchObject({ success: true });
+	expect(
+		await resolveActiveKioskFob(fixture.db, {
+			organizationId: context.organizationId,
+			serial,
+			now: parseInstant(context.now),
+		}),
+	).toBeNull();
+});
+it("deactivation summaries distinguish lost, waived and recovered quantities from outstanding returns", async () => {
+	const target = await fixture.seedEmployee();
+	const held = await issue(target.employeeId);
+	expect(
+		await actions.changeEquipment({
+			kind: "close_return",
+			assignmentId: held.id,
+			requestId: randomUUID(),
+			expectedRevision: 1,
+			quantity: 1,
+			outcome: "lost",
+			reason: "Missing shirt",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	let current = (await equipment(target.employeeId))[0];
+	const loss = current.exceptions[0];
+	expect(
+		await actions.changeEquipment({
+			kind: "receive_exception",
+			assignmentId: held.id,
+			exceptionId: loss.id,
+			requestId: randomUUID(),
+			expectedRevision: current.revision,
+			quantity: 1,
+			actualDate: "2026-10-20",
+			condition: "good",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	current = (await equipment(target.employeeId))[0];
+	expect(
+		await actions.changeEquipment({
+			kind: "close_return",
+			assignmentId: held.id,
+			requestId: randomUUID(),
+			expectedRevision: current.revision,
+			quantity: 1,
+			outcome: "waived",
+			reason: "Permission to keep one",
+		}),
+	).toMatchObject({ success: true, data: { ok: true } });
+	expect(await preview(target.employeeId)).toMatchObject({
+		success: true,
+		data: { equipment: [{ assignmentId: held.id, outstandingQuantity: 1 }] },
+	});
+	expect(await deactivate(target.employeeId)).toMatchObject({ success: true });
+	expect(await equipment(target.employeeId)).toMatchObject([
+		{
+			outstandingQuantity: 1,
+			physicallyReceivedQuantity: 1,
+			lostQuantity: 1,
+			waivedQuantity: 1,
+			recoveredQuantity: 1,
+		},
+	]);
 });

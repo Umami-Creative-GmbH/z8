@@ -635,12 +635,15 @@ async function performHandover(
 						),
 					)
 			: [];
-		const endingDeadline = departure
-			? equipmentDepartureDeadline(
-					instantFromDate(departure.cutoffAt),
-					departure.timezone,
-					departure.mode,
-				)
+		const ending = departure
+			? {
+					deadline: equipmentDepartureDeadline(
+						instantFromDate(departure.cutoffAt),
+						departure.timezone,
+						departure.mode,
+					),
+					deactivationId: null,
+				}
 			: historical
 				? await historicalEndingDeadline(
 						tx,
@@ -662,7 +665,10 @@ async function performHandover(
 				employmentPeriodId: period?.id ?? null,
 				returnRequired: change.returnRequired,
 				explicitDeadline: change.explicitDeadline ?? null,
-				departureDeadline: change.returnRequired ? endingDeadline : null,
+				departureDeadline: change.returnRequired
+					? (ending?.deadline ?? null)
+					: null,
+				deactivationId: ending?.deactivationId ?? null,
 				departureId: change.returnRequired ? (departure?.id ?? null) : null,
 			})
 			.returning();
@@ -853,12 +859,15 @@ async function historicalEndingDeadline(
 	periodId: string | null,
 	timezone: string,
 	legacyDeactivatedAt: Date | null,
-): Promise<string | null> {
+): Promise<{ deadline: string | null; deactivationId: string | null }> {
 	const periodScope = periodId
 		? eq(equipmentAssignment.employmentPeriodId, periodId)
 		: isNull(equipmentAssignment.employmentPeriodId);
 	const [existing] = await tx
-		.select({ deadline: equipmentAssignment.departureDeadline })
+		.select({
+			deadline: equipmentAssignment.departureDeadline,
+			deactivationId: equipmentAssignment.deactivationId,
+		})
 		.from(equipmentAssignment)
 		.where(
 			and(
@@ -869,10 +878,10 @@ async function historicalEndingDeadline(
 			),
 		)
 		.limit(1);
-	if (existing?.deadline) return existing.deadline;
 	const [deactivation] = await tx
 		.select({
 			at: employeeDeactivation.deactivatedAt,
+			id: employeeDeactivation.id,
 			plan: employeeDeactivation.plan,
 		})
 		.from(employeeDeactivation)
@@ -888,16 +897,25 @@ async function historicalEndingDeadline(
 		.orderBy(desc(employeeDeactivation.deactivatedAt))
 		.limit(1);
 	const at = deactivation?.at ?? legacyDeactivatedAt;
-	if (!at) return null;
+	if (!at)
+		return {
+			deadline: existing?.deadline ?? null,
+			deactivationId: existing?.deactivationId ?? null,
+		};
 	const frozenTimezone =
 		typeof deactivation?.plan?.timeZone === "string"
 			? resolveOrganizationTimezone(deactivation.plan.timeZone).timezone
 			: timezone;
-	return equipmentDepartureDeadline(
-		instantFromDate(at),
-		frozenTimezone,
-		"immediate",
-	);
+	return {
+		deactivationId: existing?.deactivationId ?? deactivation?.id ?? null,
+		deadline:
+			existing?.deadline ??
+			equipmentDepartureDeadline(
+				instantFromDate(at),
+				frozenTimezone,
+				"immediate",
+			),
+	};
 }
 
 /** Staff overview, scoped employee history and self history share one permission/read model. */

@@ -27,9 +27,7 @@ import type { LifecycleClient } from "../types";
  */
 
 /** Audit reason of an admin's deactivation. The backfill (#1442) uses its own. */
-export type DeactivationReason =
-	| "employee_deactivated"
-	| "employee_deactivation_backfill";
+export type DeactivationReason = "employee_deactivated" | "employee_deactivation_backfill";
 
 /** What every plan function receives. */
 export type DeactivationPlanContext = {
@@ -95,9 +93,7 @@ export type ManagerLinksPlan = {
 		}
 	>;
 	/** Reports who keep another current manager and just lose this one. */
-	reportsKeepingAnotherManager: Array<
-		NamedEmployee & { newPrimaryManagerId: string | null }
-	>;
+	reportsKeepingAnotherManager: Array<NamedEmployee & { newPrimaryManagerId: string | null }>;
 	/** Reports who are former employees themselves: the link ends, nobody replaces it. */
 	formerReports: NamedEmployee[];
 	/** The deactivated person's own manager links, which end. */
@@ -251,9 +247,7 @@ export type DeactivationPreview = Omit<DeactivationPlan, "shifts"> & {
 	shifts: Omit<ShiftsPlan, "plannerRecipientUserIds">;
 };
 
-export function toDeactivationPreview(
-	plan: DeactivationPlan,
-): DeactivationPreview {
+export function toDeactivationPreview(plan: DeactivationPlan): DeactivationPreview {
 	const { plannerRecipientUserIds: _serverOnly, ...shifts } = plan.shifts;
 	return { ...plan, shifts };
 }

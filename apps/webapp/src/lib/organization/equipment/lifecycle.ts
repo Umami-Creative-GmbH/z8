@@ -4,10 +4,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
 import type { EquipmentDepartureReturn } from "./contracts";
-import {
-	effectiveEquipmentDeadline,
-	equipmentDepartureDeadline,
-} from "./deadlines";
+import { effectiveEquipmentDeadline, equipmentDepartureDeadline } from "./deadlines";
 import { lockEquipmentOrganization } from "./setup";
 
 type Client = Pick<LifecycleClient, "execute">;

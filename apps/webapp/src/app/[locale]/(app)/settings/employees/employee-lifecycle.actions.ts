@@ -51,10 +51,7 @@ import {
 } from "@/lib/employee-lifecycle/receipts";
 import { createLogger } from "@/lib/logger";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
-import {
-	employeeCoordinationGuard,
-	holdGuard,
-} from "@/lib/time-tracking/work-transaction/ranks";
+import { employeeCoordinationGuard, holdGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -67,10 +64,7 @@ const logger = createLogger("EmployeeLifecycleActions");
 const employeeIdSchema = z.uuid("Invalid employee ID");
 const replacementManagersSchema = z
 	.record(z.uuid("Invalid employee ID"), z.uuid("Invalid employee ID"))
-	.refine(
-		(picks) => Object.keys(picks).length <= 500,
-		"Too many replacement managers",
-	)
+	.refine((picks) => Object.keys(picks).length <= 500, "Too many replacement managers")
 	.default({});
 const deactivateEmployeeSchema = z.strictObject({
 	employeeId: employeeIdSchema,
@@ -83,12 +77,9 @@ const previewEmployeeDeactivationSchema = z.strictObject({
 });
 
 export type DeactivateEmployeeInput = z.input<typeof deactivateEmployeeSchema>;
-export type PreviewEmployeeDeactivationInput = z.input<
-	typeof previewEmployeeDeactivationSchema
->;
+export type PreviewEmployeeDeactivationInput = z.input<typeof previewEmployeeDeactivationSchema>;
 
-const ownerInvariantViolationMessage =
-	"Organization must retain an approved accessible owner";
+const ownerInvariantViolationMessage = "Organization must retain an approved accessible owner";
 const finalOwnerDeactivateGuidance =
 	"Assign and activate another approved owner before deactivating this employee";
 const removeFinalOwnerGuidance =
@@ -96,10 +87,7 @@ const removeFinalOwnerGuidance =
 const requestConflictMessage =
 	"This deactivation was already submitted with different choices. Review the preview and try again.";
 
-type LifecycleRefusal = Exclude<
-	LifecycleTargetCheck,
-	{ type: "change" } | { type: "unchanged" }
->;
+type LifecycleRefusal = Exclude<LifecycleTargetCheck, { type: "change" } | { type: "unchanged" }>;
 
 type ReactivationTransactionResult =
 	| {
@@ -143,11 +131,7 @@ type DeactivationTransactionResult =
 function isOwnerInvariantViolation(error: DatabaseError) {
 	let cause: unknown = error.cause;
 
-	for (
-		let depth = 0;
-		depth < 4 && cause && typeof cause === "object";
-		depth += 1
-	) {
+	for (let depth = 0; depth < 4 && cause && typeof cause === "object"; depth += 1) {
 		const candidate = cause as {
 			code?: unknown;
 			message?: unknown;
@@ -168,11 +152,7 @@ function isOwnerInvariantViolation(error: DatabaseError) {
 
 function isRequestConflict(error: DatabaseError) {
 	let cause: unknown = error.cause;
-	for (
-		let depth = 0;
-		depth < 4 && cause && typeof cause === "object";
-		depth += 1
-	) {
+	for (let depth = 0; depth < 4 && cause && typeof cause === "object"; depth += 1) {
 		if (cause instanceof DeactivationRequestConflictError) return true;
 		cause = (cause as { cause?: unknown }).cause;
 	}
@@ -187,10 +167,7 @@ function isFinalOwnerRemovalError(error: unknown) {
 		const candidate = candidates[index];
 		if (typeof candidate === "string") {
 			const normalized = candidate.toLowerCase().replaceAll("_", " ");
-			if (
-				normalized.includes("last owner") ||
-				normalized.includes("approved accessible owner")
-			) {
+			if (normalized.includes("last owner") || normalized.includes("approved accessible owner")) {
 				return true;
 			}
 			continue;
@@ -206,12 +183,7 @@ function isFinalOwnerRemovalError(error: unknown) {
 			code?: unknown;
 			message?: unknown;
 		};
-		candidates.push(
-			errorRecord.code,
-			errorRecord.message,
-			errorRecord.body,
-			errorRecord.cause,
-		);
+		candidates.push(errorRecord.code, errorRecord.message, errorRecord.body, errorRecord.cause);
 	}
 
 	return false;
@@ -252,8 +224,7 @@ function lifecycleRefusalError(
 			});
 		case "admin_targeting_owner":
 			return new AuthorizationError({
-				message:
-					"Only an organization owner can change an owner's lifecycle state",
+				message: "Only an organization owner can change an owner's lifecycle state",
 				userId: options.userId,
 				resource: "employee",
 				action: options.action,
@@ -273,18 +244,12 @@ function lifecycleRefusalError(
 }
 
 /** Runs after-commit steps one after another; a failure is logged and never undoes the commit. */
-async function runAfterCommit(
-	steps: DeactivationAfterCommit[],
-	context: Record<string, unknown>,
-) {
+async function runAfterCommit(steps: DeactivationAfterCommit[], context: Record<string, unknown>) {
 	for (const step of steps) {
 		try {
 			await step();
 		} catch (error) {
-			logger.warn(
-				{ error, ...context },
-				"Deactivation follow-up step failed after the commit",
-			);
+			logger.warn({ error, ...context }, "Deactivation follow-up step failed after the commit");
 		}
 	}
 }
@@ -309,10 +274,7 @@ function deactivateEmployee(input: unknown) {
 			"employee.lifecycleState": "inactive",
 		},
 		logError: (error) => {
-			logger.error(
-				{ error, employeeId, state: "inactive" },
-				"Failed to deactivate employee",
-			);
+			logger.error({ error, employeeId, state: "inactive" }, "Failed to deactivate employee");
 		},
 		execute: () =>
 			Effect.gen(function* () {
@@ -320,16 +282,11 @@ function deactivateEmployee(input: unknown) {
 					queryName: "setEmployeeLifecycleState:actor",
 				});
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message:
-						"Only organization owners and admins can change employee lifecycle state",
+					message: "Only organization owners and admins can change employee lifecycle state",
 					resource: "employee",
 					action: "deactivate",
 				});
-				const data = yield* validateInput(
-					deactivateEmployeeSchema,
-					input,
-					"employeeId",
-				);
+				const data = yield* validateInput(deactivateEmployeeSchema, input, "employeeId");
 				const command: DeactivationCommand = {
 					organizationId: actor.organizationId,
 					actorUserId: actor.session.user.id,
@@ -344,17 +301,9 @@ function deactivateEmployee(input: unknown) {
 						return await withAuthorizationMutation(
 							deactivationProtectionScope(command),
 							async (tx): Promise<DeactivationTransactionResult> => {
-								await holdGuard(
-									tx,
-									employeeCoordinationGuard(command.employeeId),
-								);
+								await holdGuard(tx, employeeCoordinationGuard(command.employeeId));
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-								if (
-									!(await tryLockLifecycleOrganization(
-										tx,
-										actor.organizationId,
-									))
-								) {
+								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
 									return { type: "not_found" };
 								}
 
@@ -446,10 +395,7 @@ function deactivateEmployee(input: unknown) {
 						}),
 					);
 				}
-				if (
-					transactionResult.type !== "success" &&
-					transactionResult.type !== "replay"
-				) {
+				if (transactionResult.type !== "success" && transactionResult.type !== "replay") {
 					return yield* Effect.fail(
 						lifecycleRefusalError(transactionResult, {
 							action: "deactivate",
@@ -458,10 +404,7 @@ function deactivateEmployee(input: unknown) {
 					);
 				}
 
-				if (
-					transactionResult.type === "replay" &&
-					transactionResult.reactivated
-				) {
+				if (transactionResult.type === "replay" && transactionResult.reactivated) {
 					// Reactivated since: nothing to repeat for the earlier deactivation.
 					revalidateEmployeesCache(actor.organizationId);
 					return;
@@ -476,24 +419,16 @@ function deactivateEmployee(input: unknown) {
 						? transactionResult.targetUserId
 						: transactionResult.targetEmployee.userId;
 				// Everything the deactivation committed, on the first run and again on a replay.
-				const applied =
-					transactionResult.type === "replay" || transactionResult.changed;
+				const applied = transactionResult.type === "replay" || transactionResult.changed;
 
-				if (transactionResult.type === "success")
-					transactionResult.audit?.forwardCommitted();
-				yield* Effect.promise(() =>
-					runAfterCommit(transactionResult.afterCommit, context),
-				);
+				if (transactionResult.type === "success") transactionResult.audit?.forwardCommitted();
+				yield* Effect.promise(() => runAfterCommit(transactionResult.afterCommit, context));
 
 				const revocationFailed =
 					targetUserId === null
 						? false
 						: yield* Effect.tryPromise({
-								try: () =>
-									revokeOrganizationActiveSessions(
-										targetUserId,
-										actor.organizationId,
-									),
+								try: () => revokeOrganizationActiveSessions(targetUserId, actor.organizationId),
 								catch: () => true,
 							}).pipe(
 								Effect.map(() => false),
@@ -540,14 +475,12 @@ function deactivateEmployee(input: unknown) {
 
 				if (applied && targetUserId !== null) {
 					// A deactivated owner or admin can no longer own scheduled exports (#988).
-					yield* actor.dbService.query(
-						"scheduledExport.pauseAfterDeactivation",
-						() =>
-							pauseSchedulesAfterOwnerAccessChange(actor.dbService.db, {
-								organizationId: actor.organizationId,
-								owner: { userId: targetUserId },
-								actorUserId: actor.session.user.id,
-							}),
+					yield* actor.dbService.query("scheduledExport.pauseAfterDeactivation", () =>
+						pauseSchedulesAfterOwnerAccessChange(actor.dbService.db, {
+							organizationId: actor.organizationId,
+							owner: { userId: targetUserId },
+							actorUserId: actor.session.user.id,
+						}),
 					);
 				}
 
@@ -555,10 +488,7 @@ function deactivateEmployee(input: unknown) {
 					const releasedDeputies = transactionResult.releasedDeputies;
 					// After the commit, on the caller's database client (#1014); never throws.
 					yield* Effect.promise(() =>
-						notifyReleasedDeputyAssignments(
-							releasedDeputies,
-							actor.dbService.db,
-						),
+						notifyReleasedDeputyAssignments(releasedDeputies, actor.dbService.db),
 					);
 				}
 
@@ -592,10 +522,7 @@ function reactivateEmployee(employeeId: string) {
 			"employee.lifecycleState": "active",
 		},
 		logError: (error) => {
-			logger.error(
-				{ error, employeeId, state: "active" },
-				"Failed to reactivate employee",
-			);
+			logger.error({ error, employeeId, state: "active" }, "Failed to reactivate employee");
 		},
 		execute: () =>
 			Effect.gen(function* () {
@@ -603,8 +530,7 @@ function reactivateEmployee(employeeId: string) {
 					queryName: "setEmployeeLifecycleState:actor",
 				});
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message:
-						"Only organization owners and admins can change employee lifecycle state",
+					message: "Only organization owners and admins can change employee lifecycle state",
 					resource: "employee",
 					action: "reactivate",
 				});
@@ -627,12 +553,7 @@ function reactivateEmployee(employeeId: string) {
 							},
 							async (tx): Promise<ReactivationTransactionResult> => {
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-								if (
-									!(await tryLockLifecycleOrganization(
-										tx,
-										actor.organizationId,
-									))
-								) {
+								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
 									return { type: "not_found" };
 								}
 
@@ -665,8 +586,7 @@ function reactivateEmployee(employeeId: string) {
 									},
 									audit,
 								);
-								if (reactivation.kind === "not_found")
-									return { type: "not_found" };
+								if (reactivation.kind === "not_found") return { type: "not_found" };
 
 								return {
 									type: "success",
@@ -764,26 +684,19 @@ export async function previewEmployeeDeactivationAction(
 					queryName: "previewEmployeeDeactivation:actor",
 				});
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message:
-						"Only organization owners and admins can change employee lifecycle state",
+					message: "Only organization owners and admins can change employee lifecycle state",
 					resource: "employee",
 					action: "deactivate",
 				});
-				const data = yield* validateInput(
-					previewEmployeeDeactivationSchema,
-					input,
-					"employeeId",
-				);
-				const result = yield* actor.dbService.query(
-					"previewEmployeeDeactivation",
-					() =>
-						previewEmployeeDeactivation(actor.dbService.db, {
-							organizationId: actor.organizationId,
-							employeeId: data.employeeId,
-							actorUserId: actor.session.user.id,
-							replacementManagers: data.replacementManagers,
-							now: systemClock.nowInstant(),
-						}),
+				const data = yield* validateInput(previewEmployeeDeactivationSchema, input, "employeeId");
+				const result = yield* actor.dbService.query("previewEmployeeDeactivation", () =>
+					previewEmployeeDeactivation(actor.dbService.db, {
+						organizationId: actor.organizationId,
+						employeeId: data.employeeId,
+						actorUserId: actor.session.user.id,
+						replacementManagers: data.replacementManagers,
+						now: systemClock.nowInstant(),
+					}),
 				);
 				switch (result.kind) {
 					case "ok":
@@ -857,10 +770,7 @@ export async function removeEmployeeAccessAction(
 						});
 					},
 				);
-				if (
-					!actorMembership ||
-					!hasOrganizationRole(actorMembership.role, "owner")
-				) {
+				if (!actorMembership || !hasOrganizationRole(actorMembership.role, "owner")) {
 					return yield* Effect.fail(
 						new AuthorizationError({
 							message: "Only organization owners can remove employee access",
@@ -954,9 +864,7 @@ export async function removeEmployeeAccessAction(
 					catch: (cause) => cause,
 				}).pipe(
 					Effect.map(() => ({ success: true as const })),
-					Effect.catch((cause) =>
-						Effect.succeed({ success: false as const, cause }),
-					),
+					Effect.catch((cause) => Effect.succeed({ success: false as const, cause })),
 				);
 
 				if (!removalOutcome.success) {

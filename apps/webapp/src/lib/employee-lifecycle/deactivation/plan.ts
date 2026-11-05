@@ -7,17 +7,10 @@ import { readEquipmentDepartureReturns } from "@/lib/organization/equipment/life
 import { planAbsences } from "./absences";
 import { planAccessEnds } from "./access-ends";
 import { planApprovalDuties } from "./approval-duties";
-import {
-	planManagerLinks,
-	validatedReplacementManagers,
-} from "./manager-links";
+import { planManagerLinks, validatedReplacementManagers } from "./manager-links";
 import { planShiftsToOpen } from "./shifts";
 import { planTeamLinks } from "./team-links";
-import type {
-	DeactivationPlan,
-	DeactivationPlanContext,
-	DeactivationReader,
-} from "./types";
+import type { DeactivationPlan, DeactivationPlanContext, DeactivationReader } from "./types";
 
 /**
  * Everything a deactivation changes (#1440, Organization ADR 0006), composed
