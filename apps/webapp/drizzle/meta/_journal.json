@@ -2110,6 +2110,13 @@
       "breakpoints": true
     },
     {
+      "idx": 301,
+      "version": "7",
+      "when": 1810742400000,
+      "tag": "0301_equipment_historical",
+      "breakpoints": true
+    },
+    {
       "idx": 302,
       "version": "7",
       "when": 1810828800000,

@@ -297,10 +297,11 @@ export function ReceiveExceptionForm({
 								.toZonedDateTimeISO(timezone)
 								.toPlainDate();
 							return comparePlainDates(parsePlainDate(value), earliest) < 0 ||
-								comparePlainDates(
-									parsePlainDate(value),
-									parsePlainDate(assignment.issue.actualDate),
-								) < 0
+								(assignment.issue.actualDate &&
+									comparePlainDates(
+										parsePlainDate(value),
+										parsePlainDate(assignment.issue.actualDate),
+									) < 0)
 								? t(
 										"settings.equipment.exception.receiptBeforeDecision",
 										"Receipt cannot precede the exception decision or issuance.",
