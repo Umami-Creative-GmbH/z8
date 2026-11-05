@@ -512,6 +512,36 @@
 								}
 							}
 						}
+					},
+					"500": {
+						"description": "`server_error`: an unexpected error occurred while processing the request.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
 					}
 				},
 				"x-z8-scope": "time-entries:read"
@@ -914,6 +944,36 @@
 							},
 							"Retry-After": {
 								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`server_error`: an unexpected error occurred while processing the request.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
 								"schema": {
 									"type": "integer"
 								}
@@ -1341,6 +1401,36 @@
 								}
 							}
 						}
+					},
+					"500": {
+						"description": "`server_error`: an unexpected error occurred while processing the request.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
 					}
 				},
 				"x-z8-scope": "employees:read"
@@ -1698,6 +1788,36 @@
 							},
 							"Retry-After": {
 								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`server_error`: an unexpected error occurred while processing the request.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
 								"schema": {
 									"type": "integer"
 								}
@@ -2081,6 +2201,36 @@
 								}
 							}
 						}
+					},
+					"500": {
+						"description": "`server_error`: an unexpected error occurred while processing the request.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
 					}
 				},
 				"x-z8-scope": "projects:read"
@@ -2450,6 +2600,36 @@
 								}
 							}
 						}
+					},
+					"500": {
+						"description": "`server_error`: an unexpected error occurred while processing the request.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
 					}
 				},
 				"x-z8-scope": "projects:read"
@@ -2781,6 +2961,36 @@
 							},
 							"Retry-After": {
 								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`server_error`: an unexpected error occurred while processing the request.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
 								"schema": {
 									"type": "integer"
 								}
@@ -3150,6 +3360,36 @@
 							},
 							"Retry-After": {
 								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`server_error`: an unexpected error occurred while processing the request.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
 								"schema": {
 									"type": "integer"
 								}
