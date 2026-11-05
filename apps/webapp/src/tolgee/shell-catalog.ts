@@ -389,6 +389,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 	]),
 	...keys("settings/scheduledExports", ["settings.scheduledExports.title"]),
 	...keys("settings/vacation", [
+		"settings.vacation.employees.title",
+		"settings.vacation.employees.description",
 		"settings.vacation.history.title",
 		"settings.vacation.description",
 		"settings.vacation.title",
