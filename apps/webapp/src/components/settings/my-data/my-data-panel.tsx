@@ -15,12 +15,21 @@ import {
 	REFRESH_WHILE_BUILDING_MS,
 } from "@/components/settings/personal-data-export/personal-data-export-status";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-function statusLabel(t: Translate, status: PersonalDataExportSummary["status"]): string {
+function statusLabel(
+	t: Translate,
+	status: PersonalDataExportSummary["status"],
+): string {
 	switch (status) {
 		case "pending":
 		case "processing":
@@ -35,7 +44,8 @@ function statusLabel(t: Translate, status: PersonalDataExportSummary["status"]):
 function listLabels(t: Translate): PersonalDataExportListLabels {
 	return {
 		list: t("settings.myData.listLabel", "Your exports"),
-		requestedAt: (date) => t("settings.myData.requestedAt", "Requested {date}", { date }),
+		requestedAt: (date) =>
+			t("settings.myData.requestedAt", "Requested {date}", { date }),
 		availableUntil: (date) =>
 			t("settings.myData.availableUntil", "Available until {date}", { date }),
 		status: (status) => statusLabel(t, status),
@@ -88,7 +98,10 @@ export function MyDataPanel({ exports }: MyDataPanelProps) {
 
 	useEffect(() => {
 		if (!building) return;
-		const timer = window.setInterval(() => router.refresh(), REFRESH_WHILE_BUILDING_MS);
+		const timer = window.setInterval(
+			() => router.refresh(),
+			REFRESH_WHILE_BUILDING_MS,
+		);
 		return () => window.clearInterval(timer);
 	}, [building, router]);
 
@@ -128,6 +141,12 @@ export function MyDataPanel({ exports }: MyDataPanelProps) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.myData.aboutEquipment",
+						"Includes retained equipment assignments, conditions, notes, corrections, physical receipts, and lost or waived outcomes, with recoveries recorded separately.",
+					)}
+				</p>
 				<ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
 					<li>
 						{t(
@@ -141,7 +160,12 @@ export function MyDataPanel({ exports }: MyDataPanelProps) {
 							"Download it here while signed in. Files are deleted after 7 days.",
 						)}
 					</li>
-					<li>{t("settings.myData.aboutLimit", "You can request one export every 24 hours.")}</li>
+					<li>
+						{t(
+							"settings.myData.aboutLimit",
+							"You can request one export every 24 hours.",
+						)}
+					</li>
 				</ul>
 				<Button onClick={requestExport} disabled={requesting || building}>
 					{requesting ? (
