@@ -51,6 +51,7 @@ import type {
 } from "@/lib/validations/api-key";
 import { MAX_API_KEYS_PER_ORG } from "@/lib/validations/api-key";
 import { Link } from "@/navigation";
+import { ApiKeyDocumentation } from "./api-key-documentation";
 
 // Dynamically import dialogs - they're only shown on user interaction
 const ApiKeyCreateDialog = dynamic(() =>
@@ -501,6 +502,7 @@ function ApiKeyPageView({
 					</Button>
 				</div>
 				<div className="space-y-6">
+					<ApiKeyDocumentation />
 					<ApiKeysCard viewModel={viewModel} />
 
 					{/* Security Notice */}
