@@ -245,6 +245,7 @@ export async function applyEquipmentSetupChange(
 						trackingMode: change.trackingMode,
 						defaultReturnRequired: change.defaultReturnRequired,
 						createdBy: actor.userId,
+						createdAt: now,
 						...audit,
 					})
 					.returning();
@@ -311,6 +312,7 @@ export async function applyEquipmentSetupChange(
 						identifier: change.identifier,
 						serialNumber: change.serialNumber || null,
 						createdBy: actor.userId,
+						createdAt: now,
 						...audit,
 					})
 					.returning();

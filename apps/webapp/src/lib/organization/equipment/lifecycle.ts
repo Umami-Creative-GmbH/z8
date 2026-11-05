@@ -1,10 +1,17 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import type { Instant } from "@/lib/datetime/temporal-core";
-import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
 import type { EquipmentDepartureReturn } from "./contracts";
-import { effectiveEquipmentDeadline, equipmentDepartureDeadline } from "./deadlines";
+import {
+	effectiveEquipmentDeadline,
+	equipmentDepartureDeadline,
+} from "./deadlines";
 import { lockEquipmentOrganization } from "./setup";
 
 type Client = Pick<LifecycleClient, "execute">;
@@ -91,7 +98,7 @@ export async function endEquipmentEmployment(
 	}>(sql`UPDATE equipment_officer_grant SET revoked_at=${at}, updated_at=${at}, updated_by=${input.actorUserId}, revision=revision+1
   WHERE organization_id=${input.organizationId} AND employee_id=${input.employeeId}::uuid AND revoked_at IS NULL RETURNING employee_id AS id`);
 	if (input.deactivationId) {
-		await tx.execute(sql`UPDATE equipment_assignment SET deactivation_id=${input.deactivationId}::uuid, revision=revision+1
+		await tx.execute(sql`UPDATE equipment_assignment SET deactivation_id=${input.deactivationId}::uuid, revision=revision+1, last_activity_at=${dateFromInstant(systemClock.nowInstant())}
    WHERE organization_id=${input.organizationId} AND employee_id=${input.employeeId}::uuid
     AND (employment_period_id IS NULL OR employment_period_id=${input.employmentPeriodId}::uuid)
     AND NOT return_required AND deactivation_id IS NULL`);
@@ -123,7 +130,7 @@ export async function synchronizeEquipmentDeparture(
 	const departure = result.rows[0];
 	if (!departure || !["pending", "canceled"].includes(departure.status)) return;
 	if (departure.status === "canceled") {
-		await tx.execute(sql`UPDATE equipment_assignment SET departure_deadline=NULL, departure_id=NULL, revision=revision+1
+		await tx.execute(sql`UPDATE equipment_assignment SET departure_deadline=NULL, departure_id=NULL, revision=revision+1, last_activity_at=${dateFromInstant(systemClock.nowInstant())}
    WHERE organization_id=${subject.organizationId} AND employee_id=${subject.employeeId}::uuid
     AND employment_period_id=${subject.employmentPeriodId}::uuid AND departure_id=${subject.departureId}::uuid AND deactivation_id IS NULL AND departure_deadline IS NOT NULL`);
 		return;
@@ -147,7 +154,7 @@ async function updateDeadlines(
 ) {
 	await tx.execute(sql`UPDATE equipment_assignment SET departure_deadline=${deadline}::date, departure_id=${departureId}::uuid,
   deactivation_id=${subject.deactivationId ?? null}::uuid,
-  employment_period_id=coalesce(employment_period_id, ${subject.employmentPeriodId}::uuid), revision=revision+1
+  employment_period_id=coalesce(employment_period_id, ${subject.employmentPeriodId}::uuid), revision=revision+1, last_activity_at=${dateFromInstant(systemClock.nowInstant())}
   WHERE organization_id=${subject.organizationId} AND employee_id=${subject.employeeId}::uuid AND return_required
    AND (employment_period_id IS NULL OR employment_period_id=${subject.employmentPeriodId}::uuid)
    AND deactivation_id IS NULL

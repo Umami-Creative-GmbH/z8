@@ -256,6 +256,16 @@ export interface SlackEscalationResult {
  * - defaultJobOptions: BullMQ options for retry, priority, etc.
  */
 export const CRON_JOBS = {
+	"cron:equipment-retention": {
+		schedule: "35 2 * * *",
+		description:
+			"Remove expired closed equipment personal history, protecting outstanding returns and case holds",
+		processor: async () =>
+			(
+				await import("@/lib/jobs/equipment-retention")
+			).runEquipmentRetentionJob(),
+		defaultJobOptions: { attempts: 3, priority: 5 },
+	},
 	"cron:payroll-baseline-cleanup": {
 		schedule: "17 * * * *",
 		description:

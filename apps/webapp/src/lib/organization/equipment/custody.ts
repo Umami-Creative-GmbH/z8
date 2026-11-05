@@ -21,6 +21,7 @@ import {
 } from "@/db/schema";
 import {
 	equipmentAssignment,
+	equipmentCaseHoldEvent,
 	equipmentCommand,
 	equipmentCorrection,
 	equipmentException,
@@ -67,6 +68,11 @@ import {
 } from "./deadlines";
 import { applyItemReadiness, readItemReadiness } from "./readiness";
 import {
+	changeEquipmentCaseHold,
+	equipmentRetentionStatus,
+	recordEquipmentCommandAssignments,
+} from "./retention";
+import {
 	type EquipmentTransaction,
 	prepareEquipmentTypeForIssuance,
 } from "./setup";
@@ -101,6 +107,7 @@ async function organizationCalendar(
 		.select({
 			timezone: organization.timezone,
 			policyOrganizationId: equipmentPolicy.organizationId,
+			retentionMonths: equipmentPolicy.retentionMonths,
 		})
 		.from(organization)
 		.leftJoin(
@@ -114,6 +121,7 @@ async function organizationCalendar(
 		timezone,
 		now,
 		policyConfigured: !!org?.policyOrganizationId,
+		retentionMonths: org?.retentionMonths ?? null,
 		today: now.toZonedDateTimeISO(timezone).toPlainDate(),
 	};
 }
@@ -156,7 +164,9 @@ export async function applyEquipmentChange(
 			if (
 				!access.canManage ||
 				((change.kind === "close_return" ||
-					change.kind === "correct_exception") &&
+					change.kind === "correct_exception" ||
+					change.kind === "place_case_hold" ||
+					change.kind === "release_case_hold") &&
 					!access.canAdminister)
 			)
 				return { ok: false, reason: "forbidden" };
@@ -240,9 +250,11 @@ export async function applyEquipmentChange(
 					),
 				);
 			if (replay)
-				return replay.fingerprint === fingerprint
-					? replay.result
-					: { ok: false, reason: "request_conflict" };
+				return !replay.result
+					? { ok: false, reason: "history_removed" }
+					: replay.fingerprint === fingerprint
+						? replay.result
+						: { ok: false, reason: "request_conflict" };
 			const { today, now, timezone } = await organizationCalendar(
 				tx,
 				actor.organizationId,
@@ -264,35 +276,60 @@ export async function applyEquipmentChange(
 						requestId: change.requestId,
 						fingerprint,
 						result: outcome,
+						createdAt: dateFromInstant(now),
 					});
 				return outcome;
 			}
 			const outcome =
-				change.kind === "correct_transfer"
-					? await correctEquipmentTransfer(
-							tx,
-							actor,
-							change,
-							today,
-							now,
-							timezone,
-						)
-					: change.kind === "correct_issue" ||
-							change.kind === "correct_receipt" ||
-							change.kind === "correct_exception"
-						? await correctEquipment(tx, actor, change, today, now, timezone)
-						: change.kind === "close_return"
-							? await closeEquipmentReturn(tx, actor, change, now)
-							: change.kind === "transfer_equipment"
-								? await transferEquipment(tx, actor, change, target, today, now)
-								: await performHandover(tx, actor, change, target, today, now);
+				change.kind === "place_case_hold" || change.kind === "release_case_hold"
+					? await changeEquipmentCaseHold(tx, actor, change, now)
+					: change.kind === "correct_transfer"
+						? await correctEquipmentTransfer(
+								tx,
+								actor,
+								change,
+								today,
+								now,
+								timezone,
+							)
+						: change.kind === "correct_issue" ||
+								change.kind === "correct_receipt" ||
+								change.kind === "correct_exception"
+							? await correctEquipment(tx, actor, change, today, now, timezone)
+							: change.kind === "close_return"
+								? await closeEquipmentReturn(tx, actor, change, now)
+								: change.kind === "transfer_equipment"
+									? await transferEquipment(
+											tx,
+											actor,
+											change,
+											target,
+											today,
+											now,
+										)
+									: await performHandover(
+											tx,
+											actor,
+											change,
+											target,
+											today,
+											now,
+										);
 			if (!outcome.ok) return outcome;
 			await tx.insert(equipmentCommand).values({
 				organizationId: actor.organizationId,
 				requestId: change.requestId,
 				fingerprint,
 				result: outcome,
+				createdAt: dateFromInstant(now),
 			});
+			await recordEquipmentCommandAssignments(
+				tx,
+				actor.organizationId,
+				change,
+				outcome,
+				now,
+			);
 			return outcome;
 		})
 		.catch((error: unknown) => {
@@ -1239,6 +1276,22 @@ export async function readEquipment(
 					)
 					.orderBy(asc(equipmentCorrection.expectedRevision))
 			: [];
+		const holdRows = rows.length
+			? await tx
+					.select({ record: equipmentCaseHoldEvent, actorName: user.name })
+					.from(equipmentCaseHoldEvent)
+					.leftJoin(user, eq(user.id, equipmentCaseHoldEvent.actorId))
+					.where(
+						and(
+							eq(equipmentCaseHoldEvent.organizationId, actor.organizationId),
+							inArray(
+								equipmentCaseHoldEvent.assignmentId,
+								rows.map((r) => r.assignment.id),
+							),
+						),
+					)
+					.orderBy(asc(equipmentCaseHoldEvent.revision))
+			: [];
 		const filters = scope.kind === "overview" ? scope.filters : {};
 		const assignments: EquipmentAssignmentView[] = [];
 		for (const { assignment, item, type } of rows) {
@@ -1338,6 +1391,21 @@ export async function readEquipment(
 				}
 			}
 			assignments.push({
+				retention: equipmentRetentionStatus(
+					assignment,
+					calendar.retentionMonths,
+					timezone,
+					calendar.now,
+				),
+				caseHolds: holdRows
+					.filter((h) => h.record.assignmentId === assignment.id)
+					.map(({ record, actorName }) => ({
+						id: record.id,
+						kind: record.kind,
+						reason: record.reason,
+						actorName,
+						recordedAt: instantFromDate(record.recordedAt).toString(),
+					})),
 				correctionTransfers,
 				canCorrect: correctionAllowed,
 				canCorrectReceipt: correctionAllowed && holder.userId !== actor.userId,

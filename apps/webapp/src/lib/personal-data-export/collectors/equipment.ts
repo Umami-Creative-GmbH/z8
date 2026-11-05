@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import {
 	equipmentAssignment,
+	equipmentCaseHoldEvent,
 	equipmentCorrection,
 	equipmentException,
 	equipmentHandover,
@@ -220,9 +221,51 @@ export const equipmentCollector: PersonalDataCollector = {
 						asc(equipmentCorrection.recordedAt),
 						asc(equipmentCorrection.id),
 					);
+				const holds = await tx
+					.select({ record: equipmentCaseHoldEvent, actor })
+					.from(equipmentCaseHoldEvent)
+					.innerJoin(
+						equipmentAssignment,
+						assignmentJoin(
+							equipmentCaseHoldEvent.assignmentId,
+							equipmentCaseHoldEvent.organizationId,
+						),
+					)
+					.leftJoin(user, actorJoin(equipmentCaseHoldEvent.actorId))
+					.where(
+						and(
+							subject,
+							eq(equipmentCaseHoldEvent.organizationId, organizationId),
+						),
+					)
+					.orderBy(
+						asc(equipmentCaseHoldEvent.recordedAt),
+						asc(equipmentCaseHoldEvent.id),
+					);
 				return {
 					category: "equipment" as const,
 					parts: [
+						tablePart(
+							"case_holds",
+							[
+								"id",
+								"assignment_id",
+								"kind",
+								"reason",
+								"revision",
+								"recorded_by",
+								"recorded_at",
+							],
+							holds.map(({ record: r, actor }) => ({
+								id: r.id,
+								assignment_id: r.assignmentId,
+								kind: r.kind,
+								reason: r.reason,
+								revision: r.revision,
+								recorded_by: by(actor),
+								recorded_at: instantText(r.recordedAt),
+							})),
+						),
 						tablePart(
 							"assignments",
 							[

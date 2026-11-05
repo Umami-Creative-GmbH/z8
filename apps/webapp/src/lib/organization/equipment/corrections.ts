@@ -13,6 +13,7 @@ import {
 	equipmentException,
 	equipmentHandover,
 	equipmentItem,
+	equipmentItemCustodyHistory,
 	equipmentItemReadinessEvent,
 	equipmentTransfer,
 } from "@/db/schema/equipment";
@@ -168,6 +169,11 @@ export async function correctEquipment(
 						(h) => h.id === change.handoverId && h.kind === "receipt",
 					);
 		if (!h) return refused("not_found");
+		if (
+			h.transferHistoryCleaned &&
+			(change.quantity !== h.quantity || change.actualDate !== h.actualDate)
+		)
+			return refused("transfer_conflict");
 		handoverId = h.id;
 		before = handoverValues(h);
 		after = {
@@ -568,11 +574,47 @@ export async function correctEquipment(
 			)
 			.orderBy(asc(equipmentHandover.sequence));
 		const issues = allHandovers.filter((h) => h.kind === "issue");
+		const cleaned = await tx
+			.select()
+			.from(equipmentItemCustodyHistory)
+			.where(
+				and(
+					eq(equipmentItemCustodyHistory.organizationId, actor.organizationId),
+					eq(equipmentItemCustodyHistory.itemId, item.id),
+				),
+			);
 		// Keep the original custody order even when correcting the actual dates.
 		let previousReceipt: string | null = null;
 		let lastDate: string | null = null;
 		let heldCount = 0;
-		for (const original of issues) {
+		const chronology = [
+			...issues.map((original) => ({
+				sequence: original.sequence,
+				original,
+				cleaned: undefined,
+			})),
+			...cleaned.map((row) => ({
+				sequence: row.issueSequence,
+				original: undefined,
+				cleaned: row,
+			})),
+		].sort((a, b) => a.sequence - b.sequence);
+		for (const entry of chronology) {
+			if (entry.cleaned) {
+				const row = entry.cleaned;
+				if (
+					heldCount ||
+					(previousReceipt &&
+						(!row.issueDate || earlier(row.issueDate, previousReceipt)))
+				)
+					return refused("conflicting_history");
+				if (!row.receiptDate) heldCount++;
+				previousReceipt = row.receiptDate;
+				lastDate = row.receiptDate ?? row.issueDate;
+				continue;
+			}
+			const original = entry.original;
+			if (!original) throw new Error("Missing item history boundary");
 			const effectiveIssue =
 				original.assignmentId === assignment.id
 					? issue

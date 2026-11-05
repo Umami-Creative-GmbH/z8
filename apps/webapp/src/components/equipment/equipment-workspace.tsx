@@ -36,6 +36,7 @@ import {
 	ReceiveEquipmentForm,
 } from "./equipment-handovers";
 import { EquipmentReadiness } from "./equipment-readiness";
+import { EquipmentRetention } from "./equipment-retention";
 import { TransferEquipmentForm } from "./equipment-transfer";
 export function EquipmentOverview({
 	data,
@@ -133,18 +134,27 @@ function useEquipmentCommands() {
 				setFeedback({
 					kind: "success",
 					text:
-						change.kind === "correct_issue" ||
-						change.kind === "correct_receipt" ||
-						change.kind === "correct_exception" ||
-						change.kind === "correct_transfer"
-							? t("settings.equipment.correction.saved", "Amendment recorded.")
-							: change.kind === "close_return" ||
-									change.kind === "receive_exception"
+						change.kind === "place_case_hold" ||
+						change.kind === "release_case_hold"
+							? t("settings.equipment.retention.saved", "Case hold updated.")
+							: change.kind === "correct_issue" ||
+									change.kind === "correct_receipt" ||
+									change.kind === "correct_exception" ||
+									change.kind === "correct_transfer"
 								? t(
-										"settings.equipment.exception.saved",
-										"Equipment action recorded.",
+										"settings.equipment.correction.saved",
+										"Amendment recorded.",
 									)
-								: t("settings.equipment.handover.saved", "Handover recorded."),
+								: change.kind === "close_return" ||
+										change.kind === "receive_exception"
+									? t(
+											"settings.equipment.exception.saved",
+											"Equipment action recorded.",
+										)
+									: t(
+											"settings.equipment.handover.saved",
+											"Handover recorded.",
+										),
 				});
 				router.refresh();
 			} catch {
@@ -491,6 +501,10 @@ function EquipmentAssignments({
 				{t(
 					"settings.equipment.custody.empty",
 					"No equipment assignments match this view.",
+				)}{" "}
+				{t(
+					"settings.equipment.retention.emptyHelp",
+					"Closed personal history is removed when the organization’s retention period expires, unless protected by a case hold.",
 				)}
 			</p>
 		);
@@ -501,21 +515,31 @@ function EquipmentAssignments({
 					key={assignment.id}
 					assignment={assignment}
 					amendments={
-						<EquipmentCorrections
-							key={`${assignment.id}:${assignment.revision}`}
-							assignment={{
-								...assignment,
-								canCorrect: data.canManage && assignment.canCorrect,
-								canCorrectReceipt:
-									data.canManage && assignment.canCorrectReceipt,
-								canCorrectException:
-									data.canManage && assignment.canCorrectException,
-							}}
-							today={data.today}
-							timezone={data.timezone}
-							pending={pending}
-							submit={submit}
-						/>
+						<>
+							<EquipmentRetention
+								key={`retention:${assignment.id}:${assignment.revision}`}
+								assignment={assignment}
+								timezone={data.timezone}
+								canAdminister={data.canManage && data.canAdminister}
+								pending={pending}
+								submit={submit}
+							/>
+							<EquipmentCorrections
+								key={`${assignment.id}:${assignment.revision}`}
+								assignment={{
+									...assignment,
+									canCorrect: data.canManage && assignment.canCorrect,
+									canCorrectReceipt:
+										data.canManage && assignment.canCorrectReceipt,
+									canCorrectException:
+										data.canManage && assignment.canCorrectException,
+								}}
+								today={data.today}
+								timezone={data.timezone}
+								pending={pending}
+								submit={submit}
+							/>
+						</>
 					}
 					timezone={data.timezone}
 					staff={data.canManage}

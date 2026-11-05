@@ -124,6 +124,16 @@ export function handoverRefusalMessage(
 				"settings.equipment.handover.requestConflict",
 				"This submission was already saved with different values. Reload equipment before recording another handover.",
 			);
+		case "history_removed":
+			return t(
+				"settings.equipment.retention.removedRetry",
+				"This request belongs to personal history already removed under retention. Reload equipment.",
+			);
+		case "hold_unchanged":
+			return t(
+				"settings.equipment.retention.unchanged",
+				"This hold state is already recorded. Reload equipment before making another change.",
+			);
 		default:
 			return equipmentRefusalMessage(reason, t);
 	}

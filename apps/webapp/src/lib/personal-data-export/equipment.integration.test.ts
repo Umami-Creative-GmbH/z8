@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -10,6 +10,15 @@ const harness = vi.hoisted(() => ({
 	jobs: [] as { organizationId: string; exportId: string }[],
 	signed: [] as { key: string }[],
 }));
+const retentionClock = vi.hoisted(() => ({ now: "2026-11-05T12:00:00Z" }));
+vi.mock("@/lib/datetime/temporal-core", async (original) => {
+	const actual =
+		await original<typeof import("@/lib/datetime/temporal-core")>();
+	return {
+		...actual,
+		systemClock: { nowInstant: () => actual.parseInstant(retentionClock.now) },
+	};
+});
 vi.mock("next/headers", async () =>
 	(await import("@/test/integration-harness")).nextHeaders(),
 );
@@ -95,7 +104,7 @@ async function cleanup() {
 	await pool.query('delete from "user" where id like $1', ["t1548-%"]);
 }
 
-beforeAll(async () => {
+beforeEach(async () => {
 	await cleanup();
 	for (const org of [ORG, OTHER])
 		await pool.query(
@@ -173,6 +182,7 @@ beforeAll(async () => {
 });
 afterAll(cleanup);
 beforeEach(async () => {
+	retentionClock.now = "2026-11-05T12:00:00Z";
 	await pool.query(
 		"delete from equipment_assignment where organization_id in ($1,$2) and id >= $3",
 		[ORG, OTHER, id(50)],
@@ -186,6 +196,88 @@ beforeEach(async () => {
 		"delete from personal_data_export where organization_id in ($1,$2)",
 		[ORG, OTHER],
 	);
+});
+
+it("new employee and admin ZIPs omit purged original/effective/correction evidence and retain held/outstanding records", async () => {
+	await pool.query(
+		"insert into equipment_policy(organization_id,retention_months) values($1,1)",
+		[ORG],
+	);
+	await pool.query(
+		"update equipment_assignment set last_activity_at='2026-11-02T05:00:00Z' where organization_id=$1 and id=$2",
+		[ORG, id(20)],
+	);
+	for (const [assignment, subject, held, required, note] of [
+		[80, 1, true, false, "Held personal case evidence"],
+		[81, 4, false, false, "Former expired personal history"],
+		[82, 4, false, true, "Former outstanding personal history"],
+		[83, 4, true, false, "Former held personal history"],
+	] as const) {
+		await pool.query(
+			"insert into equipment_assignment(id,organization_id,type_id,employee_id,quantity,return_required,case_held,last_activity_at) values($1,$2,$3,$4,1,$5,$6,'2026-11-02T05:00:00Z')",
+			[id(assignment), ORG, id(10), id(subject), required, held],
+		);
+		await pool.query(
+			"insert into equipment_handover(organization_id,assignment_id,kind,quantity,actual_date,condition,notes,actor_id,recorded_at) values($1,$2,'issue',1,'2026-11-01','good',$3,'t1548-owner','2026-11-02T05:00:00Z')",
+			[ORG, id(assignment), note],
+		);
+		if (held)
+			await pool.query(
+				"insert into equipment_case_hold_event(organization_id,assignment_id,kind,reason,actor_id,recorded_at,revision) values($1,$2,'place','Specific documented case','t1548-owner','2026-11-02T05:00:00Z',2)",
+				[ORG, id(assignment)],
+			);
+	}
+	const before = await build("employee");
+	expect(before.files["equipment.json"]).toContain("Original issue note");
+	retentionClock.now = "2026-12-02T23:00:00Z";
+	const { runEquipmentRetentionJob } = await import(
+		"@/lib/jobs/equipment-retention"
+	);
+	expect(await runEquipmentRetentionJob()).toMatchObject({
+		deletedCount: 2,
+		errors: [],
+	});
+	const own = await build("employee");
+	expect(own.equipment.assignments.map((a: { id: string }) => a.id)).toEqual([
+		id(80),
+	]);
+	expect(own.files["equipment.json"]).toContain("Held personal case evidence");
+	expect(own.equipment.case_holds).toMatchObject([
+		{
+			kind: "place",
+			reason: "Specific documented case",
+			recorded_by: "Recorder owner",
+		},
+	]);
+	for (const secret of [
+		"Original issue note",
+		"Corrected issue note",
+		"Lost at departure",
+		"Count corrected",
+		"Recovered shirt",
+	])
+		expect(Object.values(own.files).join("\n")).not.toContain(secret);
+	harness.userId = "t1548-owner";
+	const admin = await build("admin");
+	expect(admin.equipment.assignments.map((a: { id: string }) => a.id)).toEqual([
+		id(80),
+	]);
+	const former = await build("admin", id(4));
+	expect(former.equipment.assignments.map((a: { id: string }) => a.id)).toEqual(
+		[id(82), id(83)],
+	);
+	expect(former.files["equipment.json"]).not.toContain(
+		"Former expired personal history",
+	);
+	expect(former.files["equipment.json"]).toContain(
+		"Former outstanding personal history",
+	);
+	expect(former.files["equipment.json"]).toContain(
+		"Former held personal history",
+	);
+	await pool.query("delete from equipment_policy where organization_id=$1", [
+		ORG,
+	]);
 });
 
 it("exports scheduled and immediate endings for former subjects and keeps a reactivated assignment's original ending separate from fresh equipment", async () => {
