@@ -45,8 +45,9 @@ export function OrganizationProfileCard({
 	const focusErrors = useRef(false);
 	const [fieldErrors, setFieldErrors] = useState<ProfileFieldErrors>({});
 	const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
+	const [savedProfile, setSavedProfile] = useState(profile);
 	const form = useForm({
-		defaultValues: profile,
+		defaultValues: savedProfile,
 		onSubmit: async ({ value }) => {
 			setFeedback(null);
 			const validation = validateOrganizationProfile(value);
@@ -67,7 +68,8 @@ export function OrganizationProfileCard({
 					setFieldErrors(result.data.fieldErrors);
 				} else {
 					setFieldErrors({});
-					form.reset(result.data.profile, { keepDefaultValues: true });
+					setSavedProfile(result.data.profile);
+					form.reset(result.data.profile);
 					setFeedback("saved");
 					router.refresh();
 				}
@@ -77,6 +79,20 @@ export function OrganizationProfileCard({
 		},
 	});
 	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
+	const hasUnsavedChanges = useStore(
+		form.store,
+		(state) => !state.isDefaultValue,
+	);
+	useEffect(() => {
+		if (!hasUnsavedChanges) return;
+		const warn = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			// Older browsers require returnValue to display their native warning.
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", warn);
+		return () => window.removeEventListener("beforeunload", warn);
+	}, [hasUnsavedChanges]);
 	useEffect(() => {
 		if (isSubmitting || !focusErrors.current) return;
 		focusErrors.current = false;

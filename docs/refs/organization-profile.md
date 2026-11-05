@@ -29,6 +29,9 @@ Implementation tickets:
 - Authenticated-action integration tests use disposable PostgreSQL and real
   permissions, validation and tenant filtering. Form tests exercise editing,
   accessible errors, pending state and save feedback.
+- Unsaved edits trigger the browser's native leave/reload warning. Reverting
+  edits removes the warning; a successful save adopts the normalized saved
+  profile as the new baseline. Failed saves retain protection.
 
 ## Confirmed scope
 
@@ -102,6 +105,15 @@ this first release.
   boxes grow with wrapped text, and fixed footers show actual page totals as the
   agreement flows across pages. Existing agreement wording, processor details and
   conditional subprocessor disclosures are retained.
+- Controller details use self-hosted, subset-embedded Noto Sans and Droid Sans
+  Fallback fonts for Latin, Greek, Cyrillic, Chinese and Japanese text. Font
+  loading stays behind the PDF export's lazy import; the Chinese/Japanese
+  fallback is loaded only when needed. Font sources, licenses and checksums are
+  recorded in `apps/webapp/public/fonts/avv/README.md`.
+- Font coverage is bounded. If a supplied character cannot render, export fails
+  with its Unicode code point and a support message instead of silently changing
+  the legal identity. This does not restrict profile validation or alter saved
+  text. Additional scripts require licensed font coverage and render review.
 
 ## Verification
 
@@ -116,6 +128,9 @@ this first release.
   display names, absent optional details, changed addresses and maximum-length
   party details. Minimal/full/long PDFs were rendered and reviewed on all pages,
   including text bounds, overlap and page footers.
+- Unicode exporter regressions read actual embedded-font mappings with PDF.js,
+  checking Cyrillic, Japanese and Chinese legal names and every address row,
+  repeated downloads across scripts and explicit unsupported-character errors.
 
 ## Acceptance scenarios
 

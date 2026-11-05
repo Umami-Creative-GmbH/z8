@@ -1,20 +1,57 @@
 import { expect, it } from "vitest";
-import { pdfTexts } from "@/lib/time-tracking/kiosk/badge-pdf.test.fixture";
+import { validateOrganizationProfile } from "@/lib/organization/profile";
 import {
+	avvPdfText,
 	fullAvvProfile,
 	longAvvProfile,
 	minimalAvvProfile as minimal,
+	nonLatinAvvProfiles,
 } from "./avv-pdf.test.fixture";
 import { exportAvvToPDF } from "./avv-pdf-generator";
 
+it.each(nonLatinAvvProfiles)(
+	"preserves the exact non-Latin legal identity and every registered address row for $country",
+	async (profile) => {
+		const text = (await avvPdfText(await exportAvvToPDF(profile))).replace(
+			/\s+/gu,
+			"",
+		);
+		for (const value of [
+			profile.legalCompanyName,
+			profile.addressLine1,
+			profile.addressLine2,
+			profile.postalCode,
+			profile.city,
+			profile.stateOrRegion,
+			profile.country,
+		]) {
+			expect(text).toContain(value.replace(/\s+/gu, ""));
+		}
+	},
+);
+
+it("preserves Latin text when a new download follows a Cyrillic document with composite glyphs", async () => {
+	await exportAvvToPDF(nonLatinAvvProfiles[0]);
+	const text = await avvPdfText(await exportAvvToPDF(minimal));
+	expect(text).toContain("Umami Creative Legal GmbH");
+	expect(text).toContain("Example Street 7");
+});
+
+it("refuses an unrenderable character instead of silently damaging a valid saved legal identity", async () => {
+	const profile = { ...minimal, legalCompanyName: "Example 😀 Ltd" };
+	expect(validateOrganizationProfile(profile).ok).toBe(true);
+	await expect(exportAvvToPDF(profile)).rejects.toThrow(
+		"The AVV fonts cannot render U+1F600. Your profile has not been changed. Contact support to add font coverage.",
+	);
+});
+
 it("exports the legal company and registered address without optional labels or the display name", async () => {
 	const pdf = Buffer.from(await exportAvvToPDF(minimal));
-	const texts = pdfTexts(pdf);
-	const text = texts.join("").replace(/\s+/g, " ");
-	expect(texts).toContain("Umami Creative Legal GmbH");
+	const text = (await avvPdfText(pdf)).replace(/\s+/g, " ");
+	expect(text).toContain("Umami Creative Legal GmbH");
 	for (const line of ["Example Street 7", "10115 Berlin", "DE"])
 		expect(text).toContain(line);
-	expect(texts).not.toContain("Umami");
+	expect(text).not.toContain(minimal.displayName);
 	expect(text).not.toContain("USt-IdNr.");
 	expect(text).toContain("Scaleway");
 	expect(text).toContain("Firebase Cloud Messaging");
@@ -29,9 +66,7 @@ it("refuses incomplete identity even when the public exporter is invoked directl
 });
 
 it("includes optional VAT and every supplied registered address row without a verified claim", async () => {
-	const text = pdfTexts(Buffer.from(await exportAvvToPDF(fullAvvProfile))).join(
-		"",
-	);
+	const text = await avvPdfText(await exportAvvToPDF(fullAvvProfile));
 	for (const value of [
 		"Building B, Floor 2",
 		"Berlin region",
@@ -43,8 +78,8 @@ it("includes optional VAT and every supplied registered address row without a ve
 
 it("wraps maximum-length party details across physical pages while retaining the agreement and correct page totals", async () => {
 	const pdf = Buffer.from(await exportAvvToPDF(longAvvProfile));
-	const text = pdfTexts(pdf).join("");
 	const pages = (pdf.toString("latin1").match(/\/Type \/Page\b/g) ?? []).length;
+	const text = await avvPdfText(pdf);
 	expect(pages).toBeGreaterThan(2);
 	for (const ending of [
 		"LegalEnd GmbH",
@@ -81,12 +116,10 @@ it("exports a country without postal codes and regenerates after an address chan
 		city: "Hong Kong",
 		postalCode: "",
 	};
-	const first = pdfTexts(Buffer.from(await exportAvvToPDF(hongKong))).join("");
-	const second = pdfTexts(
-		Buffer.from(
-			await exportAvvToPDF({ ...hongKong, addressLine1: "Changed Street 8" }),
-		),
-	).join("");
+	const first = await avvPdfText(await exportAvvToPDF(hongKong));
+	const second = await avvPdfText(
+		await exportAvvToPDF({ ...hongKong, addressLine1: "Changed Street 8" }),
+	);
 	expect(first).toContain("Example Street 7");
 	expect(second).toContain("Changed Street 8");
 	expect(second).not.toContain("Example Street 7");
