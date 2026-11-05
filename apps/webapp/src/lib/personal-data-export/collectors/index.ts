@@ -5,6 +5,7 @@ import { approvalsCollector } from "./approvals";
 import { auditLogCollector } from "./audit-log";
 import { drivingLicenceCollector } from "./driving-licence";
 import { employmentCollector } from "./employment";
+import { equipmentCollector } from "./equipment";
 import { integrationsCollector } from "./integrations";
 import { notificationsCollector } from "./notifications";
 import { personnelFileCollector } from "./personnel-file";
@@ -30,5 +31,6 @@ export const PERSONAL_DATA_COLLECTORS: readonly PersonalDataCollector[] = [
 	integrationsCollector,
 	auditLogCollector,
 	drivingLicenceCollector,
+	equipmentCollector,
 	accountCollector,
 ];

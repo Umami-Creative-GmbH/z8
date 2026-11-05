@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EmployeePersonalDataExportCard } from "./employee-personal-data-export-card";
 
@@ -14,16 +14,26 @@ const actions = vi.hoisted(() => ({
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string>) =>
-			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => params?.[name] ?? ""),
+			fallback.replace(
+				/\{(\w+)\}/g,
+				(_match, name: string) => params?.[name] ?? "",
+			),
 	}),
 }));
 vi.mock("@/hooks/use-display-context", () => ({
-	useDisplayContext: () => ({ locale: "en", timezone: "UTC", timeFormat: "24h" }),
+	useDisplayContext: () => ({
+		locale: "en",
+		timezone: "UTC",
+		timeFormat: "24h",
+	}),
 }));
-vi.mock("@/app/[locale]/(app)/settings/employees/personal-data-export.actions", () => ({
-	getEmployeePersonalDataExportsAction: actions.list,
-	requestEmployeePersonalDataExportAction: actions.request,
-}));
+vi.mock(
+	"@/app/[locale]/(app)/settings/employees/personal-data-export.actions",
+	() => ({
+		getEmployeePersonalDataExportsAction: actions.list,
+		requestEmployeePersonalDataExportAction: actions.request,
+	}),
+);
 vi.mock("@/app/[locale]/(app)/settings/my-data/actions", () => ({
 	getPersonalDataExportDownloadUrl: actions.download,
 }));
@@ -39,7 +49,9 @@ const completed = {
 };
 
 function renderCard(isOwnRecord: boolean) {
-	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
 	return render(
 		<QueryClientProvider client={queryClient}>
 			<EmployeePersonalDataExportCard
@@ -59,8 +71,24 @@ describe("EmployeePersonalDataExportCard (#811)", () => {
 
 	it("lists past admin exports of a colleague with a download button", async () => {
 		renderCard(false);
-		expect(await screen.findByRole("button", { name: "Download" })).toBeTruthy();
+		expect(
+			await screen.findByRole("button", { name: "Download" }),
+		).toBeTruthy();
 		expect(actions.list).toHaveBeenCalledWith("employee-1");
+	});
+	it("describes current/former equipment and uses the existing authorized archive download", async () => {
+		actions.download.mockResolvedValue({
+			success: false,
+			error: "No longer available",
+		});
+		renderCard(false);
+		expect(
+			screen.getByText(/Includes the same retained equipment records/),
+		).toBeTruthy();
+		fireEvent.click(await screen.findByRole("button", { name: "Download" }));
+		await waitFor(() =>
+			expect(actions.download).toHaveBeenCalledWith("export-1"),
+		);
 	});
 
 	it("never loads or offers the admin exports of the admin's own record", async () => {
@@ -72,6 +100,8 @@ describe("EmployeePersonalDataExportCard (#811)", () => {
 		).toBeTruthy();
 		expect(actions.list).not.toHaveBeenCalled();
 		expect(screen.queryByRole("button", { name: "Download" })).toBeNull();
-		expect(screen.queryByRole("list", { name: "Past admin exports" })).toBeNull();
+		expect(
+			screen.queryByRole("list", { name: "Past admin exports" }),
+		).toBeNull();
 	});
 });
