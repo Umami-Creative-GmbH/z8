@@ -110,4 +110,37 @@ describe("Public API discovery in API Keys", () => {
 			}
 		},
 	);
+
+	it.each([
+		{ state: "empty", keys: [] },
+		{ state: "populated", keys: [existingKey] },
+	])(
+		"offers a keyboard-accessible installation download with the $state key list",
+		async ({ keys }) => {
+			renderApiKeys(keys);
+			const action = screen.getByRole("link", {
+				name: "Download OpenAPI spec",
+			});
+			expect(action.getAttribute("href")).toBe("/api/v1/openapi.json");
+			expect(action.getAttribute("download")).toBe(
+				"z8-public-api-v1.openapi.json",
+			);
+			const user = userEvent.setup();
+			for (
+				let step = 0;
+				step < 10 && document.activeElement !== action;
+				step++
+			) {
+				await user.tab();
+			}
+			expect(document.activeElement).toBe(action);
+			let activated = false;
+			action.addEventListener("click", (event) => {
+				event.preventDefault(); // jsdom does not implement browser file downloads.
+				activated = true;
+			});
+			await user.keyboard("{Enter}");
+			expect(activated).toBe(true);
+		},
+	);
 });
