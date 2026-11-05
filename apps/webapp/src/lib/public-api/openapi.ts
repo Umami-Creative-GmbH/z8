@@ -56,7 +56,11 @@ const rateLimitHeaders = {
 const problemResponse = (description: string, extraHeaders: Record<string, unknown> = {}) => ({
 	description,
 	headers: { ...rateLimitHeaders, ...extraHeaders },
-	content: { [PROBLEM_CONTENT_TYPE]: { schema: { $ref: "#/components/schemas/Problem" } } },
+	content: {
+		[PROBLEM_CONTENT_TYPE]: {
+			schema: { $ref: "#/components/schemas/Problem" },
+		},
+	},
 });
 
 function parametersOf(endpoint: PublicApiEndpoint) {
@@ -85,7 +89,11 @@ function operationOf(endpoint: PublicApiEndpoint) {
 			"200": {
 				description: "OK",
 				headers: rateLimitHeaders,
-				content: { "application/json": { schema: jsonSchema(endpoint.response, "output") } },
+				content: {
+					"application/json": {
+						schema: jsonSchema(endpoint.response, "output"),
+					},
+				},
 			},
 			"400": problemResponse("`validation_failed`: a query parameter is invalid."),
 			"401": problemResponse("`invalid_key`: the API key is missing, unknown, revoked or expired."),
@@ -99,6 +107,9 @@ function operationOf(endpoint: PublicApiEndpoint) {
 						schema: { type: "integer" },
 					},
 				},
+			),
+			"500": problemResponse(
+				"`server_error`: an unexpected error occurred while processing the request.",
 			),
 		},
 		"x-z8-scope": endpoint.scope,

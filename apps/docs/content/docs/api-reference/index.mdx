@@ -36,7 +36,11 @@ Work periods and absences require a `from`/`to` range of at most 366 days.
 
 ## Errors
 
-Errors are `application/problem+json` (RFC 9457) with a stable `type`: `invalid_key`, `scope_missing`, `billing_required`, `rate_limited`, `validation_failed` or `not_found`. A `validation_failed` problem lists each invalid parameter in `errors`.
+Errors are `application/problem+json` (RFC 9457) with a stable `type`: `invalid_key`, `scope_missing`, `billing_required`, `rate_limited`, `validation_failed`, `not_found` or `server_error`. A `validation_failed` problem lists each invalid parameter in `errors`.
+
+Supported operations return `500 server_error` when an unexpected error occurs while processing the request. Each operation documents this response with the shared problem schema.
+
+An unknown route under `/api/v1` returns `404 not_found` with the detail `No Public API v1 endpoint has this path.` Check the request path against the operations in this reference. This response means the route does not exist; the supported list operations do not return a resource-not-found response when no records match.
 
 ## Rate limits
 
