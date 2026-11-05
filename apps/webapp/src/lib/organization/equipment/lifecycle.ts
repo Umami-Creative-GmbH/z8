@@ -32,7 +32,7 @@ export async function readEquipmentDepartureReturns(
   SELECT a.id, coalesce(i.identifier, t.name) AS identifier, t.name AS type_name,
    (a.quantity::bigint - a.received_quantity - a.lost_quantity - a.waived_quantity + a.exception_received_quantity)::integer AS outstanding,
    a.explicit_deadline::text, a.departure_deadline::text,
-   (a.employment_period_id IS NULL OR EXISTS (SELECT 1 FROM employee_employment_period p WHERE p.organization_id=a.organization_id AND p.employee_id=a.employee_id AND p.id=a.employment_period_id AND p.status='open')) AS current_period
+   (a.deactivation_id IS NULL AND (a.employment_period_id IS NULL OR EXISTS (SELECT 1 FROM employee_employment_period p WHERE p.organization_id=a.organization_id AND p.employee_id=a.employee_id AND p.id=a.employment_period_id AND p.status='open'))) AS current_period
   FROM equipment_assignment a JOIN equipment_type t ON t.id=a.type_id AND t.organization_id=a.organization_id
   LEFT JOIN equipment_item i ON i.id=a.item_id AND i.organization_id=a.organization_id
   WHERE a.organization_id=${subject.organizationId} AND a.employee_id=${subject.employeeId}::uuid
@@ -62,6 +62,7 @@ export async function endEquipmentEmployment(
 	tx: Client,
 	input: Subject & {
 		departureId?: string;
+		deactivationId?: string;
 		actorUserId: string;
 		cutoff: Instant;
 		timezone: string;
@@ -74,8 +75,9 @@ export async function endEquipmentEmployment(
 	const current = await tx.execute(sql`SELECT 1 FROM employee e
   WHERE e.organization_id=${input.organizationId} AND e.id=${input.employeeId}::uuid
   AND NOT EXISTS (SELECT 1 FROM employee_employment_period p WHERE p.organization_id=e.organization_id AND p.employee_id=e.id AND p.status='open' AND p.id IS DISTINCT FROM ${input.employmentPeriodId}::uuid)
-  AND (${input.employmentPeriodId}::uuid IS NULL OR EXISTS (SELECT 1 FROM employee_employment_period p WHERE p.organization_id=e.organization_id AND p.employee_id=e.id AND p.id=${input.employmentPeriodId}::uuid AND p.status='open'))`);
-	if (!current.rows.length) return;
+  AND (${input.employmentPeriodId}::uuid IS NULL OR EXISTS (SELECT 1 FROM employee_employment_period p WHERE p.organization_id=e.organization_id AND p.employee_id=e.id AND p.id=${input.employmentPeriodId}::uuid AND p.status='open'))
+  AND (${input.deactivationId ?? null}::uuid IS NULL OR EXISTS (SELECT 1 FROM employee_deactivation d WHERE d.id=${input.deactivationId ?? null}::uuid AND d.organization_id=e.organization_id AND d.employee_id=e.id AND d.employment_period_id IS NOT DISTINCT FROM ${input.employmentPeriodId}::uuid AND d.reactivated_at IS NULL))`);
+	if (!current.rows.length) return { revokedOfficerGrantIds: [] as string[] };
 	const at = dateFromInstant(input.cutoff);
 	await tx.execute(sql`INSERT INTO equipment_former_team_scope (organization_id, employee_id, team_ids, captured_at)
   SELECT e.organization_id, e.id, ARRAY(SELECT DISTINCT team_id FROM (
@@ -84,14 +86,23 @@ export async function endEquipmentEmployment(
   ) teams), ${at} FROM employee e WHERE e.organization_id=${input.organizationId} AND e.id=${input.employeeId}::uuid
   ON CONFLICT (organization_id, employee_id) DO UPDATE SET
    team_ids=ARRAY(SELECT DISTINCT unnest(equipment_former_team_scope.team_ids || excluded.team_ids)), captured_at=excluded.captured_at`);
-	await tx.execute(sql`UPDATE equipment_officer_grant SET revoked_at=${at}, updated_at=${at}, updated_by=${input.actorUserId}, revision=revision+1
-  WHERE organization_id=${input.organizationId} AND employee_id=${input.employeeId}::uuid AND revoked_at IS NULL`);
+	const revoked = await tx.execute<{
+		id: string;
+	}>(sql`UPDATE equipment_officer_grant SET revoked_at=${at}, updated_at=${at}, updated_by=${input.actorUserId}, revision=revision+1
+  WHERE organization_id=${input.organizationId} AND employee_id=${input.employeeId}::uuid AND revoked_at IS NULL RETURNING employee_id AS id`);
+	if (input.deactivationId) {
+		await tx.execute(sql`UPDATE equipment_assignment SET deactivation_id=${input.deactivationId}::uuid, revision=revision+1
+   WHERE organization_id=${input.organizationId} AND employee_id=${input.employeeId}::uuid
+    AND (employment_period_id IS NULL OR employment_period_id=${input.employmentPeriodId}::uuid)
+    AND NOT return_required AND deactivation_id IS NULL`);
+	}
 	await updateDeadlines(
 		tx,
 		input,
 		input.departureId ?? null,
 		equipmentDepartureDeadline(input.cutoff, input.timezone, input.mode),
 	);
+	return { revokedOfficerGrantIds: revoked.rows.map((row) => row.id) };
 }
 
 /** Recompute after an accepted schedule/edit/cancel under lifecycle locks, never from a preview. */
@@ -114,7 +125,7 @@ export async function synchronizeEquipmentDeparture(
 	if (departure.status === "canceled") {
 		await tx.execute(sql`UPDATE equipment_assignment SET departure_deadline=NULL, departure_id=NULL, revision=revision+1
    WHERE organization_id=${subject.organizationId} AND employee_id=${subject.employeeId}::uuid
-    AND employment_period_id=${subject.employmentPeriodId}::uuid AND departure_id=${subject.departureId}::uuid AND departure_deadline IS NOT NULL`);
+    AND employment_period_id=${subject.employmentPeriodId}::uuid AND departure_id=${subject.departureId}::uuid AND deactivation_id IS NULL AND departure_deadline IS NOT NULL`);
 		return;
 	}
 	await updateDeadlines(
@@ -130,13 +141,15 @@ export async function synchronizeEquipmentDeparture(
 }
 async function updateDeadlines(
 	tx: Client,
-	subject: Subject,
+	subject: Subject & { deactivationId?: string },
 	departureId: string | null,
 	deadline: string,
 ) {
 	await tx.execute(sql`UPDATE equipment_assignment SET departure_deadline=${deadline}::date, departure_id=${departureId}::uuid,
+  deactivation_id=${subject.deactivationId ?? null}::uuid,
   employment_period_id=coalesce(employment_period_id, ${subject.employmentPeriodId}::uuid), revision=revision+1
   WHERE organization_id=${subject.organizationId} AND employee_id=${subject.employeeId}::uuid AND return_required
    AND (employment_period_id IS NULL OR employment_period_id=${subject.employmentPeriodId}::uuid)
-   AND (departure_deadline IS DISTINCT FROM ${deadline}::date OR departure_id IS DISTINCT FROM ${departureId}::uuid)`);
+   AND deactivation_id IS NULL
+   AND (departure_deadline IS DISTINCT FROM ${deadline}::date OR departure_id IS DISTINCT FROM ${departureId}::uuid OR deactivation_id IS DISTINCT FROM ${subject.deactivationId ?? null}::uuid)`);
 }

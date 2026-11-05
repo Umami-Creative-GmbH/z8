@@ -12,8 +12,8 @@ import { AuditTrail } from "@/lib/audit-trail";
 import { auth, runAuthMutation } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { revokeOrganizationActiveSessions } from "@/lib/auth/organization-session-revocation";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import {
@@ -51,6 +51,7 @@ import {
 } from "@/lib/employee-lifecycle/receipts";
 import { createLogger } from "@/lib/logger";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
+import { employeeCoordinationGuard, holdGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -78,8 +79,7 @@ const previewEmployeeDeactivationSchema = z.strictObject({
 export type DeactivateEmployeeInput = z.input<typeof deactivateEmployeeSchema>;
 export type PreviewEmployeeDeactivationInput = z.input<typeof previewEmployeeDeactivationSchema>;
 
-const ownerInvariantViolationMessage =
-	"Organization must retain an approved accessible owner";
+const ownerInvariantViolationMessage = "Organization must retain an approved accessible owner";
 const finalOwnerDeactivateGuidance =
 	"Assign and activate another approved owner before deactivating this employee";
 const removeFinalOwnerGuidance =
@@ -120,18 +120,18 @@ type DeactivationTransactionResult =
 	  }
 	| {
 			type: "refused";
-			reports: Array<NamedEmployee & { refusal: "replacement_missing" | "replacement_ineligible" }>;
+			reports: Array<
+				NamedEmployee & {
+					refusal: "replacement_missing" | "replacement_ineligible";
+				}
+			>;
 	  }
 	| LifecycleRefusal;
 
 function isOwnerInvariantViolation(error: DatabaseError) {
 	let cause: unknown = error.cause;
 
-	for (
-		let depth = 0;
-		depth < 4 && cause && typeof cause === "object";
-		depth += 1
-	) {
+	for (let depth = 0; depth < 4 && cause && typeof cause === "object"; depth += 1) {
 		const candidate = cause as {
 			code?: unknown;
 			message?: unknown;
@@ -167,10 +167,7 @@ function isFinalOwnerRemovalError(error: unknown) {
 		const candidate = candidates[index];
 		if (typeof candidate === "string") {
 			const normalized = candidate.toLowerCase().replaceAll("_", " ");
-			if (
-				normalized.includes("last owner") ||
-				normalized.includes("approved accessible owner")
-			) {
+			if (normalized.includes("last owner") || normalized.includes("approved accessible owner")) {
 				return true;
 			}
 			continue;
@@ -186,12 +183,7 @@ function isFinalOwnerRemovalError(error: unknown) {
 			code?: unknown;
 			message?: unknown;
 		};
-		candidates.push(
-			errorRecord.code,
-			errorRecord.message,
-			errorRecord.body,
-			errorRecord.cause,
-		);
+		candidates.push(errorRecord.code, errorRecord.message, errorRecord.body, errorRecord.cause);
 	}
 
 	return false;
@@ -205,7 +197,10 @@ function lifecycleRefusalError(
 	const isActive = options.action === "reactivate";
 	switch (refusal.type) {
 		case "not_found":
-			return new NotFoundError({ message: "Employee not found", entityType: "employee" });
+			return new NotFoundError({
+				message: "Employee not found",
+				entityType: "employee",
+			});
 		case "actor_membership_missing":
 			return new AuthorizationError({
 				message: "You do not have access to employee settings",
@@ -235,7 +230,10 @@ function lifecycleRefusalError(
 				action: options.action,
 			});
 		case "final_accessible_owner":
-			return new ValidationError({ message: finalOwnerDeactivateGuidance, field: "employeeId" });
+			return new ValidationError({
+				message: finalOwnerDeactivateGuidance,
+				field: "employeeId",
+			});
 		case "rehire_required":
 			return new ValidationError({
 				message:
@@ -303,6 +301,7 @@ function deactivateEmployee(input: unknown) {
 						return await withAuthorizationMutation(
 							deactivationProtectionScope(command),
 							async (tx): Promise<DeactivationTransactionResult> => {
+								await holdGuard(tx, employeeCoordinationGuard(command.employeeId));
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
 								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
 									return { type: "not_found" };
@@ -411,7 +410,10 @@ function deactivateEmployee(input: unknown) {
 					return;
 				}
 
-				const context = { employeeId: command.employeeId, organizationId: actor.organizationId };
+				const context = {
+					employeeId: command.employeeId,
+					organizationId: actor.organizationId,
+				};
 				const targetUserId =
 					transactionResult.type === "replay"
 						? transactionResult.targetUserId
@@ -444,7 +446,10 @@ function deactivateEmployee(input: unknown) {
 							targetType: "employee",
 							organizationId: actor.organizationId,
 							changes: {
-								isActive: { from: transactionResult.targetEmployee.isActive, to: false },
+								isActive: {
+									from: transactionResult.targetEmployee.isActive,
+									to: false,
+								},
 							},
 							// The employment history shows this deactivation once (#1441).
 							metadata: {
@@ -530,7 +535,11 @@ function reactivateEmployee(employeeId: string) {
 					action: "reactivate",
 				});
 
-				const validatedEmployeeId = yield* validateInput(employeeIdSchema, employeeId, "employeeId");
+				const validatedEmployeeId = yield* validateInput(
+					employeeIdSchema,
+					employeeId,
+					"employeeId",
+				);
 				// Identifies this reactivation in the ledger, the history event and the audit entry.
 				const requestId = randomUUID();
 				const transactionResult = yield* actor.dbService
@@ -538,7 +547,10 @@ function reactivateEmployee(employeeId: string) {
 						// The target's active state feeds manual creation, so its protection
 						// precedes the organization row lock and every write.
 						return await withAuthorizationMutation(
-							{ organizationId: actor.organizationId, employeeIds: [validatedEmployeeId] },
+							{
+								organizationId: actor.organizationId,
+								employeeIds: [validatedEmployeeId],
+							},
 							async (tx): Promise<ReactivationTransactionResult> => {
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
 								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
@@ -552,7 +564,11 @@ function reactivateEmployee(employeeId: string) {
 									isActive: true,
 								});
 								if (check.type === "unchanged") {
-									return { type: "success", changed: false, targetEmployee: check.targetEmployee };
+									return {
+										type: "success",
+										changed: false,
+										targetEmployee: check.targetEmployee,
+									};
 								}
 								if (check.type !== "change") return check;
 
@@ -735,7 +751,11 @@ export async function removeEmployeeAccessAction(
 				const actor = yield* getEmployeeSettingsActorContext({
 					queryName: "removeEmployeeAccess:actor",
 				});
-				const validatedEmployeeId = yield* validateInput(employeeIdSchema, employeeId, "employeeId");
+				const validatedEmployeeId = yield* validateInput(
+					employeeIdSchema,
+					employeeId,
+					"employeeId",
+				);
 
 				const actorMembership = yield* actor.dbService.query(
 					"removeEmployeeAccess:actorMembership",
@@ -750,10 +770,7 @@ export async function removeEmployeeAccessAction(
 						});
 					},
 				);
-				if (
-					!actorMembership ||
-					!hasOrganizationRole(actorMembership.role, "owner")
-				) {
+				if (!actorMembership || !hasOrganizationRole(actorMembership.role, "owner")) {
 					return yield* Effect.fail(
 						new AuthorizationError({
 							message: "Only organization owners can remove employee access",
@@ -847,9 +864,7 @@ export async function removeEmployeeAccessAction(
 					catch: (cause) => cause,
 				}).pipe(
 					Effect.map(() => ({ success: true as const })),
-					Effect.catch((cause) =>
-						Effect.succeed({ success: false as const, cause }),
-					),
+					Effect.catch((cause) => Effect.succeed({ success: false as const, cause })),
 				);
 
 				if (!removalOutcome.success) {

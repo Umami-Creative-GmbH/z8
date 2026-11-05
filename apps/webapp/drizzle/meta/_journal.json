@@ -2124,6 +2124,13 @@
       "breakpoints": true
     },
     {
+      "idx": 303,
+      "version": "7",
+      "when": 1810915200000,
+      "tag": "0303_equipment_deactivation",
+      "breakpoints": true
+    },
+    {
       "idx": 304,
       "version": "7",
       "when": 1811001600000,
@@ -2132,3 +2139,4 @@
     }
   ]
 }
+

@@ -365,6 +365,7 @@ export interface EquipmentAssignmentView {
 	effectiveDeadline: string | null;
 	employmentPeriodId: string | null;
 	departureId: string | null;
+	deactivationId: string | null;
 	outstanding: boolean;
 	overdue: boolean;
 	held: boolean;

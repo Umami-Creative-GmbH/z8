@@ -36,6 +36,7 @@ export function DeactivationConsequences({ plan }: { plan: DeactivationPreview }
 			<ShiftsSection plan={plan} locale={locale} />
 			<AbsencesSection plan={plan} locale={locale} />
 			<AccessEndsSection access={plan.accessEnds} />
+			<EquipmentSection plan={plan} locale={locale} />
 			<RecordsSection plan={plan} />
 		</div>
 	);
@@ -63,6 +64,7 @@ function hasConsequences(plan: DeactivationPreview): boolean {
 			accessEnds.kioskBadges,
 			accessEnds.kioskFobs,
 			accessEnds.shareLinks,
+			plan.equipment,
 		].some((items) => items.length > 0) ||
 		plan.retentionStarts ||
 		plan.seatReleased
@@ -305,7 +307,10 @@ function ApprovalDutiesSection({
 						{t(
 							"settings.employees.lifecycle.deactivationPreview.approvalsToReview",
 							"{count, plural, one {# approval duty needs a replacement and is listed for review} other {# approval duties need a replacement and are listed for review}} ({review}).",
-							{ count: reviewCount, review: labels.review("approval_handover") },
+							{
+								count: reviewCount,
+								review: labels.review("approval_handover"),
+							},
 						)}
 						{reasons.length > 0 && (
 							<ul className="mt-1 list-[circle] space-y-1 pl-5 text-muted-foreground">
@@ -496,6 +501,54 @@ function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
 						)}
 					</li>
 				)}
+			</ItemList>
+		</PreviewSection>
+	);
+}
+
+function EquipmentSection({ plan, locale }: { plan: DeactivationPreview; locale: string }) {
+	const { t } = useTranslate();
+	if (plan.equipment.length === 0) return null;
+	return (
+		<PreviewSection
+			title={t(
+				"settings.employees.lifecycle.deactivationPreview.equipmentTitle",
+				"Outstanding equipment returns",
+			)}
+			description={t(
+				"settings.employees.lifecycle.deactivationPreview.equipmentDescription",
+				"Employment and access end even while equipment is missing. Authorized staff can follow up in Equipment, including former employees. Returning a physical key or fob does not restore its credential.",
+			)}
+		>
+			<ItemList>
+				{plan.equipment.map((item) => (
+					<li key={item.assignmentId} className="break-words">
+						{item.effectiveDeadline
+							? t(
+									"settings.employees.lifecycle.deactivationPreview.equipmentDue",
+									"{identifier} ({type}): {count} outstanding, due {date}",
+									{
+										identifier: item.identifier,
+										type: item.typeName,
+										count: item.outstandingQuantity,
+										date: formatPlainDate(
+											parsePlainDate(item.effectiveDeadline),
+											locale,
+											"dateMedium",
+										),
+									},
+								)
+							: t(
+									"settings.employees.lifecycle.deactivationPreview.equipmentUndated",
+									"{identifier} ({type}): {count} outstanding, no recorded deadline",
+									{
+										identifier: item.identifier,
+										type: item.typeName,
+										count: item.outstandingQuantity,
+									},
+								)}
+					</li>
+				))}
 			</ItemList>
 		</PreviewSection>
 	);

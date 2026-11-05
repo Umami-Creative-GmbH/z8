@@ -80,6 +80,7 @@ function plan(): DeactivationPlan {
 			kioskFobs: [{ fobId: "fob-1" }],
 			shareLinks: [{ linkId: "link-1", kind: "project" }],
 		},
+		equipment: [],
 		retentionStarts: true,
 		seatReleased: true,
 		refusals: [],
