@@ -2,11 +2,10 @@
 
 import { useTranslate } from "@tolgee/react";
 import { ReactFlowProvider } from "@xyflow/react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PersonPanel } from "./org-explorer-person-panel";
 import {
-	type CenterRequest,
 	type Highlight,
 	NoReportingLineGroup,
 	ReportingLinesCanvas,
@@ -16,12 +15,13 @@ import {
 import { groupTeams } from "./org-explorer-teams";
 import { TeamsView } from "./org-explorer-teams-view";
 import { EmployeeSearch, TeamFilter, ViewSwitch } from "./org-explorer-toolbar";
-import { buildReportingTree, defaultExpandedIds } from "./org-explorer-tree";
+import { buildReportingTree, type ReportingTree } from "./org-explorer-tree";
 import type { OrgExplorerData, OrgExplorerPerson } from "./org-explorer-types";
+import type { OrgExplorerUrlState } from "./org-explorer-url";
+import { useOrgExplorerLines } from "./use-org-explorer-lines";
 import {
+	type OrgExplorerPeopleLoader,
 	useOrgExplorerPeople,
-	withIds,
-	withoutIds,
 } from "./use-org-explorer-people";
 import { useOrgExplorerUrlState } from "./use-org-explorer-url-state";
 
@@ -44,103 +44,32 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 	const isMobile = useIsMobile();
 	const [url, setUrl] = useOrgExplorerUrlState();
 	const loader = useOrgExplorerPeople(initialData);
-	const { summary, peopleById, unknownIds, loadPeople } = loader;
-	const [expanded, setExpanded] = useState<ReadonlySet<string>>(() =>
-		defaultExpandedIds(buildReportingTree(initialData.people)),
-	);
-	const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(
-		() => new Set(),
-	);
-	const [centerRequest, setCenterRequest] = useState<CenterRequest | null>(
-		() => (url.employeeId ? { employeeId: url.employeeId, nonce: 0 } : null),
-	);
+	const { summary, peopleById } = loader;
 
 	const people = [...peopleById.values()];
 	const tree = buildReportingTree(people);
 	const teamNamesById = new Map(
 		summary.teams.map((entry) => [entry.teamId, entry.name]),
 	);
-
-	// The team filter highlights members and keeps their paths to the top open.
-	const filter = new Set(url.teamIds);
-	const matches = new Set(
-		filter.size === 0
-			? []
-			: people
-					.filter((entry) => entry.teamIds.some((teamId) => filter.has(teamId)))
-					.map((entry) => entry.employeeId),
+	const { pathIds, highlightOf } = teamFilterHighlights(
+		people,
+		tree,
+		url.teamIds,
 	);
-	const pathIds = new Set(
-		[...matches].flatMap((id) => tree.pathTo(id).slice(0, -1)),
-	);
-	const selectedPath = url.employeeId
-		? tree.pathTo(url.employeeId).slice(0, -1)
-		: [];
-	const openIds = new Set(
-		[...expanded, ...pathIds, ...selectedPath].filter(
-			(id) => !collapsed.has(id),
-		),
-	);
-	const highlightOf = (employeeId: string): Highlight => {
-		if (filter.size === 0) return "none";
-		if (matches.has(employeeId)) return "match";
-		return pathIds.has(employeeId) ? "path" : "dimmed";
-	};
 
 	function select(employeeId: string) {
 		setUrl({ employeeId });
 	}
 
-	/** Selects a person, opens the path to them and centres on them, loading what is missing. */
-	async function reveal(employeeId: string) {
-		setUrl({ employeeId });
-		await loadPeople([employeeId], { withPaths: true });
-		const path = buildReportingTree(loader.currentPeople())
-			.pathTo(employeeId)
-			.slice(0, -1);
-		setCollapsed((current) => withoutIds(current, path));
-		setExpanded((current) => withIds(current, path));
-		setCenterRequest((current) => ({
-			employeeId,
-			nonce: (current?.nonce ?? 0) + 1,
-		}));
-	}
-
-	function toggle(employeeId: string) {
-		if (openIds.has(employeeId)) {
-			setCollapsed((current) => withIds(current, [employeeId]));
-			setExpanded((current) => withoutIds(current, [employeeId]));
-			return;
-		}
-		setCollapsed((current) => withoutIds(current, [employeeId]));
-		setExpanded((current) => withIds(current, [employeeId]));
-		loader.loadLineReports(employeeId);
-	}
-
-	// A large organization loads the selected person, their managers and reports,
-	// and the filtered teams' members when the URL names them, also after the back button.
-	const selected = url.employeeId ? peopleById.get(url.employeeId) : undefined;
-	const loadSelected = useEffectEvent(
-		(employeeId: string | null, person: OrgExplorerPerson | undefined) => {
-			if (!employeeId) return;
-			void loadPeople(
-				person ? [...person.managerIds, ...person.reportIds] : [employeeId],
-				{
-					withPaths: true,
-				},
-			);
-		},
-	);
-	useEffect(
-		() => loadSelected(url.employeeId, selected),
-		[url.employeeId, selected],
-	);
-
-	const filterKey = url.teamIds.join(",");
-	const loadFilteredTeams = useEffectEvent((key: string) => {
-		if (key) loader.loadTeamsStarted(key.split(","));
+	const { openIds, centerRequest, reveal, toggle } = useOrgExplorerLines({
+		initialPeople: initialData.people,
+		tree,
+		pathIds,
+		selectedId: url.employeeId,
+		loader,
+		onSelect: select,
 	});
-	useEffect(() => loadFilteredTeams(filterKey), [filterKey]);
+	useOrgExplorerUrlLoads(url, loader);
 
 	if (summary.employeeCount === 0 && peopleById.size === 0) {
 		return (
@@ -164,16 +93,6 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 		onSelect: select,
 		onToggle: toggle,
 	};
-	const noReportingLine = tree.noReportingLine.flatMap(
-		(id) => peopleById.get(id) ?? [],
-	);
-	// An id that is not on the current roster opens nothing.
-	const shownEmployeeId =
-		url.employeeId &&
-		!unknownIds.has(url.employeeId) &&
-		(peopleById.has(url.employeeId) || !summary.complete)
-			? url.employeeId
-			: null;
 
 	return (
 		<section className="flex flex-col gap-4">
@@ -222,37 +141,16 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 					showNoTeam={url.teamIds.length === 0}
 				/>
 			) : (
-				<>
-					{tree.roots.length === 0 ? (
-						<p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-							{t(
-								"organization.explorer.noReportingLines",
-								"Nobody has a reporting line yet.",
-							)}
-						</p>
-					) : isMobile ? (
-						<ReportingLinesOutline {...lineProps} />
-					) : (
-						<ReportingLinesCanvas {...lineProps} />
-					)}
-					<NoReportingLineGroup
-						canLoad={
-							loader.canLoadGroup("noReportingLine") &&
-							noReportingLine.length < summary.noReportingLineCount
-						}
-						highlightOf={highlightOf}
-						isLoading={loader.loadingGroups.has("noReportingLine")}
-						onLoad={() => void loader.loadGroupPage("noReportingLine")}
-						onSelect={select}
-						people={noReportingLine}
-						total={summary.noReportingLineCount}
-					/>
-				</>
+				<ReportingLinesView
+					isMobile={isMobile}
+					lines={lineProps}
+					loader={loader}
+				/>
 			)}
 
 			<PersonPanel
 				canManage={canManage}
-				employeeId={shownEmployeeId}
+				employeeId={shownEmployeeIdOf(url.employeeId, loader)}
 				onClose={() => setUrl({ employeeId: null })}
 				onSelect={(employeeId) => void reveal(employeeId)}
 				peopleById={peopleById}
@@ -260,5 +158,123 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 				teamNamesById={teamNamesById}
 			/>
 		</section>
+	);
+}
+
+/** The team filter highlights members and keeps their paths to the top open. */
+function teamFilterHighlights(
+	people: OrgExplorerPerson[],
+	tree: ReportingTree,
+	teamIds: string[],
+) {
+	const filter = new Set(teamIds);
+	const matches = new Set(
+		filter.size === 0
+			? []
+			: people
+					.filter((entry) => entry.teamIds.some((teamId) => filter.has(teamId)))
+					.map((entry) => entry.employeeId),
+	);
+	const pathIds = new Set(
+		[...matches].flatMap((id) => tree.pathTo(id).slice(0, -1)),
+	);
+	const highlightOf = (employeeId: string): Highlight => {
+		if (filter.size === 0) return "none";
+		if (matches.has(employeeId)) return "match";
+		return pathIds.has(employeeId) ? "path" : "dimmed";
+	};
+	return { pathIds, highlightOf };
+}
+
+/**
+ * A large organization loads the selected person, their managers and reports,
+ * and the filtered teams' members when the URL names them, also after the back button.
+ */
+function useOrgExplorerUrlLoads(
+	url: OrgExplorerUrlState,
+	loader: OrgExplorerPeopleLoader,
+) {
+	const selected = url.employeeId
+		? loader.peopleById.get(url.employeeId)
+		: undefined;
+	const loadSelected = useEffectEvent(
+		(employeeId: string | null, person: OrgExplorerPerson | undefined) => {
+			if (!employeeId) return;
+			void loader.loadPeople(
+				person ? [...person.managerIds, ...person.reportIds] : [employeeId],
+				{
+					withPaths: true,
+				},
+			);
+		},
+	);
+	useEffect(
+		() => loadSelected(url.employeeId, selected),
+		[url.employeeId, selected],
+	);
+
+	const filterKey = url.teamIds.join(",");
+	const loadFilteredTeams = useEffectEvent((key: string) => {
+		if (key) loader.loadTeamsStarted(key.split(","));
+	});
+	useEffect(() => loadFilteredTeams(filterKey), [filterKey]);
+}
+
+/** An id that is not on the current roster opens nothing. */
+function shownEmployeeIdOf(
+	employeeId: string | null,
+	{ peopleById, unknownIds, summary }: OrgExplorerPeopleLoader,
+) {
+	return employeeId &&
+		!unknownIds.has(employeeId) &&
+		(peopleById.has(employeeId) || !summary.complete)
+		? employeeId
+		: null;
+}
+
+/** The reporting lines, as an outline on a phone, and the people without one. */
+function ReportingLinesView({
+	lines,
+	isMobile,
+	loader,
+}: {
+	lines: ReportingLinesProps;
+	isMobile: boolean;
+	loader: OrgExplorerPeopleLoader;
+}) {
+	const { t } = useTranslate();
+	const { tree, peopleById } = lines;
+	const { summary } = loader;
+	const noReportingLine = tree.noReportingLine.flatMap(
+		(id) => peopleById.get(id) ?? [],
+	);
+
+	return (
+		<>
+			{tree.roots.length === 0 ? (
+				<p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+					{t(
+						"organization.explorer.noReportingLines",
+						"Nobody has a reporting line yet.",
+					)}
+				</p>
+			) : isMobile ? (
+				<ReportingLinesOutline {...lines} />
+			) : (
+				<ReportingLinesCanvas {...lines} />
+			)}
+			<NoReportingLineGroup
+				canLoad={
+					loader.canLoadGroup("noReportingLine") &&
+					noReportingLine.length < summary.noReportingLineCount
+				}
+				highlightOf={lines.highlightOf}
+				isLoading={loader.loadingGroups.has("noReportingLine")}
+				onLoad={() => void loader.loadGroupPage("noReportingLine")}
+				onSelect={lines.onSelect}
+				people={noReportingLine}
+				total={summary.noReportingLineCount}
+			/>
+		</>
 	);
 }

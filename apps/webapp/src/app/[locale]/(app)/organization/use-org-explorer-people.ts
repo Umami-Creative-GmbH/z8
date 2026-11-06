@@ -19,6 +19,8 @@ import {
 
 export type OrgExplorerSummary = Omit<OrgExplorerData, "people">;
 
+export type OrgExplorerPeopleLoader = ReturnType<typeof useOrgExplorerPeople>;
+
 /**
  * Where the next page of a team's members or of a group starts: absent before
  * the first page, null once everything is loaded.
@@ -103,29 +105,35 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 		await Promise.all(waiting);
 	}
 
-	async function fetchPeople(missing: string[], options?: { withPaths: true }) {
-		try {
-			for (
-				let start = 0;
-				start < missing.length;
-				start += ORG_EXPLORER_BATCH_LIMIT
-			) {
-				const chunk = missing.slice(start, start + ORG_EXPLORER_BATCH_LIMIT);
-				const result = options
-					? await getOrgExplorerPeople(chunk, options)
-					: await getOrgExplorerPeople(chunk);
-				if (!result.success) {
-					showFailure(result.error);
-					return;
-				}
-				mergePeople(result.data);
-				// Nobody comes back for an id that is not on the current roster.
-				const notFound = chunk.filter((id) => !peopleRef.current.has(id));
-				if (notFound.length > 0)
-					setUnknownIds((current) => withIds(current, notFound));
-			}
-		} finally {
+	// `.finally` rather than `try … finally`, which React Compiler cannot lower.
+	function fetchPeople(missing: string[], options?: { withPaths: true }) {
+		return fetchPeopleBatches(missing, options).finally(() => {
 			for (const id of missing) pendingLoads.current.delete(id);
+		});
+	}
+
+	async function fetchPeopleBatches(
+		missing: string[],
+		options?: { withPaths: true },
+	) {
+		for (
+			let start = 0;
+			start < missing.length;
+			start += ORG_EXPLORER_BATCH_LIMIT
+		) {
+			const chunk = missing.slice(start, start + ORG_EXPLORER_BATCH_LIMIT);
+			const result = options
+				? await getOrgExplorerPeople(chunk, options)
+				: await getOrgExplorerPeople(chunk);
+			if (!result.success) {
+				showFailure(result.error);
+				return;
+			}
+			mergePeople(result.data);
+			// Nobody comes back for an id that is not on the current roster.
+			const notFound = chunk.filter((id) => !peopleRef.current.has(id));
+			if (notFound.length > 0)
+				setUnknownIds((current) => withIds(current, notFound));
 		}
 	}
 
@@ -199,16 +207,21 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 			(id) => !fresh.has(id),
 		);
 		if (!result.data.complete) {
+			// The batches are independent reads: load them side by side.
+			const chunks: string[][] = [];
 			for (
 				let start = 0;
 				start < stillShown.length;
 				start += ORG_EXPLORER_BATCH_LIMIT
 			) {
-				const reloaded = await getOrgExplorerPeople(
-					stillShown.slice(start, start + ORG_EXPLORER_BATCH_LIMIT),
-				);
-				if (!reloaded.success) throw new Error(reloaded.error);
-				for (const entry of reloaded.data) fresh.set(entry.employeeId, entry);
+				chunks.push(stillShown.slice(start, start + ORG_EXPLORER_BATCH_LIMIT));
+			}
+			const reloaded = await Promise.all(
+				chunks.map((chunk) => getOrgExplorerPeople(chunk)),
+			);
+			for (const batch of reloaded) {
+				if (!batch.success) throw new Error(batch.error);
+				for (const entry of batch.data) fresh.set(entry.employeeId, entry);
 			}
 		}
 		setTeamOffsets(new Map());

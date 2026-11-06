@@ -63,6 +63,8 @@ export default {
 					"**/components/calendar/work-period-mileage-action.tsx",
 					"**/components/settings/vacation/vacation-assignment-dialog.tsx",
 					"**/components/scheduling/shifts/shift-dialog.tsx",
+					// The shared equipment form frame calls each form's `form.handleSubmit()`.
+					"**/components/equipment/equipment-handovers.tsx",
 				],
 				rules: ["react-doctor/no-prevent-default"],
 			},

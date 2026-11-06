@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/collapsible";
 import type {
 	EquipmentAssignmentView,
+	EquipmentCorrectionView,
 	EquipmentView,
 } from "@/lib/organization/equipment/contracts";
 import { conditionLabel } from "./equipment-copy";
@@ -27,7 +28,11 @@ import { CorrectionHistory, CorrectionMenu } from "./equipment-corrections";
 import { EquipmentExceptionTotals } from "./equipment-exceptions";
 import { EquipmentRefreshButton } from "./equipment-header-actions";
 import { EquipmentHistory } from "./equipment-history";
-import { canTransfer, useEquipmentPanels } from "./equipment-panels";
+import {
+	canTransfer,
+	type EquipmentPanelSelection,
+	useEquipmentPanels,
+} from "./equipment-panels";
 import { EquipmentRetention } from "./equipment-retention";
 import {
 	AssignmentStatusBadge,
@@ -160,6 +165,98 @@ function AssignmentFacts({
 	);
 }
 
+/** The page's commands that this assignment still offers. */
+function AssignmentActions({
+	assignment,
+	transferable,
+	pending,
+	open,
+}: {
+	assignment: EquipmentAssignmentView;
+	transferable: boolean;
+	pending: boolean;
+	open: (selection: EquipmentPanelSelection) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<EquipmentRefreshButton />
+			{assignment.canCloseException ? (
+				<Button
+					variant="outline"
+					disabled={pending}
+					onClick={() => open({ kind: "closure", assignmentId: assignment.id })}
+				>
+					<IconCircleX className="size-4" aria-hidden="true" />
+					{t("settings.equipment.exception.close", "Close return")}
+				</Button>
+			) : null}
+			{transferable ? (
+				<Button
+					variant="outline"
+					disabled={pending}
+					onClick={() =>
+						open({ kind: "transfer", assignmentId: assignment.id })
+					}
+				>
+					<IconArrowsExchange className="size-4" aria-hidden="true" />
+					{t("settings.equipment.list.transfer", "Transfer")}
+				</Button>
+			) : null}
+			{assignment.canReceive ? (
+				<Button
+					disabled={pending}
+					onClick={() => open({ kind: "receipt", assignmentId: assignment.id })}
+				>
+					<IconPackageImport className="size-4" aria-hidden="true" />
+					{t("settings.equipment.handover.receive", "Record receipt")}
+				</Button>
+			) : null}
+		</div>
+	);
+}
+
+/** The original records and their amendments, collapsed behind a count. */
+function AmendmentsCard({
+	corrections,
+	timezone,
+}: {
+	corrections: EquipmentCorrectionView[];
+	timezone: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Collapsible>
+			<Card className="gap-0 py-0">
+				<CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-xl px-6 py-4 text-left focus-visible:outline-2 focus-visible:outline-ring">
+					<span className="font-semibold">
+						{t(
+							"settings.equipment.correction.history",
+							"Original records and amendments",
+						)}
+					</span>
+					<span className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
+						{t(
+							"settings.equipment.detail.corrections",
+							"{count, plural, one {# amendment} other {# amendments}}",
+							{ count: corrections.length },
+						)}
+						<IconChevronDown
+							className="size-4 transition-transform group-data-[panel-open]:rotate-180"
+							aria-hidden="true"
+						/>
+					</span>
+				</CollapsibleTrigger>
+				<CollapsibleContent>
+					<CardContent className="border-t py-5">
+						<CorrectionHistory corrections={corrections} timezone={timezone} />
+					</CardContent>
+				</CollapsibleContent>
+			</Card>
+		</Collapsible>
+	);
+}
+
 /**
  * One assignment's page (#1572): its facts, the handover history with its
  * amendments, the holder and record retention. Commands open in action panels.
@@ -226,44 +323,12 @@ export function EquipmentAssignmentDetail({
 						</p>
 					</div>
 				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<EquipmentRefreshButton />
-					{assignment.canCloseException ? (
-						<Button
-							variant="outline"
-							disabled={pending}
-							onClick={() =>
-								open({ kind: "closure", assignmentId: assignment.id })
-							}
-						>
-							<IconCircleX className="size-4" aria-hidden="true" />
-							{t("settings.equipment.exception.close", "Close return")}
-						</Button>
-					) : null}
-					{transferable ? (
-						<Button
-							variant="outline"
-							disabled={pending}
-							onClick={() =>
-								open({ kind: "transfer", assignmentId: assignment.id })
-							}
-						>
-							<IconArrowsExchange className="size-4" aria-hidden="true" />
-							{t("settings.equipment.list.transfer", "Transfer")}
-						</Button>
-					) : null}
-					{assignment.canReceive ? (
-						<Button
-							disabled={pending}
-							onClick={() =>
-								open({ kind: "receipt", assignmentId: assignment.id })
-							}
-						>
-							<IconPackageImport className="size-4" aria-hidden="true" />
-							{t("settings.equipment.handover.receive", "Record receipt")}
-						</Button>
-					) : null}
-				</div>
+				<AssignmentActions
+					assignment={assignment}
+					transferable={transferable}
+					pending={pending}
+					open={open}
+				/>
 			</div>
 			<div className="grid items-start gap-6 px-4 lg:px-6 @5xl/main:grid-cols-[minmax(0,1fr)_20rem]">
 				<div className="flex min-w-0 flex-col gap-6">
@@ -309,37 +374,10 @@ export function EquipmentAssignmentDetail({
 						</CardContent>
 					</Card>
 					{corrections.length ? (
-						<Collapsible>
-							<Card className="gap-0 py-0">
-								<CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-xl px-6 py-4 text-left focus-visible:outline-2 focus-visible:outline-ring">
-									<span className="font-semibold">
-										{t(
-											"settings.equipment.correction.history",
-											"Original records and amendments",
-										)}
-									</span>
-									<span className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
-										{t(
-											"settings.equipment.detail.corrections",
-											"{count, plural, one {# amendment} other {# amendments}}",
-											{ count: corrections.length },
-										)}
-										<IconChevronDown
-											className="size-4 transition-transform group-data-[panel-open]:rotate-180"
-											aria-hidden="true"
-										/>
-									</span>
-								</CollapsibleTrigger>
-								<CollapsibleContent>
-									<CardContent className="border-t py-5">
-										<CorrectionHistory
-											corrections={corrections}
-											timezone={data.timezone}
-										/>
-									</CardContent>
-								</CollapsibleContent>
-							</Card>
-						</Collapsible>
+						<AmendmentsCard
+							corrections={corrections}
+							timezone={data.timezone}
+						/>
 					) : null}
 				</div>
 				<div className="flex min-w-0 flex-col gap-4">

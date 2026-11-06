@@ -554,29 +554,30 @@ function ReadinessConfirmation({
 				),
 			);
 		setPending(true);
+		// No `finally`: React Compiler cannot lower it.
 		try {
 			const result = await changeEquipment({
 				...payload,
 				requestId: identity(payload),
 			});
-			if (!result.success) return failed();
-			if (!result.data.ok) {
+			if (!result.success) {
+				failed();
+			} else if (!result.data.ok) {
 				toast.error(handoverRefusalMessage(result.data.reason, t));
-				return;
+			} else {
+				toast.success(
+					t(
+						"settings.equipment.readiness.recorded",
+						"Availability decision recorded.",
+					),
+				);
+				onClose();
+				router.refresh();
 			}
-			toast.success(
-				t(
-					"settings.equipment.readiness.recorded",
-					"Availability decision recorded.",
-				),
-			);
-			onClose();
-			router.refresh();
 		} catch {
 			failed();
-		} finally {
-			setPending(false);
 		}
+		setPending(false);
 	}
 	return (
 		<AlertDialog

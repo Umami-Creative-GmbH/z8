@@ -15,11 +15,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-import {
-	PersonAvatar,
-	PersonButton,
-	personDisplayName,
-} from "./org-explorer-person";
+import { PersonAvatar, PersonButton } from "./org-explorer-person";
+import { personDisplayName } from "./org-explorer-person-name";
 import type { OrgExplorerPerson } from "./org-explorer-types";
 
 export type PersonPanelProps = {

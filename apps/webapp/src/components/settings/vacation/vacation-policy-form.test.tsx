@@ -79,7 +79,7 @@ describe("VacationPolicyForm", () => {
 
 		await user.click(screen.getByRole("combobox", { name: "Accrual Start Month" }));
 
-		expect(screen.getByRole("option", { name: "März" })).toBeTruthy();
+		expect(await screen.findByRole("option", { name: "März" })).toBeTruthy();
 	});
 
 	it("saves picked and cleared dates as YYYY-MM-DD", async () => {

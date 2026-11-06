@@ -26,12 +26,8 @@ import {
 	PERSON_CARD_HEIGHT,
 	PERSON_CARD_WIDTH,
 } from "./org-explorer-layout";
-import {
-	PersonAvatar,
-	PersonButton,
-	personDisplayName,
-	TeamChips,
-} from "./org-explorer-person";
+import { PersonAvatar, PersonButton, TeamChips } from "./org-explorer-person";
+import { personDisplayName } from "./org-explorer-person-name";
 import { type ReportingTree, visibleTreeIds } from "./org-explorer-tree";
 import { nextPageSize, type OrgExplorerPerson } from "./org-explorer-types";
 

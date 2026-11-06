@@ -52,6 +52,176 @@ const TOGGLE_VIEWS: readonly AssignmentStatusView[] = [
 ];
 const ALL_TYPES = "all";
 
+type FilterProps = {
+	data: EquipmentView;
+	filters: AssignmentFilters;
+	onFiltersChange: (filters: AssignmentFilters) => void;
+};
+
+/** The status views with their counts under the other filters. */
+function StatusToggle({ data, filters, onFiltersChange }: FilterProps) {
+	const { t } = useTranslate();
+	const counts = statusCounts(data.assignments, filters, data.today);
+	const statusLabel: Record<AssignmentStatusView, string> = {
+		outstanding: t("settings.equipment.list.statusOutstanding", "Outstanding"),
+		overdue: t("settings.equipment.custody.overdue", "Overdue"),
+		soon: t("settings.equipment.kpi.dueSoon", "Due within 14 days"),
+		all: t("settings.equipment.filters.all", "All"),
+	};
+	return (
+		<ToggleGroup
+			type="single"
+			variant="outline"
+			value={filters.status}
+			onValueChange={(value: string) => {
+				const status = TOGGLE_VIEWS.find((entry) => entry === value);
+				if (status) onFiltersChange({ ...filters, status });
+			}}
+			aria-label={t("settings.equipment.list.statusFilter", "Show assignments")}
+		>
+			{TOGGLE_VIEWS.map((status) => (
+				<ToggleGroupItem
+					key={status}
+					value={status}
+					className="gap-1.5 whitespace-nowrap px-3"
+				>
+					{statusLabel[status]}
+					{status !== "all" ? (
+						<span className="rounded-full bg-muted px-1.5 text-xs tabular-nums">
+							{counts[status]}
+						</span>
+					) : null}
+				</ToggleGroupItem>
+			))}
+		</ToggleGroup>
+	);
+}
+
+/** Search, holder, type and former-employee filters, and "Clear filters". */
+function FilterBar({
+	data,
+	filters,
+	onFiltersChange,
+	showHolder,
+	filtered,
+	onClear,
+}: FilterProps & {
+	showHolder: boolean;
+	filtered: boolean;
+	onClear: () => void;
+}) {
+	const { t } = useTranslate();
+	const searchId = useId();
+	const typeId = useId();
+	const holderOptions = data.employees.map((employee) => ({
+		code: employee.id,
+		name: employee.former
+			? `${employee.name} · ${t("common:formerEmployees.former", "Former")}`
+			: employee.name,
+	}));
+	const allHolders = t("settings.equipment.list.allHolders", "All holders");
+	const typeItems = [
+		{
+			value: ALL_TYPES,
+			label: t("settings.equipment.list.allTypes", "All types"),
+		},
+		...data.types.map((type) => ({ value: type.id, label: type.name })),
+	];
+	return (
+		<CardContent className="flex flex-wrap items-center gap-3 pb-4">
+			<div className="relative w-full min-w-48 sm:max-w-xs sm:flex-1">
+				<IconSearch
+					className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+					aria-hidden="true"
+				/>
+				<label htmlFor={searchId} className="sr-only">
+					{t("settings.equipment.list.search", "Search assignments")}
+				</label>
+				<Input
+					id={searchId}
+					type="search"
+					name="equipment-search"
+					autoComplete="off"
+					maxLength={100}
+					className="pl-8"
+					placeholder={t(
+						"settings.equipment.list.searchPlaceholder",
+						"Search identifier, type or holder",
+					)}
+					value={filters.search}
+					onChange={(event) =>
+						onFiltersChange({ ...filters, search: event.target.value })
+					}
+				/>
+			</div>
+			{showHolder ? (
+				<SearchableSelect
+					className="w-full sm:w-48"
+					aria-label={t("settings.equipment.filters.holder", "Holder")}
+					options={holderOptions}
+					value={filters.holderId ?? ""}
+					onValueChange={(value) =>
+						onFiltersChange({ ...filters, holderId: value || null })
+					}
+					placeholder={allHolders}
+					searchPlaceholder={t(
+						"settings.equipment.list.searchHolders",
+						"Search holders…",
+					)}
+					emptyText={t("settings.equipment.list.noHolder", "No holder found.")}
+					allowEmpty
+					emptyLabel={allHolders}
+				/>
+			) : null}
+			{data.types.length ? (
+				<div className="w-full sm:w-44">
+					<span id={typeId} className="sr-only">
+						{t("settings.equipment.filters.type", "Type")}
+					</span>
+					<Select
+						value={filters.typeId ?? ALL_TYPES}
+						items={typeItems}
+						onValueChange={(value) =>
+							onFiltersChange({
+								...filters,
+								typeId: !value || value === ALL_TYPES ? null : value,
+							})
+						}
+					>
+						<SelectTrigger aria-labelledby={typeId} className="w-full">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{typeItems.map((item) => (
+								<SelectItem key={item.value} value={item.value}>
+									{item.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+			) : null}
+			{showHolder ? (
+				<ShowFormerEmployeesSwitch
+					checked={filters.former !== "hide"}
+					onCheckedChange={(checked) =>
+						onFiltersChange({
+							...filters,
+							former: checked ? "show" : "hide",
+						})
+					}
+				/>
+			) : null}
+			{filtered ? (
+				<Button variant="ghost" size="sm" onClick={onClear}>
+					<IconFilterOff className="size-4" aria-hidden="true" />
+					{t("settings.equipment.filters.clear", "Clear filters")}
+				</Button>
+			) : null}
+		</CardContent>
+	);
+}
+
 /**
  * Assignments with the status toggle, search and filters, and the table (#1572).
  * Filters apply immediately; the overview keeps them in its URL.
@@ -80,10 +250,7 @@ export function EquipmentAssignmentsCard({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const searchId = useId();
-	const typeId = useId();
 	const [sort, setSort] = useState<AssignmentSort>(DEFAULT_ASSIGNMENT_SORT);
-	const counts = statusCounts(data.assignments, filters, data.today);
 	const visible = sortAssignments(
 		filterAssignments(data.assignments, filters, data.today),
 		sort,
@@ -92,26 +259,6 @@ export function EquipmentAssignmentsCard({
 	const filtered = hasActiveFilters(filters, defaultStatus);
 	const clear = () =>
 		onFiltersChange({ ...DEFAULT_ASSIGNMENT_FILTERS, status: defaultStatus });
-	const statusLabel: Record<AssignmentStatusView, string> = {
-		outstanding: t("settings.equipment.list.statusOutstanding", "Outstanding"),
-		overdue: t("settings.equipment.custody.overdue", "Overdue"),
-		soon: t("settings.equipment.kpi.dueSoon", "Due within 14 days"),
-		all: t("settings.equipment.filters.all", "All"),
-	};
-	const holderOptions = data.employees.map((employee) => ({
-		code: employee.id,
-		name: employee.former
-			? `${employee.name} · ${t("common:formerEmployees.former", "Former")}`
-			: employee.name,
-	}));
-	const allHolders = t("settings.equipment.list.allHolders", "All holders");
-	const typeItems = [
-		{
-			value: ALL_TYPES,
-			label: t("settings.equipment.list.allTypes", "All types"),
-		},
-		...data.types.map((type) => ({ value: type.id, label: type.name })),
-	];
 	const holderHref = (assignment: EquipmentAssignmentView) =>
 		data.canManage
 			? `/equipment/employees/${assignment.employeeId}`
@@ -131,130 +278,21 @@ export function EquipmentAssignmentsCard({
 						)}
 					</p>
 				</div>
-				<ToggleGroup
-					type="single"
-					variant="outline"
-					value={filters.status}
-					onValueChange={(value: string) => {
-						const status = TOGGLE_VIEWS.find((entry) => entry === value);
-						if (status) onFiltersChange({ ...filters, status });
-					}}
-					aria-label={t(
-						"settings.equipment.list.statusFilter",
-						"Show assignments",
-					)}
-				>
-					{TOGGLE_VIEWS.map((status) => (
-						<ToggleGroupItem
-							key={status}
-							value={status}
-							className="gap-1.5 whitespace-nowrap px-3"
-						>
-							{statusLabel[status]}
-							{status !== "all" ? (
-								<span className="rounded-full bg-muted px-1.5 text-xs tabular-nums">
-									{counts[status]}
-								</span>
-							) : null}
-						</ToggleGroupItem>
-					))}
-				</ToggleGroup>
+				<StatusToggle
+					data={data}
+					filters={filters}
+					onFiltersChange={onFiltersChange}
+				/>
 			</CardHeader>
 			{data.assignments.length ? (
-				<CardContent className="flex flex-wrap items-center gap-3 pb-4">
-					<div className="relative w-full min-w-48 sm:max-w-xs sm:flex-1">
-						<IconSearch
-							className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-							aria-hidden="true"
-						/>
-						<label htmlFor={searchId} className="sr-only">
-							{t("settings.equipment.list.search", "Search assignments")}
-						</label>
-						<Input
-							id={searchId}
-							type="search"
-							name="equipment-search"
-							autoComplete="off"
-							maxLength={100}
-							className="pl-8"
-							placeholder={t(
-								"settings.equipment.list.searchPlaceholder",
-								"Search identifier, type or holder",
-							)}
-							value={filters.search}
-							onChange={(event) =>
-								onFiltersChange({ ...filters, search: event.target.value })
-							}
-						/>
-					</div>
-					{showHolder ? (
-						<SearchableSelect
-							className="w-full sm:w-48"
-							aria-label={t("settings.equipment.filters.holder", "Holder")}
-							options={holderOptions}
-							value={filters.holderId ?? ""}
-							onValueChange={(value) =>
-								onFiltersChange({ ...filters, holderId: value || null })
-							}
-							placeholder={allHolders}
-							searchPlaceholder={t(
-								"settings.equipment.list.searchHolders",
-								"Search holders…",
-							)}
-							emptyText={t(
-								"settings.equipment.list.noHolder",
-								"No holder found.",
-							)}
-							allowEmpty
-							emptyLabel={allHolders}
-						/>
-					) : null}
-					{data.types.length ? (
-						<div className="w-full sm:w-44">
-							<span id={typeId} className="sr-only">
-								{t("settings.equipment.filters.type", "Type")}
-							</span>
-							<Select
-								value={filters.typeId ?? ALL_TYPES}
-								items={typeItems}
-								onValueChange={(value) =>
-									onFiltersChange({
-										...filters,
-										typeId: !value || value === ALL_TYPES ? null : value,
-									})
-								}
-							>
-								<SelectTrigger aria-labelledby={typeId} className="w-full">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{typeItems.map((item) => (
-										<SelectItem key={item.value} value={item.value}>
-											{item.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-					) : null}
-					{showHolder ? (
-						<ShowFormerEmployeesSwitch
-							checked={filters.former !== "hide"}
-							onCheckedChange={(checked) =>
-								onFiltersChange({
-									...filters,
-									former: checked ? "show" : "hide",
-								})
-							}
-						/>
-					) : null}
-					{filtered ? (
-						<Button variant="ghost" size="sm" onClick={clear}>
-							<IconFilterOff className="size-4" aria-hidden="true" />
-							{t("settings.equipment.filters.clear", "Clear filters")}
-						</Button>
-					) : null}
-				</CardContent>
+				<FilterBar
+					data={data}
+					filters={filters}
+					onFiltersChange={onFiltersChange}
+					showHolder={showHolder}
+					filtered={filtered}
+					onClear={clear}
+				/>
 			) : null}
 			{!data.assignments.length ? (
 				<Empty className="rounded-none border-t md:p-10">

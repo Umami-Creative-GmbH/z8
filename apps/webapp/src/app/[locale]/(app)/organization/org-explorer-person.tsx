@@ -3,19 +3,12 @@
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/user-avatar";
-import { normalizePronouns } from "@/lib/employee-identity";
 import { cn } from "@/lib/utils";
+import { personDisplayName } from "./org-explorer-person-name";
 import type { OrgExplorerPerson } from "./org-explorer-types";
 
 /** How many team chips a card shows before it sums up the rest as "+N". */
 const VISIBLE_TEAM_CHIPS = 2;
-
-export function personDisplayName(
-	person: Pick<OrgExplorerPerson, "name" | "pronouns">,
-) {
-	const pronouns = normalizePronouns(person.pronouns);
-	return pronouns ? `${person.name} (${pronouns})` : person.name;
-}
 
 export function PersonAvatar({
 	person,
