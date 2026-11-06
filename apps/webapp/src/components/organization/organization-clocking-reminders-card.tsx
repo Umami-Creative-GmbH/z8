@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useId, useRef, useState } from "react";
+import { useId, useRef } from "react";
 import { toast } from "sonner";
 import { updateClockingReminderSettings } from "@/app/[locale]/(app)/settings/organizations/clocking-reminder-actions";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,6 @@ export function OrganizationClockingRemindersCard({
 	const helpId = useId();
 	const errorId = useId();
 	const submitting = useRef(false);
-	const [feedback, setFeedback] = useState<{ error: boolean; message: string } | null>(null);
 	const canEdit = currentMemberRole === "owner" || currentMemberRole === "admin";
 	const invalidGrace = t(
 		"organization.clockingReminders.invalidMinutes",
@@ -80,7 +79,6 @@ export function OrganizationClockingRemindersCard({
 		onSubmit: async ({ value }) => {
 			if (!canEdit || submitting.current) return;
 			submitting.current = true;
-			setFeedback(null);
 			try {
 				const result = await updateClockingReminderSettings({
 					organizationId,
@@ -99,24 +97,20 @@ export function OrganizationClockingRemindersCard({
 					roles: CLOCKING_REMINDER_ROLES.filter((role) => value.roles.includes(role)),
 				});
 				if (!result.success) {
-					setFeedback({ error: true, message: result.error });
 					toast.error(result.error);
 				} else {
-					const message = t(
-						"organization.clockingReminders.saved",
-						"Clocking reminder settings saved",
+					toast.success(
+						t("organization.clockingReminders.saved", "Clocking reminder settings saved"),
 					);
-					setFeedback({ error: false, message });
-					toast.success(message);
 					router.refresh();
 				}
 			} catch {
-				const message = t(
-					"organization.clockingReminders.saveFailed",
-					"Failed to update clocking reminder settings",
+				toast.error(
+					t(
+						"organization.clockingReminders.saveFailed",
+						"Failed to update clocking reminder settings",
+					),
 				);
-				setFeedback({ error: true, message });
-				toast.error(message);
 			}
 			submitting.current = false;
 		},
@@ -180,8 +174,8 @@ export function OrganizationClockingRemindersCard({
 						void form.handleSubmit();
 					}}
 				>
-					<form.Subscribe selector={(state) => [state.isSubmitting, state.isValid] as const}>
-						{([pending, valid]) => (
+					<form.Subscribe selector={(state) => state.isSubmitting}>
+						{(pending) => (
 							<div className="space-y-6">
 								{reminders.map((reminder) => (
 									<div key={reminder.enabledField} className="space-y-3">
@@ -286,16 +280,6 @@ export function OrganizationClockingRemindersCard({
 											"organization.clockingReminders.adminOnly",
 											"Only organization admins and owners can change these settings.",
 										)}
-									</p>
-								)}
-								{valid && feedback && (
-									<p
-										role={feedback.error ? "alert" : "status"}
-										className={
-											feedback.error ? "text-sm text-destructive" : "text-sm text-muted-foreground"
-										}
-									>
-										{feedback.message}
 									</p>
 								)}
 								<Button type="submit" disabled={!canEdit || pending}>

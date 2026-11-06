@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { equipmentSelectClass } from "@/components/equipment/equipment-handovers";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,10 +96,7 @@ function OfficerGrantForm({
 	const current =
 		data.employees.find((e) => e.id === employeeId)?.current ?? false;
 	const [pending, startTransition] = useTransition();
-	const [feedback, setFeedback] = useState<{
-		error: boolean;
-		text: string;
-	} | null>(null);
+	const [scopeError, setScopeError] = useState<string | null>(null);
 	const identity = useRef<{ payload: string; id: string } | null>(null);
 	function submit(
 		command:
@@ -121,22 +119,20 @@ function OfficerGrantForm({
 				requestId,
 			}).catch(() => null);
 			if (!result?.success || !result.data.ok) {
-				setFeedback({
-					error: true,
-					text: t(
+				toast.error(
+					t(
 						"settings.equipment.officers.failed",
 						"Responsibility could not be saved. Reload to check current access and revisions, then try again.",
 					),
-				});
+				);
 				return;
 			}
-			setFeedback({
-				error: false,
-				text: t(
+			toast.success(
+				t(
 					"settings.equipment.officers.saved",
 					"Equipment responsibility saved.",
 				),
-			});
+			);
 			router.refresh();
 		});
 	}
@@ -152,15 +148,15 @@ function OfficerGrantForm({
 				!value.teamIds.length &&
 				!value.employeeIds.length
 			) {
-				setFeedback({
-					error: true,
-					text: t(
+				setScopeError(
+					t(
 						"settings.equipment.officers.scopeRequired",
 						"Select at least one team or employee.",
 					),
-				});
+				);
 				return;
 			}
+			setScopeError(null);
 			submit({
 				kind: "set_officer_grant",
 				employeeId,
@@ -283,16 +279,9 @@ function OfficerGrantForm({
 					{t("settings.equipment.officers.revoke", "Revoke responsibility")}
 				</Button>
 			) : null}
-			{feedback ? (
-				<p
-					role={feedback.error ? "alert" : "status"}
-					className={
-						feedback.error
-							? "text-sm text-destructive"
-							: "text-sm text-muted-foreground"
-					}
-				>
-					{feedback.text}
+			{scopeError ? (
+				<p role="alert" className="text-sm text-destructive">
+					{scopeError}
 				</p>
 			) : null}
 			{pending ? (

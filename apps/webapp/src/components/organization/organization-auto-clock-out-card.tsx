@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useId, useRef, useState } from "react";
+import { useId, useRef } from "react";
 import { toast } from "sonner";
 import { updateAutoClockOutSettings } from "@/app/[locale]/(app)/settings/organizations/auto-clock-out-actions";
 import { Button } from "@/components/ui/button";
@@ -36,10 +36,6 @@ export function OrganizationAutoClockOutCard({
 	const helpId = useId();
 	const errorId = useId();
 	const submitting = useRef(false);
-	const [feedback, setFeedback] = useState<{
-		error: boolean;
-		message: string;
-	} | null>(null);
 	const canEdit = currentMemberRole === "owner" || currentMemberRole === "admin";
 	const invalidDuration = t(
 		"organization.autoClockOut.invalidDuration",
@@ -63,7 +59,6 @@ export function OrganizationAutoClockOutCard({
 		onSubmit: async ({ value }) => {
 			if (!canEdit || submitting.current) return;
 			submitting.current = true;
-			setFeedback(null);
 			try {
 				const result = await updateAutoClockOutSettings({
 					organizationId,
@@ -71,24 +66,18 @@ export function OrganizationAutoClockOutCard({
 					maxUninterruptedMinutes: durationFromFields(value.hours, value.minutes),
 				});
 				if (!result.success) {
-					setFeedback({ error: true, message: result.error });
 					toast.error(result.error);
 				} else {
-					const message = t(
-						"organization.autoClockOut.saved",
-						"Automatic clock-out settings saved",
-					);
-					setFeedback({ error: false, message });
-					toast.success(message);
+					toast.success(t("organization.autoClockOut.saved", "Automatic clock-out settings saved"));
 					router.refresh();
 				}
 			} catch {
-				const message = t(
-					"organization.autoClockOut.saveFailed",
-					"Failed to update automatic clock-out settings",
+				toast.error(
+					t(
+						"organization.autoClockOut.saveFailed",
+						"Failed to update automatic clock-out settings",
+					),
 				);
-				setFeedback({ error: true, message });
-				toast.error(message);
 			}
 			submitting.current = false;
 		},
@@ -214,23 +203,10 @@ export function OrganizationAutoClockOutCard({
 										)}
 									</p>
 								)}
-								{errors.length > 0 ? (
+								{errors.length > 0 && (
 									<p id={errorId} role="alert" className="text-sm text-destructive">
 										{String(errors[0])}
 									</p>
-								) : (
-									feedback && (
-										<p
-											role={feedback.error ? "alert" : "status"}
-											className={
-												feedback.error
-													? "text-sm text-destructive"
-													: "text-sm text-muted-foreground"
-											}
-										>
-											{feedback.message}
-										</p>
-									)
 								)}
 								<Button type="submit" disabled={!canEdit || pending}>
 									{pending && (

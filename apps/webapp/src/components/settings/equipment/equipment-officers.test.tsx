@@ -4,7 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { EquipmentOfficers } from "./equipment-officers";
 
-const api = vi.hoisted(() => ({ change: vi.fn(), refresh: vi.fn() }));
+const api = vi.hoisted(() => ({
+	change: vi.fn(),
+	refresh: vi.fn(),
+	success: vi.fn(),
+	error: vi.fn(),
+}));
+vi.mock("sonner", () => ({
+	toast: { success: api.success, error: api.error },
+}));
 vi.mock("@/lib/organization/equipment/actions", () => ({
 	changeEquipmentOfficerGrant: api.change,
 }));
@@ -59,6 +67,12 @@ it("validates selected scope and submits a revisioned grant, then exposes explic
 			}),
 		),
 	);
+	await waitFor(() =>
+		expect(api.success).toHaveBeenCalledWith("Equipment responsibility saved."),
+	);
+	expect(
+		screen.queryByText("Select at least one team or employee."),
+	).toBeNull();
 });
 it("revokes the displayed revision and refuses to offer former employees as new officers", async () => {
 	const user = userEvent.setup();
@@ -105,5 +119,7 @@ it("revokes the displayed revision and refuses to offer former employees as new 
 			}),
 		),
 	);
-	expect((await screen.findByRole("alert")).textContent).toContain("Reload");
+	await waitFor(() =>
+		expect(api.error).toHaveBeenCalledWith(expect.stringContaining("Reload")),
+	);
 });
