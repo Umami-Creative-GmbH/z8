@@ -896,6 +896,26 @@ describe("org-admin settings route access", () => {
 		expect(billableTimeField).toContain("input: false");
 	});
 
+	it("keeps the equipment switch out of direct Better Auth organization input", () => {
+		const source = stripComments(
+			readTestText(join(SETTINGS_ROOT, "../../../../lib/auth.ts"), "utf8"),
+		);
+		const equipmentField = source.slice(
+			source.indexOf("equipmentEnabled:"),
+			source.indexOf("timezone:", source.indexOf("equipmentEnabled:")),
+		);
+
+		expect(equipmentField).toContain("input: false");
+	});
+
+	it("hides the equipment settings page while equipment is switched off", () => {
+		const source = readTestText(join(SETTINGS_ROOT, "equipment/page.tsx"), "utf8");
+
+		expect(source).toMatch(
+			/if \(!\(await isEquipmentEnabled\(db, organizationId\)\)\) notFound\(\);/,
+		);
+	});
+
 	it("gates the Billable Time settings pages on org admins and the module flag", () => {
 		for (const page of [
 			"billable-time/page.tsx",

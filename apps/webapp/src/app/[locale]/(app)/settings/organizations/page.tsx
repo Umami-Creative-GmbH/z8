@@ -11,6 +11,7 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { readDrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
+import { countOutstandingEquipmentReturns } from "@/lib/organization/equipment/lifecycle";
 import { getTranslate } from "@/tolgee/server";
 import { getOrganizationProfile } from "./profile-actions";
 
@@ -44,6 +45,7 @@ async function OrganizationsPageContent() {
 		billableTimeSettings,
 		drivingLicence,
 		profileResult,
+		equipmentOutstandingReturns,
 	] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
@@ -72,6 +74,8 @@ async function OrganizationsPageContent() {
 		getBillableTimeSettings(organizationId, db),
 		readDrivingLicenceFeatureState(organizationId),
 		getOrganizationProfile(organizationId),
+		// The orgAdmin tier above already limits this page to owners and admins.
+		countOutstandingEquipmentReturns(db, organizationId),
 	]);
 
 	const [currentMemberRecord] = currentMember;
@@ -112,6 +116,7 @@ async function OrganizationsPageContent() {
 			}
 			billableCurrency={billableTimeSettings.currency}
 			drivingLicence={drivingLicence}
+			equipmentOutstandingReturns={equipmentOutstandingReturns}
 			canCreateOrganizations={canCreateOrganizationsForDeployment(
 				authContext.user.canCreateOrganizations ||
 					authContext.user.role === "admin",

@@ -54,7 +54,7 @@ beforeAll(async () => {
 	await clean();
 	for (const org of ["org", "foreign"])
 		await pool.query(
-			"insert into organization(id,name,slug,timezone,created_at) values($1,$1,$1,'Europe/Berlin',now())",
+			"insert into organization(id,name,slug,timezone,equipment_enabled,created_at) values($1,$1,$1,'Europe/Berlin',true,now())",
 			[`t1539-${org}`],
 		);
 	for (const [name, role] of [

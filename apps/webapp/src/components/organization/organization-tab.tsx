@@ -27,6 +27,7 @@ interface OrganizationTabProps {
 	canCreateOrganizations: boolean;
 	billableCurrency: BillableCurrency | null;
 	drivingLicence: DrivingLicenceFeatureState;
+	equipmentOutstandingReturns: number;
 }
 
 export function OrganizationTab({
@@ -39,6 +40,7 @@ export function OrganizationTab({
 	canCreateOrganizations,
 	billableCurrency,
 	drivingLicence,
+	equipmentOutstandingReturns,
 }: OrganizationTabProps) {
 	const { t } = useTranslate();
 	const [createOrgDialogOpen, setCreateOrgDialogOpen] = useState(false);
@@ -85,6 +87,8 @@ export function OrganizationTab({
 				billableTimeEnabled={organization.billableTimeEnabled ?? false}
 				billableCurrency={billableCurrency}
 				personnelFilesEnabled={organization.personnelFilesEnabled ?? false}
+				equipmentEnabled={organization.equipmentEnabled ?? false}
+				equipmentOutstandingReturns={equipmentOutstandingReturns}
 				drivingLicence={drivingLicence}
 				organizationTimezone={organization.timezone ?? "UTC"}
 				currentMemberRole={currentMemberRole}

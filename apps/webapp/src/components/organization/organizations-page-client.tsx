@@ -17,6 +17,7 @@ interface OrganizationsPageClientProps {
 	canCreateOrganizations: boolean;
 	billableCurrency: BillableCurrency | null;
 	drivingLicence: DrivingLicenceFeatureState;
+	equipmentOutstandingReturns: number;
 }
 
 export function OrganizationsPageClient({
@@ -29,6 +30,7 @@ export function OrganizationsPageClient({
 	canCreateOrganizations,
 	billableCurrency,
 	drivingLicence,
+	equipmentOutstandingReturns,
 }: OrganizationsPageClientProps) {
 	const { t } = useTranslate();
 	const organizationTitle = t("settings.organizations.title", "Organization");
@@ -55,6 +57,7 @@ export function OrganizationsPageClient({
 					canCreateOrganizations={canCreateOrganizations}
 					billableCurrency={billableCurrency}
 					drivingLicence={drivingLicence}
+					equipmentOutstandingReturns={equipmentOutstandingReturns}
 				/>
 			</div>
 		</div>

@@ -54,6 +54,7 @@ function renderCard(input: {
 			billableTimeEnabled={false}
 			billableCurrency={null}
 			personnelFilesEnabled={false}
+			equipmentEnabled={false}
 			organizationTimezone="Europe/Berlin"
 			drivingLicence={input.drivingLicence}
 			currentMemberRole={input.role ?? "admin"}
@@ -85,7 +86,7 @@ describe("OrganizationFeaturesCard driving licence control (#1421)", () => {
 		expect(drivingSwitch().hasAttribute("disabled")).toBe(false);
 		expect(
 			screen.getByText(
-				"Only organization owners can change feature settings, except personnel files and driving licence control.",
+				"Only organization owners can change feature settings, except personnel files, equipment and driving licence control.",
 			),
 		).toBeTruthy();
 		cleanup();

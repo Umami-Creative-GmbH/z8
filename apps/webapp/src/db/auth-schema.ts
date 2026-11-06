@@ -358,6 +358,7 @@ export const organization = pgTable("organization", {
   worksCouncilEnabled: boolean("works_council_enabled").default(false),
   billableTimeEnabled: boolean("billable_time_enabled").default(false),
   personnelFilesEnabled: boolean("personnel_files_enabled").default(false),
+  equipmentEnabled: boolean("equipment_enabled").default(false),
   timezone: text("timezone").default("UTC"),
   deletedAt: timestamp("deleted_at"),
   deletedBy: text("deleted_by"),

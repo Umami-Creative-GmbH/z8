@@ -45,6 +45,7 @@ function getOrganizationFeatureFlags(
 		worksCouncilEnabled: organization?.worksCouncilEnabled ?? false,
 		billableTimeEnabled: organization?.billableTimeEnabled ?? false,
 		personnelFilesEnabled: organization?.personnelFilesEnabled ?? false,
+		equipmentEnabled: organization?.equipmentEnabled ?? false,
 	};
 }
 
@@ -221,7 +222,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 			false,
 		),
 		capability(
-			identity
+			featureFlags.equipmentEnabled && identity
 				? readEquipmentNavigation(db, identity)
 				: { personal: false, staff: false },
 			{ personal: false, staff: false },

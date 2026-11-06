@@ -1,8 +1,11 @@
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { EquipmentOfficers } from "@/components/settings/equipment/equipment-officers";
 import { EquipmentSettings } from "@/components/settings/equipment/equipment-settings";
 import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/db";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { isEquipmentEnabled } from "@/lib/organization/equipment/access";
 import {
 	getEquipmentOfficerGrants,
 	getEquipmentSetup,
@@ -12,6 +15,7 @@ import { getTranslate } from "@/tolgee/server";
 
 async function EquipmentSettingsContent() {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
+	if (!(await isEquipmentEnabled(db, organizationId))) notFound();
 	const [t, result, officers] = await Promise.all([
 		getTranslate(),
 		getEquipmentSetup(),

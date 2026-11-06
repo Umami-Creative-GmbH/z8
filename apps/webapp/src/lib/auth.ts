@@ -535,6 +535,13 @@ export const auth = betterAuth({
 							defaultValue: false,
 							input: false,
 						},
+						// Equipment tracking (#1572): switched by owners and admins through the features card.
+						equipmentEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: false,
+							input: false,
+						},
 						timezone: {
 							type: "string",
 							required: false,
