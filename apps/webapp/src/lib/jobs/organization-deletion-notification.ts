@@ -44,7 +44,7 @@ export async function sendOrganizationDeletionNotifications(
 		loadOrganizationTimezone(db, organizationId),
 		getOrganizationBaseUrl(organizationId),
 	]);
-	const recoveryUrl = `${appUrl}/settings/organizations`;
+	const recoveryUrl = `${appUrl}/settings/organization`;
 
 	await Promise.all(
 		recipients.map(async ({ user }) => {

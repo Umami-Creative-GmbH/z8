@@ -4,7 +4,7 @@ import { env } from "@/env";
 import { type AvvRequiredField, getAvvMissingFields } from "@/lib/avv/profile";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { OrganizationProfile } from "@/lib/organization/profile";
-import { getOrganizationProfile } from "../organizations/profile-actions";
+import { getOrganizationProfile } from "../organization/profile-actions";
 
 type AvvPreparation =
 	| { ready: true; profile: OrganizationProfile }

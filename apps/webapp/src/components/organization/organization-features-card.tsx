@@ -15,7 +15,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { switchBillableTime } from "@/app/[locale]/(app)/settings/billable-time/actions";
-import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organization/actions";
 import { BillableCurrencyForm } from "@/components/billable-time/billable-currency-form";
 import {
 	AlertDialog,

@@ -18,7 +18,7 @@ vi.mock("@/navigation", () => ({
 vi.mock("sonner", () => ({
 	toast: { success: mocks.success, error: mocks.error },
 }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/period-submission-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/period-submission-actions", () => ({
 	updatePeriodSubmissionSettings: mocks.save,
 }));
 

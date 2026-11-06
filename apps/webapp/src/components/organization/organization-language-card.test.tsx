@@ -28,7 +28,7 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: refreshMock }),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/actions", () => ({
 	updateOrganizationDefaultNotificationLanguage: updateLanguageMock,
 }));
 

@@ -24,7 +24,7 @@ vi.mock("@tolgee/react", () => ({
 }));
 vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh }) }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/profile-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/profile-actions", () => ({
 	saveOrganizationProfile: save,
 }));
 

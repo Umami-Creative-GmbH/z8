@@ -17,7 +17,7 @@ import {
 	bulkRejectPendingMembers,
 	listPendingMembers,
 	rejectPendingMember,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+} from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	AlertDialog,

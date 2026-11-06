@@ -17,7 +17,7 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: mocks.refresh }),
 	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
 }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/tracking-date-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/tracking-date-actions", () => ({
 	previewOrganizationTrackingDateAction: mocks.preview,
 	commitOrganizationTrackingDateAction: mocks.commit,
 }));

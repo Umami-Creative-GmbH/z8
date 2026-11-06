@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 	toastError: vi.fn(),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/actions", () => ({
 	toggleOrganizationFeature: vi.fn(),
 }));
 vi.mock("@/lib/organization/driving-licence/policy-actions", () => ({

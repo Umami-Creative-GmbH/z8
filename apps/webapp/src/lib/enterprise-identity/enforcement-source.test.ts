@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const organizationsActionsSource = readFileSync(
-	join(process.cwd(), "src/app/[locale]/(app)/settings/organizations/actions.ts"),
+	join(process.cwd(), "src/app/[locale]/(app)/settings/organization/actions.ts"),
 	"utf8",
 );
 const inviteCodeServiceSource = readFileSync(

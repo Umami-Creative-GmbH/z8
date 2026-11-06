@@ -18,7 +18,7 @@ vi.mock("@/navigation", () => ({
 vi.mock("sonner", () => ({
 	toast: { success: mocks.success, error: mocks.error },
 }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/auto-clock-out-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/auto-clock-out-actions", () => ({
 	updateAutoClockOutSettings: mocks.save,
 }));
 

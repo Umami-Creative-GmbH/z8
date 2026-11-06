@@ -683,7 +683,7 @@ describe("app sidebar compliance navigation", () => {
 			expect.objectContaining({
 				staticResults: expect.not.arrayContaining([
 					expect.objectContaining({ href: "/settings/employees" }),
-					expect.objectContaining({ href: "/settings/organizations" }),
+					expect.objectContaining({ href: "/settings/organization" }),
 				]),
 				staticCommands: expect.arrayContaining([
 					expect.objectContaining({

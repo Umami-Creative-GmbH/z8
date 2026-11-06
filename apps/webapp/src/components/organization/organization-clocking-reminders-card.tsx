@@ -5,7 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useId, useRef } from "react";
 import { toast } from "sonner";
-import { updateClockingReminderSettings } from "@/app/[locale]/(app)/settings/organizations/clocking-reminder-actions";
+import { updateClockingReminderSettings } from "@/app/[locale]/(app)/settings/organization/clocking-reminder-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";

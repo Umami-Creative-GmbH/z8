@@ -5,12 +5,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { InviteCodeWithRelations } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+import type { InviteCodeWithRelations } from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import {
 	createInviteCode,
 	generateRandomCode,
 	updateInviteCode,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+} from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	ActionPanel,

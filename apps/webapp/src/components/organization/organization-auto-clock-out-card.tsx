@@ -5,7 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useId, useRef } from "react";
 import { toast } from "sonner";
-import { updateAutoClockOutSettings } from "@/app/[locale]/(app)/settings/organizations/auto-clock-out-actions";
+import { updateAutoClockOutSettings } from "@/app/[locale]/(app)/settings/organization/auto-clock-out-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

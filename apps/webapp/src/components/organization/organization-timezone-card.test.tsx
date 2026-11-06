@@ -32,7 +32,7 @@ vi.mock("@/stores/organization-settings-store", () => ({
 	) => selector({ setSettings: setSettingsMock }),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/actions", () => ({
 	updateOrganizationTimezone: updateTimezoneMock,
 }));
 

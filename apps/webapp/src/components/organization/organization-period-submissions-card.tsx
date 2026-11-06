@@ -5,7 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useId, useRef } from "react";
 import { toast } from "sonner";
-import { updatePeriodSubmissionSettings } from "@/app/[locale]/(app)/settings/organizations/period-submission-actions";
+import { updatePeriodSubmissionSettings } from "@/app/[locale]/(app)/settings/organization/period-submission-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

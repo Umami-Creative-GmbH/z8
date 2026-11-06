@@ -6,7 +6,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { saveOrganizationProfile } from "@/app/[locale]/(app)/settings/organizations/profile-actions";
+import { saveOrganizationProfile } from "@/app/[locale]/(app)/settings/organization/profile-actions";
 import { Button } from "@/components/ui/button";
 import {
 	Card,

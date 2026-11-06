@@ -11,7 +11,7 @@ import { z } from "zod";
 import {
 	commitOrganizationTrackingDateAction,
 	previewOrganizationTrackingDateAction,
-} from "@/app/[locale]/(app)/settings/organizations/tracking-date-actions";
+} from "@/app/[locale]/(app)/settings/organization/tracking-date-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

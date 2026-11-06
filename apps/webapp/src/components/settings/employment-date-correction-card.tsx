@@ -202,7 +202,7 @@ export function EmploymentDateCorrectionCard({
 					</p>
 				) : null}
 				{activationNeeded ? (
-					<Link href="/settings/organizations" className="text-sm underline">
+					<Link href="/settings/organization" className="text-sm underline">
 						{t(
 							"settings.employmentCorrection.activateFirst",
 							"Review tracking activation in organization settings",

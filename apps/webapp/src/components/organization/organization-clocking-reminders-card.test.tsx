@@ -17,7 +17,7 @@ vi.mock("@/navigation", () => ({
 vi.mock("sonner", () => ({
 	toast: { success: mocks.success, error: mocks.error },
 }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/clocking-reminder-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/clocking-reminder-actions", () => ({
 	updateClockingReminderSettings: mocks.save,
 }));
 
