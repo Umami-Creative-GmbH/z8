@@ -36,7 +36,12 @@ import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-prefer
 import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { billableChoice } from "./billable-choice";
 import { BillableWorkSwitch } from "./billable-work-switch";
-import { BreakConnectionNote, OnBreakActions, StartBreakButton } from "./break-in-progress-actions";
+import {
+	BreakConnectionNote,
+	HeaderStartBreakButton,
+	OnBreakActions,
+	StartBreakButton,
+} from "./break-in-progress-actions";
 import { breakInProgressHandlers } from "./break-in-progress-handlers";
 import { BreakInProgressNotice } from "./break-in-progress-notice";
 import { toastClockCommandError } from "./clock-command-error-toast";
@@ -769,6 +774,9 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		isAddingBreak,
 		vehicleUse,
 		isOnBreak,
+		handleStartBreak,
+		isStartingBreak,
+		isOffline,
 	} = controller;
 	if (isError) {
 		return (
@@ -846,16 +854,26 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 			</Popover>
 			{/* No other break runs while a break is in progress (#861). */}
 			{isClockedIn && !isOnBreak ? (
-				<QuickBreakPopover
-					onAddBreak={handleAddBreak}
-					isAddingBreak={isAddingBreak}
-					isDisabled={isMutating}
-					t={t}
-					buttonClassName="-ml-2 h-8 rounded-l-none border-l-0 px-2.5"
-					iconOnly
-				>
-					<BreakVehicleReading state={vehicleUse} disabled={isAddingBreak} t={t} />
-				</QuickBreakPopover>
+				<>
+					<HeaderStartBreakButton
+						onClick={() => void handleStartBreak()}
+						disabled={isMutating}
+						pending={isStartingBreak}
+						isOffline={isOffline}
+						className="-ml-2"
+						t={t}
+					/>
+					<QuickBreakPopover
+						onAddBreak={handleAddBreak}
+						isAddingBreak={isAddingBreak}
+						isDisabled={isMutating}
+						t={t}
+						buttonClassName="-ml-2 h-8 rounded-l-none border-l-0 px-2.5"
+						iconOnly
+					>
+						<BreakVehicleReading state={vehicleUse} disabled={isAddingBreak} t={t} />
+					</QuickBreakPopover>
+				</>
 			) : null}
 		</div>
 	);
