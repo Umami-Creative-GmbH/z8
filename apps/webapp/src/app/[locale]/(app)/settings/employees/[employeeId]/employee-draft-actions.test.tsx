@@ -42,7 +42,7 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push: pushMock }),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/actions", () => ({
 	resendInvitation: resendInvitationMock,
 }));
 

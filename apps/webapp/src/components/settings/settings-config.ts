@@ -247,7 +247,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleDefault: "Organization",
 		descriptionKey: "settings.organizations.description",
 		descriptionDefault: "Manage organization details and configuration",
-		href: "/settings/organizations",
+		href: "/settings/organization",
 		icon: "building",
 		minimumTier: "orgAdmin",
 		group: "organization",

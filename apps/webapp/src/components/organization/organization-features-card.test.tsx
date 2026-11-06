@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 	refresh: vi.fn(),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/actions", () => ({
 	toggleOrganizationFeature: mocks.toggle,
 }));
 vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));

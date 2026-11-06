@@ -15,6 +15,6 @@ describe("settings import entry", () => {
 	it("hides organization settings for members", () => {
 		const entries = getVisibleSettings("member", false);
 
-		expect(entries.some((entry) => entry.href === "/settings/organizations")).toBe(false);
+		expect(entries.some((entry) => entry.href === "/settings/organization")).toBe(false);
 	});
 });

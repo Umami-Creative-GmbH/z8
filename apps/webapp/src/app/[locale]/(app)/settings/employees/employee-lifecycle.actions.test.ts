@@ -1575,7 +1575,7 @@ describe("removeEmployeeAccessAction", () => {
 			"utf8",
 		);
 		const organizationActionsSource = readFileSync(
-			new URL("../organizations/actions.ts", import.meta.url),
+			new URL("../organization/actions.ts", import.meta.url),
 			"utf8",
 		);
 

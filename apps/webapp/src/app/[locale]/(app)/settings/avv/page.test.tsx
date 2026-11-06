@@ -20,7 +20,7 @@ vi.mock("@/env", () => ({
 vi.mock("@/lib/auth-helpers", () => ({
 	requireOrgAdminSettingsAccess: mocks.access,
 }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/profile-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/profile-actions", () => ({
 	getOrganizationProfile: mocks.profile,
 }));
 vi.mock("@/lib/navigation/locale-redirect", () => ({
@@ -105,7 +105,7 @@ it("shows the legal identity and full address with a profile editor link", async
 		screen
 			.getByRole("link", { name: "Edit organization profile" })
 			.getAttribute("href"),
-	).toBe("/settings/organizations#organization-profile");
+	).toBe("/settings/organization#organization-profile");
 	expect(screen.getByRole("button").hasAttribute("disabled")).toBe(false);
 });
 

@@ -405,7 +405,7 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "BillingSettingsContent",
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/organizations/page.tsx",
+		file: "src/app/[locale]/(app)/settings/organization/page.tsx",
 		fallbackComponent: "OrganizationsPageLoading",
 		contentComponent: "OrganizationsPageContent",
 	},

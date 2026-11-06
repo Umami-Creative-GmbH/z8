@@ -6,7 +6,7 @@ import {
 export type SettingsAccessTier = "member" | "manager" | "orgAdmin";
 
 export const ORG_ADMIN_SETTINGS_ROUTES = [
-	"/settings/organizations",
+	"/settings/organization",
 	"/settings/clocking",
 	"/settings/notification-channels",
 	"/settings/billing",

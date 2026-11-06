@@ -25,7 +25,7 @@ describe("buildStaticAppSearchResults", () => {
 			expect.arrayContaining(["/", "/time-tracking", "/settings/profile", "/settings/security"]),
 		);
 		expect(results.some((result) => result.href === "/settings/employees")).toBe(false);
-		expect(results.some((result) => result.href === "/settings/organizations")).toBe(false);
+		expect(results.some((result) => result.href === "/settings/organization")).toBe(false);
 		expect(results.some((result) => result.href === "/team")).toBe(false);
 		expect(results.some((result) => result.href === "/team/absences")).toBe(false);
 		const settingsResult = results.find((result) => result.href === "/settings/profile");
@@ -112,7 +112,7 @@ describe("buildStaticAppSearchResults", () => {
 		});
 
 		expect(results.some((result) => result.href === "/compliance")).toBe(true);
-		expect(results.some((result) => result.href === "/settings/organizations")).toBe(true);
+		expect(results.some((result) => result.href === "/settings/organization")).toBe(true);
 		expect(results.some((result) => result.href === "/settings/billing")).toBe(true);
 		expect(results.some((result) => result.href === "/settings/roles")).toBe(true);
 	});

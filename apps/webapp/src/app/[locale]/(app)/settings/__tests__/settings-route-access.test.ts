@@ -117,7 +117,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps the exported org-admin route list aligned with the approved sweep", () => {
 		expect(ORG_ADMIN_SETTINGS_ROUTES).toEqual([
-			"/settings/organizations",
+			"/settings/organization",
 			"/settings/clocking",
 			"/settings/notification-channels",
 			"/settings/billing",
@@ -176,7 +176,7 @@ describe("org-admin settings route access", () => {
 		});
 
 		expect(
-			canResolvedTierAccessRoute(managerTier, "/settings/organizations"),
+			canResolvedTierAccessRoute(managerTier, "/settings/organization"),
 		).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams")).toBe(
 			true,
@@ -984,7 +984,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps organization management org-admin-only and separate from teams", () => {
 		const source = stripComments(
-			readTestText(join(SETTINGS_ROOT, "organizations/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "organization/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);

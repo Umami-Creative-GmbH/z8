@@ -103,7 +103,7 @@ const STATIC_APP_COMMANDS: StaticAppCommandDefinition[] = [
 			{ key: "appSearch.commands.inviteTeammate.keywords.teammate", defaultValue: "teammate" },
 			{ key: "appSearch.commands.inviteTeammate.keywords.member", defaultValue: "member" },
 		],
-		href: "/settings/organizations",
+		href: "/settings/organization",
 		visibleFor: "orgAdmin",
 	},
 	{

@@ -76,7 +76,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		actionLabel: "Review organization",
 		actionLabelKey: "settings.implementationChecklist.items.organizationStructure.actionLabel",
 		confirmationCovers: "organization-structure",
-		href: "/settings/organizations",
+		href: "/settings/organization",
 		detector: "manual",
 		canManualComplete: true,
 		role: "manual-only",

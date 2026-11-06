@@ -9,24 +9,20 @@ import { OrganizationTab } from "./organization-tab";
 
 interface OrganizationsPageClientProps {
 	organizationProfile: OrganizationProfile;
-	trackingSuggestedAt: string;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
 	currentMemberRole: "owner" | "admin" | "member";
 	defaultNotificationLanguage: string;
-	canCreateOrganizations: boolean;
 	billableCurrency: BillableCurrency | null;
 	drivingLicence: DrivingLicenceFeatureState;
 }
 
 export function OrganizationsPageClient({
 	organizationProfile,
-	trackingSuggestedAt,
 	organization,
 	memberCount,
 	currentMemberRole,
 	defaultNotificationLanguage,
-	canCreateOrganizations,
 	billableCurrency,
 	drivingLicence,
 }: OrganizationsPageClientProps) {
@@ -47,12 +43,10 @@ export function OrganizationsPageClient({
 
 				<OrganizationTab
 					organizationProfile={organizationProfile}
-					trackingSuggestedAt={trackingSuggestedAt}
 					organization={organization}
 					memberCount={memberCount}
 					currentMemberRole={currentMemberRole}
 					defaultNotificationLanguage={defaultNotificationLanguage}
-					canCreateOrganizations={canCreateOrganizations}
 					billableCurrency={billableCurrency}
 					drivingLicence={drivingLicence}
 				/>

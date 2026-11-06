@@ -51,7 +51,7 @@ function buildSettingsBreadcrumbs(
 		// Handle special cases for better labels
 		if (segment === "profile") {
 			label = t("settings.profile.title", "Profile");
-		} else if (segment === "organizations") {
+		} else if (segment === "organization") {
 			label = t("settings.organizations.title", "Organization");
 		} else if (segment === "security") {
 			label = t("settings.security.title", "Security");

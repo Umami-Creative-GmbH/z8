@@ -49,7 +49,7 @@ const actions = await import(
 	"@/app/[locale]/(app)/settings/employees/employee-tracking-date-actions"
 );
 const organizationActions = await import(
-	"@/app/[locale]/(app)/settings/organizations/tracking-date-actions"
+	"@/app/[locale]/(app)/settings/organization/tracking-date-actions"
 );
 const monthActions = await import("@/app/[locale]/(app)/settings/closed-months/actions");
 const adjustmentActions = await import(

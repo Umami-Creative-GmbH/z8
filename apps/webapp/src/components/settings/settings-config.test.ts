@@ -64,7 +64,7 @@ describe("settings visibility tiers", () => {
 		expect(entries.find((entry) => entry.id === "organizations")).toMatchObject(
 			{
 				titleDefault: "Organization",
-				href: "/settings/organizations",
+				href: "/settings/organization",
 				minimumTier: "orgAdmin",
 			},
 		);

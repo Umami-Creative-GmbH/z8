@@ -4,7 +4,7 @@ import { IconCamera, IconEdit, IconLoader2, IconTrash, IconUsers } from "@tabler
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { removeOrganizationLogo } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { removeOrganizationLogo } from "@/app/[locale]/(app)/settings/organization/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type * as authSchema from "@/db/auth-schema";
@@ -128,31 +128,6 @@ export function OrganizationDetailsCard({
 										</span>
 									</div>
 								)}
-								{canEdit && logoUrl && !isUploading && (
-									<button
-										type="button"
-										onClick={handleRemoveLogo}
-										disabled={isRemovingLogo}
-										aria-label={t("organization.logo.removeLabel", "Remove organization logo")}
-										className="absolute top-0 right-0 rounded-full bg-destructive p-1.5 text-destructive-foreground shadow-lg ring-2 ring-background transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
-									>
-										{isRemovingLogo ? (
-											<IconLoader2 className="size-3 animate-spin text-white" aria-hidden="true" />
-										) : (
-											<IconTrash className="size-3 text-white" aria-hidden="true" />
-										)}
-									</button>
-								)}
-								{canEdit && !isUploading && (
-									<button
-										type="button"
-										onClick={() => inputRef.current?.click()}
-										aria-label={t("organization.logo.changeLabel", "Change organization logo")}
-										className="absolute right-0 bottom-0 rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-									>
-										<IconCamera className="size-3" aria-hidden="true" />
-									</button>
-								)}
 							</div>
 							<div className="min-w-0">
 								<CardTitle className="text-2xl">{organization.name}</CardTitle>
@@ -163,6 +138,38 @@ export function OrganizationDetailsCard({
 										</span>
 									)}
 								</CardDescription>
+								{canEdit && (
+									<div className="mt-2 flex flex-wrap items-center gap-1 -ml-2">
+										<Button
+											variant="ghost"
+											size="sm"
+											className="h-7 px-2 text-xs text-muted-foreground"
+											onClick={() => inputRef.current?.click()}
+											disabled={isUploading}
+										>
+											<IconCamera className="size-3.5" aria-hidden="true" />
+											{logoUrl
+												? t("organization.logo.changeLabel", "Change organization logo")
+												: t("organization.logo.uploadLabel", "Upload organization logo")}
+										</Button>
+										{logoUrl && (
+											<Button
+												variant="ghost"
+												size="sm"
+												className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+												onClick={handleRemoveLogo}
+												disabled={isRemovingLogo || isUploading}
+											>
+												{isRemovingLogo ? (
+													<IconLoader2 className="size-3.5 animate-spin" aria-hidden="true" />
+												) : (
+													<IconTrash className="size-3.5" aria-hidden="true" />
+												)}
+												{t("organization.logo.removeLabel", "Remove organization logo")}
+											</Button>
+										)}
+									</div>
+								)}
 							</div>
 						</div>
 						{canEdit && (

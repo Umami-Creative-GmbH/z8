@@ -16,7 +16,7 @@ Implementation tickets:
 - One optional `organization_profile` row belongs to each organization. An absent
   row reads as eight empty strings; no existing metadata is backfilled.
 - Organization settings load and save through `getOrganizationProfile` and
-  `saveOrganizationProfile` in `settings/organizations/profile-actions.ts`. Both
+  `saveOrganizationProfile` in `settings/organization/profile-actions.ts`. Both
   require an approved, active owner/admin and reject any requested organization
   ID that differs from the authenticated session's active organization.
 - Saves replace the eight profile fields only. Empty and partial profiles are

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
 	generateInviteQRCode,
 	type InviteCodeWithRelations,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+} from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,

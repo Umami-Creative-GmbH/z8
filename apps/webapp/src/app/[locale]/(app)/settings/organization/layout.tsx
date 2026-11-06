@@ -9,7 +9,7 @@ export default function FeatureLayout({
 	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<RouteTranslationBoundary route="/settings/organizations" params={params}>
+		<RouteTranslationBoundary route="/settings/organization" params={params}>
 			{children}
 		</RouteTranslationBoundary>
 	);

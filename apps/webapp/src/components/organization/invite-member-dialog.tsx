@@ -10,7 +10,7 @@ import {
 	createKioskOnlyEmployeeAction,
 	getKioskOnlyEmployeeLocationsAction,
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
-import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { sendInvitation } from "@/app/[locale]/(app)/settings/organization/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { kioskPinErrorMessage } from "@/components/settings/kiosk/kiosk-pin-error-message";
 import {
