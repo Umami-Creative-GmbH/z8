@@ -66,6 +66,7 @@
         "manageEmployees": "menaxhoni punonjësit",
         "managers": "Menaxherët",
         "noScheduleAssigned": "Nuk është caktuar orar",
+        "noTeam": "Pa ekip",
         "personnelNumber": "Numri i personelit",
         "personnelNumberDescription": "Numri i caktuar nga organizata juaj për këtë punonjës, i cili përdoret në eksportimet e listëpagesave. Ai duhet të jetë unik, duke përfshirë edhe ish-punonjësit.",
         "personnelNumberManagedByIdp": "Menaxhohet nga ofruesi juaj i identitetit. Ndryshojeni numrin e personelit atje.",
@@ -95,6 +96,9 @@
           "overview": "Përmbledhje"
         },
         "team": "Ekipi",
+        "teamClearNotice": "Me ruajtjen përfundon anëtarësimi i këtij punonjësi në ekipin {currentTeam}. Anëtarësimi i tij i radhës në një ekip, nëse ka, bëhet ekipi i tij kryesor.",
+        "teamDescription": "Ekipi kryesor i punonjësit. Anëtarësimet e tjera në ekipe menaxhohen te Ekipet.",
+        "teamMoveNotice": "Me ruajtjen, ky punonjës kalon në ekipin {nextTeam}. Anëtarësimi i tij në ekipin {currentTeam} përfundon; anëtarësimet e tjera në ekipe mbeten.",
         "unexpectedError": "Ndodhi një gabim i papritur",
         "updateFailed": "Përditësimi i punonjësit dështoi",
         "updateSuccess": "Punonjësi u përditësua me sukses",

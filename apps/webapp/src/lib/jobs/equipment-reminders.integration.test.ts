@@ -572,6 +572,11 @@ it("uses current team coverage, then captured former-team scope after departure 
 		teamId,
 		fixture.employeeId,
 	]);
+	// The primary team is always a team membership (Organization ADR 0010).
+	await fixture.pool.query(
+		"insert into team_membership(organization_id,team_id,employee_id) values($1,$2,$3)",
+		[fixture.organizationId, teamId, fixture.employeeId],
+	);
 	await grant(officer.employeeId, { employeeIds: [], teamIds: [teamId] });
 	harness.now = "2026-03-31T12:00:00Z";
 	await runEquipmentRemindersJob();
@@ -688,6 +693,11 @@ it("dispatches queued former-team reminders only for their own employment ending
 		teamA,
 		fixture.employeeId,
 	]);
+	// The primary team is always a team membership (Organization ADR 0010).
+	await fixture.pool.query(
+		"insert into team_membership(organization_id,team_id,employee_id) values($1,$2,$3)",
+		[fixture.organizationId, teamA, fixture.employeeId],
+	);
 	await grant(officer.employeeId, { employeeIds: [], teamIds: [teamA] });
 	const old = await issue({ explicitDeadline: null });
 	harness.now = "2026-03-20T12:00:00Z";

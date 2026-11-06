@@ -66,6 +66,7 @@
         "manageEmployees": "Mitarbeiter verwalten",
         "managers": "Vorgesetzte",
         "noScheduleAssigned": "Kein Arbeitsplan zugewiesen",
+        "noTeam": "Kein Team",
         "personnelNumber": "Personalnummer",
         "personnelNumberDescription": "Die organisationsinterne Nummer für diesen Mitarbeiter, die bei Lohnexporten verwendet wird. Sie muss eindeutig sein, auch gegenüber ehemaligen Mitarbeitern.",
         "personnelNumberManagedByIdp": "Wird von Ihrem Identitätsanbieter verwaltet. Ändern Sie die Personalnummer dort.",
@@ -95,6 +96,9 @@
           "overview": "Übersicht"
         },
         "team": "Team",
+        "teamClearNotice": "Beim Speichern endet die Mitgliedschaft dieser Person im Team {currentTeam}. Ihre nächste Teammitgliedschaft, falls vorhanden, wird ihr primäres Team.",
+        "teamDescription": "Das primäre Team der Person. Weitere Teammitgliedschaften verwalten Sie unter Teams.",
+        "teamMoveNotice": "Beim Speichern wechselt diese Person ins Team {nextTeam}. Ihre Mitgliedschaft im Team {currentTeam} endet; ihre anderen Teammitgliedschaften bleiben bestehen.",
         "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
         "updateFailed": "Mitarbeiter konnte nicht aktualisiert werden",
         "updateSuccess": "Mitarbeiter erfolgreich aktualisiert",

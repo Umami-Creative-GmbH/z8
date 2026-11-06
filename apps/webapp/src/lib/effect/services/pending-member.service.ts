@@ -17,6 +17,7 @@ import {
 } from "@/lib/auth/member-removal-cleanup";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { placeInTeam } from "@/lib/organization/primary-team";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -269,27 +270,37 @@ export const PendingMemberServiceLive = Layer.effect(
 						}),
 					]);
 
-					if (!existingEmployee) {
-						await tx.insert(employee).values({
-							userId: approvedMember.userId,
+					// The assigned team is a membership and the primary team (Organization ADR 0010).
+					const placeInAssignedTeam = (employeeId: string) =>
+						placeInTeam(tx, {
 							organizationId: input.organizationId,
+							employeeId,
 							teamId: input.assignedTeamId,
-							role: "employee",
-							isActive: true,
+							createdBy: input.approvedBy,
 						});
+
+					if (!existingEmployee) {
+						const [created] = await tx
+							.insert(employee)
+							.values({
+								userId: approvedMember.userId,
+								organizationId: input.organizationId,
+								role: "employee",
+								isActive: true,
+							})
+							.returning({ id: employee.id });
+						if (created) await placeInAssignedTeam(created.id);
 					} else if (!existingEmployee.isActive) {
 						await tx
 							.update(employee)
-							.set({
-								isActive: true,
-								teamId: input.assignedTeamId ?? existingEmployee.teamId,
-							})
+							.set({ isActive: true })
 							.where(
 								and(
 									eq(employee.id, existingEmployee.id),
 									eq(employee.organizationId, input.organizationId),
 								),
 							);
+						await placeInAssignedTeam(existingEmployee.id);
 					}
 
 					return approval;

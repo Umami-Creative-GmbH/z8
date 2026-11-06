@@ -20,6 +20,27 @@ vi.mock("@/lib/employment-history/first-terms", () => ({
 	writeFirstEmploymentTerms,
 }));
 
+// The placement itself is covered by primary-team.integration.test.ts (#1575).
+const setPrimaryTeam = vi.hoisted(() =>
+	vi.fn(async (_tx: unknown, input: { teamId: string | null }) => ({
+		addTeamId: input.teamId,
+		endTeamId: null,
+		primaryTeamId: input.teamId,
+	})),
+);
+vi.mock("@/lib/organization/primary-team", () => ({
+	setPrimaryTeam,
+	// As placeInTeam: no team places nothing.
+	placeInTeam: (tx: unknown, input: { teamId?: string | null }) =>
+		input.teamId ? setPrimaryTeam(tx, { ...input, teamId: input.teamId }) : null,
+}));
+const placedIn = (employeeId: string, teamId: string) =>
+	expect(setPrimaryTeam).toHaveBeenCalledWith(expect.anything(), {
+		organizationId: "org-1",
+		employeeId,
+		teamId,
+	});
+
 // Draft personnel numbers here are free; a taken one is covered by
 // organization-member-provisioning.personnel-number.integration.test.ts.
 vi.mock("@/lib/organization/personnel-number-uniqueness", () => ({
@@ -28,6 +49,10 @@ vi.mock("@/lib/organization/personnel-number-uniqueness", () => ({
 }));
 
 type ProvisioningDb = Parameters<typeof ensureEmployeeForOrganizationMember>[0];
+
+beforeEach(() => {
+	setPrimaryTeam.mockClear();
+});
 
 describe("ensureEmployeeForOrganizationMember", () => {
 	function createDbMock(existingEmployee: unknown = null) {
@@ -70,6 +95,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 				member: { findMany: memberFindMany },
 				employee: { findFirst, findMany: employeeFindMany },
 				employeeInvitationDraft: { findFirst: draftFindFirst },
+				team: { findFirst: vi.fn().mockResolvedValue({ id: "team-1" }) },
 				teamPermissions: { findFirst: teamPermissionsFindFirst },
 				user: { findFirst: userFindFirst },
 			},
@@ -115,11 +141,11 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			organizationId: "org-1",
 			role: "employee",
 			isActive: true,
-			teamId: null,
 		});
+		expect(setPrimaryTeam).not.toHaveBeenCalled();
 	});
 
-	it("sets targetTeamId when creating a new employee", async () => {
+	it("places a new employee in targetTeamId as a membership and primary team", async () => {
 		const { db, values } = createDbMock();
 
 		await ensureEmployeeForOrganizationMember(db, {
@@ -135,8 +161,8 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			organizationId: "org-1",
 			role: "employee",
 			isActive: true,
-			teamId: "team-1",
 		});
+		placedIn("employee-1", "team-1");
 	});
 
 	it("does not move an existing active employee to a new invite target team", async () => {
@@ -245,7 +271,6 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			organizationId: "org-1",
 			role: "admin",
 			isActive: true,
-			teamId: null,
 		});
 		expect(values).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -423,7 +448,6 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			organizationId: "org-1",
 			role: "admin",
 			isActive: true,
-			teamId: null,
 		});
 	});
 });
@@ -923,11 +947,11 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			invitationId: "invite-1",
 		});
 
+		placedIn("employee-created", "team-1");
 		expect(db.values).toHaveBeenCalledWith(
 			expect.objectContaining({
 				userId: "user-1",
 				organizationId: "org-1",
-				teamId: "team-1",
 				role: "manager",
 				firstName: "Ada",
 				lastName: "Lovelace",
@@ -967,9 +991,8 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			targetTeamId: invitationTeamId,
 		});
 
-		expect(db.values).toHaveBeenCalledWith(
-			expect.objectContaining({ teamId: expectedTeamId }),
-		);
+		if (expectedTeamId) placedIn("employee-created", expectedTeamId);
+		else expect(setPrimaryTeam).not.toHaveBeenCalled();
 	});
 
 	it("falls back to the same organization and accepting email for a replacement invitation", async () => {
@@ -1051,9 +1074,8 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			db.query.employeeInvitationDraft.findFirst.mock.calls[1]?.[0].where,
 		);
 		expect(fallbackQuery.params).toEqual(["org-1", "invitee@example.com"]);
-		expect(db.values).toHaveBeenCalledWith(
-			expect.objectContaining({ role: "employee", teamId: null }),
-		);
+		expect(db.values).toHaveBeenCalledWith(expect.objectContaining({ role: "employee" }));
+		expect(setPrimaryTeam).not.toHaveBeenCalled();
 	});
 
 	it("ignores a draft team that no longer belongs to the organization", async () => {
@@ -1076,9 +1098,8 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			invitationId: "invite-1",
 		});
 
-		expect(db.values).toHaveBeenCalledWith(
-			expect.objectContaining({ teamId: null }),
-		);
+		expect(db.values).toHaveBeenCalledWith(expect.objectContaining({ role: "employee" }));
+		expect(setPrimaryTeam).not.toHaveBeenCalled();
 	});
 
 	it("keeps current behavior when no draft exists", async () => {
@@ -1091,9 +1112,8 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			memberRole: "admin",
 		});
 
-		expect(db.values).toHaveBeenCalledWith(
-			expect.objectContaining({ role: "admin", teamId: null }),
-		);
+		expect(db.values).toHaveBeenCalledWith(expect.objectContaining({ role: "admin" }));
+		expect(setPrimaryTeam).not.toHaveBeenCalled();
 	});
 
 	it("applies draft fields when reactivating an inactive placeholder employee", async () => {
@@ -1126,12 +1146,13 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 		expect(db.set).toHaveBeenCalledWith(
 			expect.objectContaining({
 				isActive: true,
-				teamId: "team-1",
 				role: "manager",
 				position: "Lead",
 				contractType: "hourly",
 			}),
 		);
+		// The draft's team is a move from team-old (Organization ADR 0010).
+		placedIn("employee-existing", "team-1");
 		expect(db.set).not.toHaveBeenCalledWith(
 			expect.objectContaining({ currentHourlyRate: expect.anything() }),
 		);
@@ -1222,9 +1243,9 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			invitationId: "invite-1",
 		});
 
+		placedIn("employee-existing", "team-1");
 		expect(db.set).toHaveBeenCalledWith({
 			isActive: true,
-			teamId: "team-1",
 			role: "manager",
 			firstName: "Ada",
 			lastName: "Lovelace",
@@ -1276,11 +1297,7 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				"team-from-invitation",
 			),
 		).toBe(false);
-		expect(db.values).toHaveBeenCalledWith(
-			expect.objectContaining({
-				teamId: "team-1",
-			}),
-		);
+		placedIn("employee-created", "team-1");
 	});
 });
 

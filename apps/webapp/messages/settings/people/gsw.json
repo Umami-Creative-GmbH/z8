@@ -66,6 +66,7 @@
         "manageEmployees": "Mitarbeiter verwalte",
         "managers": "Manager",
         "noScheduleAssigned": "Kei Zytplan zuegwise",
+        "noTeam": "Käs Team",
         "personnelNumber": "Personalnummere",
         "personnelNumberDescription": "D Nummere vo dinere Organisation für de Mitarbeiter, wo bi Lohnexport brucht wird. Si muess eidütig si, au bi ehemalige Mitarbeiter.",
         "personnelNumberManagedByIdp": "Wird vo dim Identity-Provider verwaltet. Änder d Personalnummere döt.",
@@ -95,6 +96,9 @@
           "overview": "Übersicht"
         },
         "team": "Team",
+        "teamClearNotice": "Bim Speichere endet d Mitgliedschaft vo dere Person im Team {currentTeam}. Iri nächschti Teammitgliedschaft, falls vorhande, wird ires primäre Team.",
+        "teamDescription": "S primäre Team vo dere Person. Wiiteri Teammitgliedschafte verwaltet Sie under Teams.",
+        "teamMoveNotice": "Bim Speichere wächslet die Person is Team {nextTeam}. Iri Mitgliedschaft im Team {currentTeam} endet; iri andere Teammitgliedschafte bliibed bestoh.",
         "unexpectedError": "Es isch en unerwartete Fehler ufträtte",
         "updateFailed": "Mitarbeiter-Aktualisierig isch fehlgschlage",
         "updateSuccess": "Mitarbeiter isch erfolgriich aktualisiert worde",

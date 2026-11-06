@@ -2,12 +2,15 @@
 
 import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { use, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { previewEmployeeTeamChange } from "@/app/[locale]/(app)/settings/employees/actions";
+import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { BillableRateSeries } from "@/components/billable-time/billable-rate-series";
 import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
+import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import { EmployeeEquipment } from "@/components/equipment/equipment-workspace";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
@@ -190,6 +193,27 @@ export function EmployeeDetailPageClient({
 			: undefined,
 	});
 
+	// The Team field (Organization ADR 0010): org admins move a real employee between teams.
+	const canEditTeam = accessTier === "orgAdmin" && employee?.kind === "employee";
+	const teamOptions = useQuery({
+		queryKey: queryKeys.teams.options(employee?.organizationId ?? ""),
+		queryFn: async () => {
+			const result = await listTeams(employee?.organizationId);
+			if (!result.success) throw new Error(result.error);
+			return result.data.map((team) => ({ id: team.id, name: team.name }));
+		},
+		enabled: canEditTeam,
+		staleTime: 60 * 1000,
+	});
+	// Without its teams the Team field stays hidden: say why rather than offer none.
+	const teamOptionsError = teamOptions.error;
+	useEffect(() => {
+		if (teamOptionsError)
+			toast.error(teamOptionsError.message || t("errors.failedToLoad", "Failed to load data"));
+	}, [teamOptionsError, t]);
+	const { confirmTeamChange, teamChangeError, drivingLicenceWarning } =
+		useDrivingLicenceTeamChangeWarning();
+
 	const form = useForm({
 		defaultValues: employee
 			? buildEmployeeDetailFormValues(employee)
@@ -197,11 +221,24 @@ export function EmployeeDetailPageClient({
 		onSubmitInvalid: ({ formApi }) =>
 			focusFirstInvalidEmployeeDetailField(formApi),
 		onSubmit: async ({ value }) => {
-			const payload = buildEmployeeUpdatePayload(value);
+			const payload = buildEmployeeUpdatePayload(
+				value,
+				canEditTeam ? (employee.teamId ?? null) : undefined,
+			);
+			// A new primary team can end driving authorizations: warn first (#1425).
+			let drivingLicencePreviewToken: string | undefined;
+			if ("teamId" in payload) {
+				const previewToken = await confirmTeamChange(() =>
+					previewEmployeeTeamChange(employeeId, payload.teamId ?? null),
+				);
+				if (previewToken === null) return;
+				drivingLicencePreviewToken = previewToken;
+			}
 			const result = await updateEmployee({
 				...payload,
 				// Undefined for invitation drafts: their section is never loaded.
 				customFieldValues: customFields.values(),
+				drivingLicencePreviewToken,
 			}).catch(() => null);
 
 			if (!result) {
@@ -227,11 +264,10 @@ export function EmployeeDetailPageClient({
 				focusFirstInvalidEmployeeDetailField(form);
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.employees.detailView.updateFailed",
-							"Failed to update employee",
-						),
+					teamChangeError(
+						result,
+						t("settings.employees.detailView.updateFailed", "Failed to update employee"),
+					),
 				);
 			}
 		},
@@ -353,6 +389,16 @@ export function EmployeeDetailPageClient({
 						isUpdating={isUpdating}
 						onCancel={() => push("/settings/employees")}
 						t={t}
+						team={
+							canEditTeam && teamOptions.data
+								? {
+										currentTeam: employee.team
+											? { id: employee.team.id, name: employee.team.name }
+											: null,
+										options: teamOptions.data,
+									}
+								: null
+						}
 						hasCustomFieldChanges={customFields.isDirty}
 						customFields={
 							isDraft ? null : (
@@ -394,6 +440,7 @@ export function EmployeeDetailPageClient({
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
+			{drivingLicenceWarning}
 			<EmployeeDetailHeader
 				t={t}
 				actions={

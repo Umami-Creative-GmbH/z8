@@ -66,6 +66,7 @@
         "manageEmployees": "administrere ansatte",
         "managers": "Ledere",
         "noScheduleAssigned": "Ingen tidsplan tilordnet",
+        "noTeam": "Ingen team",
         "personnelNumber": "Ansattnummer",
         "personnelNumberDescription": "Organisasjonens eget nummer for denne ansatte, brukt i lønnseksporter. Det må være unikt, også blant tidligere ansatte.",
         "personnelNumberManagedByIdp": "Administreres av identitetsleverandøren din. Endre ansattnummeret der.",
@@ -95,6 +96,9 @@
           "overview": "Oversikt"
         },
         "team": "Team",
+        "teamClearNotice": "Ved lagring avsluttes denne ansattes medlemskap i {currentTeam}. Det neste teammedlemskapet, om noe, blir det primære teamet.",
+        "teamDescription": "Den ansattes primære team. Administrer andre teammedlemskap under Team.",
+        "teamMoveNotice": "Ved lagring flyttes denne ansatte til {nextTeam}. Medlemskapet i {currentTeam} avsluttes; de andre teammedlemskapene beholdes.",
         "unexpectedError": "Det oppsto en uventet feil",
         "updateFailed": "Kunne ikke oppdatere ansatt",
         "updateSuccess": "Ansatt ble oppdatert",

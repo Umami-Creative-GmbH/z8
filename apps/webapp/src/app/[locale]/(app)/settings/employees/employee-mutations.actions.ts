@@ -34,6 +34,7 @@ import {
 } from "@/lib/organization/driving-licence/no-longer-intended";
 import { keepDrivingLicenceStalePreview } from "@/lib/organization/driving-licence/stale-preview";
 import { personnelNumberKey } from "@/lib/organization/personnel-number";
+import { keepPrimaryTeamRefusal, setPrimaryTeam } from "@/lib/organization/primary-team";
 import {
 	assertPersonnelNumberFree,
 	assertPersonnelNumberLocallyEditable,
@@ -199,7 +200,6 @@ export async function createEmployeeAction(
 									.values({
 										userId: validatedData.userId,
 										organizationId: validatedData.organizationId,
-										teamId: validatedData.teamId || null,
 										role: validatedData.role,
 										position: validatedData.position || null,
 										gender: validatedData.gender || null,
@@ -211,6 +211,15 @@ export async function createEmployeeAction(
 										contractType,
 									})
 									.returning();
+								// The team is a membership and the primary team (Organization ADR 0010).
+								const placed = validatedData.teamId
+									? await setPrimaryTeam(tx, {
+											organizationId: validatedData.organizationId,
+											employeeId: inserted.id,
+											teamId: validatedData.teamId,
+											createdBy: session.user.id,
+										})
+									: null;
 								// The wage lives in employment terms (Organization ADR 0002):
 								// an hourly employee starts with confirmed terms, and
 								// without them no employee is created.
@@ -222,7 +231,10 @@ export async function createEmployeeAction(
 									hourlyRate,
 									startDate: validatedData.startDate ?? null,
 								});
-								return { newEmployee: inserted, firstTerms: terms };
+								return {
+									newEmployee: { ...inserted, teamId: placed?.primaryTeamId ?? null },
+									firstTerms: terms,
+								};
 							},
 							dbService.db,
 						),
@@ -239,6 +251,7 @@ export async function createEmployeeAction(
 							// Keep the terms refusal for the user (D8).
 							return keepTermsRefusal(error);
 						}),
+						keepPrimaryTeamRefusal,
 					);
 
 				if (firstTerms) {
@@ -343,15 +356,14 @@ export async function previewEmployeeTeamChangeDrivingImpact(
 						async (tx) => {
 							// A scoped manager can't change the team: nothing changes then.
 							if (!Object.hasOwn(validatedData, "teamId")) return;
-							await tx
-								.update(employee)
-								.set({ teamId: validatedData.teamId ?? null })
-								.where(
-									and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-								);
+							await setPrimaryTeam(tx, {
+								organizationId,
+								employeeId,
+								teamId: validatedData.teamId ?? null,
+							});
 						},
 					),
-				);
+				).pipe(keepPrimaryTeamRefusal);
 			}),
 	});
 }
@@ -402,11 +414,14 @@ export async function updateEmployeeAction(
 				const {
 					firstName,
 					lastName,
+					teamId: nextTeamId,
 					...employeeUpdateData
 				} = updatePayload as typeof updatePayload & {
 					firstName?: string;
 					lastName?: string;
 				};
+				// A changed Team field is a move (Organization ADR 0010).
+				const hasTeamUpdate = nextTeamId !== undefined;
 
 				// A personnel number is unique per organization among current and former
 				// employees (#881); a blank one is no number.
@@ -473,9 +488,17 @@ export async function updateEmployeeAction(
 												eq(employee.organizationId, targetEmployee.organizationId),
 											),
 										);
+									if (hasTeamUpdate) {
+										await setPrimaryTeam(tx, {
+											organizationId: targetEmployee.organizationId,
+											employeeId,
+											teamId: nextTeamId ?? null,
+											createdBy: session.user.id,
+										});
+									}
 								};
 								// A new primary team can end the employee's driving authorization (#1425).
-								if (Object.hasOwn(employeeUpdateData, "teamId"))
+								if (hasTeamUpdate)
 									await runDrivingLicenceIntendedDriverWrite(
 										tx,
 										{
@@ -506,6 +529,7 @@ export async function updateEmployeeAction(
 					.pipe(
 						keepCustomFieldRefusal,
 						keepDrivingLicenceStalePreview,
+						keepPrimaryTeamRefusal,
 						// A concurrent save that took the number first hits the unique index.
 						keepPersonnelNumberRefusal(() =>
 							personnelNumber === null
