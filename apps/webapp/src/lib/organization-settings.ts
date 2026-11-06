@@ -40,6 +40,7 @@ export async function getOrganizationSettings(
 			worksCouncilEnabled: true,
 			billableTimeEnabled: true,
 			personnelFilesEnabled: true,
+			equipmentEnabled: true,
 			timezone: true,
 			deletedAt: true,
 		},

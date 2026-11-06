@@ -15,6 +15,7 @@ interface OrganizationsPageClientProps {
 	defaultNotificationLanguage: string;
 	billableCurrency: BillableCurrency | null;
 	drivingLicence: DrivingLicenceFeatureState;
+	equipmentOutstandingReturns: number;
 }
 
 export function OrganizationsPageClient({
@@ -25,6 +26,7 @@ export function OrganizationsPageClient({
 	defaultNotificationLanguage,
 	billableCurrency,
 	drivingLicence,
+	equipmentOutstandingReturns,
 }: OrganizationsPageClientProps) {
 	const { t } = useTranslate();
 	const organizationTitle = t("settings.organizations.title", "Organization");
@@ -49,6 +51,7 @@ export function OrganizationsPageClient({
 					defaultNotificationLanguage={defaultNotificationLanguage}
 					billableCurrency={billableCurrency}
 					drivingLicence={drivingLicence}
+					equipmentOutstandingReturns={equipmentOutstandingReturns}
 				/>
 			</div>
 		</div>

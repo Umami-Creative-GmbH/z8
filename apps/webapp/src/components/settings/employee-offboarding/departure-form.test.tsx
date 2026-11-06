@@ -43,6 +43,7 @@ vi.mock("@/lib/query/use-employee-offboarding", async (importOriginal) => ({
 	useDeparturePreview: previewMock,
 }));
 
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DepartureForm, type DepartureFormProps } from "./departure-form";
 
 const employeeId = "11111111-1111-4111-8111-111111111111";
@@ -102,6 +103,7 @@ describe("DepartureForm", () => {
 		expect(props.scheduleDeparture).not.toHaveBeenCalled();
 	});
 	it("shows outstanding equipment quantities and deadlines while access ending remains independent", () => {
+		useOrganizationSettings.setState({ equipmentEnabled: true });
 		previewMock.mockReturnValue({
 			data: {
 				lastWorkingDay: "2026-10-25",
@@ -137,6 +139,44 @@ describe("DepartureForm", () => {
 				"Outstanding equipment never delays employment, access or paid-seat ending. Returning a key or fob does not restore its credential.",
 			),
 		).toBeTruthy();
+	});
+
+	it("keeps outstanding equipment read-only while equipment tracking is switched off (#1572)", () => {
+		useOrganizationSettings.setState({ equipmentEnabled: false });
+		previewMock.mockReturnValue({
+			data: {
+				lastWorkingDay: "2026-10-25",
+				cutoff: "2026-10-25T23:00:00Z",
+				timezone: "Europe/Berlin",
+				pendingDutyCount: 0,
+				replacementOptions: [],
+				exceptions: [],
+				equipment: [
+					{
+						assignmentId: "laptop-1",
+						identifier: "IT-42",
+						typeName: "Laptop",
+						outstandingQuantity: 1,
+						explicitDeadline: "2026-10-23",
+						effectiveDeadline: "2026-10-23",
+					},
+				],
+			},
+			isFetching: false,
+			error: null,
+		});
+		renderForm();
+		expect(
+			screen.getByRole("region", { name: "Outstanding equipment returns" }).textContent,
+		).toContain("IT-42");
+		expect(screen.queryByRole("link", { name: "Open equipment follow-up" })).toBeNull();
+		expect(screen.getByText(/Equipment is switched off for this organization/)).toBeTruthy();
+	});
+
+	it("leaves out the equipment section while switched off and nothing is outstanding", () => {
+		useOrganizationSettings.setState({ equipmentEnabled: false });
+		renderForm();
+		expect(screen.queryByRole("region", { name: "Outstanding equipment returns" })).toBeNull();
 	});
 
 	it("keeps entered values, focuses the server guidance and retries with the same request id", async () => {

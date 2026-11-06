@@ -3,7 +3,6 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useRef } from "react";
-import { Button } from "@/components/ui/button";
 import {
 	TFormControl,
 	TFormItem,
@@ -27,6 +26,7 @@ import {
 import {
 	ActualDateField,
 	ConditionField,
+	EquipmentFormPanel,
 	equipmentSelectClass,
 	NotesField,
 	QuantityField,
@@ -73,21 +73,24 @@ export function CloseReturnForm({
 		},
 	});
 	return (
-		<form
-			ref={element}
-			noValidate
-			className="min-w-0 space-y-4 break-words rounded-lg border bg-card p-4"
-			onSubmit={(e) => {
-				e.preventDefault();
-				void form.handleSubmit();
-			}}
+		<EquipmentFormPanel
+			element={element}
+			pending={pending}
+			onCancel={onCancel}
+			onSubmit={() => void form.handleSubmit()}
+			title={t(
+				"settings.equipment.exception.closeTitle",
+				"Close required return",
+			)}
+			description={
+				<>
+					<span translate="no">{assignment.identifier}</span> ·{" "}
+					{assignment.holderName}
+				</>
+			}
+			submitLabel={t("settings.equipment.exception.save", "Record closure")}
 		>
-			<h3 className="font-semibold">
-				{t("settings.equipment.exception.closeTitle", "Close required return")}{" "}
-				· <span translate="no">{assignment.identifier}</span>
-			</h3>
 			<p className="text-sm text-muted-foreground">
-				{assignment.holderName} ·{" "}
 				{t(
 					"settings.equipment.exception.closeHelp",
 					"Lost or waived quantities close the return obligation without recording physical receipt. The equipment stays in custody until actually received.",
@@ -182,20 +185,7 @@ export function CloseReturnForm({
 					</TFormItem>
 				)}
 			</form.Field>
-			<div className="flex flex-wrap gap-2">
-				<Button type="submit" disabled={pending}>
-					{t("settings.equipment.exception.save", "Record closure")}
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={onCancel}
-					disabled={pending}
-				>
-					{t("common.cancel", "Cancel")}
-				</Button>
-			</div>
-		</form>
+		</EquipmentFormPanel>
 	);
 }
 
@@ -240,17 +230,13 @@ export function ReceiveExceptionForm({
 		},
 	});
 	return (
-		<form
-			ref={element}
-			noValidate
-			className="min-w-0 space-y-4 break-words rounded-lg border bg-card p-4"
-			onSubmit={(e) => {
-				e.preventDefault();
-				void form.handleSubmit();
-			}}
-		>
-			<h3 className="font-semibold">
-				{exception.kind === "lost"
+		<EquipmentFormPanel
+			element={element}
+			pending={pending}
+			onCancel={onCancel}
+			onSubmit={() => void form.handleSubmit()}
+			title={
+				exception.kind === "lost"
 					? t(
 							"settings.equipment.exception.recoveryTitle",
 							"Recover lost equipment",
@@ -258,13 +244,27 @@ export function ReceiveExceptionForm({
 					: t(
 							"settings.equipment.exception.waivedReceiptTitle",
 							"Receive waived equipment",
-						)}{" "}
-				· <span translate="no">{assignment.identifier}</span>
-			</h3>
-			<p className="text-sm text-muted-foreground">
-				{assignment.holderName} · <span translate="no">{timezone}</span> ·{" "}
-				{exception.reason}
-			</p>
+						)
+			}
+			description={
+				<>
+					<span translate="no">{assignment.identifier}</span> ·{" "}
+					{assignment.holderName} · <span translate="no">{timezone}</span>
+				</>
+			}
+			submitLabel={
+				exception.kind === "lost"
+					? t(
+							"settings.equipment.exception.confirmRecovery",
+							"Confirm recovery",
+						)
+					: t(
+							"settings.equipment.exception.confirmWaivedReceipt",
+							"Confirm waived receipt",
+						)
+			}
+		>
+			<p className="whitespace-pre-wrap text-sm">{exception.reason}</p>
 			<p className="text-sm text-muted-foreground">
 				{t(
 					"settings.equipment.exception.recoveryHelp",
@@ -333,28 +333,7 @@ export function ReceiveExceptionForm({
 			<form.Field name="notes">
 				{(field) => <NotesField field={field} pending={pending} t={t} />}
 			</form.Field>
-			<div className="flex flex-wrap gap-2">
-				<Button type="submit" disabled={pending}>
-					{exception.kind === "lost"
-						? t(
-								"settings.equipment.exception.confirmRecovery",
-								"Confirm recovery",
-							)
-						: t(
-								"settings.equipment.exception.confirmWaivedReceipt",
-								"Confirm waived receipt",
-							)}
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={onCancel}
-					disabled={pending}
-				>
-					{t("common.cancel", "Cancel")}
-				</Button>
-			</div>
-		</form>
+		</EquipmentFormPanel>
 	);
 }
 
@@ -405,69 +384,5 @@ export function EquipmentExceptionTotals({
 				)}
 			</p>
 		</div>
-	);
-}
-
-export function EquipmentExceptionEvidence({
-	exception,
-	timezone,
-	pending,
-	onReceive,
-}: {
-	exception: EquipmentExceptionView;
-	timezone: string;
-	pending: boolean;
-	onReceive: () => void;
-}) {
-	const { t } = useTranslate();
-	const locale = useLocale();
-	return (
-		<li className="space-y-1 break-words text-sm">
-			<p className="font-medium">
-				{exception.kind === "lost"
-					? t("settings.equipment.exception.lost", "Lost")
-					: t("settings.equipment.exception.waived", "Return waived")}{" "}
-				· {t("settings.equipment.handover.quantity", "Quantity")}:{" "}
-				{exception.quantity.toLocaleString(locale)}
-			</p>
-			<p className="whitespace-pre-wrap">{exception.reason}</p>
-			<p className="text-muted-foreground">
-				{t("settings.equipment.custody.recordedBy", "Recorded by")}{" "}
-				{exception.actorName ??
-					t("settings.equipment.custody.removedActor", "Removed account")}{" "}
-				·{" "}
-				<time dateTime={exception.recordedAt}>
-					{parseInstant(exception.recordedAt)
-						.toZonedDateTimeISO(timezone)
-						.toLocaleString(locale, {
-							dateStyle: "medium",
-							timeStyle: "short",
-						})}
-				</time>{" "}
-				<span translate="no">{timezone}</span>
-			</p>
-			<p className="tabular-nums">
-				{exception.kind === "lost"
-					? t(
-							"settings.equipment.exception.recoveredQuantity",
-							"Recovered quantity",
-						)
-					: t(
-							"settings.equipment.exception.waivedReceivedQuantity",
-							"Physically received after waiver",
-						)}
-				: {exception.receivedQuantity.toLocaleString(locale)}
-			</p>
-			{exception.canReceive ? (
-				<Button variant="outline" disabled={pending} onClick={onReceive}>
-					{exception.kind === "lost"
-						? t("settings.equipment.exception.recover", "Record recovery")
-						: t(
-								"settings.equipment.exception.receiveWaived",
-								"Record waived receipt",
-							)}
-				</Button>
-			) : null}
-		</li>
 	);
 }

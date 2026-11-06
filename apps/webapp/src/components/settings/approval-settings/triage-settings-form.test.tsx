@@ -9,7 +9,14 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApprovalTriageSettingsForm } from "./triage-settings-form";
 
-const transport = vi.hoisted(() => ({ save: vi.fn() }));
+const transport = vi.hoisted(() => ({
+	save: vi.fn(),
+	success: vi.fn(),
+	error: vi.fn(),
+}));
+vi.mock("sonner", () => ({
+	toast: { success: transport.success, error: transport.error },
+}));
 vi.mock(
 	"@/app/[locale]/(app)/settings/approval-policies/triage-actions",
 	() => ({ saveApprovalTriageSettingsAction: transport.save }),
@@ -42,9 +49,8 @@ describe("approval triage settings form", () => {
 		fireEvent.click(
 			screen.getByRole("button", { name: "Save triage settings" }),
 		);
-		await screen.findByRole("status");
-		expect(screen.getByRole("status").textContent).toContain(
-			"Triage settings saved",
+		await waitFor(() =>
+			expect(transport.success).toHaveBeenCalledWith("Triage settings saved."),
 		);
 		expect(transport.save).toHaveBeenCalledWith({
 			staleAfterHours: 24,
@@ -84,7 +90,7 @@ it("keeps invalid values visible with accessible feedback and does not submit th
 		screen.getByLabelText("Stale after (hours)").getAttribute("aria-invalid"),
 	).toBe("true");
 });
-it("shows server refusal inline while preserving the administrator's edits", async () => {
+it("shows server refusal as a toast while preserving the administrator's edits", async () => {
 	transport.save.mockResolvedValue({
 		success: false,
 		error: "Only organization admins can change approval triage settings.",
@@ -98,8 +104,10 @@ it("shows server refusal inline while preserving the administrator's edits", asy
 		target: { value: "24" },
 	});
 	fireEvent.click(screen.getByRole("button", { name: "Save triage settings" }));
-	expect((await screen.findByRole("alert")).textContent).toContain(
-		"Only organization admins",
+	await waitFor(() =>
+		expect(transport.error).toHaveBeenCalledWith(
+			expect.stringContaining("Only organization admins"),
+		),
 	);
 	expect(
 		(screen.getByLabelText("Stale after (hours)") as HTMLInputElement).value,
@@ -113,7 +121,9 @@ it("shows a retryable error when the save transport fails", async () => {
 		/>,
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Save triage settings" }));
-	expect((await screen.findByRole("alert")).textContent).toContain(
-		"Unable to save triage settings. Please try again.",
+	await waitFor(() =>
+		expect(transport.error).toHaveBeenCalledWith(
+			"Unable to save triage settings. Please try again.",
+		),
 	);
 });

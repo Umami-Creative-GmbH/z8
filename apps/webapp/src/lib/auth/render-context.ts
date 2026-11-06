@@ -54,6 +54,7 @@ const getRenderIdentityRecords = cache(async () => {
 					worksCouncilEnabled: organization.worksCouncilEnabled,
 					billableTimeEnabled: organization.billableTimeEnabled,
 					personnelFilesEnabled: organization.personnelFilesEnabled,
+					equipmentEnabled: organization.equipmentEnabled,
 					timezone: organization.timezone,
 					deletedAt: organization.deletedAt,
 				},

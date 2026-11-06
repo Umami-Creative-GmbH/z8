@@ -23,7 +23,8 @@ export type FeatureFlag =
 	| "demoDataEnabled"
 	| "worksCouncilEnabled"
 	| "billableTimeEnabled"
-	| "personnelFilesEnabled";
+	| "personnelFilesEnabled"
+	| "equipmentEnabled";
 
 export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
 
@@ -343,6 +344,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "briefcase",
 		minimumTier: "orgAdmin",
 		group: "organization",
+		requiredFeature: "equipmentEnabled",
 	},
 	{
 		id: "personnel-files",

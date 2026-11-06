@@ -6,6 +6,7 @@ import { DateTime } from "luxon";
 import { z } from "zod";
 import { invitation, user } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft, team } from "@/db/schema";
+import { AuditAction, type AuditLogEntry, logAudit } from "@/lib/audit-logger";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import {
 	acquireEmployeeIdentityLock,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
+import { type BirthdayChange, birthdayChange } from "@/lib/organization/employee-birthday";
 import {
 	previewDrivingLicenceIntendedDriverWrite,
 	runDrivingLicenceIntendedDriverWrite,
@@ -99,6 +101,29 @@ function parseFirstTermsWage(
 					field: "hourlyRate",
 				}),
 			);
+}
+
+/**
+ * Records that an org admin set, changed or cleared a birthday (#1579). The
+ * dates stay out of the audit log: it must not hold another copy of them.
+ */
+function recordBirthdayChange(entry: {
+	actor: { id: string; email?: string };
+	organizationId: string;
+	target: Pick<AuditLogEntry, "targetType" | "targetId" | "employeeId">;
+	change: BirthdayChange;
+}) {
+	return Effect.promise(() =>
+		logAudit({
+			action: AuditAction.EMPLOYEE_UPDATED,
+			actorId: entry.actor.id,
+			actorEmail: entry.actor.email,
+			organizationId: entry.organizationId,
+			...entry.target,
+			metadata: { field: "birthday", change: entry.change },
+			timestamp: dateFromInstant(systemClock.nowInstant()),
+		}),
+	);
 }
 
 export async function createEmployeeAction(
@@ -395,7 +420,7 @@ export async function updateEmployeeAction(
 				};
 
 				// Role, team and active state feed creation authority and target checks.
-				yield* dbService
+				const birthdayUpdate = yield* dbService
 					.query("updateEmployee", () =>
 						withAuthorizationMutation(
 							{
@@ -421,6 +446,22 @@ export async function updateEmployeeAction(
 										...personnelNumberScope,
 										personnelNumber,
 									});
+								}
+								// What this save replaces, locked so the audit records the real change (#1579).
+								// A scoped manager's save carries no birthday.
+								let birthdayUpdate: BirthdayChange | null = null;
+								if (scopedData.birthday !== undefined) {
+									const [stored] = await tx
+										.select({ birthday: employee.birthday })
+										.from(employee)
+										.where(
+											and(
+												eq(employee.id, employeeId),
+												eq(employee.organizationId, targetEmployee.organizationId),
+											),
+										)
+										.for("update");
+									birthdayUpdate = birthdayChange(stored?.birthday, scopedData.birthday);
 								}
 								const writeEmployee = async () => {
 									await tx
@@ -457,6 +498,7 @@ export async function updateEmployeeAction(
 									recordId: employeeId,
 									values: customFieldValues,
 								});
+								return birthdayUpdate;
 							},
 							dbService.db,
 						),
@@ -476,6 +518,15 @@ export async function updateEmployeeAction(
 									),
 						),
 					);
+
+				if (birthdayUpdate) {
+					yield* recordBirthdayChange({
+						actor: session.user,
+						organizationId: targetEmployee.organizationId,
+						target: { targetType: "employee", targetId: employeeId, employeeId },
+						change: birthdayUpdate,
+					});
+				}
 
 				// A lower role can take projects away from the employee's share links (#806).
 				if ("role" in employeeUpdateData) {
@@ -659,9 +710,10 @@ export async function updateEmployeeInvitationDraftAction(
 					draftId,
 					now: dateFromInstant(systemClock.nowInstant()),
 				});
-				const updatedDrafts = yield* actor.dbService.query("updateEmployeeInvitationDraft", async () => {
+				const notSaved = { saved: false, birthdayUpdate: null } as const;
+				const draftSave = yield* actor.dbService.query("updateEmployeeInvitationDraft", async () => {
 					return await actor.dbService.db.transaction(
-						async (tx) => {
+						async (tx): Promise<{ saved: boolean; birthdayUpdate: BirthdayChange | null }> => {
 							await acquireEmployeeIdentityLock(tx, {
 								organizationId: actor.organizationId,
 								normalizedEmail: targetDraft.normalizedEmail,
@@ -672,6 +724,7 @@ export async function updateEmployeeInvitationDraftAction(
 									id: employeeInvitationDraft.id,
 									invitationId: employeeInvitationDraft.invitationId,
 									employeeNumber: employeeInvitationDraft.employeeNumber,
+									birthday: employeeInvitationDraft.birthday,
 								})
 								.from(employeeInvitationDraft)
 								.where(
@@ -685,7 +738,7 @@ export async function updateEmployeeInvitationDraftAction(
 								)
 								.for("update");
 
-							if (!lockedDraft) return [];
+							if (!lockedDraft) return notSaved;
 
 							const [lockedInvitation] = await tx
 								.select({ id: invitation.id })
@@ -698,7 +751,7 @@ export async function updateEmployeeInvitationDraftAction(
 								)
 								.for("update");
 
-							if (!lockedInvitation) return [];
+							if (!lockedInvitation) return notSaved;
 
 							const now = dateFromInstant(systemClock.nowInstant());
 							const [eligibleDraft] = await tx
@@ -724,7 +777,7 @@ export async function updateEmployeeInvitationDraftAction(
 								)
 								.limit(1);
 
-							if (!eligibleDraft) return [];
+							if (!eligibleDraft) return notSaved;
 
 							// Like an employee, a draft saved with its unchanged number keeps it; a
 							// clash is dropped and audited when the invitation is accepted.
@@ -759,9 +812,13 @@ export async function updateEmployeeInvitationDraftAction(
 									),
 								)
 								.returning({ id: employeeInvitationDraft.id });
-							if (updatedDrafts.length === 0 || !hasTeamIdUpdate) {
-								return updatedDrafts;
-							}
+							if (updatedDrafts.length === 0) return notSaved;
+							const saved = {
+								saved: true,
+								// Read under the draft lock, so it is what this save replaced.
+								birthdayUpdate: birthdayChange(lockedDraft.birthday, draftUpdate.birthday),
+							};
+							if (!hasTeamIdUpdate) return saved;
 
 							await tx
 								.update(invitation)
@@ -774,7 +831,7 @@ export async function updateEmployeeInvitationDraftAction(
 									),
 								);
 
-							return updatedDrafts;
+							return saved;
 						},
 						{ isolationLevel: "serializable" },
 					);
@@ -793,7 +850,7 @@ export async function updateEmployeeInvitationDraftAction(
 					),
 				);
 
-				if (updatedDrafts.length === 0) {
+				if (!draftSave.saved) {
 					return yield* Effect.fail(
 						new ValidationError({
 							message: "This invitation draft can no longer be edited",
@@ -801,6 +858,15 @@ export async function updateEmployeeInvitationDraftAction(
 							value: draftEmployeeId,
 						}),
 					);
+				}
+
+				if (draftSave.birthdayUpdate) {
+					yield* recordBirthdayChange({
+						actor: actor.session.user,
+						organizationId: actor.organizationId,
+						target: { targetType: "employee_invitation_draft", targetId: draftId },
+						change: draftSave.birthdayUpdate,
+					});
 				}
 
 				revalidateEmployeesCache(actor.organizationId);

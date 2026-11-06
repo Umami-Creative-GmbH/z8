@@ -50,6 +50,17 @@ describe("employee detail page utilities", () => {
 			expect.objectContaining({ startDate: null }),
 		);
 	});
+
+	it("saves the birthday as UTC midnight, and an empty one as no birthday (#1579)", () => {
+		expect(
+			buildEmployeeUpdatePayload({ ...defaultFormValues, birthday: "1990-05-01" }),
+		).toEqual(
+			expect.objectContaining({ birthday: new Date("1990-05-01T00:00:00.000Z") }),
+		);
+		expect(buildEmployeeUpdatePayload(defaultFormValues)).toEqual(
+			expect.objectContaining({ birthday: null }),
+		);
+	});
 });
 
 describe("showEmployeeSaveRefusal", () => {
@@ -117,6 +128,26 @@ describe("syncEmployeeForm", () => {
 			startDate: "2026-05-01",
 		});
 		expect(form.state.isDirty).toBe(false);
+	});
+
+	it("loads the stored birthday as a date input value (#1579)", () => {
+		const form = createFormMock();
+		syncEmployeeForm(form, {
+			kind: "employee",
+			birthday: new Date("1990-05-01T00:00:00.000Z"),
+			user: { firstName: "Ada", lastName: "Lovelace" },
+		} as EmployeeDetail);
+
+		expect(form.state.values.birthday).toBe("1990-05-01");
+		expect(form.state.isDirty).toBe(false);
+
+		syncEmployeeForm(form, {
+			kind: "employee",
+			birthday: null,
+			user: { firstName: "Ada", lastName: "Lovelace" },
+		} as EmployeeDetail);
+
+		expect(form.state.values.birthday).toBe("");
 	});
 
 	it("never loads an employee's wage or contract type into the detail form", () => {

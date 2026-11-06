@@ -19,6 +19,11 @@ describe("route metadata", () => {
 		["/en/reports/vehicles", "Distance per Vehicle"],
 		["/en/settings/employees/employee-1", "Employees"],
 		["/en/settings/locations/location-1", "Locations"],
+		["/en/equipment", "Equipment"],
+		["/en/equipment/employees/employee-1", "Equipment"],
+		["/en/equipment/assignments/assignment-1", "Equipment"],
+		["/de/my-equipment", "My equipment"],
+		["/en/settings/equipment", "Settings"],
 	])("resolves %s", (pathname, title) => {
 		expect(resolveAppRouteMetadata(pathname).titleDefault).toBe(title);
 	});

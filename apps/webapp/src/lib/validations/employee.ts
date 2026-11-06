@@ -1,5 +1,10 @@
 import { Temporal } from "temporal-polyfill";
 import * as z from "zod";
+import {
+	birthdayCalendarDate,
+	EARLIEST_BIRTHDAY,
+	latestBirthday,
+} from "@/lib/organization/employee-birthday";
 import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
 
 // Gender enum matching database enum
@@ -50,14 +55,16 @@ const authUserNamePartSchema = z.preprocess(
 	z.string().min(1, "Name is required").max(100, "Name is too long").optional(),
 );
 
-const birthdaySchema = z.date().refine((date) => {
-	const birthday = Temporal.Instant.from(date.toISOString())
-		.toZonedDateTimeISO("UTC")
-		.toPlainDate();
-	return (
-		Temporal.PlainDate.compare(birthday, Temporal.Now.plainDateISO("UTC")) <= 0
+const birthdaySchema = z
+	.date()
+	.refine(
+		(date) => Temporal.PlainDate.compare(birthdayCalendarDate(date), EARLIEST_BIRTHDAY) >= 0,
+		"Birthday must be on or after January 1, 1900",
+	)
+	.refine(
+		(date) => Temporal.PlainDate.compare(birthdayCalendarDate(date), latestBirthday()) <= 0,
+		"Birthday must be in the past",
 	);
-}, "Birthday must be in the past");
 
 // Personal information schema (for self-service profile updates)
 export const personalInformationSchema = z.object({

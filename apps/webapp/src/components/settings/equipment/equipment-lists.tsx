@@ -1,197 +1,272 @@
 "use client";
 
+import { IconArchive, IconDots, IconPencil } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import type {
 	EquipmentItemView,
 	EquipmentTypeView,
 } from "@/lib/organization/equipment/contracts";
-import { EquipmentArchiveButton } from "./equipment-archive-button";
-import type { SubmitEquipment } from "./equipment-forms";
 
-interface ListActions {
-	pending: boolean;
-	submit: SubmitEquipment;
+/** The "•••" menu of an equipment settings row. */
+export function EquipmentRowMenu({
+	label,
+	disabled,
+	children,
+}: {
+	label: string;
+	disabled?: boolean;
+	children: ReactNode;
+}) {
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="size-8"
+					aria-label={label}
+					disabled={disabled}
+				>
+					<IconDots className="size-4" aria-hidden="true" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">{children}</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+export function EquipmentEditMenuItem({ onClick }: { onClick: () => void }) {
+	const { t } = useTranslate();
+	return (
+		<DropdownMenuItem onClick={onClick}>
+			<IconPencil className="size-4" aria-hidden="true" />
+			{t("settings.equipment.edit", "Edit")}
+		</DropdownMenuItem>
+	);
+}
+
+function ArchiveMenuItem({ onClick }: { onClick: () => void }) {
+	const { t } = useTranslate();
+	return (
+		<DropdownMenuItem variant="destructive" onClick={onClick}>
+			<IconArchive className="size-4" aria-hidden="true" />
+			{t("settings.equipment.archive", "Archive")}
+		</DropdownMenuItem>
+	);
+}
+
+function ArchivedBadge() {
+	const { t } = useTranslate();
+	return (
+		<Badge variant="secondary">
+			{t("settings.equipment.archived", "Archived")}
+		</Badge>
+	);
 }
 
 export function EquipmentTypeList({
 	types,
 	pending,
-	submit,
-	editType,
-}: ListActions & {
+	onEdit,
+	onArchive,
+}: {
 	types: EquipmentTypeView[];
-	editType: (id: string) => Promise<void>;
+	pending: boolean;
+	onEdit: (type: EquipmentTypeView) => void;
+	onArchive: (type: EquipmentTypeView) => void;
 }) {
 	const { t } = useTranslate();
-	if (types.length === 0)
-		return (
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"settings.equipment.types.empty",
-					"No equipment types to show. Add a type to start your register.",
-				)}
-			</p>
-		);
 	return (
-		<ul className="divide-y">
-			{types.map((type) => (
-				<li
-					key={type.id}
-					className="flex flex-wrap items-center justify-between gap-3 py-3 [content-visibility:auto] [contain-intrinsic-size:auto_64px]"
-				>
-					<div className="min-w-0 space-y-1">
-						<p className="break-words font-medium">
-							{type.name}{" "}
-							{type.archived ? (
-								<Badge variant="secondary">
-									{t("settings.equipment.archived", "Archived")}
+		<div className="rounded-lg border">
+			<Table mobileLayout="stacked">
+				<TableHeader>
+					<TableRow className="hover:bg-transparent">
+						<TableHead className="px-4">
+							{t("settings.equipment.types.column", "Type")}
+						</TableHead>
+						<TableHead>
+							{t("settings.equipment.types.mode", "Tracking mode")}
+						</TableHead>
+						<TableHead>
+							{t("settings.equipment.types.returnColumn", "Return default")}
+						</TableHead>
+						<TableHead className="w-12 px-4">
+							<span className="sr-only">
+								{t("settings.equipment.actions", "Actions")}
+							</span>
+						</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{types.map((type) => (
+						<TableRow key={type.id}>
+							<TableCell className="whitespace-normal px-4">
+								<div className="flex min-w-0 flex-wrap items-center gap-2">
+									<span className="break-words font-medium">{type.name}</span>
+									{type.archived ? <ArchivedBadge /> : null}
+								</div>
+							</TableCell>
+							<TableCell>
+								<Badge variant="outline">
+									{type.trackingMode === "individual"
+										? t(
+												"settings.equipment.types.individual",
+												"Individual items",
+											)
+										: t("settings.equipment.types.quantity", "Quantity")}
 								</Badge>
-							) : null}
-						</p>
-						<p className="text-sm text-muted-foreground">
-							{type.trackingMode === "individual"
-								? t("settings.equipment.types.individual", "Individual items")
-								: t("settings.equipment.types.quantity", "Quantity")}{" "}
-							·{" "}
-							{type.defaultReturnRequired
-								? t("settings.equipment.types.required", "Return required")
-								: t("settings.equipment.types.toKeep", "Issued to keep")}
-						</p>
-					</div>
-					{!type.archived ? (
-						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={pending}
-								onClick={() => void editType(type.id)}
-								aria-label={t(
-									"settings.equipment.types.editNamed",
-									"Edit type {name}",
-									{ name: type.name },
+							</TableCell>
+							<TableCell>
+								{type.defaultReturnRequired ? (
+									<Badge variant="secondary">
+										{t("settings.equipment.types.required", "Return required")}
+									</Badge>
+								) : (
+									<Badge variant="outline">
+										{t("settings.equipment.types.toKeep", "Issued to keep")}
+									</Badge>
 								)}
-							>
-								{t("settings.equipment.edit", "Edit")}
-							</Button>
-							<EquipmentArchiveButton
-								target={{
-									kind: "archive_type",
-									id: type.id,
-									expectedRevision: type.revision,
-								}}
-								name={type.name}
-								pending={pending}
-								submit={submit}
-								label={t(
-									"settings.equipment.types.archiveNamed",
-									"Archive type {name}",
-									{ name: type.name },
-								)}
-							/>
-						</div>
-					) : null}
-				</li>
-			))}
-		</ul>
+							</TableCell>
+							<TableCell className="px-4 text-right">
+								{!type.archived ? (
+									<EquipmentRowMenu
+										disabled={pending}
+										label={t(
+											"settings.equipment.types.actionsNamed",
+											"Actions for type {name}",
+											{ name: type.name },
+										)}
+									>
+										<EquipmentEditMenuItem onClick={() => onEdit(type)} />
+										<ArchiveMenuItem onClick={() => onArchive(type)} />
+									</EquipmentRowMenu>
+								) : null}
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
+		</div>
 	);
+}
+
+function availabilityLabel(
+	item: EquipmentItemView,
+	t: ReturnType<typeof useTranslate>["t"],
+) {
+	if (item.archived)
+		return t(
+			"settings.equipment.items.archivedAvailability",
+			"Archived; unavailable for new assignments",
+		);
+	if (item.inCustody)
+		return t(
+			"settings.equipment.items.held",
+			"Held by employee; unavailable for new issuance",
+		);
+	if (item.status === "available")
+		return t("settings.equipment.items.available", "Available");
+	if (item.status === "retired")
+		return t("settings.equipment.items.retired", "Retired");
+	return t("settings.equipment.items.unavailable", "Unavailable");
 }
 
 export function EquipmentItemList({
 	items,
 	types,
 	pending,
-	submit,
-}: ListActions & { items: EquipmentItemView[]; types: EquipmentTypeView[] }) {
+	onArchive,
+}: {
+	items: EquipmentItemView[];
+	types: EquipmentTypeView[];
+	pending: boolean;
+	onArchive: (item: EquipmentItemView) => void;
+}) {
 	const { t } = useTranslate();
-	if (items.length === 0)
-		return (
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"settings.equipment.items.empty",
-					"No individual equipment items to show.",
-				)}
-			</p>
-		);
 	const typeNames = new Map(types.map((type) => [type.id, type.name]));
 	return (
-		<ul className="divide-y">
-			{items.map((item) => (
-				<li
-					key={item.id}
-					className="py-3 [content-visibility:auto] [contain-intrinsic-size:auto_48px]"
-				>
-					<details>
-						<summary className="cursor-pointer rounded-sm break-words font-medium focus-visible:outline-2 focus-visible:outline-ring">
-							<span translate="no">{item.identifier}</span>{" "}
-							{item.archived ? (
-								<Badge variant="secondary">
-									{t("settings.equipment.archived", "Archived")}
-								</Badge>
-							) : null}
-						</summary>
-						<dl className="mt-3 grid gap-1 text-sm sm:grid-cols-[12rem_1fr]">
-							<dt className="text-muted-foreground">
-								{t("settings.equipment.items.type", "Equipment type")}
-							</dt>
-							<dd className="break-words">{typeNames.get(item.typeId)}</dd>
-							<dt className="text-muted-foreground">
-								{t(
-									"settings.equipment.items.serial",
-									"Manufacturer serial number (optional)",
+		<div className="rounded-lg border">
+			<Table mobileLayout="stacked">
+				<TableHeader>
+					<TableRow className="hover:bg-transparent">
+						<TableHead className="px-4">
+							{t("settings.equipment.items.identifier", "Equipment identifier")}
+						</TableHead>
+						<TableHead>
+							{t("settings.equipment.items.type", "Equipment type")}
+						</TableHead>
+						<TableHead>
+							{t("settings.equipment.items.serialColumn", "Serial number")}
+						</TableHead>
+						<TableHead>
+							{t("settings.equipment.items.status", "Availability")}
+						</TableHead>
+						<TableHead className="w-12 px-4">
+							<span className="sr-only">
+								{t("settings.equipment.actions", "Actions")}
+							</span>
+						</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{items.map((item) => (
+						<TableRow key={item.id}>
+							<TableCell className="whitespace-normal px-4">
+								<div className="flex min-w-0 flex-wrap items-center gap-2">
+									<span className="break-all font-medium" translate="no">
+										{item.identifier}
+									</span>
+									{item.archived ? <ArchivedBadge /> : null}
+								</div>
+							</TableCell>
+							<TableCell className="whitespace-normal break-words">
+								{typeNames.get(item.typeId)}
+							</TableCell>
+							<TableCell className="whitespace-normal break-all" translate="no">
+								{item.serialNumber ?? (
+									<span className="text-muted-foreground">
+										{t("settings.equipment.notRecorded", "Not recorded")}
+									</span>
 								)}
-							</dt>
-							<dd className="break-all" translate="no">
-								{item.serialNumber ??
-									t("settings.equipment.notRecorded", "Not recorded")}
-							</dd>
-							<dt className="text-muted-foreground">
-								{t("settings.equipment.items.status", "Availability")}
-							</dt>
-							<dd>
-								{item.archived
-									? t(
-											"settings.equipment.items.archivedAvailability",
-											"Archived; unavailable for new assignments",
-										)
-									: item.inCustody
-										? t(
-												"settings.equipment.items.held",
-												"Held by employee; unavailable for new issuance",
-											)
-										: item.status === "available"
-											? t("settings.equipment.items.available", "Available")
-											: item.status === "retired"
-												? t("settings.equipment.items.retired", "Retired")
-												: t(
-														"settings.equipment.items.unavailable",
-														"Unavailable",
-													)}
-							</dd>
-						</dl>
-						{!item.archived ? (
-							<div className="mt-3">
-								<EquipmentArchiveButton
-									target={{
-										kind: "archive_item",
-										id: item.id,
-										expectedRevision: item.revision,
-									}}
-									name={item.identifier}
-									pending={pending}
-									submit={submit}
-									label={t(
-										"settings.equipment.items.archiveNamed",
-										"Archive item {identifier}",
-										{ identifier: item.identifier },
-									)}
-								/>
-							</div>
-						) : null}
-					</details>
-				</li>
-			))}
-		</ul>
+							</TableCell>
+							<TableCell className="whitespace-normal text-muted-foreground">
+								{availabilityLabel(item, t)}
+							</TableCell>
+							<TableCell className="px-4 text-right">
+								{!item.archived ? (
+									<EquipmentRowMenu
+										disabled={pending}
+										label={t(
+											"settings.equipment.items.actionsNamed",
+											"Actions for item {identifier}",
+											{ identifier: item.identifier },
+										)}
+									>
+										<ArchiveMenuItem onClick={() => onArchive(item)} />
+									</EquipmentRowMenu>
+								) : null}
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
+		</div>
 	);
 }

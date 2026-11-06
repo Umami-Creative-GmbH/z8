@@ -5,9 +5,19 @@ const api = vi.hoisted(() => ({
 	guard: vi.fn(),
 	read: vi.fn(),
 	detail: vi.fn(),
+	enabled: vi.fn(),
 }));
 vi.mock("@/lib/auth-helpers", () => ({
 	requireOrgAdminSettingsAccess: api.guard,
+}));
+vi.mock("@/db", () => ({ db: {} }));
+vi.mock("@/lib/organization/equipment/access", () => ({
+	isEquipmentEnabled: api.enabled,
+}));
+vi.mock("next/navigation", () => ({
+	notFound: () => {
+		throw new Error("NEXT_NOT_FOUND");
+	},
 }));
 vi.mock("@/lib/organization/equipment/actions", () => ({
 	getEquipmentSetup: api.read,
@@ -40,6 +50,7 @@ async function content() {
 beforeEach(() => {
 	vi.clearAllMocks();
 	api.guard.mockResolvedValue({ organizationId: "org" });
+	api.enabled.mockResolvedValue(true);
 	api.read.mockResolvedValue({
 		success: true,
 		data: { policy: null, types: [], selectableTypes: [], items: [] },
@@ -47,13 +58,20 @@ beforeEach(() => {
 });
 it("renders the usable setup screen through its guarded route", async () => {
 	const html = renderToStaticMarkup(await content());
-	expect(html).toContain("Closed-record retention (months)");
+	expect(html).toContain("Retention is not configured yet");
+	expect(html).toContain("Configure retention");
 	expect(html).toContain("Add type");
 	expect(html).toContain("Register item");
 });
 it("does not load or expose setup when direct-route administration is refused", async () => {
 	api.guard.mockRejectedValue(new Error("forbidden"));
 	await expect(content()).rejects.toThrow("forbidden");
+	expect(api.read).not.toHaveBeenCalled();
+});
+it("returns not found without loading setup while equipment tracking is switched off (#1572)", async () => {
+	api.enabled.mockResolvedValue(false);
+	await expect(content()).rejects.toThrow("NEXT_NOT_FOUND");
+	expect(api.enabled).toHaveBeenCalledWith({}, "org");
 	expect(api.read).not.toHaveBeenCalled();
 });
 it("shows an accessible error when the authorized action refuses access", async () => {

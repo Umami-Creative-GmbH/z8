@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { EquipmentDepartureReturn } from "@/lib/organization/equipment/contracts";
 import { Link } from "@/navigation";
+import { useEquipmentEnabled } from "@/stores/organization-settings-store";
 
 /** Shared presentation for departure and deactivation previews; dates are calendar-only. */
 export function EquipmentDepartureSummary({
@@ -16,6 +17,10 @@ export function EquipmentDepartureSummary({
 	locale: string;
 }) {
 	const { t } = useTranslate();
+	const enabled = useEquipmentEnabled();
+	// Switched off (#1572): outstanding returns remain real obligations, so they stay
+	// visible read-only. With nothing outstanding the section has nothing to say.
+	if (!enabled && equipment.length === 0) return null;
 	return (
 		<section
 			aria-label={t("settings.equipment.departure.title", "Outstanding equipment returns")}
@@ -64,12 +69,21 @@ export function EquipmentDepartureSummary({
 					"Outstanding equipment never delays employment, access or paid-seat ending. Returning a key or fob does not restore its credential.",
 				)}
 			</p>
-			<Link
-				href={`/equipment/employees/${employeeId}`}
-				className="text-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring"
-			>
-				{t("settings.equipment.departure.followUp", "Open equipment follow-up")}
-			</Link>
+			{enabled ? (
+				<Link
+					href={`/equipment/employees/${employeeId}`}
+					className="text-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring"
+				>
+					{t("settings.equipment.departure.followUp", "Open equipment follow-up")}
+				</Link>
+			) : (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.equipment.departure.switchedOff",
+						"Equipment is switched off for this organization. These returns stay recorded, but nobody can record receipts until an owner or admin switches it back on.",
+					)}
+				</p>
+			)}
 		</section>
 	);
 }

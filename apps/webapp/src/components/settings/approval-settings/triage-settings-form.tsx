@@ -3,7 +3,8 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState, useTransition } from "react";
+import { useRef, useTransition } from "react";
+import { toast } from "sonner";
 import { saveApprovalTriageSettingsAction } from "@/app/[locale]/(app)/settings/approval-policies/triage-actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,10 +31,6 @@ export function ApprovalTriageSettingsForm({
 	policy: ApprovalTriagePolicy;
 }) {
 	const { t } = useTranslate();
-	const [message, setMessage] = useState<{
-		success: boolean;
-		text: string;
-	} | null>(null);
 	const [pending, startTransition] = useTransition();
 	const formElement = useRef<HTMLFormElement>(null);
 	const form = useForm({
@@ -51,28 +48,25 @@ export function ApprovalTriageSettingsForm({
 					?.focus();
 		},
 		onSubmit: async ({ value }) => {
-			setMessage(null);
 			try {
 				const result = await saveApprovalTriageSettingsAction({
 					staleAfterHours: Number(value.staleAfterHours),
 					smallCorrectionMinutes: Number(value.smallCorrectionMinutes),
 				});
 				if (!result.success) {
-					setMessage({ success: false, text: result.error });
+					toast.error(result.error);
 					return;
 				}
-				setMessage({
-					success: true,
-					text: t("settings.approvalTriage.saved", "Triage settings saved."),
-				});
+				toast.success(
+					t("settings.approvalTriage.saved", "Triage settings saved."),
+				);
 			} catch {
-				setMessage({
-					success: false,
-					text: t(
+				toast.error(
+					t(
 						"settings.approvalTriage.saveError",
 						"Unable to save triage settings. Please try again.",
 					),
-				});
+				);
 			}
 		},
 	});
@@ -208,18 +202,6 @@ export function ApprovalTriageSettingsForm({
 							)}
 						</form.Field>
 					</fieldset>
-					{message ? (
-						<p
-							role={message.success ? "status" : "alert"}
-							className={
-								message.success
-									? "text-sm text-muted-foreground"
-									: "text-sm text-destructive"
-							}
-						>
-							{message.text}
-						</p>
-					) : null}
 					<Button type="submit" disabled={pending}>
 						{pending ? (
 							<IconLoader2

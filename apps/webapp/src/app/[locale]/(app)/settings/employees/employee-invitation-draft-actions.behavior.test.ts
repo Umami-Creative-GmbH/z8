@@ -13,6 +13,7 @@ import {
 const mocks = vi.hoisted(() => ({
 	ensureEmployeeProfiles: vi.fn(),
 	getEmployeeSettingsActorContext: vi.fn(),
+	logAudit: vi.fn(async () => undefined),
 	predicateInputs: vi.fn(),
 	requireOrgAdminEmployeeSettingsAccess: vi.fn(),
 	revalidateEmployeesCache: vi.fn(),
@@ -28,6 +29,11 @@ vi.mock("@/lib/effect/runtime", async (importOriginal) => {
 	const { Layer } = await import("effect");
 	return { ...actual, AppLayer: Layer.empty };
 });
+
+vi.mock("@/lib/audit-logger", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
+	logAudit: mocks.logAudit,
+}));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ error: vi.fn(), info: vi.fn() }),
@@ -217,6 +223,8 @@ function createConditionAwareDb(
 		afterInvitationLock?: () => void;
 		beforeDraftLock?: () => void;
 		forceZeroRowUpdate?: boolean;
+		/** The birthday the draft holds when the edit locks it. */
+		lockedBirthday?: Date | null;
 		serializationConflict?: Error & { code: string };
 	} = {},
 ) {
@@ -296,6 +304,7 @@ function createConditionAwareDb(
 					rows.splice(0, rows.length, {
 						id: model.draft.id,
 						invitationId: model.draft.invitationId,
+						birthday: options.lockedBirthday ?? null,
 					});
 					events.push(`lock:draft:${lockMode}`);
 				} else if (source === invitation) {
@@ -658,6 +667,48 @@ describe("invitation draft action eligibility", () => {
 			"org-1",
 			"pending",
 		]);
+	});
+
+	it("records that an org admin set a draft's birthday, without the date (#1579)", async () => {
+		const fake = createConditionAwareDb(structuredClone(baseModel), {
+			lockedBirthday: null,
+		});
+		setActor("orgAdmin", fake.dbService);
+		const birthday = new Date("1990-05-01T00:00:00.000Z");
+
+		const result = await updateEmployeeInvitationDraftAction(
+			`draft:${baseModel.draft.id}`,
+			{ birthday },
+		);
+
+		expect(result).toMatchObject({ success: true });
+		expect(fake.updateValues).toEqual([expect.objectContaining({ birthday })]);
+		expect(mocks.logAudit).toHaveBeenCalledTimes(1);
+		const [entry] = mocks.logAudit.mock.calls[0];
+		expect(entry).toMatchObject({
+			action: "employee.updated",
+			actorId: "admin-user-1",
+			targetType: "employee_invitation_draft",
+			targetId: baseModel.draft.id,
+			organizationId: "org-1",
+			metadata: { field: "birthday", change: "set" },
+		});
+		expect(JSON.stringify(entry)).not.toContain("1990");
+	});
+
+	it("records nothing when a draft is saved with its unchanged birthday (#1579)", async () => {
+		const fake = createConditionAwareDb(structuredClone(baseModel), {
+			lockedBirthday: new Date("1990-05-01T00:00:00.000Z"),
+		});
+		setActor("orgAdmin", fake.dbService);
+
+		const result = await updateEmployeeInvitationDraftAction(
+			`draft:${baseModel.draft.id}`,
+			{ position: "Changed", birthday: new Date("1990-05-01T00:00:00.000Z") },
+		);
+
+		expect(result).toMatchObject({ success: true });
+		expect(mocks.logAudit).not.toHaveBeenCalled();
 	});
 
 	it("does not update when acceptance wins while the edit waits for the invitation lock", async () => {

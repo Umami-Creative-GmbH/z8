@@ -60,6 +60,22 @@ export async function readEquipmentDepartureReturns(
 }
 
 /**
+ * Assignments with an outstanding return, for the features card's switch-off
+ * warning (#1572). The caller must authorize an owner or admin first.
+ */
+export async function countOutstandingEquipmentReturns(
+	tx: Client,
+	organizationId: string,
+): Promise<number> {
+	const result = await tx.execute<{ count: number }>(sql`
+  SELECT count(*)::integer AS count FROM equipment_assignment a
+  WHERE a.organization_id=${organizationId}
+   AND a.return_required AND a.quantity::bigint > a.received_quantity::bigint + a.lost_quantity + a.waived_quantity - a.exception_received_quantity
+ `);
+	return result.rows[0]?.count ?? 0;
+}
+
+/**
  * Lifecycle owns authorization, revision/replay and the transaction. Call only after
  * its user/access guards, employee coordination and organization row, before any
  * roster cleanup. Equipment never takes an earlier guard or opens a transaction.

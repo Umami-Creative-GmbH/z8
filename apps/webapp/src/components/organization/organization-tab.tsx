@@ -20,6 +20,7 @@ interface OrganizationTabProps {
 	defaultNotificationLanguage: string;
 	billableCurrency: BillableCurrency | null;
 	drivingLicence: DrivingLicenceFeatureState;
+	equipmentOutstandingReturns: number;
 }
 
 export function OrganizationTab({
@@ -30,6 +31,7 @@ export function OrganizationTab({
 	defaultNotificationLanguage,
 	billableCurrency,
 	drivingLicence,
+	equipmentOutstandingReturns,
 }: OrganizationTabProps) {
 	return (
 		<div className="space-y-6">
@@ -60,6 +62,8 @@ export function OrganizationTab({
 				billableTimeEnabled={organization.billableTimeEnabled ?? false}
 				billableCurrency={billableCurrency}
 				personnelFilesEnabled={organization.personnelFilesEnabled ?? false}
+				equipmentEnabled={organization.equipmentEnabled ?? false}
+				equipmentOutstandingReturns={equipmentOutstandingReturns}
 				drivingLicence={drivingLicence}
 				organizationTimezone={organization.timezone ?? "UTC"}
 				currentMemberRole={currentMemberRole}

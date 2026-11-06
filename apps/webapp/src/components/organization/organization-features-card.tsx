@@ -7,6 +7,7 @@ import {
 	IconFileText,
 	IconGavel,
 	IconLoader2,
+	IconPackage,
 	IconPercentage,
 	IconReceipt,
 } from "@tabler/icons-react";
@@ -61,6 +62,10 @@ interface OrganizationFeaturesCardProps {
 	/** The billable currency, or null until Billable Time was first switched on. */
 	billableCurrency: BillableCurrency | null;
 	personnelFilesEnabled: boolean;
+	/** Equipment tracking (#1572). */
+	equipmentEnabled: boolean;
+	/** Assignments with an outstanding return, for the switch-off warning. */
+	equipmentOutstandingReturns?: number;
 	/** Driving licence control (#1421): the policy's on/off, read on the server. */
 	drivingLicence?: DrivingLicenceFeatureState;
 	/** Prefills the driving licence deadline timezone on its first switch-on. */
@@ -76,6 +81,7 @@ export function OrganizationFeaturesCard({
 	worksCouncilEnabled,
 	billableTimeEnabled,
 	personnelFilesEnabled,
+	equipmentEnabled,
 	...props
 }: OrganizationFeaturesCardProps) {
 	const initialFeatures = {
@@ -86,6 +92,7 @@ export function OrganizationFeaturesCard({
 		worksCouncilEnabled,
 		billableTimeEnabled,
 		personnelFilesEnabled,
+		equipmentEnabled,
 	};
 
 	return <OrganizationFeaturesCardContent {...props} initialFeatures={initialFeatures} />;
@@ -111,9 +118,12 @@ function useOrganizationFeatures({
 	const canEdit = currentMemberRole === "owner";
 	// Personnel files are switched by owners and admins (#865).
 	const canEditPersonnelFiles = canEdit || currentMemberRole === "admin";
-	// Driving licence control too (#1421): the same owner-or-admin rule, under its own name.
+	// Driving licence control (#1421) and equipment tracking (#1572) too: the same
+	// owner-or-admin rule, under their own names.
 	const canSwitchDrivingLicence = canEditPersonnelFiles;
+	const canEditEquipment = canEditPersonnelFiles;
 	const [confirmPersonnelFilesOff, setConfirmPersonnelFilesOff] = useState(false);
+	const [confirmEquipmentOff, setConfirmEquipmentOff] = useState(false);
 
 	const applyFeatures = (values: Partial<OrganizationFeatureState>) => {
 		for (const [feature, enabled] of Object.entries(values) as [OrganizationFeature, boolean][]) {
@@ -123,7 +133,13 @@ function useOrganizationFeatures({
 	};
 
 	const handleToggleFeature = async (feature: OrganizationFeature, enabled: boolean) => {
-		if (feature === "personnelFilesEnabled" ? !canEditPersonnelFiles : !canEdit) return;
+		const allowed =
+			feature === "personnelFilesEnabled"
+				? canEditPersonnelFiles
+				: feature === "equipmentEnabled"
+					? canEditEquipment
+					: canEdit;
+		if (!allowed) return;
 
 		// Billable Time needs projects: the server switches it off with them (#897).
 		const cascadesBillableTime = feature === "projectsEnabled" && !enabled;
@@ -209,6 +225,9 @@ function useOrganizationFeatures({
 		canEditPersonnelFiles,
 		canSwitchDrivingLicence,
 		confirmPersonnelFilesOff,
+		canEditEquipment,
+		confirmEquipmentOff,
+		setConfirmEquipmentOff,
 	};
 }
 
@@ -218,6 +237,7 @@ function OrganizationFeaturesCardContent({
 	billableCurrency,
 	drivingLicence,
 	organizationTimezone,
+	equipmentOutstandingReturns = 0,
 	initialFeatures,
 }: Omit<OrganizationFeaturesCardProps, OrganizationFeature> & {
 	initialFeatures: OrganizationFeatureState;
@@ -236,6 +256,9 @@ function OrganizationFeaturesCardContent({
 		canEditPersonnelFiles,
 		canSwitchDrivingLicence,
 		confirmPersonnelFilesOff,
+		canEditEquipment,
+		confirmEquipmentOff,
+		setConfirmEquipmentOff,
 	} = useOrganizationFeatures({
 		organizationId,
 		currentMemberRole,
@@ -389,6 +412,47 @@ function OrganizationFeaturesCardContent({
 					</AlertDialogContent>
 				</AlertDialog>
 
+				{/* Equipment Tracking Feature (#1572): owners and admins */}
+				<EquipmentFeature
+					t={t}
+					isPending={isPending}
+					features={features}
+					handleToggleFeature={handleToggleFeature}
+					setConfirmEquipmentOff={setConfirmEquipmentOff}
+					canEditEquipment={canEditEquipment}
+				/>
+
+				<AlertDialog open={confirmEquipmentOff} onOpenChange={setConfirmEquipmentOff}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{t("organization.features.equipment-disable-title", "Turn off equipment?")}
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{t(
+									"organization.features.equipment-disable-description",
+									"Equipment pages are hidden for everyone and return reminders stop. All equipment records, outstanding returns and record retention stay in place. Turning equipment back on restores everything.",
+								)}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						{equipmentOutstandingReturns > 0 && (
+							<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
+								{t(
+									"organization.features.equipment-disable-outstanding",
+									"{count, plural, one {# return is still outstanding. It stays recorded, but nobody can record its receipt while equipment is off.} other {# returns are still outstanding. They stay recorded, but nobody can record receipts while equipment is off.}}",
+									{ count: equipmentOutstandingReturns },
+								)}
+							</p>
+						)}
+						<AlertDialogFooter>
+							<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+							<AlertDialogAction onClick={() => void handleToggleFeature("equipmentEnabled", false)}>
+								{t("organization.features.equipment-disable-confirm", "Turn off")}
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+
 				{/* Driving Licence Control (#1421): owners and admins, the feature's only activation */}
 				{drivingLicence && (
 					<DrivingLicenceFeature
@@ -403,12 +467,12 @@ function OrganizationFeaturesCardContent({
 						{canEditPersonnelFiles
 							? drivingLicence
 								? t(
-										"organization.features.owner-only-except-admin-features",
-										"Only organization owners can change feature settings, except personnel files and driving licence control.",
+										"organization.features.owner-only-except-admin-managed-features",
+										"Only organization owners can change feature settings, except personnel files, equipment and driving licence control.",
 									)
 								: t(
-										"organization.features.owner-only-except-personnel-files",
-										"Only organization owners can change feature settings, except personnel files.",
+										"organization.features.owner-only-except-personnel-files-equipment",
+										"Only organization owners can change feature settings, except personnel files and equipment.",
 									)
 							: t(
 									"organization.features.owner-only",
@@ -758,6 +822,63 @@ function PersonnelFileFeature({
 					}}
 					disabled={!canEditPersonnelFiles || isPending}
 					aria-label={t("organization.features.toggle-personnel-files", "Toggle personnel files")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function EquipmentFeature({
+	t,
+	isPending,
+	features,
+	handleToggleFeature,
+	setConfirmEquipmentOff,
+	canEditEquipment,
+}: Pick<
+	ReturnType<typeof useOrganizationFeatures>,
+	| "t"
+	| "isPending"
+	| "features"
+	| "handleToggleFeature"
+	| "setConfirmEquipmentOff"
+	| "canEditEquipment"
+>) {
+	return (
+		<div className="flex items-center justify-between">
+			<div className="flex items-start gap-3">
+				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+					<IconPackage aria-hidden="true" className="size-5 text-primary" />
+				</div>
+				<div className="space-y-1">
+					<Label
+						htmlFor="equipment-toggle"
+						className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>
+						{t("organization.features.equipment", "Equipment")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.equipment-description",
+							"Track equipment issued to employees and what must come back.",
+						)}
+					</p>
+				</div>
+			</div>
+			<div className="flex items-center gap-2">
+				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+				<Switch
+					id="equipment-toggle"
+					checked={features.equipmentEnabled}
+					onCheckedChange={(enabled) => {
+						if (enabled) {
+							void handleToggleFeature("equipmentEnabled", true);
+						} else {
+							setConfirmEquipmentOff(true);
+						}
+					}}
+					disabled={!canEditEquipment || isPending}
+					aria-label={t("organization.features.toggle-equipment", "Toggle equipment")}
 				/>
 			</div>
 		</div>

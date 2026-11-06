@@ -238,7 +238,21 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 			boundary.queries.filter((query) => query.includes('from "employee"')),
 		).toHaveLength(1);
 	});
+	it("hides all equipment navigation while equipment tracking is switched off (#1572)", async () => {
+		await fixture.pool.query(
+			"update organization set equipment_enabled=false where id=$1",
+			[fixture.organizationId],
+		);
+		const admin = await fixture.seedEmployee({ role: "admin" });
+		const output = await render(subject(admin.userId));
+		expect(output).not.toContain('"href":"/myEquipment"');
+		expect(output).not.toContain('"href":"/equipment"');
+	});
 	it("offers equipment staff navigation to owners/admins and only self-history to managers and employees", async () => {
+		await fixture.pool.query(
+			"update organization set equipment_enabled=true where id=$1",
+			[fixture.organizationId],
+		);
 		for (const role of ["owner", "admin", "manager", "employee"] as const) {
 			const person = await fixture.seedEmployee({
 				role: role === "owner" || role === "admin" ? role : "member",
@@ -256,6 +270,10 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		}
 	});
 	it("offers equipment navigation for a current officer grant and removes it on revocation", async () => {
+		await fixture.pool.query(
+			"update organization set equipment_enabled=true where id=$1",
+			[fixture.organizationId],
+		);
 		const officer = await fixture.seedEmployee({ role: "member" });
 		expect(await render(subject(officer.userId))).not.toContain(
 			'"href":"/equipment"',
