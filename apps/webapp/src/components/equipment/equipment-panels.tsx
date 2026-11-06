@@ -67,25 +67,24 @@ export function useEquipmentSubmit() {
 					),
 				);
 			setPending(true);
+			// No `finally`: React Compiler cannot lower it.
+			let recorded = false;
 			try {
 				const result = await changeEquipment(change);
 				if (!result.success) {
 					failed();
-					return false;
-				}
-				if (!result.data.ok) {
+				} else if (!result.data.ok) {
 					toast.error(handoverRefusalMessage(result.data.reason, t));
-					return false;
+				} else {
+					toast.success(savedMessage(change.kind, t));
+					router.refresh();
+					recorded = true;
 				}
-				toast.success(savedMessage(change.kind, t));
-				router.refresh();
-				return true;
 			} catch {
 				failed();
-				return false;
-			} finally {
-				setPending(false);
 			}
+			setPending(false);
+			return recorded;
 		},
 		[router, t],
 	);

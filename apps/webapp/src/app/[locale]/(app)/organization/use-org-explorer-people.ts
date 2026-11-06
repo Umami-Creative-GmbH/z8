@@ -103,29 +103,35 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 		await Promise.all(waiting);
 	}
 
-	async function fetchPeople(missing: string[], options?: { withPaths: true }) {
-		try {
-			for (
-				let start = 0;
-				start < missing.length;
-				start += ORG_EXPLORER_BATCH_LIMIT
-			) {
-				const chunk = missing.slice(start, start + ORG_EXPLORER_BATCH_LIMIT);
-				const result = options
-					? await getOrgExplorerPeople(chunk, options)
-					: await getOrgExplorerPeople(chunk);
-				if (!result.success) {
-					showFailure(result.error);
-					return;
-				}
-				mergePeople(result.data);
-				// Nobody comes back for an id that is not on the current roster.
-				const notFound = chunk.filter((id) => !peopleRef.current.has(id));
-				if (notFound.length > 0)
-					setUnknownIds((current) => withIds(current, notFound));
-			}
-		} finally {
+	// `.finally` rather than `try … finally`, which React Compiler cannot lower.
+	function fetchPeople(missing: string[], options?: { withPaths: true }) {
+		return fetchPeopleBatches(missing, options).finally(() => {
 			for (const id of missing) pendingLoads.current.delete(id);
+		});
+	}
+
+	async function fetchPeopleBatches(
+		missing: string[],
+		options?: { withPaths: true },
+	) {
+		for (
+			let start = 0;
+			start < missing.length;
+			start += ORG_EXPLORER_BATCH_LIMIT
+		) {
+			const chunk = missing.slice(start, start + ORG_EXPLORER_BATCH_LIMIT);
+			const result = options
+				? await getOrgExplorerPeople(chunk, options)
+				: await getOrgExplorerPeople(chunk);
+			if (!result.success) {
+				showFailure(result.error);
+				return;
+			}
+			mergePeople(result.data);
+			// Nobody comes back for an id that is not on the current roster.
+			const notFound = chunk.filter((id) => !peopleRef.current.has(id));
+			if (notFound.length > 0)
+				setUnknownIds((current) => withIds(current, notFound));
 		}
 	}
 
