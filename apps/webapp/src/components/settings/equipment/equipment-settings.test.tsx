@@ -9,6 +9,11 @@ const api = vi.hoisted(() => ({
 	change: vi.fn(),
 	read: vi.fn(),
 	detail: vi.fn(),
+	success: vi.fn(),
+	error: vi.fn(),
+}));
+vi.mock("sonner", () => ({
+	toast: { success: api.success, error: api.error },
 }));
 vi.mock("@/lib/organization/equipment/actions", () => ({
 	changeEquipmentSetup: api.change,
@@ -89,9 +94,10 @@ it("submits item identities, displays server validation, and preserves request i
 		"SN-42",
 	);
 	await user.click(screen.getByRole("button", { name: "Register item" }));
-	expect(await screen.findByRole("alert")).toHaveProperty(
-		"textContent",
-		"This equipment identifier is already reserved, including archived and retired items.",
+	await waitFor(() =>
+		expect(api.error).toHaveBeenCalledWith(
+			"This equipment identifier is already reserved, including archived and retired items.",
+		),
 	);
 	await user.click(screen.getByRole("button", { name: "Register item" }));
 	expect(api.change.mock.calls[1][0]).toEqual(api.change.mock.calls[0][0]);
@@ -223,7 +229,9 @@ it("validates retention accessibly and enables registration after saving policy"
 			}),
 		),
 	);
-	expect(await screen.findByText("Retention policy saved.")).toBeTruthy();
+	await waitFor(() =>
+		expect(api.success).toHaveBeenCalledWith("Retention policy saved."),
+	);
 });
 
 it("creates a quantity type through the public action with its return default", async () => {

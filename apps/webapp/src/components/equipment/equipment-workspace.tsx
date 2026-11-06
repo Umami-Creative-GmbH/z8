@@ -4,6 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { type ReactNode, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -104,76 +105,50 @@ function useEquipmentCommands() {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [selection, setSelection] = useState<HandoverSelection>(null);
-	const [feedback, setFeedback] = useState<{
-		kind: "error" | "success";
-		text: string;
-	} | null>(null);
 	const [pending, startTransition] = useTransition();
 	async function submit(change: EquipmentChange) {
+		const failed = t(
+			"settings.equipment.handover.failed",
+			"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
+		);
 		startTransition(async () => {
-			setFeedback(null);
 			try {
 				const result = await changeEquipment(change);
 				if (!result.success) {
-					setFeedback({
-						kind: "error",
-						text: t(
-							"settings.equipment.handover.failed",
-							"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
-						),
-					});
+					toast.error(failed);
 					return;
 				}
 				if (!result.data.ok) {
-					setFeedback({
-						kind: "error",
-						text: handoverRefusalMessage(result.data.reason, t),
-					});
+					toast.error(handoverRefusalMessage(result.data.reason, t));
 					return;
 				}
 				setSelection(null);
-				setFeedback({
-					kind: "success",
-					text:
-						change.kind === "place_case_hold" ||
+				toast.success(
+					change.kind === "place_case_hold" ||
 						change.kind === "release_case_hold"
-							? t("settings.equipment.retention.saved", "Case hold updated.")
-							: change.kind === "correct_issue" ||
-									change.kind === "correct_receipt" ||
-									change.kind === "correct_exception" ||
-									change.kind === "correct_transfer"
+						? t("settings.equipment.retention.saved", "Case hold updated.")
+						: change.kind === "correct_issue" ||
+								change.kind === "correct_receipt" ||
+								change.kind === "correct_exception" ||
+								change.kind === "correct_transfer"
+							? t("settings.equipment.correction.saved", "Amendment recorded.")
+							: change.kind === "close_return" ||
+									change.kind === "receive_exception"
 								? t(
-										"settings.equipment.correction.saved",
-										"Amendment recorded.",
+										"settings.equipment.exception.saved",
+										"Equipment action recorded.",
 									)
-								: change.kind === "close_return" ||
-										change.kind === "receive_exception"
-									? t(
-											"settings.equipment.exception.saved",
-											"Equipment action recorded.",
-										)
-									: t(
-											"settings.equipment.handover.saved",
-											"Handover recorded.",
-										),
-				});
+								: t("settings.equipment.handover.saved", "Handover recorded."),
+				);
 				router.refresh();
 			} catch {
-				setFeedback({
-					kind: "error",
-					text: t(
-						"settings.equipment.handover.failed",
-						"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
-					),
-				});
+				toast.error(failed);
 			}
 		});
 	}
 	return {
 		selection,
 		setSelection,
-		feedback,
-		setFeedback,
 		pending,
 		startTransition,
 		submit,
@@ -241,16 +216,8 @@ function EquipmentWorkspace({
 	children?: ReactNode;
 }) {
 	const { t } = useTranslate();
-	const {
-		selection,
-		setSelection,
-		feedback,
-		setFeedback,
-		pending,
-		startTransition,
-		submit,
-		router,
-	} = useEquipmentCommands();
+	const { selection, setSelection, pending, startTransition, submit, router } =
+		useEquipmentCommands();
 	const { canIssue, canRecordHistorical, unavailableReason } =
 		equipmentSelection(data, scope, selection);
 	return (
@@ -289,10 +256,7 @@ function EquipmentWorkspace({
 						<Button
 							variant="outline"
 							disabled={pending || !!selection}
-							onClick={() => {
-								setFeedback(null);
-								setSelection({ kind: "historical" });
-							}}
+							onClick={() => setSelection({ kind: "historical" })}
 						>
 							{t(
 								"settings.equipment.historical.title",
@@ -303,10 +267,7 @@ function EquipmentWorkspace({
 					{canIssue ? (
 						<Button
 							disabled={pending || !!selection}
-							onClick={() => {
-								setFeedback(null);
-								setSelection({ kind: "issue" });
-							}}
+							onClick={() => setSelection({ kind: "issue" })}
 						>
 							<IconPlus className="size-4" aria-hidden="true" />
 							{t("settings.equipment.custody.issue", "Issue equipment")}
@@ -315,18 +276,6 @@ function EquipmentWorkspace({
 				</div>
 			</div>
 			{children}
-			{feedback ? (
-				<p
-					role={feedback.kind === "error" ? "alert" : "status"}
-					className={
-						feedback.kind === "error"
-							? "text-sm text-destructive"
-							: "text-sm text-muted-foreground"
-					}
-				>
-					{feedback.text}
-				</p>
-			) : null}
 			{pending ? (
 				<p role="status" className="text-sm text-muted-foreground">
 					{t("settings.equipment.custody.updating", "Updating equipment…")}
@@ -344,26 +293,22 @@ function EquipmentWorkspace({
 				data={data}
 				submit={submit}
 				pending={pending || !!selection}
-				onClose={(assignmentId) => {
-					setFeedback(null);
-					setSelection({ kind: "closure", assignmentId });
-				}}
-				onReceiveException={(assignmentId, exceptionId) => {
-					setFeedback(null);
+				onClose={(assignmentId) =>
+					setSelection({ kind: "closure", assignmentId })
+				}
+				onReceiveException={(assignmentId, exceptionId) =>
 					setSelection({
 						kind: "exception_receipt",
 						assignmentId,
 						exceptionId,
-					});
-				}}
-				onReceive={(assignmentId) => {
-					setFeedback(null);
-					setSelection({ kind: "receipt", assignmentId });
-				}}
-				onTransfer={(assignmentId) => {
-					setFeedback(null);
-					setSelection({ kind: "transfer", assignmentId });
-				}}
+					})
+				}
+				onReceive={(assignmentId) =>
+					setSelection({ kind: "receipt", assignmentId })
+				}
+				onTransfer={(assignmentId) =>
+					setSelection({ kind: "transfer", assignmentId })
+				}
 			/>
 			<IssuanceAvailability reason={unavailableReason} />
 		</section>

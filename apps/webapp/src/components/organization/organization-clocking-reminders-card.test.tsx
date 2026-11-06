@@ -82,9 +82,8 @@ describe("OrganizationClockingRemindersCard", () => {
 			}),
 		);
 		await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
-		expect((await screen.findByRole("status")).textContent).toBe(
-			"Clocking reminder settings saved",
-		);
+		expect(mocks.success).toHaveBeenCalledWith("Clocking reminder settings saved");
+		expect(screen.queryByRole("status")).toBeNull();
 	});
 
 	it.each(["-1", "1441", "2.5", ""])("rejects %j grace minutes without saving", async (value) => {
@@ -153,8 +152,8 @@ describe("OrganizationClockingRemindersCard", () => {
 		mocks.save.mockResolvedValue({ success: false, error: "Access refused" });
 		show();
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-		await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Access refused"));
-		expect(mocks.error).toHaveBeenCalledWith("Access refused");
+		await waitFor(() => expect(mocks.error).toHaveBeenCalledWith("Access refused"));
+		expect(screen.queryByRole("alert")).toBeNull();
 	});
 
 	it("is read-only for members", () => {

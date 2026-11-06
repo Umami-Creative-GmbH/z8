@@ -5,6 +5,7 @@ import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { saveOrganizationProfile } from "@/app/[locale]/(app)/settings/organizations/profile-actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,12 +45,14 @@ export function OrganizationProfileCard({
 	const formElement = useRef<HTMLFormElement>(null);
 	const focusErrors = useRef(false);
 	const [fieldErrors, setFieldErrors] = useState<ProfileFieldErrors>({});
-	const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
 	const [savedProfile, setSavedProfile] = useState(profile);
 	const form = useForm({
 		defaultValues: savedProfile,
 		onSubmit: async ({ value }) => {
-			setFeedback(null);
+			const saveFailed = t(
+				"organization.profile.saveFailed",
+				"Could not save the organization profile. Please try again.",
+			);
 			const validation = validateOrganizationProfile(value);
 			if (!validation.ok) {
 				focusErrors.current = true;
@@ -62,7 +65,7 @@ export function OrganizationProfileCard({
 					validation.profile,
 				);
 				if (!result.success) {
-					setFeedback("error");
+					toast.error(saveFailed);
 				} else if (!result.data.ok) {
 					focusErrors.current = true;
 					setFieldErrors(result.data.fieldErrors);
@@ -70,11 +73,13 @@ export function OrganizationProfileCard({
 					setFieldErrors({});
 					setSavedProfile(result.data.profile);
 					form.reset(result.data.profile);
-					setFeedback("saved");
+					toast.success(
+						t("organization.profile.saved", "Organization profile saved"),
+					);
 					router.refresh();
 				}
 			} catch {
-				setFeedback("error");
+				toast.error(saveFailed);
 			}
 		},
 	});
@@ -220,7 +225,6 @@ export function OrganizationProfileCard({
 																...current,
 																[name]: undefined,
 															}));
-															setFeedback(null);
 														}}
 													>
 														<option value="">
@@ -248,7 +252,6 @@ export function OrganizationProfileCard({
 																...current,
 																[name]: undefined,
 															}));
-															setFeedback(null);
 														}}
 													/>
 												)}
@@ -278,19 +281,6 @@ export function OrganizationProfileCard({
 							? t("organization.profile.saving", "Saving…")
 							: t("organization.profile.save", "Save profile")}
 					</Button>
-					{feedback === "saved" ? (
-						<p role="status" className="text-sm text-muted-foreground">
-							{t("organization.profile.saved", "Organization profile saved")}
-						</p>
-					) : null}
-					{feedback === "error" ? (
-						<p role="alert" className="text-sm text-destructive">
-							{t(
-								"organization.profile.saveFailed",
-								"Could not save the organization profile. Please try again.",
-							)}
-						</p>
-					) : null}
 				</form>
 			</CardContent>
 		</Card>

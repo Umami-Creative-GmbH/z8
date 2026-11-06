@@ -3,6 +3,7 @@
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -37,10 +38,6 @@ export function EquipmentSettings({
 	const { t } = useTranslate();
 	const [data, setData] = useState(initialData);
 	const [pending, setPending] = useState(false);
-	const [feedback, setFeedback] = useState<{
-		kind: "error" | "success";
-		text: string;
-	} | null>(null);
 	const [editor, setEditor] = useState<{ type?: EquipmentTypeView } | null>(
 		null,
 	);
@@ -54,46 +51,38 @@ export function EquipmentSettings({
 	}
 	async function submit(change: EquipmentSetupChange) {
 		setPending(true);
-		setFeedback(null);
 		const result = await changeEquipmentSetup(change).catch(() => null);
 		if (!result?.success) {
 			setPending(false);
-			setFeedback({
-				kind: "error",
-				text: t(
+			toast.error(
+				t(
 					"settings.equipment.errors.unavailable",
 					"Equipment setup is unavailable. Check your organization access and try again.",
 				),
-			});
+			);
 			return false;
 		}
 		if (!result.data.ok) {
 			setPending(false);
-			setFeedback({
-				kind: "error",
-				text: equipmentRefusalMessage(result.data.reason, t),
-			});
+			toast.error(equipmentRefusalMessage(result.data.reason, t));
 			return false;
 		}
 		const refreshed = await reload();
 		setPending(false);
 		if (!refreshed) {
-			setFeedback({
-				kind: "error",
-				text: t(
+			toast.error(
+				t(
 					"settings.equipment.errors.retry",
 					"The result could not be loaded. Retry the same submission or reload the setup.",
 				),
-			});
+			);
 			return false;
 		}
-		setFeedback({
-			kind: "success",
-			text:
-				change.kind === "configure_policy"
-					? t("settings.equipment.retention.saved", "Retention policy saved.")
-					: t("settings.equipment.saved", "Equipment setup saved."),
-		});
+		toast.success(
+			change.kind === "configure_policy"
+				? t("settings.equipment.retention.saved", "Retention policy saved.")
+				: t("settings.equipment.saved", "Equipment setup saved."),
+		);
 		return true;
 	}
 	const types = data.types.filter((type) => showArchived || !type.archived);
@@ -109,13 +98,12 @@ export function EquipmentSettings({
 			result.data?.kind !== "type" ||
 			result.data.record.archived
 		) {
-			setFeedback({
-				kind: "error",
-				text: t(
+			toast.error(
+				t(
 					"settings.equipment.errors.load",
 					"Equipment setup could not be loaded. Reload the page.",
 				),
-			});
+			);
 			return;
 		}
 		setEditor({ type: result.data.record });
@@ -133,19 +121,6 @@ export function EquipmentSettings({
 					/>
 					{t("settings.equipment.saving", "Saving…")}
 				</p>
-			) : null}
-			{feedback ? (
-				<div
-					role={feedback.kind === "error" ? "alert" : "status"}
-					aria-live="polite"
-					className={
-						feedback.kind === "error"
-							? "rounded-md border border-destructive p-3 text-sm text-destructive"
-							: "rounded-md border p-3 text-sm"
-					}
-				>
-					{feedback.text}
-				</div>
 			) : null}
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<label className="flex items-center gap-2 text-sm">
@@ -166,15 +141,13 @@ export function EquipmentSettings({
 						setPending(false);
 						if (refreshed) {
 							setEditor(null);
-							setFeedback(null);
 						} else {
-							setFeedback({
-								kind: "error",
-								text: t(
+							toast.error(
+								t(
 									"settings.equipment.errors.load",
 									"Equipment setup could not be loaded. Reload the page.",
 								),
-							});
+							);
 						}
 					}}
 				>

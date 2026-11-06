@@ -22,6 +22,11 @@ const api = vi.hoisted(() => ({
 	change: vi.fn(),
 	refresh: vi.fn(),
 	replace: vi.fn(),
+	success: vi.fn(),
+	error: vi.fn(),
+}));
+vi.mock("sonner", () => ({
+	toast: { success: api.success, error: api.error },
 }));
 vi.mock("@/lib/organization/equipment/actions", () => ({
 	changeEquipment: api.change,
@@ -213,7 +218,7 @@ it("requires an actual handover date, snapshots the selected type default, and r
 	await user.selectOptions(screen.getByLabelText("Condition"), "worn");
 	await user.type(screen.getByLabelText("Notes (optional)"), "With charger");
 	await user.click(screen.getByRole("button", { name: "Record issuance" }));
-	expect(await screen.findByRole("alert")).toBeTruthy();
+	await waitFor(() => expect(api.error).toHaveBeenCalledOnce());
 	await user.click(screen.getByRole("button", { name: "Record issuance" }));
 	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(2));
 	expect(api.change.mock.calls[1][0]).toEqual(api.change.mock.calls[0][0]);
@@ -341,9 +346,8 @@ it("records a dated receipt with its own condition and notes from the overview",
 		condition: "damaged",
 		notes: "Cracked screen",
 	});
-	expect(await screen.findByRole("status")).toHaveProperty(
-		"textContent",
-		"Handover recorded.",
+	await waitFor(() =>
+		expect(api.success).toHaveBeenCalledWith("Handover recorded."),
 	);
 });
 
@@ -929,9 +933,10 @@ it("requires a correction reason and keeps a rejected amendment open with action
 		condition: "worn",
 		reason: "Signed agreement lists worn condition",
 	});
-	expect(await screen.findByRole("alert")).toHaveProperty(
-		"textContent",
-		expect.stringContaining("Reload equipment"),
+	await waitFor(() =>
+		expect(api.error).toHaveBeenCalledWith(
+			expect.stringContaining("Reload equipment"),
+		),
 	);
 	expect(screen.getByLabelText(/^Amendment reason/)).toHaveProperty(
 		"value",

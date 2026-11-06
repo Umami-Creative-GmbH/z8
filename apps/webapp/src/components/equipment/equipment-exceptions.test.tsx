@@ -16,6 +16,11 @@ const api = vi.hoisted(() => ({
 	change: vi.fn(),
 	refresh: vi.fn(),
 	replace: vi.fn(),
+	success: vi.fn(),
+	error: vi.fn(),
+}));
+vi.mock("sonner", () => ({
+	toast: { success: api.success, error: api.error },
 }));
 vi.mock("@/lib/organization/equipment/actions", () => ({
 	changeEquipment: api.change,
@@ -148,7 +153,7 @@ it("requires a reason for partial loss/waiver and preserves command identity on 
 	await user.clear(quantity);
 	await user.type(quantity, "2");
 	await user.click(screen.getByRole("button", { name: "Record closure" }));
-	expect(await screen.findByRole("alert")).toBeTruthy();
+	await waitFor(() => expect(api.error).toHaveBeenCalledOnce());
 	await user.click(screen.getByRole("button", { name: "Record closure" }));
 	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(2));
 	expect(api.change.mock.calls[1][0]).toEqual(api.change.mock.calls[0][0]);
@@ -287,9 +292,10 @@ it("offers closure on the employee profile and leaves stale feedback with a relo
 	await user.click(screen.getByRole("button", { name: "Close return" }));
 	await user.type(screen.getByLabelText(/^Reason/), "Missing laptop");
 	await user.click(screen.getByRole("button", { name: "Record closure" }));
-	expect(await screen.findByRole("alert")).toHaveProperty(
-		"textContent",
-		"This record changed. Reload equipment and review it before submitting again.",
+	await waitFor(() =>
+		expect(api.error).toHaveBeenCalledWith(
+			"This record changed. Reload equipment and review it before submitting again.",
+		),
 	);
 	expect(screen.getByLabelText(/^Reason/)).toHaveProperty(
 		"value",

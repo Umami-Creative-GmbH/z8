@@ -22,6 +22,11 @@ const api = vi.hoisted(() => ({
 	change: vi.fn(),
 	refresh: vi.fn(),
 	replace: vi.fn(),
+	success: vi.fn(),
+	error: vi.fn(),
+}));
+vi.mock("sonner", () => ({
+	toast: { success: api.success, error: api.error },
 }));
 vi.mock("@/lib/organization/equipment/actions", () => ({
 	changeEquipment: api.change,
@@ -177,7 +182,7 @@ it("records separate receipt and issuance evidence, new terms, and a stable requ
 	await user.click(
 		screen.getByRole("button", { name: "Confirm receipt and issuance" }),
 	);
-	expect(await screen.findByRole("alert")).toBeTruthy();
+	await waitFor(() => expect(api.error).toHaveBeenCalledOnce());
 	await user.click(
 		screen.getByRole("button", { name: "Confirm receipt and issuance" }),
 	);
@@ -295,8 +300,10 @@ it("keeps a stale transfer reviewable and uses a new identity after editing the 
 	await user.click(
 		screen.getByRole("button", { name: "Confirm receipt and issuance" }),
 	);
-	expect((await screen.findByRole("alert")).textContent).toContain(
-		"This record changed.",
+	await waitFor(() =>
+		expect(api.error).toHaveBeenCalledWith(
+			expect.stringContaining("This record changed."),
+		),
 	);
 	await user.type(
 		receipt.getByLabelText("Notes (optional)"),

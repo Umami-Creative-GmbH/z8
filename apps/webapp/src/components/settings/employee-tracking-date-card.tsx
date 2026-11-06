@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import {
@@ -156,7 +157,6 @@ function EmployeeTrackingDateForm({
 		null,
 	);
 	const [error, setError] = useState<string | null>(null);
-	const [saved, setSaved] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 	const minimum = [settings.organizationTrackingStartDate, settings.employmentStartDate]
 		.filter((day): day is string => !!day)
@@ -167,7 +167,6 @@ function EmployeeTrackingDateForm({
 		onSubmit: async ({ value }) =>
 			withBusyState(setBusy, async () => {
 				setError(null);
-				setSaved(null);
 				setReview(null);
 				try {
 					const date = value.trackingStartDate || null;
@@ -208,7 +207,7 @@ function EmployeeTrackingDateForm({
 					setReview(null);
 					return;
 				}
-				setSaved(
+				toast.success(
 					result.data.refreshPending
 						? t(
 								"settings.employees.tracking.saved-pending",
@@ -271,7 +270,6 @@ function EmployeeTrackingDateForm({
 									field.handleChange(event.target.value);
 									setReview(null);
 									setError(null);
-									setSaved(null);
 								}}
 							/>
 							<p id={`${id}-explanation`} className="text-sm text-muted-foreground">
@@ -293,7 +291,6 @@ function EmployeeTrackingDateForm({
 									field.handleChange("");
 									setReview(null);
 									setError(null);
-									setSaved(null);
 								}}
 							>
 								{t("settings.employees.tracking.use-default", "Use organization default")}
@@ -314,11 +311,6 @@ function EmployeeTrackingDateForm({
 			{error ? (
 				<p role="alert" className="text-sm text-destructive">
 					{error}
-				</p>
-			) : null}
-			{saved ? (
-				<p role="status" className="text-sm">
-					{saved}
 				</p>
 			) : null}
 			{review ? (

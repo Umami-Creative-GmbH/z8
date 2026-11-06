@@ -2,7 +2,13 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ preview: vi.fn(), commit: vi.fn(), refresh: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+	preview: vi.fn(),
+	commit: vi.fn(),
+	refresh: vi.fn(),
+	success: vi.fn(),
+}));
+vi.mock("sonner", () => ({ toast: { success: mocks.success } }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
@@ -119,9 +125,8 @@ describe("actual joining date review", () => {
 			target: { value: "Signed contract" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Save reviewed employment date" }));
-		expect(await screen.findByRole("status")).toHaveProperty(
-			"textContent",
-			"Employment date corrected and balances updated.",
+		await waitFor(() =>
+			expect(mocks.success).toHaveBeenCalledWith("Employment date corrected and balances updated."),
 		);
 		expect(await screen.findByRole("alert")).toHaveProperty(
 			"textContent",
