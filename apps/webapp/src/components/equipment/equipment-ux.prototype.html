@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Equipment prototype</title>
+<!-- PROTOTYPE (#1572): throwaway mock of /equipment and /equipment/assignments/[id]. Not production code. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+<style>
+:root {
+	--radius: 0.625rem;
+	--background: oklch(0.98 0.005 260);
+	--foreground: oklch(0.16 0.02 260);
+	--card: oklch(0.995 0.003 260);
+	--primary: oklch(0.45 0.17 265);
+	--primary-foreground: oklch(0.985 0.008 265);
+	--secondary: oklch(0.955 0.012 260);
+	--muted: oklch(0.965 0.008 260);
+	--muted-foreground: oklch(0.55 0.025 260);
+	--accent: oklch(0.94 0.025 265);
+	--destructive: oklch(0.577 0.235 27);
+	--border: oklch(0.905 0.012 260);
+	--sidebar: oklch(0.98 0.005 260);
+	--amber: oklch(0.666 0.179 58);
+	--emerald: oklch(0.596 0.145 163);
+}
+:root[data-theme="dark"] {
+	--background: oklch(0.155 0.015 260);
+	--foreground: oklch(0.985 0.008 260);
+	--card: oklch(0.195 0.015 260);
+	--primary: oklch(0.55 0.18 265);
+	--secondary: oklch(0.25 0.015 260);
+	--muted: oklch(0.25 0.015 260);
+	--muted-foreground: oklch(0.65 0.025 260);
+	--accent: oklch(0.25 0.025 265);
+	--destructive: oklch(0.704 0.191 22);
+	--border: oklch(1 0 0 / 10%);
+	--sidebar: oklch(0.14 0.015 260);
+	--amber: oklch(0.769 0.188 70);
+	--emerald: oklch(0.765 0.177 163);
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--foreground); font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+.ti { font-size: 16px; line-height: 1; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted-foreground); }
+.xs { font-size: 12px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* shell */
+.app { display: flex; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.sidebar { width: 232px; flex-shrink: 0; background: var(--sidebar); border-right: 1px solid var(--border); padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+.sidebar .org { display: flex; gap: 8px; align-items: center; padding: 6px 8px 14px; font-weight: 600; }
+.sidebar .org span.logo { width: 28px; height: 28px; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); display: grid; place-items: center; font-size: 13px; }
+.sidebar .group { font-size: 12px; color: var(--muted-foreground); padding: 12px 8px 4px; }
+.sidebar a { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 6px; }
+.sidebar a:hover { background: var(--accent); }
+.sidebar a.active { background: var(--accent); font-weight: 500; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar { height: 48px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 0 24px; color: var(--muted-foreground); }
+.page { display: flex; flex-direction: column; gap: 24px; padding: 24px 0 96px; }
+.px { padding: 0 24px; }
+
+/* primitives */
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid transparent; font-weight: 500; cursor: pointer; white-space: nowrap; background: transparent; }
+.btn.sm { height: 32px; padding: 0 10px; font-size: 13px; }
+.btn.icon { width: 36px; padding: 0; justify-content: center; }
+.btn.primary { background: var(--primary); color: var(--primary-foreground); }
+.btn.outline { border-color: var(--border); background: var(--card); }
+.btn.outline:hover, .btn.ghost:hover { background: var(--accent); }
+.btn.destructive-outline { border-color: var(--border); background: var(--card); color: var(--destructive); }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 2px oklch(0 0 0 / 4%); }
+.badge { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; border: 1px solid transparent; }
+.badge.outline { border-color: var(--border); }
+.badge.secondary { background: var(--secondary); }
+.badge.destructive { background: var(--destructive); color: white; }
+.badge.default { background: var(--primary); color: var(--primary-foreground); }
+.avatar { width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center; font-size: 11px; font-weight: 600; flex-shrink: 0; color: white; }
+.input { height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.input input { border: 0; outline: 0; background: transparent; color: inherit; font: inherit; width: 100%; }
+.select { justify-content: space-between; min-width: 170px; cursor: pointer; }
+.toggle-group { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--card); }
+.toggle-group button { border: 0; background: transparent; padding: 0 12px; height: 34px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.toggle-group button + button { border-left: 1px solid var(--border); }
+.toggle-group button[aria-pressed="true"] { background: var(--accent); font-weight: 500; }
+.count { font-size: 11px; background: var(--muted); border-radius: 999px; padding: 0 6px; }
+.switch { width: 32px; height: 18px; border-radius: 999px; background: var(--border); position: relative; display: inline-block; cursor: pointer; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 999px; background: white; transition: left .15s; }
+.switch.on { background: var(--primary); }
+.switch.on::after { left: 16px; }
+
+/* header */
+.header { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-start; }
+h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.header p { margin: 4px 0 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* kpi */
+.kpis { display: grid; gap: 16px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kpi { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; text-align: left; }
+.kpi:hover { border-color: color-mix(in oklch, var(--primary) 40%, var(--border)); }
+.kpi[aria-pressed="true"] { outline: 2px solid var(--primary); outline-offset: -1px; }
+.kpi .head { display: flex; gap: 10px; align-items: center; color: var(--muted-foreground); font-weight: 500; }
+.chip { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; }
+.tone-neutral { background: var(--muted); color: var(--muted-foreground); }
+.tone-info { background: color-mix(in oklch, var(--primary) 10%, transparent); color: var(--primary); }
+.tone-warning { background: color-mix(in oklch, var(--amber) 12%, transparent); color: var(--amber); }
+.tone-critical { background: color-mix(in oklch, var(--destructive) 10%, transparent); color: var(--destructive); }
+.kpi .value { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+
+/* tabs */
+.tabs { display: inline-flex; background: var(--muted); padding: 3px; border-radius: 10px; gap: 2px; }
+.tabs button { border: 0; background: transparent; padding: 5px 12px; border-radius: 7px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; color: var(--muted-foreground); font-weight: 500; }
+.tabs button[aria-selected="true"] { background: var(--card); color: var(--foreground); box-shadow: 0 1px 2px oklch(0 0 0 / 8%); }
+
+/* table */
+.card-head { padding: 18px 24px 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 0 24px 16px; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-weight: 500; color: var(--muted-foreground); font-size: 13px; padding: 10px 12px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: color-mix(in oklch, var(--muted) 50%, transparent); white-space: nowrap; }
+th:first-child, td:first-child { padding-left: 24px; }
+th:last-child, td:last-child { padding-right: 16px; }
+th .sort { display: inline-flex; gap: 4px; align-items: center; }
+td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: color-mix(in oklch, var(--muted) 50%, transparent); }
+tbody tr:last-child td { border-bottom: 0; }
+.holder { display: flex; gap: 10px; align-items: center; }
+.cell-title { font-weight: 500; }
+.deadline-overdue { color: var(--destructive); font-weight: 500; }
+.deadline-soon { color: var(--amber); font-weight: 500; }
+.table-foot { border-top: 1px solid var(--border); padding: 12px 24px; display: flex; justify-content: space-between; }
+
+/* dropdown + sheet */
+.menu { position: absolute; right: 16px; top: 36px; z-index: 20; width: 200px; padding: 4px; }
+.menu .label { padding: 6px 8px; font-size: 12px; color: var(--muted-foreground); }
+.menu button { width: 100%; border: 0; background: transparent; display: flex; gap: 8px; align-items: center; padding: 7px 8px; border-radius: 6px; cursor: pointer; text-align: left; }
+.menu button:hover { background: var(--accent); }
+.menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px -4px; }
+.overlay { position: fixed; inset: 0; background: oklch(0 0 0 / 40%); z-index: 40; }
+.sheet { position: fixed; right: 0; top: 0; bottom: 0; width: min(480px, 100vw); background: var(--card); border-left: 1px solid var(--border); z-index: 41; display: flex; flex-direction: column; }
+.sheet header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.sheet .body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; overflow: auto; flex: 1; }
+.sheet footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-weight: 500; font-size: 13px; }
+.field .input { width: 100%; }
+.radio-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.radio-row span { border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.radio-row span.on { border-color: var(--primary); background: color-mix(in oklch, var(--primary) 8%, transparent); }
+.toast { position: fixed; right: 24px; bottom: 24px; z-index: 50; padding: 12px 16px; display: flex; gap: 10px; align-items: center; min-width: 300px; }
+
+/* empty */
+.empty { border-top: 1px solid var(--border); padding: 48px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+.empty .media { width: 40px; height: 40px; border-radius: 10px; background: var(--muted); display: grid; place-items: center; margin-bottom: 4px; }
+.empty .media .ti { font-size: 22px; }
+
+/* detail */
+.back { display: inline-flex; gap: 6px; align-items: center; color: var(--muted-foreground); font-size: 13px; }
+.back:hover { color: var(--foreground); }
+.detail-grid { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+.facts div { padding: 14px 20px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.facts div:nth-child(3n) { border-right: 0; }
+.facts div:nth-last-child(-n+3) { border-bottom: 0; }
+.facts dt { font-size: 12px; color: var(--muted-foreground); margin-bottom: 4px; }
+.facts dd { margin: 0; font-weight: 500; }
+.timeline { list-style: none; margin: 0; padding: 8px 24px 20px; }
+.timeline li { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; position: relative; padding: 12px 0; }
+.timeline li::before { content: ""; position: absolute; left: 15px; top: 44px; bottom: -12px; width: 1px; background: var(--border); }
+.timeline li:last-child::before { display: none; }
+.dot { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; border: 1px solid var(--border); background: var(--card); }
+.side-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.side-card .row { display: flex; justify-content: space-between; gap: 12px; }
+details.card summary { padding: 16px 24px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; list-style: none; }
+details.card summary::-webkit-details-marker { display: none; }
+.amend { padding: 0 24px 18px; }
+.amend table td, .amend table th { padding: 8px 10px; font-size: 13px; }
+.amend del { color: var(--muted-foreground); }
+
+/* proto bar */
+.proto { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 60; background: #111; color: #fff; border-radius: 999px; padding: 6px 8px; display: flex; gap: 4px; align-items: center; box-shadow: 0 8px 24px rgb(0 0 0 / 35%); font-size: 13px; }
+.proto button { background: transparent; border: 0; color: #fff; padding: 6px 10px; border-radius: 999px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.proto button:hover { background: #333; }
+.proto button.on { background: #fff; color: #111; }
+.proto .sep { width: 1px; height: 20px; background: #444; margin: 0 4px; }
+
+@media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .detail-grid { grid-template-columns: 1fr; } .sidebar { display: none; } }
+@media (max-width: 640px) {
+	.px, .toolbar, .card-head { padding-left: 16px; padding-right: 16px; }
+	.kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+	thead { display: none; }
+	tbody tr { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); position: relative; }
+	td { border: 0; padding: 0 !important; }
+	td[data-label]:not(.lead)::before { content: attr(data-label) ": "; color: var(--muted-foreground); font-size: 12px; }
+	td.lead { grid-column: 1 / -1; }
+	td.actions-cell { position: absolute; top: 10px; right: 10px; }
+	.facts { grid-template-columns: 1fr 1fr; }
+	.facts div { border-right: 0 !important; border-bottom: 1px solid var(--border) !important; }
+	.select { min-width: 0; flex: 1; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+	<aside class="sidebar">
+		<div class="org"><span class="logo">Z8</span> Nordlicht GmbH</div>
+		<a href="#"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+		<a href="#"><i class="ti ti-clock"></i> Time tracking</a>
+		<a href="#"><i class="ti ti-calendar"></i> Absences</a>
+		<div class="group">Personal</div>
+		<a href="#"><i class="ti ti-package"></i> My equipment</a>
+		<div class="group">Organization</div>
+		<a href="#"><i class="ti ti-users"></i> Team</a>
+		<a href="#" class="active"><i class="ti ti-package"></i> Equipment</a>
+		<a href="#"><i class="ti ti-shield-check"></i> Compliance</a>
+		<a href="#"><i class="ti ti-settings"></i> Settings</a>
+	</aside>
+	<div class="main">
+		<div class="topbar"><i class="ti ti-layout-sidebar"></i><span id="crumb">Equipment</span></div>
+		<div id="view"></div>
+	</div>
+</div>
+
+<div id="layer"></div>
+
+<nav class="proto" aria-label="Prototype controls">
+	<button data-screen="overview">Overview</button>
+	<button data-screen="detail">Assignment detail</button>
+	<button data-screen="unset">Empty: not set up</button>
+	<span class="sep"></span>
+	<button id="themeBtn"><i class="ti ti-moon"></i> Theme</button>
+</nav>
+
+<script>
+const today = "2026-11-06";
+const COLORS = ["#4f46e5", "#0891b2", "#059669", "#d97706", "#db2777", "#7c3aed", "#2563eb", "#0d9488"];
+const people = {
+	e1: { name: "Lena Hoffmann", team: "Field service" },
+	e2: { name: "Jonas Becker", team: "Warehouse" },
+	e3: { name: "Mira Schulz", team: "Field service", former: true },
+	e4: { name: "Tobias Wagner", team: "Office" },
+	e5: { name: "Aylin Demir", team: "Warehouse" },
+	e6: { name: "Felix Braun", team: "Field service" },
+};
+const rows = [
+	{ id: "a1", e: "e3", ident: "LT-0142", type: "Laptop", qty: [1, 1], deadline: "2026-10-31", status: "overdue" },
+	{ id: "a2", e: "e2", ident: "Safety shoes", type: "Safety shoes", qty: [2, 2], deadline: "2026-11-02", status: "overdue", quantity: true },
+	{ id: "a3", e: "e1", ident: "PH-0088", type: "Phone", qty: [1, 1], deadline: "2026-11-12", status: "outstanding" },
+	{ id: "a4", e: "e6", ident: "Work jacket", type: "Workwear", qty: [1, 3], deadline: "2026-11-18", status: "outstanding", quantity: true },
+	{ id: "a5", e: "e5", ident: "SC-0007", type: "Hand scanner", qty: [1, 1], deadline: null, status: "outstanding" },
+	{ id: "a6", e: "e4", ident: "KY-0311", type: "Office key", qty: [1, 1], deadline: null, status: "outstanding" },
+	{ id: "a7", e: "e1", ident: "Work gloves", type: "Workwear", qty: [0, 10], deadline: null, status: "keep", quantity: true },
+	{ id: "a8", e: "e2", ident: "LT-0119", type: "Laptop", qty: [0, 1], deadline: null, status: "received" },
+];
+const STATUS = {
+	overdue: ["destructive", "Overdue"],
+	outstanding: ["outline", "Outstanding return"],
+	keep: ["secondary", "Issued to keep"],
+	received: ["secondary", "Physically received"],
+	closed: ["secondary", "Return obligation closed"],
+};
+const state = { screen: "overview", status: "outstanding", tab: "assignments", menu: null, sheet: null, toast: null, former: true };
+
+function initials(n) { return n.split(" ").map((p) => p[0]).join(""); }
+function avatar(id) { const p = people[id]; return `<span class="avatar" style="background:${COLORS[Number(id.slice(1)) % COLORS.length]}">${initials(p.name)}</span>`; }
+function fmt(d) { if (!d) return "—"; const [y, m, day] = d.split("-"); return `${day}.${m}.${y}`; }
+function daysUntil(d) { return Math.round((new Date(d) - new Date(today)) / 86400000); }
+function deadlineCell(r) {
+	if (!r.deadline) return `<span class="muted">No deadline</span>`;
+	const n = daysUntil(r.deadline);
+	if (n < 0) return `<span class="deadline-overdue num">${fmt(r.deadline)}</span><div class="xs muted">${-n} days overdue</div>`;
+	if (n <= 14) return `<span class="deadline-soon num">${fmt(r.deadline)}</span><div class="xs muted">in ${n} days</div>`;
+	return `<span class="num">${fmt(r.deadline)}</span>`;
+}
+function visibleRows() {
+	return rows.filter((r) => state.status === "all" ? true : state.status === "overdue" ? r.status === "overdue" : state.status === "soon" ? r.deadline && daysUntil(r.deadline) >= 0 && daysUntil(r.deadline) <= 14 : r.status === "overdue" || r.status === "outstanding")
+		.filter((r) => state.former || !people[r.e].former);
+}
+
+function kpi(key, icon, tone, label, value, caption) {
+	return `<button class="card kpi" data-kpi="${key}" aria-pressed="${state.status === key}">
+		<div class="head"><span class="chip tone-${tone}"><i class="ti ti-${icon}"></i></span>${label}</div>
+		<div class="value num">${value}</div>
+		<div class="xs muted">${caption}</div>
+	</button>`;
+}
+
+function header(extra = "") {
+	return `<div class="header px">
+		<div><h1>Equipment</h1><p class="muted">Who holds each item, what must come back, and every recorded handover.</p></div>
+		<div class="actions">
+			<button class="btn ghost icon" title="Refresh" aria-label="Refresh"><i class="ti ti-refresh"></i></button>
+			<button class="btn outline"><i class="ti ti-settings"></i> Equipment settings</button>
+			<button class="btn outline"><i class="ti ti-history"></i> Record existing holding</button>
+			<button class="btn primary" data-open="issue"><i class="ti ti-plus"></i> Issue equipment</button>
+		</div>
+	</div>${extra}`;
+}
+
+function overview() {
+	const list = visibleRows();
+	const counts = { outstanding: rows.filter((r) => r.status === "outstanding" || r.status === "overdue").length, overdue: rows.filter((r) => r.status === "overdue").length, all: rows.length };
+	return `<div class="page">
+	${header()}
+	<div class="kpis px">
+		${kpi("outstanding", "package-export", "neutral", "Outstanding returns", counts.outstanding, "Across 5 employees")}
+		${kpi("overdue", "alert-triangle", "critical", "Overdue", counts.overdue, "Oldest: 6 days")}
+		${kpi("soon", "calendar-due", "warning", "Due within 14 days", 2, "Next: 12.11.2026")}
+		${kpi("ready", "circle-check", "info", "Items ready to issue", 14, "Of 31 identified items")}
+	</div>
+	<div class="px"><div class="tabs" role="tablist">
+		<button role="tab" data-tab="assignments" aria-selected="${state.tab === "assignments"}"><i class="ti ti-list-details"></i> Assignments</button>
+		<button role="tab" data-tab="items" aria-selected="${state.tab === "items"}"><i class="ti ti-barcode"></i> Items</button>
+	</div></div>
+	<div class="px">${state.tab === "assignments" ? assignmentsCard(list, counts) : itemsCard()}</div>
+	</div>`;
+}
+
+function assignmentsCard(list, counts) {
+	return `<div class="card" style="overflow:hidden">
+		<div class="card-head">
+			<div><h2>Assignments</h2><div class="muted" style="margin-top:2px">${list.length} of ${rows.length} assignments</div></div>
+			<div class="toggle-group" role="group" aria-label="Status">
+				<button data-status="outstanding" aria-pressed="${state.status === "outstanding"}">Outstanding <span class="count num">${counts.outstanding}</span></button>
+				<button data-status="overdue" aria-pressed="${state.status === "overdue"}">Overdue <span class="count num">${counts.overdue}</span></button>
+				<button data-status="all" aria-pressed="${state.status === "all"}">All</button>
+			</div>
+		</div>
+		<div class="toolbar">
+			<div class="input" style="flex:1;min-width:200px;max-width:320px"><i class="ti ti-search muted"></i><input placeholder="Search identifier, type or holder" /></div>
+			<div class="input select"><span>All holders</span><i class="ti ti-selector muted"></i></div>
+			<div class="input select"><span>All types</span><i class="ti ti-chevron-down muted"></i></div>
+			<label style="display:inline-flex;gap:8px;align-items:center;cursor:pointer" data-former><span class="switch ${state.former ? "on" : ""}"></span> Show former employees</label>
+			<button class="btn ghost sm"><i class="ti ti-filter-off"></i> Clear filters</button>
+		</div>
+		${list.length === 0 ? `<div class="empty"><div class="muted">No assignments match these filters.</div><button class="btn outline sm" data-status="all">Clear filters</button></div>` : `
+		<table>
+			<thead><tr>
+				<th><span class="sort">Holder <i class="ti ti-arrows-sort muted"></i></span></th>
+				<th><span class="sort">Item <i class="ti ti-arrows-sort muted"></i></span></th>
+				<th>Outstanding</th>
+				<th><span class="sort">Return deadline <i class="ti ti-arrow-up"></i></span></th>
+				<th>Status</th>
+				<th><span class="sr-only"></span></th>
+			</tr></thead>
+			<tbody>${list.map((r) => {
+				const p = people[r.e]; const [v, l] = STATUS[r.status];
+				return `<tr data-row="${r.id}">
+					<td class="lead" data-label="Holder"><div class="holder">${avatar(r.e)}<div><div class="cell-title">${p.name} ${p.former ? `<span class="badge outline" style="margin-left:4px"><i class="ti ti-user-off"></i> Former</span>` : ""}</div><div class="xs muted">${p.team}</div></div></div></td>
+					<td data-label="Item"><div class="cell-title">${r.ident}</div><div class="xs muted">${r.quantity ? "Quantity · " : ""}${r.type}</div></td>
+					<td data-label="Outstanding" class="num">${r.qty[0]} <span class="muted">/ ${r.qty[1]}</span></td>
+					<td data-label="Deadline">${deadlineCell(r)}</td>
+					<td data-label="Status"><span class="badge ${v}">${l}</span></td>
+					<td class="actions-cell" style="position:relative;width:48px">
+						<button class="btn ghost icon" data-menu="${r.id}" aria-label="Actions"><i class="ti ti-dots"></i></button>
+						${state.menu === r.id ? `<div class="card menu">
+							<div class="label">${r.ident}</div>
+							<button data-open="receive"><i class="ti ti-package-import"></i> Record receipt</button>
+							<button data-open="transfer"><i class="ti ti-arrows-exchange"></i> Transfer</button>
+							<button data-open="close"><i class="ti ti-circle-x"></i> Close return</button>
+							<hr /><button data-row="${r.id}"><i class="ti ti-eye"></i> View details</button>
+						</div>` : ""}
+					</td>
+				</tr>`;
+			}).join("")}</tbody>
+		</table>`}
+	</div>`;
+}
+
+function itemsCard() {
+	const items = [
+		["LT-0142", "Laptop", "Held by Mira Schulz", "outline"],
+		["LT-0151", "Laptop", "Available", "secondary"],
+		["PH-0090", "Phone", "Unavailable · damaged", "destructive"],
+		["SC-0009", "Hand scanner", "Cleared for issue", "secondary"],
+		["LT-0098", "Laptop", "Retired", "outline"],
+	];
+	return `<div class="card" style="overflow:hidden">
+		<div class="card-head"><div><h2>Items</h2><div class="muted" style="margin-top:2px">Availability of individually identified items</div></div>
+			<div class="toggle-group"><button aria-pressed="true">Needs attention <span class="count">1</span></button><button>Available</button><button>Held</button><button>All</button></div></div>
+		<table><thead><tr><th>Item</th><th>Type</th><th>Availability</th><th>Last change</th><th></th></tr></thead>
+		<tbody>${items.map(([i, t, s, v]) => `<tr><td class="lead"><div class="cell-title">${i}</div></td><td>${t}</td><td><span class="badge ${v}">${s}</span></td><td class="num muted">03.11.2026</td><td class="actions-cell"><button class="btn ghost icon"><i class="ti ti-dots"></i></button></td></tr>`).join("")}</tbody></table>
+		<div class="table-foot"><span class="muted xs">Anonymous custody receipts awaiting confirmation: 1</span><button class="btn outline sm"><i class="ti ti-clipboard-check"></i> Review receipt</button></div>
+	</div>`;
+}
+
+function detail() {
+	return `<div class="page">
+	<div class="px"><a class="back" href="#" data-screen-link="overview"><i class="ti ti-arrow-left"></i> Equipment</a></div>
+	<div class="header px">
+		<div style="display:flex;gap:14px;align-items:center">
+			<span class="chip tone-neutral" style="width:44px;height:44px;border-radius:12px"><i class="ti ti-device-laptop" style="font-size:22px"></i></span>
+			<div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h1>LT-0142</h1><span class="badge destructive">Overdue</span></div>
+			<div class="muted">Laptop · Serial C02XK1JHJGH5</div></div>
+		</div>
+		<div class="actions">
+			<button class="btn outline" data-open="close"><i class="ti ti-circle-x"></i> Close return</button>
+			<button class="btn outline" data-open="transfer"><i class="ti ti-arrows-exchange"></i> Transfer</button>
+			<button class="btn primary" data-open="receive"><i class="ti ti-package-import"></i> Record receipt</button>
+		</div>
+	</div>
+	<div class="detail-grid px">
+		<div style="display:flex;flex-direction:column;gap:24px">
+			<div class="card"><dl class="facts" style="margin:0">
+				<div><dt>Issued</dt><dd class="num">1</dd></div>
+				<div><dt>Received</dt><dd class="num">0</dd></div>
+				<div><dt>Outstanding</dt><dd class="num">1</dd></div>
+				<div><dt>Return requirement</dt><dd>Must be returned</dd></div>
+				<div><dt>Effective deadline</dt><dd class="num deadline-overdue">31.10.2026</dd></div>
+				<div><dt>Latest condition</dt><dd>Good</dd></div>
+			</dl></div>
+			<div class="card">
+				<div class="card-head" style="padding-bottom:0"><h2>Handover history</h2><button class="btn ghost sm"><i class="ti ti-pencil"></i> Correct a record</button></div>
+				<ol class="timeline">
+					<li><span class="dot" style="color:var(--destructive)"><i class="ti ti-alert-triangle"></i></span><div><div class="cell-title">Return became overdue</div><div class="xs muted">Departure deadline passed without a receipt</div></div><span class="xs muted num">31.10.2026</span></li>
+					<li><span class="dot"><i class="ti ti-door-exit"></i></span><div><div class="cell-title">Departure scheduled</div><div class="xs muted">Last working day 31.10.2026 set the return deadline · by Anna Keller</div></div><span class="xs muted num">14.10.2026</span></li>
+					<li><span class="dot" style="color:var(--primary)"><i class="ti ti-package-export"></i></span><div><div class="cell-title">Issued to Mira Schulz</div><div class="xs muted">Condition good · Charger and sleeve included · by Jonas Becker</div><span class="badge outline" style="margin-top:6px"><i class="ti ti-pencil"></i> Amended</span></div><span class="xs muted num">02.03.2025</span></li>
+				</ol>
+			</div>
+			<details class="card">
+				<summary><h2>Original records and amendments</h2><span class="muted xs">1 correction <i class="ti ti-chevron-down"></i></span></summary>
+				<div class="amend"><table><thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
+				<tbody><tr><td>Issue date</td><td><del>03.03.2025</del></td><td>02.03.2025</td></tr></tbody></table>
+				<p class="xs muted">Corrected by Anna Keller on 05.03.2025 · “Handover form shows Monday.”</p></div>
+			</details>
+		</div>
+		<div style="display:flex;flex-direction:column;gap:16px">
+			<div class="card side-card">
+				<div class="muted xs">Holder</div>
+				<a href="#" class="holder">${avatar("e3")}<div><div class="cell-title">Mira Schulz</div><div class="xs muted">Field service</div></div><i class="ti ti-chevron-right muted" style="margin-left:auto"></i></a>
+				<span class="badge outline" style="align-self:flex-start"><i class="ti ti-user-off"></i> Former employee · left 31.10.2026</span>
+			</div>
+			<div class="card side-card">
+				<div class="row"><h2>Record retention</h2><span class="badge outline">Outstanding</span></div>
+				<p class="muted" style="margin:0">Kept while the return is outstanding. Cleanup starts 24 months after the latest activity.</p>
+				<div class="row xs"><span class="muted">Latest activity</span><span class="num">31.10.2026</span></div>
+				<div class="row xs"><span class="muted">Case hold</span><span>None</span></div>
+				<button class="btn outline sm" style="align-self:flex-start"><i class="ti ti-lock"></i> Place case hold</button>
+			</div>
+		</div>
+	</div>
+	</div>`;
+}
+
+function unset() {
+	return `<div class="page">${header()}<div class="px"><div class="card" style="overflow:hidden">
+		<div class="empty" style="border-top:0;padding:72px 24px">
+			<div class="media"><i class="ti ti-package"></i></div>
+			<h2>Set up equipment first</h2>
+			<p class="muted" style="max-width:420px;margin:0">Add the equipment types you issue and choose how long closed records are kept. Then you can issue equipment to employees.</p>
+			<button class="btn primary" style="margin-top:8px"><i class="ti ti-settings"></i> Set up equipment</button>
+		</div></div></div></div>`;
+}
+
+function sheet() {
+	if (!state.sheet) return "";
+	const titles = { receive: ["Record receipt", "LT-0142 · Laptop held by Mira Schulz"], transfer: ["Transfer equipment", "Receive LT-0142 and issue it to another employee"], close: ["Close return", "Close the return without receiving the equipment"], issue: ["Issue equipment", "Record equipment handed to an employee"] };
+	const [t, d] = titles[state.sheet];
+	return `<div class="overlay" data-close></div><aside class="sheet" role="dialog" aria-label="${t}">
+		<header><h2>${t}</h2><div class="muted" style="margin-top:4px">${d}</div></header>
+		<div class="body">
+			${state.sheet === "issue" ? `<div class="field"><label>Employee</label><div class="input select"><span class="muted">Select employee</span><i class="ti ti-selector"></i></div></div>
+				<div class="field"><label>Item or type</label><div class="input select"><span class="muted">Search items and quantity types</span><i class="ti ti-selector"></i></div></div>` : ""}
+			${state.sheet === "close" ? `<div class="field"><label>Outcome</label><div class="radio-row"><span class="on">Lost</span><span>Return waived</span></div></div>
+				<div class="field"><label>Reason</label><div class="input" style="height:80px;align-items:flex-start;padding-top:8px"><span class="muted">Why the return is closed</span></div></div>` : ""}
+			${state.sheet === "transfer" ? `<div class="field"><label>New holder</label><div class="input select"><span class="muted">Select employee</span><i class="ti ti-selector"></i></div></div>` : ""}
+			${state.sheet !== "close" ? `<div class="field"><label>Handover date</label><div class="input"><i class="ti ti-calendar muted"></i><span class="num">06.11.2026</span></div></div>
+				<div class="field"><label>Condition</label><div class="radio-row"><span class="on">Good</span><span>Worn</span><span>Damaged</span><span>Unknown</span></div></div>
+				<div class="field"><label>Notes <span class="muted">(optional)</span></label><div class="input" style="height:80px"></div></div>` : ""}
+		</div>
+		<footer><button class="btn outline" data-close>Cancel</button><button class="btn primary" data-save>${t}</button></footer>
+	</aside>`;
+}
+
+function render() {
+	const view = document.getElementById("view");
+	view.innerHTML = state.screen === "detail" ? detail() : state.screen === "unset" ? unset() : overview();
+	document.getElementById("crumb").textContent = state.screen === "detail" ? "Equipment / LT-0142" : "Equipment";
+	document.getElementById("layer").innerHTML = sheet() + (state.toast ? `<div class="card toast"><i class="ti ti-circle-check" style="color:var(--emerald);font-size:18px"></i><div><div class="cell-title">${state.toast}</div><div class="xs muted">LT-0142 · Laptop</div></div></div>` : "");
+	document.querySelectorAll(".proto [data-screen]").forEach((b) => b.classList.toggle("on", b.dataset.screen === state.screen));
+}
+
+document.addEventListener("click", (e) => {
+	const t = e.target.closest("[data-screen],[data-screen-link],[data-status],[data-kpi],[data-tab],[data-menu],[data-open],[data-close],[data-save],[data-row],[data-former],#themeBtn");
+	if (!t) { if (state.menu) { state.menu = null; render(); } return; }
+	if (t.id === "themeBtn") { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"; return; }
+	e.preventDefault();
+	if (t.dataset.screen || t.dataset.screenLink) { state.screen = t.dataset.screen || t.dataset.screenLink; state.menu = null; }
+	else if (t.dataset.kpi) state.status = t.dataset.kpi === "ready" ? (state.tab = "items", state.status) : t.dataset.kpi;
+	else if (t.dataset.status) state.status = t.dataset.status;
+	else if (t.dataset.tab) state.tab = t.dataset.tab;
+	else if (t.dataset.menu) { e.stopPropagation(); state.menu = state.menu === t.dataset.menu ? null : t.dataset.menu; }
+	else if (t.dataset.open) { state.sheet = t.dataset.open; state.menu = null; }
+	else if (t.hasAttribute("data-close")) state.sheet = null;
+	else if (t.hasAttribute("data-save")) { const s = state.sheet; state.sheet = null; state.toast = { receive: "Receipt recorded", transfer: "Equipment transferred", close: "Return closed", issue: "Equipment issued" }[s]; setTimeout(() => { state.toast = null; render(); }, 2600); }
+	else if (t.hasAttribute("data-former")) state.former = !state.former;
+	else if (t.dataset.row) { state.screen = "detail"; state.menu = null; }
+	render();
+});
+document.addEventListener("keydown", (e) => {
+	if (e.target.closest("input,textarea,[contenteditable]")) return;
+	const order = ["overview", "detail", "unset"];
+	if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const i = order.indexOf(state.screen); state.screen = order[(i + (e.key === "ArrowRight" ? 1 : order.length - 1)) % order.length]; render(); }
+	if (e.key === "Escape" && state.sheet) { state.sheet = null; render(); }
+});
+render();
+</script>
+</body>
+</html>
