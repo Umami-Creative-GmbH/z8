@@ -228,13 +228,16 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(200);
-		expect(mockState.coversCurrentApprover).toHaveBeenCalledWith(expect.anything(), {
-			organizationId: "org-1",
-			entityType: "time_entry",
-			approverEmployeeId: "absent-1",
-			actorEmployeeId: "employee-1",
-			at: expect.anything(),
-		});
+		expect(mockState.coversCurrentApprover).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				organizationId: "org-1",
+				entityType: "time_entry",
+				approverEmployeeId: "absent-1",
+				actorEmployeeId: "employee-1",
+				at: expect.anything(),
+			},
+		);
 		expect(mockState.approveApprovalInboxItem).toHaveBeenCalledWith(
 			expect.objectContaining({ coveredApproverIds: ["absent-1"] }),
 		);
@@ -243,8 +246,9 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 	it("never opens an expense claim to a covering deputy", async () => {
 		mockState.getAbility.mockResolvedValue(createManagerAbility());
 		// The store's contract: only deputy kinds are ever covered.
-		mockState.coversCurrentApprover.mockImplementation(async (_db: unknown, input: { entityType: string }) =>
-			isDeputyDecisionEntityType(input.entityType),
+		mockState.coversCurrentApprover.mockImplementation(
+			async (_db: unknown, input: { entityType: string }) =>
+				isDeputyDecisionEntityType(input.entityType),
 		);
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
@@ -561,6 +565,32 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(200);
+	});
+
+	it("returns occupied work ranges for correction review without exposing arbitrary error details", async () => {
+		const overlaps = [
+			{
+				kind: "work_period",
+				id: "period-other",
+				startAt: "2026-11-02T12:00:00Z",
+				endAt: "2026-11-02T13:30:00Z",
+			},
+		];
+		mockState.approveApprovalInboxItem.mockRejectedValue(
+			new ConflictError({
+				message: "The time range overlaps other recorded work",
+				conflictType: "work_interval_occupied",
+				details: { overlaps, privateDetails: "not returned" },
+			}),
+		);
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+		expect(response.status).toBe(409);
+		await expect(response.json()).resolves.toEqual({
+			error: "The time range overlaps other recorded work",
+			overlaps,
+		});
 	});
 
 	it("returns decision service conflict errors as 409 responses", async () => {

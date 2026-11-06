@@ -24,8 +24,16 @@ import {
 	RevokeGrantDialog,
 	toSelectableEmployee,
 } from "@/components/settings/access-grants/grant-editor";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PayrollAccessFormProps {
 	employees: PayrollAccessEmployeeOption[];
@@ -101,7 +109,10 @@ export function PayrollAccessForm({
 	const namedEmployeeOptions = [
 		...employeeOptions,
 		...retainedDepartedEmployees.map((employee) =>
-			toSelectableEmployee(employee, { isActive: false, formerSince: employee.formerSince }),
+			toSelectableEmployee(employee, {
+				isActive: false,
+				formerSince: employee.formerSince,
+			}),
 		),
 	];
 	const selectedDepartedNames = retainedDepartedEmployees
@@ -126,7 +137,9 @@ export function PayrollAccessForm({
 		if (!revokingGrant) return;
 		setIsRevoking(true);
 		try {
-			const result = await revokePayrollAccessGrantAction({ grantId: revokingGrant.id });
+			const result = await revokePayrollAccessGrantAction({
+				grantId: revokingGrant.id,
+			});
 			if (result.success) {
 				toast.success(t("settings.payrollAccess.revoked", "Payroll officer access revoked"));
 				if (editingGrantId === revokingGrant.id) {
@@ -187,31 +200,36 @@ export function PayrollAccessForm({
 				}}
 			/>
 
-			{isEditorOpen ? (
-				// Client-side TanStack Form submit (docs/refs/forms.md); the settings page needs JS.
-				// react-doctor-disable-next-line react-doctor/no-prevent-default
-				<form
-					className="space-y-6"
-					onSubmit={(event) => {
-						event.preventDefault();
-						void form.handleSubmit();
-					}}
-				>
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{editingGrantId
-									? t("settings.payrollAccess.editTitle", "Edit payroll officer")
-									: t("settings.payrollAccess.addTitle", "Add payroll officer")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"settings.payrollAccess.editorDescription",
-									"Choose a payroll officer and define whether they can access everyone or a specific scope.",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-6">
+			<ActionPanel
+				open={isEditorOpen}
+				onOpenChange={(open) => {
+					if (!isPending) setIsEditorOpen(open);
+				}}
+			>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>
+							{editingGrantId
+								? t("settings.payrollAccess.editTitle", "Edit payroll officer")
+								: t("settings.payrollAccess.addTitle", "Add payroll officer")}
+						</ActionPanelTitle>
+						<ActionPanelDescription>
+							{t(
+								"settings.payrollAccess.editorDescription",
+								"Choose a payroll officer and define whether they can access everyone or a specific scope.",
+							)}
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+					{/* Client-side TanStack Form submit; the settings page needs JS. */}
+					{/* react-doctor-disable-next-line react-doctor/no-prevent-default */}
+					<form
+						className="flex min-h-0 flex-1 flex-col"
+						onSubmit={(event) => {
+							event.preventDefault();
+							void form.handleSubmit();
+						}}
+					>
+						<ActionPanelBody className="space-y-6">
 							<form.Field name="payrollEmployeeId">
 								{(field) => (
 									<EmployeeSingleSelect
@@ -275,27 +293,26 @@ export function PayrollAccessForm({
 											: null,
 								}}
 							/>
-
-							<div className="flex flex-wrap gap-2">
-								<Button type="submit" disabled={!canSubmit}>
-									{isPending ? (
-										<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-									) : null}
-									{t("settings.payrollAccess.save", "Save payroll officer")}
-								</Button>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => setIsEditorOpen(false)}
-									disabled={isPending}
-								>
-									{t("common.cancel", "Cancel")}
-								</Button>
-							</div>
-						</CardContent>
-					</Card>
-				</form>
-			) : null}
+						</ActionPanelBody>
+						<ActionPanelFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setIsEditorOpen(false)}
+								disabled={isPending}
+							>
+								{t("common.cancel", "Cancel")}
+							</Button>
+							<Button type="submit" disabled={!canSubmit}>
+								{isPending ? (
+									<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+								) : null}
+								{t("settings.payrollAccess.save", "Save payroll officer")}
+							</Button>
+						</ActionPanelFooter>
+					</form>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

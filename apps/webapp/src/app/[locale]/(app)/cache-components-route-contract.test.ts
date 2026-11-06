@@ -19,6 +19,7 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/organization/page.tsx",
 	"src/app/[locale]/(app)/page.tsx",
 	"src/app/[locale]/(app)/payroll/page.tsx",
+	"src/app/[locale]/(app)/settings/avv/page.tsx",
 	"src/app/[locale]/(app)/settings/billing/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-access/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
@@ -36,6 +37,15 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 const PENDING_CONNECTION_FILES = [] as const;
 
 const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
+	{
+		file: "src/app/[locale]/(app)/settings/avv/page.tsx",
+		contentComponent: "AvvPageContent",
+		fallbackComponent: "AvvPageLoading",
+		reasonCategory: "deployment-config",
+		reason:
+			"Deployment flags must be evaluated per request, as on the billing page.",
+		operation: 'if (env.BILLING_ENABLED !== "true") {',
+	},
 	{
 		file: "src/app/[locale]/(app)/page.tsx",
 		contentComponent: "DashboardPageContent",
@@ -1391,7 +1401,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(20);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(21);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {

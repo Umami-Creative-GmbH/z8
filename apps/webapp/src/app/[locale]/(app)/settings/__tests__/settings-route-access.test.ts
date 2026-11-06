@@ -1106,7 +1106,10 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "avv/page.tsx"), "utf8"),
 		);
 
-		expect(avvSource).not.toContain("connection(");
+		expect(avvSource).toContain("await connection()");
+		expect(avvSource.indexOf("await connection()")).toBeLessThan(
+			avvSource.indexOf('if (env.BILLING_ENABLED !== "true")'),
+		);
 		expect(avvSource).toContain("async function AvvPageContent()");
 		expect(avvSource).toContain(
 			"<Suspense fallback={<AvvPageLoading />}>\n\t\t\t<AvvPageContent />\n\t\t</Suspense>",

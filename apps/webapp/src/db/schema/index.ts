@@ -76,14 +76,14 @@ export * from "./enterprise";
 export * from "./enterprise-identity-setup";
 // Enums
 export * from "./enums";
+export * from "./equipment";
+export * from "./equipment-reminders";
 export * from "./expense-officer";
 export * from "./export";
 export * from "./go-live";
 export * from "./holiday";
 // Identity management (role templates, lifecycle)
 export * from "./identity";
-export * from "./equipment";
-export * from "./equipment-reminders";
 export * from "./implementation-checklist";
 // Import review staging and audit tables
 export * from "./import-review";
@@ -98,6 +98,7 @@ export * from "./notification";
 export * from "./organization";
 export * from "./organization-mfa";
 export * from "./organization-notification-settings";
+export * from "./organization-profile";
 export * from "./organization-time-tracking-settings";
 export * from "./organization-tracking-settings";
 // Payroll export

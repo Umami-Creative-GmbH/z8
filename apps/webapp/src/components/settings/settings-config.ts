@@ -429,6 +429,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "policies",
 	},
 	{
+		id: "employee-allowances",
+		titleKey: "settings.vacation.employees.title",
+		titleDefault: "Employee Allowances",
+		descriptionKey: "settings.vacation.employees.description",
+		descriptionDefault:
+			"Configure custom vacation allowances for individual employees",
+		href: "/settings/vacation/employees",
+		icon: "beach",
+		minimumTier: "orgAdmin",
+		group: "policies",
+	},
+	{
 		id: "travel-expenses",
 		titleKey: "settings.travelExpenses.title",
 		titleDefault: "Travel Expense Policies",

@@ -29,7 +29,10 @@ import { useRouter } from "@/navigation";
 import { CloseMonthPanel } from "./close-month-panel";
 import { ReopenMonthPanel } from "./reopen-month-panel";
 
-type PanelState = { kind: "close" | "reopen"; month: MonthClosureStatus } | null;
+type PanelState = {
+	kind: "close" | "reopen";
+	month: MonthClosureStatus;
+} | null;
 
 /** The "Closed months" settings page (#762): statuses, close and reopen, automatic close, history. */
 export function ClosedMonthsSettings({ overview }: { overview: ClosedMonthsOverview }) {
@@ -38,7 +41,7 @@ export function ClosedMonthsSettings({ overview }: { overview: ClosedMonthsOverv
 	const [panel, setPanel] = useState<PanelState>(null);
 
 	return (
-		<div className="space-y-6">
+		<div className="grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
 			<Card>
 				<CardHeader>
 					<CardTitle>{t("settings.closedMonths.monthsTitle", "Months")}</CardTitle>
@@ -90,9 +93,10 @@ export function ClosedMonthsSettings({ overview }: { overview: ClosedMonthsOverv
 				</CardContent>
 			</Card>
 
-			{overview.canClose ? <AutomaticCloseCard settings={overview.settings} /> : null}
-
-			<HistoryCard overview={overview} />
+			<div className="min-w-0 space-y-6">
+				{overview.canClose ? <AutomaticCloseCard settings={overview.settings} /> : null}
+				<HistoryCard overview={overview} />
+			</div>
 
 			<CloseMonthPanel
 				open={panel?.kind === "close"}

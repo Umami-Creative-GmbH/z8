@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PayrollAccessForm } from "./payroll-access-form";
@@ -145,7 +145,9 @@ describe("PayrollAccessForm", () => {
 		await user.click(screen.getByRole("button", { name: "Revoke access" }));
 
 		await waitFor(() =>
-			expect(revokePayrollAccessGrantActionMock).toHaveBeenCalledWith({ grantId: "grant-a" }),
+			expect(revokePayrollAccessGrantActionMock).toHaveBeenCalledWith({
+				grantId: "grant-a",
+			}),
 		);
 	});
 
@@ -178,8 +180,12 @@ describe("PayrollAccessForm", () => {
 
 		await user.click(screen.getByRole("button", { name: "Edit" }));
 
+		expect(screen.getByRole("dialog", { name: "Edit payroll officer" })).toBeTruthy();
+
 		expect(
-			screen.getByRole<HTMLInputElement>("checkbox", { name: "Former Colleague" }).checked,
+			screen.getByRole<HTMLInputElement>("checkbox", {
+				name: "Former Colleague",
+			}).checked,
 		).toBe(true);
 		expect(
 			screen.getByText(
@@ -340,7 +346,10 @@ describe("PayrollAccessForm", () => {
 			/>,
 		);
 
+		expect(screen.queryByRole("dialog")).toBeNull();
 		await user.click(screen.getByRole("button", { name: "Add payroll officer" }));
+		const panel = screen.getByRole("dialog", { name: "Add payroll officer" });
+		expect(within(panel).getByLabelText("Payroll officer")).toBeTruthy();
 		await user.selectOptions(screen.getByLabelText("Payroll officer"), "employee-a");
 		await user.click(screen.getByRole("switch", { name: "Ops" }));
 		await user.click(screen.getByRole("checkbox", { name: "Grace Hopper" }));
@@ -365,6 +374,7 @@ describe("PayrollAccessForm", () => {
 			teamIds: ["team-ops"],
 			employeeIds: ["employee-b"],
 		});
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	});
 
 	it("selects a team when its row is clicked and lays teams out in two columns", async () => {

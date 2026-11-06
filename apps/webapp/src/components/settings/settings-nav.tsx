@@ -2,6 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { activeNavHref } from "@/components/nav-active";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -13,13 +14,9 @@ import {
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { Link, usePathname } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
-import {
-	type FeatureFlag,
-	getEntriesByGroup,
-	getResolvedSettingsVisibility,
-} from "./settings-config";
+import { type FeatureFlag, getResolvedSettingsVisibility } from "./settings-config";
 import { SETTINGS_ICON_MAP } from "./settings-icons";
-import { isSettingsNavItemActive } from "./settings-nav-utils";
+import { SettingsSearch, useSettingsSearch } from "./settings-search";
 
 interface SettingsNavProps {
 	accessTier: SettingsAccessTier;
@@ -49,7 +46,13 @@ export function SettingsNav({
 		drivingLicenceSettingsVisible,
 	});
 
-	// Memoize to prevent recreation on every render
+	const { query, setQuery, matchingGroups } = useSettingsSearch(visibleSettings, visibleGroups);
+
+	const activeHref = activeNavHref(
+		pathname,
+		visibleSettings.map((entry) => entry.href),
+	);
+
 	const isFeatureEnabled = (feature: FeatureFlag | undefined): boolean => {
 		if (!feature) return true;
 		return orgSettings[feature] ?? false;
@@ -57,11 +60,15 @@ export function SettingsNav({
 
 	return (
 		<>
-			{visibleGroups.map((group) => {
-				const groupEntries = getEntriesByGroup(visibleSettings, group.id);
-
-				if (groupEntries.length === 0) return null;
-
+			<div className="p-3">
+				<SettingsSearch value={query} onChange={setQuery} />
+			</div>
+			{matchingGroups.length === 0 ? (
+				<p role="status" className="px-4 py-3 text-sm text-muted-foreground">
+					{t("settings.search.noResults", "No settings found. Try a different search.")}
+				</p>
+			) : null}
+			{matchingGroups.map((group) => {
 				return (
 					<SidebarGroup key={group.id} className="p-0">
 						<SidebarGroupLabel className="sticky top-0 z-10 rounded-none bg-card px-4">
@@ -69,8 +76,8 @@ export function SettingsNav({
 						</SidebarGroupLabel>
 						<SidebarGroupContent className="px-2 pb-2">
 							<SidebarMenu>
-								{groupEntries.map((item) => {
-									const isActive = isSettingsNavItemActive(pathname, item.href);
+								{group.entries.map((item) => {
+									const isActive = activeHref === item.href;
 									const title = t(item.titleKey, item.titleDefault);
 									const Icon = SETTINGS_ICON_MAP[item.icon];
 									const hasFeatureFlag = !!item.requiredFeature;

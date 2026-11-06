@@ -24,7 +24,7 @@ interface BuildDailyWorkHoursSummariesOptions {
 }
 
 function getStatus(actualMinutes: number, requiredMinutes: number): DailyWorkHoursStatus {
-	if (actualMinutes === 0) return "missing";
+	if (actualMinutes === 0 && requiredMinutes > 0) return "missing";
 	if (actualMinutes > requiredMinutes) return "over";
 	if (actualMinutes === requiredMinutes) return "met";
 	return "under";

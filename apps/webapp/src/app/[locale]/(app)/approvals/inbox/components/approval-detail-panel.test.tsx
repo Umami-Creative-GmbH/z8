@@ -36,6 +36,11 @@ const localeState = vi.hoisted(() => ({ locale: "en" }));
 
 vi.mock("next-intl", () => ({ useLocale: () => localeState.locale }));
 
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/corrections", () => ({
+	prepareTimeCorrectionRevision: vi.fn(),
+	requestTimeCorrection: vi.fn(),
+}));
+
 vi.mock("sonner", () => ({
 	toast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -169,6 +174,36 @@ describe("normalizeTravelExpenseDetailEntity", () => {
 });
 
 describe("ApprovalDetailPanel", () => {
+	it("shows conflicting work and offers requested-time adjustment after approval is blocked", async () => {
+		const correction = { ...approvalItem, type: "time_entry" as const };
+		mockState.detailItem = correction;
+		mockState.approveMutateAsync.mockResolvedValueOnce({
+			success: false,
+			error: "The time range overlaps other recorded work",
+			overlaps: [
+				{
+					kind: "work_period",
+					id: "earlier-work",
+					startAt: "2026-11-02T12:00:00Z",
+					endAt: "2026-11-02T13:30:00Z",
+				},
+			],
+		});
+		render(
+			<ApprovalDetailPanel
+				approval={correction}
+				open
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: /^Approve$/ }));
+		expect(
+			await screen.findByRole("button", { name: "Adjust requested times" }),
+		).toBeTruthy();
+		expect(screen.getByText(/13:30/)).toBeTruthy();
+	});
+
 	beforeEach(() => {
 		localeState.locale = "en";
 		mockState.detailItem = null;
@@ -767,8 +802,38 @@ describe("ApprovalDetailPanel", () => {
 	});
 });
 it("shows every assessment reason in detail review", () => {
- mockState.detailItem = { ...approvalItem, triage: { ...approvalItem.triage, reasons: [{ code: "work_category_changed", riskLevel: "high", text: { key: "approvals:triage.test.category", fallback: "Work category changes." } }, { code: "coverage_unverified", riskLevel: "medium", text: { key: "approvals:triage.test.coverage", fallback: "Coverage not verified." } }] } };
- render(<ApprovalDetailPanel approval={approvalItem} open={true} onOpenChange={vi.fn()} onActioned={vi.fn()} />);
- expect(screen.getByText("Work category changes.")).toBeTruthy();
- expect(screen.getByText("Coverage not verified.")).toBeTruthy();
+	mockState.detailItem = {
+		...approvalItem,
+		triage: {
+			...approvalItem.triage,
+			reasons: [
+				{
+					code: "work_category_changed",
+					riskLevel: "high",
+					text: {
+						key: "approvals:triage.test.category",
+						fallback: "Work category changes.",
+					},
+				},
+				{
+					code: "coverage_unverified",
+					riskLevel: "medium",
+					text: {
+						key: "approvals:triage.test.coverage",
+						fallback: "Coverage not verified.",
+					},
+				},
+			],
+		},
+	};
+	render(
+		<ApprovalDetailPanel
+			approval={approvalItem}
+			open={true}
+			onOpenChange={vi.fn()}
+			onActioned={vi.fn()}
+		/>,
+	);
+	expect(screen.getByText("Work category changes.")).toBeTruthy();
+	expect(screen.getByText("Coverage not verified.")).toBeTruthy();
 });

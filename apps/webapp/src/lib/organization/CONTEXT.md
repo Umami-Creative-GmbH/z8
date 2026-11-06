@@ -1,8 +1,26 @@
 # Organization
 
-An organization's master data about its employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. It also hands an employee their personal data on request. Projects themselves belong to the Projects context.
+An organization's legal identity and its master data about employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. It also hands an employee their personal data on request. Projects themselves belong to the Projects context.
 
 ## Language
+
+### Organization identity
+
+**Organization profile**:
+The legal identity and registered address of the single legal entity an organization represents. Its details can be used wherever that organization must be identified, including its AVV.
+_Avoid_: billing profile, office location
+
+**Organization display name**:
+The name people see for their organization in Z8. It can differ from the legal company name.
+_Avoid_: legal company name
+
+**Legal company name**:
+The full name of the legal entity an organization represents, used to identify it in documents such as its AVV.
+_Avoid_: organization display name, trading name
+
+**Registered address**:
+The address of the legal entity an organization represents. It is separate from the locations where its employees work.
+_Avoid_: office location, billing address
 
 ### Employees
 
@@ -255,6 +273,8 @@ _Avoid_: rehearsal record, test data
 
 ## Confirmed design references
 
+- [Organization profile and AVV](../../../../../docs/refs/organization-profile.md): profile editing, persistence and authenticated actions are implemented in #1566; AVV settings, country-aware readiness and current-profile PDF downloads are implemented in #1567.
+- [AVVs use the current organization profile](./docs/adr/0009-avv-uses-current-organization-profile.md): why downloads use current master data rather than a stored agreement version.
 - [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules and their implementation status.
 - [Driving authorization and check evidence have their own lifecycle](./docs/adr/0004-driving-authorization-and-check-evidence-have-their-own-lifecycle.md): why permission and check evidence stay separate from vehicle attribution, skill certificates and generic audit retention.
 - [Intended-driver status is a scoped assignment, and losing it ends driving authorization](./docs/adr/0005-intended-driver-is-a-scoped-assignment-and-losing-it-ends-authorization.md): why intended drivers are assigned like a policy, matched by primary team, and why leaving ends authorization.

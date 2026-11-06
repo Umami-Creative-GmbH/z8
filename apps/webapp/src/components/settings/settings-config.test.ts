@@ -309,7 +309,7 @@ describe("settings visibility tiers", () => {
 			entries
 				.filter((entry) => entry.group === "policies")
 				.map((entry) => entry.id),
-		).toEqual(["work-policies", "absences", "travel-expenses", "approval"]);
+		).toEqual(["work-policies", "absences", "employee-allowances", "travel-expenses", "approval"]);
 		expect(entries.find((entry) => entry.id === "approval")).toMatchObject({
 			titleDefault: "Approval",
 			href: "/settings/approval-policies",

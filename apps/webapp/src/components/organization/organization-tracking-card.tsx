@@ -44,7 +44,10 @@ export function OrganizationTrackingCard({
 		.toPlainDate()
 		.toString();
 	const form = useForm({
-		defaultValues: { trackingStartDate: settings.trackingStartDate ?? suggested, reason: "" },
+		defaultValues: {
+			trackingStartDate: settings.trackingStartDate ?? suggested,
+			reason: "",
+		},
 		onSubmit: async ({ value }) => {
 			setBusy(true);
 			setError(null);
@@ -162,6 +165,7 @@ export function OrganizationTrackingCard({
 									id={`${id}-date`}
 									type="date"
 									name="trackingStartDate"
+									className="w-full sm:w-48"
 									autoComplete="off"
 									value={field.state.value}
 									disabled={busy}
