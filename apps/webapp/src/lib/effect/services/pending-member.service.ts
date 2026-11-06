@@ -17,7 +17,7 @@ import {
 } from "@/lib/auth/member-removal-cleanup";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
-import { setPrimaryTeam } from "@/lib/organization/primary-team";
+import { placeInTeam } from "@/lib/organization/primary-team";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -272,14 +272,12 @@ export const PendingMemberServiceLive = Layer.effect(
 
 					// The assigned team is a membership and the primary team (Organization ADR 0010).
 					const placeInAssignedTeam = (employeeId: string) =>
-						input.assignedTeamId
-							? setPrimaryTeam(tx, {
-									organizationId: input.organizationId,
-									employeeId,
-									teamId: input.assignedTeamId,
-									createdBy: input.approvedBy,
-								})
-							: undefined;
+						placeInTeam(tx, {
+							organizationId: input.organizationId,
+							employeeId,
+							teamId: input.assignedTeamId,
+							createdBy: input.approvedBy,
+						});
 
 					if (!existingEmployee) {
 						const [created] = await tx

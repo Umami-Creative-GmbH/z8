@@ -15,6 +15,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps, ReactNode } from "react";
 import { renderToString } from "react-dom/server";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { EmployeeReadSnapshot } from "@/lib/organization/employee-read-types";
@@ -416,6 +417,20 @@ describe("employee detail Team field (#1575)", () => {
 			expect(teamApi.preview).not.toHaveBeenCalled();
 		} finally {
 			formSection.real = false;
+		}
+	});
+
+	it("reports teams that could not load instead of offering none", async () => {
+		teamApi.list.mockResolvedValue({ success: false, error: "Teams are unavailable" });
+		const toastError = vi.spyOn(toast, "error");
+		formSection.real = true;
+		try {
+			renderDetail({ employee: inUmami });
+			await waitFor(() => expect(toastError).toHaveBeenCalledWith("Teams are unavailable"));
+			expect(screen.queryByRole("combobox", { name: "Team" })).toBeNull();
+		} finally {
+			formSection.real = false;
+			toastError.mockRestore();
 		}
 	});
 

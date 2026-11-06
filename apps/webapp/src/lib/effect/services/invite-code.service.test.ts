@@ -37,8 +37,15 @@ vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 }));
 
 // The placement itself is covered by primary-team.integration.test.ts (#1575).
-const setPrimaryTeam = vi.hoisted(() => vi.fn(async () => undefined));
-vi.mock("@/lib/organization/primary-team", () => ({ setPrimaryTeam }));
+const setPrimaryTeam = vi.hoisted(() =>
+	vi.fn(async (_tx: unknown, _input: unknown) => undefined),
+);
+vi.mock("@/lib/organization/primary-team", () => ({
+	setPrimaryTeam,
+	// As placeInTeam: no team places nothing.
+	placeInTeam: (tx: unknown, input: { teamId?: string | null }) =>
+		input.teamId ? setPrimaryTeam(tx, input) : null,
+}));
 
 function resetEnterpriseIdentityMock() {
 	enterpriseIdentityMock.assertRedemptionAllowed.mockReset();

@@ -28,7 +28,12 @@ const setPrimaryTeam = vi.hoisted(() =>
 		primaryTeamId: input.teamId,
 	})),
 );
-vi.mock("@/lib/organization/primary-team", () => ({ setPrimaryTeam }));
+vi.mock("@/lib/organization/primary-team", () => ({
+	setPrimaryTeam,
+	// As placeInTeam: no team places nothing.
+	placeInTeam: (tx: unknown, input: { teamId?: string | null }) =>
+		input.teamId ? setPrimaryTeam(tx, { ...input, teamId: input.teamId }) : null,
+}));
 const placedIn = (employeeId: string, teamId: string) =>
 	expect(setPrimaryTeam).toHaveBeenCalledWith(expect.anything(), {
 		organizationId: "org-1",

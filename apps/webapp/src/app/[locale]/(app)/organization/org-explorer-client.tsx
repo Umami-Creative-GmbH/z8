@@ -2,16 +2,8 @@
 
 import { useTranslate } from "@tolgee/react";
 import { ReactFlowProvider } from "@xyflow/react";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { toast } from "sonner";
-import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-	getOrgExplorerData,
-	getOrgExplorerGroup,
-	getOrgExplorerPeople,
-	getOrgExplorerTeamMembers,
-} from "./actions";
 import { PersonPanel } from "./org-explorer-person-panel";
 import {
 	type CenterRequest,
@@ -25,12 +17,12 @@ import { groupTeams } from "./org-explorer-teams";
 import { TeamsView } from "./org-explorer-teams-view";
 import { EmployeeSearch, TeamFilter, ViewSwitch } from "./org-explorer-toolbar";
 import { buildReportingTree, defaultExpandedIds } from "./org-explorer-tree";
+import type { OrgExplorerData, OrgExplorerPerson } from "./org-explorer-types";
 import {
-	ORG_EXPLORER_BATCH_LIMIT,
-	type OrgExplorerData,
-	type OrgExplorerGroup,
-	type OrgExplorerPerson,
-} from "./org-explorer-types";
+	useOrgExplorerPeople,
+	withIds,
+	withoutIds,
+} from "./use-org-explorer-people";
 import { useOrgExplorerUrlState } from "./use-org-explorer-url-state";
 
 type OrgExplorerClientProps = {
@@ -38,8 +30,6 @@ type OrgExplorerClientProps = {
 	/** Whether the viewer is an organization admin, who gets links to the settings screens. */
 	canManage: boolean;
 };
-
-type Summary = Omit<OrgExplorerData, "people">;
 
 export function OrgExplorerClient(props: OrgExplorerClientProps) {
 	return (
@@ -53,29 +43,8 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 	const { t } = useTranslate();
 	const isMobile = useIsMobile();
 	const [url, setUrl] = useOrgExplorerUrlState();
-	const [summary, setSummary] = useState<Summary>(() => summaryOf(initialData));
-	const [peopleById, setPeopleById] = useState(() =>
-		toPeopleMap(initialData.people),
-	);
-	// The latest people between renders, so loads that finish one after another all merge.
-	const peopleRef = useRef(peopleById);
-	const pendingLoads = useRef(new Map<string, Promise<void>>());
-	const requestedTeamIds = useRef(new Set<string>());
-	const [unknownIds, setUnknownIds] = useState<ReadonlySet<string>>(
-		() => new Set(),
-	);
-	const [loadingIds, setLoadingIds] = useState<ReadonlySet<string>>(
-		() => new Set(),
-	);
-	const [loadingTeamIds, setLoadingTeamIds] = useState<ReadonlySet<string>>(
-		() => new Set(),
-	);
-	const [loadedGroups, setLoadedGroups] = useState<
-		ReadonlySet<OrgExplorerGroup>
-	>(() => new Set());
-	const [loadingGroups, setLoadingGroups] = useState<
-		ReadonlySet<OrgExplorerGroup>
-	>(() => new Set());
+	const loader = useOrgExplorerPeople(initialData);
+	const { summary, peopleById, unknownIds, loadPeople } = loader;
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(() =>
 		defaultExpandedIds(buildReportingTree(initialData.people)),
 	);
@@ -118,99 +87,6 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 		return pathIds.has(employeeId) ? "path" : "dimmed";
 	};
 
-	function showFailure(message: string | undefined) {
-		toast.error(
-			message ||
-				t("organization.explorer.loadFailed", "Could not load people."),
-		);
-	}
-
-	function mergePeople(incoming: OrgExplorerPerson[]) {
-		if (incoming.length === 0) return;
-		const next = new Map(peopleRef.current);
-		for (const entry of incoming) next.set(entry.employeeId, entry);
-		peopleRef.current = next;
-		setPeopleById(next);
-	}
-
-	/**
-	 * Loads the people not loaded yet, and waits for those already on their way.
-	 * A complete organization has everyone already.
-	 */
-	async function loadPeople(
-		employeeIds: string[],
-		options?: { withPaths: true },
-	) {
-		if (summary.complete) return;
-		const unique = [...new Set(employeeIds)];
-		const waiting = unique.flatMap((id) => pendingLoads.current.get(id) ?? []);
-		const missing = unique.filter(
-			(id) =>
-				!peopleRef.current.has(id) &&
-				!pendingLoads.current.has(id) &&
-				!unknownIds.has(id),
-		);
-		if (missing.length > 0) {
-			const load = fetchPeople(missing, options);
-			for (const id of missing) pendingLoads.current.set(id, load);
-			waiting.push(load);
-		}
-		await Promise.all(waiting);
-	}
-
-	async function fetchPeople(missing: string[], options?: { withPaths: true }) {
-		try {
-			for (
-				let start = 0;
-				start < missing.length;
-				start += ORG_EXPLORER_BATCH_LIMIT
-			) {
-				const chunk = missing.slice(start, start + ORG_EXPLORER_BATCH_LIMIT);
-				const result = options
-					? await getOrgExplorerPeople(chunk, options)
-					: await getOrgExplorerPeople(chunk);
-				if (!result.success) {
-					showFailure(result.error);
-					return;
-				}
-				mergePeople(result.data);
-				// Nobody comes back for an id that is not on the current roster.
-				const notFound = chunk.filter((id) => !peopleRef.current.has(id));
-				if (notFound.length > 0)
-					setUnknownIds((current) => withIds(current, notFound));
-			}
-		} finally {
-			for (const id of missing) pendingLoads.current.delete(id);
-		}
-	}
-
-	async function loadTeamMembers(teamIds: string[]) {
-		const pending = teamIds.filter((id) => !requestedTeamIds.current.has(id));
-		if (summary.complete || pending.length === 0) return;
-		for (const id of pending) requestedTeamIds.current.add(id);
-		setLoadingTeamIds((current) => withIds(current, pending));
-		const result = await getOrgExplorerTeamMembers(pending);
-		setLoadingTeamIds((current) => withoutIds(current, pending));
-		if (!result.success) {
-			for (const id of pending) requestedTeamIds.current.delete(id);
-			showFailure(result.error);
-			return;
-		}
-		mergePeople(result.data);
-	}
-
-	async function loadGroup(group: OrgExplorerGroup) {
-		setLoadingGroups((current) => withIds(current, [group]));
-		const result = await getOrgExplorerGroup(group);
-		setLoadingGroups((current) => withoutIds(current, [group]));
-		if (!result.success) {
-			showFailure(result.error);
-			return;
-		}
-		mergePeople(result.data);
-		setLoadedGroups((current) => withIds(current, [group]));
-	}
-
 	function select(employeeId: string) {
 		setUrl({ employeeId });
 	}
@@ -219,7 +95,7 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 	async function reveal(employeeId: string) {
 		setUrl({ employeeId });
 		await loadPeople([employeeId], { withPaths: true });
-		const path = buildReportingTree([...peopleRef.current.values()])
+		const path = buildReportingTree(loader.currentPeople())
 			.pathTo(employeeId)
 			.slice(0, -1);
 		setCollapsed((current) => withoutIds(current, path));
@@ -238,16 +114,7 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 		}
 		setCollapsed((current) => withoutIds(current, [employeeId]));
 		setExpanded((current) => withIds(current, [employeeId]));
-
-		const missing =
-			peopleRef.current
-				.get(employeeId)
-				?.lineReportIds.filter((id) => !peopleRef.current.has(id)) ?? [];
-		if (summary.complete || missing.length === 0) return;
-		setLoadingIds((current) => withIds(current, [employeeId]));
-		void loadPeople(missing).finally(() => {
-			setLoadingIds((current) => withoutIds(current, [employeeId]));
-		});
+		loader.loadLineReports(employeeId);
 	}
 
 	// A large organization loads the selected person, their managers and reports,
@@ -271,36 +138,9 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 
 	const filterKey = url.teamIds.join(",");
 	const loadFilteredTeams = useEffectEvent((key: string) => {
-		if (key) void loadTeamMembers(key.split(","));
+		if (key) loader.loadTeamsStarted(key.split(","));
 	});
 	useEffect(() => loadFilteredTeams(filterKey), [filterKey]);
-
-	useViewRefresh(async () => {
-		const result = await getOrgExplorerData();
-		if (!result.success) throw new Error(result.error);
-		const fresh = toPeopleMap(result.data.people);
-		const stillShown = [...peopleRef.current.keys()].filter(
-			(id) => !fresh.has(id),
-		);
-		if (!result.data.complete) {
-			for (
-				let start = 0;
-				start < stillShown.length;
-				start += ORG_EXPLORER_BATCH_LIMIT
-			) {
-				const reloaded = await getOrgExplorerPeople(
-					stillShown.slice(start, start + ORG_EXPLORER_BATCH_LIMIT),
-				);
-				if (!reloaded.success) throw new Error(reloaded.error);
-				for (const entry of reloaded.data) fresh.set(entry.employeeId, entry);
-			}
-		}
-		requestedTeamIds.current.clear();
-		setUnknownIds(new Set());
-		peopleRef.current = fresh;
-		setPeopleById(fresh);
-		setSummary(summaryOf(result.data));
-	});
 
 	if (summary.employeeCount === 0 && peopleById.size === 0) {
 		return (
@@ -319,7 +159,7 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 		openIds,
 		highlightOf,
 		selectedId: url.employeeId,
-		loadingIds,
+		loadingIds: loader.loadingIds,
 		centerRequest,
 		onSelect: select,
 		onToggle: toggle,
@@ -369,14 +209,15 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 
 			{url.view === "teams" ? (
 				<TeamsView
+					canLoadNoTeam={loader.canLoadGroup("noTeam")}
+					canLoadTeam={loader.canLoadTeam}
 					complete={summary.complete}
 					grouped={groupTeams(summary.teams, people, url.teamIds)}
-					isNoTeamLoaded={loadedGroups.has("noTeam")}
-					isNoTeamLoading={loadingGroups.has("noTeam")}
-					loadingTeamIds={loadingTeamIds}
+					isNoTeamLoading={loader.loadingGroups.has("noTeam")}
+					loadingTeamIds={loader.loadingTeamIds}
 					noTeamCount={summary.noTeamCount}
-					onLoadNoTeam={() => void loadGroup("noTeam")}
-					onLoadTeam={(teamId) => void loadTeamMembers([teamId])}
+					onLoadNoTeam={() => void loader.loadGroupPage("noTeam")}
+					onLoadTeam={(teamId) => void loader.loadTeamPage(teamId)}
 					onSelect={select}
 					showNoTeam={url.teamIds.length === 0}
 				/>
@@ -396,13 +237,12 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 					)}
 					<NoReportingLineGroup
 						canLoad={
-							!summary.complete &&
-							!loadedGroups.has("noReportingLine") &&
+							loader.canLoadGroup("noReportingLine") &&
 							noReportingLine.length < summary.noReportingLineCount
 						}
 						highlightOf={highlightOf}
-						isLoading={loadingGroups.has("noReportingLine")}
-						onLoad={() => void loadGroup("noReportingLine")}
+						isLoading={loader.loadingGroups.has("noReportingLine")}
+						onLoad={() => void loader.loadGroupPage("noReportingLine")}
 						onSelect={select}
 						people={noReportingLine}
 						total={summary.noReportingLineCount}
@@ -421,30 +261,4 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 			/>
 		</section>
 	);
-}
-
-function summaryOf({ people: _people, ...summary }: OrgExplorerData): Summary {
-	return summary;
-}
-
-function toPeopleMap(people: OrgExplorerPerson[]) {
-	return new Map(people.map((entry) => [entry.employeeId, entry]));
-}
-
-function withIds<T>(
-	current: ReadonlySet<T>,
-	ids: readonly T[],
-): ReadonlySet<T> {
-	if (ids.every((id) => current.has(id))) return current;
-	return new Set([...current, ...ids]);
-}
-
-function withoutIds<T>(
-	current: ReadonlySet<T>,
-	ids: readonly T[],
-): ReadonlySet<T> {
-	if (!ids.some((id) => current.has(id))) return current;
-	const next = new Set(current);
-	for (const id of ids) next.delete(id);
-	return next;
 }

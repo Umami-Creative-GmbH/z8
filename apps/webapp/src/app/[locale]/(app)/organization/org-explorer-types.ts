@@ -3,6 +3,11 @@ export const SMALL_ORG_EMPLOYEE_LIMIT = 100;
 /** The most people one on-demand request loads. */
 export const ORG_EXPLORER_BATCH_LIMIT = 200;
 
+/** How many of `remaining` people the next page shows, at most a batch. */
+export function nextPageSize(remaining: number) {
+	return Math.max(0, Math.min(remaining, ORG_EXPLORER_BATCH_LIMIT));
+}
+
 /**
  * A person on the current roster, with their team memberships and reporting
  * lines. Ids point at other people on the current roster, who may not be loaded
@@ -20,8 +25,13 @@ export type OrgExplorerPerson = {
 	primaryTeamId: string | null;
 	/** Team memberships, the primary team first. */
 	teamIds: string[];
-	/** Current managers, the primary manager (the reporting line) first. */
+	/**
+	 * Current managers, the reporting line first: the primary manager, or, when
+	 * they left or none is marked, the first remaining manager by name.
+	 */
 	managerIds: string[];
+	/** The current manager marked primary, if any. Not set for the fallback. */
+	primaryManagerId: string | null;
 	/** Everyone who reports to this person, through any of their managers. */
 	reportIds: string[];
 	/** The direct reports whose reporting line runs to this person: their children in the tree. */
@@ -53,6 +63,16 @@ export type OrgExplorerData = {
 
 /** The people groups a large organization loads on demand. */
 export type OrgExplorerGroup = "noReportingLine" | "noTeam";
+
+/**
+ * A page of a team's members or of a group, with everyone on their reporting
+ * lines up to the top. `nextOffset` asks for the next page, or is null after
+ * the last.
+ */
+export type OrgExplorerPage = {
+	people: OrgExplorerPerson[];
+	nextOffset: number | null;
+};
 
 export type OrgExplorerSearchResult = {
 	employeeId: string;

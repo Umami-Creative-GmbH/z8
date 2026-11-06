@@ -3,11 +3,11 @@ import type { OrgExplorerPerson } from "./org-explorer-types";
 /** The reporting lines among the loaded people: one line per person, from their primary manager. */
 export type ReportingTree = {
 	/**
-	 * The top level: people with no manager who have direct reports. A person whose
+	 * The top level: people with no manager who have line reports. A person whose
 	 * primary manager is not loaded, and the first person of a loop, also start here.
 	 */
 	roots: string[];
-	/** People with no manager and no direct reports. */
+	/** People with no manager and no line reports. */
 	noReportingLine: string[];
 	childrenOf(employeeId: string): string[];
 	parentOf(employeeId: string): string | null;
@@ -27,7 +27,7 @@ export function buildReportingTree(people: OrgExplorerPerson[]): ReportingTree {
 		const managerId = entry.managerIds[0];
 		if (managerId && order.has(managerId) && managerId !== entry.employeeId) {
 			parents.set(entry.employeeId, managerId);
-		} else if (entry.managerIds.length === 0 && entry.reportIds.length === 0) {
+		} else if (hasNoReportingLine(entry)) {
 			noReportingLine.push(entry.employeeId);
 		}
 	}
@@ -67,6 +67,17 @@ export function buildReportingTree(people: OrgExplorerPerson[]): ReportingTree {
 			return path;
 		},
 	};
+}
+
+/**
+ * No reporting line: no manager, and nobody whose reporting line runs to them.
+ * Someone whose reports all report along another line has nothing to head.
+ * `noReportingLine` in `org-explorer-queries.ts` is the same rule in SQL.
+ */
+export function hasNoReportingLine(
+	person: Pick<OrgExplorerPerson, "managerIds" | "lineReportIds">,
+) {
+	return person.managerIds.length === 0 && person.lineReportIds.length === 0;
 }
 
 /** How many levels below the top open by default. */

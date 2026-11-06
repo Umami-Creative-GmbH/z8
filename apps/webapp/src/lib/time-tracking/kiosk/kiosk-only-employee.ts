@@ -16,7 +16,7 @@ import { isOrganizationAdmin } from "@/lib/authorization/organization-admin";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
-import { setPrimaryTeam } from "@/lib/organization/primary-team";
+import { placeInTeam } from "@/lib/organization/primary-team";
 import { isUuid } from "@/lib/validations/uuid";
 import { AssignedLocationRefusal } from "../assigned-locations/errors";
 import { addAssignedLocation } from "../assigned-locations/store";
@@ -153,14 +153,12 @@ export async function createKioskOnlyEmployee(
 					})
 					.returning({ id: employee.id });
 				// The team is a membership and the primary team (Organization ADR 0010).
-				if (teamId) {
-					await setPrimaryTeam(tx, {
-						organizationId: input.organizationId,
-						employeeId: created.id,
-						teamId,
-						createdBy: input.actorUserId,
-					});
-				}
+				await placeInTeam(tx, {
+					organizationId: input.organizationId,
+					employeeId: created.id,
+					teamId,
+					createdBy: input.actorUserId,
+				});
 				for (const locationId of locationIds) {
 					await addAssignedLocation(tx, audit, {
 						organizationId: input.organizationId,

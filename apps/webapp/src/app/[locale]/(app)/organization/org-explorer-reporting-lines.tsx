@@ -33,7 +33,7 @@ import {
 	TeamChips,
 } from "./org-explorer-person";
 import { type ReportingTree, visibleTreeIds } from "./org-explorer-tree";
-import type { OrgExplorerPerson } from "./org-explorer-types";
+import { nextPageSize, type OrgExplorerPerson } from "./org-explorer-types";
 
 export type CenterRequest = { employeeId: string; nonce: number };
 
@@ -363,7 +363,10 @@ function OutlineItem({
 	);
 }
 
-/** People with no manager and no direct reports, kept off the top of the tree. */
+/**
+ * People with no manager and no line reports, kept off the top of the tree.
+ * `onLoad` loads the next page while `canLoad`.
+ */
 export function NoReportingLineGroup({
 	people,
 	total,
@@ -413,7 +416,7 @@ export function NoReportingLineGroup({
 						{t(
 							"organization.explorer.showPeople",
 							"{count, plural, one {Show # person} other {Show # people}}",
-							{ count: total },
+							{ count: nextPageSize(total - people.length) },
 						)}
 					</Button>
 				) : null}

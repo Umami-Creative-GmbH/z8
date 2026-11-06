@@ -81,7 +81,7 @@ import {
 	absencePendingApprovalContent,
 	timeCorrectionPendingApprovalContent,
 } from "@/lib/notifications/triggers";
-import { setPrimaryTeam } from "@/lib/organization/primary-team";
+import { placeInTeam } from "@/lib/organization/primary-team";
 import { RECORDED_VEHICLE_FOREIGN_KEYS } from "@/lib/organization/vehicles/vehicle-rules";
 import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
@@ -1666,9 +1666,9 @@ async function generateDemoTeamsInTransaction(
 	// Shuffle employees and assign to teams
 	const shuffledEmployees = faker.helpers.shuffle([...employees]);
 	let employeesAssigned = 0;
-	// A team assignment is a membership and the primary team (Organization ADR 0010).
+	// A team membership, which is also the primary team (Organization ADR 0010).
 	const assign = (employeeId: string, teamId: string) =>
-		setPrimaryTeam(tx, {
+		placeInTeam(tx, {
 			organizationId: options.organizationId,
 			employeeId,
 			teamId,
