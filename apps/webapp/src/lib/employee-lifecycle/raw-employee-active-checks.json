@@ -3,8 +3,6 @@
 	"app/[locale]/(app)/absences/mutations.ts": 1,
 	"app/[locale]/(app)/absences/request-absence-effect.ts": 2,
 	"app/[locale]/(app)/analytics/current-employee-scope.ts": 1,
-	"app/[locale]/(app)/organization/actions.ts": 13,
-	"app/[locale]/(app)/organization/org-chart-graph.ts": 2,
 	"app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx": 1,
 	"app/[locale]/(app)/personnel-files/[employeeId]/page.tsx": 2,
 	"app/[locale]/(app)/reports/projects/actions.ts": 2,
