@@ -3,8 +3,9 @@ import "temporal-polyfill/global";
 import { createCalendar, createViewWeek } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
 import { ScheduleXCalendar } from "@schedule-x/react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act as actPreact } from "preact/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { createScheduleXDragAndDropPlugin } from "./schedule-x-drag-and-drop";
@@ -65,6 +66,13 @@ describe("planner shifts in Schedule-X's week view", () => {
 				disconnect() {}
 			},
 		);
+	});
+
+	afterEach(() => {
+		// Schedule-X renders with Preact, which defers effect cleanups to its next
+		// frame timer. Unmount inside Preact's act so they run before jsdom tears
+		// down `window` (they call window.removeEventListener).
+		actPreact(() => cleanup());
 	});
 
 	it("renders day and overnight shifts without throwing", async () => {
