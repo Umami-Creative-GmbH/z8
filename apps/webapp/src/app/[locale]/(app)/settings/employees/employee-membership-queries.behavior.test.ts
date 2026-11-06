@@ -37,6 +37,7 @@ type EmployeeModel = {
 	organizationId: string;
 	userId: string;
 	isActive: boolean;
+	birthday?: Date | null;
 };
 
 type MemberModel = {
@@ -62,7 +63,7 @@ function employeeRow(model: EmployeeModel) {
 		employeeNumber: null,
 		gender: null,
 		pronouns: null,
-		birthday: null,
+		birthday: model.birthday ?? null,
 		startDate: null,
 		endDate: null,
 		contractType: "permanent" as const,
@@ -249,10 +250,13 @@ function createDb(employees: EmployeeModel[], memberships: MemberModel[]) {
 	};
 }
 
-function setActor(dbService: ReturnType<typeof createDb>["dbService"]) {
+function setActor(
+	dbService: ReturnType<typeof createDb>["dbService"],
+	accessTier: "orgAdmin" | "manager" = "orgAdmin",
+) {
 	mocks.getActor.mockReturnValue(
 		Effect.succeed({
-			accessTier: "orgAdmin",
+			accessTier,
 			organizationId: "org-1",
 			currentEmployee: null,
 			session: { user: { id: "admin-1", email: "admin@example.com" } },
@@ -407,5 +411,54 @@ describe("employee membership queries", () => {
 				expect.arrayContaining(["employee-1", "org-1"]),
 			);
 		}
+	});
+
+	it.each([
+		{ accessTier: "orgAdmin" as const, birthday: new Date("1990-05-01T00:00:00.000Z") },
+		{ accessTier: "manager" as const, birthday: null },
+	])("hands the $accessTier the birthday $birthday (#1579)", async ({ accessTier, birthday }) => {
+		const fake = createDb(
+			[
+				{
+					id: "employee-1",
+					organizationId: "org-1",
+					userId: "user-1",
+					isActive: true,
+					birthday: new Date("1990-05-01T00:00:00.000Z"),
+				},
+			],
+			[],
+		);
+		setActor(fake.dbService, accessTier);
+
+		const result = await getEmployeeAction("employee-1");
+
+		expect(result).toMatchObject({ success: true, data: { id: "employee-1" } });
+		expect(result.success && result.data.birthday).toEqual(birthday);
+	});
+
+	it.each([
+		{ accessTier: "orgAdmin" as const, birthday: new Date("1990-05-01T00:00:00.000Z") },
+		{ accessTier: "manager" as const, birthday: null },
+	])("lists the birthday $birthday for the $accessTier (#1579)", async ({ accessTier, birthday }) => {
+		const fake = createDb(
+			[
+				{
+					id: "employee-1",
+					organizationId: "org-1",
+					userId: "user-1",
+					isActive: true,
+					birthday: new Date("1990-05-01T00:00:00.000Z"),
+				},
+			],
+			[],
+		);
+		setActor(fake.dbService, accessTier);
+
+		const result = await listEmployeesAction();
+
+		expect(result.success && result.data.employees.map((row) => row.birthday)).toEqual([
+			birthday,
+		]);
 	});
 });

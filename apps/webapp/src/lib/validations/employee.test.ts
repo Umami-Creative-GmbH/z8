@@ -87,4 +87,22 @@ describe("employee birthday validation", () => {
 		expect(createEmployeeSchema.safeParse(createInput).success).toBe(true);
 		expect(updateEmployeeSchema.safeParse({ birthday }).success).toBe(true);
 	});
+
+	it("refuses a birthday before 1900 on employees and invitation drafts (#1579)", () => {
+		const beforeEarliest = new Date("1899-12-31T00:00:00.000Z");
+		const earliest = new Date("1900-01-01T00:00:00.000Z");
+
+		for (const schema of [updateEmployeeSchema, updateEmployeeInvitationDraftSchema]) {
+			expect(schema.safeParse({ birthday: beforeEarliest }).success).toBe(false);
+			expect(schema.safeParse({ birthday: earliest }).success).toBe(true);
+		}
+	});
+
+	it("lets an admin clear the birthday (#1579)", () => {
+		for (const schema of [updateEmployeeSchema, updateEmployeeInvitationDraftSchema]) {
+			const result = schema.safeParse({ birthday: null });
+			expect(result.success).toBe(true);
+			expect(result.data).toEqual({ birthday: null });
+		}
+	});
 });
