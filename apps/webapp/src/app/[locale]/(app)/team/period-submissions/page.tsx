@@ -60,7 +60,7 @@ async function PeriodSubmissionsContent({ searchParams }: PeriodSubmissionsPageP
 						</p>
 						{scope === "all" ? (
 							<Link
-								href="/settings/organizations"
+								href="/settings/organization"
 								className="mt-2 inline-block underline underline-offset-4"
 							>
 								{t(

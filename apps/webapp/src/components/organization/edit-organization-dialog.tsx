@@ -4,7 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { updateOrganizationDetails } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { updateOrganizationDetails } from "@/app/[locale]/(app)/settings/organization/actions";
 import {
 	ActionPanel,
 	ActionPanelBody,

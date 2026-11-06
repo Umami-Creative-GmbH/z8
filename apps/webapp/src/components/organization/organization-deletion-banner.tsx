@@ -44,7 +44,7 @@ export function OrganizationDeletionBanner() {
 					{ count: remainingDays },
 				)}{" "}
 				<Link
-					href="/settings/organizations"
+					href="/settings/organization"
 					className="font-medium underline underline-offset-4 hover:text-amber-900 dark:hover:text-amber-100"
 				>
 					{t("organization.delete.bannerLearnMore", "Learn more")}

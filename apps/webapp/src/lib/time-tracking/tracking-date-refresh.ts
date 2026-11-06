@@ -40,7 +40,7 @@ export async function refreshTrackingDateResults(
 	try {
 		revalidateWorkBalancePaths(impact.employees.map((row) => row.employeeId));
 		for (const path of [
-			"/settings/organizations",
+			"/settings/organization",
 			"/settings/clocking",
 			"/calendar",
 			"/dashboard",

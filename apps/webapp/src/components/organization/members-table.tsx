@@ -19,7 +19,7 @@ import {
 	cancelInvitation,
 	resendInvitation,
 	updateMemberRole,
-} from "@/app/[locale]/(app)/settings/organizations/actions";
+} from "@/app/[locale]/(app)/settings/organization/actions";
 import { DataTable, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";

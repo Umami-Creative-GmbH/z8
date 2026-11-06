@@ -12,7 +12,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 const SCHEMA = "t1575_migration";
 const admin = integrationAdminPool();
 const migration = readFileSync(
-	join(process.cwd(), "drizzle/0309_primary_team_membership_backfill.sql"),
+	join(process.cwd(), "drizzle/0310_primary_team_membership_backfill.sql"),
 	"utf8",
 );
 

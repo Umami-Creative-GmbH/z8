@@ -683,7 +683,7 @@ describe("app sidebar compliance navigation", () => {
 			expect.objectContaining({
 				staticResults: expect.not.arrayContaining([
 					expect.objectContaining({ href: "/settings/employees" }),
-					expect.objectContaining({ href: "/settings/organizations" }),
+					expect.objectContaining({ href: "/settings/organization" }),
 				]),
 				staticCommands: expect.arrayContaining([
 					expect.objectContaining({
@@ -1532,6 +1532,7 @@ describe("app sidebar compliance navigation", () => {
 					worksCouncilEnabled: false,
 					billableTimeEnabled: false,
 					personnelFilesEnabled: false,
+					equipmentEnabled: false,
 				},
 			}),
 		);
@@ -1564,6 +1565,7 @@ describe("app sidebar compliance navigation", () => {
 					worksCouncilEnabled: false,
 					billableTimeEnabled: false,
 					personnelFilesEnabled: false,
+					equipmentEnabled: false,
 				},
 			}),
 		);

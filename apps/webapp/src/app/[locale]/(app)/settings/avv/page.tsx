@@ -19,7 +19,7 @@ import {
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
-import { getOrganizationProfile } from "../organizations/profile-actions";
+import { getOrganizationProfile } from "../organization/profile-actions";
 
 async function AvvPageContent() {
 	// Deployment flags must be evaluated per request, as on the billing page.
@@ -91,7 +91,7 @@ async function AvvPageContent() {
 								</dl>
 							)}
 							<Link
-								href="/settings/organizations#organization-profile"
+								href="/settings/organization#organization-profile"
 								className="text-sm text-primary underline underline-offset-4"
 							>
 								{t("settings.avv.profile.edit", "Edit organization profile")}

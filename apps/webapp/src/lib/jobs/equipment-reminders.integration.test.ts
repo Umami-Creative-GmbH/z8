@@ -71,7 +71,7 @@ beforeEach(async () => {
 	harness.transport = "smtp";
 	harness.mail.mockReset().mockResolvedValue({ success: true });
 	await fixture.pool.query(
-		"update organization set timezone='Europe/Berlin' where id=$1",
+		"update organization set timezone='Europe/Berlin', equipment_enabled=true where id=$1",
 		[fixture.organizationId],
 	);
 	subjectUserId = (
@@ -167,6 +167,24 @@ it("delivers the employee's three-calendar-day and deadline occasions once acros
 	expect(await inbox()).toHaveLength(2);
 	expect(harness.mail).toHaveBeenCalledTimes(2);
 	expect(await inbox(fixture.ownerUserId)).toHaveLength(0);
+});
+
+it("sends no reminders while equipment tracking is switched off, and resumes once it is back on (#1572)", async () => {
+	await issue();
+	await fixture.pool.query(
+		"update organization set equipment_enabled=false where id=$1",
+		[fixture.organizationId],
+	);
+	harness.now = "2026-03-26T23:00:00Z"; // March 27 in Berlin, an employee occasion.
+	await runEquipmentRemindersJob();
+	expect(await inbox()).toHaveLength(0);
+	expect(harness.mail).not.toHaveBeenCalled();
+	await fixture.pool.query(
+		"update organization set equipment_enabled=true where id=$1",
+		[fixture.organizationId],
+	);
+	await runEquipmentRemindersJob();
+	expect(await inbox()).toHaveLength(1);
 });
 
 async function grant(officerId: string, extra: Record<string, unknown> = {}) {

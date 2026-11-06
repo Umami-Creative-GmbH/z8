@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db as database } from "@/db";
 import { organization, user } from "@/db/auth-schema";
@@ -1006,30 +1006,153 @@ async function performHandover(
 	return outcome;
 }
 
-/** Staff overview, scoped employee history and self history share one permission/read model. */
+/**
+ * Transfer links touching these handovers, grouped by assignment. A receipt that
+ * started a transfer is `out`, an issue a transfer created is `in`; the counterpart
+ * is named only while its holder is in the reader's employee scope.
+ */
+async function readTransferLinks(
+	tx: EquipmentTransaction,
+	organizationId: string,
+	handovers: { id: string; assignmentId: string; kind: string }[],
+	employees: Map<string, { name: string }>,
+) {
+	const grouped = new Map<
+		string,
+		NonNullable<EquipmentAssignmentView["transfers"]>
+	>();
+	const receipts = handovers.filter((h) => h.kind === "receipt");
+	const issues = handovers.filter((h) => h.kind === "issue");
+	if (!receipts.length && !issues.length) return grouped;
+	const links = await tx
+		.select()
+		.from(equipmentTransfer)
+		.where(
+			and(
+				eq(equipmentTransfer.organizationId, organizationId),
+				or(
+					receipts.length
+						? inArray(
+								equipmentTransfer.receiptId,
+								receipts.map((h) => h.id),
+							)
+						: sql`false`,
+					issues.length
+						? inArray(
+								equipmentTransfer.issueId,
+								issues.map((h) => h.id),
+							)
+						: sql`false`,
+				),
+			),
+		);
+	if (!links.length) return grouped;
+	const peers = await tx
+		.select({
+			id: equipmentHandover.id,
+			employeeId: equipmentAssignment.employeeId,
+		})
+		.from(equipmentHandover)
+		.innerJoin(
+			equipmentAssignment,
+			and(
+				eq(equipmentAssignment.id, equipmentHandover.assignmentId),
+				eq(
+					equipmentAssignment.organizationId,
+					equipmentHandover.organizationId,
+				),
+			),
+		)
+		.where(
+			and(
+				eq(equipmentHandover.organizationId, organizationId),
+				inArray(
+					equipmentHandover.id,
+					links.flatMap((link) => [link.receiptId, link.issueId]),
+				),
+			),
+		);
+	const holderOf = new Map(peers.map((peer) => [peer.id, peer.employeeId]));
+	const counterpart = (handoverId: string) =>
+		employees.get(holderOf.get(handoverId) ?? "")?.name ?? null;
+	const byId = new Map(handovers.map((h) => [h.id, h]));
+	for (const link of links) {
+		for (const [own, other, direction] of [
+			[link.receiptId, link.issueId, "out"],
+			[link.issueId, link.receiptId, "in"],
+		] as const) {
+			const handover = byId.get(own);
+			if (!handover) continue;
+			const list = grouped.get(handover.assignmentId) ?? [];
+			list.push({
+				direction,
+				handoverId: own,
+				counterpartName: counterpart(other),
+			});
+			grouped.set(handover.assignmentId, list);
+		}
+	}
+	return grouped;
+}
+
+const unreadable = () =>
+	new AuthorizationError({
+		message: "You cannot read these equipment records.",
+		resource: "equipment",
+		action: "read",
+	});
+
+/**
+ * Staff overview, scoped employee history, self history and one assignment share
+ * one permission/read model. An assignment outside the organization or the reader's
+ * scope reads as unauthorized, never as an empty view.
+ */
 export async function readEquipment(
 	db: typeof database,
 	actor: EquipmentActor,
 	scope:
 		| { kind: "overview"; filters: EquipmentFilters }
 		| { kind: "employee"; employeeId: string }
+		| { kind: "assignment"; assignmentId: string }
 		| { kind: "personal" },
 ): Promise<EquipmentView> {
 	return db.transaction(async (tx) => {
 		await lockEquipmentContext(tx, actor);
 		const access = await equipmentAccess(tx, actor);
+		const [target] =
+			scope.kind === "assignment"
+				? await tx
+						.select({ employeeId: equipmentAssignment.employeeId })
+						.from(equipmentAssignment)
+						.where(assignmentScope(actor.organizationId, scope.assignmentId))
+				: [];
+		if (scope.kind === "assignment" && !target?.employeeId) throw unreadable();
 		const employeeId =
 			scope.kind === "personal"
 				? access.employeeId
 				: scope.kind === "employee"
 					? scope.employeeId
-					: undefined;
-		const coversSubject = employeeId
-			? access.canManage &&
-				(await equipmentCoversEmployee(tx, actor, access, employeeId))
-			: false;
+					: scope.kind === "assignment"
+						? (target?.employeeId ?? undefined)
+						: undefined;
+		const coversSubject =
+			scope.kind === "assignment"
+				? access.canManage &&
+					(await equipmentCoversAssignment(
+						tx,
+						actor,
+						access,
+						scope.assignmentId,
+					))
+				: employeeId
+					? access.canManage &&
+						(await equipmentCoversEmployee(tx, actor, access, employeeId))
+					: false;
 		if (
 			(scope.kind === "overview" && !access.canManage) ||
+			(scope.kind === "assignment" &&
+				!coversSubject &&
+				employeeId !== access.employeeId) ||
 			(scope.kind === "employee" &&
 				!access.canAdminister &&
 				!coversSubject &&
@@ -1054,6 +1177,8 @@ export async function readEquipment(
 		const staffView =
 			scope.kind !== "personal" &&
 			(scope.kind === "overview" ? access.canManage : coversSubject);
+		// One assignment's page offers no issuance and no item availability.
+		const detail = scope.kind === "assignment";
 		const employees = await tx
 			.select({
 				id: employee.id,
@@ -1061,6 +1186,7 @@ export async function readEquipment(
 				firstName: user.firstName,
 				lastName: user.lastName,
 				name: user.name,
+				image: user.image,
 				current: employeeHasOrganizationAccess(calendar.now),
 				currentScope: equipmentSubjectScope(access, calendar.now, false),
 				deactivatedAt: employee.deactivatedAt,
@@ -1086,6 +1212,7 @@ export async function readEquipment(
 					id: e.id,
 					userId: e.userId,
 					name: buildAuthUserDisplayName(e),
+					image: e.image ?? null,
 					former: !e.current,
 					canIssue: staffView && e.current && e.currentScope,
 				},
@@ -1130,6 +1257,9 @@ export async function readEquipment(
 								]),
 								employeeId
 									? eq(equipmentAssignment.employeeId, employeeId)
+									: undefined,
+								scope.kind === "assignment"
+									? eq(equipmentAssignment.id, scope.assignmentId)
 									: undefined,
 							),
 						)
@@ -1258,6 +1388,14 @@ export async function readEquipment(
 					)
 					.orderBy(asc(equipmentCaseHoldEvent.revision))
 			: [];
+		const transfers = staffView
+			? await readTransferLinks(
+					tx,
+					actor.organizationId,
+					handovers.map(({ record }) => record),
+					employeeMap,
+				)
+			: new Map<string, NonNullable<EquipmentAssignmentView["transfers"]>>();
 		const filters = scope.kind === "overview" ? scope.filters : {};
 		const assignments: EquipmentAssignmentView[] = [];
 		for (const { assignment, item, type } of rows) {
@@ -1414,6 +1552,9 @@ export async function readEquipment(
 				identifier: item?.identifier ?? type.name,
 				employeeId: holder.id,
 				holderName: holder.name,
+				holderImage: holder.image,
+				serialNumber: item?.serialNumber ?? null,
+				...(staffView ? { transfers: transfers.get(assignment.id) ?? [] } : {}),
 				former: holder.former,
 				returnRequired: assignment.returnRequired,
 				explicitDeadline: assignment.explicitDeadline,
@@ -1448,6 +1589,7 @@ export async function readEquipment(
 				receipts,
 			});
 		}
+		if (detail && !assignments.length) throw unreadable();
 		const types = staffView
 			? await tx
 					.select({ id: equipmentType.id, name: equipmentType.name })
@@ -1456,7 +1598,7 @@ export async function readEquipment(
 					.orderBy(asc(equipmentType.name))
 			: [];
 		const availableItems =
-			staffView && policyConfigured
+			staffView && policyConfigured && !detail
 				? await tx
 						.select({
 							id: equipmentItem.id,
@@ -1487,7 +1629,7 @@ export async function readEquipment(
 						.orderBy(asc(equipmentItem.identifier))
 				: [];
 		const availableQuantityTypes =
-			staffView && policyConfigured
+			staffView && policyConfigured && !detail
 				? await tx
 						.select({
 							id: equipmentType.id,
@@ -1506,7 +1648,7 @@ export async function readEquipment(
 						.orderBy(asc(equipmentType.name), asc(equipmentType.id))
 				: [];
 		const employmentPeriods =
-			staffView && employeeMap.size
+			staffView && employeeMap.size && !detail
 				? await tx
 						.select()
 						.from(employeeEmploymentPeriod)
@@ -1545,7 +1687,7 @@ export async function readEquipment(
 			}
 		}
 
-		if (staffView)
+		if (staffView && !detail)
 			for (const person of employees.filter(
 				(person) => !employmentPeriods.some((p) => p.employeeId === person.id),
 			)) {
@@ -1594,20 +1736,21 @@ export async function readEquipment(
 						endedOn: contexts.at(-1)?.endedOn ?? null,
 					};
 				}),
-			readinessItems: staffView
-				? await readItemReadiness(
-						tx,
-						actor.organizationId,
-						equipmentItemScope(access),
-						actor.userId,
-						access.all,
-					)
-				: [],
+			readinessItems:
+				staffView && !detail
+					? await readItemReadiness(
+							tx,
+							actor.organizationId,
+							equipmentItemScope(access),
+							actor.userId,
+							access.all,
+						)
+					: [],
 			availableQuantityTypes,
 			canManage: staffView,
 			canAdminister: access.canAdminister && scope.kind !== "personal",
 			registrationTypes:
-				staffView && policyConfigured
+				staffView && policyConfigured && !detail
 					? await tx
 							.select({
 								id: equipmentType.id,
@@ -1630,12 +1773,15 @@ export async function readEquipment(
 			assignments,
 			availableItems,
 			employees: staffView
-				? [...employeeMap.values()].map(({ id, name, former, canIssue }) => ({
-						id,
-						name,
-						former,
-						canIssue,
-					}))
+				? [...employeeMap.values()].map(
+						({ id, name, image, former, canIssue }) => ({
+							id,
+							name,
+							image,
+							former,
+							canIssue,
+						}),
+					)
 				: [],
 			types,
 		};

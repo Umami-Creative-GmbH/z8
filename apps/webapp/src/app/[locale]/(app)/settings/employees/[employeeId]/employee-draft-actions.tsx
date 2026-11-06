@@ -6,7 +6,7 @@ import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { deleteEmployeeInvitationDraft } from "@/app/[locale]/(app)/settings/employees/actions";
-import { resendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { resendInvitation } from "@/app/[locale]/(app)/settings/organization/actions";
 import {
 	AlertDialog,
 	AlertDialogCancel,

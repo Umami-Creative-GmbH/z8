@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, type SQL, sql } from "drizzle-orm";
 import type { db as database } from "@/db";
-import { member } from "@/db/auth-schema";
+import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import {
 	equipmentAssignment,
@@ -83,12 +83,29 @@ export async function equipmentAccess(
 	return access;
 }
 
+/**
+ * Equipment tracking is an optional organization feature (#1572). While it is off
+ * the access resolver grants nothing, so every page, action and reminder that
+ * resolves access first is unavailable while the records stay stored.
+ */
+export async function isEquipmentEnabled(
+	db: Pick<EquipmentTransaction, "select">,
+	organizationId: string,
+) {
+	const [row] = await db
+		.select({ enabled: organization.equipmentEnabled })
+		.from(organization)
+		.where(eq(organization.id, organizationId));
+	return row?.enabled === true;
+}
+
 /** Scheduled delivery has no browser session; membership, employment and grant stay live. */
 export async function equipmentWorkerAccess(
 	tx: EquipmentTransaction,
 	actor: Pick<EquipmentActor, "organizationId" | "userId">,
 	now: Instant,
 ) {
+	if (!(await isEquipmentEnabled(tx, actor.organizationId))) return null;
 	const access = await resolveEmployeeOrganizationAccess(tx, {
 		...actor,
 		now,
@@ -255,7 +272,10 @@ export async function readEquipmentNavigation(
 	identity: AuthorizedOrganizationIdentity,
 ) {
 	// RSC identity already enforces approved membership and current employment.
-	// Only the grant is read again; commands never accept render identity as authority.
+	// Only the feature switch and the grant are read again; commands never accept
+	// render identity as authority.
+	if (!(await isEquipmentEnabled(db, identity.organizationId)))
+		return { personal: false, staff: false };
 	const administrator =
 		hasOrganizationRole(identity.membershipRole, "owner") ||
 		hasOrganizationRole(identity.membershipRole, "admin");

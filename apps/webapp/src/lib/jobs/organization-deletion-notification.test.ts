@@ -91,7 +91,7 @@ describe("sendOrganizationDeletionNotifications", () => {
 		const german = emailTo("de@example.com");
 		expect(german.subject).toBe("Organisation Acme wird gelöscht");
 		expect(german.organizationId).toBe("org-1");
-		expect(german.actionUrl).toBe("https://acme.example.com/settings/organizations");
+		expect(german.actionUrl).toBe("https://acme.example.com/settings/organization");
 		expect(german.html).toContain('lang="de"');
 		expect(german.html).toContain("Organisation zur Löschung vorgemerkt");
 

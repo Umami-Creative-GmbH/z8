@@ -73,7 +73,7 @@ vi.mock("sonner", () => ({
 	},
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/actions", () => ({
 	cancelInvitation: cancelInvitationMock,
 	resendInvitation: resendInvitationMock,
 	sendInvitation: sendInvitationMock,
@@ -1003,7 +1003,7 @@ describe("MembersTable invitation target teams", () => {
 		const pageSource = readFileSync(
 			join(
 				process.cwd(),
-				"src/app/[locale]/(app)/settings/organizations/page.tsx",
+				"src/app/[locale]/(app)/settings/organization/page.tsx",
 			),
 			"utf8",
 		);

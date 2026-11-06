@@ -214,7 +214,7 @@ describe("dedicated email templates", () => {
 			deletedByName: "Sam",
 			deletionDate: "Oct 13, 2026, 14:05 (Europe/Berlin)",
 			permanentDeletionDate: "Oct 18, 2026, 14:05 (Europe/Berlin)",
-			recoveryUrl: "https://acme.example.com/settings/organizations",
+			recoveryUrl: "https://acme.example.com/settings/organization",
 		};
 
 		const en = text(await renderOrganizationDeletion(data, translator("en")));

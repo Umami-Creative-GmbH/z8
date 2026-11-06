@@ -65,7 +65,7 @@ beforeAll(async () => {
 	await clean();
 	for (const org of ["t1549-org", "t1549-other"])
 		await pool.query(
-			"insert into organization(id,name,slug,timezone,created_at) values($1,$1,$1,'Europe/Berlin',now())",
+			"insert into organization(id,name,slug,timezone,equipment_enabled,created_at) values($1,$1,$1,'Europe/Berlin',true,now())",
 			[org],
 		);
 	for (const [name, org, role] of [
@@ -261,6 +261,35 @@ it("cleans closed history at the organization calendar boundary, never a partial
 	expect((await runEquipmentRetentionJob()).deletedCount).toBe(1);
 	expect((await view()).assignments).toEqual([]);
 	expect((await runEquipmentRetentionJob()).deletedCount).toBe(0);
+});
+
+it("keeps cleaning expired closed history while equipment tracking is switched off (#1572)", async () => {
+	const assignment = await issue();
+	await command({
+		kind: "receive_quantity",
+		assignmentId: assignment.id,
+		quantity: 3,
+		actualDate: "2026-01-31",
+		condition: "good",
+		expectedRevision: 1,
+	});
+	const { runEquipmentRetentionJob } = await import(
+		"@/lib/jobs/equipment-retention"
+	);
+	await pool.query("update organization set equipment_enabled=false where id='t1549-org'");
+	try {
+		clock.now = "2028-03-01T00:00:00Z";
+		expect((await runEquipmentRetentionJob()).deletedCount).toBe(1);
+		expect(
+			(
+				await pool.query(
+					"select id from equipment_assignment where organization_id='t1549-org'",
+				)
+			).rows,
+		).toEqual([]);
+	} finally {
+		await pool.query("update organization set equipment_enabled=true where id='t1549-org'");
+	}
 });
 
 it("requires attributable admin hold reasons and current revisions, replays safely, and restarts retention on release", async () => {

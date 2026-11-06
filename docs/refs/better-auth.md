@@ -17,12 +17,17 @@
 
 ## Safe Change Workflow
 
-1. Update Better Auth source config in `apps/webapp/src/lib/auth.ts`.
-2. Regenerate schema output.
-3. Update consumers to use generated fields/types.
-4. Verify org scoping still relies on `activeOrganizationId`.
+1. Change schema-shaping options (user, organization, member and invitation additional fields, SSO domain verification) in `apps/webapp/src/lib/auth/auth-schema-options.ts`; both configs read it. Other runtime behavior stays in `apps/webapp/src/lib/auth.ts`.
+2. A new plugin that adds tables or fields goes into both `auth.ts` and the CLI-only `apps/webapp/src/lib/auth.cli.ts`.
+3. Regenerate schema output with `auth:generate`.
+4. Update consumers to use generated fields/types.
+5. Verify org scoping still relies on `activeOrganizationId`.
 
-Never edit `apps/webapp/src/db/auth-schema.ts` manually.
+Never edit `apps/webapp/src/db/auth-schema.ts` manually. `src/lib/auth.cli.test.ts` fails when the committed schema and the CLI config disagree.
+
+## CLI-only config
+
+`auth:generate` reads `apps/webapp/src/lib/auth.cli.ts`, not `auth.ts`. The runtime config imports server-only modules, Redis, mail and the database, which the Better Auth CLI cannot resolve. The CLI config repeats only what shapes the schema, uses placeholder secrets and a stub Drizzle adapter, and imports by relative path only, so the command runs the same on Windows, macOS and Linux. The runtime never imports it.
 
 ## Better Auth 1.7
 

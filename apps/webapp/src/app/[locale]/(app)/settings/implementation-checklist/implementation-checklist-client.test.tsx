@@ -116,7 +116,7 @@ const checklist = {
 			description: "Confirm members, teams, and responsibility boundaries before rollout.",
 			helperText: "Manual review: Z8 cannot know whether your rollout structure is final.",
 			actionLabel: "Review organization",
-			href: "/settings/organizations",
+			href: "/settings/organization",
 			detector: "manual",
 			canManualComplete: true,
 			role: "manual-only",
@@ -260,7 +260,7 @@ describe("ImplementationChecklistClient", () => {
 		expect(screen.getByText("50% complete")).toBeTruthy();
 		expect(screen.getByLabelText("Implementation checklist progress")).toBeTruthy();
 		expect(screen.getByRole("link", { name: "Review organization" }).getAttribute("href")).toBe(
-			"/settings/organizations",
+			"/settings/organization",
 		);
 		expect(screen.getByRole("link", { name: "Configure holidays" }).getAttribute("href")).toBe(
 			"/settings/holidays",

@@ -171,6 +171,7 @@ const formValues = {
 	position: "",
 	employeeNumber: "EMP-001",
 	startDate: "2024-05-01",
+	birthday: "1990-05-01",
 	role: "employee",
 	contractType: "fixed",
 	hourlyRate: "",
@@ -653,6 +654,50 @@ describe("employee detail page sections", () => {
 		expect(
 			screen.getByText("The actual joining date determines employment-based vacation allowance. Correct it in the reviewed employment correction below; time tracking has its own start date."),
 		).toBeTruthy();
+	});
+
+	it("lets an org admin enter a birthday from 1900 up to today (#1579)", () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date("2026-11-06T12:00:00.000Z"));
+		try {
+			render(
+				<EmployeeEditFormCard
+					form={createForm() as never}
+					canEditManagerFields={true}
+					canEditOrgAdminFields={true}
+					contract={{ kind: "terms", contractTypeToday: "fixed" }}
+					isUpdating={false}
+					onCancel={vi.fn()}
+				/>,
+			);
+
+			const birthdayInput = screen.getByLabelText("Birthday") as HTMLInputElement;
+
+			expect(birthdayInput.disabled).toBe(false);
+			expect(birthdayInput.type).toBe("date");
+			expect(birthdayInput.name).toBe("birthday");
+			expect(birthdayInput.min).toBe("1900-01-01");
+			expect(birthdayInput.max).toBe("2026-11-06");
+			expect(birthdayInput.value).toBe("1990-05-01");
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("does not show a manager the birthday (#1579)", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm() as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={false}
+				contract={{ kind: "terms", contractTypeToday: "fixed" }}
+				isUpdating={false}
+				onCancel={vi.fn()}
+			/>,
+		);
+
+		expect(screen.queryByLabelText("Birthday")).toBeNull();
+		expect(screen.queryByDisplayValue("1990-05-01")).toBeNull();
 	});
 
 	it("shows an inline error when employee pronouns are longer than 50 characters", () => {

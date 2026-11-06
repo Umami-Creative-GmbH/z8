@@ -23,7 +23,7 @@ const EXTRA_SCOPES: Record<string, Namespace[]> = {
 		"settings/integrations",
 		"calendar",
 	],
-	"/settings/organizations": ["common", "settings/generic", "organization"],
+	"/settings/organization": ["common", "settings/generic", "organization"],
 	"/settings/profile": ["common", "settings/generic", "setup"],
 	"/settings/security": ["common", "settings/generic", "auth", "setup"],
 	"/settings/skills": ["common", "settings/generic", "settings/people"],

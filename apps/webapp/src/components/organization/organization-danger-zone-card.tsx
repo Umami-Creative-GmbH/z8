@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
 	deleteOrganization,
 	recoverOrganization,
-} from "@/app/[locale]/(app)/settings/organizations/actions";
+} from "@/app/[locale]/(app)/settings/organization/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,

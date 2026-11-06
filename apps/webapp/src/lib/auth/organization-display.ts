@@ -12,6 +12,7 @@ type SettingsRecord = Pick<
 	| "worksCouncilEnabled"
 	| "billableTimeEnabled"
 	| "personnelFilesEnabled"
+	| "equipmentEnabled"
 	| "timezone"
 	| "deletedAt"
 >;
@@ -30,6 +31,7 @@ export function organizationSettingsForDisplay(
 			(record.billableTimeEnabled ?? false) &&
 			(record.projectsEnabled ?? false),
 		personnelFilesEnabled: record.personnelFilesEnabled ?? false,
+		equipmentEnabled: record.equipmentEnabled ?? false,
 		timezone: record.timezone ?? "UTC",
 		deletedAt: record.deletedAt?.toISOString() ?? null,
 	};

@@ -47,7 +47,7 @@ vi.mock("@/lib/email/email-service", async (original) =>
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
-const actions = await import("@/app/[locale]/(app)/settings/organizations/tracking-date-actions");
+const actions = await import("@/app/[locale]/(app)/settings/organization/tracking-date-actions");
 const monthActions = await import("@/app/[locale]/(app)/settings/closed-months/actions");
 const adjustmentActions = await import(
 	"@/app/[locale]/(app)/settings/employees/work-balance-actions"

@@ -426,6 +426,8 @@ export interface AuditLogEntry {
 	targetId?: string; // Entity ID being affected
 	targetType?:
 		| "employee"
+		/** An invited employee's details before they join (#1579). */
+		| "employee_invitation_draft"
 		| "team"
 		| "organization"
 		| "permission"

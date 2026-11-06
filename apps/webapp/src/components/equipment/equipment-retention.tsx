@@ -1,9 +1,13 @@
 "use client";
+import { IconLock, IconLockOpen } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useRef, useState } from "react";
+import { ActionPanel, ActionPanelContent } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
 	TFormControl,
 	TFormItem,
@@ -14,10 +18,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type {
 	EquipmentAssignmentView,
-	EquipmentChange,
 	EquipmentRetentionView,
 } from "@/lib/organization/equipment/contracts";
-import { useCommandIdentity } from "./equipment-handovers";
+import {
+	EquipmentFormPanel,
+	type SubmitHandover,
+	useCommandIdentity,
+} from "./equipment-handovers";
 
 type RetentionAssignment = Pick<
 	EquipmentAssignmentView,
@@ -28,8 +35,10 @@ type Props = {
 	timezone: string;
 	canAdminister: boolean;
 	pending: boolean;
-	submit: (change: EquipmentChange) => Promise<void>;
+	submit: SubmitHandover;
 };
+
+/** Record retention of one assignment: why it is kept, until when, and its case holds. */
 export function EquipmentRetention({
 	assignment,
 	timezone,
@@ -47,80 +56,172 @@ export function EquipmentRetention({
 			.toZonedDateTimeISO(timezone)
 			.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
 	return (
-		<section
-			className="space-y-3 border-t pt-3"
+		<Card
+			className="gap-4"
 			aria-label={t("settings.equipment.retention.title", "Record retention")}
+			role="region"
 		>
-			<h4 className="text-sm font-medium">
-				{t("settings.equipment.retention.title", "Record retention")}
-			</h4>
-			<RetentionStatus retention={retention} />
-			<p className="text-sm text-muted-foreground">
-				{t("settings.equipment.retention.activity", "Latest activity")}:{" "}
-				{date(retention.lastActivityAt)} · {timezone}
-			</p>
-			{retention.expiresAt &&
-			!retention.caseHeld &&
-			retention.status !== "outstanding" ? (
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.equipment.retention.expiry",
-						"Eligible for cleanup from",
-					)}
-					: {date(retention.expiresAt)} · {timezone}
+			<CardHeader className="flex flex-row items-start justify-between gap-3">
+				<h2 className="font-semibold leading-none">
+					{t("settings.equipment.retention.title", "Record retention")}
+				</h2>
+				<RetentionBadge retention={retention} />
+			</CardHeader>
+			<CardContent className="space-y-3 text-sm">
+				<RetentionStatus retention={retention} />
+				<dl className="space-y-2">
+					<div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+						<dt className="text-muted-foreground">
+							{t("settings.equipment.retention.activity", "Latest activity")}
+						</dt>
+						<dd className="tabular-nums">
+							<time dateTime={retention.lastActivityAt}>
+								{date(retention.lastActivityAt)}
+							</time>
+						</dd>
+					</div>
+					{retention.expiresAt &&
+					!retention.caseHeld &&
+					retention.status !== "outstanding" ? (
+						<div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+							<dt className="text-muted-foreground">
+								{t(
+									"settings.equipment.retention.expiry",
+									"Eligible for cleanup from",
+								)}
+							</dt>
+							<dd className="tabular-nums">
+								<time dateTime={retention.expiresAt}>
+									{date(retention.expiresAt)}
+								</time>
+							</dd>
+						</div>
+					) : null}
+					<div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+						<dt className="text-muted-foreground">
+							{t("settings.equipment.retention.caseHold", "Case hold")}
+						</dt>
+						<dd>
+							{retention.caseHeld
+								? t("settings.equipment.retention.caseHoldActive", "Active")
+								: t("settings.equipment.retention.caseHoldNone", "None")}
+						</dd>
+					</div>
+				</dl>
+				<p className="text-xs text-muted-foreground">
+					<span translate="no">{timezone}</span>
 				</p>
-			) : null}
-			{assignment.caseHolds?.length ? (
-				<details>
-					<summary className="cursor-pointer text-sm focus-visible:ring-2 focus-visible:ring-ring">
-						{t("settings.equipment.retention.history", "Case hold history")}
-					</summary>
-					<ol className="mt-2 space-y-2 text-sm">
-						{assignment.caseHolds.map((event) => (
-							<li key={event.id} className="break-words">
-								{event.kind === "place"
-									? t("settings.equipment.retention.placed", "Hold placed")
-									: t(
-											"settings.equipment.retention.released",
-											"Hold released",
-										)}{" "}
-								·{" "}
-								{event.actorName ??
-									t(
-										"settings.equipment.retention.unavailableActor",
-										"Former account",
-									)}{" "}
-								· {date(event.recordedAt)}
-								<p className="whitespace-pre-wrap">{event.reason}</p>
-							</li>
-						))}
-					</ol>
-				</details>
-			) : null}
-			{canAdminister ? (
-				editing ? (
-					<CaseHoldForm
-						key={`${assignment.id}:${assignment.revision}`}
-						assignment={assignment}
-						pending={pending}
-						submit={submit}
-						onCancel={() => setEditing(false)}
-					/>
-				) : (
+				{assignment.caseHolds?.length ? (
+					<details className="border-t pt-3">
+						<summary className="cursor-pointer font-medium focus-visible:ring-2 focus-visible:ring-ring">
+							{t("settings.equipment.retention.history", "Case hold history")}
+						</summary>
+						<ol className="mt-2 space-y-3">
+							{assignment.caseHolds.map((event) => (
+								<li key={event.id} className="break-words">
+									<p>
+										{event.kind === "place"
+											? t("settings.equipment.retention.placed", "Hold placed")
+											: t(
+													"settings.equipment.retention.released",
+													"Hold released",
+												)}{" "}
+										·{" "}
+										{event.actorName ??
+											t(
+												"settings.equipment.retention.unavailableActor",
+												"Former account",
+											)}{" "}
+										· {date(event.recordedAt)}
+									</p>
+									<p className="whitespace-pre-wrap text-muted-foreground">
+										{event.reason}
+									</p>
+								</li>
+							))}
+						</ol>
+					</details>
+				) : null}
+				{canAdminister ? (
 					<Button
 						variant="outline"
+						size="sm"
 						disabled={pending}
 						onClick={() => setEditing(true)}
 					>
+						{retention.caseHeld ? (
+							<IconLockOpen className="size-4" aria-hidden="true" />
+						) : (
+							<IconLock className="size-4" aria-hidden="true" />
+						)}
 						{retention.caseHeld
 							? t("settings.equipment.retention.release", "Release case hold")
 							: t("settings.equipment.retention.place", "Place case hold")}
 					</Button>
-				)
+				) : null}
+			</CardContent>
+			{canAdminister ? (
+				<ActionPanel
+					open={editing}
+					onOpenChange={(open) => {
+						if (!open && !pending) setEditing(false);
+					}}
+				>
+					<ActionPanelContent size="compact">
+						<CaseHoldForm
+							key={`${assignment.id}:${assignment.revision}`}
+							assignment={assignment}
+							pending={pending}
+							submit={async (change) => {
+								const saved = await submit(change);
+								if (saved) setEditing(false);
+								return saved;
+							}}
+							onCancel={() => setEditing(false)}
+						/>
+					</ActionPanelContent>
+				</ActionPanel>
 			) : null}
-		</section>
+		</Card>
 	);
 }
+
+function RetentionBadge({ retention }: { retention: EquipmentRetentionView }) {
+	const { t } = useTranslate();
+	if (retention.caseHeld)
+		return (
+			<Badge variant="outline">
+				{t("settings.equipment.retention.badgeHeld", "Case hold")}
+			</Badge>
+		);
+	switch (retention.status) {
+		case "outstanding":
+			return (
+				<Badge variant="outline">
+					{t("settings.equipment.retention.badgeOutstanding", "Outstanding")}
+				</Badge>
+			);
+		case "due":
+			return (
+				<Badge variant="secondary">
+					{t("settings.equipment.retention.badgeDue", "Awaiting cleanup")}
+				</Badge>
+			);
+		case "policy_required":
+			return (
+				<Badge variant="outline">
+					{t("settings.equipment.retention.badgePolicy", "No policy")}
+				</Badge>
+			);
+		default:
+			return (
+				<Badge variant="secondary">
+					{t("settings.equipment.retention.badgeRetained", "Retained")}
+				</Badge>
+			);
+	}
+}
+
 function RetentionStatus({ retention }: { retention: EquipmentRetentionView }) {
 	const { t } = useTranslate();
 	let message: string;
@@ -144,8 +245,9 @@ function RetentionStatus({ retention }: { retention: EquipmentRetentionView }) {
 			"settings.equipment.retention.retained",
 			"Closed personal history follows the organization’s configured retention policy.",
 		);
-	return <p className="text-sm text-muted-foreground">{message}</p>;
+	return <p className="text-muted-foreground">{message}</p>;
 }
+
 function CaseHoldForm({
 	assignment,
 	pending,
@@ -177,21 +279,26 @@ function CaseHoldForm({
 		},
 	});
 	return (
-		<form
-			ref={element}
-			noValidate
-			className="space-y-3"
-			onSubmit={(event) => {
-				event.preventDefault();
-				void form.handleSubmit();
-			}}
+		<EquipmentFormPanel
+			element={element}
+			pending={pending}
+			onCancel={onCancel}
+			onSubmit={() => void form.handleSubmit()}
+			title={
+				held
+					? t("settings.equipment.retention.release", "Release case hold")
+					: t("settings.equipment.retention.place", "Place case hold")
+			}
+			description={t(
+				"settings.equipment.retention.holdHelp",
+				"Document the specific case. A hold protects personal evidence; releasing it restarts retention from this action. Neither action records a physical return.",
+			)}
+			submitLabel={
+				held
+					? t("settings.equipment.retention.confirmRelease", "Confirm release")
+					: t("settings.equipment.retention.confirmHold", "Confirm hold")
+			}
 		>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"settings.equipment.retention.holdHelp",
-					"Document the specific case. A hold protects personal evidence; releasing it restarts retention from this action. Neither action records a physical return.",
-				)}
-			</p>
 			<form.Field
 				name="reason"
 				validators={{
@@ -224,24 +331,6 @@ function CaseHoldForm({
 					</TFormItem>
 				)}
 			</form.Field>
-			<div className="flex flex-wrap gap-2">
-				<Button type="submit" disabled={pending}>
-					{held
-						? t(
-								"settings.equipment.retention.confirmRelease",
-								"Confirm release",
-							)
-						: t("settings.equipment.retention.confirmHold", "Confirm hold")}
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					disabled={pending}
-					onClick={onCancel}
-				>
-					{t("settings.equipment.retention.cancel", "Cancel")}
-				</Button>
-			</div>
-		</form>
+		</EquipmentFormPanel>
 	);
 }

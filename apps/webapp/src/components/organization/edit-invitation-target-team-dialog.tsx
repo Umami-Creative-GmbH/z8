@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { updateInvitationTargetTeam } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { updateInvitationTargetTeam } from "@/app/[locale]/(app)/settings/organization/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	ActionPanel,

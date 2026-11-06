@@ -18,7 +18,7 @@ vi.mock("@/navigation", () => ({
 vi.mock("sonner", () => ({
 	toast: { success: mocks.success, error: mocks.error },
 }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/auto-clock-out-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/auto-clock-out-actions", () => ({
 	updateAutoClockOutSettings: mocks.save,
 }));
 
@@ -173,8 +173,8 @@ describe("OrganizationAutoClockOutCard", () => {
 			target: { value: "10" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-		await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Access refused"));
-		expect(mocks.error).toHaveBeenCalledWith("Access refused");
+		await waitFor(() => expect(mocks.error).toHaveBeenCalledWith("Access refused"));
+		expect(screen.queryByRole("alert")).toBeNull();
 		expect(screen.getByLabelText("Hours")).toHaveProperty("value", "10");
 	});
 	it("shows read-only settings for members", () => {
@@ -187,20 +187,27 @@ describe("OrganizationAutoClockOutCard", () => {
 		expect(screen.getByRole("switch", { name: "Automatisches Ausstempeln" })).toBeTruthy();
 		expect(screen.getByLabelText("Stunden")).toHaveProperty("value", "12");
 		fireEvent.click(screen.getByRole("button", { name: "Änderungen speichern" }));
-		expect((await screen.findByRole("status")).textContent).toBe(
-			"Einstellungen für automatisches Ausstempeln gespeichert",
+		await waitFor(() =>
+			expect(mocks.success).toHaveBeenCalledWith(
+				"Einstellungen für automatisches Ausstempeln gespeichert",
+			),
 		);
 	});
 	it("restores saving after a rejected request and shows fallback feedback", async () => {
 		mocks.save.mockRejectedValueOnce(new Error("network failed"));
 		show();
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-		expect((await screen.findByRole("alert")).textContent).toBe(
-			"Failed to update automatic clock-out settings",
+		await waitFor(() =>
+			expect(mocks.error).toHaveBeenCalledWith("Failed to update automatic clock-out settings"),
 		);
-		expect(screen.getByRole("button", { name: "Save changes" })).toHaveProperty("disabled", false);
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Save changes" })).toHaveProperty(
+				"disabled",
+				false,
+			),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-		await screen.findByRole("status");
+		await waitFor(() => expect(mocks.success).toHaveBeenCalledOnce());
 		expect(mocks.save).toHaveBeenCalledTimes(2);
 	});
 	it("connects duration controls to help and validation feedback", async () => {

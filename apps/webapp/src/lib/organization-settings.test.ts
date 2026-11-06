@@ -40,6 +40,7 @@ describe("getOrganizationSettings", () => {
 			worksCouncilEnabled: true,
 			billableTimeEnabled: true,
 			personnelFilesEnabled: null,
+			equipmentEnabled: null,
 			timezone: null,
 			deletedAt: null,
 		});
@@ -64,6 +65,7 @@ describe("getOrganizationSettings", () => {
 			worksCouncilEnabled: true,
 			billableTimeEnabled: true,
 			personnelFilesEnabled: false,
+			equipmentEnabled: false,
 			timezone: "UTC",
 			deletedAt: null,
 		});

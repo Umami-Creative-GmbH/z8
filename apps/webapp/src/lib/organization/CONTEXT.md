@@ -41,6 +41,10 @@ _Avoid_: disabling, suspension, archiving an employee
 The organization's employees who are not former employees. Everything that answers "who works here now" shows only the current roster: teams, presence, planning, the people offered for picking, and who gets notified.
 _Avoid_: active users, active members, all employees
 
+**Birthday**:
+An employee's date of birth as one organization records it, if any; an employee of several organizations has a separate one in each. Only the employee and org admins see the full date; the rest of the current roster sees its day and month.
+_Avoid_: date of birth, DOB, birth date
+
 ### Teams
 
 **Team**:
@@ -190,6 +194,10 @@ _Avoid_: permanent archive, statutory three-year retention
 These terms describe the confirmed equipment design; see the
 [equipment tracking reference](../../../../../docs/refs/equipment-return-tracking.md)
 for the agreed rules and implementation status.
+
+**Equipment tracking**:
+An optional organization feature that records equipment issued to employees and its return. While it is off, nobody sees it, no equipment can be recorded and no reminders go out, but its records, outstanding returns and record retention remain.
+_Avoid_: asset management, inventory, equipment module
 
 **Equipment assignment**:
 A record of equipment issued to one employee, including its condition and whether it must be returned.

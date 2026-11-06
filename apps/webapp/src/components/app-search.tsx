@@ -63,7 +63,7 @@ const RESULT_ICON_BY_HREF: Record<string, SearchIcon> = {
 	"/reports": IconReport,
 	"/settings": IconSettings,
 	"/settings/employees": IconUsers,
-	"/settings/organizations": IconHierarchy,
+	"/settings/organization": IconHierarchy,
 	"/settings/payroll-readiness": IconReceipt,
 	"/settings/projects": IconFileDescription,
 	"/settings/security": IconShieldCheck,

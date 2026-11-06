@@ -63,6 +63,7 @@ export interface UserOrganization {
 	worksCouncilEnabled: boolean;
 	billableTimeEnabled: boolean;
 	personnelFilesEnabled: boolean;
+	equipmentEnabled: boolean;
 }
 
 /**

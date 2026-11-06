@@ -160,8 +160,8 @@ describe("EmployeesPageClient people-management tabs", () => {
 	});
 
 	it("does not send invite actions back to organization settings", () => {
-		expect(source).not.toContain('href="/settings/organizations"');
-		expect(source).not.toContain("href='/settings/organizations'");
+		expect(source).not.toContain('href="/settings/organization"');
+		expect(source).not.toContain("href='/settings/organization'");
 	});
 
 	it("passes actor identity and role to the employee directory", () => {
