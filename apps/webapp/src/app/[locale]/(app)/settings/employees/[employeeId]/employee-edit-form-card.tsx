@@ -2,6 +2,7 @@
 
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
+import { Temporal } from "temporal-polyfill";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { RoleSelector } from "@/components/settings/role-selector";
@@ -23,7 +24,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import type { ContractType } from "@/lib/validations/employee";
+import { type ContractType, EARLIEST_BIRTHDAY } from "@/lib/validations/employee";
 import { defaultTranslate, type Translate } from "./employee-section-shared";
 import { PronounsEditField } from "./pronouns-edit-field";
 import { TextField } from "./text-field";
@@ -198,6 +199,38 @@ export function EmployeeEditFormCard({
 								</TFormItem>
 							)}
 						</form.Field>
+						{/* The full date reveals age: only org admins see it (#1579). */}
+						{canEditOrgAdminFields && (
+							<form.Field name="birthday">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.employees.detailView.birthday", "Birthday")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Input
+												name="birthday"
+												type="date"
+												autoComplete="off"
+												min={EARLIEST_BIRTHDAY}
+												max={Temporal.Now.plainDateISO().toString()}
+												value={field.state.value || ""}
+												onChange={(event) => field.handleChange(event.target.value)}
+												onBlur={field.handleBlur}
+												disabled={isUpdating}
+											/>
+										</TFormControl>
+										<TFormDescription>
+											{t(
+												"settings.employees.detailView.birthdayDescription",
+												"Optional. The employee can also change it in their profile.",
+											)}
+										</TFormDescription>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						)}
 					</div>
 
 					<form.Field name="role">

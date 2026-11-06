@@ -50,14 +50,33 @@ const authUserNamePartSchema = z.preprocess(
 	z.string().min(1, "Name is required").max(100, "Name is too long").optional(),
 );
 
-const birthdaySchema = z.date().refine((date) => {
-	const birthday = Temporal.Instant.from(date.toISOString())
+/** The earliest birthday an employee record accepts, as an ISO calendar date. */
+export const EARLIEST_BIRTHDAY = "1900-01-01";
+
+function birthdayCalendarDate(date: Date) {
+	return Temporal.Instant.from(date.toISOString())
 		.toZonedDateTimeISO("UTC")
 		.toPlainDate();
-	return (
-		Temporal.PlainDate.compare(birthday, Temporal.Now.plainDateISO("UTC")) <= 0
+}
+
+const birthdaySchema = z
+	.date()
+	.refine(
+		(date) =>
+			Temporal.PlainDate.compare(
+				birthdayCalendarDate(date),
+				Temporal.PlainDate.from(EARLIEST_BIRTHDAY),
+			) >= 0,
+		"Birthday must be on or after January 1, 1900",
+	)
+	.refine(
+		(date) =>
+			Temporal.PlainDate.compare(
+				birthdayCalendarDate(date),
+				Temporal.Now.plainDateISO("UTC"),
+			) <= 0,
+		"Birthday must be in the past",
 	);
-}, "Birthday must be in the past");
 
 // Personal information schema (for self-service profile updates)
 export const personalInformationSchema = z.object({

@@ -41,6 +41,10 @@ _Avoid_: disabling, suspension, archiving an employee
 The organization's employees who are not former employees. Everything that answers "who works here now" shows only the current roster: teams, presence, planning, the people offered for picking, and who gets notified.
 _Avoid_: active users, active members, all employees
 
+**Birthday**:
+An employee's date of birth as one organization records it. An employee may have none. An employee of several organizations has a separate birthday in each, and the employee or an org admin may set, change or clear it; the last change counts. The rest of the current roster, managers included, sees only its day and month.
+_Avoid_: date of birth, DOB, birth date
+
 ### Teams
 
 **Team**:

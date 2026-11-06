@@ -6,6 +6,7 @@ import { DateTime } from "luxon";
 import { z } from "zod";
 import { invitation, user } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft, team } from "@/db/schema";
+import { AuditAction, type AuditLogEntry, logAudit } from "@/lib/audit-logger";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import {
 	acquireEmployeeIdentityLock,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
+import { type BirthdayChange, birthdayChange } from "@/lib/organization/employee-birthday";
 import {
 	previewDrivingLicenceIntendedDriverWrite,
 	runDrivingLicenceIntendedDriverWrite,
@@ -99,6 +101,29 @@ function parseFirstTermsWage(
 					field: "hourlyRate",
 				}),
 			);
+}
+
+/**
+ * Records that an org admin set, changed or cleared a birthday (#1579). The
+ * dates stay out of the audit log: it must not hold another copy of them.
+ */
+function recordBirthdayChange(entry: {
+	actor: { id: string; email?: string };
+	organizationId: string;
+	target: Pick<AuditLogEntry, "targetType" | "targetId" | "employeeId">;
+	change: BirthdayChange;
+}) {
+	return Effect.promise(() =>
+		logAudit({
+			action: AuditAction.EMPLOYEE_UPDATED,
+			actorId: entry.actor.id,
+			actorEmail: entry.actor.email,
+			organizationId: entry.organizationId,
+			...entry.target,
+			metadata: { field: "birthday", change: entry.change },
+			timestamp: dateFromInstant(systemClock.nowInstant()),
+		}),
+	);
 }
 
 export async function createEmployeeAction(
@@ -477,6 +502,17 @@ export async function updateEmployeeAction(
 						),
 					);
 
+				// A scoped manager's save carries no birthday, so only an org admin's is recorded.
+				const birthdayUpdate = birthdayChange(targetEmployee.birthday, scopedData.birthday);
+				if (birthdayUpdate) {
+					yield* recordBirthdayChange({
+						actor: session.user,
+						organizationId: targetEmployee.organizationId,
+						target: { targetType: "employee", targetId: employeeId, employeeId },
+						change: birthdayUpdate,
+					});
+				}
+
 				// A lower role can take projects away from the employee's share links (#806).
 				if ("role" in employeeUpdateData) {
 					yield* dbService.query("reportShareLink.revokeAfterEmployeeUpdate", () =>
@@ -659,6 +695,8 @@ export async function updateEmployeeInvitationDraftAction(
 					draftId,
 					now: dateFromInstant(systemClock.nowInstant()),
 				});
+				// Read under the draft lock, so it is what this save replaced.
+				let draftBirthdayUpdate: BirthdayChange | null = null;
 				const updatedDrafts = yield* actor.dbService.query("updateEmployeeInvitationDraft", async () => {
 					return await actor.dbService.db.transaction(
 						async (tx) => {
@@ -672,6 +710,7 @@ export async function updateEmployeeInvitationDraftAction(
 									id: employeeInvitationDraft.id,
 									invitationId: employeeInvitationDraft.invitationId,
 									employeeNumber: employeeInvitationDraft.employeeNumber,
+									birthday: employeeInvitationDraft.birthday,
 								})
 								.from(employeeInvitationDraft)
 								.where(
@@ -759,6 +798,9 @@ export async function updateEmployeeInvitationDraftAction(
 									),
 								)
 								.returning({ id: employeeInvitationDraft.id });
+							if (updatedDrafts.length > 0) {
+								draftBirthdayUpdate = birthdayChange(lockedDraft.birthday, draftUpdate.birthday);
+							}
 							if (updatedDrafts.length === 0 || !hasTeamIdUpdate) {
 								return updatedDrafts;
 							}
@@ -801,6 +843,15 @@ export async function updateEmployeeInvitationDraftAction(
 							value: draftEmployeeId,
 						}),
 					);
+				}
+
+				if (draftBirthdayUpdate) {
+					yield* recordBirthdayChange({
+						actor: actor.session.user,
+						organizationId: actor.organizationId,
+						target: { targetType: "employee_invitation_draft", targetId: draftId },
+						change: draftBirthdayUpdate,
+					});
 				}
 
 				revalidateEmployeesCache(actor.organizationId);

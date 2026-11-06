@@ -503,6 +503,8 @@ export async function getEmployeeAction(
 
 		return {
 			...detail,
+			// Only an org admin sees the full birthday; it reveals age (#1579).
+			birthday: actor.accessTier === "orgAdmin" ? detail.birthday : null,
 			kind: "employee",
 			membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
 			contractTypeToday: termsToday?.contractType ?? null,
