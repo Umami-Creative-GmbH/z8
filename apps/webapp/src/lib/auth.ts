@@ -1,10 +1,3 @@
-import {
-	createMfaAuthenticationPlugin,
-	recordVerifiedMfaPasskey,
-} from "@/lib/organization-mfa/authentication-plugin";
-import { mfaAuthStore } from "@/lib/organization-mfa/auth-store";
-import { getOrganizationMfaRequirement } from "@/lib/organization-mfa/store";
-import { organizationSsoVerification } from "@/lib/organization-mfa/organization-access";
 import { apiKey } from "@better-auth/api-key";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { passkey } from "@better-auth/passkey";
@@ -28,6 +21,11 @@ import {
 	handleCoordinatedAuthRequest,
 } from "@/lib/auth/auth-mutation-coordination";
 import {
+	AUTH_ORGANIZATION_SCHEMA,
+	AUTH_SSO_DOMAIN_VERIFICATION,
+	AUTH_USER_ADDITIONAL_FIELDS,
+} from "@/lib/auth/auth-schema-options";
+import {
 	getSCIMCredentialHashSecret,
 	resolveAuthSecrets,
 } from "@/lib/auth/auth-secrets";
@@ -47,11 +45,11 @@ import { passwordSetupVerification } from "@/lib/auth/password-setup-verificatio
 import { reservedEmailGuard } from "@/lib/auth/reserved-email-guard";
 import { securityAlerts } from "@/lib/auth/security-alerts";
 import { socialOrgOAuthPlugin } from "@/lib/auth/social-org-oauth";
-import { storeAppSessionPlugin } from "@/lib/auth/store-app-session";
 import {
 	provisionSsoProviderOrganization,
 	ssoVerifiedDomainMembershipPlugin,
 } from "@/lib/auth/sso-organization-provisioning";
+import { storeAppSessionPlugin } from "@/lib/auth/store-app-session";
 import {
 	getAuthAllowedHosts,
 	getOrganizationPlatformOrigins,
@@ -69,6 +67,13 @@ import {
 } from "@/lib/enterprise-identity/sso-enforcement-plugin";
 import { notifySecurityAlert } from "@/lib/notifications/security-alert-notifier";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { mfaAuthStore } from "@/lib/organization-mfa/auth-store";
+import {
+	createMfaAuthenticationPlugin,
+	recordVerifiedMfaPasskey,
+} from "@/lib/organization-mfa/authentication-plugin";
+import { organizationSsoVerification } from "@/lib/organization-mfa/organization-access";
+import { getOrganizationMfaRequirement } from "@/lib/organization-mfa/store";
 import {
 	API_KEY_HTTP_PATHS,
 	API_KEY_PLUGIN_OPTIONS,
@@ -356,36 +361,7 @@ export const auth = betterAuth({
 
 	// User additional fields - these will be included in the generated schema
 	user: {
-		additionalFields: {
-			firstName: {
-				type: "string",
-				required: false,
-				input: true,
-			},
-			lastName: {
-				type: "string",
-				required: false,
-				input: true,
-			},
-			canCreateOrganizations: {
-				type: "boolean",
-				required: false,
-				defaultValue: false,
-				input: false, // system-managed, not user-provided
-			},
-			invitedVia: {
-				type: "string",
-				required: false,
-				input: false,
-			},
-			// Stores invite code during registration until email is verified
-			// Processed by afterVerification hook to auto-join organization
-			pendingInviteCode: {
-				type: "string",
-				required: false,
-				input: false, // system-managed
-			},
-		},
+		additionalFields: AUTH_USER_ADDITIONAL_FIELDS,
 	},
 
 	emailAndPassword: {
@@ -446,6 +422,8 @@ export const auth = betterAuth({
 			}),
 		),
 	),
+	// A plugin that adds tables or fields must also be added to `auth.cli.ts`,
+	// the config `pnpm auth:generate` reads.
 	plugins: [
 		turnstileAuthGuard(),
 		accountBanPlugin(),
@@ -476,131 +454,7 @@ export const auth = betterAuth({
 			organizationRoles: ["owner", "admin", "member"],
 			creatorRole: "owner",
 			// Schema customization for organization and invitation tables
-			schema: {
-				organization: {
-					additionalFields: {
-						country: {
-							type: "string",
-							required: false,
-							input: true,
-						},
-						region: {
-							type: "string",
-							required: false,
-							input: true,
-						},
-						shiftsEnabled: {
-							type: "boolean",
-							required: false,
-							defaultValue: false,
-							input: true,
-						},
-						projectsEnabled: {
-							type: "boolean",
-							required: false,
-							defaultValue: false,
-							input: true,
-						},
-						surchargesEnabled: {
-							type: "boolean",
-							required: false,
-							defaultValue: false,
-							input: true,
-						},
-						demoDataEnabled: {
-							type: "boolean",
-							required: false,
-							defaultValue: true,
-							input: false,
-						},
-						worksCouncilEnabled: {
-							type: "boolean",
-							required: false,
-							defaultValue: false,
-							input: false,
-						},
-						// Billable Time module switch (#897). System-managed: switching it on
-						// needs projects and a billable currency, so only the module's own
-						// server action writes it.
-						billableTimeEnabled: {
-							type: "boolean",
-							required: false,
-							defaultValue: false,
-							input: false,
-						},
-						// Personnel files (#865): switched by owners and admins through the features card.
-						personnelFilesEnabled: {
-							type: "boolean",
-							required: false,
-							defaultValue: false,
-							input: false,
-						},
-						// Equipment tracking (#1572): switched by owners and admins through the features card.
-						equipmentEnabled: {
-							type: "boolean",
-							required: false,
-							defaultValue: false,
-							input: false,
-						},
-						timezone: {
-							type: "string",
-							required: false,
-							defaultValue: "UTC",
-							input: true, // admin can set organization timezone
-						},
-						deletedAt: {
-							type: "date",
-							required: false,
-							input: false, // system-managed
-						},
-						deletedBy: {
-							type: "string",
-							required: false,
-							input: false, // system-managed, stores user ID
-						},
-						// SSO approval configuration: when true, SSO users need approval
-						ssoRequiresApproval: {
-							type: "boolean",
-							required: false,
-							defaultValue: true,
-							input: true,
-						},
-					},
-				},
-				member: {
-					additionalFields: {
-						// Member status for invite code approval flow
-						// "pending" = awaiting admin approval, "approved" = active member, "rejected" = rejected
-						status: {
-							type: "string",
-							required: false,
-							defaultValue: "approved", // existing members are approved by default
-							input: false, // system-managed
-						},
-						// Reference to the invite code used to join (if any)
-						inviteCodeId: {
-							type: "string",
-							required: false,
-							input: false,
-						},
-					},
-				},
-				invitation: {
-					additionalFields: {
-						canCreateOrganizations: {
-							type: "boolean",
-							required: false,
-							defaultValue: false,
-							input: true,
-						},
-						targetTeamId: {
-							type: "string",
-							required: false,
-							input: false,
-						},
-					},
-				},
-			},
+			schema: AUTH_ORGANIZATION_SCHEMA,
 			sendInvitationEmail: async (data) => {
 				// Use organization's custom domain if verified
 				const appUrl = await getOrganizationBaseUrl(data.organization.id);
@@ -713,10 +567,7 @@ export const auth = betterAuth({
 		}),
 		sso({
 			// Enable domain verification for SSO providers
-			domainVerification: {
-				enabled: true,
-				tokenPrefix: "z8-auth-",
-			},
+			domainVerification: AUTH_SSO_DOMAIN_VERIFICATION,
 			saml: {
 				enableSingleLogout: true,
 				wantLogoutRequestSigned: true,
