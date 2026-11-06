@@ -422,6 +422,20 @@ export interface EquipmentAssignmentView {
 	identifier: string;
 	employeeId: string;
 	holderName: string;
+	/** The holder's own user image, read in the same organization-scoped row as the name. */
+	holderImage: string | null;
+	/** Manufacturer serial number of an individually identified item. */
+	serialNumber: string | null;
+	/**
+	 * Staff views only: transfers this assignment took part in. `in` marks an issue
+	 * that a transfer created, `out` a receipt that started one. The counterpart name
+	 * is present only while that holder is in the reader's scope.
+	 */
+	transfers?: {
+		direction: "in" | "out";
+		handoverId: string;
+		counterpartName: string | null;
+	}[];
 	former: boolean;
 	returnRequired: boolean;
 	explicitDeadline: string | null;
@@ -534,6 +548,7 @@ export interface EquipmentView {
 	employees: {
 		id: string;
 		name: string;
+		image: string | null;
 		former: boolean;
 		canIssue?: boolean;
 	}[];

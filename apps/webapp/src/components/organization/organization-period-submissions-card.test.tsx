@@ -18,7 +18,7 @@ vi.mock("@/navigation", () => ({
 vi.mock("sonner", () => ({
 	toast: { success: mocks.success, error: mocks.error },
 }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/period-submission-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/period-submission-actions", () => ({
 	updatePeriodSubmissionSettings: mocks.save,
 }));
 
@@ -82,9 +82,8 @@ describe("OrganizationPeriodSubmissionsCard", () => {
 			}),
 		);
 		await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
-		expect((await screen.findByRole("status")).textContent).toBe(
-			"Period submission settings saved",
-		);
+		expect(mocks.success).toHaveBeenCalledWith("Period submission settings saved");
+		expect(screen.queryByRole("status")).toBeNull();
 	});
 
 	it("saves another week start day", async () => {
@@ -154,7 +153,8 @@ describe("OrganizationPeriodSubmissionsCard", () => {
 		show();
 		fireEvent.click(screen.getByRole("radio", { name: "Monthly" }));
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-		expect((await screen.findByRole("alert")).textContent).toBe("Only admins");
+		await waitFor(() => expect(mocks.error).toHaveBeenCalledWith("Only admins"));
+		expect(screen.queryByRole("alert")).toBeNull();
 		expect(mocks.refresh).not.toHaveBeenCalled();
 	});
 

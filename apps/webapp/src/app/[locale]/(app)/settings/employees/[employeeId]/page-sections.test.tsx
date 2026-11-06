@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FieldApi, FormApi } from "@tanstack/react-form";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
@@ -171,9 +171,11 @@ const formValues = {
 	position: "",
 	employeeNumber: "EMP-001",
 	startDate: "2024-05-01",
+	birthday: "1990-05-01",
 	role: "employee",
 	contractType: "fixed",
 	hourlyRate: "",
+	teamId: "team-1",
 };
 
 function createForm(overrides: Partial<typeof formValues> = {}) {
@@ -534,6 +536,68 @@ describe("employee detail page sections", () => {
 		).toBe("#employment-history");
 	});
 
+	describe("Team field (#1575)", () => {
+		const interpolate = (_key: string, fallback: string, values?: Record<string, string | number>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(values?.[name] ?? ""));
+		const team = {
+			currentTeam: { id: "team-1", name: "Umami" },
+			options: [
+				{ id: "team-1", name: "Umami" },
+				{ id: "team-2", name: "Vertrieb" },
+			],
+		};
+		const renderWithTeam = (teamId: string) =>
+			render(
+				<EmployeeEditFormCard
+					form={createForm({ teamId }) as never}
+					canEditManagerFields={true}
+					canEditOrgAdminFields={true}
+					contract={{ kind: "terms", contractTypeToday: "fixed" }}
+					isUpdating={false}
+					onCancel={vi.fn()}
+					t={interpolate}
+					team={team}
+				/>,
+			);
+
+		it("says before saving that a move ends the old team membership", () => {
+			renderWithTeam("team-2");
+			expect(
+				screen.getByText(
+					"Saving moves this employee to Vertrieb. Their Umami team membership ends; their other team memberships stay.",
+				),
+			).toBeTruthy();
+		});
+
+		it("says before saving that clearing the team ends its membership", () => {
+			renderWithTeam("");
+			expect(
+				screen.getByText(
+					"Saving ends this employee's Umami team membership. Their next team membership, if any, becomes their primary team.",
+				),
+			).toBeTruthy();
+		});
+
+		it("says nothing while the team is unchanged, and has no Team field without team options", () => {
+			renderWithTeam("team-1");
+			expect(screen.getByText("Team")).toBeTruthy();
+			expect(screen.queryByText(/team membership ends/)).toBeNull();
+			cleanup();
+
+			render(
+				<EmployeeEditFormCard
+					form={createForm() as never}
+					canEditManagerFields={true}
+					canEditOrgAdminFields={true}
+					contract={{ kind: "terms", contractTypeToday: "fixed" }}
+					isUpdating={false}
+					onCancel={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("Team")).toBeNull();
+		});
+	});
+
 	it("says when no confirmed terms are in force today", () => {
 		render(
 			<EmployeeEditFormCard
@@ -590,6 +654,50 @@ describe("employee detail page sections", () => {
 		expect(
 			screen.getByText("The actual joining date determines employment-based vacation allowance. Correct it in the reviewed employment correction below; time tracking has its own start date."),
 		).toBeTruthy();
+	});
+
+	it("lets an org admin enter a birthday from 1900 up to today (#1579)", () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date("2026-11-06T12:00:00.000Z"));
+		try {
+			render(
+				<EmployeeEditFormCard
+					form={createForm() as never}
+					canEditManagerFields={true}
+					canEditOrgAdminFields={true}
+					contract={{ kind: "terms", contractTypeToday: "fixed" }}
+					isUpdating={false}
+					onCancel={vi.fn()}
+				/>,
+			);
+
+			const birthdayInput = screen.getByLabelText("Birthday") as HTMLInputElement;
+
+			expect(birthdayInput.disabled).toBe(false);
+			expect(birthdayInput.type).toBe("date");
+			expect(birthdayInput.name).toBe("birthday");
+			expect(birthdayInput.min).toBe("1900-01-01");
+			expect(birthdayInput.max).toBe("2026-11-06");
+			expect(birthdayInput.value).toBe("1990-05-01");
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("does not show a manager the birthday (#1579)", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm() as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={false}
+				contract={{ kind: "terms", contractTypeToday: "fixed" }}
+				isUpdating={false}
+				onCancel={vi.fn()}
+			/>,
+		);
+
+		expect(screen.queryByLabelText("Birthday")).toBeNull();
+		expect(screen.queryByDisplayValue("1990-05-01")).toBeNull();
 	});
 
 	it("shows an inline error when employee pronouns are longer than 50 characters", () => {

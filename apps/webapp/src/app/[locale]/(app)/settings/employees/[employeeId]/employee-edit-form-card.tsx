@@ -1,10 +1,11 @@
 "use client";
 
-import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { RoleSelector } from "@/components/settings/role-selector";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { EARLIEST_BIRTHDAY, latestBirthday } from "@/lib/organization/employee-birthday";
 import type { ContractType } from "@/lib/validations/employee";
 import { defaultTranslate, type Translate } from "./employee-section-shared";
 import { PronounsEditField } from "./pronouns-edit-field";
@@ -38,6 +40,18 @@ export type EmployeeEditFormContract =
 	| { kind: "draft" }
 	| { kind: "terms"; contractTypeToday: ContractType | null };
 
+/** A team the Team field offers. */
+export type EmployeeTeamOption = { id: string; name: string };
+
+/**
+ * The Team field (Organization ADR 0010): the employee's primary team, which saving moves.
+ * Only org admins get it, on an employee record.
+ */
+export type EmployeeEditFormTeam = {
+	currentTeam: EmployeeTeamOption | null;
+	options: readonly EmployeeTeamOption[];
+};
+
 export function EmployeeEditFormCard({
 	form,
 	canEditManagerFields,
@@ -49,6 +63,7 @@ export function EmployeeEditFormCard({
 	customFields = null,
 	hasCustomFieldChanges = false,
 	personnelNumberManagedByScim = false,
+	team = null,
 }: {
 	form: EmployeeDetailFormApi;
 	canEditManagerFields: boolean;
@@ -62,7 +77,11 @@ export function EmployeeEditFormCard({
 	/** Custom field drafts count as changes for the save button. */
 	hasCustomFieldChanges?: boolean;
 	personnelNumberManagedByScim?: boolean;
+	team?: EmployeeEditFormTeam | null;
 }) {
+	const managerFieldsDisabled = !canEditManagerFields || isUpdating;
+	const orgAdminFieldsDisabled = !canEditOrgAdminFields || isUpdating;
+
 	return (
 		<Card className="lg:col-span-2">
 			<EmployeeEditFormHeader canEditManagerFields={canEditManagerFields} t={t} />
@@ -73,77 +92,11 @@ export function EmployeeEditFormCard({
 					}}
 					className="space-y-6"
 				>
-					<div className="grid gap-4 md:grid-cols-2">
-						<TextField
-							form={form}
-							name="firstName"
-							label={t("settings.employees.detailView.firstName", "First name")}
-							placeholder={t("settings.employees.detailView.firstNamePlaceholder", "e.g., Ada…")}
-							autoComplete="given-name"
-							description={t(
-								"settings.employees.detailView.firstNameDescription",
-								"Shown across the employee account",
-							)}
-							disabled={!canEditOrgAdminFields || isUpdating}
-						/>
-						<TextField
-							form={form}
-							name="lastName"
-							label={t("settings.employees.detailView.lastName", "Last name")}
-							placeholder={t(
-								"settings.employees.detailView.lastNamePlaceholder",
-								"e.g., Lovelace…",
-							)}
-							autoComplete="family-name"
-							description={t(
-								"settings.employees.detailView.lastNameDescription",
-								"Shown across the employee account",
-							)}
-							disabled={!canEditOrgAdminFields || isUpdating}
-						/>
-					</div>
+					<EmployeeNameFields form={form} disabled={orgAdminFieldsDisabled} t={t} />
 
-					<form.Field name="gender">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.employees.detailView.gender", "Gender")}
-								</TFormLabel>
-								<Select
-									onValueChange={(value) =>
-										field.handleChange(value as EmployeeDetailFormValues["gender"])
-									}
-									value={field.state.value || ""}
-									disabled={!canEditManagerFields || isUpdating}
-								>
-									<TFormControl hasError={fieldHasError(field)}>
-										<SelectTrigger>
-											<SelectValue
-												placeholder={t(
-													"settings.employees.detailView.genderPlaceholder",
-													"Select gender",
-												)}
-											/>
-										</SelectTrigger>
-									</TFormControl>
-									<SelectContent>
-										<SelectItem value="male">
-											{t("settings.employees.detailView.genderMale", "Male")}
-										</SelectItem>
-										<SelectItem value="female">
-											{t("settings.employees.detailView.genderFemale", "Female")}
-										</SelectItem>
-										<SelectItem value="other">
-											{t("settings.employees.detailView.genderOther", "Other")}
-										</SelectItem>
-									</SelectContent>
-								</Select>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
+					<EmployeeGenderField form={form} disabled={managerFieldsDisabled} t={t} />
 
-					<PronounsEditField form={form} disabled={!canEditManagerFields || isUpdating} t={t} />
+					<PronounsEditField form={form} disabled={managerFieldsDisabled} t={t} />
 
 					<div className="grid gap-4 md:grid-cols-2">
 						<TextField
@@ -155,153 +108,38 @@ export function EmployeeEditFormCard({
 								"settings.employees.detailView.positionDescription",
 								"Job title or role",
 							)}
-							disabled={!canEditManagerFields || isUpdating}
+							disabled={managerFieldsDisabled}
 						/>
-						<TextField
+						<PersonnelNumberField
 							form={form}
-							readOnly={personnelNumberManagedByScim}
-						name="employeeNumber"
-							label={t("settings.employees.detailView.personnelNumber", "Personnel number")}
-							placeholder={t(
-								"settings.employees.detailView.employeeNumberPlaceholder",
-								"e.g., EMP-001",
-							)}
-							description={personnelNumberManagedByScim
-								? t("settings.employees.detailView.personnelNumberManagedByIdp", "Managed by your identity provider. Change the personnel number there.")
-								: t("settings.employees.detailView.personnelNumberDescription", "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.")}
-							disabled={!canEditOrgAdminFields || isUpdating}
+							managedByScim={personnelNumberManagedByScim}
+							disabled={orgAdminFieldsDisabled}
+							t={t}
 						/>
-						<form.Field name="startDate">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.employees.detailView.actualEmploymentStart", "Actual employment start")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											name="startDate"
-											type="date"
-											autoComplete="off"
-											value={field.state.value || ""}
-											onChange={(event) => field.handleChange(event.target.value)}
-											onBlur={field.handleBlur}
-											disabled={contract.kind !== "draft" || !canEditOrgAdminFields || isUpdating}
-										/>
-									</TFormControl>
-									<TFormDescription>
-										{t(
-											"settings.employees.detailView.actualEmploymentStartDescription",
-											"The actual joining date determines employment-based vacation allowance. Correct it in the reviewed employment correction below; time tracking has its own start date.",
-										)}
-									</TFormDescription>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
+						<EmployeeStartDateField
+							form={form}
+							disabled={contract.kind !== "draft" || orgAdminFieldsDisabled}
+							t={t}
+						/>
+						{/* The full date reveals age: only org admins see it (#1579). */}
+						{canEditOrgAdminFields && (
+							<EmployeeBirthdayField form={form} disabled={isUpdating} t={t} />
+						)}
 					</div>
 
-					<form.Field name="role">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.employees.detailView.systemRole", "System Role")}
-								</TFormLabel>
-								<RoleSelector
-									value={field.state.value}
-									onChange={field.handleChange}
-									disabled={!canEditOrgAdminFields || isUpdating}
-									labels={{
-										admin: {
-											label: t("settings.employees.detailView.roleAdmin", "Admin"),
-											description: t(
-												"settings.employees.detailView.roleAdminDescription",
-												"Full system access",
-											),
-										},
-										manager: {
-											label: t("settings.employees.detailView.roleManager", "Manager"),
-											description: t(
-												"settings.employees.detailView.roleManagerDescription",
-												"Team oversight",
-											),
-										},
-										employee: {
-											label: t("settings.employees.detailView.roleEmployee", "Employee"),
-											description: t(
-												"settings.employees.detailView.roleEmployeeDescription",
-												"Standard access",
-											),
-										},
-									}}
-								/>
-								<TFormDescription>
-									{t(
-										"settings.employees.detailView.systemRoleDescription",
-										"Determines access level in the system",
-									)}
-								</TFormDescription>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
+					<EmployeeRoleField form={form} disabled={orgAdminFieldsDisabled} t={t} />
+
+					{team && (
+						<EmployeeTeamField
+							form={form}
+							team={team}
+							disabled={orgAdminFieldsDisabled}
+							t={t}
+						/>
+					)}
 
 					{contract.kind === "draft" ? (
-						<>
-							<form.Field name="contractType">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>
-											{t("settings.employees.detailView.contractType", "Contract Type")}
-										</TFormLabel>
-										<ContractTypeSelector
-											value={field.state.value}
-											onChange={field.handleChange}
-											disabled={!canEditOrgAdminFields || isUpdating}
-											labels={contractTypeLabels(t)}
-										/>
-										<TFormDescription>
-											{t(
-												"settings.employees.detailView.contractTypeDescription",
-												"Determines how compensation is calculated",
-											)}
-										</TFormDescription>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
-
-							<form.Subscribe<EmployeeDetailFormValues["contractType"]> selector={(state) => state.values.contractType}>
-								{(contractType: EmployeeDetailFormValues["contractType"]) =>
-									contractType === "hourly" && (
-										<form.Field name="hourlyRate">
-											{(field) => (
-												<TFormItem>
-													<TFormLabel hasError={fieldHasError(field)}>
-														{t("settings.employees.detailView.hourlyRate", "Hourly Rate")}
-													</TFormLabel>
-													<TFormControl hasError={fieldHasError(field)}>
-														<HourlyRateInput
-															value={field.state.value}
-															onChange={field.handleChange}
-															onBlur={field.handleBlur}
-															disabled={!canEditOrgAdminFields || isUpdating}
-															hasError={fieldHasError(field)}
-														/>
-													</TFormControl>
-													<TFormDescription>
-														{t(
-															"settings.employees.detailView.hourlyRateDescription",
-															"Current hourly rate for this employee",
-														)}
-													</TFormDescription>
-													<TFormMessage field={field} />
-												</TFormItem>
-											)}
-										</form.Field>
-									)
-								}
-							</form.Subscribe>
-						</>
+						<DraftContractFields form={form} disabled={orgAdminFieldsDisabled} t={t} />
 					) : (
 						<TermsContractType contractTypeToday={contract.contractTypeToday} t={t} />
 					)}
@@ -320,6 +158,384 @@ export function EmployeeEditFormCard({
 				</form>
 			</CardContent>
 		</Card>
+	);
+}
+
+type EmployeeFieldProps = {
+	form: EmployeeDetailFormApi;
+	disabled: boolean;
+	t: Translate;
+};
+
+function EmployeeNameFields({ form, disabled, t }: EmployeeFieldProps) {
+	return (
+		<div className="grid gap-4 md:grid-cols-2">
+			<TextField
+				form={form}
+				name="firstName"
+				label={t("settings.employees.detailView.firstName", "First name")}
+				placeholder={t("settings.employees.detailView.firstNamePlaceholder", "e.g., Ada…")}
+				autoComplete="given-name"
+				description={t(
+					"settings.employees.detailView.firstNameDescription",
+					"Shown across the employee account",
+				)}
+				disabled={disabled}
+			/>
+			<TextField
+				form={form}
+				name="lastName"
+				label={t("settings.employees.detailView.lastName", "Last name")}
+				placeholder={t(
+					"settings.employees.detailView.lastNamePlaceholder",
+					"e.g., Lovelace…",
+				)}
+				autoComplete="family-name"
+				description={t(
+					"settings.employees.detailView.lastNameDescription",
+					"Shown across the employee account",
+				)}
+				disabled={disabled}
+			/>
+		</div>
+	);
+}
+
+/** Read-only while the identity provider manages the personnel number. */
+function PersonnelNumberField({
+	form,
+	managedByScim,
+	disabled,
+	t,
+}: EmployeeFieldProps & { managedByScim: boolean }) {
+	return (
+		<TextField
+			form={form}
+			readOnly={managedByScim}
+			name="employeeNumber"
+			label={t("settings.employees.detailView.personnelNumber", "Personnel number")}
+			placeholder={t(
+				"settings.employees.detailView.employeeNumberPlaceholder",
+				"e.g., EMP-001",
+			)}
+			description={managedByScim
+				? t("settings.employees.detailView.personnelNumberManagedByIdp", "Managed by your identity provider. Change the personnel number there.")
+				: t("settings.employees.detailView.personnelNumberDescription", "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.")}
+			disabled={disabled}
+		/>
+	);
+}
+
+function EmployeeGenderField({ form, disabled, t }: EmployeeFieldProps) {
+	return (
+		<form.Field name="gender">
+			{(field) => (
+				<TFormItem>
+					<TFormLabel hasError={fieldHasError(field)}>
+						{t("settings.employees.detailView.gender", "Gender")}
+					</TFormLabel>
+					<Select
+						onValueChange={(value) =>
+							field.handleChange(value as EmployeeDetailFormValues["gender"])
+						}
+						value={field.state.value || ""}
+						disabled={disabled}
+					>
+						<TFormControl hasError={fieldHasError(field)}>
+							<SelectTrigger>
+								<SelectValue
+									placeholder={t(
+										"settings.employees.detailView.genderPlaceholder",
+										"Select gender",
+									)}
+								/>
+							</SelectTrigger>
+						</TFormControl>
+						<SelectContent>
+							<SelectItem value="male">
+								{t("settings.employees.detailView.genderMale", "Male")}
+							</SelectItem>
+							<SelectItem value="female">
+								{t("settings.employees.detailView.genderFemale", "Female")}
+							</SelectItem>
+							<SelectItem value="other">
+								{t("settings.employees.detailView.genderOther", "Other")}
+							</SelectItem>
+						</SelectContent>
+					</Select>
+					<TFormMessage field={field} />
+				</TFormItem>
+			)}
+		</form.Field>
+	);
+}
+
+function EmployeeStartDateField({ form, disabled, t }: EmployeeFieldProps) {
+	return (
+		<form.Field name="startDate">
+			{(field) => (
+				<TFormItem>
+					<TFormLabel hasError={fieldHasError(field)}>
+						{t("settings.employees.detailView.actualEmploymentStart", "Actual employment start")}
+					</TFormLabel>
+					<TFormControl hasError={fieldHasError(field)}>
+						<Input
+							name="startDate"
+							type="date"
+							autoComplete="off"
+							value={field.state.value || ""}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+							disabled={disabled}
+						/>
+					</TFormControl>
+					<TFormDescription>
+						{t(
+							"settings.employees.detailView.actualEmploymentStartDescription",
+							"The actual joining date determines employment-based vacation allowance. Correct it in the reviewed employment correction below; time tracking has its own start date.",
+						)}
+					</TFormDescription>
+					<TFormMessage field={field} />
+				</TFormItem>
+			)}
+		</form.Field>
+	);
+}
+
+function EmployeeBirthdayField({ form, disabled, t }: EmployeeFieldProps) {
+	return (
+		<form.Field name="birthday">
+			{(field) => (
+				<TFormItem>
+					<TFormLabel hasError={fieldHasError(field)}>
+						{t("settings.employees.detailView.birthday", "Birthday")}
+					</TFormLabel>
+					<TFormControl hasError={fieldHasError(field)}>
+						<Input
+							name="birthday"
+							type="date"
+							autoComplete="off"
+							min={EARLIEST_BIRTHDAY.toString()}
+							max={latestBirthday().toString()}
+							value={field.state.value || ""}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+							disabled={disabled}
+						/>
+					</TFormControl>
+					<TFormDescription>
+						{t(
+							"settings.employees.detailView.birthdayDescription",
+							"Optional. The employee can also change it in their profile.",
+						)}
+					</TFormDescription>
+					<TFormMessage field={field} />
+				</TFormItem>
+			)}
+		</form.Field>
+	);
+}
+
+function EmployeeRoleField({ form, disabled, t }: EmployeeFieldProps) {
+	return (
+		<form.Field name="role">
+			{(field) => (
+				<TFormItem>
+					<TFormLabel hasError={fieldHasError(field)}>
+						{t("settings.employees.detailView.systemRole", "System Role")}
+					</TFormLabel>
+					<RoleSelector
+						value={field.state.value}
+						onChange={field.handleChange}
+						disabled={disabled}
+						labels={{
+							admin: {
+								label: t("settings.employees.detailView.roleAdmin", "Admin"),
+								description: t(
+									"settings.employees.detailView.roleAdminDescription",
+									"Full system access",
+								),
+							},
+							manager: {
+								label: t("settings.employees.detailView.roleManager", "Manager"),
+								description: t(
+									"settings.employees.detailView.roleManagerDescription",
+									"Team oversight",
+								),
+							},
+							employee: {
+								label: t("settings.employees.detailView.roleEmployee", "Employee"),
+								description: t(
+									"settings.employees.detailView.roleEmployeeDescription",
+									"Standard access",
+								),
+							},
+						}}
+					/>
+					<TFormDescription>
+						{t(
+							"settings.employees.detailView.systemRoleDescription",
+							"Determines access level in the system",
+						)}
+					</TFormDescription>
+					<TFormMessage field={field} />
+				</TFormItem>
+			)}
+		</form.Field>
+	);
+}
+
+/** An invitation draft's contract type, and its wage while hourly: they become the first terms. */
+function DraftContractFields({ form, disabled, t }: EmployeeFieldProps) {
+	return (
+		<>
+			<form.Field name="contractType">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("settings.employees.detailView.contractType", "Contract Type")}
+						</TFormLabel>
+						<ContractTypeSelector
+							value={field.state.value}
+							onChange={field.handleChange}
+							disabled={disabled}
+							labels={contractTypeLabels(t)}
+						/>
+						<TFormDescription>
+							{t(
+								"settings.employees.detailView.contractTypeDescription",
+								"Determines how compensation is calculated",
+							)}
+						</TFormDescription>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Subscribe<EmployeeDetailFormValues["contractType"]> selector={(state) => state.values.contractType}>
+				{(contractType: EmployeeDetailFormValues["contractType"]) =>
+					contractType === "hourly" && (
+						<form.Field name="hourlyRate">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.employees.detailView.hourlyRate", "Hourly Rate")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<HourlyRateInput
+											value={field.state.value}
+											onChange={field.handleChange}
+											onBlur={field.handleBlur}
+											disabled={disabled}
+											hasError={fieldHasError(field)}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.employees.detailView.hourlyRateDescription",
+											"Current hourly rate for this employee",
+										)}
+									</TFormDescription>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+					)
+				}
+			</form.Subscribe>
+		</>
+	);
+}
+
+const NO_TEAM = "__no_team__";
+
+/**
+ * The employee's primary team. Changing it is a move and clearing it ends that membership
+ * (Organization ADR 0010): the notice says so before the save.
+ */
+function EmployeeTeamField({
+	form,
+	team,
+	disabled,
+	t,
+}: {
+	form: EmployeeDetailFormApi;
+	team: EmployeeEditFormTeam;
+	disabled: boolean;
+	t: Translate;
+}) {
+	return (
+		<form.Field name="teamId">
+			{(field) => {
+				const nextTeam = team.options.find((option) => option.id === field.state.value) ?? null;
+				return (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("settings.employees.detailView.team", "Team")}
+						</TFormLabel>
+						<Select
+							onValueChange={(value) => field.handleChange(value === NO_TEAM ? "" : value)}
+							value={field.state.value || NO_TEAM}
+							disabled={disabled}
+						>
+							<TFormControl hasError={fieldHasError(field)}>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+							</TFormControl>
+							<SelectContent>
+								<SelectItem value={NO_TEAM}>
+									{t("settings.employees.detailView.noTeam", "No team")}
+								</SelectItem>
+								{team.options.map((option) => (
+									<SelectItem key={option.id} value={option.id}>
+										{option.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<TFormDescription>
+							{t(
+								"settings.employees.detailView.teamDescription",
+								"The employee's primary team. Manage further team memberships under Teams.",
+							)}
+						</TFormDescription>
+						<TeamMoveNotice currentTeam={team.currentTeam} nextTeam={nextTeam} t={t} />
+						<TFormMessage field={field} />
+					</TFormItem>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+function TeamMoveNotice({
+	currentTeam,
+	nextTeam,
+	t,
+}: {
+	currentTeam: EmployeeTeamOption | null;
+	nextTeam: EmployeeTeamOption | null;
+	t: Translate;
+}) {
+	if (!currentTeam || currentTeam.id === nextTeam?.id) return null;
+	return (
+		<Alert role="status">
+			<IconInfoCircle aria-hidden="true" />
+			<AlertDescription>
+				{nextTeam
+					? t(
+							"settings.employees.detailView.teamMoveNotice",
+							"Saving moves this employee to {nextTeam}. Their {currentTeam} team membership ends; their other team memberships stay.",
+							{ nextTeam: nextTeam.name, currentTeam: currentTeam.name },
+						)
+					: t(
+							"settings.employees.detailView.teamClearNotice",
+							"Saving ends this employee's {currentTeam} team membership. Their next team membership, if any, becomes their primary team.",
+							{ currentTeam: currentTeam.name },
+						)}
+			</AlertDescription>
+		</Alert>
 	);
 }
 

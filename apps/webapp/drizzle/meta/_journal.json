@@ -2164,6 +2164,20 @@
       "when": 1811347200000,
       "tag": "0308_organization_profile",
       "breakpoints": true
+    },
+    {
+      "idx": 309,
+      "version": "7",
+      "when": 1811433600000,
+      "tag": "0309_equipment_feature_switch",
+      "breakpoints": true
+    },
+    {
+      "idx": 310,
+      "version": "7",
+      "when": 1811520000000,
+      "tag": "0310_primary_team_membership_backfill",
+      "breakpoints": true
     }
   ]
 }

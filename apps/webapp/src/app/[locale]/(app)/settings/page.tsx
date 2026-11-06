@@ -35,46 +35,21 @@ async function SettingsPageContent() {
 		authContext.employee?.organizationId ??
 		null;
 
-	const currentOrganization = activeOrganizationId
-		? await db.query.organization.findFirst({
-				columns: {
-					shiftsEnabled: true,
-					projectsEnabled: true,
-					surchargesEnabled: true,
-					demoDataEnabled: true,
-					worksCouncilEnabled: true,
-					billableTimeEnabled: true,
-					personnelFilesEnabled: true,
-				},
-				where: eq(authSchema.organization.id, activeOrganizationId),
-			})
-		: null;
-	const featureFlags = currentOrganization
-		? {
-				shiftsEnabled: currentOrganization.shiftsEnabled ?? false,
-				projectsEnabled: currentOrganization.projectsEnabled ?? false,
-				surchargesEnabled: currentOrganization.surchargesEnabled ?? false,
-				demoDataEnabled: currentOrganization.demoDataEnabled ?? true,
-				worksCouncilEnabled: currentOrganization.worksCouncilEnabled ?? false,
-				billableTimeEnabled: currentOrganization.billableTimeEnabled ?? false,
-				personnelFilesEnabled:
-					currentOrganization.personnelFilesEnabled ?? false,
-			}
-		: undefined;
-
-	const [managesProject, drivingLicenceSettingsVisible] = await Promise.all([
-		// The projects page grants the tasks-only view in the session's active organization.
-		managesProjectBelowManagerTier(
-			accessTier,
-			authContext.user.id,
-			authContext.session.activeOrganizationId ?? null,
-		),
-		loadDrivingLicenceSettingsVisible(
-			accessTier,
-			authContext.user.id,
-			authContext.session.activeOrganizationId ?? null,
-		),
-	]);
+	const [featureFlags, managesProject, drivingLicenceSettingsVisible] =
+		await Promise.all([
+			loadSettingsFeatureFlags(activeOrganizationId),
+			// The projects page grants the tasks-only view in the session's active organization.
+			managesProjectBelowManagerTier(
+				accessTier,
+				authContext.user.id,
+				authContext.session.activeOrganizationId ?? null,
+			),
+			loadDrivingLicenceSettingsVisible(
+				accessTier,
+				authContext.user.id,
+				authContext.session.activeOrganizationId ?? null,
+			),
+		]);
 
 	const { visibleSettings, visibleGroups } = getResolvedSettingsVisibility({
 		accessTier,
@@ -94,4 +69,36 @@ async function SettingsPageContent() {
 			</div>
 		</div>
 	);
+}
+
+/** The organization's feature switches that decide which settings show. */
+async function loadSettingsFeatureFlags(activeOrganizationId: string | null) {
+	const currentOrganization = activeOrganizationId
+		? await db.query.organization.findFirst({
+				columns: {
+					shiftsEnabled: true,
+					projectsEnabled: true,
+					surchargesEnabled: true,
+					demoDataEnabled: true,
+					worksCouncilEnabled: true,
+					billableTimeEnabled: true,
+					personnelFilesEnabled: true,
+					equipmentEnabled: true,
+				},
+				where: eq(authSchema.organization.id, activeOrganizationId),
+			})
+		: null;
+	return currentOrganization
+		? {
+				shiftsEnabled: currentOrganization.shiftsEnabled ?? false,
+				projectsEnabled: currentOrganization.projectsEnabled ?? false,
+				surchargesEnabled: currentOrganization.surchargesEnabled ?? false,
+				demoDataEnabled: currentOrganization.demoDataEnabled ?? true,
+				worksCouncilEnabled: currentOrganization.worksCouncilEnabled ?? false,
+				billableTimeEnabled: currentOrganization.billableTimeEnabled ?? false,
+				personnelFilesEnabled:
+					currentOrganization.personnelFilesEnabled ?? false,
+				equipmentEnabled: currentOrganization.equipmentEnabled ?? false,
+			}
+		: undefined;
 }

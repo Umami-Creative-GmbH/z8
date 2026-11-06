@@ -1,33 +1,22 @@
 "use client";
 
-import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useId, useState } from "react";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import type { EquipmentSetupView } from "@/lib/organization/equipment/contracts";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+	EquipmentArchiveDialog,
+	type EquipmentArchiveTarget,
+} from "./equipment-archive-dialog";
 import {
-	changeEquipmentSetup,
-	getEquipmentSetup,
-	getEquipmentSetupDetail,
-} from "@/lib/organization/equipment/actions";
-import type {
-	EquipmentSetupChange,
-	EquipmentSetupView,
-	EquipmentTypeView,
-} from "@/lib/organization/equipment/contracts";
-import { equipmentRefusalMessage } from "./equipment-feedback";
-import {
-	EquipmentItemForm,
-	EquipmentRetentionForm,
-	EquipmentTypeForm,
-} from "./equipment-forms";
-import { EquipmentItemList, EquipmentTypeList } from "./equipment-lists";
+	EquipmentItemsCard,
+	EquipmentRetentionCard,
+	type EquipmentSetupPanel,
+	EquipmentSetupPanels,
+	EquipmentTypesCard,
+} from "./equipment-setup-sections";
+import { useEquipmentSetup } from "./use-equipment-setup";
 
 export function EquipmentSettings({
 	initialData,
@@ -35,247 +24,80 @@ export function EquipmentSettings({
 	initialData: EquipmentSetupView;
 }) {
 	const { t } = useTranslate();
-	const [data, setData] = useState(initialData);
-	const [pending, setPending] = useState(false);
-	const [feedback, setFeedback] = useState<{
-		kind: "error" | "success";
-		text: string;
-	} | null>(null);
-	const [editor, setEditor] = useState<{ type?: EquipmentTypeView } | null>(
-		null,
-	);
+	const { data, pending, submit, loadType, archive } =
+		useEquipmentSetup(initialData);
+	const [panel, setPanel] = useState<EquipmentSetupPanel | null>(null);
+	const [panelOpen, setPanelOpen] = useState(false);
+	const [archiveTarget, setArchiveTarget] =
+		useState<EquipmentArchiveTarget | null>(null);
 	const [showArchived, setShowArchived] = useState(false);
+	const archivedSwitchId = useId();
 
-	async function reload() {
-		const result = await getEquipmentSetup().catch(() => null);
-		if (!result?.success) return false;
-		setData(result.data);
-		return true;
+	function openPanel(next: EquipmentSetupPanel) {
+		setPanel(next);
+		setPanelOpen(true);
 	}
-	async function submit(change: EquipmentSetupChange) {
-		setPending(true);
-		setFeedback(null);
-		const result = await changeEquipmentSetup(change).catch(() => null);
-		if (!result?.success) {
-			setPending(false);
-			setFeedback({
-				kind: "error",
-				text: t(
-					"settings.equipment.errors.unavailable",
-					"Equipment setup is unavailable. Check your organization access and try again.",
-				),
-			});
-			return false;
-		}
-		if (!result.data.ok) {
-			setPending(false);
-			setFeedback({
-				kind: "error",
-				text: equipmentRefusalMessage(result.data.reason, t),
-			});
-			return false;
-		}
-		const refreshed = await reload();
-		setPending(false);
-		if (!refreshed) {
-			setFeedback({
-				kind: "error",
-				text: t(
-					"settings.equipment.errors.retry",
-					"The result could not be loaded. Retry the same submission or reload the setup.",
-				),
-			});
-			return false;
-		}
-		setFeedback({
-			kind: "success",
-			text:
-				change.kind === "configure_policy"
-					? t("settings.equipment.retention.saved", "Retention policy saved.")
-					: t("settings.equipment.saved", "Equipment setup saved."),
-		});
-		return true;
+
+	async function editType(id: string) {
+		const type = await loadType(id);
+		if (type) openPanel({ kind: "type", type });
 	}
+
 	const types = data.types.filter((type) => showArchived || !type.archived);
 	const items = data.items.filter((item) => showArchived || !item.archived);
-	async function editType(id: string) {
-		setPending(true);
-		const result = await getEquipmentSetupDetail({ kind: "type", id }).catch(
-			() => null,
-		);
-		setPending(false);
-		if (
-			!result?.success ||
-			result.data?.kind !== "type" ||
-			result.data.record.archived
-		) {
-			setFeedback({
-				kind: "error",
-				text: t(
-					"settings.equipment.errors.load",
-					"Equipment setup could not be loaded. Reload the page.",
-				),
-			});
-			return;
-		}
-		setEditor({ type: result.data.record });
-	}
+
 	return (
 		<div className="space-y-6" aria-busy={pending}>
-			{pending ? (
-				<p
-					role="status"
-					className="flex items-center gap-2 text-sm text-muted-foreground"
-				>
-					<IconLoader2
-						aria-hidden="true"
-						className="size-4 motion-safe:animate-spin"
-					/>
-					{t("settings.equipment.saving", "Saving…")}
-				</p>
-			) : null}
-			{feedback ? (
-				<div
-					role={feedback.kind === "error" ? "alert" : "status"}
-					aria-live="polite"
-					className={
-						feedback.kind === "error"
-							? "rounded-md border border-destructive p-3 text-sm text-destructive"
-							: "rounded-md border p-3 text-sm"
-					}
-				>
-					{feedback.text}
-				</div>
-			) : null}
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<label className="flex items-center gap-2 text-sm">
-					<input
-						type="checkbox"
-						className="size-4 accent-primary"
-						checked={showArchived}
-						onChange={(e) => setShowArchived(e.target.checked)}
-					/>
+			<p role="status" className="sr-only">
+				{pending ? t("settings.equipment.saving", "Saving…") : ""}
+			</p>
+			<EquipmentRetentionCard
+				policy={data.policy}
+				pending={pending}
+				onEdit={() => openPanel({ kind: "retention" })}
+			/>
+
+			<div className="flex flex-wrap items-center justify-end gap-2">
+				<Switch
+					id={archivedSwitchId}
+					checked={showArchived}
+					onCheckedChange={setShowArchived}
+				/>
+				<Label htmlFor={archivedSwitchId}>
 					{t("settings.equipment.showArchived", "Show archived records")}
-				</label>
-				<Button
-					variant="outline"
-					disabled={pending}
-					onClick={async () => {
-						setPending(true);
-						const refreshed = await reload();
-						setPending(false);
-						if (refreshed) {
-							setEditor(null);
-							setFeedback(null);
-						} else {
-							setFeedback({
-								kind: "error",
-								text: t(
-									"settings.equipment.errors.load",
-									"Equipment setup could not be loaded. Reload the page.",
-								),
-							});
-						}
-					}}
-				>
-					{t("settings.equipment.reload", "Reload setup")}
-				</Button>
+				</Label>
 			</div>
-			<Card>
-				<CardHeader>
-					<CardTitle>
-						<h2>
-							{t("settings.equipment.retention.title", "Record retention")}
-						</h2>
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"settings.equipment.retention.description",
-							"Configure a finite period before operational equipment tracking can be used. No legal retention period is assumed.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<EquipmentRetentionForm
-						key={data.policy?.revision ?? 0}
-						policy={data.policy}
-						pending={pending}
-						submit={submit}
-					/>
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader>
-					<div className="flex flex-wrap items-center justify-between gap-3">
-						<CardTitle>
-							<h2>{t("settings.equipment.types.title", "Equipment types")}</h2>
-						</CardTitle>
-						<Button
-							variant="outline"
-							onClick={() => setEditor({})}
-							disabled={pending}
-						>
-							<IconPlus className="size-4" aria-hidden="true" />
-							{t("settings.equipment.types.add", "Add type")}
-						</Button>
-					</div>
-					<CardDescription>
-						{t(
-							"settings.equipment.types.description",
-							"Define tracking and return defaults once. Archive types to stop offering them for new assignments while retaining their history.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					{editor ? (
-						<EquipmentTypeForm
-							key={`${editor.type?.id ?? "new"}:${editor.type?.revision ?? 0}`}
-							type={editor.type}
-							submit={submit}
-							pending={pending}
-							onCancel={() => setEditor(null)}
-						/>
-					) : null}
-					<EquipmentTypeList
-						types={types}
-						pending={pending}
-						submit={submit}
-						editType={editType}
-					/>
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader>
-					<CardTitle>
-						<h2>
-							{t(
-								"settings.equipment.items.title",
-								"Individually identified items",
-							)}
-						</h2>
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"settings.equipment.items.description",
-							"Register physical equipment by its organization identifier. Manufacturer serial numbers are optional and separate.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-6">
-					<EquipmentItemForm
-						types={data.selectableTypes}
-						configured={data.policy !== null}
-						pending={pending}
-						submit={submit}
-					/>
-					<EquipmentItemList
-						items={items}
-						types={data.types}
-						pending={pending}
-						submit={submit}
-					/>
-				</CardContent>
-			</Card>
+
+			<EquipmentTypesCard
+				types={data.types}
+				visibleTypes={types}
+				pending={pending}
+				onAdd={() => openPanel({ kind: "type" })}
+				onEdit={(type) => void editType(type.id)}
+				onArchive={setArchiveTarget}
+			/>
+
+			<EquipmentItemsCard
+				data={data}
+				visibleItems={items}
+				pending={pending}
+				onRegister={() => openPanel({ kind: "item" })}
+				onArchive={setArchiveTarget}
+			/>
+
+			<EquipmentSetupPanels
+				panel={panel}
+				open={panelOpen}
+				onOpenChange={setPanelOpen}
+				data={data}
+				submit={submit}
+				pending={pending}
+			/>
+			<EquipmentArchiveDialog
+				target={archiveTarget}
+				onClose={() => setArchiveTarget(null)}
+				onConfirm={archive}
+			/>
 		</div>
 	);
 }

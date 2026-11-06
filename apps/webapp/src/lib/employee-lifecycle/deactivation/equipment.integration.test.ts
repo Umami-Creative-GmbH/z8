@@ -49,9 +49,10 @@ beforeAll(async () => {
 	fixture = await createLifecycleDatabaseFixture();
 	context.userId = fixture.ownerUserId;
 	context.organizationId = fixture.organizationId;
-	await fixture.pool.query("update organization set timezone='Europe/Berlin' where id=$1", [
-		context.organizationId,
-	]);
+	await fixture.pool.query(
+		"update organization set timezone='Europe/Berlin', equipment_enabled=true where id=$1",
+		[context.organizationId],
+	);
 	await setup({
 		kind: "configure_policy",
 		expectedRevision: 0,
@@ -169,6 +170,18 @@ function preview(employeeId: string) {
 		employeeId,
 		replacementManagers: {},
 	});
+}
+/** Moves the employee to `teamId`: a membership and the primary team (Organization ADR 0010). */
+async function moveToTeam(employeeId: string, teamId: string) {
+	await fixture.pool.query(
+		"delete from team_membership tm using employee e where e.id=$1 and tm.employee_id=e.id and tm.team_id=e.team_id",
+		[employeeId],
+	);
+	await fixture.pool.query("update employee set team_id=$1 where id=$2", [teamId, employeeId]);
+	await fixture.pool.query(
+		"insert into team_membership(organization_id,employee_id,team_id) select organization_id,id,$1 from employee where id=$2 on conflict do nothing",
+		[teamId, employeeId],
+	);
 }
 it("previews outstanding equipment on the organization-local deactivation day and recomputes new assignments on submit", async () => {
 	const target = await fixture.seedEmployee();
@@ -294,10 +307,7 @@ it("ends the officer grant, access and seat with equipment missing while primary
 			"insert into team(id,organization_id,name,updated_at) values($1,$2,'Returns',now())",
 			[id, context.organizationId],
 		);
-	await fixture.pool.query("update employee set team_id=$1 where id=$2", [
-		primary,
-		target.employeeId,
-	]);
+	await moveToTeam(target.employeeId, primary);
 	await fixture.pool.query(
 		"insert into team_membership(organization_id,employee_id,team_id) values($1,$2,$3)",
 		[context.organizationId, target.employeeId, secondary],
@@ -683,10 +693,7 @@ it("keeps former team authority on each ending across a reopened period and seco
 			"insert into team(id,organization_id,name,updated_at) values($1,$2,'Returns',now())",
 			[id, context.organizationId],
 		);
-	await fixture.pool.query("update employee set team_id=$1 where id=$2", [
-		teamA,
-		target.employeeId,
-	]);
+	await moveToTeam(target.employeeId, teamA);
 	expect(
 		await actions.changeEquipmentOfficerGrant({
 			kind: "set_officer_grant",
@@ -704,10 +711,7 @@ it("keeps former team authority on each ending across a reopened period and seco
 	expect(await reactivateEmployeeAction(target.employeeId)).toMatchObject({
 		success: true,
 	});
-	await fixture.pool.query("update employee set team_id=$1 where id=$2", [
-		teamB,
-		target.employeeId,
-	]);
+	await moveToTeam(target.employeeId, teamB);
 	const freshType = await setup({
 		kind: "create_type",
 		name: "B shirts",

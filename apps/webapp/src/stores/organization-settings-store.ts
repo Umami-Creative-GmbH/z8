@@ -38,6 +38,7 @@ const initialState: OrganizationSettings = {
 	worksCouncilEnabled: false,
 	billableTimeEnabled: false,
 	personnelFilesEnabled: false,
+	equipmentEnabled: false,
 	timezone: "UTC",
 	deletedAt: null,
 	isHydrated: false,
@@ -131,6 +132,8 @@ export const useBillableTimeEnabled = () =>
 	useOrganizationSettings((state) => state.billableTimeEnabled);
 export const usePersonnelFilesEnabled = () =>
 	useOrganizationSettings((state) => state.personnelFilesEnabled);
+export const useEquipmentEnabled = () =>
+	useOrganizationSettings((state) => state.equipmentEnabled);
 export const useOrganizationTimezone = () =>
 	useOrganizationSettings((state) => state.timezone);
 export const useOrganizationDeletedAt = () =>

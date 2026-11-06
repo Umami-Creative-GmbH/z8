@@ -64,7 +64,7 @@ describe("settings visibility tiers", () => {
 		expect(entries.find((entry) => entry.id === "organizations")).toMatchObject(
 			{
 				titleDefault: "Organization",
-				href: "/settings/organizations",
+				href: "/settings/organization",
 				minimumTier: "orgAdmin",
 			},
 		);
@@ -393,6 +393,18 @@ describe("settings visibility tiers", () => {
 		expect(
 			filterSettingsByFeatureFlags(entries, { personnelFilesEnabled: true }),
 		).toContain(personnel);
+		const equipment = entries.find((entry) => entry.id === "equipment");
+		expect(equipment).toMatchObject({
+			group: "organization",
+			minimumTier: "orgAdmin",
+			requiredFeature: "equipmentEnabled",
+		});
+		expect(
+			filterSettingsByFeatureFlags(entries, { equipmentEnabled: false }),
+		).not.toContain(equipment);
+		expect(
+			filterSettingsByFeatureFlags(entries, { equipmentEnabled: true }),
+		).toContain(equipment);
 		expect(
 			entries.find((entry) => entry.id === "scheduled-exports"),
 		).toMatchObject({ group: "data", minimumTier: "orgAdmin" });

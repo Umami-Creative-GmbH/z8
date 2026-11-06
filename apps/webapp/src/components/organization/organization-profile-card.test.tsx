@@ -10,16 +10,21 @@ import {
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { EMPTY_ORGANIZATION_PROFILE } from "@/lib/organization/profile";
 
-const { save, refresh } = vi.hoisted(() => ({
+const { save, refresh, toastSuccess, toastError } = vi.hoisted(() => ({
 	save: vi.fn(),
 	refresh: vi.fn(),
+	toastSuccess: vi.fn(),
+	toastError: vi.fn(),
+}));
+vi.mock("sonner", () => ({
+	toast: { success: toastSuccess, error: toastError },
 }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh }) }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
-vi.mock("@/app/[locale]/(app)/settings/organizations/profile-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/profile-actions", () => ({
 	saveOrganizationProfile: save,
 }));
 
@@ -54,7 +59,7 @@ it("warns before leaving with unsaved edits and adopts the successfully saved pr
 	expect(leavingWouldWarn()).toBe(false);
 	fireEvent.change(city, { target: { value: " Berlin " } });
 	fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
-	await screen.findByRole("status");
+	await waitFor(() => expect(toastSuccess).toHaveBeenCalledOnce());
 	expect(city).toHaveProperty("value", "Berlin");
 	expect(leavingWouldWarn()).toBe(false);
 	fireEvent.change(city, { target: { value: "Hamburg" } });
@@ -100,10 +105,9 @@ it("lets an admin edit the registered address and save a partial profile with vi
 	});
 	fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
 	await waitFor(() =>
-		expect(screen.getByRole("status").textContent).toBe(
-			"Organization profile saved",
-		),
+		expect(toastSuccess).toHaveBeenCalledWith("Organization profile saved"),
 	);
+	expect(screen.queryByRole("status")).toBeNull();
 	expect(save).toHaveBeenCalledWith("org-1", {
 		...EMPTY_ORGANIZATION_PROFILE,
 		legalCompanyName: "Umami Creative GmbH",
@@ -135,7 +139,7 @@ it("shows accessible field errors, focuses the invalid field and allows correcti
 	expect(save).not.toHaveBeenCalled();
 	fireEvent.change(vat, { target: { value: "DE123456789" } });
 	fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
-	await screen.findByRole("status");
+	await waitFor(() => expect(toastSuccess).toHaveBeenCalledOnce());
 	expect(screen.queryByRole("alert")).toBeNull();
 });
 
@@ -182,11 +186,13 @@ it.each(["denied", "network"])(
 			target: { value: "Berlin" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
-		expect((await screen.findByRole("alert")).textContent).toContain(
-			"Could not save",
+		await waitFor(() =>
+			expect(toastError).toHaveBeenCalledWith(
+				expect.stringContaining("Could not save"),
+			),
 		);
 		expect(screen.getByLabelText("City")).toHaveProperty("value", "Berlin");
-		expect(screen.queryByRole("status")).toBeNull();
+		expect(toastSuccess).not.toHaveBeenCalled();
 		const leaving = new Event("beforeunload", { cancelable: true });
 		window.dispatchEvent(leaving);
 		expect(leaving.defaultPrevented).toBe(true);
@@ -235,7 +241,7 @@ it("loads saved details, prevents duplicate submissions while saving and lets th
 			data: { ok: true, profile: EMPTY_ORGANIZATION_PROFILE },
 		});
 	});
-	await screen.findByRole("status");
+	await waitFor(() => expect(toastSuccess).toHaveBeenCalledOnce());
 	expect(screen.getByLabelText("Legal company name")).toHaveProperty(
 		"value",
 		"",

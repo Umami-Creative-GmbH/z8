@@ -5,12 +5,13 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import {
 	commitOrganizationTrackingDateAction,
 	previewOrganizationTrackingDateAction,
-} from "@/app/[locale]/(app)/settings/organizations/tracking-date-actions";
+} from "@/app/[locale]/(app)/settings/organization/tracking-date-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,6 @@ export function OrganizationTrackingCard({
 	const id = useId();
 	const [preview, setPreview] = useState<TrackingDateImpact | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	const [saved, setSaved] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 	const suggested = Temporal.Instant.from(createdAt)
 		.toZonedDateTimeISO(isValidIanaTimeZone(timezone) ? timezone : "UTC")
@@ -51,7 +51,6 @@ export function OrganizationTrackingCard({
 		onSubmit: async ({ value }) => {
 			setBusy(true);
 			setError(null);
-			setSaved(null);
 			setPreview(null);
 			try {
 				const result = await previewOrganizationTrackingDateAction({
@@ -100,7 +99,7 @@ export function OrganizationTrackingCard({
 				setBusy(false);
 				return;
 			}
-			setSaved(
+			toast.success(
 				result.data.refreshPending
 					? t(
 							"organization.tracking.saved-pending",
@@ -207,11 +206,6 @@ export function OrganizationTrackingCard({
 				{error ? (
 					<p role="alert" className="text-sm text-destructive">
 						{error}
-					</p>
-				) : null}
-				{saved ? (
-					<p role="status" className="text-sm">
-						{saved}
 					</p>
 				) : null}
 				{preview ? (

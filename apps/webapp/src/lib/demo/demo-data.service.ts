@@ -81,6 +81,7 @@ import {
 	absencePendingApprovalContent,
 	timeCorrectionPendingApprovalContent,
 } from "@/lib/notifications/triggers";
+import { placeInTeam } from "@/lib/organization/primary-team";
 import { RECORDED_VEHICLE_FOREIGN_KEYS } from "@/lib/organization/vehicles/vehicle-rules";
 import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
@@ -1665,6 +1666,14 @@ async function generateDemoTeamsInTransaction(
 	// Shuffle employees and assign to teams
 	const shuffledEmployees = faker.helpers.shuffle([...employees]);
 	let employeesAssigned = 0;
+	// A team membership, which is also the primary team (Organization ADR 0010).
+	const assign = (employeeId: string, teamId: string) =>
+		placeInTeam(tx, {
+			organizationId: options.organizationId,
+			employeeId,
+			teamId,
+			createdBy: options.createdBy,
+		});
 
 	// Ensure each team gets at least one employee
 	for (
@@ -1672,30 +1681,14 @@ async function generateDemoTeamsInTransaction(
 		i < createdTeams.length && i < shuffledEmployees.length;
 		i++
 	) {
-		await tx
-			.update(employee)
-			.set({ teamId: createdTeams[i].id })
-			.where(
-				and(
-					eq(employee.id, shuffledEmployees[i].id),
-					eq(employee.organizationId, options.organizationId),
-				),
-			);
+		await assign(shuffledEmployees[i].id, createdTeams[i].id);
 		employeesAssigned++;
 	}
 
 	// Assign remaining employees randomly to teams
 	for (let i = createdTeams.length; i < shuffledEmployees.length; i++) {
 		const randomTeam = faker.helpers.arrayElement(createdTeams);
-		await tx
-			.update(employee)
-			.set({ teamId: randomTeam.id })
-			.where(
-				and(
-					eq(employee.id, shuffledEmployees[i].id),
-					eq(employee.organizationId, options.organizationId),
-				),
-			);
+		await assign(shuffledEmployees[i].id, randomTeam.id);
 		employeesAssigned++;
 	}
 
@@ -3202,7 +3195,16 @@ export async function clearOrganizationTimeData(
 				result.vacationAllowancesReset = allowancesToDelete.length;
 			}
 
-			// Unassign employees from teams
+			// Unassign employees from teams: their memberships end with their primary team
+			// (Organization ADR 0010).
+			await tx
+				.delete(teamMembership)
+				.where(
+					and(
+						eq(teamMembership.organizationId, organizationId),
+						inArray(teamMembership.employeeId, organizationEmployeeIds),
+					),
+				);
 			const employeesWithTeams = organizationEmployees.filter((e) => e.teamId !== null);
 			if (employeesWithTeams.length > 0) {
 				await tx

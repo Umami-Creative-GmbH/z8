@@ -16,18 +16,19 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		titleDefault: "Dashboard",
 	},
 	{ id: "today", href: "/today", titleKey: "nav.today", titleDefault: "Today" },
-	// Equipment titles await Tolgee sync; keep the translated Settings shell fallback.
+	// Covers the employee and assignment pages below it (#1572). Both equipment
+	// titles show their English default until `tolgee sync` adds the `nav` keys.
 	{
 		id: "equipment",
 		href: "/equipment",
-		titleKey: "nav.settings",
-		titleDefault: "Settings",
+		titleKey: "nav.equipment",
+		titleDefault: "Equipment",
 	},
 	{
 		id: "my-equipment",
 		href: "/my-equipment",
-		titleKey: "nav.settings",
-		titleDefault: "Settings",
+		titleKey: "nav.my-equipment",
+		titleDefault: "My equipment",
 	},
 	{
 		id: "notifications",

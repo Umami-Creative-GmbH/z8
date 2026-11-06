@@ -92,7 +92,7 @@ export function EmployeeSickNoteSetting({
 							"Sick notes are stored in personnel files. Turn on personnel files in the organization settings first.",
 						)}{" "}
 						<Link
-							href="/settings/organizations"
+							href="/settings/organization"
 							className="font-medium underline underline-offset-4"
 						>
 							{t(

@@ -1,10 +1,9 @@
 "use client";
 
 import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
-import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { use, useEffect, useRef } from "react";
+import { type ReactNode, use } from "react";
 import { toast } from "sonner";
 import { BillableRateSeries } from "@/components/billable-time/billable-rate-series";
 import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
@@ -43,19 +42,14 @@ import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { EmployeeDraftActions } from "./employee-draft-actions";
+import type { EmployeeTeamOption } from "./employee-edit-form-card";
 import {
 	EmployeeDetailHeader,
 	EmployeeEditFormCard,
 	EmployeeOverviewCard,
 } from "./page-sections";
-import {
-	buildEmployeeDetailFormValues,
-	buildEmployeeUpdatePayload,
-	defaultFormValues,
-	focusFirstInvalidEmployeeDetailField,
-	showEmployeeSaveRefusal,
-	syncEmployeeForm,
-} from "./page-utils";
+import type { EmployeeDetailFormApi } from "./page-utils";
+import { useEmployeeDetailForm } from "./use-employee-detail-form";
 
 function EmployeeDetailLifecycleActions({
 	employee,
@@ -170,16 +164,8 @@ export function EmployeeDetailPageClient({
 		organizationId,
 		initialSnapshot,
 	});
-	const {
-		employee,
-		schedule,
-		isLoading,
-		hasEmployee,
-		updateEmployee,
-		isUpdating,
-	} = employeeData;
-	const canManageEmployeeDetails =
-		accessTier === "orgAdmin" || accessTier === "manager";
+	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } =
+		employeeData;
 	// The "Custom fields" section (#818), saved with the employee details.
 	const customFields = useCustomFieldDrafts({
 		entity: "employee",
@@ -189,211 +175,55 @@ export function EmployeeDetailPageClient({
 			? { userId: currentUserId, organizationId }
 			: undefined,
 	});
-
-	const form = useForm({
-		defaultValues: employee
-			? buildEmployeeDetailFormValues(employee)
-			: defaultFormValues,
-		onSubmitInvalid: ({ formApi }) =>
-			focusFirstInvalidEmployeeDetailField(formApi),
-		onSubmit: async ({ value }) => {
-			const payload = buildEmployeeUpdatePayload(value);
-			const result = await updateEmployee({
-				...payload,
-				// Undefined for invitation drafts: their section is never loaded.
-				customFieldValues: customFields.values(),
-			}).catch(() => null);
-
-			if (!result) {
-				toast.error(
-					t(
-						"settings.employees.detailView.unexpectedError",
-						"An unexpected error occurred",
-					),
-				);
-				return;
-			}
-
-			if (result.success) {
-				toast.success(
-					t(
-						"settings.employees.detailView.updateSuccess",
-						"Employee updated successfully",
-					),
-				);
-				customFields.reset();
-				push("/settings/employees");
-			} else if (showEmployeeSaveRefusal(form, result)) {
-				focusFirstInvalidEmployeeDetailField(form);
-			} else {
-				toast.error(
-					result.error ||
-						t(
-							"settings.employees.detailView.updateFailed",
-							"Failed to update employee",
-						),
-				);
-			}
-		},
+	const { form, teamOptions, drivingLicenceWarning } = useEmployeeDetailForm({
+		employeeId,
+		accessTier,
+		employee,
+		updateEmployee,
+		customFields,
 	});
-	const syncedEmployee = useRef<string | null>(null);
-
-	useEffect(() => {
-		if (
-			employee &&
-			(syncedEmployee.current !== employeeId || !form.state.isDirty)
-		) {
-			syncEmployeeForm(form, employee);
-			syncedEmployee.current = employeeId;
-		}
-	}, [employee, employeeId, form]);
 
 	if (!hasEmployee && !isLoading && !employeeData.isError) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError
-					feature={t(
-						"settings.employees.detailView.manageEmployees",
-						"manage employees",
-					)}
-				/>
-			</div>
-		);
+		return <EmployeeDetailMissing />;
 	}
 
 	if (employeeData.isError) {
-		return (
-			<div className="flex flex-1 flex-col gap-4 p-4" role="alert">
-				<p>
-					{employeeData.error?.message ||
-						t(
-							"settings.employees.detailView.loadFailed",
-							"Employee data could not be loaded",
-						)}
-				</p>
-				<Button
-					onClick={() => void employeeData.refetch()}
-					disabled={employeeData.isFetching}
-				>
-					{t("common.retry", "Try again")}
-				</Button>
-			</div>
-		);
+		return <EmployeeDetailLoadError data={employeeData} />;
 	}
 	if (isLoading || !employee) {
-		return (
-			<div className="flex flex-1 flex-col gap-4 p-4">
-				<output
-					className="flex items-center justify-center p-8"
-					aria-label={t(
-						"settings.employees.detailView.loadingEmployeeData",
-						"Loading employee data",
-					)}
-				>
-					<IconLoader2
-						className="size-8 animate-spin text-muted-foreground"
-						aria-hidden="true"
-					/>
-				</output>
-			</div>
-		);
+		return <EmployeeDetailLoading />;
 	}
 
-	const isDraft = employee.kind === "invitationDraft";
-	const canShowRealEmployeeSections = !isDraft;
-	const canEditDraftDetails = !isDraft || !employee.realEmployeeId;
+	const canShowRealEmployeeSections = employee.kind !== "invitationDraft";
 
 	const overview = (
-		<>
-			{employeeData.readErrors &&
-			Object.values(employeeData.readErrors).some(Boolean) ? (
-				<div role="alert" className="rounded-lg border p-4">
-					<p>
-						{t(
-							"settings.employees.detailView.secondaryLoadFailed",
-							"Some employee information could not be loaded. Your edits have been kept.",
-						)}
-					</p>
-					<Button
-						variant="outline"
-						onClick={() => void employeeData.refetch()}
-						disabled={employeeData.isFetching}
-					>
-						{t("common.retry", "Try again")}
-					</Button>
-				</div>
-			) : null}
-			{employeeData.isLoadingSchedule ? (
-				<p role="status">
-					{t(
-						"settings.employees.detailView.loadingSchedule",
-						"Loading work schedule…",
-					)}
-				</p>
-			) : null}
-			<div className="grid gap-4 lg:grid-cols-3">
-				<EmployeeOverviewCard employee={employee} schedule={schedule} t={t} />
-				{canEditDraftDetails && (
-					<EmployeeEditFormCard
-						form={form}
-						canEditManagerFields={canManageEmployeeDetails}
-						canEditOrgAdminFields={accessTier === "orgAdmin"}
-						personnelNumberManagedByScim={
-							employee.kind === "employee" &&
-							employee.personnelNumberManagedByScim
-						}
-						contract={
-							employee.kind === "invitationDraft"
-								? { kind: "draft" }
-								: {
-										kind: "terms",
-										contractTypeToday: employee.contractTypeToday ?? null,
-									}
-						}
-						isUpdating={isUpdating}
-						onCancel={() => push("/settings/employees")}
-						t={t}
-						hasCustomFieldChanges={customFields.isDirty}
-						customFields={
-							isDraft ? null : (
-								<CustomFieldDraftsSection
-									drafts={customFields}
-									disabled={isUpdating}
-								/>
-							)
-						}
-					/>
-				)}
-			</div>
-
-			<EmployeeInvitationActions
-				employee={employee}
-				accessTier={accessTier}
-				currentMemberRole={currentMemberRole}
-			/>
-			{equipment && canShowRealEmployeeSections ? (
-				<EmployeeEquipment
-					key={`${organizationId}:${employeeId}`}
-					data={equipment}
-					employeeId={employeeId}
-				/>
-			) : null}
-
-			{canShowRealEmployeeSections && (
-				<EmployeeRecordSections
+		<EmployeeDetailOverview
+			employee={employee}
+			employeeId={employeeId}
+			data={employeeData}
+			accessTier={accessTier}
+			currentUserId={currentUserId}
+			currentMemberRole={currentMemberRole}
+			organizationId={organizationId}
+			highlightedReviewId={highlightedReviewId}
+			equipment={equipment}
+			editForm={
+				<EmployeeDetailEditCard
+					form={form}
 					employee={employee}
-					employeeId={employeeId}
 					accessTier={accessTier}
-					currentUserId={currentUserId}
-					highlightedReviewId={highlightedReviewId}
-					data={employeeData}
+					isUpdating={isUpdating}
+					teamOptions={teamOptions}
+					customFields={customFields}
+					onCancel={() => push("/settings/employees")}
 				/>
-			)}
-		</>
+			}
+		/>
 	);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
+			{drivingLicenceWarning}
 			<EmployeeDetailHeader
 				t={t}
 				actions={
@@ -426,6 +256,229 @@ export function EmployeeDetailPageClient({
 				overview
 			)}
 		</div>
+	);
+}
+
+function EmployeeDetailMissing() {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-1 items-center justify-center p-6">
+			<NoEmployeeError
+				feature={t(
+					"settings.employees.detailView.manageEmployees",
+					"manage employees",
+				)}
+			/>
+		</div>
+	);
+}
+
+function EmployeeDetailLoadError({
+	data,
+}: {
+	data: ReturnType<typeof useEmployee>;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-1 flex-col gap-4 p-4" role="alert">
+			<p>
+				{data.error?.message ||
+					t(
+						"settings.employees.detailView.loadFailed",
+						"Employee data could not be loaded",
+					)}
+			</p>
+			<Button onClick={() => void data.refetch()} disabled={data.isFetching}>
+				{t("common.retry", "Try again")}
+			</Button>
+		</div>
+	);
+}
+
+function EmployeeDetailLoading() {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<output
+				className="flex items-center justify-center p-8"
+				aria-label={t(
+					"settings.employees.detailView.loadingEmployeeData",
+					"Loading employee data",
+				)}
+			>
+				<IconLoader2
+					className="size-8 animate-spin text-muted-foreground"
+					aria-hidden="true"
+				/>
+			</output>
+		</div>
+	);
+}
+
+/** The overview tab: the employee's details and edit form, then the record's sections. */
+function EmployeeDetailOverview({
+	employee,
+	employeeId,
+	data,
+	accessTier,
+	currentUserId,
+	currentMemberRole,
+	organizationId,
+	highlightedReviewId,
+	equipment,
+	editForm,
+}: {
+	employee: EmployeeDetail;
+	employeeId: string;
+	data: ReturnType<typeof useEmployee>;
+	accessTier: SettingsAccessTier;
+	currentUserId: string;
+	currentMemberRole: string;
+	organizationId?: string;
+	highlightedReviewId: string | null;
+	equipment: EquipmentView | null;
+	/** Shown unless the invitation draft already became an employee. */
+	editForm: ReactNode;
+}) {
+	const { t } = useTranslate();
+	const isDraft = employee.kind === "invitationDraft";
+	const canShowRealEmployeeSections = !isDraft;
+	const canEditDraftDetails = !isDraft || !employee.realEmployeeId;
+
+	return (
+		<>
+			<EmployeeReadNotices data={data} />
+			<div className="grid gap-4 lg:grid-cols-3">
+				<EmployeeOverviewCard
+					employee={employee}
+					schedule={data.schedule}
+					t={t}
+				/>
+				{canEditDraftDetails && editForm}
+			</div>
+
+			<EmployeeInvitationActions
+				employee={employee}
+				accessTier={accessTier}
+				currentMemberRole={currentMemberRole}
+			/>
+			{equipment && canShowRealEmployeeSections ? (
+				<EmployeeEquipment
+					key={`${organizationId}:${employeeId}`}
+					data={equipment}
+					employeeId={employeeId}
+				/>
+			) : null}
+
+			{canShowRealEmployeeSections && (
+				<EmployeeRecordSections
+					employee={employee}
+					employeeId={employeeId}
+					accessTier={accessTier}
+					currentUserId={currentUserId}
+					highlightedReviewId={highlightedReviewId}
+					data={data}
+				/>
+			)}
+		</>
+	);
+}
+
+/** What did not load beside the employee, and the work schedule still loading. */
+function EmployeeReadNotices({
+	data,
+}: {
+	data: ReturnType<typeof useEmployee>;
+}) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{data.readErrors && Object.values(data.readErrors).some(Boolean) ? (
+				<div role="alert" className="rounded-lg border p-4">
+					<p>
+						{t(
+							"settings.employees.detailView.secondaryLoadFailed",
+							"Some employee information could not be loaded. Your edits have been kept.",
+						)}
+					</p>
+					<Button
+						variant="outline"
+						onClick={() => void data.refetch()}
+						disabled={data.isFetching}
+					>
+						{t("common.retry", "Try again")}
+					</Button>
+				</div>
+			) : null}
+			{data.isLoadingSchedule ? (
+				<p role="status">
+					{t(
+						"settings.employees.detailView.loadingSchedule",
+						"Loading work schedule…",
+					)}
+				</p>
+			) : null}
+		</>
+	);
+}
+
+function EmployeeDetailEditCard({
+	form,
+	employee,
+	accessTier,
+	isUpdating,
+	teamOptions,
+	customFields,
+	onCancel,
+}: {
+	form: EmployeeDetailFormApi;
+	employee: EmployeeDetail;
+	accessTier: SettingsAccessTier;
+	isUpdating: boolean;
+	/** Only for an org admin editing a real employee: the Team field stays hidden without. */
+	teamOptions: EmployeeTeamOption[] | undefined;
+	customFields: ReturnType<typeof useCustomFieldDrafts>;
+	onCancel: () => void;
+}) {
+	const { t } = useTranslate();
+	const isDraft = employee.kind === "invitationDraft";
+
+	return (
+		<EmployeeEditFormCard
+			form={form}
+			canEditManagerFields={accessTier === "orgAdmin" || accessTier === "manager"}
+			canEditOrgAdminFields={accessTier === "orgAdmin"}
+			personnelNumberManagedByScim={
+				employee.kind === "employee" && employee.personnelNumberManagedByScim
+			}
+			contract={
+				employee.kind === "invitationDraft"
+					? { kind: "draft" }
+					: {
+							kind: "terms",
+							contractTypeToday: employee.contractTypeToday ?? null,
+						}
+			}
+			isUpdating={isUpdating}
+			onCancel={onCancel}
+			t={t}
+			team={
+				teamOptions
+					? {
+							currentTeam: employee.team
+								? { id: employee.team.id, name: employee.team.name }
+								: null,
+							options: teamOptions,
+						}
+					: null
+			}
+			hasCustomFieldChanges={customFields.isDirty}
+			customFields={
+				isDraft ? null : (
+					<CustomFieldDraftsSection drafts={customFields} disabled={isUpdating} />
+				)
+			}
+		/>
 	);
 }
 

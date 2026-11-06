@@ -41,6 +41,32 @@ _Avoid_: disabling, suspension, archiving an employee
 The organization's employees who are not former employees. Everything that answers "who works here now" shows only the current roster: teams, presence, planning, the people offered for picking, and who gets notified.
 _Avoid_: active users, active members, all employees
 
+**Birthday**:
+An employee's date of birth as one organization records it, if any; an employee of several organizations has a separate one in each. Only the employee and org admins see the full date; the rest of the current roster sees its day and month.
+_Avoid_: date of birth, DOB, birth date
+
+### Teams
+
+**Team**:
+A group of employees within an organization. Teams are the only grouping of employees; there are no separate departments.
+_Avoid_: department, group, unit
+
+**Team membership**:
+An employee belonging to a team. An employee can be a member of several teams.
+_Avoid_: team assignment
+
+**Primary team**:
+The one team membership that counts when a rule needs a single team for an employee, such as a policy assignment. An employee's primary team is always one of their team memberships.
+_Avoid_: compatibility team, legacy team, home team
+
+**Team lead**:
+The one employee responsible for a team. A team may have none, and the team lead need not be a member of the team.
+_Avoid_: primary manager, team manager, team owner
+
+**Reporting line**:
+An employee reporting to a manager. An employee can have several managers, one of them marked primary.
+_Avoid_: hierarchy edge, supervisor link
+
 ### Custom fields
 
 **Custom field**:
@@ -169,6 +195,10 @@ These terms describe the confirmed equipment design; see the
 [equipment tracking reference](../../../../../docs/refs/equipment-return-tracking.md)
 for the agreed rules and implementation status.
 
+**Equipment tracking**:
+An optional organization feature that records equipment issued to employees and its return. While it is off, nobody sees it, no equipment can be recorded and no reminders go out, but its records, outstanding returns and record retention remain.
+_Avoid_: asset management, inventory, equipment module
+
 **Equipment assignment**:
 A record of equipment issued to one employee, including its condition and whether it must be returned.
 _Avoid_: equipment issue (can mean a fault), asset ownership
@@ -278,4 +308,5 @@ _Avoid_: rehearsal record, test data
 - [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules and their implementation status.
 - [Driving authorization and check evidence have their own lifecycle](./docs/adr/0004-driving-authorization-and-check-evidence-have-their-own-lifecycle.md): why permission and check evidence stay separate from vehicle attribution, skill certificates and generic audit retention.
 - [Intended-driver status is a scoped assignment, and losing it ends driving authorization](./docs/adr/0005-intended-driver-is-a-scoped-assignment-and-losing-it-ends-authorization.md): why intended drivers are assigned like a policy, matched by primary team, and why leaving ends authorization.
+- [A primary team is always a team membership, and changing it moves the employee](./docs/adr/0010-primary-team-is-always-a-team-membership.md): why every write keeps the primary team among the memberships instead of readers combining both, and why changing the Team field is a move.
 - [Going live is checked, never staged](./docs/adr/0007-going-live-is-checked-never-staged.md): why go-live checks are worked out live, the go-live rehearsal writes nothing, there is no test-employee mode, and manual confirmations carry configuration fingerprints.

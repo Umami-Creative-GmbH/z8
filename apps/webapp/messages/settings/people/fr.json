@@ -66,6 +66,7 @@
         "manageEmployees": "gérer les employés",
         "managers": "Responsables",
         "noScheduleAssigned": "Aucun planning attribué",
+        "noTeam": "Aucune équipe",
         "personnelNumber": "Numéro de personnel",
         "personnelNumberDescription": "Numéro attribué par votre organisation à cet employé, utilisé dans les exportations de paie. Il doit être unique, y compris parmi les anciens employés.",
         "personnelNumberManagedByIdp": "Géré par votre fournisseur d'identité. Modifiez le matricule de l'employé à cet endroit.",
@@ -95,6 +96,9 @@
           "overview": "Vue d'ensemble"
         },
         "team": "Équipe",
+        "teamClearNotice": "L'enregistrement met fin à l'appartenance de cet employé à l'équipe {currentTeam}. Sa prochaine appartenance à une équipe, s'il en a une, devient son équipe principale.",
+        "teamDescription": "L'équipe principale de l'employé. Gérez ses autres appartenances à des équipes dans Équipes.",
+        "teamMoveNotice": "L'enregistrement déplace cet employé dans l'équipe {nextTeam}. Son appartenance à l'équipe {currentTeam} prend fin ; ses autres appartenances à des équipes sont conservées.",
         "unexpectedError": "Une erreur inattendue est survenue",
         "updateFailed": "Échec de la mise à jour de l'employé",
         "updateSuccess": "Employé mis à jour avec succès",

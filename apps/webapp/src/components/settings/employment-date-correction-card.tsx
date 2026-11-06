@@ -3,6 +3,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import {
 	commitEmploymentDateCorrectionAction,
@@ -31,7 +32,6 @@ export function EmploymentDateCorrectionCard({
 	const [review, setReview] = useState<EmploymentDateCorrectionImpact | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [saved, setSaved] = useState<string | null>(null);
 	const [activationNeeded, setActivationNeeded] = useState(false);
 	const form = useForm({
 		defaultValues: { employmentStartDate: employmentStartDate ?? "", reason: "" },
@@ -39,7 +39,6 @@ export function EmploymentDateCorrectionCard({
 			setBusy(true);
 			setError(null);
 			setReview(null);
-			setSaved(null);
 			setActivationNeeded(false);
 			try {
 				const result = await previewEmploymentDateCorrectionAction({
@@ -81,7 +80,7 @@ export function EmploymentDateCorrectionCard({
 				reason,
 			});
 			if (result.success) {
-				setSaved(
+				toast.success(
 					result.data.refreshPending
 						? t(
 								"settings.employmentCorrection.savedPending",
@@ -203,17 +202,12 @@ export function EmploymentDateCorrectionCard({
 					</p>
 				) : null}
 				{activationNeeded ? (
-					<Link href="/settings/organizations" className="text-sm underline">
+					<Link href="/settings/organization" className="text-sm underline">
 						{t(
 							"settings.employmentCorrection.activateFirst",
 							"Review tracking activation in organization settings",
 						)}
 					</Link>
-				) : null}
-				{saved ? (
-					<p role="status" className="text-sm">
-						{saved}
-					</p>
 				) : null}
 				{review ? (
 					<section

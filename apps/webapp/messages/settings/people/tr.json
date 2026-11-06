@@ -66,6 +66,7 @@
         "manageEmployees": "çalışanları yönet",
         "managers": "Yöneticiler",
         "noScheduleAssigned": "Atanmış program yok",
+        "noTeam": "Ekip yok",
         "personnelNumber": "Personel numarası",
         "personnelNumberDescription": "Kuruluşunuzun bordro dışa aktarımlarında kullanılan, bu çalışana özel numarası. Eski çalışanlar da dahil olmak üzere benzersiz olmalıdır.",
         "personnelNumberManagedByIdp": "Kimlik sağlayıcınız tarafından yönetilir. Personel numarasını oradan değiştirin.",
@@ -95,6 +96,9 @@
           "overview": "Genel Bakış"
         },
         "team": "Ekip",
+        "teamClearNotice": "Kaydettiğinizde bu çalışanın {currentTeam} ekibindeki üyeliği sona erer. Varsa bir sonraki ekip üyeliği birincil ekibi olur.",
+        "teamDescription": "Çalışanın birincil ekibi. Diğer ekip üyeliklerini Ekipler bölümünden yönetin.",
+        "teamMoveNotice": "Kaydettiğinizde bu çalışan {nextTeam} ekibine taşınır. {currentTeam} ekibindeki üyeliği sona erer; diğer ekip üyelikleri korunur.",
         "unexpectedError": "Beklenmedik bir hata oluştu",
         "updateFailed": "Çalışan güncellenemedi",
         "updateSuccess": "Çalışan başarıyla güncellendi",

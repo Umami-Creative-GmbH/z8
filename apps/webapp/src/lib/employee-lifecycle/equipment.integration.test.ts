@@ -57,7 +57,7 @@ beforeAll(async () => {
 	context.userId = fixture.ownerUserId;
 	context.organizationId = fixture.organizationId;
 	await fixture.pool.query(
-		"update organization set timezone='Europe/Berlin' where id=$1",
+		"update organization set timezone='Europe/Berlin', equipment_enabled=true where id=$1",
 		[context.organizationId],
 	);
 	await setup({

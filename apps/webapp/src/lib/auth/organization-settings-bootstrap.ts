@@ -9,6 +9,8 @@ export interface OrganizationSettingsBootstrap {
 	/** Billable Time module (#897); never true while projects are off. */
 	billableTimeEnabled: boolean;
 	personnelFilesEnabled: boolean;
+	/** Equipment tracking (#1572). */
+	equipmentEnabled: boolean;
 	timezone: string;
 	deletedAt: string | null;
 }

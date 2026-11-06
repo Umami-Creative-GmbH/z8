@@ -5,7 +5,7 @@ import {
 	redeemInviteCode as redeemInviteCodeInSettings,
 	storePendingInviteCode as storePendingInviteCodeInSettings,
 	validateInviteCode as validateInviteCodeInSettings,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+} from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 
 export async function validateInviteCode(code: string) {
 	return validateInviteCodeInSettings(code);

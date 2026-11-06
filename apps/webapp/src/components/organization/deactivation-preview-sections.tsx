@@ -11,6 +11,7 @@ import type {
 	ApprovalDutiesPlan,
 	DeactivationPreview,
 } from "@/lib/employee-lifecycle/deactivation/types";
+import { useEquipmentEnabled } from "@/stores/organization-settings-store";
 import { useGrantKindLabel } from "./use-grant-kind-label";
 
 /** Every consequence of the plan except the replacement pickers; empty areas are left out. */
@@ -508,6 +509,7 @@ function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
 
 function EquipmentSection({ plan, locale }: { plan: DeactivationPreview; locale: string }) {
 	const { t } = useTranslate();
+	const enabled = useEquipmentEnabled();
 	if (plan.equipment.length === 0) return null;
 	return (
 		<PreviewSection
@@ -515,10 +517,17 @@ function EquipmentSection({ plan, locale }: { plan: DeactivationPreview; locale:
 				"settings.employees.lifecycle.deactivationPreview.equipmentTitle",
 				"Outstanding equipment returns",
 			)}
-			description={t(
-				"settings.employees.lifecycle.deactivationPreview.equipmentDescription",
-				"Employment and access end even while equipment is missing. Authorized staff can follow up in Equipment, including former employees. Returning a physical key or fob does not restore its credential.",
-			)}
+			description={
+				enabled
+					? t(
+							"settings.employees.lifecycle.deactivationPreview.equipmentDescription",
+							"Employment and access end even while equipment is missing. Authorized staff can follow up in Equipment, including former employees. Returning a physical key or fob does not restore its credential.",
+						)
+					: t(
+							"settings.employees.lifecycle.deactivationPreview.equipmentSwitchedOff",
+							"Employment and access end even while equipment is missing. Equipment is switched off for this organization, so these returns stay recorded but cannot be followed up until it is switched back on.",
+						)
+			}
 		>
 			<ItemList>
 				{plan.equipment.map((item) => (

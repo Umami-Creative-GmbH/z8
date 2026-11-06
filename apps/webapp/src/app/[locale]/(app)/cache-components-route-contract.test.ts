@@ -119,8 +119,7 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reasonCategory: "effect-current-time",
 		reason:
 			"Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.",
-		operation:
-			"const [t, result] = await Promise.all([getTranslate(), getOrgChartInitialGraph()]);",
+		operation: "const [t, result, accessTier] = await Promise.all([",
 	},
 	{
 		file: "src/app/[locale]/(app)/payroll/page.tsx",
@@ -405,7 +404,7 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "BillingSettingsContent",
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/organizations/page.tsx",
+		file: "src/app/[locale]/(app)/settings/organization/page.tsx",
 		fallbackComponent: "OrganizationsPageLoading",
 		contentComponent: "OrganizationsPageContent",
 	},

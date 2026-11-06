@@ -359,6 +359,15 @@ export async function runEquipmentReminders(clock: Clock) {
 				eq(employee.organizationId, equipmentAssignment.organizationId),
 			),
 		)
+		// Equipment tracking switched off (#1572): no reminders go out. Recipients are
+		// checked again through `equipmentWorkerAccess`, which also refuses.
+		.innerJoin(
+			organization,
+			and(
+				eq(organization.id, equipmentAssignment.organizationId),
+				eq(organization.equipmentEnabled, true),
+			),
+		)
 		.where(eq(equipmentAssignment.returnRequired, true));
 	const result = { inAppCreated: 0, externalSent: 0, externalFailed: 0 };
 	for (const assignment of assignments) {

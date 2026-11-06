@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, type SQL, sql } from "drizzle-orm";
 import type { db as database } from "@/db";
-import { member } from "@/db/auth-schema";
+import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import {
 	equipmentAssignment,
@@ -83,12 +83,29 @@ export async function equipmentAccess(
 	return access;
 }
 
+/**
+ * Equipment tracking is an optional organization feature (#1572). While it is off
+ * the access resolver grants nothing, so every page, action and reminder that
+ * resolves access first is unavailable while the records stay stored.
+ */
+export async function isEquipmentEnabled(
+	db: Pick<EquipmentTransaction, "select">,
+	organizationId: string,
+) {
+	const [row] = await db
+		.select({ enabled: organization.equipmentEnabled })
+		.from(organization)
+		.where(eq(organization.id, organizationId));
+	return row?.enabled === true;
+}
+
 /** Scheduled delivery has no browser session; membership, employment and grant stay live. */
 export async function equipmentWorkerAccess(
 	tx: EquipmentTransaction,
 	actor: Pick<EquipmentActor, "organizationId" | "userId">,
 	now: Instant,
 ) {
+	if (!(await isEquipmentEnabled(tx, actor.organizationId))) return null;
 	const access = await resolveEmployeeOrganizationAccess(tx, {
 		...actor,
 		now,
@@ -148,7 +165,7 @@ export function equipmentSubjectScope(
 		access.teamIds.map((id) => sql`${id}::uuid`),
 		sql`,`,
 	);
-	return sql`(${direct} or (${employeeHasOrganizationAccess(now)} and (${employee.teamId} in (${teams}) or exists(select 1 from team_membership tm where tm.organization_id=${employee.organizationId} and tm.employee_id=${employee.id} and tm.team_id in (${teams})))) or ${includeFormer ? sql`exists(select 1 from equipment_former_team_scope fs where fs.organization_id=${employee.organizationId} and fs.employee_id=${employee.id} and fs.team_ids && ARRAY[${teams}]::uuid[])` : sql`false`})`;
+	return sql`(${direct} or (${employeeHasOrganizationAccess(now)} and exists(select 1 from team_membership tm where tm.organization_id=${employee.organizationId} and tm.employee_id=${employee.id} and tm.team_id in (${teams}))) or ${includeFormer ? sql`exists(select 1 from equipment_former_team_scope fs where fs.organization_id=${employee.organizationId} and fs.employee_id=${employee.id} and fs.team_ids && ARRAY[${teams}]::uuid[])` : sql`false`})`;
 }
 
 /** An ending snapshot belongs to one assignment context, including a reopened period's deactivation. */
@@ -182,7 +199,7 @@ export function equipmentContextScope(
  exists(select 1 from equipment_former_team_scope fs where fs.organization_id=${employee.organizationId} and fs.employee_id=${employee.id} and fs.ending_id is not distinct from coalesce(${deactivationId},${departureId},${periodId}) and fs.team_ids && ARRAY[${teams}]::uuid[])
  or (${deactivationId} is null and not exists(select 1 from equipment_former_team_scope fs where fs.organization_id=${employee.organizationId} and fs.employee_id=${employee.id} and fs.ending_id is not distinct from coalesce(${departureId},${periodId}))
  and not exists(select 1 from employee_employment_period p where p.organization_id=${employee.organizationId} and p.employee_id=${employee.id} and p.id=${periodId} and p.status='closed')
- and ${employeeHasOrganizationAccess(now)} and (${employee.teamId} in (${teams}) or exists(select 1 from team_membership tm where tm.organization_id=${employee.organizationId} and tm.employee_id=${employee.id} and tm.team_id in (${teams})))))`;
+ and ${employeeHasOrganizationAccess(now)} and exists(select 1 from team_membership tm where tm.organization_id=${employee.organizationId} and tm.employee_id=${employee.id} and tm.team_id in (${teams}))))`;
 	return sql`exists(select 1 from employee where ${employee.id}=${employeeId} and ${employee.organizationId}=${organizationId} and (${direct} or ${teamScope}))`;
 }
 export function equipmentAssignmentScope(
@@ -255,7 +272,10 @@ export async function readEquipmentNavigation(
 	identity: AuthorizedOrganizationIdentity,
 ) {
 	// RSC identity already enforces approved membership and current employment.
-	// Only the grant is read again; commands never accept render identity as authority.
+	// Only the feature switch and the grant are read again; commands never accept
+	// render identity as authority.
+	if (!(await isEquipmentEnabled(db, identity.organizationId)))
+		return { personal: false, staff: false };
 	const administrator =
 		hasOrganizationRole(identity.membershipRole, "owner") ||
 		hasOrganizationRole(identity.membershipRole, "admin");

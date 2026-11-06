@@ -35,7 +35,7 @@ vi.mock("@/hooks/use-image-upload", () => ({
 	}),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/organization/actions", () => ({
 	removeOrganizationLogo: removeOrganizationLogoMock,
 }));
 
@@ -73,9 +73,8 @@ describe("OrganizationDetailsCard", () => {
 		const removeButton = screen.getByRole("button", {
 			name: "Remove organization logo",
 		});
-		const trashIcon = removeButton.querySelector("svg");
-
-		expect(trashIcon?.getAttribute("class")).toContain("text-white");
+		// Logo controls sit beside the logo, not overlaid on it.
+		expect(removeButton.classList.contains("absolute")).toBe(false);
 
 		fireEvent.click(removeButton);
 

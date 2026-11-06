@@ -3,8 +3,8 @@ import type { db } from "@/db";
 import { employee, teamMembership } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type TeamMembershipWriter = Pick<Transaction, "delete" | "query" | "update">;
+export type TeamMembershipTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type TeamMembershipWriter = Pick<TeamMembershipTransaction, "delete" | "query" | "update">;
 
 /**
  * Removes one team membership in the caller's transaction; when it was the

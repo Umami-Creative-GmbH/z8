@@ -3,9 +3,9 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { useId, useRef, useState } from "react";
+import { useId, useRef } from "react";
 import { toast } from "sonner";
-import { updatePeriodSubmissionSettings } from "@/app/[locale]/(app)/settings/organizations/period-submission-actions";
+import { updatePeriodSubmissionSettings } from "@/app/[locale]/(app)/settings/organization/period-submission-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -69,7 +69,6 @@ export function OrganizationPeriodSubmissionsCard({
 	const helpId = `${id}-help`;
 	const delayErrorId = `${id}-delay-error`;
 	const submitting = useRef(false);
-	const [feedback, setFeedback] = useState<{ error: boolean; message: string } | null>(null);
 	const canEdit = currentMemberRole === "owner" || currentMemberRole === "admin";
 	const invalidDelay = t(
 		"organization.periodSubmissions.invalidDelay",
@@ -98,7 +97,6 @@ export function OrganizationPeriodSubmissionsCard({
 		onSubmit: async ({ value }) => {
 			if (!canEdit || submitting.current) return;
 			submitting.current = true;
-			setFeedback(null);
 			try {
 				const result = await updatePeriodSubmissionSettings({
 					organizationId,
@@ -107,24 +105,20 @@ export function OrganizationPeriodSubmissionsCard({
 						delayFromField(value.secondReminderDelay) ?? MIN_SECOND_REMINDER_DELAY_DAYS,
 				});
 				if (!result.success) {
-					setFeedback({ error: true, message: result.error });
 					toast.error(result.error);
 				} else {
-					const message = t(
-						"organization.periodSubmissions.saved",
-						"Period submission settings saved",
+					toast.success(
+						t("organization.periodSubmissions.saved", "Period submission settings saved"),
 					);
-					setFeedback({ error: false, message });
-					toast.success(message);
 					router.refresh();
 				}
 			} catch {
-				const message = t(
-					"organization.periodSubmissions.saveFailed",
-					"Failed to update period submission settings",
+				toast.error(
+					t(
+						"organization.periodSubmissions.saveFailed",
+						"Failed to update period submission settings",
+					),
 				);
-				setFeedback({ error: true, message });
-				toast.error(message);
 			}
 			submitting.current = false;
 		},
@@ -188,8 +182,8 @@ export function OrganizationPeriodSubmissionsCard({
 						void form.handleSubmit();
 					}}
 				>
-					<form.Subscribe selector={(state) => [state.isSubmitting, state.isValid] as const}>
-						{([pending, valid]) => (
+					<form.Subscribe selector={(state) => state.isSubmitting}>
+						{(pending) => (
 							<div className="space-y-6">
 								<form.Field name="cadence">
 									{(field) => (
@@ -309,16 +303,6 @@ export function OrganizationPeriodSubmissionsCard({
 											"organization.periodSubmissions.adminOnly",
 											"Only organization admins and owners can change these settings.",
 										)}
-									</p>
-								)}
-								{valid && feedback && (
-									<p
-										role={feedback.error ? "alert" : "status"}
-										className={
-											feedback.error ? "text-sm text-destructive" : "text-sm text-muted-foreground"
-										}
-									>
-										{feedback.message}
 									</p>
 								)}
 								<Button type="submit" disabled={!canEdit || pending}>

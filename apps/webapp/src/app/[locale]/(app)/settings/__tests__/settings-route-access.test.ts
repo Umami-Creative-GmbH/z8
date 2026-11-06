@@ -2,6 +2,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { AUTH_ORGANIZATION_SCHEMA } from "@/lib/auth/auth-schema-options";
 import {
 	canResolvedTierAccessRoute,
 	ORG_ADMIN_SETTINGS_ROUTES,
@@ -117,7 +118,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps the exported org-admin route list aligned with the approved sweep", () => {
 		expect(ORG_ADMIN_SETTINGS_ROUTES).toEqual([
-			"/settings/organizations",
+			"/settings/organization",
 			"/settings/clocking",
 			"/settings/notification-channels",
 			"/settings/billing",
@@ -176,7 +177,7 @@ describe("org-admin settings route access", () => {
 		});
 
 		expect(
-			canResolvedTierAccessRoute(managerTier, "/settings/organizations"),
+			canResolvedTierAccessRoute(managerTier, "/settings/organization"),
 		).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams")).toBe(
 			true,
@@ -872,28 +873,30 @@ describe("org-admin settings route access", () => {
 		);
 	});
 
-	it("keeps the demo data feature flag out of direct Better Auth organization input", () => {
-		const source = stripComments(
-			readTestText(join(SETTINGS_ROOT, "../../../../lib/auth.ts"), "utf8"),
-		);
-		const demoDataField = source.slice(
-			source.indexOf("demoDataEnabled:"),
-			source.indexOf("timezone:", source.indexOf("demoDataEnabled:")),
+	it.each([
+		"demoDataEnabled",
+		"worksCouncilEnabled",
+		"billableTimeEnabled",
+		"personnelFilesEnabled",
+		"equipmentEnabled",
+	] as const)(
+		"keeps the %s feature switch out of direct Better Auth organization input",
+		(feature) => {
+			expect(
+				AUTH_ORGANIZATION_SCHEMA.organization.additionalFields[feature].input,
+			).toBe(false);
+		},
+	);
+
+	it("hides the equipment settings page while equipment is switched off", () => {
+		const source = readTestText(
+			join(SETTINGS_ROOT, "equipment/page.tsx"),
+			"utf8",
 		);
 
-		expect(demoDataField).toContain("input: false");
-	});
-
-	it("keeps the Billable Time switch out of direct Better Auth organization input", () => {
-		const source = stripComments(
-			readTestText(join(SETTINGS_ROOT, "../../../../lib/auth.ts"), "utf8"),
+		expect(source).toMatch(
+			/if \(!\(await isEquipmentEnabled\(db, organizationId\)\)\) notFound\(\);/,
 		);
-		const billableTimeField = source.slice(
-			source.indexOf("billableTimeEnabled:"),
-			source.indexOf("timezone:", source.indexOf("billableTimeEnabled:")),
-		);
-
-		expect(billableTimeField).toContain("input: false");
 	});
 
 	it("gates the Billable Time settings pages on org admins and the module flag", () => {
@@ -984,7 +987,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps organization management org-admin-only and separate from teams", () => {
 		const source = stripComments(
-			readTestText(join(SETTINGS_ROOT, "organizations/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "organization/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);

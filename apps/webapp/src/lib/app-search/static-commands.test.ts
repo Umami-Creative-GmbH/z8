@@ -114,7 +114,7 @@ describe("buildStaticAppCommands", () => {
 		);
 		expect(orgAdminCommands.find((result) => result.id === "action:invite-teammate")).toMatchObject(
 			{
-				href: "/settings/organizations",
+				href: "/settings/organization",
 			},
 		);
 

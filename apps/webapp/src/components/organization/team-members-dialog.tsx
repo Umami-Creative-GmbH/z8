@@ -124,12 +124,11 @@ export function TeamMembersDialog({
 
 	if (!team) return null;
 
-	// Get team members - must have employee record in this org
+	// Team members: their team memberships alone say who belongs (Organization ADR 0010).
+	const isMember = (m: MemberWithUserAndEmployee) =>
+		m.teamMemberships?.some((membership) => membership.teamId === team.id) ?? false;
 	const allTeamMembers = allMembers.filter(
-		(m) =>
-			m.employee?.organizationId === team.organizationId &&
-			(m.employee.teamId === team.id ||
-				m.teamMemberships?.some((membership) => membership.teamId === team.id)),
+		(m) => m.employee?.organizationId === team.organizationId && isMember(m),
 	);
 	const currentTeamMembers = allTeamMembers.filter((m) => !isFormerTeamMember(m));
 	const formerCount = allTeamMembers.length - currentTeamMembers.length;
@@ -141,8 +140,7 @@ export function TeamMembersDialog({
 			m.employee &&
 			m.employee.organizationId === team.organizationId &&
 			!isFormerTeamMember(m) &&
-			m.employee.teamId !== team.id &&
-			!m.teamMemberships?.some((membership) => membership.teamId === team.id),
+			!isMember(m),
 	);
 
 	// A primary-team change can end driving authorizations: warn first (#1425).

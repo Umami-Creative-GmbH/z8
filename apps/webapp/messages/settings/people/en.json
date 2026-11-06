@@ -66,6 +66,7 @@
         "manageEmployees": "manage employees",
         "managers": "Managers",
         "noScheduleAssigned": "No schedule assigned",
+        "noTeam": "No team",
         "personnelNumber": "Personnel number",
         "personnelNumberDescription": "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
         "personnelNumberManagedByIdp": "Managed by your identity provider. Change the personnel number there.",
@@ -95,6 +96,9 @@
           "overview": "Overview"
         },
         "team": "Team",
+        "teamClearNotice": "Saving ends this employee's {currentTeam} team membership. Their next team membership, if any, becomes their primary team.",
+        "teamDescription": "The employee's primary team. Manage further team memberships under Teams.",
+        "teamMoveNotice": "Saving moves this employee to {nextTeam}. Their {currentTeam} team membership ends; their other team memberships stay.",
         "unexpectedError": "An unexpected error occurred",
         "updateFailed": "Failed to update employee",
         "updateSuccess": "Employee updated successfully",

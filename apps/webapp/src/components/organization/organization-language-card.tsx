@@ -6,7 +6,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { type ComponentType, type SVGProps, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { updateOrganizationDefaultNotificationLanguage } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { updateOrganizationDefaultNotificationLanguage } from "@/app/[locale]/(app)/settings/organization/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {

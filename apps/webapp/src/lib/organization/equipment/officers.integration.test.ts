@@ -54,7 +54,7 @@ beforeAll(async () => {
 	await clean();
 	for (const org of ["org", "foreign"])
 		await pool.query(
-			"insert into organization(id,name,slug,timezone,created_at) values($1,$1,$1,'Europe/Berlin',now())",
+			"insert into organization(id,name,slug,timezone,equipment_enabled,created_at) values($1,$1,$1,'Europe/Berlin',true,now())",
 			[`t1539-${org}`],
 		);
 	for (const [name, role] of [
@@ -301,10 +301,15 @@ it("delegates equipment responsibility without granting setup administration or 
 });
 
 it("revalidates selected teams and employees on every read, and uses only captured teams for former subjects", async () => {
+	// The primary team is always a team membership (Organization ADR 0010).
 	await pool.query("update employee set team_id=$1 where id=$2", [
 		ids.team,
 		ids.subject,
 	]);
+	await pool.query(
+		"insert into team_membership(organization_id,team_id,employee_id) values('t1539-org',$1,$2)",
+		[ids.team, ids.subject],
+	);
 	expect(
 		await grant({
 			scope: "selected",
@@ -320,6 +325,7 @@ it("revalidates selected teams and employees on every read, and uses only captur
 				{
 					id: ids.subject,
 					name: "t1539-subject",
+					image: null,
 					former: false,
 					canIssue: true,
 				},
@@ -333,7 +339,8 @@ it("revalidates selected teams and employees on every read, and uses only captur
 	expect(
 		await actions.getEquipmentOverview({ holderId: ids.foreign }),
 	).toMatchObject({ success: false, code: "AuthorizationError" });
-	await pool.query("update employee set team_id=null where id=$1", [
+	// Leaving the team ends the membership; a stale primary team alone grants nothing.
+	await pool.query("delete from team_membership where employee_id=$1", [
 		ids.subject,
 	]);
 	expect(await actions.getEmployeeEquipment(ids.subject)).toMatchObject({
@@ -368,6 +375,7 @@ it("revalidates selected teams and employees on every read, and uses only captur
 				{
 					id: ids.subject,
 					name: "t1539-subject",
+					image: null,
 					former: true,
 					canIssue: false,
 				},

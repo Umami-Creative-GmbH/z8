@@ -160,7 +160,8 @@ export async function changeEquipment(input: unknown) {
 					),
 				);
 			if (result.ok) {
-				revalidatePath("/equipment");
+				// Includes the employee and assignment pages below the overview.
+				revalidatePath("/equipment", "layout");
 				revalidatePath("/my-equipment");
 				revalidatePath("/settings/employees", "layout");
 				revalidatePath("/settings/equipment");
@@ -211,6 +212,37 @@ export async function getEmployeeEquipment(employeeId: unknown) {
 					readEquipment(database.db, actor, {
 						kind: "employee",
 						employeeId: parsed.data,
+					}),
+				)
+				.pipe(
+					Effect.mapError((error) =>
+						error.cause instanceof AuthorizationError ? error.cause : error,
+					),
+				);
+		}),
+	);
+}
+
+/**
+ * One assignment with everything its page and forms need. It reuses the shared read
+ * model, so another organization's, an out-of-scope or a missing assignment, and
+ * equipment switched off, all come back as `AuthorizationError`.
+ */
+export async function getEquipmentAssignment(assignmentId: unknown) {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const actor = yield* equipmentActor;
+			const parsed = z.uuid().safeParse(assignmentId);
+			if (!parsed.success)
+				return yield* Effect.fail(
+					new ValidationError({ message: "Invalid assignment reference." }),
+				);
+			const database = yield* DatabaseService;
+			return yield* database
+				.query("equipment.assignment", () =>
+					readEquipment(database.db, actor, {
+						kind: "assignment",
+						assignmentId: parsed.data,
 					}),
 				)
 				.pipe(

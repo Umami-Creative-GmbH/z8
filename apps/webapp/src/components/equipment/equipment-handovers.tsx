@@ -1,7 +1,15 @@
 "use client";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useRef } from "react";
+import { type ReactNode, type RefObject, useRef } from "react";
+import {
+	ActionPanelBody,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,11 +37,79 @@ import {
 } from "./equipment-handover-validation";
 export const equipmentSelectClass =
 	"h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
-export type SubmitHandover = (change: EquipmentChange) => Promise<void>;
+/** Resolves `true` once the command is recorded; a refusal keeps the form open for review. */
+export type SubmitHandover = (change: EquipmentChange) => Promise<boolean>;
 interface HandoverActions {
 	submit: SubmitHandover;
 	pending: boolean;
 	onCancel: () => void;
+}
+/**
+ * Every equipment form sits in an action panel: title and context in the header,
+ * fields in the scrolling body, Cancel and the command in the footer. Render it
+ * inside `ActionPanelContent`.
+ */
+export function EquipmentFormPanel({
+	title,
+	description,
+	element,
+	onSubmit,
+	pending,
+	onCancel,
+	submitLabel,
+	children,
+}: {
+	title: ReactNode;
+	description?: ReactNode;
+	element: RefObject<HTMLFormElement | null>;
+	onSubmit: () => void;
+	pending: boolean;
+	onCancel: () => void;
+	submitLabel: string;
+	children: ReactNode;
+}) {
+	const { t } = useTranslate();
+	return (
+		<>
+			<ActionPanelHeader>
+				<ActionPanelTitle>{title}</ActionPanelTitle>
+				{description ? (
+					<ActionPanelDescription className="break-words">
+						{description}
+					</ActionPanelDescription>
+				) : null}
+			</ActionPanelHeader>
+			<form
+				ref={element}
+				noValidate
+				className="flex min-h-0 flex-1 flex-col"
+				onSubmit={(event) => {
+					event.preventDefault();
+					onSubmit();
+				}}
+			>
+				<ActionPanelBody className="min-w-0 space-y-4 break-words">
+					{children}
+				</ActionPanelBody>
+				<ActionPanelFooter>
+					<Button
+						type="button"
+						variant="outline"
+						disabled={pending}
+						onClick={onCancel}
+					>
+						{t("common.cancel", "Cancel")}
+					</Button>
+					<Button type="submit" disabled={pending} aria-busy={pending}>
+						{pending ? (
+							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+						) : null}
+						{submitLabel}
+					</Button>
+				</ActionPanelFooter>
+			</form>
+		</>
+	);
 }
 const handoverDefaults = {
 	actualDate: "",
@@ -340,27 +416,31 @@ function EquipmentIssueForm({
 		submit,
 	});
 	return (
-		<form
-			ref={element}
-			noValidate
-			className="space-y-4 rounded-lg border bg-card p-4"
-			onSubmit={(e) => {
-				e.preventDefault();
-				void form.handleSubmit();
-			}}
-		>
-			<h3 className="font-semibold">
-				{mode === "historical"
+		<EquipmentFormPanel
+			element={element}
+			pending={pending}
+			onCancel={onCancel}
+			onSubmit={() => void form.handleSubmit()}
+			title={
+				mode === "historical"
 					? t("settings.equipment.historical.title", "Record existing holding")
-					: t("settings.equipment.handover.issueTitle", "Issue equipment")}
-			</h3>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"settings.equipment.handover.zone",
-					"Handover dates and deadlines use the organization’s timezone.",
-				)}{" "}
-				<span translate="no">{data.timezone}</span>
-			</p>
+					: t("settings.equipment.handover.issueTitle", "Issue equipment")
+			}
+			description={
+				<>
+					{t(
+						"settings.equipment.handover.zone",
+						"Handover dates and deadlines use the organization’s timezone.",
+					)}{" "}
+					<span translate="no">{data.timezone}</span>
+				</>
+			}
+			submitLabel={
+				mode === "historical"
+					? t("settings.equipment.historical.save", "Save historical holding")
+					: t("settings.equipment.handover.issue", "Record issuance")
+			}
+		>
 			{mode === "historical" ? (
 				<p className="text-sm text-muted-foreground">
 					{t(
@@ -408,27 +488,7 @@ function EquipmentIssueForm({
 			<form.Field name="notes">
 				{(field) => <NotesField field={field} pending={pending} t={t} />}
 			</form.Field>
-			<div className="flex flex-wrap gap-2">
-				<Button type="submit" disabled={pending}>
-					{pending
-						? t("settings.equipment.handover.saving", "Saving…")
-						: mode === "historical"
-							? t(
-									"settings.equipment.historical.save",
-									"Save historical holding",
-								)
-							: t("settings.equipment.handover.issue", "Record issuance")}
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					disabled={pending}
-					onClick={onCancel}
-				>
-					{t("common.cancel", "Cancel")}
-				</Button>
-			</div>
-		</form>
+		</EquipmentFormPanel>
 	);
 }
 function RegistrationFields({
@@ -700,25 +760,23 @@ export function ReceiveEquipmentForm({
 		},
 	});
 	return (
-		<form
-			ref={element}
-			noValidate
-			className="space-y-4 rounded-lg border bg-card p-4"
-			onSubmit={(e) => {
-				e.preventDefault();
-				void form.handleSubmit();
-			}}
+		<EquipmentFormPanel
+			element={element}
+			pending={pending}
+			onCancel={onCancel}
+			onSubmit={() => void form.handleSubmit()}
+			title={t(
+				"settings.equipment.handover.receiveTitle",
+				"Confirm physical receipt",
+			)}
+			description={
+				<>
+					<span translate="no">{assignment.identifier}</span> ·{" "}
+					{assignment.holderName} · <span translate="no">{timezone}</span>
+				</>
+			}
+			submitLabel={t("settings.equipment.handover.receive", "Record receipt")}
 		>
-			<h3 className="font-semibold">
-				{t(
-					"settings.equipment.handover.receiveTitle",
-					"Confirm physical receipt",
-				)}{" "}
-				· <span translate="no">{assignment.identifier}</span>
-			</h3>
-			<p className="text-sm text-muted-foreground">
-				{assignment.holderName} · <span translate="no">{timezone}</span>
-			</p>
 			<div className="grid gap-4 sm:grid-cols-2">
 				{assignment.trackingMode === "quantity" ? (
 					<form.Field
@@ -797,22 +855,7 @@ export function ReceiveEquipmentForm({
 					"Record only the quantity physically received, with its own condition and notes. Damaged individual items stay unavailable pending clearance.",
 				)}
 			</p>
-			<div className="flex flex-wrap gap-2">
-				<Button type="submit" disabled={pending}>
-					{pending
-						? t("settings.equipment.handover.saving", "Saving…")
-						: t("settings.equipment.handover.receive", "Record receipt")}
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					disabled={pending}
-					onClick={onCancel}
-				>
-					{t("common.cancel", "Cancel")}
-				</Button>
-			</div>
-		</form>
+		</EquipmentFormPanel>
 	);
 }
 
