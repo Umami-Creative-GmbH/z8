@@ -66,6 +66,7 @@
         "manageEmployees": "hantera medarbetare",
         "managers": "Chefer",
         "noScheduleAssigned": "Inget schema tilldelat",
+        "noTeam": "Inget team",
         "personnelNumber": "Anställningsnummer",
         "personnelNumberDescription": "Din organisations eget nummer för den anställde, som används vid löneexporter. Det måste vara unikt, även bland tidigare anställda.",
         "personnelNumberManagedByIdp": "Hanteras av din identitetsleverantör. Ändra anställningsnumret där.",
@@ -95,6 +96,9 @@
           "overview": "Översikt"
         },
         "team": "Team",
+        "teamClearNotice": "När du sparar upphör den anställdas medlemskap i {currentTeam}. Nästa teammedlemskap, om något finns, blir det primära teamet.",
+        "teamDescription": "Den anställdas primära team. Hantera andra teammedlemskap under Team.",
+        "teamMoveNotice": "När du sparar flyttas den anställda till {nextTeam}. Medlemskapet i {currentTeam} upphör; de andra teammedlemskapen finns kvar.",
         "unexpectedError": "Ett oväntat fel uppstod",
         "updateFailed": "Det gick inte att uppdatera anställd",
         "updateSuccess": "Anställd uppdaterades",

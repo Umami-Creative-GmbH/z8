@@ -18,6 +18,8 @@ export interface EmployeeDetailFormValues {
 	role: "admin" | "manager" | "employee" | undefined;
 	contractType: "fixed" | "hourly";
 	hourlyRate: string;
+	/** The primary team; "" is none. Saved only when it changed (Organization ADR 0010). */
+	teamId: string;
 }
 
 export type EmployeeDetailFormApi = ReactFormExtendedApi<
@@ -48,6 +50,7 @@ export const defaultFormValues: EmployeeDetailFormValues = {
 	role: undefined,
 	contractType: "fixed",
 	hourlyRate: "",
+	teamId: "",
 };
 
 export const scheduleDayLabels = [
@@ -87,10 +90,20 @@ export function parseEmployeeDetailDateInputValue(value: string) {
 	return date.isValid ? date.toJSDate() : null;
 }
 
-export function buildEmployeeUpdatePayload(value: EmployeeDetailFormValues) {
+/**
+ * The save of the form's values. The Team field is sent only when it changed from
+ * `currentTeamId`, since saving it moves the employee (Organization ADR 0010).
+ */
+export function buildEmployeeUpdatePayload(
+	value: EmployeeDetailFormValues,
+	currentTeamId?: string | null,
+) {
+	const { teamId, ...rest } = value;
+	const nextTeamId = teamId || null;
 	return {
-		...value,
+		...rest,
 		startDate: parseEmployeeDetailDateInputValue(value.startDate),
+		...(currentTeamId !== undefined && nextTeamId !== currentTeamId ? { teamId: nextTeamId } : {}),
 	};
 }
 
@@ -151,6 +164,7 @@ export function buildEmployeeDetailFormValues(
 		employeeNumber: employee.employeeNumber || "",
 		startDate: formatEmployeeDetailDateInputValue(employee.startDate),
 		role: employee.role || undefined,
+		teamId: employee.teamId ?? "",
 		// Employee wages change only through confirmed employment terms (ADR 0002).
 		contractType:
 			employee.kind === "invitationDraft"

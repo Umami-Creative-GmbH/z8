@@ -5,6 +5,7 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
 import type { ExecuteDepartureResult } from "@/lib/employee-lifecycle/types";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
 import type {
 	AssignManagers,
 	CreateEmployee,
@@ -39,7 +40,9 @@ import {
 	assignManagersAction,
 	createEmployeeAction,
 	deleteEmployeeInvitationDraftAction,
+	previewEmployeeTeamChangeDrivingImpact,
 	requestEmployeeWorkBalanceRecalculationAction,
+	type UpdateEmployeeOptions,
 	updateEmployeeAction,
 	updateEmployeeInvitationDraftAction,
 	updateOwnProfileAction,
@@ -71,8 +74,17 @@ export async function updateEmployee(
 	employeeId: string,
 	data: UpdateEmployee,
 	customFieldValues?: CustomFieldValuesInput,
+	options?: UpdateEmployeeOptions,
 ): Promise<ServerActionResult<void>> {
-	return updateEmployeeAction(employeeId, data, customFieldValues);
+	return updateEmployeeAction(employeeId, data, customFieldValues, options);
+}
+
+/** The driving licence warning a Team field change confirmed (#1425), read before the save. */
+export async function previewEmployeeTeamChange(
+	employeeId: string,
+	teamId: string | null,
+): Promise<ServerActionResult<DrivingLicenceTeamChangeImpact>> {
+	return previewEmployeeTeamChangeDrivingImpact(employeeId, teamId);
 }
 
 /** `{ employeeId, requestId, replacementManagers }`; a retry with the same request ID replays. */

@@ -86,11 +86,11 @@ export async function endEquipmentEmployment(
   AND (${input.deactivationId ?? null}::uuid IS NULL OR EXISTS (SELECT 1 FROM employee_deactivation d WHERE d.id=${input.deactivationId ?? null}::uuid AND d.organization_id=e.organization_id AND d.employee_id=e.id AND d.employment_period_id IS NOT DISTINCT FROM ${input.employmentPeriodId}::uuid AND d.reactivated_at IS NULL))`);
 	if (!current.rows.length) return { revokedOfficerGrantIds: [] as string[] };
 	const at = dateFromInstant(input.cutoff);
+	// Team memberships alone say which teams the employee was in (Organization ADR 0010).
 	await tx.execute(sql`INSERT INTO equipment_former_team_scope (organization_id, employee_id, ending_id, team_ids, captured_at)
-  SELECT e.organization_id, e.id, ${input.deactivationId ?? input.departureId ?? input.employmentPeriodId}::uuid, ARRAY(SELECT DISTINCT team_id FROM (
-   SELECT e.team_id WHERE e.team_id IS NOT NULL
-   UNION SELECT tm.team_id FROM team_membership tm WHERE tm.organization_id=e.organization_id AND tm.employee_id=e.id
-  ) teams), ${at} FROM employee e WHERE e.organization_id=${input.organizationId} AND e.id=${input.employeeId}::uuid
+  SELECT e.organization_id, e.id, ${input.deactivationId ?? input.departureId ?? input.employmentPeriodId}::uuid, ARRAY(
+   SELECT DISTINCT tm.team_id FROM team_membership tm WHERE tm.organization_id=e.organization_id AND tm.employee_id=e.id
+  ), ${at} FROM employee e WHERE e.organization_id=${input.organizationId} AND e.id=${input.employeeId}::uuid
   ON CONFLICT DO NOTHING`);
 	const revoked = await tx.execute<{
 		id: string;

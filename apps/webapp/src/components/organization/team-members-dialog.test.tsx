@@ -72,6 +72,25 @@ async function clickRemove() {
 	await userEvent.click(within(row).getByRole("button"));
 }
 
+describe("TeamMembersDialog membership (#1575)", () => {
+	// Her primary team is this team, but she has no membership in it.
+	const stefanie = {
+		member: { id: "m5" },
+		user: { id: "u5", name: "Stefanie Sust", email: "stefanie@example.test", image: null },
+		employee: { id: "d1425000-0000-4000-8000-000000000005", organizationId, teamId, position: null },
+		teamMemberships: [],
+	} as unknown as MemberWithUserAndEmployee;
+
+	it("lists only team memberships and offers anyone else to add", async () => {
+		renderDialog([dana, stefanie]);
+
+		expect(await screen.findByText("Current Members (1)")).toBeTruthy();
+		expect(screen.getByText("Dana Driver")).toBeTruthy();
+		await userEvent.click(screen.getByRole("combobox"));
+		expect(await screen.findByRole("option", { name: /Stefanie Sust/ })).toBeTruthy();
+	});
+});
+
 describe("TeamMembersDialog former employees (#1438)", () => {
 	const fern = {
 		member: { id: "m2" },

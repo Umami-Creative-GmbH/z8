@@ -66,6 +66,7 @@
         "manageEmployees": "zarządzaj pracownikami",
         "managers": "Menedżerowie",
         "noScheduleAssigned": "Brak przypisanego harmonogramu",
+        "noTeam": "Brak zespołu",
         "personnelNumber": "Numer kadrowy",
         "personnelNumberDescription": "Wewnętrzny numer pracownika w Twojej organizacji, używany w eksportach płacowych. Musi być unikalny, także w odniesieniu do byłych pracowników.",
         "personnelNumberManagedByIdp": "Zarządzane przez Twojego dostawcę tożsamości. Zmień tam numer pracownika.",
@@ -95,6 +96,9 @@
           "overview": "Przegląd"
         },
         "team": "Zespół",
+        "teamClearNotice": "Zapisanie kończy członkostwo tego pracownika w zespole {currentTeam}. Jego kolejne członkostwo w zespole, jeśli istnieje, staje się głównym zespołem.",
+        "teamDescription": "Główny zespół pracownika. Pozostałymi członkostwami w zespołach zarządzasz w sekcji Zespoły.",
+        "teamMoveNotice": "Zapisanie przenosi tego pracownika do zespołu {nextTeam}. Jego członkostwo w zespole {currentTeam} wygasa; pozostałe członkostwa w zespołach zostają.",
         "unexpectedError": "Wystąpił nieoczekiwany błąd",
         "updateFailed": "Nie udało się zaktualizować pracownika",
         "updateSuccess": "Pracownik został pomyślnie zaktualizowany",

@@ -66,6 +66,7 @@
         "manageEmployees": "upravljanje zaposlenicima",
         "managers": "Voditelji",
         "noScheduleAssigned": "Nema dodijeljenog rasporeda",
+        "noTeam": "Nema tima",
         "personnelNumber": "Broj zaposlenika",
         "personnelNumberDescription": "Interni broj vaše organizacije za ovog zaposlenika koji se koristi pri izvozu obračuna plaća. Mora biti jedinstven, uključujući i među bivšim zaposlenicima.",
         "personnelNumberManagedByIdp": "Upravlja vaš davatelj identiteta. Tamo promijenite kadrovski broj.",
@@ -95,6 +96,9 @@
           "overview": "Pregled"
         },
         "team": "Tim",
+        "teamClearNotice": "Spremanjem prestaje članstvo ovog zaposlenika u timu {currentTeam}. Njegovo sljedeće članstvo u timu, ako postoji, postaje primarni tim.",
+        "teamDescription": "Primarni tim zaposlenika. Ostalim članstvima u timovima upravljajte pod Timovi.",
+        "teamMoveNotice": "Spremanjem se ovaj zaposlenik premješta u tim {nextTeam}. Njegovo članstvo u timu {currentTeam} prestaje; ostala članstva u timovima ostaju.",
         "unexpectedError": "Došlo je do neočekivane pogreške",
         "updateFailed": "Ažuriranje zaposlenika nije uspjelo",
         "updateSuccess": "Zaposlenik je uspješno ažuriran",

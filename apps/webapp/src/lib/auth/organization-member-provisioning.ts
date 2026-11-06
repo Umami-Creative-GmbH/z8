@@ -18,6 +18,7 @@ import {
 	findPersonnelNumberHolder,
 	isPersonnelNumberConflict,
 } from "@/lib/organization/personnel-number-uniqueness";
+import { setPrimaryTeam } from "@/lib/organization/primary-team";
 import { hourlyWageSchema } from "@/lib/validations/employment-history";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
@@ -84,15 +85,12 @@ async function resolveDraftTeamId(
 
 /**
  * The employee values a draft gives a new employee. The personnel number is
- * left out: `writeWithDraftPersonnelNumber` adds it only while it is free.
+ * left out: `writeWithDraftPersonnelNumber` adds it only while it is free. So is
+ * the team: `setPrimaryTeam` places the employee in it (Organization ADR 0010).
  */
-function draftEmployeeCreationValues(
-	draft: typeof employeeInvitationDraft.$inferSelect | null,
-	teamId: string | null,
-) {
-	if (!draft) return { teamId };
+function draftEmployeeCreationValues(draft: typeof employeeInvitationDraft.$inferSelect | null) {
+	if (!draft) return {};
 	return {
-		teamId,
 		role: draft.role,
 		firstName: draft.firstName,
 		lastName: draft.lastName,
@@ -107,13 +105,9 @@ function draftEmployeeCreationValues(
 }
 
 /** Like `draftEmployeeCreationValues`, for a reactivated employee: only what the draft sets. */
-function draftEmployeeReactivationValues(
-	draft: typeof employeeInvitationDraft.$inferSelect | null,
-	teamId: string | null,
-) {
+function draftEmployeeReactivationValues(draft: typeof employeeInvitationDraft.$inferSelect | null) {
 	if (!draft) return {};
 	return {
-		...(teamId != null ? { teamId } : {}),
 		...(draft.role != null ? { role: draft.role } : {}),
 		...(draft.firstName != null ? { firstName: draft.firstName } : {}),
 		...(draft.lastName != null ? { lastName: draft.lastName } : {}),
@@ -125,6 +119,21 @@ function draftEmployeeReactivationValues(
 		...(draft.endDate != null ? { endDate: draft.endDate } : {}),
 		...(draft.contractType != null ? { contractType: draft.contractType } : {}),
 	};
+}
+
+/** Places the provisioned employee in `teamId` as a membership and their primary team. */
+async function placeInTeam<T extends { id: string; teamId?: string | null }>(
+	tx: EmployeeProvisioningTransaction,
+	organizationId: string,
+	provisioned: T,
+	teamId: string,
+): Promise<T> {
+	const { primaryTeamId } = await setPrimaryTeam(tx, {
+		organizationId,
+		employeeId: provisioned.id,
+		teamId,
+	});
+	return { ...provisioned, teamId: primaryTeamId };
 }
 
 /** A draft personnel number acceptance did not copy because another employee held it. */
@@ -358,17 +367,14 @@ export async function ensureEmployeeForOrganizationMember(
 			allowIdentityFallback: input.mode === "membershipAccepted",
 		});
 		const draft = loadedDraft?.draft ?? null;
-		const draftTeamCandidate = draft
-			? draft.teamId
-			: (input.targetTeamId ?? null);
-		const targetTeamId = draft
-			? await resolveDraftTeamId(tx, input.organizationId, draftTeamCandidate)
-			: (input.targetTeamId ?? null);
-		const creationValues = draftEmployeeCreationValues(draft, targetTeamId);
-		const reactivationValues = draftEmployeeReactivationValues(
-			draft,
-			targetTeamId,
+		// Only a team of this organization places the employee.
+		const targetTeamId = await resolveDraftTeamId(
+			tx,
+			input.organizationId,
+			draft ? draft.teamId : (input.targetTeamId ?? null),
 		);
+		const creationValues = draftEmployeeCreationValues(draft);
+		const reactivationValues = draftEmployeeReactivationValues(draft);
 		const existingEmployee = await tx.query.employee.findFirst({
 			where: and(
 				eq(employee.userId, input.userId),
@@ -410,7 +416,16 @@ export async function ensureEmployeeForOrganizationMember(
 							.returning(),
 				);
 
-				const updatedEmployee = reactivatedEmployee ?? existingEmployee;
+				// The draft's team is a move: its old primary team's membership ends.
+				const updatedEmployee =
+					draft && targetTeamId
+						? await placeInTeam(
+								tx,
+								input.organizationId,
+								reactivatedEmployee ?? existingEmployee,
+								targetTeamId,
+							)
+						: (reactivatedEmployee ?? existingEmployee);
 
 				if (draft && dropped) {
 					await recordDroppedPersonnelNumber(tx, audit, {
@@ -484,6 +499,10 @@ export async function ensureEmployeeForOrganizationMember(
 					return insertResult.returning ? await insertResult.returning() : [];
 				},
 			);
+			const placedEmployee =
+				newEmployee && targetTeamId
+					? await placeInTeam(tx, input.organizationId, newEmployee, targetTeamId)
+					: newEmployee;
 
 			if (newEmployee && draft && dropped) {
 				await recordDroppedPersonnelNumber(tx, audit, {
@@ -518,7 +537,7 @@ export async function ensureEmployeeForOrganizationMember(
 				});
 			}
 
-			provisionedEmployee = newEmployee;
+			provisionedEmployee = placedEmployee;
 		}
 
 		return {

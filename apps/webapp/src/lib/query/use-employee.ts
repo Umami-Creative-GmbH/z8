@@ -38,11 +38,13 @@ export type EmployeeDetail = EmployeeDetailRecord;
 /**
  * An employee detail save: the form's fields plus its custom field values (#818,
  * real employees only). Contract type and wage are saved for invitation drafts
- * only; an employee's change through employment terms.
+ * only; an employee's change through employment terms. A Team field change carries the
+ * driving licence warning it confirmed (#1425).
  */
 type EmployeeDetailUpdate = UpdateEmployee &
 	Pick<UpdateEmployeeInvitationDraft, "contractType" | "hourlyRate"> & {
 		customFieldValues?: CustomFieldValuesInput;
+		drivingLicencePreviewToken?: string;
 	};
 
 interface UseEmployeeOptions {
@@ -258,7 +260,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 	// Update employee mutation
 	const updateMutation = useMutation({
 		mutationFn: async (input: EmployeeDetailUpdate) => {
-			const { customFieldValues, contractType, hourlyRate, ...data } = input;
+			const { customFieldValues, contractType, hourlyRate, drivingLicencePreviewToken, ...data } =
+				input;
 			const isAcceptedDraft =
 				employee?.kind === "invitationDraft" &&
 				Boolean(employee.realEmployeeId);
@@ -277,7 +280,12 @@ export function useEmployee(options: UseEmployeeOptions) {
 						contractType,
 						hourlyRate,
 					})
-				: updateEmployee(employeeId, data, customFieldValues);
+				: updateEmployee(
+						employeeId,
+						data,
+						customFieldValues,
+						drivingLicencePreviewToken ? { drivingLicencePreviewToken } : undefined,
+					);
 		},
 		onSuccess: (result) => {
 			if (result.success) {

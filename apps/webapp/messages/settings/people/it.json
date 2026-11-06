@@ -66,6 +66,7 @@
         "manageEmployees": "gestisci dipendenti",
         "managers": "Manager",
         "noScheduleAssigned": "Nessun orario assegnato",
+        "noTeam": "Nessun team",
         "personnelNumber": "Numero di matricola",
         "personnelNumberDescription": "Il numero identificativo della tua organizzazione per questo dipendente, utilizzato nelle esportazioni delle paghe. Deve essere univoco, anche tra gli ex dipendenti.",
         "personnelNumberManagedByIdp": "Gestito dal tuo provider di identità. Modifica il numero del personale lì.",
@@ -95,6 +96,9 @@
           "overview": "Panoramica"
         },
         "team": "Team",
+        "teamClearNotice": "Salvando, termina l'appartenenza di questo dipendente al team {currentTeam}. La sua appartenenza successiva a un team, se presente, diventa il suo team principale.",
+        "teamDescription": "Il team principale del dipendente. Gestisci le altre appartenenze ai team in Team.",
+        "teamMoveNotice": "Salvando, questo dipendente passa al team {nextTeam}. La sua appartenenza al team {currentTeam} termina; le altre appartenenze ai team restano.",
         "unexpectedError": "Si è verificato un errore imprevisto",
         "updateFailed": "Impossibile aggiornare il dipendente",
         "updateSuccess": "Dipendente aggiornato correttamente",

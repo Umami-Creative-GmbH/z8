@@ -28,6 +28,10 @@ vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	syncBillingSeatsAfterMemberChange: billingMock.sync,
 }));
 
+// The placement itself is covered by primary-team.integration.test.ts (#1575).
+const setPrimaryTeam = vi.hoisted(() => vi.fn(async () => undefined));
+vi.mock("@/lib/organization/primary-team", () => ({ setPrimaryTeam }));
+
 vi.mock("@/lib/auth/member-removal-cleanup", () => ({
 	completeRemovedMemberCleanup: removalCleanupMock.complete,
 	completeRemovedMemberCleanupPostCommit: removalCleanupMock.completePostCommit,
@@ -235,6 +239,7 @@ async function bulkApproveWith(
 describe("PendingMemberService approval transactions", () => {
 	beforeEach(() => {
 		billingMock.sync.mockClear();
+		setPrimaryTeam.mockClear();
 	});
 
 	it("atomically approves the member, records the audit, provisions the employee, then bills", async () => {
@@ -260,6 +265,13 @@ describe("PendingMemberService approval transactions", () => {
 				isActive: true,
 			}),
 		]);
+		// The assigned team is a membership and the primary team (Organization ADR 0010).
+		expect(setPrimaryTeam).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			teamId: "team-1",
+			createdBy: "admin-1",
+		});
 		expect(fake.events).toContain("identity-lock");
 		expect(fake.events.at(-1)).toBe("transaction-commit");
 		expect(billingMock.sync).toHaveBeenCalledWith({

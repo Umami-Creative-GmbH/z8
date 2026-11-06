@@ -27,6 +27,7 @@ import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
+import { setPrimaryTeam } from "@/lib/organization/primary-team";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -281,7 +282,7 @@ export const InviteCodeServiceLive = Layer.effect(
 
 		type RedemptionDb = Pick<
 			typeof dbService.db,
-			"execute" | "query" | "insert" | "update"
+			"execute" | "query" | "insert" | "update" | "delete"
 		>;
 
 		const clearPendingInviteCodeIfCurrent = async (
@@ -336,35 +337,46 @@ export const InviteCodeServiceLive = Layer.effect(
 				),
 			]);
 
+			// The code's team is a membership and the primary team (Organization ADR 0010).
+			const placeInTargetTeam = (employeeId: string) =>
+				targetTeamId
+					? setPrimaryTeam(dbClient, {
+							organizationId: inviteCodeRecord.organizationId,
+							employeeId,
+							teamId: targetTeamId,
+						})
+					: undefined;
+
 			if (existingEmployee) {
 				if (!existingEmployee.isActive) {
 					await dbClient
 						.update(employee)
-						.set({
-							isActive: true,
-							...(targetTeamId ? { teamId: targetTeamId } : {}),
-						})
+						.set({ isActive: true })
 						.where(
 							and(
 								eq(employee.id, existingEmployee.id),
 								eq(employee.organizationId, inviteCodeRecord.organizationId),
 							),
 						);
+					await placeInTargetTeam(existingEmployee.id);
 				}
 				return;
 			}
 
-			await dbClient.insert(employee).values({
-				userId,
-				organizationId: inviteCodeRecord.organizationId,
-				teamId: targetTeamId,
-				role:
-					hasOrganizationRole(memberRole, "owner") ||
-					hasOrganizationRole(memberRole, "admin")
-						? "admin"
-						: "employee",
-				isActive: true,
-			});
+			const [created] = await dbClient
+				.insert(employee)
+				.values({
+					userId,
+					organizationId: inviteCodeRecord.organizationId,
+					role:
+						hasOrganizationRole(memberRole, "owner") ||
+						hasOrganizationRole(memberRole, "admin")
+							? "admin"
+							: "employee",
+					isActive: true,
+				})
+				.returning({ id: employee.id });
+			if (created) await placeInTargetTeam(created.id);
 		};
 
 		const redeemInviteCodeInTransaction = async (

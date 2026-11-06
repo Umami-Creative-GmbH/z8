@@ -12,6 +12,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ComponentProps, ReactNode } from "react";
 import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -22,10 +23,17 @@ import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 import type { EmployeeDetailFormApi } from "./page-utils";
 
-const { pushMock, useEmployeeMock, formSection } = vi.hoisted(() => ({
+const { pushMock, useEmployeeMock, formSection, saveEmployeeMock, teamApi } = vi.hoisted(() => ({
 	pushMock: vi.fn(),
 	useEmployeeMock: vi.fn(),
 	formSection: { real: false },
+	saveEmployeeMock: vi.fn(),
+	teamApi: { list: vi.fn(), preview: vi.fn() },
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/teams/actions", () => ({ listTeams: teamApi.list }));
+vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
+	previewEmployeeTeamChange: teamApi.preview,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -259,7 +267,7 @@ function employeeHookResult(employee: EmployeeDetail) {
 		workPolicies: [],
 		isLoading: false,
 		hasEmployee: true,
-		updateEmployee: vi.fn(),
+		updateEmployee: saveEmployeeMock,
 		isUpdating: false,
 		changeWage: vi.fn(),
 		isChangingWage: false,
@@ -352,6 +360,77 @@ function renderDetail({
 		),
 	};
 }
+
+describe("employee detail Team field (#1575)", () => {
+	const token = "a".repeat(64);
+	const inUmami = {
+		...realEmployee,
+		teamId: "team-1",
+		team: { id: "team-1", name: "Umami" },
+	} as EmployeeDetail;
+	beforeEach(() => {
+		vi.clearAllMocks();
+		teamApi.list.mockResolvedValue({
+			success: true,
+			data: [
+				{ id: "team-1", name: "Umami" },
+				{ id: "team-2", name: "Vertrieb" },
+			],
+		});
+		teamApi.preview.mockResolvedValue({
+			success: true,
+			data: { detail: "full", employees: [], previewToken: token },
+		});
+		saveEmployeeMock.mockResolvedValue({ success: true, data: undefined });
+	});
+
+	it("warns that the old membership ends, then saves the move with its driving licence check", async () => {
+		formSection.real = true;
+		try {
+			renderDetail({ employee: inUmami });
+			await userEvent.click(await screen.findByRole("combobox", { name: "Team" }));
+			await userEvent.click(await screen.findByRole("option", { name: "Vertrieb" }));
+			expect(screen.getByRole("status").textContent).toMatch(/team membership ends/);
+
+			await userEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+			await waitFor(() =>
+				expect(saveEmployeeMock).toHaveBeenCalledWith(
+					expect.objectContaining({ teamId: "team-2", drivingLicencePreviewToken: token }),
+				),
+			);
+			expect(teamApi.preview).toHaveBeenCalledWith("employee-2", "team-2");
+		} finally {
+			formSection.real = false;
+		}
+	});
+
+	it("saves other fields without touching the team", async () => {
+		formSection.real = true;
+		try {
+			renderDetail({ employee: inUmami });
+			const input = await screen.findByRole("textbox", { name: "Position" });
+			await userEvent.type(input, "Lead");
+			await userEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+			await waitFor(() => expect(saveEmployeeMock).toHaveBeenCalled());
+			expect(saveEmployeeMock.mock.calls[0][0]).not.toHaveProperty("teamId");
+			expect(teamApi.preview).not.toHaveBeenCalled();
+		} finally {
+			formSection.real = false;
+		}
+	});
+
+	it("offers no Team field to a scoped manager", async () => {
+		formSection.real = true;
+		try {
+			renderDetail({ employee: inUmami, accessTier: "manager", currentMemberRole: "member" });
+			await screen.findByRole("textbox", { name: "Position" });
+			expect(screen.queryByRole("combobox", { name: "Team" })).toBeNull();
+			expect(teamApi.list).not.toHaveBeenCalled();
+		} finally {
+			formSection.real = false;
+		}
+	});
+});
 
 describe("employee detail admin-only custom roles (#1475)", () => {
 	beforeEach(() => vi.clearAllMocks());

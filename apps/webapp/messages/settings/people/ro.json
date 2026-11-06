@@ -66,6 +66,7 @@
         "manageEmployees": "gestionați angajații",
         "managers": "Manageri",
         "noScheduleAssigned": "Niciun program alocat",
+        "noTeam": "Fără echipă",
         "personnelNumber": "Număr de personal",
         "personnelNumberDescription": "Numărul atribuit de organizația dvs. acestui angajat, utilizat în exporturile de salarii. Acesta trebuie să fie unic, inclusiv în rândul foștilor angajați.",
         "personnelNumberManagedByIdp": "Gestionat de furnizorul dvs. de identitate. Modificați numărul de personal acolo.",
@@ -95,6 +96,9 @@
           "overview": "Prezentare generală"
         },
         "team": "Echipă",
+        "teamClearNotice": "La salvare se încheie apartenența acestui angajat la echipa {currentTeam}. Următoarea sa apartenență la o echipă, dacă există, devine echipa principală.",
+        "teamDescription": "Echipa principală a angajatului. Gestionați celelalte apartenențe la echipe în Echipe.",
+        "teamMoveNotice": "La salvare, acest angajat este mutat în echipa {nextTeam}. Apartenența sa la echipa {currentTeam} se încheie; celelalte apartenențe la echipe rămân.",
         "unexpectedError": "A apărut o eroare neașteptată",
         "updateFailed": "Actualizarea angajatului a eșuat",
         "updateSuccess": "Angajat actualizat cu succes",
