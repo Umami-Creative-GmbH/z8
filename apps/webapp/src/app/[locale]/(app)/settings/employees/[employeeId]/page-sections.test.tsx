@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FieldApi, FormApi } from "@tanstack/react-form";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
@@ -174,6 +174,7 @@ const formValues = {
 	role: "employee",
 	contractType: "fixed",
 	hourlyRate: "",
+	teamId: "team-1",
 };
 
 function createForm(overrides: Partial<typeof formValues> = {}) {
@@ -532,6 +533,68 @@ describe("employee detail page sections", () => {
 				.getByRole("link", { name: "Change in Contract & Work Model" })
 				.getAttribute("href"),
 		).toBe("#employment-history");
+	});
+
+	describe("Team field (#1575)", () => {
+		const interpolate = (_key: string, fallback: string, values?: Record<string, string | number>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(values?.[name] ?? ""));
+		const team = {
+			currentTeam: { id: "team-1", name: "Umami" },
+			options: [
+				{ id: "team-1", name: "Umami" },
+				{ id: "team-2", name: "Vertrieb" },
+			],
+		};
+		const renderWithTeam = (teamId: string) =>
+			render(
+				<EmployeeEditFormCard
+					form={createForm({ teamId }) as never}
+					canEditManagerFields={true}
+					canEditOrgAdminFields={true}
+					contract={{ kind: "terms", contractTypeToday: "fixed" }}
+					isUpdating={false}
+					onCancel={vi.fn()}
+					t={interpolate}
+					team={team}
+				/>,
+			);
+
+		it("says before saving that a move ends the old team membership", () => {
+			renderWithTeam("team-2");
+			expect(
+				screen.getByText(
+					"Saving moves this employee to Vertrieb. Their Umami team membership ends; their other team memberships stay.",
+				),
+			).toBeTruthy();
+		});
+
+		it("says before saving that clearing the team ends its membership", () => {
+			renderWithTeam("");
+			expect(
+				screen.getByText(
+					"Saving ends this employee's Umami team membership. Their next team membership, if any, becomes their primary team.",
+				),
+			).toBeTruthy();
+		});
+
+		it("says nothing while the team is unchanged, and has no Team field without team options", () => {
+			renderWithTeam("team-1");
+			expect(screen.getByText("Team")).toBeTruthy();
+			expect(screen.queryByText(/team membership ends/)).toBeNull();
+			cleanup();
+
+			render(
+				<EmployeeEditFormCard
+					form={createForm() as never}
+					canEditManagerFields={true}
+					canEditOrgAdminFields={true}
+					contract={{ kind: "terms", contractTypeToday: "fixed" }}
+					isUpdating={false}
+					onCancel={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("Team")).toBeNull();
+		});
 	});
 
 	it("says when no confirmed terms are in force today", () => {

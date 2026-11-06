@@ -1,10 +1,11 @@
 "use client";
 
-import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { RoleSelector } from "@/components/settings/role-selector";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,18 @@ export type EmployeeEditFormContract =
 	| { kind: "draft" }
 	| { kind: "terms"; contractTypeToday: ContractType | null };
 
+/** A team the Team field offers. */
+export type EmployeeTeamOption = { id: string; name: string };
+
+/**
+ * The Team field (Organization ADR 0010): the employee's primary team, which saving moves.
+ * Only org admins get it, on an employee record.
+ */
+export type EmployeeEditFormTeam = {
+	currentTeam: EmployeeTeamOption | null;
+	options: readonly EmployeeTeamOption[];
+};
+
 export function EmployeeEditFormCard({
 	form,
 	canEditManagerFields,
@@ -49,6 +62,7 @@ export function EmployeeEditFormCard({
 	customFields = null,
 	hasCustomFieldChanges = false,
 	personnelNumberManagedByScim = false,
+	team = null,
 }: {
 	form: EmployeeDetailFormApi;
 	canEditManagerFields: boolean;
@@ -62,6 +76,7 @@ export function EmployeeEditFormCard({
 	/** Custom field drafts count as changes for the save button. */
 	hasCustomFieldChanges?: boolean;
 	personnelNumberManagedByScim?: boolean;
+	team?: EmployeeEditFormTeam | null;
 }) {
 	return (
 		<Card className="lg:col-span-2">
@@ -245,6 +260,15 @@ export function EmployeeEditFormCard({
 						)}
 					</form.Field>
 
+					{team && (
+						<EmployeeTeamField
+							form={form}
+							team={team}
+							disabled={!canEditOrgAdminFields || isUpdating}
+							t={t}
+						/>
+					)}
+
 					{contract.kind === "draft" ? (
 						<>
 							<form.Field name="contractType">
@@ -320,6 +344,98 @@ export function EmployeeEditFormCard({
 				</form>
 			</CardContent>
 		</Card>
+	);
+}
+
+const NO_TEAM = "__no_team__";
+
+/**
+ * The employee's primary team. Changing it is a move and clearing it ends that membership
+ * (Organization ADR 0010): the notice says so before the save.
+ */
+function EmployeeTeamField({
+	form,
+	team,
+	disabled,
+	t,
+}: {
+	form: EmployeeDetailFormApi;
+	team: EmployeeEditFormTeam;
+	disabled: boolean;
+	t: Translate;
+}) {
+	return (
+		<form.Field name="teamId">
+			{(field) => {
+				const nextTeam = team.options.find((option) => option.id === field.state.value) ?? null;
+				return (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("settings.employees.detailView.team", "Team")}
+						</TFormLabel>
+						<Select
+							onValueChange={(value) => field.handleChange(value === NO_TEAM ? "" : value)}
+							value={field.state.value || NO_TEAM}
+							disabled={disabled}
+						>
+							<TFormControl hasError={fieldHasError(field)}>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+							</TFormControl>
+							<SelectContent>
+								<SelectItem value={NO_TEAM}>
+									{t("settings.employees.detailView.noTeam", "No team")}
+								</SelectItem>
+								{team.options.map((option) => (
+									<SelectItem key={option.id} value={option.id}>
+										{option.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<TFormDescription>
+							{t(
+								"settings.employees.detailView.teamDescription",
+								"The employee's primary team. Manage further team memberships under Teams.",
+							)}
+						</TFormDescription>
+						<TeamMoveNotice currentTeam={team.currentTeam} nextTeam={nextTeam} t={t} />
+						<TFormMessage field={field} />
+					</TFormItem>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+function TeamMoveNotice({
+	currentTeam,
+	nextTeam,
+	t,
+}: {
+	currentTeam: EmployeeTeamOption | null;
+	nextTeam: EmployeeTeamOption | null;
+	t: Translate;
+}) {
+	if (!currentTeam || currentTeam.id === nextTeam?.id) return null;
+	return (
+		<Alert role="status">
+			<IconInfoCircle aria-hidden="true" />
+			<AlertDescription>
+				{nextTeam
+					? t(
+							"settings.employees.detailView.teamMoveNotice",
+							"Saving moves this employee to {nextTeam}. Their {currentTeam} team membership ends; their other team memberships stay.",
+							{ nextTeam: nextTeam.name, currentTeam: currentTeam.name },
+						)
+					: t(
+							"settings.employees.detailView.teamClearNotice",
+							"Saving ends this employee's {currentTeam} team membership. Their next team membership, if any, becomes their primary team.",
+							{ currentTeam: currentTeam.name },
+						)}
+			</AlertDescription>
+		</Alert>
 	);
 }
 

@@ -314,13 +314,13 @@ export function TeamsTab({
 		),
 	];
 
-	// Get employees for a specific team: the current roster unless asked for everyone (#1438)
+	// Get employees for a specific team: the current roster unless asked for everyone (#1438).
+	// Team memberships alone say who belongs (Organization ADR 0010).
 	const getTeamEmployees = (teamId: string, options: { includeFormer?: boolean } = {}) => {
 		return members.filter(
 			(m) =>
 				(options.includeFormer || !isFormerTeamMember(m)) &&
-				(m.employee?.teamId === teamId ||
-					m.teamMemberships?.some((membership) => membership.teamId === teamId)),
+				m.teamMemberships?.some((membership) => membership.teamId === teamId),
 		);
 	};
 

@@ -74,6 +74,19 @@ vi.mock("@/lib/organization/custom-fields/form-values", () => ({
 	saveFormCustomFieldValues: vi.fn(async () => undefined),
 }));
 
+// The placement itself is covered by primary-team.integration.test.ts (#1575).
+const setPrimaryTeam = vi.hoisted(() =>
+	vi.fn(async (_tx: unknown, input: { teamId: string | null }) => ({
+		addTeamId: input.teamId,
+		endTeamId: null,
+		primaryTeamId: input.teamId,
+	})),
+);
+vi.mock("@/lib/organization/primary-team", () => ({
+	keepPrimaryTeamRefusal: (effect: unknown) => effect,
+	setPrimaryTeam,
+}));
+
 // The work balance is marked from the terms' calendar date in the organization's timezone.
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 	loadOrganizationTimezone: vi.fn(async () => "Europe/Berlin"),
@@ -275,6 +288,11 @@ describe("createEmployeeAction", () => {
 				firstName: expect.anything(),
 				lastName: expect.anything(),
 			}),
+		);
+		// The team is a membership and the primary team (Organization ADR 0010).
+		expect(setPrimaryTeam).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-1", teamId: validTeamId }),
 		);
 		// The absent employee row is inserted under the new user's protection.
 		expect(protection.scopes).toContainEqual({

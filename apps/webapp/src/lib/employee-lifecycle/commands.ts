@@ -18,6 +18,7 @@ import {
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
 import { synchronizeEquipmentDeparture } from "@/lib/organization/equipment/lifecycle";
+import { setPrimaryTeam } from "@/lib/organization/primary-team";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { departureCutoff } from "./cutoff";
 import { queueDataExportReminder } from "./data-export-reminder";
@@ -714,12 +715,18 @@ async function rehireEmployee(
 			.set({
 				isActive: true,
 				role: input.role,
-				teamId: input.teamId,
 				contractType: input.contractType,
 				endDate: null,
 				updatedAt: nowDate,
 			})
 			.where(and(eq(employee.organizationId, actor.organizationId), eq(employee.id, target.id)));
+		// The rehire's team is a move (Organization ADR 0010).
+		await setPrimaryTeam(tx, {
+			organizationId: actor.organizationId,
+			employeeId: target.id,
+			teamId: input.teamId ?? null,
+			createdBy: actor.userId,
+		});
 
 		await tx
 			.insert(employeeDepartureTask)

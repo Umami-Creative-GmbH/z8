@@ -66,6 +66,7 @@
         "manageEmployees": "gerenciar funcionários",
         "managers": "Gerentes",
         "noScheduleAssigned": "Nenhum horário atribuído",
+        "noTeam": "Sem equipe",
         "personnelNumber": "Número de pessoal",
         "personnelNumberDescription": "O número próprio da sua organização para este colaborador, usado em exportações da folha de pagamento. Ele deve ser exclusivo, inclusive entre ex-colaboradores.",
         "personnelNumberManagedByIdp": "Gerenciado pelo seu provedor de identidade. Altere o número de matrícula lá.",
@@ -95,6 +96,9 @@
           "overview": "Visão geral"
         },
         "team": "Equipe",
+        "teamClearNotice": "Ao salvar, termina a participação deste funcionário na equipe {currentTeam}. A próxima participação em equipe, se houver, passa a ser a equipe principal.",
+        "teamDescription": "A equipe principal do funcionário. Gerencie outras participações em equipes em Equipes.",
+        "teamMoveNotice": "Ao salvar, este funcionário passa para a equipe {nextTeam}. A participação na equipe {currentTeam} termina; as outras participações em equipes permanecem.",
         "unexpectedError": "Ocorreu um erro inesperado",
         "updateFailed": "Falha ao atualizar funcionário",
         "updateSuccess": "Funcionário atualizado com sucesso",

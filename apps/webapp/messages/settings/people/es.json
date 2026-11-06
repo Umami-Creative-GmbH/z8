@@ -66,6 +66,7 @@
         "manageEmployees": "gestionar empleados",
         "managers": "Responsables",
         "noScheduleAssigned": "Sin horario asignado",
+        "noTeam": "Sin equipo",
         "personnelNumber": "Número de personal",
         "personnelNumberDescription": "El número asignado por tu organización a este empleado, utilizado en las exportaciones de nómina. Debe ser único, incluso entre antiguos empleados.",
         "personnelNumberManagedByIdp": "Gestionado por su proveedor de identidades. Modifique el número de empleado allí.",
@@ -95,6 +96,9 @@
           "overview": "Resumen"
         },
         "team": "Equipo",
+        "teamClearNotice": "Al guardar, termina la pertenencia de este empleado al equipo {currentTeam}. Su siguiente pertenencia a un equipo, si la hay, pasa a ser su equipo principal.",
+        "teamDescription": "El equipo principal del empleado. Gestiona otras pertenencias a equipos en Equipos.",
+        "teamMoveNotice": "Al guardar, este empleado pasa al equipo {nextTeam}. Su pertenencia al equipo {currentTeam} termina; sus demás pertenencias a equipos se mantienen.",
         "unexpectedError": "Se ha producido un error inesperado",
         "updateFailed": "Error al actualizar el empleado",
         "updateSuccess": "Empleado actualizado correctamente",
