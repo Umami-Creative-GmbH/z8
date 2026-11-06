@@ -1,10 +1,28 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
 	TFormControl,
 	TFormDescription,
@@ -21,18 +39,112 @@ import type {
 export type SubmitEquipment = (
 	change: EquipmentSetupChange,
 ) => Promise<boolean>;
-interface FormActions {
+
+interface PanelProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
 	submit: SubmitEquipment;
 	pending: boolean;
 }
-const selectClass =
-	"flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
-export function EquipmentRetentionForm({
+/** An action panel that cannot be dismissed while its command is in flight. */
+function EquipmentPanel({
+	open,
+	onOpenChange,
+	pending,
+	title,
+	description,
+	children,
+}: Omit<PanelProps, "submit"> & {
+	title: ReactNode;
+	description: ReactNode;
+	children: ReactNode;
+}) {
+	return (
+		<ActionPanel
+			open={open}
+			onOpenChange={(next) => {
+				if (!pending) onOpenChange(next);
+			}}
+		>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{title}</ActionPanelTitle>
+					<ActionPanelDescription>{description}</ActionPanelDescription>
+				</ActionPanelHeader>
+				{children}
+			</ActionPanelContent>
+		</ActionPanel>
+	);
+}
+
+function PanelFooter({
+	pending,
+	onCancel,
+	submitLabel,
+	submitDisabled,
+}: {
+	pending: boolean;
+	onCancel: () => void;
+	submitLabel: string;
+	submitDisabled?: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<ActionPanelFooter>
+			<Button
+				type="button"
+				variant="outline"
+				onClick={onCancel}
+				disabled={pending}
+			>
+				{t("settings.equipment.cancel", "Cancel")}
+			</Button>
+			<Button type="submit" disabled={pending || submitDisabled}>
+				{pending ? (
+					<IconLoader2
+						className="size-4 motion-safe:animate-spin"
+						aria-hidden="true"
+					/>
+				) : null}
+				{submitLabel}
+			</Button>
+		</ActionPanelFooter>
+	);
+}
+
+export function EquipmentRetentionPanel({
+	policy,
+	...panel
+}: PanelProps & { policy: EquipmentSetupView["policy"] }) {
+	const { t } = useTranslate();
+	return (
+		<EquipmentPanel
+			{...panel}
+			title={
+				policy
+					? t("settings.equipment.retention.editTitle", "Edit record retention")
+					: t(
+							"settings.equipment.retention.configureTitle",
+							"Configure record retention",
+						)
+			}
+			description={t(
+				"settings.equipment.retention.description",
+				"Configure a finite period before operational equipment tracking can be used. No legal retention period is assumed.",
+			)}
+		>
+			<RetentionForm key={policy?.revision ?? 0} policy={policy} {...panel} />
+		</EquipmentPanel>
+	);
+}
+
+function RetentionForm({
 	policy,
 	submit,
 	pending,
-}: FormActions & { policy: EquipmentSetupView["policy"] }) {
+	onOpenChange,
+}: PanelProps & { policy: EquipmentSetupView["policy"] }) {
 	const { t } = useTranslate();
 	const [requestId] = useState(() => crypto.randomUUID());
 	const element = useRef<HTMLFormElement>(null);
@@ -44,15 +156,18 @@ export function EquipmentRetentionForm({
 				?.focus();
 		},
 		onSubmit: async ({ value }) => {
-			await submit({
+			const saved = await submit({
 				kind: "configure_policy",
 				requestId,
 				retentionMonths: Number(value.months),
 				expectedRevision: policy?.revision ?? 0,
 			});
+			if (saved) onOpenChange(false);
 		},
 	});
 	return (
+		// Client-side TanStack Form submit; the settings page needs JS.
+		// react-doctor-disable-next-line react-doctor/no-prevent-default
 		<form
 			ref={element}
 			noValidate
@@ -60,72 +175,106 @@ export function EquipmentRetentionForm({
 				e.preventDefault();
 				void form.handleSubmit();
 			}}
-			className="space-y-4"
+			className="flex min-h-0 flex-1 flex-col"
 		>
-			<form.Field
-				name="months"
-				validators={{
-					onSubmit: ({ value }) =>
-						!/^\d+$/.test(value) ||
-						Number(value) < 1 ||
-						Number(value) > 2147483647
-							? t(
-									"settings.equipment.validation.months",
-									"Enter a positive whole number of months.",
-								)
-							: undefined,
-				}}
-			>
-				{(field) => (
-					<TFormItem>
-						<TFormLabel>
-							{t(
-								"settings.equipment.retention.label",
-								"Closed-record retention (months)",
-							)}
-						</TFormLabel>
-						<TFormControl hasError={field.state.meta.errors.length > 0}>
-							<Input
-								name={field.name}
-								autoComplete="off"
-								type="number"
-								inputMode="numeric"
-								min={1}
-								step={1}
-								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
-								onBlur={field.handleBlur}
-								disabled={pending}
-								className="max-w-xs"
-							/>
-						</TFormControl>
-						<TFormDescription>
-							{t(
-								"settings.equipment.retention.help",
-								"Choose your organization's justified retention period. It starts at the latest activity on fully closed assignments. Outstanding returns and documented case holds prevent cleanup.",
-							)}{" "}
-							{t(
-								"settings.equipment.retention.calendarBoundary",
-								"Cleanup becomes eligible at organization-local midnight after the full anniversary day. Later activity, including releasing a case hold, starts the period again.",
-							)}
-						</TFormDescription>
-						<TFormMessage field={field} />
-					</TFormItem>
+			<ActionPanelBody className="space-y-4">
+				<form.Field
+					name="months"
+					validators={{
+						onSubmit: ({ value }) =>
+							!/^\d+$/.test(value) ||
+							Number(value) < 1 ||
+							Number(value) > 2147483647
+								? t(
+										"settings.equipment.validation.months",
+										"Enter a positive whole number of months.",
+									)
+								: undefined,
+					}}
+				>
+					{(field) => (
+						<TFormItem>
+							<TFormLabel hasError={field.state.meta.errors.length > 0}>
+								{t(
+									"settings.equipment.retention.label",
+									"Closed-record retention (months)",
+								)}
+							</TFormLabel>
+							<TFormControl hasError={field.state.meta.errors.length > 0}>
+								<Input
+									name={field.name}
+									autoComplete="off"
+									type="number"
+									inputMode="numeric"
+									min={1}
+									step={1}
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									disabled={pending}
+									className="max-w-40"
+								/>
+							</TFormControl>
+							<TFormDescription>
+								{t(
+									"settings.equipment.retention.help",
+									"Choose your organization's justified retention period. It starts at the latest activity on fully closed assignments. Outstanding returns and documented case holds prevent cleanup.",
+								)}{" "}
+								{t(
+									"settings.equipment.retention.calendarBoundary",
+									"Cleanup becomes eligible at organization-local midnight after the full anniversary day. Later activity, including releasing a case hold, starts the period again.",
+								)}
+							</TFormDescription>
+							<TFormMessage field={field} />
+						</TFormItem>
+					)}
+				</form.Field>
+			</ActionPanelBody>
+			<PanelFooter
+				pending={pending}
+				onCancel={() => onOpenChange(false)}
+				submitLabel={t(
+					"settings.equipment.retention.save",
+					"Save retention policy",
 				)}
-			</form.Field>
-			<Button type="submit" disabled={pending}>
-				{t("settings.equipment.retention.save", "Save retention policy")}
-			</Button>
+			/>
 		</form>
 	);
 }
 
-export function EquipmentTypeForm({
+export function EquipmentTypePanel({
+	type,
+	...panel
+}: PanelProps & { type?: EquipmentTypeView }) {
+	const { t } = useTranslate();
+	return (
+		<EquipmentPanel
+			{...panel}
+			title={
+				type
+					? t("settings.equipment.types.edit", "Edit equipment type")
+					: t("settings.equipment.types.create", "New equipment type")
+			}
+			description={t(
+				"settings.equipment.types.defaultHelp",
+				"Defaults apply to future assignments. Existing return agreements stay as recorded.",
+			)}
+		>
+			<TypeForm
+				key={`${type?.id ?? "new"}:${type?.revision ?? 0}`}
+				type={type}
+				{...panel}
+			/>
+		</EquipmentPanel>
+	);
+}
+
+function TypeForm({
 	type,
 	submit,
 	pending,
-	onCancel,
-}: FormActions & { type?: EquipmentTypeView; onCancel: () => void }) {
+	onOpenChange,
+}: PanelProps & { type?: EquipmentTypeView }) {
 	const { t } = useTranslate();
 	const [requestId] = useState(() => crypto.randomUUID());
 	const element = useRef<HTMLFormElement>(null);
@@ -152,10 +301,16 @@ export function EquipmentTypeForm({
 						}
 					: { ...value, kind: "create_type", requestId },
 			);
-			if (saved) onCancel();
+			if (saved) onOpenChange(false);
 		},
 	});
+	const modeLabels = {
+		individual: t("settings.equipment.types.individual", "Individual items"),
+		quantity: t("settings.equipment.types.quantity", "Quantity"),
+	};
 	return (
+		// Client-side TanStack Form submit; the settings page needs JS.
+		// react-doctor-disable-next-line react-doctor/no-prevent-default
 		<form
 			ref={element}
 			noValidate
@@ -163,145 +318,151 @@ export function EquipmentTypeForm({
 				e.preventDefault();
 				void form.handleSubmit();
 			}}
-			className="space-y-4 rounded-lg border p-4"
+			className="flex min-h-0 flex-1 flex-col"
 		>
-			<h3 className="font-medium">
-				{type
-					? t("settings.equipment.types.edit", "Edit equipment type")
-					: t("settings.equipment.types.create", "New equipment type")}
-			</h3>
-			<form.Field
-				name="name"
-				validators={{
-					onSubmit: ({ value }) =>
-						!value.trim() || value.trim().length > 100
-							? t(
-									"settings.equipment.validation.name",
-									"Enter a type name of up to 100 characters.",
-								)
-							: undefined,
-				}}
-			>
-				{(field) => (
-					<TFormItem>
-						<TFormLabel>
-							{t("settings.equipment.types.name", "Type name")}
-						</TFormLabel>
-						<TFormControl hasError={field.state.meta.errors.length > 0}>
-							<Input
-								name={field.name}
-								autoComplete="off"
+			<ActionPanelBody className="space-y-6">
+				<form.Field
+					name="name"
+					validators={{
+						onSubmit: ({ value }) =>
+							!value.trim() || value.trim().length > 100
+								? t(
+										"settings.equipment.validation.name",
+										"Enter a type name of up to 100 characters.",
+									)
+								: undefined,
+					}}
+				>
+					{(field) => (
+						<TFormItem>
+							<TFormLabel hasError={field.state.meta.errors.length > 0}>
+								{t("settings.equipment.types.name", "Type name")}
+							</TFormLabel>
+							<TFormControl hasError={field.state.meta.errors.length > 0}>
+								<Input
+									name={field.name}
+									autoComplete="off"
+									value={field.state.value}
+									maxLength={100}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									disabled={pending}
+								/>
+							</TFormControl>
+							<TFormMessage field={field} />
+						</TFormItem>
+					)}
+				</form.Field>
+				<form.Field name="trackingMode">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel>
+								{t("settings.equipment.types.mode", "Tracking mode")}
+							</TFormLabel>
+							<Select
 								value={field.state.value}
-								maxLength={100}
-								onChange={(e) => field.handleChange(e.target.value)}
-								onBlur={field.handleBlur}
-								disabled={pending}
-							/>
-						</TFormControl>
-						<TFormMessage field={field} />
-					</TFormItem>
-				)}
-			</form.Field>
-			<form.Field name="trackingMode">
-				{(field) => (
-					<TFormItem>
-						<TFormLabel>
-							{t("settings.equipment.types.mode", "Tracking mode")}
-						</TFormLabel>
-						<TFormControl>
-							<select
-								aria-label={t("settings.equipment.types.mode", "Tracking mode")}
-								name={field.name}
-								autoComplete="off"
-								className={selectClass}
-								value={field.state.value}
-								onChange={(e) =>
+								onValueChange={(value) =>
 									field.handleChange(
-										e.target.value === "quantity" ? "quantity" : "individual",
+										value === "quantity" ? "quantity" : "individual",
 									)
 								}
-								onBlur={field.handleBlur}
 								disabled={pending || type?.used}
 							>
-								<option value="individual">
-									{t("settings.equipment.types.individual", "Individual items")}
-								</option>
-								<option value="quantity">
-									{t("settings.equipment.types.quantity", "Quantity")}
-								</option>
-							</select>
-						</TFormControl>
-						<TFormDescription>
-							{type?.used
-								? t(
-										"settings.equipment.types.fixed",
-										"This type has been used. Its tracking mode is fixed; create a new type to use another mode.",
-									)
-								: t(
-										"settings.equipment.types.modeHelp",
-										"Track laptops by identity, or interchangeable equipment such as shirts by quantity.",
+								<TFormControl>
+									<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+										<SelectValue />
+									</SelectTrigger>
+								</TFormControl>
+								<SelectContent>
+									<SelectItem value="individual">
+										{modeLabels.individual}
+									</SelectItem>
+									<SelectItem value="quantity">
+										{modeLabels.quantity}
+									</SelectItem>
+								</SelectContent>
+							</Select>
+							<TFormDescription>
+								{type?.used
+									? t(
+											"settings.equipment.types.fixed",
+											"This type has been used. Its tracking mode is fixed; create a new type to use another mode.",
+										)
+									: t(
+											"settings.equipment.types.modeHelp",
+											"Track laptops by identity, or interchangeable equipment such as shirts by quantity.",
+										)}
+							</TFormDescription>
+						</TFormItem>
+					)}
+				</form.Field>
+				<form.Field name="defaultReturnRequired">
+					{(field) => (
+						<TFormItem className="flex items-start justify-between gap-4 rounded-lg border p-4">
+							<div className="min-w-0 space-y-1">
+								<TFormLabel>
+									{t(
+										"settings.equipment.types.returnDefault",
+										"Return required by default",
 									)}
-						</TFormDescription>
-					</TFormItem>
-				)}
-			</form.Field>
-			<form.Field name="defaultReturnRequired">
-				{(field) => (
-					<TFormItem className="flex items-center gap-2">
-						<TFormControl>
-							<input
-								aria-label={t(
-									"settings.equipment.types.returnDefault",
-									"Return required by default",
-								)}
-								name={field.name}
-								type="checkbox"
-								className="size-4 accent-primary"
-								checked={field.state.value}
-								onChange={(e) => field.handleChange(e.target.checked)}
-								disabled={pending}
-							/>
-						</TFormControl>
-						<TFormLabel>
-							{t(
-								"settings.equipment.types.returnDefault",
-								"Return required by default",
-							)}
-						</TFormLabel>
-					</TFormItem>
-				)}
-			</form.Field>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"settings.equipment.types.defaultHelp",
-					"Defaults apply to future assignments. Existing return agreements stay as recorded.",
-				)}
-			</p>
-			<div className="flex gap-2">
-				<Button type="submit" disabled={pending}>
-					{t("settings.equipment.types.save", "Save type")}
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={onCancel}
-					disabled={pending}
-				>
-					{t("settings.equipment.cancel", "Cancel")}
-				</Button>
-			</div>
+								</TFormLabel>
+								<TFormDescription>
+									{t(
+										"settings.equipment.types.returnDefaultHelp",
+										"Turn off for equipment that employees keep, such as clothing.",
+									)}
+								</TFormDescription>
+							</div>
+							<TFormControl>
+								<Switch
+									checked={field.state.value}
+									onCheckedChange={(checked) => field.handleChange(checked)}
+									disabled={pending}
+								/>
+							</TFormControl>
+						</TFormItem>
+					)}
+				</form.Field>
+			</ActionPanelBody>
+			<PanelFooter
+				pending={pending}
+				onCancel={() => onOpenChange(false)}
+				submitLabel={t("settings.equipment.types.save", "Save type")}
+			/>
 		</form>
 	);
 }
 
-export function EquipmentItemForm({
+export function EquipmentItemPanel({
 	types,
-	configured,
+	...panel
+}: PanelProps & { types: EquipmentTypeView[] }) {
+	const { t } = useTranslate();
+	return (
+		<EquipmentPanel
+			{...panel}
+			title={t(
+				"settings.equipment.items.registerTitle",
+				"Register equipment item",
+			)}
+			description={t(
+				"settings.equipment.items.description",
+				"Register physical equipment by its organization identifier. Manufacturer serial numbers are optional and separate.",
+			)}
+		>
+			<ItemForm types={types} {...panel} />
+		</EquipmentPanel>
+	);
+}
+
+function ItemForm({
+	types,
 	submit,
 	pending,
-}: FormActions & { types: EquipmentTypeView[]; configured: boolean }) {
+	onOpenChange,
+}: PanelProps & { types: EquipmentTypeView[] }) {
 	const { t } = useTranslate();
-	const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+	const [requestId] = useState(() => crypto.randomUUID());
 	const element = useRef<HTMLFormElement>(null);
 	const individualTypes = types.filter(
 		(type) => type.trackingMode === "individual",
@@ -314,18 +475,17 @@ export function EquipmentItemForm({
 			);
 			if (name)
 				element.current
-					?.querySelector<HTMLElement>(`[name="${name}"]`)
+					?.querySelector<HTMLElement>(`[data-focus-field="${name}"]`)
 					?.focus();
 		},
 		onSubmit: async ({ value }) => {
-			if (await submit({ ...value, kind: "register_item", requestId })) {
-				form.reset();
-				setRequestId(crypto.randomUUID());
-			}
+			if (await submit({ ...value, kind: "register_item", requestId }))
+				onOpenChange(false);
 		},
 	});
-	const disabled = pending || !configured || individualTypes.length === 0;
 	return (
+		// Client-side TanStack Form submit; the settings page needs JS.
+		// react-doctor-disable-next-line react-doctor/no-prevent-default
 		<form
 			ref={element}
 			noValidate
@@ -333,54 +493,57 @@ export function EquipmentItemForm({
 				e.preventDefault();
 				void form.handleSubmit();
 			}}
-			className="space-y-4"
+			className="flex min-h-0 flex-1 flex-col"
 		>
-			<form.Field
-				name="typeId"
-				validators={{
-					onSubmit: ({ value }) =>
-						!individualTypes.some((type) => type.id === value)
-							? t(
-									"settings.equipment.validation.type",
-									"Select an active individually tracked type.",
-								)
-							: undefined,
-				}}
-			>
-				{(field) => (
-					<TFormItem>
-						<TFormLabel>
-							{t("settings.equipment.items.type", "Equipment type")}
-						</TFormLabel>
-						<TFormControl hasError={field.state.meta.errors.length > 0}>
-							<select
-								aria-label={t(
-									"settings.equipment.items.type",
-									"Equipment type",
-								)}
-								name={field.name}
-								autoComplete="off"
-								className={selectClass}
-								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
-								onBlur={field.handleBlur}
-								disabled={disabled}
+			<ActionPanelBody className="space-y-6">
+				<form.Field
+					name="typeId"
+					validators={{
+						onSubmit: ({ value }) =>
+							!individualTypes.some((type) => type.id === value)
+								? t(
+										"settings.equipment.validation.type",
+										"Select an active individually tracked type.",
+									)
+								: undefined,
+					}}
+				>
+					{(field) => (
+						<TFormItem>
+							<TFormLabel hasError={field.state.meta.errors.length > 0}>
+								{t("settings.equipment.items.type", "Equipment type")}
+							</TFormLabel>
+							<Select
+								value={field.state.value || null}
+								onValueChange={(value) => field.handleChange(value ?? "")}
+								disabled={pending}
 							>
-								<option value="">
-									{t("settings.equipment.items.selectType", "Select a type")}
-								</option>
-								{individualTypes.map((type) => (
-									<option key={type.id} value={type.id}>
-										{type.name}
-									</option>
-								))}
-							</select>
-						</TFormControl>
-						<TFormMessage field={field} />
-					</TFormItem>
-				)}
-			</form.Field>
-			<div className="grid gap-4 sm:grid-cols-2">
+								<TFormControl hasError={field.state.meta.errors.length > 0}>
+									<SelectTrigger
+										className="w-full"
+										data-focus-field="typeId"
+										onBlur={field.handleBlur}
+									>
+										<SelectValue
+											placeholder={t(
+												"settings.equipment.items.selectType",
+												"Select a type",
+											)}
+										/>
+									</SelectTrigger>
+								</TFormControl>
+								<SelectContent>
+									{individualTypes.map((type) => (
+										<SelectItem key={type.id} value={type.id}>
+											{type.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<TFormMessage field={field} />
+						</TFormItem>
+					)}
+				</form.Field>
 				<form.Field
 					name="identifier"
 					validators={{
@@ -395,7 +558,7 @@ export function EquipmentItemForm({
 				>
 					{(field) => (
 						<TFormItem>
-							<TFormLabel>
+							<TFormLabel hasError={field.state.meta.errors.length > 0}>
 								{t(
 									"settings.equipment.items.identifier",
 									"Equipment identifier",
@@ -404,13 +567,14 @@ export function EquipmentItemForm({
 							<TFormControl hasError={field.state.meta.errors.length > 0}>
 								<Input
 									name={field.name}
+									data-focus-field="identifier"
 									autoComplete="off"
 									spellCheck={false}
 									value={field.state.value}
 									maxLength={100}
 									onChange={(e) => field.handleChange(e.target.value)}
 									onBlur={field.handleBlur}
-									disabled={disabled}
+									disabled={pending}
 								/>
 							</TFormControl>
 							<TFormDescription>
@@ -441,31 +605,18 @@ export function EquipmentItemForm({
 									maxLength={200}
 									onChange={(e) => field.handleChange(e.target.value)}
 									onBlur={field.handleBlur}
-									disabled={disabled}
+									disabled={pending}
 								/>
 							</TFormControl>
 						</TFormItem>
 					)}
 				</form.Field>
-			</div>
-			{!configured ? (
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.equipment.errors.policy",
-						"Configure closed-record retention before registering or issuing equipment.",
-					)}
-				</p>
-			) : individualTypes.length === 0 ? (
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.equipment.items.noTypes",
-						"Add an active individually tracked type to register an item. Quantity types do not need item identities.",
-					)}
-				</p>
-			) : null}
-			<Button type="submit" disabled={disabled}>
-				{t("settings.equipment.items.register", "Register item")}
-			</Button>
+			</ActionPanelBody>
+			<PanelFooter
+				pending={pending}
+				onCancel={() => onOpenChange(false)}
+				submitLabel={t("settings.equipment.items.register", "Register item")}
+			/>
 		</form>
 	);
 }

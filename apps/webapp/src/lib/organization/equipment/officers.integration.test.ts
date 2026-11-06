@@ -320,6 +320,7 @@ it("revalidates selected teams and employees on every read, and uses only captur
 				{
 					id: ids.subject,
 					name: "t1539-subject",
+					image: null,
 					former: false,
 					canIssue: true,
 				},
@@ -368,6 +369,7 @@ it("revalidates selected teams and employees on every read, and uses only captur
 				{
 					id: ids.subject,
 					name: "t1539-subject",
+					image: null,
 					former: true,
 					canIssue: false,
 				},

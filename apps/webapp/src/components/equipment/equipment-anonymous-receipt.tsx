@@ -3,6 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { changeEquipment } from "@/lib/organization/equipment/actions";
@@ -53,13 +54,7 @@ export function EquipmentAnonymousReceipt({
 	const receipt = item.custodyReceipt;
 	if (!item.canProposeCustodyReceipt && !receipt) return null;
 	return (
-		<div className="min-w-0 space-y-3 break-words border-t pt-3">
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"settings.equipment.anonymous.help",
-					"The former holder's personal history was removed. A different authorized staff member must confirm this physical receipt before custody is released.",
-				)}
-			</p>
+		<div className="min-w-0 space-y-3 break-words">
 			{receipt ? (
 				<CustodyReceiptEvidence receipt={receipt} timezone={timezone} />
 			) : null}
@@ -150,18 +145,6 @@ export function EquipmentAnonymousReceipt({
 					</div>
 				</form>
 			) : null}
-			{feedback ? (
-				<p
-					role={feedback.error ? "alert" : "status"}
-					className={
-						feedback.error
-							? "text-sm text-destructive"
-							: "text-sm text-muted-foreground"
-					}
-				>
-					{feedback.text}
-				</p>
-			) : null}
 		</div>
 	);
 }
@@ -171,11 +154,18 @@ function useAnonymousReceiptCommands() {
 	const router = useRouter();
 
 	const [pending, startTransition] = useTransition();
-	const [feedback, setFeedback] = useState<{
-		error: boolean;
-		text: string;
-	} | null>(null);
+	// Set once a step is recorded, so it cannot be sent twice before the reload.
+	const [feedback, setFeedback] = useState<{ error: boolean } | null>(null);
 	const identity = useCommandIdentity();
+	const failed = () => {
+		setFeedback({ error: true });
+		toast.error(
+			t(
+				"settings.equipment.anonymous.failed",
+				"Receipt could not be confirmed. Retry unchanged or reload equipment.",
+			),
+		);
+	};
 	const send = (
 		payload:
 			| Omit<
@@ -195,38 +185,24 @@ function useAnonymousReceiptCommands() {
 					requestId: identity(payload),
 				});
 				if (!result.success) {
-					setFeedback({
-						error: true,
-						text: t(
-							"settings.equipment.anonymous.failed",
-							"Receipt could not be confirmed. Retry unchanged or reload equipment.",
-						),
-					});
+					failed();
 					return;
 				}
 				if (!result.data.ok) {
-					setFeedback({
-						error: true,
-						text: handoverRefusalMessage(result.data.reason, t),
-					});
+					setFeedback({ error: true });
+					toast.error(handoverRefusalMessage(result.data.reason, t));
 					return;
 				}
-				setFeedback({
-					error: false,
-					text: t(
+				setFeedback({ error: false });
+				toast.success(
+					t(
 						"settings.equipment.anonymous.saved",
 						"Receipt evidence recorded. Reloading equipment…",
 					),
-				});
+				);
 				router.refresh();
 			} catch {
-				setFeedback({
-					error: true,
-					text: t(
-						"settings.equipment.anonymous.failed",
-						"Receipt could not be confirmed. Retry unchanged or reload equipment.",
-					),
-				});
+				failed();
 			}
 		});
 

@@ -3,7 +3,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
 	TFormControl,
@@ -27,6 +26,7 @@ import {
 import {
 	ActualDateField,
 	ConditionField,
+	EquipmentFormPanel,
 	equipmentSelectClass,
 	NotesField,
 	QuantityField,
@@ -111,22 +111,23 @@ export function TransferEquipmentForm({
 	});
 
 	return (
-		<form
-			ref={element}
-			noValidate
-			className="space-y-4 rounded-lg border bg-card p-4"
-			onSubmit={(event) => {
-				event.preventDefault();
-				void form.handleSubmit();
-			}}
+		<EquipmentFormPanel
+			element={element}
+			pending={pending}
+			onCancel={onCancel}
+			onSubmit={() => void form.handleSubmit()}
+			title={t("settings.equipment.transfer.title", "Transfer equipment")}
+			description={
+				<>
+					<span translate="no">{assignment.identifier}</span> ·{" "}
+					{assignment.holderName}
+				</>
+			}
+			submitLabel={t(
+				"settings.equipment.transfer.confirm",
+				"Confirm receipt and issuance",
+			)}
 		>
-			<h3 className="font-semibold">
-				{t("settings.equipment.transfer.title", "Transfer equipment")}
-			</h3>
-			<p className="break-words text-sm">
-				<span translate="no">{assignment.identifier}</span> ·{" "}
-				{assignment.holderName}
-			</p>
 			<p className="text-sm text-muted-foreground">
 				{t(
 					"settings.equipment.transfer.help",
@@ -319,25 +320,7 @@ export function TransferEquipmentForm({
 					{(field) => <NotesField field={field} pending={pending} t={t} />}
 				</form.Field>
 			</fieldset>
-			<div className="flex flex-wrap gap-2">
-				<Button type="submit" disabled={pending}>
-					{pending
-						? t("settings.equipment.handover.saving", "Saving…")
-						: t(
-								"settings.equipment.transfer.confirm",
-								"Confirm receipt and issuance",
-							)}
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					disabled={pending}
-					onClick={onCancel}
-				>
-					{t("common.cancel", "Cancel")}
-				</Button>
-			</div>
-		</form>
+		</EquipmentFormPanel>
 	);
 }
 

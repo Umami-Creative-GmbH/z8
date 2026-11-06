@@ -231,7 +231,14 @@ Corrections preserve the original record, identify the correcting person, and re
 
 ## Product surfaces (Q15)
 
-Provide an Equipment overview for authorized staff, an equipment section on employee profiles, a view of the employee's own equipment, and outstanding returns in departure and deactivation previews. The overview filters by holder, equipment type, outstanding returns, overdue returns, and former employees. Managers require an explicit equipment grant to view other employees' equipment.
+Provide an Equipment overview for authorized staff, an equipment section on employee profiles, a view of the employee's own equipment, and outstanding returns in departure and deactivation previews. Managers require an explicit equipment grant to view other employees' equipment.
+
+- **Overview (`/equipment`).** Four key figures: outstanding returns, overdue, due within 14 days (effective deadline from today through today + 14 in the organization's calendar), and items ready to issue (staff, only when identified items exist). A figure is also its filter. Tabs: Assignments and, for staff with identified items, Items.
+- **Assignments.** Opens on outstanding returns; a toggle switches to overdue or all. Search (identifier, type, holder), holder, type and the former-employees switch apply at once. The URL keeps the filter schema (`holderId`, `typeId`, `outstanding`, `overdue`, `former`), so reminder links still open a holder's outstanding returns; `status=all` and `status=soon` are the only additions. The key figures always cover the reader's whole scope. Default order: overdue first, then the soonest deadline, undated last. A row opens the assignment; its menu offers record receipt, transfer and close return only where permitted, each in an action panel without leaving the list.
+- **Items.** Item availability with needs attention, available, held and all views. Clear for issue, mark unavailable and retire are one-step confirmations; availability history and anonymous custody receipts open in action panels.
+- **Assignment page (`/equipment/assignments/[id]`).** Facts, the handover history (issue, receipts, lost and waived decisions, transfers, the departure deadline and a passed deadline; amended records are marked), corrections, original records and amendments, the holder, and record retention with case holds. Another organization's, an out-of-scope or a missing assignment, and equipment switched off, read as not found. It returns to the list it was opened from.
+- **Employee page (`/equipment/employees/[id]`).** The holder with a summary of outstanding and overdue returns, issuance prefilled with the holder, and their assignments.
+- **My equipment.** Read-only groups: to return (overdue first), yours to keep, and returned and closed. Each row opens its handover history in place.
 
 ## Initial entry and evidence scope (Q16–Q17)
 
