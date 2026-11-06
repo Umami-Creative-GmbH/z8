@@ -7,14 +7,25 @@
  */
 
 import JSZip from "jszip";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 vi.mock("@/lib/storage/export-s3-client", () => ({
-	uploadPrivateObjectStream: async () => ({ bucket: "unused", versionId: null }),
+	uploadPrivateObjectStream: async () => ({
+		bucket: "unused",
+		versionId: null,
+	}),
 	deletePrivateObject: async () => undefined,
 	deletePrivateObjectVersions: async () => undefined,
 }));
@@ -64,10 +75,13 @@ const admin = integrationAdminPool();
 const uploads = new Map<string, Uint8Array>();
 
 async function cleanup() {
-	await admin.query("delete from audit_log where organization_id = any($1::text[])", [
+	await admin.query(
+		"delete from audit_log where organization_id = any($1::text[])",
+		[[ORG, OTHER]],
+	);
+	await admin.query("delete from organization where id = any($1::text[])", [
 		[ORG, OTHER],
 	]);
-	await admin.query("delete from organization where id = any($1::text[])", [[ORG, OTHER]]);
 	// Deleted exports leave file cleanup ledger rows; the sweep in sibling suites drains the whole ledger.
 	await admin.query(
 		"delete from personal_data_export_file_cleanup where organization_id = any($1::text[])",
@@ -90,12 +104,22 @@ async function seedPerson(
 	);
 	await admin.query(
 		"insert into member (id, organization_id, user_id, role, status, created_at) values ($1, $2, $3, $4, 'approved', now())",
-		[`t1170-member-${organizationId}-${name}`, organizationId, `t1170-${name}`, role],
+		[
+			`t1170-member-${organizationId}-${name}`,
+			organizationId,
+			`t1170-${name}`,
+			role,
+		],
 	);
 	await admin.query(
 		`insert into employee (id, user_id, organization_id, role, is_active, updated_at)
 		 values ($1, $2, $3, $4, true, now())`,
-		[employeeId, `t1170-${name}`, organizationId, role === "member" ? "employee" : "admin"],
+		[
+			employeeId,
+			`t1170-${name}`,
+			organizationId,
+			role === "member" ? "employee" : "admin",
+		],
 	);
 }
 
@@ -166,7 +190,16 @@ async function seed() {
 				duration_minutes, is_active, updated_at) values
 			 ($1, $3, $5, $6, $7, '2026-09-20T06:00:00Z', '2026-09-20T14:00:00Z', 480, false, now()),
 			 ($2, $4, $5, $8, null, '2026-09-20T07:00:00Z', null, null, true, now())`,
-			[ids.adaPeriod, ids.bobPeriod, ids.ada, ids.bob, ORG, ids.adaIn, ids.adaOut, ids.bobIn],
+			[
+				ids.adaPeriod,
+				ids.bobPeriod,
+				ids.ada,
+				ids.bob,
+				ORG,
+				ids.adaIn,
+				ids.adaOut,
+				ids.bobIn,
+			],
 		),
 	);
 	const stamp = `insert into position_stamp (organization_id, employee_id, time_entry_id, consent_id,
@@ -407,7 +440,13 @@ async function seed() {
 		  '2026-08-21T08:00:00Z'),
 		 ($1, 'kiosk_fob', $3, 'kiosk_fob.ended', 't1170-bob', $4::uuid,
 		  '{"reason":"departure","endedAtRegistrationOnKioskId":"kiosk-t1170"}', '2026-08-22T08:00:00Z')`,
-		[ORG, ids.adaOldFob, ids.adaFob, ids.ada, JSON.stringify({ kioskId: ids.kiosk })],
+		[
+			ORG,
+			ids.adaOldFob,
+			ids.adaFob,
+			ids.ada,
+			JSON.stringify({ kioskId: ids.kiosk }),
+		],
 	);
 }
 
@@ -428,7 +467,10 @@ async function buildExport(
 		{ organizationId: ORG, exportId },
 		{
 			upload: async (_organizationId, key, body) => {
-				uploads.set(key, new Uint8Array(await new Response(body).arrayBuffer()));
+				uploads.set(
+					key,
+					new Uint8Array(await new Response(body).arrayBuffer()),
+				);
 				return { bucket: "t1170", versionId: null };
 			},
 			deleteObject: async () => undefined,
@@ -442,7 +484,9 @@ async function buildExport(
 			[exportId],
 		)
 	).rows;
-	const zip = await JSZip.loadAsync(uploads.get(stored?.storage_key ?? "") as Uint8Array);
+	const zip = await JSZip.loadAsync(
+		uploads.get(stored?.storage_key ?? "") as Uint8Array,
+	);
 	const files: Record<string, string> = {};
 	for (const entry of Object.values(zip.files)) {
 		if (!entry.dir) files[entry.name] = await entry.async("string");
@@ -459,7 +503,10 @@ function categoryOf(files: Record<string, string>, category: string) {
 
 function categoryText(files: Record<string, string>, category: string): string {
 	return Object.entries(files)
-		.filter(([path]) => path === `${category}.json` || path.startsWith(`${category}/`))
+		.filter(
+			([path]) =>
+				path === `${category}.json` || path.startsWith(`${category}/`),
+		)
 		.map(([, text]) => text)
 		.join("\n");
 }
@@ -484,14 +531,21 @@ describe("personal data export: position stamps, notifications and integrations 
 	beforeAll(seed);
 
 	beforeEach(async () => {
-		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);
+		await admin.query(
+			"delete from personal_data_export where organization_id = $1",
+			[ORG],
+		);
 		uploads.clear();
 	});
 
 	afterAll(cleanup);
 
 	it("exports Ada's stamps, consent history and who viewed her positions, nothing of Bob or the other organization", async () => {
-		const { exportId, files } = await buildExport(ids.ada, "employee", "t1170-ada");
+		const { exportId, files } = await buildExport(
+			ids.ada,
+			"employee",
+			"t1170-ada",
+		);
 		const stamps = categoryOf(files, "position_stamps");
 
 		expect(stamps.stamps).toEqual([
@@ -578,16 +632,28 @@ describe("personal data export: position stamps, notifications and integrations 
 	});
 
 	it("logs the requesting admin as a viewer when an admin export contains stamps", async () => {
-		const { exportId, files } = await buildExport(ids.ada, "admin", "t1170-owner");
+		const { exportId, files } = await buildExport(
+			ids.ada,
+			"admin",
+			"t1170-owner",
+		);
 		expect(categoryOf(files, "position_stamps").stamps).toHaveLength(1);
 		expect(await accessLogRowsOf(exportId)).toEqual([
-			{ kind: "data_export", viewer_user_id: "t1170-owner", subjects: [ids.ada] },
+			{
+				kind: "data_export",
+				viewer_user_id: "t1170-owner",
+				subjects: [ids.ada],
+			},
 		]);
 
 		// The next export shows that access like any other.
 		const next = await buildExport(ids.ada, "employee", "t1170-ada");
 		expect(categoryOf(next.files, "position_stamps").access_log).toContainEqual(
-			expect.objectContaining({ kind: "data_export", viewer: "Olga Owner", export_id: exportId }),
+			expect.objectContaining({
+				kind: "data_export",
+				viewer: "Olga Owner",
+				export_id: exportId,
+			}),
 		);
 
 		// A retried build of the same export logs the access once.
@@ -603,7 +669,7 @@ describe("personal data export: position stamps, notifications and integrations 
 
 		// An admin export holding no stamps writes no access-log row.
 		const mia = await buildExport(ids.mia, "admin", "t1170-owner");
-		expect(categoryOf(mia.files, "position_stamps").stamps).toEqual([]);
+		expect(mia.files).not.toHaveProperty("position_stamps.json");
 		expect(await accessLogRowsOf(mia.exportId)).toEqual([]);
 	});
 
@@ -740,14 +806,24 @@ describe("personal data export: position stamps, notifications and integrations 
 		}
 	});
 
-	it("reports no kiosk PIN for an employee without one", async () => {
-		const { files } = await buildExport(ids.mia, "employee", "t1170-mia");
-		expect(categoryOf(files, "integrations").kiosk_pin).toEqual({
-			pin_set: false,
-			set_at: null,
-			set_by: null,
-		});
-	});
+	it.each(["employee", "admin"] as const)(
+		"omits integrations with only an unset kiosk PIN in an %s export",
+		async (kind) => {
+			const { files } = await buildExport(
+				ids.mia,
+				kind,
+				kind === "employee" ? "t1170-mia" : "t1170-owner",
+			);
+			expect(files).not.toHaveProperty("integrations.json");
+			expect(
+				Object.keys(files).some((path) => path.startsWith("integrations/")),
+			).toBe(false);
+			expect(
+				JSON.parse(files["_manifest.json"] as string).categories,
+			).not.toContain("integrations");
+			expect(files["README.txt"]).not.toContain("integrations.json");
+		},
+	);
 
 	it("exports the kiosk PIN attempts and unlocks the lockout is judged from (#1288)", async () => {
 		const { files } = await buildExport(ids.ada, "employee", "t1170-ada");
@@ -813,7 +889,10 @@ describe("personal data export: position stamps, notifications and integrations 
 		]);
 		expect(categoryText(own.files, "audit_log")).not.toContain("Bob Builder");
 
-		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);
+		await admin.query(
+			"delete from personal_data_export where organization_id = $1",
+			[ORG],
+		);
 		const byAdmin = await buildExport(ids.ada, "admin", "t1170-owner");
 		expect(fobAudits(byAdmin.files)).toEqual([
 			["kiosk_fob.registered", "Ada Lovelace"],
@@ -829,18 +908,28 @@ describe("personal data export: position stamps, notifications and integrations 
 				.map((row) => row.action);
 
 		const own = await buildExport(ids.bob, "employee", "t1170-bob");
-		expect(fobActions(own.files)).toEqual([]);
+		expect(own.files).not.toHaveProperty("audit_log.json");
 
-		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);
+		await admin.query(
+			"delete from personal_data_export where organization_id = $1",
+			[ORG],
+		);
 		const byAdmin = await buildExport(ids.bob, "admin", "t1170-owner");
 		expect(fobActions(byAdmin.files)).toEqual(["kiosk_fob.ended"]);
 	});
 
 	it("holds the same rows in both kinds of export", async () => {
 		const own = await buildExport(ids.ada, "employee", "t1170-ada");
-		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);
+		await admin.query(
+			"delete from personal_data_export where organization_id = $1",
+			[ORG],
+		);
 		const byAdmin = await buildExport(ids.ada, "admin", "t1170-owner");
-		for (const category of ["position_stamps", "notifications", "integrations"]) {
+		for (const category of [
+			"position_stamps",
+			"notifications",
+			"integrations",
+		]) {
 			expect(categoryOf(byAdmin.files, category), category).toEqual(
 				categoryOf(own.files, category),
 			);
@@ -853,7 +942,10 @@ describe("personal data export: position stamps, notifications and integrations 
 			(await buildExport(ids.ada, "employee", "t1170-ada")).files,
 			"position_stamps",
 		).access_log.length;
-		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);
+		await admin.query(
+			"delete from personal_data_export where organization_id = $1",
+			[ORG],
+		);
 		await admin.query(
 			`with rows as (
 				insert into position_stamp_access_log (organization_id, viewer_user_id, kind, work_period_ids, accessed_at)
@@ -864,6 +956,8 @@ describe("personal data export: position stamps, notifications and integrations 
 			[ORG, ids.adaPeriod, ids.ada],
 		);
 		const { files } = await buildExport(ids.ada, "employee", "t1170-ada");
-		expect(categoryOf(files, "position_stamps").access_log).toHaveLength(before + 230);
+		expect(categoryOf(files, "position_stamps").access_log).toHaveLength(
+			before + 230,
+		);
 	});
 });

@@ -4,7 +4,7 @@
  * - `<category>.json` per category, the authoritative machine-readable copy
  *   (Art. 20): `_metadata` plus one property per part;
  * - `<category>/<part>.csv` next to it for every table part, the same rows
- *   with exactly the part's columns (header only when there are none);
+ *   with exactly the part's columns, only when it has rows;
  * - `<category>/<path>` for every original file the category brings;
  * - `README.txt` in the employee's language, and `_manifest.json` listing
  *   every file with its category, format, record count and size.
@@ -14,12 +14,20 @@
  * consumer reaches it, so at most one file is held in memory at a time.
  */
 
-import { type CsvTable, csvTableToCSV } from "@/lib/export/formatters/csv-formatter";
-import { createStoredZipStream, type StoredZipEntry } from "@/lib/storage/stored-zip-stream";
-import type {
-	CollectedCategory,
-	PersonalDataExportScope,
-	PersonalDataTablePart,
+import {
+	type CsvTable,
+	csvTableToCSV,
+} from "@/lib/export/formatters/csv-formatter";
+import {
+	createStoredZipStream,
+	type StoredZipEntry,
+} from "@/lib/storage/stored-zip-stream";
+import {
+	type CollectedCategory,
+	type PersonalDataExportScope,
+	type PersonalDataTablePart,
+	personalDataCategoryHasData,
+	personalDataPartRecordCount,
 } from "./collector";
 
 export const PERSONAL_DATA_ARCHIVE_README = "README.txt";
@@ -85,11 +93,10 @@ function categoryDocument(
 	for (const part of category.parts) {
 		if (part.kind === "table") {
 			document[part.key] = part.rows;
-			records += part.rows.length;
 		} else {
 			document[part.key] = part.record;
-			if (part.record) records += 1;
 		}
+		records += personalDataPartRecordCount(part);
 	}
 	return { json: JSON.stringify(document, null, 2), records };
 }
@@ -99,8 +106,11 @@ function categoryDocument(
  * last. Entries are produced lazily; each records itself in the manifest when
  * it is read, so the manifest lists exactly what the ZIP holds.
  */
-function* archiveEntries(input: PersonalDataArchiveInput): Generator<StoredZipEntry> {
+function* archiveEntries(
+	input: PersonalDataArchiveInput,
+): Generator<StoredZipEntry> {
 	const date = input.exportedAt.slice(0, 10);
+	const categories = input.categories.filter(personalDataCategoryHasData);
 	const files: PersonalDataManifestFile[] = [];
 	const entry = (
 		path: string,
@@ -122,15 +132,17 @@ function* archiveEntries(input: PersonalDataArchiveInput): Generator<StoredZipEn
 		format: "text",
 		records: null,
 	});
-	for (const category of input.categories) {
+	for (const category of categories) {
 		const { json, records } = categoryDocument(input, category);
-		yield entry(`${category.category}.json`, text(json), {
-			category: category.category,
-			format: "json",
-			records,
-		});
+		if (records > 0) {
+			yield entry(`${category.category}.json`, text(json), {
+				category: category.category,
+				format: "json",
+				records,
+			});
+		}
 		for (const part of category.parts) {
-			if (part.kind !== "table") continue;
+			if (part.kind !== "table" || part.rows.length === 0) continue;
 			yield entry(`${category.category}/${part.key}.csv`, text(csvOf(part)), {
 				category: category.category,
 				format: "csv",
@@ -146,7 +158,11 @@ function* archiveEntries(input: PersonalDataArchiveInput): Generator<StoredZipEn
 					throw new PersonalDataArchiveFileError(path, { cause: error });
 				}
 			};
-			yield entry(path, read, { category: category.category, format: "file", records: null });
+			yield entry(path, read, {
+				category: category.category,
+				format: "file",
+				records: null,
+			});
 		}
 	}
 
@@ -164,7 +180,7 @@ function* archiveEntries(input: PersonalDataArchiveInput): Generator<StoredZipEn
 						employeeId: input.scope.employeeId,
 						exportedAt: input.exportedAt,
 						locale: input.locale,
-						categories: input.categories.map((category) => category.category),
+						categories: categories.map((category) => category.category),
 						files,
 					},
 					null,
