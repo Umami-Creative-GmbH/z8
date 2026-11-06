@@ -755,12 +755,21 @@ describe("updateEmployeeAction", () => {
 		function saveAs(
 			accessTier: "orgAdmin" | "manager",
 			validated: Record<string, unknown>,
+			lockedBirthday: Date | null = storedBirthday,
 		) {
 			const employeeSet = vi.fn(() => ({
 				where: vi.fn().mockResolvedValue(undefined),
 			}));
+			// The row as the save's transaction locks it.
+			const select = vi.fn(() => ({
+				from: vi.fn(() => ({
+					where: vi.fn(() => ({
+						for: vi.fn().mockResolvedValue([{ birthday: lockedBirthday }]),
+					})),
+				})),
+			}));
 			const dbService = {
-				db: { update: vi.fn(() => ({ set: employeeSet })) },
+				db: { update: vi.fn(() => ({ set: employeeSet })), select },
 				query: vi.fn((_name: string, run: () => Promise<unknown>) =>
 					Effect.promise(run),
 				),
@@ -836,6 +845,16 @@ describe("updateEmployeeAction", () => {
 				position: "Engineer",
 				birthday: new Date("1990-05-01T00:00:00.000Z"),
 			});
+
+			expect(mocks.logAudit).not.toHaveBeenCalled();
+		});
+
+		it("compares with the birthday the save replaced, not the one read before it", async () => {
+			// The employee changed it to May 2 after the admin's form loaded May 1.
+			const may2 = new Date("1990-05-02T00:00:00.000Z");
+			saveAs("orgAdmin", { birthday: may2 }, may2);
+
+			await updateEmployeeAction("employee-1", { birthday: may2 });
 
 			expect(mocks.logAudit).not.toHaveBeenCalled();
 		});

@@ -42,7 +42,7 @@ The organization's employees who are not former employees. Everything that answe
 _Avoid_: active users, active members, all employees
 
 **Birthday**:
-An employee's date of birth as one organization records it. An employee may have none. An employee of several organizations has a separate birthday in each, and the employee or an org admin may set, change or clear it; the last change counts. The rest of the current roster, managers included, sees only its day and month.
+An employee's date of birth as one organization records it, if any; an employee of several organizations has a separate one in each. Only the employee and org admins see the full date; the rest of the current roster sees its day and month.
 _Avoid_: date of birth, DOB, birth date
 
 ### Teams

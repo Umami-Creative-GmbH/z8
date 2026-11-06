@@ -436,4 +436,29 @@ describe("employee membership queries", () => {
 		expect(result).toMatchObject({ success: true, data: { id: "employee-1" } });
 		expect(result.success && result.data.birthday).toEqual(birthday);
 	});
+
+	it.each([
+		{ accessTier: "orgAdmin" as const, birthday: new Date("1990-05-01T00:00:00.000Z") },
+		{ accessTier: "manager" as const, birthday: null },
+	])("lists the birthday $birthday for the $accessTier (#1579)", async ({ accessTier, birthday }) => {
+		const fake = createDb(
+			[
+				{
+					id: "employee-1",
+					organizationId: "org-1",
+					userId: "user-1",
+					isActive: true,
+					birthday: new Date("1990-05-01T00:00:00.000Z"),
+				},
+			],
+			[],
+		);
+		setActor(fake.dbService, accessTier);
+
+		const result = await listEmployeesAction();
+
+		expect(result.success && result.data.employees.map((row) => row.birthday)).toEqual([
+			birthday,
+		]);
+	});
 });

@@ -1,5 +1,10 @@
 import { Temporal } from "temporal-polyfill";
 import * as z from "zod";
+import {
+	birthdayCalendarDate,
+	EARLIEST_BIRTHDAY,
+	latestBirthday,
+} from "@/lib/organization/employee-birthday";
 import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
 
 // Gender enum matching database enum
@@ -50,31 +55,14 @@ const authUserNamePartSchema = z.preprocess(
 	z.string().min(1, "Name is required").max(100, "Name is too long").optional(),
 );
 
-/** The earliest birthday an employee record accepts, as an ISO calendar date. */
-export const EARLIEST_BIRTHDAY = "1900-01-01";
-
-function birthdayCalendarDate(date: Date) {
-	return Temporal.Instant.from(date.toISOString())
-		.toZonedDateTimeISO("UTC")
-		.toPlainDate();
-}
-
 const birthdaySchema = z
 	.date()
 	.refine(
-		(date) =>
-			Temporal.PlainDate.compare(
-				birthdayCalendarDate(date),
-				Temporal.PlainDate.from(EARLIEST_BIRTHDAY),
-			) >= 0,
+		(date) => Temporal.PlainDate.compare(birthdayCalendarDate(date), EARLIEST_BIRTHDAY) >= 0,
 		"Birthday must be on or after January 1, 1900",
 	)
 	.refine(
-		(date) =>
-			Temporal.PlainDate.compare(
-				birthdayCalendarDate(date),
-				Temporal.Now.plainDateISO("UTC"),
-			) <= 0,
+		(date) => Temporal.PlainDate.compare(birthdayCalendarDate(date), latestBirthday()) <= 0,
 		"Birthday must be in the past",
 	);
 

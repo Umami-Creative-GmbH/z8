@@ -56,17 +56,29 @@ import {
 
 const DEFAULT_LIMIT = 20;
 
-function mapEmployeeRow(row: {
-	employee: typeof employee.$inferSelect;
-	user: typeof user.$inferSelect;
-	team: typeof team.$inferSelect | null;
-	membership: EmployeeMembershipSummary | null;
-	isFormer: boolean;
-	formerSince: string | null;
-}): EmployeeWithRelations {
+/** Only an org admin sees an employee's full birthday; it reveals age (#1579). */
+function birthdayVisibleTo(
+	viewer: { accessTier: string },
+	birthday: Date | null,
+): Date | null {
+	return viewer.accessTier === "orgAdmin" ? birthday : null;
+}
+
+function mapEmployeeRow(
+	row: {
+		employee: typeof employee.$inferSelect;
+		user: typeof user.$inferSelect;
+		team: typeof team.$inferSelect | null;
+		membership: EmployeeMembershipSummary | null;
+		isFormer: boolean;
+		formerSince: string | null;
+	},
+	viewer: { accessTier: string },
+): EmployeeWithRelations {
 	const isFormer = row.isFormer === true;
 	return {
 		...row.employee,
+		birthday: birthdayVisibleTo(viewer, row.employee.birthday),
 		kind: "employee",
 		user: row.user,
 		team: row.team,
@@ -281,7 +293,10 @@ function loadEmployeePage(params: EmployeeListParams) {
 
 			const total = totalResult[0]?.total ?? 0;
 			return {
-				employees: yield* enrichEmployeeDirectoryRows(actor, rows.map(mapEmployeeRow)),
+				employees: yield* enrichEmployeeDirectoryRows(
+					actor,
+					rows.map((row) => mapEmployeeRow(row, actor)),
+				),
 				total,
 				hasMore: offset + rows.length < total,
 			};
@@ -317,7 +332,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 		]);
 
 		const employees = sortEmployeeDirectoryRows([
-			...employeeRows.map(mapEmployeeRow),
+			...employeeRows.map((row) => mapEmployeeRow(row, actor)),
 			...draftRows.map(mapDraftRow),
 		]);
 		const pagedEmployees = employees.slice(offset, offset + limit);
@@ -503,8 +518,7 @@ export async function getEmployeeAction(
 
 		return {
 			...detail,
-			// Only an org admin sees the full birthday; it reveals age (#1579).
-			birthday: actor.accessTier === "orgAdmin" ? detail.birthday : null,
+			birthday: birthdayVisibleTo(actor, detail.birthday),
 			kind: "employee",
 			membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
 			contractTypeToday: termsToday?.contractType ?? null,

@@ -2,7 +2,6 @@
 
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { Temporal } from "temporal-polyfill";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { RoleSelector } from "@/components/settings/role-selector";
@@ -24,7 +23,8 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { type ContractType, EARLIEST_BIRTHDAY } from "@/lib/validations/employee";
+import { EARLIEST_BIRTHDAY, latestBirthday } from "@/lib/organization/employee-birthday";
+import type { ContractType } from "@/lib/validations/employee";
 import { defaultTranslate, type Translate } from "./employee-section-shared";
 import { PronounsEditField } from "./pronouns-edit-field";
 import { TextField } from "./text-field";
@@ -212,8 +212,8 @@ export function EmployeeEditFormCard({
 												name="birthday"
 												type="date"
 												autoComplete="off"
-												min={EARLIEST_BIRTHDAY}
-												max={Temporal.Now.plainDateISO().toString()}
+												min={EARLIEST_BIRTHDAY.toString()}
+												max={latestBirthday().toString()}
 												value={field.state.value || ""}
 												onChange={(event) => field.handleChange(event.target.value)}
 												onBlur={field.handleBlur}
