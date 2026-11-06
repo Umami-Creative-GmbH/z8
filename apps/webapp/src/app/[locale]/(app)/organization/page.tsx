@@ -3,20 +3,27 @@ import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getCurrentSettingsAccessTier } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { getOrgChartInitialGraph } from "./actions";
-import { OrgChartClient } from "./org-chart-client";
+import { getOrgExplorerData } from "./actions";
+import { OrgExplorerClient } from "./org-explorer-client";
 
 async function OrganizationPageContent() {
 	// Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.
 	await connection();
-	const [t, result] = await Promise.all([getTranslate(), getOrgChartInitialGraph()]);
+	const [t, result, accessTier] = await Promise.all([
+		getTranslate(),
+		getOrgExplorerData(),
+		getCurrentSettingsAccessTier(),
+	]);
 
 	if (!result.success) {
 		if (result.code === "NotFoundError") {
 			return (
 				<div className="@container/main flex flex-1 items-center justify-center p-6">
-					<NoEmployeeError feature={t("organization.feature", "explore your organization")} />
+					<NoEmployeeError
+						feature={t("organization.feature", "explore your organization")}
+					/>
 				</div>
 			);
 		}
@@ -24,7 +31,9 @@ async function OrganizationPageContent() {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
 				<Alert variant="destructive" className="max-w-xl">
-					<AlertTitle>{t("organization.error.title", "Unable to load organization")}</AlertTitle>
+					<AlertTitle>
+						{t("organization.error.title", "Unable to load organization")}
+					</AlertTitle>
 					<AlertDescription>
 						{t(
 							"organization.error.description",
@@ -51,7 +60,10 @@ async function OrganizationPageContent() {
 			</div>
 
 			<div className="min-h-[680px] px-4 lg:px-6">
-				<OrgChartClient initialGraph={result.data} />
+				<OrgExplorerClient
+					canManage={accessTier === "orgAdmin"}
+					initialData={result.data}
+				/>
 			</div>
 		</div>
 	);

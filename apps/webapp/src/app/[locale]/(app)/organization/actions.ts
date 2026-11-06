@@ -1,76 +1,141 @@
 "use server";
 
-import { and, asc, count, eq, ilike, inArray, or } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
-import { user } from "@/db/auth-schema";
-import { employee, employeeManagers, team, teamMembership } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
-import { AuthenticationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import { buildScopedOrgChartGraph, capTeamMembershipsPerTeam } from "./org-chart-graph";
 import {
-	EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,
-	type OrgChartGraph,
-	type OrgChartSearchResult,
+	AuthenticationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
+import {
+	type DatabaseClient,
+	DatabaseService,
+} from "@/lib/effect/services/database.service";
+import {
+	countCurrentRoster,
+	countUnplacedPeople,
+	findCurrentRosterViewer,
+	loadCurrentRosterPeople,
+	loadCurrentRosterPeopleWithPaths,
+	loadCurrentTeamMemberIds,
+	loadOrgExplorerTeams,
+	loadReportingLineRootIds,
+	loadUnplacedPeopleIds,
+	searchCurrentRoster,
+} from "./org-explorer-queries";
+import {
+	ORG_EXPLORER_BATCH_LIMIT,
+	type OrgExplorerData,
+	type OrgExplorerGroup,
+	type OrgExplorerPerson,
+	type OrgExplorerSearchResult,
 	SMALL_ORG_EMPLOYEE_LIMIT,
-	TEAM_NEIGHBORHOOD_MEMBER_LIMIT,
-} from "./org-chart-types";
+} from "./org-explorer-types";
 
-type DatabaseServiceInstance = typeof DatabaseService.Service;
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-type EmployeeGraphRow = {
-	id: string;
-	organizationId: string;
-	userId: string;
-	name: string;
-	pronouns: string | null;
-	email: string;
-	image: string | null;
-	position: string | null;
-	role: "admin" | "manager" | "employee";
-	isActive: boolean;
-	teamIds: string[];
-};
-
-type TeamGraphRow = {
-	id: string;
-	organizationId: string;
-	name: string;
-	description: string | null;
-	memberCount: number;
-	primaryManagerId: string | null;
-};
-
-type ManagerLinkRow = {
-	managerId: string;
-	employeeId: string;
-};
-
-type TeamMembershipRow = {
-	organizationId: string;
-	teamId: string;
-	employeeId: string;
-};
-
-type OrgChartContext = {
-	organizationId: string;
-	currentEmployee: typeof employee.$inferSelect;
-};
-
-export async function getOrgChartInitialGraph(): Promise<ServerActionResult<OrgChartGraph>> {
+/**
+ * The Org Explorer's first load. A small organization gets its whole current
+ * roster. A large one gets the top two levels of reporting lines, the viewer's
+ * own path and the team leads, and loads the rest on demand.
+ */
+export async function getOrgExplorerData(): Promise<
+	ServerActionResult<OrgExplorerData>
+> {
 	const effect = Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
-		const { organizationId, currentEmployee } = yield* resolveOrgChartContext(dbService);
-		const employeeCount = yield* countActiveEmployees(dbService, organizationId);
+		const { organizationId, viewerEmployeeId } =
+			yield* resolveOrgExplorerViewer(dbService);
 
-		if (employeeCount < SMALL_ORG_EMPLOYEE_LIMIT) {
-			return yield* loadFullGraph(dbService, organizationId, employeeCount, currentEmployee.id);
+		return yield* dbService.query("orgExplorer.loadData", () =>
+			loadOrgExplorerData(dbService.db, organizationId, viewerEmployeeId),
+		);
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/** People by id, and with `withPaths` everyone on their reporting lines up to the top. */
+export async function getOrgExplorerPeople(
+	employeeIds: string[],
+	options: { withPaths?: boolean } = {},
+): Promise<ServerActionResult<OrgExplorerPerson[]>> {
+	const effect = Effect.gen(function* () {
+		const ids = yield* validIds(employeeIds);
+		const dbService = yield* DatabaseService;
+		const { organizationId } = yield* resolveOrgExplorerViewer(dbService);
+
+		return yield* dbService.query("orgExplorer.loadPeople", () =>
+			options.withPaths
+				? loadCurrentRosterPeopleWithPaths(dbService.db, organizationId, ids)
+				: loadCurrentRosterPeople(dbService.db, organizationId, ids),
+		);
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/** The current members of teams, with their paths to the top so the filter can show them. */
+export async function getOrgExplorerTeamMembers(
+	teamIds: string[],
+): Promise<ServerActionResult<OrgExplorerPerson[]>> {
+	const effect = Effect.gen(function* () {
+		const ids = yield* validIds(teamIds);
+		const dbService = yield* DatabaseService;
+		const { organizationId } = yield* resolveOrgExplorerViewer(dbService);
+
+		return yield* dbService.query("orgExplorer.loadTeamMembers", async () => {
+			const memberIds = await loadCurrentTeamMemberIds(
+				dbService.db,
+				organizationId,
+				ids,
+			);
+			return loadCurrentRosterPeopleWithPaths(
+				dbService.db,
+				organizationId,
+				memberIds,
+			);
+		});
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * The people with no reporting line, or with no team membership. People without
+ * a team can still have managers, so their paths to the top come along.
+ */
+export async function getOrgExplorerGroup(
+	group: OrgExplorerGroup,
+): Promise<ServerActionResult<OrgExplorerPerson[]>> {
+	const effect = Effect.gen(function* () {
+		if (group !== "noReportingLine" && group !== "noTeam") {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Unknown people group",
+					field: "group",
+				}),
+			);
 		}
+		const dbService = yield* DatabaseService;
+		const { organizationId } = yield* resolveOrgExplorerViewer(dbService);
 
-		return yield* loadEmployeeNeighborhood(dbService, organizationId, employeeCount, currentEmployee.id, {
-			partial: true,
+		return yield* dbService.query("orgExplorer.loadGroup", async () => {
+			const ids = await loadUnplacedPeopleIds(
+				dbService.db,
+				organizationId,
+				group,
+			);
+			return loadCurrentRosterPeopleWithPaths(
+				dbService.db,
+				organizationId,
+				ids,
+			);
 		});
 	});
 
@@ -79,84 +144,114 @@ export async function getOrgChartInitialGraph(): Promise<ServerActionResult<OrgC
 
 export async function searchOrgEmployees(
 	query: string,
-): Promise<ServerActionResult<OrgChartSearchResult[]>> {
-	const trimmedQuery = query.trim();
+): Promise<ServerActionResult<OrgExplorerSearchResult[]>> {
+	const trimmedQuery = typeof query === "string" ? query.trim() : "";
 	if (trimmedQuery.length < 2) {
 		return { success: true, data: [] };
 	}
 
 	const effect = Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
-		const { organizationId } = yield* resolveOrgChartContext(dbService);
-		const pattern = `%${trimmedQuery}%`;
+		const { organizationId } = yield* resolveOrgExplorerViewer(dbService);
 
-		return yield* dbService.query("searchOrgEmployees", async () => {
-			const rows = await dbService.db
-				.select({
-					employeeId: employee.id,
-					name: user.name,
-					pronouns: employee.pronouns,
-					email: user.email,
-					position: employee.position,
-					image: user.image,
-					role: employee.role,
-				})
-				.from(employee)
-				.innerJoin(user, eq(employee.userId, user.id))
-				.where(
-					and(
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
-						or(
-							ilike(user.name, pattern),
-							ilike(user.email, pattern),
-							ilike(user.firstName, pattern),
-							ilike(user.lastName, pattern),
-							ilike(employee.position, pattern),
-						),
-					),
+		return yield* dbService.query("orgExplorer.search", () =>
+			searchCurrentRoster(dbService.db, organizationId, trimmedQuery),
+		);
+	});
+
+	return runServerActionSafe(effect);
+}
+
+async function loadOrgExplorerData(
+	db: DatabaseClient,
+	organizationId: string,
+	viewerEmployeeId: string,
+): Promise<OrgExplorerData> {
+	const [employeeCount, teams] = await Promise.all([
+		countCurrentRoster(db, organizationId),
+		loadOrgExplorerTeams(db, organizationId),
+	]);
+
+	if (employeeCount < SMALL_ORG_EMPLOYEE_LIMIT) {
+		const people = await loadCurrentRosterPeople(db, organizationId, "all");
+		return {
+			complete: true,
+			employeeCount,
+			viewerEmployeeId,
+			teams,
+			people,
+			rootIds: people
+				.filter(
+					(entry) =>
+						entry.managerIds.length === 0 && entry.reportIds.length > 0,
 				)
-				.orderBy(asc(user.name), asc(user.email))
-				.limit(10);
+				.map((entry) => entry.employeeId),
+			noReportingLineCount: people.filter(
+				(entry) =>
+					entry.managerIds.length === 0 && entry.reportIds.length === 0,
+			).length,
+			noTeamCount: people.filter((entry) => entry.teamIds.length === 0).length,
+		};
+	}
 
-			return rows satisfies OrgChartSearchResult[];
-		});
-	});
+	const [rootIds, unplaced, viewerPath] = await Promise.all([
+		loadReportingLineRootIds(db, organizationId),
+		countUnplacedPeople(db, organizationId),
+		loadCurrentRosterPeopleWithPaths(db, organizationId, [viewerEmployeeId]),
+	]);
+	const loaded = new Map(viewerPath.map((entry) => [entry.employeeId, entry]));
+	const load = async (ids: string[]) => {
+		const missing = [...new Set(ids)].filter((id) => !loaded.has(id));
+		for (const entry of await loadCurrentRosterPeople(
+			db,
+			organizationId,
+			missing,
+		)) {
+			loaded.set(entry.employeeId, entry);
+		}
+		return ids.flatMap((id) => loaded.get(id) ?? []);
+	};
 
-	return runServerActionSafe(effect);
+	// The two levels below the top open by default.
+	const roots = await load(rootIds);
+	const firstLevel = await load(roots.flatMap((entry) => entry.lineReportIds));
+	await load(firstLevel.flatMap((entry) => entry.lineReportIds));
+	await load(
+		teams.flatMap((entry) =>
+			entry.leadEmployeeId ? [entry.leadEmployeeId] : [],
+		),
+	);
+
+	return {
+		complete: false,
+		employeeCount,
+		viewerEmployeeId,
+		teams,
+		people: [...loaded.values()],
+		rootIds,
+		...unplaced,
+	};
 }
 
-export async function getEmployeeNeighborhood(
-	employeeId: string,
-): Promise<ServerActionResult<OrgChartGraph>> {
-	const effect = Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const { organizationId } = yield* resolveOrgChartContext(dbService);
-		const employeeCount = yield* countActiveEmployees(dbService, organizationId);
-
-		return yield* loadEmployeeNeighborhood(dbService, organizationId, employeeCount, employeeId, {
-			partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
-		});
-	});
-
-	return runServerActionSafe(effect);
+function validIds(ids: unknown) {
+	if (!Array.isArray(ids) || ids.length > ORG_EXPLORER_BATCH_LIMIT) {
+		return Effect.fail(
+			new ValidationError({
+				message: `Request at most ${ORG_EXPLORER_BATCH_LIMIT} ids at a time`,
+				field: "ids",
+			}),
+		);
+	}
+	return Effect.succeed([
+		...new Set(
+			ids.filter(
+				(id): id is string => typeof id === "string" && UUID_PATTERN.test(id),
+			),
+		),
+	]);
 }
 
-export async function getTeamNeighborhood(
-	teamId: string,
-): Promise<ServerActionResult<OrgChartGraph>> {
-	const effect = Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const { organizationId } = yield* resolveOrgChartContext(dbService);
-		const employeeCount = yield* countActiveEmployees(dbService, organizationId);
-
-		return yield* loadTeamNeighborhood(dbService, organizationId, employeeCount, teamId);
-	});
-
-	return runServerActionSafe(effect);
-}
-
-function resolveOrgChartContext(dbService: DatabaseServiceInstance) {
+function resolveOrgExplorerViewer(dbService: typeof DatabaseService.Service) {
 	return Effect.gen(function* () {
 		const session = yield* Effect.promise(() => getRequestSession());
 
@@ -178,17 +273,13 @@ function resolveOrgChartContext(dbService: DatabaseServiceInstance) {
 			);
 		}
 
-		const currentEmployee = yield* dbService.query("getOrgChartCurrentEmployee", async () => {
-			return await dbService.db.query.employee.findFirst({
-				where: and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-				),
-			});
-		});
+		const viewerEmployeeId = yield* dbService.query(
+			"orgExplorer.findViewer",
+			() =>
+				findCurrentRosterViewer(dbService.db, organizationId, session.user.id),
+		);
 
-		if (!currentEmployee) {
+		if (!viewerEmployeeId) {
 			return yield* Effect.fail(
 				new NotFoundError({
 					message: "Employee profile not found",
@@ -197,561 +288,6 @@ function resolveOrgChartContext(dbService: DatabaseServiceInstance) {
 			);
 		}
 
-		return { organizationId, currentEmployee } satisfies OrgChartContext;
+		return { organizationId, viewerEmployeeId };
 	});
-}
-
-function countActiveEmployees(dbService: DatabaseServiceInstance, organizationId: string) {
-	return Effect.gen(function* () {
-		const [row] = yield* dbService.query("countActiveOrgChartEmployees", async () => {
-			return await dbService.db
-				.select({ value: count() })
-				.from(employee)
-				.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)));
-		});
-
-		return row?.value ?? 0;
-	});
-}
-
-function loadFullGraph(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeCount: number,
-	focusedEmployeeId: string,
-) {
-	return Effect.gen(function* () {
-		const employees = yield* loadActiveEmployees(dbService, organizationId);
-		const activeEmployeeIds = employees.map((row) => row.id);
-		const teams = yield* loadTeams(dbService, organizationId);
-		const managerLinks = yield* loadManagerLinks(dbService, activeEmployeeIds);
-		const teamMemberships = yield* loadTeamMemberships(dbService, organizationId);
-
-		return buildScopedOrgChartGraph(
-			{
-				mode: "full",
-				focusedEmployeeId,
-				employeeCount,
-				partial: false,
-				employees,
-				teams,
-				managerLinks,
-				teamMemberships,
-			},
-			organizationId,
-		);
-	});
-}
-
-function loadEmployeeNeighborhood(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeCount: number,
-	employeeId: string,
-	options: { partial: boolean },
-) {
-	return Effect.gen(function* () {
-		const targetEmployee = yield* ensureActiveEmployee(dbService, organizationId, employeeId);
-		const directManagerLinks = yield* loadDirectManagerLinks(dbService, organizationId, employeeId);
-		const directReportLinks = yield* loadDirectReportLinks(dbService, organizationId, employeeId);
-		const targetTeamMemberships = yield* loadEmployeeTeamMemberships(dbService, organizationId, employeeId);
-		const connectedTeamIds = targetTeamMemberships.map((membership) => membership.teamId);
-		const teams = yield* loadTeamsByIds(dbService, organizationId, connectedTeamIds);
-		const primaryManagerIds = teams
-			.map((teamRow) => teamRow.primaryManagerId)
-			.filter((id): id is string => Boolean(id));
-		const teamMemberMemberships = yield* loadLimitedActiveTeamMemberships(
-			dbService,
-			organizationId,
-			connectedTeamIds,
-			EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,
-		);
-		const employeeIds = new Set<string>([
-			targetEmployee.id,
-			...directManagerLinks.map((link) => link.managerId),
-			...directReportLinks.map((link) => link.employeeId),
-			...teamMemberMemberships.map((membership) => membership.employeeId),
-			...primaryManagerIds,
-		]);
-		const employees = yield* loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]);
-
-		return buildScopedOrgChartGraph(
-			{
-				mode: "focused",
-				focusedEmployeeId: targetEmployee.id,
-				employeeCount,
-				partial: options.partial,
-				employees,
-				teams,
-				managerLinks: [...directManagerLinks, ...directReportLinks],
-				teamMemberships: dedupeMemberships([...targetTeamMemberships, ...teamMemberMemberships]),
-			},
-			organizationId,
-		);
-	});
-}
-
-function loadTeamNeighborhood(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeCount: number,
-	teamId: string,
-) {
-	return Effect.gen(function* () {
-		const [targetTeam] = yield* loadTeamsByIds(dbService, organizationId, [teamId]);
-		if (!targetTeam) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Team not found",
-					entityType: "team",
-					entityId: teamId,
-				}),
-			);
-		}
-
-		const memberships = yield* loadLimitedActiveTeamMemberships(
-			dbService,
-			organizationId,
-			[teamId],
-			TEAM_NEIGHBORHOOD_MEMBER_LIMIT,
-		);
-		const employeeIds = new Set<string>(memberships.map((membership) => membership.employeeId));
-		if (targetTeam.primaryManagerId) {
-			employeeIds.add(targetTeam.primaryManagerId);
-		}
-		const directManagerLinks = yield* loadDirectManagerLinksForEmployees(dbService, organizationId, [...employeeIds]);
-		for (const managerId of directManagerLinks.map((link) => link.managerId)) {
-			employeeIds.add(managerId);
-		}
-		const employees = yield* loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]);
-		const activeEmployeeIds = employees.map((row) => row.id);
-		const managerLinks = yield* loadManagerLinks(dbService, activeEmployeeIds);
-
-		return buildScopedOrgChartGraph(
-			{
-				mode: "focused",
-				focusedEmployeeId: null,
-				employeeCount,
-				partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
-				employees,
-				teams: [targetTeam],
-				managerLinks: dedupeManagerLinks([...directManagerLinks, ...managerLinks]),
-				teamMemberships: memberships,
-			},
-			organizationId,
-		);
-	});
-}
-
-function ensureActiveEmployee(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeId: string,
-) {
-	return Effect.gen(function* () {
-		const targetEmployee = yield* dbService.query("getOrgChartTargetEmployee", async () => {
-			return await dbService.db.query.employee.findFirst({
-				where: and(
-					eq(employee.id, employeeId),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-				),
-			});
-		});
-
-		if (!targetEmployee) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Employee not found",
-					entityType: "employee",
-					entityId: employeeId,
-				}),
-			);
-		}
-
-		return targetEmployee;
-	});
-}
-
-function loadActiveEmployees(dbService: DatabaseServiceInstance, organizationId: string) {
-	return dbService.query("loadOrgChartEmployees", async () => {
-		const rows = await dbService.db
-			.select({
-				id: employee.id,
-				organizationId: employee.organizationId,
-				userId: employee.userId,
-				name: user.name,
-				pronouns: employee.pronouns,
-				email: user.email,
-				image: user.image,
-				position: employee.position,
-				role: employee.role,
-				isActive: employee.isActive,
-			})
-			.from(employee)
-			.innerJoin(user, eq(employee.userId, user.id))
-			.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
-			.orderBy(asc(user.name), asc(user.email));
-
-		return withEmployeeTeamIds(dbService, organizationId, rows);
-	});
-}
-
-function loadActiveEmployeesByIds(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeIds: string[],
-) {
-	if (employeeIds.length === 0) {
-		return Effect.succeed([] satisfies EmployeeGraphRow[]);
-	}
-
-	return dbService.query("loadOrgChartEmployeesByIds", async () => {
-		const rows = await dbService.db
-			.select({
-				id: employee.id,
-				organizationId: employee.organizationId,
-				userId: employee.userId,
-				name: user.name,
-				pronouns: employee.pronouns,
-				email: user.email,
-				image: user.image,
-				position: employee.position,
-				role: employee.role,
-				isActive: employee.isActive,
-			})
-			.from(employee)
-			.innerJoin(user, eq(employee.userId, user.id))
-			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-					inArray(employee.id, employeeIds),
-				),
-			)
-			.orderBy(asc(user.name), asc(user.email));
-
-		return withEmployeeTeamIds(dbService, organizationId, rows);
-	});
-}
-
-async function withEmployeeTeamIds(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	rows: Array<Omit<EmployeeGraphRow, "teamIds">>,
-): Promise<EmployeeGraphRow[]> {
-	if (rows.length === 0) {
-		return [];
-	}
-
-	const memberships = await dbService.db
-		.select({
-			organizationId: teamMembership.organizationId,
-			employeeId: teamMembership.employeeId,
-			teamId: teamMembership.teamId,
-		})
-		.from(teamMembership)
-		.innerJoin(team, eq(teamMembership.teamId, team.id))
-		.where(
-			and(
-				eq(teamMembership.organizationId, organizationId),
-				eq(team.organizationId, organizationId),
-				inArray(
-					teamMembership.employeeId,
-					rows.map((row) => row.id),
-				),
-			),
-		);
-	const teamIdsByEmployeeId = new Map<string, string[]>();
-	for (const membership of memberships) {
-		const teamIds = teamIdsByEmployeeId.get(membership.employeeId) ?? [];
-		teamIds.push(membership.teamId);
-		teamIdsByEmployeeId.set(membership.employeeId, teamIds);
-	}
-
-	return rows.map((row) => ({
-		...row,
-		teamIds: teamIdsByEmployeeId.get(row.id) ?? [],
-	}));
-}
-
-function loadTeams(dbService: DatabaseServiceInstance, organizationId: string) {
-	return dbService.query("loadOrgChartTeams", async () => {
-		const rows = await dbService.db
-			.select({
-				id: team.id,
-				organizationId: team.organizationId,
-				name: team.name,
-				description: team.description,
-				primaryManagerId: team.primaryManagerId,
-			})
-			.from(team)
-			.where(eq(team.organizationId, organizationId))
-			.orderBy(asc(team.name));
-
-		return withTeamMemberCounts(dbService, organizationId, rows);
-	});
-}
-
-function loadTeamsByIds(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	teamIds: string[],
-) {
-	if (teamIds.length === 0) {
-		return Effect.succeed([] satisfies TeamGraphRow[]);
-	}
-
-	return dbService.query("loadOrgChartTeamsByIds", async () => {
-		const rows = await dbService.db
-			.select({
-				id: team.id,
-				organizationId: team.organizationId,
-				name: team.name,
-				description: team.description,
-				primaryManagerId: team.primaryManagerId,
-			})
-			.from(team)
-			.where(and(eq(team.organizationId, organizationId), inArray(team.id, teamIds)))
-			.orderBy(asc(team.name));
-
-		return withTeamMemberCounts(dbService, organizationId, rows);
-	});
-}
-
-async function withTeamMemberCounts(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	rows: Array<Omit<TeamGraphRow, "memberCount">>,
-): Promise<TeamGraphRow[]> {
-	if (rows.length === 0) {
-		return [];
-	}
-
-	const memberCounts = await dbService.db
-		.select({
-			teamId: teamMembership.teamId,
-			value: count(),
-		})
-		.from(teamMembership)
-		.innerJoin(employee, eq(teamMembership.employeeId, employee.id))
-		.innerJoin(team, eq(teamMembership.teamId, team.id))
-		.where(
-			and(
-				eq(teamMembership.organizationId, organizationId),
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
-				eq(team.organizationId, organizationId),
-				inArray(
-					teamMembership.teamId,
-					rows.map((row) => row.id),
-				),
-			),
-		)
-		.groupBy(teamMembership.teamId);
-	const countsByTeamId = new Map(memberCounts.map((row) => [row.teamId, row.value]));
-
-	return rows.map((row) => ({
-		...row,
-		memberCount: countsByTeamId.get(row.id) ?? 0,
-	}));
-}
-
-function loadManagerLinks(dbService: DatabaseServiceInstance, activeEmployeeIds: string[]) {
-	if (activeEmployeeIds.length === 0) {
-		return Effect.succeed([] satisfies ManagerLinkRow[]);
-	}
-
-	return dbService.query("loadOrgChartManagerLinks", async () => {
-		return await dbService.db
-			.select({
-				managerId: employeeManagers.managerId,
-				employeeId: employeeManagers.employeeId,
-			})
-			.from(employeeManagers)
-			.where(
-				and(
-					inArray(employeeManagers.managerId, activeEmployeeIds),
-					inArray(employeeManagers.employeeId, activeEmployeeIds),
-				),
-			);
-	});
-}
-
-function loadDirectManagerLinks(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeId: string,
-) {
-	return dbService.query("loadOrgChartDirectManagerLinks", async () => {
-		return await dbService.db
-			.select({
-				managerId: employeeManagers.managerId,
-				employeeId: employeeManagers.employeeId,
-			})
-			.from(employeeManagers)
-			.innerJoin(employee, eq(employeeManagers.managerId, employee.id))
-			.where(
-				and(
-					eq(employeeManagers.employeeId, employeeId),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-				),
-			);
-	});
-}
-
-function loadDirectManagerLinksForEmployees(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeIds: string[],
-) {
-	if (employeeIds.length === 0) {
-		return Effect.succeed([] satisfies ManagerLinkRow[]);
-	}
-
-	return dbService.query("loadOrgChartDirectManagerLinksForEmployees", async () => {
-		const reportEmployee = alias(employee, "report_employee");
-		const managerEmployee = alias(employee, "manager_employee");
-
-		return await dbService.db
-			.select({
-				managerId: employeeManagers.managerId,
-				employeeId: employeeManagers.employeeId,
-			})
-			.from(employeeManagers)
-			.innerJoin(reportEmployee, eq(employeeManagers.employeeId, reportEmployee.id))
-			.innerJoin(managerEmployee, eq(employeeManagers.managerId, managerEmployee.id))
-			.where(
-				and(
-					inArray(employeeManagers.employeeId, employeeIds),
-					eq(reportEmployee.organizationId, organizationId),
-					eq(reportEmployee.isActive, true),
-					eq(managerEmployee.organizationId, organizationId),
-					eq(managerEmployee.isActive, true),
-				),
-			);
-	});
-}
-
-function loadDirectReportLinks(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeId: string,
-) {
-	return dbService.query("loadOrgChartDirectReportLinks", async () => {
-		return await dbService.db
-			.select({
-				managerId: employeeManagers.managerId,
-				employeeId: employeeManagers.employeeId,
-			})
-			.from(employeeManagers)
-			.innerJoin(employee, eq(employeeManagers.employeeId, employee.id))
-			.where(
-				and(
-					eq(employeeManagers.managerId, employeeId),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-				),
-			);
-	});
-}
-
-function loadTeamMemberships(dbService: DatabaseServiceInstance, organizationId: string) {
-	return dbService.query("loadOrgChartTeamMemberships", async () => {
-		return await dbService.db
-			.select({
-				organizationId: teamMembership.organizationId,
-				teamId: teamMembership.teamId,
-				employeeId: teamMembership.employeeId,
-			})
-			.from(teamMembership)
-			.innerJoin(employee, eq(teamMembership.employeeId, employee.id))
-			.innerJoin(team, eq(teamMembership.teamId, team.id))
-			.where(
-				and(
-					eq(teamMembership.organizationId, organizationId),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-					eq(team.organizationId, organizationId),
-				),
-			);
-	});
-}
-
-function loadEmployeeTeamMemberships(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	employeeId: string,
-) {
-	return dbService.query("loadOrgChartEmployeeTeamMemberships", async () => {
-		return await dbService.db
-			.select({
-				organizationId: teamMembership.organizationId,
-				teamId: teamMembership.teamId,
-				employeeId: teamMembership.employeeId,
-			})
-			.from(teamMembership)
-			.innerJoin(team, eq(teamMembership.teamId, team.id))
-			.where(
-				and(
-					eq(teamMembership.organizationId, organizationId),
-					eq(teamMembership.employeeId, employeeId),
-					eq(team.organizationId, organizationId),
-				),
-			);
-	});
-}
-
-function loadLimitedActiveTeamMemberships(
-	dbService: DatabaseServiceInstance,
-	organizationId: string,
-	teamIds: string[],
-	limitPerTeam: number,
-) {
-	if (teamIds.length === 0) {
-		return Effect.succeed([] satisfies TeamMembershipRow[]);
-	}
-
-	return dbService.query("loadOrgChartLimitedActiveTeamMemberships", async () => {
-		const rows = await dbService.db
-			.select({
-				organizationId: teamMembership.organizationId,
-				teamId: teamMembership.teamId,
-				employeeId: teamMembership.employeeId,
-			})
-			.from(teamMembership)
-			.innerJoin(employee, eq(teamMembership.employeeId, employee.id))
-			.innerJoin(team, eq(teamMembership.teamId, team.id))
-			.innerJoin(user, eq(employee.userId, user.id))
-			.where(
-				and(
-					eq(teamMembership.organizationId, organizationId),
-					inArray(teamMembership.teamId, teamIds),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-					eq(team.organizationId, organizationId),
-				),
-			)
-			.orderBy(asc(teamMembership.teamId), asc(user.name), asc(user.email), asc(employee.id));
-
-		return capTeamMembershipsPerTeam(rows, limitPerTeam);
-	});
-}
-
-function dedupeMemberships(memberships: TeamMembershipRow[]) {
-	return Array.from(
-		new Map(
-			memberships.map((membership) => [
-				`${membership.teamId}:${membership.employeeId}`,
-				membership,
-			]),
-		).values(),
-	);
-}
-
-function dedupeManagerLinks(links: ManagerLinkRow[]) {
-	return Array.from(
-		new Map(links.map((link) => [`${link.managerId}:${link.employeeId}`, link])).values(),
-	);
 }

@@ -54,7 +54,10 @@ const ROSTER_SURFACES: Surface[] = [
 	},
 	{
 		file: "components/dashboard/schedule-absence-reads.ts",
-		functions: ["loadUpcomingAbsencesForOrganization", "loadWhosOutForOrganization"],
+		functions: [
+			"loadUpcomingAbsencesForOrganization",
+			"loadWhosOutForOrganization",
+		],
 		note: "shared production readers own current-team filtering for RSC, GET and retained actions",
 	},
 	{
@@ -77,8 +80,31 @@ const ROSTER_SURFACES: Surface[] = [
 		note: "/team: current reports unless former employees are asked for, and the viewer",
 	},
 	{
+		file: "app/[locale]/(app)/organization/org-explorer-queries.ts",
+		functions: [
+			"countCurrentRoster",
+			"findCurrentRosterViewer",
+			"loadCurrentRosterPeople",
+			"loadOrgExplorerTeams",
+			"loadCurrentTeamMemberIds",
+			"loadReportingLineRootIds",
+			"countUnplacedPeople",
+			"loadUnplacedPeopleIds",
+			"searchCurrentRoster",
+			"loadCurrentManagersByEmployee",
+			"loadCurrentReportsByManager",
+			"currentManagerLink",
+			"currentReportLink",
+		],
+		note: "the Org Explorer: people, reporting lines, team leads and team counts of the current roster",
+	},
+	{
 		file: "lib/bot-platform/current-roster-team.ts",
-		functions: ["currentRosterReportIds", "currentRosterDigestManager", "currentRosterEmployees"],
+		functions: [
+			"currentRosterReportIds",
+			"currentRosterDigestManager",
+			"currentRosterEmployees",
+		],
 		note: "bot commands, digests and escalation targets",
 	},
 	{
@@ -246,7 +272,10 @@ const ROSTER_SURFACES: Surface[] = [
 const HISTORY_VIEWS: Surface[] = [
 	{
 		file: "app/[locale]/(app)/team/actions.ts",
-		functions: ["getCalendarManagedEmployees", "getCachedCalendarManagedEmployeeRecords"],
+		functions: [
+			"getCalendarManagedEmployees",
+			"getCachedCalendarManagedEmployeeRecords",
+		],
 		note: "historical calendars stay readable; former reports are marked",
 	},
 	{
@@ -339,7 +368,11 @@ const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/teams/actions.ts",
-		functions: ["resolveTeamSettingsActor", "writeTeamMemberRemoval", "listTeams"],
+		functions: [
+			"resolveTeamSettingsActor",
+			"writeTeamMemberRemoval",
+			"listTeams",
+		],
 		note: "the acting user, and removals, which stay possible for former employees",
 	},
 	{
@@ -356,17 +389,29 @@ const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
 
 type FunctionBody = { name: string; body: string };
 
-function collectFunctionBodies(source: string, fileName: string): FunctionBody[] {
+function collectFunctionBodies(
+	source: string,
+	fileName: string,
+): FunctionBody[] {
 	return withNativeSource(source, fileName, ({ sourceFile }) => {
 		const bodies: FunctionBody[] = [];
 		const record = (name: string, body: ts.Node | undefined) => {
-			if (body) bodies.push({ name, body: source.slice(body.getStart(sourceFile), body.getEnd()) });
+			if (body)
+				bodies.push({
+					name,
+					body: source.slice(body.getStart(sourceFile), body.getEnd()),
+				});
 		};
 		const functionLike = (node: ts.Node | undefined) =>
-			node && (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) ? node : undefined;
+			node && (ts.isArrowFunction(node) || ts.isFunctionExpression(node))
+				? node
+				: undefined;
 
 		function visit(node: ts.Node) {
-			if ((ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) && node.name) {
+			if (
+				(ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) &&
+				node.name
+			) {
 				if (ts.isIdentifier(node.name)) record(node.name.text, node.body);
 			} else if (
 				(ts.isVariableDeclaration(node) || ts.isPropertyAssignment(node)) &&
@@ -388,7 +433,10 @@ function collectFunctionBodies(source: string, fileName: string): FunctionBody[]
  * and functions or arrows assigned to a variable or an object property. A name
  * declared twice in one file maps to null, so the list must name it uniquely.
  */
-function functionBodies(source: string, fileName: string): Map<string, string | null> {
+function functionBodies(
+	source: string,
+	fileName: string,
+): Map<string, string | null> {
 	const bodies = new Map<string, string | null>();
 	for (const { name, body } of collectFunctionBodies(source, fileName)) {
 		bodies.set(name, bodies.has(name) ? null : body);
@@ -403,7 +451,9 @@ function unclassifiedEmployeeQueries(
 	classified: ReadonlySet<string>,
 ): string[] {
 	return collectFunctionBodies(source, fileName)
-		.filter(({ name, body }) => EMPLOYEE_QUERY.test(body) && !classified.has(name))
+		.filter(
+			({ name, body }) => EMPLOYEE_QUERY.test(body) && !classified.has(name),
+		)
 		.filter(({ body }) => rosterViolation(body) !== null)
 		.map(({ name }) => name);
 }
@@ -416,7 +466,12 @@ function rawActiveCheckCounts(): Record<string, number> {
 		for (const entry of readdirSync(dir)) {
 			const path = join(dir, entry);
 			if (statSync(path).isDirectory()) {
-				if (entry !== "node_modules" && entry !== "__tests__" && entry !== "testing") walk(path);
+				if (
+					entry !== "node_modules" &&
+					entry !== "__tests__" &&
+					entry !== "testing"
+				)
+					walk(path);
 				continue;
 			}
 			if (
@@ -427,7 +482,8 @@ function rawActiveCheckCounts(): Record<string, number> {
 				continue;
 			}
 			const found = readFileSync(path, "utf8").match(pattern)?.length ?? 0;
-			if (found > 0) counts[relative(SRC_ROOT, path).split(sep).join("/")] = found;
+			if (found > 0)
+				counts[relative(SRC_ROOT, path).split(sep).join("/")] = found;
 		}
 	};
 	walk(SRC_ROOT);
@@ -435,8 +491,10 @@ function rawActiveCheckCounts(): Record<string, number> {
 }
 
 function rosterViolation(body: string): string | null {
-	if (!ROSTER_RULE.test(body)) return "does not filter with the current-roster rule";
-	if (RAW_EMPLOYEE_ACTIVE_CHECK.test(body)) return "uses a hand-written active check";
+	if (!ROSTER_RULE.test(body))
+		return "does not filter with the current-roster rule";
+	if (RAW_EMPLOYEE_ACTIVE_CHECK.test(body))
+		return "uses a hand-written active check";
 	return null;
 }
 
@@ -452,7 +510,9 @@ function bodyOf(file: string, fn: string): string | null | undefined {
 }
 
 const entries = (surfaces: Surface[]) =>
-	surfaces.flatMap((surface) => surface.functions.map((fn) => [surface.file, fn] as const));
+	surfaces.flatMap((surface) =>
+		surface.functions.map((fn) => [surface.file, fn] as const),
+	);
 
 describe("current-roster surface guard", () => {
 	it.each([
@@ -498,15 +558,27 @@ describe("current-roster surface guard", () => {
 		expect(bodies.get("handler")).toBeNull();
 	});
 
-	it.each(entries(ROSTER_SURFACES))("%s %s filters with the current-roster rule", (file, fn) => {
-		const body = bodyOf(file, fn);
-		expect(body, `${fn} is missing or declared twice in ${file}`).toBeTruthy();
-		expect(rosterViolation(body ?? "")).toBeNull();
-	});
+	it.each(entries(ROSTER_SURFACES))(
+		"%s %s filters with the current-roster rule",
+		(file, fn) => {
+			const body = bodyOf(file, fn);
+			expect(
+				body,
+				`${fn} is missing or declared twice in ${file}`,
+			).toBeTruthy();
+			expect(rosterViolation(body ?? "")).toBeNull();
+		},
+	);
 
-	it.each(entries(HISTORY_VIEWS))("%s %s still exists as a listed view of the past", (file, fn) => {
-		expect(bodyOf(file, fn), `${fn} is missing or declared twice in ${file}`).toBeTruthy();
-	});
+	it.each(entries(HISTORY_VIEWS))(
+		"%s %s still exists as a listed view of the past",
+		(file, fn) => {
+			expect(
+				bodyOf(file, fn),
+				`${fn} is missing or declared twice in ${file}`,
+			).toBeTruthy();
+		},
+	);
 
 	it("flags an unlisted employee query next to a roster surface", () => {
 		const source = `
@@ -519,9 +591,9 @@ describe("current-roster surface guard", () => {
 			export async function workOf(id: string) {
 				return db.select().from(workPeriod).where(eq(workPeriod.employeeId, id));
 			}`;
-		expect(unclassifiedEmployeeQueries(source, "/fixture.ts", new Set(["listTeam"]))).toEqual([
-			"listEveryone",
-		]);
+		expect(
+			unclassifiedEmployeeQueries(source, "/fixture.ts", new Set(["listTeam"])),
+		).toEqual(["listEveryone"]);
 	});
 
 	it.each([...new Set(ROSTER_SURFACES.map((surface) => surface.file))])(
@@ -533,22 +605,34 @@ describe("current-roster surface guard", () => {
 					.flatMap((surface) => surface.functions),
 			);
 			expect(
-				unclassifiedEmployeeQueries(readFileSync(join(SRC_ROOT, file), "utf8"), file, classified),
+				unclassifiedEmployeeQueries(
+					readFileSync(join(SRC_ROOT, file), "utf8"),
+					file,
+					classified,
+				),
 				"apply the current-roster rule, or list the function as a view of the past or an exemption",
 			).toEqual([]);
 		},
 	);
 
-	it("adds no hand-written employee active checks beyond the baseline", { timeout: 15_000 }, () => {
+	it("adds no hand-written employee active checks beyond the baseline", {
+		timeout: 15_000,
+	}, () => {
 		const baseline = JSON.parse(
 			readFileSync(
-				join(SRC_ROOT, "lib/employee-lifecycle/raw-employee-active-checks.json"),
+				join(
+					SRC_ROOT,
+					"lib/employee-lifecycle/raw-employee-active-checks.json",
+				),
 				"utf8",
 			),
 		) as Record<string, number>;
 		const grown = Object.entries(rawActiveCheckCounts())
 			.filter(([file, count]) => count > (baseline[file] ?? 0))
-			.map(([file, count]) => `${file}: ${count} (baseline ${baseline[file] ?? 0})`);
+			.map(
+				([file, count]) =>
+					`${file}: ${count} (baseline ${baseline[file] ?? 0})`,
+			);
 		expect(
 			grown,
 			"use onCurrentRoster / isFormerEmployee from current-roster.ts instead of employee.isActive",
