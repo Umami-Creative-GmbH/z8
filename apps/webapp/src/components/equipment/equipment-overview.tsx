@@ -37,6 +37,7 @@ import {
 	type AssignmentFilters,
 	type AssignmentStatusView,
 	defaultItemView,
+	type EquipmentKpis,
 	equipmentKpis,
 	type ItemView,
 } from "./equipment-list";
@@ -157,6 +158,121 @@ function FilterKpi({
 }
 
 /**
+ * The key figures. Each one shows what it counts and is active while the page
+ * shows it; "Items ready to issue" only appears to managers with identified items.
+ */
+function OverviewKpis({
+	kpis,
+	canManage,
+	activeStatus,
+	readyActive,
+	onShowStatus,
+	onShowReady,
+}: {
+	kpis: EquipmentKpis;
+	canManage: boolean;
+	/** The assignments view on screen, or null while the items tab is. */
+	activeStatus: AssignmentStatusView | null;
+	readyActive: boolean;
+	onShowStatus: (status: AssignmentStatusView) => void;
+	onShowReady: () => void;
+}) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const showReady = canManage && kpis.identifiedItems > 0;
+	const date = (value: string) =>
+		parsePlainDate(value).toLocaleString(locale, { dateStyle: "medium" });
+	return (
+		<div
+			className={cn(
+				"grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2",
+				showReady ? "@5xl/main:grid-cols-4" : "@5xl/main:grid-cols-3",
+			)}
+		>
+			<FilterKpi
+				active={activeStatus === "outstanding"}
+				label={t(
+					"settings.equipment.filters.outstanding",
+					"Outstanding returns",
+				)}
+				actionLabel={t(
+					"settings.equipment.kpi.showOutstanding",
+					"Show outstanding returns",
+				)}
+				icon={<IconPackageExport />}
+				value={kpis.outstanding}
+				tone="neutral"
+				caption={t(
+					"settings.equipment.kpi.outstandingCaption",
+					"{count, plural, =0 {No employee holds an outstanding return} one {Across # employee} other {Across # employees}}",
+					{ count: kpis.outstandingHolders },
+				)}
+				onSelect={() => onShowStatus("outstanding")}
+			/>
+			<FilterKpi
+				active={activeStatus === "overdue"}
+				label={t("settings.equipment.custody.overdue", "Overdue")}
+				actionLabel={t(
+					"settings.equipment.kpi.showOverdue",
+					"Show overdue returns",
+				)}
+				icon={<IconAlertTriangle />}
+				value={kpis.overdue}
+				tone={kpis.overdue > 0 ? "critical" : "neutral"}
+				caption={
+					kpis.oldestOverdueDays === null
+						? t("settings.equipment.kpi.noneOverdue", "Nothing overdue")
+						: t(
+								"settings.equipment.kpi.oldestOverdue",
+								"{count, plural, one {Oldest: # day overdue} other {Oldest: # days overdue}}",
+								{ count: kpis.oldestOverdueDays },
+							)
+				}
+				onSelect={() => onShowStatus("overdue")}
+			/>
+			<FilterKpi
+				active={activeStatus === "soon"}
+				label={t("settings.equipment.kpi.dueSoon", "Due within 14 days")}
+				actionLabel={t(
+					"settings.equipment.kpi.showDueSoon",
+					"Show returns due within 14 days",
+				)}
+				icon={<IconCalendarDue />}
+				value={kpis.dueSoon}
+				tone={kpis.dueSoon > 0 ? "warning" : "neutral"}
+				caption={
+					kpis.nextDueDate
+						? t("settings.equipment.kpi.nextDue", "Next: {date}", {
+								date: date(kpis.nextDueDate),
+							})
+						: t("settings.equipment.kpi.nothingDue", "Nothing due soon")
+				}
+				onSelect={() => onShowStatus("soon")}
+			/>
+			{showReady ? (
+				<FilterKpi
+					active={readyActive}
+					label={t("settings.equipment.kpi.ready", "Items ready to issue")}
+					actionLabel={t(
+						"settings.equipment.kpi.showReady",
+						"Show items ready to issue",
+					)}
+					icon={<IconCircleCheck />}
+					value={kpis.readyToIssue}
+					tone="info"
+					caption={t(
+						"settings.equipment.kpi.readyCaption",
+						"{count, plural, one {Of # identified item} other {Of # identified items}}",
+						{ count: kpis.identifiedItems },
+					)}
+					onSelect={onShowReady}
+				/>
+			) : null}
+		</div>
+	);
+}
+
+/**
  * The staff Equipment overview (#1572): key figures, assignments with URL filters
  * and row commands, and the item availability tab.
  */
@@ -168,7 +284,6 @@ export function EquipmentOverview({
 	query: EquipmentListQuery;
 }) {
 	const { t } = useTranslate();
-	const locale = useLocale();
 	const router = useRouter();
 	const { open, panel, pending } = useEquipmentPanels(data);
 	const [tab, setTab] = useState<Tab>("assignments");
@@ -221,8 +336,6 @@ export function EquipmentOverview({
 		);
 	const kpis = equipmentKpis(data.assignments, data.readinessItems, data.today);
 	const showItems = data.canManage && data.readinessItems.length > 0;
-	const date = (value: string) =>
-		parsePlainDate(value).toLocaleString(locale, { dateStyle: "medium" });
 	const assignments = (
 		<EquipmentAssignmentsCard
 			data={data}
@@ -251,97 +364,17 @@ export function EquipmentOverview({
 					)}
 				</p>
 			) : null}
-			<div
-				className={cn(
-					"grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2",
-					kpis.identifiedItems > 0 && data.canManage
-						? "@5xl/main:grid-cols-4"
-						: "@5xl/main:grid-cols-3",
-				)}
-			>
-				<FilterKpi
-					active={tab === "assignments" && listQuery.status === "outstanding"}
-					label={t(
-						"settings.equipment.filters.outstanding",
-						"Outstanding returns",
-					)}
-					actionLabel={t(
-						"settings.equipment.kpi.showOutstanding",
-						"Show outstanding returns",
-					)}
-					icon={<IconPackageExport />}
-					value={kpis.outstanding}
-					tone="neutral"
-					caption={t(
-						"settings.equipment.kpi.outstandingCaption",
-						"{count, plural, =0 {No employee holds an outstanding return} one {Across # employee} other {Across # employees}}",
-						{ count: kpis.outstandingHolders },
-					)}
-					onSelect={() => showStatus("outstanding")}
-				/>
-				<FilterKpi
-					active={tab === "assignments" && listQuery.status === "overdue"}
-					label={t("settings.equipment.custody.overdue", "Overdue")}
-					actionLabel={t(
-						"settings.equipment.kpi.showOverdue",
-						"Show overdue returns",
-					)}
-					icon={<IconAlertTriangle />}
-					value={kpis.overdue}
-					tone={kpis.overdue > 0 ? "critical" : "neutral"}
-					caption={
-						kpis.oldestOverdueDays === null
-							? t("settings.equipment.kpi.noneOverdue", "Nothing overdue")
-							: t(
-									"settings.equipment.kpi.oldestOverdue",
-									"{count, plural, one {Oldest: # day overdue} other {Oldest: # days overdue}}",
-									{ count: kpis.oldestOverdueDays },
-								)
-					}
-					onSelect={() => showStatus("overdue")}
-				/>
-				<FilterKpi
-					active={tab === "assignments" && listQuery.status === "soon"}
-					label={t("settings.equipment.kpi.dueSoon", "Due within 14 days")}
-					actionLabel={t(
-						"settings.equipment.kpi.showDueSoon",
-						"Show returns due within 14 days",
-					)}
-					icon={<IconCalendarDue />}
-					value={kpis.dueSoon}
-					tone={kpis.dueSoon > 0 ? "warning" : "neutral"}
-					caption={
-						kpis.nextDueDate
-							? t("settings.equipment.kpi.nextDue", "Next: {date}", {
-									date: date(kpis.nextDueDate),
-								})
-							: t("settings.equipment.kpi.nothingDue", "Nothing due soon")
-					}
-					onSelect={() => showStatus("soon")}
-				/>
-				{data.canManage && kpis.identifiedItems > 0 ? (
-					<FilterKpi
-						active={tab === "items" && itemView === "available"}
-						label={t("settings.equipment.kpi.ready", "Items ready to issue")}
-						actionLabel={t(
-							"settings.equipment.kpi.showReady",
-							"Show items ready to issue",
-						)}
-						icon={<IconCircleCheck />}
-						value={kpis.readyToIssue}
-						tone="info"
-						caption={t(
-							"settings.equipment.kpi.readyCaption",
-							"{count, plural, one {Of # identified item} other {Of # identified items}}",
-							{ count: kpis.identifiedItems },
-						)}
-						onSelect={() => {
-							setItemView("available");
-							setTab("items");
-						}}
-					/>
-				) : null}
-			</div>
+			<OverviewKpis
+				kpis={kpis}
+				canManage={data.canManage}
+				activeStatus={tab === "assignments" ? listQuery.status : null}
+				readyActive={tab === "items" && itemView === "available"}
+				onShowStatus={showStatus}
+				onShowReady={() => {
+					setItemView("available");
+					setTab("items");
+				}}
+			/>
 			<div className="px-4 lg:px-6">
 				{showItems ? (
 					<Tabs

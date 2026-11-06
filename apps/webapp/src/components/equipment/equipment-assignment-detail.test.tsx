@@ -12,7 +12,7 @@ import type {
 	EquipmentAssignmentView,
 	EquipmentView,
 } from "@/lib/organization/equipment/contracts";
-import { historyEntries } from "./equipment-history";
+import { historyEntries } from "./equipment-history-entries";
 import { EquipmentAssignmentDetail } from "./equipment-workspace";
 import {
 	heldAssignment,

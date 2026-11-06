@@ -23,7 +23,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { UserAvatar } from "@/components/user-avatar";
 import { cn } from "@/lib/utils";
 import { searchOrgEmployees } from "./actions";
-import { personDisplayName } from "./org-explorer-person";
+import { personDisplayName } from "./org-explorer-person-name";
 import type {
 	OrgExplorerSearchResult,
 	OrgExplorerTeam,

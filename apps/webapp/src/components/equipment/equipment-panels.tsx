@@ -191,46 +191,84 @@ function panelSize(selection: EquipmentPanelSelection) {
 	}
 }
 
+type PanelActions = {
+	submit: SubmitHandover;
+	pending: boolean;
+	onCancel: () => void;
+};
+
+type IssuanceSelection = Extract<
+	EquipmentPanelSelection,
+	{ kind: "issue" | "historical" }
+>;
+type AssignmentSelection = Exclude<EquipmentPanelSelection, IssuanceSelection>;
+
 function PanelForm({
 	data,
 	selection,
 	submit,
 	pending,
 	onCancel,
-}: {
+}: PanelActions & {
 	data: EquipmentView;
 	selection: EquipmentPanelSelection;
-	submit: SubmitHandover;
-	pending: boolean;
-	onCancel: () => void;
 }) {
 	const actions = { submit, pending, onCancel };
-	if (selection.kind === "issue" || selection.kind === "historical") {
-		const { canIssue, canRecordHistorical } = issuanceAvailability(
-			data,
-			selection.employeeId,
+	if (selection.kind === "issue" || selection.kind === "historical")
+		return (
+			<IssuancePanelForm data={data} selection={selection} actions={actions} />
 		);
-		const issuanceKey = [...data.availableItems, ...data.availableQuantityTypes]
-			.map((item) => `${item.id}:${item.revision}`)
-			.join(",");
-		if (selection.kind === "issue")
-			return canIssue ? (
-				<IssueEquipmentForm
-					key={issuanceKey}
-					data={data}
-					employeeId={selection.employeeId}
-					{...actions}
-				/>
-			) : null;
-		return canRecordHistorical ? (
-			<HistoricalEquipmentForm
+	return (
+		<AssignmentPanelForm data={data} selection={selection} actions={actions} />
+	);
+}
+
+/** Issuing or recording a historical handover, when the reader still may. */
+function IssuancePanelForm({
+	data,
+	selection,
+	actions,
+}: {
+	data: EquipmentView;
+	selection: IssuanceSelection;
+	actions: PanelActions;
+}) {
+	const { canIssue, canRecordHistorical } = issuanceAvailability(
+		data,
+		selection.employeeId,
+	);
+	const issuanceKey = [...data.availableItems, ...data.availableQuantityTypes]
+		.map((item) => `${item.id}:${item.revision}`)
+		.join(",");
+	if (selection.kind === "issue")
+		return canIssue ? (
+			<IssueEquipmentForm
 				key={issuanceKey}
 				data={data}
 				employeeId={selection.employeeId}
 				{...actions}
 			/>
 		) : null;
-	}
+	return canRecordHistorical ? (
+		<HistoricalEquipmentForm
+			key={issuanceKey}
+			data={data}
+			employeeId={selection.employeeId}
+			{...actions}
+		/>
+	) : null;
+}
+
+/** A command on one assignment, when it still offers that command. */
+function AssignmentPanelForm({
+	data,
+	selection,
+	actions,
+}: {
+	data: EquipmentView;
+	selection: AssignmentSelection;
+	actions: PanelActions;
+}) {
 	const assignment = data.assignments.find(
 		(candidate) => candidate.id === selection.assignmentId,
 	);
@@ -260,22 +298,15 @@ function PanelForm({
 			return assignment.canCloseException ? (
 				<CloseReturnForm key={key} assignment={assignment} {...actions} />
 			) : null;
-		case "exception_receipt": {
-			const exception = assignment.exceptions.find(
-				(candidate) =>
-					candidate.id === selection.exceptionId && candidate.canReceive,
-			);
-			return exception ? (
-				<ReceiveExceptionForm
-					key={`${key}:${exception.id}`}
+		case "exception_receipt":
+			return (
+				<ExceptionReceiptPanelForm
+					data={data}
 					assignment={assignment}
-					exception={exception}
-					today={data.today}
-					timezone={data.timezone}
-					{...actions}
+					exceptionId={selection.exceptionId}
+					actions={actions}
 				/>
-			) : null;
-		}
+			);
 		case "correction":
 			return (
 				<CorrectionEditor
@@ -292,4 +323,31 @@ function PanelForm({
 				/>
 			);
 	}
+}
+
+/** Receiving a return exception's items, while that exception can still receive. */
+function ExceptionReceiptPanelForm({
+	data,
+	assignment,
+	exceptionId,
+	actions,
+}: {
+	data: EquipmentView;
+	assignment: EquipmentAssignmentView;
+	exceptionId: string;
+	actions: PanelActions;
+}) {
+	const exception = assignment.exceptions.find(
+		(candidate) => candidate.id === exceptionId && candidate.canReceive,
+	);
+	return exception ? (
+		<ReceiveExceptionForm
+			key={`${assignment.id}:${assignment.revision}:${exception.id}`}
+			assignment={assignment}
+			exception={exception}
+			today={data.today}
+			timezone={data.timezone}
+			{...actions}
+		/>
+	) : null;
 }

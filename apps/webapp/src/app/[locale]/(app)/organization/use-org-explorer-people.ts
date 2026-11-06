@@ -19,6 +19,8 @@ import {
 
 export type OrgExplorerSummary = Omit<OrgExplorerData, "people">;
 
+export type OrgExplorerPeopleLoader = ReturnType<typeof useOrgExplorerPeople>;
+
 /**
  * Where the next page of a team's members or of a group starts: absent before
  * the first page, null once everything is loaded.
@@ -205,16 +207,21 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 			(id) => !fresh.has(id),
 		);
 		if (!result.data.complete) {
+			// The batches are independent reads: load them side by side.
+			const chunks: string[][] = [];
 			for (
 				let start = 0;
 				start < stillShown.length;
 				start += ORG_EXPLORER_BATCH_LIMIT
 			) {
-				const reloaded = await getOrgExplorerPeople(
-					stillShown.slice(start, start + ORG_EXPLORER_BATCH_LIMIT),
-				);
-				if (!reloaded.success) throw new Error(reloaded.error);
-				for (const entry of reloaded.data) fresh.set(entry.employeeId, entry);
+				chunks.push(stillShown.slice(start, start + ORG_EXPLORER_BATCH_LIMIT));
+			}
+			const reloaded = await Promise.all(
+				chunks.map((chunk) => getOrgExplorerPeople(chunk)),
+			);
+			for (const batch of reloaded) {
+				if (!batch.success) throw new Error(batch.error);
+				for (const entry of batch.data) fresh.set(entry.employeeId, entry);
 			}
 		}
 		setTeamOffsets(new Map());
