@@ -195,6 +195,10 @@ These terms describe the confirmed equipment design; see the
 [equipment tracking reference](../../../../../docs/refs/equipment-return-tracking.md)
 for the agreed rules and implementation status.
 
+**Equipment tracking**:
+An optional organization feature that records equipment issued to employees and its return. While it is off, nobody sees it, no equipment can be recorded and no reminders go out, but its records, outstanding returns and record retention remain.
+_Avoid_: asset management, inventory, equipment module
+
 **Equipment assignment**:
 A record of equipment issued to one employee, including its condition and whether it must be returned.
 _Avoid_: equipment issue (can mean a fault), asset ownership

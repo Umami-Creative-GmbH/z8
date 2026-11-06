@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EquipmentLoading } from "@/components/equipment/equipment-loading";
 import { EmployeeEquipment } from "@/components/equipment/equipment-workspace";
 import { getEmployeeEquipment } from "@/lib/organization/equipment/actions";
-import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
+/** One employee's equipment; an out-of-scope, revoked or invalid employee reads as not found. */
 async function EquipmentEmployeeContent({
 	params,
 }: {
@@ -21,25 +22,25 @@ async function EquipmentEmployeeContent({
 	)
 		notFound();
 	return (
-		<div className="mx-auto max-w-5xl space-y-4 p-4 sm:p-6">
-			<h1 className="text-2xl font-semibold tracking-tight">
-				{t("settings.equipment.employee.title", "Employee equipment")}
-			</h1>
-			<Link
-				href="/equipment"
-				className="text-sm text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-			>
-				{t("settings.equipment.openOverview", "Open equipment overview")}
-			</Link>
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{result.success ? (
-				<EmployeeEquipment data={result.data} employeeId={employeeId} />
+				<EmployeeEquipment
+					data={result.data}
+					employeeId={employeeId}
+					variant="page"
+				/>
 			) : (
-				<p role="alert">
-					{t(
-						"settings.equipment.overview.failed",
-						"Equipment could not be loaded. Reload the page to try again.",
-					)}
-				</p>
+				<div className="space-y-2 px-4 lg:px-6">
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.equipment.employee.title", "Employee equipment")}
+					</h1>
+					<p role="alert" className="text-sm text-destructive">
+						{t(
+							"settings.equipment.overview.failed",
+							"Equipment could not be loaded. Reload the page to try again.",
+						)}
+					</p>
+				</div>
 			)}
 		</div>
 	);
@@ -48,7 +49,7 @@ export default function EquipmentEmployeePage(props: {
 	params: Promise<{ employeeId: string }>;
 }) {
 	return (
-		<Suspense>
+		<Suspense fallback={<EquipmentLoading variant="employee" />}>
 			<EquipmentEmployeeContent {...props} />
 		</Suspense>
 	);

@@ -1,9 +1,16 @@
 "use client";
+import { IconPencil } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
 	TFormControl,
@@ -25,6 +32,7 @@ import { actualDateError } from "./equipment-handover-validation";
 import {
 	ActualDateField,
 	ConditionField,
+	EquipmentFormPanel,
 	equipmentSelectClass,
 	NotesField,
 	type SubmitHandover,
@@ -129,12 +137,16 @@ const reasonError = (value: string, t: EquipmentTranslate) =>
 		: undefined;
 function FormFrame({
 	children,
+	title,
+	assignment,
 	pending,
 	onCancel,
 	onSubmit,
 	element,
 }: {
 	children: ReactNode;
+	title: string;
+	assignment: EquipmentAssignmentView;
 	pending: boolean;
 	onCancel: () => void;
 	onSubmit: () => void;
@@ -142,14 +154,19 @@ function FormFrame({
 }) {
 	const { t } = useTranslate();
 	return (
-		<form
-			ref={element}
-			noValidate
-			className="space-y-4 rounded-lg border p-4"
-			onSubmit={(e) => {
-				e.preventDefault();
-				onSubmit();
-			}}
+		<EquipmentFormPanel
+			element={element}
+			pending={pending}
+			onCancel={onCancel}
+			onSubmit={onSubmit}
+			title={title}
+			description={
+				<>
+					<span translate="no">{assignment.identifier}</span> ·{" "}
+					{assignment.holderName}
+				</>
+			}
+			submitLabel={t("settings.equipment.correction.save", "Save amendment")}
 		>
 			<p className="text-sm text-muted-foreground">
 				{t(
@@ -160,20 +177,7 @@ function FormFrame({
 			<fieldset className="min-w-0 space-y-4" disabled={pending}>
 				{children}
 			</fieldset>
-			<div className="flex flex-wrap gap-2">
-				<Button type="submit" disabled={pending}>
-					{t("settings.equipment.correction.save", "Save amendment")}
-				</Button>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={onCancel}
-					disabled={pending}
-				>
-					{t("common.cancel", "Cancel")}
-				</Button>
-			</div>
-		</form>
+		</EquipmentFormPanel>
 	);
 }
 function useInvalidFocus() {
@@ -247,6 +251,12 @@ export function HandoverCorrectionForm({
 	return (
 		<FormFrame
 			{...actions}
+			assignment={assignment}
+			title={
+				kind === "issue"
+					? t("settings.equipment.correction.issue", "Correct issuance")
+					: t("settings.equipment.correction.receipt", "Correct receipt")
+			}
 			element={element}
 			onSubmit={() => void form.handleSubmit()}
 		>
@@ -442,6 +452,8 @@ function ExceptionCorrectionForm({
 	return (
 		<FormFrame
 			{...actions}
+			assignment={assignment}
+			title={t("settings.equipment.correction.exception", "Correct exception")}
 			element={element}
 			onSubmit={() => void form.handleSubmit()}
 		>
@@ -575,6 +587,8 @@ function TransferCorrectionForm({
 	return (
 		<FormFrame
 			{...actions}
+			assignment={assignment}
+			title={t("settings.equipment.correction.transfer", "Correct transfer")}
 			element={element}
 			onSubmit={() => void form.handleSubmit()}
 		>
@@ -691,78 +705,90 @@ function TransferCorrectionForm({
 		</FormFrame>
 	);
 }
-function CorrectionButtons({
+/** What a correction amends; `id` is the receipt, exception or transfer destination. */
+export type CorrectionTarget = NonNullable<Selection>;
+
+/** Every record the reader may amend, numbered within its kind as the history lists them. */
+export function correctionTargets(assignment: EquipmentAssignmentView) {
+	const numbered = <T,>(
+		records: readonly T[] | undefined,
+		target: (record: T) => CorrectionTarget,
+	) =>
+		(records ?? []).map((record, index) => ({
+			target: target(record),
+			index: index + 1,
+		}));
+	return [
+		...(assignment.canCorrect
+			? [{ target: { kind: "issue" } as CorrectionTarget, index: 0 }]
+			: []),
+		...(assignment.canCorrectReceipt
+			? numbered(assignment.receipts, (h) => ({ kind: "receipt", id: h.id }))
+			: []),
+		...(assignment.canCorrectException
+			? numbered(assignment.exceptions, (e) => ({
+					kind: "exception",
+					id: e.id,
+				}))
+			: []),
+		...(assignment.canCorrectReceipt
+			? numbered(assignment.correctionTransfers, (e) => ({
+					kind: "transfer",
+					id: e.destinationAssignmentId,
+				}))
+			: []),
+	];
+}
+
+/** "Correct a record": one entry per record the reader may amend. */
+export function CorrectionMenu({
 	assignment,
 	disabled,
 	onSelect,
 }: {
 	assignment: EquipmentAssignmentView;
 	disabled: boolean;
-	onSelect: (selection: Selection) => void;
+	onSelect: (target: CorrectionTarget) => void;
 }) {
 	const { t } = useTranslate();
+	const targets = correctionTargets(assignment);
+	if (!targets.length) return null;
+	const label = ({ target, index }: (typeof targets)[number]) => {
+		switch (target.kind) {
+			case "issue":
+				return t("settings.equipment.correction.issue", "Correct issuance");
+			case "receipt":
+				return `${t("settings.equipment.correction.receipt", "Correct receipt")} ${index}`;
+			case "exception":
+				return `${t("settings.equipment.correction.exception", "Correct exception")} ${index}`;
+			case "transfer":
+				return `${t("settings.equipment.correction.transfer", "Correct transfer")} ${index}`;
+		}
+	};
 	return (
-		<div className="flex flex-wrap gap-2">
-			{assignment.canCorrect ? (
-				<Button
-					variant="outline"
-					disabled={disabled}
-					onClick={() => onSelect({ kind: "issue" })}
-				>
-					{t("settings.equipment.correction.issue", "Correct issuance")}
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button variant="ghost" size="sm" disabled={disabled}>
+					<IconPencil className="size-4" aria-hidden="true" />
+					{t("settings.equipment.correction.open", "Correct a record")}
 				</Button>
-			) : null}
-			{assignment.canCorrectReceipt
-				? assignment.receipts.map((h, index) => (
-						<Button
-							key={h.id}
-							variant="outline"
-							disabled={disabled}
-							onClick={() => onSelect({ kind: "receipt", id: h.id })}
-						>
-							{t("settings.equipment.correction.receipt", "Correct receipt")}{" "}
-							{index + 1}
-						</Button>
-					))
-				: null}
-			{assignment.canCorrectException
-				? assignment.exceptions?.map((e, index) => (
-						<Button
-							key={e.id}
-							variant="outline"
-							disabled={disabled}
-							onClick={() => onSelect({ kind: "exception", id: e.id })}
-						>
-							{t(
-								"settings.equipment.correction.exception",
-								"Correct exception",
-							)}{" "}
-							{index + 1}
-						</Button>
-					))
-				: null}
-			{assignment.canCorrectReceipt
-				? assignment.correctionTransfers?.map((e, index) => (
-						<Button
-							key={e.destinationAssignmentId}
-							variant="outline"
-							disabled={disabled}
-							onClick={() =>
-								onSelect({
-									kind: "transfer",
-									id: e.destinationAssignmentId,
-								})
-							}
-						>
-							{t("settings.equipment.correction.transfer", "Correct transfer")}{" "}
-							{index + 1}
-						</Button>
-					))
-				: null}
-		</div>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				{targets.map((entry) => (
+					<DropdownMenuItem
+						key={`${entry.target.kind}:${"id" in entry.target ? entry.target.id : ""}`}
+						onClick={() => onSelect(entry.target)}
+					>
+						{label(entry)}
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
-function CorrectionEditor({
+
+/** The amendment form for one target; renders inside an action panel. */
+export function CorrectionEditor({
 	assignment,
 	selection,
 	today,
@@ -831,62 +857,21 @@ function CorrectionEditor({
 		}
 	}
 }
-export function EquipmentCorrections({
-	assignment,
-	today,
+
+/** Every amendment with its reason, author and the before/after values. */
+export function CorrectionHistory({
+	corrections,
 	timezone,
-	pending,
-	submit,
 }: {
-	assignment: EquipmentAssignmentView;
-	today: string;
+	corrections: EquipmentCorrectionView[];
 	timezone: string;
-	pending: boolean;
-	submit: SubmitHandover;
 }) {
-	const { t } = useTranslate();
-	const [selection, setSelection] = useState<Selection>(null);
-	if (
-		!assignment.canCorrect &&
-		!assignment.canCorrectReceipt &&
-		!assignment.canCorrectException &&
-		!assignment.corrections?.length
-	)
-		return null;
-	const actions = { pending, submit, onCancel: () => setSelection(null) };
 	return (
-		<div className="space-y-3 border-t pt-3">
-			<CorrectionButtons
-				assignment={assignment}
-				disabled={pending || !!selection}
-				onSelect={setSelection}
-			/>
-			<CorrectionEditor
-				assignment={assignment}
-				selection={selection}
-				today={today}
-				{...actions}
-			/>
-			{(assignment.corrections ?? []).length ? (
-				<details>
-					<summary className="cursor-pointer text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring">
-						{t(
-							"settings.equipment.correction.history",
-							"Original records and amendments",
-						)}
-					</summary>
-					<ol className="mt-3 space-y-4">
-						{assignment.corrections?.map((c) => (
-							<CorrectionEvidence
-								key={c.id}
-								correction={c}
-								timezone={timezone}
-							/>
-						))}
-					</ol>
-				</details>
-			) : null}
-		</div>
+		<ol className="space-y-6">
+			{corrections.map((c) => (
+				<CorrectionEvidence key={c.id} correction={c} timezone={timezone} />
+			))}
+		</ol>
 	);
 }
 function CorrectionEvidence({

@@ -49,9 +49,10 @@ beforeAll(async () => {
 	fixture = await createLifecycleDatabaseFixture();
 	context.userId = fixture.ownerUserId;
 	context.organizationId = fixture.organizationId;
-	await fixture.pool.query("update organization set timezone='Europe/Berlin' where id=$1", [
-		context.organizationId,
-	]);
+	await fixture.pool.query(
+		"update organization set timezone='Europe/Berlin', equipment_enabled=true where id=$1",
+		[context.organizationId],
+	);
 	await setup({
 		kind: "configure_policy",
 		expectedRevision: 0,

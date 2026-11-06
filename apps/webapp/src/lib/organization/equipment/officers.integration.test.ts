@@ -54,7 +54,7 @@ beforeAll(async () => {
 	await clean();
 	for (const org of ["org", "foreign"])
 		await pool.query(
-			"insert into organization(id,name,slug,timezone,created_at) values($1,$1,$1,'Europe/Berlin',now())",
+			"insert into organization(id,name,slug,timezone,equipment_enabled,created_at) values($1,$1,$1,'Europe/Berlin',true,now())",
 			[`t1539-${org}`],
 		);
 	for (const [name, role] of [
@@ -320,6 +320,7 @@ it("revalidates selected teams and employees on every read, and uses only captur
 				{
 					id: ids.subject,
 					name: "t1539-subject",
+					image: null,
 					former: false,
 					canIssue: true,
 				},
@@ -368,6 +369,7 @@ it("revalidates selected teams and employees on every read, and uses only captur
 				{
 					id: ids.subject,
 					name: "t1539-subject",
+					image: null,
 					former: true,
 					canIssue: false,
 				},

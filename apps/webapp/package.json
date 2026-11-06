@@ -16,7 +16,7 @@
     "test:approval-workflow-repository:integration": "pnpm run test:integration",
     "test:watch": "pnpm run i18n:metadata && vitest --project unit",
     "test:coverage": "pnpm run i18n:metadata && vitest run --project unit --coverage",
-    "auth:generate": "NODE_OPTIONS='--require=./scripts/register-auth-generate-alias.cjs' pnpm dlx auth@1.7.7 generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts",
+    "auth:generate": "pnpm dlx auth@1.7.14 generate --config ./src/lib/auth.cli.ts --output ./src/db/auth-schema.ts --yes",
     "auth:migrate": "pnpm run auth:generate && pnpm run db:push",
     "typecheck": "next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false && tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false && tsc --project tsconfig.smoke.json --noEmit --incremental false",
     "generate-licenses": "node -e \"require('node:fs').mkdirSync('./src/data', { recursive: true })\" && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",

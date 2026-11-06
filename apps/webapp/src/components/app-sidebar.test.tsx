@@ -1532,6 +1532,7 @@ describe("app sidebar compliance navigation", () => {
 					worksCouncilEnabled: false,
 					billableTimeEnabled: false,
 					personnelFilesEnabled: false,
+					equipmentEnabled: false,
 				},
 			}),
 		);
@@ -1564,6 +1565,7 @@ describe("app sidebar compliance navigation", () => {
 					worksCouncilEnabled: false,
 					billableTimeEnabled: false,
 					personnelFilesEnabled: false,
+					equipmentEnabled: false,
 				},
 			}),
 		);

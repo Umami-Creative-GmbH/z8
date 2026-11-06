@@ -180,6 +180,7 @@ describe("organization feature allowlist", () => {
 		expect(isOrganizationFeature("demoDataEnabled")).toBe(true);
 		expect(isOrganizationFeature("worksCouncilEnabled")).toBe(true);
 		expect(isOrganizationFeature("personnelFilesEnabled")).toBe(true);
+		expect(isOrganizationFeature("equipmentEnabled")).toBe(true);
 		expect(isOrganizationFeature("metadata")).toBe(false);
 		expect(isOrganizationFeature("deletedAt")).toBe(false);
 	});
@@ -648,6 +649,48 @@ describe("organization invitation actions", () => {
 		expect(updateSetMock).toHaveBeenCalledWith({
 			personnelFilesEnabled: false,
 		});
+	});
+
+	it("lets an admin switch equipment tracking (#1572)", async () => {
+		memberFindFirstMock.mockResolvedValue({
+			id: "actor-member",
+			userId: "user-admin",
+			organizationId: "org-1",
+			role: "admin",
+			status: "approved",
+		});
+		updateWhereMock.mockResolvedValue(undefined);
+
+		const result = await toggleOrganizationFeature(
+			"org-1",
+			"equipmentEnabled",
+			true,
+		);
+
+		expect(result).toMatchObject({ success: true });
+		expect(updateSetMock).toHaveBeenCalledWith({ equipmentEnabled: true });
+	});
+
+	it("does not let a member switch equipment tracking", async () => {
+		memberFindFirstMock.mockResolvedValue({
+			id: "actor-member",
+			userId: "user-member",
+			organizationId: "org-1",
+			role: "member",
+			status: "approved",
+		});
+
+		const result = await toggleOrganizationFeature(
+			"org-1",
+			"equipmentEnabled",
+			true,
+		);
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(updateSetMock).not.toHaveBeenCalled();
 	});
 
 	it("keeps every other feature owner-only for admins", async () => {

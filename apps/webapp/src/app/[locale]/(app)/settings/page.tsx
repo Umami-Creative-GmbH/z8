@@ -45,6 +45,7 @@ async function SettingsPageContent() {
 					worksCouncilEnabled: true,
 					billableTimeEnabled: true,
 					personnelFilesEnabled: true,
+					equipmentEnabled: true,
 				},
 				where: eq(authSchema.organization.id, activeOrganizationId),
 			})
@@ -59,6 +60,7 @@ async function SettingsPageContent() {
 				billableTimeEnabled: currentOrganization.billableTimeEnabled ?? false,
 				personnelFilesEnabled:
 					currentOrganization.personnelFilesEnabled ?? false,
+				equipmentEnabled: currentOrganization.equipmentEnabled ?? false,
 			}
 		: undefined;
 

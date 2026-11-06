@@ -6,6 +6,7 @@ export const ORGANIZATION_FEATURES = [
 	"worksCouncilEnabled",
 	"billableTimeEnabled",
 	"personnelFilesEnabled",
+	"equipmentEnabled",
 ] as const;
 
 export type OrganizationFeature = (typeof ORGANIZATION_FEATURES)[number];
@@ -39,9 +40,10 @@ export function organizationFeatureUpdate(
 }
 
 /**
- * The least organization role that may switch a feature. Personnel files are
- * switched by owners and admins (#865); every other feature stays owner-only.
+ * The least organization role that may switch a feature. Personnel files (#865)
+ * and equipment tracking (#1572) are switched by owners and admins; every other
+ * feature stays owner-only.
  */
 export function organizationFeatureRequiredRole(feature: OrganizationFeature): "owner" | "admin" {
-	return feature === "personnelFilesEnabled" ? "admin" : "owner";
+	return feature === "personnelFilesEnabled" || feature === "equipmentEnabled" ? "admin" : "owner";
 }
