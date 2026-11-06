@@ -1,12 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import type { db } from "@/db";
 import { employee, team, teamMembership } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { removeTeamMembership, type TeamMembershipTransaction } from "./team-membership-removal";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type PrimaryTeamWriter = Pick<Transaction, "delete" | "insert" | "query" | "update">;
+export type PrimaryTeamWriter = Pick<
+	TeamMembershipTransaction,
+	"delete" | "insert" | "query" | "update"
+>;
 
 /** What setting an employee's Team field to `nextTeamId` changes (Organization ADR 0010). */
 export type PrimaryTeamChange = {
@@ -125,16 +127,10 @@ export async function setPrimaryTeam(
 			})
 			.onConflictDoNothing();
 	}
-	if (change.endTeamId) {
-		await tx
-			.delete(teamMembership)
-			.where(
-				and(
-					eq(teamMembership.organizationId, organizationId),
-					eq(teamMembership.teamId, change.endTeamId),
-					eq(teamMembership.employeeId, employeeId),
-				),
-			);
+	// Clearing is removing the primary team's membership: the first remaining one becomes primary.
+	if (change.endTeamId && !teamId) {
+		await removeTeamMembership(tx, { organizationId, teamId: change.endTeamId, employeeId });
+		return change;
 	}
 	if (change.primaryTeamId !== current.teamId) {
 		await tx
@@ -142,5 +138,27 @@ export async function setPrimaryTeam(
 			.set({ teamId: change.primaryTeamId, updatedAt: currentTimestamp() })
 			.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)));
 	}
+	// After a move the old team is no longer primary, so this only ends its membership.
+	if (change.endTeamId) {
+		await removeTeamMembership(tx, { organizationId, teamId: change.endTeamId, employeeId });
+	}
 	return change;
+}
+
+/**
+ * Places a new or returning employee in `teamId` as `setPrimaryTeam` does, when there
+ * is a team. Without one it changes nothing and returns null, where `setPrimaryTeam(null)`
+ * would clear the Team field.
+ */
+export async function placeInTeam(
+	tx: PrimaryTeamWriter,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		teamId: string | null | undefined;
+		createdBy?: string | null;
+	},
+): Promise<PrimaryTeamChange | null> {
+	const { teamId } = input;
+	return teamId ? setPrimaryTeam(tx, { ...input, teamId }) : null;
 }

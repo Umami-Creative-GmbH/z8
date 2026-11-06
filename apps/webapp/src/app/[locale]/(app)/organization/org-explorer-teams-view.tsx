@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PersonButton } from "./org-explorer-person";
 import type { GroupedTeams, TeamCard } from "./org-explorer-teams";
-import type { OrgExplorerPerson } from "./org-explorer-types";
+import { nextPageSize, type OrgExplorerPerson } from "./org-explorer-types";
 
 export type TeamsViewProps = {
 	grouped: GroupedTeams;
@@ -14,11 +14,16 @@ export type TeamsViewProps = {
 	complete: boolean;
 	noTeamCount: number;
 	loadingTeamIds: ReadonlySet<string>;
-	isNoTeamLoaded: boolean;
 	isNoTeamLoading: boolean;
 	showNoTeam: boolean;
+	/** Whether a team may have members left to load. */
+	canLoadTeam: (teamId: string) => boolean;
+	/** Whether the No team group may have people left to load. */
+	canLoadNoTeam: boolean;
 	onSelect: (employeeId: string) => void;
+	/** Loads the next page of a team's members. */
 	onLoadTeam: (teamId: string) => void;
+	/** Loads the next page of the No team group. */
 	onLoadNoTeam: () => void;
 };
 
@@ -26,17 +31,18 @@ export type TeamsViewProps = {
 export function TeamsView(props: TeamsViewProps) {
 	const { t } = useTranslate();
 	const { cards, noTeam } = props.grouped;
-	const canLoadNoTeam =
-		!props.complete &&
-		!props.isNoTeamLoaded &&
-		noTeam.length < props.noTeamCount;
+	const noTeamTotal = props.complete
+		? noTeam.length
+		: Math.max(props.noTeamCount, noTeam.length);
 
 	return (
 		<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 			{cards.map((card) => (
 				<TeamCardView
 					card={card}
-					canLoad={!props.complete && !card.allMembersLoaded}
+					canLoad={
+						!card.allMembersLoaded && props.canLoadTeam(card.team.teamId)
+					}
 					isLoading={props.loadingTeamIds.has(card.team.teamId)}
 					key={card.team.teamId}
 					onLoad={() => props.onLoadTeam(card.team.teamId)}
@@ -45,11 +51,7 @@ export function TeamsView(props: TeamsViewProps) {
 			))}
 			{props.showNoTeam ? (
 				<TeamShell
-					count={
-						props.complete
-							? noTeam.length
-							: Math.max(props.noTeamCount, noTeam.length)
-					}
+					count={noTeamTotal}
 					description={t(
 						"organization.explorer.noTeamDescription",
 						"People without a team membership.",
@@ -58,9 +60,10 @@ export function TeamsView(props: TeamsViewProps) {
 					teamKey="none"
 				>
 					<MemberList
-						canLoad={canLoadNoTeam}
+						canLoad={props.canLoadNoTeam && noTeam.length < noTeamTotal}
 						isLoading={props.isNoTeamLoading}
 						members={noTeam.map((person) => ({ person, isPrimaryTeam: false }))}
+						total={noTeamTotal}
 						onLoad={props.onLoadNoTeam}
 						onSelect={props.onSelect}
 					/>
@@ -115,6 +118,7 @@ function TeamCardView({
 				members={card.members}
 				onLoad={onLoad}
 				onSelect={onSelect}
+				total={card.team.memberCount}
 			/>
 		</TeamShell>
 	);
@@ -174,12 +178,15 @@ function TeamShell({
 
 function MemberList({
 	members,
+	total,
 	canLoad,
 	isLoading,
 	onLoad,
 	onSelect,
 }: {
 	members: Array<{ person: OrgExplorerPerson; isPrimaryTeam: boolean }>;
+	/** How many members there are, loaded or not. */
+	total: number;
 	canLoad: boolean;
 	isLoading: boolean;
 	onLoad: () => void;
@@ -217,7 +224,11 @@ function MemberList({
 					type="button"
 					variant="outline"
 				>
-					{t("organization.explorer.showAllMembers", "Show all members")}
+					{t(
+						"organization.explorer.showPeople",
+						"{count, plural, one {Show # person} other {Show # people}}",
+						{ count: nextPageSize(total - members.length) },
+					)}
 				</Button>
 			) : null}
 		</>

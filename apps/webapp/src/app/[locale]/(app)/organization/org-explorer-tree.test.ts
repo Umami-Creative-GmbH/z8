@@ -41,19 +41,29 @@ describe("buildReportingTree", () => {
 		expect(tree.parentOf("Bob")).toBe("Cto");
 	});
 
-	it("puts people with no manager and direct reports on top, and the rest in No reporting line", () => {
+	it("puts people with no manager and line reports on top, and the rest in No reporting line", () => {
 		const tree = buildReportingTree([
 			person("Zoe", { reportIds: ["Ada"], lineReportIds: ["Ada"] }),
 			person("Ada", { managerIds: ["Zoe"] }),
-			person("Max", { reportIds: ["Bob"] }),
-			person("Bob", { managerIds: ["Kim", "Max"] }),
 			person("Kim", { reportIds: ["Bob"], lineReportIds: ["Bob"] }),
+			person("Bob", { managerIds: ["Kim"] }),
 			person("Lou"),
 			person("Eve"),
 		]);
 
-		expect(tree.roots).toEqual(["Kim", "Max", "Zoe"]);
+		expect(tree.roots).toEqual(["Kim", "Zoe"]);
 		expect(tree.noReportingLine).toEqual(["Eve", "Lou"]);
+	});
+
+	it("puts someone with no manager whose reports all report along another line in No reporting line", () => {
+		const tree = buildReportingTree([
+			person("Max", { reportIds: ["Bob"] }),
+			person("Bob", { managerIds: ["Kim", "Max"] }),
+			person("Kim", { reportIds: ["Bob"], lineReportIds: ["Bob"] }),
+		]);
+
+		expect(tree.roots).toEqual(["Kim"]);
+		expect(tree.noReportingLine).toEqual(["Max"]);
 	});
 
 	it("orders roots, children and the No reporting line group by name", () => {

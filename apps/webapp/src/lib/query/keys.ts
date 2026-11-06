@@ -88,6 +88,8 @@ export const queryKeys = {
 	teams: {
 		all: ["teams"] as const,
 		list: (orgId: string) => ["teams", orgId] as const,
+		/** Id and name of an org's teams, for pickers; refreshed with `list`. */
+		options: (orgId: string) => ["teams", orgId, "options"] as const,
 		detail: (teamId: string) => ["teams", "detail", teamId] as const,
 		members: (teamId: string) => ["teams", teamId, "members"] as const,
 	},

@@ -67,6 +67,10 @@ const {
 	getOrgExplorerTeamMembers,
 	searchOrgEmployees,
 } = await import("./actions");
+const { loadCurrentTeamMemberIds, loadUnplacedPeopleIds } = await import(
+	"./org-explorer-queries"
+);
+const { db } = await import("@/db");
 
 const PAST_CUTOFF = "2026-09-14T13:00:00Z";
 
@@ -302,6 +306,17 @@ describe("Org Explorer (#1576)", () => {
 			expect(byId.get(bob.employeeId)?.lineReportIds).toEqual([cat.employeeId]);
 		});
 
+		it("names the primary manager only when one is marked and still current", async () => {
+			const data = await unwrap(getOrgExplorerData());
+			const byId = new Map(
+				data.people.map((entry) => [entry.employeeId, entry]),
+			);
+
+			expect(byId.get(ada.employeeId)?.primaryManagerId).toBe(vp.employeeId);
+			expect(byId.get(cat.employeeId)?.primaryManagerId).toBeNull();
+			expect(byId.get(ceo.employeeId)?.primaryManagerId).toBeNull();
+		});
+
 		it("puts people with no manager and reports on top and counts those with neither", async () => {
 			const data = await unwrap(getOrgExplorerData());
 
@@ -351,12 +366,11 @@ describe("Org Explorer (#1576)", () => {
 			);
 		});
 
-		it("loads a team's current members with their paths, ignoring other organizations' teams", async () => {
-			const people = await unwrap(
-				getOrgExplorerTeamMembers([ops, outsideTeam]),
-			);
-			const ids = people.map((entry) => entry.employeeId);
+		it("loads a team's current members with their paths", async () => {
+			const page = await unwrap(getOrgExplorerTeamMembers(ops));
+			const ids = page.people.map((entry) => entry.employeeId);
 
+			expect(page.nextOffset).toBeNull();
 			expect(ids.toSorted()).toEqual(
 				[
 					ada.employeeId,
@@ -367,15 +381,68 @@ describe("Org Explorer (#1576)", () => {
 			);
 		});
 
+		it("loads no members of another organization's team", async () => {
+			const page = await unwrap(getOrgExplorerTeamMembers(outsideTeam));
+
+			expect(page).toEqual({ people: [], nextOffset: null });
+		});
+
+		it("pages a team's members by name until all are loaded", async () => {
+			const first = await loadCurrentTeamMemberIds(
+				db,
+				fixture.organizationId,
+				ops,
+				{ offset: 0, limit: 1 },
+			);
+			const second = await loadCurrentTeamMemberIds(
+				db,
+				fixture.organizationId,
+				ops,
+				{ offset: first.nextOffset ?? -1, limit: 1 },
+			);
+
+			expect(first).toEqual({ ids: [ada.employeeId], nextOffset: 1 });
+			expect(second).toEqual({ ids: [bob.employeeId], nextOffset: null });
+		});
+
+		it("pages a group until everyone in it is loaded", async () => {
+			const whole = await loadUnplacedPeopleIds(
+				db,
+				fixture.organizationId,
+				"noTeam",
+				{ offset: 0, limit: 50 },
+			);
+			const first = await loadUnplacedPeopleIds(
+				db,
+				fixture.organizationId,
+				"noTeam",
+				{ offset: 0, limit: 4 },
+			);
+			const second = await loadUnplacedPeopleIds(
+				db,
+				fixture.organizationId,
+				"noTeam",
+				{ offset: first.nextOffset ?? -1, limit: 4 },
+			);
+
+			expect(whole.ids).toHaveLength(6);
+			expect(whole.nextOffset).toBeNull();
+			expect(first.nextOffset).toBe(4);
+			expect(second.nextOffset).toBeNull();
+			expect([...first.ids, ...second.ids]).toEqual(whole.ids);
+		});
+
 		it("loads the people without a reporting line or without a team", async () => {
 			const noReportingLine = await unwrap(
 				getOrgExplorerGroup("noReportingLine"),
 			);
-			const noTeam = await unwrap(getOrgExplorerGroup("noTeam"));
+			const noTeamPage = await unwrap(getOrgExplorerGroup("noTeam"));
+			const noTeam = noTeamPage.people;
 
-			expect(noReportingLine.map((entry) => entry.employeeId)).toEqual([
-				lou.employeeId,
-			]);
+			expect(noReportingLine).toEqual({
+				people: [expect.objectContaining({ employeeId: lou.employeeId })],
+				nextOffset: null,
+			});
 			const withoutTeam = noTeam.filter((entry) => entry.teamIds.length === 0);
 			expect(withoutTeam.map((entry) => entry.employeeId).toSorted()).toEqual(
 				[
@@ -421,12 +488,44 @@ describe("Org Explorer (#1576)", () => {
 		});
 	});
 
+	describe("someone whose reports all report along another line", () => {
+		let organizationId: string;
+		let kim: SeededEmployee;
+		let max: SeededEmployee;
+
+		beforeAll(async () => {
+			organizationId = await fixture.createOrganization();
+			kim = await seed("Kim Lead", { organizationId });
+			max = await seed("Max Matrix", { organizationId });
+			const bob = await seed("Bob Report", { organizationId });
+			await manage(bob, kim);
+			await manage(bob, max, false);
+		});
+
+		beforeEach(() => {
+			harness.userId = kim.userId;
+			harness.organizationId = organizationId;
+		});
+
+		it("has no reporting line: they are not on top", async () => {
+			const data = await unwrap(getOrgExplorerData());
+			const group = await unwrap(getOrgExplorerGroup("noReportingLine"));
+
+			expect(data.rootIds).toEqual([kim.employeeId]);
+			expect(data.noReportingLineCount).toBe(1);
+			expect(group.people.map((entry) => entry.employeeId)).toEqual([
+				max.employeeId,
+			]);
+		});
+	});
+
 	describe("a large organization", () => {
 		let organizationId: string;
 		let viewer: SeededEmployee;
 		let root: SeededEmployee;
 		let lead: SeededEmployee;
 		let deepOffPath: SeededEmployee;
+		let sideManager: SeededEmployee;
 		const loaded: SeededEmployee[] = [];
 		const fillers: SeededEmployee[] = [];
 
@@ -434,6 +533,8 @@ describe("Org Explorer (#1576)", () => {
 			organizationId = await fixture.createOrganization();
 			const inLarge = { organizationId };
 			root = await seed("Root", inLarge);
+			// No manager, and their only report reports along another line.
+			sideManager = await seed("S Side", inLarge);
 			const m1 = await seed("M One", inLarge);
 			const m2 = await seed("M Two", inLarge);
 			const a1 = await seed("A One", inLarge);
@@ -448,10 +549,11 @@ describe("Org Explorer (#1576)", () => {
 			await manage(d1, a1);
 			await manage(viewer, d1);
 			await manage(deepOffPath, a2);
+			await manage(a1, sideManager, false);
 			loaded.push(root, m1, m2, a1, a2, d1, viewer);
 
 			while (
-				loaded.length + fillers.length + 1 <
+				loaded.length + fillers.length + 2 <
 				SMALL_ORG_EMPLOYEE_LIMIT + 5
 			) {
 				fillers.push(await seed(`Filler ${fillers.length}`, inLarge));
@@ -478,7 +580,7 @@ describe("Org Explorer (#1576)", () => {
 				].toSorted(),
 			);
 			expect(data.rootIds).toEqual([root.employeeId]);
-			expect(data.noReportingLineCount).toBe(fillers.length);
+			expect(data.noReportingLineCount).toBe(fillers.length + 1);
 		});
 
 		it("loads deeper reports and the unplaced people on demand", async () => {
@@ -490,8 +592,11 @@ describe("Org Explorer (#1576)", () => {
 			expect(deeper.map((entry) => entry.employeeId)).toEqual([
 				deepOffPath.employeeId,
 			]);
-			expect(unplaced.map((entry) => entry.employeeId).toSorted()).toEqual(
-				fillers.map((entry) => entry.employeeId).toSorted(),
+			expect(unplaced.nextOffset).toBeNull();
+			expect(
+				unplaced.people.map((entry) => entry.employeeId).toSorted(),
+			).toEqual(
+				[...fillers, sideManager].map((entry) => entry.employeeId).toSorted(),
 			);
 		});
 	});

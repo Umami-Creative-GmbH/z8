@@ -35,7 +35,8 @@ export type PersonPanelProps = {
 /**
  * A person's details: managers (primary first), direct reports, team
  * memberships with the primary team marked, and email. Admins also get links
- * to the existing settings screens. Read-only.
+ * to the existing settings screens: the employee, and each of their teams.
+ * Read-only.
  */
 export function PersonPanel(props: PersonPanelProps) {
 	const { t } = useTranslate();
@@ -117,8 +118,8 @@ function PersonDetails({
 						ids={person.managerIds}
 						onSelect={onSelect}
 						peopleById={peopleById}
-						renderMark={(index) =>
-							index === 0 ? (
+						renderMark={(managerId) =>
+							managerId === person.primaryManagerId ? (
 								<Badge className="shrink-0" variant="secondary">
 									{t(
 										"organization.explorer.panel.primaryManager",
@@ -153,25 +154,35 @@ function PersonDetails({
 				>
 					{person.teamIds.length > 0 ? (
 						<ul className="flex flex-col gap-1">
-							{person.teamIds.map((teamId) => (
-								<li
-									className="flex items-center gap-2 px-2 py-1 text-sm"
-									key={teamId}
-								>
-									<IconUsersGroup
-										aria-hidden="true"
-										className="size-4 text-muted-foreground"
-									/>
-									<span className="truncate">
-										{teamNamesById.get(teamId) ?? teamId}
-									</span>
-									{teamId === person.primaryTeamId ? (
-										<Badge className="shrink-0" variant="secondary">
-											{t("organization.explorer.primaryTeam", "Primary team")}
-										</Badge>
-									) : null}
-								</li>
-							))}
+							{person.teamIds.map((teamId) => {
+								const name = teamNamesById.get(teamId) ?? teamId;
+								return (
+									<li
+										className="flex items-center gap-2 px-2 py-1 text-sm"
+										key={teamId}
+									>
+										<IconUsersGroup
+											aria-hidden="true"
+											className="size-4 text-muted-foreground"
+										/>
+										{canManage ? (
+											<Link
+												className="truncate text-primary underline-offset-4 hover:underline"
+												href={`/settings/teams/${teamId}`}
+											>
+												{name}
+											</Link>
+										) : (
+											<span className="truncate">{name}</span>
+										)}
+										{teamId === person.primaryTeamId ? (
+											<Badge className="shrink-0" variant="secondary">
+												{t("organization.explorer.primaryTeam", "Primary team")}
+											</Badge>
+										) : null}
+									</li>
+								);
+							})}
 						</ul>
 					) : (
 						<p className="px-2 text-sm text-muted-foreground">
@@ -200,13 +211,16 @@ function PersonDetails({
 							<IconPencil aria-hidden="true" />
 							{t("organization.explorer.panel.editEmployee", "Edit employee")}
 						</Link>
-						<Link
-							className={buttonVariants({ variant: "outline", size: "sm" })}
-							href="/settings/teams"
-						>
-							<IconUsersGroup aria-hidden="true" />
-							{t("organization.explorer.panel.manageTeams", "Manage teams")}
-						</Link>
+						{/* Each team membership above links to its team. */}
+						{person.teamIds.length === 0 ? (
+							<Link
+								className={buttonVariants({ variant: "outline", size: "sm" })}
+								href="/settings/teams"
+							>
+								<IconUsersGroup aria-hidden="true" />
+								{t("organization.explorer.panel.manageTeams", "Manage teams")}
+							</Link>
+						) : null}
 					</div>
 				) : null}
 			</div>
@@ -247,20 +261,20 @@ function PeopleList({
 	peopleById: ReadonlyMap<string, OrgExplorerPerson>;
 	empty: string;
 	onSelect: (employeeId: string) => void;
-	renderMark?: (index: number) => React.ReactNode;
+	renderMark?: (employeeId: string) => React.ReactNode;
 }) {
 	if (ids.length === 0)
 		return <p className="px-2 text-sm text-muted-foreground">{empty}</p>;
 
 	return (
 		<ul className="flex flex-col gap-0.5">
-			{ids.map((id, index) => {
+			{ids.map((id) => {
 				const person = peopleById.get(id);
 				return (
 					<li key={id}>
 						{person ? (
 							<PersonButton onSelect={onSelect} person={person}>
-								{renderMark?.(index)}
+								{renderMark?.(id)}
 							</PersonButton>
 						) : (
 							<Skeleton className="my-1 h-9 w-full" />

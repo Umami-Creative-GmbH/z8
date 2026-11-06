@@ -158,6 +158,7 @@ function person(
 		primaryTeamId: overrides.teamIds?.[0] ?? null,
 		teamIds: [],
 		managerIds: [],
+		primaryManagerId: overrides.managerIds?.[0] ?? null,
 		reportIds: [],
 		lineReportIds: [],
 		...overrides,
@@ -531,9 +532,33 @@ describe("OrgExplorerClient", () => {
 			).toBeNull();
 		});
 
-		it("gives admins links to edit the employee and manage their teams", async () => {
+		it("marks no primary manager when the reporting line falls back to another manager", async () => {
+			await renderExplorer({
+				initialData: {
+					...data,
+					people: people.map((entry) =>
+						entry.employeeId === "ada"
+							? { ...entry, primaryManagerId: null }
+							: entry,
+					),
+				},
+				search: "?employee=ada",
+			});
+			const panel = await screen.findByRole("dialog");
+
+			expect(
+				within(within(panel).getByRole("region", { name: "Managers" }))
+					.getAllByRole("listitem")
+					.map((item) => item.textContent),
+			).toEqual(["Vic Vp", "Cora CeoChief executive"]);
+		});
+
+		it("gives admins links to edit the employee and manage each of their teams", async () => {
 			await renderExplorer({ canManage: true, search: "?employee=ada" });
 			const panel = await screen.findByRole("dialog");
+			const memberships = within(panel).getByRole("region", {
+				name: "Team memberships",
+			});
 
 			expect(
 				within(panel)
@@ -541,10 +566,35 @@ describe("OrgExplorerClient", () => {
 					.getAttribute("href"),
 			).toBe("/settings/employees/ada");
 			expect(
+				within(memberships)
+					.getAllByRole("link")
+					.map((link) => link.getAttribute("href")),
+			).toEqual(["/settings/teams/sales", "/settings/teams/ops"]);
+			expect(
+				within(panel).queryByRole("link", { name: "Manage teams" }),
+			).toBeNull();
+		});
+
+		it("gives admins a link to the teams for someone without a team", async () => {
+			await renderExplorer({ canManage: true, search: "?employee=lou" });
+			const panel = await screen.findByRole("dialog");
+
+			expect(
 				within(panel)
 					.getByRole("link", { name: "Manage teams" })
 					.getAttribute("href"),
 			).toBe("/settings/teams");
+		});
+
+		it("does not link the teams for other viewers", async () => {
+			await renderExplorer({ search: "?employee=ada" });
+			const panel = await screen.findByRole("dialog");
+
+			expect(
+				within(
+					within(panel).getByRole("region", { name: "Team memberships" }),
+				).queryAllByRole("link"),
+			).toEqual([]);
 		});
 
 		it("opens from ?employee= and jumps to a manager, opening the path to them", async () => {
@@ -729,53 +779,103 @@ describe("OrgExplorerClient", () => {
 			expect(await screen.findByTestId("org-person-deb")).toBeTruthy();
 		});
 
-		it("loads the people without a reporting line on request", async () => {
-			mocks.group.mockResolvedValueOnce({ success: true, data: [people[5]] });
-			await renderExplorer({ initialData: partial });
+		it("loads the people without a reporting line on request, a page at a time", async () => {
+			mocks.group
+				.mockResolvedValueOnce({
+					success: true,
+					data: { people: [people[5]], nextOffset: 1 },
+				})
+				.mockResolvedValueOnce({
+					success: true,
+					data: {
+						people: [person("zed", { name: "Zed Zero" })],
+						nextOffset: null,
+					},
+				});
+			await renderExplorer({
+				initialData: { ...partial, noReportingLineCount: 2 },
+			});
 			const group = screen.getByRole("region", { name: "No reporting line" });
 
 			fireEvent.click(
-				within(group).getByRole("button", { name: "Show 40 people" }),
+				within(group).getByRole("button", { name: "Show 2 people" }),
 			);
 
-			expect(mocks.group).toHaveBeenCalledWith("noReportingLine");
+			expect(mocks.group).toHaveBeenCalledWith("noReportingLine", 0);
 			expect(
 				await within(group).findByRole("button", { name: /Lou Loner/ }),
 			).toBeTruthy();
-		});
 
-		it("loads the filtered teams' members", async () => {
-			mocks.teamMembers.mockResolvedValueOnce({
-				success: true,
-				data: [people[4]],
-			});
-			await renderExplorer({ initialData: partial, search: "?team=hr" });
-
-			await waitFor(() =>
-				expect(mocks.teamMembers).toHaveBeenCalledWith(["hr"]),
+			fireEvent.click(
+				within(group).getByRole("button", { name: "Show 1 person" }),
 			);
+
+			expect(mocks.group).toHaveBeenLastCalledWith("noReportingLine", 1);
+			expect(
+				await within(group).findByRole("button", { name: /Zed Zero/ }),
+			).toBeTruthy();
+			expect(within(group).queryByRole("button", { name: /^Show/ })).toBeNull();
 		});
 
-		it("loads a team's members on request in the Teams view", async () => {
-			mocks.teamMembers.mockResolvedValueOnce({
+		it("loads the filtered teams' members, a team at a time", async () => {
+			mocks.teamMembers.mockResolvedValue({
 				success: true,
-				data: [people[4]],
+				data: { people: [people[4]], nextOffset: null },
 			});
+			await renderExplorer({
+				initialData: partial,
+				search: "?team=hr&team=ops",
+			});
+
+			await waitFor(() => {
+				expect(mocks.teamMembers).toHaveBeenCalledWith("hr", 0);
+				expect(mocks.teamMembers).toHaveBeenCalledWith("ops", 0);
+			});
+		});
+
+		it("loads a team's members on request in the Teams view until all are loaded", async () => {
+			mocks.teamMembers
+				.mockResolvedValueOnce({
+					success: true,
+					data: {
+						people: [person("hal", { name: "Hal Hr", teamIds: ["hr"] })],
+						nextOffset: 1,
+					},
+				})
+				.mockResolvedValueOnce({
+					success: true,
+					data: {
+						people: [person("hen", { name: "Hen Hr", teamIds: ["hr"] })],
+						nextOffset: null,
+					},
+				});
 			await renderExplorer({
 				initialData: {
 					...partial,
-					teams: [{ ...teams[2], memberCount: 2 } as OrgExplorerTeam],
+					teams: [{ ...teams[2], memberCount: 3 } as OrgExplorerTeam],
 				},
 				search: "?view=teams",
 			});
+			const hr = screen.getByTestId("team-card-hr");
 
 			fireEvent.click(
-				within(screen.getByTestId("team-card-hr")).getByRole("button", {
-					name: "Show all members",
-				}),
+				within(hr).getByRole("button", { name: "Show 2 people" }),
 			);
 
-			expect(mocks.teamMembers).toHaveBeenCalledWith(["hr"]);
+			expect(mocks.teamMembers).toHaveBeenCalledWith("hr", 0);
+			expect(
+				await within(hr).findByRole("button", { name: /Hal Hr/ }),
+			).toBeTruthy();
+
+			fireEvent.click(
+				within(hr).getByRole("button", { name: "Show 1 person" }),
+			);
+
+			expect(mocks.teamMembers).toHaveBeenLastCalledWith("hr", 1);
+			expect(
+				await within(hr).findByRole("button", { name: /Hen Hr/ }),
+			).toBeTruthy();
+			expect(within(hr).queryByRole("button", { name: /^Show/ })).toBeNull();
 		});
 	});
 });

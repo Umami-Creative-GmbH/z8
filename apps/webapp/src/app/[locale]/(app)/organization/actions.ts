@@ -1,7 +1,6 @@
 "use server";
 
 import { Effect } from "effect";
-import { getRequestSession } from "@/lib/auth/request-session";
 import {
 	AuthenticationError,
 	NotFoundError,
@@ -11,6 +10,7 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
+import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	type DatabaseClient,
 	DatabaseService,
@@ -19,6 +19,7 @@ import {
 	countCurrentRoster,
 	countUnplacedPeople,
 	findCurrentRosterViewer,
+	type IdPage,
 	loadCurrentRosterPeople,
 	loadCurrentRosterPeopleWithPaths,
 	loadCurrentTeamMemberIds,
@@ -31,6 +32,7 @@ import {
 	ORG_EXPLORER_BATCH_LIMIT,
 	type OrgExplorerData,
 	type OrgExplorerGroup,
+	type OrgExplorerPage,
 	type OrgExplorerPerson,
 	type OrgExplorerSearchResult,
 	SMALL_ORG_EMPLOYEE_LIMIT,
@@ -66,7 +68,7 @@ export async function getOrgExplorerPeople(
 	options: { withPaths?: boolean } = {},
 ): Promise<ServerActionResult<OrgExplorerPerson[]>> {
 	const effect = Effect.gen(function* () {
-		const ids = yield* validIds(employeeIds);
+		const ids = yield* parseIdBatch(employeeIds);
 		const dbService = yield* DatabaseService;
 		const { organizationId } = yield* resolveOrgExplorerViewer(dbService);
 
@@ -80,39 +82,50 @@ export async function getOrgExplorerPeople(
 	return runServerActionSafe(effect);
 }
 
-/** The current members of teams, with their paths to the top so the filter can show them. */
+/**
+ * A page of a team's current members, by name, with their paths to the top so
+ * the filter can show them. `offset` is the previous page's `nextOffset`.
+ */
 export async function getOrgExplorerTeamMembers(
-	teamIds: string[],
-): Promise<ServerActionResult<OrgExplorerPerson[]>> {
+	teamId: string,
+	offset = 0,
+): Promise<ServerActionResult<OrgExplorerPage>> {
 	const effect = Effect.gen(function* () {
-		const ids = yield* validIds(teamIds);
+		if (typeof teamId !== "string" || !UUID_PATTERN.test(teamId)) {
+			return yield* Effect.fail(
+				new ValidationError({ message: "Unknown team", field: "teamId" }),
+			);
+		}
+		const page = yield* parsePageRequest(offset);
 		const dbService = yield* DatabaseService;
 		const { organizationId } = yield* resolveOrgExplorerViewer(dbService);
 
-		return yield* dbService.query("orgExplorer.loadTeamMembers", async () => {
-			const memberIds = await loadCurrentTeamMemberIds(
+		return yield* dbService.query("orgExplorer.loadTeamMembers", async () =>
+			withPaths(
 				dbService.db,
 				organizationId,
-				ids,
-			);
-			return loadCurrentRosterPeopleWithPaths(
-				dbService.db,
-				organizationId,
-				memberIds,
-			);
-		});
+				await loadCurrentTeamMemberIds(
+					dbService.db,
+					organizationId,
+					teamId,
+					page,
+				),
+			),
+		);
 	});
 
 	return runServerActionSafe(effect);
 }
 
 /**
- * The people with no reporting line, or with no team membership. People without
- * a team can still have managers, so their paths to the top come along.
+ * A page of the people with no reporting line, or with no team membership, by
+ * name. People without a team can still have managers, so their paths to the
+ * top come along. `offset` is the previous page's `nextOffset`.
  */
 export async function getOrgExplorerGroup(
 	group: OrgExplorerGroup,
-): Promise<ServerActionResult<OrgExplorerPerson[]>> {
+	offset = 0,
+): Promise<ServerActionResult<OrgExplorerPage>> {
 	const effect = Effect.gen(function* () {
 		if (group !== "noReportingLine" && group !== "noTeam") {
 			return yield* Effect.fail(
@@ -122,21 +135,17 @@ export async function getOrgExplorerGroup(
 				}),
 			);
 		}
+		const page = yield* parsePageRequest(offset);
 		const dbService = yield* DatabaseService;
 		const { organizationId } = yield* resolveOrgExplorerViewer(dbService);
 
-		return yield* dbService.query("orgExplorer.loadGroup", async () => {
-			const ids = await loadUnplacedPeopleIds(
+		return yield* dbService.query("orgExplorer.loadGroup", async () =>
+			withPaths(
 				dbService.db,
 				organizationId,
-				group,
-			);
-			return loadCurrentRosterPeopleWithPaths(
-				dbService.db,
-				organizationId,
-				ids,
-			);
-		});
+				await loadUnplacedPeopleIds(dbService.db, organizationId, group, page),
+			),
+		);
 	});
 
 	return runServerActionSafe(effect);
@@ -167,38 +176,31 @@ async function loadOrgExplorerData(
 	organizationId: string,
 	viewerEmployeeId: string,
 ): Promise<OrgExplorerData> {
-	const [employeeCount, teams] = await Promise.all([
+	// The top and the unplaced groups come from the same queries at every size.
+	const [employeeCount, teams, rootIds, unplaced] = await Promise.all([
 		countCurrentRoster(db, organizationId),
 		loadOrgExplorerTeams(db, organizationId),
+		loadReportingLineRootIds(db, organizationId),
+		countUnplacedPeople(db, organizationId),
 	]);
 
 	if (employeeCount < SMALL_ORG_EMPLOYEE_LIMIT) {
-		const people = await loadCurrentRosterPeople(db, organizationId, "all");
 		return {
 			complete: true,
 			employeeCount,
 			viewerEmployeeId,
 			teams,
-			people,
-			rootIds: people
-				.filter(
-					(entry) =>
-						entry.managerIds.length === 0 && entry.reportIds.length > 0,
-				)
-				.map((entry) => entry.employeeId),
-			noReportingLineCount: people.filter(
-				(entry) =>
-					entry.managerIds.length === 0 && entry.reportIds.length === 0,
-			).length,
-			noTeamCount: people.filter((entry) => entry.teamIds.length === 0).length,
+			people: await loadCurrentRosterPeople(db, organizationId, "all"),
+			rootIds,
+			...unplaced,
 		};
 	}
 
-	const [rootIds, unplaced, viewerPath] = await Promise.all([
-		loadReportingLineRootIds(db, organizationId),
-		countUnplacedPeople(db, organizationId),
-		loadCurrentRosterPeopleWithPaths(db, organizationId, [viewerEmployeeId]),
-	]);
+	const viewerPath = await loadCurrentRosterPeopleWithPaths(
+		db,
+		organizationId,
+		[viewerEmployeeId],
+	);
 	const loaded = new Map(viewerPath.map((entry) => [entry.employeeId, entry]));
 	const load = async (ids: string[]) => {
 		const missing = [...new Set(ids)].filter((id) => !loaded.has(id));
@@ -233,7 +235,40 @@ async function loadOrgExplorerData(
 	};
 }
 
-function validIds(ids: unknown) {
+async function withPaths(
+	db: DatabaseClient,
+	organizationId: string,
+	page: IdPage,
+): Promise<OrgExplorerPage> {
+	return {
+		people: await loadCurrentRosterPeopleWithPaths(
+			db,
+			organizationId,
+			page.ids,
+		),
+		nextOffset: page.nextOffset,
+	};
+}
+
+/** A batch-sized page starting at `offset`, which must be a whole number from 0. */
+function parsePageRequest(offset: unknown) {
+	if (
+		typeof offset !== "number" ||
+		!Number.isSafeInteger(offset) ||
+		offset < 0
+	) {
+		return Effect.fail(
+			new ValidationError({ message: "Invalid page", field: "offset" }),
+		);
+	}
+	return Effect.succeed({ offset, limit: ORG_EXPLORER_BATCH_LIMIT });
+}
+
+/**
+ * The distinct UUIDs among `ids`, dropping anything else; fails when more than a
+ * batch is requested at once.
+ */
+function parseIdBatch(ids: unknown) {
 	if (!Array.isArray(ids) || ids.length > ORG_EXPLORER_BATCH_LIMIT) {
 		return Effect.fail(
 			new ValidationError({
@@ -253,15 +288,8 @@ function validIds(ids: unknown) {
 
 function resolveOrgExplorerViewer(dbService: typeof DatabaseService.Service) {
 	return Effect.gen(function* () {
-		const session = yield* Effect.promise(() => getRequestSession());
-
-		if (!session?.user) {
-			return yield* Effect.fail(
-				new AuthenticationError({
-					message: "Authentication required",
-				}),
-			);
-		}
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		const organizationId = session.session.activeOrganizationId;
 		if (!organizationId) {

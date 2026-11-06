@@ -196,14 +196,21 @@ export function EmployeeDetailPageClient({
 	// The Team field (Organization ADR 0010): org admins move a real employee between teams.
 	const canEditTeam = accessTier === "orgAdmin" && employee?.kind === "employee";
 	const teamOptions = useQuery({
-		queryKey: ["teams", employee?.organizationId, "employee-team-options"],
+		queryKey: queryKeys.teams.options(employee?.organizationId ?? ""),
 		queryFn: async () => {
 			const result = await listTeams(employee?.organizationId);
-			return result.success ? result.data.map((team) => ({ id: team.id, name: team.name })) : [];
+			if (!result.success) throw new Error(result.error);
+			return result.data.map((team) => ({ id: team.id, name: team.name }));
 		},
 		enabled: canEditTeam,
 		staleTime: 60 * 1000,
 	});
+	// Without its teams the Team field stays hidden: say why rather than offer none.
+	const teamOptionsError = teamOptions.error;
+	useEffect(() => {
+		if (teamOptionsError)
+			toast.error(teamOptionsError.message || t("errors.failedToLoad", "Failed to load data"));
+	}, [teamOptionsError, t]);
 	const { confirmTeamChange, teamChangeError, drivingLicenceWarning } =
 		useDrivingLicenceTeamChangeWarning();
 

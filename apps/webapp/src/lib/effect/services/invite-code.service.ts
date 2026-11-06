@@ -27,7 +27,7 @@ import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
-import { setPrimaryTeam } from "@/lib/organization/primary-team";
+import { placeInTeam } from "@/lib/organization/primary-team";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -339,13 +339,11 @@ export const InviteCodeServiceLive = Layer.effect(
 
 			// The code's team is a membership and the primary team (Organization ADR 0010).
 			const placeInTargetTeam = (employeeId: string) =>
-				targetTeamId
-					? setPrimaryTeam(dbClient, {
-							organizationId: inviteCodeRecord.organizationId,
-							employeeId,
-							teamId: targetTeamId,
-						})
-					: undefined;
+				placeInTeam(dbClient, {
+					organizationId: inviteCodeRecord.organizationId,
+					employeeId,
+					teamId: targetTeamId,
+				});
 
 			if (existingEmployee) {
 				if (!existingEmployee.isActive) {

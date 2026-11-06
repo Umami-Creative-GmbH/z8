@@ -6,7 +6,10 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const { db } = await import("@/db");
-const { setPrimaryTeam, PrimaryTeamNotInOrganization } = await import("./primary-team");
+const { teamMembership } = await import("@/db/schema");
+const { placeInTeam, setPrimaryTeam, PrimaryTeamNotInOrganization } = await import(
+	"./primary-team"
+);
 const { ensureEmployeeForOrganizationMember } = await import(
 	"@/lib/auth/organization-member-provisioning"
 );
@@ -97,6 +100,34 @@ describe("primary team is always a team membership (#1575)", () => {
 		expect(await teamsOf(EMPLOYEE)).toEqual({ primary: C, memberships: [C] });
 		await set(null);
 		expect(await teamsOf(EMPLOYEE)).toEqual({ primary: null, memberships: [] });
+	});
+
+	it("clearing a second-ranked primary team makes the first remaining membership primary", async () => {
+		await set(C);
+		expect(await teamsOf(EMPLOYEE)).toEqual({ primary: C, memberships: [C] });
+		await db.transaction((tx) =>
+			tx.insert(teamMembership).values({ organizationId: ORG, teamId: B, employeeId: EMPLOYEE }),
+		);
+		await set(null);
+		expect(await teamsOf(EMPLOYEE)).toEqual({ primary: B, memberships: [B] });
+	});
+
+	it("setting the current team only adds its missing membership", async () => {
+		await admin.query("delete from team_membership where team_id = $1", [A]);
+		await set(A);
+		expect(await teamsOf(EMPLOYEE)).toEqual({ primary: A, memberships: [A, C] });
+	});
+
+	it("placing in a team is a move; placing in no team changes nothing", async () => {
+		const place = (teamId: string | null) =>
+			db.transaction((tx) =>
+				placeInTeam(tx, { organizationId: ORG, employeeId: EMPLOYEE, teamId }),
+			);
+
+		expect(await place(null)).toBeNull();
+		expect(await teamsOf(EMPLOYEE)).toEqual({ primary: A, memberships: [A, C] });
+		expect(await place(B)).toMatchObject({ primaryTeamId: B });
+		expect(await teamsOf(EMPLOYEE)).toEqual({ primary: B, memberships: [B, C] });
 	});
 
 	it("refuses a team of another organization and changes nothing", async () => {
