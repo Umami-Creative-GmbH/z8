@@ -20,12 +20,14 @@ import {
 	type DocumentCategory,
 } from "@/lib/personnel-file/document.types";
 import { loadNamespaces, TolgeeBase } from "@/tolgee/shared";
-import type {
-	CollectedCategory,
-	PersonalDataCategoryKey,
-	PersonalDataCollector,
-	PersonalDataExportKind,
-	PersonalDataFieldGuide,
+import {
+	type CollectedCategory,
+	type PersonalDataCategoryKey,
+	type PersonalDataCollector,
+	type PersonalDataExportKind,
+	type PersonalDataFieldGuide,
+	personalDataCategoryHasData,
+	personalDataPartRecordCount,
 } from "./collector";
 
 const logger = createLogger("PersonalDataExportReadme");
@@ -217,6 +219,8 @@ export interface PersonalDataReadmePart {
 	key: string;
 	kind: "table" | "record";
 	fields: readonly string[];
+	/** Present only for a table that actually has a CSV file. */
+	csvPath?: string;
 }
 
 export type PersonalDataReadmeContents = Partial<
@@ -243,14 +247,24 @@ export function readmeContentsOf(
 		collectors.toReversed().map((collector) => [collector.category, collector]),
 	);
 	for (const category of categories) {
+		if (!personalDataCategoryHasData(category)) continue;
 		const guide = collectorsByCategory.get(category.category)?.fields;
 		const guideFields = (key: string) =>
 			Object.keys(guide?.(fallbackReadmeTranslator)[key]?.fields ?? {});
 		contents[category.category] = {
 			guide,
-			parts: category.parts.map((part) => ({
+			parts: (category.parts.some(
+				(part) => personalDataPartRecordCount(part) > 0,
+			)
+				? category.parts
+				: []
+			).map((part) => ({
 				key: part.key,
 				kind: part.kind,
+				csvPath:
+					part.kind === "table" && part.rows.length > 0
+						? `${category.category}/${part.key}.csv`
+						: undefined,
 				fields:
 					part.kind === "table"
 						? part.columns
@@ -340,7 +354,7 @@ function renderFields(
 		const guide = entry.guide?.(t) ?? {};
 		for (const part of entry.parts) {
 			const partGuide = guide[part.key];
-			const csv = part.kind === "table" ? ` (${category}/${part.key}.csv)` : "";
+			const csv = part.csvPath ? ` (${part.csvPath})` : "";
 			const label = `${category}.json > ${part.key}${csv}`;
 			lines.push(partGuide?.summary ? `${label}: ${partGuide.summary}` : label);
 			for (const field of part.fields) {
@@ -642,8 +656,10 @@ export function renderPersonalDataExportReadme(
 		? new Set(input.csvCategories)
 		: null;
 	for (const category of input.categories) {
+		const hasJson =
+			!input.contents?.[category] || input.contents[category].parts.length > 0;
 		lines.push(
-			`${category}.json`,
+			hasJson ? `${category}.json` : `${category}/`,
 			`  ${categoryDescription(category, input.kind, t)}`,
 		);
 		if (csvCategories && !csvCategories.has(category)) continue;
@@ -661,6 +677,11 @@ export function renderPersonalDataExportReadme(
 			"personalDataExport.readme.manifest",
 			"Lists every file in this archive with its size and number of records.",
 		)}`,
+		"",
+		t(
+			"personalDataExport.readme.emptyFilesOmitted",
+			"Files with no exportable data are omitted. Empty tables and absent optional records remain in JSON files that contain other data. Optional settings that were never configured do not count as data.",
+		),
 		"",
 	);
 

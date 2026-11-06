@@ -35,7 +35,12 @@ import {
 	recordPart,
 	tablePart,
 } from "../collector";
-import { instantText, loadSubjectEmployee, loadUserNames, nameOf } from "../values";
+import {
+	instantText,
+	loadSubjectEmployee,
+	loadUserNames,
+	nameOf,
+} from "../values";
 import { integrationsFieldGuide } from "./integrations-fields";
 
 const CALENDAR_COLUMNS = [
@@ -103,81 +108,91 @@ async function collectIntegrations(
 	const { organizationId, employeeId } = scope;
 	await loadSubjectEmployee(database, scope);
 
-	const [calendars, feeds, { pin, pinSetters }, chatAccounts, pinEvents, refusals, fobs] =
-		await Promise.all([
-			database
-				.select({
-					provider: calendarConnection.provider,
-					account: calendarConnection.providerAccountId,
-					calendarId: calendarConnection.calendarId,
-					isActive: calendarConnection.isActive,
-					pushEnabled: calendarConnection.pushEnabled,
-					conflictDetectionEnabled: calendarConnection.conflictDetectionEnabled,
-					lastSyncAt: calendarConnection.lastSyncAt,
-					createdAt: calendarConnection.createdAt,
-					updatedAt: calendarConnection.updatedAt,
-				})
-				.from(calendarConnection)
-				.where(
-					and(
-						eq(calendarConnection.organizationId, organizationId),
-						eq(calendarConnection.employeeId, employeeId),
-					),
-				)
-				.orderBy(asc(calendarConnection.createdAt), asc(calendarConnection.id)),
+	const [
+		calendars,
+		feeds,
+		{ pin, pinSetters },
+		chatAccounts,
+		pinEvents,
+		refusals,
+		fobs,
+	] = await Promise.all([
+		database
+			.select({
+				provider: calendarConnection.provider,
+				account: calendarConnection.providerAccountId,
+				calendarId: calendarConnection.calendarId,
+				isActive: calendarConnection.isActive,
+				pushEnabled: calendarConnection.pushEnabled,
+				conflictDetectionEnabled: calendarConnection.conflictDetectionEnabled,
+				lastSyncAt: calendarConnection.lastSyncAt,
+				createdAt: calendarConnection.createdAt,
+				updatedAt: calendarConnection.updatedAt,
+			})
+			.from(calendarConnection)
+			.where(
+				and(
+					eq(calendarConnection.organizationId, organizationId),
+					eq(calendarConnection.employeeId, employeeId),
+				),
+			)
+			.orderBy(asc(calendarConnection.createdAt), asc(calendarConnection.id)),
 
-			database
+		database
+			.select({
+				includeApproved: icsFeed.includeApproved,
+				includePending: icsFeed.includePending,
+				createdAt: icsFeed.createdAt,
+				lastUsedAt: icsFeed.lastUsedAt,
+				revokedAt: icsFeed.revokedAt,
+			})
+			.from(icsFeed)
+			.where(
+				and(
+					eq(icsFeed.organizationId, organizationId),
+					eq(icsFeed.employeeId, employeeId),
+					eq(icsFeed.feedType, "user"),
+				),
+			)
+			.orderBy(asc(icsFeed.createdAt), asc(icsFeed.id)),
+		(async () => {
+			const [pin] = await database
 				.select({
-					includeApproved: icsFeed.includeApproved,
-					includePending: icsFeed.includePending,
-					createdAt: icsFeed.createdAt,
-					lastUsedAt: icsFeed.lastUsedAt,
-					revokedAt: icsFeed.revokedAt,
+					updatedAt: employeeKioskPin.updatedAt,
+					setByUserId: employeeKioskPin.setByUserId,
 				})
-				.from(icsFeed)
+				.from(employeeKioskPin)
 				.where(
 					and(
-						eq(icsFeed.organizationId, organizationId),
-						eq(icsFeed.employeeId, employeeId),
-						eq(icsFeed.feedType, "user"),
+						eq(employeeKioskPin.organizationId, organizationId),
+						eq(employeeKioskPin.employeeId, employeeId),
 					),
 				)
-				.orderBy(asc(icsFeed.createdAt), asc(icsFeed.id)),
-			(async () => {
-				const [pin] = await database
-					.select({
-						updatedAt: employeeKioskPin.updatedAt,
-						setByUserId: employeeKioskPin.setByUserId,
-					})
-					.from(employeeKioskPin)
-					.where(
-						and(
-							eq(employeeKioskPin.organizationId, organizationId),
-							eq(employeeKioskPin.employeeId, employeeId),
-						),
-					)
-					.limit(1);
-				const pinSetters = await loadUserNames(database, [pin?.setByUserId]);
-				return { pin, pinSetters };
-			})(),
-			chatAccountRows(database, scope),
-			database
-				.select({
-					kind: employeeKioskPinEvent.kind,
-					occurredAt: employeeKioskPinEvent.occurredAt,
-					offline: employeeKioskPinEvent.offline,
-				})
-				.from(employeeKioskPinEvent)
-				.where(
-					and(
-						eq(employeeKioskPinEvent.organizationId, organizationId),
-						eq(employeeKioskPinEvent.employeeId, employeeId),
-					),
-				)
-				.orderBy(asc(employeeKioskPinEvent.occurredAt), asc(employeeKioskPinEvent.sequence)),
-			kioskRefusalRows(database, scope),
-			kioskFobRows(database, scope),
-		]);
+				.limit(1);
+			const pinSetters = await loadUserNames(database, [pin?.setByUserId]);
+			return { pin, pinSetters };
+		})(),
+		chatAccountRows(database, scope),
+		database
+			.select({
+				kind: employeeKioskPinEvent.kind,
+				occurredAt: employeeKioskPinEvent.occurredAt,
+				offline: employeeKioskPinEvent.offline,
+			})
+			.from(employeeKioskPinEvent)
+			.where(
+				and(
+					eq(employeeKioskPinEvent.organizationId, organizationId),
+					eq(employeeKioskPinEvent.employeeId, employeeId),
+				),
+			)
+			.orderBy(
+				asc(employeeKioskPinEvent.occurredAt),
+				asc(employeeKioskPinEvent.sequence),
+			),
+		kioskRefusalRows(database, scope),
+		kioskFobRows(database, scope),
+	]);
 
 	return {
 		category: "integrations",
@@ -210,11 +225,15 @@ async function collectIntegrations(
 				})),
 			),
 			tablePart("chat_accounts", CHAT_ACCOUNT_COLUMNS, chatAccounts),
-			recordPart("kiosk_pin", {
-				pin_set: Boolean(pin),
-				set_at: instantText(pin?.updatedAt),
-				set_by: nameOf(pinSetters, pin?.setByUserId),
-			}),
+			recordPart(
+				"kiosk_pin",
+				{
+					pin_set: Boolean(pin),
+					set_at: instantText(pin?.updatedAt),
+					set_by: nameOf(pinSetters, pin?.setByUserId),
+				},
+				{ isPlaceholder: !pin },
+			),
 			tablePart(
 				"kiosk_pin_events",
 				KIOSK_PIN_EVENT_COLUMNS,
@@ -256,7 +275,10 @@ async function collectIntegrations(
  * registered at (null once that kiosk is gone). The full serial number is the
  * employee's own data, so it is exported.
  */
-function kioskFobRows(database: PersonalDataExportDatabase, scope: PersonalDataExportScope) {
+function kioskFobRows(
+	database: PersonalDataExportDatabase,
+	scope: PersonalDataExportScope,
+) {
 	return database
 		.select({
 			serialNumber: employeeKioskFob.serialNumber,
@@ -283,7 +305,10 @@ function kioskFobRows(database: PersonalDataExportDatabase, scope: PersonalDataE
 }
 
 /** The employee's refused offline kiosk clockings (#1290); the frozen command is not exported. */
-function kioskRefusalRows(database: PersonalDataExportDatabase, scope: PersonalDataExportScope) {
+function kioskRefusalRows(
+	database: PersonalDataExportDatabase,
+	scope: PersonalDataExportScope,
+) {
 	return database
 		.select({
 			kiosk: kiosk.name,
@@ -359,7 +384,11 @@ async function chatAccountRows(
 			.orderBy(asc(discordUserMapping.createdAt)),
 	]);
 
-	const times = (row: { isActive: boolean; createdAt: Date; lastSeenAt: Date | null }) => ({
+	const times = (row: {
+		isActive: boolean;
+		createdAt: Date;
+		lastSeenAt: Date | null;
+	}) => ({
 		is_active: row.isActive,
 		linked_at: instantText(row.createdAt),
 		last_seen_at: instantText(row.lastSeenAt),

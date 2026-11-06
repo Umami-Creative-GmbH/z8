@@ -547,7 +547,7 @@ it("enforces the existing organization, subject and admin download boundary for 
 		code: "NotFoundError",
 	});
 	const former = await build("admin", id(4));
-	expect(former.equipment.assignments).toEqual([]);
+	expect(former.files).not.toHaveProperty("equipment.json");
 	harness.userId = "t1548-former";
 	expect(await requestMyPersonalDataExport()).toMatchObject({ success: false });
 	expect(await getPersonalDataExportDownloadUrl(former.exportId)).toMatchObject(
@@ -890,6 +890,6 @@ it("does not reconstruct erased holder exports from a later anonymous custody re
 			proposal.id,
 		])
 			expect(Object.values(archive.files).join("\n")).not.toContain(erased);
-	expect(own.equipment.assignments).toEqual([]);
-	expect(admin.equipment.assignments).toEqual([]);
+	expect(own.files).not.toHaveProperty("equipment.json");
+	expect(admin.files).not.toHaveProperty("equipment.json");
 });

@@ -303,6 +303,7 @@ _Avoid_: rehearsal record, test data
 
 ## Confirmed design references
 
+- [Personal data export contents](../../../../../docs/refs/personal-data-export.md): which empty files are omitted from employee and admin exports, and how retained contents are described.
 - [Organization profile and AVV](../../../../../docs/refs/organization-profile.md): profile editing, persistence and authenticated actions are implemented in #1566; AVV settings, country-aware readiness and current-profile PDF downloads are implemented in #1567.
 - [AVVs use the current organization profile](./docs/adr/0009-avv-uses-current-organization-profile.md): why downloads use current master data rather than a stored agreement version.
 - [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules and their implementation status.
