@@ -9,6 +9,8 @@ import {
 } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 /**
  * Start Break, Resume and End Day for the employee's own clock (#888, Time
@@ -47,6 +49,56 @@ export function StartBreakButton({
 			)}
 			{t("timeTracking.breakInProgress.start", "Start break")}
 		</Button>
+	);
+}
+
+/** Start Break as an icon in the header clock, beside Clock Out (#1573). */
+export function HeaderStartBreakButton({
+	onClick,
+	disabled,
+	pending,
+	isOffline,
+	className,
+	t,
+}: {
+	onClick: () => void;
+	disabled: boolean;
+	pending: boolean;
+	isOffline: boolean;
+	className?: string;
+	t: TFnType;
+}) {
+	const label = t("timeTracking.breakInProgress.start", "Start break");
+	return (
+		<Tooltip>
+			{/* A disabled button takes no hover, so its wrapper still explains why. */}
+			<TooltipTrigger asChild>
+				<span className={cn("inline-flex", className)} tabIndex={isOffline ? 0 : undefined}>
+					<Button
+						type="button"
+						size="sm"
+						onClick={onClick}
+						disabled={disabled || isOffline}
+						aria-label={label}
+						className="h-8 rounded-none bg-amber-500 px-2.5 text-amber-950 hover:bg-amber-600"
+					>
+						{pending ? (
+							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+						) : (
+							<IconPlayerPause aria-hidden="true" className="size-4" />
+						)}
+					</Button>
+				</span>
+			</TooltipTrigger>
+			<TooltipContent>
+				{isOffline
+					? t(
+							"timeTracking.breakInProgress.connectionRequired",
+							"Starting or resuming a break needs a connection.",
+						)
+					: label}
+			</TooltipContent>
+		</Tooltip>
 	);
 }
 

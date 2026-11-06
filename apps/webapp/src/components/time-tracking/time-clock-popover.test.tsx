@@ -17,6 +17,7 @@ const addBreakMock = vi.fn();
 const startBreakMock = vi.fn();
 const resumeBreakMock = vi.fn();
 let isOfflineMock = false;
+let isMutatingMock = false;
 const updateNotesMock = vi.fn();
 const useElapsedTimerMock = vi.fn();
 
@@ -46,7 +47,7 @@ const defaultProjects = () => [
 ];
 let projectsMock: Array<Record<string, unknown>> = defaultProjects();
 
-function getPopoverClockButton(name: "Clock In" | "Clock Out"): HTMLElement {
+function getPopoverClockButton(name: "Clock In" | "Clock Out" | "Start break"): HTMLElement {
 	const button = screen.getAllByRole("button", { name }).at(-1);
 	if (!button) throw new Error(`${name} popover button not found`);
 	return button;
@@ -72,7 +73,7 @@ vi.mock("@/lib/query/use-time-clock", () => ({
 		isClockingOut: false,
 		isAddingBreak: false,
 		isUpdatingNotes: false,
-		isMutating: false,
+		isMutating: isMutatingMock,
 		captureMode,
 		connectionRequired: connectionRequiredMock,
 	}),
@@ -181,6 +182,7 @@ describe("TimeClockPopover", () => {
 		connectionRequiredMock = false;
 		activeWorkPeriodMock = null;
 		isOfflineMock = false;
+		isMutatingMock = false;
 		billableTimeEnabledMock = false;
 		projectsMock = defaultProjects();
 		clockInMock.mockResolvedValue({ success: true });
@@ -245,10 +247,95 @@ describe("TimeClockPopover", () => {
 			render(<TimeClockPopover />);
 			fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 
-			fireEvent.click(screen.getByRole("button", { name: "Start break" }));
+			fireEvent.click(getPopoverClockButton("Start break"));
 
 			await waitFor(() => expect(startBreakMock).toHaveBeenCalledOnce());
 			expect(toastMocks.success).toHaveBeenCalledWith("Break started", expect.anything());
+		});
+
+		describe("from the header (#1573)", () => {
+			function working() {
+				isClockedInMock = true;
+				activeWorkPeriodMock = { startTime: "2026-10-10T06:00:00Z" };
+			}
+
+			it("shows an icon-only amber Start break between Clock Out and Add break", () => {
+				working();
+				render(<TimeClockPopover />);
+
+				const clockOut = screen.getByRole("button", { name: "Clock Out" });
+				const startBreak = screen.getByRole("button", { name: "Start break" });
+				const addBreak = screen.getByRole("button", { name: "Add break" });
+				expect(startBreak.textContent).toBe("");
+				expect(startBreak.className).toContain("bg-amber-500");
+				expect(clockOut.compareDocumentPosition(startBreak)).toBe(
+					Node.DOCUMENT_POSITION_FOLLOWING,
+				);
+				expect(startBreak.compareDocumentPosition(addBreak)).toBe(
+					Node.DOCUMENT_POSITION_FOLLOWING,
+				);
+			});
+
+			it("starts a break in one click, without opening the clock", async () => {
+				working();
+				startBreakMock.mockResolvedValue({ success: true, data: {} });
+				render(<TimeClockPopover />);
+
+				fireEvent.click(screen.getByRole("button", { name: "Start break" }));
+
+				await waitFor(() => expect(startBreakMock).toHaveBeenCalledOnce());
+				expect(toastMocks.success).toHaveBeenCalledWith("Break started", expect.anything());
+				expect(screen.queryByRole("button", { name: "Resume" })).toBeNull();
+			});
+
+			it("is not offered while clocked out or already on a break", () => {
+				const { unmount } = render(<TimeClockPopover />);
+				expect(screen.queryByRole("button", { name: "Start break" })).toBeNull();
+				unmount();
+
+				onBreak();
+				render(<TimeClockPopover />);
+				expect(screen.queryByRole("button", { name: "Start break" })).toBeNull();
+			});
+
+			it("stays in place but disabled while offline or while a clock command runs", () => {
+				working();
+				isOfflineMock = true;
+				const { unmount } = render(<TimeClockPopover />);
+				const offline = screen.getByRole("button", { name: "Start break" }) as HTMLButtonElement;
+				expect(offline.disabled).toBe(true);
+				fireEvent.click(offline);
+				expect(startBreakMock).not.toHaveBeenCalled();
+				unmount();
+
+				isOfflineMock = false;
+				isMutatingMock = true;
+				render(<TimeClockPopover />);
+				expect(
+					(screen.getByRole("button", { name: "Start break" }) as HTMLButtonElement).disabled,
+				).toBe(true);
+			});
+
+			it("is not held by a clock-out that still needs a task", () => {
+				working();
+				localStorageData = { "z8-last-project-id": "project-1" };
+				projectsMock = [
+					{
+						id: "project-1",
+						name: "Project One",
+						requiresTask: true,
+						tasks: [{ id: "task-1", name: "Design" }],
+					},
+				];
+				render(<TimeClockPopover />);
+				fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+
+				expect((getPopoverClockButton("Clock Out") as HTMLButtonElement).disabled).toBe(true);
+				expect(
+					(screen.getAllByRole("button", { name: "Start break" })[0] as HTMLButtonElement)
+						.disabled,
+				).toBe(false);
+			});
 		});
 
 		it("offers Resume and End day while on break, and no other break", async () => {
@@ -293,9 +380,7 @@ describe("TimeClockPopover", () => {
 			render(<TimeClockPopover />);
 			fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 
-			expect(
-				(screen.getByRole("button", { name: "Start break" }) as HTMLButtonElement).disabled,
-			).toBe(true);
+			expect((getPopoverClockButton("Start break") as HTMLButtonElement).disabled).toBe(true);
 			expect(screen.getByText("Starting or resuming a break needs a connection.")).toBeTruthy();
 		});
 	});

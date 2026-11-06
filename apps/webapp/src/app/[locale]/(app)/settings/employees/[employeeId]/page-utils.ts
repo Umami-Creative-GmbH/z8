@@ -15,6 +15,7 @@ export interface EmployeeDetailFormValues {
 	position: string;
 	employeeNumber: string;
 	startDate: string;
+	birthday: string;
 	role: "admin" | "manager" | "employee" | undefined;
 	contractType: "fixed" | "hourly";
 	hourlyRate: string;
@@ -45,6 +46,7 @@ export const defaultFormValues: EmployeeDetailFormValues = {
 	position: "",
 	employeeNumber: "",
 	startDate: "",
+	birthday: "",
 	role: undefined,
 	contractType: "fixed",
 	hourlyRate: "",
@@ -91,6 +93,8 @@ export function buildEmployeeUpdatePayload(value: EmployeeDetailFormValues) {
 	return {
 		...value,
 		startDate: parseEmployeeDetailDateInputValue(value.startDate),
+		// Only an org admin's save keeps it: the server drops a manager's (#1579).
+		birthday: parseEmployeeDetailDateInputValue(value.birthday),
 	};
 }
 
@@ -150,6 +154,7 @@ export function buildEmployeeDetailFormValues(
 		position: employee.position || "",
 		employeeNumber: employee.employeeNumber || "",
 		startDate: formatEmployeeDetailDateInputValue(employee.startDate),
+		birthday: formatEmployeeDetailDateInputValue(employee.birthday),
 		role: employee.role || undefined,
 		// Employee wages change only through confirmed employment terms (ADR 0002).
 		contractType:

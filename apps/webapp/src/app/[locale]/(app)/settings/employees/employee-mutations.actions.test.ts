@@ -24,6 +24,12 @@ const mocks = vi.hoisted(() => ({
 	markEmployeeWorkBalanceDirty: vi.fn(),
 	requestEmployeeWorkBalanceFullRebuild: vi.fn(),
 	writeFirstEmploymentTerms: vi.fn(),
+	logAudit: vi.fn(async () => undefined),
+}));
+
+vi.mock("@/lib/audit-logger", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
+	logAudit: mocks.logAudit,
 }));
 
 // The terms themselves are covered by first-terms.integration.test.ts.
@@ -741,6 +747,131 @@ describe("updateEmployeeAction", () => {
 			updatedAt: expect.anything(),
 		});
 		expect(userSet).not.toHaveBeenCalled();
+	});
+
+	describe("birthday (#1579)", () => {
+		const storedBirthday = new Date("1990-05-01T00:00:00.000Z");
+
+		function saveAs(
+			accessTier: "orgAdmin" | "manager",
+			validated: Record<string, unknown>,
+			lockedBirthday: Date | null = storedBirthday,
+		) {
+			const employeeSet = vi.fn(() => ({
+				where: vi.fn().mockResolvedValue(undefined),
+			}));
+			// The row as the save's transaction locks it.
+			const select = vi.fn(() => ({
+				from: vi.fn(() => ({
+					where: vi.fn(() => ({
+						for: vi.fn().mockResolvedValue([{ birthday: lockedBirthday }]),
+					})),
+				})),
+			}));
+			const dbService = {
+				db: { update: vi.fn(() => ({ set: employeeSet })), select },
+				query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+					Effect.promise(run),
+				),
+			};
+			mocks.runTracedEmployeeAction.mockImplementation((options) =>
+				Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
+			);
+			mocks.getEmployeeSettingsActorContext.mockReturnValue(
+				Effect.succeed({
+					accessTier,
+					organizationId: "org-1",
+					session: { user: { id: "user-actor-1", email: "actor@example.com" } },
+					dbService,
+				}),
+			);
+			mocks.getTargetEmployee.mockReturnValue(
+				Effect.succeed({
+					id: "employee-1",
+					userId: validUserId,
+					organizationId: "org-1",
+					contractType: "fixed",
+					birthday: storedBirthday,
+				}),
+			);
+			mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
+				Effect.void,
+			);
+			mocks.validateInput.mockImplementation((_schema, input) =>
+				Effect.succeed(accessTier === "orgAdmin" ? validated : input),
+			);
+			return { employeeSet };
+		}
+
+		beforeEach(() => {
+			vi.clearAllMocks();
+		});
+
+		it.each([
+			{ change: "changed", birthday: new Date("1990-05-02T00:00:00.000Z") },
+			{ change: "cleared", birthday: null },
+		])(
+			"records that an org admin $change the birthday, without the dates",
+			async ({ change, birthday }) => {
+				const { employeeSet } = saveAs("orgAdmin", { position: "Engineer", birthday });
+
+				await updateEmployeeAction("employee-1", { position: "Engineer", birthday });
+
+				expect(employeeSet).toHaveBeenCalledWith(
+					expect.objectContaining({ birthday }),
+				);
+				expect(mocks.logAudit).toHaveBeenCalledTimes(1);
+				const [entry] = mocks.logAudit.mock.calls[0];
+				expect(entry).toMatchObject({
+					action: "employee.updated",
+					actorId: "user-actor-1",
+					targetType: "employee",
+					targetId: "employee-1",
+					employeeId: "employee-1",
+					organizationId: "org-1",
+					metadata: { field: "birthday", change },
+				});
+				expect(JSON.stringify(entry)).not.toContain("1990");
+			},
+		);
+
+		it("records nothing when the saved birthday is unchanged", async () => {
+			saveAs("orgAdmin", {
+				position: "Engineer",
+				birthday: new Date("1990-05-01T00:00:00.000Z"),
+			});
+
+			await updateEmployeeAction("employee-1", {
+				position: "Engineer",
+				birthday: new Date("1990-05-01T00:00:00.000Z"),
+			});
+
+			expect(mocks.logAudit).not.toHaveBeenCalled();
+		});
+
+		it("compares with the birthday the save replaced, not the one read before it", async () => {
+			// The employee changed it to May 2 after the admin's form loaded May 1.
+			const may2 = new Date("1990-05-02T00:00:00.000Z");
+			saveAs("orgAdmin", { birthday: may2 }, may2);
+
+			await updateEmployeeAction("employee-1", { birthday: may2 });
+
+			expect(mocks.logAudit).not.toHaveBeenCalled();
+		});
+
+		it("neither writes nor records a birthday a manager sends", async () => {
+			const { employeeSet } = saveAs("manager", {});
+
+			await updateEmployeeAction("employee-1", {
+				position: "Engineer",
+				birthday: new Date("2000-01-01T00:00:00.000Z"),
+			});
+
+			expect(employeeSet).toHaveBeenCalledWith(
+				expect.not.objectContaining({ birthday: expect.anything() }),
+			);
+			expect(mocks.logAudit).not.toHaveBeenCalled();
+		});
 	});
 
 	it("strips contract type and wage from the employee update input", () => {
