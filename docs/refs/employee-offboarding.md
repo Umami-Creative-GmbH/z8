@@ -207,7 +207,8 @@ Its participants run in this fixed order (`participants.ts`):
   driving authorizations, cancelled document requests (linked to the personnel
   file) and share links have items; kiosk fobs, deputy assignments and
   equipment returns have none.
-- **Causes.** Deactivation and its backfill use it today. The departure still
+- **Causes.** Deactivation and the non-interactive deactivation (which the
+  backfill runs) use it today. The departure still
   ends holdings in `transition.ts` until it moves onto the module (#1626).
 
 ## Deactivation
@@ -333,14 +334,37 @@ moment finishes on its own. A deactivation principal that names a row it does
 not match is denied as `deactivation_mismatch`, and a deactivation that no
 longer holds as `deactivation_not_effective`.
 
+**Non-interactive deactivation (#1627).** `runNonInteractiveDeactivation`
+(`deactivation/non-interactive.ts`) deactivates one employee nobody confirms:
+someone already switched off (`is_active = false`) with no effective or pending
+departure and no open `employee_deactivation` row
+(`formerEmployeeWithoutDeactivation`). The caller names the actor, the reason,
+when they left (`deactivatedAt`, or null when not recorded) and optionally the
+instant the consequences apply from. In its own transaction it takes the lock
+order above plus the employee coordination guard (before the organization row),
+re-checks the employee under the locks and skips anyone it no longer applies
+to. Then it records the `employee_deactivation` row, locks the employee row,
+sets `employee.deactivated_at` to the row's instant (replacing an instant the
+switch-off trigger wrote, audited as `employee.updated`), runs Employment
+ending and the roster areas with `replaceManagers: false`, stores the outcome,
+and writes the `employee_deactivated` history event for a recorded instant. It
+never refuses: reports who would be left with no current manager keep the link
+and are returned (`reportsWithoutManager`); the caller tells the current admins
+(`reportsStillWithoutCurrentManager` narrows the list to those still without
+one, then `notifyFormerEmployeeReportsWithoutManager`). Audit forwarding and
+the after-commit steps run inside the call; failed steps come back as
+`warnings`. The ledger row is the idempotency marker, so a second run changes
+nothing. `planNonInteractiveDeactivation` plans the same thing without writing.
+
 **Backfill of earlier deactivations (#1442).** Employees deactivated before
 #1440 get its consequences once, through the one-off script
 `pnpm employees:backfill-deactivations` (`apps/webapp/scripts/backfill-former-employees.ts`,
 library `deactivation/backfill.ts`; deploy steps in `deploy/README.md`). It is a
-dry run unless `--apply` is given. Both modes plan with
-`planDeactivationConsequences`, so the dry run reports exactly what the real run
-applies. It handles inactive employees with no effective or pending departure
-and no open `employee_deactivation` row.
+dry run unless `--apply` is given. The real run applies each employee through
+the non-interactive deactivation; the dry run plans with
+`planNonInteractiveDeactivation`, so it reports exactly what the real run
+applies, and writes nothing. It handles the employees the non-interactive
+deactivation applies to.
 
 - **When they left**: `employee.deactivated_at` if already set, else the latest
   surviving `employee.deactivated` audit entry or SCIM `leave` event
@@ -360,9 +384,9 @@ and no open `employee_deactivation` row.
   Audit rows are attributed to the admin whose audit entry deactivated the
   employee, else to the organization's longest-standing current owner (or
   admin). A report who would be left with no current manager keeps the link.
-  Since #1624 the backfill also runs Employment ending in full, so it also ends
-  equipment responsibility, document requests and deputy duties (the absent
-  employees are told after the commit).
+  Through the non-interactive deactivation it runs Employment ending in full,
+  so it also ends equipment responsibility, document requests and deputy duties
+  (the absent employees are told after the commit).
 - **Record**: one `employee_deactivation` row per employee (reason
   `employee_deactivation_backfill`) is the idempotency marker. Its
   `deactivated_at` is when they left: the recovered instant, else the run

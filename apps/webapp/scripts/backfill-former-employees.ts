@@ -20,12 +20,14 @@ deactivation record (or only those of the organization named), it:
   1. recovers when they left from the latest surviving "employee.deactivated"
      audit entry or SCIM leave event (audit entries live 365 days); without
      evidence the date stays "not recorded".
-  2. applies a deactivation's consequences from that instant, else from the run
-     instant: manager links of reports who keep another current manager and
-     their own manager links end, team memberships and project links end,
-     approval duties are handed over, later shifts open, later absences are
-     cancelled, grants, driving authorizations, kiosk badges and share links
-     end. Every change is audited with the reason employee_deactivation_backfill.
+  2. deactivates them without confirmation (the non-interactive deactivation),
+     from that instant, else from the run instant: manager links of reports
+     who keep another current manager and their own manager links end, team
+     memberships and project links end, approval duties are handed over, later
+     shifts open, later absences are cancelled, and everything they hold ends:
+     equipment responsibility, grants, driving authorizations, document
+     requests, kiosk badges and fobs, share links and deputy assignments.
+     Every change is audited with the reason employee_deactivation_backfill.
   3. keeps the manager link of reports who would be left with no current
      manager, lists them, and tells each organization's current owners and
      admins once (in-app and their chosen channels).
