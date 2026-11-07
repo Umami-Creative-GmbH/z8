@@ -59,6 +59,14 @@ _Avoid_: team assignment
 The one team membership that counts when a rule needs a single team for an employee, such as a policy assignment. An employee's primary team is always one of their team memberships.
 _Avoid_: compatibility team, legacy team, home team
 
+**Team placement**:
+An employee's team memberships together with which of them is their primary team.
+_Avoid_: team assignment
+
+**Move**:
+Changing an employee's primary team to another team. The membership in the old primary team ends; other memberships stay.
+_Avoid_: transfer, reassignment
+
 **Team lead**:
 The one employee responsible for a team. A team may have none, and the team lead need not be a member of the team.
 _Avoid_: primary manager, team manager, team owner
