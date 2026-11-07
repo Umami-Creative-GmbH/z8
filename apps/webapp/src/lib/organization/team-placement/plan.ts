@@ -23,14 +23,8 @@ export type TeamPlacementPlan = {
 };
 
 /** The alphabetically first membership (by id) other than `endTeamId`, else none. */
-function firstRemaining(
-	membershipTeamIds: readonly string[],
-	endTeamId: string | null,
-) {
-	return (
-		membershipTeamIds.filter((teamId) => teamId !== endTeamId).toSorted()[0] ??
-		null
-	);
+function firstRemaining(membershipTeamIds: readonly string[], endTeamId: string | null) {
+	return membershipTeamIds.filter((teamId) => teamId !== endTeamId).toSorted()[0] ?? null;
 }
 
 /**
@@ -49,8 +43,7 @@ export function planTeamChange(
 	switch (change.kind) {
 		case "move": {
 			const { teamId } = change;
-			const endTeamId =
-				primaryTeamId && primaryTeamId !== teamId ? primaryTeamId : null;
+			const endTeamId = primaryTeamId && primaryTeamId !== teamId ? primaryTeamId : null;
 			if (teamId) {
 				return {
 					addTeamId: isMember(teamId) ? null : teamId,

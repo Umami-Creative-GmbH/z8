@@ -12,9 +12,7 @@ import {
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 
 const session = vi.hoisted(() => ({ userId: "", organizationId: "" }));
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -50,20 +48,14 @@ vi.mock("@/lib/notifications/triggers", async (original) =>
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 const { db } = await import("@/db");
-const { withAuthorizationMutation } = await import(
-	"@/lib/authorization/authorization-mutation"
-);
-const { DrivingLicenceStalePreviewError } = await import(
-	"../driving-licence/stale-preview"
-);
+const { withAuthorizationMutation } = await import("@/lib/authorization/authorization-mutation");
+const { DrivingLicenceStalePreviewError } = await import("../driving-licence/stale-preview");
 const { ensureEmployeeForOrganizationMember } = await import(
 	"@/lib/auth/organization-member-provisioning"
 );
 const placement = await import("./team-placement");
 const policies = await import("../driving-licence/policy-actions");
-const intendedDrivers = await import(
-	"../driving-licence/intended-driver-actions"
-);
+const intendedDrivers = await import("../driving-licence/intended-driver-actions");
 const grants = await import("../driving-licence/verifier-actions");
 const checks = await import("../driving-licence/check-actions");
 
@@ -90,10 +82,7 @@ async function joinTeam(employeeId: string, teamId: string, primary = false) {
 		[fixture.organizationId, teamId, employeeId],
 	);
 	if (primary)
-		await fixture.pool.query(`update employee set team_id=$1 where id=$2`, [
-			teamId,
-			employeeId,
-		]);
+		await fixture.pool.query(`update employee set team_id=$1 where id=$2`, [teamId, employeeId]);
 }
 async function teamsOf(employeeId: string) {
 	const [{ rows: memberships }, { rows: employees }] = await Promise.all([
@@ -101,10 +90,9 @@ async function teamsOf(employeeId: string) {
 			"select team_id from team_membership where employee_id = $1 order by team_id",
 			[employeeId],
 		),
-		fixture.pool.query<{ team_id: string | null }>(
-			"select team_id from employee where id = $1",
-			[employeeId],
-		),
+		fixture.pool.query<{ team_id: string | null }>("select team_id from employee where id = $1", [
+			employeeId,
+		]),
 	]);
 	return {
 		primary: employees[0]?.team_id ?? null,
@@ -113,11 +101,7 @@ async function teamsOf(employeeId: string) {
 }
 
 const viewer = () => ({ userId: fixture.ownerUserId, organizationAdmin: true });
-function change(
-	employee: SeededEmployee,
-	kind: TeamChange["kind"],
-	teamId: string | null,
-) {
+function change(employee: SeededEmployee, kind: TeamChange["kind"], teamId: string | null) {
 	return {
 		organizationId: fixture.organizationId,
 		employeeId: employee.employeeId,
@@ -146,11 +130,7 @@ beforeEach(async () => {
 	session.organizationId = fixture.organizationId;
 	session.userId = fixture.ownerUserId;
 	alex = await fixture.seedEmployee();
-	const ids = [
-		crypto.randomUUID(),
-		crypto.randomUUID(),
-		crypto.randomUUID(),
-	].sort();
+	const ids = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()].sort();
 	[a, b, c] = ids;
 	for (const [id, name] of [
 		[a, "A"],
@@ -168,17 +148,9 @@ beforeEach(async () => {
 });
 afterEach(async () => {
 	if (extraUsers.length) {
-		await fixture.pool.query(
-			"delete from employee where user_id = any($1::text[])",
-			[extraUsers],
-		);
-		await fixture.pool.query(
-			"delete from member where user_id = any($1::text[])",
-			[extraUsers],
-		);
-		await fixture.pool.query('delete from "user" where id = any($1::text[])', [
-			extraUsers,
-		]);
+		await fixture.pool.query("delete from employee where user_id = any($1::text[])", [extraUsers]);
+		await fixture.pool.query("delete from member where user_id = any($1::text[])", [extraUsers]);
+		await fixture.pool.query('delete from "user" where id = any($1::text[])', [extraUsers]);
 		extraUsers.length = 0;
 	}
 	await fixture?.close();
@@ -207,9 +179,7 @@ describe("team changes keep the primary team among the memberships (ADR 0010)", 
 	});
 
 	it("a move to the current team only adds its missing membership", async () => {
-		await fixture.pool.query("delete from team_membership where team_id = $1", [
-			a,
-		]);
+		await fixture.pool.query("delete from team_membership where team_id = $1", [a]);
 		await apply(change(alex, "move", a));
 		expect(await teamsOf(alex.employeeId)).toEqual({
 			primary: a,
@@ -218,16 +188,13 @@ describe("team changes keep the primary team among the memberships (ADR 0010)", 
 	});
 
 	it("refuses a team of another organization and changes nothing", async () => {
-		const foreign = await seedTeam(
-			"Foreign",
-			await fixture.createOrganization(),
-		);
+		const foreign = await seedTeam("Foreign", await fixture.createOrganization());
 		await expect(apply(change(alex, "move", foreign))).rejects.toBeInstanceOf(
 			placement.TeamNotInOrganization,
 		);
-		await expect(
-			apply(change(alex, "addMembership", foreign)),
-		).rejects.toBeInstanceOf(placement.TeamNotInOrganization);
+		await expect(apply(change(alex, "addMembership", foreign))).rejects.toBeInstanceOf(
+			placement.TeamNotInOrganization,
+		);
 		expect(await teamsOf(alex.employeeId)).toEqual({
 			primary: a,
 			memberships: [a, c],
@@ -335,16 +302,14 @@ describe("arriving and leaving employees", () => {
 	});
 
 	it("a reactivated member moves to their invitation's team", async () => {
-		await fixture.pool.query(
-			"update employee set is_active = false where id = $1",
-			[alex.employeeId],
-		);
+		await fixture.pool.query("update employee set is_active = false where id = $1", [
+			alex.employeeId,
+		]);
 		const {
 			rows: [{ email }],
-		} = await fixture.pool.query<{ email: string }>(
-			'select email from "user" where id = $1',
-			[alex.userId],
-		);
+		} = await fixture.pool.query<{ email: string }>('select email from "user" where id = $1', [
+			alex.userId,
+		]);
 		const invitationId = `t1594-invitation-${crypto.randomUUID()}`;
 		await fixture.pool.query(
 			`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id)
@@ -373,9 +338,7 @@ describe("arriving and leaving employees", () => {
 describe("a new primary team ends intended-driver status (ADR 0005)", () => {
 	let verifier: SeededEmployee;
 
-	function unwrap<T>(
-		result: { success: true; data: T } | { success: false; error: string },
-	) {
+	function unwrap<T>(result: { success: true; data: T } | { success: false; error: string }) {
 		if (!result.success) throw new Error(result.error);
 		return result.data;
 	}
@@ -391,9 +354,7 @@ describe("a new primary team ends intended-driver status (ADR 0005)", () => {
 	type Target = { type: "organization" } | { type: "team"; teamId: string };
 	async function assign(target: Target, value: "required" | "not_required") {
 		const { previewToken } = unwrap(
-			await intendedDrivers.previewDrivingLicenceIntendedDriverAssignmentAction(
-				{ target, value },
-			),
+			await intendedDrivers.previewDrivingLicenceIntendedDriverAssignmentAction({ target, value }),
 		);
 		unwrap(
 			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
@@ -469,10 +430,7 @@ describe("a new primary team ends intended-driver status (ADR 0005)", () => {
 
 	const changesOfThePrimaryTeam: Array<[string, () => TeamChange]> = [
 		["a move", () => change(alex, "move", b)],
-		[
-			"removing the primary membership",
-			() => change(alex, "removeMembership", a),
-		],
+		["removing the primary membership", () => change(alex, "removeMembership", a)],
 	];
 	it.each(changesOfThePrimaryTeam)(
 		"%s is warned about, refused with a stale warning, and ends the authorization when confirmed",
@@ -485,12 +443,10 @@ describe("a new primary team ends intended-driver status (ADR 0005)", () => {
 			});
 			expect(await status(alex)).toBe("active");
 
-			await expect(apply(teamChange())).rejects.toBeInstanceOf(
+			await expect(apply(teamChange())).rejects.toBeInstanceOf(DrivingLicenceStalePreviewError);
+			await expect(apply(teamChange(), "not-the-warning")).rejects.toBeInstanceOf(
 				DrivingLicenceStalePreviewError,
 			);
-			await expect(
-				apply(teamChange(), "not-the-warning"),
-			).rejects.toBeInstanceOf(DrivingLicenceStalePreviewError);
 			expect(await teamsOf(alex.employeeId)).toEqual({
 				primary: a,
 				memberships: [a, c],
@@ -514,9 +470,7 @@ describe("a new primary team ends intended-driver status (ADR 0005)", () => {
 			detail: "full",
 			employees: [ending(carol)],
 		});
-		await expect(apply(joining)).rejects.toBeInstanceOf(
-			DrivingLicenceStalePreviewError,
-		);
+		await expect(apply(joining)).rejects.toBeInstanceOf(DrivingLicenceStalePreviewError);
 		expect(await teamsOf(carol.employeeId)).toEqual({
 			primary: null,
 			memberships: [],

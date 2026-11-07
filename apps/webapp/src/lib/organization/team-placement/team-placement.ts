@@ -40,13 +40,9 @@ export type { TeamPlacementPlan } from "./plan";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 /** What a placement write needs of the caller's transaction. */
-export type TeamPlacementWriter = Pick<
-	Transaction,
-	"select" | "insert" | "update" | "delete"
->;
+export type TeamPlacementWriter = Pick<Transaction, "select" | "insert" | "update" | "delete">;
 /** What a team change needs: it can also run the driving licence step. */
-export type TeamChangeTransaction = TeamPlacementWriter &
-	Pick<Transaction, "execute">;
+export type TeamChangeTransaction = TeamPlacementWriter & Pick<Transaction, "execute">;
 
 /** The employee whose team placement changes. */
 export type TeamPlacementTarget = {
@@ -86,12 +82,7 @@ async function readPlacement(
 	const [current] = await tx
 		.select({ teamId: employee.teamId })
 		.from(employee)
-		.where(
-			and(
-				eq(employee.id, employeeId),
-				eq(employee.organizationId, organizationId),
-			),
-		);
+		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)));
 	if (!current) return null;
 	const memberships = await tx
 		.select({ teamId: teamMembership.teamId })
@@ -111,10 +102,7 @@ async function readPlacement(
 type Planned = { placement: TeamPlacement; plan: TeamPlacementPlan };
 
 /** Reads the employee's placement under the caller's protection and plans `change`. */
-async function planChange(
-	tx: TeamPlacementWriter,
-	change: TeamChange,
-): Promise<Planned | null> {
+async function planChange(tx: TeamPlacementWriter, change: TeamChange): Promise<Planned | null> {
 	const { organizationId, employeeId, teamId } = change;
 	if (teamId && change.kind !== "removeMembership") {
 		const [target] = await tx
@@ -160,12 +148,7 @@ async function writePlan(
 		await tx
 			.update(employee)
 			.set({ teamId: plan.primaryTeamId, updatedAt: currentTimestamp() })
-			.where(
-				and(
-					eq(employee.id, employeeId),
-					eq(employee.organizationId, organizationId),
-				),
-			);
+			.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)));
 	}
 	if (plan.endTeamId) {
 		await tx
@@ -186,9 +169,7 @@ async function writePlan(
  * creation authority and target checks. The caller opens the transaction with it (merged into
  * its own scope when it writes more) before `applyTeamChange`.
  */
-export function teamChangeScope(
-	target: TeamPlacementTarget,
-): AuthorizationMutationScope {
+export function teamChangeScope(target: TeamPlacementTarget): AuthorizationMutationScope {
 	return {
 		organizationId: target.organizationId,
 		employeeIds: [target.employeeId],
@@ -248,8 +229,7 @@ export function previewTeamChange(
 				return planned !== null && movesPrimaryTeam(planned);
 			},
 		},
-		(work) =>
-			withAuthorizationMutation(teamChangeScope(change), work, database),
+		(work) => withAuthorizationMutation(teamChangeScope(change), work, database),
 		async (tx) => {
 			if (planned) await writePlan(tx, change, planned);
 		},
@@ -272,8 +252,7 @@ export function previewUnchangedTeamPlacement(
 			viewer,
 			changesIntendedDrivers: async () => false,
 		},
-		(work) =>
-			withAuthorizationMutation(teamChangeScope(target), work, database),
+		(work) => withAuthorizationMutation(teamChangeScope(target), work, database),
 		async () => {},
 	);
 }
@@ -286,22 +265,18 @@ export function keepTeamChangeRefusals<A, E, R>(
 	effect: Effect.Effect<A, E, R>,
 ): Effect.Effect<A, E | ValidationError, R> {
 	return keepDrivingLicenceStalePreview(effect).pipe(
-		Effect.catch(
-			(
-				error: E | ValidationError,
-			): Effect.Effect<never, E | ValidationError> => {
-				const cause = error instanceof DatabaseError ? error.cause : error;
-				return cause instanceof TeamNotInOrganization
-					? Effect.fail(
-							new ValidationError({
-								message: cause.message,
-								field: "teamId",
-								value: cause.teamId,
-							}),
-						)
-					: Effect.fail(error);
-			},
-		),
+		Effect.catch((error: E | ValidationError): Effect.Effect<never, E | ValidationError> => {
+			const cause = error instanceof DatabaseError ? error.cause : error;
+			return cause instanceof TeamNotInOrganization
+				? Effect.fail(
+						new ValidationError({
+							message: cause.message,
+							field: "teamId",
+							value: cause.teamId,
+						}),
+					)
+				: Effect.fail(error);
+		}),
 	);
 }
 
