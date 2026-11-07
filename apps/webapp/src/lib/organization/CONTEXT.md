@@ -100,7 +100,7 @@ An employee's team memberships together with which of them is their primary team
 _Avoid_: team assignment
 
 **Move**:
-Changing an employee's primary team to another team. The membership in the old primary team ends; other memberships stay.
+Changing an employee's primary team to another team, or to none. The membership in the old primary team ends; other memberships stay. Moving to no team makes the next remaining membership the primary team, if any.
 _Avoid_: transfer, reassignment
 
 **Team lead**:

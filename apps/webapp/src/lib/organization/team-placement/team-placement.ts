@@ -30,7 +30,8 @@ import {
  * (Organization ADR 0005). Callers decide neither.
  *
  * - `teamChangeScope` / `applyTeamChange` / `previewTeamChange` / `keepTeamChangeRefusals`:
- *   moves and membership changes, with their driving licence warning.
+ *   moves and membership changes, with their driving licence warning
+ *   (`previewUnchangedTeamPlacement` for a save that keeps the placement).
  * - `placeArrivingEmployee`: a new or returning employee, who holds no driving authorization.
  * - `releaseLeavingEmployee`: a deactivated employee, whose authorizations end elsewhere.
  */
@@ -44,16 +45,17 @@ export type TeamPlacementWriter = Pick<
 	"select" | "insert" | "update" | "delete"
 >;
 /** What a team change needs: it can also run the driving licence step. */
-export type TeamChangeTransaction = Pick<
-	Transaction,
-	"select" | "insert" | "update" | "delete" | "execute"
->;
+export type TeamChangeTransaction = TeamPlacementWriter &
+	Pick<Transaction, "execute">;
 
-/** A move or membership change of one employee. */
-export type TeamChange = TeamChangeKind & {
+/** The employee whose team placement changes. */
+export type TeamPlacementTarget = {
 	organizationId: string;
 	employeeId: string;
 };
+
+/** A move or membership change of one employee. */
+export type TeamChange = TeamChangeKind & TeamPlacementTarget;
 
 /** Who asks for a team change: their warning detail, and who ends authorizations. */
 export type TeamChangeActor = {
@@ -69,7 +71,8 @@ export class TeamNotInOrganization extends Error {
 	}
 }
 
-const UNCHANGED: TeamPlacementPlan = {
+/** The plan for an employee who is gone: nothing is added or ended, and no team is primary. */
+const EMPLOYEE_GONE: TeamPlacementPlan = {
 	addTeamId: null,
 	endTeamId: null,
 	primaryTeamId: null,
@@ -136,11 +139,7 @@ function movesPrimaryTeam({ placement, plan }: Planned) {
 
 async function writePlan(
 	tx: TeamPlacementWriter,
-	target: {
-		organizationId: string;
-		employeeId: string;
-		createdBy?: string | null;
-	},
+	target: TeamPlacementTarget & { createdBy?: string | null },
 	{ placement, plan }: Planned,
 ): Promise<TeamPlacementPlan> {
 	const { organizationId, employeeId } = target;
@@ -188,11 +187,11 @@ async function writePlan(
  * its own scope when it writes more) before `applyTeamChange`.
  */
 export function teamChangeScope(
-	change: TeamChange,
+	target: TeamPlacementTarget,
 ): AuthorizationMutationScope {
 	return {
-		organizationId: change.organizationId,
-		employeeIds: [change.employeeId],
+		organizationId: target.organizationId,
+		employeeIds: [target.employeeId],
 	};
 }
 
@@ -209,7 +208,7 @@ export async function applyTeamChange(
 	options: TeamChangeActor & { previewToken?: string },
 ): Promise<TeamPlacementPlan> {
 	const planned = await planChange(tx, change);
-	if (!planned) return UNCHANGED;
+	if (!planned) return EMPLOYEE_GONE;
 	const target = { ...change, createdBy: options.actorUserId };
 	if (!movesPrimaryTeam(planned)) return writePlan(tx, target, planned);
 	return runDrivingLicenceIntendedDriverWrite(
@@ -236,6 +235,8 @@ export function previewTeamChange(
 	change: TeamChange,
 	viewer: DrivingLicenceChangeViewer,
 ): Promise<DrivingLicenceTeamChangeImpact> {
+	// Planned in `changesIntendedDrivers`, which runs first in the preview transaction, and
+	// written by the write that follows it there.
 	let planned: Planned | null = null;
 	return previewDrivingLicenceIntendedDriverWrite<Transaction>(
 		{
@@ -252,6 +253,28 @@ export function previewTeamChange(
 		async (tx) => {
 			if (planned) await writePlan(tx, change, planned);
 		},
+	);
+}
+
+/**
+ * The warning for a save that leaves the employee's team placement alone, such as a scoped
+ * manager's, who can't change the team: nothing ends, in the detail `viewer` would see.
+ */
+export function previewUnchangedTeamPlacement(
+	database: Pick<typeof db, "transaction">,
+	target: TeamPlacementTarget,
+	viewer: DrivingLicenceChangeViewer,
+): Promise<DrivingLicenceTeamChangeImpact> {
+	return previewDrivingLicenceIntendedDriverWrite<Transaction>(
+		{
+			organizationId: target.organizationId,
+			employeeIds: [target.employeeId],
+			viewer,
+			changesIntendedDrivers: async () => false,
+		},
+		(work) =>
+			withAuthorizationMutation(teamChangeScope(target), work, database),
+		async () => {},
 	);
 }
 
@@ -284,10 +307,10 @@ export function keepTeamChangeRefusals<A, E, R>(
 
 /**
  * Places a new or returning employee in `teamId` in the caller's transaction, as a move: the
- * team becomes a membership and the primary team, and no team ends the old primary
- * membership. Callers whose team is optional skip the call instead of passing null. An
- * arriving employee holds no driving authorization (departure and deactivation end them, and
- * they belong to an employment period), so nothing ends.
+ * team becomes a membership and the primary team, and `null` (a rehire into no team) ends the
+ * old primary membership. A caller with no team to place skips the call, since `null` is not
+ * "leave it". An arriving employee holds no driving authorization (departure and deactivation
+ * end them, and they belong to an employment period), so nothing ends.
  */
 export async function placeArrivingEmployee(
 	tx: TeamPlacementWriter,
@@ -299,7 +322,7 @@ export async function placeArrivingEmployee(
 	},
 ): Promise<TeamPlacementPlan> {
 	const planned = await planChange(tx, { ...input, kind: "move" });
-	return planned ? writePlan(tx, input, planned) : UNCHANGED;
+	return planned ? writePlan(tx, input, planned) : EMPLOYEE_GONE;
 }
 
 /**
@@ -309,7 +332,7 @@ export async function placeArrivingEmployee(
  */
 export async function releaseLeavingEmployee(
 	tx: TeamPlacementWriter,
-	input: { organizationId: string; employeeId: string },
+	input: TeamPlacementTarget,
 ): Promise<{ endedTeamIds: string[] }> {
 	const { organizationId, employeeId } = input;
 	await tx

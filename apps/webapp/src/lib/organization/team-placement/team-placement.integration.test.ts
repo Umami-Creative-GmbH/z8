@@ -531,6 +531,16 @@ describe("a new primary team ends intended-driver status (ADR 0005)", () => {
 		["removing another membership", () => change(alex, "removeMembership", c)],
 		["a move to the current team", () => change(alex, "move", a)],
 	];
+	it("a save that keeps the team placement previews nothing ending", async () => {
+		expect(
+			await placement.previewUnchangedTeamPlacement(
+				db,
+				{ organizationId: fixture.organizationId, employeeId: alex.employeeId },
+				viewer(),
+			),
+		).toMatchObject({ detail: "full", employees: [] });
+	});
+
 	it.each(changesKeepingThePrimaryTeam)(
 		"%s ends nothing and ignores the warning token",
 		async (_name, teamChange) => {

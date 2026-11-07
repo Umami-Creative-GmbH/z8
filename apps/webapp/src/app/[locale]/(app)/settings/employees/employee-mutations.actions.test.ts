@@ -116,6 +116,7 @@ vi.mock("@/lib/organization/team-placement/team-placement", () => ({
 	keepTeamChangeRefusals: (effect: unknown) => effect,
 	placeArrivingEmployee,
 	previewTeamChange: vi.fn(async () => undefined),
+	previewUnchangedTeamPlacement: vi.fn(async () => undefined),
 	teamChangeScope: (change: { organizationId: string; employeeId: string }) => ({
 		organizationId: change.organizationId,
 		employeeIds: [change.employeeId],

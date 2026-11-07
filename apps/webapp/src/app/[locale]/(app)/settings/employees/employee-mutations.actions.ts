@@ -46,7 +46,7 @@ import {
 	keepTeamChangeRefusals,
 	placeArrivingEmployee,
 	previewTeamChange,
-	type TeamChange,
+	previewUnchangedTeamPlacement,
 	teamChangeScope,
 } from "@/lib/organization/team-placement/team-placement";
 import {
@@ -315,27 +315,22 @@ export const previewEmployeeTeamChangeDrivingImpact = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const { employeeId } = input;
-			const { validatedData, targetEmployee } = yield* scopedEmployeeUpdate(
-				{ actor, organizationId },
-				employeeId,
-				{ teamId: input.teamId },
-			);
+			const { validatedData } = yield* scopedEmployeeUpdate({ actor, organizationId }, employeeId, {
+				teamId: input.teamId,
+			});
 			const dbService = yield* DatabaseService;
-			const move: TeamChange = {
-				kind: "move",
-				organizationId,
-				employeeId,
-				// A scoped manager can't change the team: the unchanged team ends nothing.
-				teamId: Object.hasOwn(validatedData, "teamId")
-					? (validatedData.teamId ?? null)
-					: targetEmployee.teamId,
-			};
+			const target = { organizationId, employeeId };
+			const viewer = { userId: actor.userId, organizationAdmin: isOrgAdmin(actor) };
 			return yield* dbService
 				.query("employee.previewTeamChangeDrivingImpact", () =>
-					previewTeamChange(dbService.db, move, {
-						userId: actor.userId,
-						organizationAdmin: isOrgAdmin(actor),
-					}),
+					// A scoped manager can't change the team: nothing changes then.
+					Object.hasOwn(validatedData, "teamId")
+						? previewTeamChange(
+								dbService.db,
+								{ ...target, kind: "move", teamId: validatedData.teamId ?? null },
+								viewer,
+							)
+						: previewUnchangedTeamPlacement(dbService.db, target, viewer),
 				)
 				.pipe(keepTeamChangeRefusals);
 		}),
@@ -404,12 +399,7 @@ export const updateEmployeeAction = organizationAction(
 			const birthdayUpdate = yield* dbService
 				.query("updateEmployee", () =>
 					withAuthorizationMutation(
-						teamChangeScope({
-							kind: "move",
-							organizationId,
-							employeeId,
-							teamId: nextTeamId ?? null,
-						}),
+						teamChangeScope({ organizationId, employeeId }),
 						async (tx) => {
 							// Actual joining dates require a reviewed correction. Recheck under the employee guard,
 							// including stale full-form payloads that would otherwise undo a reviewed save.

@@ -83,9 +83,11 @@ export async function planTeamLinks(
 }
 
 /**
- * Ends exactly the links the plan lists, inside the deactivation transaction,
- * and audits each under the acting admin. A link already gone is skipped, so a
- * re-run changes nothing.
+ * Ends the links the plan lists, inside the deactivation transaction, and
+ * audits each under the acting admin. The plan read the team memberships in
+ * this transaction, so leaving every team (`releaseLeavingEmployee`, whose
+ * delete locks the rows) ends exactly those. A link already gone is skipped,
+ * so a re-run changes nothing.
  */
 export async function applyTeamLinks(
 	tx: DeactivationWriter,
