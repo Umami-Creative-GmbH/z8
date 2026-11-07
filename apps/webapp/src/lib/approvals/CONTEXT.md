@@ -34,6 +34,20 @@ _Avoid_: backfill, bootstrap
 Keeping legacy requests in step with canonical workflows once canonical authority decides, in lifecycle mode `canonical`.
 _Avoid_: reverse mirroring
 
+### Routing
+
+**Approval route**:
+What submitting one approval kind for one requester at one instant would produce: **routed** (a request would be written, with the approver stages that would decide it, even when every stage completes automatically because the requester is their own approver), **skipped** (the request path writes no request because no approver is needed, such as an owner recording their own manual work) or **unroutable** (submitting would fail).
+_Avoid_: route (unqualified; Time Tracking's scope routing is a different thing), routing check, approver check
+
+**Approval route preview**:
+Working out approval routes without starting a workflow or writing a request, by the same rules a submission applies. Where the outcome depends on the request itself (how far back it reaches, its amount, category or items), it shows the route for when approval is needed rather than guessing a skip.
+_Avoid_: dry run, simulation
+
+**Prospective requester**:
+Someone who is not an employee yet, previewed as a member of a team with no managers, groups or account of their own.
+_Avoid_: invitee (Organization's word for how they arrive), synthetic employee
+
 ### Deputies
 
 **Deputy decision**:
