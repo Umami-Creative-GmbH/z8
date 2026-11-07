@@ -1,6 +1,11 @@
 import { db } from "@/db";
 import { type Clock, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import {
+	emptyFollowUpDeactivationResult,
+	type FollowUpDeactivationResult,
+	runFollowUpDeactivations,
+} from "@/lib/employee-lifecycle/deactivation/follow-up";
+import {
 	type DepartureTaskDeliveryResult,
 	runDepartureTaskDelivery,
 } from "@/lib/employee-lifecycle/delivery";
@@ -28,6 +33,8 @@ export type EmployeeDepartureMaintenanceResult = {
 		failed: number;
 	};
 	tasks: DepartureTaskDeliveryResult;
+	/** Member removals and SCIM deprovisionings completed as deactivations (#1629). */
+	followUpDeactivations: FollowUpDeactivationResult;
 	errors: Array<{ organizationId: string; departureId: string; error: string }>;
 };
 
@@ -45,6 +52,9 @@ const emptyTasks: DepartureTaskDeliveryResult = {
  * blocks the others. While the release gate is closed no departure runs and
  * only a deactivation's follow-up work (#1440: approval handovers, review
  * notices) is delivered, since deactivation is what runs behind the gate.
+ * Either way, the pending deactivations of member removals and SCIM
+ * deprovisionings are completed first (#1629), each in its own transaction;
+ * a failed one is retried on the next run.
  */
 export async function runEmployeeDepartureMaintenanceWith(deps: {
 	released: boolean;
@@ -55,13 +65,20 @@ export async function runEmployeeDepartureMaintenanceWith(deps: {
 		now: Instant,
 		options: { deactivationOnly: boolean },
 	): Promise<DepartureTaskDeliveryResult>;
+	runFollowUpDeactivations(): Promise<FollowUpDeactivationResult>;
 }): Promise<EmployeeDepartureMaintenanceResult> {
 	const result: EmployeeDepartureMaintenanceResult = {
 		released: deps.released,
 		departures: { processed: 0, effective: 0, blocked: 0, obsolete: 0, notDue: 0, failed: 0 },
 		tasks: emptyTasks,
+		followUpDeactivations: emptyFollowUpDeactivationResult,
 		errors: [],
 	};
+	try {
+		result.followUpDeactivations = await deps.runFollowUpDeactivations();
+	} catch (error) {
+		logger.error({ error }, "Follow-up deactivations could not be listed; retried on the next run");
+	}
 	if (!deps.released) {
 		result.tasks = await deps.deliverTasks(deps.clock.nowInstant(), { deactivationOnly: true });
 		return result;
@@ -126,6 +143,7 @@ export async function runEmployeeDepartureMaintenance(): Promise<EmployeeDepartu
 				now,
 				deactivationOnly,
 			}),
+		runFollowUpDeactivations: () => runFollowUpDeactivations(db),
 	});
 }
 

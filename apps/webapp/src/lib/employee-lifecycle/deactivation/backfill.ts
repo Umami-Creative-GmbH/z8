@@ -18,8 +18,8 @@ import {
 import { currentOrganizationAdminUserIds } from "@/lib/notifications/manager-notice-recipients";
 import { memberIsAccessibleOwnerOrAdmin } from "../authority-sql";
 import { rosterCheckInstant } from "../current-roster";
+import { formerEmployeeWithoutDeactivation } from "./former-employee";
 import {
-	formerEmployeeWithoutDeactivation,
 	planNonInteractiveDeactivation,
 	reportsStillWithoutCurrentManager,
 	runNonInteractiveDeactivation,

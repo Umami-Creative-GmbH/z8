@@ -20,6 +20,7 @@ export function employmentEndingAuditMetadata(
 				employmentPeriodId: ctx.employmentPeriodId,
 			}
 		: {
+				...cause.auditMetadata,
 				reason: cause.reason,
 				deactivationId: cause.deactivationId,
 				employmentPeriodId: ctx.employmentPeriodId,

@@ -31,8 +31,18 @@ import type { LifecycleClient } from "../types";
  * after-commit step, because the transaction may be retried.
  */
 
-/** Audit reason of an admin's deactivation. The backfill (#1442) uses its own. */
-export type DeactivationReason = "employee_deactivated" | "employee_deactivation_backfill";
+/**
+ * Audit reason of an admin's deactivation. The backfill (#1442) uses its own,
+ * and so do the follow-up deactivations of member removal and SCIM
+ * deprovisioning (#1629).
+ */
+export type DeactivationReason =
+	| "employee_deactivated"
+	| "employee_deactivation_backfill"
+	| FollowUpDeactivationReason;
+
+/** Why a follow-up deactivation was recorded (#1629, Organization ADR 0011). */
+export type FollowUpDeactivationReason = "member_removed" | "scim_deprovisioned";
 
 /** What every plan function receives. */
 export type DeactivationPlanContext = {
@@ -56,13 +66,18 @@ export type DeactivationApplyContext = DeactivationPlanContext & {
 	/** The `employee_deactivation` row of this deactivation. */
 	deactivationId: string;
 	reason: DeactivationReason;
+	/**
+	 * More audit context on every row the deactivation writes: a follow-up
+	 * deactivation's system side effect marker and SCIM `connectionId` (#1629).
+	 */
+	auditMetadata?: Readonly<Record<string, unknown>>;
 	audit: AuditTrail;
 };
 
 export function deactivationAuditMetadata(
-	ctx: Pick<DeactivationApplyContext, "reason" | "deactivationId">,
+	ctx: Pick<DeactivationApplyContext, "reason" | "deactivationId" | "auditMetadata">,
 ) {
-	return { reason: ctx.reason, deactivationId: ctx.deactivationId };
+	return { ...ctx.auditMetadata, reason: ctx.reason, deactivationId: ctx.deactivationId };
 }
 
 /** Reads for planning; inside the transaction it is the transaction client. */

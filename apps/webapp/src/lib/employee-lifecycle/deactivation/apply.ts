@@ -36,7 +36,12 @@ export function endEmploymentForDeactivation(
 		timeZone: ctx.organizationTimeZone,
 		actorUserId: ctx.actorUserId,
 		audit: ctx.audit,
-		cause: { kind: "deactivation", deactivationId: ctx.deactivationId, reason: ctx.reason },
+		cause: {
+			kind: "deactivation",
+			deactivationId: ctx.deactivationId,
+			reason: ctx.reason,
+			...(ctx.auditMetadata ? { auditMetadata: ctx.auditMetadata } : {}),
+		},
 	});
 }
 

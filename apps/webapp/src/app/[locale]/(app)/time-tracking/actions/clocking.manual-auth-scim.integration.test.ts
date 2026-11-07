@@ -436,6 +436,17 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 		return rows[0]?.is_active ?? null;
 	}
 
+	/** The deactivations a removal recorded for the user's employee (#1629). */
+	async function recordedDeactivations(userId: string) {
+		const { rows } = await admin.query(
+			`select d.status, d.reason, d.created_by, d.deactivated_at = e.deactivated_at as at_removal
+			 from employee_deactivation d join employee e on e.id = d.employee_id
+			 where e.organization_id = $1 and e.user_id = $2`,
+			[ids.organization, userId],
+		);
+		return rows;
+	}
+
 	async function cleanup() {
 		await admin.query(
 			"delete from scim_group where provisioning_domain_id = $1",
@@ -807,6 +818,15 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			await expect(removal).resolves.toBeTruthy();
 			expect(await membership(ids.employeeUser)).toBeNull();
 			expect(await employeeActive(ids.employeeUser)).toBe(false);
+			// Removal is a deactivation: pending, under the removing owner (#1629).
+			expect(await recordedDeactivations(ids.employeeUser)).toEqual([
+				{
+					status: "pending",
+					reason: "member_removed",
+					created_by: ids.ownerUser,
+					at_removal: true,
+				},
+			]);
 			expect(harness.billingReconciled).toEqual([ids.organization]);
 			const { rows } = await admin.query(
 				"select id from session where user_id = $1",
@@ -884,6 +904,15 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			expect((await leaving).status).toBe(200);
 			expect(await membership(ids.employeeUser)).toBeNull();
 			expect(await employeeActive(ids.employeeUser)).toBe(false);
+			// Leaving is a deactivation too, under the leaver's own user (#1629).
+			expect(await recordedDeactivations(ids.employeeUser)).toEqual([
+				{
+					status: "pending",
+					reason: "member_removed",
+					created_by: ids.employeeUser,
+					at_removal: true,
+				},
+			]);
 			expect(harness.billingReconciled).toEqual([ids.organization]);
 		});
 	});
