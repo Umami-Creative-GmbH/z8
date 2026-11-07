@@ -45,6 +45,34 @@ _Avoid_: active users, active members, all employees
 An employee's date of birth as one organization records it, if any; an employee of several organizations has a separate one in each. Only the employee and org admins see the full date; the rest of the current roster sees its day and month.
 _Avoid_: date of birth, DOB, birth date
 
+### Organization access
+
+**Owner**:
+An org admin who may also make the changes reserved to owners, such as the organization's details, member roles and webhooks.
+_Avoid_: account owner, super admin
+
+**Org admin**:
+A user who may change all of an organization's settings except those reserved to owners. They hold an approved owner or admin membership and are not a former employee of that organization. They need not be an employee there at all.
+_Avoid_: admin (on its own), administrator, settings admin
+
+**Scoped manager**:
+An employee on the current roster who is not an org admin but may change settings for the people they manage: employees, the teams they lead, and the policies, projects and locations assigned to those people.
+_Avoid_: manager tier, team manager
+
+**Workforce admin**:
+An employee whose employee role is admin, without being an org admin. They are a scoped manager over the whole organization.
+_Avoid_: admin (on its own), org admin
+
+**Org member**:
+A user with an approved membership in an organization who is not a former employee of it. An org member may manage their own settings there, such as notification preferences or their own personal data export.
+_Avoid_: member (when it could mean a pending membership), user
+
+**Settings access**:
+The highest of org member, scoped manager, org admin and owner that a user is in one organization, or none. Each setting asks for one of them, and a higher one also qualifies. A former employee has none, whatever their membership.
+_Avoid_: access tier, settings role, permission level
+
+A user's own account, such as their password, picture and name, belongs to no organization, and settings access does not govern it.
+
 ### Teams
 
 **Team**:
