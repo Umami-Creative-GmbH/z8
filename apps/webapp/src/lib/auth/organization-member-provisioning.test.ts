@@ -48,6 +48,12 @@ vi.mock("@/lib/organization/personnel-number-uniqueness", () => ({
 	isPersonnelNumberConflict: () => false,
 }));
 
+// The reactivation of a deactivated employee is covered by reactivation-paths.integration.test.ts (#1628).
+vi.mock("@/lib/employee-lifecycle/reactivation", () => ({
+	reactivateOnReturn: async () => null,
+	completeReturnReactivation: async () => undefined,
+}));
+
 type ProvisioningDb = Parameters<typeof ensureEmployeeForOrganizationMember>[0];
 
 beforeEach(() => {
