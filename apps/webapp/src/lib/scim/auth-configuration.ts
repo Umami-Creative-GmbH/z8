@@ -10,6 +10,7 @@ import {
 	requireAuthTransaction,
 } from "@/lib/auth/auth-transaction";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { recordFollowUpDeactivation } from "@/lib/employee-lifecycle/deactivation/follow-up-record";
 import { releaseDeputyAssignmentsOnDeactivation } from "@/lib/employee-lifecycle/deputy-release";
 import { notifyReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release-runtime";
 import {
@@ -225,7 +226,7 @@ async function reconcileSCIMProjectedUser(
 		{ organizationId: input.provisioningDomainId, userId: input.userId },
 	);
 	await reconcileSCIMLifecycle(input, context, {
-		onEmployeeDeactivated: releaseSCIMDeprovisionedDeputy,
+		onEmployeeDeactivated: deactivateSCIMDeprovisionedEmployee,
 		onEmployeeReactivated: reactivateSCIMReenabledEmployee,
 	});
 	await reconcileSCIMRoleProjection(input, context);
@@ -233,28 +234,33 @@ async function reconcileSCIMProjectedUser(
 
 /**
  * A SCIM-deprovisioned employee stops being anyone's deputy (#1014), in the
- * SCIM transaction. SCIM has no acting user, so the audit names the
- * deprovisioned user, marked as a system side effect from the connection;
- * notifications wait for the commit.
+ * SCIM transaction, and the deprovisioning is recorded as a pending
+ * deactivation the follow-up applies (#1629, Organization ADR 0011). SCIM has
+ * no acting user, so the audit names the deprovisioned user, marked as a
+ * system side effect from the connection; notifications wait for the commit.
  */
-async function releaseSCIMDeprovisionedDeputy(input: {
+async function deactivateSCIMDeprovisionedEmployee(input: {
 	organizationId: string;
 	userId: string;
 	employeeId: string;
 	connectionId: string;
 }) {
-	const released = await releaseDeputyAssignmentsOnDeactivation(
-		requireAuthTransaction("SCIM deputy release"),
-		new AuditTrail(),
-		{
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			actorUserId: input.userId,
-			at: systemClock.nowInstant(),
-			reason: "scim_deprovisioned",
-			metadata: { connectionId: input.connectionId },
-		},
-	);
+	const tx = requireAuthTransaction("SCIM deprovisioning");
+	const released = await releaseDeputyAssignmentsOnDeactivation(tx, new AuditTrail(), {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		actorUserId: input.userId,
+		at: systemClock.nowInstant(),
+		reason: "scim_deprovisioned",
+		metadata: { connectionId: input.connectionId },
+	});
+	await recordFollowUpDeactivation(tx, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		createdBy: input.userId,
+		reason: "scim_deprovisioned",
+		metadata: { connectionId: input.connectionId },
+	});
 	if (released) {
 		await queueAfterAuthTransactionCommit(() => notifyReleasedDeputyAssignments(released));
 	}

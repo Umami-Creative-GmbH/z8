@@ -1,7 +1,5 @@
 import "server-only";
 
-import { and, eq, isNull, or } from "drizzle-orm";
-import { employeeEmploymentPeriod } from "@/db/schema";
 import { previewEmploymentEnding } from "../employment-ending";
 import { planAbsences } from "./absences";
 import { planApprovalDuties } from "./approval-duties";
@@ -63,37 +61,4 @@ export async function planDeactivationConsequences(
 		seatReleased: true,
 		refusals,
 	};
-}
-
-/**
- * The employee's current employment period without writing: the open one,
- * else an unended legacy one. The deactivation transaction resolves (and
- * backfills) it with `resolveCurrentEmploymentPeriod`; the read-only preview
- * uses this, so an employee whose legacy period is not backfilled yet previews
- * with none (D10).
- */
-export async function readCurrentEmploymentPeriodId(
-	reader: Pick<DeactivationReader, "select">,
-	input: { organizationId: string; employeeId: string },
-): Promise<string | null> {
-	const rows = await reader
-		.select({
-			id: employeeEmploymentPeriod.id,
-			status: employeeEmploymentPeriod.status,
-		})
-		.from(employeeEmploymentPeriod)
-		.where(
-			and(
-				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
-				eq(employeeEmploymentPeriod.employeeId, input.employeeId),
-				or(
-					eq(employeeEmploymentPeriod.status, "open"),
-					and(
-						eq(employeeEmploymentPeriod.status, "legacy_unknown"),
-						isNull(employeeEmploymentPeriod.endedAt),
-					),
-				),
-			),
-		);
-	return (rows.find((row) => row.status === "open") ?? rows[0])?.id ?? null;
 }

@@ -6,6 +6,7 @@ import { AuditTrail } from "@/lib/audit-trail";
 import { protectAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { recordFollowUpDeactivation } from "@/lib/employee-lifecycle/deactivation/follow-up-record";
 import {
 	type ReleasedDeputyAssignments,
 	releaseDeputyAssignmentsOnDeactivation,
@@ -118,15 +119,27 @@ export async function revokeRemovedMemberAccessInTransaction(
 	// The removed member stops being anyone's deputy (#1014), audited under the
 	// removing admin; only without a known one, under the removed member's own
 	// user. Either way marked as a system side effect.
+	const actorUserId = options.actorUserId ?? userId;
 	const releasedDeputies = deactivated[0]
 		? await releaseDeputyAssignmentsOnDeactivation(dbClient, new AuditTrail(), {
 				organizationId,
 				employeeId: deactivated[0].id,
-				actorUserId: options.actorUserId ?? userId,
+				actorUserId,
 				at: systemClock.nowInstant(),
 				reason: "member_removed",
 			})
 		: null;
+	// Member removal is a deactivation (#1629, Organization ADR 0011): when this
+	// removal switched the employee off, a pending deactivation at that moment
+	// waits for the follow-up, which applies it in the deactivation's locks.
+	if (deactivated[0]) {
+		await recordFollowUpDeactivation(dbClient, {
+			organizationId,
+			employeeId: deactivated[0].id,
+			createdBy: actorUserId,
+			reason: "member_removed",
+		});
+	}
 
 	return { accessRestored: false, sessionTokens, releasedDeputies };
 }

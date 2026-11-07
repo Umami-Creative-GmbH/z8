@@ -342,6 +342,7 @@
         "reinviteRequired": "Ten pracownik nie jest już członkiem organizacji. Wyślij nowe zaproszenie, aby przywrócić dostęp.",
         "removeAccess": "Usuń dostęp",
         "removeDescription": "Spowoduje to usunięcie członkostwa w organizacji i zakończenie sesji w organizacji. Rejestry czasu pracy, nieobecności, salda, historia zatrudnienia oraz audyty zostaną zachowane.",
+        "removeEndsEmployment": "Usunięcie kończy też zatrudnienie, tak jak dezaktywacja: przyszłe zmiany stają się otwarte, późniejsze nieobecności są anulowane, a uprawnienia wygasają. Aby wybrać zastępczych przełożonych dla podwładnych, użyj zamiast tego opcji „Dezaktywuj”.",
         "removeError": "Nie udało się usunąć dostępu do organizacji",
         "removeSuccess": "Dostęp do organizacji został usunięty",
         "removeTitle": "Usunąć dostęp do organizacji?",

@@ -342,6 +342,7 @@
         "reinviteRequired": "This employee no longer has organization membership. Send a new invitation to restore access.",
         "removeAccess": "Remove access",
         "removeDescription": "This removes organization membership and ends organization sessions. Time records, absences, balances, employment history, and audits are retained.",
+        "removeEndsEmployment": "Removing them also ends their employment, like a deactivation: their future shifts become open, their later absences are cancelled and their grants end. To choose replacement managers for their reports, use Deactivate instead.",
         "removeError": "Failed to remove organization access",
         "removeSuccess": "Organization access removed",
         "removeTitle": "Remove organization access?",

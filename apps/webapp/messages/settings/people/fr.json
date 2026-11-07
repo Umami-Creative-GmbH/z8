@@ -342,6 +342,7 @@
         "reinviteRequired": "Cet employé n'est plus membre de l'organisation. Envoyez une nouvelle invitation pour rétablir l'accès.",
         "removeAccess": "Supprimer l'accès",
         "removeDescription": "Ceci supprime l'adhésion à l'organisation et met fin aux sessions de l'organisation. Les relevés de temps, les absences, les soldes, l'historique d'emploi et les audits sont conservés.",
+        "removeEndsEmployment": "Cela met aussi fin à son emploi, comme une désactivation : ses futurs postes deviennent ouverts, ses absences ultérieures sont annulées et ses autorisations prennent fin. Pour choisir des responsables de remplacement pour ses collaborateurs, utilisez plutôt « Désactiver ».",
         "removeError": "Échec de la suppression de l'accès à l'organisation",
         "removeSuccess": "Accès à l'organisation supprimé",
         "removeTitle": "Supprimer l'accès à l'organisation ?",

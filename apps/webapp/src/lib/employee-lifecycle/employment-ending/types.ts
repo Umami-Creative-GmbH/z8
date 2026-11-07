@@ -19,6 +19,8 @@ export type EmploymentEndingCause =
 			kind: "deactivation";
 			deactivationId: string;
 			reason: DeactivationReason;
+			/** More audit context, e.g. a follow-up deactivation's SCIM `connectionId` (#1629). */
+			auditMetadata?: Readonly<Record<string, unknown>>;
 	  };
 
 /** What planning knows of the cause: a preview runs before the cause has an id. */

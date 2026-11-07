@@ -2178,6 +2178,13 @@
       "when": 1811520000000,
       "tag": "0310_primary_team_membership_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 311,
+      "version": "7",
+      "when": 1811606400000,
+      "tag": "0311_follow_up_deactivation",
+      "breakpoints": true
     }
   ]
 }

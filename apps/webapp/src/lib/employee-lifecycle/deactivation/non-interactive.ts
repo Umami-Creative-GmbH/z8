@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { db as appDb } from "@/db";
-import { employee, employeeManagers } from "@/db/schema";
+import { employee, employeeDeactivation, employeeManagers } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { AuditTrail } from "@/lib/audit-trail";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
@@ -13,6 +13,7 @@ import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { employeeCoordinationGuard, holdGuard } from "@/lib/time-tracking/work-transaction/ranks";
@@ -31,7 +32,8 @@ import { acquireAbsenceCancellationGuards } from "./absences";
 import { applyDeactivationConsequences, endEmploymentForDeactivation } from "./apply";
 import { type DeactivationResult, releasedDeputyAssignments } from "./command";
 import { managerLinkAuthorizationEmployeeIds } from "./manager-links";
-import { planDeactivationConsequences, readCurrentEmploymentPeriodId } from "./plan";
+import { formerEmployeeWithoutDeactivation, readCurrentEmploymentPeriodId } from "./former-employee";
+import { planDeactivationConsequences } from "./plan";
 import type {
 	DeactivationAfterCommit,
 	DeactivationApplied,
@@ -39,6 +41,7 @@ import type {
 	DeactivationPlanContext,
 	DeactivationReader,
 	DeactivationReason,
+	DeactivationWriter,
 	NamedEmployee,
 } from "./types";
 
@@ -97,27 +100,9 @@ export type NonInteractiveDeactivationOutcome =
 			warnings: string[];
 	  }
 	/** Not (or no longer) a former employee without a deactivation: nothing changed. */
-	| { kind: "skipped" };
-
-/**
- * Former employees a non-interactive deactivation applies to: switched off,
- * not offboarded by a departure (effective without a rehire, or pending), and
- * without a deactivation no reactivation has ended. Organization-scoped.
- */
-export function formerEmployeeWithoutDeactivation(organizationId: string | null) {
-	return sql`e.is_active = false
-		${organizationId === null ? sql`` : sql`AND e.organization_id = ${organizationId}`}
-		AND NOT employee_employment_ended_without_rehire(e.organization_id, e.id)
-		AND NOT EXISTS (
-			SELECT 1 FROM employee_departure d
-			WHERE d.organization_id = e.organization_id AND d.employee_id = e.id AND d.status = 'pending'
-		)
-		AND NOT EXISTS (
-			SELECT 1 FROM employee_deactivation x
-			WHERE x.organization_id = e.organization_id AND x.employee_id = e.id
-				AND x.reactivated_at IS NULL
-		)`;
-}
+	| { kind: "skipped" }
+	/** A pending deactivation whose person came back first: closed, nothing ended (#1629). */
+	| { kind: "withdrawn"; deactivationId: string };
 
 async function readFormerEmployee(
 	reader: Pick<Database, "execute">,
@@ -138,7 +123,13 @@ async function readFormerEmployee(
  */
 export async function planNonInteractiveDeactivation(
 	reader: DeactivationReader,
-	input: { organizationId: string; employeeId: string; at: Instant },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		at: Instant;
+		/** The period a pending deactivation recorded (#1629); else the current one. */
+		employmentPeriodId?: string | null;
+	},
 ): Promise<{ context: DeactivationPlanContext; plan: DeactivationPlan }> {
 	const scope = {
 		organizationId: input.organizationId,
@@ -148,7 +139,10 @@ export async function planNonInteractiveDeactivation(
 		...scope,
 		at: input.at,
 		organizationTimeZone: await loadOrganizationTimezone(reader, input.organizationId),
-		employmentPeriodId: await readCurrentEmploymentPeriodId(reader, scope),
+		employmentPeriodId:
+			input.employmentPeriodId !== undefined
+				? input.employmentPeriodId
+				: await readCurrentEmploymentPeriodId(reader, scope),
 		replacementManagers: {},
 		replaceManagers: false,
 	};
@@ -176,7 +170,154 @@ export async function runNonInteractiveDeactivation(
 	input: NonInteractiveDeactivation,
 ): Promise<NonInteractiveDeactivationOutcome> {
 	const { organizationId, employeeId } = input;
-	const outcome = await withAuthorizationMutation(
+	const outcome = await inDeactivationLocks(database, input, async (tx) => {
+		const person = await readFormerEmployee(tx, input);
+		if (!person) return null;
+
+		const consequencesFrom = input.consequencesFrom ?? input.deactivatedAt;
+		if (!consequencesFrom) throw new Error("A deactivation needs an instant to apply from");
+		const { context, plan } = await planNonInteractiveDeactivation(tx, {
+			organizationId,
+			employeeId,
+			at: consequencesFrom,
+		});
+		const requestId = randomUUID();
+		const fingerprint = requestFingerprint(
+			{ userId: input.actorUserId, organizationId },
+			NON_INTERACTIVE_COMMAND,
+			{ employeeId, reason: input.reason },
+		);
+		// For a date not recorded: the instant the consequences apply from.
+		const deactivatedAt = input.deactivatedAt ?? consequencesFrom;
+		const { id: deactivationId } = await insertDeactivation(tx, {
+			organizationId,
+			employeeId,
+			employmentPeriodId: context.employmentPeriodId,
+			deactivatedAt,
+			createdBy: input.actorUserId,
+			reason: input.reason,
+			requestId,
+			requestFingerprint: fingerprint,
+			replacementManagers: {},
+		});
+		return applyRecordedDeactivation(tx, database, {
+			...input,
+			context,
+			plan,
+			deactivationId,
+			requestId,
+			fingerprint,
+			employeeUserId: person.userId,
+			storedDeactivatedAt: deactivatedAt,
+		});
+	});
+	if (!outcome) return { kind: "skipped" };
+	return completeAfterCommit(outcome, { organizationId, employeeId });
+}
+
+/**
+ * Completes a deactivation member removal or SCIM deprovisioning recorded as
+ * pending (#1629), in its own transaction and the same locks as
+ * `runNonInteractiveDeactivation`. Under them it re-reads the row: one that is
+ * no longer pending is done (`skipped`); one whose person came back first (a
+ * reactivation stamped it, or the employee is active again) is closed as
+ * withdrawn and ends nothing. Otherwise the consequences apply from the
+ * recorded removal moment, under the recorded actor, reason, period and audit
+ * context, and the row becomes applied. Never refuses; idempotent.
+ */
+export async function completePendingDeactivation(
+	database: Database,
+	input: { organizationId: string; employeeId: string; deactivationId: string; clock?: Clock },
+): Promise<NonInteractiveDeactivationOutcome> {
+	const { organizationId, employeeId, deactivationId } = input;
+	const outcome = await inDeactivationLocks(database, input, async (tx) => {
+		const [row] = await tx
+			.select({
+				status: employeeDeactivation.status,
+				employmentPeriodId: employeeDeactivation.employmentPeriodId,
+				deactivatedAt: employeeDeactivation.deactivatedAt,
+				createdBy: employeeDeactivation.createdBy,
+				reason: employeeDeactivation.reason,
+				requestId: employeeDeactivation.requestId,
+				requestFingerprint: employeeDeactivation.requestFingerprint,
+				metadata: employeeDeactivation.metadata,
+				reactivatedAt: employeeDeactivation.reactivatedAt,
+			})
+			.from(employeeDeactivation)
+			.where(
+				and(
+					eq(employeeDeactivation.organizationId, organizationId),
+					eq(employeeDeactivation.employeeId, employeeId),
+					eq(employeeDeactivation.id, deactivationId),
+				),
+			)
+			.for("update");
+		if (row?.status !== "pending") return null;
+		const [person] = await tx
+			.select({ userId: employee.userId, current: onCurrentRoster(organizationId) })
+			.from(employee)
+			.where(and(eq(employee.organizationId, organizationId), eq(employee.id, employeeId)))
+			.for("update");
+		if (!person) return null;
+		if (row.reactivatedAt || person.current) {
+			await tx
+				.update(employeeDeactivation)
+				.set({
+					status: "withdrawn",
+					reactivatedAt: row.reactivatedAt ?? dateFromInstant((input.clock ?? systemClock).nowInstant()),
+				})
+				.where(
+					and(
+						eq(employeeDeactivation.organizationId, organizationId),
+						eq(employeeDeactivation.id, deactivationId),
+					),
+				);
+			return "withdrawn" as const;
+		}
+
+		const deactivatedAt = instantFromDate(new Date(row.deactivatedAt));
+		const { context, plan } = await planNonInteractiveDeactivation(tx, {
+			organizationId,
+			employeeId,
+			at: deactivatedAt,
+			employmentPeriodId: row.employmentPeriodId,
+		});
+		return applyRecordedDeactivation(tx, database, {
+			organizationId,
+			employeeId,
+			actorUserId: row.createdBy,
+			reason: row.reason,
+			deactivatedAt,
+			metadata: row.metadata,
+			clock: input.clock,
+			context,
+			plan,
+			deactivationId,
+			requestId: row.requestId,
+			fingerprint: row.requestFingerprint,
+			employeeUserId: person.userId,
+			storedDeactivatedAt: deactivatedAt,
+		});
+	});
+	if (!outcome) return { kind: "skipped" };
+	if (outcome === "withdrawn") return { kind: "withdrawn", deactivationId };
+	return completeAfterCommit(outcome, { organizationId, employeeId });
+}
+
+/**
+ * Runs `body` in its own transaction under the deactivation's locks, in order:
+ * the absence and period submission approval write gates, the exclusive
+ * organization configuration guard, the user guards of the person, their
+ * reports and their managers, the employee coordination guard, then the
+ * organization row.
+ */
+function inDeactivationLocks<T>(
+	database: Database,
+	scope: { organizationId: string; employeeId: string },
+	body: (tx: DeactivationWriter) => Promise<T>,
+): Promise<T> {
+	const { organizationId, employeeId } = scope;
+	return withAuthorizationMutation(
 		{
 			organizationId,
 			organizationWide: true,
@@ -192,133 +333,133 @@ export async function runNonInteractiveDeactivation(
 		async (tx) => {
 			await holdGuard(tx, employeeCoordinationGuard(employeeId));
 			await lockLifecycleOrganization(tx, organizationId);
-			const person = await readFormerEmployee(tx, input);
-			if (!person) return null;
-
-			const consequencesFrom = input.consequencesFrom ?? input.deactivatedAt;
-			if (!consequencesFrom) throw new Error("A deactivation needs an instant to apply from");
-			const { context, plan } = await planNonInteractiveDeactivation(tx, {
-				organizationId,
-				employeeId,
-				at: consequencesFrom,
-			});
-			const requestId = randomUUID();
-			const fingerprint = requestFingerprint(
-				{ userId: input.actorUserId, organizationId },
-				NON_INTERACTIVE_COMMAND,
-				{ employeeId, reason: input.reason },
-			);
-			// For a date not recorded: the instant the consequences apply from.
-			const deactivatedAt = input.deactivatedAt ?? consequencesFrom;
-			const { id: deactivationId } = await insertDeactivation(tx, {
-				organizationId,
-				employeeId,
-				employmentPeriodId: context.employmentPeriodId,
-				deactivatedAt,
-				createdBy: input.actorUserId,
-				reason: input.reason,
-				requestId,
-				requestFingerprint: fingerprint,
-				replacementManagers: {},
-			});
-			await lockEmployee(tx, input);
-			const audit = new AuditTrail();
-			if (input.deactivatedAt) {
-				await recordLeftAt(tx, audit, {
-					...input,
-					at: input.deactivatedAt,
-					deactivationId,
-				});
-			}
-			const applyContext = {
-				...context,
-				actorUserId: input.actorUserId,
-				deactivationId,
-				reason: input.reason,
-				audit,
-			};
-			// The employee is already switched off; what they hold ends first all the same.
-			const ending = await endEmploymentForDeactivation(tx, applyContext);
-			const roster = await applyDeactivationConsequences(tx, applyContext, plan, {
-				clock: input.clock,
-				database,
-			});
-			const applied: DeactivationApplied = {
-				...roster.applied,
-				employmentEnding: ending.applied,
-			};
-			const releasedDeputies = releasedDeputyAssignments(
-				{ organizationId, employeeId },
-				ending.applied.deputyAssignments,
-			);
-			const afterCommit: DeactivationAfterCommit[] = [
-				...ending.afterCommit,
-				...roster.afterCommit,
-				...(releasedDeputies
-					? [() => notifyReleasedDeputyAssignments(releasedDeputies, database)]
-					: []),
-			];
-			const reportsWithoutManager = reportsKeepingTheirLink(plan);
-			const result: DeactivationResult & Record<string, unknown> = {
-				...input.result,
-				deactivationId,
-				employeeId,
-				employeeUserId: person.userId,
-				deactivatedAt: deactivatedAt.toString(),
-				plannerNotice: null,
-				releasedDeputies: releasedDeputies
-					? {
-							eventKey: releasedDeputies.eventKey,
-							assignments: releasedDeputies.assignments,
-						}
-					: null,
-				cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
-				reportsWithoutManager,
-			};
-			await recordDeactivationOutcome(tx, {
-				organizationId,
-				deactivationId,
-				applied,
-				result,
-				// The names a reactivated employee's checklist shows (#1441).
-				plan: checklistPlanSnapshot(plan),
-			});
-			if (input.deactivatedAt && context.employmentPeriodId) {
-				// The employment history event (#1441), only for a recorded instant.
-				await writeReceipt(tx, {
-					actor: { userId: input.actorUserId, organizationId },
-					employeeId,
-					employmentPeriodId: context.employmentPeriodId,
-					departureId: null,
-					revision: null,
-					requestId,
-					fingerprint,
-					kind: "employee_deactivated",
-					occurredAt: dateFromInstant(input.deactivatedAt),
-					result,
-					metadata: { ...input.metadata, deactivationId, reason: input.reason },
-				});
-			}
-			return {
-				deactivationId,
-				plan,
-				applied,
-				reportsWithoutManager,
-				audit,
-				afterCommit,
-			};
+			return body(tx);
 		},
 		database,
 	);
-	if (!outcome) return { kind: "skipped" };
+}
 
+type AppliedInTransaction = {
+	deactivationId: string;
+	plan: DeactivationPlan;
+	applied: DeactivationApplied;
+	reportsWithoutManager: NamedEmployee[];
+	audit: AuditTrail;
+	afterCommit: DeactivationAfterCommit[];
+};
+
+/**
+ * Everything after the ledger row exists: the employee's instant, Employment
+ * ending, the roster areas (`replaceManagers: false`), the outcome and the
+ * history event. The caller holds the locks.
+ */
+async function applyRecordedDeactivation(
+	tx: DeactivationWriter,
+	database: Database,
+	input: NonInteractiveDeactivation & {
+		context: DeactivationPlanContext;
+		plan: DeactivationPlan;
+		deactivationId: string;
+		requestId: string;
+		fingerprint: string;
+		employeeUserId: string;
+		/** The instant on the ledger row. */
+		storedDeactivatedAt: Instant;
+	},
+): Promise<AppliedInTransaction> {
+	const { organizationId, employeeId, context, plan, deactivationId } = input;
+	await lockEmployee(tx, input);
+	const audit = new AuditTrail();
+	if (input.deactivatedAt) {
+		await recordLeftAt(tx, audit, {
+			...input,
+			at: input.deactivatedAt,
+			deactivationId,
+		});
+	}
+	const applyContext = {
+		...context,
+		actorUserId: input.actorUserId,
+		deactivationId,
+		reason: input.reason,
+		auditMetadata: input.metadata,
+		audit,
+	};
+	// The employee is already switched off; what they hold ends first all the same.
+	const ending = await endEmploymentForDeactivation(tx, applyContext);
+	const roster = await applyDeactivationConsequences(tx, applyContext, plan, {
+		clock: input.clock,
+		database,
+	});
+	const applied: DeactivationApplied = {
+		...roster.applied,
+		employmentEnding: ending.applied,
+	};
+	const releasedDeputies = releasedDeputyAssignments(
+		{ organizationId, employeeId },
+		ending.applied.deputyAssignments,
+	);
+	const afterCommit: DeactivationAfterCommit[] = [
+		...ending.afterCommit,
+		...roster.afterCommit,
+		...(releasedDeputies ? [() => notifyReleasedDeputyAssignments(releasedDeputies, database)] : []),
+	];
+	const reportsWithoutManager = reportsKeepingTheirLink(plan);
+	const result: DeactivationResult & Record<string, unknown> = {
+		...input.result,
+		deactivationId,
+		employeeId,
+		employeeUserId: input.employeeUserId,
+		deactivatedAt: input.storedDeactivatedAt.toString(),
+		plannerNotice: null,
+		releasedDeputies: releasedDeputies
+			? {
+					eventKey: releasedDeputies.eventKey,
+					assignments: releasedDeputies.assignments,
+				}
+			: null,
+		cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
+		reportsWithoutManager,
+	};
+	await recordDeactivationOutcome(tx, {
+		organizationId,
+		deactivationId,
+		applied,
+		result,
+		// The names a reactivated employee's checklist shows (#1441).
+		plan: checklistPlanSnapshot(plan),
+	});
+	if (input.deactivatedAt && context.employmentPeriodId) {
+		// The employment history event (#1441), only for a recorded instant.
+		await writeReceipt(tx, {
+			actor: { userId: input.actorUserId, organizationId },
+			employeeId,
+			employmentPeriodId: context.employmentPeriodId,
+			departureId: null,
+			revision: null,
+			requestId: input.requestId,
+			fingerprint: input.fingerprint,
+			kind: "employee_deactivated",
+			occurredAt: dateFromInstant(input.deactivatedAt),
+			result,
+			metadata: { ...input.metadata, deactivationId, reason: input.reason },
+		});
+	}
+	return { deactivationId, plan, applied, reportsWithoutManager, audit, afterCommit };
+}
+
+/** Forwards the audit and runs the after-commit steps; failures become warnings. */
+async function completeAfterCommit(
+	outcome: AppliedInTransaction,
+	scope: { organizationId: string; employeeId: string },
+): Promise<NonInteractiveDeactivationOutcome> {
 	outcome.audit.forwardCommitted();
 	const warnings: string[] = [];
 	for (const step of outcome.afterCommit) {
 		try {
 			await step();
 		} catch (error) {
-			logger.error({ error, organizationId, employeeId }, "After-commit step failed");
+			logger.error({ error, ...scope }, "After-commit step failed");
 			warnings.push(error instanceof Error ? error.message : String(error));
 		}
 	}

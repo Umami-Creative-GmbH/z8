@@ -342,6 +342,7 @@
         "reinviteRequired": "Ovaj zaposlenik više nema članstvo u organizaciji. Pošaljite novu pozivnicu kako biste vratili pristup.",
         "removeAccess": "Ukloni pristup",
         "removeDescription": "Ovim se uklanja članstvo u organizaciji i prekidaju sesije organizacije. Evidencije radnog vremena, odsustva, stanja, historija zaposlenja i revizije se zadržavaju.",
+        "removeEndsEmployment": "Time se završava i zaposlenje, kao kod deaktivacije: buduće smjene postaju otvorene, kasnija odsustva se otkazuju, a ovlaštenja prestaju. Da odaberete zamjenske nadređene za podređene, umjesto toga koristite „Deaktiviraj”.",
         "removeError": "Uklanjanje pristupa organizaciji nije uspjelo",
         "removeSuccess": "Pristup organizaciji je uklonjen",
         "removeTitle": "Ukloniti pristup organizaciji?",

@@ -44,12 +44,19 @@ vi.mock("@/lib/employee-lifecycle/deputy-release", () => ({
 vi.mock("@/lib/employee-lifecycle/deputy-release-runtime", () => ({
 	notifyReleasedDeputyAssignments: vi.fn(),
 }));
+// The pending deactivation is covered by protocol.integration.test.ts (#1629).
+const followUp = vi.hoisted(() => ({ record: vi.fn() }));
+vi.mock("@/lib/employee-lifecycle/deactivation/follow-up-record", () => ({
+	recordFollowUpDeactivation: followUp.record,
+}));
 
 beforeEach(() => {
 	guard.transaction = { marker: "scim-plugin-transaction" };
 	guard.protect.mockReset();
 	deputyRelease.release.mockReset();
 	deputyRelease.release.mockResolvedValue(null);
+	followUp.record.mockReset();
+	followUp.record.mockResolvedValue(null);
 });
 
 const organizationId = "org_target";
@@ -320,6 +327,14 @@ describe("createZ8SCIMPlugin", () => {
 				metadata: { connectionId },
 			},
 		);
+		// Deprovisioning is a deactivation: a pending one waits for the follow-up (#1629).
+		expect(followUp.record).toHaveBeenCalledExactlyOnceWith(guard.transaction, {
+			organizationId,
+			employeeId: "employee_opaque",
+			createdBy: userId,
+			reason: "scim_deprovisioned",
+			metadata: { connectionId },
+		});
 	});
 
 	it("creates an initially inactive user before applying lifecycle and projection state", async () => {

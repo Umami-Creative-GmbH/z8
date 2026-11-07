@@ -342,6 +342,7 @@
         "reinviteRequired": "Este funcionário não possui mais vínculo com a organização. Envie um novo convite para restaurar o acesso.",
         "removeAccess": "Remover acesso",
         "removeDescription": "Isso remove o vínculo com a organização e encerra as sessões da organização. Registros de horas, ausências, saldos, histórico de emprego e auditorias são mantidos.",
+        "removeEndsEmployment": "Isso também encerra o vínculo empregatício, como uma desativação: os turnos futuros ficam em aberto, as ausências posteriores são canceladas e as permissões terminam. Para escolher gestores substitutos para os subordinados, use «Desativar».",
         "removeError": "Falha ao remover o acesso à organização",
         "removeSuccess": "Acesso à organização removido",
         "removeTitle": "Remover acesso à organização?",

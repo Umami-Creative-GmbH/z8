@@ -3,7 +3,8 @@ import "server-only";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { checkLifecycleTarget } from "../lifecycle-target";
-import { planDeactivationConsequences, readCurrentEmploymentPeriodId } from "./plan";
+import { readCurrentEmploymentPeriodId } from "./former-employee";
+import { planDeactivationConsequences } from "./plan";
 import { type DeactivationPreview, type DeactivationReader, toDeactivationPreview } from "./types";
 
 export type DeactivationPreviewInput = {

@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import { employeeDeactivation } from "@/db/schema/employee-lifecycle";
 import { dateFromInstant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
@@ -40,6 +40,9 @@ export async function loadReactivationChecklist(
 			and(
 				eq(employeeDeactivation.organizationId, input.organizationId),
 				eq(employeeDeactivation.employeeId, input.employeeId),
+				// A follow-up deactivation the person came back before (withdrawn,
+				// or pending with the reactivation stamped) ended nothing (#1629).
+				or(eq(employeeDeactivation.status, "applied"), isNull(employeeDeactivation.reactivatedAt)),
 			),
 		)
 		.orderBy(desc(employeeDeactivation.deactivatedAt), desc(employeeDeactivation.createdAt))
