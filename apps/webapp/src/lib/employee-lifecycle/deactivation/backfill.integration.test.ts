@@ -84,6 +84,8 @@ type FirstOrganization = {
 	alreadyBackfilled: SeededEmployee;
 	departed: SeededEmployee;
 	shifts: { beforeLeft: string; afterLeft: string; beforeRun: string; afterRun: string };
+	/** Kai's absence after the run that Fiona still stands in for as deputy. */
+	deputyAbsenceId: string;
 };
 
 type SecondOrganization = {
@@ -253,6 +255,26 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 			beforeRun: await shift(organizationId, subareaId, noEvidence, "2026-10-01"),
 			afterRun: await shift(organizationId, subareaId, noEvidence, "2026-10-30"),
 		};
+		// What Fiona still holds (#1627): the equipment officer grant and a deputy duty.
+		await fixture.pool.query(
+			`insert into equipment_officer_grant (organization_id, employee_id, scope, updated_by)
+			 values ($1, $2, 'all', $3)`,
+			[organizationId, formerManager.employeeId, fixture.ownerUserId],
+		);
+		const category = await fixture.pool.query<{ id: string }>(
+			`insert into absence_category
+			 (organization_id, type, name, requires_approval, counts_against_vacation, deputy_required,
+				is_active, updated_at)
+			 values ($1, 'vacation', 'Vacation with deputy', true, false, true, true, now()) returning id`,
+			[organizationId],
+		);
+		const deputyAbsence = await fixture.pool.query<{ id: string }>(
+			`insert into absence_entry
+			 (employee_id, category_id, start_date, end_date, status, organization_id, deputy_employee_id,
+				updated_at)
+			 values ($1, $2, '2026-11-02', '2026-11-06', 'approved', $3, $4, now()) returning id`,
+			[keepsManager.employeeId, category.rows[0]?.id, organizationId, formerManager.employeeId],
+		);
 
 		// Dora was deactivated through #1440: her deactivation is already recorded.
 		await fixture.pool.query(`update employee set is_active = false where id = $1`, [
@@ -297,6 +319,7 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 			alreadyBackfilled,
 			departed,
 			shifts,
+			deputyAbsenceId: deputyAbsence.rows[0]?.id as string,
 		};
 	}
 
@@ -349,6 +372,14 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 			events: await query(
 				`select employee_id, kind, occurred_at from employee_departure_event
 				 where organization_id = any($1::text[]) order by employee_id`,
+			),
+			officerGrants: await query(
+				`select employee_id, revoked_at from equipment_officer_grant
+				 where organization_id = any($1::text[]) order by employee_id`,
+			),
+			deputies: await query(
+				`select id, deputy_employee_id from absence_entry
+				 where organization_id = any($1::text[]) order by id`,
 			),
 		};
 	}
@@ -441,6 +472,13 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 		]);
 		// From the run instant: both her shifts are past, so both stay hers.
 		expect(fiona?.plan.shifts.shiftsToOpen).toEqual([]);
+		// What she holds ends through Employment ending (#1627).
+		expect(fiona?.plan.employmentEnding.equipment.officerGrantIds).toEqual([
+			first.formerManager.employeeId,
+		]);
+		expect(fiona?.plan.employmentEnding.deputyAssignments.assignments).toEqual([
+			expect.objectContaining({ absenceId: first.deputyAbsenceId }),
+		]);
 		const nils = a.employees.find((entry) => entry.name === "Nils Nodate");
 		// Not recorded: from the run instant.
 		expect(nils?.plan.shifts.shiftsToOpen.map((entry) => entry.shiftId)).toEqual([
@@ -564,6 +602,18 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 		expect(await shiftOwner(first.shifts.beforeRun)).toBe(first.noEvidence.employeeId);
 		expect(await shiftOwner(first.shifts.afterRun)).toBeNull();
 
+		// Her equipment responsibility ends and she no longer stands in as deputy (#1627).
+		const grant = await fixture.pool.query<{ revoked_at: Date | null }>(
+			`select revoked_at from equipment_officer_grant where organization_id = $1 and employee_id = $2`,
+			[first.organizationId, first.formerManager.employeeId],
+		);
+		expect(grant.rows).toEqual([{ revoked_at: expect.any(Date) }]);
+		const deputy = await fixture.pool.query<{ deputy_employee_id: string | null }>(
+			`select deputy_employee_id from absence_entry where id = $1`,
+			[first.deputyAbsenceId],
+		);
+		expect(deputy.rows).toEqual([{ deputy_employee_id: null }]);
+
 		// Every change is audited with the backfill's reason and its deactivation.
 		const audits = (
 			await fixture.pool.query<{ action: string; performed_by: string; metadata: string }>(
@@ -582,6 +632,7 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 				"manager.primary_changed", // Clara: Mara becomes primary
 				"shift.unassigned", // Nils's shift after the run
 				"employee.updated", // Fiona's recovered left-on date
+				"absence.deputy_changed", // Fiona no longer Kai's deputy
 			].toSorted(),
 		);
 		for (const row of audits) {
