@@ -13,7 +13,7 @@ departure when it is scheduled (or the command instant for *Offboard now*). At
 the cutoff access ends, the running timer is closed at the cutoff, the paid seat
 is released, the employee's expense officer, payroll access and personnel file
 officer grants are revoked, all driving authorizations and held driving licence verifier
-grants end, the employee's kiosk badge and kiosk fob stop working, and the employee's pending approval duties are handed over. The
+grants end, the employee's kiosk badge and kiosk fob stop working, the employee's report share links are revoked, and the employee's pending approval duties are handed over. The
 departure is *effective* even while follow-up work (billing, session sign-out,
 timer post-processing, approval handover, notifications) is still pending or has
 failed; follow-up never decides whether someone has left. A **rehire** starts a
@@ -518,6 +518,20 @@ employee's personal data export (Integrations, `kiosk_fobs`: serial number,
 registered at and where, ended at and why); kiosk badges are not. Fob rows are
 deleted with the employee's record and with the organization (foreign-key
 cascades).
+
+## Report share links
+
+When the departure takes effect, every report share link the employee created
+that was live at the cutoff is revoked in the departure's transaction (#1622,
+Organization ADR 0006, through `revokeShareLinksOfCreator`), as at a
+deactivation: `revoked_at` at the cutoff (never before the link was created),
+column reason `creator_lost_access`, `revoked_by` the departure's initiator,
+and the snapshot deleted. Each is audited as `report_share_link.auto_revoked`
+under the initiator with metadata
+`{ reason: "employee_departure", departureId, employmentPeriodId }`. Links that
+expired before the cutoff are left to the expiry sweep, and links of other
+employees are untouched. A retried departure revokes nothing twice. A rehire
+never revives a link.
 
 ## Absence deputies
 
