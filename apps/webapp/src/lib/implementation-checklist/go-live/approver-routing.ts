@@ -57,12 +57,15 @@ import {
 } from "@/lib/approvals/workflow/start-workflow";
 import type { ApprovalWorkflowType } from "@/lib/approvals/workflow/types";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { compareInstants, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { MANAGER_ROLES } from "@/lib/effect/services/shift-request.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	type ChangePolicyCandidate,
+	resolveChangePolicy,
+} from "@/lib/time-tracking/change-policy/resolution";
 import { loadCollectsPeriodSubmissions } from "@/lib/time-tracking/period-submissions/settings";
-import { readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { resolveReportReviewer } from "@/lib/travel-expenses/report-reviewer-routing";
 import type { GoLiveAsOf, GoLiveMember } from "./types";
 
@@ -133,9 +136,7 @@ export type ApproverUnroutableCause =
 	/** The kind can't be submitted in the organization's approval mode (support only). */
 	| { code: "approval_mode_unsupported" }
 	/** Nobody may decide shift requests. */
-	| { code: "no_decider" }
-	/** More than one change policy applies at one level, so manual work is refused. */
-	| { code: "change_policy_ambiguous" };
+	| { code: "no_decider" };
 
 /** One stage of a would-be route. Later canonical stages activate only once earlier ones decide. */
 export interface ApproverRouteStage {
@@ -224,24 +225,11 @@ type Requester = {
 	invitee: boolean;
 };
 
-type ChangePolicyRow = {
-	assignmentId: string;
-	level: "organization" | "team" | "employee";
-	employeeId: string | null;
-	teamId: string | null;
-	assignmentActive: boolean;
-	effectiveFrom: Instant | null;
-	effectiveUntil: Instant | null;
-	policyActive: boolean;
+type ChangePolicyRow = ChangePolicyCandidate & {
 	selfServiceDays: number;
 	approvalDays: number;
 	noApprovalRequired: boolean;
 };
-
-type ChangePolicyFacts = Pick<
-	ChangePolicyRow,
-	"selfServiceDays" | "approvalDays" | "noApprovalRequired"
->;
 
 /**
  * Loads what routing the given members reads, once for the organization. `db` must be a
@@ -276,7 +264,6 @@ export async function loadApproverRouting(
 		organizationRow,
 		deciderRows,
 		periodSubmissionGateOpen,
-		manualAdmission,
 	] = await inOrder([
 		() =>
 			readApprovalAuthoritySnapshots(db as never, organizationId, [
@@ -339,11 +326,13 @@ export async function loadApproverRouting(
 				.select({
 					assignmentId: changePolicyAssignment.id,
 					level: changePolicyAssignment.assignmentType,
+					organizationId: changePolicyAssignment.organizationId,
 					employeeId: changePolicyAssignment.employeeId,
 					teamId: changePolicyAssignment.teamId,
 					assignmentActive: changePolicyAssignment.isActive,
 					effectiveFrom: changePolicyAssignment.effectiveFrom,
 					effectiveUntil: changePolicyAssignment.effectiveUntil,
+					policyOrganizationId: changePolicy.organizationId,
 					policyActive: changePolicy.isActive,
 					selfServiceDays: changePolicy.selfServiceDays,
 					approvalDays: changePolicy.approvalDays,
@@ -403,8 +392,6 @@ export async function loadApproverRouting(
 				organizationId,
 				workflowType: "period_submission",
 			}),
-		// The manual entry path the organization records through decides its change policy.
-		() => readAppendAdmission(db, organizationId),
 	]);
 
 	const changePolicies: ChangePolicyRow[] = changePolicyRows.map((row) => ({
@@ -412,6 +399,17 @@ export async function loadApproverRouting(
 		effectiveFrom: row.effectiveFrom ? instantFromDate(row.effectiveFrom) : null,
 		effectiveUntil: row.effectiveUntil ? instantFromDate(row.effectiveUntil) : null,
 	}));
+	// Invitees have no employee assignment: only their draft team's and the organization's apply.
+	const changePolicyOf = (requester: Requester) =>
+		resolveChangePolicy(
+			changePolicies,
+			{
+				organizationId,
+				employeeId: requester.invitee ? null : requester.id,
+				teamId: requester.teamId,
+			},
+			asOf.instant,
+		);
 
 	const offKinds: ApproverGoLiveKind[] = [];
 	if (!collectsPeriods) offKinds.push("period_submission");
@@ -889,7 +887,7 @@ export async function loadApproverRouting(
 		if (kind === "time_correction") {
 			// Edits the policy allows go through directly, but deletion requests and date-changing
 			// edits always go to approval, so a correction still needs an approver (U1).
-			const policy = correctionChangePolicy(changePolicies, requester, asOf.instant);
+			const policy = changePolicyOf(requester);
 			directChange = !policy
 				? "change_policy_no_policy"
 				: policy.noApprovalRequired
@@ -898,15 +896,7 @@ export async function loadApproverRouting(
 						? "change_policy_within_self_service"
 						: undefined;
 		} else {
-			// Manual work follows the path the organization records it through: the legacy entry
-			// resolves as `ChangePolicyService`, the append path as `resolveEffectiveChangePolicy`.
-			const policy =
-				manualAdmission === "append"
-					? manualChangePolicy(changePolicies, requester, asOf.instant)
-					: correctionChangePolicy(changePolicies, requester, asOf.instant);
-			if (policy === "ambiguous") {
-				return { status: "unroutable", cause: { code: "change_policy_ambiguous" }, variants: [] };
-			}
+			const policy = changePolicyOf(requester);
 			if (!policy) return { status: "skipped", reason: "change_policy_no_policy", variants: [] };
 			if (policy.noApprovalRequired) {
 				return { status: "skipped", reason: "change_policy_trust_mode", variants: [] };
@@ -1250,67 +1240,4 @@ function expenseAmountVariants(policies: readonly ApprovalPolicyDraft[]): number
 	const highest = thresholds.at(-1);
 	if (highest !== undefined) amounts.push(highest + 1);
 	return [...new Set(amounts)];
-}
-
-function matchesLevel(row: ChangePolicyRow, level: ChangePolicyRow["level"], requester: Requester) {
-	if (row.level !== level) return false;
-	if (level === "employee") return !requester.invitee && row.employeeId === requester.id;
-	if (level === "team") return requester.teamId !== null && row.teamId === requester.teamId;
-	return true;
-}
-
-const CHANGE_POLICY_LEVELS = ["employee", "team", "organization"] as const;
-
-function startedBy(row: ChangePolicyRow, at: Instant) {
-	return row.effectiveFrom === null || compareInstants(row.effectiveFrom, at) <= 0;
-}
-
-/**
- * The change policy `ChangePolicyService.resolvePolicy` applies: to time corrections, and to manual
- * work on the legacy manual entry. Employee, then primary team, then organization; at each level
- * the first active assignment counts if its policy is active. It matches only assignments with no
- * end date.
- */
-function correctionChangePolicy(
-	rows: readonly ChangePolicyRow[],
-	requester: Requester,
-	at: Instant,
-): ChangePolicyFacts | null {
-	for (const level of CHANGE_POLICY_LEVELS) {
-		const row = rows.find(
-			(candidate) =>
-				matchesLevel(candidate, level, requester) &&
-				candidate.assignmentActive &&
-				startedBy(candidate, at) &&
-				candidate.effectiveUntil === null,
-		);
-		if (row?.policyActive) return row;
-	}
-	return null;
-}
-
-/**
- * The change policy manual work applies on the append path (`resolveEffectiveChangePolicy`):
- * active, effective and not expired, employee then team then organization; two candidates at the
- * deciding level are ambiguous.
- */
-function manualChangePolicy(
-	rows: readonly ChangePolicyRow[],
-	requester: Requester,
-	at: Instant,
-): ChangePolicyFacts | null | "ambiguous" {
-	for (const level of CHANGE_POLICY_LEVELS) {
-		const candidates = rows.filter(
-			(candidate) =>
-				matchesLevel(candidate, level, requester) &&
-				candidate.assignmentActive &&
-				candidate.policyActive &&
-				startedBy(candidate, at) &&
-				(candidate.effectiveUntil === null || compareInstants(candidate.effectiveUntil, at) > 0),
-		);
-		if (candidates.length > 1) return "ambiguous";
-		const [row] = candidates;
-		if (row) return row;
-	}
-	return null;
 }

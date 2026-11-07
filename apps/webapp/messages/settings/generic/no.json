@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: kan ikke sendes inn i denne organisasjonens godkjenningsmodus. Kontakt brukerstøtte: # ansatt} other {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: kan ikke sendes inn i denne organisasjonens godkjenningsmodus. Kontakt brukerstøtte: # ansatte}}",
-          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: mer enn én endringspolicy gjelder, så oppføringer avvises: # ansatt} other {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: mer enn én endringspolicy gjelder, så oppføringer avvises: # ansatte}}",
           "correctionDirectNoPolicy": "{count, plural, one {Tidskorrigeringer: # ansatt redigerer egne oppføringer direkte, fordi ingen endringspolicy gjelder. Sletteforespørsler og datoendringer går fortsatt til en godkjenner, så de kontrolleres.} other {Tidskorrigeringer: # ansatte redigerer egne oppføringer direkte, fordi ingen endringspolicy gjelder. Sletteforespørsler og datoendringer går fortsatt til en godkjenner, så de kontrolleres.}}",
           "correctionDirectSelfService": "{count, plural, one {Tidskorrigeringer: # ansatt redigerer egne oppføringer direkte innenfor endringspolicyens dager for egenbetjening, og kan ikke endre eldre oppføringer. Sletteforespørsler og datoendringer går fortsatt til en godkjenner, så de kontrolleres.} other {Tidskorrigeringer: # ansatte redigerer egne oppføringer direkte innenfor endringspolicyens dager for egenbetjening, og kan ikke endre eldre oppføringer. Sletteforespørsler og datoendringer går fortsatt til en godkjenner, så de kontrolleres.}}",
           "correctionDirectTrustMode": "{count, plural, one {Tidskorrigeringer: # ansatt redigerer egne oppføringer direkte, fordi endringspolicyen er i tillitsmodus. Sletteforespørsler og datoendringer går fortsatt til en godkjenner, så de kontrolleres.} other {Tidskorrigeringer: # ansatte redigerer egne oppføringer direkte, fordi endringspolicyen er i tillitsmodus. Sletteforespørsler og datoendringer går fortsatt til en godkjenner, så de kontrolleres.}}",
           "fixApprovalPolicies": "Gå gjennom godkjenningspolicyer",
-          "fixChangePolicies": "Gå gjennom endringspolicyer",
           "fixExpenseApprover": "Angi en utgiftsgodkjenner",
           "fixManagers": "Tildel ledere",
           "fixTeamManager": "Angi teamets leder",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "De kan ikke sendes inn i denne organisasjonens godkjenningsmodus. Kontakt kundestøtte.",
             "badge": "Kan ikke rutes",
-            "changePolicyAmbiguous": "Mer enn én endringspolicy gjelder for dem, så oppføringene deres blir avvist.",
             "invalidPolicies": "Godkjenningspolicyene kan ikke tas i bruk.",
             "managerDeparted": "Lederen deres har sluttet, og ingen fungerer som stedfortreder.",
             "noDecider": "Ingen leder eller administrator kan avgjøre dem.",

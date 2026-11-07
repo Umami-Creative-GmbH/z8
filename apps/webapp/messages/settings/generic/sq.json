@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: nuk mund të dorëzohen në modalitetin e miratimit të kësaj organizate. Kontaktoni mbështetjen: # punonjës} }",
-          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: zbatohet më shumë se një politikë ndryshimi, kështu që regjistrimet refuzohen: # punonjës} }",
           "correctionDirectNoPolicy": "{count, plural, one {Korrigjimet e orarit: # punonjës modifikon regjistrimet e veta drejtpërdrejt, sepse nuk zbatohet asnjë politikë ndryshimi. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.} other {Korrigjimet e orarit: # punonjës modifikojnë regjistrimet e tyre drejtpërdrejt, sepse nuk zbatohet asnjë politikë ndryshimi. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.}}",
           "correctionDirectSelfService": "{count, plural, one {Korrigjimet e orarit: # punonjës modifikon regjistrimet e veta drejtpërdrejt brenda ditëve të vetëshërbimit sipas politikës së ndryshimit dhe nuk mund të ndryshojë ato më të vjetrat. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.} other {Korrigjimet e orarit: # punonjës modifikojnë regjistrimet e tyre drejtpërdrejt brenda ditëve të vetëshërbimit sipas politikës së ndryshimit dhe nuk mund të ndryshojnë ato më të vjetrat. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.}}",
           "correctionDirectTrustMode": "{count, plural, one {Korrigjimet e orarit: # punonjës modifikon regjistrimet e veta drejtpërdrejt, sepse politika e tij e ndryshimit është në modalitet besimi. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.} other {Korrigjimet e orarit: # punonjës modifikojnë regjistrimet e tyre drejtpërdrejt, sepse politika e tyre e ndryshimit është në modalitet besimi. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.}}",
           "fixApprovalPolicies": "Rishikoni politikat e miratimit",
-          "fixChangePolicies": "Rishikoni politikat e ndryshimit",
           "fixExpenseApprover": "Caktoni një miratues shpenzimesh",
           "fixManagers": "Caktoni menaxherë",
           "fixTeamManager": "Caktoni menaxherin e ekipit",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "Nuk mund të dorëzohen në modalitetin e miratimit të kësaj organizate. Kontaktoni mbështetjen.",
             "badge": "Nuk mund të përcillet",
-            "changePolicyAmbiguous": "Për ta zbatohet më shumë se një politikë ndryshimi, prandaj regjistrimet e tyre refuzohen.",
             "invalidPolicies": "Politikat e miratimit nuk mund të zbatohen.",
             "managerDeparted": "Menaxheri i tyre është larguar dhe askush nuk e zëvendëson.",
             "noDecider": "Asnjë menaxher ose administrator nuk mund të vendosë për to.",

@@ -106,8 +106,8 @@ Inside that transaction, `actions/manual-command-submission.ts`:
    eligibility (active,
    bookable, assigned), category eligibility (current effective set at the instant), and the
    change policy: organization-scoped, active, effective and not yet expired at the instant,
-   employee → team → organization, with more than one candidate at the deciding level failing
-   as `policy_ambiguous`. Age is inclusive calendar days from the end's local date to the
+   employee → team → organization, resolved by `resolveChangePolicy` (more than one candidate
+   at the deciding level is a broken invariant and throws, #1598). Age is inclusive calendar days from the end's local date to the
    instant's local date in the effective zone.
 5. Manual approval intent: authorized on-behalf entries and owner/admin self entries are
    direct; no policy and trust mode are direct; within self-service is direct; within the

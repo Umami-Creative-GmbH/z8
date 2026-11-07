@@ -472,8 +472,8 @@ describe("approver go-live check (PostgreSQL)", () => {
 		);
 	});
 
-	it("resolves manual work's change policy on the path the organization records it through", async () => {
-		// The legacy manual entry ignores an assignment with an end date; the append path honours it.
+	it("applies a change policy with a future end date to manual work on either entry path", async () => {
+		// #1598: the legacy manual entry used to ignore any assignment with an end date.
 		const manager = await seed({ role: "manager" });
 		await managedBy(manager.employeeId, owner.employeeId);
 		await changePolicy({ target: { type: "organization" } });
@@ -484,15 +484,28 @@ describe("approver go-live check (PostgreSQL)", () => {
 			noApprovalRequired: true,
 			effectiveUntil: "2026-12-31T23:00:00Z",
 		});
+		const trustMode = { status: "skipped", reason: "change_policy_trust_mode" };
 
-		expect(await kindStatus(subject.employeeId, "manual_time_submission")).toMatchObject({
-			status: "routed",
-		});
+		expect(await kindStatus(subject.employeeId, "manual_time_submission")).toMatchObject(trustMode);
 
 		await appendPathActive();
-		expect(await kindStatus(subject.employeeId, "manual_time_submission")).toMatchObject({
-			status: "skipped",
-			reason: "change_policy_trust_mode",
+		expect(await kindStatus(subject.employeeId, "manual_time_submission")).toMatchObject(trustMode);
+	});
+
+	it("notes a time correction governed by a team assignment with a future end date", async () => {
+		const manager = await seed({ role: "manager" });
+		await managedBy(manager.employeeId, owner.employeeId);
+		const trusted = await createTeam("Trusted");
+		await changePolicy({
+			target: { type: "team", teamId: trusted },
+			noApprovalRequired: true,
+			effectiveUntil: "2026-12-31T23:00:00Z",
+		});
+		const subject = await seed({ teamId: trusted });
+		await managedBy(subject.employeeId, manager.employeeId);
+
+		expect(await kindStatus(subject.employeeId, "time_correction")).toMatchObject({
+			directChange: "change_policy_trust_mode",
 		});
 	});
 

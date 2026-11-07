@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: nie można przesłać w trybie zatwierdzania tej organizacji. Skontaktuj się z pomocą techniczną: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: nie można przesłać w trybie zatwierdzania tej organizacji. Skontaktuj się z pomocą techniczną: # pracowników}}",
-          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: ma zastosowanie więcej niż jedna zasada zmian, dlatego wpisy są odrzucane: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: ma zastosowanie więcej niż jedna zasada zmian, dlatego wpisy są odrzucane: # pracowników}}",
           "correctionDirectNoPolicy": "{count, plural, one {Korekty czasu pracy: # pracownik edytuje własne wpisy bezpośrednio, ponieważ nie ma zastosowania żadna zasada zmian. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.} other {Korekty czasu pracy: # pracowników edytuje własne wpisy bezpośrednio, ponieważ nie ma zastosowania żadna zasada zmian. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.}}",
           "correctionDirectSelfService": "{count, plural, one {Korekty czasu pracy: # pracownik edytuje własne wpisy bezpośrednio w ramach dni samoobsługi określonych w zasadzie zmian i nie może zmieniać starszych wpisów. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.} other {Korekty czasu pracy: # pracowników edytuje własne wpisy bezpośrednio w ramach dni samoobsługi określonych w zasadzie zmian i nie może zmieniać starszych wpisów. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.}}",
           "correctionDirectTrustMode": "{count, plural, one {Korekty czasu pracy: # pracownik edytuje własne wpisy bezpośrednio, ponieważ jego zasada zmian działa w trybie zaufania. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.} other {Korekty czasu pracy: # pracowników edytuje własne wpisy bezpośrednio, ponieważ ich zasada zmian działa w trybie zaufania. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.}}",
           "fixApprovalPolicies": "Przejrzyj zasady zatwierdzania",
-          "fixChangePolicies": "Przejrzyj zasady zmian",
           "fixExpenseApprover": "Ustaw osobę zatwierdzającą wydatki",
           "fixManagers": "Przypisz menedżerów",
           "fixTeamManager": "Ustaw menedżera zespołu",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "Nie można ich przesłać w bieżącym trybie zatwierdzania obowiązującym w organizacji. Skontaktuj się z pomocą techniczną.",
             "badge": "Nie można przekierować",
-            "changePolicyAmbiguous": "Dotyczy ich więcej niż jedna zasada wprowadzania zmian, dlatego ich wpisy są odrzucane.",
             "invalidPolicies": "Nie można zastosować zasad zatwierdzania.",
             "managerDeparted": "Ich menedżer opuścił organizację i nikt go nie zastępuje.",
             "noDecider": "Żaden menedżer ani administrator nie może o nich zadecydować.",
