@@ -9,7 +9,8 @@ import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
 import type { ZodType } from "zod";
 import { member, user } from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { employee, team, teamPermissions } from "@/db/schema";
+import type { TeamPermissions } from "@/lib/authorization";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
 	type AnyAppError,
@@ -30,6 +31,7 @@ import {
 	resolveSettingsAccessTier,
 	type SettingsAccessTier,
 } from "@/lib/settings-access";
+import { getScopedTeamFlags } from "../teams/team-scope";
 import { canAccessManagedEmployeeSettingsTarget } from "./employee-scope";
 
 const settingsAccessLogger = createLogger("EmployeeSettingsAccess");
@@ -543,6 +545,57 @@ export function getManagedEmployeeIdsForSettingsActor(actor: {
 
 		return new Set(
 			managedEmployees.map((managedEmployee) => managedEmployee.id),
+		);
+	});
+}
+
+/**
+ * The teams the actor may pick, by the team settings' scope rule: every team for
+ * an org admin (null), else the teams they may manage members or settings of.
+ */
+export function getManageableTeamIdsForSettingsActor(actor: {
+	accessTier: SettingsAccessTier;
+	organizationId: string;
+	currentEmployee: Pick<typeof employee.$inferSelect, "id"> | null;
+}) {
+	return Effect.gen(function* () {
+		if (actor.accessTier === "orgAdmin") {
+			return null as Set<string> | null;
+		}
+
+		const currentEmployeeId = actor.currentEmployee?.id;
+		if (!currentEmployeeId) {
+			return new Set<string>();
+		}
+
+		const dbService = yield* DatabaseService;
+		const permissionRows = yield* dbService.query(
+			"getManageableTeamIdsForSettingsActor",
+			async () => {
+				return await dbService.db.query.teamPermissions.findMany({
+					where: and(
+						eq(teamPermissions.employeeId, currentEmployeeId),
+						eq(teamPermissions.organizationId, actor.organizationId),
+					),
+				});
+			},
+		);
+		const permissions: TeamPermissions = { orgWide: null, byTeamId: new Map() };
+		for (const permissionRow of permissionRows) {
+			if (permissionRow.teamId) {
+				permissions.byTeamId.set(permissionRow.teamId, permissionRow);
+			}
+		}
+
+		return new Set(
+			[...permissions.byTeamId.keys()].filter((teamId) => {
+				const flags = getScopedTeamFlags({
+					accessTier: actor.accessTier,
+					permissions,
+					teamId,
+				});
+				return flags.canManageMembers || flags.canManageSettings;
+			}),
 		);
 	});
 }

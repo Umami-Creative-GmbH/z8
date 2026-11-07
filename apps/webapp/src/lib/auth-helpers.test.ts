@@ -239,10 +239,13 @@ describe("getPrincipalContext", () => {
 			[{ id: "member-1", organizationId: "org-1", role: "member" }],
 			[
 				{
-					id: "employee-1",
-					organizationId: "org-1",
-					role: "employee",
-					teamId: null,
+					employee: {
+						id: "employee-1",
+						organizationId: "org-1",
+						role: "employee",
+						teamId: null,
+					},
+					hasOrganizationAccess: true,
 				},
 			],
 			[],
@@ -285,10 +288,13 @@ describe("getPrincipalContext", () => {
 			[],
 			[
 				{
-					id: "employee-1",
-					organizationId: "org-1",
-					role: "admin",
-					teamId: null,
+					employee: {
+						id: "employee-1",
+						organizationId: "org-1",
+						role: "admin",
+						teamId: null,
+					},
+					hasOrganizationAccess: true,
 				},
 			],
 		];

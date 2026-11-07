@@ -205,7 +205,11 @@ function resolveTeamSettingsActor(
 		yield* authService.getSession(organizationId);
 		const membershipRecord = yield* dbService.query("getOrganizationMembership", async () => {
 			return await dbService.db.query.member.findFirst({
-				where: and(eq(member.userId, sessionUser.id), eq(member.organizationId, organizationId)),
+				where: and(
+					eq(member.userId, sessionUser.id),
+					eq(member.organizationId, organizationId),
+					eq(member.status, "approved"),
+				),
 			});
 		});
 		const typedMembershipRecord = membershipRecord as OrganizationMembership | null;
@@ -223,15 +227,23 @@ function resolveTeamSettingsActor(
 
 		const employeeRecord = yield* dbService.query("getOrganizationEmployee", async () => {
 			return await dbService.db.query.employee.findFirst({
-				where: and(
-					eq(employee.userId, sessionUser.id),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-				),
+				where: and(eq(employee.userId, sessionUser.id), eq(employee.organizationId, organizationId)),
 				with: options?.includeEmployeeUser ? { user: true } : undefined,
 			});
 		});
 		const typedEmployeeRecord = employeeRecord as TeamSettingsActor["employeeRecord"];
+
+		// A former employee has no settings access, whatever their membership.
+		if (typedEmployeeRecord?.isActive === false) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Organization access is inactive",
+					userId: sessionUser.id,
+					resource: "team",
+					action: "read",
+				}),
+			);
+		}
 
 		if (typedMembershipRecord.role === "owner" || typedMembershipRecord.role === "admin") {
 			return {

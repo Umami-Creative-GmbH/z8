@@ -34,6 +34,7 @@ import {
 } from "@/lib/time-tracking/work-transaction";
 import {
 	getEmployeeSettingsActorContext,
+	getManageableTeamIdsForSettingsActor,
 	getManagedEmployeeIdsForSettingsActor,
 	requireOrgAdminEmployeeSettingsAccess,
 } from "../employees/employee-action-utils";
@@ -1714,10 +1715,12 @@ export async function getTeamsForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<TeamListItem[]>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		yield* authService.getSession();
-
-		const dbService = yield* DatabaseService;
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getTeamsForAssignment:actor",
+		});
+		const dbService = actor.dbService;
+		const manageableTeamIds = yield* getManageableTeamIdsForSettingsActor(actor);
 
 		const teams = yield* dbService.query("getTeams", async () =>
 				dbService.db
@@ -1726,7 +1729,7 @@ export async function getTeamsForAssignment(
 						name: team.name,
 					})
 					.from(team)
-					.where(eq(team.organizationId, organizationId))
+					.where(eq(team.organizationId, actor.organizationId))
 					.orderBy(asc(team.name)),
 			).pipe(Effect.mapError(
 				() =>
@@ -1737,7 +1740,11 @@ export async function getTeamsForAssignment(
 					}),
 			));
 
-		return teams;
+		if (!manageableTeamIds) {
+			return teams;
+		}
+
+		return teams.filter((teamRecord) => manageableTeamIds.has(teamRecord.id));
 	});
 
 	return runServerActionSafe(effect);
@@ -1750,10 +1757,12 @@ export async function getEmployeesForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<EmployeeListItem[]>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		yield* authService.getSession();
-
-		const dbService = yield* DatabaseService;
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getEmployeesForAssignment:actor",
+		});
+		const dbService = actor.dbService;
+		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
 
 		const employees = yield* dbService.query("getEmployees", async () =>
 				dbService.db
@@ -1765,7 +1774,9 @@ export async function getEmployeesForAssignment(
 					})
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
-					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
+					.where(
+						and(eq(employee.organizationId, actor.organizationId), eq(employee.isActive, true)),
+					)
 					.orderBy(asc(user.firstName), asc(user.lastName)),
 			).pipe(Effect.mapError(
 				() =>
@@ -1776,7 +1787,11 @@ export async function getEmployeesForAssignment(
 					}),
 			));
 
-		return employees;
+		if (!managedEmployeeIds) {
+			return employees;
+		}
+
+		return employees.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id));
 	});
 
 	return runServerActionSafe(effect);

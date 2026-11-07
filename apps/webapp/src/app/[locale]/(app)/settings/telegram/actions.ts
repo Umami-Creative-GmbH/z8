@@ -333,14 +333,34 @@ export async function disconnectTelegramBot(organizationId: string): Promise<Act
 // USER LINKING
 // ============================================
 
+/** True when the caller is `userId` and an org member of `organizationId`. */
+async function isOwnOrgMemberLink(userId: string, organizationId: string) {
+	const authContext = await requireUser();
+	if (authContext.user.id !== userId) {
+		return false;
+	}
+
+	try {
+		await runActiveOrganizationActionActorCheck({
+			userId,
+			organizationId,
+			requiredRole: "member",
+			message: "Only org members can link Telegram",
+			resource: "telegramUserLink",
+			action: "manage",
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export async function getUserTelegramLink(
 	userId: string,
 	organizationId: string,
 ): Promise<ActionResult<TelegramUserLink | null>> {
 	try {
-		// Verify the caller is the user requesting their own link status
-		const authContext = await requireUser();
-		if (authContext.user.id !== userId) {
+		if (!(await isOwnOrgMemberLink(userId, organizationId))) {
 			return { success: false, error: "Unauthorized" };
 		}
 
@@ -374,8 +394,7 @@ export async function generateTelegramLinkCode(
 	organizationId: string,
 ): Promise<ActionResult<{ code: string; expiresAt: string }>> {
 	try {
-		const authContext = await requireUser();
-		if (authContext.user.id !== userId) {
+		if (!(await isOwnOrgMemberLink(userId, organizationId))) {
 			return { success: false, error: "Unauthorized" };
 		}
 
@@ -405,8 +424,7 @@ export async function unlinkTelegramAccount(
 	organizationId: string,
 ): Promise<ActionResult> {
 	try {
-		const authContext = await requireUser();
-		if (authContext.user.id !== userId) {
+		if (!(await isOwnOrgMemberLink(userId, organizationId))) {
 			return { success: false, error: "Unauthorized" };
 		}
 

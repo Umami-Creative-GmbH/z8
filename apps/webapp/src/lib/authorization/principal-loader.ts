@@ -35,7 +35,7 @@ export async function loadOrganizationPrincipalContext(
 	input: { userId: string; organizationId: string },
 ): Promise<PrincipalContext> {
 	const { userId, organizationId } = input;
-	const [[memberRecord], [employeeRecord]] = await Promise.all([
+	const [[memberRecord], [employeeRow]] = await Promise.all([
 		executor
 			.select()
 			.from(member)
@@ -48,23 +48,28 @@ export async function loadOrganizationPrincipalContext(
 			)
 			.limit(1),
 		executor
-			.select()
+			.select({
+				employee,
+				hasOrganizationAccess: employeeHasOrganizationAccess(),
+			})
 			.from(employee)
 			.where(
 				and(
 					eq(employee.userId, userId),
 					eq(employee.organizationId, organizationId),
-					employeeHasOrganizationAccess(),
 				),
 			)
 			.limit(1),
 	]);
+	// A former employee keeps no organization role, whatever their membership.
+	const hasSettingsAccess =
+		memberRecord != null && employeeRow?.hasOrganizationAccess !== false;
 
 	return loadOrganizationPrincipalForIdentity(executor, {
 		userId,
 		organizationId,
-		membershipRole: memberRecord?.role ?? "",
-		employee: memberRecord ? (employeeRecord ?? null) : null,
+		membershipRole: hasSettingsAccess ? memberRecord.role : "",
+		employee: hasSettingsAccess ? (employeeRow?.employee ?? null) : null,
 	});
 }
 

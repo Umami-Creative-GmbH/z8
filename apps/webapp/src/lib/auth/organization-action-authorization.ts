@@ -13,7 +13,8 @@ import { hasOrganizationRole } from "./organization-role";
 export function requireActiveOrganizationActionActor(input: {
 	userId: string;
 	organizationId: string;
-	requiredRole: "admin" | "owner";
+	/** "member" admits any org member: an approved membership, not a former employee. */
+	requiredRole: "member" | "admin" | "owner";
 	message: string;
 	resource: string;
 	action: string;
@@ -66,7 +67,8 @@ export function requireActiveOrganizationActionActor(input: {
 
 		const hasCapability =
 			membership != null &&
-			(hasOrganizationRole(membership.role, "owner") ||
+			(input.requiredRole === "member" ||
+				hasOrganizationRole(membership.role, "owner") ||
 				(input.requiredRole === "admin" &&
 					hasOrganizationRole(membership.role, "admin")));
 		if (!hasCapability || employeeRecord?.isActive === false) {
