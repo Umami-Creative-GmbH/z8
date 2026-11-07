@@ -219,9 +219,10 @@ export async function liveShareLinksOfCreator(
 }
 
 /**
- * Revokes every live link of a creator who lost all report access at once, in
- * the caller's transaction: a deactivation (#1440, decision D6), which the
- * sweep would otherwise only catch later. The column reason stays
+ * Revokes every link of a creator who lost all report access at once that is
+ * live at `now`, in the caller's transaction: a deactivation (#1440, decision
+ * D6) or a departure at its cutoff (#1622), which the sweep would otherwise
+ * only catch later. The column reason stays
  * `creator_lost_access`; `auditMetadata` names the change (decision D5). The
  * caller forwards the audit entries after its commit. Returns the revoked ids.
  */
@@ -240,10 +241,12 @@ export async function revokeShareLinksOfCreator(
 		.orderBy(reportShareLink.createdAt, reportShareLink.id);
 	const revoked: string[] = [];
 	for (const link of links) {
+		// A cutoff in the past never dates the revocation before the link was created.
+		const createdAt = instantFromDate(link.createdAt);
 		const done = await markRevoked(tx, audit, link, {
 			reason: "creator_lost_access",
 			revokedBy: input.actorUserId,
-			now: input.now,
+			now: Temporal.Instant.compare(createdAt, input.now) > 0 ? createdAt : input.now,
 			auditMetadata: input.auditMetadata,
 		});
 		if (done) revoked.push(link.id);
