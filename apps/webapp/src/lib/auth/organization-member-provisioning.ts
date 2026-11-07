@@ -11,6 +11,11 @@ import { AuditAction } from "@/lib/audit-logger";
 import { AuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import {
+	completeReturnReactivation,
+	type ReturnReactivation,
+	reactivateOnReturn,
+} from "@/lib/employee-lifecycle/reactivation";
 import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
 import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
@@ -319,6 +324,8 @@ export async function ensureEmployeeForOrganizationMember(
 		memberRole: OrganizationMemberRole;
 		targetTeamId?: string | null;
 		invitationId?: string | null;
+		/** Who brought the member back, for a reactivation; defaults to the member. */
+		actorUserId?: string;
 	},
 ) {
 	// Entries reach the external audit service only once the transaction committed.
@@ -367,6 +374,7 @@ export async function ensureEmployeeForOrganizationMember(
 			),
 		});
 		let provisionedEmployee: typeof existingEmployee;
+		let reactivation: ReturnReactivation | null = null;
 		// Old drafts may hold a blank number: that is no number (#881).
 		const draftPersonnelNumber = normalizePersonnelNumber(draft?.employeeNumber);
 
@@ -460,6 +468,16 @@ export async function ensureEmployeeForOrganizationMember(
 					}
 				}
 
+				// Coming back after a deactivation is a reactivation by whoever
+				// brought them back: the accepting user, or the added user when
+				// no actor is known (#1628).
+				reactivation = await reactivateOnReturn(tx, {
+					organizationId: input.organizationId,
+					employeeId: updatedEmployee.id,
+					actorUserId: input.actorUserId ?? input.userId,
+					at: systemClock.nowInstant(),
+				});
+
 				provisionedEmployee = updatedEmployee;
 			} else {
 				provisionedEmployee = existingEmployee;
@@ -536,6 +554,7 @@ export async function ensureEmployeeForOrganizationMember(
 
 		return {
 			provisionedEmployee,
+			reactivation,
 			acceptedDraftCleanup:
 				input.mode === "membershipAccepted" && draft
 					? {
@@ -547,6 +566,9 @@ export async function ensureEmployeeForOrganizationMember(
 		};
 	});
 	audit.forwardCommitted();
+	if (transactionResult.reactivation) {
+		await completeReturnReactivation(transactionResult.reactivation);
+	}
 
 	if (transactionResult.acceptedDraftCleanup) {
 		await consumeEmployeeInvitationDraft(

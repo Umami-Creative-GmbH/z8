@@ -1,12 +1,19 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { employee } from "@/db/schema";
-import { AuditAction } from "@/lib/audit-logger";
-import type { AuditTrail } from "@/lib/audit-trail";
+import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { AuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { onCurrentRoster } from "./current-roster";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
-import { markDeactivationReactivated, requestFingerprint, writeReceipt } from "./receipts";
+import {
+	markDeactivationReactivated,
+	readOpenDeactivation,
+	requestFingerprint,
+	writeReceipt,
+} from "./receipts";
 import type { LifecycleClient } from "./types";
 
 /**
@@ -37,7 +44,6 @@ export async function executeReactivation(
 	command: ReactivationCommand,
 	audit: AuditTrail,
 ): Promise<{ kind: "not_found" } | { kind: "reactivated"; deactivationIds: string[] }> {
-	const scope = { organizationId: command.organizationId, employeeId: command.employeeId };
 	const [updated] = await tx
 		.update(employee)
 		.set({ isActive: true })
@@ -47,6 +53,88 @@ export async function executeReactivation(
 		.returning({ id: employee.id });
 	if (!updated) return { kind: "not_found" };
 
+	return { kind: "reactivated", deactivationIds: await recordReactivation(tx, command, audit) };
+}
+
+export type ReturnReactivation = {
+	organizationId: string;
+	employeeId: string;
+	actorUserId: string;
+	requestId: string;
+	metadata: Record<string, string>;
+	audit: AuditTrail;
+};
+
+/**
+ * Every way back after a deactivation is a Reactivation (#1628, Organization
+ * ADR 0011): joining with an invite code, approval of a pending member,
+ * provisioning and SCIM re-enable. Each path switches the employee on itself,
+ * then calls this in the same transaction. When the employee is on the current
+ * roster again (the migration 0073 guard keeps a departed employee inactive
+ * until a rehire) and a deactivation is open, it is reactivated like Reactivate does,
+ * by whoever brought them back; `metadata` (SCIM: the `connectionId`) goes
+ * into its audit entries. Returns null when there was nothing to reactivate;
+ * otherwise the caller runs `completeReturnReactivation` after commit.
+ */
+export async function reactivateOnReturn(
+	tx: LifecycleClient,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		at: Instant;
+		metadata?: Record<string, string>;
+	},
+): Promise<ReturnReactivation | null> {
+	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
+	const [current] = await tx
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(eq(employee.id, input.employeeId), onCurrentRoster(input.organizationId, employee, input.at)),
+		);
+	if (!current) return null;
+	if (!(await readOpenDeactivation(tx, scope))) return null;
+
+	const requestId = randomUUID();
+	const metadata = input.metadata ?? {};
+	const audit = new AuditTrail();
+	await recordReactivation(tx, { ...input, requestId, metadata }, audit);
+	return { ...scope, actorUserId: input.actorUserId, requestId, metadata, audit };
+}
+
+/**
+ * The after-commit part of a reactivation on return: its audit entries reach
+ * the external audit service, and the `employee.reactivated` entry the
+ * employment history shows once (it carries the reactivation's request id) and
+ * the deactivation backfill reads as a switch-on.
+ */
+export async function completeReturnReactivation(reactivation: ReturnReactivation): Promise<void> {
+	reactivation.audit.forwardCommitted();
+	await logAudit({
+		action: AuditAction.EMPLOYEE_REACTIVATED,
+		actorId: reactivation.actorUserId,
+		employeeId: reactivation.employeeId,
+		targetId: reactivation.employeeId,
+		targetType: "employee",
+		organizationId: reactivation.organizationId,
+		changes: { isActive: { from: false, to: true } },
+		metadata: { ...reactivation.metadata, reactivationRequestId: reactivation.requestId },
+		timestamp: new Date(),
+	});
+}
+
+/**
+ * The ledger part of a reactivation, once the employee is switched on: the
+ * open deactivation ends, its follow-up closes and the history event is
+ * recorded. Returns the reactivated deactivations.
+ */
+async function recordReactivation(
+	tx: LifecycleClient,
+	command: ReactivationCommand & { metadata?: Record<string, string> },
+	audit: AuditTrail,
+): Promise<string[]> {
+	const scope = { organizationId: command.organizationId, employeeId: command.employeeId };
 	// The open deactivation ends; its pending handovers stop (#1440). Nothing else changes.
 	const deactivationIds = await markDeactivationReactivated(tx, {
 		...scope,
@@ -60,6 +148,7 @@ export async function executeReactivation(
 		deactivationIds,
 		actorUserId: command.actorUserId,
 		at: command.at,
+		metadata: command.metadata ?? {},
 	});
 
 	const period = await resolveCurrentEmploymentPeriod(tx, scope);
@@ -82,7 +171,7 @@ export async function executeReactivation(
 		});
 	}
 
-	return { kind: "reactivated", deactivationIds };
+	return deactivationIds;
 }
 
 const FOLLOW_UP_CLOSED_REASON = "employee_reactivated";
@@ -103,6 +192,7 @@ async function closeDeactivationFollowUp(
 		deactivationIds: readonly string[];
 		actorUserId: string;
 		at: Instant;
+		metadata: Record<string, string>;
 	},
 ): Promise<void> {
 	if (input.deactivationIds.length === 0) return;
@@ -137,6 +227,7 @@ async function closeDeactivationFollowUp(
 			targetId: row.id,
 			employeeId: input.employeeId,
 			metadata: {
+				...input.metadata,
 				reason: FOLLOW_UP_CLOSED_REASON,
 				deactivationId: row.deactivation_id,
 				followUp: row.followUp,
