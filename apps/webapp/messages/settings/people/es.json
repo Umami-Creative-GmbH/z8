@@ -342,6 +342,7 @@
         "reinviteRequired": "Este empleado ya no tiene membresía en la organización. Envía una nueva invitación para restaurar el acceso.",
         "removeAccess": "Eliminar acceso",
         "removeDescription": "Esto elimina la membresía de la organización y finaliza las sesiones de la organización. Los registros de tiempo, ausencias, saldos, historial laboral y auditorías se conservan.",
+        "removeEndsEmployment": "Esto también pone fin a su empleo, como una desactivación: sus turnos futuros quedan abiertos, sus ausencias posteriores se cancelan y sus permisos finalizan. Para elegir responsables sustitutos para sus subordinados, use «Desactivar» en su lugar.",
         "removeError": "Error al eliminar el acceso a la organización",
         "removeSuccess": "Acceso a la organización eliminado",
         "removeTitle": "¿Eliminar el acceso a la organización?",

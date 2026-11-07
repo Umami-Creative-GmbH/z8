@@ -342,6 +342,7 @@
         "reinviteRequired": "Questo dipendente non fa più parte dell'organizzazione. Invia un nuovo invito per ripristinare l'accesso.",
         "removeAccess": "Rimuovi accesso",
         "removeDescription": "Questa operazione rimuove l'appartenenza all'organizzazione e termina le sessioni dell'organizzazione. I registri delle ore, le assenze, i saldi, la cronologia lavorativa e i controlli verranno conservati.",
+        "removeEndsEmployment": "In questo modo termina anche il suo rapporto di lavoro, come con una disattivazione: i suoi turni futuri diventano aperti, le assenze successive vengono annullate e le autorizzazioni terminano. Per scegliere responsabili sostitutivi per i suoi collaboratori, usa invece «Disattiva».",
         "removeError": "Impossibile rimuovere l'accesso all'organizzazione",
         "removeSuccess": "Accesso all'organizzazione rimosso",
         "removeTitle": "Rimuovere l'accesso all'organizzazione?",

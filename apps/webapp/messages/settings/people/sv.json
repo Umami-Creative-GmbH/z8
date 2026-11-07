@@ -342,6 +342,7 @@
         "reinviteRequired": "Denna medarbetare har inte längre något organisationsmedlemskap. Skicka en ny inbjudan för att återställa åtkomsten.",
         "removeAccess": "Ta bort åtkomst",
         "removeDescription": "Detta tar bort organisationsmedlemskapet och avslutar organisationssessioner. Tidsregistreringar, frånvaro, saldon, anställningshistorik och granskningar behålls.",
+        "removeEndsEmployment": "Detta avslutar också anställningen, precis som en inaktivering: framtida pass blir öppna, senare frånvaro avbokas och behörigheter upphör. Om du vill välja ersättande chefer för medarbetarna, använd ”Inaktivera” i stället.",
         "removeError": "Det gick inte att ta bort organisationsåtkomst",
         "removeSuccess": "Organisationsåtkomst har tagits bort",
         "removeTitle": "Ta bort organisationsåtkomst?",

@@ -342,6 +342,7 @@
         "reinviteRequired": "Denne ansatte har ikke lenger organisasjonsmedlemskap. Send en ny invitasjon for å gjenopprette tilgangen.",
         "removeAccess": "Fjern tilgang",
         "removeDescription": "Dette fjerner organisasjonsmedlemskap og avslutter organisasjonsøkter. Timeregistreringer, fravær, saldoer, ansettelseshistorikk og revisjonslogger beholdes.",
+        "removeEndsEmployment": "Dette avslutter også ansettelsen, som en deaktivering: fremtidige vakter blir åpne, senere fravær kanselleres og tillatelser opphører. For å velge erstatningsledere for de ansatte under vedkommende, bruk «Deaktiver» i stedet.",
         "removeError": "Kunne ikke fjerne organisasjonstilgang",
         "removeSuccess": "Organisasjonstilgang fjernet",
         "removeTitle": "Fjerne organisasjonstilgang?",

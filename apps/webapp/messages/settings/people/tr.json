@@ -342,6 +342,7 @@
         "reinviteRequired": "Bu çalışanın artık kuruluş üyeliği bulunmuyor. Erişimi geri yüklemek için yeni bir davetiye gönderin.",
         "removeAccess": "Erişimi kaldır",
         "removeDescription": "Bu işlem kuruluş üyeliğini kaldırır ve kuruluş oturumlarını sonlandırır. Zaman kayıtları, izinler, bakiyeler, istihdam geçmişi ve denetimler korunur.",
+        "removeEndsEmployment": "Bu işlem, devre dışı bırakmada olduğu gibi istihdamı da sona erdirir: gelecekteki vardiyalar açık hale gelir, sonraki izinler iptal edilir ve yetkiler sona erer. Bağlı çalışanlar için yerine geçecek yöneticileri seçmek için bunun yerine „Devre dışı bırak” seçeneğini kullanın.",
         "removeError": "Kuruluş erişimi kaldırılamadı",
         "removeSuccess": "Kuruluş erişimi kaldırıldı",
         "removeTitle": "Kuruluş erişimi kaldırılsın mı?",

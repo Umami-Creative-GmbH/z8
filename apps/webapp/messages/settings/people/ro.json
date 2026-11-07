@@ -342,6 +342,7 @@
         "reinviteRequired": "Acest angajat nu mai este membru al organizației. Trimiteți o nouă invitație pentru a restabili accesul.",
         "removeAccess": "Elimină accesul",
         "removeDescription": "Această acțiune elimină calitatea de membru al organizației și încheie sesiunile organizației. Înregistrările orelor, absențele, soldurile, istoricul angajării și jurnalele de audit sunt păstrate.",
+        "removeEndsEmployment": "Astfel se încheie și angajarea, ca la o dezactivare: turele viitoare devin deschise, absențele ulterioare sunt anulate, iar permisiunile încetează. Pentru a alege manageri înlocuitori pentru subordonați, folosiți în schimb „Dezactivează”.",
         "removeError": "Nu s-a putut elimina accesul la organizație",
         "removeSuccess": "Accesul la organizație a fost eliminat",
         "removeTitle": "Eliminați accesul la organizație?",

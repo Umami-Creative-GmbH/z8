@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -58,6 +58,9 @@ const approvedEnglish = {
 	"settings.employees.lifecycle.removeAccess": "Remove access",
 	"settings.employees.lifecycle.removeDescription":
 		"This removes organization membership and ends organization sessions. Time records, absences, balances, employment history, and audits are retained.",
+	// Member removal is a deactivation (#1629, Organization ADR 0011).
+	"settings.employees.lifecycle.removeEndsEmployment":
+		"Removing them also ends their employment, like a deactivation: their future shifts become open, their later absences are cancelled and their grants end. To choose replacement managers for their reports, use Deactivate instead.",
 	"settings.employees.lifecycle.removeError":
 		"Failed to remove organization access",
 	"settings.employees.lifecycle.removeSuccess": "Organization access removed",
@@ -73,6 +76,7 @@ const coreDescriptions = [
 	"settings.employees.lifecycle.reactivateDescription",
 	"settings.employees.lifecycle.reinviteRequired",
 	"settings.employees.lifecycle.removeDescription",
+	"settings.employees.lifecycle.removeEndsEmployment",
 ] as const;
 
 const supersededKeys = [
@@ -147,6 +151,21 @@ describe("employee lifecycle i18n catalogs", () => {
 				getPlaceholders(message as string),
 				`${locale}: ${key} placeholders`,
 			).toEqual(getPlaceholders(english));
+		}
+	});
+
+	it("translates the removal's employment ending in every locale of the namespace (#1629)", () => {
+		const key = "settings.employees.lifecycle.removeEndsEmployment";
+		const files = readdirSync(messagesDir).filter((file) => file.endsWith(".json"));
+		expect(files.length).toBeGreaterThanOrEqual(18);
+		for (const file of files) {
+			const catalog = JSON.parse(readFileSync(join(messagesDir, file), "utf8"));
+			const message = getMessage(catalog, key);
+			expect(message, `${file}: ${key}`).toEqual(expect.any(String));
+			expect(message, `${file}: ${key}`).not.toBe("");
+			if (file !== "en.json") {
+				expect(message, `${file}: ${key}`).not.toBe(approvedEnglish[key]);
+			}
 		}
 	});
 

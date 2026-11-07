@@ -342,6 +342,7 @@
         "reinviteRequired": "Ky punonjës nuk ka më anëtarësim në organizatë. Dërgoni një ftesë të re për të rikthyer qasjen.",
         "removeAccess": "Hiq qasjen",
         "removeDescription": "Kjo heq anëtarësimin në organizatë dhe përfundon seancat e organizatës. Regjistrimet e kohës, mungesat, balancat, historiku i punësimit dhe auditimet ruhen.",
+        "removeEndsEmployment": "Kjo përfundon edhe punësimin, si një çaktivizim: turnet e ardhshme bëhen të hapura, mungesat e mëvonshme anulohen dhe autorizimet përfundojnë. Për të zgjedhur menaxherë zëvendësues për vartësit, përdorni në vend të kësaj „Çaktivizo”.",
         "removeError": "Heqja e qasjes në organizatë dështoi",
         "removeSuccess": "Qasja në organizatë u hoq",
         "removeTitle": "Të hiqet qasja në organizatë?",

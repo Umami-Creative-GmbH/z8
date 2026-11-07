@@ -342,6 +342,7 @@
         "reinviteRequired": "Dä Mitarbeiter hät kei Zuegang meh zur Organisation. Sänd en neui Iiladig, zum de Zuegang wieder härzstelle.",
         "removeAccess": "Zuegang entzieh",
         "removeDescription": "Das entfernt d'Mitgliedschaft i de Organisation und beändet alli Sitzige. Ziiterfassige, Absänz, Saldi, Aastelligsverlauf und Prüfige blibed erhalte.",
+        "removeEndsEmployment": "Damit hört au d'Aastellig uf, wie bi ere Deaktivierig: Künftigi Schichte wärded offe, spöteri Abwäseheite wärded storniert und Berächtigunge höred uf. Zum Ersatzvorgsetzti für d'Mitarbeitende uswähle, bruuch stattdesse „Deaktivieren“.",
         "removeError": "Zuegang zur Organisation hät nöd chönne entzoge werde",
         "removeSuccess": "Zuegang zur Organisation isch entzoge worde",
         "removeTitle": "Zuegang zur Organisation entzieh?",
