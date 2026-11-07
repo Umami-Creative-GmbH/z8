@@ -252,8 +252,12 @@ The organization's unique identifier for one individually tracked physical item,
 _Avoid_: serial number, assignment identifier
 
 **Equipment recovery**:
-A record of physically receiving equipment previously recorded as lost, with its received condition. It supplements rather than erases the original loss decision.
+A record of physically receiving equipment previously closed as lost or return waived, with its received condition. It supplements rather than erases the original decision.
 _Avoid_: loss reversal, return waiver, new assignment
+
+**Return settlement**:
+How an equipment assignment's issued quantity is accounted for: physically returned, closed as lost or return waived, recovered, or still an outstanding return. Each unit counts once, so a recovery never lowers the outstanding return a second time.
+_Avoid_: return balance, stock balance, settlement (alone)
 
 **Equipment correction**:
 A reasoned amendment to an equipment record that preserves what was recorded before and identifies the correcting person.
