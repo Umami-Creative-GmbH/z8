@@ -207,8 +207,25 @@ Its participants run in this fixed order (`participants.ts`):
   driving authorizations, cancelled document requests (linked to the personnel
   file) and share links have items; kiosk fobs, deputy assignments and
   equipment returns have none.
-- **Causes.** Deactivation and its backfill use it today. The departure still
-  ends holdings in `transition.ts` until it moves onto the module (#1626).
+- **Causes.** Departure, deactivation and the deactivation backfill all call
+  it; none calls a participant directly.
+  - *Departure* (#1626, `transition.ts`): once the departure is re-authorized,
+    it write-locks the employee row and calls `endEmployment` with cause
+    `{ kind: "departure", departureId, mode }`, `at` the cutoff, `now` the
+    processing instant, its frozen timezone and its initiator as actor; then
+    it marks the departure effective, closes the period and switches the
+    employee off. It keeps everything that is its own: the authority check,
+    the employment windows, clock-out, the approval handover capture, the
+    follow-up reviews and tasks. Its audit rows commit with it and are not
+    forwarded (the transaction may be retried). It has no after-commit hook:
+    the deputy participant queues durable `notify_deputy_release` departure
+    tasks instead, and a participant returning an after-commit step makes the
+    departure fail. A retried or obsolete transition is a no-op before it
+    gets here, and every participant ends only what is still held.
+  - *Deactivation* and its backfill: see Deactivation.
+
+  `departure-employment-ending.integration.test.ts` runs a departure and a
+  deactivation against the same holdings and checks both end the same.
 
 ## Deactivation
 
@@ -500,10 +517,11 @@ cutoff through the employment access rule, also while departure processing is
 delayed; a scheduled departure ends nothing early, and an edit or cancellation
 before the cutoff is followed. When the departure takes effect, the fobs of the
 ended period are ended in the departure's transaction (#1509, through
-`endKioskFobLinks`), with `ended_at` at the cutoff (never before the fob was
+Employment ending), with `ended_at` at the cutoff (never before the fob was
 registered), reason `departure` and `ended_by_user_id` the departure's initiator,
 audited as `kiosk_fob.ended` under the initiator with metadata
-`{ reason: "departure", departureId, employmentPeriodId }`. An old departure
+`{ reason: "employee_departure", departureId, employmentPeriodId }` (before
+#1626 the metadata reason was `departure`). An old departure
 retry never touches a fob of a later period.
 
 A link whose employee no longer has access but whose departure was not
@@ -523,7 +541,7 @@ cascades).
 
 When the departure takes effect, every report share link the employee created
 that was live at the cutoff is revoked in the departure's transaction (#1622,
-Organization ADR 0006, through `revokeShareLinksOfCreator`), as at a
+Organization ADR 0006, through Employment ending), as at a
 deactivation: `revoked_at` at the cutoff (never before the link was created),
 column reason `creator_lost_access`, `revoked_by` the departure's initiator,
 and the snapshot deleted. Each is audited as `report_share_link.auto_revoked`

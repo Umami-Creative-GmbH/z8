@@ -16,25 +16,16 @@ import {
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { lockDrivingLicenceOrganization } from "@/lib/organization/driving-licence/checks";
-import { endDrivingLicenceEmployment } from "@/lib/organization/driving-licence/lifecycle";
-import { endEquipmentEmployment } from "@/lib/organization/equipment/lifecycle";
-import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
-import { cancelDocumentRequestsForDeparture } from "@/lib/personnel-file/document-request-store";
-import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/officer-grant-store";
-import { revokeShareLinksOfCreator } from "@/lib/projects/report-share/report-share-links";
-import { revokeKioskBadgesForDeparture } from "@/lib/time-tracking/kiosk/badge-store";
-import { endKioskFobLinks } from "@/lib/time-tracking/kiosk/fob-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
-import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { captureApprovalHandoverDuties } from "./approval-handover";
-import { releaseDeputyAssignments } from "./deputy-release";
+import { endEmployment } from "./employment-ending";
 import { enqueueReviewNotifications } from "./notifications";
 import { evaluateDepartureAuthority } from "./owner-invariant";
 import type {
 	DepartureClockOutPort,
 	DepartureClockOutResult,
 	DepartureIdentity,
+	DepartureMode,
 	DepartureScope,
 	ExecuteDepartureResult,
 	LifecycleClient,
@@ -118,20 +109,12 @@ export async function executeDepartureInTransaction(
 		};
 	}
 
-	await lockDrivingLicenceOrganization(tx, identity.organizationId);
-	await endDrivingLicenceEmployment(
-		tx,
-		identity,
-		departure.createdBy,
+	await endHoldings(tx, identity, {
 		cutoff,
 		now,
-	);
-	await endEquipmentEmployment(tx, {
-		...identity,
-		actorUserId: departure.createdBy,
-		cutoff,
-		timezone: departure.timezone,
+		timeZone: departure.timezone,
 		mode: departure.mode,
+		actorUserId: departure.createdBy,
 	});
 	await tx.execute(sql`
 		UPDATE employee_departure
@@ -160,50 +143,6 @@ export async function executeDepartureInTransaction(
 		WHERE organization_id = ${identity.organizationId} AND id = ${identity.employeeId}
 			AND is_active = true
 	`);
-	await revokeHeldAccessGrants(tx, identity, departure.createdBy);
-	// Open and submitted document requests end with the employment (#1408), silently.
-	await cancelDocumentRequestsForDeparture(tx, {
-		organizationId: identity.organizationId,
-		employeeId: identity.employeeId,
-		actorUserId: departure.createdBy,
-		departureId: identity.departureId,
-		employmentPeriodId: identity.employmentPeriodId,
-		now,
-	});
-	await revokeKioskBadgesForDeparture(tx, new AuditTrail(), {
-		...identity,
-		actorUserId: departure.createdBy,
-		cutoff,
-	});
-	// The fob stopped selecting the employee at the cutoff (#1509); only the
-	// ending period's links, so a retry never ends one registered after a rehire.
-	await endKioskFobLinks(tx, new AuditTrail(), {
-		organizationId: identity.organizationId,
-		employeeId: identity.employeeId,
-		employmentPeriodId: identity.employmentPeriodId,
-		reason: "departure",
-		at: cutoff,
-		actorUserId: departure.createdBy,
-		auditMetadata: {
-			departureId: identity.departureId,
-			employmentPeriodId: identity.employmentPeriodId,
-		},
-	});
-	// Report share links live at the cutoff end with the employment (#1622,
-	// Organization ADR 0006), as at a deactivation; a re-run finds none live.
-	await revokeShareLinksOfCreator(tx, new AuditTrail(), {
-		organizationId: identity.organizationId,
-		creatorEmployeeId: identity.employeeId,
-		now: cutoff,
-		actorUserId: departure.createdBy,
-		auditMetadata: {
-			reason: "employee_departure",
-			departureId: identity.departureId,
-			employmentPeriodId: identity.employmentPeriodId,
-		},
-	});
-	await releaseHeldDeputyAssignments(tx, identity, cutoff, departure.createdBy);
-
 	const clockResult = await closeRunningPeriod(scope, identity, clockOut, {
 		cutoff,
 		actorUserId: departure.createdBy,
@@ -343,82 +282,58 @@ async function closeEmploymentWindows(
 }
 
 /**
- * Revokes the expense officer, payroll access and personnel file officer
- * grants the employee holds (#750, #866), audited under the departure's initiator and naming the departure. A
- * rehire never restores them. Grants of other officers that name the employee
- * stay, so the departed employee's reports can still be reimbursed.
+ * Ends what the employee holds through Employment ending (#1626, spec #1590),
+ * at the cutoff and naming the departure, as a deactivation does. Runs under
+ * the lifecycle locks with the employee row write-locked, before the period
+ * closes and the employee is switched off: equipment still sees their teams
+ * and open period. Audit rows commit with the departure under its initiator;
+ * they are not forwarded to the external audit service, because the
+ * transaction may be retried. A departure has no after-commit hook: its
+ * external effects are durable departure tasks (the deputy notices), so a
+ * participant that returns an after-commit step fails here instead of being
+ * silently dropped.
  */
-async function revokeHeldAccessGrants(
+async function endHoldings(
 	tx: LifecycleClient,
 	identity: DepartureIdentity,
-	actorUserId: string,
+	input: {
+		cutoff: Instant;
+		now: Instant;
+		timeZone: string;
+		mode: DepartureMode;
+		actorUserId: string;
+	},
 ) {
-	const auditMetadata = {
-		reason: "employee_departure",
-		departureId: identity.departureId,
+	await tx
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, identity.organizationId),
+				eq(employee.id, identity.employeeId),
+			),
+		)
+		.for("update");
+	const { afterCommit } = await endEmployment(tx, {
+		organizationId: identity.organizationId,
+		employeeId: identity.employeeId,
 		employmentPeriodId: identity.employmentPeriodId,
-	};
-	await revokeExpenseOfficerGrantHeldBy(tx, {
-		organizationId: identity.organizationId,
-		actorUserId,
-		officerEmployeeId: identity.employeeId,
-		auditMetadata,
-	});
-	await revokePayrollAccessGrantHeldBy(tx, {
-		organizationId: identity.organizationId,
-		actorUserId,
-		payrollEmployeeId: identity.employeeId,
-		auditMetadata,
-	});
-	// Personnel file officer grants (#866): grants naming the employee stay, so their file stays managed.
-	await revokePersonnelFileOfficerGrantHeldBy(tx, {
-		organizationId: identity.organizationId,
-		actorUserId,
-		officerEmployeeId: identity.employeeId,
-		auditMetadata,
-	});
-}
-
-/**
- * Clears the employee as deputy on the absences that have not ended at the
- * cutoff (#1014), audited under the departure's initiator as a system side
- * effect. The audit rows commit with the departure; they are not forwarded to
- * the external audit service, because the transaction may be retried. Each
- * cleared absence queues one durable notification task with its dates, so a
- * later cancellation cannot lose them.
- */
-async function releaseHeldDeputyAssignments(
-	tx: LifecycleClient,
-	identity: DepartureIdentity,
-	cutoff: Instant,
-	actorUserId: string,
-) {
-	const released = await releaseDeputyAssignments(tx, new AuditTrail(), {
-		organizationId: identity.organizationId,
-		deputyEmployeeId: identity.employeeId,
-		at: cutoff,
-		actorUserId,
-		reason: "employee_departure",
-		metadata: {
+		at: input.cutoff,
+		now: input.now,
+		timeZone: input.timeZone,
+		actorUserId: input.actorUserId,
+		audit: new AuditTrail(),
+		cause: {
+			kind: "departure",
 			departureId: identity.departureId,
-			employmentPeriodId: identity.employmentPeriodId,
+			mode: input.mode,
 		},
 	});
-	if (released.length === 0) return;
-	await tx
-		.insert(employeeDepartureTask)
-		.values(
-			released.map((assignment) => ({
-				organizationId: identity.organizationId,
-				employeeId: identity.employeeId,
-				employmentPeriodId: identity.employmentPeriodId,
-				departureId: identity.departureId,
-				kind: "notify_deputy_release" as const,
-				dedupeKey: `deputy-release:${identity.departureId}:${assignment.absenceId}`,
-				payload: { ...assignment },
-			})),
-		)
-		.onConflictDoNothing();
+	if (afterCommit.length > 0) {
+		throw new Error(
+			"A departure cannot run after-commit steps of Employment ending; queue a durable departure task instead",
+		);
+	}
 }
 
 /**
