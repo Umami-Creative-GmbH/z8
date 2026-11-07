@@ -22,6 +22,7 @@ import { endEquipmentEmployment } from "@/lib/organization/equipment/lifecycle";
 import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
 import { cancelDocumentRequestsForDeparture } from "@/lib/personnel-file/document-request-store";
 import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/officer-grant-store";
+import { revokeShareLinksOfCreator } from "@/lib/projects/report-share/report-share-links";
 import { revokeKioskBadgesForDeparture } from "@/lib/time-tracking/kiosk/badge-store";
 import { endKioskFobLinks } from "@/lib/time-tracking/kiosk/fob-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
@@ -184,6 +185,19 @@ export async function executeDepartureInTransaction(
 		at: cutoff,
 		actorUserId: departure.createdBy,
 		auditMetadata: {
+			departureId: identity.departureId,
+			employmentPeriodId: identity.employmentPeriodId,
+		},
+	});
+	// Report share links live at the cutoff end with the employment (#1622,
+	// Organization ADR 0006), as at a deactivation; a re-run finds none live.
+	await revokeShareLinksOfCreator(tx, new AuditTrail(), {
+		organizationId: identity.organizationId,
+		creatorEmployeeId: identity.employeeId,
+		now: cutoff,
+		actorUserId: departure.createdBy,
+		auditMetadata: {
+			reason: "employee_departure",
 			departureId: identity.departureId,
 			employmentPeriodId: identity.employmentPeriodId,
 		},
