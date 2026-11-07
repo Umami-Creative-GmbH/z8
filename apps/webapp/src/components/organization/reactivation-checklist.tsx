@@ -54,6 +54,7 @@ const GROUP_ORDER: ReactivationChecklistGroup[] = [
 	"teams",
 	"shifts",
 	"absences",
+	"documentRequests",
 	"shareLinks",
 ];
 
@@ -184,6 +185,11 @@ function useChecklistLabels() {
 					"settings.employees.lifecycle.reactivationChecklist.groups.absences",
 					"Cancelled absences",
 				);
+			case "documentRequests":
+				return t(
+					"settings.employees.lifecycle.reactivationChecklist.groups.documentRequests",
+					"Cancelled document requests",
+				);
 			case "shareLinks":
 				return t(
 					"settings.employees.lifecycle.reactivationChecklist.groups.shareLinks",
@@ -282,6 +288,12 @@ function useChecklistLabels() {
 							"settings.employees.lifecycle.reactivationChecklist.items.absenceUnnamed",
 							"An absence (dates not recorded)",
 						);
+			case "document_requests":
+				return t(
+					"settings.employees.lifecycle.reactivationChecklist.items.documentRequests",
+					"{count, plural, one {# open document request was cancelled; request it again in the personnel file} other {# open document requests were cancelled; request them again in the personnel file}}",
+					{ count: item.count },
+				);
 			case "share_links":
 				return t(
 					"settings.employees.lifecycle.reactivationChecklist.items.shareLinks",

@@ -4,7 +4,10 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
-import { emptyDeactivationPreview } from "./testing/deactivation-preview.test.fixture";
+import {
+	emptyDeactivationPreview,
+	emptyEmploymentEndingPlan,
+} from "./testing/deactivation-preview.test.fixture";
 
 // Renders English defaults with their parameters, including `{count, plural, one {…} other {…}}`.
 vi.mock("@tolgee/react", () => ({
@@ -93,23 +96,21 @@ describe("DeactivationPreviewDialog", () => {
 		const user = userEvent.setup();
 		const { props } = renderDialog({
 			plan: emptyPlan({
-				equipment: [
-					{
-						assignmentId: "assignment",
-						identifier: "L-01",
-						typeName: "Laptop",
-						outstandingQuantity: 2,
-						explicitDeadline: "2026-10-20",
-						effectiveDeadline: "2026-10-20",
+				employmentEnding: emptyEmploymentEndingPlan({
+					equipment: {
+						returns: [
+							{
+								assignmentId: "assignment",
+								identifier: "L-01",
+								typeName: "Laptop",
+								outstandingQuantity: 2,
+								explicitDeadline: "2026-10-20",
+								effectiveDeadline: "2026-10-20",
+							},
+						],
+						officerGrantIds: ["employee"],
 					},
-				],
-				accessEnds: {
-					grants: [{ kind: "equipment_officer", grantId: "grant" }],
-					drivingAuthorizations: [],
-					kioskBadges: [],
-					kioskFobs: [],
-					shareLinks: [],
-				},
+				}),
 			}),
 		});
 		const section = within(screen.getByRole("region", { name: "Outstanding equipment returns" }));
@@ -453,25 +454,32 @@ describe("DeactivationPreviewDialog", () => {
 	it("lists the access that ends", () => {
 		renderDialog({
 			plan: emptyPlan({
-				accessEnds: {
-					grants: [
-						{ kind: "expense_officer", grantId: "g-1" },
-						{ kind: "payroll_access", grantId: "g-2" },
-						{ kind: "personnel_file_officer", grantId: "g-3" },
-						{ kind: "driving_licence_verifier", grantId: "g-4" },
-					],
-					drivingAuthorizations: [
-						{ authorizationId: "d-1", state: "active" },
-						{ authorizationId: "d-2", state: "suspended" },
-					],
-					kioskBadges: [{ badgeId: "b-1" }],
-					kioskFobs: [{ fobId: "f-1" }],
-					shareLinks: [
-						{ linkId: "l-1", kind: "report" },
-						{ linkId: "l-2", kind: "report" },
-						{ linkId: "l-3", kind: "report" },
-					],
-				},
+				employmentEnding: emptyEmploymentEndingPlan({
+					officerGrants: {
+						grants: [
+							{ kind: "expense_officer", grantId: "g-1" },
+							{ kind: "payroll_access", grantId: "g-2" },
+							{ kind: "personnel_file_officer", grantId: "g-3" },
+						],
+					},
+					drivingLicence: {
+						verifierGrantIds: ["g-4"],
+						authorizations: [
+							{ authorizationId: "d-1", state: "active" },
+							{ authorizationId: "d-2", state: "suspended" },
+						],
+					},
+					documentRequests: { requestIds: ["r-1", "r-2"] },
+					kioskBadges: { badgeIds: ["b-1"] },
+					kioskFobs: { fobIds: ["f-1"] },
+					reportShareLinks: {
+						links: [
+							{ linkId: "l-1", kind: "report" },
+							{ linkId: "l-2", kind: "report" },
+							{ linkId: "l-3", kind: "report" },
+						],
+					},
+				}),
 			}),
 		});
 
@@ -483,6 +491,7 @@ describe("DeactivationPreviewDialog", () => {
 		expect(
 			section.getByText("2 driving authorizations end, including suspended ones"),
 		).toBeTruthy();
+		expect(section.getByText("2 open document requests are cancelled")).toBeTruthy();
 		expect(section.getByText("1 kiosk badge is revoked")).toBeTruthy();
 		expect(section.getByText("1 kiosk fob stops working")).toBeTruthy();
 		expect(section.getByText("3 report share links are revoked")).toBeTruthy();

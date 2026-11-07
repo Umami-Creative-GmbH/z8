@@ -15,6 +15,7 @@ type DeputyReleaseClient = Pick<WorkTransactionClient, "select" | "update" | "in
 export type DeputyReleaseReason =
 	| "employee_departure"
 	| "employee_deactivated"
+	| "employee_deactivation_backfill"
 	| "member_removed"
 	| "scim_deprovisioned";
 
@@ -98,12 +99,20 @@ async function loadDeputyAssignmentsNotEnded(
 		}));
 }
 
+/** The running or upcoming absences that name the employee as deputy at `at` (#1014). */
+export function deputyAssignmentsNotEnded(
+	executor: Pick<DeputyReleaseClient, "select">,
+	input: { organizationId: string; deputyEmployeeId: string; at: Instant },
+): Promise<DeputyAssignment[]> {
+	return loadDeputyAssignmentsNotEnded(executor, { ...input, lock: false });
+}
+
 /** How many running or upcoming absences name the employee as deputy at `at` (#1014). */
 export async function countDeputyAssignmentsNotEnded(
 	executor: Pick<DeputyReleaseClient, "select">,
 	input: { organizationId: string; deputyEmployeeId: string; at: Instant },
 ): Promise<number> {
-	return (await loadDeputyAssignmentsNotEnded(executor, { ...input, lock: false })).length;
+	return (await deputyAssignmentsNotEnded(executor, input)).length;
 }
 
 /**
@@ -159,8 +168,8 @@ export async function releaseDeputyAssignments(
 }
 
 /**
- * The release for a deactivation outside a departure (#1014): the legacy
- * Deactivate action, member removal and SCIM deprovisioning. Runs in the
+ * The release for member removal and SCIM deprovisioning (#1014); Deactivate
+ * releases through Employment ending since #1624. Runs in the
  * deactivating transaction; the caller notifies after its commit
  * (`notifyReleasedDeputyAssignments`). Null when nothing was cleared.
  */
