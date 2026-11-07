@@ -26,6 +26,7 @@ import { currentOrganizationAdminUserIds } from "@/lib/notifications/manager-not
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { memberIsAccessibleOwnerOrAdmin } from "../authority-sql";
 import { onCurrentRoster, rosterCheckInstant } from "../current-roster";
+import { notifyReleasedDeputyAssignments } from "../deputy-release-runtime";
 import { lockLifecycleOrganization } from "../locks";
 import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
@@ -35,12 +36,13 @@ import {
 	writeReceipt,
 } from "../receipts";
 import { acquireAbsenceCancellationGuards } from "./absences";
-import { applyDeactivationConsequences } from "./apply";
-import type { DeactivationResult } from "./command";
+import { applyDeactivationConsequences, endEmploymentForDeactivation } from "./apply";
+import { type DeactivationResult, releasedDeputyAssignments } from "./command";
 import { managerLinkAuthorizationEmployeeIds } from "./manager-links";
 import { planDeactivationConsequences, readCurrentEmploymentPeriodId } from "./plan";
 import type {
 	DeactivationAfterCommit,
+	DeactivationApplied,
 	DeactivationPlan,
 	DeactivationPlanContext,
 	DeactivationReader,
@@ -58,8 +60,10 @@ import type {
  *    latest surviving `employee.deactivated` audit entry or SCIM `leave` event,
  *    unless a later reactivation, SCIM `join` or employment start undid it.
  *    Audit entries live 365 days; without evidence the date stays not recorded.
- * 2. applies #1440's consequences (`planDeactivationConsequences` /
- *    `applyDeactivationConsequences`) from the run instant (or that instant,
+ * 2. applies #1440's consequences (`planDeactivationConsequences`, then
+ *    Employment ending and `applyDeactivationConsequences`; since #1624 also
+ *    equipment responsibility, document requests and deputy assignments,
+ *    whose absences are told after the commit) from the run instant (or that instant,
  *    were it later), with `replaceManagers: false` and the reason
  *    `employee_deactivation_backfill`: shifts and absences change only from now
  *    on, so nothing in the past is reopened or cancelled (user decision
@@ -498,12 +502,34 @@ async function applyOne(
 					deactivationId,
 				});
 			}
-			const { applied, afterCommit } = await applyDeactivationConsequences(
-				tx,
-				{ ...context, actorUserId, deactivationId, reason: BACKFILL_REASON, audit },
-				plan,
-				{ clock: input.clock, database },
+			const applyContext = {
+				...context,
+				actorUserId,
+				deactivationId,
+				reason: BACKFILL_REASON,
+				audit,
+			};
+			// The employee is already switched off; what they hold ends first all the same.
+			const ending = await endEmploymentForDeactivation(tx, applyContext);
+			const roster = await applyDeactivationConsequences(tx, applyContext, plan, {
+				clock: input.clock,
+				database,
+			});
+			const applied: DeactivationApplied = {
+				...roster.applied,
+				employmentEnding: ending.applied,
+			};
+			const releasedDeputies = releasedDeputyAssignments(
+				{ organizationId, employeeId: current.employeeId },
+				ending.applied.deputyAssignments,
 			);
+			const afterCommit: DeactivationAfterCommit[] = [
+				...ending.afterCommit,
+				...roster.afterCommit,
+				...(releasedDeputies
+					? [() => notifyReleasedDeputyAssignments(releasedDeputies, database)]
+					: []),
+			];
 			const reportsWithoutManager = plan.managerLinks.reportsNeedingReplacement.map((report) => ({
 				employeeId: report.employeeId,
 				name: report.name,
@@ -514,7 +540,9 @@ async function applyOne(
 				employeeUserId: current.userId,
 				deactivatedAt: deactivatedAt.toString(),
 				plannerNotice: null,
-				releasedDeputies: null,
+				releasedDeputies: releasedDeputies
+					? { eventKey: releasedDeputies.eventKey, assignments: releasedDeputies.assignments }
+					: null,
 				cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
 				backfill: {
 					leftAt: leftAt ? leftAt.at.toString() : null,

@@ -3,10 +3,13 @@ import { z } from "zod";
 import { employeeDeactivation } from "@/db/schema/employee-lifecycle";
 import { dateFromInstant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import type { DeactivationApplied } from "./deactivation/types";
+import { reactivationItems } from "./employment-ending";
+import type { EmploymentEndingApplied } from "./employment-ending/types";
 import {
 	buildReactivationChecklistItems,
+	type ChecklistApplied,
 	type ChecklistPlan,
+	legacyAccessEndsItems,
 	type ReactivationChecklist,
 } from "./reactivation-checklist";
 import type { LifecycleClient } from "./types";
@@ -45,6 +48,17 @@ export async function loadReactivationChecklist(
 	const applied = appliedSchema.safeParse(latest.applied);
 	if (!applied.success) return null;
 	const plan = checklistPlanSchema.safeParse(latest.plan);
+	const ended = applied.data;
+	const holdings = ended.employmentEnding
+		? // Written by the participants themselves, in the same transaction as the ending.
+			reactivationItems(ended.employmentEnding as Partial<EmploymentEndingApplied>, input)
+		: ended.accessEnds
+			? legacyAccessEndsItems({
+					employeeId: input.employeeId,
+					accessEnds: ended.accessEnds,
+					plannedGrants: legacyPlannedGrantsSchema.safeParse(latest.plan).data?.accessEnds.grants ?? null,
+				})
+			: [];
 
 	const timeZone = await loadOrganizationTimezone(database, input.organizationId);
 	return {
@@ -57,8 +71,9 @@ export async function loadReactivationChecklist(
 		timeZone,
 		items: buildReactivationChecklistItems({
 			employeeId: input.employeeId,
-			applied: applied.data,
+			applied: ended,
 			plan: plan.success ? plan.data : null,
+			holdings,
 		}),
 	};
 }
@@ -76,7 +91,7 @@ function dateNotRecorded(row: { reason: string; result: unknown }): boolean {
 // The ledger's jsonb columns, validated before the checklist reads them.
 const ids = z.array(z.string());
 const link = z.object({ employeeId: z.string(), managerId: z.string() });
-const appliedSchema: z.ZodType<DeactivationApplied> = z.object({
+const appliedSchema = z.object({
 	managerLinks: z.object({
 		removedLinks: z.array(link),
 		addedLinks: z.array(link.extend({ isPrimary: z.boolean() })),
@@ -90,15 +105,23 @@ const appliedSchema: z.ZodType<DeactivationApplied> = z.object({
 	approvalDuties: z.object({ handoverTaskIds: ids, reviewIds: ids }),
 	shifts: z.object({ openedShiftIds: ids }),
 	absences: z.object({ cancelledAbsenceIds: ids }),
-	accessEnds: z.object({
-		grantIds: ids,
-		drivingAuthorizationIds: ids,
-		kioskBadgeIds: ids,
-		// Not listed in deactivations stored before kiosk fobs ended with them (#1509).
-		kioskFobIds: ids.default([]),
-		shareLinkIds: ids,
-	}),
-});
+	/**
+	 * What Employment ending ended (#1624), by participant; each participant
+	 * reads its own entry. A participant missing here has no items.
+	 */
+	employmentEnding: z.record(z.string(), z.unknown()).optional(),
+	/** What deactivations stored before #1624 ended. */
+	accessEnds: z
+		.object({
+			grantIds: ids,
+			drivingAuthorizationIds: ids,
+			kioskBadgeIds: ids,
+			// Not listed in deactivations stored before kiosk fobs ended with them (#1509).
+			kioskFobIds: ids.default([]),
+			shareLinkIds: ids,
+		})
+		.optional(),
+}) satisfies z.ZodType<ChecklistApplied>;
 const named = z.array(z.object({ employeeId: z.string(), name: z.string() }));
 const project = z.array(z.object({ projectId: z.string(), name: z.string() }));
 const absenceItem = z.object({
@@ -133,6 +156,9 @@ const checklistPlanSchema: z.ZodType<ChecklistPlan> = z.object({
 		),
 	}),
 	absences: z.object({ absencesToCancel: z.array(absenceItem) }),
+});
+/** The grant kinds a plan stored before #1624 named (`legacyAccessEndsItems`). */
+const legacyPlannedGrantsSchema = z.object({
 	accessEnds: z.object({
 		grants: z.array(
 			z.object({

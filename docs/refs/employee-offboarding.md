@@ -158,12 +158,64 @@ active, and not past a due departure (the same live check as
   keeps hand-written `employee.isActive` checks from growing beyond
   `raw-employee-active-checks.json`.
 
+## Employment ending
+
+One module ends everything an employee holds when their employment ends
+(#1624, spec #1590): `apps/webapp/src/lib/employee-lifecycle/employment-ending/`.
+Its participants run in this fixed order (`participants.ts`):
+
+1. equipment responsibility (`organization/equipment/employment-ending.ts`):
+   captures the employee's teams and needs the open employment period, so it
+   runs first; outstanding returns stay actionable (Organization ADR 0008)
+2. driving licence employment, under its organization lock
+   (`organization/driving-licence/employment-ending.ts`)
+3. held expense officer, payroll access and personnel file officer grants
+   (`employment-ending/officer-grants.ts`)
+4. open and submitted document requests, cancelled silently
+   (`personnel-file/document-request-employment-ending.ts`)
+5. kiosk badges (`time-tracking/kiosk/badge-employment-ending.ts`)
+6. kiosk fobs (`time-tracking/kiosk/fob-employment-ending.ts`)
+7. report share links (`projects/report-share/employment-ending.ts`)
+8. deputy assignments (`employment-ending/deputy-assignments.ts`)
+
+- **Interface.** `endEmployment(tx, ctx)` returns `{ applied, afterCommit }`;
+  `previewEmploymentEnding(reader, ctx)` returns each participant's plan without
+  writing; `reactivationItems(applied, { employeeId })` lists the reactivation
+  checklist items. `ctx` carries `organizationId`, `employeeId`,
+  `employmentPeriodId`, `at` (the cutoff), `now` (when it is recorded),
+  `timeZone`, `actorUserId`, `audit` and the `cause`:
+  `{ kind: "departure", departureId, mode }` or
+  `{ kind: "deactivation", deactivationId, reason }`. Participants derive their
+  audit reason and metadata (`{ reason, departureId | deactivationId,
+  employmentPeriodId }`), badge and fob end reasons and equipment mode from it.
+- **Participant.** `{ key, plan(reader, ctx), apply(tx, plan, ctx),
+  reactivationItems(applied, subject) }`. A plan reads with the predicate its
+  apply ends by; an apply ends what is still held (a second run ends nothing)
+  and records what it ended. Adding one is its adapter plus a line in
+  `participants.ts`. Every cause runs every participant.
+- **Where it runs.** The cause calls it inside its transaction after the
+  lifecycle locks and after write-locking the employee row (`FOR UPDATE`, so a
+  concurrent kiosk fob registration either committed before or is refused),
+  before it switches the employee off. The cause's own roster areas run after
+  the switch-off.
+- **Lock order.** The driving licence lock is taken after equipment's. That is
+  safe: everyone else takes the organization row (driving licence `FOR SHARE`,
+  equipment `FOR UPDATE`) before either advisory lock, and the cause already
+  holds that row exclusively, and nobody takes the two locks in the other
+  order outside a lifecycle transaction.
+- **Checklist.** Officer, equipment officer and verifier grants, kiosk badges,
+  driving authorizations, cancelled document requests (linked to the personnel
+  file) and share links have items; kiosk fobs, deputy assignments and
+  equipment returns have none.
+- **Causes.** Deactivation and its backfill use it today. The departure still
+  ends holdings in `transition.ts` until it moves onto the module (#1626).
+
 ## Deactivation
 
 *Deactivate* (Settings → Employees and the members table, while the release
 gate is closed) has the consequences of a departure taking effect, at the
-moment of deactivation (#1440, Organization ADR 0006). It reuses the
-departure's code paths; the area modules live in
+moment of deactivation (#1440, Organization ADR 0006). What the person holds
+ends through Employment ending; the roster area modules live in
 `apps/webapp/src/lib/employee-lifecycle/deactivation/`.
 
 **Consequences**, each audited under the acting admin with
@@ -205,22 +257,24 @@ departure's code paths; the area modules live in
    which frees the allowance (`absence.cancelled`). Absences spanning that day
    are kept and listed in the preview, and so are later ones that touch a closed
    month (`absencesInClosedMonths`): the closed month refuses the cancellation
-   until it is reopened. The deputy release (#1014) still runs. The after-commit
-   work (sick note cleanup, deputy notices) runs on the caller's database client.
-6. **Access** ends as at a departure: held expense officer, payroll access,
-   personnel file officer, driving licence verifier and equipment officer grants, driving
-   authorizations (also suspended ones), kiosk badges, the kiosk fob and the
-   person's report share links. `applied` records the grant ids actually revoked.
-   A badge stores the reason `revoked` and a fob `removed`; their audit rows name
-   the deactivation (`{ reason: "employee_deactivated", deactivationId,
-   employmentPeriodId }`).
+   until it is reopened. The after-commit work (sick note cleanup, deputy
+   notices) runs on the caller's database client.
+6. **What the person holds** ends through Employment ending, before the
+   switch-off: equipment responsibility (with the equipment officer grant),
+   driving authorizations (also suspended ones) and the verifier grant, held
+   expense officer, payroll access and personnel file officer grants, open and
+   submitted document requests (silently, as at a departure), kiosk badges,
+   the kiosk fob, the person's report share links and their deputy duties
+   (#1014). `applied.employmentEnding` records, per participant, what was
+   actually ended. A badge stores the reason `revoked` and a fob `removed`;
+   every audit row names the deactivation (`{ reason: "employee_deactivated",
+   deactivationId, employmentPeriodId }`).
 7. **Retention**: the instant counts as the end of employment (see Personnel
    file retention). The paid seat is released (see Billing reconciliation).
 8. **Equipment**: outstanding required returns become due on the organization-local
    deactivation day unless an explicit date is earlier. Primary and secondary teams
    are captured before removal so currently authorized officers can follow up former
-   employees. Equipment capture runs before the active-state trigger closes the
-   period. Reactivation restores no grant and preserves old equipment deadlines and
+   employees. Reactivation restores no grant and preserves old equipment deadlines and
    deactivation lineage, including historical holdings entered after the employee left.
    Physical key/fob receipt never restores its revoked credential. See the
    [equipment reference](equipment-return-tracking.md).
@@ -258,10 +312,12 @@ submission approval write gates (rank 2, shared, via `withAuthorizationMutation`
 `beforeProtection` hook), the exclusive organization configuration guard
 (rank 3, `organizationWide: true`), the user guards (rank 4) of the person,
 their reports, their own managers and the picked replacements, then the
-organization row `FOR UPDATE` (`lockLifecycleOrganization`). The plan is computed under these locks, then the
-employee is switched off with `deactivated_at = <instant>` and the areas apply
-in order: manager links, team links, approval duties, shifts, absences, access
-ends. Notices and other external effects run after the commit.
+organization row `FOR UPDATE` (`lockLifecycleOrganization`). The plan is computed
+under these locks, the deactivation is recorded, the employee row is locked
+`FOR UPDATE` and Employment ending ends what the person holds; then the
+employee is switched off with `deactivated_at = <instant>` and the roster
+areas apply in order: manager links, team links, approval duties, shifts,
+absences. Notices and other external effects run after the commit.
 
 **Follow-up.** The employee page shows the deactivation's handovers and reviews
 where a departure's show, with the instant in the organization's zone; reviews
@@ -303,8 +359,10 @@ and no open `employee_deactivation` row.
   with `replaceManagers: false` and the reason `employee_deactivation_backfill`.
   Audit rows are attributed to the admin whose audit entry deactivated the
   employee, else to the organization's longest-standing current owner (or
-  admin). A report who would be left with no current manager keeps the link. The
-  deputy release is not repeated, because Deactivate has done it since #1014.
+  admin). A report who would be left with no current manager keeps the link.
+  Since #1624 the backfill also runs Employment ending in full, so it also ends
+  equipment responsibility, document requests and deputy duties (the absent
+  employees are told after the commit).
 - **Record**: one `employee_deactivation` row per employee (reason
   `employee_deactivation_backfill`) is the idempotency marker. Its
   `deactivated_at` is when they left: the recovered instant, else the run
@@ -351,7 +409,10 @@ and own managers to the employee pages, grants to their settings tabs, kiosk
 badges to the employee page, driving authorizations to
 `/driving-licence/checks/<id>`, teams to `/settings/teams/<id>`, projects to
 `/settings/projects`, shifts to `/scheduling`, absences to `/team/absences`,
-share links to `/settings/report-share-links`. Approval duties are not listed:
+share links to `/settings/report-share-links`, cancelled document requests to
+the personnel file (`/personnel-files/<id>`). The items of what Employment
+ending ended come from its participants (`reactivationItems`); rows stored
+before #1624 keep their `accessEnds` shape and are still listed. Approval duties are not listed:
 they were handed over. An ended kiosk fob is not listed either: nobody grants it
 again, the employee registers a fob themselves at a kiosk. The dialog after *Reactivate* and the card on the
 employee page are org-admin only (`employee-reactivation.actions.ts`).

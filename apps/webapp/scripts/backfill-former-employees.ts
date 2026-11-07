@@ -100,11 +100,15 @@ function counts(entry: DeactivationBackfillEmployee): string {
 		["absences cancelled", plan.absences.absencesToCancel.length],
 		[
 			"access ended",
-			plan.accessEnds.grants.length +
-				plan.accessEnds.drivingAuthorizations.length +
-				plan.accessEnds.kioskBadges.length +
-				plan.accessEnds.shareLinks.length,
+			plan.employmentEnding.officerGrants.grants.length +
+				plan.employmentEnding.equipment.officerGrantIds.length +
+				plan.employmentEnding.drivingLicence.verifierGrantIds.length +
+				plan.employmentEnding.drivingLicence.authorizations.length +
+				plan.employmentEnding.kioskBadges.badgeIds.length +
+				plan.employmentEnding.reportShareLinks.links.length,
 		],
+		["document requests cancelled", plan.employmentEnding.documentRequests.requestIds.length],
+		["deputy duties released", plan.employmentEnding.deputyAssignments.assignments.length],
 	];
 	return parts.map(([label, count]) => `${label} ${count}`).join(", ");
 }

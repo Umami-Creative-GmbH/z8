@@ -1,6 +1,5 @@
 import type {
 	AbsencesPlan,
-	AccessEndsPlan,
 	DeactivationApplied,
 	DeactivationPlan,
 	NamedEmployee,
@@ -13,10 +12,16 @@ import type {
  * 0006). Reactivation restores nothing; the checklist lists what the
  * deactivation ended, read from its ledger row (`applied`, named from the
  * stored `plan`), and links each item to the page where it is granted again.
- * Client-safe: no server imports.
+ * The roster areas' items are built here; each Employment ending participant
+ * supplies its own (`reactivationItems`). Client-safe: no server imports.
  */
 
-export type ChecklistGrantKind = AccessEndsPlan["grants"][number]["kind"];
+export type ChecklistGrantKind =
+	| "expense_officer"
+	| "payroll_access"
+	| "personnel_file_officer"
+	| "driving_licence_verifier"
+	| "equipment_officer";
 
 export type ReactivationChecklistGroup =
 	| "managers"
@@ -25,6 +30,7 @@ export type ReactivationChecklistGroup =
 	| "teams"
 	| "shifts"
 	| "absences"
+	| "documentRequests"
 	| "shareLinks";
 
 /** One thing the deactivation ended. Names are null when the plan was not stored. */
@@ -92,6 +98,12 @@ export type ReactivationChecklistItem =
 			endDate: string | null;
 			href: string;
 	  }
+	| {
+			group: "documentRequests";
+			kind: "document_requests";
+			count: number;
+			href: string;
+	  }
 	| { group: "shareLinks"; kind: "share_links"; count: number; href: string };
 
 /** The checklist of the employee's latest reactivated deactivation, until dismissed. */
@@ -117,6 +129,11 @@ const GRANT_PAGES: Record<ChecklistGrantKind, string> = {
 };
 
 const employeePage = (employeeId: string) => `/settings/employees/${employeeId}`;
+
+/** A held grant that ended, linked to where it is granted again. */
+export function grantChecklistItem(grant: ChecklistGrantKind | null): ReactivationChecklistItem {
+	return { group: "grants", kind: "grant", grant, href: grant ? GRANT_PAGES[grant] : "/settings" };
+}
 
 /**
  * The plan as stored on the ledger row: everything the checklist names, but
@@ -152,14 +169,23 @@ export type ChecklistPlan = {
 	teamLinks: TeamLinksPlan;
 	shifts: Pick<ShiftsPlan, "shiftsToOpen">;
 	absences: Pick<AbsencesPlan, "absencesToCancel">;
-	accessEnds: Pick<AccessEndsPlan, "grants">;
 };
 
-/** The checklist items, in display order, for exactly what `applied` lists. */
+/** The roster areas a deactivation's ledger row records, in every version of it. */
+export type ChecklistApplied = Pick<
+	DeactivationApplied,
+	"managerLinks" | "teamLinks" | "shifts" | "absences"
+>;
+
+/**
+ * The checklist items for exactly what `applied` lists, with `holdings`, the
+ * items of what Employment ending ended, after the manager links.
+ */
 export function buildReactivationChecklistItems(input: {
 	employeeId: string;
-	applied: DeactivationApplied;
+	applied: ChecklistApplied;
 	plan: ChecklistPlan | null;
+	holdings: readonly ReactivationChecklistItem[];
 }): ReactivationChecklistItem[] {
 	const { employeeId: person, applied, plan } = input;
 	const items: ReactivationChecklistItem[] = [];
@@ -213,35 +239,7 @@ export function buildReactivationChecklistItems(input: {
 		}
 	}
 
-	const grantKinds = new Map(plan?.accessEnds.grants.map((grant) => [grant.grantId, grant.kind]));
-	for (const grantId of applied.accessEnds.grantIds) {
-		const grant = grantKinds.get(grantId) ?? null;
-		items.push({
-			group: "grants",
-			kind: "grant",
-			grant,
-			href: grant ? GRANT_PAGES[grant] : "/settings",
-		});
-	}
-
-	if (applied.accessEnds.kioskBadgeIds.length > 0) {
-		items.push({
-			group: "access",
-			kind: "kiosk_badges",
-			count: applied.accessEnds.kioskBadgeIds.length,
-			href: employeePage(person),
-		});
-	}
-	// An ended kiosk fob has no item: nobody grants it again, the employee
-	// registers a fob themselves at a kiosk (#1509).
-	if (applied.accessEnds.drivingAuthorizationIds.length > 0) {
-		items.push({
-			group: "access",
-			kind: "driving_authorizations",
-			count: applied.accessEnds.drivingAuthorizationIds.length,
-			href: `/driving-licence/checks/${person}`,
-		});
-	}
+	items.push(...input.holdings);
 
 	const teamNames = new Map(plan?.teamLinks.teams.map((team) => [team.teamId, team.name]));
 	for (const teamId of applied.teamLinks.teamIds) {
@@ -308,14 +306,55 @@ export function buildReactivationChecklistItems(input: {
 		});
 	}
 
-	if (applied.accessEnds.shareLinkIds.length > 0) {
+	return items;
+}
+
+/** What a ledger row written before Employment ending (#1624) recorded as ended. */
+export type LegacyAccessEndsApplied = {
+	grantIds: string[];
+	drivingAuthorizationIds: string[];
+	kioskBadgeIds: string[];
+	kioskFobIds: string[];
+	shareLinkIds: string[];
+};
+
+/**
+ * The checklist items of such a row, named from the grant kinds its stored
+ * plan listed. An ended kiosk fob has no item (#1509).
+ */
+export function legacyAccessEndsItems(input: {
+	employeeId: string;
+	accessEnds: LegacyAccessEndsApplied;
+	plannedGrants: ReadonlyArray<{ kind: ChecklistGrantKind; grantId: string }> | null;
+}): ReactivationChecklistItem[] {
+	const { employeeId, accessEnds } = input;
+	const grantKinds = new Map(input.plannedGrants?.map((grant) => [grant.grantId, grant.kind]));
+	const items = accessEnds.grantIds.map((grantId) =>
+		grantChecklistItem(grantKinds.get(grantId) ?? null),
+	);
+	if (accessEnds.kioskBadgeIds.length > 0) {
+		items.push({
+			group: "access",
+			kind: "kiosk_badges",
+			count: accessEnds.kioskBadgeIds.length,
+			href: employeePage(employeeId),
+		});
+	}
+	if (accessEnds.drivingAuthorizationIds.length > 0) {
+		items.push({
+			group: "access",
+			kind: "driving_authorizations",
+			count: accessEnds.drivingAuthorizationIds.length,
+			href: `/driving-licence/checks/${employeeId}`,
+		});
+	}
+	if (accessEnds.shareLinkIds.length > 0) {
 		items.push({
 			group: "shareLinks",
 			kind: "share_links",
-			count: applied.accessEnds.shareLinkIds.length,
+			count: accessEnds.shareLinkIds.length,
 			href: "/settings/report-share-links",
 		});
 	}
-
 	return items;
 }
