@@ -4,7 +4,7 @@ status: accepted
 
 # Settings actions authorize by settings access, not CASL
 
-Settings server actions each built their own guard, and the codebase ended up with seven definitions of "org admin". They disagreed on whether an unapproved member or a deactivated owner counts, and some trusted an `organizationId` sent by the client (#1592). We decided that every settings action goes through one organization action. It authorizes by **settings access**: it requires org member, scoped manager, org admin or owner, and a higher level also qualifies. Actions do not authorize with CASL `{subject, action}` pairs. CASL has no settings subjects for a scoped manager, only four settings files used it, and its org-level grants survive deactivation.
+Settings server actions each built their own guard, and the codebase ended up with seven definitions of "org admin". They disagreed on edge cases, such as whether an unapproved member counts, and the organization was worked out in three different ways (#1592). We decided that every settings action goes through one organization action. It authorizes by **settings access**: it requires org member, scoped manager, org admin or owner, and a higher level also qualifies. Actions do not authorize with CASL `{subject, action}` pairs. CASL has no settings subjects for a scoped manager, and only four settings files used it.
 
 ## Considered Options
 
