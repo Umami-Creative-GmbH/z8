@@ -135,62 +135,9 @@ describe("departure access grants", () => {
 		}));
 	}
 
-	it("revokes both grants the departing officer holds, with audit entries naming the departure", async () => {
-		const officer = await fixture.seedEmployee();
-		const expense = await grantExpenseOfficer(officer);
-		const payroll = await grantPayrollAccess(officer);
-
-		const { departureId } = await offboardNow(officer.employeeId);
-
-		expect(await grantState("expense_officer_grant", expense.grantId)).toEqual({
-			is_active: false,
-			updated_by: fixture.ownerUserId,
-		});
-		expect(await grantState("payroll_access_grant", payroll.grantId)).toEqual({
-			is_active: false,
-			updated_by: fixture.ownerUserId,
-		});
-		const departure = {
-			reason: "employee_departure",
-			departureId,
-			employmentPeriodId: officer.employmentPeriodId,
-		};
-		expect((await auditEntries(expense.grantId)).at(-1)).toEqual({
-			action: "expense_officer.grant_revoked",
-			performedBy: fixture.ownerUserId,
-			employeeId: officer.employeeId,
-			changes: {
-				from: {
-					scope: "all",
-					teamIds: [],
-					employeeIds: [],
-					canExport: true,
-					canRecordReimbursements: true,
-				},
-				to: null,
-			},
-			metadata: departure,
-		});
-		expect((await auditEntries(payroll.grantId)).at(-1)).toEqual({
-			action: "payroll_access.grant_revoked",
-			performedBy: fixture.ownerUserId,
-			employeeId: officer.employeeId,
-			changes: { from: { scope: "all", teamIds: [], employeeIds: [] }, to: null },
-			metadata: departure,
-		});
-	});
-
-	it("departs an employee who holds no grant without writing grant audit entries", async () => {
-		const employee = await fixture.seedEmployee();
-
-		await offboardNow(employee.employeeId);
-
-		const audits = await fixture.pool.query(
-			`select 1 from audit_log where employee_id = $1 and action like '%grant%'`,
-			[employee.employeeId],
-		);
-		expect(audits.rows).toHaveLength(0);
-	});
+	// Revoking the grants the departing officer holds, naming the departure, is
+	// Employment ending's (#1626): its adapter test and
+	// `departure-employment-ending.integration.test.ts` cover it.
 
 	it("never restores either grant on rehire", async () => {
 		const officer = await fixture.seedEmployee();
@@ -241,49 +188,6 @@ describe("departure access grants", () => {
 				officerEmployeeId: officer.employeeId,
 			}),
 		).toBeNull();
-	});
-
-	it("revokes the grants when a scheduled departure takes effect at its cutoff", async () => {
-		const officer = await fixture.seedEmployee();
-		const expense = await grantExpenseOfficer(officer);
-		const payroll = await grantPayrollAccess(officer);
-		now = parseInstant("2026-09-14T08:00:00Z");
-		const scheduled = await commands().scheduleDeparture(owner(), {
-			employeeId: officer.employeeId,
-			requestId: randomUUID(),
-			expectedRevision: null,
-			lastWorkingDay: "2026-09-30",
-			replacementEmployeeId: null,
-			acknowledgeUnassignedDuties: true,
-		});
-		const identity = {
-			organizationId: fixture.organizationId,
-			employeeId: officer.employeeId,
-			employmentPeriodId: officer.employmentPeriodId,
-			departureId: scheduled.departureId,
-			revision: scheduled.revision,
-		};
-
-		expect(await commands().executeDeparture(identity)).toEqual({ status: "not_due" });
-		expect(await grantState("expense_officer_grant", expense.grantId)).toMatchObject({
-			is_active: true,
-		});
-
-		now = parseInstant("2026-10-02T00:00:00Z");
-		await expect(commands().executeDeparture(identity)).resolves.toMatchObject({
-			status: "effective",
-		});
-		expect(await grantState("expense_officer_grant", expense.grantId)).toMatchObject({
-			is_active: false,
-		});
-		expect(await grantState("payroll_access_grant", payroll.grantId)).toMatchObject({
-			is_active: false,
-		});
-		expect((await auditEntries(payroll.grantId)).at(-1)?.metadata).toEqual({
-			reason: "employee_departure",
-			departureId: scheduled.departureId,
-			employmentPeriodId: officer.employmentPeriodId,
-		});
 	});
 
 	async function insertReport(employee: SeededEmployee, approvalTeamIds: string[] | null) {
@@ -392,38 +296,6 @@ describe("departure access grants", () => {
 		);
 		return result.rows[0];
 	}
-
-	it("revokes the personnel file officer grant the departing officer holds (#866)", async () => {
-		const officer = await fixture.seedEmployee();
-		const grant = await grantPersonnelFileOfficer(officer);
-
-		const { departureId } = await offboardNow(officer.employeeId);
-
-		expect(await personnelFileGrantState(grant.grantId)).toEqual({
-			is_active: false,
-			updated_by: fixture.ownerUserId,
-		});
-		expect((await auditEntries(grant.grantId)).at(-1)).toEqual({
-			action: "personnel_file.grant_revoked",
-			performedBy: fixture.ownerUserId,
-			employeeId: officer.employeeId,
-			changes: {
-				from: { scope: "all", teamIds: [], employeeIds: [], categories: ["payslip", "sick_note"] },
-				to: null,
-			},
-			metadata: {
-				reason: "employee_departure",
-				departureId,
-				employmentPeriodId: officer.employmentPeriodId,
-			},
-		});
-		expect(
-			await loadActivePersonnelFileOfficerGrant(fixture.db, {
-				organizationId: fixture.organizationId,
-				officerEmployeeId: officer.employeeId,
-			}),
-		).toBeNull();
-	});
 
 	it("leaves personnel file officer grants that name the departed employee unchanged (#866)", async () => {
 		const leaver = await fixture.seedEmployee();

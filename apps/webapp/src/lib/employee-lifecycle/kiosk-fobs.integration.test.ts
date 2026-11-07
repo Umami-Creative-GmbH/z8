@@ -207,40 +207,9 @@ describe("kiosk fobs across departure, rehire and data deletion", () => {
 		return result.employmentPeriodId;
 	}
 
-	it("ends the fob inside the departure transaction at the cutoff, as departure, audited under the departure", async () => {
-		const worker = await fixture.seedEmployee();
-		const serial = newSerial();
-		now = parseInstant("2026-09-14T08:00:00Z");
-		await register(worker, serial);
-		expect(await holder(serial)).toBe(worker.employeeId);
-
-		const departureId = await offboardNow(worker);
-
-		expect(await holder(serial)).toBeNull();
-		const [fob] = await fobRows(worker.employeeId);
-		expect(fob).toMatchObject({
-			employment_period_id: worker.employmentPeriodId,
-			ended_at: new Date("2026-09-14T09:30:00Z"),
-			ended_reason: "departure",
-			ended_by_user_id: fixture.ownerUserId,
-		});
-		const audits = await fobAudits(worker.employeeId);
-		expect(audits.map((audit) => audit.action)).toEqual([
-			"kiosk_fob.registered",
-			"kiosk_fob.ended",
-		]);
-		expect(audits[1]).toEqual({
-			action: "kiosk_fob.ended",
-			performedBy: fixture.ownerUserId,
-			fobId: fob?.id,
-			metadata: {
-				reason: "departure",
-				departureId,
-				employmentPeriodId: worker.employmentPeriodId,
-			},
-		});
-		expect(JSON.stringify(audits)).not.toContain(serial);
-	});
+	// Ending the fob at the cutoff, as departure and naming the departure, is
+	// Employment ending's (#1626): its adapter test and
+	// `departure-employment-ending.integration.test.ts` cover it.
 
 	it("keeps the fob working until a future cutoff in the organization's zone, denies it from then on and records the cutoff, not the late run", async () => {
 		const original = await fixture.pool.query<{ timezone: string | null }>(

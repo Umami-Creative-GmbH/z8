@@ -730,27 +730,6 @@ export async function cancelDocumentRequest(
 	});
 }
 
-/**
- * The departure's side of document requests (#1408), through
- * `cancelDocumentRequestsAtEmploymentEnd`, naming the departure.
- */
-export async function cancelDocumentRequestsForDeparture(
-	tx: Pick<Transaction, "select" | "insert" | "update">,
-	input: {
-		organizationId: string;
-		employeeId: string;
-		actorUserId: string;
-		departureId: string;
-		employmentPeriodId: string;
-		now: Instant;
-	},
-): Promise<string[]> {
-	return cancelDocumentRequestsAtEmploymentEnd(tx, {
-		...input,
-		auditMetadata: { departureId: input.departureId, employmentPeriodId: input.employmentPeriodId },
-	});
-}
-
 /** The employee's open and submitted requests, in id order. Organization-scoped. */
 export async function activeDocumentRequestIdsOfEmployee(
 	client: Pick<Transaction, "select">,
