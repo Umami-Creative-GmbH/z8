@@ -908,6 +908,7 @@ export function resolvePolicyAndCreateApproval(
 			defaultApproverId: input.defaultApproverId,
 		});
 		if (decision.kind === "failure" && decision.reason === "invalid_policies") {
+			// Thrown, not failed: invalid policies have always surfaced as the matcher's throw.
 			throw decision.error;
 		}
 		const requesterUserId = userIdForEmployee(
