@@ -34,7 +34,7 @@ An employee who has left the organization, either because their departure took e
 _Avoid_: inactive user, disabled user, deleted user, ex-member
 
 **Deactivation**:
-Ending someone's employment at once, without scheduling a departure. It has the same consequences as a departure taking effect at that moment. **Reactivation** undoes a deactivation but brings back nothing that ended.
+Ending someone's employment at once, without scheduling a departure. It has the same consequences as a departure taking effect at that moment. An admin deactivating the employee, removing them from the organization, and their identity provider deprovisioning them are all deactivations. **Reactivation** undoes a deactivation but brings back nothing that ended. Every way back after a deactivation is a reactivation, including rejoining the organization and the identity provider enabling the person again.
 _Avoid_: disabling, suspension, archiving an employee
 
 **Current roster**:
