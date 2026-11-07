@@ -12,6 +12,10 @@ import {
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { releaseDeputyAssignmentsOnDeactivation } from "@/lib/employee-lifecycle/deputy-release";
 import { notifyReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release-runtime";
+import {
+	completeReturnReactivation,
+	reactivateOnReturn,
+} from "@/lib/employee-lifecycle/reactivation";
 import { resolveSCIMIdentity } from "./identity-resolution";
 import { reconcileSCIMLifecycle } from "./lifecycle-reconciler";
 import { protectSCIMProjectedUser } from "./projection-guards";
@@ -222,6 +226,7 @@ async function reconcileSCIMProjectedUser(
 	);
 	await reconcileSCIMLifecycle(input, context, {
 		onEmployeeDeactivated: releaseSCIMDeprovisionedDeputy,
+		onEmployeeReactivated: reactivateSCIMReenabledEmployee,
 	});
 	await reconcileSCIMRoleProjection(input, context);
 }
@@ -252,6 +257,33 @@ async function releaseSCIMDeprovisionedDeputy(input: {
 	);
 	if (released) {
 		await queueAfterAuthTransactionCommit(() => notifyReleasedDeputyAssignments(released));
+	}
+}
+
+/**
+ * A deprovisioned employee the IdP re-enables comes back through a
+ * reactivation (#1628), in the SCIM transaction. As at deprovisioning, the
+ * actor is the user, with the connection in the audit metadata; the audit
+ * entries wait for the commit.
+ */
+async function reactivateSCIMReenabledEmployee(input: {
+	organizationId: string;
+	userId: string;
+	employeeId: string;
+	connectionId: string;
+}) {
+	const reactivation = await reactivateOnReturn(
+		requireAuthTransaction("SCIM reactivation"),
+		{
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			actorUserId: input.userId,
+			at: systemClock.nowInstant(),
+			metadata: { connectionId: input.connectionId },
+		},
+	);
+	if (reactivation) {
+		await queueAfterAuthTransactionCommit(() => completeReturnReactivation(reactivation));
 	}
 }
 

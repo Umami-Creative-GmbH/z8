@@ -27,6 +27,16 @@ export interface SCIMLifecycleHooks {
 		employeeId: string;
 		connectionId: string;
 	}): Promise<void>;
+	/**
+	 * Runs in the SCIM transaction right after this reconciliation switched a
+	 * deprovisioned employee on again (#1628: the way back is a reactivation).
+	 */
+	onEmployeeReactivated?(input: {
+		organizationId: string;
+		userId: string;
+		employeeId: string;
+		connectionId: string;
+	}): Promise<void>;
 }
 
 export async function reconcileSCIMLifecycle(
@@ -156,6 +166,14 @@ export async function reconcileSCIMLifecycle(
 				updatedEmployee ??
 				(await store.getEmployee(organizationId, input.userId)) ??
 				employee;
+			if (updatedEmployee?.isActive) {
+				await hooks.onEmployeeReactivated?.({
+					organizationId,
+					userId: input.userId,
+					employeeId: updatedEmployee.id,
+					connectionId: config.connectionId,
+				});
+			}
 		}
 		memberDeactivationOwned = false;
 		employeeDeactivationOwned = false;

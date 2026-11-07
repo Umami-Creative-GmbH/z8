@@ -122,9 +122,12 @@ send again.
 - **Membership** (organization access) and **employment** (periods, terms, time)
   are separate. Owner-only *Remove access* removes membership and never ends or
   reactivates employment.
-- External provisioning (SCIM, invitations, pending-member approval) cannot
-  reactivate an employee whose employment an effective departure ended; the
-  database guard keeps them inactive. Access returns only through a rehire.
+- Coming back through an invite code, pending-member approval, provisioning
+  (invitation acceptance, `addMember`) or a SCIM re-enable switches a
+  deactivated employee on and runs a reactivation (see *Reactivation*).
+- None of these paths can reactivate an employee whose employment an effective
+  departure ended; the database guard keeps them inactive and no reactivation is
+  recorded. Access returns only through a rehire.
 
 ## Former employees and the current roster
 
@@ -395,6 +398,22 @@ with `reactivated_at`, `reactivated_by` and a server-generated
 `{ deactivationId }`) when the employee has an employment period. It restores
 no grant, badge, fob, driving authorization, manager link, team or project link,
 shift or absence; the acceptance suite asserts that.
+
+**Every way back is a reactivation** (#1628). The invite-code join, the
+pending-member approval, provisioning (`ensureEmployeeForOrganizationMember` in
+`membershipAccepted` mode) and a SCIM re-enable (the reconciler's
+`onEmployeeReactivated` hook) switch the employee on themselves, then call
+`reactivateOnReturn` in the same transaction. It does the same ledger work as
+*Reactivate* when the employee is on the current roster again and has an open
+deactivation, and nothing otherwise: a departed employee the database guard
+kept inactive and an employee who was never deactivated get no reactivation.
+The actor is whoever brought them back: the approving admin, the joining or
+accepting user (the added user for `addMember`, whose hook names no actor), or
+for SCIM the user, with `{ connectionId }` in the audit metadata. After commit
+`completeReturnReactivation` forwards the audit entries and writes
+`employee.reactivated` with the `reactivationRequestId`. These paths serialize
+with Deactivate through the user's exclusive configuration/access guard and do
+not take the organization row lock.
 
 **Checklist.** The ledger row keeps the applied consequences (`applied`) and,
 since migration 0286, the plan they were applied from (`plan`, with only the
