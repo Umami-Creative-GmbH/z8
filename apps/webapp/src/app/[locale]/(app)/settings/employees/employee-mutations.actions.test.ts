@@ -103,17 +103,23 @@ vi.mock("@/lib/organization/personnel-number-uniqueness", () => ({
 	keepPersonnelNumberRefusal: () => (effect: unknown) => effect,
 }));
 
-// The placement itself is covered by primary-team.integration.test.ts (#1575).
-const setPrimaryTeam = vi.hoisted(() =>
+// The placement itself is covered by team-placement.integration.test.ts (#1594).
+const placeArrivingEmployee = vi.hoisted(() =>
 	vi.fn(async (_tx: unknown, input: { teamId: string | null }) => ({
 		addTeamId: input.teamId,
 		endTeamId: null,
 		primaryTeamId: input.teamId,
 	})),
 );
-vi.mock("@/lib/organization/primary-team", () => ({
-	keepPrimaryTeamRefusal: (effect: unknown) => effect,
-	setPrimaryTeam,
+vi.mock("@/lib/organization/team-placement/team-placement", () => ({
+	applyTeamChange: vi.fn(async () => undefined),
+	keepTeamChangeRefusals: (effect: unknown) => effect,
+	placeArrivingEmployee,
+	previewTeamChange: vi.fn(async () => undefined),
+	teamChangeScope: (change: { organizationId: string; employeeId: string }) => ({
+		organizationId: change.organizationId,
+		employeeIds: [change.employeeId],
+	}),
 }));
 
 // The work balance is marked from the terms' calendar date in the organization's timezone.
@@ -333,7 +339,7 @@ describe("createEmployeeAction", () => {
 		);
 		expect(values).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1" }));
 		// The team is a membership and the primary team (Organization ADR 0010).
-		expect(setPrimaryTeam).toHaveBeenCalledWith(
+		expect(placeArrivingEmployee).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ organizationId: "org-1", teamId: validTeamId }),
 		);

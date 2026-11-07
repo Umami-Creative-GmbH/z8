@@ -52,16 +52,11 @@ const cameBack = (employeeId: string) =>
 		expect.anything(),
 	);
 
-// The placement itself is covered by primary-team.integration.test.ts (#1575).
-const setPrimaryTeam = vi.hoisted(() =>
+// The placement itself is covered by team-placement.integration.test.ts (#1594).
+const placeArrivingEmployee = vi.hoisted(() =>
 	vi.fn(async (_tx: unknown, _input: unknown) => undefined),
 );
-vi.mock("@/lib/organization/primary-team", () => ({
-	setPrimaryTeam,
-	// As placeInTeam: no team places nothing.
-	placeInTeam: (tx: unknown, input: { teamId?: string | null }) =>
-		input.teamId ? setPrimaryTeam(tx, input) : null,
-}));
+vi.mock("@/lib/organization/team-placement/team-placement", () => ({ placeArrivingEmployee }));
 
 function resetEnterpriseIdentityMock() {
 	enterpriseIdentityMock.assertRedemptionAllowed.mockReset();
@@ -270,7 +265,7 @@ describe("InviteCodeService.useCode", () => {
 
 	it("provisions an active employee on a valid no-approval invite target team", async () => {
 		resetEnterpriseIdentityMock();
-		setPrimaryTeam.mockClear();
+		placeArrivingEmployee.mockClear();
 		const insertedEmployees: unknown[] = [];
 		const inviteCodeRecord = {
 			id: "invite-1",
@@ -352,7 +347,7 @@ describe("InviteCodeService.useCode", () => {
 			},
 		]);
 		// The code's team is a membership and the primary team (Organization ADR 0010).
-		expect(setPrimaryTeam).toHaveBeenCalledWith(
+		expect(placeArrivingEmployee).toHaveBeenCalledWith(
 			mockDb,
 			expect.objectContaining({ organizationId: "org-1", teamId: "team-1" }),
 		);
@@ -1454,7 +1449,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 	});
 
 	it("provisions an active employee without a team when the invite target team is invalid", async () => {
-		setPrimaryTeam.mockClear();
+		placeArrivingEmployee.mockClear();
 		const insertedEmployees: unknown[] = [];
 		const userClears: unknown[] = [];
 		const inviteCodeRecord = {
@@ -1546,7 +1541,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 				isActive: true,
 			},
 		]);
-		expect(setPrimaryTeam).not.toHaveBeenCalled();
+		expect(placeArrivingEmployee).not.toHaveBeenCalled();
 	});
 
 	it("rejects enterprise identity blocked pending invite codes before member or employee inserts", async () => {
@@ -1993,7 +1988,7 @@ describe("InviteCodeService preserved employee reactivation", () => {
 	] as const)(
 		"reactivates the same employee after membership removal %s and preserves HR fields",
 		async (_case, defaultTeamId) => {
-			setPrimaryTeam.mockClear();
+			placeArrivingEmployee.mockClear();
 			const fake = reactivationLayer({
 				defaultTeamId,
 				existingEmployee: {
@@ -2020,12 +2015,12 @@ describe("InviteCodeService preserved employee reactivation", () => {
 			expect(fake.employeeUpdates).toEqual([]);
 			// The code's team is a move from team-history (Organization ADR 0010).
 			if (defaultTeamId) {
-				expect(setPrimaryTeam).toHaveBeenCalledWith(fake.mockDb, {
+				expect(placeArrivingEmployee).toHaveBeenCalledWith(fake.mockDb, {
 					organizationId: "org-1",
 					employeeId: "employee-preserved",
 					teamId: defaultTeamId,
 				});
-			} else expect(setPrimaryTeam).not.toHaveBeenCalled();
+			} else expect(placeArrivingEmployee).not.toHaveBeenCalled();
 		},
 	);
 

@@ -529,22 +529,15 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		).toEqual(full([]));
 	});
 
-	it("deleting a team clears it as primary team and drops its assignment: warned, then ended", async () => {
-		const { previewTeamDeletionDrivingImpact, deleteTeam } = await teams();
-		const dana = await fixture.seedEmployee();
+	it("deleting a team ends nothing: only a team without members is deleted (#1594)", async () => {
+		const { deleteTeam } = await teams();
 		const vans = await seedTeam("Vans");
-		await fixture.pool.query(`update employee set team_id=$1 where id=$2`, [vans, dana.employeeId]);
 		await assign({ type: "team", teamId: vans }, "required");
-		await check(dana);
+		await assign({ type: "team", teamId: drivers }, "required");
+		await check(alex);
 
-		const preview = impact(await owner(() => previewTeamDeletionDrivingImpact(vans)));
-		expect(preview).toEqual(full([ending(dana)]));
-		expect(
-			await owner(() =>
-				deleteTeam({ teamId: vans, drivingLicencePreviewToken: preview.previewToken }),
-			),
-		).toMatchObject({ success: true });
-		await expectEnded(dana);
+		expect(await owner(() => deleteTeam({ teamId: vans }))).toMatchObject({ success: true });
+		expect(await status(alex)).toBe("active");
 	});
 
 	it("changing the primary team on the employee ends the authorizations too", async () => {
@@ -570,7 +563,7 @@ describe("primary-team changes end the authorizations of employees who stop bein
 	});
 
 	it("refuses a team change whose preview went stale, and one that skipped the preview", async () => {
-		const { previewTeamMemberChangeDrivingImpact, removeTeamMember, deleteTeam } = await teams();
+		const { previewTeamMemberChangeDrivingImpact, removeTeamMember } = await teams();
 		const { updateEmployeeAction } = await employees();
 		await assign({ type: "team", teamId: drivers }, "required");
 		const preview = impact(
@@ -605,19 +598,7 @@ describe("primary-team changes end the authorizations of employees who stop bein
 				updateEmployeeAction({ employeeId: alex.employeeId, data: { teamId: office } }),
 			),
 		).toMatchObject({ success: false, refusal: "stale_preview" });
-		const vans = await seedTeam("Vans");
-		await assign({ type: "team", teamId: vans }, "required");
-		await fixture.pool.query(`update employee set team_id=$1 where id=$2`, [
-			vans,
-			blair.employeeId,
-		]);
-		await check(blair, ["B"]);
-		expect(await owner(() => deleteTeam({ teamId: vans }))).toMatchObject({
-			success: false,
-			refusal: "stale_preview",
-		});
 		expect(await status(alex)).toBe("active");
-		expect(await status(blair)).toBe("active");
 	});
 
 	it("shows a team manager without the planning permission only that some authorizations end", async () => {

@@ -19,7 +19,7 @@ import { AuditTrail } from "@/lib/audit-trail";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
-import { placeInTeam } from "@/lib/organization/primary-team";
+import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -275,13 +275,15 @@ export const PendingMemberServiceLive = Layer.effect(
 					]);
 
 					// The assigned team is a membership and the primary team (Organization ADR 0010).
-					const placeInAssignedTeam = (employeeId: string) =>
-						placeInTeam(tx, {
+					const placeInAssignedTeam = async (employeeId: string) => {
+						if (!input.assignedTeamId) return;
+						await placeArrivingEmployee(tx, {
 							organizationId: input.organizationId,
 							employeeId,
 							teamId: input.assignedTeamId,
 							createdBy: input.approvedBy,
 						});
+					};
 
 					if (!existingEmployee) {
 						const [created] = await tx

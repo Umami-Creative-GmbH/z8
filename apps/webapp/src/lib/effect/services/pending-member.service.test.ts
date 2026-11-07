@@ -28,15 +28,12 @@ vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	syncBillingSeatsAfterMemberChange: billingMock.sync,
 }));
 
-// The placement itself is covered by primary-team.integration.test.ts (#1575).
-const setPrimaryTeam = vi.hoisted(() =>
+// The placement itself is covered by team-placement.integration.test.ts (#1594).
+const placeArrivingEmployee = vi.hoisted(() =>
 	vi.fn(async (_tx: unknown, _input: unknown) => undefined),
 );
-vi.mock("@/lib/organization/primary-team", () => ({
-	setPrimaryTeam,
-	// As placeInTeam: no team places nothing.
-	placeInTeam: (tx: unknown, input: { teamId?: string | null }) =>
-		input.teamId ? setPrimaryTeam(tx, input) : null,
+vi.mock("@/lib/organization/team-placement/team-placement", () => ({
+	placeArrivingEmployee,
 }));
 
 vi.mock("@/lib/auth/member-removal-cleanup", () => ({
@@ -246,7 +243,7 @@ async function bulkApproveWith(
 describe("PendingMemberService approval transactions", () => {
 	beforeEach(() => {
 		billingMock.sync.mockClear();
-		setPrimaryTeam.mockClear();
+		placeArrivingEmployee.mockClear();
 	});
 
 	it("atomically approves the member, records the audit, provisions the employee, then bills", async () => {
@@ -273,7 +270,7 @@ describe("PendingMemberService approval transactions", () => {
 			}),
 		]);
 		// The assigned team is a membership and the primary team (Organization ADR 0010).
-		expect(setPrimaryTeam).toHaveBeenCalledWith(expect.anything(), {
+		expect(placeArrivingEmployee).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			employeeId: "employee-1",
 			teamId: "team-1",

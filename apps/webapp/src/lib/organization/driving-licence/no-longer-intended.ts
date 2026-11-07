@@ -24,7 +24,7 @@ import type { DrivingLicenceDatabase, DrivingLicenceTransaction } from "./verifi
 /**
  * "End authorization because no longer intended" (#1425, Organization ADR 0005). Whatever
  * takes intended-driver status away (an assignment change or exclusion, a move to another
- * primary team, a team deletion) wraps its write in `begin…` / `preview…` inside one
+ * primary team) wraps its write in `begin…` / `preview…` inside one
  * transaction: begin takes the driving licence organization lock and notes the intended
  * drivers holding a current class authorization; after the write the caller checks the
  * outcome against the confirmed preview token and ends the authorizations of those no longer
@@ -280,7 +280,7 @@ async function endingDetail(
 /**
  * Runs `write` (inside the caller's transaction, after its authorization-mutation protection)
  * between `begin…` and `finish…`: for writes outside driving licence control that can change
- * who is an intended driver, such as primary-team changes and team deletion. The outcome must
+ * who is an intended driver, such as primary-team changes (team placement). The outcome must
  * match the preview the viewer confirmed (`previewToken`); without a token the viewer is held
  * to "nobody is affected". Otherwise throws `DrivingLicenceStalePreviewError` before ending.
  */
@@ -320,12 +320,14 @@ export async function runDrivingLicenceIntendedDriverWrite<Tx extends DrivingLic
 /**
  * The warning for such a write: runs it in a transaction opened by `transaction` (the same
  * protection as the real write) and rolls it back, returning what the viewer may see of who
- * would lose which classes, with the token the save takes.
+ * would lose which classes, with the token the save takes. `changesIntendedDrivers`, read
+ * first in that transaction, can tell that this write ends nothing: the preview then takes no
+ * driving licence lock.
  */
 export async function previewDrivingLicenceIntendedDriverWrite<
 	Tx extends DrivingLicenceTransaction,
 >(
-	scope: IntendedDriverWriteScope,
+	scope: IntendedDriverWriteScope & { changesIntendedDrivers?: (tx: Tx) => Promise<boolean> },
 	transaction: (work: (tx: Tx) => Promise<void>) => Promise<unknown>,
 	write: (tx: Tx) => Promise<unknown>,
 ): Promise<DrivingLicenceTeamChangeImpact> {
@@ -333,12 +335,15 @@ export async function previewDrivingLicenceIntendedDriverWrite<
 	const endings = await previewDrivingLicenceEndingByRollback((rollBack) =>
 		transaction(async (tx) => {
 			const now = systemClock.nowInstant();
-			const change = await beginDrivingLicenceIntendedDriverChange(
-				tx,
-				scope.organizationId,
-				now,
-				scope.employeeIds,
-			);
+			const changes = (await scope.changesIntendedDrivers?.(tx)) ?? true;
+			const change = changes
+				? await beginDrivingLicenceIntendedDriverChange(
+						tx,
+						scope.organizationId,
+						now,
+						scope.employeeIds,
+					)
+				: null;
 			await write(tx);
 			const result = await previewDrivingLicenceIntendedDriverChange(tx, change, now);
 			seen.detail = await endingDetail(tx, scope.organizationId, scope.viewer);

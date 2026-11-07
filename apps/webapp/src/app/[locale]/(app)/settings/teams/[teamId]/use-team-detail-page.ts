@@ -12,7 +12,6 @@ import {
 	addTeamMember,
 	deleteTeam,
 	getTeam,
-	previewTeamDeletionDrivingImpact,
 	previewTeamMemberChangeDrivingImpact,
 	removeTeamMember,
 	updateTeam,
@@ -240,20 +239,12 @@ export function useTeamDetailPage(teamId: string) {
 	});
 
 	const deleteTeamMutation = useMutation({
-		mutationFn: async (previewToken: string) => {
-			const result = await deleteTeam({
-				teamId,
-				drivingLicencePreviewToken: previewToken,
-			});
+		mutationFn: async () => {
+			const result = await deleteTeam({ teamId });
 			if (!result.success) {
 				throw new Error(
-					teamChangeError(
-						result,
-						t(
-							"settings.teams.detail.errors.deleteTeam",
-							"Failed to delete team",
-						),
-					),
+					result.error ||
+						t("settings.teams.detail.errors.deleteTeam", "Failed to delete team"),
 				);
 			}
 			return result;
@@ -300,10 +291,8 @@ export function useTeamDetailPage(teamId: string) {
 		removeMemberMutation.mutate({ employeeId, previewToken });
 	}
 
-	async function handleDeleteTeam() {
-		const previewToken = await confirmTeamChange(() => previewTeamDeletionDrivingImpact(teamId));
-		if (previewToken === null) return;
-		deleteTeamMutation.mutate(previewToken);
+	function handleDeleteTeam() {
+		deleteTeamMutation.mutate();
 	}
 
 	const loading =

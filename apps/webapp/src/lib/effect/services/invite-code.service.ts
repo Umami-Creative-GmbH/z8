@@ -30,7 +30,7 @@ import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
 import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
 import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
-import { placeInTeam } from "@/lib/organization/primary-team";
+import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -285,7 +285,7 @@ export const InviteCodeServiceLive = Layer.effect(
 
 		type RedemptionDb = Pick<
 			typeof dbService.db,
-			"execute" | "query" | "insert" | "update" | "delete"
+			"execute" | "query" | "select" | "insert" | "update" | "delete"
 		>;
 
 		const clearPendingInviteCodeIfCurrent = async (
@@ -342,12 +342,14 @@ export const InviteCodeServiceLive = Layer.effect(
 			]);
 
 			// The code's team is a membership and the primary team (Organization ADR 0010).
-			const placeInTargetTeam = (employeeId: string) =>
-				placeInTeam(dbClient, {
+			const placeInTargetTeam = async (employeeId: string) => {
+				if (!targetTeamId) return;
+				await placeArrivingEmployee(dbClient, {
 					organizationId: inviteCodeRecord.organizationId,
 					employeeId,
 					teamId: targetTeamId,
 				});
+			};
 
 			if (existingEmployee) {
 				if (!existingEmployee.isActive) {

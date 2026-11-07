@@ -18,6 +18,7 @@ const mockState = vi.hoisted(() => ({
 	updateWhere: vi.fn(async () => undefined),
 	deleteWhere: vi.fn(async () => undefined),
 	teamMembershipFindFirst: vi.fn(async () => null),
+	applyTeamChange: vi.fn(async (_tx: unknown, _change: unknown, _options: unknown) => undefined),
 	formerEmployeeIds: new Set<string>(),
 }));
 
@@ -37,15 +38,16 @@ vi.mock("@/lib/authorization/authorization-mutation", () => ({
 	) => mutation(database),
 }));
 
-// Ending driving authorizations on a primary-team change (#1425) is covered by the
-// driving licence PostgreSQL suite; here the team write runs on its own.
-vi.mock("@/lib/organization/driving-licence/no-longer-intended", () => ({
-	runDrivingLicenceIntendedDriverWrite: (
-		tx: unknown,
-		_scope: unknown,
-		write: (tx: unknown) => Promise<unknown>,
-	) => write(tx),
-	previewDrivingLicenceIntendedDriverWrite: async () => [],
+// The placement and its driving licence consequence (#1425) are covered by
+// team-placement.integration.test.ts (#1594); here the actions hand it their change.
+vi.mock("@/lib/organization/team-placement/team-placement", () => ({
+	applyTeamChange: mockState.applyTeamChange,
+	keepTeamChangeRefusals: (effect: unknown) => effect,
+	previewTeamChange: vi.fn(async () => undefined),
+	teamChangeScope: (change: { organizationId: string; employeeId: string }) => ({
+		organizationId: change.organizationId,
+		employeeIds: [change.employeeId],
+	}),
 }));
 
 vi.mock("next/cache", () => ({
@@ -129,7 +131,6 @@ const {
 	deleteTeam,
 	getTeam,
 	listTeams,
-	previewTeamDeletionDrivingImpact,
 	previewTeamMemberChangeDrivingImpact,
 	removeTeamMember,
 	updateTeam,
@@ -214,7 +215,6 @@ describe("team settings server scope", () => {
 					change: "add",
 				}),
 		],
-		["previewTeamDeletionDrivingImpact", () => previewTeamDeletionDrivingImpact("team-a")],
 	])("refuses %s to an org member, one level below a scoped manager", async (_name, run) => {
 		mockState.caller = orgMember;
 		mockState.teamQueue = [{ id: "team-a", organizationId: "org-1", name: "Alpha" }];
@@ -226,6 +226,7 @@ describe("team settings server scope", () => {
 		expect(await run()).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mockState.insertValues).not.toHaveBeenCalled();
 		expect(mockState.deleteWhere).not.toHaveBeenCalled();
+		expect(mockState.applyTeamChange).not.toHaveBeenCalled();
 	});
 
 	it("refuses adding a former employee to a team (#1438)", async () => {
@@ -245,7 +246,7 @@ describe("team settings server scope", () => {
 		const result = await addTeamMember({ teamId: "team-b", employeeId: "target-1" });
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.applyTeamChange).not.toHaveBeenCalled();
 	});
 
 	it("refuses team creation to a scoped manager, one level below an org admin, even with canCreateTeams", async () => {
@@ -567,10 +568,10 @@ describe("team settings server scope", () => {
 		const result = await addTeamMember({ teamId: "team-a", employeeId: "emp-target" });
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
-		expect(mockState.updateWhere).not.toHaveBeenCalled();
+		expect(mockState.applyTeamChange).not.toHaveBeenCalled();
 	});
 
-	it("adds team membership without moving an employee out of another team", async () => {
+	it("adds the member through team placement with the confirmed driving licence warning", async () => {
 		mockState.employeeQueue = [
 			{
 				id: "target-1",
@@ -583,51 +584,27 @@ describe("team settings server scope", () => {
 		];
 		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
 
-		const result = await addTeamMember({ teamId: "team-b", employeeId: "target-1" });
+		const result = await addTeamMember({
+			teamId: "team-b",
+			employeeId: "target-1",
+			drivingLicencePreviewToken: "token-1",
+		});
 
 		expect(result.success).toBe(true);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				teamId: "team-b",
-				employeeId: "target-1",
-				organizationId: "org-1",
-				createdBy: "user-1",
-			}),
-		);
-		expect(mockState.updateSet).not.toHaveBeenCalledWith(
-			expect.objectContaining({ teamId: "team-b" }),
+		expect(mockState.applyTeamChange).toHaveBeenCalledWith(
+			expect.anything(),
+			{ kind: "addMembership", organizationId: "org-1", teamId: "team-b", employeeId: "target-1" },
+			{
+				actorUserId: "user-1",
+				viewer: { userId: "user-1", organizationAdmin: true },
+				previewToken: "token-1",
+			},
 		);
 		expect(mockState.revalidateTag).toHaveBeenCalledWith("teams:org-1", "max");
 		expect(mockState.revalidateTag).toHaveBeenCalledWith("employees:org-1", "max");
 		expect(mockState.onTeamMemberAdded).toHaveBeenCalledWith(
 			expect.objectContaining({ performedByName: "Caller", organizationId: "org-1" }),
 		);
-	});
-
-	it("adds team membership and sets compatibility team when employee has none", async () => {
-		mockState.employeeQueue = [
-			{
-				id: "target-1",
-				userId: "user-2",
-				organizationId: "org-1",
-				role: "employee",
-				teamId: null,
-				user: { id: "user-2", name: "Target", email: "target@example.com" },
-			},
-		];
-		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
-
-		const result = await addTeamMember({ teamId: "team-b", employeeId: "target-1" });
-
-		expect(result.success).toBe(true);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				teamId: "team-b",
-				employeeId: "target-1",
-				organizationId: "org-1",
-			}),
-		);
-		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
 	});
 
 	it("rejects scoped manager adding employee with existing membership outside scope", async () => {
@@ -656,7 +633,7 @@ describe("team settings server scope", () => {
 			code: "AuthorizationError",
 			error: "Cannot move employees from teams outside your scope",
 		});
-		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.applyTeamChange).not.toHaveBeenCalled();
 	});
 
 	it("allows scoped manager adding employee with no memberships and no legacy team", async () => {
@@ -679,36 +656,19 @@ describe("team settings server scope", () => {
 		const result = await addTeamMember({ teamId: "team-b", employeeId: "emp-target" });
 
 		expect(result.success).toBe(true);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
+		expect(mockState.applyTeamChange).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				kind: "addMembership",
+				organizationId: "org-1",
 				teamId: "team-b",
 				employeeId: "emp-target",
-				organizationId: "org-1",
-			}),
-		);
-		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
-	});
-
-	it("uses idempotent insert for duplicate team membership adds", async () => {
-		mockState.employeeQueue = [
-			{
-				id: "target-1",
-				userId: "user-2",
-				organizationId: "org-1",
-				role: "employee",
-				teamId: "team-a",
-				user: { id: "user-2", name: "Target", email: "target@example.com" },
 			},
-		];
-		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
-
-		const result = await addTeamMember({ teamId: "team-b", employeeId: "target-1" });
-
-		expect(result.success).toBe(true);
-		expect(mockState.onConflictDoNothing).toHaveBeenCalledOnce();
+			expect.objectContaining({ viewer: { userId: "user-1", organizationAdmin: false } }),
+		);
 	});
 
-	it("removes only selected team membership and reassigns compatibility team to another remaining membership", async () => {
+	it("removes the member through team placement with the confirmed driving licence warning", async () => {
 		mockState.employeeQueue = [
 			{
 				id: "target-1",
@@ -718,43 +678,32 @@ describe("team settings server scope", () => {
 				teamId: "team-b",
 				user: { name: "Target" },
 			},
-			{ teamId: "team-b" },
 		];
 		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
-		mockState.teamMembershipRows = [
-			[
-				{ organizationId: "org-1", teamId: "team-c", employeeId: "target-1" },
-				{ organizationId: "org-1", teamId: "team-a", employeeId: "target-1" },
-			],
-		];
 
-		const result = await removeTeamMember({ teamId: "team-b", employeeId: "target-1" });
+		const result = await removeTeamMember({
+			teamId: "team-b",
+			employeeId: "target-1",
+			drivingLicencePreviewToken: "token-1",
+		});
 
 		expect(result.success).toBe(true);
-		expect(mockState.deleteWhere).toHaveBeenCalled();
-		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-a" }));
+		expect(mockState.applyTeamChange).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				kind: "removeMembership",
+				organizationId: "org-1",
+				teamId: "team-b",
+				employeeId: "target-1",
+			},
+			{
+				actorUserId: "user-1",
+				viewer: { userId: "user-1", organizationAdmin: true },
+				previewToken: "token-1",
+			},
+		);
 		expect(mockState.revalidateTag).toHaveBeenCalledWith("teams:org-1", "max");
 		expect(mockState.revalidateTag).toHaveBeenCalledWith("employees:org-1", "max");
-	});
-
-	it("removes only selected team membership without changing a different compatibility team", async () => {
-		mockState.employeeQueue = [
-			{
-				id: "target-1",
-				userId: "user-2",
-				organizationId: "org-1",
-				role: "employee",
-				teamId: "team-a",
-				user: { name: "Target" },
-			},
-		];
-		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
-
-		const result = await removeTeamMember({ teamId: "team-b", employeeId: "target-1" });
-
-		expect(result.success).toBe(true);
-		expect(mockState.deleteWhere).toHaveBeenCalled();
-		expect(mockState.updateSet).not.toHaveBeenCalledWith(expect.objectContaining({ teamId: null }));
 	});
 
 	it("still removes a former employee from a team (#1438)", async () => {
@@ -774,7 +723,11 @@ describe("team settings server scope", () => {
 		const result = await removeTeamMember({ teamId: "team-b", employeeId: "target-1" });
 
 		expect(result.success).toBe(true);
-		expect(mockState.deleteWhere).toHaveBeenCalled();
+		expect(mockState.applyTeamChange).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ kind: "removeMembership", employeeId: "target-1" }),
+			expect.anything(),
+		);
 	});
 
 	it("rejects primary manager assignment for employee role", async () => {
