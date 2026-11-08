@@ -251,11 +251,37 @@ describe("member removal and SCIM deprovisioning are follow-up deactivations (#1
 			);
 	}
 
+	function deputyNotices() {
+		return createNotification.mock.calls
+			.map(([params]) => params)
+			.filter((params) => params.type === "absence_deputy_unavailable");
+	}
+
+	async function deputyAudits(absenceId: string) {
+		const { rows } = await fixture.pool.query<{
+			performed_by: string;
+			metadata: string;
+		}>(
+			`select performed_by, metadata from audit_log
+			 where organization_id = $1 and action = 'absence.deputy_changed' and entity_id = $2`,
+			[fixture.organizationId, absenceId],
+		);
+		return rows.map((row) => ({
+			performedBy: row.performed_by,
+			metadata: JSON.parse(row.metadata) as Record<string, unknown>,
+		}));
+	}
+
 	describe("the follow-up applies the deactivation", () => {
 		it("ends what they hold and applies the roster areas at the removal moment", async () => {
 			const seeded = await seedHoldings();
 			await removeMember(seeded.person, fixture.ownerUserId);
 			const removedAt = await leftAt(seeded.person);
+			// The removal only switches them off; the follow-up releases their deputy duties.
+			expect((await holdings(seeded)).deputy).toEqual({
+				deputy_employee_id: seeded.person.employeeId,
+			});
+			expect(deputyNotices()).toEqual([]);
 
 			await runFollowUpDeactivations(db);
 
@@ -279,6 +305,24 @@ describe("member removal and SCIM deprovisioning are follow-up deactivations (#1
 				// Never refuses: the report keeps their only manager link.
 				managerLinks: [{ employee_id: seeded.report.employeeId }],
 			});
+			// Released as part of the deactivation, under its audit, and the absent colleague hears of it.
+			const [deactivation] = await fixture.pool.query<{ id: string }>(
+				"select id from employee_deactivation where employee_id = $1",
+				[seeded.person.employeeId],
+			).then((result) => result.rows);
+			expect(await deputyAudits(seeded.absenceId)).toEqual([
+				{
+					performedBy: fixture.ownerUserId,
+					metadata: expect.objectContaining({
+						actorKind: "system",
+						reason: "member_removed",
+						deactivationId: deactivation?.id,
+					}),
+				},
+			]);
+			expect(deputyNotices()).toEqual([
+				expect.objectContaining({ entityId: seeded.absenceId }),
+			]);
 			// The organization's admins hear about the report once.
 			expect(adminNotices()).toEqual([
 				expect.objectContaining({
@@ -319,6 +363,38 @@ describe("member removal and SCIM deprovisioning are follow-up deactivations (#1
 					)
 				).rows,
 			}).toEqual(before);
+			expect(adminNotices()).toEqual([]);
+		});
+
+		it("retries the admins' notice until it is sent, and sends it once", async () => {
+			const seeded = await seedHoldings();
+			await removeMember(seeded.person, fixture.ownerUserId);
+			const failing = vi.fn(async () => {
+				throw new Error("notification store down");
+			});
+
+			const failed = await runFollowUpDeactivations(db, { notify: failing });
+
+			expect(failing).toHaveBeenCalled();
+			expect(failed.failed).toBeGreaterThanOrEqual(1);
+			// The deactivation stands; only the notice is still owed.
+			expect(await deactivations(seeded.person)).toEqual([
+				expect.objectContaining({ status: "applied", applied: true }),
+			]);
+			expect(adminNotices()).toEqual([]);
+
+			await runFollowUpDeactivations(db);
+
+			expect(adminNotices()).toEqual([
+				expect.objectContaining({
+					userId: fixture.ownerUserId,
+					entityId: seeded.report.employeeId,
+				}),
+			]);
+			createNotification.mockClear();
+
+			await runFollowUpDeactivations(db);
+
 			expect(adminNotices()).toEqual([]);
 		});
 
@@ -373,8 +449,8 @@ describe("member removal and SCIM deprovisioning are follow-up deactivations (#1
 	describe("a person who came back before the follow-up ran", () => {
 		it("keeps everything, and the deactivation is closed as withdrawn", async () => {
 			const seeded = await seedHoldings();
-			await removeMember(seeded.person, fixture.ownerUserId);
 			const kept = await holdings(seeded);
+			await removeMember(seeded.person, fixture.ownerUserId);
 			await reAdd(seeded.person);
 
 			const result = await runFollowUpDeactivations(db);
@@ -389,8 +465,13 @@ describe("member removal and SCIM deprovisioning are follow-up deactivations (#1
 				}),
 			]);
 			expect(await holdings(seeded)).toEqual(kept);
-			expect(kept.grant).toEqual({ revoked_at: null });
+			expect(kept).toMatchObject({
+				grant: { revoked_at: null },
+				// Still the colleague's deputy: the removal itself releases nothing.
+				deputy: { deputy_employee_id: seeded.person.employeeId },
+			});
 			expect(adminNotices()).toEqual([]);
+			expect(deputyNotices()).toEqual([]);
 			// Nothing ended, so there is nothing to grant again.
 			expect(
 				await loadReactivationChecklist(db, {

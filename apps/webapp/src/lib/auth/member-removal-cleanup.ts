@@ -2,16 +2,9 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { AuditTrail } from "@/lib/audit-trail";
 import { protectAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
-import { systemClock } from "@/lib/datetime/temporal-core";
 import { recordFollowUpDeactivation } from "@/lib/employee-lifecycle/deactivation/follow-up-record";
-import {
-	type ReleasedDeputyAssignments,
-	releaseDeputyAssignmentsOnDeactivation,
-} from "@/lib/employee-lifecycle/deputy-release";
-import { notifyReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release-runtime";
 import { secondaryStorage } from "@/lib/redis";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
 import { normalizeInvitationEmail } from "./employee-invitation-draft";
@@ -25,8 +18,6 @@ type MemberRemovalTransaction = Parameters<
 export type RemovedMemberAccessOutcome = {
 	accessRestored: boolean;
 	sessionTokens: string[];
-	/** Absences the removed member stopped covering, to notify after commit (#1014). */
-	releasedDeputies?: ReleasedDeputyAssignments | null;
 };
 
 const memberAccessRevocationDependencies = {
@@ -53,7 +44,6 @@ export async function revokeRemovedMemberAccess(
 			dependencies.deleteSecondarySession(token),
 		),
 	);
-	await notifyReleasedDeputyAssignments(outcome.releasedDeputies);
 	return { accessRestored: outcome.accessRestored };
 }
 
@@ -116,32 +106,22 @@ export async function revokeRemovedMemberAccessInTransaction(
 		)
 		.returning({ id: employee.id });
 
-	// The removed member stops being anyone's deputy (#1014), audited under the
-	// removing admin; only without a known one, under the removed member's own
-	// user. Either way marked as a system side effect.
-	const actorUserId = options.actorUserId ?? userId;
-	const releasedDeputies = deactivated[0]
-		? await releaseDeputyAssignmentsOnDeactivation(dbClient, new AuditTrail(), {
-				organizationId,
-				employeeId: deactivated[0].id,
-				actorUserId,
-				at: systemClock.nowInstant(),
-				reason: "member_removed",
-			})
-		: null;
 	// Member removal is a deactivation (#1629, Organization ADR 0011): when this
 	// removal switched the employee off, a pending deactivation at that moment
-	// waits for the follow-up, which applies it in the deactivation's locks.
+	// waits for the follow-up, which applies it in the deactivation's locks and
+	// ends what they hold, their deputy duties too (#1014). It is audited under
+	// the removing admin; only without a known one, under the removed member's
+	// own user. A person re-added before it runs keeps everything.
 	if (deactivated[0]) {
 		await recordFollowUpDeactivation(dbClient, {
 			organizationId,
 			employeeId: deactivated[0].id,
-			createdBy: actorUserId,
+			createdBy: options.actorUserId ?? userId,
 			reason: "member_removed",
 		});
 	}
 
-	return { accessRestored: false, sessionTokens, releasedDeputies };
+	return { accessRestored: false, sessionTokens };
 }
 
 const postRemovalCleanupDependencies = {
@@ -155,7 +135,6 @@ export async function completeRemovedMemberCleanupPostCommit(
 	input: {
 		organizationId: string;
 		sessionTokens: string[];
-		releasedDeputies?: ReleasedDeputyAssignments | null;
 	},
 	dependencies: {
 		deleteSecondarySession: (token: string) => Promise<void>;
@@ -167,7 +146,6 @@ export async function completeRemovedMemberCleanupPostCommit(
 			dependencies.deleteSecondarySession(token),
 		),
 	);
-	await notifyReleasedDeputyAssignments(input.releasedDeputies);
 	await dependencies.reconcileBillingSeatsForOrganization(
 		input.organizationId,
 		{ strict: true },
@@ -213,7 +191,6 @@ export async function completeRemovedMemberCleanup(
 		{
 			organizationId: input.organizationId,
 			sessionTokens: outcome.sessionTokens,
-			releasedDeputies: outcome.releasedDeputies,
 		},
 		{
 			deleteSecondarySession: dependencies.deleteSecondarySession,

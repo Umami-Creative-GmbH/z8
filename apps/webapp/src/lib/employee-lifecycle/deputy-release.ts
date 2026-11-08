@@ -121,7 +121,8 @@ export async function countDeputyAssignmentsNotEnded(
  * their historical deputy. Each cleared absence gets the same audit entry as a
  * manual deputy change, performed by `actorUserId` and marked as a system side
  * effect. Idempotent: a second run finds nothing to clear and writes nothing.
- * Notifications are the caller's, after the commit (or as a durable task).
+ * Notifications are the caller's, after the commit (or as a durable task):
+ * Employment ending's deputy participant returns them (#1624).
  */
 export async function releaseDeputyAssignments(
 	executor: DeputyReleaseClient,
@@ -165,40 +166,4 @@ export async function releaseDeputyAssignments(
 		});
 	}
 	return released;
-}
-
-/**
- * The release for member removal and SCIM deprovisioning (#1014); Deactivate
- * releases through Employment ending since #1624. Runs in the
- * deactivating transaction; the caller notifies after its commit
- * (`notifyReleasedDeputyAssignments`). Null when nothing was cleared.
- */
-export async function releaseDeputyAssignmentsOnDeactivation(
-	executor: DeputyReleaseClient,
-	audit: AuditTrail,
-	input: {
-		organizationId: string;
-		employeeId: string;
-		actorUserId: string;
-		at: Instant;
-		reason: Exclude<DeputyReleaseReason, "employee_departure">;
-		metadata?: Record<string, unknown>;
-	},
-): Promise<ReleasedDeputyAssignments | null> {
-	const assignments = await releaseDeputyAssignments(executor, audit, {
-		organizationId: input.organizationId,
-		deputyEmployeeId: input.employeeId,
-		at: input.at,
-		actorUserId: input.actorUserId,
-		reason: input.reason,
-		metadata: input.metadata,
-	});
-	if (assignments.length === 0) return null;
-	return {
-		organizationId: input.organizationId,
-		deputyEmployeeId: input.employeeId,
-		eventKey: `${input.reason}:${input.at.epochMilliseconds}`,
-		assignments,
-		audit,
-	};
 }

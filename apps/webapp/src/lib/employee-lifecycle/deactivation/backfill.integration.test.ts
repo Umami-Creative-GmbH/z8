@@ -473,7 +473,7 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 		// From the run instant: both her shifts are past, so both stay hers.
 		expect(fiona?.plan.shifts.shiftsToOpen).toEqual([]);
 		// What she holds ends through Employment ending (#1627).
-		expect(fiona?.plan.employmentEnding.equipment.officerGrantIds).toEqual([
+		expect(fiona?.plan.employmentEnding.equipment.officerGrantHolderIds).toEqual([
 			first.formerManager.employeeId,
 		]);
 		expect(fiona?.plan.employmentEnding.deputyAssignments.assignments).toEqual([

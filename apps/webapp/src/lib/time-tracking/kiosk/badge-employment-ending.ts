@@ -5,6 +5,7 @@ import {
 	endingEmployment,
 } from "@/lib/employee-lifecycle/employment-ending/cause";
 import type { EmploymentEndingParticipant } from "@/lib/employee-lifecycle/employment-ending/types";
+import { countedChecklistItems } from "@/lib/employee-lifecycle/reactivation-checklist";
 import {
 	liveKioskBadgesOfEmploymentPeriod,
 	revokeKioskBadgesOfEmploymentPeriod,
@@ -40,14 +41,10 @@ export const kioskBadgesEndingParticipant: EmploymentEndingParticipant<
 		return { applied: { revokedBadgeIds } };
 	},
 	reactivationItems: (applied, subject) =>
-		applied.revokedBadgeIds.length > 0
-			? [
-					{
-						group: "access",
-						kind: "kiosk_badges",
-						count: applied.revokedBadgeIds.length,
-						href: `/settings/employees/${subject.employeeId}`,
-					},
-				]
-			: [],
+		countedChecklistItems({
+			group: "access",
+			kind: "kiosk_badges",
+			count: applied.revokedBadgeIds.length,
+			href: `/settings/employees/${subject.employeeId}`,
+		}),
 };

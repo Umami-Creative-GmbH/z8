@@ -9,15 +9,22 @@ import type { DeactivationReader } from "./types";
  */
 
 /**
- * Former employees a non-interactive deactivation applies to: switched off,
- * not offboarded by a departure (effective without a rehire, or pending), and
- * without a deactivation no reactivation has ended. Organization-scoped.
+ * Former employees of the organization a non-interactive deactivation applies
+ * to: switched off, not offboarded by a departure (effective without a
+ * rehire, or pending), and without a deactivation no reactivation has ended.
  */
-export function formerEmployeeWithoutDeactivation(
-	organizationId: string | null,
-) {
+export function formerEmployeeWithoutDeactivation(organizationId: string) {
+	return sql`e.organization_id = ${organizationId}
+		AND ${formerEmployeeWithoutDeactivationAcrossOrganizations()}`;
+}
+
+/**
+ * The same predicate in every organization, deliberately not scoped: only for
+ * the backfill's system scan for the organizations that have candidates, which
+ * it then works through one organization at a time.
+ */
+export function formerEmployeeWithoutDeactivationAcrossOrganizations() {
 	return sql`e.is_active = false
-		${organizationId === null ? sql`` : sql`AND e.organization_id = ${organizationId}`}
 		AND NOT employee_employment_ended_without_rehire(e.organization_id, e.id)
 		AND NOT EXISTS (
 			SELECT 1 FROM employee_departure d

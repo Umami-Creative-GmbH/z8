@@ -449,7 +449,7 @@ function endedGrantKinds(ending: EmploymentEndingPlan): ChecklistGrantKind[] {
 	return [
 		...new Set<ChecklistGrantKind>([
 			...ending.officerGrants.grants.map((grant) => grant.kind),
-			...ending.equipment.officerGrantIds.map(() => "equipment_officer" as const),
+			...ending.equipment.officerGrantHolderIds.map(() => "equipment_officer" as const),
 			...ending.drivingLicence.verifierGrantIds.map(() => "driving_licence_verifier" as const),
 		]),
 	];

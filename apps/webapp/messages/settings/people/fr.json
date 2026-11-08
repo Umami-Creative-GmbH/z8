@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# responsabilité d'approbation nécessite un remplaçant et est répertoriée pour examen ({review}).} other {# responsabilités d'approbation nécessitent un remplaçant et sont répertoriées pour examen ({review}).}}",
           "description": "{name} devient un ancien employé dès maintenant. L'accès à cette organisation prend fin, ses sessions sont déconnectées et son historique est conservé. Vérifiez les autres modifications avant de confirmer.",
           "descriptionAt": "{name} devient un ancien employé dès que vous confirmez (prévu pour {time}, {timeZone}). L'accès à cette organisation prend fin, ses sessions sont fermées et son historique est conservé. Vérifiez les autres modifications avant de confirmer.",
+          "documentRequests": "{count, plural, one {# demande de document ouverte est annulée} other {# demandes de documents ouvertes sont annulées}}",
           "drivingAuthorizations": "{count, plural, one {# autorisation de conduite prend fin, y compris celles suspendues} other {# autorisations de conduite prennent fin, y compris celles suspendues}}",
           "formLabel": "Aperçu de la désactivation",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Absences annulées",
             "access": "Badges de borne et autorisations de conduite",
+            "documentRequests": "Demandes de documents annulées",
             "grants": "Autorisations détenues",
             "managers": "Liens hiérarchiques",
             "shareLinks": "Liens de partage de rapport",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Une absence (dates non enregistrées)",
+            "documentRequests": "{count, plural, one {# demande de document ouverte a été annulée ; elle doit être redemandée dans le dossier du personnel} other {# demandes de documents ouvertes ont été annulées ; elles doivent être redemandées dans le dossier du personnel}}",
             "drivingAuthorizations": "{count, plural, one {# autorisation de conduite a pris fin ; une nouvelle vérification est nécessaire} other {# autorisations de conduite ont pris fin ; une nouvelle vérification est nécessaire}}",
             "kioskBadges": "{count, plural, one {# badge de borne a été révoqué} other {# badges de borne ont été révoqués}}",
             "ownManager": "Géré par {name}",

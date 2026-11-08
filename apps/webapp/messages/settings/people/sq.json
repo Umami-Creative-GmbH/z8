@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# detyrë miratimi ka nevojë për një zëvendësues dhe është listuar për shqyrtim ({review}).} other {# detyra miratimi kanë nevojë për një zëvendësues dhe janë listuar për shqyrtim ({review}).}}",
           "description": "{name} bëhet ish-punonjës tani. Qasja në këtë organizatë përfundon, seancat e tyre çidentifikohen dhe historiku i tyre ruhet. Rishikoni se çfarë tjetër ndryshon para se të konfirmoni.",
           "descriptionAt": "{name} bëhet ish-punonjës kur të konfirmoni (parashikuar për {time}, {timeZone}). Qasja në këtë organizatë përfundon, sesionet e tyre çidentifikohen dhe historiku i tyre ruhet. Rishikoni se çfarë tjetër ndryshon para se të konfirmoni.",
+          "documentRequests": "{count, plural, one {# kërkesë e hapur për dokument anulohet} other {# kërkesa të hapura për dokumente anulohen}}",
           "drivingAuthorizations": "{count, plural, one {# autorizim drejtimi përfundon, duke përfshirë edhe ato të pezulluara} other {# autorizime drejtimi përfundojnë, duke përfshirë edhe ato të pezulluara}}",
           "formLabel": "Parapamja e çaktivizimit",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Mungesat e anuluara",
             "access": "Distinktivët e kioskës dhe autorizimet e drejtimit",
+            "documentRequests": "Kërkesat e anuluara për dokumente",
             "grants": "Të drejtat e mbajtura",
             "managers": "Lidhjet e menaxherit",
             "shareLinks": "Lidhjet e ndarjes së raporteve",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Një mungesë (datat nuk janë regjistruar)",
+            "documentRequests": "{count, plural, one {# kërkesë e hapur për dokument u anulua; kërkojeni përsëri në dosjen e personelit} other {# kërkesa të hapura për dokumente u anuluan; kërkojini përsëri në dosjen e personelit}}",
             "drivingAuthorizations": "{count, plural, one {# autorizim drejtimi përfundoi; nevojitet një kontroll i ri} other {# autorizime drejtimi përfunduan; nevojitet një kontroll i ri}}",
             "kioskBadges": "{count, plural, one {# distinktiv kioske u revokua} other {# distinktivë kioske u revokuan}}",
             "ownManager": "Menaxhohet nga {name}",

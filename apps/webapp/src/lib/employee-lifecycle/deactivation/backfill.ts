@@ -18,7 +18,10 @@ import {
 import { currentOrganizationAdminUserIds } from "@/lib/notifications/manager-notice-recipients";
 import { memberIsAccessibleOwnerOrAdmin } from "../authority-sql";
 import { rosterCheckInstant } from "../current-roster";
-import { formerEmployeeWithoutDeactivation } from "./former-employee";
+import {
+	formerEmployeeWithoutDeactivation,
+	formerEmployeeWithoutDeactivationAcrossOrganizations,
+} from "./former-employee";
 import {
 	planNonInteractiveDeactivation,
 	reportsStillWithoutCurrentManager,
@@ -150,7 +153,7 @@ async function findCandidates(
 async function organizationsWithCandidates(database: Pick<Database, "execute">): Promise<string[]> {
 	const result = await database.execute<{ organization_id: string }>(sql`
 		SELECT DISTINCT e.organization_id FROM employee e
-		WHERE ${formerEmployeeWithoutDeactivation(null)}
+		WHERE ${formerEmployeeWithoutDeactivationAcrossOrganizations()}
 		ORDER BY e.organization_id
 	`);
 	return result.rows.map((row) => row.organization_id);

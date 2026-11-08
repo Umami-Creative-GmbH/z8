@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# tarea de aprobación necesita un sustituto y se incluye para su revisión ({review}).} other {# tareas de aprobación necesitan un sustituto y se incluyen para su revisión ({review}).}}",
           "description": "{name} pasa a ser exempleado ahora. Finaliza su acceso a esta organización, se cierran sus sesiones y se conserva su historial. Revisa qué más cambia antes de confirmar.",
           "descriptionAt": "{name} pasará a ser un exempleado cuando confirmes (vista previa para {time}, {timeZone}). Su acceso a esta organización finalizará, se cerrarán sus sesiones y se conservará su historial. Revisa qué más cambia antes de confirmar.",
+          "documentRequests": "{count, plural, one {Se cancela # solicitud de documento abierta} other {Se cancelan # solicitudes de documentos abiertas}}",
           "drivingAuthorizations": "{count, plural, one {Finaliza # autorización de conducción, incluidas las suspendidas} other {Finalizan # autorizaciones de conducción, incluidas las suspendidas}}",
           "formLabel": "Vista previa de desactivación",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Ausencias canceladas",
             "access": "Credenciales de quiosco y autorizaciones de conducción",
+            "documentRequests": "Solicitudes de documentos canceladas",
             "grants": "Permisos otorgados",
             "managers": "Vínculos de responsable",
             "shareLinks": "Enlaces para compartir informes",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Una ausencia (fechas no registradas)",
+            "documentRequests": "{count, plural, one {# solicitud de documento abierta fue cancelada; debe volver a solicitarse en el expediente de personal} other {# solicitudes de documentos abiertas fueron canceladas; deben volver a solicitarse en el expediente de personal}}",
             "drivingAuthorizations": "{count, plural, one {# autorización de conducción finalizó; se requiere una nueva verificación} other {# autorizaciones de conducción finalizaron; se requiere una nueva verificación}}",
             "kioskBadges": "{count, plural, one {# credencial de quiosco fue revocada} other {# credenciales de quiosco fueron revocadas}}",
             "ownManager": "Gestionado por {name}",

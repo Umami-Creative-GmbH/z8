@@ -185,7 +185,10 @@ Its participants run in this fixed order (`participants.ts`):
 7. report share links (`projects/report-share/employment-ending.ts`)
 8. deputy assignments (`employment-ending/deputy-assignments.ts`)
 
-- **Interface.** `endEmployment(tx, ctx)` returns `{ applied, afterCommit }`;
+- **Interface.** `endEmployment(tx, ctx)` returns `{ applied, afterCommit }`:
+  the participants' after-commit steps (a deactivation's deputy notices), in
+  participant order, which the cause's caller runs after its commit on
+  `ctx.database`, its own client;
   `previewEmploymentEnding(reader, ctx)` returns each participant's plan without
   writing; `reactivationItems(applied, { employeeId })` lists the reactivation
   checklist items. `ctx` carries `organizationId`, `employeeId`,
@@ -227,11 +230,11 @@ Its participants run in this fixed order (`participants.ts`):
     employee off. It keeps everything that is its own: the authority check,
     the employment windows, clock-out, the approval handover capture, the
     follow-up reviews and tasks. Its audit rows commit with it and are not
-    forwarded (the transaction may be retried). It has no after-commit hook:
-    the deputy participant queues durable `notify_deputy_release` departure
-    tasks instead, and a participant returning an after-commit step makes the
-    departure fail. A retried or obsolete transition is a no-op before it
-    gets here, and every participant ends only what is still held.
+    forwarded (the transaction may be retried). It has no after-commit hook,
+    and its participants return no after-commit steps: the deputy participant
+    queues durable `notify_deputy_release` departure tasks instead. A retried
+    or obsolete transition is a no-op before it gets here, and every
+    participant ends only what is still held.
   - *Deactivation*, the non-interactive deactivation, the backfill and the
     follow-up deactivation (#1629): see Deactivation.
 
@@ -393,9 +396,10 @@ SCIM deprovisioning are deactivations. A deactivation has four reasons:
 deactivation), `pending` or `withdrawn`.
 
 - **The hook.** The removal and SCIM hooks already hold the removed user's
-  guard, so they cannot take a deactivation's locks. They keep doing what they
-  did (membership off, `is_active = false`, sessions deleted, deputy duties
-  released) and, in the same transaction, `recordFollowUpDeactivation`
+  guard, so they cannot take a deactivation's locks. They keep switching the
+  person off (membership off, `is_active = false`, sessions deleted) and end
+  nothing the person holds, deputy duties included; in the same transaction
+  `recordFollowUpDeactivation`
   (`deactivation/follow-up-record.ts`) records a `pending` row: `deactivated_at`
   is the instant the switch-off trigger stored (copied in SQL, so it equals
   `employee.deactivated_at` to the microsecond), `created_by` is the removing
@@ -419,12 +423,16 @@ deactivation), `pending` or `withdrawn`.
   under the recorded actor, reason and period, with `replaceManagers: false`;
   every audit row carries the row's `metadata` (`actorKind: "system"`,
   `connectionId`), and the row becomes `applied`. Reports left with no current
-  manager keep the link; the current admins get one
-  `former_employee_reports_without_manager` notice, keyed by the list.
+  manager keep the link, and the row is marked `reports_notice_pending` in the
+  same transaction. After the pending rows, the follow-up sends every owed
+  notice: the current admins get one `former_employee_reports_without_manager`
+  notice for the reports still without a current manager, keyed by the list,
+  and the marker is cleared. A failed send keeps the marker, so the notice is
+  retried on the next run until it is sent, and sent once.
 - **Retries and idempotency.** A failed row stays pending and is retried on the
-  next run, without limit; failures are logged and returned in
-  `followUpDeactivations.errors`. An applied or withdrawn row is never touched
-  again.
+  next run, without limit; failures (and failed notices) are logged and
+  returned in `followUpDeactivations.errors`. An applied or withdrawn row is
+  never applied again.
 - **Withdrawn.** Coming back before the follow-up ran is a reactivation (see
   *Reactivation*): it stamps the pending row too. A withdrawn row always has
   `reactivated_at` (constraint `employeeDeactivation_withdrawn_check`), shows no
@@ -666,15 +674,18 @@ team absence page until someone names a new deputy. While a departure is
 scheduled, the departure card lists *Deputy on running or upcoming absences: N*,
 counted with the same rule, so the handover can arrange new cover.
 
-Deactivations outside a departure clear the deputy the same way, in their own
-transaction, and notify after the commit: *Deactivate* (`employee_deactivated`,
-audited under the acting admin), member removal or leaving
-(`member_removed`, under the rejecting admin for pending-member rejection,
+Deactivations outside a departure clear the deputy the same way, through
+Employment ending in their own transaction, with the deactivation's audit
+metadata (`{ actorKind: "system", reason, deactivationId, employmentPeriodId }`):
+*Deactivate* (`employee_deactivated`, audited under the acting admin), member
+removal or leaving (`member_removed`, under the removing or rejecting admin,
 otherwise the removed member's own user) and SCIM deprovisioning
 (`scim_deprovisioned`, under the deprovisioned user, with the connection id).
-Member removal and SCIM deprovisioning clear it at once in their own
-transaction; their follow-up deactivation (#1629) then finds nothing left.
-A rehire or reactivation restores nothing.
+The deputy participant returns the notices as an after-commit step, which the
+deactivation's caller runs. Member removal and SCIM deprovisioning release
+nothing in their own transaction: their follow-up deactivation (#1629) does,
+so a person re-added or re-enabled before it runs stays deputy. A rehire or
+reactivation restores nothing.
 
 ## Personal data reminder
 

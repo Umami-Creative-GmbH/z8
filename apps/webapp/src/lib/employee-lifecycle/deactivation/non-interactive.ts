@@ -19,8 +19,7 @@ import { createLogger } from "@/lib/logger";
 import { employeeCoordinationGuard, holdGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { onCurrentRoster } from "../current-roster";
-import { notifyReleasedDeputyAssignments } from "../deputy-release-runtime";
-import { lockLifecycleOrganization } from "../locks";
+import { lockEmployeeRow, lockLifecycleOrganization } from "../locks";
 import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
 	insertDeactivation,
@@ -30,7 +29,7 @@ import {
 } from "../receipts";
 import { acquireAbsenceCancellationGuards } from "./absences";
 import { applyDeactivationConsequences, endEmploymentForDeactivation } from "./apply";
-import { type DeactivationResult, releasedDeputyAssignments } from "./command";
+import { type DeactivationResult, storedReleasedDeputies } from "./command";
 import { managerLinkAuthorizationEmployeeIds } from "./manager-links";
 import { formerEmployeeWithoutDeactivation, readCurrentEmploymentPeriodId } from "./former-employee";
 import { planDeactivationConsequences } from "./plan";
@@ -297,6 +296,7 @@ export async function completePendingDeactivation(
 			fingerprint: row.requestFingerprint,
 			employeeUserId: person.userId,
 			storedDeactivatedAt: deactivatedAt,
+			owesReportsNotice: true,
 		});
 	});
 	if (!outcome) return { kind: "skipped" };
@@ -365,10 +365,15 @@ async function applyRecordedDeactivation(
 		employeeUserId: string;
 		/** The instant on the ledger row. */
 		storedDeactivatedAt: Instant;
+		/**
+		 * Marks the row while reports are left with no current manager, so the
+		 * follow-up tells the admins until it succeeds (`sendOwedReportsNotices`).
+		 */
+		owesReportsNotice?: boolean;
 	},
 ): Promise<AppliedInTransaction> {
 	const { organizationId, employeeId, context, plan, deactivationId } = input;
-	await lockEmployee(tx, input);
+	await lockEmployeeRow(tx, input);
 	const audit = new AuditTrail();
 	if (input.deactivatedAt) {
 		await recordLeftAt(tx, audit, {
@@ -386,7 +391,7 @@ async function applyRecordedDeactivation(
 		audit,
 	};
 	// The employee is already switched off; what they hold ends first all the same.
-	const ending = await endEmploymentForDeactivation(tx, applyContext);
+	const ending = await endEmploymentForDeactivation(tx, applyContext, { database });
 	const roster = await applyDeactivationConsequences(tx, applyContext, plan, {
 		clock: input.clock,
 		database,
@@ -395,15 +400,7 @@ async function applyRecordedDeactivation(
 		...roster.applied,
 		employmentEnding: ending.applied,
 	};
-	const releasedDeputies = releasedDeputyAssignments(
-		{ organizationId, employeeId },
-		ending.applied.deputyAssignments,
-	);
-	const afterCommit: DeactivationAfterCommit[] = [
-		...ending.afterCommit,
-		...roster.afterCommit,
-		...(releasedDeputies ? [() => notifyReleasedDeputyAssignments(releasedDeputies, database)] : []),
-	];
+	const afterCommit: DeactivationAfterCommit[] = [...ending.afterCommit, ...roster.afterCommit];
 	const reportsWithoutManager = reportsKeepingTheirLink(plan);
 	const result: DeactivationResult & Record<string, unknown> = {
 		...input.result,
@@ -412,12 +409,7 @@ async function applyRecordedDeactivation(
 		employeeUserId: input.employeeUserId,
 		deactivatedAt: input.storedDeactivatedAt.toString(),
 		plannerNotice: null,
-		releasedDeputies: releasedDeputies
-			? {
-					eventKey: releasedDeputies.eventKey,
-					assignments: releasedDeputies.assignments,
-				}
-			: null,
+		releasedDeputies: storedReleasedDeputies(ending.applied.deputyAssignments),
 		cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
 		reportsWithoutManager,
 	};
@@ -428,6 +420,8 @@ async function applyRecordedDeactivation(
 		result,
 		// The names a reactivated employee's checklist shows (#1441).
 		plan: checklistPlanSnapshot(plan),
+		// The follow-up retries the admins' notice until it is sent (#1629).
+		reportsNoticePending: input.owesReportsNotice === true && reportsWithoutManager.length > 0,
 	});
 	if (input.deactivatedAt && context.employmentPeriodId) {
 		// The employment history event (#1441), only for a recorded instant.
@@ -471,20 +465,6 @@ async function completeAfterCommit(
 		reportsWithoutManager: outcome.reportsWithoutManager,
 		warnings,
 	};
-}
-
-/** The employee row FOR UPDATE, before Employment ending (spec #1590). */
-async function lockEmployee(
-	tx: DeactivationReader,
-	scope: { organizationId: string; employeeId: string },
-) {
-	await tx
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)),
-		)
-		.for("update");
 }
 
 /**

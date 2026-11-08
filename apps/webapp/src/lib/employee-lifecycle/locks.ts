@@ -75,6 +75,24 @@ export async function tryLockLifecycleOrganization(
 }
 
 /**
+ * The employee row FOR UPDATE, which every cause takes after its lifecycle
+ * locks and before Employment ending (spec #1590): a concurrent registration
+ * (a kiosk fob) either committed before or is refused.
+ */
+export async function lockEmployeeRow(
+	tx: Pick<LifecycleClient, "select">,
+	scope: { organizationId: string; employeeId: string },
+): Promise<void> {
+	await tx
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(eq(employee.organizationId, scope.organizationId), eq(employee.id, scope.employeeId)),
+		)
+		.for("update");
+}
+
+/**
  * The executor reads after taking locks and relies on each statement seeing
  * rows committed by transactions it waited for.
  */

@@ -108,7 +108,7 @@ describe("DeactivationPreviewDialog", () => {
 								effectiveDeadline: "2026-10-20",
 							},
 						],
-						officerGrantIds: ["employee"],
+						officerGrantHolderIds: ["employee"],
 					},
 				}),
 			}),

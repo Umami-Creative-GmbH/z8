@@ -61,7 +61,7 @@ export type ReturnReactivation = {
 	employeeId: string;
 	actorUserId: string;
 	requestId: string;
-	metadata: Record<string, string>;
+	metadata: Readonly<Record<string, unknown>>;
 	audit: AuditTrail;
 };
 
@@ -83,7 +83,7 @@ export async function reactivateOnReturn(
 		employeeId: string;
 		actorUserId: string;
 		at: Instant;
-		metadata?: Record<string, string>;
+		metadata?: Readonly<Record<string, unknown>>;
 	},
 ): Promise<ReturnReactivation | null> {
 	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
@@ -131,7 +131,7 @@ export async function completeReturnReactivation(reactivation: ReturnReactivatio
  */
 async function recordReactivation(
 	tx: LifecycleClient,
-	command: ReactivationCommand & { metadata?: Record<string, string> },
+	command: ReactivationCommand & { metadata?: Readonly<Record<string, unknown>> },
 	audit: AuditTrail,
 ): Promise<string[]> {
 	const scope = { organizationId: command.organizationId, employeeId: command.employeeId };
@@ -192,7 +192,7 @@ async function closeDeactivationFollowUp(
 		deactivationIds: readonly string[];
 		actorUserId: string;
 		at: Instant;
-		metadata: Record<string, string>;
+		metadata: Readonly<Record<string, unknown>>;
 	},
 ): Promise<void> {
 	if (input.deactivationIds.length === 0) return;

@@ -479,7 +479,6 @@ export const PendingMemberServiceLive = Layer.effect(
 				await completeRemovedMemberCleanupPostCommit({
 					organizationId: input.organizationId,
 					sessionTokens: result.cleanup.sessionTokens,
-					releasedDeputies: result.cleanup.releasedDeputies,
 				});
 			}
 			return result;

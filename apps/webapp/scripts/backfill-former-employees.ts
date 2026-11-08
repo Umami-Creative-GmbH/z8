@@ -103,7 +103,7 @@ function counts(entry: DeactivationBackfillEmployee): string {
 		[
 			"access ended",
 			plan.employmentEnding.officerGrants.grants.length +
-				plan.employmentEnding.equipment.officerGrantIds.length +
+				plan.employmentEnding.equipment.officerGrantHolderIds.length +
 				plan.employmentEnding.drivingLicence.verifierGrantIds.length +
 				plan.employmentEnding.drivingLicence.authorizations.length +
 				plan.employmentEnding.kioskBadges.badgeIds.length +
