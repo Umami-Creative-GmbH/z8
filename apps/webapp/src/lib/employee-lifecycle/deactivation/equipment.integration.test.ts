@@ -341,7 +341,7 @@ it("ends the officer grant, access and seat with equipment missing while primary
 	expect(await preview(target.employeeId)).toMatchObject({
 		success: true,
 		data: {
-			employmentEnding: { equipment: { officerGrantIds: [target.employeeId] } },
+			employmentEnding: { equipment: { officerGrantHolderIds: [target.employeeId] } },
 		},
 	});
 	const seats = await countBillableSeats(fixture.db, context.organizationId, {

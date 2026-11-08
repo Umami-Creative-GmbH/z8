@@ -1,11 +1,12 @@
 import "server-only";
 
+import type { ReportShareLinkKind } from "@/db/schema/report-share-link";
 import { employmentEndingAuditMetadata } from "@/lib/employee-lifecycle/employment-ending/cause";
 import type { EmploymentEndingParticipant } from "@/lib/employee-lifecycle/employment-ending/types";
 import { liveShareLinksOfCreator, revokeShareLinksOfCreator } from "./report-share-links";
 
 export type ReportShareLinksEndingPlan = {
-	links: Array<{ linkId: string; kind: string }>;
+	links: Array<{ linkId: string; kind: ReportShareLinkKind }>;
 };
 export type ReportShareLinksEndingApplied = { revokedLinkIds: string[] };
 

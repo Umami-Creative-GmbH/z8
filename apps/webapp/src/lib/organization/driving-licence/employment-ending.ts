@@ -4,14 +4,17 @@ import {
 	employmentEndingAuditMetadata,
 	endingEmployment,
 } from "@/lib/employee-lifecycle/employment-ending/cause";
+import type { drivingAuthorization } from "@/db/schema/driving-licence-checks";
 import type { EmploymentEndingParticipant } from "@/lib/employee-lifecycle/employment-ending/types";
 import { grantChecklistItem } from "@/lib/employee-lifecycle/reactivation-checklist";
 import { endDrivingLicenceEmployment, liveDrivingLicenceEmployment } from "./lifecycle";
 import { lockDrivingLicenceOrganization } from "./locks";
 
+type DrivingAuthorizationState = (typeof drivingAuthorization.$inferSelect)["state"];
+
 export type DrivingLicenceEndingPlan = {
 	/** Not yet ended, also suspended ones. */
-	authorizations: Array<{ authorizationId: string; state: string }>;
+	authorizations: Array<{ authorizationId: string; state: DrivingAuthorizationState }>;
 	verifierGrantIds: string[];
 };
 export type DrivingLicenceEndingApplied = {

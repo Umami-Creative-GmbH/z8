@@ -15,8 +15,11 @@ import { endEquipmentEmployment, readEquipmentDepartureReturns } from "./lifecyc
 export type EquipmentEndingPlan = {
 	/** Required returns stay actionable after the ending (Organization ADR 0008). */
 	returns: EquipmentDepartureReturn[];
-	/** The held equipment officer grant (keyed by the employee), which ends. */
-	officerGrantIds: string[];
+	/**
+	 * The employee, when they hold the equipment officer grant, which ends: the
+	 * grant is keyed by the employee, so these are employee ids.
+	 */
+	officerGrantHolderIds: string[];
 };
 export type EquipmentEndingApplied = { revokedOfficerGrantIds: string[] };
 
@@ -40,7 +43,7 @@ export const equipmentEndingParticipant: EmploymentEndingParticipant<
 	async plan(reader, ctx) {
 		const returns = await readEquipmentDepartureReturns(reader, ctx, deadline(ctx));
 		const grants = await reader
-			.select({ id: equipmentOfficerGrant.employeeId })
+			.select({ holderId: equipmentOfficerGrant.employeeId })
 			.from(equipmentOfficerGrant)
 			.where(
 				and(
@@ -49,7 +52,7 @@ export const equipmentEndingParticipant: EmploymentEndingParticipant<
 					isNull(equipmentOfficerGrant.revokedAt),
 				),
 			);
-		return { returns, officerGrantIds: grants.map((grant) => grant.id) };
+		return { returns, officerGrantHolderIds: grants.map((grant) => grant.holderId) };
 	},
 	async apply(tx, _plan, ctx) {
 		const { cause } = ctx;

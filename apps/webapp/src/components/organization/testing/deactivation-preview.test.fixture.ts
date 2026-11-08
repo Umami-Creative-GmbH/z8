@@ -39,7 +39,7 @@ export function emptyEmploymentEndingPlan(
 	overrides: Partial<EmploymentEndingPlan> = {},
 ): EmploymentEndingPlan {
 	return {
-		equipment: { returns: [], officerGrantIds: [] },
+		equipment: { returns: [], officerGrantHolderIds: [] },
 		drivingLicence: { authorizations: [], verifierGrantIds: [] },
 		officerGrants: { grants: [] },
 		documentRequests: { requestIds: [] },

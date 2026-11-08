@@ -798,7 +798,7 @@ describe("Employment ending", () => {
 		});
 
 		expect(preview).toEqual({
-			equipment: { returns: [], officerGrantIds: [] },
+			equipment: { returns: [], officerGrantHolderIds: [] },
 			drivingLicence: { authorizations: [], verifierGrantIds: [] },
 			officerGrants: { grants: [] },
 			documentRequests: { requestIds: [] },

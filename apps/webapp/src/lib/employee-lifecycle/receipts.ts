@@ -163,7 +163,7 @@ const ledgerColumns = {
 
 type LedgerRow = Omit<
 	typeof employeeDeactivation.$inferSelect,
-	"createdAt" | "checklistDismissedAt" | "checklistDismissedBy"
+	"createdAt" | "checklistDismissedAt" | "checklistDismissedBy" | "reportsNoticePending"
 >;
 
 function toEntry(row: LedgerRow): DeactivationLedgerEntry {

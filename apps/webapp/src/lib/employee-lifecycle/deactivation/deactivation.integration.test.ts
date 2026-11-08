@@ -809,7 +809,7 @@ describe("deactivation acceptance (#1440)", () => {
 				cancelledAbsenceIds: plan.absences.absencesToCancel.map((a) => a.absenceId).toSorted(),
 			},
 			employmentEnding: {
-				equipmentOfficerGrantIds: ending.equipment.officerGrantIds.toSorted(),
+				equipmentOfficerGrantIds: ending.equipment.officerGrantHolderIds.toSorted(),
 				drivingAuthorizationIds: ending.drivingLicence.authorizations
 					.map((d) => d.authorizationId)
 					.toSorted(),
