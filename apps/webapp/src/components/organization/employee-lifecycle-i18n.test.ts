@@ -79,6 +79,32 @@ const coreDescriptions = [
 	"settings.employees.lifecycle.removeEndsEmployment",
 ] as const;
 
+/**
+ * What ends with the employment (#1624) and that removal ends it (#1629): in
+ * every locale file of the namespace, translated.
+ */
+const employmentEndingEnglish = {
+	"settings.employees.lifecycle.deactivationPreview.documentRequests":
+		"{count, plural, one {# open document request is cancelled} other {# open document requests are cancelled}}",
+	"settings.employees.lifecycle.reactivationChecklist.groups.documentRequests":
+		"Cancelled document requests",
+	"settings.employees.lifecycle.reactivationChecklist.items.documentRequests":
+		"{count, plural, one {# open document request was cancelled; request it again in the personnel file} other {# open document requests were cancelled; request them again in the personnel file}}",
+	"settings.employees.lifecycle.removeEndsEmployment":
+		approvedEnglish["settings.employees.lifecycle.removeEndsEmployment"],
+} as const;
+
+/** The component that gives each of them its English default. */
+const employmentEndingSources: Record<keyof typeof employmentEndingEnglish, string> = {
+	"settings.employees.lifecycle.deactivationPreview.documentRequests":
+		"deactivation-preview-sections.tsx",
+	"settings.employees.lifecycle.reactivationChecklist.groups.documentRequests":
+		"reactivation-checklist.tsx",
+	"settings.employees.lifecycle.reactivationChecklist.items.documentRequests":
+		"reactivation-checklist.tsx",
+	"settings.employees.lifecycle.removeEndsEmployment": "employee-lifecycle-actions.tsx",
+};
+
 const supersededKeys = [
 	"settings.employees.lifecycle.reinviteGuidance",
 	"settings.employees.lifecycle.remove",
@@ -154,8 +180,10 @@ describe("employee lifecycle i18n catalogs", () => {
 		}
 	});
 
-	it("translates the removal's employment ending in every locale of the namespace (#1629)", () => {
-		const key = "settings.employees.lifecycle.removeEndsEmployment";
+	it.each(
+		Object.keys(employmentEndingEnglish),
+	)("translates %s in every locale of the namespace (#1624, #1629)", (key) => {
+		const english = employmentEndingEnglish[key as keyof typeof employmentEndingEnglish];
 		const files = readdirSync(messagesDir).filter((file) => file.endsWith(".json"));
 		expect(files.length).toBeGreaterThanOrEqual(18);
 		for (const file of files) {
@@ -163,10 +191,25 @@ describe("employee lifecycle i18n catalogs", () => {
 			const message = getMessage(catalog, key);
 			expect(message, `${file}: ${key}`).toEqual(expect.any(String));
 			expect(message, `${file}: ${key}`).not.toBe("");
-			if (file !== "en.json") {
-				expect(message, `${file}: ${key}`).not.toBe(approvedEnglish[key]);
+			if (file === "en.json") {
+				expect(message, `${file}: ${key}`).toBe(english);
+			} else {
+				expect(message, `${file}: ${key}`).not.toBe(english);
 			}
 		}
+	});
+
+	it.each(
+		Object.entries(employmentEndingSources),
+	)("keeps the English default of %s in code equal to the catalog", (key, source) => {
+		const code = readFileSync(join(import.meta.dirname, source), "utf8");
+		const defaults = Array.from(
+			code.matchAll(/t\(\s*"([^"]+)",\s*"([^"]*)"/g),
+			(match) => [match[1], match[2]] as const,
+		).filter(([used]) => used === key);
+		expect(defaults.map(([, fallback]) => fallback)).toEqual([
+			employmentEndingEnglish[key as keyof typeof employmentEndingEnglish],
+		]);
 	});
 
 	it.each(

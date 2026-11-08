@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# mansione di approvazione necessita di una sostituzione ed è indicata per la revisione ({review}).} other {# mansioni di approvazione necessitano di una sostituzione e sono indicate per la revisione ({review}).}}",
           "description": "{name} diventa ora un ex dipendente. L'accesso a questa organizzazione termina, le sessioni vengono disconnesse e la cronologia viene conservata. Controlla quali altri elementi cambieranno prima di confermare.",
           "descriptionAt": "{name} diventerà un ex dipendente al momento della conferma (anteprima per le {time}, {timeZone}). L'accesso a questa organizzazione terminerà, le relative sessioni verranno chiuse e la cronologia verrà conservata. Controlla quali altre modifiche verranno applicate prima di confermare.",
+          "documentRequests": "{count, plural, one {# richiesta di documento aperta viene annullata} other {# richieste di documenti aperte vengono annullate}}",
           "drivingAuthorizations": "{count, plural, one {# autorizzazione alla guida termina, comprese quelle sospese} other {# autorizzazioni alla guida terminano, comprese quelle sospese}}",
           "formLabel": "Anteprima della disattivazione",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Assenze annullate",
             "access": "Badge per chiosco e autorizzazioni alla guida",
+            "documentRequests": "Richieste di documenti annullate",
             "grants": "Permessi assegnati",
             "managers": "Collegamenti con i manager",
             "shareLinks": "Link di condivisione dei report",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Un'assenza (date non registrate)",
+            "documentRequests": "{count, plural, one {# richiesta di documento aperta è stata annullata; va richiesta di nuovo nel fascicolo del personale} other {# richieste di documenti aperte sono state annullate; vanno richieste di nuovo nel fascicolo del personale}}",
             "drivingAuthorizations": "{count, plural, one {# autorizzazione alla guida è terminata; è necessario un nuovo controllo} other {# autorizzazioni alla guida sono terminate; è necessario un nuovo controllo}}",
             "kioskBadges": "{count, plural, one {# badge per chiosco è stato revocato} other {# badge per chiosco sono stati revocati}}",
             "ownManager": "Gestito da {name}",

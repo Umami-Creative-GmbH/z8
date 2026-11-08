@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# godkjenningsoppgave trenger en erstatter og er oppført til vurdering ({review}).} other {# godkjenningsoppgaver trenger en erstatter og er oppført til vurdering ({review}).}}",
           "description": "{name} blir nå en tidligere ansatt. Tilgangen til denne organisasjonen opphører, øktene logges ut, og historikken beholdes. Se gjennom hva annet som endres før du bekrefter.",
           "descriptionAt": "{name} blir en tidligere ansatt når du bekrefter (forhåndsvist for {time}, {timeZone}). Tilgangen til denne organisasjonen opphører, øktene deres logges av, og historikken deres beholdes. Se gjennom hva annet som endres før du bekrefter.",
+          "documentRequests": "{count, plural, one {# åpen dokumentforespørsel kanselleres} other {# åpne dokumentforespørsler kanselleres}}",
           "drivingAuthorizations": "{count, plural, one {# kjøretillatelse opphører, inkludert suspenderte} other {# kjøretillatelser opphører, inkludert suspenderte}}",
           "formLabel": "Forhåndsvisning av deaktivering",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Kansellerte fravær",
             "access": "Kioskkort og kjøretillatelser",
+            "documentRequests": "Kansellerte dokumentforespørsler",
             "grants": "Innehadde tildelinger",
             "managers": "Lederkoblinger",
             "shareLinks": "Rapportdelingslenker",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Et fravær (datoer ikke registrert)",
+            "documentRequests": "{count, plural, one {# åpen dokumentforespørsel ble kansellert; be om den på nytt i personalmappen} other {# åpne dokumentforespørsler ble kansellert; be om dem på nytt i personalmappen}}",
             "drivingAuthorizations": "{count, plural, one {# kjøretillatelse utløp; en ny sjekk er nødvendig} other {# kjøretillatelser utløp; en ny sjekk er nødvendig}}",
             "kioskBadges": "{count, plural, other {# kioskkort ble tilbakekalt} }",
             "ownManager": "Administreres av {name}",

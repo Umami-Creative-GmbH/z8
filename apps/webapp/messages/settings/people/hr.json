@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# dužnost odobravanja treba zamjenu i navedena je za pregled ({review}).} other {# dužnosti odobravanja treba zamjenu i navedeno je za pregled ({review}).}}",
           "description": "{name} sada postaje bivši zaposlenik. Pristup ovoj organizaciji prestaje, njihove se sesije odjavljuju, a njihova se povijest zadržava. Pregledajte što se još mijenja prije nego što potvrdite.",
           "descriptionAt": "{name} postaje bivši zaposlenik nakon što potvrdite (pretpregled za {time}, {timeZone}). Pristup ovoj organizaciji prestaje, sesije se odjavljuju, a povijest se zadržava. Pregledajte što se još mijenja prije potvrde.",
+          "documentRequests": "{count, plural, one {# otvoreni zahtjev za dokument se otkazuje} few {# otvorena zahtjeva za dokumente se otkazuju} other {# otvorenih zahtjeva za dokumente se otkazuje}}",
           "drivingAuthorizations": "{count, plural, one {# ovlaštenje za vožnju prestaje važiti, uključujući i suspendirana} few {# ovlaštenja za vožnju prestaju važiti, uključujući i suspendirana} other {# ovlaštenja za vožnju prestaje važiti, uključujući i suspendirana}}",
           "formLabel": "Pretpregled deaktivacije",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Otkazane odsutnosti",
             "access": "Bedževi za kiosk i ovlaštenja za vožnju",
+            "documentRequests": "Otkazani zahtjevi za dokumente",
             "grants": "Dodijeljena prava",
             "managers": "Veze s voditeljima",
             "shareLinks": "Poveznice za dijeljenje izvještaja",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Odsutnost (datumi nisu zabilježeni)",
+            "documentRequests": "{count, plural, one {# otvoreni zahtjev za dokument je otkazan; ponovno ga zatražite u kadrovskom dosjeu} few {# otvorena zahtjeva za dokumente su otkazana; ponovno ih zatražite u kadrovskom dosjeu} other {# otvorenih zahtjeva za dokumente je otkazano; ponovno ih zatražite u kadrovskom dosjeu}}",
             "drivingAuthorizations": "{count, plural, one {# ovlaštenje za vožnju je isteklo; potrebna je nova provjera} few {# ovlaštenja za vožnju su istekla; potrebna je nova provjera} other {# ovlaštenja za vožnju je isteklo; potrebna je nova provjera}}",
             "kioskBadges": "{count, plural, one {# značka za kiosk je opozvana} few {# značke za kiosk su opozvane} other {# znački za kiosk je opozvano}}",
             "ownManager": "Voditelj: {name}",
