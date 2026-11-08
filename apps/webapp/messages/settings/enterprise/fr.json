@@ -37,6 +37,13 @@
         "time": "Heure"
       },
       "disabled": "Désactivé",
+      "documentation": {
+        "reference": "Référence de l'API",
+        "resources": "Consultez les périodes de travail, les absences, les employés, les projets, les clients et les définitions de champs personnalisés avec l'API publique v1. L'accès est en lecture seule.",
+        "scopes": "Une clé d'API agit au nom de votre organisation et lit uniquement ce que ses portées autorisent. Retrouvez les points de terminaison, les portées requises et des exemples dans la documentation de référence.",
+        "title": "API publique v1"
+      },
+      "downloadOpenApi": "Télécharger la spécification OpenAPI",
       "editCreated": "Créé le {date}",
       "editDescription": "Mettez à jour les paramètres de cette clé API. Remarque : vous ne pouvez ni voir ni modifier la clé elle-même.",
       "editTitle": "Modifier la clé API",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Enregistrez le fournisseur avant d'enregistrer un test"
           },
-          "help": "Ceci enregistre le résultat d'un test SSO externe en direct. Exécutez la connexion dans l'IdP d'abord, puis capturez le succès ou l'échec ici pour la protection de l'activation.",
           "label": {
             "email": "E-mail de l'utilisateur de test",
             "failureNote": "Note d'échec"
@@ -620,12 +626,9 @@
         "updated": "OAuth {provider} mis à jour avec succès"
       },
       "sso": {
-        "addDescription": "Configurez un fournisseur d'identité OIDC pour l'authentification unique (SSO) en entreprise.",
         "addError": "Échec de l'ajout du fournisseur SSO",
         "addSuccess": "Fournisseur SSO ajouté avec succès",
         "addTitle": "Ajouter un fournisseur SSO",
-        "clientIdPlaceholder": "Votre ID client OIDC",
-        "clientSecretPlaceholder": "Votre secret client OIDC",
         "deleteDialogDescription": "Êtes-vous sûr de vouloir supprimer ce fournisseur SSO ? Les utilisateurs ne pourront plus se connecter en utilisant ce fournisseur d'identité.",
         "deleteDialogTitle": "Supprimer le fournisseur SSO",
         "deleteError": "Échec de la suppression du fournisseur SSO",
@@ -633,32 +636,110 @@
         "deleteSuccess": "Fournisseur SSO supprimé",
         "description": "Ajoutez des fournisseurs d'identité OIDC pour activer le SSO pour votre organisation.",
         "domainInvalid": "Veuillez saisir un domaine valide (par ex., exemple.com)",
-        "domainRequired": "Le domaine est requis",
         "domainVerified": "Domaine vérifié",
         "emailDomain": "Domaine d'e-mail",
         "emailDomainHelp": "Les utilisateurs avec ce domaine d'e-mail pourront utiliser le SSO",
         "empty": "Aucun fournisseur SSO configuré pour le moment.",
         "emptyDescription": "Ajoutez un fournisseur OIDC pour activer l'authentification unique en entreprise.",
-        "instructions": {
-          "copyCredentials": "Copiez l'URL de l'émetteur, l'ID client et le secret client depuis votre fournisseur d'identité (IdP)",
-          "createApp": "Créez une application OIDC dans votre fournisseur d'identité (Okta, Azure AD, etc.)",
-          "verifyDomain": "Ajoutez le fournisseur ici et vérifiez le domaine d'e-mail via un enregistrement DNS TXT"
+        "guide": {
+          "addDescription": "Suivez les instructions de configuration de votre fournisseur, puis connectez-le à votre organisation.",
+          "afterSave": "Après l'enregistrement, vérifiez votre domaine de messagerie à l'aide de l'enregistrement DNS TXT dans Z8. Testez la connexion avec un utilisateur pilote tout en gardant votre session d'administrateur actuelle ouverte. Dans la configuration guidée, enregistrez le même ID de fournisseur et le même domaine de messagerie que ceux indiqués dans la liste des fournisseurs, puis consignez manuellement le résultat de connexion observé avant d'envisager l'option Exiger le SSO. L'enregistrement et la vérification DNS ne garantissent pas le succès de la connexion.",
+          "afterSaveTitle": "Après avoir enregistré votre fournisseur",
+          "callback": "URL de rappel Z8",
+          "connectionHelp": "Copiez ces valeurs depuis les paramètres d'application de votre fournisseur.",
+          "connectionSettings": "Paramètres de connexion",
+          "copied": "Copié dans le presse-papiers",
+          "copyCallback": "Copier l'URL de rappel",
+          "copyFailed": "Échec de l'accès au presse-papiers. Sélectionnez et copiez le texte manuellement.",
+          "domainPending": "Domaine non vérifié",
+          "domainStatus": "Vérification du domaine",
+          "domainVerified": "Domaine vérifié",
+          "entra": {
+            "clientHelp": "Copiez l'ID d'application (client) depuis Vue d'ensemble, et non l'ID d'objet.",
+            "clientId": "ID d'application (client)",
+            "consentError": "Consentement ou accès refusé : demandez à votre administrateur Entra de vérifier les stratégies de consentement et de s'assurer que l'utilisateur pilote est affecté à l'application.",
+            "consentLink": "Conseils de Microsoft sur le consentement",
+            "description": "Connectez l'annuaire Microsoft de votre organisation avec une application OpenID Connect monolocataire.",
+            "generatedIssuer": "URL de l'émetteur · générée à partir de votre ID de locataire",
+            "ids": {
+              "body": "Dans la Vue d'ensemble de l'application, copiez l'ID de l'annuaire (locataire) et l'ID d'application (client) dans Z8. L'ID d'objet est une valeur différente. Z8 génère l'URL de l'émetteur propre au locataire pour vous.",
+              "link": "Instructions d'inscription d'application",
+              "title": "Copiez les ID de locataire et d'application"
+            },
+            "introduction": "Créez une inscription d'application Web, copiez vos ID de locataire et d'application, puis ajoutez un secret client. Z8 génère l'URL de l'émetteur et vous guide à chaque étape.",
+            "permissions": "Z8 utilise openid, email et profile pour la connexion. Certaines connexions demandent également offline_access pour les jetons d'actualisation. Vous n'avez pas besoin d'autorisations Microsoft Graph pour l'ensemble de l'annuaire. La stratégie de consentement de votre locataire peut tout de même nécessiter l'approbation d'un administrateur.",
+            "portal": "Ouvrir le centre d'administration Entra",
+            "redirect": {
+              "body": "Dans Authentification, ajoutez un URI de redirection pour la plateforme Web. Collez exactement l'URL de rappel Z8 indiquée ici. Utilisez Web, et non Application monopage. Vous n'avez pas besoin d'activer l'octroi implicite.",
+              "link": "Instructions relatives à l'URI de redirection",
+              "title": "Ajouter l'URI de redirection Web"
+            },
+            "redirectError": "AADSTS50011 : vérifiez que l'URI de redirection Web correspond exactement à l'URL de rappel affichée par Z8, y compris son nom d'hôte et son chemin.",
+            "register": {
+              "body": "Ouvrez Entra ID → Inscriptions d'applications → Nouvelle inscription. Nommez l'application Z8 et choisissez Comptes dans cet annuaire organisationnel uniquement. Sélectionnez d'abord l'annuaire de votre organisation. Si vous ne pouvez pas inscrire d'applications, demandez à votre administrateur Entra d'en créer une pour vous.",
+              "title": "Inscrire une application"
+            },
+            "secret": {
+              "body": "Accédez à Certificats et secrets → Secrets client → Nouveau secret client. Collez sa Valeur dans Z8, et non son ID de secret. La Valeur ne s'affiche qu'une seule fois. Notez la date d'expiration et remplacez les identifiants avant leur expiration. Transmettez la Valeur uniquement via le canal sécurisé de votre organisation.",
+              "link": "Instructions relatives au secret client",
+              "title": "Créer un secret client"
+            },
+            "secretError": "Secret client non valide : utilisez la Valeur du secret, pas son ID. Vérifiez qu'il appartient à cette application et qu'il n'a pas expiré. Créez un nouveau secret si vous ne disposez plus de la Valeur.",
+            "secretHelp": "Certificats et secrets → Secrets client. Collez la Valeur, pas l'ID de secret. Z8 ne l'affichera plus.",
+            "secretValue": "Valeur du secret client",
+            "start": "Configurer Microsoft Entra ID",
+            "tenantError": "Locataire incorrect : copiez l'ID de l'annuaire (locataire) depuis le même enregistrement d'application que l'ID client. Cette configuration guidée utilise un locataire spécifique, et non common ou organizations.",
+            "tenantHelp": "Inscriptions d'applications → votre application → Vue d'ensemble. Utilisez votre ID de locataire, et non common ou organizations.",
+            "tenantId": "ID de l'annuaire (locataire)",
+            "tenantInvalid": "Saisissez l'ID de l'annuaire (locataire) sous la forme d'un UUID complet.",
+            "title": "Configurer Microsoft Entra ID",
+            "troubleshooting": "Dépanner la configuration d'Entra",
+            "troubleshootingLink": "Guide de dépannage des redirections de Microsoft"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Saisissez un ID de fournisseur unique, l'URL de l'émetteur OIDC, le domaine de messagerie de votre organisation, l'ID client et le secret client. Vous les trouverez dans les paramètres d'application de votre fournisseur. Transmettez les secrets via un canal sécurisé.",
+              "title": "Copier les paramètres de l'application"
+            },
+            "description": "Consultez la documentation de votre fournisseur pour créer une application Web confidentielle avec le flux de code d'autorisation.",
+            "redirect": {
+              "body": "Ajoutez le rappel Z8 indiqué ici aux URI de redirection autorisées de l'application. Copiez-le exactement, y compris le nom d'hôte de l'organisation et le chemin d'accès.",
+              "title": "Enregistrer l'URL de rappel"
+            },
+            "register": {
+              "body": "Dans votre fournisseur d'identité, créez une application OpenID Connect en utilisant le flux de code d'autorisation. Assignez d'abord un groupe pilote restreint.",
+              "title": "Créer une application Web"
+            },
+            "title": "Configurer un fournisseur OIDC"
+          },
+          "getStarted": "Connecter l'authentification de votre équipe",
+          "getStartedDescription": "Suivez un guide pas à pas propre à votre fournisseur sans avoir à assembler vous-même la configuration.",
+          "handoff": {
+            "copy": "Copier la liste de contrôle informatique",
+            "description": "Copiez les instructions de configuration et l'URL de rappel de votre organisation. La liste de contrôle ne contient jamais d'identifiants.",
+            "return": "Transmettez l'ID de locataire (pour Entra) et l'ID client de l'application à l'administrateur Z8. Transférez la Valeur du secret client séparément via un canal sécurisé ; ne la collez pas dans cette liste de contrôle.",
+            "title": "Besoin de l'aide de votre administrateur informatique ?"
+          },
+          "manual": "Autre fournisseur / OIDC manuel",
+          "manualAvailable": "Vous utilisez un autre fournisseur ? Choisissez la configuration manuelle d'OIDC dans le panneau de configuration.",
+          "manualTestHelp": "Il s'agit d'un résultat de connexion signalé par l'administrateur, et non d'un test de connexion vérifié automatiquement. Testez la connexion avec un utilisateur pilote dans une session de navigateur distincte, laissez cette session administrateur ouverte, puis enregistrez ici la réussite ou l'échec constaté. L'enregistrement du fournisseur et la vérification du DNS ne prouvent pas que la connexion fonctionne.",
+          "openSetup": "Ouvrir la configuration guidée",
+          "provider": "Fournisseur d'identité",
+          "required": "Ce champ est obligatoire.",
+          "saving": "Ajout en cours…",
+          "scopes": "Les portées de connexion incluent openid, email et profile. Certaines connexions demandent également offline_access pour les jetons d'actualisation."
         },
         "issuerUrl": "URL de l'émetteur",
         "issuerUrlHelp": "L'URL de l'émetteur OIDC de votre fournisseur d'identité",
-        "issuerUrlRequired": "L'URL de l'émetteur est requise",
         "providerId": "ID du fournisseur",
         "providerIdHelp": "Un identifiant unique pour ce fournisseur (minuscules, sans espaces)",
         "providerIdInvalid": "L'ID du fournisseur doit contenir uniquement des lettres minuscules, des chiffres et des traits d'union",
-        "providerIdRequired": "L'ID du fournisseur est requis",
-        "setupInstructions": "Instructions de configuration",
         "title": "Fournisseurs d'identité",
         "token": "Jeton",
         "tokenError": "Échec de la génération du jeton de vérification de domaine",
         "tokenGenerated": "Jeton de vérification généré",
         "txtToken": "Jeton TXT :",
         "validUrlRequired": "Veuillez saisir une URL valide",
-        "verified": "Vérifié",
         "verify": "Vérifier",
         "verifyError": "La vérification du domaine a échoué. Vérifiez votre enregistrement DNS TXT et réessayez."
       },

@@ -718,7 +718,6 @@
       "createCategory": "Opprett kategori",
       "createCategoryDescription": "Opprett en ny arbeidskategori som kan tilordnes flere sett",
       "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Opprett kategorisett med ulike tidsfaktorer for forskjellige arbeidstyper",
-      "createFirstSet": "Opprett første sett",
       "createSet": "Opprett sett",
       "createSetDescription": "Opprett et nytt kategorisett og velg hvilke kategorier som skal inkluderes",
       "defaultSet": "Standard kategorisett",

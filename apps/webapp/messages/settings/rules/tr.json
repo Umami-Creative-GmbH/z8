@@ -718,7 +718,6 @@
       "createCategory": "Kategori Oluştur",
       "createCategoryDescription": "Birden fazla sete atanabilecek yeni bir iş kategorisi oluşturun",
       "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Çeşitli çalışma türleri için farklı zaman faktörlerine sahip kategori kümeleri oluşturun",
-      "createFirstSet": "İlk Seti Oluştur",
       "createSet": "Set Oluştur",
       "createSetDescription": "Yeni bir kategori seti oluşturun ve hangi kategorilerin dahil edileceğini seçin",
       "defaultSet": "Varsayılan Kategori Seti",

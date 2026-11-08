@@ -718,7 +718,6 @@
       "createCategory": "Створити категорію",
       "createCategoryDescription": "Створіть нову робочу категорію, яку можна призначати кільком наборам",
       "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Створюйте набори категорій із різними коефіцієнтами часу для різних типів робіт",
-      "createFirstSet": "Створити перший набір",
       "createSet": "Створити набір",
       "createSetDescription": "Створіть новий набір категорій та виберіть, які категорії до нього включити",
       "defaultSet": "Стандартний набір категорій",

@@ -24,6 +24,8 @@
         "assignedViaOrganizationDefault": "Organization Default",
         "assignedViaTeam": "Team",
         "backToEmployeeList": "Back to employee list",
+        "birthday": "Birthday",
+        "birthdayDescription": "Optional. The employee can also change it in their profile.",
         "cancel": "Cancel",
         "contractFixed": "Fixed",
         "contractFixedDescription": "Salary-based compensation",
@@ -250,9 +252,15 @@
           "descriptionAt": "{name} becomes a former employee when you confirm (previewed for {time}, {timeZone}). Access to this organization ends, their sessions are signed out, and their history is kept. Review what else changes before you confirm.",
           "documentRequests": "{count, plural, one {# open document request is cancelled} other {# open document requests are cancelled}}",
           "drivingAuthorizations": "{count, plural, one {# driving authorization ends, including suspended ones} other {# driving authorizations end, including suspended ones}}",
+          "equipmentDescription": "Employment and access end even while equipment is missing. Authorized staff can follow up in Equipment, including former employees. Returning a physical key or fob does not restore its credential.",
+          "equipmentDue": "{identifier} ({type}): {count} outstanding, due {date}",
+          "equipmentSwitchedOff": "Employment and access end even while equipment is missing. Equipment is switched off for this organization, so these returns stay recorded but cannot be followed up until it is switched back on.",
+          "equipmentTitle": "Outstanding equipment returns",
+          "equipmentUndated": "{identifier} ({type}): {count} outstanding, no recorded deadline",
           "formLabel": "Deactivation preview",
           "grants": {
             "drivingLicenceVerifier": "Driving licence verifier",
+            "equipmentOfficer": "Equipment officer",
             "expenseOfficer": "Travel expense officer",
             "payrollAccess": "Payroll access",
             "personnelFileOfficer": "Personnel file officer"
@@ -499,6 +507,7 @@
         }
       },
       "personalDataExport": {
+        "aboutEquipment": "Includes the same retained equipment records as the employee's own export, including corrections, lost or waived outcomes, and recoveries. Former employees' records use this export too.",
         "availableUntil": "Available until {date}",
         "description": "A ZIP file with everything this organization keeps about this employee, including data the employee's own export leaves out. A current employee is notified when it is ready. Files are deleted after 7 days.",
         "download": "Download",

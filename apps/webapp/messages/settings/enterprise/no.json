@@ -37,6 +37,13 @@
         "time": "Tidspunkt"
       },
       "disabled": "Deaktivert",
+      "documentation": {
+        "reference": "API-referanse",
+        "resources": "Les arbeidsperioder, fravær, ansatte, prosjekter, kunder og definisjoner av egendefinerte felt med Public API v1. Tilgangen er skrivebeskyttet.",
+        "scopes": "En API-nøkkel opptrer på vegne av organisasjonen din og leser bare det nøkkelens omfang gir tilgang til. Finn endepunkter, nødvendige omfang og eksempler i referansen.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "Last ned OpenAPI-spesifikasjon",
       "editCreated": "Opprettet {date}",
       "editDescription": "Oppdater innstillingene for denne API-nøkkelen. Merk: Du kan ikke vise eller endre selve nøkkelen.",
       "editTitle": "Rediger API-nøkkel",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Lagre leverandør før du registrerer en test"
           },
-          "help": "Dette registrerer resultatet fra en ekstern live-SSO-test. Kjør innloggingen i IdP-en først, og registrer deretter bestått eller mislykket her for aktiveringssperren.",
           "label": {
             "email": "E-postadresse for testbruker",
             "failureNote": "Feilnotat"
@@ -620,12 +626,9 @@
         "updated": "{provider} OAuth ble oppdatert"
       },
       "sso": {
-        "addDescription": "Konfigurer en OIDC-identitetstilbyder for enkel pålogging (SSO) for bedrifter.",
         "addError": "Kunne ikke legge til SSO-tilbyder",
         "addSuccess": "SSO-tilbyder ble lagt til",
         "addTitle": "Legg til SSO-tilbyder",
-        "clientIdPlaceholder": "Din OIDC-klient-ID",
-        "clientSecretPlaceholder": "Din OIDC-klienthemmelighet",
         "deleteDialogDescription": "Er du sikker på at du vil slette denne SSO-tilbyderen? Brukere vil ikke lenger kunne logge på med denne identitetstilbyderen.",
         "deleteDialogTitle": "Slett SSO-tilbyder",
         "deleteError": "Kunne ikke slette SSO-tilbyder",
@@ -633,32 +636,110 @@
         "deleteSuccess": "SSO-tilbyder slettet",
         "description": "Legg til OIDC-identitetstilbydere for å aktivere SSO for organisasjonen din.",
         "domainInvalid": "Vennligst oppgi et gyldig domene (f.eks. example.com)",
-        "domainRequired": "Domene er påkrevd",
         "domainVerified": "Domene verifisert",
         "emailDomain": "E-postdomene",
         "emailDomainHelp": "Brukere med dette e-postdomenet vil kunne bruke SSO",
         "empty": "Ingen SSO-tilbydere er konfigurert ennå.",
         "emptyDescription": "Legg til en OIDC-tilbyder for å aktivere enkel pålogging for bedrifter.",
-        "instructions": {
-          "copyCredentials": "Kopier utsteder-URL, klient-ID og klienthemmelighet fra din IdP",
-          "createApp": "Opprett en OIDC-applikasjon i din identitetstilbyder (Okta, Azure AD osv.)",
-          "verifyDomain": "Legg til tilbyderen her og verifiser e-postdomenet via DNS TXT-oppføring"
+        "guide": {
+          "addDescription": "Følg leverandørens oppsettinstruksjoner, og koble den deretter til organisasjonen din.",
+          "afterSave": "Etter lagring må du verifisere e-postdomenet ditt med DNS TXT-oppføringen i Z8. Test innlogging med en tiltenkt bruker mens du holder den gjeldende administratorøkten åpen. I Veiledet oppsett lagrer du samme leverandør-ID og e-postdomene som vises i leverandørlisten, og registrerer deretter det observerte innloggingsresultatet manuelt før du vurderer Krev SSO. Lagring og DNS-verifisering beviser ikke en vellykket innlogging.",
+          "afterSaveTitle": "Etter at du har lagret leverandøren",
+          "callback": "Z8-tilbakekallings-URL",
+          "connectionHelp": "Kopier disse verdiene fra leverandørens applikasjonsinnstillinger.",
+          "connectionSettings": "Tilkoblingsinnstillinger",
+          "copied": "Kopiert til utklippstavlen",
+          "copyCallback": "Kopier tilbakekallings-URL",
+          "copyFailed": "Fikk ikke tilgang til utklippstavlen. Merk og kopier teksten manuelt.",
+          "domainPending": "Domenet er ikke verifisert",
+          "domainStatus": "Domeneverifisering",
+          "domainVerified": "Domene verifisert",
+          "entra": {
+            "clientHelp": "Kopier Program-ID (klient) fra Oversikt, ikke Objekt-ID.",
+            "clientId": "Program-ID (klient)",
+            "consentError": "Samtykke eller tilgang nektet: Be Entra-administratoren din sjekke samtykkeretningslinjer og om testbrukeren er tildelt applikasjonen.",
+            "consentLink": "Microsofts veiledning for samtykke",
+            "description": "Koble til organisasjonens Microsoft-katalog med en single-tenant OpenID Connect-applikasjon.",
+            "generatedIssuer": "Utsteder-URL · generert fra leier-ID-en din",
+            "ids": {
+              "body": "Under appens Oversikt kopierer du Katalog-ID (leier) og Program-ID (klient) inn i Z8. Objekt-ID er en annen verdi. Z8 bygger den leierspesifikke utsteder-URL-en for deg.",
+              "link": "Instruksjoner for appregistrering",
+              "title": "Kopier leier- og program-ID-ene"
+            },
+            "introduction": "Opprett en registrering for webapp, kopier leier- og program-ID-ene dine, og legg til en klienthemmelighet. Z8 genererer utsteder-URL-en og veileder deg gjennom hvert trinn.",
+            "permissions": "Z8 bruker openid, email og profile for innlogging. Enkelte tilkoblinger ber også om offline_access for fornyelsestokener. Du trenger ikke katalogomfattende Microsoft Graph-tillatelser. Leierens samtykkeretningslinjer kan likevel kreve administratorgodkjenning.",
+            "portal": "Åpne administrasjonssenteret for Entra",
+            "redirect": {
+              "body": "I Godkjenning legger du til en omdirigerings-URI for Web-plattformen. Lim inn Z8-tilbakekallingen som vises her, helt nøyaktig. Bruk Web, ikke Enkeltsideapplikasjon. Du trenger ikke å aktivere implisitt tildeling.",
+              "link": "Instruksjoner for omdirigerings-URI",
+              "title": "Legg til omdirigerings-URI for web"
+            },
+            "redirectError": "AADSTS50011: Kontroller at omdirigerings-URI-en for web samsvarer nøyaktig med tilbakekallingen som vises av Z8, inkludert vertsnavn og bane.",
+            "register": {
+              "body": "Åpne Entra ID → Appregistreringer → Ny registrering. Gi appen navnet Z8 og velg Bare kontoer i denne organisasjonskatalogen. Velg organisasjonens katalog først. Hvis du ikke kan registrere apper, ber du Entra-administratoren din om å opprette en for deg.",
+              "title": "Registrer en applikasjon"
+            },
+            "secret": {
+              "body": "Gå til Sertifikater og hemmeligheter → Klienthemmeligheter → Ny klienthemmelighet. Lim inn Verdien i Z8, ikke Hemmelighets-ID-en. Verdien vises bare én gang. Noter utløpsdatoen og erstatt påloggingsinformasjonen før den utløper. Del Verdien kun gjennom organisasjonens sikre kanal.",
+              "link": "Instruksjoner for klienthemmelighet",
+              "title": "Opprett en klienthemmelighet"
+            },
+            "secretError": "Ugyldig klienthemmelighet: Bruk hemmelighetens Verdi, ikke ID-en. Kontroller at den tilhører denne applikasjonen og ikke er utløpt. Opprett en ny hemmelighet hvis du ikke lenger har Verdien.",
+            "secretHelp": "Sertifikater og hemmeligheter → Klienthemmeligheter. Lim inn Verdien, ikke Hemmelighets-ID-en. Z8 vil ikke vise den igjen.",
+            "secretValue": "Verdi for klienthemmelighet",
+            "start": "Konfigurer Microsoft Entra ID",
+            "tenantError": "Feil leier: Kopier Katalog-ID (leier) fra samme appregistrering som klient-ID-en. Dette veiledede oppsettet bruker en spesifikk leier, ikke common eller organizations.",
+            "tenantHelp": "Appregistreringer → appen din → Oversikt. Bruk leier-ID-en din, ikke common eller organizations.",
+            "tenantId": "Katalog-ID (leier)",
+            "tenantInvalid": "Angi katalog-ID-en (leier) som en fullstendig UUID.",
+            "title": "Konfigurer Microsoft Entra ID",
+            "troubleshooting": "Feilsøk Entra-oppsett",
+            "troubleshootingLink": "Microsofts feilsøkingsveiledning for omdirigering"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Angi en unik leverandør-ID, OIDC-utstederens URL, organisasjonens e-postdomene, klient-ID-en og klienthemmeligheten. Du finner disse i leverandørens applikasjonsinnstillinger. Overfør hemmeligheter via en sikker kanal.",
+              "title": "Kopier applikasjonsinnstillingene"
+            },
+            "description": "Bruk leverandørens dokumentasjon til å opprette en konfidensiell nettapplikasjon med autorisasjonskodeflyten.",
+            "redirect": {
+              "body": "Legg til Z8-tilbakekallingen vist her i applikasjonens tillatte omdirigerings-URI-er. Kopier den nøyaktig, inkludert organisasjonens vertsnavn og bane.",
+              "title": "Registrer URL-en for tilbakekall"
+            },
+            "register": {
+              "body": "I identitetsleverandøren din oppretter du en OpenID Connect-applikasjon ved hjelp av autorisasjonskodeflyten. Tilordne en liten pilotgruppe først.",
+              "title": "Opprett en nettapplikasjon"
+            },
+            "title": "Konfigurer en OIDC-leverandør"
+          },
+          "getStarted": "Koble til teamets pålogging",
+          "getStartedDescription": "Følg en leverandørspesifikk gjennomgang uten å måtte sette sammen konfigurasjonen selv.",
+          "handoff": {
+            "copy": "Kopier IT-sjekkliste",
+            "description": "Kopier oppsettsinstruksjonene og organisasjonens tilbakekallings-URL. Sjekklisten inneholder aldri påloggingsinformasjon.",
+            "return": "Returner leier-ID-en (for Entra) og applikasjonens klient-ID til Z8-administratoren. Overfør klienthemmelighetens Verdi separat via en sikker kanal; ikke lim den inn i denne sjekklisten.",
+            "title": "Trenger du hjelp fra IT-administratoren din?"
+          },
+          "manual": "Annen leverandør / manuell OIDC",
+          "manualAvailable": "Bruker du en annen leverandør? Velg manuell OIDC-konfigurasjon i oppsettspanelet.",
+          "manualTestHelp": "Dette er et påloggingsresultat rapportert av administrator, ikke en automatisk verifisert tilkoblingstest. Pilottest pålogging med en tiltenkt bruker i en separat nettleserøkt, hold denne administratorøkten åpen, og noter deretter om testen var vellykket eller mislyktes her. Å lagre leverandøren og verifisere DNS beviser ikke at pålogging fungerer.",
+          "openSetup": "Åpne veiledet oppsett",
+          "provider": "Identitetsleverandør",
+          "required": "Dette feltet er obligatorisk.",
+          "saving": "Legger til …",
+          "scopes": "Omfang for pålogging inkluderer openid, email og profile. Enkelte tilkoblinger ber også om offline_access for oppdateringstokener."
         },
         "issuerUrl": "Utsteder-URL",
         "issuerUrlHelp": "OIDC-utsteder-URL-en fra identitetsleverandøren din",
-        "issuerUrlRequired": "Utsteder-URL er påkrevd",
         "providerId": "Leverandør-ID",
         "providerIdHelp": "En unik identifikator for denne leverandøren (små bokstaver, ingen mellomrom)",
         "providerIdInvalid": "Leverandør-ID kan bare inneholde små bokstaver, tall og bindestreker",
-        "providerIdRequired": "Leverandør-ID er påkrevd",
-        "setupInstructions": "Oppsettinstruksjoner",
         "title": "Identitetsleverandører",
         "token": "Token",
         "tokenError": "Kunne ikke generere token for domenebekreftelse",
         "tokenGenerated": "Bekreftelsestoken generert",
         "txtToken": "TXT-token:",
         "validUrlRequired": "Vennligst oppgi en gyldig URL",
-        "verified": "Bekreftet",
         "verify": "Bekreft",
         "verifyError": "Domenebekreftelse mislyktes. Sjekk DNS TXT-oppføringen din og prøv igjen."
       },

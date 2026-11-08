@@ -341,7 +341,6 @@
       "morePages": "Fler sidor",
       "pagination": "sidnumrering"
     },
-    "pending": "Väntande",
     "positionCaptureErrors": {
       "adminOnly": "Endast organisationsägare och administratörer kan hantera positionsregistrering.",
       "assignmentNotFound": "Det här uppdraget finns inte längre.",
@@ -1129,11 +1128,13 @@
     "compliance": "Efterlevnad",
     "dashboard": "Översikt",
     "driving-licence": "Körkort",
+    "equipment": "Utrustning",
     "feedback": "Feedback",
     "finance": "Ekonomi",
     "financeAwaiting": "{count, plural, other {# utlägg väntar på ersättning} }",
     "get-help": "Få hjälp",
     "my-documents": "Mina dokument",
+    "my-equipment": "Min utrustning",
     "my-requests": "Mina förfrågningar",
     "my-schedule": "Mitt schema",
     "org-explorer": "Organisationsutforskare",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Framtida anställningsvillkor behöver granskas (avgång gäller från {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Framtida arbete behöver granskas (avgång gäller från {cutoff}, {timezone}).",
         "title": "Offboarding av medarbetare behöver granskas"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} har utestående utrustning ({quantity}) som ska återlämnas senast {deadline}. Öppna Utrustning för att ordna återlämningen.",
+        "title": "Återlämning av utrustning förfallen"
+      },
+      "equipmentReturnReminder": {
+        "message": "Vänligen återlämna din utestående utrustning ({quantity}) senast {deadline}. Öppna Min utrustning för mer information.",
+        "title": "Återlämning av utrustning förfaller"
       },
       "forgottenClockOutReminder": {
         "message": "Ditt arbetspass slutade kl. {endTime} ({timezone}). Stämpla ut om du har slutat arbeta.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Körinformation saknas",
         "driving_licence_reminder": "Körkortskontroll ska utföras",
         "employee_deactivation_shifts_opened": "Arbetspass som öppnats på grund av en inaktivering",
+        "equipment_return_reminder": "Påminnelser om återlämning av utrustning",
         "forgotten_clock_out_reminder": "Glömd utstämpling",
         "former_employee_reports_without_manager": "Anställda utan en nuvarande chef",
         "kiosk_command_refused": "Kioskstämpling registrerades inte",
@@ -1960,6 +1970,7 @@
         "auditLog": "Granskningsloggposter om dig och poster som du utförde.",
         "drivingLicence": "Körkortskontroller, originalbekräftelser och försäkringar, tillskrivna tillägg, behörighetstillstånd och deras historik, registrering och ditt kontrollantansvar. Endast bevarat underlag; inga körkortsskanningar, dokumentnummer eller läkarintyg.",
         "employment": "Dina anställningsuppgifter och profil, anställningsperioder och avslut, anställningsvillkor med din timlön och dess historik, team, chefer, platser, färdigheter, projekttilldelningar, roller, grupper, kostnadsställe och varje policy som tilldelats dig.",
+        "equipment": "Dina sparade utrustningstilldelningar, ursprungliga och korrigerade skick och anteckningar, fysiska kvitton, beslut om förlorad eller avskriven utrustning, återställning samt anställnings-/avslutshärkomst. Okända historiska utlämningsdatum förblir okända; faktiska kalenderdatum skiljs från UTC-tidsstämplar för registrering. Utrustningsposter inkluderas i både medarbetar- och administratörsexporter så länge de sparas.",
         "integrations": "Dina kalenderkopplingar, kalenderflöde, länkade chattkonton och kiosk-PIN-status.",
         "notifications": "Din aviseringshistorik.",
         "personnelFile": "Dokumenten i din personalakt, som originalfiler.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Läkarintyg"
       },
       "drivingLicenceRetention": "Underlag för körkort följer organisationens motiverade lagringsperiod för kontroller när det inte längre stödjer ett aktivt behörighetstillstånd. Ett dokumenterat rättsligt bevarande för ett specifikt rättsfall skjuter upp radering. Se policyn för körkort (driving_licence), lagrings- och bevaranderegistren för tillämpligt sammanhang; att skapa en export förlänger inte lagringstiden för underlag i Z8.",
+      "emptyFilesOmitted": "Filer utan exporterbara data utelämnas. Tomma tabeller och saknade valfria poster finns kvar i JSON-filer som innehåller andra data. Valfria inställningar som aldrig konfigurerades räknas inte som data.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Sedan när du är med i teamet.",
             "summary": "Teamen du är med i nu."
           }
+        },
+        "equipment": {
+          "actualDate": "Det ursprungliga faktiska kalenderdatumet för överlämningen enligt organisationens tidszon. Tomt innebär ett uttryckligen okänt historiskt utlämningsdatum, inte registreringsdatumet.",
+          "after": "JSON med värden efter denna ändring, med samma betydelse för bevisfälten som tidigare. Värden för utlämningsavtal inkluderar returnRequired, explicitDeadline och employmentPeriodId. Kalenderdatum är skilda från ändringens UTC-registrerade recorded_at.",
+          "assignmentId": "Den sparade tilldelningen som detta bevis tillhör; endast dina tilldelningar i denna organisation inkluderas.",
+          "assignmentQuantity": "Det aktuella gällande utlämnade antalet efter korrigeringar; ursprunglig utlämning och ändringar förblir separata bevis.",
+          "assignments": {
+            "summary": "Dina sparade utrustningsavtal och aktuella gällande saldon, villkor och ursprunglig anställnings-/avslutshärkomst. Avslut på grund av förlorad eller efterskänkt utrustning gör inte anspråk på fysiskt mottagande; återställning överlappar dess tidigare avslut. Raderad personlig historik rekonstrueras aldrig från icke-personliga artikelidentiteter."
+          },
+          "before": "JSON med gällande värden före denna ändring: överlämnat antal, actualDate (null för okänd historisk utlämning), skick och anteckningar, eller undantagstyp, antal och anledning. Ändringar av utlämning behåller även tidigare returnRequired, explicitDeadline och ursprunglig anställnings-/avsluts-/avaktiveringshärkomst.",
+          "condition": "Det ursprungligen registrerade skicket: bra, slitet, skadat eller okänt; okänt skick innebär inte ett okänt datum.",
+          "correctionReason": "Den obligatoriska förklaringen till varför korrigeringen gjordes.",
+          "corrections": {
+            "summary": "Motiverade före/efter-ändringar av dina sparade överlämningar och beslut, inklusive avtalsändringar. Ursprungliga bevis förblir separata; en överföring inkluderar endast din egen överlämning och ändring, aldrig den andra innehavarens personliga historik."
+          },
+          "deactivatedAt": "När den kopplade omedelbara avaktiveringen avslutade anställningen/åtkomsten, som en UTC-tidpunkt; utestående utrustning fördröjer den aldrig.",
+          "deactivationId": "Den oföränderliga avaktiveringsidentiteten för denna tilldelning, även när återaktivering återöppnar samma anställningsperiod.",
+          "deactivationTimezone": "Organisationens tidszon som registrerades vid den ursprungliga avaktiveringen, eller tomt om den inte registrerades. En senare organisations- eller visartidszon ersätter aldrig denna historiska kontext.",
+          "departureCutoffAt": "Den kopplade avgångens UTC-bryttidpunkt, skild från dess sista arbetade kalenderdag och tidsfrist för utrustning.",
+          "departureDeadline": "Återlämningsdatumet som härletts från den ursprungliga avgången eller avaktiveringen; det kvarstår vid senare återanställning eller återaktivering. Tomt när ingen härledd tidsfrist gäller.",
+          "departureId": "Tilldelningens ursprungliga kopplade avgångsidentitet, om någon. Avgångsuppgifter och granskningar utgör inte utrustningsbevis.",
+          "departureMode": "Huruvida den kopplade avgången var schemalagd eller omedelbar, eller tomt utan en kopplad avgång.",
+          "departureStatus": "Den kopplade avgångens aktuella status; en väntande avgång avslutar inte i sig anställningen.",
+          "departureTimezone": "Tidszonen som låstes vid den kopplade avgången; ändringar i visarens tidszon ändrar inte dess kalenderbetydelse.",
+          "effectiveActualDate": "Det faktiska överlämningsdatumet i kalendern efter korrigeringar; en okänd historisk utlämning förblir tom i stället för att falla tillbaka på sin registreringstidsstämpel.",
+          "effectiveCondition": "Skicket efter korrigeringar; att ta emot skadad utrustning ger inte i sig godkännande för återutlämning.",
+          "effectiveDeadline": "Den tidigare tillämpliga uttryckliga eller härledda kalenderfristen; utrustning utlämnad för att behållas har ingen. Detta är inte ett överlämningsdatum eller en UTC-registreringstidsstämpel.",
+          "effectiveExceptionQuantity": "Det antal som fortfarande avslutas av detta beslut efter ändringar eller återkallanden, inklusive dess kopplade fysiska mottaganden; noll innebär helt återkallat.",
+          "effectiveHandoverQuantity": "Överlämningsantalet efter korrigeringar; noll upphäver en felaktig mottagning utan att radera dess ursprungliga bevis.",
+          "effectiveKind": "Det aktuella förlorade eller avskrivna utfallet efter korrigeringar.",
+          "effectiveNotes": "De aktuella valfria överlämningsanteckningarna efter korrigeringar.",
+          "effectiveReason": "Beslutets aktuella orsak efter korrigeringar; korrigeringsorsaker sparas separat.",
+          "employmentPeriodId": "Den ursprungliga anställningsperioden kopplad till denna tilldelning, ersätts inte automatiskt av en senare anställningsperiod; tomt när ingen period registrerades.",
+          "exceptionId": "Det kopplade beslutet om förlust eller avskrivning; ett kopplat fysiskt mottagande kompletterar det beslutet snarare än att reglera samma antal två gånger. Tomt för en vanlig överlämning.",
+          "exceptionKind": "Det ursprungliga utfallet som förlorat eller avskrivet; ingetdera innebär att utrustningen returnerades fysiskt.",
+          "exceptionQuantity": "Det ursprungliga antalet som avslutades genom beslutet, bevarat efter ändringar eller återkallanden.",
+          "exceptionReason": "Den ursprungliga obligatoriska orsaken till beslutet om förlust eller avskrivning.",
+          "exceptionReceivedQuantity": "Fysiska mottaganden kopplade till förlorade eller avskrivna antal; denna överlappning räknas en gång vid beräkning av utestående returer.",
+          "exceptions": {
+            "summary": "Ursprungliga motiverade förlust- och avskrivningsbeslut och deras aktuella korrigerade värden. Dessa avslutar returskyldigheter utan att hävda fysiskt mottagande; kopplade mottagningsbevis registrerar återfående eller senare retur separat."
+          },
+          "explicitDeadline": "Det separat överenskomna returdatumet som en kalenderdag i organisationens tidszon, eller tomt.",
+          "handoverId": "Den ändrade överlämningens ID, eller tomt för en undantagsändring.",
+          "handoverKind": "Utlämning registrerar utlämning; mottagning registrerar fysisk mottagning, inklusive ett kopplat återfående. Varken avslut genom förlust eller avskrivning är i sig en överlämning.",
+          "handoverQuantity": "Det ursprungligen registrerade överlämningsantalet, bevarat även efter korrigering.",
+          "handovers": {
+            "summary": "Ursprungliga bevis för utlämning och fysisk mottagning med aktuella korrigerade värden. En mottagning kopplad till ett förlustbeslut är ett återfående; en mottagning kopplad till ett avskrivningsbeslut registrerar senare fysisk mottagning. Ett okänt historiskt utlämningsdatum förblir tomt och ersätts aldrig av dess UTC-registreringstidsstämpel."
+          },
+          "historical": "Sant för registrering av en redan innehavd historisk tilldelning; endast historisk utlämning kan ha ett uttryckligen okänt faktiskt datum.",
+          "holds": {
+            "kind": "Huruvida ärendespärren aktiverades eller hävdes.",
+            "reason": "Den obligatoriska orsaken som dokumenterats av organisationsadministratören för denna specifika ärendeåtgärd.",
+            "revision": "Den tilldelningsrevision som skapades av denna ärendespärrsåtgärd.",
+            "summary": "Dokumenterade aktiveringar och hävningar av ärendespärrar i din bevarade utrustningshistorik. En aktiv spärr skyddar bevisen från rensning; den registrerar aldrig fysisk mottagning."
+          },
+          "identifier": "Organisationens identifierare för din individuellt spårade artikel, utan andra innehavares historik; tomt för antaltilldelningar.",
+          "lastWorkingDay": "Den kopplade schemalagda avgångens sista arbetsdag i kalendern i dess låsta tidszon, eller tomt.",
+          "lostQuantity": "Det faktiska antalet som avslutats som förlorat, inklusive eventuellt senare återfunnet antal; förlustbeslutet bevaras.",
+          "notes": "De ursprungliga valfria överlämningsanteckningarna, bevarade efter korrigering medan personlig historik bibehålls.",
+          "outstandingQuantity": "Obligatoriskt antal minus fysiska mottaganden och förlorade/avskrivna avslut, plus deras kvittoöverlappning för att undvika dubbelavräkning; noll för utrustning utlämnad för att behållas.",
+          "periodEndedAt": "Den kopplade periodens UTC-sluttidpunkt, eller tomt för en öppen/återöppnad period eller ett okänt slut.",
+          "periodStartedAt": "Den kopplade anställningsperiodens registrerade UTC-starttidpunkt, eller tomt när den är okänd.",
+          "periodStatus": "Den kopplade periodens aktuella status öppen, stängd eller legacy_unknown; återaktivering kan återöppna samma period utan att ändra tilldelningens avslutande identitet.",
+          "physicallyReceivedQuantity": "Det faktiska antalet som mottagits fysiskt, inklusive återfående och mottagande av avskrivna artiklar. Enbart förlust- och avskrivningsbeslut ökar aldrig detta antal.",
+          "reactivatedAt": "När den avaktiveringen senare återaktiverades, som en UTC-tidpunkt, eller tomt; återaktivering raderar inte gamla utrustningsskyldigheter eller tidsfrister.",
+          "receivedQuantity": "Det faktiska fysiska antalet som mottagits mot detta beslut. För ett förlustbeslut är detta återfunnen utrustning; det ingår redan i tilldelningens fysiska mottaganden.",
+          "recordedAt": "UTC-registreringstidsstämpeln, separat från det faktiska överlämningsdatumet; sen registrering ändrar inte överlämningsdatumet.",
+          "recordedBy": "Visningsnamnet för personen som registrerade detta bevis, när dennes organisationsidentitet fortfarande är tillgänglig; inga andra profiluppgifter inkluderas.",
+          "returnRequired": "Huruvida retur krävs. Falskt innebär utlämnad för att behållas, utan returfrist eller utestående retur; det betyder inte att den har returnerats fysiskt.",
+          "serialNumber": "Det valfria tillverkningsserienumret för den individuellt spårade artikeln.",
+          "trackingMode": "Individuell identifierar en fysisk artikel; antal räknar utbytbara artiklar.",
+          "type": "Utrustningstypens namn.",
+          "waivedQuantity": "Det faktiska antalet vars obligatoriska retur avskrevs, inklusive eventuellt senare mottaget antal; avskrivning hävdar inte mottagande."
         },
         "integrations": {
           "calendarConnections": {

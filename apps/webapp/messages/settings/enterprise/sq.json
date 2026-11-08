@@ -37,6 +37,13 @@
         "time": "Koha"
       },
       "disabled": "Çaktivizuar",
+      "documentation": {
+        "reference": "Referenca e API-së",
+        "resources": "Lexoni periudhat e punës, mungesat, punonjësit, projektet, klientët dhe përkufizimet e fushave të personalizuara me Public API v1. Qasja është vetëm për lexim.",
+        "scopes": "Një çelës API vepron si organizata juaj dhe lexon vetëm atë që lejojnë hapësirat (scopes) e tij. Gjeni pikat fundore, hapësirat e kërkuara dhe shembujt në referencë.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "Shkarko specifikimin OpenAPI",
       "editCreated": "Krijuar më {date}",
       "editDescription": "Përditësoni cilësimet për këtë çelës API. Shënim: Nuk mund ta shikoni apo ta ndryshoni vetë çelësin.",
       "editTitle": "Ndrysho çelësin API",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Ruani ofruesin përpara se të regjistroni një test"
           },
-          "help": "Kjo regjistron rezultatin e një testi të drejtpërdrejtë të jashtëm të SSO-së. Kryeni fillimisht identifikimin në IdP, pastaj regjistroni këtu suksesin ose dështimin për mbrojtjen e aktivizimit.",
           "label": {
             "email": "Email-i i përdoruesit testues",
             "failureNote": "Shënimi i dështimit"
@@ -620,12 +626,9 @@
         "updated": "OAuth i {provider} u përditësua me sukses"
       },
       "sso": {
-        "addDescription": "Konfiguroni një ofrues identiteti OIDC për identifikim të njëhershëm (SSO) për ndërmarrje.",
         "addError": "Shtimi i ofruesit SSO dështoi",
         "addSuccess": "Ofruesi SSO u shtua me sukses",
         "addTitle": "Shto ofrues SSO",
-        "clientIdPlaceholder": "ID-ja juaj e klientit OIDC",
-        "clientSecretPlaceholder": "Sekreti juaj i klientit OIDC",
         "deleteDialogDescription": "A jeni i sigurt që dëshironi ta fshini këtë ofrues SSO? Përdoruesit nuk do të mund të identifikohen më duke përdorur këtë ofrues identiteti.",
         "deleteDialogTitle": "Fshi ofruesin SSO",
         "deleteError": "Fshirja e ofruesit SSO dështoi",
@@ -633,32 +636,110 @@
         "deleteSuccess": "Ofruesi SSO u fshi",
         "description": "Shtoni ofrues identiteti OIDC për të aktivizuar SSO-në për organizatën tuaj.",
         "domainInvalid": "Ju lutemi vendosni një domen të vlefshëm (p.sh., example.com)",
-        "domainRequired": "Domeni është i detyrueshëm",
         "domainVerified": "Domeni u verifikua",
         "emailDomain": "Domeni i emailit",
         "emailDomainHelp": "Përdoruesit me këtë domen emaili do të mund të përdorin SSO-në",
         "empty": "Ende nuk është konfiguruar asnjë ofrues SSO.",
         "emptyDescription": "Shtoni një ofrues OIDC për të aktivizuar identifikimin e njëhershëm (SSO) për ndërmarrje.",
-        "instructions": {
-          "copyCredentials": "Kopjoni Issuer URL-në, Client ID-në dhe Client Secret-in nga IdP-ja juaj",
-          "createApp": "Krijoni një aplikacion OIDC te ofruesi juaj i identitetit (Okta, Azure AD, etj.)",
-          "verifyDomain": "Shtoni ofruesin këtu dhe verifikoni domenin e emailit përmes regjistrimit DNS TXT"
+        "guide": {
+          "addDescription": "Ndiqni udhëzimet e konfigurimit të ofruesit tuaj, më pas lidheni atë me organizatën tuaj.",
+          "afterSave": "Pas ruajtjes, verifikoni domenin e email-it tuaj me regjistrimin DNS TXT në Z8. Testoni hyrjen me një përdorues të synuar duke e mbajtur të hapur sesionin aktual të administratorit. Te Konfigurimi i udhëhequr, ruani të njëjtin ID ofruesi dhe domen email-i të shfaqur në listën e ofruesve, më pas regjistroni manualisht rezultatin e vëzhguar të hyrjes përpara se të merrni parasysh «Kërko SSO». Ruajtja dhe verifikimi i DNS-së nuk provojnë një hyrje të suksesshme.",
+          "afterSaveTitle": "Pas ruajtjes së ofruesit tuaj",
+          "callback": "URL-ja e callback-ut të Z8",
+          "connectionHelp": "Kopjoni këto vlera nga cilësimet e aplikacionit të ofruesit tuaj.",
+          "connectionSettings": "Cilësimet e lidhjes",
+          "copied": "U kopjua në kujtesën e fragmenteve",
+          "copyCallback": "Kopjo URL-në e callback-ut",
+          "copyFailed": "Qasja në kujtesën e fragmenteve dështoi. Zgjidhni dhe kopjoni tekstin manualisht.",
+          "domainPending": "Domeni nuk është verifikuar",
+          "domainStatus": "Verifikimi i domenit",
+          "domainVerified": "Domeni u verifikua",
+          "entra": {
+            "clientHelp": "Kopjoni Application (client) ID nga Overview, jo Object ID.",
+            "clientId": "Application (client) ID",
+            "consentError": "Pëlqimi ose qasja u refuzua: Kërkojini administratorit tuaj të Entra të kontrollojë politikat e pëlqimit dhe nëse përdoruesi testues është caktuar te aplikacioni.",
+            "consentLink": "Udhëzimet e pëlqimit të Microsoft-it",
+            "description": "Lidhni drejtorinë e Microsoft të organizatës suaj me një aplikacion OpenID Connect me një qiramarrës të vetëm (single-tenant).",
+            "generatedIssuer": "URL-ja e lëshuesit · e gjeneruar nga ID-ja juaj e qiramarrësit",
+            "ids": {
+              "body": "Te Përmbledhja (Overview) e aplikacionit, kopjoni Directory (tenant) ID dhe Application (client) ID në Z8. Object ID është një vlerë tjetër. Z8 ndërton për ju URL-në e lëshuesit specifike për qiramarrësin tuaj.",
+              "link": "Udhëzimet e regjistrimit të aplikacionit",
+              "title": "Kopjoni ID-të e qiramarrësit dhe të aplikacionit"
+            },
+            "introduction": "Krijoni një regjistrim aplikacioni Web, kopjoni ID-të e qiramarrësit dhe të aplikacionit, dhe shtoni një sekret klienti (client secret). Z8 gjeneron URL-në e lëshuesit dhe ju udhëzon në çdo hap.",
+            "permissions": "Z8 përdor openid, email dhe profile për hyrje. Disa lidhje kërkojnë gjithashtu offline_access për token-at e rifreskimit. Nuk keni nevojë për leje në mbarë drejtorinë për Microsoft Graph. Politika e pëlqimit të qiramarrësit tuaj mund të kërkojë gjithsesi miratimin e administratorit.",
+            "portal": "Hapni qendrën e administrimit Entra",
+            "redirect": {
+              "body": "Te Authentication, shtoni një URI ridrejtimi për platformën Web. Ngjisni saktësisht callback-un e Z8 të shfaqur këtu. Përdorni Web, jo Single-page application. Nuk keni nevojë të aktivizoni implicit grant.",
+              "link": "Udhëzimet për URI-n e ridrejtimit",
+              "title": "Shtoni URI-n e ridrejtimit në Web"
+            },
+            "redirectError": "AADSTS50011: Kontrolloni që URI-ja e ridrejtimit Web të përputhet saktësisht me callback-un e shfaqur nga Z8, duke përfshirë emrin e host-it dhe shtegun e tij.",
+            "register": {
+              "body": "Hapni Entra ID → App registrations → New registration. Emërtojeni aplikacionin Z8 dhe zgjidhni Accounts in this organizational directory only. Zgjidhni fillimisht drejtorinë e organizatës suaj. Nëse nuk mund të regjistroni aplikacione, kërkojini administratorit tuaj të Entra të krijojë një për ju.",
+              "title": "Regjistroni një aplikacion"
+            },
+            "secret": {
+              "body": "Shkoni te Certifikatat dhe sekretet → Sekretet e klientit → Sekreti i ri i klientit. Ngjisni Vlerën e tij në Z8, jo ID-në e sekretit. Vlera shfaqet vetëm një herë. Regjistroni skadimin dhe zëvendësoni kredencialin para se të skadojë. Ndajeni Vlerën vetëm përmes kanalit të sigurt të organizatës suaj.",
+              "link": "Udhëzimet për sekretin e klientit",
+              "title": "Krijo një sekret klienti"
+            },
+            "secretError": "Sekret klienti i pavlefshëm: Përdorni Vlerën e sekretit, jo ID-në e tij. Kontrolloni që i përket këtij aplikacioni dhe nuk ka skaduar. Krijoni një sekret të ri nëse nuk e keni më Vlerën.",
+            "secretHelp": "Certifikatat dhe sekretet → Sekretet e klientit. Ngjisni Vlerën, jo ID-në e sekretit. Z8 nuk do ta shfaqë më atë.",
+            "secretValue": "Vlera e sekretit të klientit",
+            "start": "Konfiguro Microsoft Entra ID",
+            "tenantError": "Qiramarrës i gabuar: Kopjoni ID-në e direktorisë (qiramarrësit) nga i njëjti regjistrim aplikacioni si ID-ja e klientit. Ky konfigurim i udhëhequr përdor një qiramarrës specifik, jo të përbashkët (common) ose organizata (organizations).",
+            "tenantHelp": "Regjistrimet e aplikacioneve → aplikacioni juaj → Përmbledhja. Përdorni ID-në e qiramarrësit tuaj, jo common ose organizations.",
+            "tenantId": "ID-ja e direktorisë (qiramarrësit)",
+            "tenantInvalid": "Vendosni ID-në e direktorisë (qiramarrësit) si një UUID të plotë.",
+            "title": "Konfiguro Microsoft Entra ID",
+            "troubleshooting": "Zgjidhja e problemeve të konfigurimit të Entra",
+            "troubleshootingLink": "Udhëzuesi i Microsoft-it për zgjidhjen e problemeve me ridrejtimin"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Vendosni një ID unike të ofruesit, URL-në e lëshuesit OIDC, domenin e emailit të organizatës suaj, ID-në e klientit dhe sekretin e klientit. Këto mund t'i gjeni në cilësimet e aplikacionit të ofruesit tuaj. Transferojini sekretet përmes një kanali të sigurt.",
+              "title": "Kopjo cilësimet e aplikacionit"
+            },
+            "description": "Përdorni dokumentacionin e ofruesit tuaj për të krijuar një aplikacion Web konfidencial me rrjedhën e kodit të autorizimit.",
+            "redirect": {
+              "body": "Shtoni thirrjen kthyese të Z8 të shfaqur këtu te URI-të e lejuara të ridrejtimit të aplikacionit. Kopjojeni saktësisht, duke përfshirë emrin e hostit dhe rrugën e organizatës.",
+              "title": "Regjistro URL-në e thirrjes kthyese"
+            },
+            "register": {
+              "body": "Në ofruesin tuaj të identitetit, krijoni një aplikacion OpenID Connect duke përdorur rrjedhën e kodit të autorizimit. Fillimisht caktoni një grup të vogël pilot.",
+              "title": "Krijo një aplikacion Web"
+            },
+            "title": "Konfiguro një ofrues OIDC"
+          },
+          "getStarted": "Lidhni hyrjen e ekipit tuaj",
+          "getStartedDescription": "Ndiqni një udhëzues hap pas hapi specifik për ofruesin pa pasur nevojë ta bashkoni konfigurimin vetë.",
+          "handoff": {
+            "copy": "Kopjo listën e kontrollit të IT-së",
+            "description": "Kopjoni udhëzimet e konfigurimit dhe URL-në e thirrjes kthyese të organizatës suaj. Lista e kontrollit nuk përfshin kurrë kredenciale.",
+            "return": "Kthejani ID-në e qiramarrësit (për Entra) dhe ID-në e klientit të aplikacionit administratorit të Z8. Transferojeni Vlerën e sekretit të klientit veçmas përmes një kanali të sigurt; mos e ngjisni në këtë listë kontrolli.",
+            "title": "Keni nevojë për ndihmë nga administratori juaj i IT-së?"
+          },
+          "manual": "Ofrues tjetër / OIDC manual",
+          "manualAvailable": "Po përdorni një ofrues tjetër? Zgjidhni konfigurimin manual OIDC në panelin e konfigurimit.",
+          "manualTestHelp": "Ky është një rezultat hyrjeje i raportuar nga administratori, jo një test lidhjeje i verifikuar automatikisht. Testoni hyrjen me një përdorues të synuar në një sesion të veçantë shfletuesi, mbajeni këtë sesion administratori të hapur dhe më pas regjistroni këtu suksesin ose dështimin e vëzhguar. Ruajtja e ofruesit dhe verifikimi i DNS-së nuk vërtetojnë se hyrja funksionon.",
+          "openSetup": "Hap konfigurimin e udhëhequr",
+          "provider": "Ofruesi i identitetit",
+          "required": "Kjo fushë është e detyrueshme.",
+          "saving": "Po shtohet…",
+          "scopes": "Fushëveprimet e hyrjes përfshijnë openid, email dhe profile. Disa lidhje kërkojnë gjithashtu offline_access për tokenët e rifreskimit."
         },
         "issuerUrl": "URL-ja e lëshuesit",
         "issuerUrlHelp": "URL-ja e lëshuesit OIDC nga ofruesi juaj i identitetit",
-        "issuerUrlRequired": "URL-ja e lëshuesit është e detyrueshme",
         "providerId": "ID-ja e ofruesit",
         "providerIdHelp": "Një identifikues unik për këtë ofrues (me shkronja të vogla, pa hapësira)",
         "providerIdInvalid": "ID-ja e ofruesit duhet të përmbajë vetëm shkronja të vogla, numra dhe viza lidhëse",
-        "providerIdRequired": "ID-ja e ofruesit është e detyrueshme",
-        "setupInstructions": "Udhëzimet e konfigurimit",
         "title": "Ofruesit e identitetit",
         "token": "Token",
         "tokenError": "Gjenerimi i token-it të verifikimit të domenit dështoi",
         "tokenGenerated": "Token-i i verifikimit u gjenerua",
         "txtToken": "Tokeni TXT:",
         "validUrlRequired": "Ju lutemi vendosni një URL të vlefshme",
-        "verified": "Verifikuar",
         "verify": "Verifiko",
         "verifyError": "Verifikimi i domenit dështoi. Kontrolloni regjistrimin tuaj DNS TXT dhe provoni përsëri."
       },

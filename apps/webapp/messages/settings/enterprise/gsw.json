@@ -37,6 +37,13 @@
         "time": "Ziit"
       },
       "disabled": "Deaktiviert",
+      "documentation": {
+        "reference": "API-Referenz",
+        "resources": "Lies Arbeitszyte, Abweseheite, Mitarbeiter, Projekt, Chunde und benutzerdefinierti Fälder mit de Public API v1 us. De Zuegriff isch schriibgschützt.",
+        "scopes": "En API-Schlüssel agiert im Name vo dinere Organisation und liest nur das, wo sini Scopes erlaube. Endpünkt, erforderlichi Scopes und Bispil findsch i de Referenz.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "OpenAPI-Spezifikation abelade",
       "editCreated": "Erstellt am {date}",
       "editDescription": "Aktualisiere d'Iistellige für dä API-Schlüssel. Hiiwiis: Du chasch dä Schlüssel sälber nöd aaluege oder ändere.",
       "editTitle": "API-Schlüssel bearbeite",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Speicher de Aabieter, bevor du en Test erfassisch"
           },
-          "help": "Das zeichnet es Ergebnis vomene Live-SSO-Test uf. Füehr de Login im IdP zerscht us und halt dänn da fest, ob er erfolgreich gsi isch oder nöd, für d Aktivierigssperre.",
           "label": {
             "email": "Test-User-E-Mail",
             "failureNote": "Fehlermeldig"
@@ -620,12 +626,9 @@
         "updated": "{provider} OAuth erfolgreich aktualisiert"
       },
       "sso": {
-        "addDescription": "Konfigurieren Sie einen OIDC-Identitätsanbieter für Enterprise Single Sign-On.",
         "addError": "SSO-Provider konnte nicht hinzugefügt werden",
         "addSuccess": "SSO-Provider erfolgreich hinzugefügt",
         "addTitle": "SSO-Provider hinzufügen",
-        "clientIdPlaceholder": "Ihre OIDC-Client-ID",
-        "clientSecretPlaceholder": "Ihr OIDC-Client-Secret",
         "deleteDialogDescription": "Sind Sie sicher, dass Sie diesen SSO-Provider löschen möchten? Benutzer können sich dann nicht mehr über diesen Identitätsanbieter anmelden.",
         "deleteDialogTitle": "SSO-Provider löschen",
         "deleteError": "SSO-Provider konnte nicht gelöscht werden",
@@ -633,32 +636,110 @@
         "deleteSuccess": "SSO-Provider gelöscht",
         "description": "Fügen Sie OIDC-Identitätsanbieter hinzu, um SSO für Ihre Organisation zu aktivieren.",
         "domainInvalid": "Bitte geben Sie eine gültige Domain ein (z. B. example.com)",
-        "domainRequired": "Domain ist erforderlich",
         "domainVerified": "Domain verifiziert",
         "emailDomain": "E-Mail-Domain",
         "emailDomainHelp": "Benutzer mit dieser E-Mail-Domain können SSO verwenden",
         "empty": "Noch keine SSO-Provider konfiguriert.",
         "emptyDescription": "Fügen Sie einen OIDC-Provider hinzu, um Enterprise Single Sign-On zu aktivieren.",
-        "instructions": {
-          "copyCredentials": "Kopieren Sie die Issuer-URL, Client-ID und das Client-Secret von Ihrem IdP",
-          "createApp": "Erstellen Sie eine OIDC-Anwendung bei Ihrem Identitätsanbieter (Okta, Azure AD, etc.)",
-          "verifyDomain": "Fügen Sie den Provider hier hinzu und verifizieren Sie die E-Mail-Domain über einen DNS-TXT-Eintrag"
+        "guide": {
+          "addDescription": "Befolg d Iirichtigaawiisige vo dim Provider und verbind en dänn mit dinere Organisation.",
+          "afterSave": "Nach em Speichere verifiziersch dini E-Mail-Domain mit em DNS-TXT-Iitrag in Z8. Mach e Test-Aameldig mit eme vorgsehne Benutzer und laa debii dini aktuelli Administrator-Sitzig offe. Im gführte Setup speicherisch die gliich Provider-ID und E-Mail-Domain wie i de Provider-Liste aazeigt, und hebsch s beobachtete Aamäldergebnis manuell fest, bevor du «SSO vorschriibe» aktiviersch. S Speichere und d DNS-Verifizierig bewiised no kei erfolgriichi Aameldig.",
+          "afterSaveTitle": "Nach em Speichere vo dim Provider",
+          "callback": "Z8-Callback-URL",
+          "connectionHelp": "Kopier die Wert us de Aawendigs-Istellige vo dim Provider.",
+          "connectionSettings": "Verbindigs-Istellige",
+          "copied": "I d Zwüscheablag kopiert",
+          "copyCallback": "Callback-URL kopiere",
+          "copyFailed": "Zuegriff uf d Zwüscheablag isch fählgschlage. Wähl de Text us und kopier en vo Hand.",
+          "domainPending": "Domain nöd verifiziert",
+          "domainStatus": "Domain-Verifizierig",
+          "domainVerified": "Domain verifiziert",
+          "entra": {
+            "clientHelp": "Kopier d Aawendigs-(Client-)ID us de Übersicht, nöd d Objekt-ID.",
+            "clientId": "Aawendigs-(Client-)ID",
+            "consentError": "Zuestimmig oder Zuegriff verweigeret: Frag din Entra-Administrator, zum d Zuestimmigsrichtlinie z überprüefe und z luege, öb de Testbenutzer de Aawendig zuegwise isch.",
+            "consentLink": "Microsoft-Aaleitig zur Zuestimmig",
+            "description": "Verbind s Microsoft-Verzeichnis vo dinere Organisation mit ere Single-Tenant-OpenID-Connect-Aawendig.",
+            "generatedIssuer": "Issuer-URL · generiert us dinere Tenant-ID",
+            "ids": {
+              "body": "Kopier uf de Übersicht vo de App d Verzeichnis-(Tenant-)ID und d Aawendigs-(Client-)ID nach Z8. D Objekt-ID isch en andere Wert. Z8 baut di tenant-spezifischi Issuer-URL für dich zämme.",
+              "link": "Aaleitig zur App-Registrierig",
+              "title": "Tenant- und Aawendigs-IDs kopiere"
+            },
+            "introduction": "Erstell e Web-App-Registrierig, kopier dini Tenant- und Aawendigs-IDs und füeg es Client-Secret dezue. Z8 generiert d Issuer-URL und führt dich dur jede Schritt.",
+            "permissions": "Z8 bruucht openid, email und profile für d Aameldig. Einigi Verbindige verlanget au offline_access für Refresh-Tokens. Du bruuchsch kei verzeichniswiiti Microsoft-Graph-Berechtigunge. D Zuestimmigsrichtlinie vo dim Tenant chan aber trotzdem e Administrator-Gnämigung erfordere.",
+            "portal": "Entra Admin Center öffne",
+            "redirect": {
+              "body": "Füeg under Authentifizierig e Redirect-URI für d Web-Plattform dezue. Füeg de Z8-Callback, wo da aazeigt wird, exakt ii. Bruuch Web, nöd Single-Page-Application. Du muesch de impliziti Grant nöd aktiviere.",
+              "link": "Aawiisige zur Redirect-URI",
+              "title": "Web-Redirect-URI hinzufüege"
+            },
+            "redirectError": "AADSTS50011: Überprüef, dass d Web-Redirect-URI exakt mit em Callback vo Z8 überiistimmt, inklusive Hostname und Pfad.",
+            "register": {
+              "body": "Öffne Entra ID → App-Registrierige → Nöii Registrierig. Nänn d App Z8 und wähl «Nur Konten in diesem Organisationsverzeichnis». Wähl zersch s Verzeichnis vo dinere Organisation us. Wenn du kei Apps chasch registriere, frag din Entra-Administrator, öb er eini für dich chan erstelle.",
+              "title": "E Aawendig registriere"
+            },
+            "secret": {
+              "body": "Gang zu Zertifikate & Secrets → Client-Secrets → Neus Client-Secret. Füeg de Wert (Value) i Z8 ii, nöd d Secret-ID. De Wert wird nume eimol aazeigt. Notier s Ablaufdatum und ersetz d Aameldedate, bevor si ablaufe. Teil de Wert nume über en sichere Kanal vo dinere Organisation.",
+              "link": "Aawiisige zum Client-Secret",
+              "title": "Es Client-Secret erstelle"
+            },
+            "secretError": "Ungültigs Client-Secret: Bruuch de Wert (Value) vom Secret, nöd d ID. Überprüef, ob s zu dere Aawendig ghört und nonig abgloufe isch. Erstell es neus Secret, wänn du de Wert nüme hesch.",
+            "secretHelp": "Zertifikate & Secrets → Client-Secrets. Füeg de Wert ii, nöd d Secret-ID. Z8 wird en nüme aazeige.",
+            "secretValue": "Wert (Value) vom Client-Secret",
+            "start": "Microsoft Entra ID iirichte",
+            "tenantError": "Falsche Tenant: Kopier d Directory-(Tenant-)ID vo de gliche App-Registrierig wie d Client-ID. Die gfüehrti Iirichtig bruucht en spezifische Tenant, nöd common oder organizations.",
+            "tenantHelp": "App-Registrierige → dini App → Übersicht. Bruuch dini Tenant-ID, nöd common oder organizations.",
+            "tenantId": "Directory-(Tenant-)ID",
+            "tenantInvalid": "Gib d Directory-(Tenant-)ID als vollständigi UUID ii.",
+            "title": "Microsoft Entra ID iirichte",
+            "troubleshooting": "Problembehebig für d Entra-Iirichtig",
+            "troubleshootingLink": "Leitfade vo Microsoft zur Problembehebig bi Weiterleitige"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Gib e eidütigi Provider-ID, d OIDC-Issuer-URL, d E-Mail-Domain vo dinere Organisation, d Client-ID und s Client-Secret ii. Du findsch das i de Aawendigs-Istellige vo dim Provider. Übermittle Secrets über en sichere Kanal.",
+              "title": "Aawendigs-Istellige kopiere"
+            },
+            "description": "Nutz d Dokumentation vo dim Provider, zum e vertraulichi Web-Aawendig mit em Authorization-Code-Flow z erstelle.",
+            "redirect": {
+              "body": "Füeg de do aazeigti Z8-Callback zu de erlaubte Redirect-URIs vo de Aawendig hinzue. Kopier en exakt, inklusive Hostname und Pfad vo de Organisation.",
+              "title": "Callback-URL registriere"
+            },
+            "register": {
+              "body": "Erstell bi dim Identity Provider e OpenID-Connect-Aawendig mit em Authorization-Code-Flow. Wiis zersch e chliini Pilotgruppe zue.",
+              "title": "E Web-Aawendig erstelle"
+            },
+            "title": "En OIDC-Provider iirichte"
+          },
+          "getStarted": "S Login vo dim Team verbinde",
+          "getStartedDescription": "Folg ere providerspezifische Aaleitig, ohni dass d Konfiguration sälber muesch zämestelle.",
+          "handoff": {
+            "copy": "IT-Checkliste kopiere",
+            "description": "Kopier d Iirichtigs-Aawiisige und d Callback-URL vo dinere Organisation. D Checkliste enthaltet nie Zuegangsdate.",
+            "return": "Gib d Tenant-ID (für Entra) und d Client-ID vo de Aawendig am Z8-Administrator zrugg. Übermittle de Wert (Value) vom Client-Secret separat über en sichere Kanal; füeg en nöd i die Checkliste ii.",
+            "title": "Bruuchsch Hilf vo dim IT-Administrator?"
+          },
+          "manual": "Andere Provider / manuells OIDC",
+          "manualAvailable": "Bruuchsch en andere Provider? Wähl die manuell OIDC-Konfiguration im Iirichtigs-Berych.",
+          "manualTestHelp": "Das isch es vom Administrator gmolde Login-Ergebnis, keis automatisch überprüefts Verbindigsteschtergebnis. Füer es Test-Login mit emene vorgsehene Benutzer imene separate Browser-Fenschter dure, lah die Administrator-Sitzig offe und erfass s beobachtete Ergebnis (Erfolg oder Fähler) do. S Spychere vom Provider und s Überprüefe vom DNS bewiise nonig, dass s Login funktioniert.",
+          "openSetup": "Gfüehrti Iirichtig öffne",
+          "provider": "Identity Provider",
+          "required": "Das Fäld isch erforderlich.",
+          "saving": "Wird hinzuegfüegt…",
+          "scopes": "D Login-Scopes beinhalted openid, email und profile. Einigi Verbindige fordered au offline_access für Refresh-Tokens aa."
         },
         "issuerUrl": "Issuer-URL",
         "issuerUrlHelp": "Die OIDC-Issuer-URL von Ihrem Identitätsanbieter",
-        "issuerUrlRequired": "Issuer-URL ist erforderlich",
         "providerId": "Provider-ID",
         "providerIdHelp": "Ein eindeutiger Bezeichner für diesen Provider (kleingeschrieben, keine Leerzeichen)",
         "providerIdInvalid": "Die Provider-ID darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
-        "providerIdRequired": "Provider-ID ist erforderlich",
-        "setupInstructions": "Einrichtungsanleitung",
         "title": "Identitätsanbieter",
         "token": "Token",
         "tokenError": "Domain-Verifizierungstoken konnte nicht generiert werden",
         "tokenGenerated": "Verifizierungstoken generiert",
         "txtToken": "TXT-Token:",
         "validUrlRequired": "Bitte geben Sie eine gültige URL ein",
-        "verified": "Verifiziert",
         "verify": "Verifizieren",
         "verifyError": "Domain-Verifizierung fehlgeschlagen. Überprüfen Sie Ihren DNS-TXT-Eintrag und versuchen Sie es erneut."
       },

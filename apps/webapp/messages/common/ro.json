@@ -341,7 +341,6 @@
       "morePages": "Mai multe pagini",
       "pagination": "paginare"
     },
-    "pending": "În așteptare",
     "positionCaptureErrors": {
       "adminOnly": "Numai proprietarii și administratorii organizației pot gestiona înregistrarea poziției.",
       "assignmentNotFound": "Această atribuire nu mai există.",
@@ -1129,11 +1128,13 @@
     "compliance": "Conformitate",
     "dashboard": "Panou de control",
     "driving-licence": "Permis de conducere",
+    "equipment": "Echipamente",
     "feedback": "Feedback",
     "finance": "Finanțe",
     "financeAwaiting": "{count, plural, one {# cheltuială în așteptarea rambursării} few {# cheltuieli în așteptarea rambursării} other {# de cheltuieli în așteptarea rambursării}}",
     "get-help": "Obține ajutor",
     "my-documents": "Documentele mele",
+    "my-equipment": "Echipamentele mele",
     "my-requests": "Cererile mele",
     "my-schedule": "Programul meu",
     "org-explorer": "Explorator organizație",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Termenii viitori de angajare necesită revizuire (plecare în vigoare la {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Activitatea viitoare necesită revizuire (plecare în vigoare la {cutoff}, {timezone}).",
         "title": "Offboarding-ul angajatului necesită revizuire"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} are echipamente nereturnate ({quantity}) cu termen limită la {deadline}. Deschideți Echipamente pentru a organiza returnarea.",
+        "title": "Returnarea echipamentului a depășit termenul"
+      },
+      "equipmentReturnReminder": {
+        "message": "Vă rugăm să returnați echipamentul restant ({quantity}) până la {deadline}. Deschideți Echipamentele mele pentru detalii.",
+        "title": "Termen de returnare a echipamentului"
       },
       "forgottenClockOutReminder": {
         "message": "Tura dvs. s-a încheiat la {endTime} ({timezone}). Înregistrați ieșirea dacă ați terminat programul de lucru.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Lipsesc detaliile de conducere",
         "driving_licence_reminder": "Verificare a permisului de conducere scadentă",
         "employee_deactivation_shifts_opened": "Ture deschise în urma unei dezactivări",
+        "equipment_return_reminder": "Mementouri pentru returnarea echipamentelor",
         "forgotten_clock_out_reminder": "Pontare de ieșire omisă",
         "former_employee_reports_without_manager": "Angajați fără un manager actual",
         "kiosk_command_refused": "Pontare la chioșc neînregistrată",
@@ -1960,6 +1970,7 @@
         "auditLog": "Înregistrările din jurnalul de audit despre dumneavoastră și înregistrările efectuate de dumneavoastră.",
         "drivingLicence": "Verificări ale permiselor de conducere, confirmări și declarații originale, anexe atribuite, autorizații de categorii și istoricul acestora, înrolarea și responsabilitatea dvs. de verificator. Doar dovezile păstrate; fără scanări ale permiselor, numere de documente sau note medicale.",
         "employment": "Dosarul și profilul dumneavoastră de angajat, perioadele de angajare și plecarea, condițiile de angajare cu salariul orar și istoricul acestuia, echipele, managerii, locațiile, competențele, alocările pe proiecte, rolurile, grupurile, centrul de cost și fiecare politică atribuită dumneavoastră.",
+        "equipment": "Alocările dvs. de echipamente păstrate, stările și notele inițiale și corectate, confirmările fizice de primire, deciziile privind pierderea sau renunțarea, recuperarea și istoricul angajării/încetării. Datele istorice de atribuire necunoscute rămân necunoscute; datele calendaristice reale sunt separate de marcajele temporale UTC de introducere. Înregistrările privind echipamentele sunt incluse atât în exporturile angajaților, cât și în cele ale administratorilor cât timp sunt păstrate.",
         "integrations": "Conexiunile dumneavoastră de calendar, fluxul de calendar, conturile de chat asociate și starea codului PIN pentru chioșc.",
         "notifications": "Istoricul notificărilor dumneavoastră.",
         "personnelFile": "Documentele din dosarul dumneavoastră de personal, ca fișiere originale.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Certificate medicale"
       },
       "drivingLicenceRetention": "Dovezile permisului de conducere respectă perioada justificată de păstrare a verificărilor stabilită de organizație odată ce nu mai susțin o autorizație activă. O suspendare documentată pentru un caz juridic specific amână ștergerea. Consultați politica driving_licence, înregistrările de păstrare și de suspendare pentru contextul aplicabil; generarea unui export nu prelungește păstrarea dovezilor în Z8.",
+      "emptyFilesOmitted": "Fișierele fără date exportabile sunt omise. Tabelele goale și înregistrările opționale absente rămân în fișierele JSON care conțin alte date. Setările opționale care nu au fost configurate niciodată nu sunt considerate date.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "De când sunteți în echipă.",
             "summary": "Echipele din care faceți parte în prezent."
           }
+        },
+        "equipment": {
+          "actualDate": "Data calendaristică reală inițială a predării, așa cum a fost înregistrată în fusul orar al organizației. Câmpul gol indică o dată istorică de atribuire necunoscută în mod explicit, nu data introducerii.",
+          "after": "JSON cu valorile de după această modificare, utilizând aceleași semnificații ale câmpurilor de probă ca înainte. Valorile acordului de atribuire includ returnRequired, explicitDeadline și employmentPeriodId. Datele calendaristice sunt distincte de timestampul UTC recorded_at al modificării.",
+          "assignmentId": "Alocarea păstrată căreia îi aparține această dovadă; sunt incluse doar alocările dvs. din această organizație.",
+          "assignmentQuantity": "Cantitatea efectivă curentă emisă după corecții; atribuirea inițială și modificările rămân dovezi separate.",
+          "assignments": {
+            "summary": "Acordurile dvs. de echipamente păstrate și soldurile efective curente, termenii și istoricul inițial al angajării/încetării. Închiderile prin pierdere sau renunțare nu pretind o primire fizică; recuperarea se suprapune cu închiderea anterioară. Istoricul personal eliminat nu este niciodată reconstruit din identitățile non-personale ale articolelor."
+          },
+          "before": "JSON cu valorile efective dinaintea acestei modificări: cantitatea predată, actualDate (null pentru atribuirile istorice necunoscute), starea și notele, sau tipul excepției, cantitatea și motivul. Modificările de atribuire păstrează, de asemenea, valorile anterioare pentru returnRequired, explicitDeadline și istoricul inițial de angajare/plecare/dezactivare.",
+          "condition": "Starea înregistrată inițial: bună, uzată, deteriorată sau necunoscută; starea necunoscută nu implică o dată necunoscută.",
+          "correctionReason": "Explicația obligatorie privind motivul pentru care a fost efectuată corecția.",
+          "corrections": {
+            "summary": "Modificări justificate de tip înainte/după aduse predărilor și deciziilor dvs. păstrate, inclusiv modificările acordului. Dovada inițială rămâne separată; un transfer include doar propria predare și modificare, niciodată istoricul personal al celuilalt deținător."
+          },
+          "deactivatedAt": "Momentul în care acea dezactivare imediată asociată a încheiat angajarea/accesul, ca moment UTC; echipamentele nereturnate nu îl întârzie niciodată.",
+          "deactivationId": "Identitatea imuabilă a dezactivării pentru această alocare, chiar și atunci când reactivarea redeschide aceeași perioadă de angajare.",
+          "deactivationTimezone": "Fusul orar al organizației capturat la dezactivarea inițială sau gol dacă nu a fost înregistrat. Un fus orar ulterior al organizației sau al utilizatorului nu înlocuiește niciodată acel context istoric.",
+          "departureCutoffAt": "Momentul UTC limită al plecării asociate, separat de ultima sa zi calendaristică lucrată și de termenul limită pentru echipament.",
+          "departureDeadline": "Data de returnare derivată din plecarea sau dezactivarea inițială; aceasta se menține după reangajarea sau reactivarea ulterioară. Este necompletată atunci când nu se aplică niciun termen derivat.",
+          "departureId": "Identitatea inițială de plecare asociată atribuirii, dacă există. Sarcinile și revizuirile de plecare nu constituie dovezi pentru echipament.",
+          "departureMode": "Dacă plecarea asociată a fost programată sau imediată, ori necompletat dacă nu există o plecare asociată.",
+          "departureStatus": "Starea actuală a plecării asociate; o plecare în așteptare nu încheie de la sine raportul de muncă.",
+          "departureTimezone": "Fusul orar fixat pentru plecarea asociată; modificările de fus orar ale vizualizatorului nu îi schimbă semnificația calendaristică.",
+          "effectiveActualDate": "Data calendaristică efectivă a predării după corecții; o eliberare istorică necunoscută rămâne necompletată în loc să revină la marcajul temporal de introducere.",
+          "effectiveCondition": "Starea după corecții; primirea unui echipament deteriorat nu oferă de la sine permisiunea pentru redistribuire.",
+          "effectiveDeadline": "Cel mai apropiat termen calendaristic aplicabil, explicit sau dedus; echipamentele acordate definitiv nu au niciunul. Acesta nu este o dată de predare sau un marcaj temporal UTC de introducere.",
+          "effectiveExceptionQuantity": "Cantitatea închisă în continuare prin această decizie după modificări sau revocări, inclusiv recepțiile fizice asociate; zero înseamnă revocată complet.",
+          "effectiveHandoverQuantity": "Cantitatea predată după corecții; zero revocă o recepție eronată fără a șterge dovada sa inițială.",
+          "effectiveKind": "Rezultatul actual de pierdere sau renunțare după corecții.",
+          "effectiveNotes": "Notele opționale actuale de predare după corecții.",
+          "effectiveReason": "Motivul actual al deciziei după corecții; motivele corecțiilor sunt păstrate separat.",
+          "employmentPeriodId": "Perioada inițială de angajare asociată acestei atribuiri, care nu este înlocuită automat de o perioadă de angajare ulterioară; necompletat dacă nu a fost înregistrată nicio perioadă.",
+          "exceptionId": "Decizia asociată de pierdere sau renunțare; o recepție fizică asociată completează acea decizie în loc să stingă aceeași cantitate de două ori. Necompletat pentru o predare obișnuită.",
+          "exceptionKind": "Rezultatul inițial de pierdere sau renunțare; niciunul nu înseamnă că echipamentul a fost returnat fizic.",
+          "exceptionQuantity": "Cantitatea inițială închisă prin decizie, păstrată după modificări sau revocări.",
+          "exceptionReason": "Motivul obligatoriu inițial pentru decizia de pierdere sau renunțare.",
+          "exceptionReceivedQuantity": "Recepțiile fizice asociate cantităților pierdute sau la care s-a renunțat; această suprapunere este contorizată o singură dată la calcularea returnărilor restante.",
+          "exceptions": {
+            "summary": "Deciziile inițiale motivate de pierdere și renunțare și valorile lor actuale corectate. Acestea închid obligațiile de returnare fără a pretinde recepția fizică; dovezile de recepție asociate înregistrează separat recuperarea sau returnarea ulterioară."
+          },
+          "explicitDeadline": "Data de returnare convenită separat ca zi calendaristică în fusul orar al organizației, sau necompletat.",
+          "handoverId": "ID-ul predării modificate, sau necompletat pentru modificarea unei excepții.",
+          "handoverKind": "Eliberarea înregistrează emiterea; recepția înregistrează primirea fizică, inclusiv o recuperare asociată. Nici închiderea prin pierdere, nici cea prin renunțare nu constituie în sine o predare.",
+          "handoverQuantity": "Cantitatea de predare înregistrată inițial, păstrată chiar și după corectare.",
+          "handovers": {
+            "summary": "Dovezile inițiale de eliberare și recepție fizică cu valorile corectate actuale. O recepție asociată unei decizii de pierdere reprezintă o recuperare; o recepție asociată unei decizii de renunțare înregistrează o recepție fizică ulterioară. O dată istorică necunoscută a eliberării rămâne necompletată, nefiind niciodată înlocuită de marcajul său temporal UTC de introducere."
+          },
+          "historical": "Adevărat pentru înregistrarea unei atribuiri istorice deja deținute; doar eliberarea istorică poate avea o dată efectivă marcată explicit ca necunoscută.",
+          "holds": {
+            "kind": "Dacă suspendarea cazului a fost aplicată sau ridicată.",
+            "reason": "Motivul obligatoriu documentat de administratorul organizației pentru această acțiune specifică asupra cazului.",
+            "revision": "Revizuirea atribuirii creată de această acțiune de suspendare a cazului.",
+            "summary": "Aplicările și ridicările documentate ale suspendării cazurilor din istoricul echipamentelor reținute. O suspendare activă protejează dovezile împotriva curățării; aceasta nu înregistrează niciodată o recepție fizică."
+          },
+          "identifier": "Identificatorul acordat de organizație pentru articolul urmărit individual, fără istoricul altor deținători; necompletat pentru atribuirile de cantitate.",
+          "lastWorkingDay": "Ultima zi calendaristică lucrătoare a plecării programate asociate în fusul orar fixat al acesteia, sau necompletat.",
+          "lostQuantity": "Cantitatea efectivă închisă ca pierdută, inclusiv orice cantitate recuperată ulterior; decizia de pierdere este păstrată.",
+          "notes": "Notele opționale inițiale de predare, păstrate după corectare în timp ce istoricul personal este reținut.",
+          "outstandingQuantity": "Cantitatea necesară minus recepțiile fizice și închiderile prin pierdere/renunțare, adăugând la loc suprapunerea recepțiilor pentru a evita decontarea dublă; zero pentru echipamentele acordate definitiv.",
+          "periodEndedAt": "Momentul UTC de încheiere al perioadei asociate, sau necompletat pentru o perioadă deschisă/redeschisă ori cu un final necunoscut.",
+          "periodStartedAt": "Momentul UTC înregistrat de început al perioadei de angajare asociate, sau necompletat când este necunoscut.",
+          "periodStatus": "Starea actuală a perioadei asociate: open, closed sau legacy_unknown; reactivarea poate redeschide această perioadă fără a modifica identitatea de final a atribuirii.",
+          "physicallyReceivedQuantity": "Cantitatea efectivă primită fizic, inclusiv recuperările și recepțiile articolelor la care s-a renunțat. Doar deciziile de pierdere și de renunțare nu cresc niciodată acest număr.",
+          "reactivatedAt": "Momentul UTC în care respectiva dezactivare a fost reactivată ulterior, sau necompletat; reactivarea nu șterge obligațiile sau termenele-limită vechi pentru echipamente.",
+          "receivedQuantity": "Cantitatea fizică efectivă primită în baza acestei decizii. Pentru o decizie de pierdere, aceasta reprezintă echipament recuperat; este inclusă deja în recepțiile fizice ale atribuirii.",
+          "recordedAt": "Marcajul temporal UTC de introducere, separat de data efectivă a predării; introducerea cu întârziere nu modifică data predării.",
+          "recordedBy": "Numele afișat al persoanei care a înregistrat această dovadă, dacă identitatea acesteia în cadrul organizației rămâne disponibilă; nu sunt incluse alte detalii de profil.",
+          "returnRequired": "Dacă returnarea este obligatorie. Fals înseamnă acordat definitiv, fără termen-limită de returnare sau returnare restantă; nu înseamnă returnat fizic.",
+          "serialNumber": "Numărul de serie opțional acordat de producător pentru articolul urmărit individual.",
+          "trackingMode": "Individual identifică un singur articol fizic; cantitatea numără articole interschimbabile.",
+          "type": "Numele tipului de echipament.",
+          "waivedQuantity": "Cantitatea efectivă pentru care s-a renunțat la returnarea obligatorie, inclusiv orice cantitate recepționată ulterior; renunțarea nu atestă primirea."
         },
         "integrations": {
           "calendarConnections": {

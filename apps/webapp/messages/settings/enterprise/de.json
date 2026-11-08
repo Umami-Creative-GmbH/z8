@@ -37,6 +37,13 @@
         "time": "Zeitpunkt"
       },
       "disabled": "Deaktiviert",
+      "documentation": {
+        "reference": "API-Referenz",
+        "resources": "Lesen Sie Arbeitszeiten, Abwesenheiten, Mitarbeitende, Projekte, Kunden und benutzerdefinierte Felddefinitionen mit der Public API v1 aus. Der Zugriff ist schreibgeschützt.",
+        "scopes": "Ein API-Schlüssel agiert im Namen Ihrer Organisation und liest nur Daten, die durch seine Scopes freigegeben sind. Endpunkte, erforderliche Scopes und Beispiele finden Sie in der Referenz.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "OpenAPI-Spezifikation herunterladen",
       "editCreated": "Erstellt am {date}",
       "editDescription": "Aktualisieren Sie die Einstellungen für diesen API-Schlüssel. Hinweis: Sie können den Schlüssel selbst nicht einsehen oder ändern.",
       "editTitle": "API-Schlüssel bearbeiten",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Speichern Sie den Anbieter, bevor Sie einen Test aufzeichnen"
           },
-          "help": "Dies zeichnet ein Live-Ergebnis eines externen SSO-Tests auf. Führen Sie die Anmeldung zuerst im IdP durch und erfassen Sie dann hier Erfolg oder Misserfolg für die Aktivierungssicherung.",
           "label": {
             "email": "Test-Benutzer-E-Mail",
             "failureNote": "Fehlerhinweis"
@@ -620,12 +626,9 @@
         "updated": "{provider} OAuth erfolgreich aktualisiert"
       },
       "sso": {
-        "addDescription": "Konfigurieren Sie einen OIDC-Identitätsanbieter für Enterprise Single Sign-On.",
         "addError": "Fehler beim Hinzufügen des SSO-Anbieters",
         "addSuccess": "SSO-Anbieter erfolgreich hinzugefügt",
         "addTitle": "SSO-Anbieter hinzufügen",
-        "clientIdPlaceholder": "Ihre OIDC-Client-ID",
-        "clientSecretPlaceholder": "Ihr OIDC-Client-Secret",
         "deleteDialogDescription": "Sind Sie sicher, dass Sie diesen SSO-Anbieter löschen möchten? Benutzer können sich dann nicht mehr über diesen Identitätsanbieter anmelden.",
         "deleteDialogTitle": "SSO-Anbieter löschen",
         "deleteError": "Fehler beim Löschen des SSO-Anbieters",
@@ -633,32 +636,110 @@
         "deleteSuccess": "SSO-Anbieter gelöscht",
         "description": "Fügen Sie OIDC-Identitätsanbieter hinzu, um SSO für Ihre Organisation zu aktivieren.",
         "domainInvalid": "Bitte geben Sie eine gültige Domain ein (z. B. example.com)",
-        "domainRequired": "Domain ist erforderlich",
         "domainVerified": "Domain verifiziert",
         "emailDomain": "E-Mail-Domain",
         "emailDomainHelp": "Benutzer mit dieser E-Mail-Domain können SSO verwenden",
         "empty": "Noch keine SSO-Anbieter konfiguriert.",
         "emptyDescription": "Fügen Sie einen OIDC-Anbieter hinzu, um Enterprise Single Sign-On zu aktivieren.",
-        "instructions": {
-          "copyCredentials": "Kopieren Sie die Issuer-URL, Client-ID und das Client-Secret von Ihrem IdP",
-          "createApp": "Erstellen Sie eine OIDC-Anwendung in Ihrem Identitätsanbieter (Okta, Azure AD, etc.)",
-          "verifyDomain": "Fügen Sie den Anbieter hier hinzu und verifizieren Sie die E-Mail-Domain über einen DNS-TXT-Eintrag"
+        "guide": {
+          "addDescription": "Befolgen Sie die Einrichtungsanweisungen Ihres Anbieters und verbinden Sie ihn anschließend mit Ihrer Organisation.",
+          "afterSave": "Bestätigen Sie nach dem Speichern Ihre E-Mail-Domain mit dem DNS-TXT-Eintrag in Z8. Testen Sie die Anmeldung mit einem vorgesehenen Testbenutzer, während Ihre aktuelle Administratorsitzung geöffnet bleibt. Speichern Sie in der geführten Einrichtung dieselbe Anbieter-ID und E-Mail-Domain, die in der Anbieterliste angezeigt werden, und erfassen Sie das beobachtete Anmeldeergebnis manuell, bevor Sie „SSO vorschreiben“ in Betracht ziehen. Das Speichern und die DNS-Verifizierung belegen keine erfolgreiche Anmeldung.",
+          "afterSaveTitle": "Nach dem Speichern Ihres Anbieters",
+          "callback": "Z8-Callback-URL",
+          "connectionHelp": "Kopieren Sie diese Werte aus den Anwendungseinstellungen Ihres Anbieters.",
+          "connectionSettings": "Verbindungseinstellungen",
+          "copied": "In die Zwischenablage kopiert",
+          "copyCallback": "Callback-URL kopieren",
+          "copyFailed": "Zugriff auf die Zwischenablage fehlgeschlagen. Markieren und kopieren Sie den Text manuell.",
+          "domainPending": "Domain nicht verifiziert",
+          "domainStatus": "Domain-Verifizierung",
+          "domainVerified": "Domain verifiziert",
+          "entra": {
+            "clientHelp": "Kopieren Sie die Anwendungs-ID (Client-ID) aus der Übersicht, nicht die Objekt-ID.",
+            "clientId": "Anwendungs-ID (Client-ID)",
+            "consentError": "Einwilligung oder Zugriff verweigert: Bitten Sie Ihren Entra-Administrator, die Einwilligungsrichtlinien zu überprüfen und sicherzustellen, dass der Testbenutzer der Anwendung zugewiesen ist.",
+            "consentLink": "Microsoft-Leitfaden zur Einwilligung",
+            "description": "Verbinden Sie das Microsoft-Verzeichnis Ihrer Organisation über eine Single-Tenant-OpenID-Connect-Anwendung.",
+            "generatedIssuer": "Issuer-URL · aus Ihrer Mandanten-ID generiert",
+            "ids": {
+              "body": "Kopieren Sie in der App-Übersicht die Verzeichnis-ID (Mandant) und die Anwendungs-ID (Client) in Z8. Die Objekt-ID ist ein anderer Wert. Z8 erstellt die mandantenspezifische Issuer-URL für Sie.",
+              "link": "Anweisungen zur App-Registrierung",
+              "title": "Mandanten- und Anwendungs-IDs kopieren"
+            },
+            "introduction": "Erstellen Sie eine Web-App-Registrierung, kopieren Sie Ihre Mandanten- und Anwendungs-IDs und fügen Sie ein Clientgeheimnis hinzu. Z8 generiert die Issuer-URL und führt Sie durch jeden Schritt.",
+            "permissions": "Z8 verwendet openid, email und profile für die Anmeldung. Einige Verbindungen fordern außerdem offline_access für Aktualisierungstoken an. Sie benötigen keine verzeichnisweiten Microsoft Graph-Berechtigungen. Die Einwilligungsrichtlinie Ihres Mandanten erfordert möglicherweise dennoch die Genehmigung durch einen Administrator.",
+            "portal": "Entra Admin Center öffnen",
+            "redirect": {
+              "body": "Fügen Sie unter „Authentifizierung“ einen Umleitungs-URI für die Webplattform hinzu. Fügen Sie den hier angezeigten Z8-Callback exakt ein. Verwenden Sie „Web“, nicht „Single-Page Application“. Sie müssen die implizite Gewährung nicht aktivieren.",
+              "link": "Anweisungen zum Umleitungs-URI",
+              "title": "Web-Umleitungs-URI hinzufügen"
+            },
+            "redirectError": "AADSTS50011: Überprüfen Sie, ob der Web-Umleitungs-URI exakt mit dem von Z8 angezeigten Callback übereinstimmt, einschließlich Hostname und Pfad.",
+            "register": {
+              "body": "Öffnen Sie Entra ID → App-Registrierungen → Neue Registrierung. Nennen Sie die App Z8 und wählen Sie „Nur Konten in diesem Organisationsverzeichnis“. Wählen Sie zuerst das Verzeichnis Ihrer Organisation aus. Wenn Sie keine Apps registrieren können, bitten Sie Ihren Entra-Administrator, eine für Sie zu erstellen.",
+              "title": "Eine Anwendung registrieren"
+            },
+            "secret": {
+              "body": "Gehen Sie zu Zertifikate & Geheimnisse → Clientgeheimnisse → Neues Clientgeheimnis. Fügen Sie dessen Wert in Z8 ein, nicht die Geheimnis-ID. Der Wert wird nur einmal angezeigt. Notieren Sie das Ablaufdatum und ersetzen Sie die Anmeldedaten, bevor sie ablaufen. Teilen Sie den Wert nur über den sicheren Kanal Ihrer Organisation.",
+              "link": "Anweisungen für das Clientgeheimnis",
+              "title": "Clientgeheimnis erstellen"
+            },
+            "secretError": "Ungültiges Clientgeheimnis: Verwenden Sie den Wert des Geheimnisses, nicht dessen ID. Überprüfen Sie, ob es zu dieser Anwendung gehört und noch nicht abgelaufen ist. Erstellen Sie ein neues Geheimnis, falls Sie den Wert nicht mehr vorliegen haben.",
+            "secretHelp": "Zertifikate & Geheimnisse → Clientgeheimnisse. Fügen Sie den Wert ein, nicht die Geheimnis-ID. Z8 wird ihn nicht wieder anzeigen.",
+            "secretValue": "Wert des Clientgeheimnisses",
+            "start": "Microsoft Entra ID einrichten",
+            "tenantError": "Falscher Mandant: Kopieren Sie die Verzeichnis-ID (Mandanten-ID) aus derselben App-Registrierung wie die Client-ID. Diese geführte Einrichtung verwendet einen bestimmten Mandanten, nicht „common“ oder „organizations“.",
+            "tenantHelp": "App-Registrierungen → Ihre App → Übersicht. Verwenden Sie Ihre Mandanten-ID, nicht „common“ oder „organizations“.",
+            "tenantId": "Verzeichnis-ID (Mandant)",
+            "tenantInvalid": "Geben Sie die Verzeichnis-ID (Mandant) als vollständige UUID ein.",
+            "title": "Microsoft Entra ID einrichten",
+            "troubleshooting": "Fehlerbehebung bei der Entra-Einrichtung",
+            "troubleshootingLink": "Microsoft-Leitfaden zur Problembehandlung bei Weiterleitungen"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Geben Sie eine eindeutige Anbieter-ID, die OIDC-Aussteller-URL, die E-Mail-Domain Ihrer Organisation, die Client-ID und das Clientgeheimnis ein. Sie finden diese in den Anwendungseinstellungen Ihres Anbieters. Übertragen Sie Geheimnisse über einen sicheren Kanal.",
+              "title": "Anwendungseinstellungen kopieren"
+            },
+            "description": "Nutzen Sie die Dokumentation Ihres Anbieters, um eine vertrauliche Webanwendung mit dem Authorization-Code-Flow zu erstellen.",
+            "redirect": {
+              "body": "Fügen Sie den hier angezeigten Z8-Callback zu den zulässigen Umleitungs-URIs der Anwendung hinzu. Kopieren Sie ihn exakt, einschließlich des Hostnamens und des Pfads der Organisation.",
+              "title": "Callback-URL registrieren"
+            },
+            "register": {
+              "body": "Erstellen Sie in Ihrem Identitätsanbieter eine OpenID Connect-Anwendung unter Verwendung des Authorization-Code-Flows. Weisen Sie zunächst eine kleine Pilotgruppe zu.",
+              "title": "Webanwendung erstellen"
+            },
+            "title": "OIDC-Anbieter einrichten"
+          },
+          "getStarted": "Anmeldung für Ihr Team anbinden",
+          "getStartedDescription": "Folgen Sie einer anbieterspezifischen Anleitung, anstatt die Konfiguration selbst zusammenzusetzen.",
+          "handoff": {
+            "copy": "IT-Checkliste kopieren",
+            "description": "Kopieren Sie die Einrichtungsanweisungen und die Callback-URL Ihrer Organisation. Die Checkliste enthält niemals Anmeldedaten.",
+            "return": "Geben Sie die Mandanten-ID (für Entra) und die Client-ID der Anwendung an den Z8-Administrator weiter. Übermitteln Sie den Wert des Clientgeheimnisses separat über einen sicheren Kanal; fügen Sie ihn nicht in diese Checkliste ein.",
+            "title": "Benötigen Sie Hilfe von Ihrem IT-Administrator?"
+          },
+          "manual": "Anderer Anbieter / manuelles OIDC",
+          "manualAvailable": "Verwenden Sie einen anderen Anbieter? Wählen Sie die manuelle OIDC-Konfiguration im Einrichtungsbereich aus.",
+          "manualTestHelp": "Dies ist ein vom Administrator gemeldetes Anmeldeergebnis, kein automatisch verifizierter Verbindungstest. Testen Sie die Anmeldung mit einem vorgesehenen Benutzer in einer separaten Browsersitzung, lassen Sie diese Administratorsitzung geöffnet und erfassen Sie anschließend hier das Ergebnis (Erfolg oder Fehler). Das Speichern des Anbieters und die DNS-Verifizierung belegen nicht, dass die Anmeldung funktioniert.",
+          "openSetup": "Geführte Einrichtung öffnen",
+          "provider": "Identitätsanbieter",
+          "required": "Dieses Feld ist erforderlich.",
+          "saving": "Wird hinzugefügt…",
+          "scopes": "Die Anmelde-Scopes umfassen openid, email und profile. Einige Verbindungen fordern für Refresh-Tokens zusätzlich offline_access an."
         },
         "issuerUrl": "Issuer-URL",
         "issuerUrlHelp": "Die OIDC-Issuer-URL Ihres Identitätsanbieters",
-        "issuerUrlRequired": "Issuer-URL ist erforderlich",
         "providerId": "Provider-ID",
         "providerIdHelp": "Ein eindeutiger Bezeichner für diesen Anbieter (kleingeschrieben, keine Leerzeichen)",
         "providerIdInvalid": "Die Provider-ID darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
-        "providerIdRequired": "Provider-ID ist erforderlich",
-        "setupInstructions": "Einrichtungsanleitung",
         "title": "Identitätsanbieter",
         "token": "Token",
         "tokenError": "Fehler beim Generieren des Domain-Verifizierungstokens",
         "tokenGenerated": "Verifizierungstoken generiert",
         "txtToken": "TXT-Token:",
         "validUrlRequired": "Bitte geben Sie eine gültige URL ein",
-        "verified": "Verifiziert",
         "verify": "Verifizieren",
         "verifyError": "Domain-Verifizierung fehlgeschlagen. Überprüfen Sie Ihren DNS-TXT-Eintrag und versuchen Sie es erneut."
       },

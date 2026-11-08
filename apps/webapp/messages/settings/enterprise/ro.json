@@ -37,6 +37,13 @@
         "time": "Oră"
       },
       "disabled": "Dezactivat",
+      "documentation": {
+        "reference": "Referință API",
+        "resources": "Citiți perioadele de lucru, absențele, angajații, proiectele, clienții și definițiile câmpurilor personalizate cu Public API v1. Accesul este doar în citire.",
+        "scopes": "O cheie API acționează în numele organizației dvs. și citește doar ceea ce permit permisiunile (scopes) asociate. Găsiți endpoint-urile, permisiunile necesare și exemple în documentația de referință.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "Descărcați specificația OpenAPI",
       "editCreated": "Creată la {date}",
       "editDescription": "Actualizați setările pentru această cheie API. Notă: Nu puteți vizualiza sau modifica cheia în sine.",
       "editTitle": "Editează cheia API",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Salvați furnizorul înainte de a înregistra un test"
           },
-          "help": "Aceasta înregistrează rezultatul unui test SSO extern live. Efectuați mai întâi conectarea în IdP, apoi înregistrați reușita sau eșecul aici pentru verificarea activării.",
           "label": {
             "email": "E-mail utilizator de test",
             "failureNote": "Notă privind eșecul"
@@ -620,12 +626,9 @@
         "updated": "OAuth {provider} a fost actualizat cu succes"
       },
       "sso": {
-        "addDescription": "Configurați un furnizor de identitate OIDC pentru autentificare unică (SSO) enterprise.",
         "addError": "Adăugarea furnizorului SSO a eșuat",
         "addSuccess": "Furnizorul SSO a fost adăugat cu succes",
         "addTitle": "Adăugare furnizor SSO",
-        "clientIdPlaceholder": "ID-ul dumneavoastră de client OIDC",
-        "clientSecretPlaceholder": "Secretul dumneavoastră de client OIDC",
         "deleteDialogDescription": "Sigur doriți să ștergeți acest furnizor SSO? Utilizatorii nu se vor mai putea conecta folosind acest furnizor de identitate.",
         "deleteDialogTitle": "Ștergere furnizor SSO",
         "deleteError": "Nu s-a putut șterge furnizorul SSO",
@@ -633,32 +636,110 @@
         "deleteSuccess": "Furnizorul SSO a fost șters",
         "description": "Adăugați furnizori de identitate OIDC pentru a activa SSO pentru organizația dvs.",
         "domainInvalid": "Introduceți un domeniu valid (de ex., example.com)",
-        "domainRequired": "Domeniul este obligatoriu",
         "domainVerified": "Domeniu verificat",
         "emailDomain": "Domeniu de e-mail",
         "emailDomainHelp": "Utilizatorii cu acest domeniu de e-mail vor putea utiliza SSO",
         "empty": "Nu există încă furnizori SSO configurați.",
         "emptyDescription": "Adăugați un furnizor OIDC pentru a activa autentificarea unică (SSO) de tip enterprise.",
-        "instructions": {
-          "copyCredentials": "Copiați URL-ul emitentului, Client ID-ul și Client Secret-ul din IdP-ul dvs.",
-          "createApp": "Creați o aplicație OIDC în furnizorul dvs. de identitate (Okta, Azure AD etc.)",
-          "verifyDomain": "Adăugați furnizorul aici și verificați domeniul de e-mail printr-o înregistrare DNS TXT"
+        "guide": {
+          "addDescription": "Urmați instrucțiunile de configurare ale furnizorului dvs., apoi conectați-l la organizația dvs.",
+          "afterSave": "După salvare, verificați domeniul de e-mail folosind înregistrarea DNS TXT din Z8. Efectuați o conectare de test (pilot) cu un utilizator vizat, menținând deschisă sesiunea curentă de administrator. În configurarea asistată, salvați aceleași ID de furnizor și domeniu de e-mail afișate în lista furnizorilor, apoi înregistrați manual rezultatul conectării observate înainte de a lua în considerare opțiunea Solicitare SSO. Salvarea și verificarea DNS nu garantează o conectare reușită.",
+          "afterSaveTitle": "După salvarea furnizorului dvs.",
+          "callback": "URL de callback Z8",
+          "connectionHelp": "Copiați aceste valori din setările aplicației furnizorului dvs.",
+          "connectionSettings": "Setări de conexiune",
+          "copied": "Copiat în clipboard",
+          "copyCallback": "Copiați URL-ul de callback",
+          "copyFailed": "Accesul la clipboard a eșuat. Selectați și copiați textul manual.",
+          "domainPending": "Domeniu neverificat",
+          "domainStatus": "Verificarea domeniului",
+          "domainVerified": "Domeniu verificat",
+          "entra": {
+            "clientHelp": "Copiați ID-ul aplicației (client) din Prezentare generală, nu ID-ul obiectului.",
+            "clientId": "ID aplicație (client)",
+            "consentError": "Consimțământ sau acces refuzat: Solicitați administratorului Entra să verifice politicile de consimțământ și dacă utilizatorul pilot este asociat aplicației.",
+            "consentLink": "Ghidul Microsoft privind consimțământul",
+            "description": "Conectați directorul Microsoft al organizației dvs. cu o aplicație OpenID Connect single-tenant.",
+            "generatedIssuer": "URL emitent · generat din ID-ul de entitate găzduită",
+            "ids": {
+              "body": "În secțiunea Prezentare generală a aplicației, copiați ID-ul de director (entitate găzduită) și ID-ul aplicației (client) în Z8. ID-ul de obiect este o valoare diferită. Z8 generează URL-ul emitentului specific entității găzduite pentru dvs.",
+              "link": "Instrucțiuni de înregistrare a aplicației",
+              "title": "Copiați ID-ul entității găzduite și ID-ul aplicației"
+            },
+            "introduction": "Creați o înregistrare de aplicație Web, copiați ID-ul entității găzduite și ID-ul aplicației și adăugați un secret de client. Z8 generează URL-ul emitentului și vă ghidează prin fiecare pas.",
+            "permissions": "Z8 utilizează openid, email și profile pentru conectare. Unele conexiuni solicită, de asemenea, offline_access pentru tokenuri de reîmprospătare. Nu aveți nevoie de permisiuni Microsoft Graph la nivelul întregului director. Este posibil ca politica de consimțământ a entității dvs. găzduite să necesite totuși aprobarea administratorului.",
+            "portal": "Deschideți centrul de administrare Entra",
+            "redirect": {
+              "body": "În Autentificare, adăugați un URI de redirecționare pentru platforma Web. Inserați exact adresa de callback Z8 afișată aici. Utilizați Web, nu Aplicație cu o singură pagină. Nu este necesar să activați acordarea implicită.",
+              "link": "Instrucțiuni pentru URI-ul de redirecționare",
+              "title": "Adăugați URI-ul de redirecționare Web"
+            },
+            "redirectError": "AADSTS50011: Verificați dacă URI-ul de redirecționare Web se potrivește exact cu adresa de callback afișată de Z8, inclusiv numele de gazdă și calea.",
+            "register": {
+              "body": "Deschideți Entra ID → Înregistrări aplicații → Înregistrare nouă. Denumiți aplicația Z8 și alegeți Doar conturi din acest director organizațional. Selectați mai întâi directorul organizației dvs. Dacă nu puteți înregistra aplicații, solicitați administratorului Entra să creeze una pentru dvs.",
+              "title": "Înregistrați o aplicație"
+            },
+            "secret": {
+              "body": "Accesați Certificates & secrets → Client secrets → New client secret. Inserați valoarea acestuia în Z8, nu Secret ID-ul. Valoarea este afișată o singură dată. Notați data expirării și înlocuiți credențialul înainte de expirare. Distribuiți valoarea doar printr-un canal securizat al organizației dvs.",
+              "link": "Instrucțiuni pentru secretul de client",
+              "title": "Creați un secret de client"
+            },
+            "secretError": "Secret de client nevalid: Utilizați valoarea (Value) secretului, nu ID-ul acestuia. Asigurați-vă că aparține acestei aplicații și că nu a expirat. Creați un secret nou dacă nu mai aveți valoarea.",
+            "secretHelp": "Certificates & secrets → Client secrets. Inserați valoarea (Value), nu ID-ul secretului (Secret ID). Z8 nu o va mai afișa din nou.",
+            "secretValue": "Valoarea secretului de client",
+            "start": "Configurați Microsoft Entra ID",
+            "tenantError": "Tenant incorect: Copiați Directory (tenant) ID din aceeași înregistrare de aplicație ca și client ID-ul. Această configurare ghidată utilizează un tenant specific, nu „common” sau „organizations”.",
+            "tenantHelp": "App registrations → aplicația dvs. → Overview. Utilizați ID-ul de tenant propriu, nu „common” sau „organizations”.",
+            "tenantId": "Directory (tenant) ID",
+            "tenantInvalid": "Introduceți Directory (tenant) ID ca un UUID complet.",
+            "title": "Configurați Microsoft Entra ID",
+            "troubleshooting": "Depanarea configurării Entra",
+            "troubleshootingLink": "Ghidul Microsoft de depanare a redirecționărilor"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Introduceți un ID unic de furnizor, URL-ul emitentului OIDC, domeniul de e-mail al organizației, ID-ul de client și secretul de client. Le găsiți în setările aplicației din cadrul furnizorului dvs. Transmiteți secretele printr-un canal securizat.",
+              "title": "Copiați setările aplicației"
+            },
+            "description": "Utilizați documentația furnizorului dvs. pentru a crea o aplicație web confidențială cu fluxul de cod de autorizare (authorization code flow).",
+            "redirect": {
+              "body": "Adăugați adresa URL de callback Z8 afișată aici la URI-urile de redirecționare permise ale aplicației. Copiați-o exact, inclusiv numele de gazdă al organizației și calea.",
+              "title": "Înregistrați adresa URL de callback"
+            },
+            "register": {
+              "body": "În furnizorul dvs. de identitate, creați o aplicație OpenID Connect utilizând fluxul de cod de autorizare. Atribuiți mai întâi un grup pilot restrâns.",
+              "title": "Creați o aplicație web"
+            },
+            "title": "Configurați un furnizor OIDC"
+          },
+          "getStarted": "Conectați autentificarea echipei dvs.",
+          "getStartedDescription": "Urmați un ghid pas cu pas specific furnizorului, fără a trebui să asamblați singur configurația.",
+          "handoff": {
+            "copy": "Copiați lista de verificare IT",
+            "description": "Copiați instrucțiunile de configurare și adresa URL de callback a organizației dvs. Lista de verificare nu conține niciodată date de conectare.",
+            "return": "Trimiteți administratorului Z8 ID-ul de tenant (pentru Entra) și ID-ul de client al aplicației. Transmiteți separat valoarea secretului de client printr-un canal securizat; nu o introduceți în această listă de verificare.",
+            "title": "Aveți nevoie de ajutor din partea administratorului dvs. IT?"
+          },
+          "manual": "Alt furnizor / OIDC manual",
+          "manualAvailable": "Utilizați un alt furnizor? Alegeți configurarea manuală OIDC în panoul de configurare.",
+          "manualTestHelp": "Acesta este un rezultat al autentificării raportat de administrator, nu un test de conexiune verificat automat. Testați autentificarea cu un utilizator vizat într-o sesiune de navigare separată, mențineți această sesiune de administrator deschisă, apoi înregistrați aici reușita sau eșecul observat. Salvarea furnizorului și verificarea DNS nu dovedesc că autentificarea funcționează.",
+          "openSetup": "Deschideți configurarea ghidată",
+          "provider": "Furnizor de identitate",
+          "required": "Acest câmp este obligatoriu.",
+          "saving": "Se adaugă…",
+          "scopes": "Domeniile de autentificare (scopes) includ openid, email și profile. Unele conexiuni solicită și offline_access pentru tokenuri de reîmprospătare."
         },
         "issuerUrl": "URL emitent",
         "issuerUrlHelp": "URL-ul emitentului OIDC din furnizorul dvs. de identitate",
-        "issuerUrlRequired": "URL-ul emitentului este obligatoriu",
         "providerId": "ID furnizor",
         "providerIdHelp": "Un identificator unic pentru acest furnizor (litere mici, fără spații)",
         "providerIdInvalid": "ID-ul furnizorului trebuie să conțină doar litere mici, cifre și cratime",
-        "providerIdRequired": "ID-ul furnizorului este obligatoriu",
-        "setupInstructions": "Instrucțiuni de configurare",
         "title": "Furnizori de identitate",
         "token": "Token",
         "tokenError": "Nu s-a putut genera tokenul de verificare a domeniului",
         "tokenGenerated": "Tokenul de verificare a fost generat",
         "txtToken": "Token TXT:",
         "validUrlRequired": "Introduceți o adresă URL validă",
-        "verified": "Verificat",
         "verify": "Verifică",
         "verifyError": "Verificarea domeniului a eșuat. Verificați înregistrarea DNS TXT și reîncercați."
       },

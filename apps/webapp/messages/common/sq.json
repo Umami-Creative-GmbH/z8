@@ -341,7 +341,6 @@
       "morePages": "Më shumë faqe",
       "pagination": "faqosja"
     },
-    "pending": "Në pritje",
     "positionCaptureErrors": {
       "adminOnly": "Vetëm pronarët e organizatës dhe administratorët mund të menaxhojnë regjistrimin e vendndodhjes.",
       "assignmentNotFound": "Kjo detyrë nuk ekziston më.",
@@ -1129,11 +1128,13 @@
     "compliance": "Pajtueshmëria",
     "dashboard": "Paneli kryesor",
     "driving-licence": "Leje drejtimi",
+    "equipment": "Pajisjet",
     "feedback": "Reagime",
     "finance": "Financë",
     "financeAwaiting": "{count, plural, one {# shpenzim në pritje të rimbursimit} other {# shpenzime në pritje të rimbursimit}}",
     "get-help": "Merr ndihmë",
     "my-documents": "Dokumentet e mia",
+    "my-equipment": "Pajisjet e mia",
     "my-requests": "Kërkesat e mia",
     "my-schedule": "Orari im",
     "org-explorer": "Eksploruesi i organizatës",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Kushtet e ardhshme të punësimit kanë nevojë për shqyrtim (largimi hyn në fuqi më {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Puna e ardhshme ka nevojë për shqyrtim (largimi hyn në fuqi më {cutoff}, {timezone}).",
         "title": "Çregjistrimi i punonjësit kërkon shqyrtim"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} ka pajisje të padorëzuara ({quantity}) me afat më {deadline}. Hapni Pajisjet për të organizuar kthimin e tyre.",
+        "title": "Afati i kthimit të pajisjeve ka kaluar"
+      },
+      "equipmentReturnReminder": {
+        "message": "Ju lutemi ktheni pajisjet tuaja të padorëzuara ({quantity}) deri më {deadline}. Hapni Pajisjet e mia për detajet.",
+        "title": "Afati i kthimit të pajisjeve"
       },
       "forgottenClockOutReminder": {
         "message": "Turni juaj përfundoi në {endTime} ({timezone}). Regjistroni daljen nëse keni përfunduar punën.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Mungojnë detajet e drejtimit të automjetit",
         "driving_licence_reminder": "Afati i kontrollit të patentë shoferit",
         "employee_deactivation_shifts_opened": "Turne të hapura nga një çaktivizim",
+        "equipment_return_reminder": "Kujtuesit e kthimit të pajisjeve",
         "forgotten_clock_out_reminder": "Dalje e harruar",
         "former_employee_reports_without_manager": "Punonjës pa një menaxher aktual",
         "kiosk_command_refused": "Regjistrimi i orarit në kioskë nuk u regjistrua",
@@ -1960,6 +1970,7 @@
         "auditLog": "Regjistrimet e auditimit rreth jush dhe veprimet e kryera nga ju.",
         "drivingLicence": "Kontrollet e patentë shoferit, konfirmimet dhe deklaratat origjinale, plotësimet e bashkëngjitura, autorizimet e kategorive dhe historia e tyre, regjistrimi dhe përgjegjësia juaj si verifikues. Vetëm provat e ruajtura; pa skanime të patentës, numra dokumentesh ose shënime mjekësore.",
         "employment": "Të dhënat dhe profili juaj si punonjës, periudhat e punësimit dhe largimi, kushtet e punësimit me pagën tuaj për orë dhe historikun e saj, ekipet, menaxherët, vendndodhjet, aftësitë, caktimet në projekte, rolet, grupet, qendra e kostos dhe çdo politikë e caktuar për ju.",
+        "equipment": "Caktimet e ruajtura të pajisjeve tuaja, gjendjet dhe shënimet origjinale dhe të korrigjuara, faturat fizike, vendimet për humbje dhe heqje dorë, rikuperimi dhe rrjedha e punësimit/përfundimit. Datat historike të panjohura të lëshimit mbeten të panjohura; datat reale kalendarike janë të ndara nga pullat kohore UTC të regjistrimit. Të dhënat e pajisjeve përfshihen si në eksportet e punonjësve ashtu edhe në ato të administratorit për sa kohë ruhen.",
         "integrations": "Lidhjet e kalendarit tuaj, furnizimi i kalendarit, llogaritë e lidhura të bisedës dhe statusi i PIN-it të kioskës.",
         "notifications": "Historiku juaj i njoftimeve.",
         "personnelFile": "Dokumentet në dosjen tuaj të personelit, si skedarë origjinalë.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Raportet mjekësore"
       },
       "drivingLicenceRetention": "Provat e patentë shoferit ndjekin periudhën e justifikuar të ruajtjes së kontrolleve të organizatës pasi të mos mbështesin më një autorizim aktiv. Një pezullim i dokumentuar fshirjeje për një çështje ligjore specifike e shtyn fshirjen. Referojuni politikës driving_licence, regjistrave të ruajtjes dhe pezullimit për kontekstin e zbatueshëm; gjenerimi i një eksporti nuk e zgjat ruajtjen e provave në Z8.",
+      "emptyFilesOmitted": "Skedarët pa të dhëna të eksportueshme hiqen. Tabelat bosh dhe regjistrimet opsionale që mungojnë mbeten në skedarët JSON që përmbajnë të dhëna të tjera. Cilësimet opsionale që nuk janë konfiguruar kurrë nuk llogariten si të dhëna.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Prej kur jeni në ekip.",
             "summary": "Ekipet ku bëni pjesë aktualisht."
           }
+        },
+        "equipment": {
+          "actualDate": "Data kalendarike reale origjinale e dorëzimit, siç është regjistruar në zonën kohore të organizatës. Bosh nënkupton një datë historike lëshimi qartësisht të panjohur, jo datën e regjistrimit.",
+          "after": "JSON i vlerave pas këtij ndryshimi, duke përdorur të njëjtat kuptime të fushave të provave si më parë. Vlerat e marrëveshjes së lëshimit përfshijnë returnRequired, explicitDeadline dhe employmentPeriodId. Datat kalendarike dallohen nga recorded_at në UTC të ndryshimit.",
+          "assignmentId": "Caktimi i ruajtur të cilit i përket kjo provë; përfshihen vetëm caktimet tuaja në këtë organizatë.",
+          "assignmentQuantity": "Sasia aktuale efektive e lëshuar pas korrigjimeve; lëshimi origjinal dhe ndryshimet mbeten prova të veçanta.",
+          "assignments": {
+            "summary": "Marrëveshjet tuaja të ruajtura të pajisjeve dhe bilancet aktuale efektive, kushtet dhe rrjedha origjinale e punësimit/përfundimit. Mbylljet për humbje dhe heqje dorë nuk pretendojnë pranim fizik; rikuperimi mbivendos mbylljen e mëparshme të saj. Historiku personal i hequr nuk rindërtohet kurrë nga identitetet jopersonale të artikujve."
+          },
+          "before": "JSON i vlerave efektive para këtij ndryshimi: sasia e dorëzimit, actualDate (null për lëshim historik të panjohur), gjendja dhe shënimet, ose lloji i përjashtimit, sasia dhe arsyeja. Ndryshimet e lëshimit ruajnë gjithashtu returnRequired e mëparshëm, explicitDeadline dhe rrjedhën origjinale të punësimit/largimit/çaktivizimit.",
+          "condition": "Gjendja e regjistruar fillimisht: e mirë, e konsumuar, e dëmtuar ose e panjohur; gjendja e panjohur nuk nënkupton një datë të panjohur.",
+          "correctionReason": "Shpjegimi i detyrueshëm i arsyes pse u bë korrigjimi.",
+          "corrections": {
+            "summary": "Ndryshime të arsyetuara para/pas për dorëzimet dhe vendimet tuaja të ruajtura, duke përfshirë ndryshimet e marrëveshjes. Provat origjinale mbeten të veçanta; një transferim përfshin vetëm dorëzimin dhe ndryshimin tuaj, kurrë historikun personal të mbajtësit tjetër."
+          },
+          "deactivatedAt": "Koha kur ai çaktivizim i menjëhershëm i lidhur përfundoi punësimin/aksesin, si një çast UTC; pajisjet e padorëzuara nuk e vonojnë kurrë atë.",
+          "deactivationId": "Identiteti i pandryshueshëm i çaktivizimit për këtë caktim, edhe kur riaktivizimi rihap të njëjtën periudhë punësimi.",
+          "deactivationTimezone": "Zona kohore e organizatës e regjistruar në çaktivizimin origjinal, ose bosh nëse nuk është regjistruar. Një zonë kohore e mëvonshme e organizatës ose e shikuesit nuk e zëvendëson kurrë atë kontekst historik.",
+          "departureCutoffAt": "Çasti përfundimtar UTC i largimit të lidhur, i ndarë nga dita e fundit kalendarike e punës dhe afati i pajisjeve.",
+          "departureDeadline": "Data e kthimit e nxjerrë nga largimi ose çaktivizimi origjinal; ajo mbetet edhe pas ripunësimit ose riaktivizimit të mëvonshëm. Bosh kur nuk zbatohet asnjë afat i derivuar.",
+          "departureId": "Identifikuesi origjinal i lidhur i largimit për këtë caktim, nëse ka. Detyrat dhe shqyrtimet e largimit nuk janë prova për pajisjet.",
+          "departureMode": "Nëse largimi i lidhur ishte i planifikuar apo i menjëhershëm, ose bosh pa një largim të lidhur.",
+          "departureStatus": "Statusi aktual i largimit të lidhur; një largim në pritje nuk e përfundon vetvetiu punësimin.",
+          "departureTimezone": "Zona kohore e ngrirë në largimin e lidhur; ndryshimet e zonës kohore të shikuesit nuk e ndryshojnë kuptimin e saj kalendarik.",
+          "effectiveActualDate": "Data kalendarike e dorëzimit real pas korrigjimeve; një lëshim historik i panjohur mbetet bosh në vend që të kthehet te vula kohore e regjistrimit të tij.",
+          "effectiveCondition": "Gjendja pas korrigjimeve; pranimi i pajisjeve të dëmtuara nuk jep vetvetiu leje për rilëshim.",
+          "effectiveDeadline": "Afati kalendarik më i hershëm i zbatueshëm, i shprehur ose i rrjedhur; pajisjet e lëshuara për t'u mbajtur nuk kanë asnjë. Kjo nuk është datë dorëzimi ose vulë kohore regjistrimi UTC.",
+          "effectiveExceptionQuantity": "Sasia e mbyllur ende nga ky vendim pas ndryshimeve ose anulimeve, duke përfshirë pranimet fizike të lidhura me të; zero do të thotë e anuluar plotësisht.",
+          "effectiveHandoverQuantity": "Sasia e dorëzuar pas korrigjimeve; zeroja anulon një pranim të gabuar pa fshirë provën origjinale të tij.",
+          "effectiveKind": "Përfundimi aktual i humbur ose hequr dorë pas korrigjimeve.",
+          "effectiveNotes": "Shënimet opsionale aktuale të dorëzimit pas korrigjimeve.",
+          "effectiveReason": "Arsyeja aktuale e vendimit pas korrigjimeve; arsyet e korrigjimit ruhen veçmas.",
+          "employmentPeriodId": "Periudha origjinale e punësimit e lidhur me këtë caktim, e cila nuk zëvendësohet automatikisht nga një periudhë e mëvonshme punësimi; bosh kur nuk është regjistruar asnjë periudhë.",
+          "exceptionId": "Vendimi i lidhur për humbje ose heqje dorë; një pranim fizik i lidhur e plotëson atë vendim në vend që të shlyejë të njëjtën sasi dy herë. Bosh për një dorëzim të zakonshëm.",
+          "exceptionKind": "Përfundimi origjinal i humbur ose i hequr dorë; asnjëra nuk do të thotë se pajisja është kthyer fizikisht.",
+          "exceptionQuantity": "Sasia origjinale e mbyllur nga vendimi, e ruajtur pas ndryshimeve ose kthimeve mbrapsht.",
+          "exceptionReason": "Arsyeja origjinale e detyrueshme për vendimin e humbjes ose të heqjes dorë.",
+          "exceptionReceivedQuantity": "Pranquet fizike të lidhura me sasitë e humbura ose të hequra dorë; kjo mbivendosje llogaritet një herë gjatë llogaritjes së kthimeve të papërfunduara.",
+          "exceptions": {
+            "summary": "Vendimet origjinale të arsyetuara për humbje dhe heqje dorë dhe vlerat e tyre aktuale të korrigjuara. Këto mbyllin detyrimet e kthimit pa pretenduar pranim fizik; provat e lidhura të pranimit regjistrojnë veçmas rikuperimin ose kthimin e mëvonshëm."
+          },
+          "explicitDeadline": "Data e rënë dakord veçmas e kthimit si ditë kalendarike në zonën kohore të organizatës, ose bosh.",
+          "handoverId": "ID-ja e dorëzimit të modifikuar, ose bosh për një modifikim përjashtimi.",
+          "handoverKind": "Lëshimi regjistron dhënien; pranimi regjistron marrjen fizike, duke përfshirë një rikuperim të lidhur. As mbyllja si e humbur dhe as si e hequr dorë nuk përbën vetvetiu dorëzim.",
+          "handoverQuantity": "Sasia e dorëzimit e regjistruar fillimisht, e ruajtur edhe pas korrigjimit.",
+          "handovers": {
+            "summary": "Provat origjinale të lëshimit dhe pranimit fizik me vlerat aktuale të korrigjuara. Një pranim i lidhur me një vendim humbjeje është rikuperim; një pranim i lidhur me një vendim për heqje dorë regjistron pranimin fizik të mëvonshëm. Një datë historike e panjohur lëshimi mbetet bosh, pa u zëvendësuar kurrë nga vula kohore e saj e hyrjes në UTC."
+          },
+          "historical": "E vërtetë për regjistrimin e një caktimi historik që tashmë mbahet; vetëm lëshimi historik mund të ketë një datë reale shprehimisht të panjohur.",
+          "holds": {
+            "kind": "Nëse pezullimi i çështjes u vendos apo u hoq.",
+            "reason": "Arsyeja e detyrueshme e dokumentuar nga administratori i organizatës për këtë veprim specifik të çështjes.",
+            "revision": "Rishikimi i caktimit i krijuar nga ky veprim i pezullimit të çështjes.",
+            "summary": "Vendosjet dhe heqjet e dokumentuara të pezullimit të çështjes në historikun tuaj të ruajtur të pajisjeve. Një pezullim aktiv e mbron provën nga pastrimi; ai nuk regjistron kurrë pranim fizik."
+          },
+          "identifier": "Identifikuesi i organizatës për artikullin tuaj të gjurmuar individualisht, pa historikun e mbajtësve të tjerë; bosh për caktimet me sasi.",
+          "lastWorkingDay": "Dita e fundit kalendarike e punës e largimit të planifikuar të lidhur në zonën e saj kohore të ngrirë, ose bosh.",
+          "lostQuantity": "Sasia efektive e mbyllur si e humbur, duke përfshirë çdo sasi të rikuperuar më pas; vendimi i humbjes ruhet.",
+          "notes": "Shënimet opsionale origjinale të dorëzimit, të ruajtura pas korrigjimit ndërkohë që historiku personal ruhet.",
+          "outstandingQuantity": "Sasia e kërkuar minus pranimet fizike dhe mbylljet e humbura/hequra dorë, duke rishtuar mbivendosjen e pranimeve të tyre për të shmangur shlyerjen e dyfishtë; zero për pajisjet e lëshuara për t'u mbajtur.",
+          "periodEndedAt": "Çasti i përfundimit UTC i periudhës së lidhur, ose bosh për një periudhë të hapur/të rihapur ose një përfundim të panjohur.",
+          "periodStartedAt": "Çasti i regjistruar i fillimit UTC i periudhës së lidhur të punësimit, ose bosh kur është i panjohur.",
+          "periodStatus": "Statusi aktual i periudhës së lidhur: e hapur, e mbyllur ose legacy_unknown; riaktivizimi mund të rihapë po këtë periudhë pa ndryshuar identitetin e përfundimit të caktimit.",
+          "physicallyReceivedQuantity": "Sasia efektive e pranuar fizikisht, duke përfshirë rikuperimin dhe pranimet e artikujve të hequr dorë. Vetëm vendimet për humbje dhe heqje dorë nuk e rrisin kurrë këtë numërim.",
+          "reactivatedAt": "Koha kur ai çaktivizim u riaktivizua më vonë, si një çast UTC, ose bosh; riaktivizimi nuk fshin detyrimet ose afatet e vjetra të pajisjeve.",
+          "receivedQuantity": "Sasia fizike efektive e pranuar kundrejt këtij vendimi. Për një vendim humbjeje, kjo është pajisje e rikuperuar; ajo është e përfshirë tashmë në pranimet fizike të caktimit.",
+          "recordedAt": "Vula kohore e regjistrimit UTC, e ndarë nga data reale e dorëzimit; regjistrimi i vonuar nuk e ndryshon datën e dorëzimit.",
+          "recordedBy": "Emri i shfaqur i personit që regjistroi këtë provë, kur identiteti i tij në organizatë mbetet i disponueshmë; nuk përfshihen detaje të tjera të profilit.",
+          "returnRequired": "Nëse kërkohet kthimi. E gabuar (False) do të thotë e lëshuar për t'u mbajtur, pa afat kthimi ose kthim të papërfunduar; nuk do të thotë e kthyer fizikisht.",
+          "serialNumber": "Numri serial opsional i prodhuesit për artikullin e gjurmuar individualisht.",
+          "trackingMode": "Individual identifikon një artikull fizik; sasia numëron artikuj të ndërsjellë.",
+          "type": "Emri i llojit të pajisjes.",
+          "waivedQuantity": "Sasia efektive kthimi i kërkuar i së cilës u hoq dorë, duke përfshirë çdo sasi të marrë më pas; heqja dorë nuk pretendon pranim."
         },
         "integrations": {
           "calendarConnections": {

@@ -341,7 +341,6 @@
       "morePages": "Više stranica",
       "pagination": "paginacija"
     },
-    "pending": "Na čekanju",
     "positionCaptureErrors": {
       "adminOnly": "Samo vlasnici i administratori organizacije mogu upravljati bilježenjem lokacije.",
       "assignmentNotFound": "Ova dodjela više ne postoji.",
@@ -1129,11 +1128,13 @@
     "compliance": "Usklađenost",
     "dashboard": "Nadzorna ploča",
     "driving-licence": "Vozačka dozvola",
+    "equipment": "Oprema",
     "feedback": "Povratne informacije",
     "finance": "Financije",
     "financeAwaiting": "{count, plural, one {# trošak čeka povrat} few {# troška čekaju povrat} other {# troškova čeka povrat}}",
     "get-help": "Pomoć",
     "my-documents": "Moji dokumenti",
+    "my-equipment": "Moja oprema",
     "my-requests": "Moji zahtjevi",
     "my-schedule": "Moj raspored",
     "org-explorer": "Preglednik organizacije",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Potrebno je pregledati buduće uvjete zaposlenja (odlazak stupa na snagu {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Potrebno je pregledati budući rad (odlazak stupa na snagu {cutoff}, {timezone}).",
         "title": "Odlazak zaposlenika zahtijeva pregled"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} ima nepovraćenu opremu ({quantity}) s rokom povrata {deadline}. Otvorite Opremu kako biste organizirali njezin povrat.",
+        "title": "Prekoračen rok za povrat opreme"
+      },
+      "equipmentReturnReminder": {
+        "message": "Vratite nepovraćenu opremu ({quantity}) do {deadline}. Otvorite stavku Moja oprema za pojedinosti.",
+        "title": "Dospijeće povrata opreme"
       },
       "forgottenClockOutReminder": {
         "message": "Vaša smjena završila je u {endTime} ({timezone}). Odjavite se ako ste završili s radom.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Nedostaju podaci o vožnji",
         "driving_licence_reminder": "Dospjela provjera vozačke dozvole",
         "employee_deactivation_shifts_opened": "Smjene otvorene deaktivacijom",
+        "equipment_return_reminder": "Podsjetnici za povrat opreme",
         "forgotten_clock_out_reminder": "Zaboravljena odjava",
         "former_employee_reports_without_manager": "Zaposlenici bez trenutačnog voditelja",
         "kiosk_command_refused": "Evidencija s kioska nije zabilježena",
@@ -1960,6 +1970,7 @@
         "auditLog": "Zapisi revizijskog dnevnika o vama i radnje koje ste vi izvršili.",
         "drivingLicence": "Provjere vozačkih dozvola, originalne potvrde i izjave, pripisani dodaci, ovlaštenja za kategorije i njihova povijest, registracija i vaša odgovornost verifikatora. Samo zadržani dokazi; bez skeniranih dozvola, brojeva dokumenata ili liječničkih bilješki.",
         "employment": "Vaš dosje i profil zaposlenika, razdoblja zaposlenja i odlazak, uvjeti zaposlenja s vašom satnicom i njezinom poviješću, timovi, voditelji, lokacije, vještine, dodjele projektima, uloge, grupe, mjesto troška i sva pravila koja su vam dodijeljena.",
+        "equipment": "Vaša zadržana zaduženja opreme, izvorna i ispravljena stanja i bilješke, fizičke potvrde, odluke o gubitku i otpisu, povrat i sljedivost zaposlenja/prestanka. Nepoznati povijesni datumi izdavanja ostaju nepoznati; stvarni kalendarski datumi odvojeni su od UTC vremenskih oznaka unosa. Zapisi o opremi uključeni su u izvoze za zaposlenike i administratore dok su zadržani.",
         "integrations": "Vaša povezivanja s kalendarom, sažetak kalendara, povezani računi za razgovor i status PIN-a za kiosk.",
         "notifications": "Vaša povijest obavijesti.",
         "personnelFile": "Dokumenti u vašem kadrovskom dosjeu, kao izvorne datoteke.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Doznake za bolovanje"
       },
       "drivingLicenceRetention": "Dokazi o vozačkoj dozvoli podliježu opravdanom razdoblju čuvanja provjera organizacije kada više ne podržavaju aktivno ovlaštenje. Dokumentirano zadržavanje radi određenog pravnog slučaja odgađa brisanje. Za primjenjivi kontekst pogledajte pravila za vozačke dozvole (driving_licence), evidencije o čuvanju i zadržavanju; generiranje izvoza ne produljuje čuvanje dokaza u Z8.",
+      "emptyFilesOmitted": "Datoteke bez podataka za izvoz se izostavljaju. Prazne tablice i izostali neobavezni zapisi ostaju u JSON datotekama koje sadrže druge podatke. Neobavezne postavke koje nikada nisu konfigurirane ne smatraju se podacima.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Od kada ste u timu.",
             "summary": "Timovi u kojima se trenutno nalazite."
           }
+        },
+        "equipment": {
+          "actualDate": "Izvorni stvarni kalendarski datum primopredaje zabilježen u vremenskoj zoni organizacije. Prazno polje označava izričito nepoznat povijesni datum izdavanja, a ne datum unosa.",
+          "after": "JSON vrijednosti nakon ove izmjene, uz ista značenja polja dokaza kao i prije. Vrijednosti ugovora o izdavanju uključuju returnRequired, explicitDeadline i employmentPeriodId. Kalendarski datumi razlikuju se od UTC vrijednosti recorded_at izmjene.",
+          "assignmentId": "Zadržano zaduženje kojem ovaj dokaz pripada; uključena su samo vaša zaduženja u ovoj organizaciji.",
+          "assignmentQuantity": "Trenutačna važeća izdana količina nakon ispravaka; izvorno izdavanje i izmjene ostaju zasebni dokazi.",
+          "assignments": {
+            "summary": "Vaši zadržani ugovori o opremi i trenutačna važeća stanja, uvjeti te izvorna sljedivost zaposlenja/prestanka. Zaključenja zbog gubitka i otpisa ne podrazumijevaju fizički primitak; povrat se preklapa sa svojim ranijim zaključenjem. Uklonjena osobna povijest nikada se ne rekonstruira iz neosobnih identifikatora stavki."
+          },
+          "before": "JSON važećih vrijednosti prije ove izmjene: količina primopredaje, actualDate (null za nepoznato povijesno izdavanje), stanje i bilješke ili vrsta iznimke, količina i razlog. Izmjene izdavanja također zadržavaju prethodne vrijednosti returnRequired, explicitDeadline te izvornu sljedivost zaposlenja/odlaska/deaktivacije.",
+          "condition": "Izvorno zabilježeno dobro, istrošeno, oštećeno ili nepoznato stanje; nepoznato stanje ne implicira nepoznat datum.",
+          "correctionReason": "Obavezno obrazloženje zašto je ispravak napravljen.",
+          "corrections": {
+            "summary": "Obrazložene izmjene prije/poslije vaših zadržanih primopredaja i odluka, uključujući promjene ugovora. Izvorni dokazi ostaju zasebni; prijenos uključuje samo vašu vlastitu primopredaju i izmjenu, nikada osobnu povijest drugog posjednika."
+          },
+          "deactivatedAt": "Kada je ta povezana trenutna deaktivacija prekinula radni odnos/pristup, kao UTC trenutak; nepovraćena oprema to nikada ne odgađa.",
+          "deactivationId": "Nepromjenjivi identitet deaktivacije za ovo zaduženje, čak i kada ponovna aktivacija ponovno otvori isto razdoblje zaposlenja.",
+          "deactivationTimezone": "Vremenska zona organizacije zabilježena pri izvornoj deaktivaciji ili prazno ako nije bila zabilježena. Kasnija vremenska zona organizacije ili preglednika nikada ne zamjenjuje taj povijesni kontekst.",
+          "departureCutoffAt": "Povezani UTC granični trenutak odlaska, odvojen od njegova zadnjeg radnog kalendarskog dana i roka za opremu.",
+          "departureDeadline": "Datum povrata izveden iz izvornog odlaska ili deaktivacije; ostaje sačuvan i nakon kasnijeg ponovnog zapošljavanja ili ponovne aktivacije. Prazno kada se ne primjenjuje izvedeni rok.",
+          "departureId": "Izvorni povezani identitet odlaska za ovo zaduženje, ako postoji. Zadaci i pregledi pri odlasku ne predstavljaju dokaz o opremi.",
+          "departureMode": "Je li povezani odlazak bio zakazan ili trenutačan, ili prazno ako nema povezanog odlaska.",
+          "departureStatus": "Trenutačni status povezanog odlaska; odlazak na čekanju sam po sebi ne prekida radni odnos.",
+          "departureTimezone": "Vremenska zona zamrznuta na povezanom odlasku; promjene vremenske zone preglednika ne mijenjaju njezino kalendarsko značenje.",
+          "effectiveActualDate": "Stvarni kalendarski datum primopredaje nakon ispravaka; nepoznato povijesno izdavanje ostaje prazno umjesto da se zamijeni vremenskom oznakom unosa.",
+          "effectiveCondition": "Stanje nakon ispravaka; zaprimanje oštećene opreme samo po sebi ne daje odobrenje za ponovno izdavanje.",
+          "effectiveDeadline": "Raniji primjenjivi izričiti ili izvedeni kalendarski rok; oprema izdana u trajno vlasništvo ga nema. Ovo nije datum primopredaje ni UTC vremenska oznaka unosa.",
+          "effectiveExceptionQuantity": "Količina koja je još uvijek zaključena ovom odlukom nakon izmjena ili poništenja, uključujući njezine povezane fizičke potvrde o primitku; nula znači potpuno poništeno.",
+          "effectiveHandoverQuantity": "Količina primopredaje nakon ispravaka; nula poništava pogrešan primitak bez brisanja izvornog dokaza.",
+          "effectiveKind": "Trenutačni ishod gubitka ili otpisa nakon ispravaka.",
+          "effectiveNotes": "Trenutačne neobavezne bilješke o primopredaji nakon ispravaka.",
+          "effectiveReason": "Trenutačni razlog odluke nakon ispravaka; razlozi ispravka čuvaju se zasebno.",
+          "employmentPeriodId": "Izvorno razdoblje zaposlenja povezano s ovim zaduženjem, koje se ne zamjenjuje automatski kasnijim razdobljem zaposlenja; prazno ako razdoblje nije zabilježeno.",
+          "exceptionId": "Povezana odluka o gubitku ili otpisu; povezana fizička potvrda o primitku dopunjuje tu odluku umjesto dvostrukog razduživanja iste količine. Prazno za uobičajenu primopredaju.",
+          "exceptionKind": "Izvorni ishod gubitka ili otpisa; nijedan ne znači da je oprema fizički vraćena.",
+          "exceptionQuantity": "Izvorna količina zaključena odlukom, sačuvana nakon izmjena ili poništenja.",
+          "exceptionReason": "Izvorni obavezni razlog za odluku o gubitku ili otpisu.",
+          "exceptionReceivedQuantity": "Fizički primici povezani s izgubljenim ili otpisanim količinama; ovo se preklapanje računa samo jednom pri izračunu nepodmirenih povrata.",
+          "exceptions": {
+            "summary": "Izvorne obrazložene odluke o gubitku i otpisu te njihove trenutačne ispravljene vrijednosti. One zaključuju obveze povrata bez potvrde fizičkog primitka; dokaz o povezanom primitku zasebno bilježi pronalazak ili kasniji povrat."
+          },
+          "explicitDeadline": "Zasebno dogovoreni datum povrata kao kalendarski dan u vremenskoj zoni organizacije, ili prazno.",
+          "handoverId": "ID izmijenjene primopredaje, ili prazno za izmjenu iznimke.",
+          "handoverKind": "Izdavanje bilježi izdavanje; primitak bilježi fizički primitak, uključujući povezani pronalazak. Niti zaključenje zbog gubitka niti zbog otpisa samo po sebi nije primopredaja.",
+          "handoverQuantity": "Izvorno zabilježena količina primopredaje, sačuvana čak i nakon ispravka.",
+          "handovers": {
+            "summary": "Izvorni dokazi o izdavanju i fizičkom primitku s trenutačnim ispravljenim vrijednostima. Primitak povezan s odlukom o gubitku predstavlja pronalazak; primitak povezan s odlukom o otpisu bilježi kasniji fizički primitak. Nepoznati povijesni datum izdavanja ostaje prazan i nikada se ne zamjenjuje svojom UTC vremenskom oznakom unosa."
+          },
+          "historical": "True za unos već postojećeg povijesnog zaduženja; samo povijesno izdavanje može imati izričito nepoznat stvarni datum.",
+          "holds": {
+            "kind": "Je li zadržavanje predmeta postavljeno ili ukinuto.",
+            "reason": "Obavezni razlog koji je administrator organizacije dokumentirao za ovu specifičnu radnju predmeta.",
+            "revision": "Revizija zaduženja stvorena ovom radnjom zadržavanja predmeta.",
+            "summary": "Dokumentirana postavljanja i ukidanja zadržavanja predmeta u vašoj zadržanoj povijesti opreme. Aktivno zadržavanje štiti dokaze od brisanja; nikada ne bilježi fizički primitak."
+          },
+          "identifier": "Identifikator vaše pojedinačno praćene stavke unutar organizacije, bez povijesti drugih posjednika; prazno za količinska zaduženja.",
+          "lastWorkingDay": "Zadnji radni kalendarski dan povezanog zakazanog odlaska u njegovoj zamrznutoj vremenskoj zoni, ili prazno.",
+          "lostQuantity": "Efektivna količina zaključena kao izgubljena, uključujući svaku naknadno pronađenu količinu; odluka o gubitku se čuva.",
+          "notes": "Izvorne neobavezne bilješke o primopredaji, sačuvane nakon ispravka dok se čuva osobna povijest.",
+          "outstandingQuantity": "Potrebna količina umanjena za fizičke primitke i zaključenja zbog gubitka/otpisa, uz ponovno pribrajanje njihova preklapanja u primicima radi izbjegavanja dvostrukog razduživanja; nula za opremu izdanu u trajno vlasništvo.",
+          "periodEndedAt": "UTC trenutak završetka povezanog razdoblja, ili prazno za otvoreno/ponovno otvoreno razdoblje ili nepoznat završetak.",
+          "periodStartedAt": "Zabilježeni UTC trenutak početka povezanog razdoblja zaposlenja, ili prazno kada je nepoznat.",
+          "periodStatus": "Trenutačni status povezanog razdoblja: open, closed ili legacy_unknown; ponovno aktiviranje može ponovno otvoriti ovo isto razdoblje bez promjene identiteta završetka zaduženja.",
+          "physicallyReceivedQuantity": "Efektivna fizički zaprimljena količina, uključujući pronalaske i primitke otpisanih stavki. Odluke o gubitku i otpisu same po sebi nikada ne povećavaju ovaj broj.",
+          "reactivatedAt": "Kada je ta deaktivacija kasnije ponovno aktivirana, kao UTC trenutak, ili prazno; ponovno aktiviranje ne briše stare obveze ili rokove vezane uz opremu.",
+          "receivedQuantity": "Efektivna fizička količina zaprimljena na temelju ove odluke. Za odluku o gubitku to je pronađena oprema; već je uključena u fizičke primitke zaduženja.",
+          "recordedAt": "UTC vremenska oznaka unosa, odvojena od stvarnog datuma primopredaje; kasni unos ne mijenja datum primopredaje.",
+          "recordedBy": "Prikazano ime osobe koja je zabilježila ovaj dokaz, ako je njezin identitet u organizaciji još uvijek dostupan; ostali podaci o profilu nisu uključeni.",
+          "returnRequired": "Je li povrat obavezan. False označava izdavanje u trajno vlasništvo, bez roka povrata ili nepodmirenog povrata; ne znači da je fizički vraćeno.",
+          "serialNumber": "Neobavezni serijski broj proizvođača za pojedinačno praćenu stavku.",
+          "trackingMode": "„Individual” identificira jednu fizičku stavku; „quantity” broji zamjenjive stavke.",
+          "type": "Naziv vrste opreme.",
+          "waivedQuantity": "Efektivna količina za koju je obavezni povrat otpisan, uključujući svaku naknadno zaprimljenu količinu; otpis ne podrazumijeva primitak."
         },
         "integrations": {
           "calendarConnections": {

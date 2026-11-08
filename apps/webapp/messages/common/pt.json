@@ -341,7 +341,6 @@
       "morePages": "Mais páginas",
       "pagination": "paginação"
     },
-    "pending": "Pendente",
     "positionCaptureErrors": {
       "adminOnly": "Apenas proprietários e administradores da organização podem gerenciar a captura de posições.",
       "assignmentNotFound": "Esta atribuição não existe mais.",
@@ -1129,11 +1128,13 @@
     "compliance": "Conformidade",
     "dashboard": "Painel",
     "driving-licence": "Carteira de habilitação",
+    "equipment": "Equipamento",
     "feedback": "Feedback",
     "finance": "Financeiro",
     "financeAwaiting": "{count, plural, one {# despesa aguardando reembolso} other {# despesas aguardando reembolso}}",
     "get-help": "Obter Ajuda",
     "my-documents": "Meus documentos",
+    "my-equipment": "Meu equipamento",
     "my-requests": "Minhas Solicitações",
     "my-schedule": "Minha Escala",
     "org-explorer": "Explorador da Organização",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Os termos de contratação futuros precisam de revisão (saída efetiva em {cutoff}, {timezone}).",
         "future_work": "{employeeName}: O trabalho futuro precisa de revisão (saída efetiva em {cutoff}, {timezone}).",
         "title": "O desligamento do colaborador precisa de revisão"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} possui equipamento pendente ({quantity}) com vencimento em {deadline}. Abra Equipamento para providenciar a devolução.",
+        "title": "Devolução de equipamento atrasada"
+      },
+      "equipmentReturnReminder": {
+        "message": "Por favor, devolva seu equipamento pendente ({quantity}) até {deadline}. Abra Meu equipamento para ver os detalhes.",
+        "title": "Prazo de devolução de equipamento"
       },
       "forgottenClockOutReminder": {
         "message": "Seu turno terminou às {endTime} ({timezone}). Registre a saída se tiver terminado de trabalhar.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Detalhes de condução ausentes",
         "driving_licence_reminder": "Verificação da carta de condução pendente",
         "employee_deactivation_shifts_opened": "Turnos abertos por uma desativação",
+        "equipment_return_reminder": "Lembretes de devolução de equipamento",
         "forgotten_clock_out_reminder": "Saída não registrada",
         "former_employee_reports_without_manager": "Funcionários sem um gestor atual",
         "kiosk_command_refused": "Registo de ponto no quiosque não gravado",
@@ -1960,6 +1970,7 @@
         "auditLog": "Entradas do registro de auditoria sobre você e ações realizadas por você.",
         "drivingLicence": "Verificações de cartas de condução, confirmações e declarações originais, suplementos atribuídos, autorizações de categorias e o respetivo histórico, inscrição e a sua responsabilidade de verificador. Apenas evidências retidas; sem digitalizações da carta, números de documentos ou notas médicas.",
         "employment": "Seu registro e perfil de funcionário, períodos de trabalho e desligamento, condições de trabalho com seu salário por hora e respectivo histórico, equipes, gestores, locais, competências, atribuições de projetos, funções, grupos, centro de custo e todas as políticas atribuídas a você.",
+        "equipment": "Suas atribuições de equipamentos retidas, condições e observações originais e corrigidas, comprovantes físicos, decisões de perda e isenção, histórico de recuperação e de emprego/encerramento. Datas de emissão históricas desconhecidas permanecem desconhecidas; datas reais do calendário são separadas dos registros de data e hora de entrada em UTC. Os registros de equipamentos são incluídos nas exportações do funcionário e do administrador enquanto forem retidos.",
         "integrations": "Suas conexões de calendário, feed de calendário, contas de chat vinculadas e status do PIN do quiosque.",
         "notifications": "Seu histórico de notificações.",
         "personnelFile": "Os documentos do seu dossiê de pessoal, como arquivos originais.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Atestados médicos"
       },
       "drivingLicenceRetention": "As evidências da carta de condução seguem o período justificado de retenção de verificações da organização a partir do momento em que deixam de suportar uma autorização ativa. Uma suspensão documentada devido a um processo legal específico adia a eliminação. Consulte a política driving_licence, os registos de retenção e as ordens de preservação para obter o contexto aplicável; a criação de uma exportação não prolonga a retenção de evidências no Z8.",
+      "emptyFilesOmitted": "Arquivos sem dados exportáveis são omitidos. Tabelas vazias e registros opcionais ausentes permanecem em arquivos JSON que contêm outros dados. Configurações opcionais que nunca foram definidas não contam como dados.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Desde quando você está na equipe.",
             "summary": "As equipes em que você está agora."
           }
+        },
+        "equipment": {
+          "actualDate": "A data real original do calendário de entrega, conforme registrada no fuso horário da organização. Vazio significa data de emissão histórica explicitamente desconhecida, não a data de entrada.",
+          "after": "JSON dos valores após esta alteração, usando os mesmos significados de campos de evidência de antes. Os valores do contrato de emissão incluem returnRequired, explicitDeadline e employmentPeriodId. As datas do calendário são distintas do recorded_at em UTC da alteração.",
+          "assignmentId": "A atribuição retida à qual esta evidência pertence; apenas suas atribuições nesta organização são incluídas.",
+          "assignmentQuantity": "A quantidade emitida em vigor atual após correções; a emissão original e as alterações permanecem como evidências separadas.",
+          "assignments": {
+            "summary": "Seus contratos de equipamentos retidos e saldos vigentes atuais, termos e histórico original de emprego/encerramento. Encerramentos por perda e isenção não declaram recebimento físico; a recuperação sobrepõe seu encerramento anterior. O histórico pessoal removido nunca é reconstruído a partir de identidades de itens não pessoais."
+          },
+          "before": "JSON dos valores vigentes antes desta alteração: quantidade entregue, actualDate (nulo para emissão histórica desconhecida), condição e observações, ou tipo de exceção, quantidade e motivo. Alterações de emissão também retêm returnRequired e explicitDeadline anteriores e o histórico original de emprego/desligamento/desativação.",
+          "condition": "A condição originalmente registrada como boa, desgastada, danificada ou desconhecida; condição desconhecida não implica uma data desconhecida.",
+          "correctionReason": "A explicação obrigatória do motivo pelo qual a correção foi feita.",
+          "corrections": {
+            "summary": "Alterações justificadas de antes/depois nas suas entregas e decisões retidas, incluindo mudanças de contrato. As evidências originais permanecem separadas; uma transferência inclui apenas sua própria entrega e alteração, nunca o histórico pessoal do outro detentor."
+          },
+          "deactivatedAt": "Quando essa desativação imediata vinculada encerrou o emprego/acesso, como um instante UTC; equipamentos pendentes nunca a atrasam.",
+          "deactivationId": "A identidade imutável de desativação desta atribuição, mesmo quando a reativação reabre o mesmo período de emprego.",
+          "deactivationTimezone": "O fuso horário da organização capturado na desativação original, ou vazio se não tiver sido registrado. Um fuso horário posterior da organização ou do visualizador nunca substitui esse contexto histórico.",
+          "departureCutoffAt": "O instante de corte em UTC do desligamento vinculado, separado de seu último dia útil de calendário e do prazo do equipamento.",
+          "departureDeadline": "A data de devolução derivada do desligamento ou desativação original; ela permanece mesmo após readmissão ou reativação posterior. Vazio quando nenhum prazo derivado se aplica.",
+          "departureId": "A identidade de desligamento original vinculada à atribuição, se houver. Tarefas e análises de desligamento não são evidências de equipamentos.",
+          "departureMode": "Se o desligamento vinculado foi agendado ou imediato, ou vazio sem um desligamento vinculado.",
+          "departureStatus": "O status atual do desligamento vinculado; um desligamento pendente não encerra, por si só, o vínculo empregatício.",
+          "departureTimezone": "O fuso horário fixado no desligamento vinculado; alterações de fuso horário do visualizador não alteram seu significado no calendário.",
+          "effectiveActualDate": "A data efetiva de entrega no calendário após correções; uma emissão histórica desconhecida permanece vazia em vez de recorrer ao carimbo de data/hora de registro.",
+          "effectiveCondition": "A condição após correções; o recebimento de equipamento danificado não concede, por si só, autorização para reemissão.",
+          "effectiveDeadline": "O prazo de calendário explícito ou derivado aplicável mais próximo; equipamentos emitidos para retenção não têm nenhum. Esta não é uma data de entrega nem um carimbo de data/hora de registro UTC.",
+          "effectiveExceptionQuantity": "A quantidade ainda encerrada por esta decisão após alterações ou estornos, incluindo seus recebimentos físicos vinculados; zero significa totalmente estornado.",
+          "effectiveHandoverQuantity": "A quantidade de entrega após correções; zero estorna um recebimento equivocado sem apagar sua evidência original.",
+          "effectiveKind": "O resultado atual de perda ou dispensa após correções.",
+          "effectiveNotes": "As observações opcionais atuais de entrega após correções.",
+          "effectiveReason": "O motivo atual da decisão após correções; os motivos de correção são mantidos separadamente.",
+          "employmentPeriodId": "O período original de contratação vinculado a esta atribuição, não substituído automaticamente por um período de contratação posterior; vazio quando nenhum período foi registrado.",
+          "exceptionId": "A decisão de perda ou dispensa vinculada; um recebimento físico vinculado complementa essa decisão em vez de liquidar a mesma quantidade duas vezes. Vazio para uma entrega comum.",
+          "exceptionKind": "O resultado original de perda ou dispensa; nenhum deles significa que o equipamento foi devolvido fisicamente.",
+          "exceptionQuantity": "A quantidade original encerrada pela decisão, preservada após alterações ou estornos.",
+          "exceptionReason": "O motivo obrigatório original para a decisão de perda ou dispensa.",
+          "exceptionReceivedQuantity": "Recebimentos físicos vinculados a quantidades perdidas ou dispensadas; essa sobreposição é contabilizada uma única vez ao calcular devoluções pendentes.",
+          "exceptions": {
+            "summary": "Decisões originais fundamentadas de perda e dispensa e seus valores corrigidos atuais. Elas encerram obrigações de devolução sem alegar recebimento físico; evidências de recebimento vinculadas registram a recuperação ou devolução posterior separadamente."
+          },
+          "explicitDeadline": "A data de devolução acordada separadamente como um dia do calendário no fuso horário da organização, ou vazio.",
+          "handoverId": "O ID da entrega alterada, ou vazio para uma alteração de exceção.",
+          "handoverKind": "A emissão registra o fornecimento; o recebimento registra o recebimento físico, incluindo uma recuperação vinculada. O encerramento por perda ou dispensa não é, por si só, uma entrega.",
+          "handoverQuantity": "A quantidade de entrega registrada originalmente, preservada mesmo após correção.",
+          "handovers": {
+            "summary": "Evidências originais de emissão e recebimento físico com valores corrigidos atuais. Um recebimento vinculado a uma decisão de perda é uma recuperação; um recebimento vinculado a uma decisão de dispensa registra um recebimento físico posterior. Uma data de emissão histórica desconhecida permanece vazia, nunca substituída pelo seu carimbo de data/hora de registro UTC."
+          },
+          "historical": "Verdadeiro para o registro de uma atribuição histórica já mantida; apenas emissões históricas podem ter uma data real explicitamente desconhecida.",
+          "holds": {
+            "kind": "Se a retenção de caso foi aplicada ou liberada.",
+            "reason": "O motivo obrigatório documentado pelo administrador da organização para esta ação de caso específica.",
+            "revision": "A revisão da atribuição criada por esta ação de retenção de caso.",
+            "summary": "Aplicações e liberações documentadas de retenção de caso no seu histórico de equipamentos retidos. Uma retenção ativa protege a evidência contra limpeza; ela nunca registra recebimento físico."
+          },
+          "identifier": "O identificador da organização do seu item rastreado individualmente, sem o histórico de outros detentores; vazio para atribuições por quantidade.",
+          "lastWorkingDay": "O último dia útil do calendário do desligamento agendado vinculado em seu fuso horário fixado, ou vazio.",
+          "lostQuantity": "A quantidade efetiva encerrada como perdida, incluindo qualquer quantidade recuperada posteriormente; a decisão de perda é preservada.",
+          "notes": "As observações opcionais originais de entrega, preservadas após correção enquanto o histórico pessoal for mantido.",
+          "outstandingQuantity": "Quantidade obrigatória menos recebimentos físicos e encerramentos por perda/dispensa, somando novamente a sobreposição de recebimentos para evitar liquidação dupla; zero para equipamentos emitidos para retenção.",
+          "periodEndedAt": "O instante UTC de término do período vinculado, ou vazio para um período aberto/reaberto ou término desconhecido.",
+          "periodStartedAt": "O instante UTC de início registrado do período de contratação vinculado, ou vazio quando desconhecido.",
+          "periodStatus": "O status atual aberto, fechado ou legacy_unknown do período vinculado; a reativação pode reabrir esse mesmo período sem alterar a identidade de encerramento da atribuição.",
+          "physicallyReceivedQuantity": "A quantidade efetiva recebida fisicamente, incluindo recuperação e recebimentos de itens dispensados. Decisões de perda e dispensa por si só nunca aumentam essa contagem.",
+          "reactivatedAt": "Quando essa desativação foi posteriormente reativada, como um instante UTC, ou vazio; a reativação não apaga obrigações antigas de equipamentos ou prazos.",
+          "receivedQuantity": "A quantidade física efetiva recebida em relação a esta decisão. Para uma decisão de perda, este é o equipamento recuperado; ele já está incluído nos recebimentos físicos da atribuição.",
+          "recordedAt": "O carimbo de data/hora de registro UTC, separado da data efetiva de entrega; o registro tardio não altera a data de entrega.",
+          "recordedBy": "O nome de exibição da pessoa que registrou esta evidência, quando a identidade da organização permanecer disponível; nenhum outro detalhe do perfil é incluído.",
+          "returnRequired": "Se a devolução é obrigatória. Falso significa emitido para retenção, sem prazo de devolução ou pendência de devolução; não significa devolvido fisicamente.",
+          "serialNumber": "O número de série opcional do fabricante do item rastreado individualmente.",
+          "trackingMode": "Individual identifica um item físico; quantidade conta itens intercambiáveis.",
+          "type": "O nome do tipo de equipamento.",
+          "waivedQuantity": "A quantidade efetiva cuja devolução obrigatória foi dispensada, incluindo qualquer quantidade recebida posteriormente; a dispensa não alega recebimento."
         },
         "integrations": {
           "calendarConnections": {

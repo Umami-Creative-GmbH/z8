@@ -37,6 +37,13 @@
         "time": "Czas"
       },
       "disabled": "Wyłączony",
+      "documentation": {
+        "reference": "Dokumentacja API",
+        "resources": "Odczytuj okresy pracy, nieobecności, pracowników, projekty, klientów i definicje pól niestandardowych za pomocą Public API v1. Dostęp jest wyłącznie do odczytu.",
+        "scopes": "Klucz API działa w imieniu Twojej organizacji i odczytuje tylko te dane, na które zezwalają jego zakresy uprawnień. Punkty końcowe, wymagane zakresy i przykłady znajdziesz w dokumentacji.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "Pobierz specyfikację OpenAPI",
       "editCreated": "Utworzono {date}",
       "editDescription": "Zaktualizuj ustawienia tego klucza API. Uwaga: Nie możesz wyświetlić ani zmienić samego klucza.",
       "editTitle": "Edytuj klucz API",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Zapisz dostawcę przed zapisaniem testu"
           },
-          "help": "To rejestruje wynik testu SSO na żywo. Najpierw przeprowadź logowanie w IdP, a następnie zarejestruj powodzenie lub niepowodzenie tutaj dla zabezpieczenia aktywacji.",
           "label": {
             "email": "Adres e-mail użytkownika testowego",
             "failureNote": "Uwaga dotycząca niepowodzenia"
@@ -620,12 +626,9 @@
         "updated": "Pomyślnie zaktualizowano OAuth dla {provider}"
       },
       "sso": {
-        "addDescription": "Skonfiguruj dostawcę tożsamości OIDC dla logowania jednokrotnego (SSO) w przedsiębiorstwie.",
         "addError": "Nie udało się dodać dostawcy SSO",
         "addSuccess": "Pomyślnie dodano dostawcę SSO",
         "addTitle": "Dodaj dostawcę SSO",
-        "clientIdPlaceholder": "Twój identyfikator klienta OIDC",
-        "clientSecretPlaceholder": "Twój sekret klienta OIDC",
         "deleteDialogDescription": "Czy na pewno chcesz usunąć tego dostawcę SSO? Użytkownicy nie będą już mogli logować się za pomocą tego dostawcy tożsamości.",
         "deleteDialogTitle": "Usuń dostawcę SSO",
         "deleteError": "Nie udało się usunąć dostawcy SSO",
@@ -633,32 +636,110 @@
         "deleteSuccess": "Dostawca SSO usunięty",
         "description": "Dodaj dostawców tożsamości OIDC, aby włączyć SSO dla swojej organizacji.",
         "domainInvalid": "Wprowadź poprawną domenę (np. example.com)",
-        "domainRequired": "Domena jest wymagana",
         "domainVerified": "Domena zweryfikowana",
         "emailDomain": "Domena e-mail",
         "emailDomainHelp": "Użytkownicy z tą domeną e-mail będą mogli korzystać z SSO",
         "empty": "Nie skonfigurowano jeszcze żadnych dostawców SSO.",
         "emptyDescription": "Dodaj dostawcę OIDC, aby włączyć logowanie jednokrotne (SSO) w przedsiębiorstwie.",
-        "instructions": {
-          "copyCredentials": "Skopiuj adres URL wystawcy (Issuer URL), identyfikator klienta i sekret klienta ze swojego dostawcy tożsamości (IdP)",
-          "createApp": "Utwórz aplikację OIDC u swojego dostawcy tożsamości (Okta, Azure AD itp.)",
-          "verifyDomain": "Dodaj tutaj dostawcę i zweryfikuj domenę e-mail za pomocą rekordu DNS TXT"
+        "guide": {
+          "addDescription": "Postępuj zgodnie z instrukcjami konfiguracji dostawcy, a następnie połącz go ze swoją organizacją.",
+          "afterSave": "Po zapisaniu zweryfikuj domenę e-mail za pomocą rekordu DNS TXT w Z8. Przeprowadź logowanie pilotażowe docelowym użytkownikiem, nie zamykając bieżącej sesji administratora. W konfiguracji z przewodnikiem zapisz ten sam identyfikator dostawcy i domenę e-mail, które widnieją na liście dostawców, a następnie ręcznie zarejestruj zaobserwowany wynik logowania przed rozważeniem opcji Wymagaj SSO. Zapisanie i weryfikacja DNS nie gwarantują udanego logowania.",
+          "afterSaveTitle": "Po zapisaniu dostawcy",
+          "callback": "Adres URL wywołania zwrotnego Z8",
+          "connectionHelp": "Skopiuj te wartości z ustawień aplikacji u swojego dostawcy.",
+          "connectionSettings": "Ustawienia połączenia",
+          "copied": "Skopiowano do schowka",
+          "copyCallback": "Skopiuj adres URL wywołania zwrotnego",
+          "copyFailed": "Dostęp do schowka nie powiódł się. Zaznacz i skopiuj tekst ręcznie.",
+          "domainPending": "Domena niezweryfikowana",
+          "domainStatus": "Weryfikacja domeny",
+          "domainVerified": "Domena zweryfikowana",
+          "entra": {
+            "clientHelp": "Skopiuj identyfikator aplikacji (klienta) z sekcji Przegląd, a nie identyfikator obiektu.",
+            "clientId": "Identyfikator aplikacji (klienta)",
+            "consentError": "Odmowa zgody lub dostępu: Poproś administratora usługi Entra o sprawdzenie zasad wyrażania zgody oraz tego, czy użytkownik pilotażowy jest przypisany do aplikacji.",
+            "consentLink": "Wskazówki firmy Microsoft dotyczące wyrażania zgody",
+            "description": "Połącz katalog Microsoft swojej organizacji za pomocą aplikacji OpenID Connect dla pojedynczej dzierżawy.",
+            "generatedIssuer": "Adres URL wystawcy · wygenerowany na podstawie identyfikatora dzierżawy",
+            "ids": {
+              "body": "W sekcji Przegląd aplikacji skopiuj identyfikator katalogu (dzierżawy) oraz identyfikator aplikacji (klienta) do Z8. Identyfikator obiektu to inna wartość. Z8 utworzy dla Ciebie adres URL wystawcy specyficzny dla dzierżawy.",
+              "link": "Instrukcje rejestracji aplikacji",
+              "title": "Skopiuj identyfikatory dzierżawy i aplikacji"
+            },
+            "introduction": "Utwórz rejestrację aplikacji sieci Web, skopiuj identyfikatory dzierżawy i aplikacji oraz dodaj klucz tajny klienta. Z8 wygeneruje adres URL wystawcy i przeprowadzi Cię przez każdy krok.",
+            "permissions": "Z8 używa zakresów openid, email i profile do logowania. Niektóre połączenia żądają także offline_access na potrzeby tokenów odświeżania. Nie potrzebujesz uprawnień Microsoft Graph dla całego katalogu. Zasady wyrażania zgody w Twojej dzierżawie mogą nadal wymagać zatwierdzenia przez administratora.",
+            "portal": "Otwórz centrum administracyjne Entra",
+            "redirect": {
+              "body": "W sekcji Uwierzytelnianie dodaj identyfikator URI przekierowania dla platformy Sieć Web. Wklej dokładnie wyświetlony tutaj adres URL wywołania zwrotnego Z8. Użyj opcji Sieć Web, a nie Aplikacja jednostronicowa. Nie musisz włączać niejawnego przyznawania uprawnień.",
+              "link": "Instrukcje dotyczące identyfikatora URI przekierowania",
+              "title": "Dodaj identyfikator URI przekierowania sieci Web"
+            },
+            "redirectError": "AADSTS50011: Sprawdź, czy identyfikator URI przekierowania sieci Web dokładnie odpowiada wywołaniu zwrotnemu wyświetlanemu przez Z8, w tym nazwie hosta i ścieżce.",
+            "register": {
+              "body": "Otwórz Entra ID → Rejestracje aplikacji → Nowa rejestracja. Nazwij aplikację Z8 i wybierz opcję Tylko konta w tym katalogu organizacyjnym. Najpierw wybierz katalog swojej organizacji. Jeśli nie możesz rejestrować aplikacji, poproś administratora usługi Entra o jej utworzenie.",
+              "title": "Zarejestruj aplikację"
+            },
+            "secret": {
+              "body": "Przejdź do: Certyfikaty i wpisy tajne → Wpisy tajne klienta → Nowy wpis tajny klienta. Wklej jego Wartość do Z8, a nie Identyfikator wpisu tajnego. Wartość jest wyświetlana tylko raz. Zapisz datę wygaśnięcia i wymień poświadczenie przed jej upływem. Udostępniaj Wartość wyłącznie za pośrednictwem bezpiecznego kanału organizacji.",
+              "link": "Instrukcje dotyczące wpisu tajnego klienta",
+              "title": "Utwórz wpis tajny klienta"
+            },
+            "secretError": "Nieprawidłowy wpis tajny klienta: Użyj Wartości wpisu tajnego, a nie jego identyfikatora. Sprawdź, czy należy do tej aplikacji i nie wygasł. Utwórz nowy wpis tajny, jeśli nie masz już dostępu do Wartości.",
+            "secretHelp": "Certyfikaty i wpisy tajne → Wpisy tajne klienta. Wklej Wartość, a nie Identyfikator wpisu tajnego. Z8 nie wyświetli jej ponownie.",
+            "secretValue": "Wartość wpisu tajnego klienta",
+            "start": "Skonfiguruj Microsoft Entra ID",
+            "tenantError": "Nieprawidłowa dzierżawa: Skopiuj Identyfikator katalogu (dzierżawy) z tej samej rejestracji aplikacji, co identyfikator klienta. Ta konfiguracja z przewodnikiem używa określonej dzierżawy, a nie wartości common lub organizations.",
+            "tenantHelp": "Rejestracje aplikacji → Twoja aplikacja → Przegląd. Użyj swojego identyfikatora dzierżawy, a nie common lub organizations.",
+            "tenantId": "Identyfikator katalogu (dzierżawy)",
+            "tenantInvalid": "Wprowadź identyfikator katalogu (dzierżawy) jako pełny identyfikator UUID.",
+            "title": "Skonfiguruj Microsoft Entra ID",
+            "troubleshooting": "Rozwiązywanie problemów z konfiguracją Entra",
+            "troubleshootingLink": "Przewodnik firmy Microsoft po rozwiązywaniu problemów z przekierowaniami"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Wprowadź unikatowy identyfikator dostawcy, adres URL wystawcy OIDC, domenę e-mail organizacji, identyfikator klienta oraz klucz tajny klienta. Znajdziesz je w ustawieniach aplikacji u swojego dostawcy. Przesyłaj klucze tajne za pośrednictwem bezpiecznego kanału.",
+              "title": "Skopiuj ustawienia aplikacji"
+            },
+            "description": "Skorzystaj z dokumentacji swojego dostawcy, aby utworzyć poufną aplikację internetową z przepływem kodu autoryzacji.",
+            "redirect": {
+              "body": "Dodaj wyświetlony tutaj adres zwrotny Z8 do dozwolonych identyfikatorów URI przekierowania aplikacji. Skopiuj go dokładnie, łącznie z nazwą hosta organizacji i ścieżką.",
+              "title": "Zarejestruj zwrotny adres URL"
+            },
+            "register": {
+              "body": "U swojego dostawcy tożsamości utwórz aplikację OpenID Connect korzystającą z przepływu kodu autoryzacji. Najpierw przypisz małą grupę pilotażową.",
+              "title": "Utwórz aplikację internetową"
+            },
+            "title": "Skonfiguruj dostawcę OIDC"
+          },
+          "getStarted": "Połącz logowanie swojego zespołu",
+          "getStartedDescription": "Postępuj zgodnie z instrukcją dla konkretnego dostawcy, zamiast samodzielnie składać konfigurację.",
+          "handoff": {
+            "copy": "Skopiuj listę kontrolną IT",
+            "description": "Skopiuj instrukcje konfiguracji oraz zwrotny adres URL swojej organizacji. Lista kontrolna nigdy nie zawiera danych uwierzytelniających.",
+            "return": "Przekaż identyfikator dzierżawy (w przypadku Entra) oraz identyfikator klienta aplikacji administratorowi Z8. Wartość wpisu tajnego klienta prześlij oddzielnie za pośrednictwem bezpiecznego kanału; nie wklejaj jej do tej listy kontrolnej.",
+            "title": "Potrzebujesz pomocy administratora IT?"
+          },
+          "manual": "Inny dostawca / ręczna konfiguracja OIDC",
+          "manualAvailable": "Korzystasz z innego dostawcy? Wybierz ręczną konfigurację OIDC w panelu konfiguracji.",
+          "manualTestHelp": "Jest to wynik logowania zgłoszony przez administratora, a nie automatycznie zweryfikowany test połączenia. Przeprowadź pilotażowe logowanie z docelowym użytkownikiem w osobnej sesji przeglądarki, pozostaw tę sesję administratora otwartą, a następnie zarejestruj tutaj wynik (powodzenie lub niepowodzenie). Zapisanie dostawcy i weryfikacja DNS nie potwierdzają, że logowanie działa.",
+          "openSetup": "Otwórz konfigurację z przewodnikiem",
+          "provider": "Dostawca tożsamości",
+          "required": "To pole jest wymagane.",
+          "saving": "Dodawanie…",
+          "scopes": "Zakresy logowania obejmują openid, email oraz profile. Niektóre połączenia żądają również zakresu offline_access w celu uzyskania tokenów odświeżania."
         },
         "issuerUrl": "Adres URL wystawcy (Issuer URL)",
         "issuerUrlHelp": "Adres URL wystawcy OIDC od Twojego dostawcy tożsamości",
-        "issuerUrlRequired": "Adres URL wystawcy jest wymagany",
         "providerId": "Identyfikator dostawcy",
         "providerIdHelp": "Unikalny identyfikator dla tego dostawcy (małe litery, bez spacji)",
         "providerIdInvalid": "Identyfikator dostawcy może zawierać tylko małe litery, cyfry i myślniki",
-        "providerIdRequired": "Identyfikator dostawcy jest wymagany",
-        "setupInstructions": "Instrukcje konfiguracji",
         "title": "Dostawcy tożsamości",
         "token": "Token",
         "tokenError": "Nie udało się wygenerować tokena weryfikacji domeny",
         "tokenGenerated": "Wygenerowano token weryfikacyjny",
         "txtToken": "Token TXT:",
         "validUrlRequired": "Wprowadź poprawny adres URL",
-        "verified": "Zweryfikowano",
         "verify": "Weryfikuj",
         "verifyError": "Weryfikacja domeny nie powiodła się. Sprawdź swój rekord DNS TXT i spróbuj ponownie."
       },
