@@ -2,6 +2,7 @@ import "server-only";
 
 import { employmentEndingAuditMetadata } from "@/lib/employee-lifecycle/employment-ending/cause";
 import type { EmploymentEndingParticipant } from "@/lib/employee-lifecycle/employment-ending/types";
+import { countedChecklistItems } from "@/lib/employee-lifecycle/reactivation-checklist";
 import {
 	activeDocumentRequestIdsOfEmployee,
 	cancelDocumentRequestsAtEmploymentEnd,
@@ -38,14 +39,10 @@ export const documentRequestsEndingParticipant: EmploymentEndingParticipant<
 		return { applied: { cancelledRequestIds } };
 	},
 	reactivationItems: (applied, subject) =>
-		applied.cancelledRequestIds.length > 0
-			? [
-					{
-						group: "documentRequests",
-						kind: "document_requests",
-						count: applied.cancelledRequestIds.length,
-						href: personnelFilePath(subject.employeeId),
-					},
-				]
-			: [],
+		countedChecklistItems({
+			group: "documentRequests",
+			kind: "document_requests",
+			count: applied.cancelledRequestIds.length,
+			href: personnelFilePath(subject.employeeId),
+		}),
 };

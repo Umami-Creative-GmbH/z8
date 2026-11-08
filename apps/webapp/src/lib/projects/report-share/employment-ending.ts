@@ -3,6 +3,7 @@ import "server-only";
 import type { ReportShareLinkKind } from "@/db/schema/report-share-link";
 import { employmentEndingAuditMetadata } from "@/lib/employee-lifecycle/employment-ending/cause";
 import type { EmploymentEndingParticipant } from "@/lib/employee-lifecycle/employment-ending/types";
+import { countedChecklistItems } from "@/lib/employee-lifecycle/reactivation-checklist";
 import { liveShareLinksOfCreator, revokeShareLinksOfCreator } from "./report-share-links";
 
 export type ReportShareLinksEndingPlan = {
@@ -38,14 +39,10 @@ export const reportShareLinksEndingParticipant: EmploymentEndingParticipant<
 		return { applied: { revokedLinkIds } };
 	},
 	reactivationItems: (applied) =>
-		applied.revokedLinkIds.length > 0
-			? [
-					{
-						group: "shareLinks",
-						kind: "share_links",
-						count: applied.revokedLinkIds.length,
-						href: "/settings/report-share-links",
-					},
-				]
-			: [],
+		countedChecklistItems({
+			group: "shareLinks",
+			kind: "share_links",
+			count: applied.revokedLinkIds.length,
+			href: "/settings/report-share-links",
+		}),
 };

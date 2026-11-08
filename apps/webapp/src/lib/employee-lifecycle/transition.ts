@@ -19,6 +19,7 @@ import { createLogger } from "@/lib/logger";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
 import { captureApprovalHandoverDuties } from "./approval-handover";
 import { endEmployment } from "./employment-ending";
+import { lockEmployeeRow } from "./locks";
 import { enqueueReviewNotifications } from "./notifications";
 import { evaluateDepartureAuthority } from "./owner-invariant";
 import type {
@@ -303,16 +304,7 @@ async function endHoldings(
 		actorUserId: string;
 	},
 ) {
-	await tx
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(
-				eq(employee.organizationId, identity.organizationId),
-				eq(employee.id, identity.employeeId),
-			),
-		)
-		.for("update");
+	await lockEmployeeRow(tx, identity);
 	await endEmployment(tx, {
 		organizationId: identity.organizationId,
 		employeeId: identity.employeeId,

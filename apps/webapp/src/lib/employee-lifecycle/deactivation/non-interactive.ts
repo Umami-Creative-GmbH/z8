@@ -19,7 +19,7 @@ import { createLogger } from "@/lib/logger";
 import { employeeCoordinationGuard, holdGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { onCurrentRoster } from "../current-roster";
-import { lockLifecycleOrganization } from "../locks";
+import { lockEmployeeRow, lockLifecycleOrganization } from "../locks";
 import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
 	insertDeactivation,
@@ -373,7 +373,7 @@ async function applyRecordedDeactivation(
 	},
 ): Promise<AppliedInTransaction> {
 	const { organizationId, employeeId, context, plan, deactivationId } = input;
-	await lockEmployee(tx, input);
+	await lockEmployeeRow(tx, input);
 	const audit = new AuditTrail();
 	if (input.deactivatedAt) {
 		await recordLeftAt(tx, audit, {
@@ -465,20 +465,6 @@ async function completeAfterCommit(
 		reportsWithoutManager: outcome.reportsWithoutManager,
 		warnings,
 	};
-}
-
-/** The employee row FOR UPDATE, before Employment ending (spec #1590). */
-async function lockEmployee(
-	tx: DeactivationReader,
-	scope: { organizationId: string; employeeId: string },
-) {
-	await tx
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)),
-		)
-		.for("update");
 }
 
 /**

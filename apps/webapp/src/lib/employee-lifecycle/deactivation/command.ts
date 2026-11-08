@@ -14,6 +14,7 @@ import {
 	deputyReleaseNotice,
 } from "../employment-ending/deputy-assignments";
 import { resolveCurrentEmploymentPeriod } from "../employment-periods";
+import { lockEmployeeRow } from "../locks";
 import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
 	type DeactivationLedgerEntry,
@@ -200,7 +201,7 @@ export async function executeDeactivation(
 	// Everything the person holds ends first, while they are still switched on,
 	// in their teams and in their open period; the row lock keeps a concurrent
 	// registration (a kiosk fob) from slipping in.
-	await lockDeactivatedEmployee(tx, scope);
+	await lockEmployeeRow(tx, scope);
 	const ending = await endEmploymentForDeactivation(tx, applyContext, command);
 
 	const [person] = await tx
@@ -269,18 +270,6 @@ export async function executeDeactivation(
 		audit,
 		afterCommit,
 	};
-}
-
-/** The employee row FOR UPDATE, before Employment ending (spec #1590). */
-async function lockDeactivatedEmployee(
-	tx: DeactivationWriter,
-	scope: { organizationId: string; employeeId: string },
-) {
-	await tx
-		.select({ id: employee.id })
-		.from(employee)
-		.where(and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)))
-		.for("update");
 }
 
 /** The deputy duties Employment ending released, as the stored result keeps them for a replay (#1014). */

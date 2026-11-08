@@ -135,6 +135,14 @@ export function grantChecklistItem(grant: ChecklistGrantKind | null): Reactivati
 	return { group: "grants", kind: "grant", grant, href: grant ? GRANT_PAGES[grant] : "/settings" };
 }
 
+/** An item that stands for a number of ended things of one kind. */
+type CountedChecklistItem = Extract<ReactivationChecklistItem, { count: number }>;
+
+/** The item for `count` ended things of a kind; none when nothing ended. */
+export function countedChecklistItems(item: CountedChecklistItem): ReactivationChecklistItem[] {
+	return item.count > 0 ? [item] : [];
+}
+
 /**
  * The plan as stored on the ledger row: everything the checklist names, but
  * of the replacement options only the chosen replacements (the options list
@@ -329,32 +337,25 @@ export function legacyAccessEndsItems(input: {
 }): ReactivationChecklistItem[] {
 	const { employeeId, accessEnds } = input;
 	const grantKinds = new Map(input.plannedGrants?.map((grant) => [grant.grantId, grant.kind]));
-	const items = accessEnds.grantIds.map((grantId) =>
-		grantChecklistItem(grantKinds.get(grantId) ?? null),
-	);
-	if (accessEnds.kioskBadgeIds.length > 0) {
-		items.push({
+	return [
+		...accessEnds.grantIds.map((grantId) => grantChecklistItem(grantKinds.get(grantId) ?? null)),
+		...countedChecklistItems({
 			group: "access",
 			kind: "kiosk_badges",
 			count: accessEnds.kioskBadgeIds.length,
 			href: employeePage(employeeId),
-		});
-	}
-	if (accessEnds.drivingAuthorizationIds.length > 0) {
-		items.push({
+		}),
+		...countedChecklistItems({
 			group: "access",
 			kind: "driving_authorizations",
 			count: accessEnds.drivingAuthorizationIds.length,
 			href: `/driving-licence/checks/${employeeId}`,
-		});
-	}
-	if (accessEnds.shareLinkIds.length > 0) {
-		items.push({
+		}),
+		...countedChecklistItems({
 			group: "shareLinks",
 			kind: "share_links",
 			count: accessEnds.shareLinkIds.length,
 			href: "/settings/report-share-links",
-		});
-	}
-	return items;
+		}),
+	];
 }
