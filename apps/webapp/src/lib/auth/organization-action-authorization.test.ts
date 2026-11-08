@@ -61,7 +61,7 @@ function runAuthorization({
 		role: string;
 		status: "approved" | "pending" | "rejected";
 	} | null;
-	requiredRole?: "admin" | "owner";
+	requiredRole?: "member" | "admin" | "owner";
 }) {
 	const memberFindFirst = vi.fn(async () =>
 		membershipRecord?.status === "approved" ? membershipRecord : null,
@@ -176,6 +176,55 @@ describe("requireActiveOrganizationActionActor", () => {
 			}).result,
 		).resolves.toBeDefined();
 	});
+
+	it.each([
+		[
+			"active approved member",
+			{ role: "member", status: "approved" },
+			{ isActive: true },
+		],
+		[
+			"approved member without an employee record",
+			{ role: "member", status: "approved" },
+			null,
+		],
+	] as const)(
+		"allows an org member action for an %s",
+		async (_case, membershipRecord, employeeRecord) => {
+			await expect(
+				runAuthorization({
+					membershipRecord,
+					employeeRecord,
+					requiredRole: "member",
+				}).result,
+			).resolves.toMatchObject({ membership: membershipRecord });
+		},
+	);
+
+	it.each([
+		["missing approved membership", null, { isActive: true }],
+		[
+			"pending membership",
+			{ role: "member", status: "pending" },
+			{ isActive: true },
+		],
+		[
+			"former employee",
+			{ role: "owner", status: "approved" },
+			{ isActive: false },
+		],
+	] as const)(
+		"denies an org member action for a %s",
+		async (_case, membershipRecord, employeeRecord) => {
+			await expect(
+				runAuthorization({
+					membershipRecord,
+					employeeRecord,
+					requiredRole: "member",
+				}).result,
+			).rejects.toThrow("Organization action denied");
+		},
+	);
 
 	it("scopes both records to the user and organization and requires approved membership", async () => {
 		const harness = runAuthorization({
