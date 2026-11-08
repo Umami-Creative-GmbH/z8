@@ -66,15 +66,15 @@ export async function notifyFormerEmployeeReportsWithoutManager(
 		try {
 			await createNotification(
 				{
-				userId,
-				organizationId: notice.organizationId,
-				type: "former_employee_reports_without_manager",
-				title: copy.titleDefault,
-				message,
-				...(single ? { entityType: "employee", entityId: single.employeeId } : {}),
-				actionUrl: single ? single.url : "/settings/employees",
-				idempotencyKey: `former-reports-without-manager:${listKey}:${userId}`,
-				metadata: { i18n: translatedContent(copy, { count, names }).i18n, reports },
+					userId,
+					organizationId: notice.organizationId,
+					type: "former_employee_reports_without_manager",
+					title: copy.titleDefault,
+					message,
+					...(single ? { entityType: "employee", entityId: single.employeeId } : {}),
+					actionUrl: single ? single.url : "/settings/employees",
+					idempotencyKey: `former-reports-without-manager:${listKey}:${userId}`,
+					metadata: { i18n: translatedContent(copy, { count, names }).i18n, reports },
 				},
 				options.throwOnError ? { throwOnError: true } : {},
 			);

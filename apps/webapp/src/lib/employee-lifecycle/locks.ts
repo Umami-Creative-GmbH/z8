@@ -86,7 +86,9 @@ export async function lockEmployeeRow(
 	await tx
 		.select({ id: employee.id })
 		.from(employee)
-		.where(and(eq(employee.organizationId, scope.organizationId), eq(employee.id, scope.employeeId)))
+		.where(
+			and(eq(employee.organizationId, scope.organizationId), eq(employee.id, scope.employeeId)),
+		)
 		.for("update");
 }
 

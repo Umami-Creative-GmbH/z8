@@ -36,12 +36,12 @@ describe("notifyFormerEmployeeReportsWithoutManager", () => {
 		await expect(
 			notifyFormerEmployeeReportsWithoutManager(notice, { throwOnError: true }),
 		).rejects.toThrow("store down");
-		expect(createNotification.mock.calls.map(([params, options]) => [params.userId, options])).toEqual(
-			[
-				["admin-1", { throwOnError: true }],
-				["admin-2", { throwOnError: true }],
-			],
-		);
+		expect(
+			createNotification.mock.calls.map(([params, options]) => [params.userId, options]),
+		).toEqual([
+			["admin-1", { throwOnError: true }],
+			["admin-2", { throwOnError: true }],
+		]);
 		// Keyed per admin and list, so a retry sends nothing new to whoever already has it.
 		expect(createNotification.mock.calls[1]?.[0].idempotencyKey).toMatch(
 			/^former-reports-without-manager:[0-9a-f]{16}:admin-2$/,
