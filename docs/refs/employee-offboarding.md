@@ -423,12 +423,16 @@ deactivation), `pending` or `withdrawn`.
   under the recorded actor, reason and period, with `replaceManagers: false`;
   every audit row carries the row's `metadata` (`actorKind: "system"`,
   `connectionId`), and the row becomes `applied`. Reports left with no current
-  manager keep the link; the current admins get one
-  `former_employee_reports_without_manager` notice, keyed by the list.
+  manager keep the link, and the row is marked `reports_notice_pending` in the
+  same transaction. After the pending rows, the follow-up sends every owed
+  notice: the current admins get one `former_employee_reports_without_manager`
+  notice for the reports still without a current manager, keyed by the list,
+  and the marker is cleared. A failed send keeps the marker, so the notice is
+  retried on the next run until it is sent, and sent once.
 - **Retries and idempotency.** A failed row stays pending and is retried on the
-  next run, without limit; failures are logged and returned in
-  `followUpDeactivations.errors`. An applied or withdrawn row is never touched
-  again.
+  next run, without limit; failures (and failed notices) are logged and
+  returned in `followUpDeactivations.errors`. An applied or withdrawn row is
+  never applied again.
 - **Withdrawn.** Coming back before the follow-up ran is a reactivation (see
   *Reactivation*): it stamps the pending row too. A withdrawn row always has
   `reactivated_at` (constraint `employeeDeactivation_withdrawn_check`), shows no

@@ -262,6 +262,8 @@ export async function recordDeactivationOutcome(
 		result: Record<string, unknown>;
 		/** The plan applied, for the names the reactivation checklist shows (#1441). */
 		plan?: Record<string, unknown>;
+		/** The admins are still to hear about reports left with no current manager (#1629). */
+		reportsNoticePending?: boolean;
 	},
 ): Promise<void> {
 	await tx
@@ -271,6 +273,7 @@ export async function recordDeactivationOutcome(
 			applied: input.applied,
 			result: input.result,
 			...(input.plan ? { plan: input.plan } : {}),
+			...(input.reportsNoticePending ? { reportsNoticePending: true } : {}),
 		})
 		.where(
 			and(

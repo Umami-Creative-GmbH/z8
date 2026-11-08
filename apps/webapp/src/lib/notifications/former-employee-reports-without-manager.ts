@@ -33,10 +33,13 @@ export function employeeSettingsUrl(employeeId: string): string {
  * a replacement. One notification per admin lists every report; it links to
  * the report's employee page when there is one, else to Settings → Employees,
  * and carries every employee page in `metadata.reports`. Keyed by the listed
- * reports, so sending the same list again sends nothing new. Never throws.
+ * reports, so sending the same list again sends nothing new. Never throws,
+ * unless `throwOnError`: then it still tries every admin and throws afterwards
+ * when one failed, so a caller that retries until it succeeds sends each once.
  */
 export async function notifyFormerEmployeeReportsWithoutManager(
 	notice: FormerEmployeeReportsWithoutManagerNotice,
+	options: { throwOnError?: boolean } = {},
 ): Promise<void> {
 	if (notice.reports.length === 0) return;
 	const reports = notice.reports.map((report) => ({
@@ -58,9 +61,11 @@ export async function notifyFormerEmployeeReportsWithoutManager(
 		.digest("hex")
 		.slice(0, 16);
 	const single = reports.length === 1 ? reports[0] : undefined;
+	let failure: unknown = null;
 	for (const userId of notice.recipientUserIds) {
 		try {
-			await createNotification({
+			await createNotification(
+				{
 				userId,
 				organizationId: notice.organizationId,
 				type: "former_employee_reports_without_manager",
@@ -70,12 +75,16 @@ export async function notifyFormerEmployeeReportsWithoutManager(
 				actionUrl: single ? single.url : "/settings/employees",
 				idempotencyKey: `former-reports-without-manager:${listKey}:${userId}`,
 				metadata: { i18n: translatedContent(copy, { count, names }).i18n, reports },
-			});
+				},
+				options.throwOnError ? { throwOnError: true } : {},
+			);
 		} catch (error) {
+			failure ??= error;
 			logger.error(
 				{ error, organizationId: notice.organizationId },
 				"Failed to tell admins about reports left with only a former manager",
 			);
 		}
 	}
+	if (options.throwOnError && failure) throw failure;
 }

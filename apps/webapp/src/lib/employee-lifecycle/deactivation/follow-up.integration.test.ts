@@ -366,6 +366,38 @@ describe("member removal and SCIM deprovisioning are follow-up deactivations (#1
 			expect(adminNotices()).toEqual([]);
 		});
 
+		it("retries the admins' notice until it is sent, and sends it once", async () => {
+			const seeded = await seedHoldings();
+			await removeMember(seeded.person, fixture.ownerUserId);
+			const failing = vi.fn(async () => {
+				throw new Error("notification store down");
+			});
+
+			const failed = await runFollowUpDeactivations(db, { notify: failing });
+
+			expect(failing).toHaveBeenCalled();
+			expect(failed.failed).toBeGreaterThanOrEqual(1);
+			// The deactivation stands; only the notice is still owed.
+			expect(await deactivations(seeded.person)).toEqual([
+				expect.objectContaining({ status: "applied", applied: true }),
+			]);
+			expect(adminNotices()).toEqual([]);
+
+			await runFollowUpDeactivations(db);
+
+			expect(adminNotices()).toEqual([
+				expect.objectContaining({
+					userId: fixture.ownerUserId,
+					entityId: seeded.report.employeeId,
+				}),
+			]);
+			createNotification.mockClear();
+
+			await runFollowUpDeactivations(db);
+
+			expect(adminNotices()).toEqual([]);
+		});
+
 		it("retries a failed follow-up on the next run", async () => {
 			const seeded = await seedHoldings();
 			await removeMember(seeded.person, fixture.ownerUserId);

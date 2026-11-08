@@ -18,6 +18,7 @@ const noFollowUps = {
 	applied: 0,
 	withdrawn: 0,
 	skipped: 0,
+	reportsNotices: 0,
 	failed: 0,
 	errors: [],
 };

@@ -296,6 +296,7 @@ export async function completePendingDeactivation(
 			fingerprint: row.requestFingerprint,
 			employeeUserId: person.userId,
 			storedDeactivatedAt: deactivatedAt,
+			owesReportsNotice: true,
 		});
 	});
 	if (!outcome) return { kind: "skipped" };
@@ -364,6 +365,11 @@ async function applyRecordedDeactivation(
 		employeeUserId: string;
 		/** The instant on the ledger row. */
 		storedDeactivatedAt: Instant;
+		/**
+		 * Marks the row while reports are left with no current manager, so the
+		 * follow-up tells the admins until it succeeds (`sendOwedReportsNotices`).
+		 */
+		owesReportsNotice?: boolean;
 	},
 ): Promise<AppliedInTransaction> {
 	const { organizationId, employeeId, context, plan, deactivationId } = input;
@@ -414,6 +420,8 @@ async function applyRecordedDeactivation(
 		result,
 		// The names a reactivated employee's checklist shows (#1441).
 		plan: checklistPlanSnapshot(plan),
+		// The follow-up retries the admins' notice until it is sent (#1629).
+		reportsNoticePending: input.owesReportsNotice === true && reportsWithoutManager.length > 0,
 	});
 	if (input.deactivatedAt && context.employmentPeriodId) {
 		// The employment history event (#1441), only for a recorded instant.

@@ -270,6 +270,11 @@ export const employeeDeactivation = pgTable(
 		status: text("status").$type<DeactivationStatus>().default("applied").notNull(),
 		/** Audit context of a follow-up deactivation, e.g. the SCIM `connectionId` (#1629). */
 		metadata: jsonb("metadata").$type<JsonObject>().default({}).notNull(),
+		/**
+		 * An applied follow-up deactivation left reports with no current manager,
+		 * and the organization's admins were not told yet; retried until sent (#1629).
+		 */
+		reportsNoticePending: boolean("reports_notice_pending").default(false).notNull(),
 		requestId: uuid("request_id").notNull(),
 		requestFingerprint: text("request_fingerprint").notNull(),
 		/** What a replayed request returns. */
@@ -302,6 +307,9 @@ export const employeeDeactivation = pgTable(
 		index("employeeDeactivation_pending_idx")
 			.on(table.createdAt, table.organizationId, table.id)
 			.where(sql`status = 'pending'`),
+		index("employeeDeactivation_reports_notice_idx")
+			.on(table.createdAt, table.organizationId, table.id)
+			.where(sql`reports_notice_pending`),
 		foreignKey({
 			name: "employeeDeactivation_employee_fk",
 			columns: [table.employeeId, table.organizationId],
