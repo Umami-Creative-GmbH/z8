@@ -288,10 +288,9 @@ async function closeEmploymentWindows(
  * closes and the employee is switched off: equipment still sees their teams
  * and open period. Audit rows commit with the departure under its initiator;
  * they are not forwarded to the external audit service, because the
- * transaction may be retried. A departure has no after-commit hook: its
- * external effects are durable departure tasks (the deputy notices), so a
- * participant that returns an after-commit step fails here instead of being
- * silently dropped.
+ * transaction may be retried. A departure has no after-commit hook, and its
+ * participants return no after-commit steps: their external effects are
+ * durable departure tasks queued in this transaction (the deputy notices).
  */
 async function endHoldings(
 	tx: LifecycleClient,
@@ -314,7 +313,7 @@ async function endHoldings(
 			),
 		)
 		.for("update");
-	const { afterCommit } = await endEmployment(tx, {
+	await endEmployment(tx, {
 		organizationId: identity.organizationId,
 		employeeId: identity.employeeId,
 		employmentPeriodId: identity.employmentPeriodId,
@@ -329,11 +328,6 @@ async function endHoldings(
 			mode: input.mode,
 		},
 	});
-	if (afterCommit.length > 0) {
-		throw new Error(
-			"A departure cannot run after-commit steps of Employment ending; queue a durable departure task instead",
-		);
-	}
 }
 
 /**

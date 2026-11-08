@@ -185,7 +185,10 @@ Its participants run in this fixed order (`participants.ts`):
 7. report share links (`projects/report-share/employment-ending.ts`)
 8. deputy assignments (`employment-ending/deputy-assignments.ts`)
 
-- **Interface.** `endEmployment(tx, ctx)` returns `{ applied, afterCommit }`;
+- **Interface.** `endEmployment(tx, ctx)` returns `{ applied, afterCommit }`:
+  the participants' after-commit steps (a deactivation's deputy notices), in
+  participant order, which the cause's caller runs after its commit on
+  `ctx.database`, its own client;
   `previewEmploymentEnding(reader, ctx)` returns each participant's plan without
   writing; `reactivationItems(applied, { employeeId })` lists the reactivation
   checklist items. `ctx` carries `organizationId`, `employeeId`,
@@ -227,11 +230,11 @@ Its participants run in this fixed order (`participants.ts`):
     employee off. It keeps everything that is its own: the authority check,
     the employment windows, clock-out, the approval handover capture, the
     follow-up reviews and tasks. Its audit rows commit with it and are not
-    forwarded (the transaction may be retried). It has no after-commit hook:
-    the deputy participant queues durable `notify_deputy_release` departure
-    tasks instead, and a participant returning an after-commit step makes the
-    departure fail. A retried or obsolete transition is a no-op before it
-    gets here, and every participant ends only what is still held.
+    forwarded (the transaction may be retried). It has no after-commit hook,
+    and its participants return no after-commit steps: the deputy participant
+    queues durable `notify_deputy_release` departure tasks instead. A retried
+    or obsolete transition is a no-op before it gets here, and every
+    participant ends only what is still held.
   - *Deactivation*, the non-interactive deactivation, the backfill and the
     follow-up deactivation (#1629): see Deactivation.
 

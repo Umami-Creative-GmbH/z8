@@ -46,6 +46,11 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 		systemClock: { nowInstant: () => actual.parseInstant(harness.now) },
 	};
 });
+const { createNotification } = vi.hoisted(() => ({ createNotification: vi.fn() }));
+vi.mock("@/lib/notifications/notification-service", async (original) => ({
+	...(await original<typeof import("@/lib/notifications/notification-service")>()),
+	createNotification,
+}));
 vi.setConfig({ testTimeout: 60_000 });
 
 const { activateDrivingLicenceControl, saveConfirmedIntendedDriverAssignment } = await import(
@@ -64,6 +69,8 @@ beforeEach(async () => {
 	harness.organizationId = fixture.organizationId;
 	harness.userId = fixture.ownerUserId;
 	harness.now = "2026-09-01T08:00:00Z";
+	createNotification.mockReset();
+	createNotification.mockResolvedValue({ id: "notification" });
 });
 
 afterEach(async () => {
@@ -685,8 +692,18 @@ describe("Employment ending participants", () => {
 			),
 		).toEqual([running]);
 		const deactivationId = randomUUID();
-		const { applied } = await end(plan, deactivationId);
+		const { applied, afterCommit } = await end(plan, deactivationId);
 
+		// The notice to the absent colleague is the participant's after-commit step.
+		expect(createNotification).not.toHaveBeenCalled();
+		for (const step of afterCommit) await step();
+		expect(createNotification).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({
+				type: "absence_deputy_unavailable",
+				userId: colleague.userId,
+				entityId: running,
+			}),
+		);
 		expect(applied.deputyAssignments).toEqual({
 			eventKey: `employee_deactivated:${AT.epochMilliseconds}`,
 			assignments: [

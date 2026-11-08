@@ -1,3 +1,4 @@
+import type { db as appDb } from "@/db";
 import type { AuditTrail } from "@/lib/audit-trail";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DeactivationReason } from "../deactivation/types";
@@ -49,12 +50,21 @@ export type EmploymentEndingContext = Omit<EmploymentEndingPlanContext, "cause">
 	/** Audit rows are written here, inside the transaction. */
 	audit: AuditTrail;
 	cause: EmploymentEndingCause;
+	/**
+	 * The caller's database client (its DatabaseService's), which after-commit
+	 * steps read through; the global one when not given.
+	 */
+	database?: typeof appDb;
 };
 
 export type EmploymentEndingReader = LifecycleClient;
 export type EmploymentEndingWriter = LifecycleClient;
 
-/** Runs after the commit; must be safe to run again on a replayed request. */
+/**
+ * Runs after the commit; must be safe to run again on a replayed request. A
+ * departure runs none: its external effects are durable departure tasks, which
+ * participants queue in the transaction instead.
+ */
 export type EmploymentEndingAfterCommit = () => Promise<void>;
 
 /**

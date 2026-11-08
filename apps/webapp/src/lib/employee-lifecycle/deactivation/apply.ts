@@ -22,12 +22,15 @@ export type DeactivationRosterApplied = Omit<DeactivationApplied, "employmentEnd
  * Ends what the person holds (Employment ending, #1624) for this
  * deactivation, at its instant. The caller holds the deactivation's locks and
  * the employee row FOR UPDATE, and has not switched the employee off yet.
+ * The after-commit steps (the deputy notices) run on `dependencies.database`.
  */
 export function endEmploymentForDeactivation(
 	tx: DeactivationWriter,
 	ctx: DeactivationApplyContext,
+	dependencies: Pick<DeactivationApplyDependencies, "database">,
 ) {
 	return endEmployment(tx, {
+		database: dependencies.database,
 		organizationId: ctx.organizationId,
 		employeeId: ctx.employeeId,
 		employmentPeriodId: ctx.employmentPeriodId,

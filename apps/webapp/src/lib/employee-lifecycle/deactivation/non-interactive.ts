@@ -19,7 +19,6 @@ import { createLogger } from "@/lib/logger";
 import { employeeCoordinationGuard, holdGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { onCurrentRoster } from "../current-roster";
-import { notifyReleasedDeputyAssignments } from "../deputy-release-runtime";
 import { lockLifecycleOrganization } from "../locks";
 import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
@@ -30,7 +29,7 @@ import {
 } from "../receipts";
 import { acquireAbsenceCancellationGuards } from "./absences";
 import { applyDeactivationConsequences, endEmploymentForDeactivation } from "./apply";
-import { type DeactivationResult, releasedDeputyAssignments } from "./command";
+import { type DeactivationResult, storedReleasedDeputies } from "./command";
 import { managerLinkAuthorizationEmployeeIds } from "./manager-links";
 import { formerEmployeeWithoutDeactivation, readCurrentEmploymentPeriodId } from "./former-employee";
 import { planDeactivationConsequences } from "./plan";
@@ -386,7 +385,7 @@ async function applyRecordedDeactivation(
 		audit,
 	};
 	// The employee is already switched off; what they hold ends first all the same.
-	const ending = await endEmploymentForDeactivation(tx, applyContext);
+	const ending = await endEmploymentForDeactivation(tx, applyContext, { database });
 	const roster = await applyDeactivationConsequences(tx, applyContext, plan, {
 		clock: input.clock,
 		database,
@@ -395,15 +394,7 @@ async function applyRecordedDeactivation(
 		...roster.applied,
 		employmentEnding: ending.applied,
 	};
-	const releasedDeputies = releasedDeputyAssignments(
-		{ organizationId, employeeId },
-		ending.applied.deputyAssignments,
-	);
-	const afterCommit: DeactivationAfterCommit[] = [
-		...ending.afterCommit,
-		...roster.afterCommit,
-		...(releasedDeputies ? [() => notifyReleasedDeputyAssignments(releasedDeputies, database)] : []),
-	];
+	const afterCommit: DeactivationAfterCommit[] = [...ending.afterCommit, ...roster.afterCommit];
 	const reportsWithoutManager = reportsKeepingTheirLink(plan);
 	const result: DeactivationResult & Record<string, unknown> = {
 		...input.result,
@@ -412,12 +403,7 @@ async function applyRecordedDeactivation(
 		employeeUserId: input.employeeUserId,
 		deactivatedAt: input.storedDeactivatedAt.toString(),
 		plannerNotice: null,
-		releasedDeputies: releasedDeputies
-			? {
-					eventKey: releasedDeputies.eventKey,
-					assignments: releasedDeputies.assignments,
-				}
-			: null,
+		releasedDeputies: storedReleasedDeputies(ending.applied.deputyAssignments),
 		cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
 		reportsWithoutManager,
 	};

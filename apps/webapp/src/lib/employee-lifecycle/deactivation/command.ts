@@ -8,8 +8,11 @@ import type { AuthorizationMutationScope } from "@/lib/authorization/authorizati
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import type { DeputyAssignment, ReleasedDeputyAssignments } from "../deputy-release";
-import type { DeputyAssignmentsEndingApplied } from "../employment-ending/deputy-assignments";
+import type { DeputyAssignment } from "../deputy-release";
+import {
+	type DeputyAssignmentsEndingApplied,
+	deputyReleaseNotice,
+} from "../employment-ending/deputy-assignments";
 import { resolveCurrentEmploymentPeriod } from "../employment-periods";
 import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
@@ -124,7 +127,6 @@ export type DeactivationExecution =
 			/** Forwarded to the external audit service after the commit. */
 			audit: AuditTrail;
 			afterCommit: DeactivationAfterCommit[];
-			releasedDeputies: ReleasedDeputyAssignments | null;
 	  };
 
 /**
@@ -199,7 +201,7 @@ export async function executeDeactivation(
 	// in their teams and in their open period; the row lock keeps a concurrent
 	// registration (a kiosk fob) from slipping in.
 	await lockDeactivatedEmployee(tx, scope);
-	const ending = await endEmploymentForDeactivation(tx, applyContext);
+	const ending = await endEmploymentForDeactivation(tx, applyContext, command);
 
 	const [person] = await tx
 		.update(employee)
@@ -216,7 +218,6 @@ export async function executeDeactivation(
 	});
 	const applied: DeactivationApplied = { ...roster.applied, employmentEnding: ending.applied };
 	const afterCommit = [...ending.afterCommit, ...roster.afterCommit];
-	const releasedDeputies = releasedDeputyAssignments(scope, ending.applied.deputyAssignments);
 
 	const plannerNotice = await loadPlannerNotice(tx, scope, {
 		openedShiftIds: applied.shifts.openedShiftIds,
@@ -228,12 +229,7 @@ export async function executeDeactivation(
 		employeeUserId: person.userId,
 		deactivatedAt: command.at.toString(),
 		plannerNotice,
-		releasedDeputies: releasedDeputies
-			? {
-					eventKey: releasedDeputies.eventKey,
-					assignments: releasedDeputies.assignments,
-				}
-			: null,
+		releasedDeputies: storedReleasedDeputies(ending.applied.deputyAssignments),
 		cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
 	};
 	await recordDeactivationOutcome(tx, {
@@ -272,7 +268,6 @@ export async function executeDeactivation(
 		result,
 		audit,
 		afterCommit,
-		releasedDeputies,
 	};
 }
 
@@ -288,18 +283,13 @@ async function lockDeactivatedEmployee(
 		.for("update");
 }
 
-/** The deputy duties Employment ending released, for the notices after the commit (#1014). */
-export function releasedDeputyAssignments(
-	scope: { organizationId: string; employeeId: string },
+/** The deputy duties Employment ending released, as the stored result keeps them for a replay (#1014). */
+export function storedReleasedDeputies(
 	released: DeputyAssignmentsEndingApplied,
-): ReleasedDeputyAssignments | null {
-	if (released.assignments.length === 0) return null;
-	return {
-		organizationId: scope.organizationId,
-		deputyEmployeeId: scope.employeeId,
-		eventKey: released.eventKey,
-		assignments: released.assignments,
-	};
+): DeactivationResult["releasedDeputies"] {
+	return released.assignments.length > 0
+		? { eventKey: released.eventKey, assignments: released.assignments }
+		: null;
 }
 
 /**
@@ -308,17 +298,19 @@ export function releasedDeputyAssignments(
  * and the deputy notices are keyed by the deactivation; deleting a calendar
  * event twice deletes nothing). Audit entries and the self-service absence
  * notices are not repeated. A deactivation that was reactivated since replays
- * nothing.
+ * nothing. The steps run on `database`, the caller's client.
  */
-export function rebuildDeactivationAfterCommit(entry: DeactivationLedgerEntry): {
+export function rebuildDeactivationAfterCommit(
+	entry: DeactivationLedgerEntry,
+	database: DeactivationApplyDependencies["database"],
+): {
 	result: DeactivationResult | null;
 	afterCommit: DeactivationAfterCommit[];
-	releasedDeputies: ReleasedDeputyAssignments | null;
 } {
 	const parsed = deactivationResultSchema.safeParse(entry.result);
 	const result = parsed.success ? parsed.data : null;
 	if (!result || entry.reactivatedAt !== null) {
-		return { result, afterCommit: [], releasedDeputies: null };
+		return { result, afterCommit: [] };
 	}
 	const afterCommit: DeactivationAfterCommit[] = [];
 	const { plannerNotice } = result;
@@ -337,17 +329,11 @@ export function rebuildDeactivationAfterCommit(entry: DeactivationLedgerEntry): 
 			}
 		});
 	}
-	return {
-		result,
-		afterCommit,
-		releasedDeputies: result.releasedDeputies
-			? {
-					organizationId: entry.organizationId,
-					deputyEmployeeId: entry.employeeId,
-					...result.releasedDeputies,
-				}
-			: null,
-	};
+	// The deputy participant's notice, as the first run returned it.
+	const deputyNotice =
+		result.releasedDeputies && deputyReleaseNotice(entry, result.releasedDeputies, database);
+	if (deputyNotice) afterCommit.push(deputyNotice);
+	return { result, afterCommit };
 }
 
 /** A ledger row's stored result, validated before a replay reads it. */
