@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: bu kuruluşun onay modunda gönderilemez. Destek ekibiyle iletişime geçin: # çalışan} }",
-          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: birden fazla değişiklik ilkesi geçerli olduğundan girişler reddedildi: # çalışan} }",
           "correctionDirectNoPolicy": "{count, plural, other {Zaman düzeltmeleri: Herhangi bir değişiklik ilkesi uygulanmadığı için # çalışan kendi girişlerini doğrudan düzenler. Silme talepleri ve tarih değişiklikleri yine de bir onaylayıcıya gider, bu nedenle kontrol edilirler.} }",
           "correctionDirectSelfService": "{count, plural, other {Zaman düzeltmeleri: # çalışan, değişiklik ilkesinin self servis günleri dahilinde kendi girişlerini doğrudan düzenler ve daha eski olanları değiştiremez. Silme talepleri ve tarih değişiklikleri yine de bir onaylayıcıya gider, bu nedenle kontrol edilirler.} }",
           "correctionDirectTrustMode": "{count, plural, other {Zaman düzeltmeleri: Değişiklik ilkesi güven modunda olduğu için # çalışan kendi girişlerini doğrudan düzenler. Silme talepleri ve tarih değişiklikleri yine de bir onaylayıcıya gider, bu nedenle kontrol edilirler.} }",
           "fixApprovalPolicies": "Onay ilkelerini gözden geçir",
-          "fixChangePolicies": "Değişiklik ilkelerini gözden geçir",
           "fixExpenseApprover": "Bir masraf onaylayıcısı belirle",
           "fixManagers": "Yöneticileri ata",
           "fixTeamManager": "Ekip yöneticisini belirle",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "Bu kuruluşun onay modunda gönderilemezler. Destek ekibiyle iletişime geçin.",
             "badge": "Yönlendirilemiyor",
-            "changePolicyAmbiguous": "Kendileri için birden fazla değişiklik politikası geçerli olduğundan girişleri reddedildi.",
             "invalidPolicies": "Onay politikaları uygulanamıyor.",
             "managerDeparted": "Yöneticileri ayrıldı ve yerine vekalet eden kimse yok.",
             "noDecider": "Hiçbir yönetici veya admin bunları karara bağlayamaz.",

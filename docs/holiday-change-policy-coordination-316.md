@@ -96,7 +96,8 @@ Manual preparation is unchanged. This slice verifies it against the real writers
 - Change policy: organization-scoped and active, with the assignment effective and not
   yet expired at the one evaluation instant (`effectiveFrom <= at < effectiveUntil`).
   Precedence is employee, then team, then organization. More than one candidate at the
-  deciding level fails as `policy_ambiguous`.
+  deciding level failed as `policy_ambiguous`; since #1598 it is a broken invariant that
+  throws (`resolveChangePolicy`).
 - Inclusive calendar-day age at the same instant in the effective zone. Only the
   manual-only age-based `forbidden` is converted into approval. The generic change-policy
   service is unchanged.
@@ -174,7 +175,7 @@ This slice closes on implementation. The items below are activation gates for #3
 - **Old binaries:** a deployment still running pre-#316 code writes holidays and policies
   without the guard. Drain them before activation.
 - **Policy ambiguity** still cannot be produced in the database: the partial unique
-  indexes allow one active assignment per organization default, team and employee. The
-  explicit `policy_ambiguous` failure is covered by construction only.
+  indexes allow one active assignment per organization default, team and employee. #1598
+  removed the `policy_ambiguous` failure; the resolver throws instead.
 - **Not verified here:** administrator-facing latency under a long queue of submissions.
   The guard is held only for the length of a submission transaction.

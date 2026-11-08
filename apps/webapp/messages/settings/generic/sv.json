@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: kan inte skickas in i den här organisationens godkännandeläge. Kontakta support: # medarbetare} }",
-          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: fler än en ändringspolicy gäller, så poster avvisas: # medarbetare} }",
           "correctionDirectNoPolicy": "{count, plural, other {Tidskorrigeringar: # medarbetare redigerar sina egna poster direkt, eftersom ingen ändringspolicy gäller. Förfrågningar om borttagning och datumändringar går fortfarande till en godkännare, så de kontrolleras.} }",
           "correctionDirectSelfService": "{count, plural, other {Tidskorrigeringar: # medarbetare redigerar sina egna poster direkt inom sin ändringspolicys självbetjäningsdagar och kan inte ändra äldre poster. Förfrågningar om borttagning och datumändringar går fortfarande till en godkännare, så de kontrolleras.} }",
           "correctionDirectTrustMode": "{count, plural, other {Tidskorrigeringar: # medarbetare redigerar sina egna poster direkt, eftersom deras ändringspolicy är i tillitsläge. Förfrågningar om borttagning och datumändringar går fortfarande till en godkännare, så de kontrolleras.} }",
           "fixApprovalPolicies": "Granska godkännandepolicyer",
-          "fixChangePolicies": "Granska ändringspolicyer",
           "fixExpenseApprover": "Ange en utläggsgodkännare",
           "fixManagers": "Tilldela chefer",
           "fixTeamManager": "Ange teamets chef",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "De kan inte skickas in i den här organisationens godkännandeläge. Kontakta supporten.",
             "badge": "Kan inte dirigeras",
-            "changePolicyAmbiguous": "Fler än en ändringspolicy gäller för dem, så deras poster avvisas.",
             "invalidPolicies": "Godkännandepolicyerna kan inte tillämpas.",
             "managerDeparted": "Deras chef har slutat och ingen ersätter.",
             "noDecider": "Ingen chef eller administratör kan besluta om dem.",

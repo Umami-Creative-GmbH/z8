@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: können im Genehmigungsmodus dieser Organisation nicht eingereicht werden. Support kontaktieren: # Mitarbeiter} }",
-          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Es gelten mehrere Änderungsrichtlinien, daher werden Einträge abgelehnt: # Mitarbeiter} }",
           "correctionDirectNoPolicy": "{count, plural, one {Zeitkorrekturen: # Mitarbeiter bearbeitet eigene Einträge direkt, da keine Änderungsrichtlinie gilt. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.} other {Zeitkorrekturen: # Mitarbeiter bearbeiten eigene Einträge direkt, da keine Änderungsrichtlinie gilt. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.}}",
           "correctionDirectSelfService": "{count, plural, one {Zeitkorrekturen: # Mitarbeiter bearbeitet eigene Einträge direkt innerhalb der Selfservice-Tage der jeweiligen Änderungsrichtlinie und kann ältere nicht ändern. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.} other {Zeitkorrekturen: # Mitarbeiter bearbeiten eigene Einträge direkt innerhalb der Selfservice-Tage der jeweiligen Änderungsrichtlinie und können ältere nicht ändern. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.}}",
           "correctionDirectTrustMode": "{count, plural, one {Zeitkorrekturen: # Mitarbeiter bearbeitet eigene Einträge direkt, da die Änderungsrichtlinie im Vertrauensmodus ist. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.} other {Zeitkorrekturen: # Mitarbeiter bearbeiten eigene Einträge direkt, da die Änderungsrichtlinie im Vertrauensmodus ist. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.}}",
           "fixApprovalPolicies": "Genehmigungsrichtlinien überprüfen",
-          "fixChangePolicies": "Änderungsrichtlinien überprüfen",
           "fixExpenseApprover": "Spesengenehmiger festlegen",
           "fixManagers": "Führungskräfte zuweisen",
           "fixTeamManager": "Teamleitung festlegen",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "Sie können im Genehmigungsmodus dieser Organisation nicht eingereicht werden. Wenden Sie sich an den Support.",
             "badge": "Kann nicht weitergeleitet werden",
-            "changePolicyAmbiguous": "Für diese Person gilt mehr als eine Änderungsrichtlinie, daher werden Einträge abgelehnt.",
             "invalidPolicies": "Die Genehmigungsrichtlinien können nicht angewendet werden.",
             "managerDeparted": "Die zuständige Führungskraft hat das Unternehmen verlassen und es gibt keine Vertretung.",
             "noDecider": "Weder Führungskräfte noch Admins können darüber entscheiden.",

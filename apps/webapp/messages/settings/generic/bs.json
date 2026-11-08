@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Zahtjevi za odsustvo} timeCorrection {Ispravke radnog vremena} workPeriod {Podnošenja radnog perioda} periodSubmission {Podnošenja perioda} expenseReport {Izvještaji o troškovima} other {Zahtjevi za smjenu}}: ne mogu se podnijeti u načinu odobravanja ove organizacije. Obratite se podršci: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsustvo} timeCorrection {Ispravke radnog vremena} workPeriod {Podnošenja radnog perioda} periodSubmission {Podnošenja perioda} expenseReport {Izvještaji o troškovima} other {Zahtjevi za smjenu}}: ne mogu se podnijeti u načinu odobravanja ove organizacije. Obratite se podršci: # zaposlenika}}",
-          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Zahtjevi za odsustvo} timeCorrection {Ispravke radnog vremena} workPeriod {Podnošenja radnog perioda} periodSubmission {Podnošenja perioda} expenseReport {Izvještaji o troškovima} other {Zahtjevi za smjenu}}: primjenjuje se više od jednog pravila izmjena, pa se unosi odbijaju: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsustvo} timeCorrection {Ispravke radnog vremena} workPeriod {Podnošenja radnog perioda} periodSubmission {Podnošenja perioda} expenseReport {Izvještaji o troškovima} other {Zahtjevi za smjenu}}: primjenjuje se više od jednog pravila izmjena, pa se unosi odbijaju: # zaposlenika}}",
           "correctionDirectNoPolicy": "{count, plural, one {Ispravke radnog vremena: # zaposlenik direktno uređuje vlastite unose jer se ne primjenjuje nijedno pravilo izmjena. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju, pa se provjeravaju.} other {Ispravke radnog vremena: # zaposlenika direktno uređuju vlastite unose jer se ne primjenjuje nijedno pravilo izmjena. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju, pa se provjeravaju.}}",
           "correctionDirectSelfService": "{count, plural, one {Ispravke radnog vremena: # zaposlenik direktno uređuje vlastite unose unutar dana samousluživanja prema pravilima izmjena i ne može mijenjati starije. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju, pa se provjeravaju.} other {Ispravke radnog vremena: # zaposlenika direktno uređuju vlastite unose unutar dana samousluživanja prema pravilima izmjena i ne može mijenjati starije. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju, pa se provjeravaju.}}",
           "correctionDirectTrustMode": "{count, plural, one {Ispravke radnog vremena: # zaposlenik direktno uređuje vlastite unose jer je pravilo izmjena u načinu rada zasnovanom na povjerenju. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju, pa se provjeravaju.} other {Ispravke radnog vremena: # zaposlenika direktno uređuju vlastite unose jer je pravilo izmjena u načinu rada zasnovanom na povjerenju. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju, pa se provjeravaju.}}",
           "fixApprovalPolicies": "Pregledajte pravila odobravanja",
-          "fixChangePolicies": "Pregledajte pravila izmjena",
           "fixExpenseApprover": "Postavite odobravatelja troškova",
           "fixManagers": "Dodijelite menadžere",
           "fixTeamManager": "Postavite menadžera tima",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "Ne mogu se poslati u ovom režimu odobravanja organizacije. Obratite se podršci.",
             "badge": "Nije moguće usmjeriti",
-            "changePolicyAmbiguous": "Na njih se primjenjuje više politika izmjena, pa su njihovi unosi odbijeni.",
             "invalidPolicies": "Politike odobravanja se ne mogu primijeniti.",
             "managerDeparted": "Njihov menadžer je napustio organizaciju i niko ga ne zamjenjuje.",
             "noDecider": "Nijedan menadžer ili administrator ne može odlučivati o njima.",

@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -9,7 +9,10 @@ import {
 	employee,
 	employeeManagers,
 } from "@/db/schema";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseError } from "@/lib/effect/errors";
+import { loadChangePolicyCandidates } from "@/lib/time-tracking/change-policy/candidates";
+import { resolveChangePolicy } from "@/lib/time-tracking/change-policy/resolution";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -58,8 +61,8 @@ export class ChangePolicyService extends Context.Service<
 	ChangePolicyService,
 	{
 		/**
-		 * Resolve the effective policy for an employee.
-		 * Resolution order: employee-specific > team > organization
+		 * Resolve the effective policy for an employee at `timestamp`, as
+		 * `resolveChangePolicy` decides it: employee-specific > team > organization.
 		 * Returns null if no policy is assigned (= no restrictions)
 		 */
 		readonly resolvePolicy: (
@@ -154,106 +157,30 @@ export const ChangePolicyServiceLive = Layer.effect(
 					return null;
 				}
 
-				// Build conditions for temporal validity
-				const now = timestamp;
-				const temporalConditions = and(
-					eq(changePolicyAssignment.isActive, true),
-					or(
-						isNull(changePolicyAssignment.effectiveFrom),
-						lte(changePolicyAssignment.effectiveFrom, now),
-					),
-					or(isNull(changePolicyAssignment.effectiveUntil)),
+				const subject = {
+					organizationId: emp.organizationId,
+					employeeId: emp.id,
+					teamId: emp.teamId,
+				};
+				const candidates = yield* dbService.query("changePolicy.getCandidates", () =>
+					loadChangePolicyCandidates(dbService.db, subject),
 				);
-
-				// 1. Check for employee-specific assignment (priority 2)
-				const employeeAssignment = yield* dbService.query(
-					"getEmployeePolicyAssignment",
-					async () => {
-						return await dbService.db.query.changePolicyAssignment.findFirst({
-							where: and(
-								eq(changePolicyAssignment.employeeId, employeeId),
-								eq(changePolicyAssignment.assignmentType, "employee"),
-								temporalConditions,
-							),
-							with: {
-								policy: true,
-							},
-						});
-					},
-				);
-
-				if (employeeAssignment?.policy?.isActive) {
-					return {
-						policyId: employeeAssignment.policy.id,
-						policyName: employeeAssignment.policy.name,
-						selfServiceDays: employeeAssignment.policy.selfServiceDays,
-						approvalDays: employeeAssignment.policy.approvalDays,
-						noApprovalRequired: employeeAssignment.policy.noApprovalRequired,
-						notifyAllManagers: employeeAssignment.policy.notifyAllManagers,
-						assignmentLevel: "employee" as const,
-						assignmentId: employeeAssignment.id,
-					};
-				}
-
-				// 2. Check for team assignment (priority 1)
-				const teamId = emp.teamId;
-				if (teamId) {
-					const teamAssignment = yield* dbService.query("getTeamPolicyAssignment", async () => {
-						return await dbService.db.query.changePolicyAssignment.findFirst({
-							where: and(
-								eq(changePolicyAssignment.teamId, teamId),
-								eq(changePolicyAssignment.assignmentType, "team"),
-								temporalConditions,
-							),
-							with: {
-								policy: true,
-							},
-						});
-					});
-
-					if (teamAssignment?.policy?.isActive) {
-						return {
-							policyId: teamAssignment.policy.id,
-							policyName: teamAssignment.policy.name,
-							selfServiceDays: teamAssignment.policy.selfServiceDays,
-							approvalDays: teamAssignment.policy.approvalDays,
-							noApprovalRequired: teamAssignment.policy.noApprovalRequired,
-							notifyAllManagers: teamAssignment.policy.notifyAllManagers,
-							assignmentLevel: "team" as const,
-							assignmentId: teamAssignment.id,
-						};
-					}
-				}
-
-				// 3. Check for organization assignment (priority 0)
-				const orgAssignment = yield* dbService.query("getOrgPolicyAssignment", async () => {
-					return await dbService.db.query.changePolicyAssignment.findFirst({
-						where: and(
-							eq(changePolicyAssignment.organizationId, emp.organizationId),
-							eq(changePolicyAssignment.assignmentType, "organization"),
-							temporalConditions,
-						),
-						with: {
-							policy: true,
-						},
-					});
-				});
-
-				if (orgAssignment?.policy?.isActive) {
-					return {
-						policyId: orgAssignment.policy.id,
-						policyName: orgAssignment.policy.name,
-						selfServiceDays: orgAssignment.policy.selfServiceDays,
-						approvalDays: orgAssignment.policy.approvalDays,
-						noApprovalRequired: orgAssignment.policy.noApprovalRequired,
-						notifyAllManagers: orgAssignment.policy.notifyAllManagers,
-						assignmentLevel: "organization" as const,
-						assignmentId: orgAssignment.id,
-					};
-				}
+				const resolved = resolveChangePolicy(candidates, subject, instantFromDate(timestamp));
 
 				// No policy found = no restrictions
-				return null;
+				if (!resolved) {
+					return null;
+				}
+				return {
+					policyId: resolved.policyId,
+					policyName: resolved.policyName,
+					selfServiceDays: resolved.selfServiceDays,
+					approvalDays: resolved.approvalDays,
+					noApprovalRequired: resolved.noApprovalRequired,
+					notifyAllManagers: resolved.notifyAllManagers,
+					assignmentLevel: resolved.level,
+					assignmentId: resolved.assignmentId,
+				};
 			});
 
 		return ChangePolicyService.of({

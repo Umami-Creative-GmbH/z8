@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: chönd im Gnähmigungsmodus vo dere Organisation nöd iigreicht werde. Support kontaktiere: # Mitarbeiter} }",
-          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: es gilt meh als eini Änderigsrichtlinie, drum werded Iiträg abglehnt: # Mitarbeiter} }",
           "correctionDirectNoPolicy": "{count, plural, one {Zitkorrekture: # Mitarbeiter bearbeitet sini eigene Iiträg direkt, will kei Änderigsrichtlinie gilt. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.} other {Zitkorrekture: # Mitarbeiter bearbeitit iri eigene Iiträg direkt, will kei Änderigsrichtlinie gilt. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.}}",
           "correctionDirectSelfService": "{count, plural, one {Zitkorrekture: # Mitarbeiter bearbeitet sini eigene Iiträg innerhalb vo de Self-Service-Täg vo sinere Änderigsrichtlinie direkt und chan elteri nöd ändere. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.} other {Zitkorrekture: # Mitarbeiter bearbeitit iri eigene Iiträg innerhalb vo de Self-Service-Täg vo irere Änderigsrichtlinie direkt und chönd elteri nöd ändere. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.}}",
           "correctionDirectTrustMode": "{count, plural, one {Zitkorrekture: # Mitarbeiter bearbeitet sini eigene Iiträg direkt, will d'Änderigsrichtlinie im Vertrouensmodus isch. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.} other {Zitkorrekture: # Mitarbeiter bearbeitit iri eigene Iiträg direkt, will iri Änderigsrichtlinie im Vertrouensmodus isch. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.}}",
           "fixApprovalPolicies": "Gnähmigungsrichtlinie überprüefe",
-          "fixChangePolicies": "Änderigsrichtlinie überprüefe",
           "fixExpenseApprover": "En Spese-Gnähmiger feschtlege",
           "fixManagers": "Vorgesetzti zueordne",
           "fixTeamManager": "Team-Leitig feschtlege",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "Si chönd im Freigaabemodus vo dere Organisation nöd iigreicht werde. Bitte Support kontaktiere.",
             "badge": "Cha nöd weitergleitet werde",
-            "changePolicyAmbiguous": "Es gilt meh als eini Änderigsrichtlinie für si, drum werded ihri Iiträg abglehnt.",
             "invalidPolicies": "D Freigaaberichtlinie chönd nöd aagwendet werde.",
             "managerDeparted": "Ihri vorgesetzti Person hät d Organisation verlaa und niemert vertritt si.",
             "noDecider": "Kei vorgesetzti Person oder Admin cha drüber entscheide.",

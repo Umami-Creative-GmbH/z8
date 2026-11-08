@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: nu pot fi trimise în modul de aprobare al acestei organizații. Contactați asistența: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: nu pot fi trimise în modul de aprobare al acestei organizații. Contactați asistența: # angajați}}",
-          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: se aplică mai multe politici de modificare, prin urmare intrările sunt refuzate: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: se aplică mai multe politici de modificare, prin urmare intrările sunt refuzate: # angajați}}",
           "correctionDirectNoPolicy": "{count, plural, one {Corecții de timp: # angajat își editează direct propriile intrări, deoarece nu se aplică nicio politică de modificare. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.} other {Corecții de timp: # angajați își editează direct propriile intrări, deoarece nu se aplică nicio politică de modificare. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.}}",
           "correctionDirectSelfService": "{count, plural, one {Corecții de timp: # angajat își editează direct propriile intrări în limita zilelor de autoservire din politica de modificare și nu le poate modifica pe cele mai vechi. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.} other {Corecții de timp: # angajați își editează direct propriile intrări în limita zilelor de autoservire din politica de modificare și nu le pot modifica pe cele mai vechi. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.}}",
           "correctionDirectTrustMode": "{count, plural, one {Corecții de timp: # angajat își editează direct propriile intrări, deoarece politica sa de modificare este în modul bazat pe încredere. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.} other {Corecții de timp: # angajați își editează direct propriile intrări, deoarece politica lor de modificare este în modul bazat pe încredere. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.}}",
           "fixApprovalPolicies": "Revizuiți politicile de aprobare",
-          "fixChangePolicies": "Revizuiți politicile de modificare",
           "fixExpenseApprover": "Setați un aprobator pentru cheltuieli",
           "fixManagers": "Atribuiți manageri",
           "fixTeamManager": "Setați managerul echipei",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "Nu pot fi trimise în modul de aprobare al acestei organizații. Contactați asistența.",
             "badge": "Nu poate fi direcționat",
-            "changePolicyAmbiguous": "Li se aplică mai multe politici de modificare, așadar intrările lor sunt refuzate.",
             "invalidPolicies": "Politicile de aprobare nu pot fi aplicate.",
             "managerDeparted": "Managerul lor a plecat și nimeni nu îl înlocuiește.",
             "noDecider": "Niciun manager sau administrator nu poate lua o decizie în privința lor.",

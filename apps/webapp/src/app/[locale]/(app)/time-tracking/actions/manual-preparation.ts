@@ -1,8 +1,8 @@
 import "server-only";
 
-import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
-import { changePolicy, changePolicyAssignment, employee } from "@/db/schema";
+import { employee } from "@/db/schema";
 import { isAccountBanned } from "@/lib/auth/account-ban";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
@@ -18,7 +18,6 @@ import {
 	type ManualInterval,
 	type ManualIntervalRejection,
 	type ManualPolicyEvidence,
-	type ManualPolicyLevel,
 	type ManualTargetZoneSource,
 	type ManualTimeEntryCommand,
 	type ManualZoneRejection,
@@ -36,6 +35,8 @@ import {
 	BillableWorkRefusedError,
 	resolveWorkBillabilityInTransaction,
 } from "@/lib/time-tracking/work-billability";
+import { loadChangePolicyCandidates } from "@/lib/time-tracking/change-policy/candidates";
+import { resolveChangePolicy } from "@/lib/time-tracking/change-policy/resolution";
 import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
 import { closedRangeTouchedByWork } from "@/lib/time-tracking/closed-months/rules";
 import {
@@ -78,7 +79,6 @@ export type ManualPreparationRejection =
 	| { reason: "category_ineligible"; message: string }
 	/** Billable work was requested without a project or customer (#900). */
 	| { reason: "billable_not_allowed"; detail: BillableWorkRefusal }
-	| { reason: "policy_ambiguous"; level: ManualPolicyLevel }
 	/** The work touches a closed month (#762), named as `YYYY-MM`. */
 	| { reason: "month_closed"; month: string }
 	/** The entered vehicle use cannot be recorded (#1120). */
@@ -176,76 +176,27 @@ async function authorizeTarget(
 	return allowed ? { target, isOwnEntry: false, principal } : null;
 }
 
-/**
- * The effective change policy at `at`: organization-scoped, active, effective
- * and not yet expired, with employee → team → organization precedence. More than
- * one candidate at the deciding level is ambiguous and fails instead of picking.
- */
-async function resolveEffectiveChangePolicy(
+/** The change policy in effect for the target at `at`, as `resolveChangePolicy` decides it. */
+async function resolveTargetChangePolicy(
 	tx: Reader,
 	target: Pick<Employee, "id" | "teamId" | "organizationId">,
-	at: Date,
-): Promise<
-	{ ok: true; policy: ManualPolicyEvidence | null } | { ok: false; level: ManualPolicyLevel }
-> {
-	const rows = await tx
-		.select({
-			assignmentId: changePolicyAssignment.id,
-			level: changePolicyAssignment.assignmentType,
-			employeeId: changePolicyAssignment.employeeId,
-			teamId: changePolicyAssignment.teamId,
-			policyId: changePolicy.id,
-			selfServiceDays: changePolicy.selfServiceDays,
-			approvalDays: changePolicy.approvalDays,
-			noApprovalRequired: changePolicy.noApprovalRequired,
-		})
-		.from(changePolicyAssignment)
-		.innerJoin(
-			changePolicy,
-			and(
-				eq(changePolicy.id, changePolicyAssignment.policyId),
-				eq(changePolicy.organizationId, target.organizationId),
-				eq(changePolicy.isActive, true),
-			),
-		)
-		.where(
-			and(
-				eq(changePolicyAssignment.organizationId, target.organizationId),
-				eq(changePolicyAssignment.isActive, true),
-				or(
-					isNull(changePolicyAssignment.effectiveFrom),
-					lte(changePolicyAssignment.effectiveFrom, at),
-				),
-				or(
-					isNull(changePolicyAssignment.effectiveUntil),
-					gt(changePolicyAssignment.effectiveUntil, at),
-				),
-			),
-		);
-	const levels: Array<[ManualPolicyLevel, (row: (typeof rows)[number]) => boolean]> = [
-		["employee", (row) => row.employeeId === target.id],
-		["team", (row) => target.teamId !== null && row.teamId === target.teamId],
-		["organization", () => true],
-	];
-	for (const [level, matches] of levels) {
-		const candidates = rows.filter((row) => row.level === level && matches(row));
-		if (candidates.length > 1) return { ok: false, level };
-		const [row] = candidates;
-		if (row) {
-			return {
-				ok: true,
-				policy: {
-					policyId: row.policyId,
-					assignmentId: row.assignmentId,
-					level,
-					selfServiceDays: row.selfServiceDays,
-					approvalDays: row.approvalDays,
-					noApprovalRequired: row.noApprovalRequired,
-				},
-			};
-		}
-	}
-	return { ok: true, policy: null };
+	at: Instant,
+): Promise<ManualPolicyEvidence | null> {
+	const subject = {
+		organizationId: target.organizationId,
+		employeeId: target.id,
+		teamId: target.teamId,
+	};
+	const resolved = resolveChangePolicy(await loadChangePolicyCandidates(tx, subject), subject, at);
+	if (!resolved) return null;
+	return {
+		policyId: resolved.policyId,
+		assignmentId: resolved.assignmentId,
+		level: resolved.level,
+		selfServiceDays: resolved.selfServiceDays,
+		approvalDays: resolved.approvalDays,
+		noApprovalRequired: resolved.noApprovalRequired,
+	};
 }
 
 /**
@@ -397,11 +348,7 @@ export async function prepareManualWork(
 	} else if (defineAbilityFor(principal).can("manage", "OrgSettings")) {
 		exemption = "owner_admin_self";
 	} else {
-		const resolved = await resolveEffectiveChangePolicy(tx, target, at);
-		if (!resolved.ok) {
-			return { ok: false, rejection: { reason: "policy_ambiguous", level: resolved.level } };
-		}
-		policy = resolved.policy;
+		policy = await resolveTargetChangePolicy(tx, target, now);
 	}
 
 	return {

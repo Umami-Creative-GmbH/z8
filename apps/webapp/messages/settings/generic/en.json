@@ -1469,12 +1469,10 @@
       "goLive": {
         "approver": {
           "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: can't be submitted in this organization's approval mode. Contact support: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: can't be submitted in this organization's approval mode. Contact support: # employees}}",
-          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: more than one change policy applies, so entries are refused: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: more than one change policy applies, so entries are refused: # employees}}",
           "correctionDirectNoPolicy": "{count, plural, one {Time corrections: # employee edits their own entries directly, because no change policy applies. Deletion requests and date changes still go to an approver, so they are checked.} other {Time corrections: # employees edit their own entries directly, because no change policy applies. Deletion requests and date changes still go to an approver, so they are checked.}}",
           "correctionDirectSelfService": "{count, plural, one {Time corrections: # employee edits their own entries directly within their change policy's self-service days, and can't change older ones. Deletion requests and date changes still go to an approver, so they are checked.} other {Time corrections: # employees edit their own entries directly within their change policy's self-service days, and can't change older ones. Deletion requests and date changes still go to an approver, so they are checked.}}",
           "correctionDirectTrustMode": "{count, plural, one {Time corrections: # employee edits their own entries directly, because their change policy is in trust mode. Deletion requests and date changes still go to an approver, so they are checked.} other {Time corrections: # employees edit their own entries directly, because their change policy is in trust mode. Deletion requests and date changes still go to an approver, so they are checked.}}",
           "fixApprovalPolicies": "Review approval policies",
-          "fixChangePolicies": "Review change policies",
           "fixExpenseApprover": "Set an expense approver",
           "fixManagers": "Assign managers",
           "fixTeamManager": "Set the team's manager",
@@ -1628,7 +1626,6 @@
           "unroutable": {
             "approvalModeUnsupported": "They can't be submitted in this organization's approval mode. Contact support.",
             "badge": "Can't be routed",
-            "changePolicyAmbiguous": "More than one change policy applies to them, so their entries are refused.",
             "invalidPolicies": "The approval policies can't be applied.",
             "managerDeparted": "Their manager has left and nobody stands in.",
             "noDecider": "No manager or admin can decide them.",
