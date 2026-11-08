@@ -54,7 +54,7 @@ export async function loadReactivationChecklist(
 	const ended = applied.data;
 	const holdings = ended.employmentEnding
 		? // Written by the participants themselves, in the same transaction as the ending.
-			reactivationItems(ended.employmentEnding as Partial<EmploymentEndingApplied>, input)
+			reactivationItems(ended.employmentEnding, input)
 		: ended.accessEnds
 			? legacyAccessEndsItems({
 					employeeId: input.employeeId,
@@ -94,6 +94,39 @@ function dateNotRecorded(row: { reason: string; result: unknown }): boolean {
 // The ledger's jsonb columns, validated before the checklist reads them.
 const ids = z.array(z.string());
 const link = z.object({ employeeId: z.string(), managerId: z.string() });
+/**
+ * What Employment ending ended (#1624), by participant key. A participant
+ * missing here (an ending stored before it existed) has no items.
+ */
+const employmentEndingSchema = z
+	.object({
+		equipment: z.object({ revokedOfficerGrantIds: ids }),
+		drivingLicence: z.object({ endedAuthorizationIds: ids, revokedVerifierGrantIds: ids }),
+		officerGrants: z.object({
+			grants: z.array(
+				z.object({
+					kind: z.enum(["expense_officer", "payroll_access", "personnel_file_officer"]),
+					grantId: z.string(),
+				}),
+			),
+		}),
+		documentRequests: z.object({ cancelledRequestIds: ids }),
+		kioskBadges: z.object({ revokedBadgeIds: ids }),
+		kioskFobs: z.object({ endedFobIds: ids }),
+		reportShareLinks: z.object({ revokedLinkIds: ids }),
+		deputyAssignments: z.object({
+			eventKey: z.string(),
+			assignments: z.array(
+				z.object({
+					absenceId: z.string(),
+					absentEmployeeId: z.string(),
+					startDate: z.string(),
+					endDate: z.string(),
+				}),
+			),
+		}),
+	})
+	.partial() satisfies z.ZodType<Partial<EmploymentEndingApplied>>;
 const appliedSchema = z.object({
 	managerLinks: z.object({
 		removedLinks: z.array(link),
@@ -108,11 +141,7 @@ const appliedSchema = z.object({
 	approvalDuties: z.object({ handoverTaskIds: ids, reviewIds: ids }),
 	shifts: z.object({ openedShiftIds: ids }),
 	absences: z.object({ cancelledAbsenceIds: ids }),
-	/**
-	 * What Employment ending ended (#1624), by participant; each participant
-	 * reads its own entry. A participant missing here has no items.
-	 */
-	employmentEnding: z.record(z.string(), z.unknown()).optional(),
+	employmentEnding: employmentEndingSchema.optional(),
 	/** What deactivations stored before #1624 ended. */
 	accessEnds: z
 		.object({
