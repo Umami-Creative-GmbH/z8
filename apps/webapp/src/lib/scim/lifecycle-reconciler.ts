@@ -19,7 +19,7 @@ function isBillable(
 export interface SCIMLifecycleHooks {
 	/**
 	 * Runs in the SCIM transaction right after this reconciliation deactivated
-	 * the employee (#1014: the employee stops being anyone's deputy).
+	 * the employee (#1629: a pending deactivation waits for the follow-up).
 	 */
 	onEmployeeDeactivated?(input: {
 		organizationId: string;

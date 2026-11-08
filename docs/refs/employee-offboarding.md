@@ -393,9 +393,10 @@ SCIM deprovisioning are deactivations. A deactivation has four reasons:
 deactivation), `pending` or `withdrawn`.
 
 - **The hook.** The removal and SCIM hooks already hold the removed user's
-  guard, so they cannot take a deactivation's locks. They keep doing what they
-  did (membership off, `is_active = false`, sessions deleted, deputy duties
-  released) and, in the same transaction, `recordFollowUpDeactivation`
+  guard, so they cannot take a deactivation's locks. They keep switching the
+  person off (membership off, `is_active = false`, sessions deleted) and end
+  nothing the person holds, deputy duties included; in the same transaction
+  `recordFollowUpDeactivation`
   (`deactivation/follow-up-record.ts`) records a `pending` row: `deactivated_at`
   is the instant the switch-off trigger stored (copied in SQL, so it equals
   `employee.deactivated_at` to the microsecond), `created_by` is the removing
@@ -666,15 +667,18 @@ team absence page until someone names a new deputy. While a departure is
 scheduled, the departure card lists *Deputy on running or upcoming absences: N*,
 counted with the same rule, so the handover can arrange new cover.
 
-Deactivations outside a departure clear the deputy the same way, in their own
-transaction, and notify after the commit: *Deactivate* (`employee_deactivated`,
-audited under the acting admin), member removal or leaving
-(`member_removed`, under the rejecting admin for pending-member rejection,
+Deactivations outside a departure clear the deputy the same way, through
+Employment ending in their own transaction, with the deactivation's audit
+metadata (`{ actorKind: "system", reason, deactivationId, employmentPeriodId }`):
+*Deactivate* (`employee_deactivated`, audited under the acting admin), member
+removal or leaving (`member_removed`, under the removing or rejecting admin,
 otherwise the removed member's own user) and SCIM deprovisioning
 (`scim_deprovisioned`, under the deprovisioned user, with the connection id).
-Member removal and SCIM deprovisioning clear it at once in their own
-transaction; their follow-up deactivation (#1629) then finds nothing left.
-A rehire or reactivation restores nothing.
+The deputy participant returns the notices as an after-commit step, which the
+deactivation's caller runs. Member removal and SCIM deprovisioning release
+nothing in their own transaction: their follow-up deactivation (#1629) does,
+so a person re-added or re-enabled before it runs stays deputy. A rehire or
+reactivation restores nothing.
 
 ## Personal data reminder
 
