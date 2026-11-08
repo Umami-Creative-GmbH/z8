@@ -312,6 +312,19 @@ describe("EmployeeLifecycleActions capabilities", () => {
 		).toBe(canRemove);
 	});
 
+	it("says removing access ends the employment like a deactivation (#1629)", async () => {
+		renderActions();
+
+		const dialog = await openConfirmation("Remove access");
+
+		expect(
+			within(dialog).getByText(
+				"Removing them also ends their employment, like a deactivation: their future shifts become open, their later absences are cancelled and their grants end. To choose replacement managers for their reports, use Deactivate instead.",
+			),
+		).toBeTruthy();
+		expect(within(dialog).getByRole("button", { name: "Remove access" })).toBeTruthy();
+	});
+
 	it("accepts one button-compatible React element as a custom asChild trigger", async () => {
 		expectTypeOf<EmployeeLifecycleActionsProps["trigger"]>().toEqualTypeOf<
 			ReactElement<ComponentPropsWithRef<"button">> | undefined

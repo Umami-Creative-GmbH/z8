@@ -440,43 +440,6 @@ export async function revokeKioskBadge(
 	);
 }
 
-/**
- * Ends the badges of the employment period a departure closes (#1365), inside
- * the departure's work transaction, which already holds the employee key. Only
- * badges bound to that period are touched, so a delayed or retried departure
- * can never end a badge issued after a rehire. The badge stopped proving the
- * employee at the cutoff (the access rule denies it from then on), so that is
- * when it is recorded as ended, never before it was issued. Audited under the
- * departure's initiator; the caller does not forward the entries, because the
- * work transaction may be retried.
- */
-export async function revokeKioskBadgesForDeparture(
-	tx: Pick<Transaction, "update" | "insert">,
-	audit: AuditTrail,
-	input: {
-		organizationId: string;
-		employeeId: string;
-		employmentPeriodId: string;
-		departureId: string;
-		actorUserId: string;
-		cutoff: Instant;
-	},
-): Promise<void> {
-	await revokeKioskBadgesOfEmploymentPeriod(tx, audit, {
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		employmentPeriodId: input.employmentPeriodId,
-		actorUserId: input.actorUserId,
-		cutoff: input.cutoff,
-		revokedReason: "employee_departure",
-		auditMetadata: {
-			reason: "employee_departure",
-			departureId: input.departureId,
-			employmentPeriodId: input.employmentPeriodId,
-		},
-	});
-}
-
 /** Which employee's badges an employment's end touches. */
 export type KioskBadgeEmployment = {
 	organizationId: string;

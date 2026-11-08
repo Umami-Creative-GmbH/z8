@@ -1,7 +1,10 @@
 import type { db as appDb } from "@/db";
 import type { AuditTrail } from "@/lib/audit-trail";
 import type { Clock, Instant } from "@/lib/datetime/temporal-core";
-import type { EquipmentDepartureReturn } from "@/lib/organization/equipment/contracts";
+import type {
+	EmploymentEndingApplied,
+	EmploymentEndingPlan,
+} from "../employment-ending/types";
 import type { LifecycleClient } from "../types";
 
 /**
@@ -15,19 +18,31 @@ import type { LifecycleClient } from "../types";
  * - `approval-duties.ts`   `planApprovalDuties` / `applyApprovalDuties`
  * - `shifts.ts`            `planShiftsToOpen` / `applyShiftsToOpen`
  * - `absences.ts`          `planAbsences` / `applyAbsenceCancellations`
- * - `access-ends.ts`       `planAccessEnds` / `applyAccessEnds`
  *
- * `plan.ts` composes the plans, `apply.ts` applies them in that order inside
- * the deactivation transaction, and `preview.ts` serves the plan to the
- * dialog. A plan function only reads. An apply function changes only what its
+ * What the person holds (grants, driving licence, badges, fobs, share links,
+ * document requests, equipment responsibility, deputy assignments) ends
+ * through Employment ending (`../employment-ending`), before the switch-off.
+ * `plan.ts` composes the plans with its preview, `apply.ts` applies the areas
+ * in that order inside the deactivation transaction after the switch-off, and
+ * `preview.ts` serves the plan to the dialog. A plan function only reads. An apply function changes only what its
  * plan lists, writes its audit rows into `ctx.audit` under `ctx.actorUserId`
  * with `deactivationAuditMetadata(ctx)`, and returns the ids it changed.
  * Anything with an external effect (notifications) is returned as an
  * after-commit step, because the transaction may be retried.
  */
 
-/** Audit reason of an admin's deactivation. The backfill (#1442) uses its own. */
-export type DeactivationReason = "employee_deactivated" | "employee_deactivation_backfill";
+/**
+ * Audit reason of an admin's deactivation. The backfill (#1442) uses its own,
+ * and so do the follow-up deactivations of member removal and SCIM
+ * deprovisioning (#1629).
+ */
+export type DeactivationReason =
+	| "employee_deactivated"
+	| "employee_deactivation_backfill"
+	| FollowUpDeactivationReason;
+
+/** Why a follow-up deactivation was recorded (#1629, Organization ADR 0011). */
+export type FollowUpDeactivationReason = "member_removed" | "scim_deprovisioned";
 
 /** What every plan function receives. */
 export type DeactivationPlanContext = {
@@ -51,13 +66,18 @@ export type DeactivationApplyContext = DeactivationPlanContext & {
 	/** The `employee_deactivation` row of this deactivation. */
 	deactivationId: string;
 	reason: DeactivationReason;
+	/**
+	 * More audit context on every row the deactivation writes: a follow-up
+	 * deactivation's system side effect marker and SCIM `connectionId` (#1629).
+	 */
+	auditMetadata?: Readonly<Record<string, unknown>>;
 	audit: AuditTrail;
 };
 
 export function deactivationAuditMetadata(
-	ctx: Pick<DeactivationApplyContext, "reason" | "deactivationId">,
+	ctx: Pick<DeactivationApplyContext, "reason" | "deactivationId" | "auditMetadata">,
 ) {
-	return { reason: ctx.reason, deactivationId: ctx.deactivationId };
+	return { ...ctx.auditMetadata, reason: ctx.reason, deactivationId: ctx.deactivationId };
 }
 
 /** Reads for planning; inside the transaction it is the transaction client. */
@@ -192,31 +212,6 @@ export type AbsencesPlan = {
 };
 export type AbsencesApplied = { cancelledAbsenceIds: string[] };
 
-// ---- access-ends.ts --------------------------------------------------------
-
-export type AccessEndsPlan = {
-	grants: Array<{
-		kind:
-			| "expense_officer"
-			| "payroll_access"
-			| "personnel_file_officer"
-			| "driving_licence_verifier"
-			| "equipment_officer";
-		grantId: string;
-	}>;
-	drivingAuthorizations: Array<{ authorizationId: string; state: string }>;
-	kioskBadges: Array<{ badgeId: string }>;
-	kioskFobs: Array<{ fobId: string }>;
-	shareLinks: Array<{ linkId: string; kind: string }>;
-};
-export type AccessEndsApplied = {
-	grantIds: string[];
-	drivingAuthorizationIds: string[];
-	kioskBadgeIds: string[];
-	kioskFobIds: string[];
-	shareLinkIds: string[];
-};
-
 // ---- composed (plan.ts / apply.ts / preview.ts) -----------------------------
 
 export type DeactivationPlan = {
@@ -229,9 +224,12 @@ export type DeactivationPlan = {
 	approvalDuties: ApprovalDutiesPlan;
 	shifts: ShiftsPlan;
 	absences: AbsencesPlan;
-	accessEnds: AccessEndsPlan;
-	/** Required returns remain actionable independently of employment and access. */
-	equipment: EquipmentDepartureReturn[];
+	/**
+	 * What Employment ending ends (#1624): equipment responsibility (required
+	 * returns stay actionable), driving licence, held grants, document
+	 * requests, kiosk badges and fobs, share links and deputy assignments.
+	 */
+	employmentEnding: EmploymentEndingPlan;
 	/** Personnel file retention starts at `at`. */
 	retentionStarts: boolean;
 	/** The paid seat is released. */
@@ -258,7 +256,8 @@ export type DeactivationApplied = {
 	approvalDuties: ApprovalDutiesApplied;
 	shifts: ShiftsApplied;
 	absences: AbsencesApplied;
-	accessEnds: AccessEndsApplied;
+	/** What Employment ending ended. Rows stored before #1624 have `accessEnds` instead. */
+	employmentEnding: EmploymentEndingApplied;
 };
 
 /** The shape every area apply returns. */

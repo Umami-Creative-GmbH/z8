@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# Genehmigungsaufgabe erfordert eine Vertretung und ist zur Überprüfung aufgeführt ({review}).} other {# Genehmigungsaufgaben erfordern eine Vertretung und sind zur Überprüfung aufgeführt ({review}).}}",
           "description": "{name} wird jetzt zu einem ehemaligen Mitarbeiter. Der Zugriff auf diese Organisation endet, Sitzungen werden abgemeldet und der Verlauf bleibt erhalten. Überprüfen Sie vor der Bestätigung, was sich sonst noch ändert.",
           "descriptionAt": "{name} wird nach Ihrer Bestätigung zu einer ehemaligen Mitarbeiterin bzw. einem ehemaligen Mitarbeiter (Vorschau für {time}, {timeZone}). Der Zugriff auf diese Organisation endet, Sitzungen werden abgemeldet und der Verlauf bleibt erhalten. Überprüfen Sie vor der Bestätigung, was sich sonst noch ändert.",
+          "documentRequests": "{count, plural, one {# offene Dokumentanforderung wird abgebrochen} other {# offene Dokumentanforderungen werden abgebrochen}}",
           "drivingAuthorizations": "{count, plural, one {# Fahrberechtigung endet, einschließlich ausgesetzter} other {# Fahrberechtigungen enden, einschließlich ausgesetzter}}",
           "formLabel": "Deaktivierungsvorschau",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Stornierte Abwesenheiten",
             "access": "Kiosk-Badges und Fahrberechtigungen",
+            "documentRequests": "Abgebrochene Dokumentanforderungen",
             "grants": "Innegehabte Berechtigungen",
             "managers": "Führungskraft-Zuordnungen",
             "shareLinks": "Freigabelinks für Berichte",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Eine Abwesenheit (Daten nicht erfasst)",
+            "documentRequests": "{count, plural, one {# offene Dokumentanforderung wurde abgebrochen; sie muss in der Personalakte erneut angefordert werden} other {# offene Dokumentanforderungen wurden abgebrochen; sie müssen in der Personalakte erneut angefordert werden}}",
             "drivingAuthorizations": "{count, plural, one {# Fahrberechtigung ist abgelaufen; eine neue Prüfung ist erforderlich} other {# Fahrberechtigungen sind abgelaufen; eine neue Prüfung ist erforderlich}}",
             "kioskBadges": "{count, plural, one {# Kiosk-Ausweis wurde widerrufen} other {# Kiosk-Ausweise wurden widerrufen}}",
             "ownManager": "Verwaltet von {name}",
@@ -342,6 +345,7 @@
         "reinviteRequired": "Dieser Mitarbeiter hat keine Organisationsmitgliedschaft mehr. Senden Sie eine neue Einladung, um den Zugriff wiederherzustellen.",
         "removeAccess": "Zugriff entfernen",
         "removeDescription": "Dies entfernt die Organisationsmitgliedschaft und beendet Organisationssitzungen. Zeitaufzeichnungen, Abwesenheiten, Salden, Beschäftigungsverlauf und Prüfprotokolle bleiben erhalten.",
+        "removeEndsEmployment": "Damit endet auch die Beschäftigung, wie bei einer Deaktivierung: Künftige Schichten werden offen, spätere Abwesenheiten werden storniert und Berechtigungen enden. Um Ersatzvorgesetzte für die unterstellten Mitarbeitenden zu wählen, verwenden Sie stattdessen „Deaktivieren“.",
         "removeError": "Entfernen des Organisationszugriffs fehlgeschlagen",
         "removeSuccess": "Organisationszugriff entfernt",
         "removeTitle": "Organisationszugriff entfernen?",

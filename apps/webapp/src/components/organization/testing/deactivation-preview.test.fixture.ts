@@ -1,4 +1,5 @@
 import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
+import type { EmploymentEndingPlan } from "@/lib/employee-lifecycle/employment-ending/types";
 
 /**
  * A deactivation preview in which nothing changes but what every deactivation
@@ -25,17 +26,27 @@ export function emptyDeactivationPreview(
 			absencesSpanning: [],
 			absencesInClosedMonths: [],
 		},
-		accessEnds: {
-			grants: [],
-			drivingAuthorizations: [],
-			kioskBadges: [],
-			kioskFobs: [],
-			shareLinks: [],
-		},
-		equipment: [],
+		employmentEnding: emptyEmploymentEndingPlan(),
 		retentionStarts: true,
 		seatReleased: true,
 		refusals: [],
+		...overrides,
+	};
+}
+
+/** An Employment ending plan that ends nothing. */
+export function emptyEmploymentEndingPlan(
+	overrides: Partial<EmploymentEndingPlan> = {},
+): EmploymentEndingPlan {
+	return {
+		equipment: { returns: [], officerGrantHolderIds: [] },
+		drivingLicence: { authorizations: [], verifierGrantIds: [] },
+		officerGrants: { grants: [] },
+		documentRequests: { requestIds: [] },
+		kioskBadges: { badgeIds: [] },
+		kioskFobs: { fobIds: [] },
+		reportShareLinks: { links: [] },
+		deputyAssignments: { assignments: [] },
 		...overrides,
 	};
 }

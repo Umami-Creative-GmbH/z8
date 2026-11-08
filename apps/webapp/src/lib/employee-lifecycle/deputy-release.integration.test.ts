@@ -13,7 +13,7 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { createDepartureCommands } from "./commands";
 import { runDepartureTaskDelivery } from "./delivery";
-import { releaseDeputyAssignments, releaseDeputyAssignmentsOnDeactivation } from "./deputy-release";
+import { releaseDeputyAssignments } from "./deputy-release";
 import { createDeputyReleaseNotificationHandler } from "./deputy-release-notifications";
 import { createDepartureTaskOutbox, type DepartureTaskClaim } from "./outbox";
 import { getEmployeeOffboardingView } from "./queries";
@@ -465,62 +465,7 @@ describe("departure clears the employee as deputy (#1014)", () => {
 		expect(result.kind === "ok" && result.view.deputyAbsences).toBe(2);
 	});
 
-	it("clears a deactivated employee as deputy, audited under the deactivating admin", async () => {
-		const deputy = await fixture.seedEmployee();
-		const anna = await fixture.seedEmployee();
-		const absence = await seedAbsence({
-			absent: anna,
-			deputy,
-			startDate: "2026-10-01",
-			endDate: "2026-10-05",
-		});
-		const at = parseInstant("2026-09-20T10:00:00Z");
-
-		const released = await fixture.db.transaction((tx) =>
-			releaseDeputyAssignmentsOnDeactivation(tx, new AuditTrail(), {
-				organizationId: fixture.organizationId,
-				employeeId: deputy.employeeId,
-				actorUserId: fixture.ownerUserId,
-				at,
-				reason: "employee_deactivated",
-			}),
-		);
-
-		expect(released).toEqual({
-			organizationId: fixture.organizationId,
-			deputyEmployeeId: deputy.employeeId,
-			eventKey: `employee_deactivated:${at.epochMilliseconds}`,
-			assignments: [
-				{
-					absenceId: absence,
-					absentEmployeeId: anna.employeeId,
-					startDate: "2026-10-01",
-					endDate: "2026-10-05",
-				},
-			],
-			// Forwarded to the external audit service after the commit.
-			audit: expect.any(AuditTrail),
-		});
-		expect(await deputyAudits(absence)).toEqual([
-			expect.objectContaining({
-				performedBy: fixture.ownerUserId,
-				metadata: { actorKind: "system", reason: "employee_deactivated" },
-			}),
-		]);
-		expect(
-			await fixture.db.transaction((tx) =>
-				releaseDeputyAssignmentsOnDeactivation(tx, new AuditTrail(), {
-					organizationId: fixture.organizationId,
-					employeeId: deputy.employeeId,
-					actorUserId: fixture.ownerUserId,
-					at,
-					reason: "employee_deactivated",
-				}),
-			),
-		).toBeNull();
-	});
-
-	it("clears a removed member as deputy in the removal transaction", async () => {
+	it("keeps a removed member as deputy until the follow-up deactivation releases them (#1629)", async () => {
 		const deputy = await fixture.seedEmployee();
 		const anna = await fixture.seedEmployee();
 		const absence = await seedAbsence({
@@ -531,53 +476,17 @@ describe("departure clears the employee as deputy (#1014)", () => {
 		});
 		await fixture.pool.query("delete from member where id = $1", [deputy.memberId]);
 
-		const outcome = await fixture.db.transaction((tx) =>
-			revokeRemovedMemberAccessInTransaction(
-				tx as unknown as Parameters<typeof revokeRemovedMemberAccessInTransaction>[0],
-				deputy.userId,
-				fixture.organizationId,
-			),
-		);
-
-		expect(await deputyOf(absence)).toBeNull();
-		expect(outcome.releasedDeputies?.assignments.map((assignment) => assignment.absenceId)).toEqual(
-			[absence],
-		);
-		expect(await deputyAudits(absence)).toEqual([
-			expect.objectContaining({
-				// Nobody else is known to have acted: the removed member's own user.
-				performedBy: deputy.userId,
-				metadata: { actorKind: "system", reason: "member_removed" },
-			}),
-		]);
-	});
-
-	it("audits a removed member's deputy release under the removing admin when known", async () => {
-		const deputy = await fixture.seedEmployee();
-		const anna = await fixture.seedEmployee();
-		const absence = await seedAbsence({
-			absent: anna,
-			deputy,
-			startDate: "2026-12-07",
-			endDate: "2026-12-09",
-		});
-		await fixture.pool.query("delete from member where id = $1", [deputy.memberId]);
-
 		await fixture.db.transaction((tx) =>
 			revokeRemovedMemberAccessInTransaction(
 				tx as unknown as Parameters<typeof revokeRemovedMemberAccessInTransaction>[0],
 				deputy.userId,
 				fixture.organizationId,
-				{ actorUserId: fixture.ownerUserId },
 			),
 		);
 
-		expect(await deputyAudits(absence)).toEqual([
-			expect.objectContaining({
-				performedBy: fixture.ownerUserId,
-				metadata: { actorKind: "system", reason: "member_removed" },
-			}),
-		]);
+		// The follow-up releases them with the deactivation (follow-up.integration.test.ts).
+		expect(await deputyOf(absence)).toBe(deputy.employeeId);
+		expect(await deputyAudits(absence)).toEqual([]);
 	});
 
 	it("flags 'Deputy missing' on running and upcoming deputy-required absences without a deputy", async () => {

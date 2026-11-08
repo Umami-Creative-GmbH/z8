@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# Freigaabezueständigkeit brucht en Ersatz und isch zur Überprüefig ufgfüehrt ({review}).} other {# Freigaabezueständikeite bruched en Ersatz und sind zur Überprüefig ufgfüehrt ({review}).}}",
           "description": "{name} giltet jetzt als ehemalige Mitarbeiter. De Zuegriff uf die Organisation endet, d Sitzige werded abgmolde und de Verlauf bliibt erhalte. Überprüef, was sich suscht no änderet, bevor du bestätigsch.",
           "descriptionAt": "{name} wird zu einer ehemaligen Mitarbeiterin / einem ehemaligen Mitarbeiter, sobald Sie bestätigen (Vorschau für {time}, {timeZone}). Der Zugriff auf diese Organisation endet, die Sitzungen werden abgemeldet und der Verlauf bleibt erhalten. Prüfen Sie vor der Bestätigung, was sich sonst noch ändert.",
+          "documentRequests": "{count, plural, one {# offeni Dokumentaaforderig wird abbroche} other {# offeni Dokumentaaforderige werded abbroche}}",
           "drivingAuthorizations": "{count, plural, one {# Fahrberechtigung endet, einschliesslich sistierter} other {# Fahrberechtigungen enden, einschliesslich sistierter}}",
           "formLabel": "Deaktivierungsvorschau",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Stornierte Abwesenheiten",
             "access": "Kiosk-Badges und Fahrberechtigungen",
+            "documentRequests": "Abbrocheni Dokumentaaforderige",
             "grants": "Gehaltene Berechtigungen",
             "managers": "Vorgesetzten-Verknüpfungen",
             "shareLinks": "Freigabelinks für Berichte",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "En Abweseheit (Date nöd erfasst)",
+            "documentRequests": "{count, plural, one {# offeni Dokumentaaforderig isch abbroche worde; si mues im Personaldossier neu aagforderet werde} other {# offeni Dokumentaaforderige sind abbroche worde; si müend im Personaldossier neu aagforderet werde}}",
             "drivingAuthorizations": "{count, plural, one {# Fahrbewilligung isch abgloffe; e neui Überprüefig isch nötig} other {# Fahrbewilligunge sind abgloffe; e neui Überprüefig isch nötig}}",
             "kioskBadges": "{count, plural, one {# Kiosk-Badge isch widerruefe worde} other {# Kiosk-Badges sind widerruefe worde}}",
             "ownManager": "Verwaltet vo {name}",
@@ -342,6 +345,7 @@
         "reinviteRequired": "Dä Mitarbeiter hät kei Zuegang meh zur Organisation. Sänd en neui Iiladig, zum de Zuegang wieder härzstelle.",
         "removeAccess": "Zuegang entzieh",
         "removeDescription": "Das entfernt d'Mitgliedschaft i de Organisation und beändet alli Sitzige. Ziiterfassige, Absänz, Saldi, Aastelligsverlauf und Prüfige blibed erhalte.",
+        "removeEndsEmployment": "Damit hört au d'Aastellig uf, wie bi ere Deaktivierig: Künftigi Schichte wärded offe, spöteri Abwäseheite wärded storniert und Berächtigunge höred uf. Zum Ersatzvorgsetzti für d'Mitarbeitende uswähle, bruuch stattdesse „Deaktivieren“.",
         "removeError": "Zuegang zur Organisation hät nöd chönne entzoge werde",
         "removeSuccess": "Zuegang zur Organisation isch entzoge worde",
         "removeTitle": "Zuegang zur Organisation entzieh?",

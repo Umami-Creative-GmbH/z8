@@ -254,6 +254,7 @@ function lifecycleDialogCopy(
 					"settings.employees.lifecycle.reactivatingStatus",
 					"Reactivating employee",
 				),
+				consequence: null,
 			};
 		default:
 			return {
@@ -273,6 +274,11 @@ function lifecycleDialogCopy(
 				pendingStatus: t(
 					"settings.employees.lifecycle.removingStatus",
 					"Removing organization access",
+				),
+				// Member removal is a deactivation (#1629, Organization ADR 0011).
+				consequence: t(
+					"settings.employees.lifecycle.removeEndsEmployment",
+					"Removing them also ends their employment, like a deactivation: their future shifts become open, their later absences are cancelled and their grants end. To choose replacement managers for their reports, use Deactivate instead.",
 				),
 			};
 	}
@@ -294,6 +300,9 @@ function LifecycleConfirmationDialog({
 				<AlertDialogHeader>
 					<AlertDialogTitle>{copy.title}</AlertDialogTitle>
 					<AlertDialogDescription>{copy.description}</AlertDialogDescription>
+					{copy.consequence && (
+						<p className="text-muted-foreground text-sm">{copy.consequence}</p>
+					)}
 				</AlertDialogHeader>
 				{isPending && (
 					<span

@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, other {# onay görevi için yeni biri atanmalı ve inceleme için listelendi ({review}).} }",
           "description": "{name} artık eski bir çalışan oluyor. Bu kuruluşa erişimi sona erer, oturumları kapatılır ve geçmişi saklanır. Onaylamadan önce diğer değişiklikleri gözden geçirin.",
           "descriptionAt": "Onayladığınızda {name} eski çalışan statüsüne geçer ({time}, {timeZone} için önizlendi). Bu kuruluşa erişimi sona erer, oturumları kapatılır ve geçmişi saklanır. Onaylamadan önce nelerin değişeceğini gözden geçirin.",
+          "documentRequests": "{count, plural, other {# açık belge talebi iptal edilir}}",
           "drivingAuthorizations": "{count, plural, other {Askıya alınanlar dahil # sürüş yetkisi sona erer} }",
           "formLabel": "Devre dışı bırakma önizlemesi",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "İptal edilen devamsızlıklar",
             "access": "Kiosk rozetleri ve sürüş yetkileri",
+            "documentRequests": "İptal edilen belge talepleri",
             "grants": "Sahip olunan yetkiler",
             "managers": "Yönetici bağlantıları",
             "shareLinks": "Rapor paylaşım bağlantıları",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Bir devamsızlık (tarihler kaydedilmedi)",
+            "documentRequests": "{count, plural, other {# açık belge talebi iptal edildi; özlük dosyasında yeniden talep edilmelidir}}",
             "drivingAuthorizations": "{count, plural, other {# sürüş yetkisi sona erdi; yeni bir kontrol gerekli} }",
             "kioskBadges": "{count, plural, other {# kiosk rozeti iptal edildi} }",
             "ownManager": "{name} tarafından yönetiliyor",
@@ -342,6 +345,7 @@
         "reinviteRequired": "Bu çalışanın artık kuruluş üyeliği bulunmuyor. Erişimi geri yüklemek için yeni bir davetiye gönderin.",
         "removeAccess": "Erişimi kaldır",
         "removeDescription": "Bu işlem kuruluş üyeliğini kaldırır ve kuruluş oturumlarını sonlandırır. Zaman kayıtları, izinler, bakiyeler, istihdam geçmişi ve denetimler korunur.",
+        "removeEndsEmployment": "Bu işlem, devre dışı bırakmada olduğu gibi istihdamı da sona erdirir: gelecekteki vardiyalar açık hale gelir, sonraki izinler iptal edilir ve yetkiler sona erer. Bağlı çalışanlar için yerine geçecek yöneticileri seçmek için bunun yerine „Devre dışı bırak” seçeneğini kullanın.",
         "removeError": "Kuruluş erişimi kaldırılamadı",
         "removeSuccess": "Kuruluş erişimi kaldırıldı",
         "removeTitle": "Kuruluş erişimi kaldırılsın mı?",

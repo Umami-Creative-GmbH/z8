@@ -181,7 +181,6 @@ type LifecycleState = {
 	/** What the deactivation command returns; defaults to an applied deactivation. */
 	execution?: unknown;
 	afterCommit?: Array<() => Promise<void>>;
-	releasedDeputies?: unknown;
 	/** A ledger row already recorded under the request ID (a replay). */
 	recorded?: unknown;
 };
@@ -307,7 +306,6 @@ function setup(state: LifecycleState = {}) {
 				result: {},
 				audit: { forwardCommitted },
 				afterCommit: state.afterCommit ?? [],
-				releasedDeputies: state.releasedDeputies ?? null,
 			}
 		);
 	});
@@ -752,37 +750,6 @@ describe("employee lifecycle actions", () => {
 		);
 	});
 
-	it("notifies the absences the deactivated employee stopped covering after the commit (#1014)", async () => {
-		const released = {
-			organizationId,
-			deputyEmployeeId: employeeId,
-			eventKey: "employee_deactivated:1",
-			assignments: [
-				{
-					absenceId: "absence-1",
-					absentEmployeeId: "anna",
-					startDate: "2026-10-01",
-					endDate: "2026-10-05",
-				},
-			],
-		};
-		const { events } = setup({ releasedDeputies: released });
-		mocks.notifyReleasedDeputyAssignments.mockImplementation(async () => {
-			events.push("deputies-notified");
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(mocks.notifyReleasedDeputyAssignments).toHaveBeenCalledExactlyOnceWith(
-			released,
-			expect.anything(),
-		);
-		expect(events.indexOf("deputies-notified")).toBeGreaterThan(
-			events.indexOf("transaction-committed"),
-		);
-	});
-
 	it("refuses without any after-commit work when a report still needs an eligible replacement (#1440)", async () => {
 		const { events } = setup({
 			execution: {
@@ -810,14 +777,8 @@ describe("employee lifecycle actions", () => {
 
 	it("replays a recorded request: no second deactivation, its after-commit work again (#1440)", async () => {
 		const replayedSteps: string[] = [];
-		const released = {
-			organizationId,
-			deputyEmployeeId: employeeId,
-			eventKey: "employee_deactivated:1",
-			assignments: [],
-		};
 		const recorded = { id: "deactivation-1", reactivatedAt: null };
-		const { events } = setup({ recorded });
+		const { events, dbService } = setup({ recorded });
 		mocks.rebuildDeactivationAfterCommit.mockReturnValue({
 			result: { employeeUserId: targetUserId },
 			afterCommit: [
@@ -825,7 +786,6 @@ describe("employee lifecycle actions", () => {
 					replayedSteps.push("planner-notice");
 				},
 			],
-			releasedDeputies: released,
 		});
 
 		const result = await deactivateEmployeeAction(employeeId);
@@ -836,7 +796,7 @@ describe("employee lifecycle actions", () => {
 			requestId,
 			requestFingerprint: "fingerprint",
 		});
-		expect(mocks.rebuildDeactivationAfterCommit).toHaveBeenCalledWith(recorded);
+		expect(mocks.rebuildDeactivationAfterCommit).toHaveBeenCalledWith(recorded, dbService.db);
 		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
 		expect(replayedSteps).toEqual(["planner-notice"]);
 		expect(mocks.revokeOrganizationActiveSessions).toHaveBeenCalledExactlyOnceWith(
@@ -846,7 +806,6 @@ describe("employee lifecycle actions", () => {
 		// The audit entry was written by the first run.
 		expect(mocks.logAudit).not.toHaveBeenCalled();
 		expect(mocks.reconcileBillingSeatsForOrganization).toHaveBeenCalledOnce();
-		expect(mocks.notifyReleasedDeputyAssignments).toHaveBeenCalledWith(released, expect.anything());
 		expect(events).toContain("cache-revalidated");
 	});
 
@@ -855,7 +814,6 @@ describe("employee lifecycle actions", () => {
 		mocks.rebuildDeactivationAfterCommit.mockReturnValue({
 			result: { employeeUserId: targetUserId },
 			afterCommit: [],
-			releasedDeputies: null,
 		});
 
 		const result = await deactivateEmployeeAction(employeeId);

@@ -15,6 +15,7 @@ type DeputyReleaseClient = Pick<WorkTransactionClient, "select" | "update" | "in
 export type DeputyReleaseReason =
 	| "employee_departure"
 	| "employee_deactivated"
+	| "employee_deactivation_backfill"
 	| "member_removed"
 	| "scim_deprovisioned";
 
@@ -98,12 +99,20 @@ async function loadDeputyAssignmentsNotEnded(
 		}));
 }
 
+/** The running or upcoming absences that name the employee as deputy at `at` (#1014). */
+export function deputyAssignmentsNotEnded(
+	executor: Pick<DeputyReleaseClient, "select">,
+	input: { organizationId: string; deputyEmployeeId: string; at: Instant },
+): Promise<DeputyAssignment[]> {
+	return loadDeputyAssignmentsNotEnded(executor, { ...input, lock: false });
+}
+
 /** How many running or upcoming absences name the employee as deputy at `at` (#1014). */
 export async function countDeputyAssignmentsNotEnded(
 	executor: Pick<DeputyReleaseClient, "select">,
 	input: { organizationId: string; deputyEmployeeId: string; at: Instant },
 ): Promise<number> {
-	return (await loadDeputyAssignmentsNotEnded(executor, { ...input, lock: false })).length;
+	return (await deputyAssignmentsNotEnded(executor, input)).length;
 }
 
 /**
@@ -112,7 +121,8 @@ export async function countDeputyAssignmentsNotEnded(
  * their historical deputy. Each cleared absence gets the same audit entry as a
  * manual deputy change, performed by `actorUserId` and marked as a system side
  * effect. Idempotent: a second run finds nothing to clear and writes nothing.
- * Notifications are the caller's, after the commit (or as a durable task).
+ * Notifications are the caller's, after the commit (or as a durable task):
+ * Employment ending's deputy participant returns them (#1624).
  */
 export async function releaseDeputyAssignments(
 	executor: DeputyReleaseClient,
@@ -156,40 +166,4 @@ export async function releaseDeputyAssignments(
 		});
 	}
 	return released;
-}
-
-/**
- * The release for a deactivation outside a departure (#1014): the legacy
- * Deactivate action, member removal and SCIM deprovisioning. Runs in the
- * deactivating transaction; the caller notifies after its commit
- * (`notifyReleasedDeputyAssignments`). Null when nothing was cleared.
- */
-export async function releaseDeputyAssignmentsOnDeactivation(
-	executor: DeputyReleaseClient,
-	audit: AuditTrail,
-	input: {
-		organizationId: string;
-		employeeId: string;
-		actorUserId: string;
-		at: Instant;
-		reason: Exclude<DeputyReleaseReason, "employee_departure">;
-		metadata?: Record<string, unknown>;
-	},
-): Promise<ReleasedDeputyAssignments | null> {
-	const assignments = await releaseDeputyAssignments(executor, audit, {
-		organizationId: input.organizationId,
-		deputyEmployeeId: input.employeeId,
-		at: input.at,
-		actorUserId: input.actorUserId,
-		reason: input.reason,
-		metadata: input.metadata,
-	});
-	if (assignments.length === 0) return null;
-	return {
-		organizationId: input.organizationId,
-		deputyEmployeeId: input.employeeId,
-		eventKey: `${input.reason}:${input.at.epochMilliseconds}`,
-		assignments,
-		audit,
-	};
 }

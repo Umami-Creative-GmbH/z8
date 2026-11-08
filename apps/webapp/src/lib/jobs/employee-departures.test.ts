@@ -13,6 +13,16 @@ const identity = (departureId: string, organizationId = "org-1"): DepartureIdent
 
 const noTasks = { claimed: 0, completed: 0, deferred: 0, failed: 0 };
 
+const noFollowUps = {
+	processed: 0,
+	applied: 0,
+	withdrawn: 0,
+	skipped: 0,
+	reportsNotices: 0,
+	failed: 0,
+	errors: [],
+};
+
 describe("runEmployeeDepartureMaintenanceWith", () => {
 	it("runs no departure while the offboarding release gate is closed, and delivers only deactivation work", async () => {
 		const listDueDepartures = vi.fn();
@@ -26,6 +36,7 @@ describe("runEmployeeDepartureMaintenanceWith", () => {
 			listDueDepartures,
 			executeDeparture,
 			deliverTasks,
+			runFollowUpDeactivations: vi.fn().mockResolvedValue(noFollowUps),
 		});
 
 		expect(result).toMatchObject({
@@ -36,6 +47,28 @@ describe("runEmployeeDepartureMaintenanceWith", () => {
 		expect(listDueDepartures).not.toHaveBeenCalled();
 		expect(executeDeparture).not.toHaveBeenCalled();
 		expect(deliverTasks).toHaveBeenCalledWith(now, { deactivationOnly: true });
+	});
+
+	it.each([
+		{ gate: "closed", released: false },
+		{ gate: "open", released: true },
+	])("completes the follow-up deactivations of member removals with the gate $gate (#1629)", async ({
+		released,
+	}) => {
+		const followUps = { ...noFollowUps, processed: 2, applied: 1, withdrawn: 1 };
+		const runFollowUpDeactivations = vi.fn().mockResolvedValue(followUps);
+
+		const result = await runEmployeeDepartureMaintenanceWith({
+			released,
+			clock: { nowInstant: () => parseInstant("2026-09-15T00:01:00Z") },
+			listDueDepartures: vi.fn().mockResolvedValue([]),
+			executeDeparture: vi.fn(),
+			deliverTasks: vi.fn().mockResolvedValue(noTasks),
+			runFollowUpDeactivations,
+		});
+
+		expect(runFollowUpDeactivations).toHaveBeenCalledOnce();
+		expect(result.followUpDeactivations).toEqual(followUps);
 	});
 
 	it("executes due departures in order, isolating failures, then delivers follow-up work", async () => {
@@ -59,6 +92,7 @@ describe("runEmployeeDepartureMaintenanceWith", () => {
 			listDueDepartures: vi.fn().mockResolvedValue(due),
 			executeDeparture,
 			deliverTasks,
+			runFollowUpDeactivations: vi.fn().mockResolvedValue(noFollowUps),
 		});
 
 		expect(executeDeparture.mock.calls.map(([called]) => called.departureId)).toEqual([
@@ -71,6 +105,7 @@ describe("runEmployeeDepartureMaintenanceWith", () => {
 			released: true,
 			departures: { processed: 4, effective: 1, blocked: 1, obsolete: 1, notDue: 0, failed: 1 },
 			tasks: { ...noTasks, claimed: 2, completed: 2 },
+			followUpDeactivations: noFollowUps,
 			errors: [{ organizationId: "org-1", departureId: "b", error: "deadlock detected" }],
 		});
 		expect(deliverTasks).toHaveBeenCalledWith(now, { deactivationOnly: false });

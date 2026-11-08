@@ -97,7 +97,7 @@ describe("reconcileSCIMLifecycle", () => {
 		return target;
 	}
 
-	it("reports the employee it deactivated once, so the deputy release runs (#1014)", async () => {
+	it("reports the employee it deactivated once, so a pending deactivation is recorded (#1629)", async () => {
 		const target = fixture({
 			member: {
 				id: "member_existing",

@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# responsabilitate de aprobare necesită un înlocuitor și este afișată pentru examinare ({review}).} other {# responsabilități de aprobare necesită un înlocuitor și sunt afișate pentru examinare ({review}).}}",
           "description": "{name} devine fost angajat acum. Accesul la această organizație se încheie, sesiunile sale sunt deconectate, iar istoricul său este păstrat. Examinați ce altceva se modifică înainte de a confirma.",
           "descriptionAt": "{name} devine fost angajat după ce confirmați (previzualizat pentru {time}, {timeZone}). Accesul la această organizație încetează, sesiunile sale sunt deconectate, iar istoricul este păstrat. Examinați ce altceva se modifică înainte de a confirma.",
+          "documentRequests": "{count, plural, one {# solicitare de document deschisă este anulată} few {# solicitări de documente deschise sunt anulate} other {# de solicitări de documente deschise sunt anulate}}",
           "drivingAuthorizations": "{count, plural, one {# autorizație de conducere încetează, inclusiv cele suspendate} other {# autorizații de conducere încetează, inclusiv cele suspendate}}",
           "formLabel": "Previzualizare dezactivare",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Absențe anulate",
             "access": "Ecusoane de chioșc și autorizații de conducere",
+            "documentRequests": "Solicitări de documente anulate",
             "grants": "Drepturi deținute",
             "managers": "Legături de manager",
             "shareLinks": "Linkuri de partajare a raportului",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "O absență (date neînregistrate)",
+            "documentRequests": "{count, plural, one {# solicitare de document deschisă a fost anulată; trebuie solicitată din nou în dosarul de personal} few {# solicitări de documente deschise au fost anulate; trebuie solicitate din nou în dosarul de personal} other {# de solicitări de documente deschise au fost anulate; trebuie solicitate din nou în dosarul de personal}}",
             "drivingAuthorizations": "{count, plural, one {# autorizație de conducere a expirat; este necesară o nouă verificare} few {# autorizații de conducere au expirat; este necesară o nouă verificare} other {# de autorizații de conducere au expirat; este necesară o nouă verificare}}",
             "kioskBadges": "{count, plural, one {# ecuson de chioșc a fost revocat} few {# ecusoane de chioșc au fost revocate} other {# de ecusoane de chioșc au fost revocate}}",
             "ownManager": "Gestionat de {name}",
@@ -342,6 +345,7 @@
         "reinviteRequired": "Acest angajat nu mai este membru al organizației. Trimiteți o nouă invitație pentru a restabili accesul.",
         "removeAccess": "Elimină accesul",
         "removeDescription": "Această acțiune elimină calitatea de membru al organizației și încheie sesiunile organizației. Înregistrările orelor, absențele, soldurile, istoricul angajării și jurnalele de audit sunt păstrate.",
+        "removeEndsEmployment": "Astfel se încheie și angajarea, ca la o dezactivare: turele viitoare devin deschise, absențele ulterioare sunt anulate, iar permisiunile încetează. Pentru a alege manageri înlocuitori pentru subordonați, folosiți în schimb „Dezactivează”.",
         "removeError": "Nu s-a putut elimina accesul la organizație",
         "removeSuccess": "Accesul la organizație a fost eliminat",
         "removeTitle": "Eliminați accesul la organizație?",

@@ -730,35 +730,49 @@ export async function cancelDocumentRequest(
 	});
 }
 
+/** The employee's open and submitted requests, in id order. Organization-scoped. */
+export async function activeDocumentRequestIdsOfEmployee(
+	client: Pick<Transaction, "select">,
+	input: { organizationId: string; employeeId: string },
+): Promise<string[]> {
+	const rows = await client
+		.select({ id: employeeDocumentRequest.id })
+		.from(employeeDocumentRequest)
+		.where(activeDocumentRequestsOf(input))
+		.orderBy(asc(employeeDocumentRequest.id));
+	return rows.map((row) => row.id);
+}
+
+function activeDocumentRequestsOf(input: { organizationId: string; employeeId: string }) {
+	return and(
+		eq(employeeDocumentRequest.organizationId, input.organizationId),
+		eq(employeeDocumentRequest.employeeId, input.employeeId),
+		inArray(employeeDocumentRequest.status, [...ACTIVE_DOCUMENT_REQUEST_STATUSES]),
+	);
+}
+
 /**
- * The departure's side of document requests (#1408): inside the departure
- * transaction, every open and submitted request of the departing employee is
- * cancelled with the system reason 'employment_ended', audited under the
- * departure's initiator and naming the departure. Nobody is notified. A rehire
- * never reopens them; documents already uploaded stay in the file under
- * retention. Returns the cancelled request ids.
+ * Document requests end with the employment (#1408, Employment ending
+ * #1624): inside the ending transaction, every open and submitted request of
+ * the employee is cancelled with the system reason 'employment_ended',
+ * audited under `actorUserId` with `auditMetadata` naming the cause. Nobody is
+ * notified. A rehire or reactivation never reopens them; documents already
+ * uploaded stay in the file under retention. Returns the cancelled request ids.
  */
-export async function cancelDocumentRequestsForDeparture(
+export async function cancelDocumentRequestsAtEmploymentEnd(
 	tx: Pick<Transaction, "select" | "insert" | "update">,
 	input: {
 		organizationId: string;
 		employeeId: string;
 		actorUserId: string;
-		departureId: string;
-		employmentPeriodId: string;
+		auditMetadata: Record<string, unknown>;
 		now: Instant;
 	},
 ): Promise<string[]> {
 	const active = await tx
 		.select()
 		.from(employeeDocumentRequest)
-		.where(
-			and(
-				eq(employeeDocumentRequest.organizationId, input.organizationId),
-				eq(employeeDocumentRequest.employeeId, input.employeeId),
-				inArray(employeeDocumentRequest.status, [...ACTIVE_DOCUMENT_REQUEST_STATUSES]),
-			),
-		)
+		.where(activeDocumentRequestsOf(input))
 		.orderBy(asc(employeeDocumentRequest.id))
 		.for("update");
 	const cancelled: string[] = [];
@@ -771,10 +785,7 @@ export async function cancelDocumentRequestsForDeparture(
 				kind: "cancelled",
 				actorUserId: input.actorUserId,
 				reasonCode: "employment_ended",
-				auditMetadata: {
-					departureId: input.departureId,
-					employmentPeriodId: input.employmentPeriodId,
-				},
+				auditMetadata: input.auditMetadata,
 			},
 			now: input.now,
 		});

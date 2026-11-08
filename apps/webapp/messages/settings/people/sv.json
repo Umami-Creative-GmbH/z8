@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, other {# godkännandeuppdrag behöver en ersättare och har listats för granskning ({review}).} }",
           "description": "{name} blir nu en tidigare anställd. Åtkomsten till denna organisation upphör, sessionerna loggas ut och historiken behålls. Granska vad mer som ändras innan du bekräftar.",
           "descriptionAt": "{name} blir en tidigare anställd när du bekräftar (förhandsgranskades för {time}, {timeZone}). Åtkomsten till denna organisation upphör, sessionerna loggas ut och historiken sparas. Granska vad mer som ändras innan du bekräftar.",
+          "documentRequests": "{count, plural, one {# öppen dokumentförfrågan avbryts} other {# öppna dokumentförfrågningar avbryts}}",
           "drivingAuthorizations": "{count, plural, other {# körtillstånd upphör, inklusive pausade} }",
           "formLabel": "Förhandsgranskning av avaktivering",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Avbrutna frånvaror",
             "access": "Kioskbrickor och körtillstånd",
+            "documentRequests": "Avbrutna dokumentförfrågningar",
             "grants": "Innehavda behörigheter",
             "managers": "Chefskopplingar",
             "shareLinks": "Delningslänkar för rapporter",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "En frånvaro (datum har inte registrerats)",
+            "documentRequests": "{count, plural, one {# öppen dokumentförfrågan avbröts; begär den igen i personalakten} other {# öppna dokumentförfrågningar avbröts; begär dem igen i personalakten}}",
             "drivingAuthorizations": "{count, plural, other {# körtillstånd upphörde; en ny kontroll krävs} }",
             "kioskBadges": "{count, plural, one {# kioskbricka återkallades} other {# kioskbrickor återkallades}}",
             "ownManager": "Hanteras av {name}",
@@ -342,6 +345,7 @@
         "reinviteRequired": "Denna medarbetare har inte längre något organisationsmedlemskap. Skicka en ny inbjudan för att återställa åtkomsten.",
         "removeAccess": "Ta bort åtkomst",
         "removeDescription": "Detta tar bort organisationsmedlemskapet och avslutar organisationssessioner. Tidsregistreringar, frånvaro, saldon, anställningshistorik och granskningar behålls.",
+        "removeEndsEmployment": "Detta avslutar också anställningen, precis som en inaktivering: framtida pass blir öppna, senare frånvaro avbokas och behörigheter upphör. Om du vill välja ersättande chefer för medarbetarna, använd ”Inaktivera” i stället.",
         "removeError": "Det gick inte att ta bort organisationsåtkomst",
         "removeSuccess": "Organisationsåtkomst har tagits bort",
         "removeTitle": "Ta bort organisationsåtkomst?",

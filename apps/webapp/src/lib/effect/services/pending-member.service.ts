@@ -17,6 +17,11 @@ import {
 } from "@/lib/auth/member-removal-cleanup";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import {
+	completeReturnReactivation,
+	reactivateOnReturn,
+} from "@/lib/employee-lifecycle/reactivation";
 import { placeInTeam } from "@/lib/organization/primary-team";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
@@ -301,9 +306,17 @@ export const PendingMemberServiceLive = Layer.effect(
 								),
 							);
 						await placeInAssignedTeam(existingEmployee.id);
+						// Coming back after a deactivation is a reactivation by the approving admin (#1628).
+						const reactivation = await reactivateOnReturn(tx, {
+							organizationId: input.organizationId,
+							employeeId: existingEmployee.id,
+							actorUserId: input.approvedBy,
+							at: systemClock.nowInstant(),
+						});
+						return { approval, reactivation };
 					}
 
-					return approval;
+					return { approval, reactivation: null };
 				},
 				dbService.db,
 			);
@@ -466,7 +479,6 @@ export const PendingMemberServiceLive = Layer.effect(
 				await completeRemovedMemberCleanupPostCommit({
 					organizationId: input.organizationId,
 					sessionTokens: result.cleanup.sessionTokens,
-					releasedDeputies: result.cleanup.releasedDeputies,
 				});
 			}
 			return result;
@@ -567,17 +579,21 @@ export const PendingMemberServiceLive = Layer.effect(
 									),
 						));
 
-					const approval = yield* dbService.query("approvePendingMember", () =>
+					const approved = yield* dbService.query("approvePendingMember", () =>
 						approvePendingMemberAtomically(pendingMember, input),
 					);
 
-					if (!approval) {
+					if (!approved) {
 						return yield* Effect.fail(
 							new ValidationError({
 								message: "Member is no longer pending approval",
 								field: "memberId",
 							}),
 						);
+					}
+					const { approval, reactivation } = approved;
+					if (reactivation) {
+						yield* Effect.promise(() => completeReturnReactivation(reactivation));
 					}
 
 					yield* Effect.promise(() =>
@@ -651,6 +667,10 @@ export const PendingMemberServiceLive = Layer.effect(
 						if (approvalResult._tag === "Failure" || !approvalResult.success) {
 							failed++;
 							continue;
+						}
+						const { reactivation } = approvalResult.success;
+						if (reactivation) {
+							yield* Effect.promise(() => completeReturnReactivation(reactivation));
 						}
 
 						yield* Effect.promise(() =>

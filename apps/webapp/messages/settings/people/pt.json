@@ -248,6 +248,7 @@
           "approvalsToReview": "{count, plural, one {# função de aprovação precisa de um substituto e está listada para revisão ({review}).} other {# funções de aprovação precisam de um substituto e estão listadas para revisão ({review}).}}",
           "description": "{name} passa a ser ex-funcionário(a) agora. O acesso a esta organização é encerrado, suas sessões são desconectadas e seu histórico é mantido. Revise o que mais mudará antes de confirmar.",
           "descriptionAt": "{name} se tornará um ex-funcionário quando você confirmar (previsto para {time}, {timeZone}). O acesso a esta organização será encerrado, suas sessões serão finalizadas e o histórico mantido. Revise o que mais muda antes de confirmar.",
+          "documentRequests": "{count, plural, one {# solicitação de documento aberta é cancelada} other {# solicitações de documentos abertas são canceladas}}",
           "drivingAuthorizations": "{count, plural, one {# autorização para dirigir é encerrada, incluindo as suspensas} other {# autorizações para dirigir são encerradas, incluindo as suspensas}}",
           "formLabel": "Pré-visualização da desativação",
           "grants": {
@@ -309,6 +310,7 @@
           "groups": {
             "absences": "Ausências canceladas",
             "access": "Crachás de quiosque e autorizações para dirigir",
+            "documentRequests": "Solicitações de documentos canceladas",
             "grants": "Permissões atribuídas",
             "managers": "Vínculos de gestão",
             "shareLinks": "Links de compartilhamento de relatórios",
@@ -318,6 +320,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Uma ausência (datas não registradas)",
+            "documentRequests": "{count, plural, one {# solicitação de documento aberta foi cancelada; ela deve ser solicitada novamente no arquivo de pessoal} other {# solicitações de documentos abertas foram canceladas; elas devem ser solicitadas novamente no arquivo de pessoal}}",
             "drivingAuthorizations": "{count, plural, one {# autorização para dirigir terminou; uma nova verificação é necessária} other {# autorizações para dirigir terminaram; uma nova verificação é necessária}}",
             "kioskBadges": "{count, plural, one {# crachá de quiosque foi revogado} other {# crachás de quiosque foram revogados}}",
             "ownManager": "Gerenciado por {name}",
@@ -342,6 +345,7 @@
         "reinviteRequired": "Este funcionário não possui mais vínculo com a organização. Envie um novo convite para restaurar o acesso.",
         "removeAccess": "Remover acesso",
         "removeDescription": "Isso remove o vínculo com a organização e encerra as sessões da organização. Registros de horas, ausências, saldos, histórico de emprego e auditorias são mantidos.",
+        "removeEndsEmployment": "Isso também encerra o vínculo empregatício, como uma desativação: os turnos futuros ficam em aberto, as ausências posteriores são canceladas e as permissões terminam. Para escolher gestores substitutos para os subordinados, use «Desativar».",
         "removeError": "Falha ao remover o acesso à organização",
         "removeSuccess": "Acesso à organização removido",
         "removeTitle": "Remover acesso à organização?",

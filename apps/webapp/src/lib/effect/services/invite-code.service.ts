@@ -26,6 +26,13 @@ import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import {
+	completeReturnReactivation,
+	type ReturnReactivation,
+	reactivateOnReturn,
+} from "@/lib/employee-lifecycle/reactivation";
+import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
 import { placeInTeam } from "@/lib/organization/primary-team";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
@@ -317,12 +324,13 @@ export const InviteCodeServiceLive = Layer.effect(
 			return targetTeam?.id ?? null;
 		};
 
+		/** Returns the reactivation it recorded, which the caller completes after commit (#1628). */
 		const provisionEmployeeForInviteCode = async (
 			dbClient: RedemptionDb,
 			inviteCodeRecord: InviteCode,
 			userId: string,
 			memberRole: unknown,
-		) => {
+		): Promise<ReturnReactivation | null> => {
 			const [existingEmployee, targetTeamId] = await Promise.all([
 				dbClient.query.employee.findFirst({
 					where: and(
@@ -357,8 +365,15 @@ export const InviteCodeServiceLive = Layer.effect(
 							),
 						);
 					await placeInTargetTeam(existingEmployee.id);
+					// Coming back after a deactivation is a reactivation by the joining user.
+					return reactivateOnReturn(dbClient as LifecycleClient, {
+						organizationId: inviteCodeRecord.organizationId,
+						employeeId: existingEmployee.id,
+						actorUserId: userId,
+						at: systemClock.nowInstant(),
+					});
 				}
-				return;
+				return null;
 			}
 
 			const [created] = await dbClient
@@ -375,6 +390,7 @@ export const InviteCodeServiceLive = Layer.effect(
 				})
 				.returning({ id: employee.id });
 			if (created) await placeInTargetTeam(created.id);
+			return null;
 		};
 
 		const redeemInviteCodeInTransaction = async (
@@ -500,18 +516,17 @@ export const InviteCodeServiceLive = Layer.effect(
 				}
 
 				if (existingMember) {
-					if (
+					const reactivation =
 						!lockedInviteCode.requiresApproval &&
 						existingMember.status === "approved"
-					) {
-						await provisionEmployeeForInviteCode(
-							redemptionDb,
-							lockedInviteCode,
-							input.userId,
-							existingMember.role,
-						);
-					}
-					return { member: existingMember, created: false };
+							? await provisionEmployeeForInviteCode(
+									redemptionDb,
+									lockedInviteCode,
+									input.userId,
+									existingMember.role,
+								)
+							: null;
+					return { member: existingMember, created: false, reactivation };
 				}
 
 				const memberStatus = lockedInviteCode.requiresApproval
@@ -538,14 +553,14 @@ export const InviteCodeServiceLive = Layer.effect(
 					userAgent: input.userAgent,
 				});
 
-				if (!lockedInviteCode.requiresApproval) {
-					await provisionEmployeeForInviteCode(
-						redemptionDb,
-						lockedInviteCode,
-						input.userId,
-						createdMember.role,
-					);
-				}
+				const reactivation = lockedInviteCode.requiresApproval
+					? null
+					: await provisionEmployeeForInviteCode(
+							redemptionDb,
+							lockedInviteCode,
+							input.userId,
+							createdMember.role,
+						);
 
 				const [incrementedInviteCode] = await redemptionDb
 					.update(inviteCode)
@@ -569,7 +584,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					throw new Error("Invite code changed before usage increment");
 				}
 
-				return { member: createdMember, created: true };
+				return { member: createdMember, created: true, reactivation };
 			});
 
 		return InviteCodeService.of({
@@ -982,6 +997,10 @@ export const InviteCodeServiceLive = Layer.effect(
 							}),
 						);
 					}
+					const { reactivation } = redemption;
+					if (reactivation) {
+						yield* Effect.promise(() => completeReturnReactivation(reactivation));
+					}
 					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
 
 					if (redemption.created && redemptionStatus === "approved") {
@@ -1216,6 +1235,10 @@ export const InviteCodeServiceLive = Layer.effect(
 								field: "domainRestrictionEnabled",
 							}),
 						);
+					}
+					const { reactivation } = redemption;
+					if (reactivation) {
+						yield* Effect.promise(() => completeReturnReactivation(reactivation));
 					}
 					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
 

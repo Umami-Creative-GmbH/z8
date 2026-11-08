@@ -9,8 +9,10 @@ import { betterAuth } from "better-auth/minimal";
 import { organization } from "better-auth/plugins/organization";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { afterAll, describe, expect, it, vi } from "vitest";
+import { db } from "@/db";
 import { captureAuthTransactions } from "@/lib/auth/auth-transaction";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
+import { runFollowUpDeactivations } from "@/lib/employee-lifecycle/deactivation/follow-up";
 import { integrationAdminPool } from "@/test/integration-database";
 import {
 	createSCIMCallbackModelRegistration,
@@ -895,6 +897,190 @@ describe("managed SCIM protocol PostgreSQL contract", () => {
 			{ id: employeeId, is_active: false, employee_number: "FORMER-42" },
 		]);
 	});
+
+	/** An active employee the IdP deprovisioned, with that deactivation recorded. */
+	async function deprovisionedEmployee(label: string) {
+		const graph = await setup(label);
+		const externalId = `${label}-${runId}`;
+		const userId = await bindUser(graph, externalId);
+		const created = await request(
+			graph.token,
+			"/Users",
+			"POST",
+			user(externalId),
+		);
+		expect(created.status).toBe(201);
+		const source = await created.json();
+		const setActive = (value: boolean) =>
+			request(graph.token, `/Users/${source.id}`, "PATCH", {
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations: [{ op: "replace", path: "active", value }],
+			});
+		await pool.query(
+			"update member set status = 'approved' where organization_id = $1 and user_id = $2",
+			[graph.organizationId, userId],
+		);
+		const employeeId: string = (
+			await pool.query(
+				"update employee set is_active = true where organization_id = $1 and user_id = $2 returning id",
+				[graph.organizationId, userId],
+			)
+		).rows[0].id;
+		expect((await setActive(false)).status).toBe(200);
+		expect(
+			(
+				await pool.query("select is_active from employee where id = $1", [
+					employeeId,
+				])
+			).rows,
+		).toEqual([{ is_active: false }]);
+		// Deprovisioning is a deactivation (#1629): the hook records it pending.
+		const recorded = await pool.query(
+			`select d.id, d.status, d.reason, d.created_by, d.metadata,
+				d.deactivated_at = e.deactivated_at as at_removal
+			 from employee_deactivation d join employee e on e.id = d.employee_id
+			 where d.employee_id = $1`,
+			[employeeId],
+		);
+		expect(recorded.rows).toEqual([
+			{
+				id: expect.any(String),
+				status: "pending",
+				reason: "scim_deprovisioned",
+				created_by: userId,
+				metadata: { actorKind: "system", connectionId: graph.connectionId },
+				at_removal: true,
+			},
+		]);
+		const deactivationId: string = recorded.rows[0].id;
+		return { graph, userId, employeeId, deactivationId, setActive };
+	}
+
+	it("completes a deprovisioning as a deactivation, audited by the user with the connection", async () => {
+		const { graph, userId, employeeId, deactivationId } =
+			await deprovisionedEmployee("deprovision-follow-up");
+		const teamId = randomUUID();
+		await pool.query(
+			"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'SCIM team', now())",
+			[teamId, graph.organizationId],
+		);
+		await pool.query(
+			"insert into team_membership (organization_id, team_id, employee_id) values ($1, $2, $3)",
+			[graph.organizationId, teamId, employeeId],
+		);
+
+		await runFollowUpDeactivations(db);
+
+		expect(
+			(
+				await pool.query(
+					"select status from employee_deactivation where id = $1",
+					[deactivationId],
+				)
+			).rows,
+		).toEqual([{ status: "applied" }]);
+		expect(
+			(
+				await pool.query(
+					"select team_id from team_membership where employee_id = $1",
+					[employeeId],
+				)
+			).rows,
+		).toEqual([]);
+		const audits = await pool.query<{ performed_by: string; metadata: string }>(
+			`select performed_by, metadata from audit_log
+			 where organization_id = $1 and metadata like '%' || $2 || '%'`,
+			[graph.organizationId, deactivationId],
+		);
+		expect(audits.rows.length).toBeGreaterThan(0);
+		for (const row of audits.rows) {
+			expect(row.performed_by).toBe(userId);
+			expect(JSON.parse(row.metadata)).toMatchObject({
+				actorKind: "system",
+				connectionId: graph.connectionId,
+				reason: "scim_deprovisioned",
+				deactivationId,
+			});
+		}
+	});
+
+	it("reactivates the open deactivation of a deprovisioned employee the IdP re-enables, by the user with the connection", async () => {
+		const { graph, userId, employeeId, deactivationId, setActive } =
+			await deprovisionedEmployee("reenable-reactivation");
+
+		expect((await setActive(true)).status).toBe(200);
+
+		expect(
+			(
+				await pool.query(
+					"select is_active, deactivated_at from employee where id = $1",
+					[employeeId],
+				)
+			).rows,
+		).toEqual([{ is_active: true, deactivated_at: null }]);
+		const ledger = (
+			await pool.query(
+				"select reactivated_at, reactivated_by, reactivation_request_id from employee_deactivation where id = $1",
+				[deactivationId],
+			)
+		).rows[0];
+		expect(ledger).toMatchObject({
+			reactivated_at: expect.any(Date),
+			reactivated_by: userId,
+		});
+		const audits = await pool.query(
+			`select performed_by, metadata from audit_log
+			 where organization_id = $1 and entity_id = $2 and action = 'employee.reactivated'`,
+			[graph.organizationId, employeeId],
+		);
+		expect(
+			audits.rows.map((row) => ({
+				performedBy: row.performed_by,
+				metadata: JSON.parse(row.metadata),
+			})),
+		).toEqual([
+			{
+				performedBy: userId,
+				metadata: {
+					connectionId: graph.connectionId,
+					reactivationRequestId: ledger.reactivation_request_id,
+				},
+			},
+		]);
+	});
+
+	it("leaves the deactivation of a deprovisioned employee whose departure took effect open when the IdP re-enables them", async () => {
+		const { graph, employeeId, deactivationId, setActive } =
+			await deprovisionedEmployee("reenable-departed");
+		const periodId = randomUUID();
+		await pool.query(
+			"insert into employee_employment_period (id, organization_id, employee_id, status, started_at, ended_at, start_provenance) values ($1, $2, $3, 'closed', '2025-01-01Z', '2026-01-01Z', 'recorded')",
+			[periodId, graph.organizationId, employeeId],
+		);
+		await pool.query(
+			"insert into employee_departure (organization_id, employee_id, employment_period_id, mode, timezone, cutoff_at, revision, status, created_by, request_id, request_fingerprint, effective_at) values ($1, $2, $3, 'immediate', 'UTC', '2026-01-01Z', 1, 'effective', $4, $5, 'reenable-departed', '2026-01-01Z')",
+			[graph.organizationId, employeeId, periodId, graph.actorId, randomUUID()],
+		);
+
+		expect((await setActive(true)).status).toBe(200);
+
+		expect(
+			(
+				await pool.query("select is_active from employee where id = $1", [
+					employeeId,
+				])
+			).rows,
+		).toEqual([{ is_active: false }]);
+		expect(
+			(
+				await pool.query(
+					"select reactivated_at from employee_deactivation where id = $1",
+					[deactivationId],
+				)
+			).rows,
+		).toEqual([{ reactivated_at: null }]);
+	});
+
 	it("serves managed SCIM protocol resources, authorization errors, and Entra groups", async () => {
 		const graph = await setup("protocol");
 		await bindUser(graph, "protocol-user");

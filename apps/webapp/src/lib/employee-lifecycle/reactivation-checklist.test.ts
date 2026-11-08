@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { emptyEmploymentEndingPlan } from "@/components/organization/testing/deactivation-preview.test.fixture";
 import type { DeactivationApplied, DeactivationPlan } from "./deactivation/types";
-import { buildReactivationChecklistItems, checklistPlanSnapshot } from "./reactivation-checklist";
+import { reactivationItems } from "./employment-ending";
+import type { EmploymentEndingApplied } from "./employment-ending/types";
+import {
+	buildReactivationChecklistItems,
+	type ChecklistApplied,
+	checklistPlanSnapshot,
+	legacyAccessEndsItems,
+	type ReactivationChecklistItem,
+} from "./reactivation-checklist";
 
 const PERSON = "00000000-0000-4000-8000-000000000001";
 const ORPHAN = "00000000-0000-4000-8000-000000000002";
@@ -67,27 +76,14 @@ function plan(): DeactivationPlan {
 			],
 			absencesInClosedMonths: [],
 		},
-		accessEnds: {
-			grants: [
-				{ kind: "expense_officer", grantId: "grant-expense" },
-				{ kind: "driving_licence_verifier", grantId: "grant-verifier" },
-			],
-			drivingAuthorizations: [
-				{ authorizationId: "auth-b", state: "suspended" },
-				{ authorizationId: "auth-c", state: "suspended" },
-			],
-			kioskBadges: [{ badgeId: "badge-1" }],
-			kioskFobs: [{ fobId: "fob-1" }],
-			shareLinks: [{ linkId: "link-1", kind: "project" }],
-		},
-		equipment: [],
+		employmentEnding: emptyEmploymentEndingPlan(),
 		retentionStarts: true,
 		seatReleased: true,
 		refusals: [],
 	};
 }
 
-function applied(): DeactivationApplied {
+function rosterApplied(): ChecklistApplied {
 	return {
 		managerLinks: {
 			removedLinks: [
@@ -103,25 +99,56 @@ function applied(): DeactivationApplied {
 			projectAssignmentProjectIds: ["project-1"],
 			projectManagerProjectIds: ["project-2"],
 		},
-		approvalDuties: { handoverTaskIds: ["task-1"], reviewIds: [] },
 		// The second shift was reassigned before the submit: it was not opened.
 		shifts: { openedShiftIds: ["shift-1"] },
 		absences: { cancelledAbsenceIds: ["absence-1"] },
-		accessEnds: {
-			grantIds: ["grant-expense", "grant-verifier"],
-			drivingAuthorizationIds: ["auth-b", "auth-c"],
-			kioskBadgeIds: ["badge-1"],
-			// Nothing to grant again: the employee registers a fob themselves at a kiosk.
-			kioskFobIds: ["fob-1"],
-			shareLinkIds: ["link-1"],
+	};
+}
+
+function endedEverything(): EmploymentEndingApplied {
+	return {
+		equipment: { revokedOfficerGrantIds: [PERSON] },
+		drivingLicence: {
+			endedAuthorizationIds: ["auth-b", "auth-c"],
+			revokedVerifierGrantIds: ["grant-verifier"],
+		},
+		officerGrants: { grants: [{ kind: "expense_officer", grantId: "grant-expense" }] },
+		documentRequests: { cancelledRequestIds: ["request-1", "request-2"] },
+		kioskBadges: { revokedBadgeIds: ["badge-1"] },
+		// Nothing to grant again: the employee registers a fob themselves at a kiosk.
+		kioskFobs: { endedFobIds: ["fob-1"] },
+		reportShareLinks: { revokedLinkIds: ["link-1"] },
+		// Nothing to grant again: the absence names a new deputy.
+		deputyAssignments: {
+			eventKey: "employee_deactivated:1",
+			assignments: [
+				{
+					absenceId: "absence-9",
+					absentEmployeeId: KEEPS,
+					startDate: "2026-11-02",
+					endDate: "2026-11-03",
+				},
+			],
 		},
 	};
 }
 
+const holding: ReactivationChecklistItem = {
+	group: "shareLinks",
+	kind: "share_links",
+	count: 1,
+	href: "/settings/report-share-links",
+};
+
 describe("reactivation checklist", () => {
-	it("lists exactly what the deactivation applied, each with the page it is granted again on", () => {
+	it("lists exactly what the roster areas applied, each with the page it is granted again on, with Employment ending's items after the managers", () => {
 		expect(
-			buildReactivationChecklistItems({ employeeId: PERSON, applied: applied(), plan: plan() }),
+			buildReactivationChecklistItems({
+				employeeId: PERSON,
+				applied: rosterApplied(),
+				plan: plan(),
+				holdings: [holding],
+			}),
 		).toEqual([
 			{
 				group: "managers",
@@ -145,30 +172,7 @@ describe("reactivation checklist", () => {
 				name: "Mia Manager",
 				href: `/settings/employees/${PERSON}`,
 			},
-			{
-				group: "grants",
-				kind: "grant",
-				grant: "expense_officer",
-				href: "/settings/travel-expenses?tab=access",
-			},
-			{
-				group: "grants",
-				kind: "grant",
-				grant: "driving_licence_verifier",
-				href: "/settings/driving-licence?tab=verifiers",
-			},
-			{
-				group: "access",
-				kind: "kiosk_badges",
-				count: 1,
-				href: `/settings/employees/${PERSON}`,
-			},
-			{
-				group: "access",
-				kind: "driving_authorizations",
-				count: 2,
-				href: `/driving-licence/checks/${PERSON}`,
-			},
+			holding,
 			{
 				group: "teams",
 				kind: "team",
@@ -208,6 +212,90 @@ describe("reactivation checklist", () => {
 				endDate: "2026-11-03",
 				href: "/team/absences",
 			},
+		]);
+	});
+
+	it("lists what Employment ending ended, from each participant, in participant order", () => {
+		expect(reactivationItems(endedEverything(), { employeeId: PERSON })).toEqual([
+			{
+				group: "grants",
+				kind: "grant",
+				grant: "equipment_officer",
+				href: "/settings/equipment",
+			},
+			{
+				group: "grants",
+				kind: "grant",
+				grant: "driving_licence_verifier",
+				href: "/settings/driving-licence?tab=verifiers",
+			},
+			{
+				group: "access",
+				kind: "driving_authorizations",
+				count: 2,
+				href: `/driving-licence/checks/${PERSON}`,
+			},
+			{
+				group: "grants",
+				kind: "grant",
+				grant: "expense_officer",
+				href: "/settings/travel-expenses?tab=access",
+			},
+			{
+				group: "documentRequests",
+				kind: "document_requests",
+				count: 2,
+				href: `/personnel-files/${PERSON}`,
+			},
+			{
+				group: "access",
+				kind: "kiosk_badges",
+				count: 1,
+				href: `/settings/employees/${PERSON}`,
+			},
+			{
+				group: "shareLinks",
+				kind: "share_links",
+				count: 1,
+				href: "/settings/report-share-links",
+			},
+		]);
+	});
+
+	it("lists what a deactivation stored before Employment ending ended, named from its plan's grants", () => {
+		const accessEnds = {
+			grantIds: ["grant-expense", "grant-verifier", "grant-unknown"],
+			drivingAuthorizationIds: ["auth-b", "auth-c"],
+			kioskBadgeIds: ["badge-1"],
+			kioskFobIds: ["fob-1"],
+			shareLinkIds: ["link-1"],
+		};
+		const plannedGrants = [
+			{ kind: "expense_officer" as const, grantId: "grant-expense" },
+			{ kind: "driving_licence_verifier" as const, grantId: "grant-verifier" },
+		];
+
+		expect(legacyAccessEndsItems({ employeeId: PERSON, accessEnds, plannedGrants })).toEqual([
+			{
+				group: "grants",
+				kind: "grant",
+				grant: "expense_officer",
+				href: "/settings/travel-expenses?tab=access",
+			},
+			{
+				group: "grants",
+				kind: "grant",
+				grant: "driving_licence_verifier",
+				href: "/settings/driving-licence?tab=verifiers",
+			},
+			{ group: "grants", kind: "grant", grant: null, href: "/settings" },
+			{ group: "access", kind: "kiosk_badges", count: 1, href: `/settings/employees/${PERSON}` },
+			{
+				group: "access",
+				kind: "driving_authorizations",
+				count: 2,
+				href: `/driving-licence/checks/${PERSON}`,
+			},
 			{
 				group: "shareLinks",
 				kind: "share_links",
@@ -224,30 +312,38 @@ describe("reactivation checklist", () => {
 			approvalDuties: { handoverTaskIds: [], reviewIds: [] },
 			shifts: { openedShiftIds: [] },
 			absences: { cancelledAbsenceIds: [] },
-			accessEnds: {
-				grantIds: [],
-				drivingAuthorizationIds: [],
-				kioskBadgeIds: [],
-				kioskFobIds: [],
-				shareLinkIds: [],
+			employmentEnding: {
+				equipment: { revokedOfficerGrantIds: [] },
+				drivingLicence: { endedAuthorizationIds: [], revokedVerifierGrantIds: [] },
+				officerGrants: { grants: [] },
+				documentRequests: { cancelledRequestIds: [] },
+				kioskBadges: { revokedBadgeIds: [] },
+				kioskFobs: { endedFobIds: [] },
+				reportShareLinks: { revokedLinkIds: [] },
+				deputyAssignments: { eventKey: "employee_deactivated:1", assignments: [] },
 			},
 		};
 		expect(
-			buildReactivationChecklistItems({ employeeId: PERSON, applied: nothing, plan: plan() }),
+			buildReactivationChecklistItems({
+				employeeId: PERSON,
+				applied: nothing,
+				plan: plan(),
+				holdings: reactivationItems(nothing.employmentEnding, { employeeId: PERSON }),
+			}),
 		).toEqual([]);
 	});
 
 	it("still lists every applied item without the stored plan, unnamed", () => {
 		const items = buildReactivationChecklistItems({
 			employeeId: PERSON,
-			applied: applied(),
+			applied: rosterApplied(),
 			plan: null,
+			holdings: [],
 		});
-		expect(items).toHaveLength(13);
+		expect(items).toHaveLength(8);
 		expect(items[0]).toMatchObject({ kind: "report_moved", name: null, newManagerName: null });
-		expect(items[3]).toMatchObject({ kind: "grant", grant: null, href: "/settings" });
-		expect(items[10]).toMatchObject({ kind: "shift", date: null, startTime: null });
-		expect(items[11]).toMatchObject({ kind: "absence", categoryName: null, startDate: null });
+		expect(items[6]).toMatchObject({ kind: "shift", date: null, startTime: null });
+		expect(items[7]).toMatchObject({ kind: "absence", categoryName: null, startDate: null });
 	});
 
 	it("keeps only the chosen replacements' names in the stored plan", () => {

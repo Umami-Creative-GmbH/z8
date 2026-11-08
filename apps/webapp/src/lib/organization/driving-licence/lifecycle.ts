@@ -76,7 +76,7 @@ export async function liveDrivingLicenceEmployment(
 	client: Pick<DrivingLicenceTransaction, "select">,
 	identity: DrivingLicenceEmployment,
 ): Promise<{
-	authorizations: Array<{ id: string; state: string }>;
+	authorizations: Array<{ id: string; state: (typeof drivingAuthorization.$inferSelect)["state"] }>;
 	verifierGrantIds: string[];
 }> {
 	const authorizations = await client
