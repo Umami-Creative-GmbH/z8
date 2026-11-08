@@ -148,7 +148,7 @@ export function buildPersonalNav(
 		...(navigationCapabilities.myEquipment
 			? [
 					{
-						title: t("settings.equipment.personal.title", "My equipment"),
+						title: t("nav.my-equipment", "My equipment"),
 						url: "/my-equipment",
 						icon: IconPackage,
 					},

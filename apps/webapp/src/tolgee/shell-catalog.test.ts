@@ -71,8 +71,6 @@ const SHELL_SOURCES = [
 	"lib/app-search/static-commands.ts",
 	"lib/navigation/route-metadata.ts",
 ];
-/** Equipment route titles (#1572); remove each key once Tolgee has synced it. */
-const ROUTE_TITLES_AWAITING_SYNC = new Set(["nav.equipment", "nav.my-equipment"]);
 function getPath(value: unknown, path: readonly string[]): unknown {
 	return path.reduce<unknown>(
 		(node, key) =>
@@ -104,12 +102,6 @@ describe("shared shell catalog", () => {
 			expect(shell.namespaces).toEqual([]);
 			for (const metadata of [...APP_ROUTE_METADATA, UNKNOWN_ROUTE_METADATA]) {
 				const path = metadata.titleKey.split(".");
-				// A title added before its Tolgee sync shows its default until the sync lands.
-				if (
-					ROUTE_TITLES_AWAITING_SYNC.has(metadata.titleKey) &&
-					getPath(complete[locale], path) === undefined
-				)
-					continue;
 				expect(getPath(complete[locale], path), metadata.titleKey).toEqual(expect.any(String));
 				expect(getPath(shell.records[locale], path), metadata.titleKey).toEqual(
 					getPath(complete[locale], path),
