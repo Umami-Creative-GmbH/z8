@@ -37,6 +37,14 @@ _Avoid_: inactive user, disabled user, deleted user, ex-member
 Ending someone's employment at once, without scheduling a departure. It has the same consequences as a departure taking effect at that moment. An admin deactivating the employee, removing them from the organization, and their identity provider deprovisioning them are all deactivations. **Reactivation** undoes a deactivation but brings back nothing that ended. Every way back after a deactivation is a reactivation, including rejoining the organization and the identity provider enabling the person again.
 _Avoid_: disabling, suspension, archiving an employee
 
+**Employment ending**:
+What ends of everything an employee holds when their employment ends, whatever the cause (a departure taking effect or a deactivation): their equipment responsibility, driving authorizations, officer and verifier grants, open document requests, kiosk badges and fobs, report share links and deputy duties. Each area ends its own part, in a fixed order, and records what it ended, which the reactivation checklist lists for granting again. Ending twice ends nothing more.
+_Avoid_: access ends, offboarding cleanup, revoking access
+
+**Follow-up deactivation**:
+The deactivation that completes a member removal or an identity provider deprovisioning. The removal itself only switches the person off and records the deactivation as pending at that moment; the follow-up then applies it, ending their employment from that moment, shortly afterwards and without anyone confirming it. A person who is back before it runs (re-added, or enabled again by the identity provider) keeps everything, and the pending deactivation is withdrawn.
+_Avoid_: removal cleanup, deprovisioning job
+
 **Current roster**:
 The organization's employees who are not former employees. Everything that answers "who works here now" shows only the current roster: teams, presence, planning, the people offered for picking, and who gets notified.
 _Avoid_: active users, active members, all employees
