@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { recordPart, tablePart } from "./collector";
 import {
 	fallbackReadmeTranslator,
 	loadReadmeTranslator,
 	type PersonalDataReadmeAccess,
+	readmeContentsOf,
 	renderPersonalDataExportReadme,
 } from "./readme";
 
@@ -27,7 +29,10 @@ const base = {
 
 describe("renderPersonalDataExportReadme", () => {
 	it("names the organization, the employee and the files of an employee export", () => {
-		const readme = renderPersonalDataExportReadme({ ...base, kind: "employee" });
+		const readme = renderPersonalDataExportReadme({
+			...base,
+			kind: "employee",
+		});
 
 		expect(readme).toContain("Your personal data from Acme GmbH");
 		expect(readme).toContain(
@@ -35,7 +40,9 @@ describe("renderPersonalDataExportReadme", () => {
 		);
 		expect(readme).toContain("You requested this export yourself.");
 		expect(readme).toContain("employment.json");
-		expect(readme).toContain("The folder employment/ holds the same tables as CSV files.");
+		expect(readme).toContain(
+			"The folder employment/ holds the same tables as CSV files.",
+		);
 		expect(readme).toContain("_manifest.json");
 		expect(readme).not.toContain("time.json");
 	});
@@ -43,7 +50,9 @@ describe("renderPersonalDataExportReadme", () => {
 	it("says an administrator created an admin export", () => {
 		const readme = renderPersonalDataExportReadme({ ...base, kind: "admin" });
 
-		expect(readme).toContain("An administrator of Acme GmbH created this export on your behalf.");
+		expect(readme).toContain(
+			"An administrator of Acme GmbH created this export on your behalf.",
+		);
 		expect(readme).not.toContain("You requested this export yourself.");
 	});
 
@@ -56,9 +65,13 @@ describe("renderPersonalDataExportReadme", () => {
 		});
 
 		expect(readme).toContain("account.json");
-		expect(readme).toContain("The name and email address of your user account.");
+		expect(readme).toContain(
+			"The name and email address of your user account.",
+		);
 		expect(readme).not.toContain("sessions, sign-in methods");
-		expect(readme).toContain("The folder employment/ holds the same tables as CSV files.");
+		expect(readme).toContain(
+			"The folder employment/ holds the same tables as CSV files.",
+		);
 		expect(readme).not.toContain("The folder account/");
 	});
 
@@ -75,15 +88,25 @@ describe("renderPersonalDataExportReadme", () => {
 					{ name: "Max Manager", via: "direct" },
 					{ name: "Tina Teamlead", via: "team" },
 				],
-				personnelFileOfficers: [{ name: "Petra Personnel", categories: ["contract", "payslip"] }],
+				personnelFileOfficers: [
+					{ name: "Petra Personnel", categories: ["contract", "payslip"] },
+				],
 				payrollOfficers: [
 					{ name: "Paul Payroll", covers: ["employee"] },
 					{ name: "Pia Paydesk", covers: ["all"] },
 					{ name: "Pete Payteam", covers: ["employee", "team"] },
 				],
 				expenseOfficers: [
-					{ name: "Erik Expense", canExport: true, canRecordReimbursements: false },
-					{ name: "Rita Refund", canExport: false, canRecordReimbursements: true },
+					{
+						name: "Erik Expense",
+						canExport: true,
+						canRecordReimbursements: false,
+					},
+					{
+						name: "Rita Refund",
+						canExport: false,
+						canRecordReimbursements: true,
+					},
 				],
 			},
 		});
@@ -97,8 +120,12 @@ describe("renderPersonalDataExportReadme", () => {
 		expect(section).toContain("Paul Payroll (you by name)");
 		expect(section).toContain("Pia Paydesk (all employees)");
 		expect(section).toContain("Pete Payteam (you by name, your team)");
-		expect(section).toContain("Erik Expense: read approved reports, export them");
-		expect(section).toContain("Rita Refund: read approved reports, record reimbursements");
+		expect(section).toContain(
+			"Erik Expense: read approved reports, export them",
+		);
+		expect(section).toContain(
+			"Rita Refund: read approved reports, record reimbursements",
+		);
 	});
 
 	it("says so when nobody holds a kind of access", () => {
@@ -117,7 +144,10 @@ describe("renderPersonalDataExportReadme", () => {
 			renderPersonalDataExportReadme({
 				...base,
 				kind: "employee",
-				retention: { documentYears: { contract: 10, payslip: 1 }, auditLogDays: 365 },
+				retention: {
+					documentYears: { contract: 10, payslip: 1 },
+					auditLogDays: 365,
+				},
 			}),
 			"How long your data is kept",
 		);
@@ -146,8 +176,12 @@ describe("renderPersonalDataExportReadme", () => {
 	it("tells only the employee export that a complete copy can be requested from the admins", () => {
 		const note = "You can ask the administrators of Acme GmbH for a complete copy";
 
-		expect(renderPersonalDataExportReadme({ ...base, kind: "employee" })).toContain(note);
-		expect(renderPersonalDataExportReadme({ ...base, kind: "admin" })).not.toContain(note);
+		expect(
+			renderPersonalDataExportReadme({ ...base, kind: "employee" }),
+		).toContain(note);
+		expect(
+			renderPersonalDataExportReadme({ ...base, kind: "admin" }),
+		).not.toContain(note);
 	});
 
 	it("explains every part and field of the archive with the collectors' field guides", () => {
@@ -158,7 +192,12 @@ describe("renderPersonalDataExportReadme", () => {
 				employment: {
 					parts: [
 						{ key: "employee", kind: "record", fields: ["first_name"] },
-						{ key: "skills", kind: "table", fields: ["skill", "expires_on"] },
+						{
+							key: "skills",
+							kind: "table",
+							fields: ["skill", "expires_on"],
+							csvPath: "employment/skills.csv",
+						},
 					],
 					guide: (t) => ({
 						employee: {
@@ -182,22 +221,79 @@ describe("renderPersonalDataExportReadme", () => {
 		});
 
 		const section = sectionOf(readme, "Fields");
-		expect(section).toContain("employment.json > employee: Your employee record.");
+		expect(section).toContain(
+			"employment.json > employee: Your employee record.",
+		);
 		expect(section).toContain("first_name: Your first name.");
-		expect(section).toContain("employment.json > skills (employment/skills.csv): Your skills.");
+		expect(section).toContain(
+			"employment.json > skills (employment/skills.csv): Your skills.",
+		);
 		expect(section).toContain("expires_on: The day it expires.");
 		// Only parts that are in the archive are explained.
 		expect(readme).not.toContain("billable_rates");
 		expect(readme).not.toContain("Billable rates.");
 	});
 
+	it.each(["employee", "admin"] as const)(
+		"describes retained JSON parts without linking omitted CSVs in an %s export",
+		(kind) => {
+			const contents = readmeContentsOf(
+				[
+					{
+						category: "employment",
+						parts: [
+							recordPart("employee", { first_name: "Ada" }),
+							tablePart("skills", ["skill"], []),
+							tablePart("teams", ["team"], [{ team: "Platform" }]),
+						],
+					},
+					{ category: "planning", parts: [tablePart("shifts", ["id"], [])] },
+					{
+						category: "personnel_file",
+						parts: [],
+						files: [
+							{ path: "contract.pdf", read: async () => new Uint8Array() },
+						],
+					},
+				],
+				[],
+			);
+			const readme = renderPersonalDataExportReadme({
+				...base,
+				kind,
+				contents,
+				categories: ["employment", "personnel_file"],
+				csvCategories: ["employment"],
+			});
+			expect(contents.planning).toBeUndefined();
+			expect(readme).toContain("employment.json > skills");
+			expect(readme).not.toContain("employment/skills.csv");
+			expect(readme).toContain(
+				"employment.json > teams (employment/teams.csv)",
+			);
+			expect(readme).not.toContain("planning.json");
+			expect(readme).toContain("\npersonnel_file/\n");
+			expect(readme).not.toContain("personnel_file.json");
+			expect(readme).toContain("Files with no exportable data are omitted.");
+			expect(readme.includes("You can ask the administrators")).toBe(
+				kind === "employee",
+			);
+		},
+	);
+
 	it("renders the Art. 15 sections in every supported UI language", async () => {
 		for (const locale of ALL_LANGUAGES) {
 			const t = await loadReadmeTranslator(locale);
-			const readme = renderPersonalDataExportReadme({ ...base, t, kind: "employee" });
+			const readme = renderPersonalDataExportReadme({
+				...base,
+				t,
+				kind: "employee",
+			});
 			// Article numbers survive translation; untranslated keys fall back to English.
 			for (const article of ["15", "16", "17", "18", "19", "20", "21", "77"]) {
-				expect(readme, `${locale} Art. ${article}`).toMatch(new RegExp(`\\b${article}\\b`));
+				expect(readme, `${locale} Art. ${article}`).toMatch(
+					new RegExp(`\\b${article}\\b`),
+				);
 			}
 			expect(readme, locale).not.toMatch(/personalDataExport\.readme\./);
 		}
@@ -210,6 +306,8 @@ function sectionOf(readme: string, heading: string): string {
 	const start = lines.indexOf(heading);
 	expect(start, heading).toBeGreaterThanOrEqual(0);
 	const rest = lines.slice(start + 2);
-	const end = rest.findIndex((line, index) => /^=+$/.test(rest[index + 1] ?? "") && line !== "");
+	const end = rest.findIndex(
+		(line, index) => /^=+$/.test(rest[index + 1] ?? "") && line !== "",
+	);
 	return (end === -1 ? rest : rest.slice(0, end)).join("\n");
 }

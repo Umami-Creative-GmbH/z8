@@ -341,7 +341,6 @@
       "morePages": "Więcej stron",
       "pagination": "Paginacja"
     },
-    "pending": "Oczekujące",
     "positionCaptureErrors": {
       "adminOnly": "Tylko właściciele i administratorzy organizacji mogą zarządzać rejestrowaniem pozycji.",
       "assignmentNotFound": "To przypisanie już nie istnieje.",
@@ -1129,11 +1128,13 @@
     "compliance": "Zgodność",
     "dashboard": "Pulpit",
     "driving-licence": "Prawo jazdy",
+    "equipment": "Sprzęt",
     "feedback": "Opinia",
     "finance": "Finanse",
     "financeAwaiting": "{count, plural, one {# wydatek oczekujący na zwrot} few {# wydatki oczekujące na zwrot} other {# wydatków oczekujących na zwrot} }",
     "get-help": "Uzyskaj pomoc",
     "my-documents": "Moje dokumenty",
+    "my-equipment": "Mój sprzęt",
     "my-requests": "Moje wnioski",
     "my-schedule": "Mój harmonogram",
     "org-explorer": "Eksplorator organizacji",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Przyszłe warunki zatrudnienia wymagają weryfikacji (odejście z dniem {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Przyszła praca wymaga weryfikacji (odejście z dniem {cutoff}, {timezone}).",
         "title": "Offboarding pracownika wymaga weryfikacji"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} ma niezwrócony sprzęt ({quantity}) z terminem zwrotu do {deadline}. Otwórz Sprzęt, aby zorganizować jego zwrot.",
+        "title": "Termin zwrotu sprzętu minął"
+      },
+      "equipmentReturnReminder": {
+        "message": "Zwróć niezwrócony sprzęt ({quantity}) do {deadline}. Otwórz Mój sprzęt, aby zobaczyć szczegóły.",
+        "title": "Termin zwrotu sprzętu"
       },
       "forgottenClockOutReminder": {
         "message": "Twoja zmiana zakończyła się o {endTime} ({timezone}). Zarejestruj wyjście, jeśli zakończono pracę.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Brak szczegółów przejazdu",
         "driving_licence_reminder": "Wymagana kontrola prawa jazdy",
         "employee_deactivation_shifts_opened": "Zmiany otwarte wskutek dezaktywacji",
+        "equipment_return_reminder": "Przypomnienia o zwrocie sprzętu",
         "forgotten_clock_out_reminder": "Zapomniana rejestracja wyjścia",
         "former_employee_reports_without_manager": "Pracownicy bez aktualnego menedżera",
         "kiosk_command_refused": "Rejestracja w terminalu nie została zapisana",
@@ -1960,6 +1970,7 @@
         "auditLog": "Wpisy w dzienniku zdarzeń dotyczące Ciebie oraz wykonane przez Ciebie.",
         "drivingLicence": "Kontrole praw jazdy, potwierdzenia i oświadczenia o okazaniu oryginału, przypisane uzupełnienia, uprawnienia do poszczególnych kategorii i ich historia, rejestracja oraz Twoja odpowiedzialność jako weryfikatora. Wyłącznie zachowany materiał dowodowy; bez skanów praw jazdy, numerów dokumentów czy zaświadczeń lekarskich.",
         "employment": "Twoja kartoteka i profil pracownika, okresy zatrudnienia i odejścia, warunki zatrudnienia wraz ze stawką godzinową i jej historią, zespoły, przełożeni, lokalizacje, umiejętności, przypisania do projektów, role, grupy, centrum kosztów oraz wszelkie przypisane do Ciebie zasady.",
+        "equipment": "Twoje zachowane przypisania sprzętu, pierwotne i poprawione stany oraz uwagi, potwierdzenia odbioru fizycznego, decyzje o zgubieniu i umorzeniu, odzyskanie oraz powiązania z zatrudnieniem/zakończeniem. Nieznane historyczne daty wydania pozostają nieznane; rzeczywiste daty kalendarzowe są oddzielone od znaczników czasu wprowadzenia w UTC. Rekordy sprzętu są uwzględniane w eksportach pracownika i administratora, dopóki są zachowane.",
         "integrations": "Twoje połączenia kalendarza, kanał kalendarza, połączone konta czatu i status kodu PIN do kiosku.",
         "notifications": "Twoja historia powiadomień.",
         "personnelFile": "Dokumenty z Twoich akt osobowych w postaci oryginalnych plików.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Zwolnienia lekarskie"
       },
       "drivingLicenceRetention": "Dowody kontroli prawa jazdy podlegają uzasadnionemu okresowi przechowywania obowiązującemu w organizacji, gdy przestają potwierdzać aktywne uprawnienie. Udokumentowana blokada na potrzeby konkretnej sprawy prawnej odracza usunięcie. Zapoznaj się z zasadami driving_licence oraz wpisami dotyczącymi okresu przechowywania i blokad, aby uzyskać właściwy kontekst; wygenerowanie eksportu nie przedłuża okresu przechowywania dowodów w systemie Z8.",
+      "emptyFilesOmitted": "Pliki bez danych do wyeksportowania są pomijane. Puste tabele i brakujące opcjonalne rekordy pozostają w plikach JSON zawierających inne dane. Opcjonalne ustawienia, które nigdy nie zostały skonfigurowane, nie są traktowane jako dane.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Od kiedy jesteś w zespole.",
             "summary": "Zespoły, do których obecnie należysz."
           }
+        },
+        "equipment": {
+          "actualDate": "Pierwotna rzeczywista kalendarzowa data przekazania zarejestrowana w strefie czasowej organizacji. Pusta wartość oznacza jawnie nieznaną historyczną datę wydania, a nie datę wpisu.",
+          "after": "Obiekt JSON z wartościami po tej poprawce, wykorzystujący te same znaczenia pól dowodowych co wcześniej. Wartości umowy wydania obejmują returnRequired, explicitDeadline oraz employmentPeriodId. Daty kalendarzowe różnią się od znacznika UTC recorded_at poprawki.",
+          "assignmentId": "Zachowane przypisanie, do którego należy ten dowód; uwzględniono wyłącznie Twoje przypisania w tej organizacji.",
+          "assignmentQuantity": "Bieżąca obowiązująca wydana liczba po korektach; pierwotne wydanie i poprawki pozostają osobnymi dowodami.",
+          "assignments": {
+            "summary": "Twoje zachowane umowy dotyczące sprzętu oraz bieżące obowiązujące salda, warunki i pierwotne powiązania z zatrudnieniem/zakończeniem. Zamknięcia z tytułu zgubienia lub umorzenia nie potwierdzają odbioru fizycznego; odzyskanie nakłada się na jego wcześniejsze zamknięcie. Usunięta historia osobista nigdy nie jest rekonstruowana z nieosobowych identyfikatorów przedmiotów."
+          },
+          "before": "Obiekt JSON z obowiązującymi wartościami sprzed tej poprawki: liczba przekazana, actualDate (null w przypadku nieznanego historycznego wydania), stan i uwagi lub rodzaj wyjątku, liczba i powód. Poprawki wydania zachowują również wcześniejsze returnRequired, explicitDeadline oraz pierwotne powiązania z zatrudnieniem/odejściem/dezaktywacją.",
+          "condition": "Pierwotnie zarejestrowany stan: dobry, zużyty, uszkodzony lub nieznany; nieznany stan nie oznacza nieznanej daty.",
+          "correctionReason": "Wymagane wyjaśnienie przyczyny wprowadzenia korekty.",
+          "corrections": {
+            "summary": "Poprawki przed/po wraz z uzasadnieniem do Twoich zachowanych przekazań i decyzji, w tym zmian umowy. Pierwotny dowód pozostaje oddzielny; przeniesienie obejmuje wyłącznie Twoje własne przekazanie i poprawkę, nigdy zaś historię osobistą drugiego posiadacza."
+          },
+          "deactivatedAt": "Kiedy powiązana natychmiastowa dezaktywacja zakończyła zatrudnienie/dostęp, jako punkt w czasie UTC; niezwrócony sprzęt nigdy tego nie opóźnia.",
+          "deactivationId": "Niezmienny identyfikator dezaktywacji dla tego przypisania, nawet jeśli ponowna aktywacja otwiera ten sam okres zatrudnienia.",
+          "deactivationTimezone": "Strefa czasowa organizacji zarejestrowana podczas pierwotnej dezaktywacji lub pusta, jeśli nie została zarejestrowana. Późniejsza strefa czasowa organizacji lub przeglądającego nigdy nie zastępuje tego kontekstu historycznego.",
+          "departureCutoffAt": "Punkt w czasie UTC odcięcia powiązanego odejścia, niezależny od ostatniego kalendarzowego dnia pracy i terminu zwrotu sprzętu.",
+          "departureDeadline": "Data zwrotu wynikająca z pierwotnego odejścia lub dezaktywacji; pozostaje ważna po późniejszym ponownym zatrudnieniu lub reaktywacji. Pusta, gdy nie obowiązuje żaden termin wynikowy.",
+          "departureId": "Pierwotny powiązany identyfikator odejścia dla przypisania, jeśli istnieje. Zadania i przeglądy związane z odejściem nie stanowią dowodu przekazania sprzętu.",
+          "departureMode": "Określa, czy powiązane odejście było zaplanowane, czy natychmiastowe, albo pozostaje puste w przypadku braku powiązanego odejścia.",
+          "departureStatus": "Bieżący status powiązanego odejścia; oczekujące odejście samo w sobie nie kończy zatrudnienia.",
+          "departureTimezone": "Strefa czasowa zablokowana dla powiązanego odejścia; zmiany strefy czasowej przeglądającego nie wpływają na jej znaczenie kalendarzowe.",
+          "effectiveActualDate": "Rzeczywista data kalendarzowa przekazania po korektach; nieznane wydanie historyczne pozostaje puste, zamiast przyjmować wartość znacznika czasu wpisu.",
+          "effectiveCondition": "Stan po korektach; odebranie uszkodzonego sprzętu samo w sobie nie zezwala na jego ponowne wydanie.",
+          "effectiveDeadline": "Wcześniejszy obowiązujący jawny lub pochodny termin kalendarzowy; sprzęt wydany na własność go nie posiada. Nie jest to data przekazania ani znacznik czasu wpisu UTC.",
+          "effectiveExceptionQuantity": "Liczba nadal zamknięta tą decyzją po modyfikacjach lub wycofaniach, w tym powiązane fizyczne przyjęcia; zero oznacza całkowite wycofanie.",
+          "effectiveHandoverQuantity": "Liczba przekazana po korektach; zero wycofuje omyłkowe przyjęcie bez usuwania pierwotnego dowodu.",
+          "effectiveKind": "Bieżący wynik uznania za zgubione lub odstąpienia po korektach.",
+          "effectiveNotes": "Bieżące opcjonalne notatki dotyczące przekazania po korektach.",
+          "effectiveReason": "Bieżący powód decyzji po korektach; powody korekt są zachowywane osobno.",
+          "employmentPeriodId": "Pierwotny okres zatrudnienia powiązany z tym przypisaniem, niezastępowany automatycznie późniejszym okresem zatrudnienia; pole jest puste, jeśli nie zarejestrowano okresu.",
+          "exceptionId": "Powiązana decyzja o zagubieniu lub odstąpieniu; powiązane fizyczne przyjęcie uzupełnia tę decyzję, zamiast rozliczać tę samą liczbę dwukrotnie. Puste w przypadku zwykłego przekazania.",
+          "exceptionKind": "Pierwotny wynik uznania za zgubione lub odstąpienia; żaden z nich nie oznacza, że sprzęt został fizycznie zwrócony.",
+          "exceptionQuantity": "Pierwotna liczba zamknięta decyzją, zachowana po zmianach lub wycofaniach.",
+          "exceptionReason": "Pierwotny wymagany powód decyzji o zagubieniu lub odstąpieniu.",
+          "exceptionReceivedQuantity": "Fizyczne przyjęcia powiązane ze zgubionymi lub objętymi odstąpieniem ilościami; to pokrywanie się jest liczone jednokrotnie podczas obliczania zaległych zwrotów.",
+          "exceptions": {
+            "summary": "Pierwotne uzasadnione decyzje o zagubieniu i odstąpieniu oraz ich bieżące skorygowane wartości. Zamykają one zobowiązania do zwrotu bez potwierdzania fizycznego przyjęcia; dowody powiązanego przyjęcia rejestrują odzyskanie lub późniejszy zwrot osobno."
+          },
+          "explicitDeadline": "Odrębnie uzgodniona data zwrotu jako dzień kalendarzowy w strefie czasowej organizacji lub pole puste.",
+          "handoverId": "Identyfikator zmodyfikowanego przekazania lub pole puste w przypadku modyfikacji wyjątku.",
+          "handoverKind": "Wydanie rejestruje wydanie sprzętu; przyjęcie rejestruje fizyczne odebranie, w tym powiązane odzyskanie. Ani zamknięcie z tytułu zagubienia, ani odstąpienia nie stanowi samo w sobie przekazania.",
+          "handoverQuantity": "Pierwotnie zarejestrowana przekazana ilość, zachowana nawet po korekcie.",
+          "handovers": {
+            "summary": "Pierwotne dowody wydania i fizycznego przyjęcia wraz z bieżącymi skorygowanymi wartościami. Przyjęcie powiązane z decyzją o zagubieniu to odzyskanie; przyjęcie powiązane z decyzją o odstąpieniu rejestruje późniejsze fizyczne przyjęcie. Nieznana historyczna data wydania pozostaje pusta i nigdy nie jest zastępowana znacznikiem czasu wpisu UTC."
+          },
+          "historical": "Wartość „true” w przypadku wprowadzenia posiadanego już historycznego przypisania; tylko wydanie historyczne może mieć wyraźnie nieznaną rzeczywistą datę.",
+          "holds": {
+            "kind": "Określa, czy blokada sprawy została nałożona, czy zwolniona.",
+            "reason": "Wymagany powód udokumentowany przez administratora organizacji dla tej konkretnej akcji w sprawie.",
+            "revision": "Wersja przypisania utworzona w wyniku tego działania związanego z blokadą sprawy.",
+            "summary": "Udokumentowane nałożenia i zwolnienia blokad spraw w Twojej zachowanej historii sprzętu. Aktywna blokada chroni dowody przed usunięciem; nigdy nie rejestruje fizycznego przyjęcia."
+          },
+          "identifier": "Identyfikator organizacji dla Twojego indywidualnie śledzonego przedmiotu, bez historii innych posiadaczy; puste w przypadku przypisań ilościowych.",
+          "lastWorkingDay": "Ostatni roboczy dzień kalendarzowy powiązanego zaplanowanego odejścia w jego zablokowanej strefie czasowej lub pole puste.",
+          "lostQuantity": "Rzeczywista ilość zamknięta jako zgubiona, w tym każda ilość odzyskana w późniejszym czasie; decyzja o zagubieniu zostaje zachowana.",
+          "notes": "Pierwotne opcjonalne notatki dotyczące przekazania, zachowane po korekcie, dopóki zachowywana jest historia osobista.",
+          "outstandingQuantity": "Wymagana ilość minus fizyczne przyjęcia oraz zamknięcia z tytułu zagubienia/odstąpienia, z ponownym dodaniem pokrywających się przyjęć, aby uniknąć podwójnego rozliczenia; zero dla sprzętu wydanego na własność.",
+          "periodEndedAt": "Moment zakończenia powiązanego okresu w formacie UTC lub puste w przypadku okresu otwartego/ponownie otwartego bądź nieznanego zakończenia.",
+          "periodStartedAt": "Zarejestrowany moment rozpoczęcia powiązanego okresu zatrudnienia w formacie UTC lub puste, gdy nie jest znany.",
+          "periodStatus": "Bieżący status powiązanego okresu: open, closed lub legacy_unknown; ponowna aktywacja może ponownie otworzyć ten sam okres bez zmiany tożsamości zakończenia przypisania.",
+          "physicallyReceivedQuantity": "Rzeczywista ilość przyjęta fizycznie, w tym odzyskanie oraz przyjęcia przedmiotów objętych odstąpieniem. Same decyzje o zagubieniu i odstąpieniu nigdy nie zwiększają tej liczby.",
+          "reactivatedAt": "Data i godzina ponownej aktywacji danej dezaktywacji w formacie UTC lub puste; ponowna aktywacja nie usuwa dawnych zobowiązań ani terminów dotyczących sprzętu.",
+          "receivedQuantity": "Rzeczywista ilość fizyczna przyjęta w ramach tej decyzji. W przypadku decyzji o zagubieniu jest to sprzęt odzyskany; jest on już uwzględniony w fizycznych przyjęciach przypisania.",
+          "recordedAt": "Znacznik czasu wpisu w UTC, niezależny od rzeczywistej daty przekazania; późniejsze wprowadzenie nie zmienia daty przekazania.",
+          "recordedBy": "Nazwa wyświetlana osoby, która zarejestrowała ten dowód, jeśli jej tożsamość w organizacji jest nadal dostępna; żadne inne szczegóły profilu nie są dołączane.",
+          "returnRequired": "Określa, czy zwrot jest wymagany. Wartość „false” oznacza wydanie na własność, bez terminu zwrotu i zaległych zwrotów; nie oznacza to fizycznego zwrotu.",
+          "serialNumber": "Opcjonalny numer seryjny producenta dla indywidualnie śledzonego przedmiotu.",
+          "trackingMode": "Identyfikator indywidualny określa jeden fizyczny przedmiot; ilość zlicza przedmioty wymienne.",
+          "type": "Nazwa typu sprzętu.",
+          "waivedQuantity": "Rzeczywista ilość, z której wymaganego zwrotu zrezygnowano, w tym każda ilość odebrana w późniejszym terminie; odstąpienie nie potwierdza przyjęcia."
         },
         "integrations": {
           "calendarConnections": {

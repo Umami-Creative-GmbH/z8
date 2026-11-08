@@ -37,6 +37,13 @@
         "time": "Zaman"
       },
       "disabled": "Devre Dışı",
+      "documentation": {
+        "reference": "API Referansı",
+        "resources": "Public API v1 ile çalışma dönemlerini, devamsızlıkları, çalışanları, projeleri, müşterileri ve özel alan tanımlarını okuyun. Erişim salt okunurdur.",
+        "scopes": "Bir API anahtarı kuruluşunuz adına hareket eder ve yalnızca anahtar kapsamlarının izin verdiği verileri okur. Uç noktaları, gerekli kapsamları ve örnekleri referansta bulabilirsiniz.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "OpenAPI belirtimini indir",
       "editCreated": "Oluşturulma tarihi: {date}",
       "editDescription": "Bu API anahtarı için ayarları güncelleyin. Not: Anahtarın kendisini görüntüleyemez veya değiştiremezsiniz.",
       "editTitle": "API Anahtarını Düzenle",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Testi kaydetmeden önce sağlayıcıyı kaydedin"
           },
-          "help": "Bu, canlı bir harici SSO test sonucunu kaydeder. Önce IdP'de oturum açma işlemini çalıştırın, ardından etkinleştirme koruması için buradan başarılı veya başarısız sonucunu yakalayın.",
           "label": {
             "email": "Test kullanıcısı e-postası",
             "failureNote": "Hata notu"
@@ -620,12 +626,9 @@
         "updated": "{provider} OAuth başarıyla güncellendi"
       },
       "sso": {
-        "addDescription": "Kurumsal çoklu oturum açma (SSO) için bir OIDC kimlik sağlayıcısı yapılandırın.",
         "addError": "SSO sağlayıcısı eklenemedi",
         "addSuccess": "SSO sağlayıcısı başarıyla eklendi",
         "addTitle": "SSO Sağlayıcısı Ekle",
-        "clientIdPlaceholder": "OIDC istemci kimliğiniz",
-        "clientSecretPlaceholder": "OIDC istemci sırrınız",
         "deleteDialogDescription": "Bu SSO sağlayıcısını silmek istediğinizden emin misiniz? Kullanıcılar artık bu kimlik sağlayıcısını kullanarak giriş yapamayacak.",
         "deleteDialogTitle": "SSO Sağlayıcısını Sil",
         "deleteError": "SSO sağlayıcısı silinemedi",
@@ -633,32 +636,110 @@
         "deleteSuccess": "SSO sağlayıcısı silindi",
         "description": "Kuruluşunuz için SSO'yu etkinleştirmek üzere OIDC kimlik sağlayıcıları ekleyin.",
         "domainInvalid": "Lütfen geçerli bir alan adı girin (ör. example.com)",
-        "domainRequired": "Alan adı gereklidir",
         "domainVerified": "Alan adı doğrulandı",
         "emailDomain": "E-posta Alan Adı",
         "emailDomainHelp": "Bu e-posta alan adına sahip kullanıcılar SSO kullanabilecektir",
         "empty": "Henüz yapılandırılmış SSO sağlayıcısı yok.",
         "emptyDescription": "Kurumsal çoklu oturum açmayı etkinleştirmek için bir OIDC sağlayıcısı ekleyin.",
-        "instructions": {
-          "copyCredentials": "Sağlayıcınızdan (IdP) Veren URL'sini, İstemci Kimliğini ve İstemci Sırrını kopyalayın",
-          "createApp": "Kimlik sağlayıcınızda (Okta, Azure AD vb.) bir OIDC uygulaması oluşturun",
-          "verifyDomain": "Sağlayıcıyı buraya ekleyin ve DNS TXT kaydı aracılığıyla e-posta alan adını doğrulayın"
+        "guide": {
+          "addDescription": "Sağlayıcınızın kurulum talimatlarını izleyin, ardından kuruluşunuza bağlayın.",
+          "afterSave": "Kaydettikten sonra, Z8'deki DNS TXT kaydı ile e-posta alan adınızı doğrulayın. Mevcut yönetici oturumunuzu açık tutarken hedeflenen bir kullanıcıyla pilot giriş yapın. Kılavuzlu kurulumda, sağlayıcı listesinde gösterilen sağlayıcı kimliğini ve e-posta alan adını kaydedin, ardından SSO Zorunlu Kıl seçeneğini değerlendirmeden önce gözlemlenen giriş sonucunu manuel olarak kaydedin. Kaydetme ve DNS doğrulaması başarılı bir girişi kanıtlamaz.",
+          "afterSaveTitle": "Sağlayıcınızı kaydettikten sonra",
+          "callback": "Z8 geri çağırma URL'si",
+          "connectionHelp": "Bu değerleri sağlayıcınızın uygulama ayarlarından kopyalayın.",
+          "connectionSettings": "Bağlantı ayarları",
+          "copied": "Panoya kopyalandı",
+          "copyCallback": "Geri çağırma URL'sini kopyala",
+          "copyFailed": "Panoya erişilemedi. Metni manuel olarak seçip kopyalayın.",
+          "domainPending": "Alan adı doğrulanmadı",
+          "domainStatus": "Alan adı doğrulaması",
+          "domainVerified": "Alan adı doğrulandı",
+          "entra": {
+            "clientHelp": "Genel Bakış'tan Nesne Kimliği'ni değil, Uygulama (istemci) kimliğini kopyalayın.",
+            "clientId": "Uygulama (istemci) kimliği",
+            "consentError": "Onay veya erişim reddedildi: Entra yöneticinizden onay ilkelerini ve pilot kullanıcının uygulamaya atanıp atanmadığını kontrol etmesini isteyin.",
+            "consentLink": "Microsoft onay kılavuzu",
+            "description": "Kuruluşunuzun Microsoft dizinini tek kiracılı bir OpenID Connect uygulamasıyla bağlayın.",
+            "generatedIssuer": "Veren URL'si · kiracı kimliğinizden oluşturuldu",
+            "ids": {
+              "body": "Uygulamanın Genel Bakış bölümünden Dizin (kiracı) kimliğini ve Uygulama (istemci) kimliğini Z8'e kopyalayın. Nesne kimliği farklı bir değerdir. Z8, kiracıya özel veren URL'sini sizin için oluşturur.",
+              "link": "Uygulama kaydı talimatları",
+              "title": "Kiracı ve uygulama kimliklerini kopyalayın"
+            },
+            "introduction": "Bir Web uygulaması kaydı oluşturun, kiracı ve uygulama kimliklerinizi kopyalayın ve bir istemci parolası ekleyin. Z8, veren URL'sini oluşturur ve her adımda size rehberlik eder.",
+            "permissions": "Z8, oturum açmak için openid, email ve profile izinlerini kullanır. Bazı bağlantılar yenileme belirteçleri için offline_access iznini de talep eder. Dizin genelinde Microsoft Graph izinlerine ihtiyacınız yoktur. Kiracınızın onay ilkesi yine de yönetici onayı gerektirebilir.",
+            "portal": "Entra yönetim merkezini aç",
+            "redirect": {
+              "body": "Kimlik Doğrulama bölümünde Web platformu için bir yeniden yönlendirme URI'si ekleyin. Burada gösterilen Z8 geri çağırmasını birebir yapıştırın. Tek sayfalı uygulama değil, Web platformunu kullanın. Örtük izin vermeyi (implicit grant) etkinleştirmeniz gerekmez.",
+              "link": "Yeniden yönlendirme URI'si talimatları",
+              "title": "Web yeniden yönlendirme URI'sini ekleyin"
+            },
+            "redirectError": "AADSTS50011: Web yeniden yönlendirme URI'sinin, ana bilgisayar adı ve yolu da dahil olmak üzere Z8 tarafından gösterilen geri çağırmayla tam olarak eşleştiğini kontrol edin.",
+            "register": {
+              "body": "Entra ID → Uygulama kayıtları → Yeni kayıt adımlarını izleyin. Uygulamaya Z8 adını verin ve Yalnızca bu kuruluş dizinindeki hesaplar seçeneğini belirleyin. Önce kuruluşunuzun dizinini seçin. Uygulama kaydedemiyorsanız Entra yöneticinizden sizin için bir tane oluşturmasını isteyin.",
+              "title": "Bir uygulama kaydedin"
+            },
+            "secret": {
+              "body": "Sertifikalar ve gizli diziler → İstemci gizli dizileri → Yeni istemci gizli dizisi bölümüne gidin. Gizli Dizi Kimliğini değil, Değerini Z8'e yapıştırın. Değer yalnızca bir kez gösterilir. Bitiş tarihini kaydedin ve süresi dolmadan önce kimlik bilgisini yenileyin. Değeri yalnızca kuruluşunuzun güvenli kanalı üzerinden paylaşın.",
+              "link": "İstemci gizli dizisi talimatları",
+              "title": "İstemci gizli dizisi oluştur"
+            },
+            "secretError": "Geçersiz istemci gizli dizisi: Gizli dizinin Kimliğini değil, Değerini kullanın. Bu uygulamaya ait olduğunu ve süresinin dolmadığını kontrol edin. Artık Değere sahip değilseniz yeni bir gizli dizi oluşturun.",
+            "secretHelp": "Sertifikalar ve gizli diziler → İstemci gizli dizileri. Gizli Dizi Kimliğini değil, Değeri yapıştırın. Z8 bunu tekrar görüntülemez.",
+            "secretValue": "İstemci gizli dizisi Değeri",
+            "start": "Microsoft Entra ID'yi ayarlayın",
+            "tenantError": "Yanlış kiracı: Dizin (kiracı) Kimliğini, istemci kimliğiyle aynı uygulama kaydından kopyalayın. Bu kılavuzlu kurulum common veya organizations yerine belirli bir kiracıyı kullanır.",
+            "tenantHelp": "Uygulama kayıtları → uygulamanız → Genel Bakış. common veya organizations yerine kiracı kimliğinizi kullanın.",
+            "tenantId": "Dizin (kiracı) Kimliği",
+            "tenantInvalid": "Dizin (kiracı) Kimliğini eksiksiz bir UUID olarak girin.",
+            "title": "Microsoft Entra ID'yi ayarlayın",
+            "troubleshooting": "Entra kurulumu sorunlarını giderin",
+            "troubleshootingLink": "Microsoft yeniden yönlendirme sorun giderme kılavuzu"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Benzersiz bir sağlayıcı kimliği, OIDC veren (issuer) URL'si, kuruluşunuzun e-posta etki alanı, istemci kimliği ve istemci gizli dizisini girin. Bunları sağlayıcınızın uygulama ayarlarında bulabilirsiniz. Gizli dizileri güvenli bir kanal üzerinden aktarın.",
+              "title": "Uygulama ayarlarını kopyalayın"
+            },
+            "description": "Yetkilendirme kodu akışına sahip gizli bir Web uygulaması oluşturmak için sağlayıcınızın belgelerini kullanın.",
+            "redirect": {
+              "body": "Burada gösterilen Z8 geri çağırma (callback) adresini uygulamanın izin verilen yeniden yönlendirme URI'lerine ekleyin. Kuruluş ana bilgisayar adı ve yol dahil olmak üzere tam olarak kopyalayın.",
+              "title": "Geri çağırma URL'sini kaydedin"
+            },
+            "register": {
+              "body": "Kimlik sağlayıcınızda yetkilendirme kodu akışını kullanan bir OpenID Connect uygulaması oluşturun. İlk olarak küçük bir pilot grup atayın.",
+              "title": "Web uygulaması oluşturun"
+            },
+            "title": "OIDC sağlayıcısı ayarlayın"
+          },
+          "getStarted": "Ekibinizin oturum açma yöntemini bağlayın",
+          "getStartedDescription": "Yapılandırmayı kendiniz bir araya getirmek zorunda kalmadan sağlayıcıya özel adım adım rehberi izleyin.",
+          "handoff": {
+            "copy": "BT kontrol listesini kopyalayın",
+            "description": "Kurulum talimatlarını ve kuruluşunuzun geri çağırma URL'sini kopyalayın. Kontrol listesi hiçbir zaman kimlik bilgilerini içermez.",
+            "return": "Kiracı kimliğini (Entra için) ve uygulama istemci kimliğini Z8 yöneticisine iletin. İstemci gizli dizisi Değerini güvenli bir kanal üzerinden ayrı olarak aktarın; bu kontrol listesine yapıştırmayın.",
+            "title": "BT yöneticinizden yardıma mı ihtiyacınız var?"
+          },
+          "manual": "Diğer sağlayıcı / manuel OIDC",
+          "manualAvailable": "Başka bir sağlayıcı mı kullanıyorsunuz? Kurulum panelinde manuel OIDC yapılandırmasını seçin.",
+          "manualTestHelp": "Bu, otomatik olarak doğrulanmış bir bağlantı testi değil, yönetici tarafından bildirilen bir oturum açma sonucudur. Ayrı bir tarayıcı oturumunda hedeflenen bir kullanıcıyla pilot oturum açma işlemi gerçekleştirin, bu yönetici oturumunu açık tutun ve ardından gözlemlenen başarıyı veya başarısızlığı buraya kaydedin. Sağlayıcıyı kaydetmek ve DNS'i doğrulamak oturum açmanın çalıştığını kanıtlamaz.",
+          "openSetup": "Kılavuzlu kurulumu aç",
+          "provider": "Kimlik sağlayıcı",
+          "required": "Bu alan zorunludur.",
+          "saving": "Ekleniyor…",
+          "scopes": "Oturum açma kapsamları openid, email ve profile içerir. Bazı bağlantılar yenileme belirteçleri için offline_access kapsamını da talep eder."
         },
         "issuerUrl": "Veren (Issuer) URL'si",
         "issuerUrlHelp": "Kimlik sağlayıcınızdan alınan OIDC veren URL'si",
-        "issuerUrlRequired": "Veren URL'si gereklidir",
         "providerId": "Sağlayıcı Kimliği",
         "providerIdHelp": "Bu sağlayıcı için benzersiz bir tanımlayıcı (küçük harf, boşluksuz)",
         "providerIdInvalid": "Sağlayıcı Kimliği yalnızca küçük harfler, rakamlar ve kısa çizgiler içermelidir",
-        "providerIdRequired": "Sağlayıcı Kimliği gereklidir",
-        "setupInstructions": "Kurulum Talimatları",
         "title": "Kimlik Sağlayıcıları",
         "token": "Belirteç",
         "tokenError": "Alan adı doğrulama belirteci oluşturulamadı",
         "tokenGenerated": "Doğrulama belirteci oluşturuldu",
         "txtToken": "TXT belirteci:",
         "validUrlRequired": "Lütfen geçerli bir URL girin",
-        "verified": "Doğrulandı",
         "verify": "Doğrula",
         "verifyError": "Alan adı doğrulaması başarısız oldu. DNS TXT kaydınızı kontrol edin ve tekrar deneyin."
       },

@@ -41,11 +41,20 @@ export const departureEventKinds = [
 	"employee_deactivated",
 	"employee_reactivated",
 ] as const;
-/** Audit reason a deactivation row was written under (#1440, #1442). */
+/** Audit reason a deactivation row was written under (#1440, #1442, #1629). */
 export const deactivationReasons = [
 	"employee_deactivated",
 	"employee_deactivation_backfill",
+	"member_removed",
+	"scim_deprovisioned",
 ] as const;
+/**
+ * A deactivation's state (#1629). Member removal and SCIM deprovisioning
+ * record it `pending`; the follow-up deactivation applies it, or withdraws it
+ * when the person came back first. Every other deactivation is `applied`.
+ */
+export const deactivationStatuses = ["pending", "applied", "withdrawn"] as const;
+export type DeactivationStatus = (typeof deactivationStatuses)[number];
 export const departureTaskKinds = [
 	"dispatch_departure",
 	"session_revocation",
@@ -257,6 +266,15 @@ export const employeeDeactivation = pgTable(
 		/** Audit evidence; not a foreign key so user deletion cannot rewrite history. */
 		createdBy: text("created_by").notNull(),
 		reason: text("reason").$type<(typeof deactivationReasons)[number]>().notNull(),
+		/** Pending until a follow-up deactivation applies or withdraws it (#1629). */
+		status: text("status").$type<DeactivationStatus>().default("applied").notNull(),
+		/** Audit context of a follow-up deactivation, e.g. the SCIM `connectionId` (#1629). */
+		metadata: jsonb("metadata").$type<JsonObject>().default({}).notNull(),
+		/**
+		 * An applied follow-up deactivation left reports with no current manager,
+		 * and the organization's admins were not told yet; retried until sent (#1629).
+		 */
+		reportsNoticePending: boolean("reports_notice_pending").default(false).notNull(),
 		requestId: uuid("request_id").notNull(),
 		requestFingerprint: text("request_fingerprint").notNull(),
 		/** What a replayed request returns. */
@@ -286,6 +304,12 @@ export const employeeDeactivation = pgTable(
 		),
 		uniqueIndex("employeeDeactivation_request_idx").on(table.organizationId, table.requestId),
 		index("employeeDeactivation_employee_idx").on(table.organizationId, table.employeeId),
+		index("employeeDeactivation_pending_idx")
+			.on(table.createdAt, table.organizationId, table.id)
+			.where(sql`status = 'pending'`),
+		index("employeeDeactivation_reports_notice_idx")
+			.on(table.createdAt, table.organizationId, table.id)
+			.where(sql`reports_notice_pending`),
 		foreignKey({
 			name: "employeeDeactivation_employee_fk",
 			columns: [table.employeeId, table.organizationId],
@@ -301,6 +325,12 @@ export const employeeDeactivation = pgTable(
 			],
 		}).onDelete("cascade"),
 		check("employeeDeactivation_reason_check", textIn("reason", deactivationReasons)),
+		check("employeeDeactivation_status_check", textIn("status", deactivationStatuses)),
+		// A withdrawn deactivation was ended by the person coming back: it is never open.
+		check(
+			"employeeDeactivation_withdrawn_check",
+			sql`status <> 'withdrawn' OR reactivated_at IS NOT NULL`,
+		),
 		check(
 			"employeeDeactivation_reactivation_check",
 			sql`reactivated_at IS NOT NULL OR (reactivated_by IS NULL AND reactivation_request_id IS NULL)`,

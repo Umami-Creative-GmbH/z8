@@ -718,7 +718,6 @@
       "createCategory": "Kategorie erstellen",
       "createCategoryDescription": "Erstellen Sie eine neue Arbeitskategorie, die mehreren Sets zugewiesen werden kann",
       "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Kategoriesets mit unterschiedlichen Zeitfaktoren für verschiedene Arbeitsarten erstellen",
-      "createFirstSet": "Erstes Set erstellen",
       "createSet": "Set erstellen",
       "createSetDescription": "Erstellen Sie ein neues Kategorienset und wählen Sie die Kategorien aus, die enthalten sein sollen",
       "defaultSet": "Standard-Kategorienset",

@@ -147,6 +147,8 @@ export interface PersonalDataRecordPart {
 	kind: "record";
 	key: string;
 	record: PersonalDataRow | null;
+	/** A synthetic absence value, kept in JSON but not counted as user data. */
+	isPlaceholder?: boolean;
 }
 
 export type PersonalDataPart = PersonalDataTablePart | PersonalDataRecordPart;
@@ -270,6 +272,27 @@ export function tablePart(
 export function recordPart(
 	key: string,
 	record: PersonalDataRow | null,
+	options: { isPlaceholder?: boolean } = {},
 ): PersonalDataRecordPart {
-	return { kind: "record", key, record };
+	return { kind: "record", key, record, ...options };
+}
+
+/** Count records by their presence, preserving stored zero, false and null values. */
+export function personalDataPartRecordCount(part: PersonalDataPart): number {
+	if (part.kind === "table") return part.rows.length;
+	return part.record !== null &&
+		Object.keys(part.record).length > 0 &&
+		!part.isPlaceholder
+		? 1
+		: 0;
+}
+
+/** Only already-authorized collector output decides whether a category has data. */
+export function personalDataCategoryHasData(
+	category: CollectedCategory,
+): boolean {
+	return (
+		category.parts.some((part) => personalDataPartRecordCount(part) > 0) ||
+		(category.files?.length ?? 0) > 0
+	);
 }

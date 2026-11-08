@@ -341,7 +341,6 @@
       "morePages": "Weitere Seiten",
       "pagination": "Sitenummerierig"
     },
-    "pending": "Usschtändig",
     "positionCaptureErrors": {
       "adminOnly": "Nur Inhaber und Admins vo de Organisation chönd d Standorterfassig verwalte.",
       "assignmentNotFound": "Die Zueordnig git's nüme.",
@@ -1129,11 +1128,13 @@
     "compliance": "Compliance",
     "dashboard": "Dashboard",
     "driving-licence": "Führerausweis",
+    "equipment": "Uusrüschtig",
     "feedback": "Feedback",
     "finance": "Finanzen",
     "financeAwaiting": "{count, plural, one {# Ausgabe wartet auf Rückerstattung} other {# Ausgaben warten auf Rückerstattung}}",
     "get-help": "Hilf becho",
     "my-documents": "Mini Dokumänt",
+    "my-equipment": "Miini Uusrüschtig",
     "my-requests": "Mini Aafroge",
     "my-schedule": "Min Isatzplan",
     "org-explorer": "Org-Explorer",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
         "title": "Offboarding von Mitarbeitenden muss überprüft werden"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} hät no usstehendi Uusrüschtig ({quantity}), fällig am {deadline}. Öffne Uusrüschtig, zum d Rückgab z organisiere.",
+        "title": "Rückgab vo dr Uusrüschtig überfällig"
+      },
+      "equipmentReturnReminder": {
+        "message": "Bitte gib diini usstehendi Uusrüschtig ({quantity}) bis am {deadline} zrugg. Öffne Miini Uusrüschtig für d Detail.",
+        "title": "Rückgab vo dr Uusrüschtig fällig"
       },
       "forgottenClockOutReminder": {
         "message": "Dini Schicht het um {endTime} ({timezone}) gändet. Stämpfel us, wänn du fertig gschaffet häsch.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Fahrtdetails fähled",
         "driving_licence_reminder": "Fahruuswiis-Prüefig fällig",
         "employee_deactivation_shifts_opened": "Schichte, wo dur e Deaktivierig offe worde sind",
+        "equipment_return_reminder": "Erinnerige a d Uusrüschtigsrückgab",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
         "former_employee_reports_without_manager": "Mitarbeiter ohni aktuelle Vorgesetzte",
         "kiosk_command_refused": "Kiosk-Stämplig nöd erfasst",
@@ -1960,6 +1970,7 @@
         "auditLog": "Audit-Log-Iiträg über dich und Iiträg, wo du usgfüehrt häsch.",
         "drivingLicence": "Fahruuswiis-Prüefige, Originalbestätigunge und Erchlärige, zuegordneti Ergänzige, Kategori-Bewilligunge und iri Historie, Registrierig und dini Prüefverantwortig. Nur zruggbhalteni Nachwiis; keini Fahruuswiis-Scans, Dokumentenummere oder medizinische Notize.",
         "employment": "Dini Personalakte und dis Profil, Aastelligszitruum und Ustritt, Aastelligsbedingige mit dim Stundelohn und sinere Historie, Teams, Vorgesetzti, Standört, Fähigkeite, Projektzueordnige, Rolle, Gruppe, Choschtästell und jedi Richtlinie, wo dir zuegwise isch.",
+        "equipment": "Diini bhaltene Uusrüschtigs-Zuewiisige, ursprünglechi und korrigierti Zueständ und Notize, physischi Quittige, Verlust- und Verzichtsentscheidige, Widerbeschaffig und Aastelligs-/Beendigungsverlouf. Unbekannti historischi Usgabedate bliibed unbekannt; tatsächlechi Kaländerdate sind vo de UTC-Iitragstiimestamps trennt. Uusrüschtigs-Ufzeichnige sind i Mitarbeiter- und Admin-Export enthalte, solang si bhalte werded.",
         "integrations": "Dini Kaländerverbindige, din Kaländer-Feed, verchnüpfti Chat-Konti und de Kiosk-PIN-Status.",
         "notifications": "Din Benachrichtigungsverlauf.",
         "personnelFile": "Die Dokumente in Ihrem Personaldossier, als Originaldateien.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Arztzeugnisse"
       },
       "drivingLicenceRetention": "Fahruuswiis-Nachwiis folged de grechtfertigte Prüefigs-Ufbewahrigsfrischt vo de Organisation, sobald si kei aktivi Bewilligung me understützed. E dokumentierti Sperri für en spezifische Rächtsfall verschiebt s Lösche. Lugg i d driving_licence-Richtlinie, Ufbewahrigs- und Sperriiträg für de zuträffendi Kontext; s Generiere vome Export verlengeret d Nachwiis-Ufbewahrig in Z8 nöd.",
+      "emptyFilesOmitted": "Dateie ohni exportierbari Date werded usglah. Läärs Tabälle und fählendi optionali Datensätz bliibed i JSON-Dateie erhalte, wo anderi Date enthalted. Optionali Iistellige, wo nie konfiguriert worde sind, gelted nöd als Date.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Sit wenn du im Team bisch.",
             "summary": "D Teams, wo du jetzt debii bisch."
           }
+        },
+        "equipment": {
+          "actualDate": "S ursprüngleche tatsächleche Übergab-Kaländerdatum, wie's i de Ziitzone vo de Organisation erfasst worde isch. Läär bedüütet es explizit unbekannts historischs Usgabedatum, nöd s Iitragsdatum.",
+          "after": "JSON vo de Wert nach dere Änderig, mit de gliiche Bedüütige vo de Nachwiisfelder wie vorane. Usgabeveriibarigswert enthalted returnRequired, explicitDeadline und employmentPeriodId. Kaländerdate sind trennt vom UTC recorded_at vo de Änderig.",
+          "assignmentId": "Die bhalteni Zuewiisig, zu dere de Nachwiis ghört; nur diini Zuewiisige i dere Organisation sind enthalte.",
+          "assignmentQuantity": "Die aktuell effektiv usgäbeni Mengi nach Korrekture; ursprünglechi Usgab und Änderige bliibed separati Nachwiis.",
+          "assignments": {
+            "summary": "Diini bhaltene Uusrüschtigsveriibarige und aktuell effektive Bständ, Bedingige und ursprüngliche Aastelligs-/Beendigungsverlouf. Verlust- und Verzichtsabschlüss beanspruched ke physischi Quittig; d Widerbeschaffig überschniidet sich mit irem früenere Abschluss. Entfernti personäbezogeni Historie wird nie us nöd-personäbezogene Artikel-Identitäte rekonstruiert."
+          },
+          "before": "JSON vo de effektive Wert vor dere Änderig: Übergabmengi, actualDate (null für unbekannti historischi Usgab), Zuestand und Notize, oder Usnahm-Art, Mengi und Grund. Usgabeänderige bhalted au s früeneri returnRequired, explicitDeadline und de ursprünglech Aastelligs-/Uustritts-/Deaktivierigsverlouf bii.",
+          "condition": "De ursprünglech erfasst guet, abgnutzt, beschädigt oder unbekannt Zuestand; en unbekannte Zuestand bedüütet nöd automatisch en unbekannts Datum.",
+          "correctionReason": "Die obligatorischi Begründig, worum d Korrektur gmacht worde isch.",
+          "corrections": {
+            "summary": "Begründeti Vorher-/Nachher-Änderige a diine bhaltene Übergabe und Entscheidige, inklusiv Veriibarigsänderige. Ursprünglechi Nachwiis bliibed separat; en Übertrag beinhaltet nur diini eigeti Übergab und Änderig, nie di personäbezogeni Historie vom andere Bsitzer."
+          },
+          "deactivatedAt": "Wenn die verknüpfti sofortigi Deaktivierig d Aastellig/de Zuegang beändet hät, als UTC-Ziitpunkt; usstehendi Uusrüschtig verzögeret das nie.",
+          "deactivationId": "Die unveränderlechi Deaktivierigs-Identität für die Zuewiisig, au wenn e Reaktivierig die gliichi Aastelligsperiode wider eröffnet.",
+          "deactivationTimezone": "D Organisations-Ziitzone, wo bi de ursprüngleche Deaktivierig erfasst worde isch, oder läär, falls si nöd erfasst worde isch. E spööteri Organisations- oder Betrachter-Ziitzone ersetzt dä historisch Kontext nie.",
+          "departureCutoffAt": "De UTC-Stichtagsziitpunkt vom verknüpfte Uustritt, trennt vom letschte Arbets-Kaländertag und de Uusrüschtigs-Frist.",
+          "departureDeadline": "S Rückgabedatum, wo us em ursprüngleche Uustritt oder de Deaktivierig abgleitet isch; es bliibt bi spööterer Wiederiistellig oder Reaktivierig erhalte. Läär, wenn ke abgleiteti Frist gilt.",
+          "departureId": "D'ursprünglich verchnüpfti Ustritts-Identität vo de Zueordnig, falls vorhande. Ustrittsufgabe und -überprüefige gälted nöd als Grätenachwiis.",
+          "departureMode": "Öb de verchnüpfti Ustritt plant oder sofortig gsi isch, oder leer ohni en verchnüpfte Ustritt.",
+          "departureStatus": "De aktuell Status vom verchnüpfte Ustritt; en usstehende Ustritt beändet d'Aastellig nöd automatisch.",
+          "departureTimezone": "D'Zitzone, wo bim verchnüpfte Ustritt igfrore worde isch; Änderige vo de Betrachter-Zitzone ändered d'kalendarischi Bedütig nöd.",
+          "effectiveActualDate": "S'tatsächlichi Übergabedatum nach Korrekture; en unbekannti historischi Usgab bliibt leer, anstatt uf de Iitrags-Zitstempel zruggzgreife.",
+          "effectiveCondition": "De Zuestand nach Korrekture; d'Entgegnahm vo bschädigtem Material git nöd automatisch d'Freigab für e Neuausgab.",
+          "effectiveDeadline": "Die früeneri aawendbari expliziti oder abgleiteti Kaländerfrist; Grät, wo zum Bhalte usgeh worde sind, händ keini. Das isch kes Übergabedatum und kei UTC-Iitrags-Zitstempel.",
+          "effectiveExceptionQuantity": "D'Mängi, wo nach Änderige oder Stornierige dur die Entscheidig immer no gschlosse isch, inklusiv de verchnüpfte physische Iigäng; Null bedütet vollständig storniert.",
+          "effectiveHandoverQuantity": "D'Übergabemängi nach Korrekture; Null macht en irrtümliche Iigang rückgängig, ohni de ursprünglichi Bewiis z'lösche.",
+          "effectiveKind": "S'aktuelle Ergäbnis «verlore» oder «erlah» nach Korrekture.",
+          "effectiveNotes": "Die aktuelle optionale Übergabenotize nach Korrekture.",
+          "effectiveReason": "De aktuell Grund vo de Entscheidig nach Korrekture; Korrekturgründ werded separat bhalte.",
+          "employmentPeriodId": "Die ursprünglichi Aastelligsperiode, wo mit dere Zueordnig verchnüpft isch und nöd automatisch dur e spöteri Aastelligsperiode ersetzt wird; leer, wänn kei Periode erfasst worde isch.",
+          "exceptionId": "Die verchnüpfti Entscheidig über verlore oder erlah; en verchnüpfte physische Iigang ergänzt die Entscheidig, statt die gliichi Mängi dopplet abzrechne. Leer bi ere normale Übergab.",
+          "exceptionKind": "S'ursprüngliche Ergäbnis «verlore» oder «erlah»; keis vo beidne bedütet, dass s'Grät physisch zrugggeh worde isch.",
+          "exceptionQuantity": "Die ursprünglichi Mängi, wo dur d'Entscheidig gschlosse worde isch, bliibt au nach Änderige oder Stornierige erhalte.",
+          "exceptionReason": "De ursprünglichi Pflichtgrund für d'Entscheidig über Verlust oder Erlass.",
+          "exceptionReceivedQuantity": "Physischi Iigäng, wo mit verlorne oder erlanene Mängene verchnüpft sind; die Überschniidig wird bi de Berächnig vo usstehende Rückgabe eimol zellt.",
+          "exceptions": {
+            "summary": "Ursprünglichi begründeti Entscheidige über Verlust und Erlass und ihri aktuelle korrigierte Wärt. Die schlüssed Rückgabepflichte ab, ohni en physische Iigang z'bechaupte; verchnüpfti Iigangsnachwiis erfassed d'Wiedergwünnig oder spöteri Rückgab separat."
+          },
+          "explicitDeadline": "S'separat veriibarte Rückgabedatum als Kaländertag i de Zitzone vo de Organisation, oder leer.",
+          "handoverId": "D'ID vo de gänderete Übergab, oder leer bi ere Usnahm-Änderig.",
+          "handoverKind": "«Usgab» erfasst d'Usgab; «Iigang» erfasst de physischi Iigang, inklusiv ere verchnüpfte Wiedergwünnig. Weder en Verlust- no en Erlass-Abschluss isch sälber en Übergab.",
+          "handoverQuantity": "Die ursprünglich erfassti Übergabemängi, wo au nach Korrektur erhalte bliibt.",
+          "handovers": {
+            "summary": "Ursprünglichi Usgab- und physischi Iigangsnachwiis mit de aktuelle korrigierte Wärt. En Iigang, wo mit ere Verlust-Entscheidig verchnüpft isch, isch e Wiedergwünnig; en Iigang, wo mit ere Erlass-Entscheidig verchnüpft isch, erfasst e spöteri physischi Rücknahm. En unbekannte historische Usgabetag bliibt leer und wird nie dur sin UTC-Iitrags-Zitstempel ersetzt."
+          },
+          "historical": "Wahr für de Iitrag vonere bereits bstehende historische Zueordnig; nur historischi Usgabe dörfed es explizit unbekannts tatsächlichts Datum ha.",
+          "holds": {
+            "kind": "Öb de Fallstopp gsetzt oder ufghobe worde isch.",
+            "reason": "De Pflichtgrund, wo vom Organisations-Administrator für die spezifischi Fallaktion dokumentiert worde isch.",
+            "revision": "D'Zueordnigs-Revision, wo dur die Fallstopp-Aktion erstellt worde isch.",
+            "summary": "Dokumentierti Fallstopp-Aktivierige und -Ufhebige i Dinere gspicherete Gräte-Historie. En aktive Stopp schützt d'Bewiis vor ere Bereinigung; er erfasst nie en physische Iigang."
+          },
+          "identifier": "D'Kennig vo de Organisation für Din individuell verfolgte Artikel, ohni d'Historie vo andere Bsitzer; leer bi Mänge-Zueordnige.",
+          "lastWorkingDay": "De letschti Arbeitstag lut Kaländer vom verchnüpfte plante Ustritt i sinere igfrorene Zitzone, oder leer.",
+          "lostQuantity": "Die effektivi Mängi, wo als verlore abgschlosse worde isch, inklusiv allfälliger spöter wiedergwunnener Mängene; d'Verlust-Entscheidig bliibt erhalte.",
+          "notes": "Die ursprüngliche optionale Übergabenotize, wo nach de Korrektur erhalte bliibed, während di persönlichi Historie gspicheret wird.",
+          "outstandingQuantity": "Erforderlichi Mängi minus physischi Iigäng und Verlust-/Erlass-Abschlüss, wobi d'Iigangs-Überschniidige wider hinzuegrechnet werded, zum doppleti Abrechnige z'vermiide; Null für Grät, wo zum Bhalte usgeh worde sind.",
+          "periodEndedAt": "De UTC-Ändzitzpunkt vo de verchnüpfte Periode, oder leer bi ere offene/widereröffnete Periode oder eme unbekannte Ändi.",
+          "periodStartedAt": "De erfassti UTC-Startzitzpunkt vo de verchnüpfte Aastelligsperiode, oder leer wänn unbekannt.",
+          "periodStatus": "De aktuell Status vo de verchnüpfte Periode (open, closed oder legacy_unknown); e Reaktivierig cha die gliichi Periode wider eröffne, ohni d'Änd-Identität vo de Zueordnig z'ändere.",
+          "physicallyReceivedQuantity": "Die effektivi Mängi, wo physisch empfange worde isch, inklusiv Wiedergwünnige und Iigäng vo erlanene Artikel. Entscheidige über Verlust oder Erlass elei erhöhed die Zahl nie.",
+          "reactivatedAt": "Wänn die Deaktivierig spöter reaktiviert worde isch, als UTC-Zitzpunkt, oder leer; e Reaktivierig löscht alti Grätepflichte oder -frischte nöd.",
+          "receivedQuantity": "Die effektivi physischi Mängi, wo bezüglich dere Entscheidig empfange worde isch. Bi ere Verlust-Entscheidig sind das wiedergwunneni Grät; si isch bereits i de physische Iigäng vo de Zueordnig enthalte.",
+          "recordedAt": "De UTC-Iitrags-Zitstempel, trennt vom tatsächliche Übergabedatum; en verspötete Iitrag änderet s'Übergabedatum nöd.",
+          "recordedBy": "De Aazeigename vo de Person, wo de Bewiis erfasst hät, wänn d'Organisations-Identität no verfüegbar isch; es werded keini wiitere Profil-Details iagschlosse.",
+          "returnRequired": "Öb e Rückgab erforderlich isch. «Falsch» bedütet zum Bhalte usgeh, ohni Rückgabefrist oder usstehendi Rückgab; es bedütet nöd physisch zrugggeh.",
+          "serialNumber": "Die optionali Hersteller-Serienummere vom individuell verfolgte Artikel.",
+          "trackingMode": "«Individuell» identifiziert ein physische Artikel; «Mängi» zellt ustuuschbari Artikel.",
+          "type": "De Name vom Grätetyp.",
+          "waivedQuantity": "Die effektivi Mängi, wo uf di erforderlich Rückgab verzichtet worde isch, inklusiv allfälliger spöter erhaltener Mängene; en Erlass behauptet kein Iigang."
         },
         "integrations": {
           "calendarConnections": {

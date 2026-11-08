@@ -7,10 +7,11 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate, formatPlainDateRange } from "@/lib/datetime/temporal-format";
 import type {
 	AbsencePlanItem,
-	AccessEndsPlan,
 	ApprovalDutiesPlan,
 	DeactivationPreview,
 } from "@/lib/employee-lifecycle/deactivation/types";
+import type { EmploymentEndingPlan } from "@/lib/employee-lifecycle/employment-ending/types";
+import type { ChecklistGrantKind } from "@/lib/employee-lifecycle/reactivation-checklist";
 import { useEquipmentEnabled } from "@/stores/organization-settings-store";
 import { useGrantKindLabel } from "./use-grant-kind-label";
 
@@ -36,7 +37,7 @@ export function DeactivationConsequences({ plan }: { plan: DeactivationPreview }
 			<ApprovalDutiesSection duties={plan.approvalDuties} names={names} />
 			<ShiftsSection plan={plan} locale={locale} />
 			<AbsencesSection plan={plan} locale={locale} />
-			<AccessEndsSection access={plan.accessEnds} />
+			<AccessEndsSection ending={plan.employmentEnding} />
 			<EquipmentSection plan={plan} locale={locale} />
 			<RecordsSection plan={plan} />
 		</div>
@@ -44,7 +45,7 @@ export function DeactivationConsequences({ plan }: { plan: DeactivationPreview }
 }
 
 function hasConsequences(plan: DeactivationPreview): boolean {
-	const { managerLinks, teamLinks, approvalDuties, shifts, absences, accessEnds } = plan;
+	const { managerLinks, teamLinks, approvalDuties, shifts, absences, employmentEnding } = plan;
 	return (
 		[
 			managerLinks.reportsNeedingReplacement,
@@ -60,12 +61,13 @@ function hasConsequences(plan: DeactivationPreview): boolean {
 			absences.absencesToCancel,
 			absences.absencesSpanning,
 			absences.absencesInClosedMonths,
-			accessEnds.grants,
-			accessEnds.drivingAuthorizations,
-			accessEnds.kioskBadges,
-			accessEnds.kioskFobs,
-			accessEnds.shareLinks,
-			plan.equipment,
+			endedGrantKinds(employmentEnding),
+			employmentEnding.drivingLicence.authorizations,
+			employmentEnding.documentRequests.requestIds,
+			employmentEnding.kioskBadges.badgeIds,
+			employmentEnding.kioskFobs.fobIds,
+			employmentEnding.reportShareLinks.links,
+			employmentEnding.equipment.returns,
 		].some((items) => items.length > 0) ||
 		plan.retentionStarts ||
 		plan.seatReleased
@@ -442,14 +444,30 @@ function AbsenceList({ absences, locale }: { absences: AbsencePlanItem[]; locale
 	);
 }
 
-function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
+/** The kinds of the held grants that end, each once. */
+function endedGrantKinds(ending: EmploymentEndingPlan): ChecklistGrantKind[] {
+	return [
+		...new Set<ChecklistGrantKind>([
+			...ending.officerGrants.grants.map((grant) => grant.kind),
+			...ending.equipment.officerGrantHolderIds.map(() => "equipment_officer" as const),
+			...ending.drivingLicence.verifierGrantIds.map(() => "driving_licence_verifier" as const),
+		]),
+	];
+}
+
+function AccessEndsSection({ ending }: { ending: EmploymentEndingPlan }) {
 	const { t } = useTranslate();
 	const grantLabel = useGrantKindLabel();
-	const grantKinds = [...new Set(access.grants.map((grant) => grant.kind))];
-	const { drivingAuthorizations, kioskBadges, kioskFobs, shareLinks } = access;
+	const grantKinds = endedGrantKinds(ending);
+	const drivingAuthorizations = ending.drivingLicence.authorizations;
+	const documentRequests = ending.documentRequests.requestIds;
+	const kioskBadges = ending.kioskBadges.badgeIds;
+	const kioskFobs = ending.kioskFobs.fobIds;
+	const shareLinks = ending.reportShareLinks.links;
 	if (
 		grantKinds.length +
 			drivingAuthorizations.length +
+			documentRequests.length +
 			kioskBadges.length +
 			kioskFobs.length +
 			shareLinks.length ===
@@ -472,6 +490,15 @@ function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
 							"settings.employees.lifecycle.deactivationPreview.drivingAuthorizations",
 							"{count, plural, one {# driving authorization ends} other {# driving authorizations end}}, including suspended ones",
 							{ count: drivingAuthorizations.length },
+						)}
+					</li>
+				)}
+				{documentRequests.length > 0 && (
+					<li>
+						{t(
+							"settings.employees.lifecycle.deactivationPreview.documentRequests",
+							"{count, plural, one {# open document request is cancelled} other {# open document requests are cancelled}}",
+							{ count: documentRequests.length },
 						)}
 					</li>
 				)}
@@ -510,7 +537,8 @@ function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
 function EquipmentSection({ plan, locale }: { plan: DeactivationPreview; locale: string }) {
 	const { t } = useTranslate();
 	const enabled = useEquipmentEnabled();
-	if (plan.equipment.length === 0) return null;
+	const returns = plan.employmentEnding.equipment.returns;
+	if (returns.length === 0) return null;
 	return (
 		<PreviewSection
 			title={t(
@@ -530,7 +558,7 @@ function EquipmentSection({ plan, locale }: { plan: DeactivationPreview; locale:
 			}
 		>
 			<ItemList>
-				{plan.equipment.map((item) => (
+				{returns.map((item) => (
 					<li key={item.assignmentId} className="break-words">
 						{item.effectiveDeadline
 							? t(

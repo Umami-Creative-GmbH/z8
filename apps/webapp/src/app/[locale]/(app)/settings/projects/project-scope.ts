@@ -83,11 +83,23 @@ export function getProjectSettingsActorContext(options?: {
 					where: and(
 						eq(employee.userId, session.user.id),
 						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
 					),
 				});
 			}),
 		]);
+
+		// A former employee has no settings access, whatever their membership.
+		if (employeeRecord?.isActive === false) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Organization access is inactive",
+					userId: session.user.id,
+					resource: "project_settings",
+					action: "access",
+				}),
+			);
+		}
+
 		const authorizedEmployeeRecord = membershipRecord ? employeeRecord : null;
 
 		const accessTier = resolveSettingsAccessTier({

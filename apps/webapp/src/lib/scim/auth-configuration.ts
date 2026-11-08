@@ -4,14 +4,16 @@ import type {
 } from "@better-auth/scim";
 import { scim } from "@better-auth/scim";
 import type { BetterAuthPlugin } from "better-auth";
-import { AuditTrail } from "@/lib/audit-trail";
 import {
 	queueAfterAuthTransactionCommit,
 	requireAuthTransaction,
 } from "@/lib/auth/auth-transaction";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { releaseDeputyAssignmentsOnDeactivation } from "@/lib/employee-lifecycle/deputy-release";
-import { notifyReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release-runtime";
+import { recordFollowUpDeactivation } from "@/lib/employee-lifecycle/deactivation/follow-up-record";
+import {
+	completeReturnReactivation,
+	reactivateOnReturn,
+} from "@/lib/employee-lifecycle/reactivation";
 import { resolveSCIMIdentity } from "./identity-resolution";
 import { reconcileSCIMLifecycle } from "./lifecycle-reconciler";
 import { protectSCIMProjectedUser } from "./projection-guards";
@@ -221,37 +223,59 @@ async function reconcileSCIMProjectedUser(
 		{ organizationId: input.provisioningDomainId, userId: input.userId },
 	);
 	await reconcileSCIMLifecycle(input, context, {
-		onEmployeeDeactivated: releaseSCIMDeprovisionedDeputy,
+		onEmployeeDeactivated: deactivateSCIMDeprovisionedEmployee,
+		onEmployeeReactivated: reactivateSCIMReenabledEmployee,
 	});
 	await reconcileSCIMRoleProjection(input, context);
 }
 
 /**
- * A SCIM-deprovisioned employee stops being anyone's deputy (#1014), in the
- * SCIM transaction. SCIM has no acting user, so the audit names the
- * deprovisioned user, marked as a system side effect from the connection;
- * notifications wait for the commit.
+ * SCIM deprovisioning is recorded, in the SCIM transaction, as a pending
+ * deactivation the follow-up applies (#1629, Organization ADR 0011); the
+ * follow-up ends what they hold, their deputy duties too (#1014), so a user
+ * the IdP re-enables first keeps everything. SCIM has no acting user, so the
+ * audit names the deprovisioned user, marked as a system side effect from the
+ * connection.
  */
-async function releaseSCIMDeprovisionedDeputy(input: {
+async function deactivateSCIMDeprovisionedEmployee(input: {
 	organizationId: string;
 	userId: string;
 	employeeId: string;
 	connectionId: string;
 }) {
-	const released = await releaseDeputyAssignmentsOnDeactivation(
-		requireAuthTransaction("SCIM deputy release"),
-		new AuditTrail(),
+	await recordFollowUpDeactivation(requireAuthTransaction("SCIM deprovisioning"), {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		createdBy: input.userId,
+		reason: "scim_deprovisioned",
+		metadata: { connectionId: input.connectionId },
+	});
+}
+
+/**
+ * A deprovisioned employee the IdP re-enables comes back through a
+ * reactivation (#1628), in the SCIM transaction. As at deprovisioning, the
+ * actor is the user, with the connection in the audit metadata; the audit
+ * entries wait for the commit.
+ */
+async function reactivateSCIMReenabledEmployee(input: {
+	organizationId: string;
+	userId: string;
+	employeeId: string;
+	connectionId: string;
+}) {
+	const reactivation = await reactivateOnReturn(
+		requireAuthTransaction("SCIM reactivation"),
 		{
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 			actorUserId: input.userId,
 			at: systemClock.nowInstant(),
-			reason: "scim_deprovisioned",
 			metadata: { connectionId: input.connectionId },
 		},
 	);
-	if (released) {
-		await queueAfterAuthTransactionCommit(() => notifyReleasedDeputyAssignments(released));
+	if (reactivation) {
+		await queueAfterAuthTransactionCommit(() => completeReturnReactivation(reactivation));
 	}
 }
 

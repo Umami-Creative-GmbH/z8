@@ -37,6 +37,13 @@
         "time": "Horário"
       },
       "disabled": "Desativado",
+      "documentation": {
+        "reference": "Referência da API",
+        "resources": "Leia períodos de trabalho, ausências, funcionários, projetos, clientes e definições de campos personalizados com a API Pública v1. O acesso é somente leitura.",
+        "scopes": "Uma chave de API atua como sua organização e lê apenas o que os escopos da chave concedem. Encontre endpoints, escopos necessários e exemplos na referência.",
+        "title": "API Pública v1"
+      },
+      "downloadOpenApi": "Baixar especificação OpenAPI",
       "editCreated": "Criado em {date}",
       "editDescription": "Atualize as configurações desta chave de API. Nota: Você não pode visualizar ou alterar a chave em si.",
       "editTitle": "Editar chave de API",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Salve o provedor antes de registrar um teste"
           },
-          "help": "Isso registra um resultado de teste de SSO externo ao vivo. Execute o login no IdP primeiro, depois capture o sucesso ou a falha aqui para a proteção de ativação.",
           "label": {
             "email": "E-mail do usuário de teste",
             "failureNote": "Nota de falha"
@@ -620,12 +626,9 @@
         "updated": "OAuth do {provider} atualizado com sucesso"
       },
       "sso": {
-        "addDescription": "Configure um fornecedor de identidade OIDC para início de sessão único (SSO) empresarial.",
         "addError": "Falha ao adicionar fornecedor de SSO",
         "addSuccess": "Fornecedor de SSO adicionado com sucesso",
         "addTitle": "Adicionar Fornecedor de SSO",
-        "clientIdPlaceholder": "O seu ID de cliente OIDC",
-        "clientSecretPlaceholder": "O seu segredo de cliente OIDC",
         "deleteDialogDescription": "Tem a certeza de que pretende eliminar este fornecedor de SSO? Os utilizadores deixarão de poder iniciar sessão utilizando este fornecedor de identidade.",
         "deleteDialogTitle": "Eliminar Fornecedor de SSO",
         "deleteError": "Falha ao eliminar o fornecedor de SSO",
@@ -633,32 +636,110 @@
         "deleteSuccess": "Fornecedor de SSO eliminado",
         "description": "Adicione fornecedores de identidade OIDC para ativar o SSO para a sua organização.",
         "domainInvalid": "Por favor, introduza um domínio válido (ex: exemplo.com)",
-        "domainRequired": "O domínio é obrigatório",
         "domainVerified": "Domínio verificado",
         "emailDomain": "Domínio de E-mail",
         "emailDomainHelp": "Os utilizadores com este domínio de e-mail poderão utilizar o SSO",
         "empty": "Nenhum fornecedor de SSO configurado ainda.",
         "emptyDescription": "Adicione um fornecedor OIDC para ativar o início de sessão único empresarial.",
-        "instructions": {
-          "copyCredentials": "Copie o URL do Emissor, o ID do Cliente e o Segredo do Cliente do seu IdP",
-          "createApp": "Crie uma aplicação OIDC no seu fornecedor de identidade (Okta, Azure AD, etc.)",
-          "verifyDomain": "Adicione o fornecedor aqui e verifique o domínio de e-mail através de um registo TXT de DNS"
+        "guide": {
+          "addDescription": "Siga as instruções de configuração do seu provedor e, em seguida, conecte-o à sua organização.",
+          "afterSave": "Após salvar, verifique seu domínio de e-mail com o registro TXT de DNS no Z8. Faça um teste piloto de login com um usuário pretendido mantendo sua sessão atual de administrador aberta. Na Configuração guiada, salve o mesmo ID do provedor e domínio de e-mail mostrados na lista de provedores e, em seguida, registre manualmente o resultado do login observado antes de considerar a opção Exigir SSO. O salvamento e a verificação de DNS não comprovam um login bem-sucedido.",
+          "afterSaveTitle": "Após salvar seu provedor",
+          "callback": "URL de callback do Z8",
+          "connectionHelp": "Copie estes valores das configurações de aplicativo do seu provedor.",
+          "connectionSettings": "Configurações de conexão",
+          "copied": "Copiado para a área de transferência",
+          "copyCallback": "Copiar URL de callback",
+          "copyFailed": "Falha ao acessar a área de transferência. Selecione e copie o texto manualmente.",
+          "domainPending": "Domínio não verificado",
+          "domainStatus": "Verificação de domínio",
+          "domainVerified": "Domínio verificado",
+          "entra": {
+            "clientHelp": "Copie o ID do aplicativo (cliente) da Visão geral, não o ID do objeto.",
+            "clientId": "ID do aplicativo (cliente)",
+            "consentError": "Consentimento ou acesso negado: peça ao administrador do Entra para verificar as políticas de consentimento e se o usuário piloto está atribuído ao aplicativo.",
+            "consentLink": "Orientações sobre consentimento da Microsoft",
+            "description": "Conecte o diretório da Microsoft da sua organização com um aplicativo OpenID Connect de locatário único.",
+            "generatedIssuer": "URL do emissor · gerada a partir do seu ID de locatário",
+            "ids": {
+              "body": "Na Visão geral do aplicativo, copie o ID do diretório (locatário) e o ID do aplicativo (cliente) para o Z8. O ID do objeto é um valor diferente. O Z8 cria a URL do emissor específica do locatário para você.",
+              "link": "Instruções de registro de aplicativo",
+              "title": "Copiar os IDs de locatário e de aplicativo"
+            },
+            "introduction": "Crie um registro de aplicativo Web, copie seus IDs de locatário e de aplicativo e adicione um segredo do cliente. O Z8 gera a URL do emissor e orienta você em cada etapa.",
+            "permissions": "O Z8 usa openid, email e profile para o login. Algumas conexões também solicitam offline_access para tokens de atualização. Você não precisa de permissões em todo o diretório do Microsoft Graph. A política de consentimento do seu locatário ainda pode exigir aprovação do administrador.",
+            "portal": "Abrir centro de administração do Entra",
+            "redirect": {
+              "body": "Em Autenticação, adicione um URI de redirecionamento para a plataforma Web. Cole exatamente o callback do Z8 mostrado aqui. Use Web, não Aplicativo de página única. Você não precisa habilitar a concessão implícita.",
+              "link": "Instruções de URI de redirecionamento",
+              "title": "Adicionar o URI de redirecionamento Web"
+            },
+            "redirectError": "AADSTS50011: Verifique se o URI de redirecionamento Web corresponde exatamente ao callback exibido pelo Z8, incluindo seu hostname e caminho.",
+            "register": {
+              "body": "Abra o Entra ID → Registros de aplicativo → Novo registro. Nomeie o aplicativo como Z8 e escolha Contas somente neste diretório organizacional. Selecione primeiro o diretório da sua organização. Se não conseguir registrar aplicativos, peça ao seu administrador do Entra para criar um para você.",
+              "title": "Registrar um aplicativo"
+            },
+            "secret": {
+              "body": "Acesse Certificados e segredos → Segredos do cliente → Novo segredo do cliente. Cole o Valor dele no Z8, e não o ID do segredo. O Valor é exibido apenas uma vez. Registre a expiração e substitua a credencial antes que expire. Compartilhe o Valor apenas por meio do canal seguro da sua organização.",
+              "link": "Instruções do segredo do cliente",
+              "title": "Criar um segredo do cliente"
+            },
+            "secretError": "Segredo do cliente inválido: use o Valor do segredo, não o ID dele. Verifique se ele pertence a este aplicativo e não expirou. Crie um novo segredo se não tiver mais o Valor.",
+            "secretHelp": "Certificados e segredos → Segredos do cliente. Cole o Valor, não o ID do segredo. O Z8 não o exibirá novamente.",
+            "secretValue": "Valor do segredo do cliente",
+            "start": "Configurar o Microsoft Entra ID",
+            "tenantError": "Locatário incorreto: copie o ID do diretório (locatário) do mesmo registro de aplicativo que o ID do cliente. Esta configuração guiada usa um locatário específico, não common ou organizations.",
+            "tenantHelp": "Registros de aplicativo → seu aplicativo → Visão geral. Use o ID do seu locatário, não common ou organizations.",
+            "tenantId": "ID do diretório (locatário)",
+            "tenantInvalid": "Insira o ID do diretório (locatário) como um UUID completo.",
+            "title": "Configurar o Microsoft Entra ID",
+            "troubleshooting": "Solução de problemas na configuração do Entra",
+            "troubleshootingLink": "Guia de solução de problemas de redirecionamento da Microsoft"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Insira um ID exclusivo do provedor, a URL do emissor OIDC, o domínio de e-mail da sua organização, o ID do cliente e o segredo do cliente. Encontre-os nas configurações de aplicativo do seu provedor. Transfira os segredos por um canal seguro.",
+              "title": "Copiar as configurações do aplicativo"
+            },
+            "description": "Use a documentação do seu provedor para criar um aplicativo Web confidencial com o fluxo de código de autorização.",
+            "redirect": {
+              "body": "Adicione o callback do Z8 exibido aqui aos URIs de redirecionamento permitidos do aplicativo. Copie-o exatamente, incluindo o nome de host e o caminho da organização.",
+              "title": "Registrar a URL de callback"
+            },
+            "register": {
+              "body": "No seu provedor de identidade, crie um aplicativo OpenID Connect usando o fluxo de código de autorização. Atribua primeiro um pequeno grupo piloto.",
+              "title": "Criar um aplicativo Web"
+            },
+            "title": "Configurar um provedor OIDC"
+          },
+          "getStarted": "Conectar o login da sua equipe",
+          "getStartedDescription": "Siga um passo a passo específico do provedor sem precisar montar a configuração por conta própria.",
+          "handoff": {
+            "copy": "Copiar checklist de TI",
+            "description": "Copie as instruções de configuração e a URL de callback da sua organização. O checklist nunca inclui credenciais.",
+            "return": "Envie o ID do locatário (para o Entra) e o ID do cliente do aplicativo ao administrador do Z8. Transfira o Valor do segredo do cliente separadamente por um canal seguro; não o cole neste checklist.",
+            "title": "Precisa de ajuda do seu administrador de TI?"
+          },
+          "manual": "Outro provedor / OIDC manual",
+          "manualAvailable": "Está usando outro provedor? Escolha a configuração manual de OIDC no painel de configuração.",
+          "manualTestHelp": "Este é um resultado de login informado pelo administrador, não um teste de conexão verificado automaticamente. Faça um login piloto com um usuário previsto em uma sessão de navegador separada, mantenha esta sessão de administrador aberta e registre aqui a aprovação ou falha observada. Salvar o provedor e verificar o DNS não comprovam que o login funciona.",
+          "openSetup": "Abrir configuração guiada",
+          "provider": "Provedor de identidade",
+          "required": "Este campo é obrigatório.",
+          "saving": "Adicionando…",
+          "scopes": "Os escopos de login incluem openid, email e profile. Algumas conexões também solicitam offline_access para tokens de atualização."
         },
         "issuerUrl": "URL do Emissor",
         "issuerUrlHelp": "O URL do emissor OIDC do seu fornecedor de identidade",
-        "issuerUrlRequired": "A URL do emissor é obrigatória",
         "providerId": "ID do provedor",
         "providerIdHelp": "Um identificador único para este provedor (minúsculas, sem espaços)",
         "providerIdInvalid": "O ID do provedor deve conter apenas letras minúsculas, números e hifens",
-        "providerIdRequired": "O ID do provedor é obrigatório",
-        "setupInstructions": "Instruções de configuração",
         "title": "Provedores de identidade",
         "token": "Token",
         "tokenError": "Falha ao gerar o token de verificação de domínio",
         "tokenGenerated": "Token de verificação gerado",
         "txtToken": "Token TXT:",
         "validUrlRequired": "Por favor, insira uma URL válida",
-        "verified": "Verificado",
         "verify": "Verificar",
         "verifyError": "Falha na verificação do domínio. Verifique seu registro DNS TXT e tente novamente."
       },

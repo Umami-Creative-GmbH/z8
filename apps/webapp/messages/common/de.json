@@ -341,7 +341,6 @@
       "morePages": "Weitere Seiten",
       "pagination": "Paginierung"
     },
-    "pending": "Ausstehend",
     "positionCaptureErrors": {
       "adminOnly": "Nur Inhaber und Administratoren der Organisation können die Standorterfassung verwalten.",
       "assignmentNotFound": "Diese Zuweisung existiert nicht mehr.",
@@ -1129,11 +1128,13 @@
     "compliance": "Compliance",
     "dashboard": "Dashboard",
     "driving-licence": "Führerschein",
+    "equipment": "Ausrüstung",
     "feedback": "Feedback",
     "finance": "Finanzen",
     "financeAwaiting": "{count, plural, one {# Ausgabe wartet auf Erstattung} other {# Ausgaben warten auf Erstattung}}",
     "get-help": "Hilfe",
     "my-documents": "Meine Dokumente",
+    "my-equipment": "Meine Ausrüstung",
     "my-requests": "Meine Anfragen",
     "my-schedule": "Mein Dienstplan",
     "org-explorer": "Organisations-Explorer",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
         "title": "Offboarding benötigt eine Prüfung"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} hat noch ausstehende Ausrüstung ({quantity}), fällig am {deadline}. Öffnen Sie „Ausrüstung“, um die Rückgabe zu veranlassen.",
+        "title": "Rückgabe der Ausrüstung überfällig"
+      },
+      "equipmentReturnReminder": {
+        "message": "Bitte geben Sie Ihre ausstehende Ausrüstung ({quantity}) bis zum {deadline} zurück. Öffnen Sie „Meine Ausrüstung“ für Details.",
+        "title": "Rückgabe der Ausrüstung fällig"
       },
       "forgottenClockOutReminder": {
         "message": "Ihre Schicht endete um {endTime} ({timezone}). Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Fahrtdetails fehlen",
         "driving_licence_reminder": "Führerscheinprüfung fällig",
         "employee_deactivation_shifts_opened": "Durch Deaktivierung frei gewordene Schichten",
+        "equipment_return_reminder": "Erinnerungen an Ausrüstungsrückgabe",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
         "former_employee_reports_without_manager": "Mitarbeiter ohne aktuelle Führungskraft",
         "kiosk_command_refused": "Kiosk-Buchung nicht erfasst",
@@ -1960,6 +1970,7 @@
         "auditLog": "Audit-Log-Einträge über Sie und Einträge, die Sie vorgenommen haben.",
         "drivingLicence": "Führerscheinprüfungen, Originalbestätigungen und -erklärungen, zugeordnete Nachträge, Klassenberechtigungen und deren Historie, Registrierung und Ihre Prüferverantwortlichkeit. Nur aufbewahrte Nachweise; keine Führerschein-Scans, Dokumentennummern oder ärztliche Bescheinigungen.",
         "employment": "Ihre Personalakte und Ihr Profil, Beschäftigungszeiträume und Austritt, Beschäftigungsbedingungen mit Ihrem Stundenlohn und dessen Historie, Teams, Führungskräfte, Standorte, Qualifikationen, Projektzuweisungen, Rollen, Gruppen, Kostenstelle und jede Ihnen zugewiesene Richtlinie.",
+        "equipment": "Ihre gespeicherten Ausrüstungszuweisungen, ursprünglichen und korrigierten Zustände und Notizen, physischen Quittungen, Entscheidungen über Verluste und Verzicht, Rückholungen und die Historie zu Beschäftigung/Beendigung. Unbekannte historische Ausgabedaten bleiben unbekannt; tatsächliche Kalenderdaten sind getrennt von UTC-Eintragszeitstempeln. Ausrüstungsdatensätze sind während der Aufbewahrung sowohl in Mitarbeiter- als auch in Administrator-Exporten enthalten.",
         "integrations": "Ihre Kalenderverknüpfungen, Ihr Kalender-Feed, verknüpfte Chat-Konten und Kiosk-PIN-Status.",
         "notifications": "Ihr Benachrichtigungsverlauf.",
         "personnelFile": "Die Dokumente in Ihrer Personalakte als Originaldateien.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Krankmeldungen"
       },
       "drivingLicenceRetention": "Führerscheinnachweise unterliegen der berechtigten Prüfungsaufbewahrungsfrist der Organisation, sobald sie keine aktive Berechtigung mehr unterstützen. Eine dokumentierte Aufbewahrungspflicht für einen konkreten Rechtsfall schiebt die Löschung auf. Den jeweiligen Kontext entnehmen Sie bitte der driving_licence-Richtlinie sowie den Aufbewahrungs- und Sperrdatensätzen; das Erstellen eines Exports verlängert die Nachweisaufbewahrung in Z8 nicht.",
+      "emptyFilesOmitted": "Dateien ohne exportierbare Daten werden ausgelassen. Leere Tabellen und fehlende optionale Datensätze verbleiben in JSON-Dateien, die andere Daten enthalten. Optionale Einstellungen, die nie konfiguriert wurden, gelten nicht als Daten.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Seit wann Sie im Team sind.",
             "summary": "Die Teams, in denen Sie aktuell sind."
           }
+        },
+        "equipment": {
+          "actualDate": "Das ursprüngliche tatsächliche Kalenderdatum der Übergabe, wie in der Zeitzone der Organisation erfasst. Leer bedeutet ein explizit unbekanntes historisches Ausgabedatum, nicht das Eintragsdatum.",
+          "after": "JSON der Werte nach dieser Änderung unter Verwendung derselben Bedeutungen der Nachweisfelder wie zuvor. Werte der Ausgabe-Vereinbarung umfassen returnRequired, explicitDeadline und employmentPeriodId. Kalenderdaten unterscheiden sich vom UTC-Wert recorded_at der Änderung.",
+          "assignmentId": "Die beibehaltene Zuweisung, zu der dieser Nachweis gehört; es sind nur Ihre Zuweisungen in dieser Organisation enthalten.",
+          "assignmentQuantity": "Die aktuell gültige ausgegebene Menge nach Korrekturen; ursprüngliche Ausgabe und Änderungen bleiben separate Nachweise.",
+          "assignments": {
+            "summary": "Ihre aufbewahrten Ausrüstungsvereinbarungen und aktuellen effektiven Bestände, Bedingungen sowie die ursprüngliche Historie zu Beschäftigung/Beendigung. Abschlüsse aufgrund von Verlust oder Verzicht beanspruchen keinen physischen Erhalt; eine Rückholung überschneidet sich mit deren früherem Abschluss. Entfernte persönliche Historien werden niemals aus unpersönlichen Gegenstandsidentitäten rekonstruiert."
+          },
+          "before": "JSON der effektiven Werte vor dieser Änderung: Übergabemenge, actualDate (null bei unbekannter historischer Ausgabe), Zustand und Notizen oder Ausnahmeart, Menge und Grund. Ausgabeänderungen behalten auch frühere Werte für returnRequired, explicitDeadline sowie die ursprüngliche Historie zu Beschäftigung/Ausscheiden/Deaktivierung bei.",
+          "condition": "Der ursprünglich erfasste Zustand: gut, abgenutzt, beschädigt oder unbekannt; ein unbekannter Zustand impliziert kein unbekanntes Datum.",
+          "correctionReason": "Die obligatorische Erklärung, warum die Korrektur vorgenommen wurde.",
+          "corrections": {
+            "summary": "Begründete Vorher-/Nachher-Änderungen an Ihren gespeicherten Übergaben und Entscheidungen, einschließlich Vertragsänderungen. Ursprüngliche Nachweise bleiben separat; eine Übertragung umfasst nur Ihre eigene Übergabe und Änderung, niemals die persönliche Historie des anderen Inhabers."
+          },
+          "deactivatedAt": "Wann diese verknüpfte sofortige Deaktivierung die Beschäftigung/den Zugriff beendet hat, als UTC-Zeitpunkt; ausstehende Ausrüstung verzögert dies niemals.",
+          "deactivationId": "Die unveränderliche Deaktivierungsidentität für diese Zuweisung, selbst wenn eine Reaktivierung denselben Beschäftigungszeitraum wiedereröffnet.",
+          "deactivationTimezone": "Die bei der ursprünglichen Deaktivierung erfasste Zeitzone der Organisation, oder leer, falls sie nicht aufgezeichnet wurde. Eine spätere Zeitzone der Organisation oder des Betrachters ersetzt diesen historischen Kontext niemals.",
+          "departureCutoffAt": "Der UTC-Stichtagzeitpunkt des verknüpften Ausscheidens, getrennt von dessen letztem Arbeitstag laut Kalender und der Ausrüstungsfrist.",
+          "departureDeadline": "Das aus dem ursprünglichen Ausscheiden oder der Deaktivierung abgeleitete Rückgabedatum; es bleibt auch bei einer späteren Wiedereinstellung oder Reaktivierung bestehen. Leer, wenn keine abgeleitete Frist gilt.",
+          "departureId": "Die ursprünglich mit der Zuweisung verknüpfte Austrittskennung, falls vorhanden. Austrittsaufgaben und -prüfungen gelten nicht als Gerätenachweis.",
+          "departureMode": "Gibt an, ob der verknüpfte Austritt geplant oder sofortig war, oder leer ohne verknüpften Austritt.",
+          "departureStatus": "Der aktuelle Status des verknüpften Austritts; ein ausstehender Austritt beendet das Beschäftigungsverhältnis nicht automatisch.",
+          "departureTimezone": "Die für den verknüpften Austritt festgelegte Zeitzone; Änderungen der Zeitzone des Betrachters ändern nichts an ihrer kalendarischen Bedeutung.",
+          "effectiveActualDate": "Das tatsächliche kalendarische Übergabedatum nach Korrekturen; eine unbekannte historische Ausgabe bleibt leer, anstatt auf ihren Erfassungszeitstempel zurückzugreifen.",
+          "effectiveCondition": "Der Zustand nach Korrekturen; der Erhalt beschädigter Geräte berechtigt für sich allein nicht zur Neuausgabe.",
+          "effectiveDeadline": "Die frühere zutreffende ausdrückliche oder abgeleitete Kalenderfrist; zur dauerhaften Nutzung ausgegebene Geräte haben keine. Dies ist kein Übergabedatum oder UTC-Erfassungszeitstempel.",
+          "effectiveExceptionQuantity": "Die Menge, die durch diese Entscheidung nach Änderungen oder Stornierungen noch abgeschlossen ist, einschließlich der damit verknüpften physischen Eingänge; null bedeutet vollständig storniert.",
+          "effectiveHandoverQuantity": "Die Übergabemenge nach Korrekturen; null storniert einen irrtümlichen Eingang, ohne den ursprünglichen Nachweis zu löschen.",
+          "effectiveKind": "Das aktuelle Ergebnis („Verloren“ oder „Erlassen“) nach Korrekturen.",
+          "effectiveNotes": "Die aktuellen optionalen Übergabenotizen nach Korrekturen.",
+          "effectiveReason": "Die aktuelle Begründung der Entscheidung nach Korrekturen; Korrekturgründe werden separat aufbewahrt.",
+          "employmentPeriodId": "Der ursprünglich mit dieser Zuweisung verknüpfte Beschäftigungszeitraum, der nicht automatisch durch einen späteren Beschäftigungszeitraum ersetzt wird; leer, wenn kein Zeitraum erfasst wurde.",
+          "exceptionId": "Die verknüpfte Entscheidung („Verloren“ oder „Erlassen“); ein verknüpfter physischer Eingang ergänzt diese Entscheidung, anstatt dieselbe Menge doppelt abzurechnen. Leer bei einer gewöhnlichen Übergabe.",
+          "exceptionKind": "Das ursprüngliche Ergebnis („Verloren“ oder „Erlassen“); keines von beiden bedeutet, dass das Gerät physisch zurückgegeben wurde.",
+          "exceptionQuantity": "Die ursprünglich durch die Entscheidung abgeschlossene Menge, die auch nach Änderungen oder Stornierungen erhalten bleibt.",
+          "exceptionReason": "Der ursprüngliche Pflichtgrund für die Verlust- oder Erlassentscheidung.",
+          "exceptionReceivedQuantity": "Physische Eingänge, die mit verlorenen oder erlassenen Mengen verknüpft sind; diese Überschneidung wird bei der Berechnung ausstehender Rückgaben einmal gezählt.",
+          "exceptions": {
+            "summary": "Ursprüngliche begründete Verlust- und Erlassentscheidungen und ihre aktuellen korrigierten Werte. Diese schließen Rückgabepflichten ab, ohne einen physischen Eingang zu behaupten; verknüpfte Eingangsnachweise erfassen eine Wiederbeschaffung oder spätere Rückgabe separat."
+          },
+          "explicitDeadline": "Das separat vereinbarte Rückgabedatum als Kalendertag in der Zeitzone der Organisation oder leer.",
+          "handoverId": "Die ID der geänderten Übergabe oder leer bei einer Ausnahmeänderung.",
+          "handoverKind": "„Ausgabe“ erfasst die Ausgabe; „Eingang“ erfasst den physischen Eingang, einschließlich einer verknüpften Wiederbeschaffung. Weder der Abschluss als „Verloren“ noch als „Erlassen“ stellt selbst eine Übergabe dar.",
+          "handoverQuantity": "Die ursprünglich erfasste Übergabemenge, die auch nach einer Korrektur erhalten bleibt.",
+          "handovers": {
+            "summary": "Ursprüngliche Nachweise über Ausgabe und physischen Eingang mit aktuellen korrigierten Werten. Ein mit einer Verlustentscheidung verknüpfter Eingang ist eine Wiederbeschaffung; ein mit einer Erlassentscheidung verknüpfter Eingang erfasst einen späteren physischen Eingang. Ein unbekanntes historisches Ausgabedatum bleibt leer und wird niemals durch seinen UTC-Erfassungszeitstempel ersetzt."
+          },
+          "historical": "Wahr bei Erfassung einer bereits bestehenden historischen Zuweisung; nur eine historische Ausgabe darf ein ausdrücklich unbekanntes tatsächliches Datum haben.",
+          "holds": {
+            "kind": "Gibt an, ob die Fallsperre verhängt oder aufgehoben wurde.",
+            "reason": "Der vom Organisationsadministrator dokumentierte Pflichtgrund für diese spezifische Fallmaßnahme.",
+            "revision": "Die durch diese Fallsperren-Aktion erstellte Zuweisungsrevision.",
+            "summary": "Dokumentierte Verhängungen und Aufhebungen von Fallsperren für Ihren aufbewahrten Geräteverlauf. Eine aktive Sperre schützt die Nachweise vor einer Bereinigung; sie erfasst niemals einen physischen Eingang."
+          },
+          "identifier": "Die Organisationskennung Ihres individuell nachverfolgten Artikels, ohne den Verlauf anderer Besitzer; leer bei Mengenzuweisungen.",
+          "lastWorkingDay": "Der letzte Arbeitstag des verknüpften geplanten Austritts in dessen festgelegter Zeitzone oder leer.",
+          "lostQuantity": "Die effektive als verloren abgeschlossene Menge, einschließlich etwaiger nachträglich wiederbeschaffter Mengen; die Verlustentscheidung bleibt erhalten.",
+          "notes": "Die ursprünglichen optionalen Übergabenotizen, die nach einer Korrektur erhalten bleiben, während der persönliche Verlauf aufbewahrt wird.",
+          "outstandingQuantity": "Erforderliche Menge abzüglich physischer Eingänge und Verlust-/Erlassabschlüsse, zuzüglich deren Eingangsüberschneidung zur Vermeidung doppelter Abrechnung; null bei zur dauerhaften Nutzung ausgegebenen Geräten.",
+          "periodEndedAt": "Der UTC-Endzeitpunkt des verknüpften Zeitraums oder leer bei einem offenen/wiedereröffneten Zeitraum oder einem unbekannten Ende.",
+          "periodStartedAt": "Der erfasste UTC-Startzeitpunkt des verknüpften Beschäftigungszeitraums oder leer, wenn unbekannt.",
+          "periodStatus": "Der aktuelle Status des verknüpften Zeitraums („open“, „closed“ oder „legacy_unknown“); eine Reaktivierung kann denselben Zeitraum wiedereröffnen, ohne die Abschlussidentität der Zuweisung zu ändern.",
+          "physicallyReceivedQuantity": "Die effektive physisch empfangene Menge, einschließlich Wiederbeschaffungen und Eingängen erlassener Artikel. Entscheidungen über Verlust oder Erlass allein erhöhen diesen Zähler nicht.",
+          "reactivatedAt": "Zeitpunkt, zu dem diese Deaktivierung später reaktiviert wurde, als UTC-Zeitpunkt, oder leer; eine Reaktivierung löscht keine alten Geräteverpflichtungen oder Fristen.",
+          "receivedQuantity": "Die effektive physische Menge, die zu dieser Entscheidung empfangen wurde. Bei einer Verlustentscheidung handelt es sich um wiederbeschaffte Geräte; dies ist bereits in den physischen Eingängen der Zuweisung enthalten.",
+          "recordedAt": "Der UTC-Erfassungszeitstempel, getrennt vom tatsächlichen Übergabedatum; eine verspätete Erfassung ändert das Übergabedatum nicht.",
+          "recordedBy": "Der Anzeigename der Person, die diesen Nachweis erfasst hat, sofern deren Organisationsidentität verfügbar bleibt; es sind keine weiteren Profildetails enthalten.",
+          "returnRequired": "Gibt an, ob eine Rückgabe erforderlich ist. „Falsch“ bedeutet zur dauerhaften Nutzung ausgegeben, ohne Rückgabefrist oder ausstehende Rückgabe; es bedeutet nicht physisch zurückgegeben.",
+          "serialNumber": "Die optionale Seriennummer des Herstellers des individuell nachverfolgten Artikels.",
+          "trackingMode": "„Individuell“ identifiziert einen einzelnen physischen Artikel; „Menge“ zählt austauschbare Artikel.",
+          "type": "Der Name des Gerätetyps.",
+          "waivedQuantity": "Die effektive Menge, auf deren erforderliche Rückgabe verzichtet wurde, einschließlich etwaiger nachträglich empfangener Mengen; ein Verzicht impliziert keinen Eingang."
         },
         "integrations": {
           "calendarConnections": {

@@ -36,8 +36,6 @@ import type {
 	DeactivationPreview,
 	NamedEmployee,
 } from "@/lib/employee-lifecycle/deactivation/types";
-import type { ReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release";
-import { notifyReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release-runtime";
 import {
 	checkLifecycleTarget,
 	type LifecycleTargetCheck,
@@ -108,7 +106,6 @@ type DeactivationTransactionResult =
 			deactivationId: string | null;
 			audit: AuditTrail | null;
 			afterCommit: DeactivationAfterCommit[];
-			releasedDeputies: ReleasedDeputyAssignments | null;
 	  }
 	/** The same request again: its stored result, with the after-commit work rebuilt. */
 	| {
@@ -116,7 +113,6 @@ type DeactivationTransactionResult =
 			targetUserId: string | null;
 			reactivated: boolean;
 			afterCommit: DeactivationAfterCommit[];
-			releasedDeputies: ReleasedDeputyAssignments | null;
 	  }
 	| {
 			type: "refused";
@@ -313,13 +309,12 @@ function deactivateEmployee(input: unknown) {
 									requestFingerprint,
 								});
 								if (recorded) {
-									const rebuilt = rebuildDeactivationAfterCommit(recorded);
+									const rebuilt = rebuildDeactivationAfterCommit(recorded, actor.dbService.db);
 									return {
 										type: "replay",
 										targetUserId: rebuilt.result?.employeeUserId ?? null,
 										reactivated: recorded.reactivatedAt !== null,
 										afterCommit: rebuilt.afterCommit,
-										releasedDeputies: rebuilt.releasedDeputies,
 									};
 								}
 
@@ -337,7 +332,6 @@ function deactivateEmployee(input: unknown) {
 										deactivationId: null,
 										audit: null,
 										afterCommit: [],
-										releasedDeputies: null,
 									};
 								}
 								if (check.type !== "change") return check;
@@ -360,7 +354,6 @@ function deactivateEmployee(input: unknown) {
 									deactivationId: execution.deactivationId,
 									audit: execution.audit,
 									afterCommit: execution.afterCommit,
-									releasedDeputies: execution.releasedDeputies,
 								};
 							},
 							actor.dbService.db,
@@ -481,14 +474,6 @@ function deactivateEmployee(input: unknown) {
 							owner: { userId: targetUserId },
 							actorUserId: actor.session.user.id,
 						}),
-					);
-				}
-
-				if (transactionResult.releasedDeputies) {
-					const releasedDeputies = transactionResult.releasedDeputies;
-					// After the commit, on the caller's database client (#1014); never throws.
-					yield* Effect.promise(() =>
-						notifyReleasedDeputyAssignments(releasedDeputies, actor.dbService.db),
 					);
 				}
 

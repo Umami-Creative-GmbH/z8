@@ -718,7 +718,6 @@
       "createCategory": "Créer une catégorie",
       "createCategoryDescription": "Créez une nouvelle catégorie de travail pouvant être attribuée à plusieurs ensembles",
       "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Créer des ensembles de catégories avec différents coefficients de temps pour divers types de travail",
-      "createFirstSet": "Créer le premier ensemble",
       "createSet": "Créer un ensemble",
       "createSetDescription": "Créez un nouvel ensemble de catégories et sélectionnez les catégories à inclure",
       "defaultSet": "Ensemble de catégories par défaut",

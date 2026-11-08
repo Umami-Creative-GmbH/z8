@@ -268,7 +268,6 @@ const REJECTION_MESSAGES: Record<ManualCommandRejection["reason"], string> = {
 	...PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	category_ineligible: "Cannot assign to this work category",
 	billable_not_allowed: "Only work on a project that has a customer can be billable",
-	policy_ambiguous: "Could not verify time approval policy. Please try again.",
 	// Worded from the occupants by `manualEntryOccupancyError` (#1492).
 	occupancy_conflict: MANUAL_ENTRY_OVERLAP_ERROR,
 	append_review_required:

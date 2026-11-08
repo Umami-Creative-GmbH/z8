@@ -24,6 +24,8 @@
         "assignedViaOrganizationDefault": "Organisasjonsstandard",
         "assignedViaTeam": "Team",
         "backToEmployeeList": "Tilbake til ansattliste",
+        "birthday": "Fødselsdag",
+        "birthdayDescription": "Valgfritt. Den ansatte kan også endre det i profilen sin.",
         "cancel": "Avbryt",
         "contractFixed": "Fast",
         "contractFixedDescription": "Lønnsbasert kompensasjon",
@@ -96,9 +98,9 @@
           "overview": "Oversikt"
         },
         "team": "Team",
-        "teamClearNotice": "Ved lagring avsluttes denne ansattes medlemskap i {currentTeam}. Det neste teammedlemskapet, om noe, blir det primære teamet.",
-        "teamDescription": "Den ansattes primære team. Administrer andre teammedlemskap under Team.",
-        "teamMoveNotice": "Ved lagring flyttes denne ansatte til {nextTeam}. Medlemskapet i {currentTeam} avsluttes; de andre teammedlemskapene beholdes.",
+        "teamClearNotice": "Lagring avslutter denne ansattes medlemskap i {currentTeam}. Deres neste teammedlemskap, hvis de har noen, blir deres primære team.",
+        "teamDescription": "Den ansattes primære team. Administrer flere teammedlemskap under Team.",
+        "teamMoveNotice": "Lagring flytter denne ansatte til {nextTeam}. Medlemskapet i {currentTeam} opphører; andre teammedlemskap beholdes.",
         "unexpectedError": "Det oppsto en uventet feil",
         "updateFailed": "Kunne ikke oppdatere ansatt",
         "updateSuccess": "Ansatt ble oppdatert",
@@ -248,10 +250,17 @@
           "approvalsToReview": "{count, plural, one {# godkjenningsoppgave trenger en erstatter og er oppført til vurdering ({review}).} other {# godkjenningsoppgaver trenger en erstatter og er oppført til vurdering ({review}).}}",
           "description": "{name} blir nå en tidligere ansatt. Tilgangen til denne organisasjonen opphører, øktene logges ut, og historikken beholdes. Se gjennom hva annet som endres før du bekrefter.",
           "descriptionAt": "{name} blir en tidligere ansatt når du bekrefter (forhåndsvist for {time}, {timeZone}). Tilgangen til denne organisasjonen opphører, øktene deres logges av, og historikken deres beholdes. Se gjennom hva annet som endres før du bekrefter.",
+          "documentRequests": "{count, plural, one {# åpen dokumentforespørsel er kansellert} other {# åpne dokumentforespørsler er kansellert}}",
           "drivingAuthorizations": "{count, plural, one {# kjøretillatelse opphører, inkludert suspenderte} other {# kjøretillatelser opphører, inkludert suspenderte}}",
+          "equipmentDescription": "Ansettelse og tilgang opphører selv om utstyr mangler. Autorisert personell kan følge opp under Utstyr, inkludert for tidligere ansatte. Å returnere en fysisk nøkkel eller adgangsbrikke gjenoppretter ikke tilgangsrettighetene.",
+          "equipmentDue": "{identifier} ({type}): {count} utestående, forfaller {date}",
+          "equipmentSwitchedOff": "Ansettelse og tilgang opphører selv om utstyr mangler. Utstyr er slått av for denne organisasjonen, så disse returene forblir registrert, men kan ikke følges opp før det slås på igjen.",
+          "equipmentTitle": "Utestående utstyrsreturer",
+          "equipmentUndated": "{identifier} ({type}): {count} utestående, ingen registrert frist",
           "formLabel": "Forhåndsvisning av deaktivering",
           "grants": {
             "drivingLicenceVerifier": "Førerkortkontrollør",
+            "equipmentOfficer": "Utstyrsansvarlig",
             "expenseOfficer": "Reiseutgiftsansvarlig",
             "payrollAccess": "Lønnstilgang",
             "personnelFileOfficer": "Personalmappeansvarlig"
@@ -309,6 +318,7 @@
           "groups": {
             "absences": "Kansellerte fravær",
             "access": "Kioskkort og kjøretillatelser",
+            "documentRequests": "Kansellerte dokumentforespørsler",
             "grants": "Innehadde tildelinger",
             "managers": "Lederkoblinger",
             "shareLinks": "Rapportdelingslenker",
@@ -318,6 +328,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Et fravær (datoer ikke registrert)",
+            "documentRequests": "{count, plural, one {# åpen dokumentforespørsel ble kansellert; be om den på nytt i personalmappen} other {# åpne dokumentforespørsler ble kansellert; be om dem på nytt i personalmappen}}",
             "drivingAuthorizations": "{count, plural, one {# kjøretillatelse utløp; en ny sjekk er nødvendig} other {# kjøretillatelser utløp; en ny sjekk er nødvendig}}",
             "kioskBadges": "{count, plural, other {# kioskkort ble tilbakekalt} }",
             "ownManager": "Administreres av {name}",
@@ -342,6 +353,7 @@
         "reinviteRequired": "Denne ansatte har ikke lenger organisasjonsmedlemskap. Send en ny invitasjon for å gjenopprette tilgangen.",
         "removeAccess": "Fjern tilgang",
         "removeDescription": "Dette fjerner organisasjonsmedlemskap og avslutter organisasjonsøkter. Timeregistreringer, fravær, saldoer, ansettelseshistorikk og revisjonslogger beholdes.",
+        "removeEndsEmployment": "Å fjerne dem avslutter også ansettelsesforholdet, på samme måte som en deaktivering: fremtidige vakter blir åpne, senere fravær kanselleres og tilgangene deres opphører. For å velge nye ledere for deres underordnede, bruk Deaktiver i stedet.",
         "removeError": "Kunne ikke fjerne organisasjonstilgang",
         "removeSuccess": "Organisasjonstilgang fjernet",
         "removeTitle": "Fjerne organisasjonstilgang?",
@@ -495,6 +507,7 @@
         }
       },
       "personalDataExport": {
+        "aboutEquipment": "Inkluderer de samme beholdte utstyrsregistreringene som den ansattes egen eksport, inkludert korrigeringer, tapte eller frafalte utfall og gjenfunnet utstyr. Tidligere ansattes oppføringer bruker også denne eksporten.",
         "availableUntil": "Tilgjengelig til {date}",
         "description": "En ZIP-fil med alt denne organisasjonen har lagret om denne ansatte, inkludert data som den ansattes egen eksport utelater. En nåværende ansatt varsles når den er klar. Filer slettes etter 7 dager.",
         "download": "Last ned",

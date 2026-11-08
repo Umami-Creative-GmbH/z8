@@ -37,6 +37,13 @@
         "time": "Tid"
       },
       "disabled": "Inaktiverad",
+      "documentation": {
+        "reference": "API-referens",
+        "resources": "Läs arbetsperioder, frånvaro, medarbetare, projekt, kunder och definitioner av anpassade fält med Public API v1. Åtkomsten är skrivskyddad.",
+        "scopes": "En API-nyckel agerar som din organisation och läser endast det som dess nyckelomfång tillåter. Hitta slutpunkter, obligatoriska omfång och exempel i referensen.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "Ladda ned OpenAPI-specifikation",
       "editCreated": "Skapad {date}",
       "editDescription": "Uppdatera inställningarna för denna API-nyckel. Obs! Du kan inte visa eller ändra själva nyckeln.",
       "editTitle": "Redigera API-nyckel",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Spara leverantören innan du registrerar ett test"
           },
-          "help": "Detta registrerar resultatet från ett skarpt externt SSO-test. Kör inloggningen i IdP först och registrera sedan godkänt eller underkänt här för aktiveringsskyddet.",
           "label": {
             "email": "E-postadress för testanvändare",
             "failureNote": "Anteckning om misslyckande"
@@ -620,12 +626,9 @@
         "updated": "{provider} OAuth har uppdaterats"
       },
       "sso": {
-        "addDescription": "Konfigurera en OIDC-identitetsleverantör för enkel inloggning (SSO) på företagsnivå.",
         "addError": "Kunde inte lägga till SSO-leverantör",
         "addSuccess": "SSO-leverantör har lagts till",
         "addTitle": "Lägg till SSO-leverantör",
-        "clientIdPlaceholder": "Ditt OIDC-klient-ID",
-        "clientSecretPlaceholder": "Din OIDC-klienthemlighet",
         "deleteDialogDescription": "Är du säker på att du vill ta bort den här SSO-leverantören? Användare kommer inte längre att kunna logga in med denna identitetsleverantör.",
         "deleteDialogTitle": "Ta bort SSO-leverantör",
         "deleteError": "Kunde inte ta bort SSO-leverantör",
@@ -633,32 +636,110 @@
         "deleteSuccess": "SSO-leverantör har tagits bort",
         "description": "Lägg till OIDC-identitetsleverantörer för att aktivera SSO för din organisation.",
         "domainInvalid": "Ange en giltig domän (t.ex. example.com)",
-        "domainRequired": "Domän krävs",
         "domainVerified": "Domänen har verifierats",
         "emailDomain": "E-postdomän",
         "emailDomainHelp": "Användare med denna e-postdomän kommer att kunna använda SSO",
         "empty": "Inga SSO-leverantörer har konfigurerats ännu.",
         "emptyDescription": "Lägg till en OIDC-leverantör för att aktivera enkel inloggning (SSO) för företag.",
-        "instructions": {
-          "copyCredentials": "Kopiera utfärdar-URL, klient-ID och klienthemlighet från din IdP",
-          "createApp": "Skapa en OIDC-applikation i din identitetsleverantör (Okta, Azure AD etc.)",
-          "verifyDomain": "Lägg till leverantören här och verifiera e-postdomänen via en DNS TXT-post"
+        "guide": {
+          "addDescription": "Följ instruktionerna från din leverantör och anslut den sedan till din organisation.",
+          "afterSave": "Efter att du har sparat verifierar du din e-postdomän med DNS TXT-posten i Z8. Testa inloggningen med en tilltänkt användare samtidigt som du håller din nuvarande administratörssession öppen. I Guidad konfiguration sparar du samma leverantörs-ID och e-postdomän som visas i leverantörslistan, och registrerar sedan det observerade inloggningsresultatet manuellt innan du överväger att kräva SSO. Att spara och göra DNS-verifiering bevisar inte att inloggningen lyckas.",
+          "afterSaveTitle": "Efter att du har sparat din leverantör",
+          "callback": "Callback-URL för Z8",
+          "connectionHelp": "Kopiera dessa värden från din leverantörs applikationsinställningar.",
+          "connectionSettings": "Anslutningsinställningar",
+          "copied": "Kopierat till urklipp",
+          "copyCallback": "Kopiera callback-URL",
+          "copyFailed": "Åtkomst till urklipp misslyckades. Markera och kopiera texten manuellt.",
+          "domainPending": "Domänen är inte verifierad",
+          "domainStatus": "Domänverifiering",
+          "domainVerified": "Domänen är verifierad",
+          "entra": {
+            "clientHelp": "Kopiera Program-ID (klient-ID) från Översikt, inte Objekt-ID.",
+            "clientId": "Program-ID (klient-ID)",
+            "consentError": "Samtycke eller åtkomst nekad: Be din Entra-administratör att kontrollera principer för medgivande och om testanvändaren har tilldelats applikationen.",
+            "consentLink": "Microsofts vägledning för medgivande",
+            "description": "Anslut din organisations Microsoft-katalog med en single-tenant OpenID Connect-applikation.",
+            "generatedIssuer": "Utfärdar-URL · genereras från ditt klientorganisations-ID",
+            "ids": {
+              "body": "Under appens Översikt kopierar du Katalog-ID (klientorganisation) och Program-ID (klient-ID) till Z8. Objekt-ID är ett annat värde. Z8 skapar den klientspecifika utfärdar-URL:en åt dig.",
+              "link": "Instruktioner för appregistrering",
+              "title": "Kopiera klientorganisations- och applikations-ID:n"
+            },
+            "introduction": "Skapa en webbappregistrering, kopiera dina klientorganisations- och applikations-ID:n och lägg till en klienthemlighet. Z8 genererar utfärdar-URL:en och vägleder dig genom varje steg.",
+            "permissions": "Z8 använder openid, email och profile för inloggning. Vissa anslutningar begär även offline_access för uppdateringstoken. Du behöver inte katalogomfattande Microsoft Graph-behörigheter. Din klientorganisations medgivandeprincip kan dock fortfarande kräva administratörsgodkännande.",
+            "portal": "Öppna administrationscentret för Entra",
+            "redirect": {
+              "body": "Under Autentisering lägger du till en omdirigerings-URI för plattformen Webb. Klistra in Z8-callbacken som visas här exakt. Använd Webb, inte Enkelsidig applikation. Du behöver inte aktivera implicit beviljande.",
+              "link": "Instruktioner för omdirigerings-URI",
+              "title": "Lägg till omdirigerings-URI för webb"
+            },
+            "redirectError": "AADSTS50011: Kontrollera att omdirigerings-URI:n för webb matchar callbacken som visas i Z8 exakt, inklusive dess värdnamn och sökväg.",
+            "register": {
+              "body": "Öppna Entra ID → Appregistreringar → Ny registrering. Namnge appen Z8 och välj Endast konton i den här organisationskatalogen. Välj din organisations katalog först. Om du inte kan registrera appar ber du din Entra-administratör att skapa en åt dig.",
+              "title": "Registrera en applikation"
+            },
+            "secret": {
+              "body": "Gå till Certifikat och hemligheter → Klienthemligheter → Ny klienthemlighet. Klistra in dess Värde i Z8, inte dess Hemlighets-ID. Värdet visas bara en gång. Notera förfallodatumet och byt ut autentiseringsuppgiften innan den löper ut. Dela endast Värdet via organisationens säkra kanal.",
+              "link": "Instruktioner för klienthemlighet",
+              "title": "Skapa en klienthemlighet"
+            },
+            "secretError": "Ogiltig klienthemlighet: Använd hemlighetens Värde, inte dess ID. Kontrollera att den tillhör den här applikationen och inte har löpt ut. Skapa en ny hemlighet om du inte längre har Värdet.",
+            "secretHelp": "Certifikat och hemligheter → Klienthemligheter. Klistra in Värdet, inte Hemlighets-ID:t. Z8 kommer inte att visa det igen.",
+            "secretValue": "Klienthemlighetens Värde",
+            "start": "Konfigurera Microsoft Entra ID",
+            "tenantError": "Fel klientorganisation: Kopiera Katalog-ID (klientorganisation) från samma appregistrering som klient-ID:t. Den här guidade konfigurationen använder en specifik klientorganisation, inte common eller organizations.",
+            "tenantHelp": "Appregistreringar → din app → Översikt. Använd ditt klientorganisations-ID, inte common eller organizations.",
+            "tenantId": "Katalog-ID (klientorganisation)",
+            "tenantInvalid": "Ange Katalog-ID (klientorganisation) som ett fullständigt UUID.",
+            "title": "Konfigurera Microsoft Entra ID",
+            "troubleshooting": "Felsök Entra-konfiguration",
+            "troubleshootingLink": "Microsofts felsökningsguide för omdirigering"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Ange ett unikt provider-ID, URL:en för OIDC-utfärdaren, organisationens e-postdomän, klient-ID:t och klienthemligheten. Du hittar dessa i leverantörens applikationsinställningar. Överför hemligheter via en säker kanal.",
+              "title": "Kopiera applikationsinställningarna"
+            },
+            "description": "Använd din leverantörs dokumentation för att skapa en konfidentiell webbapplikation med auktoriseringskodflödet.",
+            "redirect": {
+              "body": "Lägg till Z8-återanropet som visas här i applikationens tillåtna omdirigerings-URI:er. Kopiera den exakt, inklusive organisationens värdnamn och sökväg.",
+              "title": "Registrera återanrops-URL:en"
+            },
+            "register": {
+              "body": "Skapa en OpenID Connect-applikation med auktoriseringskodflödet i din identitetsleverantör. Tilldela en liten pilotgrupp först.",
+              "title": "Skapa en webbapplikation"
+            },
+            "title": "Konfigurera en OIDC-leverantör"
+          },
+          "getStarted": "Anslut ditt teams inloggning",
+          "getStartedDescription": "Följ en leverantörsspecifik genomgång utan att behöva pussla ihop konfigurationen själv.",
+          "handoff": {
+            "copy": "Kopiera IT-checklista",
+            "description": "Kopiera konfigurationsinstruktionerna och din organisations återanrops-URL. Checklistan innehåller aldrig autentiseringsuppgifter.",
+            "return": "Skicka tillbaka klientorganisations-ID:t (för Entra) och applikationens klient-ID till Z8-administratören. Överför klienthemlighetens Värde separat via en säker kanal; klistra inte in det i denna checklista.",
+            "title": "Behöver du hjälp från din IT-administratör?"
+          },
+          "manual": "Annan leverantör / manuell OIDC",
+          "manualAvailable": "Använder du en annan leverantör? Välj manuell OIDC-konfiguration i konfigurationspanelen.",
+          "manualTestHelp": "Detta är ett inloggningsresultat som rapporterats av en administratör, inte ett automatiskt verifierat anslutningstest. Gör en testinloggning med en avsedd användare i en separat webbläsarsession, håll denna administratörssession öppen och registrera sedan om det lyckades eller misslyckades här. Att spara leverantören och verifiera DNS bevisar inte att inloggningen fungerar.",
+          "openSetup": "Öppna Guidad konfiguration",
+          "provider": "Identitetsleverantör",
+          "required": "Det här fältet är obligatoriskt.",
+          "saving": "Lägger till…",
+          "scopes": "Inloggningsomfång inkluderar openid, email och profile. Vissa anslutningar begär även offline_access för uppdateringstoken."
         },
         "issuerUrl": "Utfärdar-URL",
         "issuerUrlHelp": "OIDC-utfärdarens URL från din identitetsleverantör",
-        "issuerUrlRequired": "Utfärdarens URL krävs",
         "providerId": "Leverantörs-ID",
         "providerIdHelp": "En unik identifierare för denna leverantör (gemener, inga mellanslag)",
         "providerIdInvalid": "Leverantörs-ID får endast innehålla gemener, siffror och bindestreck",
-        "providerIdRequired": "Leverantörs-ID krävs",
-        "setupInstructions": "Konfigurationsinstruktioner",
         "title": "Identitetsleverantörer",
         "token": "Token",
         "tokenError": "Kunde inte generera domänverifieringstoken",
         "tokenGenerated": "Verifieringstoken har genererats",
         "txtToken": "TXT-token:",
         "validUrlRequired": "Ange en giltig URL",
-        "verified": "Verifierad",
         "verify": "Verifiera",
         "verifyError": "Domänverifieringen misslyckades. Kontrollera din DNS TXT-post och försök igen."
       },

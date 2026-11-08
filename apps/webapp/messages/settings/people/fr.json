@@ -24,6 +24,8 @@
         "assignedViaOrganizationDefault": "Valeur par défaut de l'organisation",
         "assignedViaTeam": "Équipe",
         "backToEmployeeList": "Retour à la liste des employés",
+        "birthday": "Date de naissance",
+        "birthdayDescription": "Facultatif. L'employé peut également la modifier dans son profil.",
         "cancel": "Annuler",
         "contractFixed": "Fixe",
         "contractFixedDescription": "Rémunération basée sur le salaire",
@@ -96,9 +98,9 @@
           "overview": "Vue d'ensemble"
         },
         "team": "Équipe",
-        "teamClearNotice": "L'enregistrement met fin à l'appartenance de cet employé à l'équipe {currentTeam}. Sa prochaine appartenance à une équipe, s'il en a une, devient son équipe principale.",
-        "teamDescription": "L'équipe principale de l'employé. Gérez ses autres appartenances à des équipes dans Équipes.",
-        "teamMoveNotice": "L'enregistrement déplace cet employé dans l'équipe {nextTeam}. Son appartenance à l'équipe {currentTeam} prend fin ; ses autres appartenances à des équipes sont conservées.",
+        "teamClearNotice": "L'enregistrement met fin à l'appartenance de cet employé à l'équipe {currentTeam}. Sa prochaine appartenance à une équipe, le cas échéant, devient son équipe principale.",
+        "teamDescription": "L'équipe principale de l'employé. Gérez les autres appartenances à des équipes dans Équipes.",
+        "teamMoveNotice": "L'enregistrement déplace cet employé vers {nextTeam}. Son appartenance à l'équipe {currentTeam} prend fin ; ses autres appartenances à des équipes sont conservées.",
         "unexpectedError": "Une erreur inattendue est survenue",
         "updateFailed": "Échec de la mise à jour de l'employé",
         "updateSuccess": "Employé mis à jour avec succès",
@@ -248,10 +250,17 @@
           "approvalsToReview": "{count, plural, one {# responsabilité d'approbation nécessite un remplaçant et est répertoriée pour examen ({review}).} other {# responsabilités d'approbation nécessitent un remplaçant et sont répertoriées pour examen ({review}).}}",
           "description": "{name} devient un ancien employé dès maintenant. L'accès à cette organisation prend fin, ses sessions sont déconnectées et son historique est conservé. Vérifiez les autres modifications avant de confirmer.",
           "descriptionAt": "{name} devient un ancien employé dès que vous confirmez (prévu pour {time}, {timeZone}). L'accès à cette organisation prend fin, ses sessions sont fermées et son historique est conservé. Vérifiez les autres modifications avant de confirmer.",
+          "documentRequests": "{count, plural, one {# demande de document en cours est annulée} other {# demandes de documents en cours sont annulées}}",
           "drivingAuthorizations": "{count, plural, one {# autorisation de conduite prend fin, y compris celles suspendues} other {# autorisations de conduite prennent fin, y compris celles suspendues}}",
+          "equipmentDescription": "Le contrat et les accès prennent fin même si du matériel est manquant. Le personnel autorisé peut effectuer un suivi dans Équipement, y compris pour les anciens employés. La restitution d'une clé physique ou d'un badge ne rétablit pas ses identifiants.",
+          "equipmentDue": "{identifier} ({type}) : {count} en attente, échéance le {date}",
+          "equipmentSwitchedOff": "Le contrat et les accès prennent fin même si du matériel est manquant. La fonctionnalité Équipement étant désactivée pour cette organisation, ces retours restent enregistrés mais ne peuvent faire l'objet d'un suivi tant qu'elle n'est pas réactivée.",
+          "equipmentTitle": "Retours de matériel en attente",
+          "equipmentUndated": "{identifier} ({type}) : {count} en attente, aucune date limite enregistrée",
           "formLabel": "Aperçu de la désactivation",
           "grants": {
             "drivingLicenceVerifier": "Vérificateur de permis de conduire",
+            "equipmentOfficer": "Responsable du matériel",
             "expenseOfficer": "Gestionnaire des frais de déplacement",
             "payrollAccess": "Accès à la paie",
             "personnelFileOfficer": "Gestionnaire des dossiers du personnel"
@@ -309,6 +318,7 @@
           "groups": {
             "absences": "Absences annulées",
             "access": "Badges de borne et autorisations de conduite",
+            "documentRequests": "Demandes de documents annulées",
             "grants": "Autorisations détenues",
             "managers": "Liens hiérarchiques",
             "shareLinks": "Liens de partage de rapport",
@@ -318,6 +328,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Une absence (dates non enregistrées)",
+            "documentRequests": "{count, plural, one {# demande de document en cours a été annulée ; demandez-le à nouveau dans le dossier du personnel} other {# demandes de documents en cours ont été annulées ; demandez-les à nouveau dans le dossier du personnel}}",
             "drivingAuthorizations": "{count, plural, one {# autorisation de conduite a pris fin ; une nouvelle vérification est nécessaire} other {# autorisations de conduite ont pris fin ; une nouvelle vérification est nécessaire}}",
             "kioskBadges": "{count, plural, one {# badge de borne a été révoqué} other {# badges de borne ont été révoqués}}",
             "ownManager": "Géré par {name}",
@@ -342,6 +353,7 @@
         "reinviteRequired": "Cet employé n'est plus membre de l'organisation. Envoyez une nouvelle invitation pour rétablir l'accès.",
         "removeAccess": "Supprimer l'accès",
         "removeDescription": "Ceci supprime l'adhésion à l'organisation et met fin aux sessions de l'organisation. Les relevés de temps, les absences, les soldes, l'historique d'emploi et les audits sont conservés.",
+        "removeEndsEmployment": "Les supprimer met également fin à leur contrat, tout comme une désactivation : leurs futurs créneaux deviennent vacants, leurs absences ultérieures sont annulées et leurs autorisations prennent fin. Pour choisir des managers de remplacement pour leurs collaborateurs directs, utilisez plutôt Désactiver.",
         "removeError": "Échec de la suppression de l'accès à l'organisation",
         "removeSuccess": "Accès à l'organisation supprimé",
         "removeTitle": "Supprimer l'accès à l'organisation ?",
@@ -495,6 +507,7 @@
         }
       },
       "personalDataExport": {
+        "aboutEquipment": "Comprend les mêmes enregistrements de matériel conservés que l'export de l'employé lui-même, y compris les corrections, les déclarations de perte ou de dispense, et les récupérations. Les dossiers des anciens employés utilisent également cet export.",
         "availableUntil": "Disponible jusqu'au {date}",
         "description": "Un fichier ZIP contenant l'ensemble des données conservées par cette organisation sur cet employé, y compris celles exclues de son propre export. L'employé en poste est informé dès qu'il est prêt. Les fichiers sont supprimés au bout de 7 jours.",
         "download": "Télécharger",

@@ -24,6 +24,8 @@
         "assignedViaOrganizationDefault": "E parazgjedhur e organizatës",
         "assignedViaTeam": "Ekipi",
         "backToEmployeeList": "Kthehu te lista e punonjësve",
+        "birthday": "Ditëlindja",
+        "birthdayDescription": "Opsionale. Punonjësi mund ta ndryshojë gjithashtu në profilin e vet.",
         "cancel": "Anulo",
         "contractFixed": "Fikse",
         "contractFixedDescription": "Kompensim i bazuar në pagë",
@@ -96,9 +98,9 @@
           "overview": "Përmbledhje"
         },
         "team": "Ekipi",
-        "teamClearNotice": "Me ruajtjen përfundon anëtarësimi i këtij punonjësi në ekipin {currentTeam}. Anëtarësimi i tij i radhës në një ekip, nëse ka, bëhet ekipi i tij kryesor.",
-        "teamDescription": "Ekipi kryesor i punonjësit. Anëtarësimet e tjera në ekipe menaxhohen te Ekipet.",
-        "teamMoveNotice": "Me ruajtjen, ky punonjës kalon në ekipin {nextTeam}. Anëtarësimi i tij në ekipin {currentTeam} përfundon; anëtarësimet e tjera në ekipe mbeten.",
+        "teamClearNotice": "Ruajtja i jep fund anëtarësimit të këtij punonjësi në ekipin {currentTeam}. Anëtarësimi i tij i ardhshëm në ekip, nëse ka, bëhet ekipi i tij kryesor.",
+        "teamDescription": "Ekipi kryesor i punonjësit. Menaxhoni anëtarësimet e tjera në ekipe te Ekipet.",
+        "teamMoveNotice": "Ruajtja e zhvendos këtë punonjës te {nextTeam}. Anëtarësimi i tij në ekipin {currentTeam} përfundon; anëtarësimet e tjera në ekipe mbeten.",
         "unexpectedError": "Ndodhi një gabim i papritur",
         "updateFailed": "Përditësimi i punonjësit dështoi",
         "updateSuccess": "Punonjësi u përditësua me sukses",
@@ -248,10 +250,17 @@
           "approvalsToReview": "{count, plural, one {# detyrë miratimi ka nevojë për një zëvendësues dhe është listuar për shqyrtim ({review}).} other {# detyra miratimi kanë nevojë për një zëvendësues dhe janë listuar për shqyrtim ({review}).}}",
           "description": "{name} bëhet ish-punonjës tani. Qasja në këtë organizatë përfundon, seancat e tyre çidentifikohen dhe historiku i tyre ruhet. Rishikoni se çfarë tjetër ndryshon para se të konfirmoni.",
           "descriptionAt": "{name} bëhet ish-punonjës kur të konfirmoni (parashikuar për {time}, {timeZone}). Qasja në këtë organizatë përfundon, sesionet e tyre çidentifikohen dhe historiku i tyre ruhet. Rishikoni se çfarë tjetër ndryshon para se të konfirmoni.",
+          "documentRequests": "{count, plural, one {# kërkesë e hapur për dokument është anuluar} other {# kërkesa të hapura për dokumente janë anuluar}}",
           "drivingAuthorizations": "{count, plural, one {# autorizim drejtimi përfundon, duke përfshirë edhe ato të pezulluara} other {# autorizime drejtimi përfundojnë, duke përfshirë edhe ato të pezulluara}}",
+          "equipmentDescription": "Punësimi dhe qasja përfundojnë edhe nëse pajisjet mungojnë. Stafi i autorizuar mund të bëjë ndjekjen te Pajisjet, përfshirë ish-punonjësit. Kthimi i një çelësi fizik ose fobi nuk e rikthen kredencialin e tij.",
+          "equipmentDue": "{identifier} ({type}): {count} të pakthyera, afati {date}",
+          "equipmentSwitchedOff": "Punësimi dhe qasja përfundojnë edhe nëse pajisjet mungojnë. Pajisjet janë çaktivizuar për këtë organizatë, kështu që këto kthime mbeten të regjistruara, por nuk mund të ndiqen derisa të riaktivizohen.",
+          "equipmentTitle": "Kthimet e papërfunduara të pajisjeve",
+          "equipmentUndated": "{identifier} ({type}): {count} të pakthyera, pa afat të regjistruar",
           "formLabel": "Parapamja e çaktivizimit",
           "grants": {
             "drivingLicenceVerifier": "Verifikues i lejes së drejtimit",
+            "equipmentOfficer": "Përgjegjësi i pajisjeve",
             "expenseOfficer": "Zyrtar i shpenzimeve të udhëtimit",
             "payrollAccess": "Qasja në listëpagesë",
             "personnelFileOfficer": "Zyrtar i dosjeve të personelit"
@@ -309,6 +318,7 @@
           "groups": {
             "absences": "Mungesat e anuluara",
             "access": "Distinktivët e kioskës dhe autorizimet e drejtimit",
+            "documentRequests": "Kërkesat e anuluara për dokumente",
             "grants": "Të drejtat e mbajtura",
             "managers": "Lidhjet e menaxherit",
             "shareLinks": "Lidhjet e ndarjes së raporteve",
@@ -318,6 +328,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Një mungesë (datat nuk janë regjistruar)",
+            "documentRequests": "{count, plural, one {# kërkesë e hapur për dokument u anulua; kërkojeni përsëri në dosjen e personelit} other {# kërkesa të hapura për dokumente u anuluan; kërkojini përsëri në dosjen e personelit}}",
             "drivingAuthorizations": "{count, plural, one {# autorizim drejtimi përfundoi; nevojitet një kontroll i ri} other {# autorizime drejtimi përfunduan; nevojitet një kontroll i ri}}",
             "kioskBadges": "{count, plural, one {# distinktiv kioske u revokua} other {# distinktivë kioske u revokuan}}",
             "ownManager": "Menaxhohet nga {name}",
@@ -342,6 +353,7 @@
         "reinviteRequired": "Ky punonjës nuk ka më anëtarësim në organizatë. Dërgoni një ftesë të re për të rikthyer qasjen.",
         "removeAccess": "Hiq qasjen",
         "removeDescription": "Kjo heq anëtarësimin në organizatë dhe përfundon seancat e organizatës. Regjistrimet e kohës, mungesat, balancat, historiku i punësimit dhe auditimet ruhen.",
+        "removeEndsEmployment": "Heqja e tyre gjithashtu i jep fund punësimit të tyre, si një çaktivizim: turnet e tyre të ardhshme bëhen të hapura, mungesat e mëvonshme anulohen dhe autorizimet e tyre përfundojnë. Për të zgjedhur menaxherë zëvendësues për vartësit e tyre, përdorni në vend të kësaj Çaktivizo.",
         "removeError": "Heqja e qasjes në organizatë dështoi",
         "removeSuccess": "Qasja në organizatë u hoq",
         "removeTitle": "Të hiqet qasja në organizatë?",
@@ -495,6 +507,7 @@
         }
       },
       "personalDataExport": {
+        "aboutEquipment": "Përfshin të njëjtat regjistrime të ruajtura të pajisjeve si eksporti i vetë punonjësit, duke përfshirë korrigjimet, përfundimet e humbura ose të falura dhe rikuperimet. Regjistrimet e ish-punonjësve përdorin gjithashtu këtë eksport.",
         "availableUntil": "E disponueshme deri më {date}",
         "description": "Një skedar ZIP me gjithçka që kjo organizatë mban për këtë punonjës, duke përfshirë të dhëna që eksporti i vetë punonjësit i lë jashtë. Punonjësi aktual njoftohet kur të jetë gati. Skedarët fshihen pas 7 ditësh.",
         "download": "Shkarko",

@@ -34,8 +34,16 @@ An employee who has left the organization, either because their departure took e
 _Avoid_: inactive user, disabled user, deleted user, ex-member
 
 **Deactivation**:
-Ending someone's employment at once, without scheduling a departure. It has the same consequences as a departure taking effect at that moment. **Reactivation** undoes a deactivation but brings back nothing that ended.
+Ending someone's employment at once, without scheduling a departure. It has the same consequences as a departure taking effect at that moment. An admin deactivating the employee, removing them from the organization, and their identity provider deprovisioning them are all deactivations. **Reactivation** undoes a deactivation but brings back nothing that ended. Every way back after a deactivation is a reactivation, including rejoining the organization and the identity provider enabling the person again.
 _Avoid_: disabling, suspension, archiving an employee
+
+**Employment ending**:
+What ends of everything an employee holds when their employment ends, whatever the cause (a departure taking effect or a deactivation): their equipment responsibility, driving authorizations, officer and verifier grants, open document requests, kiosk badges and fobs, report share links and deputy duties. Each area ends its own part, in a fixed order, and records what it ended, which the reactivation checklist lists for granting again. Ending twice ends nothing more.
+_Avoid_: access ends, offboarding cleanup, revoking access
+
+**Follow-up deactivation**:
+The deactivation that completes a member removal or an identity provider deprovisioning. The removal itself only switches the person off and records the deactivation as pending at that moment; the follow-up then applies it, ending their employment from that moment, shortly afterwards and without anyone confirming it. A person who is back before it runs (re-added, or enabled again by the identity provider) keeps everything, and the pending deactivation is withdrawn.
+_Avoid_: removal cleanup, deprovisioning job
 
 **Current roster**:
 The organization's employees who are not former employees. Everything that answers "who works here now" shows only the current roster: teams, presence, planning, the people offered for picking, and who gets notified.
@@ -44,6 +52,34 @@ _Avoid_: active users, active members, all employees
 **Birthday**:
 An employee's date of birth as one organization records it, if any; an employee of several organizations has a separate one in each. Only the employee and org admins see the full date; the rest of the current roster sees its day and month.
 _Avoid_: date of birth, DOB, birth date
+
+### Organization access
+
+**Owner**:
+An org admin who may also make the changes reserved to owners, such as the organization's details, member roles and webhooks.
+_Avoid_: account owner, super admin
+
+**Org admin**:
+A user who may change all of an organization's settings except those reserved to owners. They hold an approved owner or admin membership and are not a former employee of that organization. They need not be an employee there at all.
+_Avoid_: admin (on its own), administrator, settings admin
+
+**Scoped manager**:
+An employee on the current roster who is not an org admin but may change settings for the people they manage: employees, the teams they lead, and the policies, projects and locations assigned to those people.
+_Avoid_: manager tier, team manager
+
+**Workforce admin**:
+An employee whose employee role is admin, without being an org admin. They are a scoped manager over the whole organization.
+_Avoid_: admin (on its own), org admin
+
+**Org member**:
+A user with an approved membership in an organization who is not a former employee of it. An org member may manage their own settings there, such as notification preferences or their own personal data export.
+_Avoid_: member (when it could mean a pending membership), user
+
+**Settings access**:
+The highest of org member, scoped manager, org admin and owner that a user is in one organization, or none. Each setting asks for one of them, and a higher one also qualifies. A former employee has none, whatever their membership.
+_Avoid_: access tier, settings role, permission level
+
+A user's own account, such as their password, picture and name, belongs to no organization, and settings access does not govern it.
 
 ### Teams
 
@@ -58,6 +94,14 @@ _Avoid_: team assignment
 **Primary team**:
 The one team membership that counts when a rule needs a single team for an employee, such as a policy assignment. An employee's primary team is always one of their team memberships.
 _Avoid_: compatibility team, legacy team, home team
+
+**Team placement**:
+An employee's team memberships together with which of them is their primary team.
+_Avoid_: team assignment
+
+**Move**:
+Changing an employee's primary team to another team. The membership in the old primary team ends; other memberships stay.
+_Avoid_: transfer, reassignment
 
 **Team lead**:
 The one employee responsible for a team. A team may have none, and the team lead need not be a member of the team.
@@ -252,8 +296,12 @@ The organization's unique identifier for one individually tracked physical item,
 _Avoid_: serial number, assignment identifier
 
 **Equipment recovery**:
-A record of physically receiving equipment previously recorded as lost, with its received condition. It supplements rather than erases the original loss decision.
+A record of physically receiving equipment previously closed as lost or return waived, with its received condition. It supplements rather than erases the original decision.
 _Avoid_: loss reversal, return waiver, new assignment
+
+**Return settlement**:
+How an equipment assignment's issued quantity is accounted for: physically returned, closed as lost or return waived, recovered, or still an outstanding return. Each unit counts once, so a recovery never lowers the outstanding return a second time.
+_Avoid_: return balance, stock balance, settlement (alone)
 
 **Equipment correction**:
 A reasoned amendment to an equipment record that preserves what was recorded before and identifies the correcting person.
@@ -303,6 +351,7 @@ _Avoid_: rehearsal record, test data
 
 ## Confirmed design references
 
+- [Personal data export contents](../../../../../docs/refs/personal-data-export.md): which empty files are omitted from employee and admin exports, and how retained contents are described.
 - [Organization profile and AVV](../../../../../docs/refs/organization-profile.md): profile editing, persistence and authenticated actions are implemented in #1566; AVV settings, country-aware readiness and current-profile PDF downloads are implemented in #1567.
 - [AVVs use the current organization profile](./docs/adr/0009-avv-uses-current-organization-profile.md): why downloads use current master data rather than a stored agreement version.
 - [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules and their implementation status.

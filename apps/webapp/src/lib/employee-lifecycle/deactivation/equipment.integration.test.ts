@@ -190,13 +190,17 @@ it("previews outstanding equipment on the organization-local deactivation day an
 	expect(await preview(target.employeeId)).toMatchObject({
 		success: true,
 		data: {
-			equipment: [
-				{
-					assignmentId: early.id,
-					outstandingQuantity: 3,
-					effectiveDeadline: "2026-10-20",
+			employmentEnding: {
+				equipment: {
+					returns: [
+						{
+							assignmentId: early.id,
+							outstandingQuantity: 3,
+							effectiveDeadline: "2026-10-20",
+						},
+					],
 				},
-			],
+			},
 		},
 	});
 	const fresh = await issue(target.employeeId);
@@ -251,16 +255,20 @@ it("reactivation and later schedules preserve old deadlines and deactivation lin
 	expect(await preview(target.employeeId)).toMatchObject({
 		success: true,
 		data: {
-			equipment: expect.arrayContaining([
-				expect.objectContaining({
-					assignmentId: old.id,
-					effectiveDeadline: "2026-10-20",
-				}),
-				expect.objectContaining({
-					assignmentId: fresh.id,
-					effectiveDeadline: "2026-10-22",
-				}),
-			]),
+			employmentEnding: {
+				equipment: {
+					returns: expect.arrayContaining([
+						expect.objectContaining({
+							assignmentId: old.id,
+							effectiveDeadline: "2026-10-20",
+						}),
+						expect.objectContaining({
+							assignmentId: fresh.id,
+							effectiveDeadline: "2026-10-22",
+						}),
+					]),
+				},
+			},
 		},
 	});
 	expect(await deactivate(target.employeeId, requestId)).toMatchObject({
@@ -333,14 +341,7 @@ it("ends the officer grant, access and seat with equipment missing while primary
 	expect(await preview(target.employeeId)).toMatchObject({
 		success: true,
 		data: {
-			accessEnds: {
-				grants: expect.arrayContaining([
-					expect.objectContaining({
-						kind: "equipment_officer",
-						grantId: target.employeeId,
-					}),
-				]),
-			},
+			employmentEnding: { equipment: { officerGrantHolderIds: [target.employeeId] } },
 		},
 	});
 	const seats = await countBillableSeats(fixture.db, context.organizationId, {
@@ -349,6 +350,14 @@ it("ends the officer grant, access and seat with equipment missing while primary
 	const requestId = randomUUID();
 	expect(await deactivate(target.employeeId, requestId)).toMatchObject({
 		success: true,
+	});
+	// Revoked by its own participant, and recorded with what the deactivation ended.
+	const ledger = await fixture.pool.query<{ applied: Record<string, unknown> }>(
+		"select applied from employee_deactivation where organization_id=$1 and request_id=$2",
+		[context.organizationId, requestId],
+	);
+	expect(ledger.rows[0]?.applied).toMatchObject({
+		employmentEnding: { equipment: { revokedOfficerGrantIds: [target.employeeId] } },
 	});
 	expect(
 		await countBillableSeats(fixture.db, context.organizationId, {
@@ -669,7 +678,11 @@ it("deactivation summaries distinguish lost, waived and recovered quantities fro
 	).toMatchObject({ success: true, data: { ok: true } });
 	expect(await preview(target.employeeId)).toMatchObject({
 		success: true,
-		data: { equipment: [{ assignmentId: held.id, outstandingQuantity: 1 }] },
+		data: {
+			employmentEnding: {
+				equipment: { returns: [{ assignmentId: held.id, outstandingQuantity: 1 }] },
+			},
+		},
 	});
 	expect(await deactivate(target.employeeId)).toMatchObject({ success: true });
 	expect(await equipment(target.employeeId)).toMatchObject([

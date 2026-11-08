@@ -32,16 +32,24 @@ import {
 	uploadPrivateObjectStream,
 } from "@/lib/storage/export-s3-client";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
-import { PersonalDataArchiveFileError, streamPersonalDataArchive } from "./archive";
-import type {
-	CollectedCategory,
-	PersonalDataCollector,
-	PersonalDataExportKind,
-	PersonalDataExportScope,
+import {
+	PersonalDataArchiveFileError,
+	streamPersonalDataArchive,
+} from "./archive";
+import {
+	type CollectedCategory,
+	type PersonalDataCollector,
+	type PersonalDataExportKind,
+	type PersonalDataExportScope,
+	personalDataCategoryHasData,
 } from "./collector";
 import { PERSONAL_DATA_COLLECTORS } from "./collectors";
 import { employeePagePath, MY_DATA_PATH } from "./paths";
-import { loadReadmeTranslator, readmeContentsOf, renderPersonalDataExportReadme } from "./readme";
+import {
+	loadReadmeTranslator,
+	readmeContentsOf,
+	renderPersonalDataExportReadme,
+} from "./readme";
 import { loadPersonalDataReadmeFacts } from "./readme-facts";
 import {
 	type ClaimedPersonalDataExport,
@@ -142,7 +150,10 @@ export async function processPersonalDataExport(
 	overrides: Partial<PersonalDataExportProcessorDeps> = {},
 ): Promise<PersonalDataExportRunResult> {
 	const deps = { ...defaultDeps, ...overrides };
-	const claimed = await claimPersonalDataExport(database, { ...input, now: deps.now() });
+	const claimed = await claimPersonalDataExport(database, {
+		...input,
+		now: deps.now(),
+	});
 	if (!claimed) return { status: "skipped" };
 
 	let stored: { key: string; bucket: string; versionId: string | null } | null = null;
@@ -159,7 +170,8 @@ export async function processPersonalDataExport(
 		const exportedAt = deps.now().toString();
 		const categories: CollectedCategory[] = [];
 		for (const collector of deps.collectors) {
-			categories.push(await collector.collect(database, scope));
+			const category = await collector.collect(database, scope);
+			if (personalDataCategoryHasData(category)) categories.push(category);
 		}
 
 		// The employee's UI language, else the organization's; also for admin exports.
@@ -182,7 +194,11 @@ export async function processPersonalDataExport(
 			exportedAt,
 			categories: categories.map((category) => category.category),
 			csvCategories: categories
-				.filter((category) => category.parts.some((part) => part.kind === "table"))
+				.filter((category) =>
+					category.parts.some(
+						(part) => part.kind === "table" && part.rows.length > 0,
+					),
+				)
 				.map((category) => category.category),
 		});
 		// Streamed into storage: original files are read one at a time while it uploads.
@@ -204,7 +220,12 @@ export async function processPersonalDataExport(
 		});
 		let upload: { bucket: string; versionId: string | null };
 		try {
-			upload = await deps.upload(claimed.organizationId, key, zip.stream, "application/zip");
+			upload = await deps.upload(
+				claimed.organizationId,
+				key,
+				zip.stream,
+				"application/zip",
+			);
 		} catch (error) {
 			if (error instanceof PersonalDataArchiveFileError) {
 				throw new PersonalDataExportBuildError("file_unavailable");
@@ -225,18 +246,33 @@ export async function processPersonalDataExport(
 			return { status: "discarded" };
 		}
 		logger.info(
-			{ exportId: claimed.id, organizationId: claimed.organizationId, sizeBytes },
+			{
+				exportId: claimed.id,
+				organizationId: claimed.organizationId,
+				sizeBytes,
+			},
 			"Personal data export completed",
 		);
 		await notifyRequester(deps, claimed, subject.employeeName);
 		if (claimed.kind === "admin") {
-			await notifySubjectOfAdminExport(database, deps, claimed, subject, locale);
+			await notifySubjectOfAdminExport(
+				database,
+				deps,
+				claimed,
+				subject,
+				locale,
+			);
 		}
 		return { status: "completed" };
 	} catch (error) {
 		const errorCode = error instanceof PersonalDataExportBuildError ? error.code : "unexpected";
 		logger.error(
-			{ exportId: claimed.id, organizationId: claimed.organizationId, errorCode, error },
+			{
+				exportId: claimed.id,
+				organizationId: claimed.organizationId,
+				errorCode,
+				error,
+			},
 			"Personal data export failed",
 		);
 		const recorded = await failPersonalDataExport(database, {
@@ -250,7 +286,10 @@ export async function processPersonalDataExport(
 	}
 }
 
-async function loadSubject(database: Database, claimed: ClaimedPersonalDataExport) {
+async function loadSubject(
+	database: Database,
+	claimed: ClaimedPersonalDataExport,
+) {
 	const [row] = await database
 		.select({
 			userId: employee.userId,
@@ -265,7 +304,10 @@ async function loadSubject(database: Database, claimed: ClaimedPersonalDataExpor
 		.innerJoin(user, eq(user.id, employee.userId))
 		.innerJoin(organization, eq(organization.id, employee.organizationId))
 		.where(
-			and(eq(employee.id, claimed.employeeId), eq(employee.organizationId, claimed.organizationId)),
+			and(
+				eq(employee.id, claimed.employeeId),
+				eq(employee.organizationId, claimed.organizationId),
+			),
 		)
 		.limit(1);
 	if (!row) throw new PersonalDataExportBuildError("employee_not_found");
@@ -288,7 +330,10 @@ async function removeStored(
 	try {
 		await deps.deleteObject({ organizationId, ...stored });
 	} catch (error) {
-		logger.warn({ organizationId, error }, "Could not remove a discarded personal data export");
+		logger.warn(
+			{ organizationId, error },
+			"Could not remove a discarded personal data export",
+		);
 	}
 }
 
@@ -401,7 +446,9 @@ export function buildPersonalDataExportAdminExportedNotification(input: {
 			onDay: input.day.toString(),
 			i18n: {
 				...adminExportedCopy,
-				params: { onDate: formatPlainDate(input.day, input.locale, "dateMedium") },
+				params: {
+					onDate: formatPlainDate(input.day, input.locale, "dateMedium"),
+				},
 			},
 		},
 	};
@@ -459,7 +506,11 @@ export async function enqueuePersonalDataExport(
 		await addJob(
 			"process-personal-data-export",
 			{ type: "personal-data-export", ...input },
-			{ priority: 4, attempts: 1, jobId: `personal-data-export-${input.exportId}` },
+			{
+				priority: 4,
+				attempts: 1,
+				jobId: `personal-data-export-${input.exportId}`,
+			},
 		);
 		return true;
 	} catch (error) {

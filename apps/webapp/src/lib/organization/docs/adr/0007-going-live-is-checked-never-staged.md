@@ -18,6 +18,6 @@ Manual confirmations stay for what Z8 can't judge, such as whether the organizat
 
 ## Consequences
 
-- No go-live code path writes work records, approval requests, notifications or deliveries. A rehearsal reuses the approval workflow dry run, never the workflow itself.
+- No go-live code path writes work records, approval requests, notifications or deliveries. A rehearsal reuses the approval route preview, never the workflow itself.
 - Large organizations need batched lookups, because checks resolve every member of the go-live group on each view.
 - Confirmations made before fingerprints existed keep counting, labelled as confirmed before change tracking, until they are confirmed again.

@@ -19,7 +19,6 @@ import type { GoLiveCheck } from "./types";
 export const APPROVAL_POLICIES_HREF = "/settings/approval-policies";
 export const EMPLOYEES_HREF = "/settings/employees";
 export const TRAVEL_EXPENSES_HREF = "/settings/travel-expenses";
-export const CHANGE_POLICIES_HREF = "/settings/work-policies?tab=changes";
 
 /** The ICU `select` value each kind's messages name it by. */
 export const APPROVER_KIND_LABEL: Record<ApproverGoLiveKind, string> = {
@@ -205,13 +204,6 @@ function failureGroup(
 					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no manager or admin can decide them: {count, plural, one {# employee} other {# employees}}",
 				params: { kind, count },
 			});
-		case "change_policy_ambiguous":
-			return build({
-				key: "settings.implementationChecklist.goLive.approver.changePolicyAmbiguous",
-				fallback:
-					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: more than one change policy applies, so entries are refused: {count, plural, one {# employee} other {# employees}}",
-				params: { kind, count },
-			});
 	}
 }
 
@@ -256,11 +248,6 @@ export function approverFixLink(
 		case "approval_mode_unsupported":
 			// The approval mode is changed by Z8 support, not on a settings page.
 			return null;
-		case "change_policy_ambiguous":
-			return fixLink(CHANGE_POLICIES_HREF, {
-				key: "settings.implementationChecklist.goLive.approver.fixChangePolicies",
-				fallback: "Review change policies",
-			});
 	}
 }
 

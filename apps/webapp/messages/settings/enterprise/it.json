@@ -37,6 +37,13 @@
         "time": "Ora"
       },
       "disabled": "Disabilitato",
+      "documentation": {
+        "reference": "Riferimento API",
+        "resources": "Leggi periodi di lavoro, assenze, dipendenti, progetti, clienti e definizioni di campi personalizzati con l'API pubblica v1. L'accesso è di sola lettura.",
+        "scopes": "Una chiave API agisce per conto della tua organizzazione e legge solo ciò che i suoi ambiti autorizzano. Trova endpoint, ambiti necessari ed esempi nella documentazione di riferimento.",
+        "title": "API pubblica v1"
+      },
+      "downloadOpenApi": "Scarica la specifica OpenAPI",
       "editCreated": "Creata il {date}",
       "editDescription": "Aggiorna le impostazioni per questa chiave API. Nota: non è possibile visualizzare o modificare la chiave stessa.",
       "editTitle": "Modifica chiave API",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Salva il provider prima di registrare un test"
           },
-          "help": "Questo registra il risultato di un test SSO esterno live. Esegui prima l'accesso nell'IdP, quindi acquisisci il successo o il fallimento qui per la protezione dell'attivazione.",
           "label": {
             "email": "Email utente di test",
             "failureNote": "Nota di errore"
@@ -620,12 +626,9 @@
         "updated": "OAuth di {provider} aggiornato correttamente"
       },
       "sso": {
-        "addDescription": "Configura un provider di identità OIDC per il single sign-on aziendale.",
         "addError": "Impossibile aggiungere il provider SSO",
         "addSuccess": "Provider SSO aggiunto correttamente",
         "addTitle": "Aggiungi provider SSO",
-        "clientIdPlaceholder": "Il tuo client ID OIDC",
-        "clientSecretPlaceholder": "Il tuo client secret OIDC",
         "deleteDialogDescription": "Sei sicuro di voler eliminare questo provider SSO? Gli utenti non potranno più accedere utilizzando questo provider di identità.",
         "deleteDialogTitle": "Elimina provider SSO",
         "deleteError": "Impossibile eliminare il provider SSO",
@@ -633,32 +636,110 @@
         "deleteSuccess": "Provider SSO eliminato",
         "description": "Aggiungi provider di identità OIDC per abilitare il SSO per la tua organizzazione.",
         "domainInvalid": "Inserisci un dominio valido (es. example.com)",
-        "domainRequired": "Il dominio è obbligatorio",
         "domainVerified": "Dominio verificato",
         "emailDomain": "Dominio email",
         "emailDomainHelp": "Gli utenti con questo dominio email potranno utilizzare il SSO",
         "empty": "Nessun provider SSO configurato al momento.",
         "emptyDescription": "Aggiungi un provider OIDC per abilitare il single sign-on aziendale.",
-        "instructions": {
-          "copyCredentials": "Copia l'URL dell'emittente (Issuer URL), il Client ID e il Client Secret dal tuo IdP",
-          "createApp": "Crea un'applicazione OIDC nel tuo provider di identità (Okta, Azure AD, ecc.)",
-          "verifyDomain": "Aggiungi qui il provider e verifica il dominio email tramite record DNS TXT"
+        "guide": {
+          "addDescription": "Segui le istruzioni di configurazione del tuo provider, quindi collegalo alla tua organizzazione.",
+          "afterSave": "Dopo il salvataggio, verifica il tuo dominio email con il record TXT del DNS in Z8. Esegui un accesso di prova con un utente previsto mantenendo aperta la sessione di amministratore corrente. Nella configurazione guidata, salva lo stesso ID provider e dominio email mostrati nell'elenco dei provider, quindi registra manualmente l'esito dell'accesso rilevato prima di valutare l'opzione Richiedi SSO. Il salvataggio e la verifica del DNS non garantiscono un accesso riuscito.",
+          "afterSaveTitle": "Dopo aver salvato il provider",
+          "callback": "URL di callback di Z8",
+          "connectionHelp": "Copia questi valori dalle impostazioni dell'applicazione del tuo provider.",
+          "connectionSettings": "Impostazioni di connessione",
+          "copied": "Copiato negli appunti",
+          "copyCallback": "Copia URL di callback",
+          "copyFailed": "Accesso agli appunti non riuscito. Seleziona e copia il testo manualmente.",
+          "domainPending": "Dominio non verificato",
+          "domainStatus": "Verifica del dominio",
+          "domainVerified": "Dominio verificato",
+          "entra": {
+            "clientHelp": "Copia l'ID applicazione (client) da Panoramica, non l'ID oggetto.",
+            "clientId": "ID applicazione (client)",
+            "consentError": "Consenso o accesso negato: chiedi all'amministratore di Entra di verificare i criteri di consenso e se l'utente pilota è assegnato all'applicazione.",
+            "consentLink": "Guida al consenso di Microsoft",
+            "description": "Connetti la directory Microsoft della tua organizzazione con un'applicazione OpenID Connect a tenant singolo.",
+            "generatedIssuer": "URL dell'emittente · generato dal tuo ID tenant",
+            "ids": {
+              "body": "In Panoramica dell'app, copia l'ID directory (tenant) e l'ID applicazione (client) in Z8. L'ID oggetto è un valore diverso. Z8 genera automaticamente l'URL dell'emittente specifico per il tuo tenant.",
+              "link": "Istruzioni per la registrazione dell'app",
+              "title": "Copia gli ID tenant e applicazione"
+            },
+            "introduction": "Crea una registrazione per app Web, copia gli ID tenant e applicazione e aggiungi un segreto client. Z8 genera l'URL dell'emittente e ti guida attraverso ogni passaggio.",
+            "permissions": "Z8 utilizza openid, email e profile per l'accesso. Alcune connessioni richiedono anche offline_access per i token di aggiornamento. Non sono necessarie autorizzazioni di Microsoft Graph a livello di directory. I criteri di consenso del tenant potrebbero comunque richiedere l'approvazione dell'amministratore.",
+            "portal": "Apri l'interfaccia di amministrazione di Entra",
+            "redirect": {
+              "body": "In Autenticazione, aggiungi un URI di reindirizzamento per la piattaforma Web. Incolla esattamente l'URL di callback di Z8 mostrato qui. Usa Web, non Applicazione a pagina singola. Non è necessario abilitare la concessione implicita.",
+              "link": "Istruzioni per l'URI di reindirizzamento",
+              "title": "Aggiungi l'URI di reindirizzamento Web"
+            },
+            "redirectError": "AADSTS50011: verifica che l'URI di reindirizzamento Web corrisponda esattamente al callback mostrato da Z8, inclusi nome host e percorso.",
+            "register": {
+              "body": "Apri Entra ID → Registrazioni app → Nuova registrazione. Assegna all'app il nome Z8 e scegli Solo account in questa directory organizzativa. Seleziona prima la directory della tua organizzazione. Se non puoi registrare app, chiedi all'amministratore di Entra di crearne una per te.",
+              "title": "Registra un'applicazione"
+            },
+            "secret": {
+              "body": "Vai su Certificati e segreti → Segreti client → Nuovo segreto client. Incolla il relativo Valore in Z8, non il relativo ID segreto. Il Valore viene mostrato una sola volta. Annota la scadenza e sostituisci le credenziali prima che scadano. Condividi il Valore solo tramite il canale sicuro della tua organizzazione.",
+              "link": "Istruzioni per il segreto client",
+              "title": "Crea un segreto client"
+            },
+            "secretError": "Segreto client non valido: usa il Valore del segreto, non il suo ID. Verifica che appartenga a questa applicazione e che non sia scaduto. Crea un nuovo segreto se non hai più a disposizione il Valore.",
+            "secretHelp": "Certificati e segreti → Segreti client. Incolla il Valore, non l'ID segreto. Z8 non lo mostrerà di nuovo.",
+            "secretValue": "Valore del segreto client",
+            "start": "Configura Microsoft Entra ID",
+            "tenantError": "Tenant errato: copia l'ID directory (tenant) dalla stessa registrazione dell'app dell'ID client. Questa configurazione guidata utilizza un tenant specifico, non common o organizations.",
+            "tenantHelp": "Registrazioni app → la tua app → Panoramica. Usa l'ID del tuo tenant, non common o organizations.",
+            "tenantId": "ID directory (tenant)",
+            "tenantInvalid": "Inserisci l'ID directory (tenant) come UUID completo.",
+            "title": "Configura Microsoft Entra ID",
+            "troubleshooting": "Risoluzione dei problemi di configurazione di Entra",
+            "troubleshootingLink": "Guida di Microsoft alla risoluzione dei problemi di reindirizzamento"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Inserisci un ID provider univoco, l'URL dell'emittente OIDC, il dominio email della tua organizzazione, l'ID client e il segreto client. Puoi trovarli nelle impostazioni dell'applicazione del provider. Trasferisci i segreti tramite un canale sicuro.",
+              "title": "Copia le impostazioni dell'applicazione"
+            },
+            "description": "Usa la documentazione del tuo provider per creare un'applicazione Web riservata con il flusso del codice di autorizzazione.",
+            "redirect": {
+              "body": "Aggiungi il callback Z8 mostrato qui agli URI di reindirizzamento consentiti dell'applicazione. Copialo esattamente, inclusi l'hostname dell'organizzazione e il percorso.",
+              "title": "Registra l'URL di callback"
+            },
+            "register": {
+              "body": "Nel tuo provider di identità, crea un'applicazione OpenID Connect utilizzando il flusso del codice di autorizzazione. Assegna prima un piccolo gruppo pilota.",
+              "title": "Crea un'applicazione Web"
+            },
+            "title": "Configura un provider OIDC"
+          },
+          "getStarted": "Connetti l'accesso del tuo team",
+          "getStartedDescription": "Segui una procedura dettagliata specifica per il provider senza dover comporre la configurazione autonomamente.",
+          "handoff": {
+            "copy": "Copia la checklist IT",
+            "description": "Copia le istruzioni di configurazione e l'URL di callback della tua organizzazione. La checklist non include mai le credenziali.",
+            "return": "Fornisci l'ID tenant (per Entra) e l'ID client dell'applicazione all'amministratore di Z8. Trasferisci il Valore del segreto client separatamente tramite un canale sicuro; non incollarlo in questa checklist.",
+            "title": "Hai bisogno dell'aiuto del tuo amministratore IT?"
+          },
+          "manual": "Altro provider / OIDC manuale",
+          "manualAvailable": "Utilizzi un altro provider? Scegli la configurazione OIDC manuale nel pannello di configurazione.",
+          "manualTestHelp": "Questo è un esito di accesso segnalato dall'amministratore, non un test di connessione verificato automaticamente. Esegui un accesso pilota con un utente previsto in una sessione del browser separata, mantieni aperta questa sessione di amministrazione, quindi registra qui l'esito positivo o negativo osservato. Il salvataggio del provider e la verifica del DNS non garantiscono che l'accesso funzioni.",
+          "openSetup": "Apri la configurazione guidata",
+          "provider": "Provider di identità",
+          "required": "Questo campo è obbligatorio.",
+          "saving": "Aggiunta in corso…",
+          "scopes": "Gli ambiti di accesso includono openid, email e profile. Alcune connessioni richiedono anche offline_access per i token di aggiornamento."
         },
         "issuerUrl": "URL dell'emittente",
         "issuerUrlHelp": "L'URL dell'emittente OIDC dal tuo provider di identità",
-        "issuerUrlRequired": "L'URL dell'emittente è obbligatoria",
         "providerId": "ID provider",
         "providerIdHelp": "Un identificativo univoco per questo provider (minuscolo, senza spazi)",
         "providerIdInvalid": "L'ID provider deve contenere solo lettere minuscole, numeri e trattini",
-        "providerIdRequired": "L'ID provider è obbligatorio",
-        "setupInstructions": "Istruzioni di configurazione",
         "title": "Identity Provider",
         "token": "Token",
         "tokenError": "Generazione del token di verifica del dominio non riuscita",
         "tokenGenerated": "Token di verifica generato",
         "txtToken": "Token TXT:",
         "validUrlRequired": "Inserisci un URL valido",
-        "verified": "Verificato",
         "verify": "Verifica",
         "verifyError": "Verifica del dominio non riuscita. Controlla il tuo record DNS TXT e riprova."
       },

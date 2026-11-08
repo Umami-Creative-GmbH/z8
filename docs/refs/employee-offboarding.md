@@ -13,7 +13,7 @@ departure when it is scheduled (or the command instant for *Offboard now*). At
 the cutoff access ends, the running timer is closed at the cutoff, the paid seat
 is released, the employee's expense officer, payroll access and personnel file
 officer grants are revoked, all driving authorizations and held driving licence verifier
-grants end, the employee's kiosk badge and kiosk fob stop working, and the employee's pending approval duties are handed over. The
+grants end, the employee's kiosk badge and kiosk fob stop working, the employee's report share links are revoked, and the employee's pending approval duties are handed over. The
 departure is *effective* even while follow-up work (billing, session sign-out,
 timer post-processing, approval handover, notifications) is still pending or has
 failed; follow-up never decides whether someone has left. A **rehire** starts a
@@ -120,11 +120,18 @@ send again.
 ## Membership versus employment
 
 - **Membership** (organization access) and **employment** (periods, terms, time)
-  are separate. Owner-only *Remove access* removes membership and never ends or
-  reactivates employment.
-- External provisioning (SCIM, invitations, pending-member approval) cannot
-  reactivate an employee whose employment an effective departure ended; the
-  database guard keeps them inactive. Access returns only through a rehire.
+  are separate, but losing membership ends employment: member removal (owner-only
+  *Remove access*, leaving the organization, rejecting a pending member) and
+  SCIM deprovisioning are deactivations (Organization ADR 0011). They switch the
+  employee off and record a pending deactivation that the follow-up applies (see
+  *Follow-up deactivation*). The removal dialog says so and suggests *Deactivate*
+  for choosing replacement managers.
+- Coming back through an invite code, pending-member approval, provisioning
+  (invitation acceptance, `addMember`) or a SCIM re-enable switches a
+  deactivated employee on and runs a reactivation (see *Reactivation*).
+- None of these paths can reactivate an employee whose employment an effective
+  departure ended; the database guard keeps them inactive and no reactivation is
+  recorded. Access returns only through a rehire.
 
 ## Former employees and the current roster
 
@@ -158,12 +165,88 @@ active, and not past a due departure (the same live check as
   keeps hand-written `employee.isActive` checks from growing beyond
   `raw-employee-active-checks.json`.
 
+## Employment ending
+
+One module ends everything an employee holds when their employment ends
+(#1624, spec #1590): `apps/webapp/src/lib/employee-lifecycle/employment-ending/`.
+Its participants run in this fixed order (`participants.ts`):
+
+1. equipment responsibility (`organization/equipment/employment-ending.ts`):
+   captures the employee's teams and needs the open employment period, so it
+   runs first; outstanding returns stay actionable (Organization ADR 0008)
+2. driving licence employment, under its organization lock
+   (`organization/driving-licence/employment-ending.ts`)
+3. held expense officer, payroll access and personnel file officer grants
+   (`employment-ending/officer-grants.ts`)
+4. open and submitted document requests, cancelled silently
+   (`personnel-file/document-request-employment-ending.ts`)
+5. kiosk badges (`time-tracking/kiosk/badge-employment-ending.ts`)
+6. kiosk fobs (`time-tracking/kiosk/fob-employment-ending.ts`)
+7. report share links (`projects/report-share/employment-ending.ts`)
+8. deputy assignments (`employment-ending/deputy-assignments.ts`)
+
+- **Interface.** `endEmployment(tx, ctx)` returns `{ applied, afterCommit }`:
+  the participants' after-commit steps (a deactivation's deputy notices), in
+  participant order, which the cause's caller runs after its commit on
+  `ctx.database`, its own client;
+  `previewEmploymentEnding(reader, ctx)` returns each participant's plan without
+  writing; `reactivationItems(applied, { employeeId })` lists the reactivation
+  checklist items. `ctx` carries `organizationId`, `employeeId`,
+  `employmentPeriodId`, `at` (the cutoff), `now` (when it is recorded),
+  `timeZone`, `actorUserId`, `audit` and the `cause`:
+  `{ kind: "departure", departureId, mode }` or
+  `{ kind: "deactivation", deactivationId, reason, auditMetadata? }`.
+  Participants derive their audit reason and metadata (`{ reason, departureId |
+  deactivationId, employmentPeriodId }`, plus a follow-up deactivation's
+  `auditMetadata` such as `{ actorKind: "system", connectionId }`), badge and
+  fob end reasons and equipment mode from it.
+- **Participant.** `{ key, plan(reader, ctx), apply(tx, plan, ctx),
+  reactivationItems(applied, subject) }`. A plan reads with the predicate its
+  apply ends by; an apply ends what is still held (a second run ends nothing)
+  and records what it ended. Adding one is its adapter plus a line in
+  `participants.ts`. Every cause runs every participant.
+- **Where it runs.** The cause calls it inside its transaction after the
+  lifecycle locks and after write-locking the employee row (`FOR UPDATE`, so a
+  concurrent kiosk fob registration either committed before or is refused),
+  before it switches the employee off. The cause's own roster areas run after
+  the switch-off.
+- **Lock order.** The driving licence lock is taken after equipment's. That is
+  safe: everyone else takes the organization row (driving licence `FOR SHARE`,
+  equipment `FOR UPDATE`) before either advisory lock, and the cause already
+  holds that row exclusively, and nobody takes the two locks in the other
+  order outside a lifecycle transaction.
+- **Checklist.** Officer, equipment officer and verifier grants, kiosk badges,
+  driving authorizations, cancelled document requests (linked to the personnel
+  file) and share links have items; kiosk fobs, deputy assignments and
+  equipment returns have none.
+- **Causes.** Departure, deactivation and the non-interactive deactivation
+  (which the backfill and the follow-up deactivation of member removal and SCIM
+  deprovisioning run) all call it; none calls a participant directly.
+  - *Departure* (#1626, `transition.ts`): once the departure is re-authorized,
+    it write-locks the employee row and calls `endEmployment` with cause
+    `{ kind: "departure", departureId, mode }`, `at` the cutoff, `now` the
+    processing instant, its frozen timezone and its initiator as actor; then
+    it marks the departure effective, closes the period and switches the
+    employee off. It keeps everything that is its own: the authority check,
+    the employment windows, clock-out, the approval handover capture, the
+    follow-up reviews and tasks. Its audit rows commit with it and are not
+    forwarded (the transaction may be retried). It has no after-commit hook,
+    and its participants return no after-commit steps: the deputy participant
+    queues durable `notify_deputy_release` departure tasks instead. A retried
+    or obsolete transition is a no-op before it gets here, and every
+    participant ends only what is still held.
+  - *Deactivation*, the non-interactive deactivation, the backfill and the
+    follow-up deactivation (#1629): see Deactivation.
+
+  `departure-employment-ending.integration.test.ts` runs a departure and a
+  deactivation against the same holdings and checks both end the same.
+
 ## Deactivation
 
 *Deactivate* (Settings → Employees and the members table, while the release
 gate is closed) has the consequences of a departure taking effect, at the
-moment of deactivation (#1440, Organization ADR 0006). It reuses the
-departure's code paths; the area modules live in
+moment of deactivation (#1440, Organization ADR 0006). What the person holds
+ends through Employment ending; the roster area modules live in
 `apps/webapp/src/lib/employee-lifecycle/deactivation/`.
 
 **Consequences**, each audited under the acting admin with
@@ -205,22 +288,24 @@ departure's code paths; the area modules live in
    which frees the allowance (`absence.cancelled`). Absences spanning that day
    are kept and listed in the preview, and so are later ones that touch a closed
    month (`absencesInClosedMonths`): the closed month refuses the cancellation
-   until it is reopened. The deputy release (#1014) still runs. The after-commit
-   work (sick note cleanup, deputy notices) runs on the caller's database client.
-6. **Access** ends as at a departure: held expense officer, payroll access,
-   personnel file officer, driving licence verifier and equipment officer grants, driving
-   authorizations (also suspended ones), kiosk badges, the kiosk fob and the
-   person's report share links. `applied` records the grant ids actually revoked.
-   A badge stores the reason `revoked` and a fob `removed`; their audit rows name
-   the deactivation (`{ reason: "employee_deactivated", deactivationId,
-   employmentPeriodId }`).
+   until it is reopened. The after-commit work (sick note cleanup, deputy
+   notices) runs on the caller's database client.
+6. **What the person holds** ends through Employment ending, before the
+   switch-off: equipment responsibility (with the equipment officer grant),
+   driving authorizations (also suspended ones) and the verifier grant, held
+   expense officer, payroll access and personnel file officer grants, open and
+   submitted document requests (silently, as at a departure), kiosk badges,
+   the kiosk fob, the person's report share links and their deputy duties
+   (#1014). `applied.employmentEnding` records, per participant, what was
+   actually ended. A badge stores the reason `revoked` and a fob `removed`;
+   every audit row names the deactivation (`{ reason: "employee_deactivated",
+   deactivationId, employmentPeriodId }`).
 7. **Retention**: the instant counts as the end of employment (see Personnel
    file retention). The paid seat is released (see Billing reconciliation).
 8. **Equipment**: outstanding required returns become due on the organization-local
    deactivation day unless an explicit date is earlier. Primary and secondary teams
    are captured before removal so currently authorized officers can follow up former
-   employees. Equipment capture runs before the active-state trigger closes the
-   period. Reactivation restores no grant and preserves old equipment deadlines and
+   employees. Reactivation restores no grant and preserves old equipment deadlines and
    deactivation lineage, including historical holdings entered after the employee left.
    Physical key/fob receipt never restores its revoked credential. See the
    [equipment reference](equipment-return-tracking.md).
@@ -258,10 +343,12 @@ submission approval write gates (rank 2, shared, via `withAuthorizationMutation`
 `beforeProtection` hook), the exclusive organization configuration guard
 (rank 3, `organizationWide: true`), the user guards (rank 4) of the person,
 their reports, their own managers and the picked replacements, then the
-organization row `FOR UPDATE` (`lockLifecycleOrganization`). The plan is computed under these locks, then the
-employee is switched off with `deactivated_at = <instant>` and the areas apply
-in order: manager links, team links, approval duties, shifts, absences, access
-ends. Notices and other external effects run after the commit.
+organization row `FOR UPDATE` (`lockLifecycleOrganization`). The plan is computed
+under these locks, the deactivation is recorded, the employee row is locked
+`FOR UPDATE` and Employment ending ends what the person holds; then the
+employee is switched off with `deactivated_at = <instant>` and the roster
+areas apply in order: manager links, team links, approval duties, shifts,
+absences. Notices and other external effects run after the commit.
 
 **Follow-up.** The employee page shows the deactivation's handovers and reviews
 where a departure's show, with the instant in the organization's zone; reviews
@@ -277,14 +364,91 @@ moment finishes on its own. A deactivation principal that names a row it does
 not match is denied as `deactivation_mismatch`, and a deactivation that no
 longer holds as `deactivation_not_effective`.
 
+**Non-interactive deactivation (#1627).** `runNonInteractiveDeactivation`
+(`deactivation/non-interactive.ts`) deactivates one employee nobody confirms:
+someone already switched off (`is_active = false`) with no effective or pending
+departure and no open `employee_deactivation` row
+(`formerEmployeeWithoutDeactivation`). The caller names the actor, the reason,
+when they left (`deactivatedAt`, or null when not recorded) and optionally the
+instant the consequences apply from. In its own transaction it takes the lock
+order above plus the employee coordination guard (before the organization row),
+re-checks the employee under the locks and skips anyone it no longer applies
+to. Then it records the `employee_deactivation` row, locks the employee row,
+sets `employee.deactivated_at` to the row's instant (replacing an instant the
+switch-off trigger wrote, audited as `employee.updated`), runs Employment
+ending and the roster areas with `replaceManagers: false`, stores the outcome,
+and writes the `employee_deactivated` history event for a recorded instant. It
+never refuses: reports who would be left with no current manager keep the link
+and are returned (`reportsWithoutManager`); the caller tells the current admins
+(`reportsStillWithoutCurrentManager` narrows the list to those still without
+one, then `notifyFormerEmployeeReportsWithoutManager`). Audit forwarding and
+the after-commit steps run inside the call; failed steps come back as
+`warnings`. The ledger row is the idempotency marker, so a second run changes
+nothing. `planNonInteractiveDeactivation` plans the same thing without writing.
+`completePendingDeactivation` is its second entry point, for a row recorded
+pending (below): same locks, no new row.
+
+**Follow-up deactivation (#1629, Organization ADR 0011).** Member removal and
+SCIM deprovisioning are deactivations. A deactivation has four reasons:
+`employee_deactivated` (an admin), `employee_deactivation_backfill`,
+`member_removed` (admin removal, leaving, pending rejection) and
+`scim_deprovisioned`, and a `status`: `applied` (every admin and backfill
+deactivation), `pending` or `withdrawn`.
+
+- **The hook.** The removal and SCIM hooks already hold the removed user's
+  guard, so they cannot take a deactivation's locks. They keep switching the
+  person off (membership off, `is_active = false`, sessions deleted) and end
+  nothing the person holds, deputy duties included; in the same transaction
+  `recordFollowUpDeactivation`
+  (`deactivation/follow-up-record.ts`) records a `pending` row: `deactivated_at`
+  is the instant the switch-off trigger stored (copied in SQL, so it equals
+  `employee.deactivated_at` to the microsecond), `created_by` is the removing
+  admin, else the removed user (SCIM: the deprovisioned user), the period is
+  the current one (read without writing), and `metadata` is `{ actorKind:
+  "system" }` plus the SCIM `connectionId`. It reads and inserts only: no lock
+  beyond the removal's. Nothing is recorded when the transaction did not switch
+  the employee off (a retried cleanup, someone already former), when a
+  departure took effect or is pending, or when an open deactivation exists.
+  A pending row counts as an open deactivation everywhere: the person is a
+  former employee from the removal moment.
+- **The follow-up.** `runFollowUpDeactivations` (`deactivation/follow-up.ts`)
+  runs at the start of every employee departure maintenance scan
+  (`cron:employee-departures`, every minute), with the release gate open or
+  closed. It completes pending rows oldest first (50 per run), each in its own
+  transaction through `completePendingDeactivation`: under the deactivation's
+  locks it re-reads the row `FOR UPDATE`. A row no longer pending is skipped. A
+  row whose person came back first (a reactivation stamped `reactivated_at`, or
+  the employee is on the current roster again) becomes `withdrawn` and ends
+  nothing. Otherwise the full consequences apply from the recorded instant,
+  under the recorded actor, reason and period, with `replaceManagers: false`;
+  every audit row carries the row's `metadata` (`actorKind: "system"`,
+  `connectionId`), and the row becomes `applied`. Reports left with no current
+  manager keep the link, and the row is marked `reports_notice_pending` in the
+  same transaction. After the pending rows, the follow-up sends every owed
+  notice: the current admins get one `former_employee_reports_without_manager`
+  notice for the reports still without a current manager, keyed by the list,
+  and the marker is cleared. A failed send keeps the marker, so the notice is
+  retried on the next run until it is sent, and sent once.
+- **Retries and idempotency.** A failed row stays pending and is retried on the
+  next run, without limit; failures (and failed notices) are logged and
+  returned in `followUpDeactivations.errors`. An applied or withdrawn row is
+  never applied again.
+- **Withdrawn.** Coming back before the follow-up ran is a reactivation (see
+  *Reactivation*): it stamps the pending row too. A withdrawn row always has
+  `reactivated_at` (constraint `employeeDeactivation_withdrawn_check`), shows no
+  reactivation checklist, and never hides an older deactivation's checklist.
+  A SCIM disable and re-enable before the follow-up runs therefore keeps
+  everything.
+
 **Backfill of earlier deactivations (#1442).** Employees deactivated before
 #1440 get its consequences once, through the one-off script
 `pnpm employees:backfill-deactivations` (`apps/webapp/scripts/backfill-former-employees.ts`,
 library `deactivation/backfill.ts`; deploy steps in `deploy/README.md`). It is a
-dry run unless `--apply` is given. Both modes plan with
-`planDeactivationConsequences`, so the dry run reports exactly what the real run
-applies. It handles inactive employees with no effective or pending departure
-and no open `employee_deactivation` row.
+dry run unless `--apply` is given. The real run applies each employee through
+the non-interactive deactivation; the dry run plans with
+`planNonInteractiveDeactivation`, so it reports exactly what the real run
+applies, and writes nothing. It handles the employees the non-interactive
+deactivation applies to.
 
 - **When they left**: `employee.deactivated_at` if already set, else the latest
   surviving `employee.deactivated` audit entry or SCIM `leave` event
@@ -303,8 +467,10 @@ and no open `employee_deactivation` row.
   with `replaceManagers: false` and the reason `employee_deactivation_backfill`.
   Audit rows are attributed to the admin whose audit entry deactivated the
   employee, else to the organization's longest-standing current owner (or
-  admin). A report who would be left with no current manager keeps the link. The
-  deputy release is not repeated, because Deactivate has done it since #1014.
+  admin). A report who would be left with no current manager keeps the link.
+  Through the non-interactive deactivation it runs Employment ending in full,
+  so it also ends equipment responsibility, document requests and deputy duties
+  (the absent employees are told after the commit).
 - **Record**: one `employee_deactivation` row per employee (reason
   `employee_deactivation_backfill`) is the idempotency marker. Its
   `deactivated_at` is when they left: the recovered instant, else the run
@@ -338,6 +504,22 @@ with `reactivated_at`, `reactivated_by` and a server-generated
 no grant, badge, fob, driving authorization, manager link, team or project link,
 shift or absence; the acceptance suite asserts that.
 
+**Every way back is a reactivation** (#1628). The invite-code join, the
+pending-member approval, provisioning (`ensureEmployeeForOrganizationMember` in
+`membershipAccepted` mode) and a SCIM re-enable (the reconciler's
+`onEmployeeReactivated` hook) switch the employee on themselves, then call
+`reactivateOnReturn` in the same transaction. It does the same ledger work as
+*Reactivate* when the employee is on the current roster again and has an open
+deactivation, and nothing otherwise: a departed employee the database guard
+kept inactive and an employee who was never deactivated get no reactivation.
+The actor is whoever brought them back: the approving admin, the joining or
+accepting user (the added user for `addMember`, whose hook names no actor), or
+for SCIM the user, with `{ connectionId }` in the audit metadata. After commit
+`completeReturnReactivation` forwards the audit entries and writes
+`employee.reactivated` with the `reactivationRequestId`. These paths serialize
+with Deactivate through the user's exclusive configuration/access guard and do
+not take the organization row lock.
+
 **Checklist.** The ledger row keeps the applied consequences (`applied`) and,
 since migration 0286, the plan they were applied from (`plan`, with only the
 chosen replacements among the replacement options), so a deleted absence can
@@ -351,7 +533,10 @@ and own managers to the employee pages, grants to their settings tabs, kiosk
 badges to the employee page, driving authorizations to
 `/driving-licence/checks/<id>`, teams to `/settings/teams/<id>`, projects to
 `/settings/projects`, shifts to `/scheduling`, absences to `/team/absences`,
-share links to `/settings/report-share-links`. Approval duties are not listed:
+share links to `/settings/report-share-links`, cancelled document requests to
+the personnel file (`/personnel-files/<id>`). The items of what Employment
+ending ended come from its participants (`reactivationItems`); rows stored
+before #1624 keep their `accessEnds` shape and are still listed. Approval duties are not listed:
 they were handed over. An ended kiosk fob is not listed either: nobody grants it
 again, the employee registers a fob themselves at a kiosk. The dialog after *Reactivate* and the card on the
 employee page are org-admin only (`employee-reactivation.actions.ts`).
@@ -439,10 +624,11 @@ cutoff through the employment access rule, also while departure processing is
 delayed; a scheduled departure ends nothing early, and an edit or cancellation
 before the cutoff is followed. When the departure takes effect, the fobs of the
 ended period are ended in the departure's transaction (#1509, through
-`endKioskFobLinks`), with `ended_at` at the cutoff (never before the fob was
+Employment ending), with `ended_at` at the cutoff (never before the fob was
 registered), reason `departure` and `ended_by_user_id` the departure's initiator,
 audited as `kiosk_fob.ended` under the initiator with metadata
-`{ reason: "departure", departureId, employmentPeriodId }`. An old departure
+`{ reason: "employee_departure", departureId, employmentPeriodId }` (before
+#1626 the metadata reason was `departure`). An old departure
 retry never touches a fob of a later period.
 
 A link whose employee no longer has access but whose departure was not
@@ -457,6 +643,20 @@ employee's personal data export (Integrations, `kiosk_fobs`: serial number,
 registered at and where, ended at and why); kiosk badges are not. Fob rows are
 deleted with the employee's record and with the organization (foreign-key
 cascades).
+
+## Report share links
+
+When the departure takes effect, every report share link the employee created
+that was live at the cutoff is revoked in the departure's transaction (#1622,
+Organization ADR 0006, through Employment ending), as at a
+deactivation: `revoked_at` at the cutoff (never before the link was created),
+column reason `creator_lost_access`, `revoked_by` the departure's initiator,
+and the snapshot deleted. Each is audited as `report_share_link.auto_revoked`
+under the initiator with metadata
+`{ reason: "employee_departure", departureId, employmentPeriodId }`. Links that
+expired before the cutoff are left to the expiry sweep, and links of other
+employees are untouched. A retried departure revokes nothing twice. A rehire
+never revives a link.
 
 ## Absence deputies
 
@@ -474,13 +674,18 @@ team absence page until someone names a new deputy. While a departure is
 scheduled, the departure card lists *Deputy on running or upcoming absences: N*,
 counted with the same rule, so the handover can arrange new cover.
 
-Deactivations outside a departure clear the deputy the same way, in their own
-transaction, and notify after the commit: *Deactivate* (`employee_deactivated`,
-audited under the acting admin), member removal or leaving
-(`member_removed`, under the rejecting admin for pending-member rejection,
+Deactivations outside a departure clear the deputy the same way, through
+Employment ending in their own transaction, with the deactivation's audit
+metadata (`{ actorKind: "system", reason, deactivationId, employmentPeriodId }`):
+*Deactivate* (`employee_deactivated`, audited under the acting admin), member
+removal or leaving (`member_removed`, under the removing or rejecting admin,
 otherwise the removed member's own user) and SCIM deprovisioning
 (`scim_deprovisioned`, under the deprovisioned user, with the connection id).
-A rehire or reactivation restores nothing.
+The deputy participant returns the notices as an after-commit step, which the
+deactivation's caller runs. Member removal and SCIM deprovisioning release
+nothing in their own transaction: their follow-up deactivation (#1629) does,
+so a person re-added or re-enabled before it runs stays deputy. A rehire or
+reactivation restores nothing.
 
 ## Personal data reminder
 
@@ -598,5 +803,10 @@ English and German.
   (includes `acceptance.integration.test.ts` with the ten cross-system scenarios).
 - A departure stuck *pending* past its cutoff already denies access and the paid
   seat; the next `cron:employee-departures` run materializes it.
+- A member removal or SCIM deprovisioning whose deactivation stays `pending`
+  (`select * from employee_deactivation where status = 'pending'`) is retried by
+  every `cron:employee-departures` run, gate open or closed; the run's
+  `followUpDeactivations.errors` and the `FollowUpDeactivation` log name the
+  failing row. The person already has no access and no seat meanwhile.
 - Follow-up counts on the departure card come from persisted tasks and reviews,
   never from guesses.

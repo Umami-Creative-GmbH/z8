@@ -341,7 +341,6 @@
       "morePages": "Plus de pages",
       "pagination": "Pagination"
     },
-    "pending": "En attente",
     "positionCaptureErrors": {
       "adminOnly": "Seuls les propriétaires et les administrateurs de l'organisation peuvent gérer l'enregistrement des positions.",
       "assignmentNotFound": "Cette affectation n'existe plus.",
@@ -1129,11 +1128,13 @@
     "compliance": "Conformité",
     "dashboard": "Tableau de bord",
     "driving-licence": "Permis de conduire",
+    "equipment": "Équipement",
     "feedback": "Commentaires",
     "finance": "Finances",
     "financeAwaiting": "{count, plural, one {# dépense en attente de remboursement} other {# dépenses en attente de remboursement}}",
     "get-help": "Obtenir de l'aide",
     "my-documents": "Mes documents",
+    "my-equipment": "Mon équipement",
     "my-requests": "Mes demandes",
     "my-schedule": "Mon planning",
     "org-explorer": "Explorateur d'organisation",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName} : Les futures conditions d'emploi doivent être vérifiées (départ effectif le {cutoff}, {timezone}).",
         "future_work": "{employeeName} : Le travail futur doit être vérifié (départ effectif le {cutoff}, {timezone}).",
         "title": "Le départ de l'employé doit être vérifié"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} a de l'équipement non retourné ({quantity}) à rendre le {deadline}. Ouvrez Équipement pour organiser son retour.",
+        "title": "Retour d'équipement en retard"
+      },
+      "equipmentReturnReminder": {
+        "message": "Veuillez retourner votre équipement non rendu ({quantity}) avant le {deadline}. Ouvrez Mon équipement pour afficher les détails.",
+        "title": "Retour d'équipement prévu"
       },
       "forgottenClockOutReminder": {
         "message": "Votre quart de travail s'est terminé à {endTime} ({timezone}). Pointez votre départ si vous avez fini de travailler.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Informations de conduite manquantes",
         "driving_licence_reminder": "Contrôle du permis de conduire requis",
         "employee_deactivation_shifts_opened": "Créneaux ouverts suite à une désactivation",
+        "equipment_return_reminder": "Rappels de retour d'équipement",
         "forgotten_clock_out_reminder": "Oubli de pointage de sortie",
         "former_employee_reports_without_manager": "Employés sans responsable actuel",
         "kiosk_command_refused": "Pointage sur la borne non enregistré",
@@ -1960,6 +1970,7 @@
         "auditLog": "Entrées du journal d'audit vous concernant et actions que vous avez effectuées.",
         "drivingLicence": "Contrôles de permis de conduire, confirmations et déclarations originales, compléments attribués, autorisations de catégories et leur historique, inscription et votre responsabilité de vérificateur. Justificatifs conservés uniquement ; aucun scan de permis, numéro de document ou note médicale.",
         "employment": "Votre dossier et profil d'employé, périodes d'emploi et départ, conditions d'emploi avec votre salaire horaire et son historique, équipes, responsables, sites, compétences, affectations de projets, rôles, groupes, centre de coûts et toutes les politiques qui vous sont assignées.",
+        "equipment": "Vos attributions d'équipements conservées, les états et notes d'origine et corrigés, les reçus physiques, les décisions de perte et d'exonération, ainsi que l'historique de récupération et d'emploi/fin de contrat. Les dates historiques d'attribution inconnues restent inconnues ; les dates civiles réelles sont distinctes des horodatages de saisie UTC. Les dossiers d'équipement sont inclus dans les exports employés et administrateurs tant qu'ils sont conservés.",
         "integrations": "Vos connexions de calendrier, flux de calendrier, comptes de messagerie associés et statut du code PIN de borne.",
         "notifications": "Votre historique de notifications.",
         "personnelFile": "Les documents de votre dossier du personnel, sous forme de fichiers originaux.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Arrêts maladie"
       },
       "drivingLicenceRetention": "Les justificatifs de permis de conduire suivent la durée de conservation justifiée des contrôles de l'organisation dès lors qu'ils ne soutiennent plus une autorisation active. Une mise en suspens documentée liée à une affaire juridique spécifique reporte la suppression. Reportez-vous à la politique driving_licence, ainsi qu'aux registres de conservation et de suspension pour connaître le cadre applicable ; la génération d'un export ne prolonge pas la conservation des justificatifs dans Z8.",
+      "emptyFilesOmitted": "Les fichiers ne contenant aucune donnée exportable sont omis. Les tables vides et les enregistrements facultatifs absents subsistent dans les fichiers JSON contenant d'autres données. Les paramètres facultatifs qui n'ont jamais été configurés ne sont pas considérés comme des données.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Date depuis laquelle vous faites partie de l'équipe.",
             "summary": "Les équipes dont vous faites actuellement partie."
           }
+        },
+        "equipment": {
+          "actualDate": "La date civile réelle de remise d'origine telle qu'enregistrée dans le fuseau horaire de l'organisation. Une valeur vide indique une date historique d'attribution explicitement inconnue, et non la date de saisie.",
+          "after": "JSON des valeurs après cet avenant, avec les mêmes significations de champs de preuve qu'auparavant. Les valeurs de l'accord d'attribution incluent returnRequired, explicitDeadline et employmentPeriodId. Les dates civiles sont distinctes du champ recorded_at UTC de l'avenant.",
+          "assignmentId": "L'attribution conservée à laquelle appartient cette preuve ; seules vos attributions au sein de cette organisation sont incluses.",
+          "assignmentQuantity": "La quantité actuellement attribuée effective après corrections ; l'attribution d'origine et les avenants demeurent des preuves distinctes.",
+          "assignments": {
+            "summary": "Vos accords d'équipement conservés et les soldes effectifs actuels, conditions et historique d'emploi/fin de contrat d'origine. Les clôtures pour perte ou exonération n'impliquent pas de reçu physique ; la récupération chevauche sa clôture antérieure. L'historique personnel supprimé n'est jamais reconstitué à partir d'identités d'articles non personnelles."
+          },
+          "before": "JSON des valeurs effectives avant cet avenant : quantité remise, actualDate (null pour une attribution historique inconnue), état et notes, ou type d'exception, quantité et motif. Les avenants d'attribution conservent également les valeurs antérieures de returnRequired, explicitDeadline et l'historique d'origine d'emploi/départ/désactivation.",
+          "condition": "L'état initialement enregistré : bon, usé, endommagé ou inconnu ; un état inconnu n'implique pas une date inconnue.",
+          "correctionReason": "L'explication obligatoire de la raison pour laquelle la correction a été effectuée.",
+          "corrections": {
+            "summary": "Avenants motivés avant/après à vos remises et décisions conservées, y compris les modifications d'accord. Les preuves d'origine restent distinctes ; un transfert n'inclut que votre propre remise et avenant, jamais l'historique personnel de l'autre détenteur."
+          },
+          "deactivatedAt": "Date et heure auxquelles cette désactivation immédiate liée a mis fin à l'emploi/à l'accès, sous forme d'instant UTC ; les équipements non restitués ne la retardent jamais.",
+          "deactivationId": "L'identifiant immuable de désactivation pour cette attribution, même si une réactivation rouvre la même période d'emploi.",
+          "deactivationTimezone": "Le fuseau horaire de l'organisation enregistré lors de la désactivation d'origine, ou vide s'il n'a pas été enregistré. Un fuseau horaire ultérieur de l'organisation ou du lecteur ne remplace jamais ce contexte historique.",
+          "departureCutoffAt": "L'instant limite UTC du départ lié, distinct de son dernier jour civil de travail et de la date limite pour l'équipement.",
+          "departureDeadline": "La date de retour déduite du départ ou de la désactivation d'origine ; elle persiste en cas de réembauche ou de réactivation ultérieure. Vide si aucune date limite déduite ne s'applique.",
+          "departureId": "L'identifiant de départ d'origine lié à l'attribution, le cas échéant. Les tâches et révisions de départ ne constituent pas des preuves d'équipement.",
+          "departureMode": "Indique si le départ lié était planifié ou immédiat, ou vide en l'absence de départ lié.",
+          "departureStatus": "Le statut actuel du départ lié ; un départ en attente ne met pas fin en soi au contrat de travail.",
+          "departureTimezone": "Le fuseau horaire figé lors du départ lié ; les changements de fuseau horaire du visualiseur ne modifient pas sa signification calendaire.",
+          "effectiveActualDate": "La date civile effective de remise après corrections ; une distribution historique inconnue reste vide plutôt que de revenir à son horodatage de saisie.",
+          "effectiveCondition": "L'état après corrections ; la réception d'un équipement endommagé n'autorise pas en soi sa réattribution.",
+          "effectiveDeadline": "L'échéance civile applicable la plus proche, explicite ou dérivée ; les équipements cédés à titre définitif n'en ont aucune. Il ne s'agit pas d'une date de remise ni d'un horodatage de saisie UTC.",
+          "effectiveExceptionQuantity": "La quantité toujours clôturée par cette décision après modifications ou annulations, y compris ses réceptions physiques liées ; zéro signifie totalement annulée.",
+          "effectiveHandoverQuantity": "La quantité remise après corrections ; zéro annule une réception erronée sans effacer sa preuve d'origine.",
+          "effectiveKind": "L'issue actuelle relative à la perte ou à la dispense après corrections.",
+          "effectiveNotes": "Les notes facultatives de remise actuelles après corrections.",
+          "effectiveReason": "Le motif actuel de la décision après corrections ; les motifs de correction sont conservés séparément.",
+          "employmentPeriodId": "La période d'emploi d'origine liée à cette attribution, non remplacée automatiquement par une période ultérieure ; vide si aucune période n'a été enregistrée.",
+          "exceptionId": "La décision de perte ou de dispense liée ; une réception physique liée complète cette décision plutôt que de régler deux fois la même quantité. Vide pour une remise ordinaire.",
+          "exceptionKind": "L'issue d'origine de perte ou de dispense ; aucune des deux ne signifie que l'équipement a été physiquement restitué.",
+          "exceptionQuantity": "La quantité d'origine clôturée par la décision, conservée après modifications ou annulations.",
+          "exceptionReason": "Le motif obligatoire d'origine pour la décision de perte ou de dispense.",
+          "exceptionReceivedQuantity": "Réceptions physiques liées aux quantités perdues ou dispensées ; ce chevauchement est comptabilisé une seule fois lors du calcul des retours en attente.",
+          "exceptions": {
+            "summary": "Décisions motivées d'origine de perte et de dispense et leurs valeurs corrigées actuelles. Celles-ci clôturent les obligations de retour sans attester d'une réception physique ; les preuves de réception liées enregistrent séparément la récupération ou le retour ultérieur."
+          },
+          "explicitDeadline": "La date de retour convenue séparément sous forme de jour civil dans le fuseau horaire de l'organisation, ou vide.",
+          "handoverId": "L'identifiant de la remise modifiée, ou vide pour une modification d'exception.",
+          "handoverKind": "Distribution enregistre la remise initiale ; Réception enregistre la réception physique, y compris une récupération liée. Ni la clôture pour perte ni la clôture pour dispense ne constitue en soi une remise.",
+          "handoverQuantity": "La quantité remise initialement enregistrée, conservée même après correction.",
+          "handovers": {
+            "summary": "Preuves d'attribution initiale et de réception physique d'origine avec leurs valeurs corrigées actuelles. Une réception liée à une décision de perte constitue une récupération ; une réception liée à une décision de dispense enregistre une réception physique ultérieure. Une date d'attribution historique inconnue reste vide et n'est jamais remplacée par son horodatage de saisie UTC."
+          },
+          "historical": "Vrai pour la saisie d'une attribution historique déjà détenue ; seule une distribution historique peut avoir une date effective explicitement inconnue.",
+          "holds": {
+            "kind": "Indique si le gel du dossier a été appliqué ou levé.",
+            "reason": "Le motif obligatoire documenté par l'administrateur de l'organisation pour cette action spécifique sur le dossier.",
+            "revision": "La révision de l'attribution créée par cette action de gel du dossier.",
+            "summary": "Applications et levées documentées de gels de dossier dans votre historique d'équipement conservé. Un gel actif protège les preuves de la suppression ; il n'enregistre en aucun cas une réception physique."
+          },
+          "identifier": "L'identifiant attribué par l'organisation à votre article suivi individuellement, sans l'historique des autres détenteurs ; vide pour les attributions de quantité.",
+          "lastWorkingDay": "Le dernier jour civil ouvré du départ planifié lié dans son fuseau horaire figé, ou vide.",
+          "lostQuantity": "La quantité effective clôturée comme perdue, y compris toute quantité récupérée ultérieurement ; la décision de perte est conservée.",
+          "notes": "Les notes facultatives de remise d'origine, conservées après correction tant que l'historique personnel est maintenu.",
+          "outstandingQuantity": "Quantité requise moins les réceptions physiques et les clôtures pour perte/dispense, en réintégrant leur chevauchement de réception pour éviter un double décompte ; zéro pour les équipements cédés à titre définitif.",
+          "periodEndedAt": "L'instant de fin UTC de la période liée, ou vide pour une période en cours/rouverte ou une fin inconnue.",
+          "periodStartedAt": "L'instant de début UTC enregistré pour la période d'emploi liée, ou vide si inconnu.",
+          "periodStatus": "Le statut actuel de la période liée (ouvert, fermé ou legacy_unknown) ; la réactivation peut rouvrir cette même période sans modifier l'identifiant de fin de l'attribution.",
+          "physicallyReceivedQuantity": "La quantité effective physiquement reçue, y compris la récupération et les réceptions d'articles dispensés. Les décisions de perte et de dispense ne peuvent à elles seules augmenter ce total.",
+          "reactivatedAt": "La date et l'heure UTC auxquelles cette désactivation a été ultérieurement réactivée, ou vide ; la réactivation n'efface pas les anciennes obligations ni les échéances relatives aux équipements.",
+          "receivedQuantity": "La quantité physique effective reçue au titre de cette décision. Pour une décision de perte, il s'agit d'équipements récupérés ; elle est déjà incluse dans les réceptions physiques de l'attribution.",
+          "recordedAt": "L'horodatage de saisie UTC, distinct de la date effective de remise ; une saisie tardive ne modifie pas la date de remise.",
+          "recordedBy": "Le nom d'affichage de la personne ayant enregistré cette preuve, lorsque son identité au sein de l'organisation reste disponible ; aucun autre détail de profil n'est inclus.",
+          "returnRequired": "Indique si la restitution est requise. Faux signifie cédé à titre définitif, sans échéance ni retour en attente ; cela ne signifie pas qu'il a été physiquement restitué.",
+          "serialNumber": "Le numéro de série fabricant facultatif de l'article suivi individuellement.",
+          "trackingMode": "Individuel identifie un article physique précis ; Quantité compte des articles interchangeables.",
+          "type": "Le nom du type d'équipement.",
+          "waivedQuantity": "La quantité effective dont la restitution requise a fait l'objet d'une dispense, y compris toute quantité reçue ultérieurement ; une dispense ne vaut pas réception."
         },
         "integrations": {
           "calendarConnections": {

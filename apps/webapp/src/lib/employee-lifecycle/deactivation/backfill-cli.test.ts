@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { emptyEmploymentEndingPlan } from "@/components/organization/testing/deactivation-preview.test.fixture";
 import {
 	parseBackfillFormerEmployeesCommand,
 	runBackfillFormerEmployeesCli,
@@ -27,14 +28,7 @@ const EMPTY_PLAN: DeactivationPlan = {
 	approvalDuties: { handovers: [], reviews: [] },
 	shifts: { shiftsToOpen: [], plannerRecipientUserIds: [] },
 	absences: { absencesToCancel: [], absencesSpanning: [] },
-	accessEnds: {
-		grants: [],
-		drivingAuthorizations: [],
-		kioskBadges: [],
-		kioskFobs: [],
-		shareLinks: [],
-	},
-	equipment: [],
+	employmentEnding: emptyEmploymentEndingPlan(),
 	retentionStarts: true,
 	seatReleased: true,
 	refusals: [],
@@ -165,9 +159,9 @@ describe("backfill former employees CLI (#1442)", () => {
 		expect(lines).toEqual([
 			"Organization org-a (dry run): former employees 2, failed 0",
 			"    Fiona Former (emp-fiona): left 2026-08-03T09:00:00Z (audit log); consequences from 2026-08-03T09:00:00Z; audited as user-mara",
-			"        manager links ending 2, manager links kept 1, teams 0, project links 0, approval handovers 0, reviews 0, shifts opened 1, absences cancelled 0, access ended 0",
+			"        manager links ending 2, manager links kept 1, teams 0, project links 0, approval handovers 0, reviews 0, shifts opened 1, absences cancelled 0, access ended 0, document requests cancelled 0, deputy duties released 0",
 			"    Nils Nodate (emp-nils): left: not recorded; consequences from 2026-10-24T08:00:00Z; audited as user-owner",
-			"        manager links ending 0, manager links kept 0, teams 0, project links 0, approval handovers 0, reviews 0, shifts opened 0, absences cancelled 0, access ended 0",
+			"        manager links ending 0, manager links kept 0, teams 0, project links 0, approval handovers 0, reviews 0, shifts opened 0, absences cancelled 0, access ended 0, document requests cancelled 0, deputy duties released 0",
 			"    reports with no current manager (would tell 2 admins): Otto Orphan (emp-otto)",
 			"",
 			"Total over 1 organizations (dry run): former employees 2, failed 0",

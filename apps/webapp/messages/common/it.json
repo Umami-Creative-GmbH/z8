@@ -341,7 +341,6 @@
       "morePages": "Altre pagine",
       "pagination": "paginazione"
     },
-    "pending": "In sospeso",
     "positionCaptureErrors": {
       "adminOnly": "Solo i proprietari e gli amministratori dell'organizzazione possono gestire il rilevamento della posizione.",
       "assignmentNotFound": "Questa assegnazione non esiste più.",
@@ -1129,11 +1128,13 @@
     "compliance": "Conformità",
     "dashboard": "Dashboard",
     "driving-licence": "Patente di guida",
+    "equipment": "Attrezzatura",
     "feedback": "Feedback",
     "finance": "Finanza",
     "financeAwaiting": "{count, plural, one {# spesa in attesa di rimborso} other {# spese in attesa di rimborso}}",
     "get-help": "Ottieni Aiuto",
     "my-documents": "I miei documenti",
+    "my-equipment": "La mia attrezzatura",
     "my-requests": "Le mie richieste",
     "my-schedule": "Il mio programma",
     "org-explorer": "Esplora organizzazione",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Le condizioni contrattuali future richiedono una revisione (uscita effettiva il {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Il lavoro futuro richiede una revisione (uscita effettiva il {cutoff}, {timezone}).",
         "title": "L'offboarding del dipendente richiede una revisione"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} ha attrezzatura in sospeso ({quantity}) da restituire entro il {deadline}. Apri Attrezzatura per organizzarne la restituzione.",
+        "title": "Restituzione attrezzatura scaduta"
+      },
+      "equipmentReturnReminder": {
+        "message": "Restituisci l'attrezzatura in sospeso ({quantity}) entro il {deadline}. Apri La mia attrezzatura per visualizzare i dettagli.",
+        "title": "Restituzione attrezzatura prevista"
       },
       "forgottenClockOutReminder": {
         "message": "Il tuo turno è terminato alle {endTime} ({timezone}). Timbra l'uscita se hai finito di lavorare.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Dettagli di guida mancanti",
         "driving_licence_reminder": "Controllo patente di guida in scadenza",
         "employee_deactivation_shifts_opened": "Turni aperti a seguito di una disattivazione",
+        "equipment_return_reminder": "Promemoria restituzione attrezzatura",
         "forgotten_clock_out_reminder": "Timbratura di uscita dimenticata",
         "former_employee_reports_without_manager": "Dipendenti senza un responsabile attuale",
         "kiosk_command_refused": "Timbratura da chiosco non registrata",
@@ -1960,6 +1970,7 @@
         "auditLog": "Voci del registro di controllo relative a te e operazioni eseguite da te.",
         "drivingLicence": "Controlli della patente di guida, conferme e dichiarazioni originali, integrazioni attribuite, autorizzazioni di categoria e relativa cronologia, registrazione e responsabilità di verifica. Solo prove conservate; nessuna scansione della patente, numero di documento o annotazione medica.",
         "employment": "La tua scheda dipendente e il tuo profilo, i periodi di impiego e la cessazione, le condizioni contrattuali con la retribuzione oraria e la relativa cronologia, i team, i responsabili, le sedi, le competenze, le assegnazioni ai progetti, i ruoli, i gruppi, il centro di costo e tutte le policy a te assegnate.",
+        "equipment": "Le assegnazioni di attrezzatura conservate, le condizioni e le note originali e corrette, le ricevute fisiche, le decisioni relative a smarrimenti e deroghe, il recupero e la cronologia del rapporto di lavoro e della sua cessazione. Le date di assegnazione storiche sconosciute rimangono sconosciute; le date effettive da calendario sono distinte dai timestamp di inserimento UTC. I record dell'attrezzatura sono inclusi nelle esportazioni dei dipendenti e degli amministratori finché vengono conservati.",
         "integrations": "I tuoi collegamenti al calendario, il feed del calendario, gli account di chat collegati e lo stato del PIN del chiosco.",
         "notifications": "La cronologia delle tue notifiche.",
         "personnelFile": "I documenti presenti nel tuo fascicolo personale, come file originali.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Certificati di malattia"
       },
       "drivingLicenceRetention": "Le prove relative alla patente di guida seguono il periodo di conservazione dei controlli giustificato dall'organizzazione una volta che non supportano più un'autorizzazione attiva. Un blocco documentato per un caso legale specifico posticipa l'eliminazione. Fai riferimento al criterio driving_licence e ai registri di conservazione e blocco per il contesto applicabile; la generazione di un'esportazione non estende la conservazione delle prove in Z8.",
+      "emptyFilesOmitted": "I file privi di dati esportabili vengono omessi. Le tabelle vuote e i record opzionali assenti rimangono nei file JSON che contengono altri dati. Le impostazioni opzionali mai configurate non sono considerate dati.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Da quando fai parte del team.",
             "summary": "I team di cui fai parte attualmente."
           }
+        },
+        "equipment": {
+          "actualDate": "La data di calendario effettiva della consegna originale, registrata nel fuso orario dell'organizzazione. Se vuota, indica una data di rilascio storica esplicitamente sconosciuta, non la data di inserimento.",
+          "after": "JSON dei valori successivi a questa modifica, con lo stesso significato per i campi della prova. I valori dell'accordo di assegnazione includono returnRequired, explicitDeadline ed employmentPeriodId. Le date di calendario sono distinte dal recorded_at UTC della modifica.",
+          "assignmentId": "L'assegnazione conservata a cui appartiene questa prova; sono incluse solo le tue assegnazioni all'interno di questa organizzazione.",
+          "assignmentQuantity": "La quantità attualmente assegnata effettiva dopo le correzioni; l'assegnazione originale e le modifiche rimangono prove distinte.",
+          "assignments": {
+            "summary": "I contratti relativi all'attrezzatura conservati, i saldi effettivi correnti, i termini e la cronologia originale di assunzione/cessazione. Le chiusure per smarrimento e deroga non attestano la ricezione fisica; il recupero si sovrappone alla chiusura precedente. La cronologia personale rimossa non viene mai ricostruita a partire da identità di articoli non personali."
+          },
+          "before": "JSON dei valori effettivi precedenti a questa modifica: quantità consegnata, actualDate (null per assegnazione storica sconosciuta), condizioni e note, oppure tipo di eccezione, quantità e motivo. Le modifiche all'assegnazione conservano anche i precedenti returnRequired, explicitDeadline e la cronologia originale di assunzione/cessazione/disattivazione.",
+          "condition": "La condizione registrata originariamente (buona, usurata, danneggiata o sconosciuta); una condizione sconosciuta non implica una data sconosciuta.",
+          "correctionReason": "La spiegazione obbligatoria del motivo per cui è stata apportata la correzione.",
+          "corrections": {
+            "summary": "Modifiche motivate prima/dopo relative alle consegne e decisioni conservate, comprese le modifiche all'accordo. La prova originale rimane distinta; un trasferimento include solo la propria consegna e modifica, mai la cronologia personale dell'altro assegnatario."
+          },
+          "deactivatedAt": "Il momento esatto in formato UTC in cui la disattivazione immediata collegata ha terminato il rapporto di lavoro/l'accesso; l'attrezzatura in sospeso non ne ritarda mai l'applicazione.",
+          "deactivationId": "L'identificatore immutabile di disattivazione per questa assegnazione, anche qualora una riattivazione riapra lo stesso periodo di impiego.",
+          "deactivationTimezone": "Il fuso orario dell'organizzazione acquisito al momento della disattivazione originale, o vuoto se non registrato. Un fuso orario successivo dell'organizzazione o del visualizzatore non sostituisce mai tale contesto storico.",
+          "departureCutoffAt": "L'istante limite UTC della cessazione collegata, distinto dall'ultimo giorno lavorativo da calendario e dalla scadenza per l'attrezzatura.",
+          "departureDeadline": "La data di restituzione derivata dalla cessazione o disattivazione originale; rimane valida anche in caso di successiva riassunzione o riattivazione. Vuota se non si applica alcuna scadenza derivata.",
+          "departureId": "L'identità di partenza originale collegata all'assegnazione, se presente. Le attività di partenza e le revisioni non costituiscono prove dell'attrezzatura.",
+          "departureMode": "Indica se la partenza collegata era pianificata o immediata, oppure vuoto in assenza di una partenza collegata.",
+          "departureStatus": "Lo stato corrente della partenza collegata; una partenza in sospeso non interrompe di per sé il rapporto di lavoro.",
+          "departureTimezone": "Il fuso orario bloccato al momento della partenza collegata; le modifiche al fuso orario del visualizzatore non ne alterano il significato nel calendario.",
+          "effectiveActualDate": "La data effettiva di consegna nel calendario dopo le correzioni; un'emissione storica sconosciuta rimane vuota anziché reimpostarsi sul relativo timestamp di inserimento.",
+          "effectiveCondition": "La condizione dopo le correzioni; la ricezione di attrezzatura danneggiata non concede di per sé l'autorizzazione alla riassegnazione.",
+          "effectiveDeadline": "La precedente scadenza di calendario applicabile, esplicita o derivata; l'attrezzatura ceduta a titolo definitivo non ne ha alcuna. Non si tratta di una data di consegna o di un timestamp di inserimento UTC.",
+          "effectiveExceptionQuantity": "La quantità ancora chiusa da questa decisione dopo modifiche o storni, comprese le relative ricevute fisiche collegate; zero indica uno storno completo.",
+          "effectiveHandoverQuantity": "La quantità consegnata dopo le correzioni; zero annulla una ricezione errata senza cancellare la prova originale.",
+          "effectiveKind": "L'esito corrente di perdita o esonero dopo le correzioni.",
+          "effectiveNotes": "Le note facoltative correnti sulla consegna dopo le correzioni.",
+          "effectiveReason": "Il motivo corrente della decisione dopo le correzioni; i motivi delle correzioni vengono conservati separatamente.",
+          "employmentPeriodId": "Il periodo di lavoro originale collegato a questa assegnazione, non sostituito automaticamente da un periodo successivo; vuoto se non è stato registrato alcun periodo.",
+          "exceptionId": "La decisione collegata di perdita o esonero; una ricevuta fisica collegata integra tale decisione anziché saldare due volte la stessa quantità. Vuoto per una consegna ordinaria.",
+          "exceptionKind": "L'esito originale di perdita o esonero; nessuno dei due implica che l'attrezzatura sia stata fisicamente restituita.",
+          "exceptionQuantity": "La quantità originale chiusa dalla decisione, conservata dopo modifiche o storni.",
+          "exceptionReason": "Il motivo obbligatorio originale per la decisione di perdita o esonero.",
+          "exceptionReceivedQuantity": "Ricevute fisiche collegate a quantità perse o esonerate; questa sovrapposizione viene conteggiata una sola volta nel calcolo delle restituzioni in sospeso.",
+          "exceptions": {
+            "summary": "Decisioni originali motivate di perdita ed esonero e i relativi valori corretti correnti. Queste chiudono gli obblighi di restituzione senza attestare la ricezione fisica; le prove di ricezione collegate registrano separatamente il recupero o la restituzione successiva."
+          },
+          "explicitDeadline": "La data di restituzione concordata separatamente come giorno di calendario nel fuso orario dell'organizzazione, o vuoto.",
+          "handoverId": "L'ID della consegna modificata, o vuoto per una modifica di eccezione.",
+          "handoverKind": "L'assegnazione registra l'emissione; la ricezione registra la ricezione fisica, compreso un recupero collegato. Né la chiusura per perdita né quella per esonero costituiscono di per sé una consegna.",
+          "handoverQuantity": "La quantità consegnata originariamente registrata, conservata anche dopo la correzione.",
+          "handovers": {
+            "summary": "Prove originali di emissione e ricezione fisica con i valori corretti correnti. Una ricevuta collegata a una decisione di perdita è un recupero; una ricevuta collegata a una decisione di esonero registra una successiva ricezione fisica. Una data di emissione storica sconosciuta rimane vuota, senza mai essere sostituita dal suo timestamp di inserimento UTC."
+          },
+          "historical": "True per l'inserimento di un'assegnazione storica già in possesso; solo l'emissione storica può avere una data effettiva esplicitamente sconosciuta.",
+          "holds": {
+            "kind": "Indica se il blocco del caso è stato applicato o revocato.",
+            "reason": "Il motivo obbligatorio documentato dall'amministratore dell'organizzazione per questa specifica azione sul caso.",
+            "revision": "La revisione dell'assegnazione creata da questa azione di blocco del caso.",
+            "summary": "Applicazioni e revoche documentate del blocco del caso sulla cronologia dell'attrezzatura conservata. Un blocco attivo protegge le prove dalla cancellazione; non registra mai la ricezione fisica."
+          },
+          "identifier": "L'identificatore dell'organizzazione per l'articolo monitorato singolarmente, senza la cronologia di altri assegnatari; vuoto per le assegnazioni di quantità.",
+          "lastWorkingDay": "L'ultimo giorno lavorativo di calendario della partenza pianificata collegata nel relativo fuso orario bloccato, o vuoto.",
+          "lostQuantity": "La quantità effettiva chiusa come persa, compresa l'eventuale quantità successivamente recuperata; la decisione di perdita viene conservata.",
+          "notes": "Le note facoltative originali sulla consegna, conservate dopo la correzione mentre viene mantenuta la cronologia personale.",
+          "outstandingQuantity": "Quantità richiesta meno le ricevute fisiche e le chiusure per perdita/esonero, riaggiungendo la loro sovrapposizione di ricezione per evitare un doppio conteggio; zero per l'attrezzatura ceduta a titolo definitivo.",
+          "periodEndedAt": "L'istante UTC di fine del periodo collegato, o vuoto per un periodo aperto/riaperto o una fine sconosciuta.",
+          "periodStartedAt": "L'istante UTC di inizio registrato del periodo di lavoro collegato, o vuoto se sconosciuto.",
+          "periodStatus": "Lo stato corrente open, closed o legacy_unknown del periodo collegato; la riattivazione può riaprire questo stesso periodo senza modificare l'identità finale dell'assegnazione.",
+          "physicallyReceivedQuantity": "La quantità effettiva ricevuta fisicamente, compresi i recuperi e le ricevute di articoli esonerati. Le sole decisioni di perdita ed esonero non incrementano mai questo conteggio.",
+          "reactivatedAt": "Quando tale disattivazione è stata successivamente riattivata, come istante UTC, o vuoto; la riattivazione non cancella i vecchi obblighi o le scadenze dell'attrezzatura.",
+          "receivedQuantity": "La quantità fisica effettiva ricevuta a fronte di questa decisione. Per una decisione di perdita si tratta di attrezzatura recuperata; è già inclusa nelle ricevute fisiche dell'assegnazione.",
+          "recordedAt": "Il timestamp UTC di inserimento, separato dalla data effettiva di consegna; un inserimento tardivo non modifica la data di consegna.",
+          "recordedBy": "Il nome visualizzato della persona che ha registrato questa prova, se la sua identità all'interno dell'organizzazione è ancora disponibile; non sono inclusi altri dettagli del profilo.",
+          "returnRequired": "Indica se la restituzione è obbligatoria. False indica che l'attrezzatura è ceduta a titolo definitivo, senza alcuna scadenza o restituzione in sospeso; non implica che sia stata fisicamente restituita.",
+          "serialNumber": "Il numero di serie del produttore facoltativo per l'articolo monitorato singolarmente.",
+          "trackingMode": "Individual identifica un singolo articolo fisico; quantity conteggia articoli intercambiabili.",
+          "type": "Il nome del tipo di attrezzatura.",
+          "waivedQuantity": "La quantità effettiva la cui restituzione obbligatoria è stata esonerata, compresa l'eventuale quantità ricevuta successivamente; l'esonero non attesta la ricezione."
         },
         "integrations": {
           "calendarConnections": {

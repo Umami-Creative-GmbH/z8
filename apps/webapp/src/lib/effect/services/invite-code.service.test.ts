@@ -36,6 +36,12 @@ vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	syncBillingSeatsAfterMemberChange: billingMock.sync,
 }));
 
+// The reactivation of a deactivated employee is covered by reactivation-paths.integration.test.ts (#1628).
+vi.mock("@/lib/employee-lifecycle/reactivation", () => ({
+	reactivateOnReturn: async () => null,
+	completeReturnReactivation: async () => undefined,
+}));
+
 // The placement itself is covered by primary-team.integration.test.ts (#1575).
 const setPrimaryTeam = vi.hoisted(() =>
 	vi.fn(async (_tx: unknown, _input: unknown) => undefined),

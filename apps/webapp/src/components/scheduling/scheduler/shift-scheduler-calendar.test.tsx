@@ -68,11 +68,15 @@ describe("planner shifts in Schedule-X's week view", () => {
 		);
 	});
 
-	afterEach(() => {
+	afterEach(async () => {
 		// Schedule-X renders with Preact, which defers effect cleanups to its next
 		// frame timer. Unmount inside Preact's act so they run before jsdom tears
 		// down `window` (they call window.removeEventListener).
 		actPreact(() => cleanup());
+		// A frame Preact armed during the test still has its 35ms fallback timer
+		// pending, which calls jsdom's cancelAnimationFrame. Let it fire while
+		// jsdom is still installed.
+		await new Promise((resolve) => setTimeout(resolve, 50));
 	});
 
 	it("renders day and overnight shifts without throwing", async () => {

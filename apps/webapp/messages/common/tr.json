@@ -341,7 +341,6 @@
       "morePages": "Daha fazla sayfa",
       "pagination": "Sayfalama"
     },
-    "pending": "Beklemede",
     "positionCaptureErrors": {
       "adminOnly": "Konum kaydını yalnızca kuruluş sahipleri ve yöneticiler yönetebilir.",
       "assignmentNotFound": "Bu atama artık mevcut değil.",
@@ -1129,11 +1128,13 @@
     "compliance": "Uyumluluk",
     "dashboard": "Panel",
     "driving-licence": "Sürücü belgesi",
+    "equipment": "Ekipman",
     "feedback": "Geri bildirim",
     "finance": "Finans",
     "financeAwaiting": "{count, plural, other {# masraf geri ödeme bekliyor} }",
     "get-help": "Yardım Al",
     "my-documents": "Belgelerim",
+    "my-equipment": "Ekipmanlarım",
     "my-requests": "Taleplerim",
     "my-schedule": "Programım",
     "org-explorer": "Kuruluş Gezgini",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Gelecekteki istihdam koşullarının incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Gelecekteki çalışmaların incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "title": "Çalışan işten ayrılış sürecinin incelenmesi gerekiyor"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} adlı kullanıcının {deadline} tarihine kadar iade edilmesi gereken zimmetli ekipmanı ({quantity}) bulunuyor. İadeyi ayarlamak için Ekipman'ı açın.",
+        "title": "Ekipman iadesi gecikti"
+      },
+      "equipmentReturnReminder": {
+        "message": "Lütfen zimmetinizdeki ekipmanı ({quantity}) {deadline} tarihine kadar iade edin. Ayrıntılar için Ekipmanlarım'ı açın.",
+        "title": "Ekipman iade zamanı"
       },
       "forgottenClockOutReminder": {
         "message": "Vardiyanız {endTime} ({timezone}) saatinde sona erdi. Çalışmayı bitirdiyseniz çıkış yapın.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Sürüş ayrıntıları eksik",
         "driving_licence_reminder": "Sürücü belgesi kontrolünün süresi geldi",
         "employee_deactivation_shifts_opened": "Bir devre dışı bırakma nedeniyle açılan vardiyalar",
+        "equipment_return_reminder": "Ekipman iade hatırlatıcıları",
         "forgotten_clock_out_reminder": "Unutulan çıkış",
         "former_employee_reports_without_manager": "Mevcut yöneticisi olmayan çalışanlar",
         "kiosk_command_refused": "Kiosk zaman kaydı kaydedilmedi",
@@ -1960,6 +1970,7 @@
         "auditLog": "Hakkınızdaki denetim günlüğü kayıtları ve gerçekleştirdiğiniz işlemler.",
         "drivingLicence": "Sürücü belgesi kontrolleri, orijinal onaylar ve beyanlar, ilişkili ekler, sınıf yetkilendirmeleri ve geçmişleri, kayıt ve doğrulayıcı sorumluluğunuz. Yalnızca saklanan kanıtlar; ehliyet taramaları, belge numaraları veya tıbbi notlar içermez.",
         "employment": "Çalışan kaydınız ve profiliniz, çalışma dönemleriniz ve ayrılışınız, saatlik ücretiniz ve geçmişiyle birlikte çalışma koşullarınız, ekipler, yöneticiler, konumlar, beceriler, proje görevlendirmeleri, roller, gruplar, masraf merkezi ve size atanan tüm politikalar.",
+        "equipment": "Saklanan ekipman atamalarınız, orijinal ve düzeltilmiş durumlar ve notlar, fiziksel makbuzlar, kayıp ve feragat kararları, geri alma ve istihdam/ayrılma soybağı. Bilinmeyen geçmiş teslim tarihleri bilinmiyor olarak kalır; gerçek takvim tarihleri UTC giriş zaman damgalarından ayrıdır. Saklandığı sürece ekipman kayıtları hem çalışan hem de yönetici dışa aktarımlarına dahil edilir.",
         "integrations": "Takvim bağlantılarınız, takvim akışınız, bağlı sohbet hesaplarınız ve kiosk PIN durumunuz.",
         "notifications": "Bildirim geçmişiniz.",
         "personnelFile": "Özlük dosyanızdaki belgeler (orijinal dosyalar olarak).",
@@ -1979,6 +1990,7 @@
         "sickNote": "Hastalık raporları"
       },
       "drivingLicenceRetention": "Sürücü belgesi kanıtı, artık aktif bir yetkilendirmeyi desteklemediğinde kuruluşun gerekçelendirilmiş kontrol saklama süresine tabi olur. Belirli bir yasal dava için belgelenmiş bir alıkoyma silme işlemini erteler. Geçerli bağlam için driving_licence ilkesine, saklama ve alıkoyma kayıtlarına başvurun; dışa aktarma oluşturmak Z8'deki kanıt saklama süresini uzatmaz.",
+      "emptyFilesOmitted": "Dışa aktarılabilir verisi olmayan dosyalar atlanır. Boş tablolar ve mevcut olmayan isteğe bağlı kayıtlar, başka veriler içeren JSON dosyalarında kalmaya devam eder. Hiç yapılandırılmamış isteğe bağlı ayarlar veri olarak sayılmaz.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Ne zamandan beri takımda olduğunuz.",
             "summary": "Şu anda içinde bulunduğunuz takımlar."
           }
+        },
+        "equipment": {
+          "actualDate": "Kuruluşun saat diliminde kaydedilmiş olan orijinal fiili teslim takvim tarihi. Boş olması, giriş tarihini değil, geçmiş teslim tarihinin açıkça bilinmediğini gösterir.",
+          "after": "Bu değişiklikten sonraki değerlerin JSON'ı; önceki kanıt alanı anlamları geçerlidir. Veriliş sözleşmesi değerleri returnRequired, explicitDeadline ve employmentPeriodId alanlarını içerir. Takvim tarihleri, değişikliğin UTC recorded_at değerinden ayrıdır.",
+          "assignmentId": "Bu kanıtın ait olduğu saklanan atama; yalnızca bu kuruluştaki atamalarınız dahil edilir.",
+          "assignmentQuantity": "Düzeltmelerden sonraki geçerli mevcut verilen miktar; orijinal teslimat ve değişiklikler ayrı kanıtlar olarak kalır.",
+          "assignments": {
+            "summary": "Saklanan ekipman sözleşmeleriniz ve güncel geçerli bakiyeleriniz, şartlar ve orijinal istihdam/ayrılma soybağı. Kayıp ve feragat kapanışları fiziksel teslim alındı iddiasında bulunmaz; geri alma önceki kapanışıyla örtüşür. Silinen kişisel geçmiş, kişisel olmayan öğe kimliklerinden asla yeniden oluşturulmaz."
+          },
+          "before": "Bu değişiklikten önceki geçerli değerlerin JSON'ı: teslim miktarı, actualDate (bilinmeyen geçmiş teslimler için null), durum ve notlar veya istisna türü, miktar ve gerekçe. Teslim değişiklikleri ayrıca önceki returnRequired, explicitDeadline ve orijinal istihdam/ayrılma/devre dışı bırakma soybağını da saklar.",
+          "condition": "Orijinal olarak kaydedilen iyi, yıpranmış, hasarlı veya bilinmeyen durum; bilinmeyen durum, tarihin bilinmediği anlamına gelmez.",
+          "correctionReason": "Düzeltmenin neden yapıldığına dair zorunlu açıklama.",
+          "corrections": {
+            "summary": "Sözleşme değişiklikleri de dahil olmak üzere, saklanan teslimlerinize ve kararlarınıza ilişkin gerekçeli öncesi/sonrası değişiklikler. Orijinal kanıtlar ayrı kalır; bir aktarım yalnızca kendi tesliminizi ve değişikliğinizi içerir, diğer kullanıcının kişisel geçmişini asla içermez."
+          },
+          "deactivatedAt": "Bağlantılı anlık devre dışı bırakmanın istihdamı/erişimi sonlandırdığı an (UTC cinsinden); teslim edilmemiş ekipman bunu asla geciktirmez.",
+          "deactivationId": "Yeniden etkinleştirme aynı istihdam dönemini tekrar açsa bile, bu atamaya ait değiştirilemez devre dışı bırakma kimliği.",
+          "deactivationTimezone": "Orijinal devre dışı bırakma sırasında kaydedilen kuruluş saat dilimi ya da kaydedilmemişse boş. Sonraki bir kuruluş veya görüntüleyici saat dilimi, bu geçmiş bağlamın yerini asla almaz.",
+          "departureCutoffAt": "Bağlantılı ayrılışın UTC kesilme anı; son çalışma takvim gününden ve ekipman son teslim tarihinden ayrıdır.",
+          "departureDeadline": "Orijinal ayrılış veya devre dışı bırakmadan türetilen iade tarihi; sonraki yeniden işe alım veya yeniden etkinleştirmeden sonra da korunur. Türetilmiş bir son tarih geçerli olmadığında boştur.",
+          "departureId": "Varsa, zimmetin başlangıçta bağlandığı ayrılış kimliği. Ayrılış görevleri ve incelemeleri ekipman kanıtı sayılmaz.",
+          "departureMode": "Bağlı ayrılışın planlı mı yoksa anlık mı olduğu veya bağlı bir ayrılış yoksa boş.",
+          "departureStatus": "Bağlı ayrılışın güncel durumu; beklemedeki bir ayrılış tek başına istihdamı sonlandırmaz.",
+          "departureTimezone": "Bağlı ayrılışta dondurulan saat dilimi; görüntüleyenin saat dilimi değişiklikleri takvim anlamını değiştirmez.",
+          "effectiveActualDate": "Düzeltmelerden sonraki fiili teslim takvim tarihi; bilinmeyen geçmiş bir verme işlemi, giriş zaman damgasına geri dönmek yerine boş kalır.",
+          "effectiveCondition": "Düzeltmelerden sonraki durum; hasarlı ekipmanın teslim alınması, tek başına yeniden verilmesi için onay sağlamaz.",
+          "effectiveDeadline": "Geçerli daha erken açık veya türetilmiş takvim son tarihi; kalıcı verilen ekipmanlar için bu tarih bulunmaz. Bu bir teslim tarihi veya UTC giriş zaman damgası değildir.",
+          "effectiveExceptionQuantity": "Değişiklikler veya geri almalardan sonra, bağlı fiziksel teslim alma işlemleri dâhil olmak üzere bu kararla hâlâ kapatılan miktar; sıfır, tamamen geri alındığı anlamına gelir.",
+          "effectiveHandoverQuantity": "Düzeltmelerden sonraki teslim miktarı; sıfır, orijinal kanıtı silmeden hatalı bir teslim almayı geri alır.",
+          "effectiveKind": "Düzeltmelerden sonraki güncel kayıp veya feragat sonucu.",
+          "effectiveNotes": "Düzeltmelerden sonraki güncel isteğe bağlı teslim notları.",
+          "effectiveReason": "Düzeltmelerden sonraki kararın güncel gerekçesi; düzeltme gerekçeleri ayrı olarak saklanır.",
+          "employmentPeriodId": "Bu zimmete bağlı orijinal istihdam dönemi, daha sonraki bir istihdam dönemiyle otomatik olarak değiştirilmez; hiçbir dönem kaydedilmediğinde boştur.",
+          "exceptionId": "Bağlı kayıp veya feragat kararı; bağlı bir fiziksel teslim alma işlemi, aynı miktarı iki kez kapatmak yerine bu kararı tamamlar. Sıradan bir teslimde boştur.",
+          "exceptionKind": "Orijinal kayıp veya feragat sonucu; hiçbiri ekipmanın fiziksel olarak iade edildiği anlamına gelmez.",
+          "exceptionQuantity": "Kararla kapatılan ve değişikliklerden ya da geri almalardan sonra korunan orijinal miktar.",
+          "exceptionReason": "Kayıp veya feragat kararının orijinal zorunlu gerekçesi.",
+          "exceptionReceivedQuantity": "Kayıp veya feragat edilen miktarlarla bağlantılı fiziksel teslim almalar; bu çakışma, bekleyen iadeler hesaplanırken bir kez sayılır.",
+          "exceptions": {
+            "summary": "Orijinal gerekçeli kayıp ve feragat kararları ile bunların güncel düzeltilmiş değerleri. Bunlar, fiziksel teslim alma iddiasında bulunmadan iade yükümlülüklerini kapatır; bağlantılı teslim alma kanıtı, geri kazanımı veya daha sonraki iadeyi ayrı olarak kaydeder."
+          },
+          "explicitDeadline": "Kuruluşun saat diliminde bir takvim günü olarak ayrıca kararlaştırılan iade tarihi veya boş.",
+          "handoverId": "Düzeltilen teslimin kimliği veya bir istisna değişikliği için boş.",
+          "handoverKind": "Veriliş kayıtları ekipman vermeyi; teslim alma kayıtları ise bağlantılı bir geri kazanım dâhil olmak üzere fiziksel teslim almayı kaydeder. Ne kayıp ne de feragat ile kapatma işlemi tek başına bir teslim sayılmaz.",
+          "handoverQuantity": "Düzeltmeden sonra bile korunan, başlangıçta kaydedilmiş teslim miktarı.",
+          "handovers": {
+            "summary": "Güncel düzeltilmiş değerlerle orijinal verme ve fiziksel teslim alma kanıtı. Kayıp kararına bağlı bir teslim alma işlemi geri kazanımdır; feragat kararına bağlı bir teslim alma işlemi ise daha sonraki fiziksel teslim almayı kaydeder. Bilinmeyen geçmiş bir verme tarihi boş kalır, hiçbir zaman UTC giriş zaman damgasıyla değiştirilmez."
+          },
+          "historical": "Zaten elde tutulan geçmiş bir zimmetin girişi için true değerini alır; yalnızca geçmişteki verme işlemlerinde açıkça bilinmeyen bir fiili tarih bulunabilir.",
+          "holds": {
+            "kind": "Vaka dondurmasının uygulanıp uygulanmadığı veya kaldırılıp kaldırılmadığı.",
+            "reason": "Bu özel vaka eylemi için kuruluş yöneticisi tarafından belgelenen zorunlu gerekçe.",
+            "revision": "Bu vaka dondurma eylemi tarafından oluşturulan zimmet revizyonu.",
+            "summary": "Saklanan ekipman geçmişinizde belgelenmiş vaka dondurma uygulamaları ve kaldırmaları. Etkin bir dondurma işlemi kanıtı temizlenmeye karşı korur; hiçbir zaman fiziksel teslim alma kaydı oluşturmaz."
+          },
+          "identifier": "Diğer zilyetlerin geçmişi olmaksızın, bireysel olarak izlenen ögenizin kuruluştaki tanımlayıcısı; miktar bazlı zimmetler için boştur.",
+          "lastWorkingDay": "Bağlı planlı ayrılışın dondurulmuş saat dilimindeki son çalışma takvim günü veya boş.",
+          "lostQuantity": "Sonradan geri kazanılan miktarlar dâhil olmak üzere kayıp olarak kapatılan geçerli miktar; kayıp kararı korunur.",
+          "notes": "Kişisel geçmiş tutulurken düzeltmeden sonra korunan orijinal isteğe bağlı teslim notları.",
+          "outstandingQuantity": "Çift mahsuplaşmayı önlemek için teslim alma çakışması tekrar eklenmiş olarak, gerekli miktardan fiziksel teslim almalar ve kayıp/feragat kapatmaları çıkarılmış tutar; kalıcı verilen ekipmanlar için sıfırdır.",
+          "periodEndedAt": "Bağlı dönemin UTC bitiş anı; açık/yeniden açılmış bir dönem veya bilinmeyen bir bitiş için boş.",
+          "periodStartedAt": "Bağlı istihdam döneminin kaydedilmiş UTC başlangıç anı veya bilinmediğinde boş.",
+          "periodStatus": "Bağlı dönemin güncel açık, kapalı veya legacy_unknown durumu; yeniden etkinleştirme, zimmetin sonlandırma kimliğini değiştirmeden bu dönemi tekrar açabilir.",
+          "physicallyReceivedQuantity": "Geri kazanım ve feragat edilen ögelerin teslim alınması dâhil, fiziksel olarak teslim alınan geçerli miktar. Tek başına kayıp ve feragat kararları bu sayıyı asla artırmaz.",
+          "reactivatedAt": "Bu devre dışı bırakmanın daha sonra ne zaman yeniden etkinleştirildiği (UTC anı olarak) veya boş; yeniden etkinleştirme, eski ekipman yükümlülüklerini veya son teslim tarihlerini silmez.",
+          "receivedQuantity": "Bu karara istinaden fiziksel olarak teslim alınan geçerli miktar. Kayıp kararı için bu, geri kazanılan ekipmandır; zimmetin fiziksel teslim almalarına zaten dâhildir.",
+          "recordedAt": "Fiili teslim tarihinden ayrı olan UTC giriş zaman damgası; geç giriş teslim tarihini değiştirmez.",
+          "recordedBy": "Kuruluş kimliği hâlâ mevcut olduğunda bu kanıtı kaydeden kişinin görünen adı; başka hiçbir profil ayrıntısı dâhil edilmez.",
+          "returnRequired": "İadenin zorunlu olup olmadığı. Yanlış (False), iade son tarihi veya bekleyen iadesi olmaksızın kalıcı olarak verildiği anlamına gelir; fiziksel olarak iade edildiği anlamına gelmez.",
+          "serialNumber": "Bireysel olarak izlenen ögenin isteğe bağlı üretici seri numarası.",
+          "trackingMode": "Bireysel, tek bir fiziksel ögeyi tanımlar; miktar, birbirinin yerine geçebilen ögeleri sayar.",
+          "type": "Ekipman türünün adı.",
+          "waivedQuantity": "Sonradan teslim alınan miktarlar dâhil olmak üzere gerekli iadesinden feragat edilen geçerli miktar; feragat, teslim alma iddiasında bulunmaz."
         },
         "integrations": {
           "calendarConnections": {

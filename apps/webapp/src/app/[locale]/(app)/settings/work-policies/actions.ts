@@ -35,6 +35,7 @@ import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	filterItemsToManagedEmployees,
 	getEmployeeSettingsActorContext,
+	getManageableTeamIdsForSettingsActor,
 	getManagedEmployeeIdsForSettingsActor,
 	getOrganizationTeam,
 	getTargetEmployee,
@@ -2144,10 +2145,12 @@ export async function getTeamsForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<{ id: string; name: string }[]>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const _session = yield* authService.getSession();
-
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getTeamsForAssignment:actor",
+		});
 		const dbService = yield* DatabaseService;
+		const manageableTeamIds = yield* getManageableTeamIdsForSettingsActor(actor);
 		const teams = yield* dbService.query("getTeamsForAssignment", async () => {
 			return await dbService.db.query.team.findMany({
 				where: eq(team.organizationId, organizationId),
@@ -2156,7 +2159,11 @@ export async function getTeamsForAssignment(
 			});
 		});
 
-		return teams;
+		if (!manageableTeamIds) {
+			return teams;
+		}
+
+		return teams.filter((teamRecord) => manageableTeamIds.has(teamRecord.id));
 	});
 
 	return runServerActionSafe(effect);

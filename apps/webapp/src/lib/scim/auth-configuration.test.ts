@@ -36,20 +36,17 @@ vi.mock("@/lib/auth/auth-transaction", async (importOriginal) => {
 vi.mock("@/lib/authorization/authorization-mutation", () => ({
 	protectAuthorizationMutation: guard.protect,
 }));
-// The release itself is covered by deputy-release.integration.test.ts (#1014).
-const deputyRelease = vi.hoisted(() => ({ release: vi.fn() }));
-vi.mock("@/lib/employee-lifecycle/deputy-release", () => ({
-	releaseDeputyAssignmentsOnDeactivation: deputyRelease.release,
-}));
-vi.mock("@/lib/employee-lifecycle/deputy-release-runtime", () => ({
-	notifyReleasedDeputyAssignments: vi.fn(),
+// The pending deactivation is covered by protocol.integration.test.ts (#1629).
+const followUp = vi.hoisted(() => ({ record: vi.fn() }));
+vi.mock("@/lib/employee-lifecycle/deactivation/follow-up-record", () => ({
+	recordFollowUpDeactivation: followUp.record,
 }));
 
 beforeEach(() => {
 	guard.transaction = { marker: "scim-plugin-transaction" };
 	guard.protect.mockReset();
-	deputyRelease.release.mockReset();
-	deputyRelease.release.mockResolvedValue(null);
+	followUp.record.mockReset();
+	followUp.record.mockResolvedValue(null);
 });
 
 const organizationId = "org_target";
@@ -307,19 +304,15 @@ describe("createZ8SCIMPlugin", () => {
 		expect(target.rows(SCIM_MODELS.member)[0]?.status).toBe("suspended");
 		expect(target.rows(SCIM_MODELS.employee)[0]?.isActive).toBe(false);
 		expect(target.rows(SCIM_MODELS.projectionState)).toHaveLength(1);
-		// The deprovisioned employee stops being a deputy in the SCIM transaction (#1014).
-		expect(deputyRelease.release).toHaveBeenCalledExactlyOnceWith(
-			guard.transaction,
-			expect.anything(),
-			{
-				organizationId,
-				employeeId: "employee_opaque",
-				actorUserId: userId,
-				at: expect.anything(),
-				reason: "scim_deprovisioned",
-				metadata: { connectionId },
-			},
-		);
+		// Deprovisioning is a deactivation: a pending one waits for the follow-up (#1629),
+		// which also releases their deputy duties; the SCIM transaction releases nothing.
+		expect(followUp.record).toHaveBeenCalledExactlyOnceWith(guard.transaction, {
+			organizationId,
+			employeeId: "employee_opaque",
+			createdBy: userId,
+			reason: "scim_deprovisioned",
+			metadata: { connectionId },
+		});
 	});
 
 	it("creates an initially inactive user before applying lifecycle and projection state", async () => {

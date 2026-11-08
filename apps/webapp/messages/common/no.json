@@ -341,7 +341,6 @@
       "morePages": "Flere sider",
       "pagination": "paginering"
     },
-    "pending": "Ventende",
     "positionCaptureErrors": {
       "adminOnly": "Bare organisasjonseiere og -administratorer kan administrere posisjonsregistrering.",
       "assignmentNotFound": "Dette oppdraget finnes ikke lenger.",
@@ -1129,11 +1128,13 @@
     "compliance": "Samsvar",
     "dashboard": "Dashbord",
     "driving-licence": "Førerkort",
+    "equipment": "Utstyr",
     "feedback": "Tilbakemelding",
     "finance": "Økonomi",
     "financeAwaiting": "{count, plural, one {# utgift venter på refusjon} other {# utgifter venter på refusjon}}",
     "get-help": "Få hjelp",
     "my-documents": "Mine dokumenter",
+    "my-equipment": "Mitt utstyr",
     "my-requests": "Mine forespørsler",
     "my-schedule": "Min tidsplan",
     "org-explorer": "Organisasjonsutforsker",
@@ -1355,6 +1356,14 @@
         "employment_terms": "{employeeName}: Fremtidige ansettelsesvilkår må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Fremtidig arbeid må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone}).",
         "title": "Offboarding av ansatt må gjennomgås"
+      },
+      "equipmentReturnOverdue": {
+        "message": "{employeeName} har utestående utstyr ({quantity}) med frist {deadline}. Åpne Utstyr for å avtale innlevering.",
+        "title": "Innlevering av utstyr har forfalt"
+      },
+      "equipmentReturnReminder": {
+        "message": "Vennligst lever tilbake det utestående utstyret ({quantity}) innen {deadline}. Åpne Mitt utstyr for detaljer.",
+        "title": "Frist for innlevering av utstyr"
       },
       "forgottenClockOutReminder": {
         "message": "Vakten din var ferdig kl. {endTime} ({timezone}). Stemple ut hvis du er ferdig med å jobbe.",
@@ -1833,6 +1842,7 @@
         "driving_details_missing_reminder": "Kjøredetaljer mangler",
         "driving_licence_reminder": "Førerkortkontroll forfaller",
         "employee_deactivation_shifts_opened": "Vakter som er åpnet etter en deaktivering",
+        "equipment_return_reminder": "Påminnelser om innlevering av utstyr",
         "forgotten_clock_out_reminder": "Glemt utstempling",
         "former_employee_reports_without_manager": "Ansatte uten en nåværende leder",
         "kiosk_command_refused": "Kioskstempling ikke registrert",
@@ -1960,6 +1970,7 @@
         "auditLog": "Revisjonsloggoppføringer om deg og oppføringer du har utført.",
         "drivingLicence": "Førerkortkontroller, originale bekreftelser og egenerklæringer, tilordnede tillegg, klassetillatelser og deres historikk, registrering og ditt kontrolløransvar. Kun bevarte bevis; ingen førerkortskanninger, dokumentnumre eller helseopplysninger.",
         "employment": "Din ansattpost og profil, ansettelsesperioder og fratredelse, ansettelsesvilkår med timelønn og historikk, team, ledere, lokasjoner, ferdigheter, prosjekttildelinger, roller, grupper, kostnadssted og alle retningslinjer tildelt deg.",
+        "equipment": "Dine beholdte utstyrstildelinger, opprinnelige og korrigerte tilstander og notater, fysiske kvitteringer, tapte og frafalte beslutninger, gjenvinning og ansettelses-/avslutningshistorikk. Ukjente historiske utleveringsdatoer forblir ukjente; faktiske kalenderdatoer er adskilt fra UTC-registreringstidsstempler. Utstyrsposter inkluderes i både ansatt- og administratoreksporter så lenge de oppbevares.",
         "integrations": "Dine kalendertilkoblinger, kalenderfeed, tilknyttede chat-kontoer og kiosk-PIN-status.",
         "notifications": "Varslingshistorikken din.",
         "personnelFile": "Dokumentene i personalmappen din, som originalfiler.",
@@ -1979,6 +1990,7 @@
         "sickNote": "Sykmeldinger"
       },
       "drivingLicenceRetention": "Førerkortbevis følger organisasjonens begrunnede oppbevaringsperiode for kontroller når de ikke lenger understøtter en aktiv tillatelse. En dokumentert sperre for en spesifikk rettssak utsetter sletting. Se policyen for førerkort (driving_licence), oppbevarings- og sperreposter for gjeldende kontekst; generering av en eksport forlenger ikke oppbevaringstiden for bevis i Z8.",
+      "emptyFilesOmitted": "Filer uten eksporterbare data utelates. Tomme tabeller og fraværende valgfrie poster forblir i JSON-filer som inneholder andre data. Valgfrie innstillinger som aldri ble konfigurert, regnes ikke som data.",
       "fields": {
         "absences": {
           "absences": {
@@ -2617,6 +2629,79 @@
             "memberSince": "Fra når du har vært med i teamet.",
             "summary": "Teamene du er med i nå."
           }
+        },
+        "equipment": {
+          "actualDate": "Den opprinnelige faktiske overleveringskalenderdatoen slik den ble registrert i organisasjonens tidssone. Tom betyr eksplisitt ukjent historisk utleveringsdato, ikke registreringsdatoen.",
+          "after": "JSON med verdier etter denne endringen, med samme betydning for bevisfeltene som før. Verdier for utleveringsavtaler inkluderer returnRequired, explicitDeadline og employmentPeriodId. Kalenderdatoer er adskilt fra endringens UTC recorded_at.",
+          "assignmentId": "Den beholdte tildelingen dette beviset tilhører; kun dine tildelinger i denne organisasjonen er inkludert.",
+          "assignmentQuantity": "Gjeldende effektivt utlevert antall etter korrigeringer; opprinnelig utlevering og endringer forblir separate bevis.",
+          "assignments": {
+            "summary": "Dine beholdte utstyrsavtaler og gjeldende effektive saldoer, vilkår og opprinnelig ansettelses-/avslutningshistorikk. Tapte og frafalte avslutninger gjør ikke krav på fysisk mottak; gjenvinning overlapper den tidligere avslutningen. Fjernet personlig historikk rekonstrueres aldri fra ikke-personlige gjenstandsidentiteter."
+          },
+          "before": "JSON med gjeldende verdier før denne endringen: overleveringsantall, actualDate (null for ukjent historisk utlevering), tilstand og notater, eller unntakstype, antall og årsak. Utleveringsendringer beholder også tidligere returnRequired, explicitDeadline og opprinnelig ansettelses-/fratredelses-/deaktiveringshistorikk.",
+          "condition": "Den opprinnelig registrerte tilstanden bra, slitt, skadet eller ukjent; ukjent tilstand innebærer ikke en ukjent dato.",
+          "correctionReason": "Den obligatoriske forklaringen på hvorfor korrigeringen ble gjort.",
+          "corrections": {
+            "summary": "Begrunnede før/etter-endringer av dine beholdte overleveringer og beslutninger, inkludert avtaleendringer. Opprinnelig bevis forblir separat; en overføring inkluderer kun din egen overlevering og endring, aldri den andre innehaverens personlige historikk."
+          },
+          "deactivatedAt": "Når den tilknyttede umiddelbare deaktiveringen avsluttet ansettelse/tilgang, som et UTC-tidspunkt; utestående utstyr utsetter det aldri.",
+          "deactivationId": "Den uforanderlige deaktiveringsidentiteten for denne tildelingen, selv når reaktivering gjenåpner samme ansettelsesperiode.",
+          "deactivationTimezone": "Organisasjonens tidssone registrert ved den opprinnelige deaktiveringen, eller tom hvis den ikke ble registrert. En senere organisasjons- eller visningstidssone erstatter aldri denne historiske konteksten.",
+          "departureCutoffAt": "Det tilknyttede fratredelsestidspunktet i UTC, adskilt fra siste arbeidsdag i kalenderen og utstyrsfristen.",
+          "departureDeadline": "Returdatoen utledet fra den opprinnelige fratredelsen eller deaktiveringen; den består ved senere nyansettelse eller reaktivering. Tom når ingen utledet frist gjelder.",
+          "departureId": "Tildelingens opprinnelige tilknyttede avgangsidentitet, hvis noen. Avgangsoppgaver og gjennomganger er ikke utstyrsbevis.",
+          "departureMode": "Hvorvidt den tilknyttede avgangen var planlagt eller umiddelbar, eller tom uten en tilknyttet avgang.",
+          "departureStatus": "Den tilknyttede avgangens gjeldende status; en ventende avgang avslutter ikke i seg selv ansettelsen.",
+          "departureTimezone": "Tidssonen som er låst på den tilknyttede avgangen; endringer i visningstidssone endrer ikke kalenderbetydningen.",
+          "effectiveActualDate": "Den faktiske kalenderdatoen for overlevering etter korrigeringer; en ukjent historisk utlevering forblir tom i stedet for å falle tilbake på tidsstempelet for registrering.",
+          "effectiveCondition": "Tilstanden etter korrigeringer; mottak av skadet utstyr gir ikke i seg selv klarsignal for ny utlevering.",
+          "effectiveDeadline": "Den tidligste gjeldende eksplisitte eller utledede kalenderfristen; utstyr utlevert til eie har ingen. Dette er ikke en overleveringsdato eller et UTC-tidsstempel for registrering.",
+          "effectiveExceptionQuantity": "Antallet som fortsatt er lukket av denne beslutningen etter endringer eller reverseringer, inkludert tilknyttede fysiske kvitteringer; null betyr fullstendig reversert.",
+          "effectiveHandoverQuantity": "Overleveringsantallet etter korrigeringer; null reverserer et feilaktig mottak uten å slette det opprinnelige beviset.",
+          "effectiveKind": "Gjeldende tapt- eller frafalt-utfall etter korrigeringer.",
+          "effectiveNotes": "Gjeldende valgfrie overleveringsnotater etter korrigeringer.",
+          "effectiveReason": "Beslutningens gjeldende årsak etter korrigeringer; korrigeringsårsaker beholdes separat.",
+          "employmentPeriodId": "Den opprinnelige ansettelsesperioden knyttet til denne tildelingen, som ikke automatisk erstattes av en senere ansettelsesperiode; tom når ingen periode ble registrert.",
+          "exceptionId": "Den tilknyttede tapt- eller frafalt-beslutningen; en tilknyttet fysisk kvittering supplerer denne beslutningen i stedet for å gjøre opp samme antall to ganger. Tom for en ordinær overlevering.",
+          "exceptionKind": "Det opprinnelige tapt- eller frafalt-utfallet; ingen av dem betyr at utstyret ble fysisk returnert.",
+          "exceptionQuantity": "Det opprinnelige antallet lukket av beslutningen, bevart etter endringer eller reverseringer.",
+          "exceptionReason": "Den opprinnelige obligatoriske årsaken for tapt- eller frafallsbeslutningen.",
+          "exceptionReceivedQuantity": "Fysiske kvitteringer knyttet til tapte eller frafalte antall; denne overlappingen telles én gang ved beregning av utestående returer.",
+          "exceptions": {
+            "summary": "Opprinnelige begrunnede tapt- og frafalt-beslutninger og deres gjeldende korrigerte verdier. Disse lukker returforpliktelser uten å kreve fysisk mottak; tilknyttede kvitteringsbevis registrerer gjenfinning eller senere retur separat."
+          },
+          "explicitDeadline": "Den separat avtalte returdatoen som en kalenderdag i organisasjonens tidssone, eller tom.",
+          "handoverId": "Den endrede overleveringens ID, eller tom for en unntaksendring.",
+          "handoverKind": "Utlevering registrerer utlevering; mottak registrerer fysisk mottak, inkludert en tilknyttet gjenfinning. Verken lukking som tapt eller frafalt er i seg selv en overlevering.",
+          "handoverQuantity": "Det opprinnelig registrerte overleveringsantallet, bevart selv etter korrigering.",
+          "handovers": {
+            "summary": "Opprinnelig bevis på utlevering og fysisk mottak med gjeldende korrigerte verdier. En kvittering knyttet til en tapt-beslutning er en gjenfinning; en kvittering knyttet til en frafalt-beslutning registrerer senere fysisk mottak. En ukjent historisk utleveringsdato forblir tom, aldri erstattet av UTC-tidsstempelet for registrering."
+          },
+          "historical": "Sann for registrering av en allerede tildelt historisk tildeling; bare historiske utleveringer kan ha en eksplisitt ukjent faktisk dato.",
+          "holds": {
+            "kind": "Hvorvidt saksfrysingen ble aktivert eller opphevet.",
+            "reason": "Den obligatoriske årsaken dokumentert av organisasjonsadministratoren for denne spesifikke sakshandlingen.",
+            "revision": "Tildelingsrevisjonen opprettet av denne saksfryshandlingen.",
+            "summary": "Dokumenterte aktiveringer og opphevinger av saksfrys på din bevarte utstyrshistorikk. En aktiv frys beskytter bevisene mot opprydding; den registrerer aldri fysisk mottak."
+          },
+          "identifier": "Organisasjonens identifikator for den individuelt sporede enheten din, uten andre innehaveres historikk; tom for antallstildelinger.",
+          "lastWorkingDay": "Den tilknyttede planlagte avgangens siste arbeidsdag i dens låste tidssone, eller tom.",
+          "lostQuantity": "Det effektive antallet lukket som tapt, inkludert eventuelt senere gjenfunnet antall; tapsbeslutningen bevares.",
+          "notes": "De opprinnelige valgfrie overleveringsnotatene, bevart etter korrigering mens personlig historikk opprettholdes.",
+          "outstandingQuantity": "Påkrevd antall minus fysiske mottak og lukking som tapt/frafalt, med tillegg for kvitteringsoverlapping for å unngå dobbelt oppgjør; null for utstyr utlevert til eie.",
+          "periodEndedAt": "Den tilknyttede periodens UTC-sluttidspunkt, eller tom for en åpen/gjenåpnet periode eller en ukjent slutt.",
+          "periodStartedAt": "Den tilknyttede ansettelsesperiodens registrerte UTC-starttidspunkt, eller tom når ukjent.",
+          "periodStatus": "Den tilknyttede periodens gjeldende status som open, closed eller legacy_unknown; reaktivering kan gjenåpne den samme perioden uten å endre tildelingens avsluttende identitet.",
+          "physicallyReceivedQuantity": "Det effektive antallet som er fysisk mottatt, inkludert gjenfinning og mottak av frafalte enheter. Tapt- og frafalt-beslutninger alene øker aldri dette antallet.",
+          "reactivatedAt": "Når denne deaktiveringen senere ble reaktivert, som et UTC-tidspunkt, eller tom; reaktivering sletter ikke gamle utstyrsforpliktelser eller frister.",
+          "receivedQuantity": "Det effektive fysiske antallet mottatt mot denne beslutningen. For en tapt-beslutning er dette gjenfunnet utstyr; det er allerede inkludert i tildelingens fysiske mottak.",
+          "recordedAt": "UTC-tidsstempelet for registrering, separat fra den faktiske overleveringsdatoen; sen registrering endrer ikke overleveringsdatoen.",
+          "recordedBy": "Visningsnavnet til personen som registrerte dette beviset, når organisasjonsidentiteten deres forblir tilgjengelig; ingen andre profildetaljer er inkludert.",
+          "returnRequired": "Hvorvidt retur er påkrevd. Usann betyr utlevert til eie, uten returfrist eller utestående retur; det betyr ikke fysisk returnert.",
+          "serialNumber": "Det valgfrie produsentserienummeret til den individuelt sporede enheten.",
+          "trackingMode": "Individuell identifiserer én fysisk enhet; antall teller utskiftbare enheter.",
+          "type": "Utstyrstypens navn.",
+          "waivedQuantity": "Det effektive antallet der påkrevd retur ble frafalt, inkludert eventuelt senere mottatt antall; frafall gjør ikke krav på mottak."
         },
         "integrations": {
           "calendarConnections": {

@@ -477,10 +477,5 @@ function unroutableReason(
 				key: "settings.implementationChecklist.rehearsal.approvals.unroutable.noDecider",
 				fallback: "No manager or admin can decide them.",
 			};
-		case "change_policy_ambiguous":
-			return {
-				key: "settings.implementationChecklist.rehearsal.approvals.unroutable.changePolicyAmbiguous",
-				fallback: "More than one change policy applies to them, so their entries are refused.",
-			};
 	}
 }

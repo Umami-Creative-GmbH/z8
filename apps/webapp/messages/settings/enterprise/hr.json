@@ -37,6 +37,13 @@
         "time": "Vrijeme"
       },
       "disabled": "Onemogućen",
+      "documentation": {
+        "reference": "API referenca",
+        "resources": "Čitajte radna razdoblja, odsutnosti, zaposlenike, projekte, klijente i definicije prilagođenih polja pomoću Public API v1. Pristup je samo za čitanje.",
+        "scopes": "API ključ djeluje u ime vaše organizacije i čita samo ono što mu dopuštaju opsezi ključa. Pronađite krajnje točke, potrebne opsege i primjere u referenci.",
+        "title": "Public API v1"
+      },
+      "downloadOpenApi": "Preuzmi OpenAPI specifikaciju",
       "editCreated": "Stvoreno {date}",
       "editDescription": "Ažurirajte postavke za ovaj API ključ. Napomena: Ne možete pregledati niti promijeniti sam ključ.",
       "editTitle": "Uredi API ključ",
@@ -529,7 +536,6 @@
           "error": {
             "saveProviderFirst": "Spremite davatelja prije bilježenja testa"
           },
-          "help": "Ovo bilježi rezultat testiranja vanjskog SSO-a uživo. Prvo pokrenite prijavu u IdP-u, a zatim ovdje zabilježite uspjeh ili neuspjeh radi zaštite aktivacije.",
           "label": {
             "email": "E-pošta testnog korisnika",
             "failureNote": "Napomena o neuspjehu"
@@ -620,12 +626,9 @@
         "updated": "{provider} OAuth je uspješno ažuriran"
       },
       "sso": {
-        "addDescription": "Konfigurirajte OIDC pružatelja identiteta za poslovnu jedinstvenu prijavu (SSO).",
         "addError": "Dodavanje SSO pružatelja nije uspjelo",
         "addSuccess": "SSO pružatelj je uspješno dodan",
         "addTitle": "Dodaj SSO pružatelja",
-        "clientIdPlaceholder": "Vaš OIDC ID klijenta",
-        "clientSecretPlaceholder": "Vaša OIDC tajna klijenta",
         "deleteDialogDescription": "Jeste li sigurni da želite izbrisati ovog SSO pružatelja? Korisnici se više neće moći prijaviti putem ovog pružatelja identiteta.",
         "deleteDialogTitle": "Izbriši SSO pružatelja",
         "deleteError": "Brisanje SSO pružatelja nije uspjelo",
@@ -633,32 +636,110 @@
         "deleteSuccess": "SSO pružatelj je izbrisan",
         "description": "Dodajte OIDC pružatelje identiteta kako biste omogućili SSO za svoju organizaciju.",
         "domainInvalid": "Unesite valjanu domenu (npr. example.com)",
-        "domainRequired": "Domena je obavezna",
         "domainVerified": "Domena je verificirana",
         "emailDomain": "Domena e-pošte",
         "emailDomainHelp": "Korisnici s ovom domenom e-pošte moći će koristiti SSO",
         "empty": "Još nema konfiguriranih SSO pružatelja.",
         "emptyDescription": "Dodajte OIDC pružatelja kako biste omogućili poslovnu jednokratnu prijavu (SSO).",
-        "instructions": {
-          "copyCredentials": "Kopirajte URL izdavača, Client ID i Client Secret iz svog IdP-a",
-          "createApp": "Izradite OIDC aplikaciju kod svog pružatelja identiteta (Okta, Azure AD itd.)",
-          "verifyDomain": "Ovdje dodajte pružatelja i verificirajte domenu e-pošte putem DNS TXT zapisa"
+        "guide": {
+          "addDescription": "Slijedite upute za postavljanje davatelja usluge, a zatim ga povežite sa svojom organizacijom.",
+          "afterSave": "Nakon spremanja potvrdite svoju domenu e-pošte pomoću DNS TXT zapisa u Z8. Isprobajte prijavu s predviđenim korisnikom dok vam je trenutna administratorska sesija otvorena. U vođenom postavljanju spremite isti ID davatelja usluge i domenu e-pošte koji su prikazani na popisu davatelja usluga, a zatim ručno zabilježite uočeni rezultat prijave prije nego što razmotrite opciju Obavezan SSO. Spremanje i DNS provjera ne jamče uspješnu prijavu.",
+          "afterSaveTitle": "Nakon spremanja davatelja usluge",
+          "callback": "Z8 callback URL",
+          "connectionHelp": "Kopirajte ove vrijednosti iz postavki aplikacije davatelja usluge.",
+          "connectionSettings": "Postavke veze",
+          "copied": "Kopirano u međuspremnik",
+          "copyCallback": "Kopiraj callback URL",
+          "copyFailed": "Pristup međuspremniku nije uspio. Označite i ručno kopirajte tekst.",
+          "domainPending": "Domena nije verificirana",
+          "domainStatus": "Verifikacija domene",
+          "domainVerified": "Domena verificirana",
+          "entra": {
+            "clientHelp": "Kopirajte Application (client) ID iz odjeljka Overview, a ne Object ID.",
+            "clientId": "Application (client) ID",
+            "consentError": "Pristanak ili pristup odbijen: zatražite od svog administratora za Entra da provjeri pravila davanja pristanka i je li testni korisnik dodijeljen aplikaciji.",
+            "consentLink": "Microsoftove smjernice za davanje pristanka",
+            "description": "Povežite Microsoftov direktorij svoje organizacije s aplikacijom OpenID Connect za jednog zakupca (single-tenant).",
+            "generatedIssuer": "URL izdavatelja · generiran iz vašeg ID-ja zakupca",
+            "ids": {
+              "body": "U odjeljku Overview aplikacije kopirajte Directory (tenant) ID i Application (client) ID u Z8. Object ID je druga vrijednost. Z8 za vas generira URL izdavatelja specifičan za zakupca.",
+              "link": "Upute za registraciju aplikacije",
+              "title": "Kopirajte ID-jeve zakupca i aplikacije"
+            },
+            "introduction": "Izradite registraciju za web-aplikaciju, kopirajte ID-jeve svog zakupca i aplikacije te dodajte tajni ključ klijenta (client secret). Z8 generira URL izdavatelja i vodi vas kroz svaki korak.",
+            "permissions": "Z8 koristi openid, email i profile za prijavu. Neke veze također zahtijevaju offline_access za tokene osvježavanja. Nisu vam potrebna dopuštenja za cijeli direktorij u Microsoft Graphu. Pravila davanja pristanka vašeg zakupca možda će i dalje zahtijevati odobrenje administratora.",
+            "portal": "Otvorite Entra centar za administratore",
+            "redirect": {
+              "body": "U odjeljku Authentication dodajte URI za preusmjeravanje za platformu Web. Zalijepite točan Z8 callback prikazan ovdje. Koristite Web, a ne Single-page application. Nije potrebno omogućiti implicit grant.",
+              "link": "Upute za URI za preusmjeravanje",
+              "title": "Dodajte web-URI za preusmjeravanje"
+            },
+            "redirectError": "AADSTS50011: Provjerite podudara li se web-URI za preusmjeravanje točno s povratnim pozivom (callback) koji prikazuje Z8, uključujući naziv računala i putanju.",
+            "register": {
+              "body": "Otvorite Entra ID → App registrations → New registration. Aplikaciji dodijelite naziv Z8 i odaberite Accounts in this organizational directory only. Prvo odaberite direktorij svoje organizacije. Ako ne možete registrirati aplikacije, zatražite od svog administratora za Entra da izradi jednu za vas.",
+              "title": "Registrirajte aplikaciju"
+            },
+            "secret": {
+              "body": "Otvorite Certificates & secrets → Client secrets → New client secret. Zalijepite njezinu vrijednost (Value) u Z8, a ne Secret ID. Vrijednost se prikazuje samo jednom. Zabilježite datum isteka i zamijenite vjerodajnicu prije nego što istekne. Vrijednost dijelite samo putem sigurnog kanala svoje organizacije.",
+              "link": "Upute za tajnu klijenta",
+              "title": "Izradite tajnu klijenta"
+            },
+            "secretError": "Nevažeća tajna klijenta: upotrijebite vrijednost (Value) tajne, a ne njezin ID. Provjerite pripada li ovoj aplikaciji i je li istekla. Izradite novu tajnu ako više nemate vrijednost.",
+            "secretHelp": "Certificates & secrets → Client secrets. Zalijepite vrijednost (Value), a ne Secret ID. Z8 je više neće prikazivati.",
+            "secretValue": "Vrijednost tajne klijenta",
+            "start": "Postavite Microsoft Entra ID",
+            "tenantError": "Pogrešan klijent (tenant): kopirajte ID direktorija (klijenta) iz iste registracije aplikacije kao i ID klijenta. Ovo vođeno postavljanje koristi određenog klijenta, a ne common ili organizations.",
+            "tenantHelp": "App registrations → vaša aplikacija → Overview. Upotrijebite svoj ID klijenta (tenant ID), a ne common ili organizations.",
+            "tenantId": "ID direktorija (klijenta)",
+            "tenantInvalid": "Unesite ID direktorija (klijenta) kao potpuni UUID.",
+            "title": "Postavite Microsoft Entra ID",
+            "troubleshooting": "Rješavanje problema s postavljanjem servisa Entra",
+            "troubleshootingLink": "Microsoftov vodič za rješavanje problema s preusmjeravanjem"
+          },
+          "generic": {
+            "credentials": {
+              "body": "Unesite jedinstveni ID pružatelja usluga, OIDC URL izdavača, domenu e-pošte svoje organizacije, ID klijenta i tajnu klijenta. Te podatke možete pronaći u postavkama aplikacije kod svog pružatelja usluga. Prenosite tajne putem sigurnog kanala.",
+              "title": "Kopirajte postavke aplikacije"
+            },
+            "description": "Pomoću dokumentacije svog pružatelja usluga izradite povjerljivu web-aplikaciju s tijekom autorizacijskog koda.",
+            "redirect": {
+              "body": "Dodajte ovdje prikazani povratni poziv (callback) servisa Z8 na popis dopuštenih URI-ja za preusmjeravanje aplikacije. Kopirajte ga točno, uključujući naziv glavnog računala organizacije i putanju.",
+              "title": "Registrirajte URL povratnog poziva"
+            },
+            "register": {
+              "body": "Kod svog pružatelja identiteta izradite OpenID Connect aplikaciju pomoću tijeka autorizacijskog koda. Najprije dodijelite malu pilot-grupu.",
+              "title": "Izradite web-aplikaciju"
+            },
+            "title": "Postavite OIDC pružatelja usluga"
+          },
+          "getStarted": "Povežite prijavu svog tima",
+          "getStartedDescription": "Pratite detaljne upute specifične za pružatelja usluga bez potrebe za samostalnim slaganjem konfiguracije.",
+          "handoff": {
+            "copy": "Kopirajte IT kontrolni popis",
+            "description": "Kopirajte upute za postavljanje i URL povratnog poziva svoje organizacije. Kontrolni popis nikada ne uključuje vjerodajnice.",
+            "return": "Vratite ID klijenta (za Entra) i ID klijenta aplikacije administratoru servisa Z8. Vrijednost tajne klijenta prenesite zasebno putem sigurnog kanala; nemojte je lijepiti u ovaj kontrolni popis.",
+            "title": "Trebate li pomoć svog IT administratora?"
+          },
+          "manual": "Drugi pružatelj usluga / ručni OIDC",
+          "manualAvailable": "Koristite li drugog pružatelja usluga? Odaberite ručnu OIDC konfiguraciju na ploči za postavljanje.",
+          "manualTestHelp": "Ovo je rezultat prijave koji prijavljuje administrator, a ne automatski provjeren test veze. Isprobajte prijavu s predviđenim korisnikom u zasebnoj sesiji preglednika, ostavite ovu administratorsku sesiju otvorenom, a zatim ovdje zabilježite prolaz ili neuspjeh. Spremanje pružatelja usluga i provjera DNS-a ne dokazuju da prijava radi.",
+          "openSetup": "Otvorite vođeno postavljanje",
+          "provider": "Pružatelj identiteta",
+          "required": "Ovo je polje obavezno.",
+          "saving": "Dodavanje…",
+          "scopes": "Opsezi za prijavu uključuju openid, email i profile. Neke veze također zahtijevaju offline_access za tokene osvježavanja."
         },
         "issuerUrl": "URL izdavača",
         "issuerUrlHelp": "OIDC URL izdavača vašeg pružatelja identiteta",
-        "issuerUrlRequired": "URL izdavača je obavezan",
         "providerId": "ID pružatelja",
         "providerIdHelp": "Jedinstveni identifikator za ovog pružatelja (mala slova, bez razmaka)",
         "providerIdInvalid": "ID pružatelja smije sadržavati samo mala slova, brojeve i spojnice",
-        "providerIdRequired": "ID pružatelja je obavezan",
-        "setupInstructions": "Upute za postavljanje",
         "title": "Pružatelji identiteta",
         "token": "Token",
         "tokenError": "Generiranje tokena za verifikaciju domene nije uspjelo",
         "tokenGenerated": "Verifikacijski token je generiran",
         "txtToken": "TXT token:",
         "validUrlRequired": "Unesite valjani URL",
-        "verified": "Verificirano",
         "verify": "Verificiraj",
         "verifyError": "Verifikacija domene nije uspjela. Provjerite svoj DNS TXT zapis i pokušajte ponovno."
       },

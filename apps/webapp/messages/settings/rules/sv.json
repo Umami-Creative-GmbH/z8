@@ -718,7 +718,6 @@
       "createCategory": "Skapa kategori",
       "createCategoryDescription": "Skapa en ny arbetskategori som kan tilldelas flera uppsättningar",
       "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Skapa kategorigrupper med olika tidsfaktorer för olika arbetstyper",
-      "createFirstSet": "Skapa första uppsättningen",
       "createSet": "Skapa uppsättning",
       "createSetDescription": "Skapa en ny kategoriuppsättning och välj vilka kategorier som ska ingå",
       "defaultSet": "Standardkategoriuppsättning",

@@ -13,7 +13,9 @@ import { integrationAdminPool } from "@/test/integration-database";
 
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -62,11 +64,14 @@ const admin = integrationAdminPool();
 
 async function cleanup() {
 	for (const org of [ORG, OTHER_ORG]) {
-		await admin.query("delete from audit_log where organization_id = $1", [org]);
-		await admin.query("delete from organization where id = $1", [org]);
-		await admin.query("delete from personal_data_export_file_cleanup where organization_id = $1", [
+		await admin.query("delete from audit_log where organization_id = $1", [
 			org,
 		]);
+		await admin.query("delete from organization where id = $1", [org]);
+		await admin.query(
+			"delete from personal_data_export_file_cleanup where organization_id = $1",
+			[org],
+		);
 	}
 	await admin.query('delete from "user" where id like $1', ["t1172-%"]);
 }
@@ -74,7 +79,12 @@ async function cleanup() {
 async function seedPerson(
 	name: string,
 	displayName: string,
-	input: { employeeId?: string; role?: string; organizationId?: string; isActive?: boolean } = {},
+	input: {
+		employeeId?: string;
+		role?: string;
+		organizationId?: string;
+		isActive?: boolean;
+	} = {},
 ) {
 	const organizationId = input.organizationId ?? ORG;
 	await admin.query(
@@ -83,13 +93,23 @@ async function seedPerson(
 	);
 	await admin.query(
 		"insert into member (id,organization_id,user_id,role,status,created_at) values ($1,$2,$3,$4,'approved',now())",
-		[`t1172-member-${name}`, organizationId, `t1172-${name}`, input.role ?? "member"],
+		[
+			`t1172-member-${name}`,
+			organizationId,
+			`t1172-${name}`,
+			input.role ?? "member",
+		],
 	);
 	if (input.employeeId) {
 		await admin.query(
 			`insert into employee (id,user_id,organization_id,role,is_active,updated_at)
 			 values ($1,$2,$3,'employee',$4,now())`,
-			[input.employeeId, `t1172-${name}`, organizationId, input.isActive ?? true],
+			[
+				input.employeeId,
+				`t1172-${name}`,
+				organizationId,
+				input.isActive ?? true,
+			],
 		);
 	}
 }
@@ -116,7 +136,9 @@ async function adaReadme(kind: "employee" | "admin"): Promise<string> {
 		},
 	);
 	expect(outcome).toEqual({ status: "completed" });
-	await admin.query("delete from personal_data_export where id = $1", [exportId]);
+	await admin.query("delete from personal_data_export where id = $1", [
+		exportId,
+	]);
 	const archive = await JSZip.loadAsync(zip as unknown as Uint8Array);
 	return (await archive.file("README.txt")?.async("string")) as string;
 }
@@ -132,7 +154,10 @@ describe("personal data export README sections (#1172)", () => {
 			);
 		}
 		await seedPerson("ada", "Ada Lovelace", { employeeId: ids.ada });
-		await seedPerson("owner", "Olga Owner", { employeeId: ids.owner, role: "owner" });
+		await seedPerson("owner", "Olga Owner", {
+			employeeId: ids.owner,
+			role: "owner",
+		});
 		await seedPerson("admin", "Adam Admin", { role: "admin" });
 		await seedPerson("former-admin", "Fiona Former", {
 			employeeId: ids.formerAdmin,
@@ -140,11 +165,17 @@ describe("personal data export README sections (#1172)", () => {
 			isActive: false,
 		});
 		await seedPerson("manager", "Max Manager", { employeeId: ids.manager });
-		await seedPerson("team-lead", "Tina Teamlead", { employeeId: ids.teamLead });
+		await seedPerson("team-lead", "Tina Teamlead", {
+			employeeId: ids.teamLead,
+		});
 		await seedPerson("creator", "Carl Creator", { employeeId: ids.creator });
-		await seedPerson("other-lead", "Otto Otherlead", { employeeId: ids.otherLead });
+		await seedPerson("other-lead", "Otto Otherlead", {
+			employeeId: ids.otherLead,
+		});
 		await seedPerson("filer", "Petra Personnel", { employeeId: ids.filer });
-		await seedPerson("other-filer", "Quinn Otherfiler", { employeeId: ids.otherFiler });
+		await seedPerson("other-filer", "Quinn Otherfiler", {
+			employeeId: ids.otherFiler,
+		});
 		await seedPerson("payroll", "Paul Payroll", { employeeId: ids.payroll });
 		await seedPerson("expense", "Erik Expense", { employeeId: ids.expense });
 		await seedPerson("other-org-admin", "Xena Elsewhere", {
@@ -158,7 +189,10 @@ describe("personal data export README sections (#1172)", () => {
 			   ($1, $3, 'Platform', now()), ($2, $3, 'Other team', now())`,
 			[ids.teamAda, ids.teamOther, ORG],
 		);
-		await admin.query("update employee set team_id = $1 where id = $2", [ids.teamAda, ids.ada]);
+		await admin.query("update employee set team_id = $1 where id = $2", [
+			ids.teamAda,
+			ids.ada,
+		]);
 		await admin.query(
 			"insert into employee_managers (employee_id, manager_id, is_primary, assigned_by) values ($1, $2, true, 't1172-owner')",
 			[ids.ada, ids.manager],
@@ -170,7 +204,15 @@ describe("personal data export README sections (#1172)", () => {
 			   ($1, $4, $5, false, true, $7, now()),
 			   ($2, $4, null, true, false, $7, now()),
 			   ($3, $4, $6, false, true, $7, now())`,
-			[ids.teamLead, ids.creator, ids.otherLead, ORG, ids.teamAda, ids.teamOther, ids.owner],
+			[
+				ids.teamLead,
+				ids.creator,
+				ids.otherLead,
+				ORG,
+				ids.teamAda,
+				ids.teamOther,
+				ids.owner,
+			],
 		);
 		// Personnel file officers: one for Ada's team, one for another team.
 		await admin.query(
@@ -243,11 +285,16 @@ describe("personal data export README sections (#1172)", () => {
 		expect(readme).toContain("Audit log entries are deleted after 365 days.");
 		expect(readme).toContain("(Art. 21 GDPR)");
 		expect(readme).toContain("supervisory authority");
-		expect(readme).toContain("You can ask the administrators of Acme GmbH for a complete copy");
 		expect(readme).toContain(
-			"employment.json > employment_terms (employment/employment_terms.csv)",
+			"You can ask the administrators of Acme GmbH for a complete copy",
 		);
-		expect(readme).toContain("  - hourly_rate: Your hourly wage under these terms.");
+		expect(readme).toContain(
+			"employment.json > employment_terms:",
+		);
+		expect(readme).not.toContain("employment/employment_terms.csv");
+		expect(readme).toContain(
+			"  - hourly_rate: Your hourly wage under these terms.",
+		);
 	});
 
 	it("leaves the complete-copy note out of the admin export, which explains its withheld parts", async () => {
@@ -259,11 +306,15 @@ describe("personal data export README sections (#1172)", () => {
 	});
 
 	it("still lists the payroll access covering a former employee", async () => {
-		await admin.query("update employee set is_active = false where id = $1", [ids.ada]);
+		await admin.query("update employee set is_active = false where id = $1", [
+			ids.ada,
+		]);
 		try {
 			expect(await adaReadme("admin")).toContain("  - Paul Payroll");
 		} finally {
-			await admin.query("update employee set is_active = true where id = $1", [ids.ada]);
+			await admin.query("update employee set is_active = true where id = $1", [
+				ids.ada,
+			]);
 		}
 	});
 
@@ -313,15 +364,22 @@ describe("personal data export README sections (#1172)", () => {
 	// cannot ship without its README explanation.
 	it("explains every field of every part every collector writes, in both kinds of export", async () => {
 		for (const kind of ["employee", "admin"] as const) {
-			const scope = { organizationId: ORG, employeeId: ids.ada, userId: "t1172-ada", kind };
+			const scope = {
+				organizationId: ORG,
+				employeeId: ids.ada,
+				userId: "t1172-ada",
+				kind,
+			};
 			const categories = await Promise.all(
-				PERSONAL_DATA_COLLECTORS.map((collector) => collector.collect(db, scope)),
+				PERSONAL_DATA_COLLECTORS.map((collector) =>
+					collector.collect(db, scope),
+				),
 			);
 			const contents = readmeContentsOf(categories, PERSONAL_DATA_COLLECTORS);
 			expect(
-				PERSONAL_DATA_COLLECTORS.filter((collector) => !contents[collector.category]?.guide).map(
-					(collector) => collector.category,
-				),
+				Object.entries(contents)
+					.filter(([, entry]) => !entry?.guide)
+					.map(([category]) => category),
 				kind,
 			).toEqual([]);
 			expect(findUnexplainedFields(contents), kind).toEqual([]);

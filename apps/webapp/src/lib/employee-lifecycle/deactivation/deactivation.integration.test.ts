@@ -158,6 +158,7 @@ type Seeded = People & {
 	authorizationIds: string[];
 	badgeId: string;
 	shareLinkId: string;
+	documentRequestId: string;
 	shifts: { past: string; running: string; future: string };
 	absences: { spanning: string; pending: string; approved: string };
 	deputyAbsenceId: string;
@@ -285,6 +286,24 @@ describe("deactivation acceptance (#1440)", () => {
 			],
 		);
 		return rows[0]?.id ?? "";
+	}
+
+	/** An open document request of the person, as an officer created it. */
+	async function seedDocumentRequest(person: SeededEmployee) {
+		const id = randomUUID();
+		await fixture.pool.query(
+			`insert into employee_document_request
+			 (id, organization_id, employee_id, category, title, deadline, status, created_by, created_at, updated_at)
+			 values ($1, $2, $3, 'certificate', 'First aid certificate', '2026-12-01', 'open', $4,
+			  '2026-10-01T08:00:00Z', '2026-10-01T08:00:00Z')`,
+			[id, fixture.organizationId, person.employeeId, fixture.ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into employee_document_request_event (organization_id, request_id, kind, occurred_at)
+			 values ($1, $2, 'created', '2026-10-01T08:00:00Z')`,
+			[fixture.organizationId, id],
+		);
+		return id;
 	}
 
 	async function seedShifts(person: SeededEmployee) {
@@ -511,6 +530,7 @@ describe("deactivation acceptance (#1440)", () => {
 		);
 
 		const shareLinkId = await seedShareLink(person);
+		const documentRequestId = await seedDocumentRequest(person);
 		const shifts = await seedShifts(person);
 
 		// Absences: one spanning the day they leave, two after it; and a colleague's they cover.
@@ -554,6 +574,7 @@ describe("deactivation acceptance (#1440)", () => {
 			authorizationIds: authorizations.rows.map((row) => row.id),
 			badgeId: badge.badgeId,
 			shareLinkId,
+			documentRequestId,
 			shifts,
 			absences,
 			deputyAbsenceId: deputyAbsence.rows[0]?.id ?? "",
@@ -740,6 +761,7 @@ describe("deactivation acceptance (#1440)", () => {
 	/** What applying `plan` must change, derived from the plan alone. */
 	function expectedApplied(plan: DeactivationPreview, personId: string) {
 		const links = plan.managerLinks;
+		const ending = plan.employmentEnding;
 		const sortLinks = <T extends { employeeId: string; managerId: string }>(items: T[]) =>
 			items.toSorted((a, b) =>
 				`${a.employeeId}:${a.managerId}`.localeCompare(`${b.employeeId}:${b.managerId}`),
@@ -786,19 +808,24 @@ describe("deactivation acceptance (#1440)", () => {
 			absences: {
 				cancelledAbsenceIds: plan.absences.absencesToCancel.map((a) => a.absenceId).toSorted(),
 			},
-			accessEnds: {
-				grantIds: plan.accessEnds.grants.map((g) => g.grantId).toSorted(),
-				drivingAuthorizationIds: plan.accessEnds.drivingAuthorizations
+			employmentEnding: {
+				equipmentOfficerGrantIds: ending.equipment.officerGrantHolderIds.toSorted(),
+				drivingAuthorizationIds: ending.drivingLicence.authorizations
 					.map((d) => d.authorizationId)
 					.toSorted(),
-				kioskBadgeIds: plan.accessEnds.kioskBadges.map((b) => b.badgeId).toSorted(),
-				kioskFobIds: plan.accessEnds.kioskFobs.map((f) => f.fobId).toSorted(),
-				shareLinkIds: plan.accessEnds.shareLinks.map((l) => l.linkId).toSorted(),
+				verifierGrantIds: ending.drivingLicence.verifierGrantIds.toSorted(),
+				officerGrantIds: ending.officerGrants.grants.map((g) => g.grantId).toSorted(),
+				documentRequestIds: ending.documentRequests.requestIds.toSorted(),
+				kioskBadgeIds: ending.kioskBadges.badgeIds.toSorted(),
+				kioskFobIds: ending.kioskFobs.fobIds.toSorted(),
+				shareLinkIds: ending.reportShareLinks.links.map((l) => l.linkId).toSorted(),
+				deputyAbsenceIds: ending.deputyAssignments.assignments.map((a) => a.absenceId).toSorted(),
 			},
 		};
 	}
 
 	function sortedApplied(applied: DeactivationApplied) {
+		const ended = applied.employmentEnding;
 		const sortLinks = <T extends { employeeId: string; managerId: string }>(items: T[]) =>
 			items.toSorted((a, b) =>
 				`${a.employeeId}:${a.managerId}`.localeCompare(`${b.employeeId}:${b.managerId}`),
@@ -816,12 +843,16 @@ describe("deactivation acceptance (#1440)", () => {
 			},
 			shifts: { openedShiftIds: applied.shifts.openedShiftIds.toSorted() },
 			absences: { cancelledAbsenceIds: applied.absences.cancelledAbsenceIds.toSorted() },
-			accessEnds: {
-				grantIds: applied.accessEnds.grantIds.toSorted(),
-				drivingAuthorizationIds: applied.accessEnds.drivingAuthorizationIds.toSorted(),
-				kioskBadgeIds: applied.accessEnds.kioskBadgeIds.toSorted(),
-				kioskFobIds: applied.accessEnds.kioskFobIds.toSorted(),
-				shareLinkIds: applied.accessEnds.shareLinkIds.toSorted(),
+			employmentEnding: {
+				equipmentOfficerGrantIds: ended.equipment.revokedOfficerGrantIds.toSorted(),
+				drivingAuthorizationIds: ended.drivingLicence.endedAuthorizationIds.toSorted(),
+				verifierGrantIds: ended.drivingLicence.revokedVerifierGrantIds.toSorted(),
+				officerGrantIds: ended.officerGrants.grants.map((g) => g.grantId).toSorted(),
+				documentRequestIds: ended.documentRequests.cancelledRequestIds.toSorted(),
+				kioskBadgeIds: ended.kioskBadges.revokedBadgeIds.toSorted(),
+				kioskFobIds: ended.kioskFobs.endedFobIds.toSorted(),
+				shareLinkIds: ended.reportShareLinks.revokedLinkIds.toSorted(),
+				deputyAbsenceIds: ended.deputyAssignments.assignments.map((a) => a.absenceId).toSorted(),
 			},
 		};
 	}
@@ -877,15 +908,22 @@ describe("deactivation acceptance (#1440)", () => {
 		expect(plan.absences.absencesSpanning.map((item) => item.absenceId)).toEqual([
 			seeded.absences.spanning,
 		]);
-		expect(plan.accessEnds.grants.map((grant) => grant.kind).toSorted()).toEqual([
-			"driving_licence_verifier",
+		const ending = plan.employmentEnding;
+		expect(ending.officerGrants.grants.map((grant) => grant.kind).toSorted()).toEqual([
 			"expense_officer",
 			"payroll_access",
 			"personnel_file_officer",
 		]);
-		expect(plan.accessEnds.drivingAuthorizations).toHaveLength(2);
-		expect(plan.accessEnds.kioskBadges).toEqual([{ badgeId: seeded.badgeId }]);
-		expect(plan.accessEnds.shareLinks).toEqual([{ linkId: seeded.shareLinkId, kind: "project" }]);
+		expect(ending.drivingLicence.verifierGrantIds).toEqual([seeded.verifierGrantId]);
+		expect(ending.drivingLicence.authorizations).toHaveLength(2);
+		expect(ending.documentRequests.requestIds).toEqual([seeded.documentRequestId]);
+		expect(ending.kioskBadges.badgeIds).toEqual([seeded.badgeId]);
+		expect(ending.reportShareLinks.links).toEqual([
+			{ linkId: seeded.shareLinkId, kind: "project" },
+		]);
+		expect(ending.deputyAssignments.assignments.map((a) => a.absenceId)).toEqual([
+			seeded.deputyAbsenceId,
+		]);
 		expect(plan.retentionStarts).toBe(true);
 		expect(plan.seatReleased).toBe(true);
 	});
@@ -1156,6 +1194,11 @@ describe("deactivation acceptance (#1440)", () => {
 			[seeded.shareLinkId],
 		);
 		expect(link.rows[0]?.revoke_reason).toBe("creator_lost_access");
+		const request = await fixture.pool.query<{ status: string }>(
+			`select status from employee_document_request where id = $1`,
+			[seeded.documentRequestId],
+		);
+		expect(request.rows[0]?.status).toBe("cancelled");
 	});
 
 	it("audits each consequence under the acting admin with the deactivation's reason", async () => {
@@ -1164,6 +1207,8 @@ describe("deactivation acceptance (#1440)", () => {
 			[
 				"absence.cancelled",
 				"absence.cancelled",
+				// No longer the colleague's deputy (#1014), naming the deactivation since #1624.
+				"absence.deputy_changed",
 				// Two current-stage duties handed over, one later stage turned into a review.
 				"approval_duty.handed_over",
 				"approval_duty.handed_over",
@@ -1181,6 +1226,8 @@ describe("deactivation acceptance (#1440)", () => {
 				"manager.removed",
 				"manager.removed",
 				"payroll_access.grant_revoked",
+				// The open document request ends with the employment (#1624).
+				"personnel_file.document_request_cancelled",
 				"personnel_file.grant_revoked",
 				"report_share_link.auto_revoked",
 				"shift.unassigned",
@@ -1479,12 +1526,24 @@ describe("deactivation acceptance (#1440)", () => {
 				name: "Mia Manager",
 				href: `/settings/employees/${person}`,
 			},
-			{ group: "access", kind: "kiosk_badges", count: 1, href: `/settings/employees/${person}` },
 			{
 				group: "access",
 				kind: "driving_authorizations",
 				count: 2,
 				href: `/driving-licence/checks/${person}`,
+			},
+			{
+				group: "documentRequests",
+				kind: "document_requests",
+				count: 1,
+				href: `/personnel-files/${person}`,
+			},
+			{ group: "access", kind: "kiosk_badges", count: 1, href: `/settings/employees/${person}` },
+			{
+				group: "shareLinks",
+				kind: "share_links",
+				count: 1,
+				href: "/settings/report-share-links",
 			},
 			{
 				group: "teams",
@@ -1501,12 +1560,6 @@ describe("deactivation acceptance (#1440)", () => {
 				startTime: "09:00",
 				endTime: "17:00",
 				href: "/scheduling",
-			},
-			{
-				group: "shareLinks",
-				kind: "share_links",
-				count: 1,
-				href: "/settings/report-share-links",
 			},
 		]);
 		expect(grants.map((item) => item.kind === "grant" && item.grant).toSorted()).toEqual([

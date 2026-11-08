@@ -6,15 +6,15 @@ import { employee } from "@/db/schema";
 import { AuditTrail } from "@/lib/audit-trail";
 import type { AuthorizationMutationScope } from "@/lib/authorization/authorization-mutation";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
-import { endEquipmentEmployment } from "@/lib/organization/equipment/lifecycle";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import type { DeputyAssignment } from "../deputy-release";
 import {
-	type DeputyAssignment,
-	type ReleasedDeputyAssignments,
-	releaseDeputyAssignmentsOnDeactivation,
-} from "../deputy-release";
+	type DeputyAssignmentsEndingApplied,
+	deputyReleaseNotice,
+} from "../employment-ending/deputy-assignments";
 import { resolveCurrentEmploymentPeriod } from "../employment-periods";
+import { lockEmployeeRow } from "../locks";
 import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
 	type DeactivationLedgerEntry,
@@ -24,7 +24,7 @@ import {
 	writeReceipt,
 } from "../receipts";
 import { acquireAbsenceCancellationGuards } from "./absences";
-import { applyDeactivationConsequences } from "./apply";
+import { applyDeactivationConsequences, endEmploymentForDeactivation } from "./apply";
 import { managerLinkAuthorizationEmployeeIds, validatedReplacementManagers } from "./manager-links";
 import { planDeactivationConsequences } from "./plan";
 import { type DeactivationPlannerNotice, loadPlannerNotice, sendPlannerNotice } from "./shifts";
@@ -128,7 +128,6 @@ export type DeactivationExecution =
 			/** Forwarded to the external audit service after the commit. */
 			audit: AuditTrail;
 			afterCommit: DeactivationAfterCommit[];
-			releasedDeputies: ReleasedDeputyAssignments | null;
 	  };
 
 /**
@@ -136,8 +135,9 @@ export type DeactivationExecution =
  * holds the protection of `deactivationProtectionScope` and the organization
  * row, and checked the actor's authority and the owner rules. Plans first and
  * refuses without writing when a report still needs an eligible replacement;
- * otherwise switches the employee off at `at`, records the deactivation, applies
- * the plan, releases deputy duties and stores the outcome for replays.
+ * otherwise records the deactivation, ends what the person holds (Employment
+ * ending), switches the employee off at `at`, applies the roster areas and
+ * stores the outcome for replays.
  */
 export async function executeDeactivation(
 	tx: DeactivationWriter,
@@ -189,17 +189,20 @@ export async function executeDeactivation(
 		replacementManagers: validatedReplacementManagers(plan.managerLinks),
 	});
 
-	// Capture scope and end equipment responsibility before the active-state trigger
-	// closes the period and the consequence areas remove team membership.
-	const equipment = await endEquipmentEmployment(tx, {
-		...scope,
-		employmentPeriodId: planContext.employmentPeriodId,
-		deactivationId,
+	const audit = new AuditTrail();
+	const applyContext = {
+		...planContext,
 		actorUserId: command.actorUserId,
-		cutoff: command.at,
-		timezone: organizationTimeZone,
-		mode: "immediate",
-	});
+		deactivationId,
+		reason: "employee_deactivated" as const,
+		audit,
+	};
+
+	// Everything the person holds ends first, while they are still switched on,
+	// in their teams and in their open period; the row lock keeps a concurrent
+	// registration (a kiosk fob) from slipping in.
+	await lockEmployeeRow(tx, scope);
+	const ending = await endEmploymentForDeactivation(tx, applyContext, command);
 
 	const [person] = await tx
 		.update(employee)
@@ -210,29 +213,12 @@ export async function executeDeactivation(
 		.returning({ id: employee.id, userId: employee.userId });
 	if (!person) throw new Error("The deactivated employee was not found");
 
-	const audit = new AuditTrail();
-	const { applied, afterCommit } = await applyDeactivationConsequences(
-		tx,
-		{
-			...planContext,
-			actorUserId: command.actorUserId,
-			deactivationId,
-			reason: "employee_deactivated",
-			audit,
-		},
-		plan,
-		{ clock: command.clock, database: command.database },
-	);
-
-	applied.accessEnds.grantIds.push(...equipment.revokedOfficerGrantIds);
-
-	// The deactivated employee stops being anyone's deputy (#1014).
-	const releasedDeputies = await releaseDeputyAssignmentsOnDeactivation(tx, new AuditTrail(), {
-		...scope,
-		actorUserId: command.actorUserId,
-		at: command.at,
-		reason: "employee_deactivated",
+	const roster = await applyDeactivationConsequences(tx, applyContext, plan, {
+		clock: command.clock,
+		database: command.database,
 	});
+	const applied: DeactivationApplied = { ...roster.applied, employmentEnding: ending.applied };
+	const afterCommit = [...ending.afterCommit, ...roster.afterCommit];
 
 	const plannerNotice = await loadPlannerNotice(tx, scope, {
 		openedShiftIds: applied.shifts.openedShiftIds,
@@ -244,12 +230,7 @@ export async function executeDeactivation(
 		employeeUserId: person.userId,
 		deactivatedAt: command.at.toString(),
 		plannerNotice,
-		releasedDeputies: releasedDeputies
-			? {
-					eventKey: releasedDeputies.eventKey,
-					assignments: releasedDeputies.assignments,
-				}
-			: null,
+		releasedDeputies: storedReleasedDeputies(ending.applied.deputyAssignments),
 		cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
 	};
 	await recordDeactivationOutcome(tx, {
@@ -288,8 +269,16 @@ export async function executeDeactivation(
 		result,
 		audit,
 		afterCommit,
-		releasedDeputies,
 	};
+}
+
+/** The deputy duties Employment ending released, as the stored result keeps them for a replay (#1014). */
+export function storedReleasedDeputies(
+	released: DeputyAssignmentsEndingApplied,
+): DeactivationResult["releasedDeputies"] {
+	return released.assignments.length > 0
+		? { eventKey: released.eventKey, assignments: released.assignments }
+		: null;
 }
 
 /**
@@ -298,17 +287,19 @@ export async function executeDeactivation(
  * and the deputy notices are keyed by the deactivation; deleting a calendar
  * event twice deletes nothing). Audit entries and the self-service absence
  * notices are not repeated. A deactivation that was reactivated since replays
- * nothing.
+ * nothing. The steps run on `database`, the caller's client.
  */
-export function rebuildDeactivationAfterCommit(entry: DeactivationLedgerEntry): {
+export function rebuildDeactivationAfterCommit(
+	entry: DeactivationLedgerEntry,
+	database: DeactivationApplyDependencies["database"],
+): {
 	result: DeactivationResult | null;
 	afterCommit: DeactivationAfterCommit[];
-	releasedDeputies: ReleasedDeputyAssignments | null;
 } {
 	const parsed = deactivationResultSchema.safeParse(entry.result);
 	const result = parsed.success ? parsed.data : null;
 	if (!result || entry.reactivatedAt !== null) {
-		return { result, afterCommit: [], releasedDeputies: null };
+		return { result, afterCommit: [] };
 	}
 	const afterCommit: DeactivationAfterCommit[] = [];
 	const { plannerNotice } = result;
@@ -327,17 +318,11 @@ export function rebuildDeactivationAfterCommit(entry: DeactivationLedgerEntry): 
 			}
 		});
 	}
-	return {
-		result,
-		afterCommit,
-		releasedDeputies: result.releasedDeputies
-			? {
-					organizationId: entry.organizationId,
-					deputyEmployeeId: entry.employeeId,
-					...result.releasedDeputies,
-				}
-			: null,
-	};
+	// The deputy participant's notice, as the first run returned it.
+	const deputyNotice =
+		result.releasedDeputies && deputyReleaseNotice(entry, result.releasedDeputies, database);
+	if (deputyNotice) afterCommit.push(deputyNotice);
+	return { result, afterCommit };
 }
 
 /** A ledger row's stored result, validated before a replay reads it. */

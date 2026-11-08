@@ -24,6 +24,8 @@
         "assignedViaOrganizationDefault": "Organisationsstandard",
         "assignedViaTeam": "Team",
         "backToEmployeeList": "Zurück zur Mitarbeiterliste",
+        "birthday": "Geburtstag",
+        "birthdayDescription": "Optional. Der Mitarbeiter kann dies auch im eigenen Profil ändern.",
         "cancel": "Abbrechen",
         "contractFixed": "Fest",
         "contractFixedDescription": "Gehaltsbasierte Vergütung",
@@ -96,9 +98,9 @@
           "overview": "Übersicht"
         },
         "team": "Team",
-        "teamClearNotice": "Beim Speichern endet die Mitgliedschaft dieser Person im Team {currentTeam}. Ihre nächste Teammitgliedschaft, falls vorhanden, wird ihr primäres Team.",
-        "teamDescription": "Das primäre Team der Person. Weitere Teammitgliedschaften verwalten Sie unter Teams.",
-        "teamMoveNotice": "Beim Speichern wechselt diese Person ins Team {nextTeam}. Ihre Mitgliedschaft im Team {currentTeam} endet; ihre anderen Teammitgliedschaften bleiben bestehen.",
+        "teamClearNotice": "Durch das Speichern wird die Mitgliedschaft dieses Mitarbeiters im Team {currentTeam} beendet. Eine etwaige weitere Teammitgliedschaft wird zu seinem primären Team.",
+        "teamDescription": "Das primäre Team des Mitarbeiters. Verwalten Sie weitere Teammitgliedschaften unter „Teams“.",
+        "teamMoveNotice": "Durch das Speichern wird dieser Mitarbeiter zu {nextTeam} verschoben. Seine Mitgliedschaft im Team {currentTeam} endet; sonstige Teammitgliedschaften bleiben bestehen.",
         "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
         "updateFailed": "Mitarbeiter konnte nicht aktualisiert werden",
         "updateSuccess": "Mitarbeiter erfolgreich aktualisiert",
@@ -248,10 +250,17 @@
           "approvalsToReview": "{count, plural, one {# Genehmigungsaufgabe erfordert eine Vertretung und ist zur Überprüfung aufgeführt ({review}).} other {# Genehmigungsaufgaben erfordern eine Vertretung und sind zur Überprüfung aufgeführt ({review}).}}",
           "description": "{name} wird jetzt zu einem ehemaligen Mitarbeiter. Der Zugriff auf diese Organisation endet, Sitzungen werden abgemeldet und der Verlauf bleibt erhalten. Überprüfen Sie vor der Bestätigung, was sich sonst noch ändert.",
           "descriptionAt": "{name} wird nach Ihrer Bestätigung zu einer ehemaligen Mitarbeiterin bzw. einem ehemaligen Mitarbeiter (Vorschau für {time}, {timeZone}). Der Zugriff auf diese Organisation endet, Sitzungen werden abgemeldet und der Verlauf bleibt erhalten. Überprüfen Sie vor der Bestätigung, was sich sonst noch ändert.",
+          "documentRequests": "{count, plural, one {# offene Dokumentanforderung wird storniert} other {# offene Dokumentanforderungen werden storniert}}",
           "drivingAuthorizations": "{count, plural, one {# Fahrberechtigung endet, einschließlich ausgesetzter} other {# Fahrberechtigungen enden, einschließlich ausgesetzter}}",
+          "equipmentDescription": "Das Beschäftigungsverhältnis und der Zugriff enden auch dann, wenn Ausrüstung fehlt. Befugte Personen können dies unter „Ausrüstung“ nachverfolgen, auch für ehemalige Mitarbeiter. Die Rückgabe eines physischen Schlüssels oder Transponders stellt dessen Berechtigung nicht wieder her.",
+          "equipmentDue": "{identifier} ({type}): {count} ausstehend, fällig {date}",
+          "equipmentSwitchedOff": "Das Beschäftigungsverhältnis und der Zugriff enden auch dann, wenn Ausrüstung fehlt. Die Ausrüstungsverwaltung ist für diese Organisation deaktiviert, daher bleiben diese Rückgaben erfasst, können jedoch erst nach erneuter Aktivierung nachverfolgt werden.",
+          "equipmentTitle": "Ausstehende Ausrüstungsrückgaben",
+          "equipmentUndated": "{identifier} ({type}): {count} ausstehend, keine Frist erfasst",
           "formLabel": "Deaktivierungsvorschau",
           "grants": {
             "drivingLicenceVerifier": "Führerscheinprüfer",
+            "equipmentOfficer": "Ausrüstungsbeauftragter",
             "expenseOfficer": "Reisekostenbeauftragte Person",
             "payrollAccess": "Zugriff auf die Lohnabrechnung",
             "personnelFileOfficer": "Personalaktenbeauftragte Person"
@@ -309,6 +318,7 @@
           "groups": {
             "absences": "Stornierte Abwesenheiten",
             "access": "Kiosk-Badges und Fahrberechtigungen",
+            "documentRequests": "Stornierte Dokumentanforderungen",
             "grants": "Innegehabte Berechtigungen",
             "managers": "Führungskraft-Zuordnungen",
             "shareLinks": "Freigabelinks für Berichte",
@@ -318,6 +328,7 @@
           "items": {
             "absence": "{category}, {dates}",
             "absenceUnnamed": "Eine Abwesenheit (Daten nicht erfasst)",
+            "documentRequests": "{count, plural, one {# offene Dokumentanforderung wurde storniert; fordern Sie diese in der Personalakte erneut an} other {# offene Dokumentanforderungen wurden storniert; fordern Sie diese in der Personalakte erneut an}}",
             "drivingAuthorizations": "{count, plural, one {# Fahrberechtigung ist abgelaufen; eine neue Prüfung ist erforderlich} other {# Fahrberechtigungen sind abgelaufen; eine neue Prüfung ist erforderlich}}",
             "kioskBadges": "{count, plural, one {# Kiosk-Ausweis wurde widerrufen} other {# Kiosk-Ausweise wurden widerrufen}}",
             "ownManager": "Verwaltet von {name}",
@@ -342,6 +353,7 @@
         "reinviteRequired": "Dieser Mitarbeiter hat keine Organisationsmitgliedschaft mehr. Senden Sie eine neue Einladung, um den Zugriff wiederherzustellen.",
         "removeAccess": "Zugriff entfernen",
         "removeDescription": "Dies entfernt die Organisationsmitgliedschaft und beendet Organisationssitzungen. Zeitaufzeichnungen, Abwesenheiten, Salden, Beschäftigungsverlauf und Prüfprotokolle bleiben erhalten.",
+        "removeEndsEmployment": "Das Entfernen beendet auch das Beschäftigungsverhältnis wie bei einer Deaktivierung: Zukünftige Schichten werden freigegeben, spätere Abwesenheiten storniert und Berechtigungen beendet. Um stellvertretende Führungskräfte für direkt unterstellte Mitarbeiter auszuwählen, verwenden Sie stattdessen „Deaktivieren“.",
         "removeError": "Entfernen des Organisationszugriffs fehlgeschlagen",
         "removeSuccess": "Organisationszugriff entfernt",
         "removeTitle": "Organisationszugriff entfernen?",
@@ -495,6 +507,7 @@
         }
       },
       "personalDataExport": {
+        "aboutEquipment": "Enthält dieselben aufbewahrten Ausrüstungsdatensätze wie der Export des Mitarbeiters selbst, einschließlich Korrekturen, als verloren oder erlassen vermerkter Fälle sowie Rückgaben. Datensätze ehemaliger Mitarbeiter verwenden ebenfalls diesen Export.",
         "availableUntil": "Verfügbar bis {date}",
         "description": "Eine ZIP-Datei mit allem, was diese Organisation über diesen Mitarbeiter gespeichert hat, einschließlich Daten, die im eigenen Export des Mitarbeiters fehlen. Ein aktiver Mitarbeiter wird benachrichtigt, sobald sie bereitsteht. Dateien werden nach 7 Tagen gelöscht.",
         "download": "Herunterladen",

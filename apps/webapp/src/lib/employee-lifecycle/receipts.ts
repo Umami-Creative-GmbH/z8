@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import {
+	type DeactivationStatus,
 	type deactivationReasons,
 	employeeDeactivation,
 	employeeDepartureEvent,
@@ -113,6 +114,10 @@ export type DeactivationLedgerEntry = {
 	deactivatedAt: Instant;
 	createdBy: string;
 	reason: DeactivationLedgerReason;
+	/** Pending until a follow-up deactivation applies or withdraws it (#1629). */
+	status: DeactivationStatus;
+	/** Audit context of a follow-up deactivation (#1629), e.g. the SCIM `connectionId`. */
+	metadata: Record<string, unknown>;
 	requestId: string;
 	replacementManagers: Record<string, string>;
 	/** What a replayed request returns; null until the outcome is recorded. */
@@ -143,6 +148,8 @@ const ledgerColumns = {
 	deactivatedAt: employeeDeactivation.deactivatedAt,
 	createdBy: employeeDeactivation.createdBy,
 	reason: employeeDeactivation.reason,
+	status: employeeDeactivation.status,
+	metadata: employeeDeactivation.metadata,
 	requestId: employeeDeactivation.requestId,
 	requestFingerprint: employeeDeactivation.requestFingerprint,
 	replacementManagers: employeeDeactivation.replacementManagers,
@@ -156,7 +163,7 @@ const ledgerColumns = {
 
 type LedgerRow = Omit<
 	typeof employeeDeactivation.$inferSelect,
-	"createdAt" | "checklistDismissedAt" | "checklistDismissedBy"
+	"createdAt" | "checklistDismissedAt" | "checklistDismissedBy" | "reportsNoticePending"
 >;
 
 function toEntry(row: LedgerRow): DeactivationLedgerEntry {
@@ -168,6 +175,8 @@ function toEntry(row: LedgerRow): DeactivationLedgerEntry {
 		deactivatedAt: instantFromDate(new Date(row.deactivatedAt)),
 		createdBy: row.createdBy,
 		reason: row.reason,
+		status: row.status,
+		metadata: row.metadata ?? {},
 		requestId: row.requestId,
 		replacementManagers: row.replacementManagers ?? {},
 		result: row.result,
@@ -240,7 +249,10 @@ export async function readDeactivationByRequest(
 	return toEntry(row);
 }
 
-/** Stores what was applied and what a replay returns, in the same transaction. */
+/**
+ * Stores what was applied and what a replay returns, in the same transaction.
+ * A pending deactivation (#1629) becomes applied.
+ */
 export async function recordDeactivationOutcome(
 	tx: Pick<LifecycleClient, "update">,
 	input: {
@@ -250,14 +262,18 @@ export async function recordDeactivationOutcome(
 		result: Record<string, unknown>;
 		/** The plan applied, for the names the reactivation checklist shows (#1441). */
 		plan?: Record<string, unknown>;
+		/** The admins are still to hear about reports left with no current manager (#1629). */
+		reportsNoticePending?: boolean;
 	},
 ): Promise<void> {
 	await tx
 		.update(employeeDeactivation)
 		.set({
+			status: "applied",
 			applied: input.applied,
 			result: input.result,
 			...(input.plan ? { plan: input.plan } : {}),
+			...(input.reportsNoticePending ? { reportsNoticePending: true } : {}),
 		})
 		.where(
 			and(

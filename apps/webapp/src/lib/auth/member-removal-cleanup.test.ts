@@ -50,8 +50,8 @@ function setup(
 		events.push("database-sessions-deleted");
 	});
 	const deleteRows = vi.fn(() => ({ where: deleteWhere }));
-	// No employee row comes back, so no deputy release runs here; the release is
-	// covered by deputy-release.integration.test.ts (#1014).
+	// No employee row comes back, so no pending deactivation is recorded here; that is
+	// covered by follow-up.integration.test.ts (#1629).
 	const updateWhere = vi.fn().mockImplementation(() => ({
 		returning: async () => {
 			events.push("employee-deactivated");

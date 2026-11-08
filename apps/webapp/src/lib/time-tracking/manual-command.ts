@@ -9,6 +9,7 @@
 import { Temporal } from "temporal-polyfill";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
+import type { ChangePolicyLevel } from "./change-policy/resolution";
 import { buildWorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { isWorkLocationType, type WorkLocationType } from "./work-location";
@@ -536,7 +537,7 @@ export type ManualChangePolicy = {
 };
 
 /** The assignment level that decided the effective change policy. */
-export type ManualPolicyLevel = "employee" | "team" | "organization";
+export type ManualPolicyLevel = ChangePolicyLevel;
 
 /** The effective change policy as it was applied, recorded with the interpretation. */
 export type ManualPolicyEvidence = {
