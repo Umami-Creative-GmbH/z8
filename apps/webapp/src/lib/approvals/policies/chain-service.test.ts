@@ -1,5 +1,6 @@
-import { Effect } from "effect";
+import { Effect, Exit } from "effect";
 import { describe, expect, it, vi } from "vitest";
+import type { WorkTransactionContext } from "@/lib/time-tracking/web-clock-out-transaction";
 import type { ApprovalDbService } from "../server/types";
 import {
 	approveCurrentStageInMemory,
@@ -1336,5 +1337,38 @@ describe("resolvePolicyAndCreateApproval", () => {
 			}),
 		]);
 		expectAuditEvents(auditEvents, ["approval_policy.no_match_fallback"]);
+	});
+
+	it.each([
+		["a matched policy", [dbPolicy]],
+		["the default approver", []],
+	])("restarts outside the locked scope before writing %s", async (_name, policies) => {
+		const restart = new Error("restart with approval participants routed");
+		const coordination = {
+			assertApprovalPolicy: vi.fn(),
+			assertParticipant: vi.fn(() => {
+				throw restart;
+			}),
+		};
+		const { dbService, txInserts, outerInserts, auditEvents } =
+			createPolicyResolutionDbService({ policies });
+
+		const exit = await Effect.runPromiseExit(
+			resolvePolicyAndCreateApproval(dbService, {
+				coordination: coordination as unknown as WorkTransactionContext,
+				context: policyResolutionContext,
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expect(exit).toEqual(Exit.die(restart));
+		expect(coordination.assertParticipant).toHaveBeenCalledWith(
+			"org-1",
+			"emp-manager",
+		);
+		expect(coordination.assertApprovalPolicy.mock.calls).toEqual(
+			policies.length > 0 ? [["org-1", "policy-1", ["stage-1"]]] : [],
+		);
+		expect([...txInserts, ...outerInserts, ...auditEvents]).toEqual([]);
 	});
 });

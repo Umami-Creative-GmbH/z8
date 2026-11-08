@@ -20,8 +20,8 @@ import {
 } from "@/lib/approvals/authority";
 import { periodSubmissionRoutingContext } from "@/lib/approvals/domain-adapters/period-submission.adapter";
 import { PERIOD_SUBMISSION_SOURCE_TYPE } from "@/lib/approvals/domain-adapters/period-submission-contract";
-import { resolveApproverFromDirectory } from "@/lib/approvals/policies/approver-resolution";
 import { type DbPolicyRecord, policyFromDbRecord } from "@/lib/approvals/policies/chain-service";
+import { decideLegacyRoute } from "@/lib/approvals/policies/legacy-route-decision";
 import type {
 	EligibleManagerEmployee,
 	EligibleManagerLink,
@@ -29,8 +29,6 @@ import type {
 	EligibleTeamMembership,
 } from "@/lib/approvals/policies/manager-eligibility";
 import { resolvePrimaryEligibleManager } from "@/lib/approvals/policies/manager-eligibility";
-import { findMatchingPolicy } from "@/lib/approvals/policies/matcher";
-import { classifyLegacyStage } from "@/lib/approvals/policies/requester-auto-approval";
 import type {
 	ApprovalPolicyDraft,
 	ApprovalPolicyEvaluationContext,
@@ -69,7 +67,7 @@ import type { GoLiveAsOf, GoLiveMember } from "./types";
 /**
  * How each covered approval kind would route one go-live group member (#1514), worked out
  * read-only as submitting would: canonical kinds plan the workflow start (the dry run period
- * submission readiness uses), legacy kinds apply the read half of legacy policy resolution, and
+ * submission readiness uses), legacy kinds take the legacy route decision submitting takes, and
  * built-in skips come from the same rules the request paths apply. Nothing starts a workflow or
  * writes a row; run it inside a read-only transaction. The go-live rehearsal (#1517) reuses it.
  *
@@ -707,7 +705,7 @@ export async function loadApproverRouting(
 		| { kind: "invalid_policies" }
 		| { kind: "resolved"; autoCompleted: boolean; route: ApproverRoute };
 
-	/** The read half of `resolvePolicyAndCreateApproval`: what it would create, or why it fails. */
+	/** What `resolvePolicyAndCreateApproval` would create, or why it fails, as a route. */
 	function resolveLegacy(
 		requester: Requester,
 		context: Omit<
@@ -716,63 +714,52 @@ export async function loadApproverRouting(
 		>,
 		defaultApproverId: string | null,
 	): LegacyResult {
-		const evaluation: ApprovalPolicyEvaluationContext = {
-			...context,
-			organizationId,
-			requesterEmployeeId: requester.id,
-			employeeGroupIds: (groupIdsByEmployee.get(requester.id) ?? []).map((row) => row.groupId),
-			entityId: DRY_RUN_SOURCE_ID,
-		};
-		let matched: ApprovalPolicyDraft | null;
-		try {
-			matched = findMatchingPolicy(evaluation, legacyPolicies);
-		} catch (error) {
-			if (error instanceof ApprovalRoutingPolicyValidationError)
-				return { kind: "invalid_policies" };
-			throw error;
-		}
-		if (!matched) {
-			if (!defaultApproverId) return { kind: "failed", field: "managerId" };
-			const disposition = classifyLegacyStage({
-				requesterEmployeeId: requester.id,
-				approverEmployeeId: defaultApproverId,
-			});
-			return {
-				kind: "resolved",
-				autoCompleted: disposition.kind === "auto_approve",
-				route: legacyDefaultRoute(defaultApproverId, disposition.kind === "auto_approve"),
-			};
-		}
-		const stages: ApproverRouteStage[] = [];
-		for (const stage of matched.stages.toSorted(
-			(left, right) => left.stepOrder - right.stepOrder,
-		)) {
-			const resolved = resolveApproverFromDirectory({
+		const decision = decideLegacyRoute({
+			context: {
+				...context,
 				organizationId,
 				requesterEmployeeId: requester.id,
-				stage,
-				...legacyDirectory,
-			});
-			if (!resolved.ok) return { kind: "failed", field: "stage", policy: matched };
-			stages.push({
-				sequence: stage.stepOrder,
-				label: stage.label,
-				approverType: stage.approverType,
-				fallbackBehavior: null,
-				approverEmployeeIds: [resolved.approverEmployeeId],
-				activation:
-					resolved.approverEmployeeId === requester.id ? "requester_auto_approve" : "human",
-			});
+				employeeGroupIds: (groupIdsByEmployee.get(requester.id) ?? []).map((row) => row.groupId),
+				entityId: DRY_RUN_SOURCE_ID,
+			},
+			policies: legacyPolicies,
+			defaultApproverId,
+			...legacyDirectory,
+		});
+		if (decision.kind === "failure") {
+			switch (decision.reason) {
+				case "invalid_policies":
+					return { kind: "invalid_policies" };
+				case "no_default_approver":
+					return { kind: "failed", field: "managerId" };
+				case "stage_unresolvable":
+				case "policy_has_no_stages":
+					return { kind: "failed", field: "stage", policy: decision.policy };
+			}
 		}
-		if (stages.length === 0) return { kind: "failed", field: "stage", policy: matched };
+		if (decision.kind === "default") {
+			const self = decision.disposition.kind === "auto_approve";
+			return {
+				kind: "resolved",
+				autoCompleted: self,
+				route: legacyDefaultRoute(decision.approverEmployeeId, self),
+			};
+		}
 		return {
 			kind: "resolved",
-			autoCompleted: stages.every((stage) => stage.activation === "requester_auto_approve"),
+			autoCompleted: decision.autoCompleted,
 			route: {
 				path: "legacy",
-				policy: { id: matched.id, name: matched.name },
+				policy: { id: decision.policy.id, name: decision.policy.name },
 				defaultApproverEmployeeId: defaultApproverId,
-				stages,
+				stages: decision.stages.map(({ stage, approverEmployeeId, disposition }) => ({
+					sequence: stage.stepOrder,
+					label: stage.label,
+					approverType: stage.approverType,
+					fallbackBehavior: null,
+					approverEmployeeIds: [approverEmployeeId],
+					activation: disposition.kind === "auto_approve" ? "requester_auto_approve" : "human",
+				})),
 			},
 		};
 	}

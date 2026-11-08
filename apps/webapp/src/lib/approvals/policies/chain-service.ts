@@ -20,8 +20,8 @@ import {
 import type { WorkTransactionContext } from "@/lib/time-tracking/web-clock-out-transaction";
 import { logApprovalPolicyEvent } from "../infrastructure/audit-logger";
 import type { ApprovalDbService } from "../server/types";
-import { resolveApproverFromDirectory } from "./approver-resolution";
-import { findMatchingPolicy } from "./matcher";
+import type { resolveApproverFromDirectory } from "./approver-resolution";
+import { decideLegacyRoute } from "./legacy-route-decision";
 import {
 	classifyLegacyStage,
 	type LegacyStageDisposition,
@@ -903,26 +903,24 @@ export function resolvePolicyAndCreateApproval(
 		const loaded = yield* dbService.query("loadApprovalPolicyContext", () =>
 			loadPolicyContext(dbService, input.context),
 		);
-		const matchedPolicy = findMatchingPolicy(loaded.context, loaded.policies);
+		const decision = decideLegacyRoute({
+			...loaded,
+			defaultApproverId: input.defaultApproverId,
+		});
+		if (decision.kind === "failure" && decision.reason === "invalid_policies") {
+			// Thrown, not failed: invalid policies have always surfaced as the matcher's throw.
+			throw decision.error;
+		}
 		const requesterUserId = userIdForEmployee(
 			loaded.employees,
 			loaded.context.requesterEmployeeId,
 		);
+		if (decision.kind === "failure") {
+			return yield* Effect.fail(decision.error);
+		}
 
-		if (!matchedPolicy) {
-			const defaultApproverId = input.defaultApproverId;
-			if (!defaultApproverId) {
-				return yield* Effect.fail(
-					new ValidationError({
-						message: "No manager assigned to approve time changes",
-						field: "managerId",
-					}),
-				);
-			}
-			const disposition = classifyLegacyStage({
-				requesterEmployeeId: loaded.context.requesterEmployeeId,
-				approverEmployeeId: defaultApproverId,
-			});
+		if (decision.kind === "default") {
+			const { approverEmployeeId: defaultApproverId, disposition } = decision;
 			const resultKind =
 				disposition.kind === "auto_approve"
 					? ("auto_completed" as const)
@@ -969,69 +967,29 @@ export function resolvePolicyAndCreateApproval(
 			return { kind: "default_created", approvalRequestId } as const;
 		}
 
+		const {
+			policy: matchedPolicy,
+			stages: resolvedStages,
+			autoCompleted: chainAutoCompleted,
+		} = decision;
 		input.coordination?.assertApprovalPolicy(
 			input.context.organizationId,
 			matchedPolicy.id,
 			matchedPolicy.stages.map(({ id }) => id),
 		);
-		const resolvedStages: Array<{
-			stage: (typeof matchedPolicy.stages)[number];
-			approverEmployeeId: string;
-			disposition: LegacyStageDisposition;
-		}> = [];
-		for (const stage of matchedPolicy.stages
-			.slice()
-			.sort((left, right) => left.stepOrder - right.stepOrder)) {
-			const resolved = resolveApproverFromDirectory({
-				organizationId: loaded.context.organizationId,
-				requesterEmployeeId: loaded.context.requesterEmployeeId,
-				stage,
-				employees: loaded.employees,
-				managerLinks: loaded.managerLinks,
-				teamMemberships: loaded.teamMemberships,
-				teams: loaded.teams,
-			});
-
-			if (!resolved.ok) {
-				return yield* Effect.fail(
-					new ValidationError({
-						message: resolved.reason,
-						field: "approvalPolicyStage.approverType",
-						value: stage.approverType,
-					}),
-				);
-			}
-
+		for (const { approverEmployeeId } of resolvedStages) {
 			input.coordination?.assertParticipant(
 				input.context.organizationId,
-				resolved.approverEmployeeId,
-			);
-			resolvedStages.push({
-				stage,
-				approverEmployeeId: resolved.approverEmployeeId,
-				disposition: classifyLegacyStage({
-					requesterEmployeeId: loaded.context.requesterEmployeeId,
-					approverEmployeeId: resolved.approverEmployeeId,
-				}),
-			});
-		}
-
-		const firstStage = resolvedStages[0];
-		if (!firstStage) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: "Matched approval policy has no stages.",
-					field: "approvalPolicy.stages",
-					value: matchedPolicy.id,
-				}),
+				approverEmployeeId,
 			);
 		}
 
-		const firstHumanStage = resolvedStages.find(
-			(resolvedStage) => resolvedStage.disposition.kind === "human",
-		);
-		const currentStage = firstHumanStage ?? resolvedStages.at(-1) ?? firstStage;
-		const chainAutoCompleted = !firstHumanStage;
+		const currentStage =
+			resolvedStages.find(
+				(resolvedStage) => resolvedStage.disposition.kind === "human",
+			) ??
+			resolvedStages.at(-1) ??
+			resolvedStages[0];
 		const resultKind = chainAutoCompleted
 			? ("auto_completed" as const)
 			: ("chain_created" as const);
