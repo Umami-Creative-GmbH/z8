@@ -12,7 +12,6 @@ import { AuditTrail } from "@/lib/audit-trail";
 import { auth, runAuthMutation } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { revokeOrganizationActiveSessions } from "@/lib/auth/organization-session-revocation";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
 import { systemClock } from "@/lib/datetime/temporal-core";
@@ -23,19 +22,9 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import {
-	type DeactivationCommand,
-	deactivationProtectionScope,
-	deactivationRequestFingerprint,
-	executeDeactivation,
-	rebuildDeactivationAfterCommit,
-} from "@/lib/employee-lifecycle/deactivation/command";
+import { deactivate } from "@/lib/employee-lifecycle/deactivation/command";
 import { previewEmployeeDeactivation } from "@/lib/employee-lifecycle/deactivation/preview";
-import type {
-	DeactivationAfterCommit,
-	DeactivationPreview,
-	NamedEmployee,
-} from "@/lib/employee-lifecycle/deactivation/types";
+import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
 import {
 	checkLifecycleTarget,
 	type LifecycleTargetCheck,
@@ -43,13 +32,9 @@ import {
 } from "@/lib/employee-lifecycle/lifecycle-target";
 import { tryLockLifecycleOrganization } from "@/lib/employee-lifecycle/locks";
 import { executeReactivation } from "@/lib/employee-lifecycle/reactivation";
-import {
-	DeactivationRequestConflictError,
-	readDeactivationByRequest,
-} from "@/lib/employee-lifecycle/receipts";
+import { DeactivationRequestConflictError } from "@/lib/employee-lifecycle/receipts";
 import { createLogger } from "@/lib/logger";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
-import { employeeCoordinationGuard, holdGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -94,33 +79,6 @@ type ReactivationTransactionResult =
 			targetEmployee: LifecycleTargetEmployee;
 			/** The closed deactivation follow-up, forwarded after the commit. */
 			audit?: AuditTrail;
-	  }
-	| LifecycleRefusal;
-
-type DeactivationTransactionResult =
-	| {
-			type: "success";
-			changed: boolean;
-			targetEmployee: LifecycleTargetEmployee;
-			/** The ledger row, when this request deactivated the employee. */
-			deactivationId: string | null;
-			audit: AuditTrail | null;
-			afterCommit: DeactivationAfterCommit[];
-	  }
-	/** The same request again: its stored result, with the after-commit work rebuilt. */
-	| {
-			type: "replay";
-			targetUserId: string | null;
-			reactivated: boolean;
-			afterCommit: DeactivationAfterCommit[];
-	  }
-	| {
-			type: "refused";
-			reports: Array<
-				NamedEmployee & {
-					refusal: "replacement_missing" | "replacement_ineligible";
-				}
-			>;
 	  }
 	| LifecycleRefusal;
 
@@ -239,23 +197,12 @@ function lifecycleRefusalError(
 	}
 }
 
-/** Runs after-commit steps one after another; a failure is logged and never undoes the commit. */
-async function runAfterCommit(steps: DeactivationAfterCommit[], context: Record<string, unknown>) {
-	for (const step of steps) {
-		try {
-			await step();
-		} catch (error) {
-			logger.warn({ error, ...context }, "Deactivation follow-up step failed after the commit");
-		}
-	}
-}
-
 /**
  * Deactivate (#1440, Organization ADR 0006): the employee becomes a former
  * employee with the same consequences as a departure taking effect, applied in
- * one transaction. The request ID makes a retried submission replay the first
- * result; the plan is recomputed here and refused when a report still needs an
- * eligible replacement manager.
+ * one transaction. The deactivation module (`deactivation/command.ts`) does all
+ * of it; this action authenticates the actor, parses the input and words the
+ * refusals.
  */
 function deactivateEmployee(input: unknown) {
 	const employeeId =
@@ -283,82 +230,19 @@ function deactivateEmployee(input: unknown) {
 					action: "deactivate",
 				});
 				const data = yield* validateInput(deactivateEmployeeSchema, input, "employeeId");
-				const command: DeactivationCommand = {
-					organizationId: actor.organizationId,
-					actorUserId: actor.session.user.id,
-					employeeId: data.employeeId,
-					requestId: data.requestId,
-					replacementManagers: data.replacementManagers,
-				};
-				const requestFingerprint = deactivationRequestFingerprint(command);
-
-				const transactionResult = yield* actor.dbService
-					.query("setEmployeeLifecycleState", async () => {
-						return await withAuthorizationMutation(
-							deactivationProtectionScope(command),
-							async (tx): Promise<DeactivationTransactionResult> => {
-								await holdGuard(tx, employeeCoordinationGuard(command.employeeId));
-								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
-									return { type: "not_found" };
-								}
-
-								const recorded = await readDeactivationByRequest(tx, {
-									organizationId: actor.organizationId,
-									requestId: command.requestId,
-									requestFingerprint,
-								});
-								if (recorded) {
-									const rebuilt = rebuildDeactivationAfterCommit(recorded, actor.dbService.db);
-									return {
-										type: "replay",
-										targetUserId: rebuilt.result?.employeeUserId ?? null,
-										reactivated: recorded.reactivatedAt !== null,
-										afterCommit: rebuilt.afterCommit,
-									};
-								}
-
-								const check = await checkLifecycleTarget(tx, {
-									organizationId: actor.organizationId,
-									actorUserId: actor.session.user.id,
-									employeeId: command.employeeId,
-									isActive: false,
-								});
-								if (check.type === "unchanged") {
-									return {
-										type: "success",
-										changed: false,
-										targetEmployee: check.targetEmployee,
-										deactivationId: null,
-										audit: null,
-										afterCommit: [],
-									};
-								}
-								if (check.type !== "change") return check;
-
-								// The instant every consequence uses, taken once the locks are held.
-								const execution = await executeDeactivation(tx, {
-									...command,
-									at: systemClock.nowInstant(),
-									requestFingerprint,
-									// After-commit steps run on this action's database client.
-									database: actor.dbService.db,
-								});
-								if (execution.kind === "refused") {
-									return { type: "refused", reports: execution.reports };
-								}
-								return {
-									type: "success",
-									changed: true,
-									targetEmployee: check.targetEmployee,
-									deactivationId: execution.deactivationId,
-									audit: execution.audit,
-									afterCommit: execution.afterCommit,
-								};
-							},
-							actor.dbService.db,
-						);
-					})
+				// The deactivation module takes its own locks, replays the request ID,
+				// checks the owner rules, applies and runs its after-commit work.
+				const outcome = yield* actor.dbService
+					.query("setEmployeeLifecycleState", () =>
+						deactivate(actor.dbService.db, {
+							organizationId: actor.organizationId,
+							actorUserId: actor.session.user.id,
+							actorEmail: actor.session.user.email,
+							employeeId: data.employeeId,
+							requestId: data.requestId,
+							replacementManagers: data.replacementManagers,
+						}),
+					)
 					.pipe(
 						Effect.mapError((error) =>
 							isOwnerInvariantViolation(error)
@@ -376,8 +260,8 @@ function deactivateEmployee(input: unknown) {
 						),
 					);
 
-				if (transactionResult.type === "refused") {
-					const names = transactionResult.reports
+				if (outcome.kind === "refused") {
+					const names = outcome.reports
 						.map((report) => report.name || report.employeeId)
 						.join(", ");
 					return yield* Effect.fail(
@@ -388,108 +272,16 @@ function deactivateEmployee(input: unknown) {
 						}),
 					);
 				}
-				if (transactionResult.type !== "success" && transactionResult.type !== "replay") {
+				if (outcome.kind === "rejected") {
 					return yield* Effect.fail(
-						lifecycleRefusalError(transactionResult, {
+						lifecycleRefusalError(outcome.refusal, {
 							action: "deactivate",
 							userId: actor.session.user.id,
 						}),
 					);
 				}
 
-				if (transactionResult.type === "replay" && transactionResult.reactivated) {
-					// Reactivated since: nothing to repeat for the earlier deactivation.
-					revalidateEmployeesCache(actor.organizationId);
-					return;
-				}
-
-				const context = {
-					employeeId: command.employeeId,
-					organizationId: actor.organizationId,
-				};
-				const targetUserId =
-					transactionResult.type === "replay"
-						? transactionResult.targetUserId
-						: transactionResult.targetEmployee.userId;
-				// Everything the deactivation committed, on the first run and again on a replay.
-				const applied = transactionResult.type === "replay" || transactionResult.changed;
-
-				if (transactionResult.type === "success") transactionResult.audit?.forwardCommitted();
-				yield* Effect.promise(() => runAfterCommit(transactionResult.afterCommit, context));
-
-				const revocationFailed =
-					targetUserId === null
-						? false
-						: yield* Effect.tryPromise({
-								try: () => revokeOrganizationActiveSessions(targetUserId, actor.organizationId),
-								catch: () => true,
-							}).pipe(
-								Effect.map(() => false),
-								Effect.catch(() => Effect.succeed(true)),
-							);
-
-				if (transactionResult.type === "success" && transactionResult.changed) {
-					yield* Effect.promise(() =>
-						logAudit({
-							action: AuditAction.EMPLOYEE_DEACTIVATED,
-							actorId: actor.session.user.id,
-							actorEmail: actor.session.user.email,
-							employeeId: transactionResult.targetEmployee.id,
-							targetId: transactionResult.targetEmployee.id,
-							targetType: "employee",
-							organizationId: actor.organizationId,
-							changes: {
-								isActive: {
-									from: transactionResult.targetEmployee.isActive,
-									to: false,
-								},
-							},
-							// The employment history shows this deactivation once (#1441).
-							metadata: {
-								reason: "employee_deactivated",
-								deactivationId: transactionResult.deactivationId,
-							},
-							timestamp: new Date(),
-						}),
-					);
-				}
-
-				if (applied) {
-					// A former employee holds no paid seat (#1439). Best effort after the commit, as for
-					// member removal (but recounting the local seats even while external billing is off,
-					// as a departure does): a failed delivery is logged, and the billing seat
-					// reconciliation job settles it.
-					yield* Effect.promise(() =>
-						reconcileBillingSeatsForOrganization(actor.organizationId, {
-							alsoWhenBillingDisabled: true,
-						}),
-					);
-				}
-
-				if (applied && targetUserId !== null) {
-					// A deactivated owner or admin can no longer own scheduled exports (#988).
-					yield* actor.dbService.query("scheduledExport.pauseAfterDeactivation", () =>
-						pauseSchedulesAfterOwnerAccessChange(actor.dbService.db, {
-							organizationId: actor.organizationId,
-							owner: { userId: targetUserId },
-							actorUserId: actor.session.user.id,
-						}),
-					);
-				}
-
 				revalidateEmployeesCache(actor.organizationId);
-
-				if (revocationFailed) {
-					logger.warn(
-						{
-							operation: "revokeOrganizationActiveSessions",
-							employeeId: command.employeeId,
-							organizationId: actor.organizationId,
-							targetUserId,
-						},
-						"Employee deactivated with session cleanup pending",
-					);
-				}
 			}),
 	});
 }
