@@ -1,51 +1,24 @@
 import { and, desc, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import {
 	type changePolicyAssignment as ChangePolicyAssignmentTable,
 	type changePolicy as ChangePolicyTable,
 	changePolicy,
 	changePolicyAssignment,
-	employee,
 	employeeManagers,
 } from "@/db/schema";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import type { DatabaseError } from "@/lib/effect/errors";
-import { loadChangePolicyCandidates } from "@/lib/time-tracking/change-policy/candidates";
-import { resolveChangePolicy } from "@/lib/time-tracking/change-policy/resolution";
+import {
+	type ChangePolicyExemption,
+	type ChangePolicyVerdict,
+	readChangePolicyVerdict,
+} from "@/lib/time-tracking/change-policy/verdict";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
 type ChangePolicy = typeof ChangePolicyTable.$inferSelect;
 type ChangePolicyAssignment = typeof ChangePolicyAssignmentTable.$inferSelect;
-
-/**
- * Resolved policy with assignment context
- */
-export interface ResolvedChangePolicy {
-	policyId: string;
-	policyName: string;
-	selfServiceDays: number;
-	approvalDays: number;
-	noApprovalRequired: boolean;
-	notifyAllManagers: boolean;
-	assignmentLevel: "organization" | "team" | "employee";
-	assignmentId: string;
-}
-
-/**
- * Edit capability result - determines what the user can do
- */
-export type EditCapability =
-	| {
-			type: "direct";
-			reason: "within_self_service" | "no_policy" | "trust_mode";
-	  }
-	| {
-			type: "approval_required";
-			reason: "within_approval_window" | "zero_day_policy";
-	  }
-	| { type: "forbidden"; reason: "beyond_approval_window"; daysBack: number };
 
 /**
  * Manager information for notification
@@ -61,25 +34,16 @@ export class ChangePolicyService extends Context.Service<
 	ChangePolicyService,
 	{
 		/**
-		 * Resolve the effective policy for an employee at `timestamp`, as
-		 * `resolveChangePolicy` decides it: employee-specific > team > organization.
-		 * Returns null if no policy is assigned (= no restrictions)
+		 * What the change policy in effect allows for an employee's work period, as
+		 * `readChangePolicyVerdict` decides it.
 		 */
-		readonly resolvePolicy: (
-			employeeId: string,
-			timestamp?: Date,
-		) => Effect.Effect<ResolvedChangePolicy | null, DatabaseError>;
-
-		/**
-		 * Determine what edit capability the user has for a work period.
-		 * Considers the policy, work period age, and user role.
-		 */
-		readonly getEditCapability: (params: {
+		readonly getVerdict: (params: {
+			organizationId: string;
 			employeeId: string;
-			workPeriodEndTime: Date;
-			timezone: string;
+			workPeriodEndTime: Date | null;
+			exemption?: ChangePolicyExemption | null;
 			currentTime?: Date;
-		}) => Effect.Effect<EditCapability, DatabaseError>;
+		}) => Effect.Effect<ChangePolicyVerdict, DatabaseError>;
 
 		/**
 		 * Get managers to notify for an approval request.
@@ -118,119 +82,17 @@ export const ChangePolicyServiceLive = Layer.effect(
 	Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 
-		/**
-		 * Calculate the age of a work period in days, accounting for timezone
-		 */
-		const calculateDaysBack = (
-			workPeriodEndTime: Date,
-			timezone: string,
-			currentTime: Date = new Date(),
-		): number => {
-			const workPeriodDate = DateTime.fromJSDate(workPeriodEndTime, {
-				zone: timezone,
-			}).startOf("day");
-			const currentDate = DateTime.fromJSDate(currentTime, {
-				zone: timezone,
-			}).startOf("day");
-			return Math.floor(currentDate.diff(workPeriodDate, "days").days);
-		};
-
-		// Helper function to resolve policy - extracted so it can be called internally
-		const resolvePolicyImpl = (
-			employeeId: string,
-			timestamp: Date = new Date(),
-		): Effect.Effect<ResolvedChangePolicy | null, DatabaseError> =>
-			Effect.gen(function* () {
-				// Get employee with team info
-				const emp = yield* dbService.query("getEmployeeForPolicy", async () => {
-					return await dbService.db.query.employee.findFirst({
-						where: eq(employee.id, employeeId),
-						columns: {
-							id: true,
-							teamId: true,
-							organizationId: true,
-						},
-					});
-				});
-
-				if (!emp) {
-					return null;
-				}
-
-				const subject = {
-					organizationId: emp.organizationId,
-					employeeId: emp.id,
-					teamId: emp.teamId,
-				};
-				const candidates = yield* dbService.query("changePolicy.getCandidates", () =>
-					loadChangePolicyCandidates(dbService.db, subject),
-				);
-				const resolved = resolveChangePolicy(candidates, subject, instantFromDate(timestamp));
-
-				// No policy found = no restrictions
-				if (!resolved) {
-					return null;
-				}
-				return {
-					policyId: resolved.policyId,
-					policyName: resolved.policyName,
-					selfServiceDays: resolved.selfServiceDays,
-					approvalDays: resolved.approvalDays,
-					noApprovalRequired: resolved.noApprovalRequired,
-					notifyAllManagers: resolved.notifyAllManagers,
-					assignmentLevel: resolved.level,
-					assignmentId: resolved.assignmentId,
-				};
-			});
-
 		return ChangePolicyService.of({
-			resolvePolicy: resolvePolicyImpl,
-
-			getEditCapability: ({ employeeId, workPeriodEndTime, timezone, currentTime }) =>
-				Effect.gen(function* () {
-					// Use the helper function directly instead of ChangePolicyService.pipe()
-					const policy = yield* resolvePolicyImpl(employeeId, currentTime);
-
-					// No policy = no restrictions, allow direct edit
-					if (!policy) {
-						return { type: "direct" as const, reason: "no_policy" as const };
-					}
-
-					// Trust mode = no approval required
-					if (policy.noApprovalRequired) {
-						return { type: "direct" as const, reason: "trust_mode" as const };
-					}
-
-					const daysBack = calculateDaysBack(
-						workPeriodEndTime,
-						timezone,
-						currentTime ?? new Date(),
-					);
-
-					// Within self-service window (including same day when selfServiceDays=0)
-					if (daysBack <= policy.selfServiceDays) {
-						return {
-							type: "direct" as const,
-							reason: "within_self_service" as const,
-						};
-					}
-
-					// Within approval window
-					const totalApprovalWindow = policy.selfServiceDays + policy.approvalDays;
-					if (daysBack <= totalApprovalWindow) {
-						return {
-							type: "approval_required" as const,
-							reason: "within_approval_window" as const,
-						};
-					}
-
-					// Beyond approval window - forbidden for employees
-					return {
-						type: "forbidden" as const,
-						reason: "beyond_approval_window" as const,
-						daysBack,
-					};
-				}),
+			getVerdict: ({ organizationId, employeeId, workPeriodEndTime, exemption, currentTime }) =>
+				dbService.query("changePolicy.getVerdict", () =>
+					readChangePolicyVerdict(dbService.db, {
+						organizationId,
+						employeeId,
+						workEnd: workPeriodEndTime ? instantFromDate(workPeriodEndTime) : null,
+						now: currentTime ? instantFromDate(currentTime) : systemClock.nowInstant(),
+						exemption,
+					}),
+				),
 
 			getManagersForApproval: (employeeId, notifyAll) =>
 				Effect.gen(function* () {

@@ -13,7 +13,11 @@ import { DeactivationRequestConflictError } from "@/lib/employee-lifecycle/recei
 const mocks = vi.hoisted(() => ({
 	authRemoveMember: vi.fn(),
 	completeRemovedMemberCleanup: vi.fn(),
-	executeDeactivation: vi.fn(),
+	deactivate: vi.fn(),
+	/** The reactivation tests still assert under the command's former name (#1638). */
+	get executeDeactivation() {
+		return this.deactivate;
+	},
 	getEmployeeSettingsActorContext: vi.fn(),
 	headers: vi.fn(),
 	logAudit: vi.fn(),
@@ -22,27 +26,18 @@ const mocks = vi.hoisted(() => ({
 	notifyReleasedDeputyAssignments: vi.fn(),
 	previewEmployeeDeactivation: vi.fn(),
 	readDeactivationByRequest: vi.fn(),
-	rebuildDeactivationAfterCommit: vi.fn(),
 	reconcileBillingSeatsForOrganization: vi.fn(),
 	revalidateEmployeesCache: vi.fn(),
 	revokeOrganizationActiveSessions: vi.fn(),
 	runTracedEmployeeAction: vi.fn(),
 }));
 
-// The deactivation's consequences, plan, ledger and lock order are covered by
-// deactivation.integration.test.ts and the area suites; here the command
-// records that it ran inside the transaction and returns what the action
-// finishes after the commit.
-const protectionScope = vi.hoisted(() => ({ marker: "deactivation-protection-scope" }));
+// The deactivation is one call into its module (#1638). Its locks, replay,
+// target rules, consequences and after-commit work are covered against
+// PostgreSQL by deactivate.integration.test.ts, deactivation.integration.test.ts
+// and the area suites; here it returns the outcome the action words.
 vi.mock("@/lib/employee-lifecycle/deactivation/command", () => ({
-	deactivationProtectionScope: (command: { organizationId: string; employeeId: string }) => ({
-		...protectionScope,
-		organizationId: command.organizationId,
-		employeeIds: [command.employeeId],
-	}),
-	deactivationRequestFingerprint: () => "fingerprint",
-	executeDeactivation: mocks.executeDeactivation,
-	rebuildDeactivationAfterCommit: mocks.rebuildDeactivationAfterCommit,
+	deactivate: mocks.deactivate,
 }));
 
 vi.mock("@/lib/employee-lifecycle/deactivation/preview", () => ({
@@ -178,11 +173,10 @@ type LifecycleState = {
 	revocationError?: Error;
 	transactionError?: unknown;
 	employmentEnded?: boolean;
-	/** What the deactivation command returns; defaults to an applied deactivation. */
-	execution?: unknown;
-	afterCommit?: Array<() => Promise<void>>;
-	/** A ledger row already recorded under the request ID (a replay). */
-	recorded?: unknown;
+	/** What the deactivation returns; defaults to an applied deactivation. */
+	outcome?: unknown;
+	/** What the deactivation throws instead. */
+	deactivationError?: unknown;
 };
 
 function compilePredicate(table: unknown, predicate: unknown) {
@@ -292,31 +286,16 @@ function setup(state: LifecycleState = {}) {
 		events.push("sessions-revoked");
 		if (state.revocationError) throw state.revocationError;
 	});
-	const forwardCommitted = vi.fn(() => {
-		events.push("audit-forwarded");
+	mocks.deactivate.mockImplementation(async () => {
+		if (state.deactivationError) throw state.deactivationError;
+		return state.outcome ?? { kind: "deactivated", deactivationId: "deactivation-1", warnings: [] };
 	});
-	mocks.executeDeactivation.mockImplementation(async () => {
-		events.push("deactivation-executed");
-		return (
-			state.execution ?? {
-				kind: "applied",
-				deactivationId: "deactivation-1",
-				plan: {},
-				applied: {},
-				result: {},
-				audit: { forwardCommitted },
-				afterCommit: state.afterCommit ?? [],
-			}
-		);
-	});
-	mocks.readDeactivationByRequest.mockResolvedValue(state.recorded ?? null);
 	mocks.markDeactivationReactivated.mockImplementation(async () => {
 		events.push("deactivation-reactivated");
 		return [];
 	});
 
 	return {
-		forwardCommitted,
 		dbService,
 		events,
 		findEmployee,
@@ -370,7 +349,7 @@ describe("employee lifecycle actions", () => {
 		"member",
 		"manager",
 	] as const)("denies %s settings actors", async (accessTier) => {
-		const { transaction } = setup({ accessTier });
+		setup({ accessTier });
 
 		const result = await deactivateEmployeeAction(employeeId);
 
@@ -378,7 +357,7 @@ describe("employee lifecycle actions", () => {
 			success: false,
 			code: "AuthorizationError",
 		});
-		expect(transaction).not.toHaveBeenCalled();
+		expect(mocks.deactivate).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -389,53 +368,17 @@ describe("employee lifecycle actions", () => {
 			input: { employeeId, requestId, replacementManagers: { [reportId]: "anna" } },
 		},
 		{ label: "an unknown field", input: { employeeId, requestId, isActive: false } },
-	])("rejects $label before opening a transaction (#1440)", async ({ input }) => {
-		const { transaction } = setup();
+	])("rejects $label before deactivating (#1440)", async ({ input }) => {
+		setup();
 
 		const result = await deactivateEmployeeWithInput(input as never);
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(transaction).not.toHaveBeenCalled();
+		expect(mocks.deactivate).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		"owner",
-		"admin",
-	] as const)("allows an approved %s actor", async (actorRole) => {
-		setup({ actorRole });
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toEqual({ success: true, data: undefined });
-	});
-
-	it.each([
-		"owner,admin",
-		" member , admin ",
-		["member", "owner"],
-	])("allows approved compound actor role %j", async (actorRole) => {
-		setup({ actorRole });
-
-		await expect(deactivateEmployeeAction(employeeId)).resolves.toEqual({
-			success: true,
-			data: undefined,
-		});
-	});
-
-	it("denies an actor demoted after settings context resolution", async () => {
-		setup({ actorRole: "member" });
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-	});
-
-	it("looks up the target by employee and organization and deactivates exactly that request", async () => {
-		const { findEmployee, dbService } = setup();
+	it("hands the deactivation the actor's database, organization and the parsed command", async () => {
+		const { dbService } = setup();
 
 		await deactivateEmployeeWithInput({
 			employeeId,
@@ -443,64 +386,76 @@ describe("employee lifecycle actions", () => {
 			replacementManagers: { [reportId]: replacementId },
 		});
 
-		const targetQuery = compilePredicate(
-			employee,
-			findEmployee.mock.calls[0]?.[0]?.where,
-		);
-		expect(targetQuery.sql).toContain('"employee"."id"');
-		expect(targetQuery.sql).toContain('"employee"."organization_id"');
-		expect(targetQuery.params).toEqual([employeeId, organizationId]);
-		expect(mocks.executeDeactivation).toHaveBeenCalledExactlyOnceWith(
-			expect.objectContaining({ select: expect.any(Function) }),
-			{
-				organizationId,
-				actorUserId,
-				employeeId,
-				requestId,
-				replacementManagers: { [reportId]: replacementId },
-				requestFingerprint: "fingerprint",
-				at: expect.anything(),
-				// After-commit steps run on the action's own database client.
-				database: dbService.db,
-			},
-		);
-	});
-
-	it("returns not found without mutation for a cross-organization-safe target miss", async () => {
-		setup({ target: null });
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "NotFoundError",
-			error: "Employee not found",
-		});
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-		expect(mocks.revokeOrganizationActiveSessions).not.toHaveBeenCalled();
-	});
-
-	it("looks up an approved target membership by user and organization", async () => {
-		const { findMember } = setup();
-
-		await deactivateEmployeeAction(employeeId);
-
-		const targetMembershipQuery = compilePredicate(
-			member,
-			findMember.mock.calls[1]?.[0]?.where,
-		);
-		expect(targetMembershipQuery.sql).toContain('"member"."user_id"');
-		expect(targetMembershipQuery.sql).toContain('"member"."organization_id"');
-		expect(targetMembershipQuery.sql).toContain('"member"."status"');
-		expect(targetMembershipQuery.params).toEqual([
-			targetUserId,
+		expect(mocks.deactivate).toHaveBeenCalledExactlyOnceWith(dbService.db, {
 			organizationId,
-			"approved",
-		]);
+			actorUserId,
+			actorEmail,
+			employeeId,
+			requestId,
+			replacementManagers: { [reportId]: replacementId },
+		});
 	});
 
 	it.each([
-		deactivateEmployeeAction,
+		{ label: "applied", outcome: { kind: "deactivated", deactivationId: "deactivation-1" } },
+		{ label: "replayed the request", outcome: { kind: "replayed", reactivatedSince: false } },
+		{
+			label: "replayed a request reactivated since",
+			outcome: { kind: "replayed", reactivatedSince: true },
+		},
+		{ label: "found a former employee", outcome: { kind: "unchanged" } },
+		{
+			label: "left follow-up work pending",
+			outcome: { kind: "unchanged", warnings: ["Session cleanup is pending"] },
+		},
+	])("succeeds and revalidates the employees cache when the deactivation $label", async ({
+		outcome,
+	}) => {
+		setup({ outcome: { warnings: [], ...outcome } });
+
+		const result = await deactivateEmployeeAction(employeeId);
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledExactlyOnceWith(organizationId);
+	});
+
+	it.each([
+		{ type: "not_found", code: "NotFoundError", error: "Employee not found" },
+		{
+			type: "actor_membership_missing",
+			code: "AuthorizationError",
+			error: "You do not have access to employee settings",
+		},
+		{
+			type: "target_membership_missing",
+			code: "ValidationError",
+			error: "This employee is not an approved organization member.",
+		},
+		{
+			type: "self_target",
+			code: "AuthorizationError",
+			error: "You cannot deactivate your own employee profile",
+		},
+		{
+			type: "admin_targeting_owner",
+			code: "AuthorizationError",
+			error: "Only an organization owner can change an owner's lifecycle state",
+		},
+		{
+			type: "final_accessible_owner",
+			code: "ValidationError",
+			error: "Assign and activate another approved owner before deactivating this employee",
+		},
+	])("words the deactivation's $type refusal", async ({ type, code, error }) => {
+		setup({ outcome: { kind: "rejected", refusal: { type } } });
+
+		const result = await deactivateEmployeeAction(employeeId);
+
+		expect(result).toMatchObject({ success: false, code, error });
+		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+	});
+
+	it.each([
 		reactivateEmployeeAction,
 	])("prohibits changing the actor's own lifecycle state", async (action) => {
 		const { update } = setup({
@@ -527,119 +482,6 @@ describe("employee lifecycle actions", () => {
 		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
 	});
 
-	it("prevents an admin from targeting an owner", async () => {
-		setup({
-			actorRole: "admin",
-			targetMembership: {
-				userId: targetUserId,
-				role: "owner",
-				status: "approved",
-			},
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		"owner,admin",
-		" member , owner ",
-		["member", "owner"],
-	])("prevents an admin from targeting compound owner role %j", async (role) => {
-		setup({
-			actorRole: "admin",
-			targetMembership: {
-				userId: targetUserId,
-				role: role as string,
-				status: "approved",
-			},
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-	});
-
-	it("prevents deactivation of the final approved accessible owner", async () => {
-		setup({
-			targetMembership: {
-				userId: targetUserId,
-				role: "owner",
-				status: "approved",
-			},
-			owners: [{ userId: targetUserId, role: "owner", employeeIsActive: true }],
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		{ label: "no employee bootstrap", employeeIsActive: null },
-		{ label: "active employee", employeeIsActive: true },
-	] as const)("counts an approved alternative owner with $label", async ({
-		employeeIsActive,
-	}) => {
-		const { ownerWhere } = setup({
-			targetMembership: {
-				userId: targetUserId,
-				role: "owner",
-				status: "approved",
-			},
-			owners: [
-				{ userId: targetUserId, role: "owner", employeeIsActive: true },
-				{ userId: "other-owner", role: "owner,admin", employeeIsActive },
-			],
-		});
-
-		await expect(deactivateEmployeeAction(employeeId)).resolves.toEqual({
-			success: true,
-			data: undefined,
-		});
-		const ownerQuery = compilePredicate(member, ownerWhere.mock.calls[0]?.[0]);
-		expect(ownerQuery.params).toEqual([organizationId, "approved"]);
-	});
-
-	it("does not count an inactive alternative owner", async () => {
-		setup({
-			targetMembership: {
-				userId: targetUserId,
-				role: "owner",
-				status: "approved",
-			},
-			owners: [
-				{ userId: targetUserId, role: "owner", employeeIsActive: true },
-				{ userId: "inactive-owner", role: ["owner"], employeeIsActive: false },
-			],
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-	});
-
-	it("deactivates under the deactivation's protection scope (#1440)", async () => {
-		protection.scopes.length = 0;
-		setup();
-
-		await deactivateEmployeeAction(employeeId);
-
-		expect(protection.scopes).toEqual([
-			{ ...protectionScope, organizationId, employeeIds: [employeeId] },
-		]);
-	});
-
 	it("reactivates under the target's configuration/access protection", async () => {
 		protection.scopes.length = 0;
 		setup({
@@ -651,110 +493,10 @@ describe("employee lifecycle actions", () => {
 		expect(protection.scopes).toEqual([{ organizationId, employeeIds: [employeeId] }]);
 	});
 
-	it("serializes the owner check and the deactivation with an organization lock", async () => {
-		const { events, lockFor } = setup({
-			targetMembership: {
-				userId: targetUserId,
-				role: "owner",
-				status: "approved",
-			},
-		});
-
-		await deactivateEmployeeAction(employeeId);
-
-		expect(lockFor).toHaveBeenCalledWith("update");
-		expect(events.indexOf("organization-locked")).toBeLessThan(
-			events.indexOf("deactivation-executed"),
-		);
-		expect(events.indexOf("deactivation-executed")).toBeLessThan(
-			events.indexOf("transaction-committed"),
-		);
-	});
-
-	it("deactivates in the transaction, then forwards its audit, revokes sessions, audits and reconciles seats", async () => {
-		const { events, update } = setup();
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toEqual({ success: true, data: undefined });
-		// The command writes the employee row itself, with the deactivation instant.
-		expect(update).not.toHaveBeenCalled();
-		expect(
-			mocks.revokeOrganizationActiveSessions,
-		).toHaveBeenCalledExactlyOnceWith(targetUserId, organizationId);
-		expect(mocks.logAudit).toHaveBeenCalledWith({
-			action: AuditAction.EMPLOYEE_DEACTIVATED,
-			actorId: actorUserId,
-			actorEmail,
-			employeeId,
-			targetId: employeeId,
-			targetType: "employee",
-			organizationId,
-			changes: { isActive: { from: true, to: false } },
-			// The history shows this deactivation once (#1441).
-			metadata: { reason: "employee_deactivated", deactivationId: "deactivation-1" },
-			timestamp: expect.any(Date),
-		});
-		expect(mocks.reconcileBillingSeatsForOrganization).toHaveBeenCalledExactlyOnceWith(
-			organizationId,
-			{ alsoWhenBillingDisabled: true },
-		);
-		expect(events).toEqual([
-			"organization-locked",
-			"deactivation-executed",
-			"transaction-committed",
-			"audit-forwarded",
-			"sessions-revoked",
-			"audit-logged",
-			"seats-reconciled",
-			"cache-revalidated",
-		]);
-	});
-
-	it("runs the consequences' after-commit steps once after the commit, and a failing step never fails the deactivation", async () => {
-		const steps: string[] = [];
-		const { events } = setup({
-			afterCommit: [
-				async () => {
-					steps.push("planner-notice");
-					events.push("step-1");
-				},
-				async () => {
-					events.push("step-2");
-					throw new Error("calendar queue down");
-				},
-				async () => {
-					events.push("step-3");
-				},
-			],
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(steps).toEqual(["planner-notice"]);
-		expect(events.slice(events.indexOf("transaction-committed"))).toEqual([
-			"transaction-committed",
-			"audit-forwarded",
-			"step-1",
-			"step-2",
-			"step-3",
-			"sessions-revoked",
-			"audit-logged",
-			"seats-reconciled",
-			"cache-revalidated",
-		]);
-		expect(mocks.loggerWarn).toHaveBeenCalledWith(
-			expect.objectContaining({ employeeId, organizationId }),
-			"Deactivation follow-up step failed after the commit",
-		);
-	});
-
-	it("refuses without any after-commit work when a report still needs an eligible replacement (#1440)", async () => {
-		const { events } = setup({
-			execution: {
+	it("names the reports when a report still needs an eligible replacement (#1440)", async () => {
+		setup({
+			outcome: {
 				kind: "refused",
-				plan: {},
 				reports: [
 					{ employeeId: reportId, name: "Rita Report", refusal: "replacement_ineligible" },
 				],
@@ -769,64 +511,11 @@ describe("employee lifecycle actions", () => {
 			error: "Choose a current admin or manager as the new manager of Rita Report.",
 			refusal: "replacement_required",
 		});
-		expect(mocks.revokeOrganizationActiveSessions).not.toHaveBeenCalled();
-		expect(mocks.logAudit).not.toHaveBeenCalled();
-		expect(mocks.reconcileBillingSeatsForOrganization).not.toHaveBeenCalled();
-		expect(events).not.toContain("cache-revalidated");
-	});
-
-	it("replays a recorded request: no second deactivation, its after-commit work again (#1440)", async () => {
-		const replayedSteps: string[] = [];
-		const recorded = { id: "deactivation-1", reactivatedAt: null };
-		const { events, dbService } = setup({ recorded });
-		mocks.rebuildDeactivationAfterCommit.mockReturnValue({
-			result: { employeeUserId: targetUserId },
-			afterCommit: [
-				async () => {
-					replayedSteps.push("planner-notice");
-				},
-			],
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(mocks.readDeactivationByRequest).toHaveBeenCalledWith(expect.anything(), {
-			organizationId,
-			requestId,
-			requestFingerprint: "fingerprint",
-		});
-		expect(mocks.rebuildDeactivationAfterCommit).toHaveBeenCalledWith(recorded, dbService.db);
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-		expect(replayedSteps).toEqual(["planner-notice"]);
-		expect(mocks.revokeOrganizationActiveSessions).toHaveBeenCalledExactlyOnceWith(
-			targetUserId,
-			organizationId,
-		);
-		// The audit entry was written by the first run.
-		expect(mocks.logAudit).not.toHaveBeenCalled();
-		expect(mocks.reconcileBillingSeatsForOrganization).toHaveBeenCalledOnce();
-		expect(events).toContain("cache-revalidated");
-	});
-
-	it("repeats nothing for a replayed request whose deactivation was reactivated since", async () => {
-		setup({ recorded: { id: "deactivation-1", reactivatedAt: "2026-10-25T08:00:00Z" } });
-		mocks.rebuildDeactivationAfterCommit.mockReturnValue({
-			result: { employeeUserId: targetUserId },
-			afterCommit: [],
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(mocks.revokeOrganizationActiveSessions).not.toHaveBeenCalled();
-		expect(mocks.reconcileBillingSeatsForOrganization).not.toHaveBeenCalled();
-		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledWith(organizationId);
+		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
 	});
 
 	it("refuses a request ID used before with other choices", async () => {
-		setup();
-		mocks.readDeactivationByRequest.mockRejectedValue(new DeactivationRequestConflictError());
+		setup({ deactivationError: new DeactivationRequestConflictError() });
 
 		const result = await deactivateEmployeeAction(employeeId);
 
@@ -837,7 +526,6 @@ describe("employee lifecycle actions", () => {
 				"This deactivation was already submitted with different choices. Review the preview and try again.",
 			refusal: "request_conflict",
 		});
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
 	});
 
 	it("never touches the deactivation ledger's consequences when reactivating, and ends the open deactivation", async () => {
@@ -868,85 +556,12 @@ describe("employee lifecycle actions", () => {
 		);
 	});
 
-	it("always retries session revocation but does not deactivate or audit an already inactive employee", async () => {
-		setup({
-			target: {
-				id: employeeId,
-				userId: targetUserId,
-				organizationId,
-				isActive: false,
-			},
-		});
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-		expect(mocks.logAudit).not.toHaveBeenCalled();
-		expect(
-			mocks.revokeOrganizationActiveSessions,
-		).toHaveBeenCalledExactlyOnceWith(targetUserId, organizationId);
-	});
-
-	it("returns success and logs safely when session cleanup fails after committed deactivation", async () => {
-		const firstAttempt = setup({
-			revocationError: new Error("redis://secret-host failed"),
-		});
-
-		const firstResult = await deactivateEmployeeAction(employeeId);
-
-		expect(firstAttempt.events).toEqual([
-			"organization-locked",
-			"deactivation-executed",
-			"transaction-committed",
-			"audit-forwarded",
-			"sessions-revoked",
-			"audit-logged",
-			"seats-reconciled",
-			"cache-revalidated",
-		]);
-		expect(firstResult).toEqual({ success: true, data: undefined });
-		expect(mocks.loggerWarn).toHaveBeenCalledWith(
-			{
-				operation: "revokeOrganizationActiveSessions",
-				employeeId,
-				organizationId,
-				targetUserId,
-			},
-			"Employee deactivated with session cleanup pending",
-		);
-		expect(JSON.stringify(mocks.loggerWarn.mock.calls)).not.toContain(
-			"secret-host",
-		);
-		expect(mocks.logAudit).toHaveBeenCalledOnce();
-
-		const retry = setup({
-			target: {
-				id: employeeId,
-				userId: targetUserId,
-				organizationId,
-				isActive: false,
-			},
-		});
-		const retryResult = await deactivateEmployeeAction(employeeId);
-
-		expect(retryResult).toEqual({ success: true, data: undefined });
-		expect(retry.events).toEqual([
-			"organization-locked",
-			"transaction-committed",
-			"sessions-revoked",
-			"cache-revalidated",
-		]);
-		expect(mocks.revokeOrganizationActiveSessions).toHaveBeenCalledTimes(2);
-		expect(mocks.logAudit).toHaveBeenCalledOnce();
-	});
-
 	it("translates the database owner guard into fixed friendly guidance", async () => {
 		const triggerError = Object.assign(
 			new Error("Organization must retain an approved accessible owner"),
 			{ code: "23514" },
 		);
-		setup({ transactionError: triggerError });
+		setup({ deactivationError: triggerError });
 
 		const result = await deactivateEmployeeAction(employeeId);
 

@@ -140,9 +140,11 @@ vi.mock("@/lib/billing/guard", () => ({
 	requireBillingForMutation: state.requireBilling,
 }));
 
-vi.mock("./policy-helpers", () => ({
-	getEditCapabilityForPeriod: state.editCapability,
-}));
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, state.editCapability),
+);
 
 // Same-day edits amend through work records in either admission (#1226, #1231); its PostgreSQL
 // suites prove the writes, this suite the caller policy around them.
@@ -527,11 +529,9 @@ describe("time correction submission actions", () => {
 				"Entries older than 45 days can only be edited by admins or team leads.",
 			code: "ValidationError",
 		});
-		expect(state.editCapability).toHaveBeenCalledWith({
-			employeeId: ids.employee,
-			workPeriodEndTime: period.endTime,
-			timezone: "UTC",
-		});
+		const [asked] = state.editCapability.mock.calls.at(-1) ?? [];
+		expect(asked).toMatchObject({ organizationId: "org-1", employeeId: ids.employee });
+		expect(asked.workEnd.toString()).toBe(period.endTime.toISOString().replace(".000Z", "Z"));
 		expect(state.withTransaction).not.toHaveBeenCalled();
 		expect(state.executeSubmission).not.toHaveBeenCalled();
 		expect(state.txInsertValues).not.toHaveBeenCalled();
@@ -583,15 +583,11 @@ describe("time correction submission actions", () => {
 		expect(state.executeSubmission).not.toHaveBeenCalled();
 	});
 
-	it("skips the change policy age check for a running work period", async () => {
+	it("asks the change policy about a running work period as live work, which has no end", async () => {
 		configure({ kind: "default_created" });
 		const runningPeriod = { ...period, clockOutId: null, endTime: null };
 		state.selectLimit.mockResolvedValue([runningPeriod]);
-		state.editCapability.mockResolvedValue({
-			type: "forbidden",
-			reason: "beyond_approval_window",
-			daysBack: 45,
-		});
+		state.editCapability.mockResolvedValue({ type: "direct", reason: "within_self_service" });
 
 		await modular.requestTimeCorrectionEffect({
 			workPeriodId: ids.period,
@@ -601,7 +597,7 @@ describe("time correction submission actions", () => {
 			reason: "Missed punch",
 		});
 
-		expect(state.editCapability).not.toHaveBeenCalled();
+		expect(state.editCapability).toHaveBeenCalledWith(expect.objectContaining({ workEnd: null }));
 		expect(state.withTransaction).toHaveBeenCalledOnce();
 	});
 

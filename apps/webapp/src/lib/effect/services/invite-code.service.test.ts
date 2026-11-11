@@ -36,11 +36,21 @@ vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	syncBillingSeatsAfterMemberChange: billingMock.sync,
 }));
 
-// The reactivation of a deactivated employee is covered by reactivation-paths.integration.test.ts (#1628).
-vi.mock("@/lib/employee-lifecycle/reactivation", () => ({
-	reactivateOnReturn: async () => null,
-	completeReturnReactivation: async () => undefined,
-}));
+// Coming back is covered by reactivation.integration.test.ts and reactivation-paths.integration.test.ts (#1643).
+const reactivateOnReturn = vi.hoisted(() =>
+	vi.fn(async (_tx: unknown, _input: unknown, _audit: unknown) => ({
+		current: true,
+		reactivationRequestId: null,
+	})),
+);
+vi.mock("@/lib/employee-lifecycle/reactivation", () => ({ reactivateOnReturn }));
+/** The employee came back through the one call that switches them on (#1643). */
+const cameBack = (employeeId: string) =>
+	expect(reactivateOnReturn).toHaveBeenCalledWith(
+		expect.anything(),
+		{ organizationId: "org-1", employeeId, actorUserId: "user-1" },
+		expect.anything(),
+	);
 
 // The placement itself is covered by primary-team.integration.test.ts (#1575).
 const setPrimaryTeam = vi.hoisted(() =>
@@ -1900,6 +1910,7 @@ async function redeemNoApprovalCode(
 
 describe("InviteCodeService preserved employee reactivation", () => {
 	beforeEach(() => {
+		reactivateOnReturn.mockClear();
 		resetEnterpriseIdentityMock();
 		billingMock.sync.mockClear();
 	});
@@ -2005,7 +2016,8 @@ describe("InviteCodeService preserved employee reactivation", () => {
 			expect(fake.mockDb.transaction).toHaveBeenCalledOnce();
 			expect(fake.events).toContain("identity-lock");
 			expect(fake.employeeInserts).toEqual([]);
-			expect(fake.employeeUpdates).toEqual([{ isActive: true }]);
+			cameBack("employee-preserved");
+			expect(fake.employeeUpdates).toEqual([]);
 			// The code's team is a move from team-history (Organization ADR 0010).
 			if (defaultTeamId) {
 				expect(setPrimaryTeam).toHaveBeenCalledWith(fake.mockDb, {
@@ -2038,7 +2050,8 @@ describe("InviteCodeService preserved employee reactivation", () => {
 			status: "approved",
 			memberId: "member-existing",
 		});
-		expect(fake.employeeUpdates).toEqual([{ isActive: true }]);
+		cameBack("employee-preserved");
+		expect(fake.employeeUpdates).toEqual([]);
 		expect(fake.employeeInserts).toEqual([]);
 	});
 

@@ -364,9 +364,9 @@ export async function POST(request: NextRequest) {
 			let forbiddenMessage: string | null;
 			try {
 				forbiddenMessage = await getForbiddenCorrectionEditMessage({
+					organizationId: activeOrgId,
 					employeeId: currentEmployee.id,
 					workPeriodEndTime: selectedWorkPeriod.endTime,
-					timezone: targetTimezone,
 				});
 			} catch (error) {
 				logger.error({ error }, "Failed to check edit capability");

@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	describeManualWallTime,
-	evaluateManualApprovalIntent,
 	interpretManualInterval,
 	type ManualTimeEntryCommand,
-	manualCalendarDaysBack,
 	manualOccupiedLocalDates,
 	parseManualTimeEntryCommand,
 	resolveManualInterpretationZone,
@@ -435,64 +433,5 @@ describe("manualOccupiedLocalDates", () => {
 		]);
 		// Interpreted in the effective zone, not UTC: 23:30Z is already the 25th in Berlin.
 		expect(dates("2026-09-24T23:30:00Z", "2026-09-25T01:00:00Z")).toEqual(["2026-09-25"]);
-	});
-});
-
-describe("manualCalendarDaysBack", () => {
-	it("counts calendar days from the end's local date to today's local date in the zone", () => {
-		const back = (end: string, now: string, zone = "Europe/Berlin") =>
-			manualCalendarDaysBack(parseInstant(end), parseInstant(now), zone);
-		expect(back("2026-09-24T21:00:00Z", "2026-09-24T21:59:00Z")).toBe(0);
-		expect(back("2026-09-24T21:00:00Z", "2026-09-24T22:00:00Z")).toBe(1);
-		expect(back("2026-09-24T21:00:00Z", "2026-09-25T21:59:00Z")).toBe(1);
-		expect(back("2026-09-24T21:00:00Z", "2026-09-25T22:00:00Z")).toBe(2);
-		expect(back("2026-09-24T21:00:00Z", "2026-09-25T22:00:00Z", "UTC")).toBe(1);
-	});
-});
-
-describe("evaluateManualApprovalIntent", () => {
-	const policy = { selfServiceDays: 2, approvalDays: 3, noApprovalRequired: false };
-
-	it("creates approved work within the inclusive self-service window, without policy, in trust mode and for exemptions", () => {
-		expect(evaluateManualApprovalIntent({ exemption: null, policy, daysBack: 2 })).toEqual({
-			intent: "direct",
-			reason: "within_self_service",
-		});
-		expect(evaluateManualApprovalIntent({ exemption: null, policy: null, daysBack: 90 })).toEqual({
-			intent: "direct",
-			reason: "no_policy",
-		});
-		expect(
-			evaluateManualApprovalIntent({
-				exemption: null,
-				policy: { ...policy, noApprovalRequired: true },
-				daysBack: 90,
-			}),
-		).toEqual({ intent: "direct", reason: "trust_mode" });
-		expect(
-			evaluateManualApprovalIntent({ exemption: "owner_admin_self", policy, daysBack: 90 }),
-		).toEqual({
-			intent: "direct",
-			reason: "owner_admin_self",
-		});
-		expect(evaluateManualApprovalIntent({ exemption: "on_behalf", policy, daysBack: 90 })).toEqual({
-			intent: "direct",
-			reason: "on_behalf",
-		});
-	});
-
-	it("routes approval inside the inclusive approval window and converts only age-forbidden work beyond it", () => {
-		expect(evaluateManualApprovalIntent({ exemption: null, policy, daysBack: 3 })).toEqual({
-			intent: "approval",
-			reason: "within_approval_window",
-		});
-		expect(evaluateManualApprovalIntent({ exemption: null, policy, daysBack: 5 })).toEqual({
-			intent: "approval",
-			reason: "within_approval_window",
-		});
-		expect(evaluateManualApprovalIntent({ exemption: null, policy, daysBack: 6 })).toEqual({
-			intent: "approval",
-			reason: "beyond_approval_window",
-		});
 	});
 });

@@ -8,7 +8,6 @@
  * retried transition ends nothing twice.
  */
 import { createHash, randomUUID } from "node:crypto";
-import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 
@@ -24,9 +23,7 @@ vi.mock("@/lib/queue", async (original) =>
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 const { createDepartureCommands } = await import("./commands");
-const { deactivationRequestFingerprint, executeDeactivation } = await import(
-	"./deactivation/command"
-);
+const { deactivate: deactivateEmployee } = await import("./deactivation/command");
 const { createLifecycleDatabaseFixture } = await import(
 	"./testing/database.test.fixture"
 );
@@ -281,26 +278,27 @@ describe("a departure ends what a deactivation ends", () => {
 	}
 
 	async function deactivate(person: SeededEmployee) {
-		const command = {
-			organizationId: fixture.organizationId,
-			actorUserId: fixture.ownerUserId,
-			employeeId: person.employeeId,
-			requestId: randomUUID(),
-			replacementManagers: {},
-		};
-		const execution = await fixture.db.transaction(async (tx) => {
-			await tx.execute(
-				sql`SELECT id FROM organization WHERE id = ${fixture.organizationId} FOR UPDATE`,
-			);
-			return executeDeactivation(tx, {
-				...command,
-				at: CUTOFF,
-				requestFingerprint: deactivationRequestFingerprint(command),
+		const outcome = await deactivateEmployee(
+			fixture.db,
+			{
+				organizationId: fixture.organizationId,
+				actorUserId: fixture.ownerUserId,
+				employeeId: person.employeeId,
+				requestId: randomUUID(),
+				replacementManagers: {},
+			},
+			{
 				clock: { nowInstant: () => CUTOFF },
-				database: fixture.db,
-			});
-		});
-		expect(execution.kind).toBe("applied");
+				// Sessions, the audit log, seats and exports are not what is compared here.
+				effects: {
+					revokeSessions: async () => {},
+					logAudit: async () => {},
+					reconcileSeats: async () => {},
+					pauseOwnedExports: async () => {},
+				},
+			},
+		);
+		expect(outcome.kind).toBe("deactivated");
 	}
 
 	it("ends the same holdings as a deactivation, naming the departure, and nothing twice on a retry", async () => {

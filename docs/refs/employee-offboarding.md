@@ -315,13 +315,45 @@ ends through Employment ending; the roster area modules live in
 authorization and owner rules as the action, then
 `planDeactivationConsequences` (`deactivation/plan.ts`), which lists every item
 above with replacement-manager pickers. A new pick asks for the preview again.
-The preview is advisory and takes no locks; the action recomputes the plan in
-its transaction with the same predicates and refuses with
+The preview is advisory and takes no locks; the deactivation recomputes the
+plan in its transaction with the same predicates, and the action refuses with
 `refusal: "replacement_required"` while a report has no eligible replacement.
 The acceptance suite (`deactivation/deactivation.integration.test.ts`) checks
 that the preview lists exactly what the server applied. The browser gets the
 plan without the planner notice's recipients (`DeactivationPreview`), which are
 other users' ids and stay on the server.
+
+**One module (#1638).** The deactivation module owns its locks, the apply
+sequence and the after-commit work. It has one entry per caller:
+
+- `deactivate(database, command, dependencies?)` (`deactivation/command.ts`)
+  for an admin's Deactivate. In its own transaction it takes the locks, replays
+  a request ID it has seen, checks the owner rules (`checkLifecycleTarget`),
+  plans or refuses, records the deactivation and applies it. After the commit
+  it forwards the audit, runs the consequences' after-commit steps, revokes the
+  person's sessions, writes the `employee.deactivated` audit entry, recounts
+  the seats and pauses the scheduled exports the person owned. It returns
+  `deactivated`, `replayed`, `unchanged` (already a former employee), `refused`
+  (a report needs a replacement) or `rejected` (a target rule, or no such
+  employee). It throws for a request conflict and passes on the database's
+  owner-invariant error. A failed after-commit step or session cleanup is a
+  warning; a failed export pause is passed on, with the deactivation committed.
+  The four effects outside the database are an optional `effects` dependency,
+  which tests replace.
+- `runNonInteractiveDeactivation` and `completePendingDeactivation`
+  (`deactivation/non-interactive.ts`), see below.
+
+All three run one internal sequence (`deactivation/sequence.ts`):
+`inDeactivationLocks` takes the locks, `applyRecordedDeactivation` applies
+everything once the ledger row exists, and `runAfterCommitSteps` runs the
+after-commit steps. The sequence has two modes. In the interactive mode it
+switches the employee off itself and stores the planner notice for a replay. In
+the non-interactive mode the employee is already off, so it only stores the
+instant, and it returns the reports left with no current manager.
+`deactivateEmployeeAction` keeps the session and org-admin check, input
+parsing, the wording of refusals and the cache revalidation.
+`deactivate.integration.test.ts` checks the locks, replay, target rules and
+after-commit order through `deactivate` against PostgreSQL.
 
 **Request IDs and replay.** `deactivateEmployeeAction({ employeeId, requestId,
 replacementManagers })` records one `employee_deactivation` row per request ID
@@ -336,14 +368,15 @@ request ID with other picks is refused (`refusal: "request_conflict"`). The
 history event `employee_deactivated` (`employee_departure_event`, no departure)
 is written when the employee has an employment period.
 
-**Lock order**, all in one transaction, so that the deactivation never waits
+**Lock order** (`inDeactivationLocks`), all in one transaction, so that the
+deactivation never waits
 on a guard it should already hold while another writer waits on it: the absence
 and period
 submission approval write gates (rank 2, shared, via `withAuthorizationMutation`'s
 `beforeProtection` hook), the exclusive organization configuration guard
 (rank 3, `organizationWide: true`), the user guards (rank 4) of the person,
-their reports, their own managers and the picked replacements, then the
-organization row `FOR UPDATE` (`lockLifecycleOrganization`). The plan is computed
+their reports, their own managers and the picked replacements, the employee
+coordination guard, then the organization row `FOR UPDATE`. The plan is computed
 under these locks, the deactivation is recorded, the employee row is locked
 `FOR UPDATE` and Employment ending ends what the person holds; then the
 employee is switched off with `deactivated_at = <instant>` and the roster
@@ -371,9 +404,8 @@ departure and no open `employee_deactivation` row
 (`formerEmployeeWithoutDeactivation`). The caller names the actor, the reason,
 when they left (`deactivatedAt`, or null when not recorded) and optionally the
 instant the consequences apply from. In its own transaction it takes the lock
-order above plus the employee coordination guard (before the organization row),
-re-checks the employee under the locks and skips anyone it no longer applies
-to. Then it records the `employee_deactivation` row, locks the employee row,
+order above (no replacements are picked), re-checks the employee under the
+locks and skips anyone it no longer applies to. Then it records the `employee_deactivation` row, locks the employee row,
 sets `employee.deactivated_at` to the row's instant (replacing an instant the
 switch-off trigger wrote, audited as `employee.updated`), runs Employment
 ending and the roster areas with `replaceManagers: false`, stores the outcome,
@@ -507,18 +539,25 @@ shift or absence; the acceptance suite asserts that.
 **Every way back is a reactivation** (#1628). The invite-code join, the
 pending-member approval, provisioning (`ensureEmployeeForOrganizationMember` in
 `membershipAccepted` mode) and a SCIM re-enable (the reconciler's
-`onEmployeeReactivated` hook) switch the employee on themselves, then call
-`reactivateOnReturn` in the same transaction. It does the same ledger work as
-*Reactivate* when the employee is on the current roster again and has an open
-deactivation, and nothing otherwise: a departed employee the database guard
-kept inactive and an employee who was never deactivated get no reactivation.
-The actor is whoever brought them back: the approving admin, the joining or
-accepting user (the added user for `addMember`, whose hook names no actor), or
-for SCIM the user, with `{ connectionId }` in the audit metadata. After commit
-`completeReturnReactivation` forwards the audit entries and writes
-`employee.reactivated` with the `reactivationRequestId`. These paths serialize
-with Deactivate through the user's exclusive configuration/access guard and do
-not take the organization row lock.
+`onEmployeeReactivated` hook) each make one call in their transaction (#1643):
+`reactivateOnReturn(tx, { organizationId, employeeId, actorUserId, metadata? },
+audit)`. It switches the employee on when they are off (the SCIM reconciler has
+already done so, with its own ownership check). It then does the same ledger
+work as *Reactivate* when the employee is on the current roster again and has
+an open deactivation, and nothing otherwise: a departed employee the database
+guard kept inactive (`current: false`) and an employee who was never
+deactivated (`reactivationRequestId: null`) get no reactivation. The actor is
+whoever brought them back: the approving admin, the joining or accepting user
+(the added user for `addMember`, whose hook names no actor), or for SCIM the
+user, with `{ connectionId }` in the audit metadata. The `employee.reactivated`
+entry, with the `reactivationRequestId`, is recorded into the caller's
+`AuditTrail` in the same transaction, so it commits or rolls back with the
+ledger. After its commit the caller only forwards that trail to the external
+audit service, where it opens the transaction (`withAuditTrail`, or
+`queueAfterAuthTransactionCommit` for SCIM). *Reactivate* itself still writes
+its entry after the commit (#1640). These paths serialize with Deactivate
+through the user's exclusive configuration/access guard and do not take the
+organization row lock.
 
 **Checklist.** The ledger row keeps the applied consequences (`applied`) and,
 since migration 0286, the plan they were applied from (`plan`, with only the

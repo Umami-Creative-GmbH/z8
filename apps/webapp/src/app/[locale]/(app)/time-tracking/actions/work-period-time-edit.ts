@@ -61,8 +61,12 @@ import {
 	getRequestMetadata,
 	getUserTimezone,
 } from "./auth";
-import { getEditCapabilityForPeriod } from "./policy-helpers";
 import { logger } from "./shared";
+import {
+	type EditCapability,
+	editCapabilityOf,
+	readChangePolicyVerdict,
+} from "@/lib/time-tracking/change-policy/verdict";
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 import { loadWorkVehicleUseFormContext } from "@/lib/time-tracking/vehicle-use/form-context";
 import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
@@ -296,23 +300,23 @@ async function loadTimeEditTarget(
 		hasPendingTimeCorrection(organizationId, period.id),
 	]);
 
-	let capability: Awaited<
-		ReturnType<typeof getEditCapabilityForPeriod>
-	> | null = null;
-	if (isOwnEntry && !isOrgAdmin && period.endTime) {
-		try {
-			capability = await getEditCapabilityForPeriod({
-				employeeId: currentEmployee.id,
-				workPeriodEndTime: period.endTime,
-				timezone,
-			});
-		} catch (error) {
-			logger.error({ error }, "Failed to resolve work period edit capability");
-			return {
-				success: false,
-				error: "Failed to verify edit policy. Please try again.",
-			};
-		}
+	let capability: EditCapability;
+	try {
+		capability = editCapabilityOf(
+			await readChangePolicyVerdict(db, {
+				organizationId,
+				employeeId: period.employeeId,
+				workEnd: period.endTime ? instantFromDate(period.endTime) : null,
+				now: systemClock.nowInstant(),
+				exemption: !isOwnEntry ? "on_behalf" : isOrgAdmin ? "owner_admin_self" : null,
+			}),
+		);
+	} catch (error) {
+		logger.error({ error }, "Failed to resolve work period edit capability");
+		return {
+			success: false,
+			error: "Failed to verify edit policy. Please try again.",
+		};
 	}
 
 	const access = resolveWorkPeriodTimeEditAccess({

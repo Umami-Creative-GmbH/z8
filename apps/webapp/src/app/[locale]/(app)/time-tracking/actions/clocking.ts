@@ -28,6 +28,10 @@ import { deserializeInstant, serializeInstant } from "@/lib/datetime/temporal-wi
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
+import {
+	manualApprovalIntentOf,
+	readChangePolicyVerdict,
+} from "@/lib/time-tracking/change-policy/verdict";
 import { attributionIntent, type ClockChannel } from "@/lib/time-tracking/close-active-work";
 import { reconcileImmediateSurcharges } from "@/lib/time-tracking/clock-out-effects";
 import {
@@ -129,7 +133,6 @@ import {
 	resolveManualEntryTarget,
 	resolveManualEntryTargetZone,
 } from "./manual-entry-target";
-import { getEditCapabilityForPeriod } from "./policy-helpers";
 import {
 	logger,
 	ONE_MINUTE_MS,
@@ -1282,29 +1285,26 @@ export async function createManualTimeEntry(
 			};
 		}
 	}
-	let requiresApproval = false;
-	if (isOwnEntry) {
-		let editCapability: Awaited<ReturnType<typeof getEditCapabilityForPeriod>> | null;
-		try {
-			// Organization owners and admins are not limited to employee self-service windows.
-			editCapability = (await isOrgAdminCasl(targetEmployee.organizationId))
-				? null
-				: await getEditCapabilityForPeriod({
-						employeeId: targetEmployee.id,
-						workPeriodEndTime: clockOutDate,
-						timezone,
-					});
-		} catch (error) {
-			logger.error(
-				{ error },
-				"Failed to check edit capability for manual entry",
-			);
-			return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
-		}
-
-		// Older manual entries require approval instead of being blocked by age.
-		requiresApproval =
-			editCapability?.type === "approval_required" || editCapability?.type === "forbidden";
+	let requiresApproval: boolean;
+	try {
+		// Organization owners and admins are not limited to employee self-service windows.
+		const exemption = !isOwnEntry
+			? "on_behalf"
+			: (await isOrgAdminCasl(targetEmployee.organizationId))
+				? "owner_admin_self"
+				: null;
+		const verdict = await readChangePolicyVerdict(db, {
+			organizationId: targetEmployee.organizationId,
+			employeeId: targetEmployee.id,
+			workEnd: instantFromDate(clockOutDate),
+			now: instantFromDate(now),
+			exemption,
+			timezone,
+		});
+		requiresApproval = manualApprovalIntentOf(verdict).intent === "approval";
+	} catch (error) {
+		logger.error({ error }, "Failed to check edit capability for manual entry");
+		return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
 	}
 
 	try {

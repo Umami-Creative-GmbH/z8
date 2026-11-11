@@ -8,12 +8,9 @@ import {
 	queueAfterAuthTransactionCommit,
 	requireAuthTransaction,
 } from "@/lib/auth/auth-transaction";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { AuditTrail } from "@/lib/audit-trail";
 import { recordFollowUpDeactivation } from "@/lib/employee-lifecycle/deactivation/follow-up-record";
-import {
-	completeReturnReactivation,
-	reactivateOnReturn,
-} from "@/lib/employee-lifecycle/reactivation";
+import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
 import { resolveSCIMIdentity } from "./identity-resolution";
 import { reconcileSCIMLifecycle } from "./lifecycle-reconciler";
 import { protectSCIMProjectedUser } from "./projection-guards";
@@ -264,19 +261,18 @@ async function reactivateSCIMReenabledEmployee(input: {
 	employeeId: string;
 	connectionId: string;
 }) {
-	const reactivation = await reactivateOnReturn(
+	const audit = new AuditTrail();
+	await reactivateOnReturn(
 		requireAuthTransaction("SCIM reactivation"),
 		{
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 			actorUserId: input.userId,
-			at: systemClock.nowInstant(),
 			metadata: { connectionId: input.connectionId },
 		},
+		audit,
 	);
-	if (reactivation) {
-		await queueAfterAuthTransactionCommit(() => completeReturnReactivation(reactivation));
-	}
+	await queueAfterAuthTransactionCommit(async () => audit.forwardCommitted());
 }
 
 export function createZ8SCIMPlugin(credentialHashSecret: string) {

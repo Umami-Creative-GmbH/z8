@@ -3,9 +3,9 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { employee } from "@/db/schema";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { AuditTrail } from "@/lib/audit-trail";
-import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { AuditAction } from "@/lib/audit-logger";
+import type { AuditTrail } from "@/lib/audit-trail";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { onCurrentRoster } from "./current-roster";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
 import {
@@ -56,25 +56,29 @@ export async function executeReactivation(
 	return { kind: "reactivated", deactivationIds: await recordReactivation(tx, command, audit) };
 }
 
-export type ReturnReactivation = {
-	organizationId: string;
-	employeeId: string;
-	actorUserId: string;
-	requestId: string;
-	metadata: Readonly<Record<string, unknown>>;
-	audit: AuditTrail;
+export type ReturnOutcome = {
+	/** Whether the employee is on the current roster after the call. */
+	current: boolean;
+	/** The reactivation this call recorded; null when there was nothing to reactivate. */
+	reactivationRequestId: string | null;
 };
 
 /**
  * Every way back after a deactivation is a Reactivation (#1628, Organization
  * ADR 0011): joining with an invite code, approval of a pending member,
- * provisioning and SCIM re-enable. Each path switches the employee on itself,
- * then calls this in the same transaction. When the employee is on the current
- * roster again (the migration 0073 guard keeps a departed employee inactive
- * until a rehire) and a deactivation is open, it is reactivated like Reactivate does,
+ * provisioning and SCIM re-enable. Each path makes this one call in its
+ * transaction (#1643). It switches the employee on when they are off (SCIM's
+ * reconciler has done so already). When they are on the current roster again
+ * (the migration 0073 guard keeps a departed employee inactive until a
+ * rehire) and a deactivation is open, it is reactivated like Reactivate does,
  * by whoever brought them back; `metadata` (SCIM: the `connectionId`) goes
- * into its audit entries. Returns null when there was nothing to reactivate;
- * otherwise the caller runs `completeReturnReactivation` after commit.
+ * into its audit entries.
+ *
+ * The `employee.reactivated` entry, which the employment history shows once
+ * (it carries the reactivation's request id) and the deactivation backfill
+ * reads as a switch-on, is recorded into `audit` in this transaction, so it
+ * commits or rolls back with the ledger. The caller forwards `audit` after its
+ * commit, as for any other audit trail.
  */
 export async function reactivateOnReturn(
 	tx: LifecycleClient,
@@ -82,46 +86,45 @@ export async function reactivateOnReturn(
 		organizationId: string;
 		employeeId: string;
 		actorUserId: string;
-		at: Instant;
 		metadata?: Readonly<Record<string, unknown>>;
 	},
-): Promise<ReturnReactivation | null> {
+	audit: AuditTrail,
+): Promise<ReturnOutcome> {
+	const at = systemClock.nowInstant();
 	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
+	const isEmployee = and(
+		eq(employee.id, input.employeeId),
+		eq(employee.organizationId, input.organizationId),
+	);
+	// Only someone who is off: the SCIM reconciler has switched its employee on already.
+	await tx
+		.update(employee)
+		.set({ isActive: true })
+		.where(and(isEmployee, eq(employee.isActive, false)));
+
 	const [current] = await tx
 		.select({ id: employee.id })
 		.from(employee)
-		.where(
-			and(eq(employee.id, input.employeeId), onCurrentRoster(input.organizationId, employee, input.at)),
-		);
-	if (!current) return null;
-	if (!(await readOpenDeactivation(tx, scope))) return null;
+		.where(and(isEmployee, onCurrentRoster(input.organizationId, employee, at)));
+	if (!current) return { current: false, reactivationRequestId: null };
+	if (!(await readOpenDeactivation(tx, scope))) {
+		return { current: true, reactivationRequestId: null };
+	}
 
 	const requestId = randomUUID();
 	const metadata = input.metadata ?? {};
-	const audit = new AuditTrail();
-	await recordReactivation(tx, { ...input, requestId, metadata }, audit);
-	return { ...scope, actorUserId: input.actorUserId, requestId, metadata, audit };
-}
-
-/**
- * The after-commit part of a reactivation on return: its audit entries reach
- * the external audit service, and the `employee.reactivated` entry the
- * employment history shows once (it carries the reactivation's request id) and
- * the deactivation backfill reads as a switch-on.
- */
-export async function completeReturnReactivation(reactivation: ReturnReactivation): Promise<void> {
-	reactivation.audit.forwardCommitted();
-	await logAudit({
+	await recordReactivation(tx, { ...input, at, requestId, metadata }, audit);
+	await audit.record(tx, {
+		organizationId: input.organizationId,
 		action: AuditAction.EMPLOYEE_REACTIVATED,
-		actorId: reactivation.actorUserId,
-		employeeId: reactivation.employeeId,
-		targetId: reactivation.employeeId,
+		actorUserId: input.actorUserId,
 		targetType: "employee",
-		organizationId: reactivation.organizationId,
+		targetId: input.employeeId,
+		employeeId: input.employeeId,
 		changes: { isActive: { from: false, to: true } },
-		metadata: { ...reactivation.metadata, reactivationRequestId: reactivation.requestId },
-		timestamp: new Date(),
+		metadata: { ...metadata, reactivationRequestId: requestId },
 	});
+	return { current: true, reactivationRequestId: requestId };
 }
 
 /**

@@ -11,11 +11,7 @@ import { AuditAction } from "@/lib/audit-logger";
 import { AuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
-import {
-	completeReturnReactivation,
-	type ReturnReactivation,
-	reactivateOnReturn,
-} from "@/lib/employee-lifecycle/reactivation";
+import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
 import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
 import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
@@ -374,12 +370,31 @@ export async function ensureEmployeeForOrganizationMember(
 			),
 		});
 		let provisionedEmployee: typeof existingEmployee;
-		let reactivation: ReturnReactivation | null = null;
 		// Old drafts may hold a blank number: that is no number (#881).
 		const draftPersonnelNumber = normalizePersonnelNumber(draft?.employeeNumber);
 
 		if (existingEmployee) {
 			if (input.mode === "membershipAccepted" && !existingEmployee.isActive) {
+				// Coming back after a deactivation is a reactivation by whoever
+				// brought them back: the accepting user, or the added user when
+				// no actor is known (#1628). It switches the employee on.
+				await reactivateOnReturn(
+					tx,
+					{
+						organizationId: input.organizationId,
+						employeeId: existingEmployee.id,
+						actorUserId: input.actorUserId ?? input.userId,
+					},
+					audit,
+				);
+				const isExistingEmployee = and(
+					eq(employee.id, existingEmployee.id),
+					eq(employee.organizationId, input.organizationId),
+				);
+				const returnValues = {
+					...reactivationValues,
+					...(draft ? {} : isAdminRole ? { role: "admin" as const } : {}),
+				};
 				const {
 					written: [reactivatedEmployee],
 					dropped,
@@ -391,22 +406,15 @@ export async function ensureEmployeeForOrganizationMember(
 						exceptEmployeeId: existingEmployee.id,
 						personnelNumberManagedByScim: existingEmployee.personnelNumberManagedByScim && existingEmployee.employeeNumber !== draftPersonnelNumber,
 					},
-					(client, personnelNumber) =>
-						client
-							.update(employee)
-							.set({
-								isActive: true,
-								...reactivationValues,
-								...personnelNumber,
-								...(draft ? {} : isAdminRole ? { role: "admin" as const } : {}),
-							})
-							.where(
-								and(
-									eq(employee.id, existingEmployee.id),
-									eq(employee.organizationId, input.organizationId),
-								),
-							)
-							.returning(),
+					async (client, personnelNumber) => {
+						const values = { ...returnValues, ...personnelNumber };
+						if (Object.keys(values).length > 0) {
+							return client.update(employee).set(values).where(isExistingEmployee).returning();
+						}
+						// Nothing of the draft to write: the switched-on row as it is.
+						const row = await client.query.employee.findFirst({ where: isExistingEmployee });
+						return row ? [row] : [];
+					},
 				);
 
 				// The draft's team is a move: its old primary team's membership ends.
@@ -467,16 +475,6 @@ export async function ensureEmployeeForOrganizationMember(
 						});
 					}
 				}
-
-				// Coming back after a deactivation is a reactivation by whoever
-				// brought them back: the accepting user, or the added user when
-				// no actor is known (#1628).
-				reactivation = await reactivateOnReturn(tx, {
-					organizationId: input.organizationId,
-					employeeId: updatedEmployee.id,
-					actorUserId: input.actorUserId ?? input.userId,
-					at: systemClock.nowInstant(),
-				});
 
 				provisionedEmployee = updatedEmployee;
 			} else {
@@ -554,7 +552,6 @@ export async function ensureEmployeeForOrganizationMember(
 
 		return {
 			provisionedEmployee,
-			reactivation,
 			acceptedDraftCleanup:
 				input.mode === "membershipAccepted" && draft
 					? {
@@ -566,9 +563,6 @@ export async function ensureEmployeeForOrganizationMember(
 		};
 	});
 	audit.forwardCommitted();
-	if (transactionResult.reactivation) {
-		await completeReturnReactivation(transactionResult.reactivation);
-	}
 
 	if (transactionResult.acceptedDraftCleanup) {
 		await consumeEmployeeInvitationDraft(

@@ -123,12 +123,11 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/app/[locale]/(app)/time-tracking/actions/policy-helpers")
-	>()),
-	getEditCapabilityForPeriod: async () => ({ type: "approval_required" }),
-}));
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, () => ({ type: "approval_required" })),
+);
 
 const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 const { requestTimeCorrection } = await import(

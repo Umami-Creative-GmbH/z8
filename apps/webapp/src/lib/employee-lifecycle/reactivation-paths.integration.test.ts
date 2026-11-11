@@ -1,12 +1,15 @@
 /**
  * #1628 (spec #1590, Organization ADR 0011): every way back after a
- * deactivation is a Reactivation. A deactivated employee who comes back
- * through an invite code, a pending-member approval or provisioning has the
- * deactivation marked reactivated by whoever brought them back, `deactivatedAt`
- * cleared, the history event recorded and the reactivation checklist offered,
- * and nothing the deactivation ended returns. SCIM re-enable is covered by the
- * SCIM protocol suite. Only the request and session, billing, queues and the
- * Next cache are replaced.
+ * deactivation is a Reactivation. Each way back makes the one call that does
+ * it (#1643): a deactivated employee who comes back through an invite code, a
+ * pending-member approval or provisioning has the deactivation marked
+ * reactivated by whoever brought them back, `deactivatedAt` cleared, the
+ * history event recorded and the reactivation checklist offered, and nothing
+ * the deactivation ended returns. What the call decides (a departed employee,
+ * one who was never deactivated, a second call, a rollback) is covered by
+ * reactivation.integration.test.ts; SCIM re-enable by the SCIM protocol suite.
+ * Only the request and session, billing, queues and the Next cache are
+ * replaced.
  */
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -328,12 +331,6 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		});
 	}
 
-	const waysBack = [
-		{ way: "pending-member approval", comeBack: approvePendingRejoin },
-		{ way: "invite-code join", comeBack: joinWithInviteCode },
-		{ way: "provisioning", comeBack: acceptInvitation },
-	];
-
 	it("reactivates a deactivated employee whose pending membership an admin approves, by the admin", async () => {
 		const person = await deactivatedPerson();
 		await approvePendingRejoin(person);
@@ -351,65 +348,4 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		await acceptInvitation(person);
 		await expectReactivatedBy(person, person.userId);
 	});
-
-	it.each(waysBack)(
-		"never reactivates a former employee whose departure took effect through $way",
-		async ({ comeBack }) => {
-			const person = await deactivatedPerson();
-			// Their departure took effect after the deactivation: only a rehire brings them back.
-			await fixture.pool.query(
-				`insert into employee_departure
-			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
-			  cutoff_at, created_by, request_id, request_fingerprint, revision, status, effective_at)
-			 values ($1, $2, $3, 'immediate', '2026-10-20', 'UTC', '2026-10-21T08:00:00Z', $4,
-			         gen_random_uuid(), 'test', 1, 'effective', '2026-10-21T08:00:00Z')`,
-				[
-					fixture.organizationId,
-					person.employeeId,
-					person.employmentPeriodId,
-					fixture.ownerUserId,
-				],
-			);
-			await fixture.pool.query(
-				`update employee_employment_period set status = 'closed', ended_at = '2026-10-21T08:00:00Z' where id = $1`,
-				[person.employmentPeriodId],
-			);
-
-			await comeBack(person);
-
-			expect(await employeeState(person)).toMatchObject({ is_active: false });
-			expect(await ledger(person)).toMatchObject([
-				{ reactivated_at: null, reactivated_by: null },
-			]);
-			actAs(fixture.ownerUserId);
-			expect(await getReactivationChecklistAction(person.employeeId)).toEqual({
-				success: true,
-				data: null,
-			});
-		},
-	);
-
-	it.each(waysBack)(
-		"leaves an employee who was never deactivated without a reactivation through $way",
-		async ({ comeBack }) => {
-			// Switched off before deactivations were recorded: today's direct switch-on, nothing more.
-			const person = await fixture.seedEmployee({ isActive: false });
-			harness.now = RETURNED_AT;
-
-			await comeBack(person);
-
-			expect(await employeeState(person)).toEqual({
-				is_active: true,
-				deactivated_at: null,
-			});
-			expect(await ledger(person)).toEqual([]);
-			actAs(fixture.ownerUserId);
-			expect(
-				await listEmployeeLifecycleHistoryAction(person.employeeId),
-			).toMatchObject({
-				success: true,
-				data: { events: [] },
-			});
-		},
-	);
 });

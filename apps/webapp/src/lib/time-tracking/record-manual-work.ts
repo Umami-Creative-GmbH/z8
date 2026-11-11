@@ -28,8 +28,8 @@ import {
 	type CompletedWorkFollowUp,
 	CompletedWorkIntegrityError,
 } from "./close-active-work";
+import type { ManualApprovalIntent } from "./change-policy/verdict";
 import type {
-	ManualApprovalIntent,
 	ManualCaptureSource,
 	ManualPolicyEvidence,
 	ManualTargetZoneSource,

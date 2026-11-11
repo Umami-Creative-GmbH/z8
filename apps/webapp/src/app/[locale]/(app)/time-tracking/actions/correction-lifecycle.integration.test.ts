@@ -117,10 +117,11 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 	};
 });
 
-vi.mock("./policy-helpers", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./policy-helpers")>()),
-	getEditCapabilityForPeriod: async () => ({ type: "approval_required" }),
-}));
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, () => ({ type: "approval_required" })),
+);
 
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();

@@ -79,10 +79,6 @@ vi.mock("@/lib/billing/guard", async () =>
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
 	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
 );
-vi.mock("./policy-helpers", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./policy-helpers")>()),
-	getEditCapabilityForPeriod: async () => ({ type: "direct", reason: "no_policy" }),
-}));
 
 const { clockIn, clockOut } = await import("./clocking");
 const { updateWorkPeriodTimes } = await import("./work-period-time-edit");

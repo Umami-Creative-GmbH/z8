@@ -1,4 +1,4 @@
-import type { EditCapability } from "@/lib/effect/services/change-policy.service";
+import type { EditCapability } from "./change-policy/verdict";
 import { sameWorkVehicleUse, type WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "./work-location";
 

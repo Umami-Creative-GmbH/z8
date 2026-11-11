@@ -6,10 +6,8 @@ import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { runtime } from "@/lib/effect/runtime";
-import {
-	ChangePolicyService,
-	type EditCapability,
-} from "@/lib/effect/services/change-policy.service";
+import { ChangePolicyService } from "@/lib/effect/services/change-policy.service";
+import { type EditCapability, editCapabilityOf } from "@/lib/time-tracking/change-policy/verdict";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import {
@@ -18,7 +16,7 @@ import {
 	readWorkPeriods,
 } from "../read-queries";
 import type { WorkPeriodWithEntries } from "../types";
-import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
+import { getCurrentEmployee, getCurrentSession } from "./auth";
 import { getAssignedProjectsWithHours } from "./entry-helpers";
 import { logger } from "./shared";
 import type { AssignedProject } from "./types";
@@ -171,14 +169,11 @@ export async function getWorkPeriodEditCapability(
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	const [timezone, [selectedWorkPeriod]] = await Promise.all([
-		getUserTimezone(session.user.id),
-		db
-			.select()
-			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
-			.limit(1),
-	]);
+	const [selectedWorkPeriod] = await db
+		.select()
+		.from(workPeriod)
+		.where(eq(workPeriod.id, workPeriodId))
+		.limit(1);
 
 	if (!selectedWorkPeriod) {
 		return { success: false, error: "Work period not found" };
@@ -209,16 +204,15 @@ export async function getWorkPeriodEditCapability(
 		const result = await runtime.runPromise(
 			Effect.gen(function* () {
 				const policyService = yield* ChangePolicyService;
-				const policy = yield* policyService.resolvePolicy(currentEmployee.id);
-				const capability = yield* policyService.getEditCapability({
+				const verdict = yield* policyService.getVerdict({
+					organizationId: currentEmployee.organizationId,
 					employeeId: currentEmployee.id,
-					workPeriodEndTime: selectedWorkPeriod.endTime!,
-					timezone,
+					workPeriodEndTime: selectedWorkPeriod.endTime,
 				});
 
 				return {
-					capability,
-					policyName: policy?.policyName || null,
+					capability: editCapabilityOf(verdict),
+					policyName: verdict.policy?.policyName ?? null,
 				};
 			}),
 		);
