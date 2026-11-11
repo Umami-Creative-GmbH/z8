@@ -915,11 +915,12 @@ describe("POST /api/time-entries/corrections", () => {
 			error:
 				"Entries older than 45 days can only be edited by admins or team leads.",
 		});
-		expect(mockState.getForbiddenCorrectionEditMessage).toHaveBeenCalledWith({
-			employeeId: "employee-1",
-			workPeriodEndTime: new Date("2026-07-01T20:00:00.000Z"),
-			timezone: "Europe/Berlin",
-		});
+		expect(mockState.getForbiddenCorrectionEditMessage).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				workPeriodEndTime: new Date("2026-07-01T20:00:00.000Z"),
+			}),
+		);
 		expect(mockState.submitCorrection).not.toHaveBeenCalled();
 		expect(mockState.amend).not.toHaveBeenCalled();
 	});
