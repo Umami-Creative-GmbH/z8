@@ -15,13 +15,10 @@ import {
 	completeRemovedMemberCleanupPostCommit,
 	revokeRemovedMemberAccessInTransaction,
 } from "@/lib/auth/member-removal-cleanup";
+import { withAuditTrail } from "@/lib/audit-trail";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
-import { systemClock } from "@/lib/datetime/temporal-core";
-import {
-	completeReturnReactivation,
-	reactivateOnReturn,
-} from "@/lib/employee-lifecycle/reactivation";
+import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
 import { placeInTeam } from "@/lib/organization/primary-team";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
@@ -217,7 +214,8 @@ export const PendingMemberServiceLive = Layer.effect(
 		) =>
 			// Approval grants membership and activates the employee, so the member's
 			// configuration/access protection precedes the identity lock (#313).
-			withAuthorizationMutation(
+			// A reactivation's audit entries are forwarded once the approval committed.
+			withAuditTrail((audit) => withAuthorizationMutation(
 				{ organizationId: input.organizationId, userIds: [pendingMember.userId] },
 				async (tx) => {
 					const targetUser = await tx.query.user.findFirst({
@@ -296,30 +294,23 @@ export const PendingMemberServiceLive = Layer.effect(
 							.returning({ id: employee.id });
 						if (created) await placeInAssignedTeam(created.id);
 					} else if (!existingEmployee.isActive) {
-						await tx
-							.update(employee)
-							.set({ isActive: true })
-							.where(
-								and(
-									eq(employee.id, existingEmployee.id),
-									eq(employee.organizationId, input.organizationId),
-								),
-							);
-						await placeInAssignedTeam(existingEmployee.id);
 						// Coming back after a deactivation is a reactivation by the approving admin (#1628).
-						const reactivation = await reactivateOnReturn(tx, {
-							organizationId: input.organizationId,
-							employeeId: existingEmployee.id,
-							actorUserId: input.approvedBy,
-							at: systemClock.nowInstant(),
-						});
-						return { approval, reactivation };
+						await reactivateOnReturn(
+							tx,
+							{
+								organizationId: input.organizationId,
+								employeeId: existingEmployee.id,
+								actorUserId: input.approvedBy,
+							},
+							audit,
+						);
+						await placeInAssignedTeam(existingEmployee.id);
 					}
 
-					return { approval, reactivation: null };
+					return { approval };
 				},
 				dbService.db,
-			);
+			));
 
 		const rejectPendingMemberAtomically = async (input: RejectMemberInput) => {
 			const result = await dbService.db.transaction(async (tx) => {
@@ -591,10 +582,7 @@ export const PendingMemberServiceLive = Layer.effect(
 							}),
 						);
 					}
-					const { approval, reactivation } = approved;
-					if (reactivation) {
-						yield* Effect.promise(() => completeReturnReactivation(reactivation));
-					}
+					const { approval } = approved;
 
 					yield* Effect.promise(() =>
 						syncBillingSeatsAfterMemberChange({
@@ -667,10 +655,6 @@ export const PendingMemberServiceLive = Layer.effect(
 						if (approvalResult._tag === "Failure" || !approvalResult.success) {
 							failed++;
 							continue;
-						}
-						const { reactivation } = approvalResult.success;
-						if (reactivation) {
-							yield* Effect.promise(() => completeReturnReactivation(reactivation));
 						}
 
 						yield* Effect.promise(() =>

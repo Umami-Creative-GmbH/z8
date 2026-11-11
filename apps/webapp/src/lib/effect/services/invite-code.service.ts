@@ -26,12 +26,8 @@ import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
-import { systemClock } from "@/lib/datetime/temporal-core";
-import {
-	completeReturnReactivation,
-	type ReturnReactivation,
-	reactivateOnReturn,
-} from "@/lib/employee-lifecycle/reactivation";
+import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
+import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
 import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
 import { placeInTeam } from "@/lib/organization/primary-team";
@@ -324,13 +320,13 @@ export const InviteCodeServiceLive = Layer.effect(
 			return targetTeam?.id ?? null;
 		};
 
-		/** Returns the reactivation it recorded, which the caller completes after commit (#1628). */
 		const provisionEmployeeForInviteCode = async (
 			dbClient: RedemptionDb,
 			inviteCodeRecord: InviteCode,
 			userId: string,
 			memberRole: unknown,
-		): Promise<ReturnReactivation | null> => {
+			audit: AuditTrail,
+		): Promise<void> => {
 			const [existingEmployee, targetTeamId] = await Promise.all([
 				dbClient.query.employee.findFirst({
 					where: and(
@@ -355,25 +351,19 @@ export const InviteCodeServiceLive = Layer.effect(
 
 			if (existingEmployee) {
 				if (!existingEmployee.isActive) {
-					await dbClient
-						.update(employee)
-						.set({ isActive: true })
-						.where(
-							and(
-								eq(employee.id, existingEmployee.id),
-								eq(employee.organizationId, inviteCodeRecord.organizationId),
-							),
-						);
+					// Coming back after a deactivation is a reactivation by the joining user (#1628).
+					await reactivateOnReturn(
+						dbClient as LifecycleClient,
+						{
+							organizationId: inviteCodeRecord.organizationId,
+							employeeId: existingEmployee.id,
+							actorUserId: userId,
+						},
+						audit,
+					);
 					await placeInTargetTeam(existingEmployee.id);
-					// Coming back after a deactivation is a reactivation by the joining user.
-					return reactivateOnReturn(dbClient as LifecycleClient, {
-						organizationId: inviteCodeRecord.organizationId,
-						employeeId: existingEmployee.id,
-						actorUserId: userId,
-						at: systemClock.nowInstant(),
-					});
 				}
-				return null;
+				return;
 			}
 
 			const [created] = await dbClient
@@ -390,7 +380,6 @@ export const InviteCodeServiceLive = Layer.effect(
 				})
 				.returning({ id: employee.id });
 			if (created) await placeInTargetTeam(created.id);
-			return null;
 		};
 
 		const redeemInviteCodeInTransaction = async (
@@ -402,7 +391,8 @@ export const InviteCodeServiceLive = Layer.effect(
 				expectedPendingInviteCode?: string;
 			},
 		) =>
-			dbService.db.transaction(async (tx) => {
+			// A reactivation's audit entries are forwarded once the redemption committed.
+			withAuditTrail((audit) => dbService.db.transaction(async (tx) => {
 				const redemptionDb = tx as RedemptionDb;
 				// Redemption adds the user's membership and employee in the code's
 				// organization: the user's exclusive configuration/access guard comes
@@ -516,17 +506,16 @@ export const InviteCodeServiceLive = Layer.effect(
 				}
 
 				if (existingMember) {
-					const reactivation =
-						!lockedInviteCode.requiresApproval &&
-						existingMember.status === "approved"
-							? await provisionEmployeeForInviteCode(
-									redemptionDb,
-									lockedInviteCode,
-									input.userId,
-									existingMember.role,
-								)
-							: null;
-					return { member: existingMember, created: false, reactivation };
+					if (!lockedInviteCode.requiresApproval && existingMember.status === "approved") {
+						await provisionEmployeeForInviteCode(
+							redemptionDb,
+							lockedInviteCode,
+							input.userId,
+							existingMember.role,
+							audit,
+						);
+					}
+					return { member: existingMember, created: false };
 				}
 
 				const memberStatus = lockedInviteCode.requiresApproval
@@ -553,14 +542,15 @@ export const InviteCodeServiceLive = Layer.effect(
 					userAgent: input.userAgent,
 				});
 
-				const reactivation = lockedInviteCode.requiresApproval
-					? null
-					: await provisionEmployeeForInviteCode(
-							redemptionDb,
-							lockedInviteCode,
-							input.userId,
-							createdMember.role,
-						);
+				if (!lockedInviteCode.requiresApproval) {
+					await provisionEmployeeForInviteCode(
+						redemptionDb,
+						lockedInviteCode,
+						input.userId,
+						createdMember.role,
+						audit,
+					);
+				}
 
 				const [incrementedInviteCode] = await redemptionDb
 					.update(inviteCode)
@@ -584,8 +574,8 @@ export const InviteCodeServiceLive = Layer.effect(
 					throw new Error("Invite code changed before usage increment");
 				}
 
-				return { member: createdMember, created: true, reactivation };
-			});
+				return { member: createdMember, created: true };
+			}));
 
 		return InviteCodeService.of({
 			create: (input) =>
@@ -997,10 +987,6 @@ export const InviteCodeServiceLive = Layer.effect(
 							}),
 						);
 					}
-					const { reactivation } = redemption;
-					if (reactivation) {
-						yield* Effect.promise(() => completeReturnReactivation(reactivation));
-					}
 					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
 
 					if (redemption.created && redemptionStatus === "approved") {
@@ -1235,10 +1221,6 @@ export const InviteCodeServiceLive = Layer.effect(
 								field: "domainRestrictionEnabled",
 							}),
 						);
-					}
-					const { reactivation } = redemption;
-					if (reactivation) {
-						yield* Effect.promise(() => completeReturnReactivation(reactivation));
 					}
 					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
 
