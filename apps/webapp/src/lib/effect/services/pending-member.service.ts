@@ -15,7 +15,7 @@ import {
 	completeRemovedMemberCleanupPostCommit,
 	revokeRemovedMemberAccessInTransaction,
 } from "@/lib/auth/member-removal-cleanup";
-import { withAuditTrail } from "@/lib/audit-trail";
+import { AuditTrail } from "@/lib/audit-trail";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
@@ -211,13 +211,14 @@ export const PendingMemberServiceLive = Layer.effect(
 		const approvePendingMemberAtomically = async (
 			pendingMember: PendingMember,
 			input: ApproveMemberInput,
-		) =>
+		) => {
 			// Approval grants membership and activates the employee, so the member's
 			// configuration/access protection precedes the identity lock (#313).
-			// A reactivation's audit entries are forwarded once the approval committed.
-			withAuditTrail((audit) => withAuthorizationMutation(
+			const approved = await withAuthorizationMutation(
 				{ organizationId: input.organizationId, userIds: [pendingMember.userId] },
 				async (tx) => {
+					// One trail per attempt: a restarted attempt's entries rolled back with it.
+					const audit = new AuditTrail();
 					const targetUser = await tx.query.user.findFirst({
 						where: eq(user.id, pendingMember.userId),
 						columns: { email: true },
@@ -307,10 +308,14 @@ export const PendingMemberServiceLive = Layer.effect(
 						await placeInAssignedTeam(existingEmployee.id);
 					}
 
-					return { approval };
+					return { approval, audit };
 				},
 				dbService.db,
-			));
+			);
+			// A reactivation's audit entries are forwarded once the approval committed.
+			approved?.audit.forwardCommitted();
+			return approved;
+		};
 
 		const rejectPendingMemberAtomically = async (input: RejectMemberInput) => {
 			const result = await dbService.db.transaction(async (tx) => {

@@ -96,8 +96,11 @@ export async function reactivateOnReturn(
 		eq(employee.id, input.employeeId),
 		eq(employee.organizationId, input.organizationId),
 	);
-	// Changes nothing for an employee who is on already.
-	await tx.update(employee).set({ isActive: true }).where(isEmployee);
+	// Only someone who is off: the SCIM reconciler has switched its employee on already.
+	await tx
+		.update(employee)
+		.set({ isActive: true })
+		.where(and(isEmployee, eq(employee.isActive, false)));
 
 	const [current] = await tx
 		.select({ id: employee.id })

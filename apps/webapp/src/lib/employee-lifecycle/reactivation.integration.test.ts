@@ -184,7 +184,8 @@ describe("reactivateOnReturn (#1643)", () => {
 		expect(await reactivatedAuditEntries(person)).toEqual([]);
 	});
 
-	it("stamps a pending follow-up deactivation, which the follow-up then withdraws", async () => {
+	// The follow-up then withdraws the stamped row: follow-up.integration.test.ts.
+	it("stamps a pending follow-up deactivation as reactivated", async () => {
 		const person = await fixture.seedEmployee();
 		// A member removal: switched off and recorded pending in one transaction (#1629).
 		await fixture.db.transaction(async (tx) => {
