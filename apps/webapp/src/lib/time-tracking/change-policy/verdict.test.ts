@@ -62,9 +62,12 @@ describe("decideChangePolicyVerdict", () => {
 		[5, "approval_required", "within_approval_window"],
 		[6, "forbidden", "beyond_approval_window"],
 		[90, "forbidden", "beyond_approval_window"],
-	] as const)("%i days back under 2 self-service and 3 approval days is %s", (daysBack, type, reason) => {
-		expect(decide(daysBack)).toEqual({ type, reason, daysBack, policy });
-	});
+	] as const)(
+		"%i days back under 2 self-service and 3 approval days is %s",
+		(daysBack, type, reason) => {
+			expect(decide(daysBack)).toEqual({ type, reason, daysBack, policy });
+		},
+	);
 
 	it("requires approval from the first day when the self-service window is zero days", () => {
 		const sameDayOnly = { ...policy, selfServiceDays: 0, approvalDays: 7 };
@@ -123,14 +126,18 @@ describe("manualApprovalIntentOf", () => {
 
 describe("editCapabilityOf", () => {
 	it("keeps the outcome and reason and leaves the policy out", () => {
-		expect(editCapabilityOf(decideChangePolicyVerdict({ exemption: null, policy, daysBack: 3 }))).toEqual({
+		expect(
+			editCapabilityOf(decideChangePolicyVerdict({ exemption: null, policy, daysBack: 3 })),
+		).toEqual({
 			type: "approval_required",
 			reason: "within_approval_window",
 		});
 	});
 
 	it("carries the days back only when the edit is refused", () => {
-		expect(editCapabilityOf(decideChangePolicyVerdict({ exemption: null, policy, daysBack: 6 }))).toEqual({
+		expect(
+			editCapabilityOf(decideChangePolicyVerdict({ exemption: null, policy, daysBack: 6 })),
+		).toEqual({
 			type: "forbidden",
 			reason: "beyond_approval_window",
 			daysBack: 6,

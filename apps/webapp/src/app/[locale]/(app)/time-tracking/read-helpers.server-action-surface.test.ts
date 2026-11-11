@@ -18,7 +18,6 @@ function exportsName(source: string, name: string) {
 describe("time-tracking read helper surface", () => {
 	it.each([
 		"actions/queries.ts",
-		"actions/policy-helpers.ts",
 		"actions/auth.ts",
 		"read-queries.ts",
 		"read-time-kpis.ts",

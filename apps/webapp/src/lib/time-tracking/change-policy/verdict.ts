@@ -118,8 +118,10 @@ export function editCapabilityOf(verdict: ChangePolicyVerdict): EditCapability {
 		return { type: "forbidden", reason: verdict.reason, daysBack: verdict.daysBack };
 	}
 	if (verdict.type === "approval_required") return { type: verdict.type, reason: verdict.reason };
-	const exempt = verdict.reason === "on_behalf" || verdict.reason === "owner_admin_self";
-	return { type: "direct", reason: exempt ? "no_policy" : verdict.reason };
+	if (verdict.reason === "on_behalf" || verdict.reason === "owner_admin_self") {
+		return { type: "direct", reason: "no_policy" };
+	}
+	return { type: "direct", reason: verdict.reason };
 }
 
 /**

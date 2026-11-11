@@ -56,9 +56,11 @@ vi.mock("./auth", () => ({
 		userAgent: "vitest",
 	}),
 }));
-vi.mock("./policy-helpers", () => ({
-	getEditCapabilityForPeriod: state.getEditCapability,
-}));
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, state.getEditCapability),
+);
 vi.mock("./shared", () => ({
 	logger: { error: vi.fn(), info: vi.fn() },
 }));

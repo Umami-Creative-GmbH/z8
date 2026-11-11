@@ -8,7 +8,6 @@ import {
 	getRequestMetadata,
 	getUserTimezone,
 } from "@/app/[locale]/(app)/time-tracking/actions/auth";
-import { getEditCapabilityForPeriod } from "@/app/[locale]/(app)/time-tracking/actions/policy-helpers";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { createCorrectionDateTime } from "@/app/[locale]/(app)/time-tracking/actions/time-utils";
 import type {
@@ -93,6 +92,11 @@ import {
 	replayCommittedAmendment,
 	replayOrAmendCompletedWork,
 } from "@/lib/time-tracking/amend-completed-work";
+import {
+	type ChangePolicyExemption,
+	type ChangePolicyVerdict,
+	readChangePolicyVerdict,
+} from "@/lib/time-tracking/change-policy/verdict";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { CompletedWorkCollisionError } from "@/lib/time-tracking/close-active-work";
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
@@ -231,25 +235,25 @@ function editPolicyForbiddenMessage(daysBack: number) {
 }
 
 /**
- * Enforces the employee change policy for self-submitted edit corrections.
- * Returns the rejection message when the period is beyond both the
- * self-service and approval windows, otherwise null. A running period has no
- * end yet, so it is always within the current day's window.
+ * Enforces the employee change policy for edit corrections. Returns the
+ * rejection message when the period is beyond both the self-service and
+ * approval windows, otherwise null.
  */
 export async function getForbiddenCorrectionEditMessage(input: {
+	organizationId: string;
+	/** The employee whose work period it is. */
 	employeeId: string;
 	workPeriodEndTime: Date | null;
-	timezone: string;
+	exemption?: ChangePolicyExemption | null;
 }): Promise<string | null> {
-	if (!input.workPeriodEndTime) {
-		return null;
-	}
-	const capability = await getEditCapabilityForPeriod({
+	const verdict = await readChangePolicyVerdict(db, {
+		organizationId: input.organizationId,
 		employeeId: input.employeeId,
-		workPeriodEndTime: input.workPeriodEndTime,
-		timezone: input.timezone,
+		workEnd: input.workPeriodEndTime ? instantFromDate(input.workPeriodEndTime) : null,
+		now: systemClock.nowInstant(),
+		exemption: input.exemption,
 	});
-	return capability.type === "forbidden" ? editPolicyForbiddenMessage(capability.daysBack) : null;
+	return verdict.type === "forbidden" ? editPolicyForbiddenMessage(verdict.daysBack) : null;
 }
 
 /** The same-day request exactly as submitted: the adopted receipt's command. */
@@ -411,12 +415,13 @@ export async function editSameDayTimeEntry(
 		};
 	}
 
-	let editCapability: Awaited<ReturnType<typeof getEditCapabilityForPeriod>>;
+	let editCapability: ChangePolicyVerdict;
 	try {
-		editCapability = await getEditCapabilityForPeriod({
+		editCapability = await readChangePolicyVerdict(db, {
+			organizationId: currentEmployee.organizationId,
 			employeeId: currentEmployee.id,
-			workPeriodEndTime: selectedWorkPeriod.endTime,
-			timezone,
+			workEnd: instantFromDate(selectedWorkPeriod.endTime),
+			now: systemClock.nowInstant(),
 		});
 	} catch (error) {
 		logger.error({ error }, "Failed to check edit capability");
@@ -2052,23 +2057,22 @@ function submissionEffect(
 		if (action === "edit") {
 			// The change policy governs employees' own edits; an on-behalf change
 			// goes to the owner's approval chain instead.
-			const forbiddenMessage = onBehalf
-				? null
-				: yield* dbService
-						.query("timeCorrection.getForbiddenEditMessage", () =>
-							getForbiddenCorrectionEditMessage({
-								employeeId: currentEmployee.id,
-								workPeriodEndTime: period.endTime,
-								timezone,
-							}),
-						)
-						.pipe(
-							Effect.tapError((error) =>
-								Effect.sync(() =>
-									logger.error({ error: error.cause }, "Failed to check edit capability"),
-								),
-							),
-						);
+			const forbiddenMessage = yield* dbService
+				.query("timeCorrection.getForbiddenEditMessage", () =>
+					getForbiddenCorrectionEditMessage({
+						organizationId,
+						employeeId: period.employeeId,
+						workPeriodEndTime: period.endTime,
+						exemption: onBehalf ? "on_behalf" : null,
+					}),
+				)
+				.pipe(
+					Effect.tapError((error) =>
+						Effect.sync(() =>
+							logger.error({ error: error.cause }, "Failed to check edit capability"),
+						),
+					),
+				);
 			if (forbiddenMessage) {
 				return yield* Effect.fail(
 					new ValidationError({

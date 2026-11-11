@@ -98,10 +98,11 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
-vi.mock("./policy-helpers", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./policy-helpers")>()),
-	getEditCapabilityForPeriod: async () => harness.capability,
-}));
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, () => harness.capability),
+);
 vi.mock("@/lib/notifications/triggers", async (original) =>
 	(await import("@/test/integration-harness")).notificationTriggers(original),
 );

@@ -73,11 +73,6 @@ vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 
-vi.mock("./policy-helpers", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./policy-helpers")>()),
-	getEditCapabilityForPeriod: async () => ({ type: "direct", reason: "no_policy" }),
-}));
-
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();
 	const record = (context: unknown, message?: unknown) => {

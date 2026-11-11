@@ -43,18 +43,12 @@ vi.mock("@/lib/time-tracking/project-eligibility", async (importOriginal) => {
 	};
 });
 
-vi.mock("./policy-helpers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("./policy-helpers")>();
-	return {
-		...original,
-		getEditCapabilityForPeriod: async (
-			...args: Parameters<typeof original.getEditCapabilityForPeriod>
-		) =>
-			harness.editsNeedApproval
-				? { type: "approval_required" as const }
-				: original.getEditCapabilityForPeriod(...args),
-	};
-});
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, () =>
+		harness.editsNeedApproval ? { type: "approval_required" } : null),
+);
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/datetime/temporal-core")>();

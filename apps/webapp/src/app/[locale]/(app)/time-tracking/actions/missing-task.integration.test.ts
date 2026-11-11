@@ -26,15 +26,6 @@ const harness = vi.hoisted(() => ({
 	organizationId: null as string | null,
 }));
 
-// The employee edits their own work directly, as without a change policy's approval window.
-vi.mock("./policy-helpers", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./policy-helpers")>()),
-	getEditCapabilityForPeriod: async () => ({
-		type: "direct" as const,
-		reason: "no_policy" as const,
-	}),
-}));
-
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
