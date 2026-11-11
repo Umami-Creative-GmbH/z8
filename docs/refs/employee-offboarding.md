@@ -539,18 +539,25 @@ shift or absence; the acceptance suite asserts that.
 **Every way back is a reactivation** (#1628). The invite-code join, the
 pending-member approval, provisioning (`ensureEmployeeForOrganizationMember` in
 `membershipAccepted` mode) and a SCIM re-enable (the reconciler's
-`onEmployeeReactivated` hook) switch the employee on themselves, then call
-`reactivateOnReturn` in the same transaction. It does the same ledger work as
-*Reactivate* when the employee is on the current roster again and has an open
-deactivation, and nothing otherwise: a departed employee the database guard
-kept inactive and an employee who was never deactivated get no reactivation.
-The actor is whoever brought them back: the approving admin, the joining or
-accepting user (the added user for `addMember`, whose hook names no actor), or
-for SCIM the user, with `{ connectionId }` in the audit metadata. After commit
-`completeReturnReactivation` forwards the audit entries and writes
-`employee.reactivated` with the `reactivationRequestId`. These paths serialize
-with Deactivate through the user's exclusive configuration/access guard and do
-not take the organization row lock.
+`onEmployeeReactivated` hook) each make one call in their transaction (#1643):
+`reactivateOnReturn(tx, { organizationId, employeeId, actorUserId, metadata? },
+audit)`. It switches the employee on when they are off (the SCIM reconciler has
+already done so, with its own ownership check). It then does the same ledger
+work as *Reactivate* when the employee is on the current roster again and has
+an open deactivation, and nothing otherwise: a departed employee the database
+guard kept inactive (`current: false`) and an employee who was never
+deactivated (`reactivationRequestId: null`) get no reactivation. The actor is
+whoever brought them back: the approving admin, the joining or accepting user
+(the added user for `addMember`, whose hook names no actor), or for SCIM the
+user, with `{ connectionId }` in the audit metadata. The `employee.reactivated`
+entry, with the `reactivationRequestId`, is recorded into the caller's
+`AuditTrail` in the same transaction, so it commits or rolls back with the
+ledger. After its commit the caller only forwards that trail to the external
+audit service, where it opens the transaction (`withAuditTrail`, or
+`queueAfterAuthTransactionCommit` for SCIM). *Reactivate* itself still writes
+its entry after the commit (#1640). These paths serialize with Deactivate
+through the user's exclusive configuration/access guard and do not take the
+organization row lock.
 
 **Checklist.** The ledger row keeps the applied consequences (`applied`) and,
 since migration 0286, the plan they were applied from (`plan`, with only the

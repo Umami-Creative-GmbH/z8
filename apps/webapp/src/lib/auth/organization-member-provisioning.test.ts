@@ -48,17 +48,30 @@ vi.mock("@/lib/organization/personnel-number-uniqueness", () => ({
 	isPersonnelNumberConflict: () => false,
 }));
 
-// The reactivation of a deactivated employee is covered by reactivation-paths.integration.test.ts (#1628).
-vi.mock("@/lib/employee-lifecycle/reactivation", () => ({
-	reactivateOnReturn: async () => null,
-	completeReturnReactivation: async () => undefined,
-}));
+// Coming back, the switch-on included, is covered by reactivation.integration.test.ts and
+// reactivation-paths.integration.test.ts (#1643).
+const reactivateOnReturn = vi.hoisted(() =>
+	vi.fn(async (_tx: unknown, _input: unknown, _audit: unknown) => ({
+		current: true,
+		reactivationRequestId: null,
+	})),
+);
+vi.mock("@/lib/employee-lifecycle/reactivation", () => ({ reactivateOnReturn }));
 
 type ProvisioningDb = Parameters<typeof ensureEmployeeForOrganizationMember>[0];
 
 beforeEach(() => {
 	setPrimaryTeam.mockClear();
+	reactivateOnReturn.mockClear();
 });
+
+/** The employee came back through the one call that switches them on (#1643). */
+const cameBack = (employeeId: string) =>
+	expect(reactivateOnReturn).toHaveBeenCalledWith(
+		expect.anything(),
+		{ organizationId: "org-1", employeeId, actorUserId: "user-1" },
+		expect.anything(),
+	);
 
 describe("ensureEmployeeForOrganizationMember", () => {
 	function createDbMock(existingEmployee: unknown = null) {
@@ -194,16 +207,13 @@ describe("ensureEmployeeForOrganizationMember", () => {
 	});
 
 	it("reactivates an inactive employee without a draft without assigning a target team", async () => {
-		const { db, set, updateReturning } = createDbMock({
+		const { db, update } = createDbMock({
 			id: "employee-existing",
 			userId: "user-1",
 			organizationId: "org-1",
 			teamId: null,
 			isActive: false,
 		});
-		updateReturning.mockResolvedValue([
-			{ id: "employee-existing", isActive: true, teamId: "team-1" },
-		]);
 
 		await ensureEmployeeForOrganizationMember(db, {
 			mode: "membershipAccepted",
@@ -213,7 +223,10 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			targetTeamId: "team-1",
 		});
 
-		expect(set).toHaveBeenCalledWith({ isActive: true });
+		cameBack("employee-existing");
+		// Without a draft there is nothing else to write.
+		expect(update).not.toHaveBeenCalled();
+		expect(setPrimaryTeam).not.toHaveBeenCalled();
 	});
 
 	it("reactivates an inactive admin employee without a team and grants org-wide team permissions", async () => {
@@ -242,10 +255,8 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			targetTeamId: "team-1",
 		});
 
-		expect(set).toHaveBeenCalledWith({
-			isActive: true,
-			role: "admin",
-		});
+		cameBack("employee-existing");
+		expect(set).toHaveBeenCalledWith({ role: "admin" });
 		expect(teamPermissionsFindFirst).toHaveBeenCalledOnce();
 		expect(values).toHaveBeenCalledWith({
 			employeeId: "employee-existing",
@@ -388,7 +399,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 	});
 
 	it("preserves established employee data when reactivating without a draft", async () => {
-		const { db, set } = createDbMock({
+		const { db, update } = createDbMock({
 			id: "employee-existing",
 			userId: "user-1",
 			organizationId: "org-1",
@@ -410,7 +421,8 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			targetTeamId: "team-new",
 		});
 
-		expect(set).toHaveBeenCalledWith({ isActive: true });
+		cameBack("employee-existing");
+		expect(update).not.toHaveBeenCalled();
 	});
 
 	it("does not duplicate an employee when acceptance is followed by reconciliation", async () => {
@@ -1151,7 +1163,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 
 		expect(db.set).toHaveBeenCalledWith(
 			expect.objectContaining({
-				isActive: true,
 				role: "manager",
 				position: "Lead",
 				contractType: "hourly",
@@ -1205,7 +1216,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 		});
 
 		expect(db.set).toHaveBeenCalledWith({
-			isActive: true,
 			role: "employee",
 			position: "Lead",
 			contractType: "fixed",
@@ -1251,7 +1261,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 
 		placedIn("employee-existing", "team-1");
 		expect(db.set).toHaveBeenCalledWith({
-			isActive: true,
 			role: "manager",
 			firstName: "Ada",
 			lastName: "Lovelace",
