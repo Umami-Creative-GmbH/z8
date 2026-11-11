@@ -20,8 +20,9 @@ export type DeactivationRosterApplied = Omit<DeactivationApplied, "employmentEnd
 
 /**
  * Ends what the person holds (Employment ending, #1624) for this
- * deactivation, at its instant. The caller holds the deactivation's locks and
- * the employee row FOR UPDATE, and has not switched the employee off yet.
+ * deactivation, at its instant. Only the deactivation sequence
+ * (`sequence.ts`) calls it, under the deactivation's locks and the employee
+ * row FOR UPDATE, before it switches the employee off.
  * The after-commit steps (the deputy notices) run on `dependencies.database`.
  */
 export function endEmploymentForDeactivation(
@@ -51,11 +52,10 @@ export function endEmploymentForDeactivation(
 /**
  * Applies a deactivation's roster areas inside its transaction, in the lock
  * order the areas agree on (D12): manager links, team links, approval duties,
- * shifts, then absences. The caller has already taken the absence write gates,
- * the exclusive organization configuration guard, the authorization guards and
- * the organization row, ended the employment (`endEmployment`), switched the
- * employee off with `deactivated_at = ctx.at` and refused a plan with
- * refusals. Audit rows go into `ctx.audit`; external effects come back as
+ * shifts, then absences. Only the deactivation sequence (`sequence.ts`) calls
+ * it, under the deactivation's locks, after Employment ending and after the
+ * employee is switched off; its entries refuse a plan with refusals before
+ * that. Audit rows go into `ctx.audit`; external effects come back as
  * after-commit steps.
  */
 export async function applyDeactivationConsequences(

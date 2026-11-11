@@ -1,48 +1,48 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { employee } from "@/db/schema";
-import { AuditTrail } from "@/lib/audit-trail";
-import type { AuthorizationMutationScope } from "@/lib/authorization/authorization-mutation";
-import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import type { db as appDb } from "@/db";
+import { AuditAction, type AuditLogEntry, logAudit } from "@/lib/audit-logger";
+import { revokeOrganizationActiveSessions } from "@/lib/auth/organization-session-revocation";
+import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
+import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
+import { createLogger } from "@/lib/logger";
 import { addCalendarSyncJob } from "@/lib/queue";
+import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import type { DeputyAssignment } from "../deputy-release";
-import {
-	type DeputyAssignmentsEndingApplied,
-	deputyReleaseNotice,
-} from "../employment-ending/deputy-assignments";
+import { deputyReleaseNotice } from "../employment-ending/deputy-assignments";
 import { resolveCurrentEmploymentPeriod } from "../employment-periods";
-import { lockEmployeeRow } from "../locks";
-import { checklistPlanSnapshot } from "../reactivation-checklist";
+import { checkLifecycleTarget, type LifecycleTargetCheck } from "../lifecycle-target";
 import {
 	type DeactivationLedgerEntry,
 	insertDeactivation,
-	recordDeactivationOutcome,
+	readDeactivationByRequest,
 	requestFingerprint,
-	writeReceipt,
 } from "../receipts";
-import { acquireAbsenceCancellationGuards } from "./absences";
-import { applyDeactivationConsequences, endEmploymentForDeactivation } from "./apply";
-import { managerLinkAuthorizationEmployeeIds, validatedReplacementManagers } from "./manager-links";
+import { validatedReplacementManagers } from "./manager-links";
 import { planDeactivationConsequences } from "./plan";
-import { type DeactivationPlannerNotice, loadPlannerNotice, sendPlannerNotice } from "./shifts";
-import type {
-	DeactivationAfterCommit,
-	DeactivationApplied,
-	DeactivationApplyDependencies,
-	DeactivationPlan,
-	DeactivationWriter,
-	NamedEmployee,
-} from "./types";
+import {
+	type AppliedDeactivation,
+	applyRecordedDeactivation,
+	type DeactivationResult,
+	inDeactivationLocks,
+	runAfterCommitSteps,
+} from "./sequence";
+import { sendPlannerNotice } from "./shifts";
+import type { DeactivationAfterCommit, DeactivationPlanContext, NamedEmployee } from "./types";
 
 /**
- * The deactivation command (#1440, Organization ADR 0006): the transaction
- * part of Deactivate, after the action's authorization and owner checks. One
- * request ID is one deactivation: `employee_deactivation` is its ledger, and a
- * retried request replays the stored result instead of applying anything again.
+ * Deactivate (#1440, Organization ADR 0006), as an admin confirms it: the
+ * whole command behind one call (#1638). One request ID is one deactivation:
+ * `employee_deactivation` is its ledger, and a retried request replays the
+ * stored result instead of applying anything again.
  */
+
+export type { DeactivationResult } from "./sequence";
+
+type Database = typeof appDb;
+
+const logger = createLogger("Deactivation");
 
 export const DEACTIVATE_EMPLOYEE_COMMAND = "deactivate_employee";
 
@@ -67,218 +67,267 @@ export function deactivationRequestFingerprint(command: DeactivationCommand): st
 	);
 }
 
-/**
- * The deactivation's protection, in the lock order of D12: the absence and
- * period submission approval write gates (rank 2) before protection, the
- * exclusive organization configuration guard (rank 3, project assignments and
- * the closed-month check), then the user guards (rank 4) of the person, their
- * reports, their own managers and the chosen replacements. The caller takes
- * the organization row afterwards.
- */
-export function deactivationProtectionScope(
-	command: DeactivationCommand,
-): AuthorizationMutationScope {
-	return {
-		organizationId: command.organizationId,
-		organizationWide: true,
-		employeeIds: [command.employeeId, ...Object.values(command.replacementManagers)],
-		route: async (tx) => ({
-			employeeIds: await managerLinkAuthorizationEmployeeIds(tx, {
-				organizationId: command.organizationId,
-				employeeId: command.employeeId,
-			}),
-		}),
-		beforeProtection: (tx) => acquireAbsenceCancellationGuards(tx, command.organizationId),
-	};
-}
+/** Why the actor may not deactivate this employee; the caller words it. */
+export type DeactivationTargetRefusal = Exclude<
+	LifecycleTargetCheck,
+	{ type: "change" } | { type: "unchanged" }
+>;
 
-/** What a replayed request returns and re-runs after the commit. JSON, stored on the ledger. */
-export type DeactivationResult = {
-	deactivationId: string;
-	employeeId: string;
-	employeeUserId: string;
-	deactivatedAt: string;
-	/** The planner notice, keyed by the deactivation, so sending it again sends nothing new. */
-	plannerNotice: DeactivationPlannerNotice | null;
-	/** Absences the person stopped covering as deputy; their notices are keyed by `eventKey`. */
-	releasedDeputies: {
-		eventKey: string;
-		assignments: DeputyAssignment[];
-	} | null;
-	cancelledAbsenceIds: string[];
-};
-
-export type DeactivationExecution =
+export type DeactivateOutcome =
+	/** This request deactivated the employee. */
+	| { kind: "deactivated"; deactivationId: string; warnings: string[] }
+	/**
+	 * The same request again: nothing was applied twice. Its after-commit work
+	 * that is safe to repeat ran again, unless the deactivation was reactivated
+	 * since.
+	 */
+	| { kind: "replayed"; reactivatedSince: boolean; warnings: string[] }
+	/** Already a former employee: nothing changed; only their sessions were revoked again. */
+	| { kind: "unchanged"; warnings: string[] }
+	/** A report still needs an eligible replacement manager. Nothing was written. */
 	| {
 			kind: "refused";
-			plan: DeactivationPlan;
-			/** Reports whose replacement is missing or not eligible. */
 			reports: Array<
 				NamedEmployee & {
 					refusal: "replacement_missing" | "replacement_ineligible";
 				}
 			>;
 	  }
-	| {
-			kind: "applied";
-			deactivationId: string;
-			plan: DeactivationPlan;
-			applied: DeactivationApplied;
-			result: DeactivationResult;
-			/** Forwarded to the external audit service after the commit. */
-			audit: AuditTrail;
-			afterCommit: DeactivationAfterCommit[];
-	  };
+	/** The actor may not deactivate this employee, or there is no such employee. Nothing was written. */
+	| { kind: "rejected"; refusal: DeactivationTargetRefusal };
 
 /**
- * Deactivates the employee inside the caller's transaction, which already
- * holds the protection of `deactivationProtectionScope` and the organization
- * row, and checked the actor's authority and the owner rules. Plans first and
- * refuses without writing when a report still needs an eligible replacement;
- * otherwise records the deactivation, ends what the person holds (Employment
- * ending), switches the employee off at `at`, applies the roster areas and
- * stores the outcome for replays.
+ * What a deactivation does outside the database once it has committed. The
+ * real ones are the default; a test passes its own to see their order.
  */
-export async function executeDeactivation(
-	tx: DeactivationWriter,
-	command: DeactivationCommand &
-		DeactivationApplyDependencies & { at: Instant; requestFingerprint: string },
-): Promise<DeactivationExecution> {
-	const scope = {
-		organizationId: command.organizationId,
-		employeeId: command.employeeId,
-	};
-	const period = await resolveCurrentEmploymentPeriod(tx, scope);
-	const organizationTimeZone = await loadOrganizationTimezone(tx, command.organizationId);
-	const planContext = {
-		...scope,
-		at: command.at,
-		organizationTimeZone,
-		employmentPeriodId: period?.id ?? null,
-		replacementManagers: command.replacementManagers,
-		replaceManagers: true,
-	};
-	const plan = await planDeactivationConsequences(tx, planContext);
-	if (plan.refusals.length > 0) {
-		return {
-			kind: "refused",
-			plan,
-			reports: plan.managerLinks.reportsNeedingReplacement.flatMap((report) =>
-				report.refusal
-					? [
-							{
-								employeeId: report.employeeId,
-								name: report.name,
-								refusal: report.refusal,
-							},
-						]
-					: [],
-			),
-		};
+export type DeactivationEffects = {
+	revokeSessions: (userId: string, organizationId: string) => Promise<void>;
+	logAudit: (entry: AuditLogEntry) => Promise<void>;
+	/** A former employee holds no paid seat (#1439). */
+	reconcileSeats: (organizationId: string) => Promise<void>;
+	/** A deactivated owner or admin can no longer own scheduled exports (#988). */
+	pauseOwnedExports: (
+		database: Database,
+		input: { organizationId: string; owner: { userId: string }; actorUserId: string },
+	) => Promise<void>;
+};
+
+const defaultEffects: DeactivationEffects = {
+	revokeSessions: (userId, organizationId) =>
+		revokeOrganizationActiveSessions(userId, organizationId),
+	logAudit,
+	// Best effort, as for member removal, but recounting the local seats even
+	// while external billing is off, as a departure does: a failed delivery is
+	// logged, and the billing seat reconciliation job settles it.
+	reconcileSeats: (organizationId) =>
+		reconcileBillingSeatsForOrganization(organizationId, { alsoWhenBillingDisabled: true }),
+	pauseOwnedExports: pauseSchedulesAfterOwnerAccessChange,
+};
+
+export type DeactivateDependencies = {
+	/** Gives the instant every consequence uses; read once the locks are held. */
+	clock?: Clock;
+	effects?: Partial<DeactivationEffects>;
+};
+
+type Committed =
+	| { kind: "deactivated"; applied: AppliedDeactivation }
+	| {
+			kind: "replayed";
+			employeeUserId: string | null;
+			reactivatedSince: boolean;
+			afterCommit: DeactivationAfterCommit[];
+	  }
+	| { kind: "unchanged"; employeeUserId: string }
+	| Extract<DeactivateOutcome, { kind: "refused" | "rejected" }>;
+
+/**
+ * Deactivates the employee: they become a former employee with the same
+ * consequences as a departure taking effect, applied in one transaction.
+ *
+ * The caller has authenticated the actor and parsed the command; everything
+ * else happens here. In its own transaction on `database`, under the
+ * deactivation's locks (`sequence.ts`), it replays a request ID it has seen,
+ * checks that the actor may deactivate this employee (the owner rules), plans
+ * and refuses without writing while a report still needs an eligible
+ * replacement, and otherwise records the deactivation and runs the
+ * deactivation sequence. After the commit it forwards the audit, runs the
+ * consequences' after-commit steps (a failing step is logged and returned as a
+ * warning, never undoing the commit), revokes the person's sessions, writes
+ * the `employee.deactivated` audit entry, recounts the seats and pauses the
+ * scheduled exports they owned. All of it runs on `database`.
+ *
+ * Throws `DeactivationRequestConflictError` for a request ID used before with
+ * other picks, and passes on the database's owner-invariant error.
+ */
+export async function deactivate(
+	database: Database,
+	command: DeactivationCommand & { actorEmail?: string },
+	dependencies: DeactivateDependencies = {},
+): Promise<DeactivateOutcome> {
+	const { organizationId, employeeId, actorUserId } = command;
+	const scope = { organizationId, employeeId };
+	const clock = dependencies.clock ?? systemClock;
+	const effects = { ...defaultEffects, ...dependencies.effects };
+	const fingerprint = deactivationRequestFingerprint(command);
+
+	const committed = await inDeactivationLocks<Committed>(
+		database,
+		{ ...scope, replacementManagerIds: Object.values(command.replacementManagers) },
+		async (tx) => {
+			const recorded = await readDeactivationByRequest(tx, {
+				organizationId,
+				requestId: command.requestId,
+				requestFingerprint: fingerprint,
+			});
+			if (recorded) {
+				const rebuilt = rebuildAfterCommit(recorded, database);
+				return {
+					kind: "replayed",
+					employeeUserId: rebuilt.result?.employeeUserId ?? null,
+					reactivatedSince: recorded.reactivatedAt !== null,
+					afterCommit: rebuilt.afterCommit,
+				};
+			}
+
+			const check = await checkLifecycleTarget(tx, { ...scope, actorUserId, isActive: false });
+			if (check.type === "unchanged") {
+				return { kind: "unchanged", employeeUserId: check.targetEmployee.userId };
+			}
+			if (check.type !== "change") return { kind: "rejected", refusal: check };
+
+			// The instant every consequence uses, taken once the locks are held.
+			const at = clock.nowInstant();
+			const period = await resolveCurrentEmploymentPeriod(tx, scope);
+			const context: DeactivationPlanContext = {
+				...scope,
+				at,
+				organizationTimeZone: await loadOrganizationTimezone(tx, organizationId),
+				employmentPeriodId: period?.id ?? null,
+				replacementManagers: command.replacementManagers,
+				replaceManagers: true,
+			};
+			const plan = await planDeactivationConsequences(tx, context);
+			if (plan.refusals.length > 0) {
+				return {
+					kind: "refused",
+					reports: plan.managerLinks.reportsNeedingReplacement.flatMap((report) =>
+						report.refusal
+							? [{ employeeId: report.employeeId, name: report.name, refusal: report.refusal }]
+							: [],
+					),
+				};
+			}
+
+			const { id: deactivationId } = await insertDeactivation(tx, {
+				...scope,
+				employmentPeriodId: context.employmentPeriodId,
+				deactivatedAt: at,
+				createdBy: actorUserId,
+				reason: "employee_deactivated",
+				requestId: command.requestId,
+				requestFingerprint: fingerprint,
+				// Only the validated picks: stage activation routes later stages by them.
+				replacementManagers: validatedReplacementManagers(plan.managerLinks),
+			});
+			const applied = await applyRecordedDeactivation(tx, database, {
+				context,
+				plan,
+				deactivationId,
+				actorUserId,
+				reason: "employee_deactivated",
+				requestId: command.requestId,
+				requestFingerprint: fingerprint,
+				deactivatedAt: at,
+				clock: dependencies.clock,
+				mode: { kind: "interactive" },
+			});
+			return { kind: "deactivated", applied };
+		},
+		() => ({ kind: "rejected", refusal: { type: "not_found" } }),
+	);
+
+	if (committed.kind === "refused" || committed.kind === "rejected") return committed;
+	if (committed.kind === "replayed" && committed.reactivatedSince) {
+		// Reactivated since: nothing to repeat for the earlier deactivation.
+		return { kind: "replayed", reactivatedSince: true, warnings: [] };
 	}
 
-	const { id: deactivationId } = await insertDeactivation(tx, {
-		...scope,
-		employmentPeriodId: planContext.employmentPeriodId,
-		deactivatedAt: command.at,
-		createdBy: command.actorUserId,
-		reason: "employee_deactivated",
-		requestId: command.requestId,
-		requestFingerprint: command.requestFingerprint,
-		// Only the validated picks: stage activation routes later stages by them.
-		replacementManagers: validatedReplacementManagers(plan.managerLinks),
+	const employeeUserId =
+		committed.kind === "deactivated" ? committed.applied.employeeUserId : committed.employeeUserId;
+	const steps =
+		committed.kind === "deactivated"
+			? committed.applied.afterCommit
+			: committed.kind === "replayed"
+				? committed.afterCommit
+				: [];
+	if (committed.kind === "deactivated") committed.applied.audit.forwardCommitted();
+	const warnings = await runAfterCommitSteps(steps, (error) => {
+		logger.warn({ error, ...scope }, "Deactivation follow-up step failed after the commit");
 	});
 
-	const audit = new AuditTrail();
-	const applyContext = {
-		...planContext,
-		actorUserId: command.actorUserId,
-		deactivationId,
-		reason: "employee_deactivated" as const,
-		audit,
-	};
+	// Always tried again, also for someone already former: a retry finishes a failed cleanup.
+	let sessionCleanupPending = false;
+	if (employeeUserId !== null) {
+		try {
+			await effects.revokeSessions(employeeUserId, organizationId);
+		} catch {
+			sessionCleanupPending = true;
+		}
+	}
 
-	// Everything the person holds ends first, while they are still switched on,
-	// in their teams and in their open period; the row lock keeps a concurrent
-	// registration (a kiosk fob) from slipping in.
-	await lockEmployeeRow(tx, scope);
-	const ending = await endEmploymentForDeactivation(tx, applyContext, command);
-
-	const [person] = await tx
-		.update(employee)
-		.set({ isActive: false, deactivatedAt: dateFromInstant(command.at) })
-		.where(
-			and(eq(employee.id, command.employeeId), eq(employee.organizationId, command.organizationId)),
-		)
-		.returning({ id: employee.id, userId: employee.userId });
-	if (!person) throw new Error("The deactivated employee was not found");
-
-	const roster = await applyDeactivationConsequences(tx, applyContext, plan, {
-		clock: command.clock,
-		database: command.database,
-	});
-	const applied: DeactivationApplied = { ...roster.applied, employmentEnding: ending.applied };
-	const afterCommit = [...ending.afterCommit, ...roster.afterCommit];
-
-	const plannerNotice = await loadPlannerNotice(tx, scope, {
-		openedShiftIds: applied.shifts.openedShiftIds,
-		recipientUserIds: plan.shifts.plannerRecipientUserIds,
-	});
-	const result: DeactivationResult = {
-		deactivationId,
-		employeeId: command.employeeId,
-		employeeUserId: person.userId,
-		deactivatedAt: command.at.toString(),
-		plannerNotice,
-		releasedDeputies: storedReleasedDeputies(ending.applied.deputyAssignments),
-		cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,
-	};
-	await recordDeactivationOutcome(tx, {
-		organizationId: command.organizationId,
-		deactivationId,
-		applied,
-		result,
-		// The names the reactivation checklist shows (#1441).
-		plan: checklistPlanSnapshot(plan),
-	});
-	if (period) {
-		// The employment history event (#1441 shows it); its period is required.
-		await writeReceipt(tx, {
-			actor: {
-				userId: command.actorUserId,
-				organizationId: command.organizationId,
+	if (committed.kind === "deactivated") {
+		await effects.logAudit({
+			action: AuditAction.EMPLOYEE_DEACTIVATED,
+			actorId: actorUserId,
+			actorEmail: command.actorEmail,
+			employeeId,
+			targetId: employeeId,
+			targetType: "employee",
+			organizationId,
+			changes: { isActive: { from: true, to: false } },
+			// The employment history shows this deactivation once (#1441).
+			metadata: {
+				reason: "employee_deactivated",
+				deactivationId: committed.applied.deactivationId,
 			},
-			employeeId: command.employeeId,
-			employmentPeriodId: period.id,
-			departureId: null,
-			revision: null,
-			requestId: command.requestId,
-			fingerprint: command.requestFingerprint,
-			kind: "employee_deactivated",
-			occurredAt: dateFromInstant(command.at),
-			result,
-			metadata: { deactivationId },
+			timestamp: new Date(),
 		});
 	}
 
-	return {
-		kind: "applied",
-		deactivationId,
-		plan,
-		applied,
-		result,
-		audit,
-		afterCommit,
-	};
-}
+	// Everything the deactivation committed, on the first run and again on a replay.
+	if (committed.kind !== "unchanged") {
+		await effects.reconcileSeats(organizationId);
+		if (employeeUserId !== null) {
+			await effects.pauseOwnedExports(database, {
+				organizationId,
+				owner: { userId: employeeUserId },
+				actorUserId,
+			});
+		}
+	}
 
-/** The deputy duties Employment ending released, as the stored result keeps them for a replay (#1014). */
-export function storedReleasedDeputies(
-	released: DeputyAssignmentsEndingApplied,
-): DeactivationResult["releasedDeputies"] {
-	return released.assignments.length > 0
-		? { eventKey: released.eventKey, assignments: released.assignments }
-		: null;
+	if (sessionCleanupPending) {
+		// The cause may name infrastructure; it stays out of the log and the warning.
+		logger.warn(
+			{
+				operation: "revokeOrganizationActiveSessions",
+				...scope,
+				targetUserId: employeeUserId,
+			},
+			"Employee deactivated with session cleanup pending",
+		);
+		warnings.push("Session cleanup is pending");
+	}
+
+	switch (committed.kind) {
+		case "deactivated":
+			return { kind: "deactivated", deactivationId: committed.applied.deactivationId, warnings };
+		case "replayed":
+			return { kind: "replayed", reactivatedSince: false, warnings };
+		case "unchanged":
+			return { kind: "unchanged", warnings };
+	}
 }
 
 /**
@@ -289,9 +338,9 @@ export function storedReleasedDeputies(
  * notices are not repeated. A deactivation that was reactivated since replays
  * nothing. The steps run on `database`, the caller's client.
  */
-export function rebuildDeactivationAfterCommit(
+function rebuildAfterCommit(
 	entry: DeactivationLedgerEntry,
-	database: DeactivationApplyDependencies["database"],
+	database: Database,
 ): {
 	result: DeactivationResult | null;
 	afterCommit: DeactivationAfterCommit[];
