@@ -9,7 +9,6 @@ import {
 	project,
 	projectAssignment,
 	timeEntry,
-	userSettings,
 	workPeriod,
 } from "@/db/schema";
 import { activeOrganizationSession } from "@/lib/auth/active-organization-session";
@@ -38,10 +37,7 @@ import {
 	type ServerActionResult,
 } from "@/lib/effect/result";
 import { runtime } from "@/lib/effect/runtime";
-import {
-	ChangePolicyService,
-	type EditCapability,
-} from "@/lib/effect/services/change-policy.service";
+import { ChangePolicyService } from "@/lib/effect/services/change-policy.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
@@ -50,6 +46,7 @@ import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { breakDueStatus } from "@/lib/time-tracking/break-due";
+import { type EditCapability, editCapabilityOf } from "@/lib/time-tracking/change-policy/verdict";
 import {
 	CLOCK_READ_SCOPE_CHANGED,
 	type ClockReadScope,
@@ -1107,13 +1104,6 @@ export async function getWorkPeriodEditCapability(
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone from userSettings
-	const settingsData = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
-		columns: { timezone: true },
-	});
-	const timezone = settingsData?.timezone || "UTC";
-
 	// Get the work period
 	const [period] = await db
 		.select()
@@ -1152,20 +1142,15 @@ export async function getWorkPeriodEditCapability(
 		const result = await runtime.runPromise(
 			Effect.gen(function* () {
 				const policyService = yield* ChangePolicyService;
-
-				// Get the resolved policy for context
-				const policy = yield* policyService.resolvePolicy(emp.id);
-
-				// Get edit capability
-				const capability = yield* policyService.getEditCapability({
+				const verdict = yield* policyService.getVerdict({
+					organizationId: emp.organizationId,
 					employeeId: emp.id,
-					workPeriodEndTime: period.endTime!,
-					timezone,
+					workPeriodEndTime: period.endTime,
 				});
 
 				return {
-					capability,
-					policyName: policy?.policyName || null,
+					capability: editCapabilityOf(verdict),
+					policyName: verdict.policy?.policyName ?? null,
 				};
 			}),
 		);

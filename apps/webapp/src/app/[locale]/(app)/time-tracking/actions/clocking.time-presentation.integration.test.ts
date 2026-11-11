@@ -120,13 +120,11 @@ vi.mock("./approvals", async (importOriginal) => ({
 	sendManualEntryApprovedNotification: async () => undefined,
 }));
 
-vi.mock("./policy-helpers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("./policy-helpers")>();
-	return {
-		...original,
-		getEditCapabilityForPeriod: async () => ({ type: "approval_required" as const }),
-	};
-});
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, () => ({ type: "approval_required" })),
+);
 
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();

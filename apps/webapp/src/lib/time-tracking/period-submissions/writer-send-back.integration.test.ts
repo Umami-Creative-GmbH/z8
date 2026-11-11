@@ -55,12 +55,6 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/app/[locale]/(app)/time-tracking/actions/policy-helpers")
-	>()),
-	getEditCapabilityForPeriod: async () => ({ type: "direct", reason: "no_policy" }),
-}));
 vi.mock("@/lib/app-url", async (original) => ({
 	...(await original<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://t1062.example.test",

@@ -10,9 +10,7 @@ import type { PrincipalContext } from "@/lib/authorization/types";
 import { isHolidayBlockingTimeEntry } from "@/lib/calendar/holiday-service";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import {
-	evaluateManualApprovalIntent,
 	interpretManualInterval,
-	type ManualApprovalIntent,
 	type ManualCaptureSource,
 	type ManualCommandRejection,
 	type ManualInterval,
@@ -21,7 +19,6 @@ import {
 	type ManualTargetZoneSource,
 	type ManualTimeEntryCommand,
 	type ManualZoneRejection,
-	manualCalendarDaysBack,
 	manualOccupiedLocalDates,
 	resolveManualInterpretationZone,
 } from "@/lib/time-tracking/manual-command";
@@ -35,8 +32,11 @@ import {
 	BillableWorkRefusedError,
 	resolveWorkBillabilityInTransaction,
 } from "@/lib/time-tracking/work-billability";
-import { loadChangePolicyCandidates } from "@/lib/time-tracking/change-policy/candidates";
-import { resolveChangePolicy } from "@/lib/time-tracking/change-policy/resolution";
+import {
+	type ManualApprovalIntent,
+	manualApprovalIntentOf,
+	readChangePolicyVerdict,
+} from "@/lib/time-tracking/change-policy/verdict";
 import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
 import { closedRangeTouchedByWork } from "@/lib/time-tracking/closed-months/rules";
 import {
@@ -174,29 +174,6 @@ async function authorizeTarget(
 		}),
 	);
 	return allowed ? { target, isOwnEntry: false, principal } : null;
-}
-
-/** The change policy in effect for the target at `at`, as `resolveChangePolicy` decides it. */
-async function resolveTargetChangePolicy(
-	tx: Reader,
-	target: Pick<Employee, "id" | "teamId" | "organizationId">,
-	at: Instant,
-): Promise<ManualPolicyEvidence | null> {
-	const subject = {
-		organizationId: target.organizationId,
-		employeeId: target.id,
-		teamId: target.teamId,
-	};
-	const resolved = resolveChangePolicy(await loadChangePolicyCandidates(tx, subject), subject, at);
-	if (!resolved) return null;
-	return {
-		policyId: resolved.policyId,
-		assignmentId: resolved.assignmentId,
-		level: resolved.level,
-		selfServiceDays: resolved.selfServiceDays,
-		approvalDays: resolved.approvalDays,
-		noApprovalRequired: resolved.noApprovalRequired,
-	};
 }
 
 /**
@@ -340,16 +317,27 @@ export async function prepareManualWork(
 		return { ok: false, rejection: { reason: "billable_not_allowed", detail: error.reason } };
 	}
 
-	const daysBack = manualCalendarDaysBack(interval.end, now, zone.timezone);
-	let policy: ManualPolicyEvidence | null = null;
-	let exemption: "on_behalf" | "owner_admin_self" | null = null;
-	if (!isOwnEntry) {
-		exemption = "on_behalf";
-	} else if (defineAbilityFor(principal).can("manage", "OrgSettings")) {
-		exemption = "owner_admin_self";
-	} else {
-		policy = await resolveTargetChangePolicy(tx, target, now);
-	}
+	// Days back are counted in the zone the entry is interpreted in, which is recorded with it.
+	const verdict = await readChangePolicyVerdict(tx, {
+		organizationId: target.organizationId,
+		employeeId: target.id,
+		workEnd: interval.end,
+		now,
+		exemption: !isOwnEntry
+			? "on_behalf"
+			: defineAbilityFor(principal).can("manage", "OrgSettings")
+				? "owner_admin_self"
+				: null,
+		timezone: zone.timezone,
+	});
+	const policy: ManualPolicyEvidence | null = verdict.policy && {
+		policyId: verdict.policy.policyId,
+		assignmentId: verdict.policy.assignmentId,
+		level: verdict.policy.level,
+		selfServiceDays: verdict.policy.selfServiceDays,
+		approvalDays: verdict.policy.approvalDays,
+		noApprovalRequired: verdict.policy.noApprovalRequired,
+	};
 
 	return {
 		ok: true,
@@ -373,9 +361,9 @@ export async function prepareManualWork(
 			workCategoryId: command.workCategoryId,
 			workLocationType: command.workLocationType,
 			...(vehicleUse ? { vehicleUse } : {}),
-			daysBack,
+			daysBack: verdict.daysBack,
 			policy,
-			approval: evaluateManualApprovalIntent({ exemption, policy, daysBack }),
+			approval: manualApprovalIntentOf(verdict),
 		},
 	};
 }

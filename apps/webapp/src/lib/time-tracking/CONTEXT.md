@@ -67,6 +67,19 @@ _Avoid_: Manual time entry, added time, retroactive entry
 What a work period is recorded against: its project, work category, work location, vehicle use and whether it is billable. Changing it is an amendment of completed work, under the same change policy for every part.
 _Avoid_: Work metadata, tags
 
+**Change policy**:
+An organization's rule for how far back an employee may change their own work, set as a self-service window and an approval window. It is assigned to the organization, a team or one employee, and the most specific assignment in effect decides. With no policy assigned, an employee changes their own work directly at any age. It does not limit a change made on the employee's behalf, or one an organization owner or admin makes to their own work.
+_Avoid_: Edit policy, correction policy
+
+**Self-service window**:
+The number of calendar days back, in the employee's timezone, within which a change policy lets them change their own work directly. Zero means the same day only. The count runs from the local date the work ended on, and live work counts as today's.
+
+**Approval window**:
+The further calendar days, after the self-service window, within which the change needs approval. Work older than both windows cannot be edited by the employee, but they can still record it as a manual entry, which then needs approval.
+
+**Trust mode**:
+A change policy that requires no approval: the employee changes their own work directly at any age.
+
 **Canonical work record**:
 The record of a completed work period that payroll reads, kept beside the work period in both admissions. Every completed work period has exactly one, except history written before that rule in a closed month, which gets its record when the month is reopened.
 _Avoid_: Canonical record (alone; Approvals has canonical workflows), time record, shadow record, mirror

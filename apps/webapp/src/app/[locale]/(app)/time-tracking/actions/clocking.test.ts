@@ -437,9 +437,11 @@ vi.mock("./entry-helpers", () => ({
 	validateProjectAssignment: mockState.validateProjectAssignment,
 }));
 
-vi.mock("./policy-helpers", () => ({
-	getEditCapabilityForPeriod: mockState.getEditCapabilityForPeriod,
-}));
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, mockState.getEditCapabilityForPeriod),
+);
 
 vi.mock("./queries", () => ({
 	getActiveWorkPeriod: mockState.getActiveWorkPeriod,
@@ -1253,12 +1255,9 @@ describe("createManualTimeEntry", () => {
 			timezoneSource: "user_setting",
 			utcOffsetMinutes: 120,
 		});
-		expect(mockState.getEditCapabilityForPeriod).toHaveBeenCalledWith(
-			expect.objectContaining({
-				workPeriodEndTime: new Date("2026-05-04T07:00:00.000Z"),
-				timezone: "Europe/Berlin",
-			}),
-		);
+		const [policyInput] = mockState.getEditCapabilityForPeriod.mock.calls.at(-1) ?? [];
+		expect(policyInput).toMatchObject({ timezone: "Europe/Berlin" });
+		expect(policyInput.workEnd.toString()).toBe("2026-05-04T07:00:00Z");
 	});
 
 	it("uses browser capture for self manual entries when it matches the effective timezone", async () => {
@@ -2097,7 +2096,7 @@ describe("createManualTimeEntry", () => {
 			pendingChanges: null,
 			computationMetadata: null,
 		});
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "allowed" });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct" });
 
 		const result = await createManualTimeEntry({
 			submissionId: defaultSubmissionId,
@@ -2437,7 +2436,7 @@ describe("createManualTimeEntry", () => {
 		const submissionId = "10000000-0000-4000-8000-000000000099";
 		const startTime = new Date("2026-05-03T09:00:00.000Z");
 		const endTime = new Date("2026-05-03T10:00:00.000Z");
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "allowed" });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct" });
 		mockState.findExistingPeriod.mockResolvedValue({
 			id: submissionId,
 			organizationId: "org-1",
@@ -2701,7 +2700,7 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("revalidates an executed manual entry that does not require approval", async () => {
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "allowed" });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct" });
 
 		const result = await createManualTimeEntry({
 			date: "2026-05-03",

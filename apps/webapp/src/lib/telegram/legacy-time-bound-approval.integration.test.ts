@@ -119,16 +119,11 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 	sendManualEntryApprovedNotification: async () => undefined,
 }));
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (importOriginal) => {
-	const original =
-		await importOriginal<
-			typeof import("@/app/[locale]/(app)/time-tracking/actions/policy-helpers")
-		>();
-	return {
-		...original,
-		getEditCapabilityForPeriod: async () => ({ type: "approval_required" as const }),
-	};
-});
+vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>
+	(
+		await import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")
+	).stubChangePolicyVerdict(original, () => ({ type: "approval_required" })),
+);
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", async (importOriginal) => {
 	const original =

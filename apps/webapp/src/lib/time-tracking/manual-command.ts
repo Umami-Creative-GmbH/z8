@@ -521,21 +521,6 @@ export function manualOccupiedLocalDates(
 	return dates;
 }
 
-/** Calendar days from the end instant's local date to `now`'s local date in the zone. */
-export function manualCalendarDaysBack(end: Instant, now: Instant, timezone: string): number {
-	return end
-		.toZonedDateTimeISO(timezone)
-		.toPlainDate()
-		.until(now.toZonedDateTimeISO(timezone).toPlainDate(), { largestUnit: "days" }).days;
-}
-
-/** The effective change policy's manual-relevant values. */
-export type ManualChangePolicy = {
-	selfServiceDays: number;
-	approvalDays: number;
-	noApprovalRequired: boolean;
-};
-
 /** The assignment level that decided the effective change policy. */
 export type ManualPolicyLevel = ChangePolicyLevel;
 
@@ -544,35 +529,7 @@ export type ManualPolicyEvidence = {
 	policyId: string;
 	assignmentId: string;
 	level: ManualPolicyLevel;
-} & ManualChangePolicy;
-
-export type ManualApprovalIntent =
-	| {
-			intent: "direct";
-			reason: "on_behalf" | "owner_admin_self" | "no_policy" | "trust_mode" | "within_self_service";
-	  }
-	| { intent: "approval"; reason: "within_approval_window" | "beyond_approval_window" };
-
-/**
- * Manual approval intent (#254 §5). Thresholds are inclusive calendar days.
- * Authorized on-behalf entries and owner/admin self entries are exempt. Beyond
- * the approval window the generic policy says `forbidden`; for manual entries
- * only that age-based outcome becomes approval intent. Authorization failures
- * never reach this function.
- */
-export function evaluateManualApprovalIntent(input: {
-	exemption: "on_behalf" | "owner_admin_self" | null;
-	policy: ManualChangePolicy | null;
-	daysBack: number;
-}): ManualApprovalIntent {
-	const { exemption, policy, daysBack } = input;
-	if (exemption) return { intent: "direct", reason: exemption };
-	if (!policy) return { intent: "direct", reason: "no_policy" };
-	if (policy.noApprovalRequired) return { intent: "direct", reason: "trust_mode" };
-	if (daysBack <= policy.selfServiceDays)
-		return { intent: "direct", reason: "within_self_service" };
-	if (daysBack <= policy.selfServiceDays + policy.approvalDays) {
-		return { intent: "approval", reason: "within_approval_window" };
-	}
-	return { intent: "approval", reason: "beyond_approval_window" };
-}
+	selfServiceDays: number;
+	approvalDays: number;
+	noApprovalRequired: boolean;
+};
