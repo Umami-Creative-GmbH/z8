@@ -3,21 +3,24 @@ import { user } from "@/db/auth-schema";
 import { readOnlyTransaction } from "@/db/read-only-transaction";
 import { absenceCategory, employee } from "@/db/schema";
 import { scheduledWeekdays, type WeekdayName } from "@/lib/absences/working-days";
+import type {
+	ApprovalRouteOutcome,
+	ApprovalRouteVariant,
+} from "@/lib/approvals/route-preview/types";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
 import { loadEffectiveWorkPolicies } from "@/lib/work-policy/effective-work-policies";
 import {
+	APPROVER_KIND_LABEL,
 	type ApproverDirectChange,
 	type ApproverGoLiveKind,
 	type ApproverKindResolution,
-	type ApproverRoute,
 	type ApproverSkipReason,
 	type ApproverUnroutableCause,
-	type ApproverVariant,
 	type ApproverVariantResult,
-	loadApproverRouting,
-} from "./approver-routing";
-import { APPROVER_KIND_LABEL, approverFixLink } from "./checks/approver";
+	approverFixLink,
+	previewGoLiveApprovers,
+} from "./checks/approver";
 import { EMPLOYEES_SETTINGS_HREF, PAYROLL_EXPORT_SETTINGS_HREF } from "./checks/payroll-setup";
 import { WORK_POLICY_ASSIGNMENTS_HREF, workPolicySubject } from "./checks/work-policy";
 import { resolveGoLiveGroup } from "./group";
@@ -54,7 +57,7 @@ const WEEKDAYS: readonly WeekdayName[] = [
  * The go-live rehearsal (Organization ADR 0007): for one checked member of the go-live group,
  * their effective work policy today, how each covered approval kind would route (every stage,
  * fallbacks and stand-ins included) and their payroll prerequisites. It resolves exactly as the
- * go-live checks do (the same group, `loadEffectiveWorkPolicies`, `loadApproverRouting`,
+ * go-live checks do (the same group, `loadEffectiveWorkPolicies`, `previewApprovalRoutes`,
  * `readPayrollPrerequisites`), so the two never disagree, all in one read-only transaction: it
  * writes nothing, starts no workflow and sends nothing.
  *
@@ -84,13 +87,13 @@ export async function rehearseGoLiveMember(
 			employees: [workPolicySubject(member)],
 			at: asOf.instant,
 		});
-		const routing = await loadApproverRouting(reader, {
+		const routing = await previewGoLiveApprovers(reader, {
 			organizationId,
 			asOf,
 			members: [member],
 			traceStages: true,
 		});
-		const resolutions = await routing.resolve(member);
+		const resolutions = routing.resolve(member);
 		const prerequisites = await readPayrollPrerequisites(reader, { organizationId, asOf, member });
 		// Awaited in turn for readability; the transaction's one connection queues queries anyway.
 		const people = await loadPeople(reader, organizationId, employeeIdsIn(resolutions));
@@ -227,7 +230,7 @@ function collapse(variants: GoLiveRehearsalVariant[]): GoLiveRehearsalVariant[] 
 }
 
 function variantTrace(
-	variant: ApproverVariant,
+	variant: ApprovalRouteVariant,
 	result: ApproverVariantResult,
 	context: TraceContext,
 ): GoLiveRehearsalVariant {
@@ -247,7 +250,7 @@ function variantTrace(
 }
 
 function variantLabel(
-	variant: ApproverVariant,
+	variant: ApprovalRouteVariant,
 	categories: ReadonlyMap<string, string>,
 ): GoLiveMessage | null {
 	if (variant.absenceCategoryId) {
@@ -267,7 +270,10 @@ function variantLabel(
 	return null;
 }
 
-function routeTrace(route: ApproverRoute, context: TraceContext): GoLiveRehearsalRoute {
+function routeTrace(
+	route: Extract<ApprovalRouteOutcome, { kind: "routed" }>,
+	context: TraceContext,
+): GoLiveRehearsalRoute {
 	const person = (employeeId: string): GoLiveRehearsalPerson => ({
 		employeeId,
 		displayName: context.people.get(employeeId) ?? employeeId,

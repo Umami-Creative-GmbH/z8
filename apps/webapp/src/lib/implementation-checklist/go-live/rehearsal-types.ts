@@ -1,5 +1,5 @@
 import type { WeekdayName } from "@/lib/absences/working-days";
-import type { ApproverGoLiveKind } from "./approver-routing";
+import type { ApprovalRouteKind as ApproverGoLiveKind } from "@/lib/approvals/route-preview/types";
 import type { PayrollPrerequisites } from "./payroll-prerequisites";
 import {
 	type GoLiveFixLink,
