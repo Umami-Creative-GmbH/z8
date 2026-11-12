@@ -102,14 +102,14 @@ describe("WageTypeMappings", () => {
 	});
 
 	it("loads every mapping input with the organization and preserves returned order", async () => {
-		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		render(<WageTypeMappings hasMappingFormat />);
 
 		await waitFor(() =>
 			expect(screen.getByText("First category")).toBeTruthy(),
 		);
-		expect(getMappingsActionMock).toHaveBeenCalledWith("org_123");
-		expect(getWorkCategoriesActionMock).toHaveBeenCalledWith("org_123");
-		expect(getAbsenceCategoriesActionMock).toHaveBeenCalledWith("org_123");
+		expect(getMappingsActionMock).toHaveBeenCalledWith();
+		expect(getWorkCategoriesActionMock).toHaveBeenCalledWith();
+		expect(getAbsenceCategoriesActionMock).toHaveBeenCalledWith();
 
 		const categories = screen.getAllByRole("cell", {
 			name: /First category|Overtime Reduction/,
@@ -122,7 +122,7 @@ describe("WageTypeMappings", () => {
 
 	it("asks for a payroll format before loading mappings when none is configured", () => {
 		render(
-			<WageTypeMappings organizationId="org_123" hasMappingFormat={false} />,
+			<WageTypeMappings hasMappingFormat={false} />,
 		);
 
 		expect(
@@ -131,7 +131,7 @@ describe("WageTypeMappings", () => {
 		expect(getMappingsActionMock).not.toHaveBeenCalled();
 	});
 	it("reports unsuccessful header refresh actions and keeps current mappings", async () => {
-		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		render(<WageTypeMappings hasMappingFormat />);
 		await screen.findByText("First category");
 		getMappingsActionMock.mockResolvedValue({
 			success: false,
@@ -146,7 +146,7 @@ describe("WageTypeMappings", () => {
 	});
 
 	it("offers only supported special categories while retaining saved unsupported mappings", async () => {
-		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		render(<WageTypeMappings hasMappingFormat />);
 		await screen.findByRole("cell", { name: "Overtime Reduction" });
 		expect(
 			screen.getByRole("cell", { name: "Holiday Compensation" }),
@@ -189,7 +189,7 @@ describe("WageTypeMappings", () => {
 			});
 			return { success: true, data: mapping };
 		});
-		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		render(<WageTypeMappings hasMappingFormat />);
 		await screen.findByText("First category");
 		fireEvent.click(screen.getByRole("button", { name: "Add Mapping" }));
 		const panel = within(screen.getByRole("dialog"));
@@ -210,7 +210,6 @@ describe("WageTypeMappings", () => {
 		await screen.findByRole("cell", { name: "SF-WORK" });
 		expect(saveMappingActionMock).toHaveBeenCalledWith(
 			expect.objectContaining({
-				organizationId: "org_123",
 				workCategoryId: "work-2",
 				datevWageTypeCode: null,
 				lexwareWageTypeCode: null,
@@ -238,7 +237,7 @@ describe("WageTypeMappings", () => {
 			data: [{ id: "work-1", name: "First category" }],
 		});
 		saveMappingActionMock.mockResolvedValue({ success: true, data: {} });
-		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		render(<WageTypeMappings hasMappingFormat />);
 		await screen.findByText("First category");
 		fireEvent.click(screen.getByRole("button", { name: "Add Mapping" }));
 		const panel = within(screen.getByRole("dialog"));
@@ -270,7 +269,7 @@ describe("WageTypeMappings", () => {
 	});
 
 	it("uses distinct translated text for the subtitle and format description labels", async () => {
-		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
+		render(<WageTypeMappings hasMappingFormat />);
 		await screen.findByText("First category");
 		expect(
 			screen.getByText(

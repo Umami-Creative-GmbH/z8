@@ -1,11 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
-	actor: null as null | {
-		accessTier: "orgAdmin" | "manager" | "member";
-		organizationId: string;
-		session: { user: { id: string } };
-	},
+	caller: null as StubCaller | null,
 	loadWageHistoryMergeNote: vi.fn(
 		async (_database: unknown, _input: unknown): Promise<unknown> => ({
 			mergedOn: "2026-10-14",
@@ -16,33 +13,10 @@ const mocks = vi.hoisted(() => ({
 	scopedDb: { name: "scoped-db" },
 }));
 
-vi.mock("@/db", () => ({ db: { name: "global-db" } }));
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
 	const { runtimeModuleOver } = await import("@/test/effect-runtime");
-	return runtimeModuleOver(
-		Layer.succeed(
-			DatabaseService,
-			DatabaseService.of({
-				db: mocks.scopedDb as never,
-				query: (_name, query) => Effect.promise(query),
-			}),
-		),
-	);
-});
-vi.mock("./employee-action-utils", async (importOriginal) => {
-	const { Effect } = await import("effect");
-	const { AuthorizationError } = await import("@/lib/effect/errors");
-	const original = await importOriginal<typeof import("./employee-action-utils")>();
-	return {
-		...original,
-		getEmployeeSettingsActorContext: vi.fn(() =>
-			mocks.actor
-				? Effect.succeed(mocks.actor)
-				: Effect.fail(new AuthorizationError({ message: "Not signed in", userId: "unknown" })),
-		),
-	};
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db: mocks.scopedDb }));
 });
 vi.mock("@/lib/employment-history/wage-history-merge-note", () => ({
 	loadWageHistoryMergeNote: mocks.loadWageHistoryMergeNote,
@@ -55,18 +29,27 @@ const { dismissWageHistoryMergeNoteAction, getWageHistoryMergeNoteAction } = awa
 
 const EMPLOYEE_ID = "7d3c8f8e-2b7a-4f7e-9a51-0d6f1c2b3a4e";
 
-function actor(accessTier: "orgAdmin" | "manager" | "member") {
-	return { accessTier, organizationId: "org-1", session: { user: { id: "user-1" } } };
-}
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: null,
+};
+const scopedManager: StubCaller = {
+	userId: "user-2",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "manager-1", role: "manager", former: false },
+};
 
 describe("wage history merge note actions (#1176)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.actor = null;
+		mocks.caller = null;
 	});
 
 	it("reads the employee's note in the org admin's organization", async () => {
-		mocks.actor = actor("orgAdmin");
+		mocks.caller = orgAdmin;
 
 		await expect(getWageHistoryMergeNoteAction(EMPLOYEE_ID)).resolves.toEqual({
 			success: true,
@@ -79,7 +62,7 @@ describe("wage history merge note actions (#1176)", () => {
 	});
 
 	it("dismisses the employee's note for the org admin's organization", async () => {
-		mocks.actor = actor("orgAdmin");
+		mocks.caller = orgAdmin;
 
 		await expect(dismissWageHistoryMergeNoteAction(EMPLOYEE_ID)).resolves.toEqual({
 			success: true,
@@ -92,30 +75,31 @@ describe("wage history merge note actions (#1176)", () => {
 		});
 	});
 
-	it.each(["manager", "member"] as const)(
-		"shows a %s nothing and lets them dismiss nothing",
-		async (accessTier) => {
-			mocks.actor = actor(accessTier);
+	it("refuses a scoped manager, one level below org admin", async () => {
+		mocks.caller = scopedManager;
 
-			await expect(getWageHistoryMergeNoteAction(EMPLOYEE_ID)).resolves.toMatchObject({
-				success: false,
-			});
-			await expect(dismissWageHistoryMergeNoteAction(EMPLOYEE_ID)).resolves.toMatchObject({
-				success: false,
-			});
-			expect(mocks.loadWageHistoryMergeNote).not.toHaveBeenCalled();
-			expect(mocks.dismissWageHistoryMergeNote).not.toHaveBeenCalled();
-		},
-	);
+		await expect(getWageHistoryMergeNoteAction(EMPLOYEE_ID)).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		await expect(dismissWageHistoryMergeNoteAction(EMPLOYEE_ID)).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(mocks.loadWageHistoryMergeNote).not.toHaveBeenCalled();
+		expect(mocks.dismissWageHistoryMergeNote).not.toHaveBeenCalled();
+	});
 
 	it("refuses an employee id that is not a UUID", async () => {
-		mocks.actor = actor("orgAdmin");
+		mocks.caller = orgAdmin;
 
 		await expect(getWageHistoryMergeNoteAction("nope")).resolves.toMatchObject({
 			success: false,
+			code: "ValidationError",
 		});
 		await expect(dismissWageHistoryMergeNoteAction("nope")).resolves.toMatchObject({
 			success: false,
+			code: "ValidationError",
 		});
 		expect(mocks.loadWageHistoryMergeNote).not.toHaveBeenCalled();
 		expect(mocks.dismissWageHistoryMergeNote).not.toHaveBeenCalled();

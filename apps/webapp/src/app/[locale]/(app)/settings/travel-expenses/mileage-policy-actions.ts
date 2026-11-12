@@ -1,11 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { Effect } from "effect";
 import { z } from "zod";
-import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
+import { NotFoundError } from "@/lib/effect/errors";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { activeVersionTimeline, type TimelineEntry } from "@/lib/travel-expenses/allowance-policy";
 import {
 	activateMileagePolicyVersion,
@@ -13,7 +13,6 @@ import {
 	type MileagePolicyVersionView,
 	withdrawMileagePolicyVersion,
 } from "@/lib/travel-expenses/allowance-policy-store";
-import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 import {
 	type MileagePolicyInputErrors,
 	type MileagePolicyVersionFormInput,
@@ -23,11 +22,11 @@ import {
 	STATUTORY_MILEAGE_DEFAULTS,
 	type StatutoryMileageDefault,
 } from "@/lib/travel-expenses/statutory-allowance-defaults";
+import { auditLater, revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
- * Dated mileage policy of the organization (#606), managed by expense
- * administrators (`canManageCurrentOrganizationSettings`). Every change is a
- * new immutable version activated in one transaction.
+ * Dated mileage policy of the organization (#606), managed by org admins.
+ * Every change is a new immutable version activated in one transaction.
  */
 
 export interface MileagePolicySettings {
@@ -39,20 +38,17 @@ export interface MileagePolicySettings {
 	defaults: StatutoryMileageDefault[];
 }
 
-const requireExpenseAdmin = () => requireExpenseAdministrator();
-
-export async function getMileagePolicySettings(): Promise<
-	ServerActionResult<MileagePolicySettings>
-> {
-	try {
-		const access = await requireExpenseAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		const versions = await loadMileagePolicyVersions(db, access.organizationId, {
-			includeWithdrawn: true,
-		});
-		return {
-			success: true,
-			data: {
+export const getMileagePolicySettings = organizationAction(
+	{ name: "travelExpenses.getMileagePolicy", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const versions = yield* storeStep(
+				"travelExpenses.getMileagePolicy",
+				(database) =>
+					loadMileagePolicyVersions(database, organizationId, { includeWithdrawn: true }),
+				{ failure: "Failed to load the mileage policy" },
+			);
+			return {
 				timeline: activeVersionTimeline(versions),
 				withdrawn: versions
 					.filter((version) => version.withdrawnAt)
@@ -60,13 +56,9 @@ export async function getMileagePolicySettings(): Promise<
 						(left.withdrawnAt ?? "") < (right.withdrawnAt ?? "") ? 1 : -1,
 					),
 				defaults: [...STATUTORY_MILEAGE_DEFAULTS],
-			},
-		};
-	} catch (error) {
-		logger.error({ error }, "Failed to load the mileage policy");
-		return { success: false, error: "Failed to load the mileage policy" };
-	}
-}
+			} satisfies MileagePolicySettings;
+		}),
+);
 
 export type ActivateMileagePolicyOutcome =
 	| { status: "activated"; versionId: string }
@@ -77,98 +69,117 @@ export type ActivateMileagePolicyOutcome =
 	| { status: "stale_replacement" };
 
 const text = z.string().max(2000).nullable().optional();
-const activateSchema = z.object({
-	source: z.enum(["organization", "statutory_default"]),
-	effectiveFrom: text,
-	currency: text,
-	ratesPerKm: z.object({ car: text, other_motor_vehicle: text }).partial().optional(),
-	sourceReference: text,
-	sourceVersion: text,
-	defaultKey: text,
-	note: text,
-	replacesVersionId: z.uuid().nullable().optional(),
-});
+const activateSchema = z.object(
+	{
+		source: z.enum(["organization", "statutory_default"], "Invalid mileage policy"),
+		effectiveFrom: text,
+		currency: text,
+		ratesPerKm: z.object({ car: text, other_motor_vehicle: text }).partial().optional(),
+		sourceReference: text,
+		sourceVersion: text,
+		defaultKey: text,
+		note: text,
+		replacesVersionId: z.uuid("Invalid mileage policy").nullable().optional(),
+	},
+	"Invalid mileage policy",
+) satisfies z.ZodType<MileagePolicyVersionFormInput>;
 
-export async function activateMileagePolicyVersionAction(
-	input: MileagePolicyVersionFormInput,
-): Promise<ServerActionResult<ActivateMileagePolicyOutcome>> {
-	try {
-		const access = await requireExpenseAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		const shape = activateSchema.safeParse(input);
-		if (!shape.success) return { success: false, error: "Invalid mileage policy" };
-		const parsed = parseMileagePolicyVersionInput(shape.data);
-		if (!parsed.ok) return { success: true, data: { status: "invalid", errors: parsed.errors } };
-		const result = await activateMileagePolicyVersion(
-			db,
-			{ organizationId: access.organizationId, userId: access.userId },
-			parsed.input,
-		);
-		if (result.kind !== "activated") {
-			return {
-				success: true,
-				data:
+export const activateMileagePolicyVersionAction = organizationAction(
+	{ name: "travelExpenses.activateMileagePolicy", requires: "orgAdmin", schema: activateSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const parsed = parseMileagePolicyVersionInput(input);
+			if (!parsed.ok) {
+				return { status: "invalid", errors: parsed.errors } satisfies ActivateMileagePolicyOutcome;
+			}
+			const result = yield* storeStep(
+				"travelExpenses.activateMileagePolicy",
+				(database) =>
+					activateMileagePolicyVersion(
+						database,
+						{ organizationId, userId: actor.userId },
+						parsed.input,
+					),
+				{ failure: "Failed to save the mileage policy" },
+			);
+			if (result.kind !== "activated") {
+				return (
 					result.kind === "start_taken"
 						? { status: "start_taken", existingVersionId: result.existingVersionId }
-						: { status: "stale_replacement" },
-			};
-		}
-		logAudit({
-			action: AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED,
-			actorId: access.userId,
-			employeeId: access.employeeId ?? undefined,
-			targetId: result.versionId,
-			targetType: "travel_expense_policy_version",
-			organizationId: access.organizationId,
-			metadata: {
-				kind: "mileage",
-				effectiveFrom: parsed.input.effectiveFrom,
-				currency: parsed.input.currency,
-				ratesPerKm: parsed.input.ratesPerKm,
-				source: parsed.input.source,
-				replacesVersionId: parsed.input.replacesVersionId,
-			},
-			timestamp: new Date(),
-		}).catch((error) => logger.error({ error }, "Failed to log mileage policy activation"));
-		revalidatePath("/settings/travel-expenses");
-		return { success: true, data: { status: "activated", versionId: result.versionId } };
-	} catch (error) {
-		logger.error({ error }, "Failed to activate the mileage policy version");
-		return { success: false, error: "Failed to save the mileage policy" };
-	}
-}
+						: { status: "stale_replacement" }
+				) satisfies ActivateMileagePolicyOutcome;
+			}
+			yield* auditLater(
+				() =>
+					logAudit({
+						action: AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED,
+						actorId: actor.userId,
+						employeeId: actor.employee?.id,
+						targetId: result.versionId,
+						targetType: "travel_expense_policy_version",
+						organizationId,
+						metadata: {
+							kind: "mileage",
+							effectiveFrom: parsed.input.effectiveFrom,
+							currency: parsed.input.currency,
+							ratesPerKm: parsed.input.ratesPerKm,
+							source: parsed.input.source,
+							replacesVersionId: parsed.input.replacesVersionId,
+						},
+						timestamp: new Date(),
+					}),
+				"Failed to log mileage policy activation",
+			);
+			yield* revalidateExpenseSettings();
+			return {
+				status: "activated",
+				versionId: result.versionId,
+			} satisfies ActivateMileagePolicyOutcome;
+		}),
+);
 
-export async function withdrawMileagePolicyVersionAction(input: {
-	versionId: string;
-}): Promise<ServerActionResult<{ versionId: string }>> {
-	try {
-		const access = await requireExpenseAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		if (!z.uuid().safeParse(input.versionId).success) {
-			return { success: false, error: "Mileage policy version not found" };
-		}
-		const result = await withdrawMileagePolicyVersion(
-			db,
-			{ organizationId: access.organizationId, userId: access.userId },
-			{ versionId: input.versionId },
-		);
-		if (result.kind === "not_found") {
-			return { success: false, error: "Mileage policy version not found" };
-		}
-		logAudit({
-			action: AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN,
-			actorId: access.userId,
-			employeeId: access.employeeId ?? undefined,
-			targetId: input.versionId,
-			targetType: "travel_expense_policy_version",
-			organizationId: access.organizationId,
-			metadata: { kind: "mileage" },
-			timestamp: new Date(),
-		}).catch((error) => logger.error({ error }, "Failed to log mileage policy withdrawal"));
-		revalidatePath("/settings/travel-expenses");
-		return { success: true, data: { versionId: input.versionId } };
-	} catch (error) {
-		logger.error({ error }, "Failed to withdraw the mileage policy version");
-		return { success: false, error: "Failed to withdraw the mileage policy version" };
-	}
-}
+export const withdrawMileagePolicyVersionAction = organizationAction(
+	{
+		name: "travelExpenses.withdrawMileagePolicy",
+		requires: "orgAdmin",
+		schema: z.strictObject({ versionId: z.uuid("Mileage policy version not found") }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const result = yield* storeStep(
+				"travelExpenses.withdrawMileagePolicy",
+				(database) =>
+					withdrawMileagePolicyVersion(
+						database,
+						{ organizationId, userId: actor.userId },
+						{ versionId: input.versionId },
+					),
+				{ failure: "Failed to withdraw the mileage policy version" },
+			);
+			if (result.kind === "not_found") {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Mileage policy version not found",
+						entityType: "travel_expense_policy_version",
+						entityId: input.versionId,
+					}),
+				);
+			}
+			yield* auditLater(
+				() =>
+					logAudit({
+						action: AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN,
+						actorId: actor.userId,
+						employeeId: actor.employee?.id,
+						targetId: input.versionId,
+						targetType: "travel_expense_policy_version",
+						organizationId,
+						metadata: { kind: "mileage" },
+						timestamp: new Date(),
+					}),
+				"Failed to log mileage policy withdrawal",
+			);
+			yield* revalidateExpenseSettings();
+			return { versionId: input.versionId };
+		}),
+);

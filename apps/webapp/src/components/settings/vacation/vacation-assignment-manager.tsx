@@ -43,6 +43,7 @@ import {
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import { AssignmentManagerSkeleton } from "../assignment-manager-skeleton";
 import { getVacationAssignmentSectionVisibility } from "../policy-assignment-surface";
@@ -233,7 +234,7 @@ function useVacationAssignmentData(organizationId: string) {
 	const { data: companyDefaults, isLoading: defaultsLoading } = useQuery({
 		queryKey: queryKeys.vacationPolicies.companyDefault(organizationId),
 		queryFn: async () => {
-			const result = await getCompanyDefaultPolicies(organizationId);
+			const result = await getCompanyDefaultPolicies();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch company default policies");
 			}
@@ -249,7 +250,7 @@ function useVacationAssignmentData(organizationId: string) {
 	} = useQuery({
 		queryKey: queryKeys.vacationPolicyAssignments.list(organizationId),
 		queryFn: async () => {
-			const result = await getVacationPolicyAssignments(organizationId);
+			const result = await getVacationPolicyAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
@@ -283,7 +284,7 @@ function useEndVacationAssignment(organizationId: string, today: string | undefi
 	// Delete assignment mutation
 	const endMutation = useMutation({
 		mutationFn: ({ id, effectiveOn }: { id: string; effectiveOn: string }) =>
-			deleteVacationPolicyAssignment(id, effectiveOn),
+			deleteVacationPolicyAssignment({ assignmentId: id, effectiveOn }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.vacation.history.ended", "Policy assignment end date saved"));
@@ -294,8 +295,10 @@ function useEndVacationAssignment(organizationId: string, today: string | undefi
 				setSelectedAssignment(null);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.vacation.history.endFailed", "Failed to end policy assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.vacation.history.endFailed",
+						"Failed to end policy assignment",
+					]),
 				);
 			}
 		},

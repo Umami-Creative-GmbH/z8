@@ -341,22 +341,19 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 	async function expectRefused(
 		actor: SeededEmployee,
 		target: SeededEmployee,
-		{ readOnly = false }: { readOnly?: boolean } = {},
+		{ readOnly = false, former = false }: { readOnly?: boolean; former?: boolean } = {},
 	) {
-		expect(await recordPayout(actor, target)).toMatchObject({
-			success: false,
-			code: "not_permitted",
-		});
+		// A former employee has no settings access at all (ADR 0002); anyone else is
+		// refused by the balance adjustment authority.
+		const refused = former
+			? { success: false, code: "AuthorizationError" }
+			: { success: false, refusal: "not_permitted" };
+		expect(await recordPayout(actor, target)).toMatchObject(refused);
 		const adjustmentId = await ownerPayout(target);
-		expect(await cancelPayout(actor, target, adjustmentId)).toMatchObject({
-			success: false,
-			code: "not_permitted",
-		});
+		expect(await cancelPayout(actor, target, adjustmentId)).toMatchObject(refused);
 		// The employee and a direct manager see the history read-only (#996); anyone else nothing.
 		expect(await readSection(actor, target)).toMatchObject(
-			readOnly
-				? { success: true, data: { canManage: false } }
-				: { success: false, code: "not_permitted" },
+			readOnly ? { success: true, data: { canManage: false } } : refused,
 		);
 		actAs(fixture.ownerUserId);
 		await actions.cancelBalanceAdjustmentAction({
@@ -441,7 +438,7 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 
 	it("gives a deactivated grant, or a grant whose holder has left, no access", async () => {
 		await expectRefused(deactivatedHolder, direct);
-		await expectRefused(departedHolder, direct);
+		await expectRefused(departedHolder, direct, { former: true });
 	});
 
 	it("refuses managers and employees without a grant", async () => {
@@ -460,12 +457,13 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 				minutes: 0,
 				reason: "Foreign",
 			}),
-		).toMatchObject({ success: false, code: "not_permitted" });
-		// With the grant's organization not active, an "all" holder is refused too.
+		).toMatchObject({ success: false, refusal: "not_permitted" });
+		// With the grant's organization not active, an "all" holder is refused too: they
+		// are no member of the active organization.
 		actAs(allHolder.userId, otherOrganizationId);
 		expect(
 			await actions.getEmployeeWorkBalanceSectionAction({ employeeId: direct.employeeId }),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 
 	it("lists the employees a grant covers for payouts, including those who have left, never the holder", async () => {

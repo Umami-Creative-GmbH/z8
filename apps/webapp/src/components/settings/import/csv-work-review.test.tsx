@@ -30,7 +30,6 @@ it("keeps commit available for accepted rows while showing unresolved source err
 	remote.commit.mockResolvedValue({ success: true, data: {} });
 	render(
 		<CsvWorkReview
-			organizationId="org"
 			batchId="batch"
 			view={{
 				batch: {
@@ -89,7 +88,6 @@ it("keeps commit available for accepted rows while showing unresolved source err
 	await userEvent.setup().click(button);
 	await waitFor(() =>
 		expect(remote.commit).toHaveBeenCalledWith({
-			organizationId: "org",
 			batchId: "batch",
 		}),
 	);
@@ -101,7 +99,6 @@ it("lets an admin map an unknown personnel number and reject an unresolved row",
 	remote.decision.mockResolvedValue({ success: true, data: {} });
 	render(
 		<CsvWorkReview
-			organizationId="org"
 			batchId="batch"
 			view={{
 				batch: {
@@ -146,7 +143,6 @@ it("lets an admin map an unknown personnel number and reject an unresolved row",
 	await user.click(screen.getByRole("button", { name: "Apply mapping" }));
 	await waitFor(() =>
 		expect(remote.map).toHaveBeenCalledWith({
-			organizationId: "org",
 			batchId: "batch",
 			kind: "employee",
 			sourceValue: "external-7",
@@ -159,7 +155,6 @@ it("lets an admin map an unknown personnel number and reject an unresolved row",
 	);
 	await waitFor(() =>
 		expect(remote.decision).toHaveBeenCalledWith({
-			organizationId: "org",
 			batchId: "batch",
 			rowIds: ["unmatched"],
 			decision: "rejected",

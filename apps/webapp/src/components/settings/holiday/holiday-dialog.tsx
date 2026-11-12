@@ -61,7 +61,7 @@ export function HolidayDialog({
 	const { data: categories = [], isLoading: categoriesLoading } = useQuery({
 		queryKey: ["holiday-categories", organizationId],
 		queryFn: async () => {
-			const result = await getHolidayCategories(organizationId);
+			const result = await getHolidayCategories();
 			if (!result.success || !result.data) {
 				throw new Error(t("settings.holidays.categories.loadFailed", "Failed to load categories"));
 			}

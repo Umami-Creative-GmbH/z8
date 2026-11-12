@@ -103,6 +103,7 @@ const variants = [
 		end: actions.endBillable,
 		saved: "Billable rate saved",
 		unchanged: "That rate already applies",
+		loadError: "Billable rates could not be loaded",
 	},
 	{
 		kind: "cost",
@@ -112,6 +113,7 @@ const variants = [
 		end: actions.endCost,
 		saved: "Cost rate saved",
 		unchanged: "That cost rate already applies",
+		loadError: "Cost rates could not be loaded",
 	},
 ] as const;
 
@@ -193,7 +195,12 @@ describe.each(variants)("$kind rate series outcomes", (variant) => {
 		"retains the form and cache when a save is %s",
 		async (failure) => {
 			if (failure === "refused")
-				variant.set.mockResolvedValue({ success: false, error: "Not allowed" });
+				variant.set.mockResolvedValue({
+					success: false,
+					error: "server text",
+					code: "ValidationError",
+					refusal: "invalid_rate",
+				});
 			else variant.set.mockRejectedValue(new Error("Network unavailable"));
 			const user = userEvent.setup();
 			const { client, onChanged } = renderSeries(variant.kind);
@@ -204,7 +211,7 @@ describe.each(variants)("$kind rate series outcomes", (variant) => {
 			await waitFor(() =>
 				expect(actions.error).toHaveBeenCalledWith(
 					failure === "refused"
-						? "Not allowed"
+						? "Enter a positive hourly rate with at most two decimals."
 						: "An unexpected error occurred",
 				),
 			);
@@ -241,12 +248,13 @@ describe.each(variants)("$kind rate series outcomes", (variant) => {
 	it("shows a failed history read as an alert without offering editing", async () => {
 		variant.history.mockResolvedValue({
 			success: false,
-			error: "Rates unavailable",
+			error: "server text",
+			code: "DatabaseError",
 		});
 		renderSeries(variant.kind);
 		expect(await screen.findByRole("alert")).toHaveProperty(
 			"textContent",
-			"Rates unavailable",
+			variant.loadError,
 		);
 		expect(screen.queryByRole("button", { name: "Set rate" })).toBeNull();
 	});

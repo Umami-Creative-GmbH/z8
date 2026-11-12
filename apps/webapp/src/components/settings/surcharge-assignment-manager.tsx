@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import {
 	type SurchargeAssignmentData,
@@ -61,7 +62,7 @@ export function SurchargeAssignmentManager({
 	} = useQuery({
 		queryKey: queryKeys.surcharges.assignments.list(organizationId),
 		queryFn: async () => {
-			const result = await getSurchargeAssignments(organizationId);
+			const result = await getSurchargeAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
@@ -88,11 +89,10 @@ export function SurchargeAssignmentManager({
 				setSelectedAssignment(null);
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.surcharges.assignmentDeleteFailed",
-							"Failed to remove assignment",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.surcharges.assignmentDeleteFailed",
+						"Failed to remove assignment",
+					]),
 				);
 			}
 		},

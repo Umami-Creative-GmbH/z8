@@ -6,6 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { readOnlyTransaction } from "@/db/read-only-transaction";
+import type { ApprovalRouteKind } from "@/lib/approvals/route-preview/types";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
@@ -13,11 +14,10 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import {
-	type ApproverGoLiveKind,
+	APPROVER_KIND_LABEL,
 	type ApproverKindResolution,
-	loadApproverRouting,
-} from "./approver-routing";
-import { APPROVER_KIND_LABEL } from "./checks/approver";
+	previewGoLiveApprovers,
+} from "./checks/approver";
 import { createGoLiveExclusion, liftGoLiveExclusion } from "./group-settings";
 import { rehearseGoLiveMember } from "./rehearsal";
 import type { GoLiveRehearsal, GoLiveRehearsalKind } from "./rehearsal-types";
@@ -473,10 +473,14 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 		expect(members.length).toBe(5);
 		// What the check resolved for each member: routed, skipped or not, and who decides first.
 		const checked = await readOnlyTransaction(db, async (reader) => {
-			const routing = await loadApproverRouting(reader, { organizationId, asOf: AS_OF, members });
-			const byMember = new Map<string, Map<ApproverGoLiveKind, ApproverKindResolution>>();
+			const routing = await previewGoLiveApprovers(reader, {
+				organizationId,
+				asOf: AS_OF,
+				members,
+			});
+			const byMember = new Map<string, Map<ApprovalRouteKind, ApproverKindResolution>>();
 			for (const member of members) {
-				byMember.set(goLiveMemberKey(member), await routing.resolve(member));
+				byMember.set(goLiveMemberKey(member), routing.resolve(member));
 			}
 			return byMember;
 		});

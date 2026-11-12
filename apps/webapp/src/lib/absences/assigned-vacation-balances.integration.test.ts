@@ -216,7 +216,7 @@ describe("assigned vacation balances (#1370)", () => {
 		expect(
 			manager.data.rows.find((row) => row.id === fixture.employeeId),
 		).toMatchObject({ vacationAllowance: 25, remainingVacationDays: 25 });
-		const list = await getEmployeesWithAllowances(fixture.organizationId, 2027);
+		const list = await getEmployeesWithAllowances(2027);
 		if (!list.success) throw new Error(list.error);
 		expect(
 			list.data.find((row) => row.id === fixture.employeeId)?.vacationBalance,
@@ -331,7 +331,7 @@ describe("assigned vacation balances (#1370)", () => {
 				fixture.organizationId,
 			),
 		).toMatchObject({ configuration: { status: "missing" }, projections: [] });
-		const list = await getEmployeesWithAllowances(fixture.organizationId, 2027);
+		const list = await getEmployeesWithAllowances(2027);
 		if (!list.success) throw new Error(list.error);
 		expect(
 			list.data.find((row) => row.id === missing.employeeId),

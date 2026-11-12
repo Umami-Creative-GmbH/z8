@@ -33,9 +33,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { VehicleChangeInput } from "@/lib/organization/vehicles/vehicle-rules";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
+import {
+	type ActionFailure,
+	actionErrorMessage,
+} from "@/lib/organization-action/action-error-message";
 import { VehicleDialog } from "./vehicle-dialog";
 import { VehiclePhotosDialog } from "./vehicle-photos-dialog";
-import { vehicleRefusalMessage } from "./vehicle-refusal-message";
+import { VEHICLE_REFUSALS } from "./vehicle-refusals";
 
 interface VehicleSettingsProps {
 	initialData: VehicleSettingsData;
@@ -54,25 +58,28 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 	const [deletion, setDeletion] = useState<Deletion>(null);
 	const [pending, setPending] = useState(false);
 
-	/** Applies a change; resolves the refusal reason, or null when it was accepted. */
+	/** Applies a change; resolves the failed result, or null when it was accepted. */
 	async function apply(change: VehicleChangeInput) {
 		const result = await changeVehicles(change);
-		if (!result.success) {
-			toast.error(t("settings.vehicles.saveFailed", "The vehicle could not be saved."));
-			return "failed" as const;
-		}
-		if (!result.data.ok) return result.data.reason;
-		setVehicles(result.data.vehicles);
+		if (!result.success) return result;
+		setVehicles(result.data);
 		return null;
 	}
 
+	function refusalMessage(failure: ActionFailure) {
+		return actionErrorMessage(t, failure, VEHICLE_REFUSALS, [
+			"settings.vehicles.saveFailed",
+			"The vehicle could not be saved.",
+		]);
+	}
+
 	async function save(change: VehicleChangeInput): Promise<boolean> {
-		const refusal = await apply(change);
-		if (refusal === null) {
+		const failure = await apply(change);
+		if (failure === null) {
 			toast.success(t("settings.vehicles.saved", "Vehicle saved"));
 			return true;
 		}
-		if (refusal !== "failed") toast.error(vehicleRefusalMessage(t, refusal));
+		toast.error(refusalMessage(failure));
 		return false;
 	}
 
@@ -81,22 +88,23 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 		const { vehicle, used } = deletion;
 		setPending(true);
 		const run = async () => {
-			const refusal = await apply({
+			const failure = await apply({
 				kind: used ? "archive" : "delete",
 				vehicleId: vehicle.id,
 			});
-			if (refusal === "vehicle_used") {
+			// A vehicle recorded on work can't be deleted: offer archiving instead.
+			if (failure?.refusal === "vehicle_used") {
 				setDeletion({ vehicle, used: true });
 				return;
 			}
-			if (refusal === null) {
+			if (failure === null) {
 				toast.success(
 					used
 						? t("settings.vehicles.archived", "Vehicle archived")
 						: t("settings.vehicles.deleted", "Vehicle deleted"),
 				);
-			} else if (refusal !== "failed") {
-				toast.error(vehicleRefusalMessage(t, refusal));
+			} else {
+				toast.error(refusalMessage(failure));
 			}
 			setDeletion(null);
 		};

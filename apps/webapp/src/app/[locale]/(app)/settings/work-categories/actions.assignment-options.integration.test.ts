@@ -170,7 +170,7 @@ describe("work category assignment options on PostgreSQL", () => {
 	it("refuses the teams of an organization the caller does not belong to", async () => {
 		harness.userId = outsiderUserId;
 
-		const result = await getTeamsForAssignment(fixture.organizationId);
+		const result = await getTeamsForAssignment();
 
 		expect(result).toMatchObject({
 			success: false,
@@ -181,7 +181,7 @@ describe("work category assignment options on PostgreSQL", () => {
 	it("refuses the employees of an organization the caller does not belong to", async () => {
 		harness.userId = outsiderUserId;
 
-		const result = await getEmployeesForAssignment(fixture.organizationId);
+		const result = await getEmployeesForAssignment();
 
 		expect(result).toMatchObject({
 			success: false,
@@ -192,12 +192,12 @@ describe("work category assignment options on PostgreSQL", () => {
 	it("refuses a pending admin membership", async () => {
 		harness.userId = pendingAdminUserId;
 
-		expect(await getTeamsForAssignment(fixture.organizationId)).toMatchObject({
+		expect(await getTeamsForAssignment()).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 		});
 		expect(
-			await getEmployeesForAssignment(fixture.organizationId),
+			await getEmployeesForAssignment(),
 		).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
@@ -207,12 +207,12 @@ describe("work category assignment options on PostgreSQL", () => {
 	it("refuses an owner who is a former employee", async () => {
 		harness.userId = inactiveOwner.userId;
 
-		expect(await getTeamsForAssignment(fixture.organizationId)).toMatchObject({
+		expect(await getTeamsForAssignment()).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 		});
 		expect(
-			await getEmployeesForAssignment(fixture.organizationId),
+			await getEmployeesForAssignment(),
 		).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
@@ -225,8 +225,8 @@ describe("work category assignment options on PostgreSQL", () => {
 	])("gives %s every team and current employee", async (_case, userId) => {
 		harness.userId = userId();
 
-		const teams = await getTeamsForAssignment(fixture.organizationId);
-		const employees = await getEmployeesForAssignment(fixture.organizationId);
+		const teams = await getTeamsForAssignment();
+		const employees = await getEmployeesForAssignment();
 
 		expect(teams).toEqual({
 			success: true,
@@ -250,7 +250,7 @@ describe("work category assignment options on PostgreSQL", () => {
 	it("gives a scoped manager only the employees they manage", async () => {
 		harness.userId = manager.userId;
 
-		const employees = await getEmployeesForAssignment(fixture.organizationId);
+		const employees = await getEmployeesForAssignment();
 
 		if (!employees.success) throw new Error(employees.error);
 		expect(employees.data.map((row) => row.id)).toEqual([fixture.employeeId]);
@@ -259,7 +259,7 @@ describe("work category assignment options on PostgreSQL", () => {
 	it("gives a scoped manager only the teams the team settings let them manage", async () => {
 		harness.userId = manager.userId;
 
-		const teams = await getTeamsForAssignment(fixture.organizationId);
+		const teams = await getTeamsForAssignment();
 
 		expect(teams).toEqual({
 			success: true,

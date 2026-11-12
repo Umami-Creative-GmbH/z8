@@ -16,6 +16,7 @@ import type {
 	ClockinImportSelections,
 	ClockinImportUserMapping,
 } from "@/lib/clockin/import-types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 export type ClockinWizardStep =
 	| "connect"
@@ -35,7 +36,7 @@ export interface ClockinMappingRow {
 	mappingType: ClockinImportUserMapping["mappingType"];
 }
 
-export function useClockinImportController(organizationId: string) {
+export function useClockinImportController() {
 	const { t } = useTranslate();
 	const [step, setStep] = useState<ClockinWizardStep>("connect");
 	const [token, setToken] = useState("");
@@ -61,9 +62,9 @@ export function useClockinImportController(organizationId: string) {
 	const handleConnect = async () => {
 		setBusyAction("connect");
 		try {
-			const result = await validateClockinCredentials(token, organizationId);
+			const result = await validateClockinCredentials({ token });
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				setBusyAction(null);
 				return;
 			}
@@ -80,16 +81,16 @@ export function useClockinImportController(organizationId: string) {
 		setBusyAction("mapping");
 		try {
 			const [clockinResult, z8Result] = await Promise.all([
-				fetchClockinEmployees(token, organizationId),
-				fetchZ8Employees(organizationId),
+				fetchClockinEmployees({ token }),
+				fetchZ8Employees(),
 			]);
 			if (!clockinResult.success) {
-				toast.error(clockinResult.error);
+				toast.error(actionErrorMessage(t, clockinResult));
 				setBusyAction(null);
 				return;
 			}
 			if (!z8Result.success) {
-				toast.error(z8Result.error);
+				toast.error(actionErrorMessage(t, z8Result));
 				setBusyAction(null);
 				return;
 			}
@@ -140,7 +141,6 @@ export function useClockinImportController(organizationId: string) {
 				...(selections.absences ? (["absence"] as const) : []),
 			];
 			const result = await startImportReviewScan({
-				organizationId,
 				provider: "clockin",
 				credential: token,
 				selectedScope: selections,
@@ -150,7 +150,7 @@ export function useClockinImportController(organizationId: string) {
 				entityTypes,
 			});
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				setStep("selection");
 				setBusyAction(null);
 				return;

@@ -98,7 +98,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        shard: ${{ fromJSON(needs.changes.outputs.webapp == 'true' && '[1,2]' || '[1]') }}
+        shard: ${{ fromJSON(needs.changes.outputs.webapp == 'true' && '[1,2,3,4]' || '[1]') }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -109,7 +109,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: 24
+          node-version: 26
           cache: pnpm
       - name: Install selected workspace dependencies
         env:
@@ -142,16 +142,16 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/webapp-vitest-cache
-          key: webapp-vitest-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-unit-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: webapp-vitest-${{ runner.os }}-node26-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-unit-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            webapp-vitest-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-unit-${{ matrix.shard }}-
+            webapp-vitest-${{ runner.os }}-node26-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-unit-${{ matrix.shard }}-
       - name: Prepare transform cache directory
         if: needs.changes.outputs.webapp == 'true'
         run: mkdir -p "$RUNNER_TEMP/webapp-vitest-cache"
       - name: Run test shard
         if: needs.changes.outputs.webapp == 'true'
         id: test-run
-        run: pnpm --filter webapp test --shard=${{ matrix.shard }}/2 --fsModuleCache --fsModuleCachePath="$RUNNER_TEMP/webapp-vitest-cache"
+        run: pnpm --filter webapp test --shard=${{ matrix.shard }}/4 --fsModuleCache --fsModuleCachePath="$RUNNER_TEMP/webapp-vitest-cache"
 
       - name: Save Vitest transforms
         if: ${{ always() && (steps.test-run.outcome == 'success' || steps.test-run.outcome == 'failure') }}
@@ -199,7 +199,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: 24
+          node-version: 26
           cache: pnpm
       - name: Install web-app dependencies
         run: pnpm --filter webapp... install --frozen-lockfile
@@ -208,9 +208,9 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/webapp-vitest-cache
-          key: webapp-vitest-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-integration-${{ github.run_id }}-${{ github.run_attempt }}
+          key: webapp-vitest-${{ runner.os }}-node26-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-integration-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            webapp-vitest-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-integration-
+            webapp-vitest-${{ runner.os }}-node26-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-integration-
       - name: Prepare transform cache directory
         run: mkdir -p "$RUNNER_TEMP/webapp-vitest-cache"
       - name: Run PostgreSQL integration suites

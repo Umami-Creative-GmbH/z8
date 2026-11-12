@@ -122,9 +122,13 @@ export default {
 				// newer revision; running them in parallel would reopen that race.
 				// The departure-access installer checks out a pooled client only after the SQL file is read,
 				// so a read failure cannot leak a connection.
+				// The settings pages run their access guard before any organization action reads
+				// settings data, so a refused viewer triggers no read (avv/page.test.tsx pins it).
 				files: [
 					"**/src/lib/organization-mfa/authentication-plugin.ts",
 					"**/src/db/install-employee-departure-access.ts",
+					"**/settings/avv/page.tsx",
+					"**/settings/payroll-export/page.tsx",
 				],
 				rules: ["react-doctor/server-sequential-independent-await"],
 			},
@@ -252,6 +256,12 @@ export default {
 					// clock-out reads break state on the coordinator's tx before closing on it.
 					"**/src/lib/time-tracking/kiosk/kiosk-only-employee.ts",
 					"**/src/lib/time-tracking/clocking/clocking.ts",
+					// The approval route preview reads its snapshot, the per-kind start policies and each
+					// departed approver's stand-in through the caller's one `reader`; the go-live rehearsal
+					// reads a member's route and payroll prerequisites inside one read-only transaction.
+					"**/src/lib/approvals/route-preview/preview.ts",
+					"**/src/lib/approvals/route-preview/snapshot.ts",
+					"**/src/lib/implementation-checklist/go-live/rehearsal.ts",
 				],
 				rules: [
 					"react-doctor/async-await-in-loop",
@@ -274,6 +284,10 @@ export default {
 					"**/src/lib/employee-lifecycle/delivery.ts",
 					"**/src/lib/jobs/travel-expense-receipt-cleanup.ts",
 					"**/src/lib/time-tracking/clocking/follow-ups.ts",
+					// The attention recheck raises and resolves the open items the alert dispatch then
+					// reads; demo vehicles are generated only after the locations step has succeeded.
+					"**/settings/approval-escalation/actions.ts",
+					"**/settings/demo/actions.ts",
 				],
 				rules: [
 					"react-doctor/async-await-in-loop",
@@ -425,9 +439,7 @@ export default {
 		"getEmployeeSettingsActorContext",
 		"requireAdmin",
 		"requireAuth",
-		"requireOrgAdminEmployeeSettingsAccess",
 		"requirePlatformAdmin",
-		"requireSettingsActorEmployeeRecord",
 		"requireSystemAdmin",
 		"requireUser",
 	],

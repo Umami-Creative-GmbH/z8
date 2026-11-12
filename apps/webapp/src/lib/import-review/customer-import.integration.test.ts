@@ -272,7 +272,6 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 
 	async function commit(batchId: string) {
 		const started = await startImportCommitAction({
-			organizationId: ids.organization,
 			batchId,
 		});
 		if (!started.success) throw new Error(started.error);
@@ -299,7 +298,6 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 		choice?: { kind: "link"; targetId: string },
 	) {
 		const result = await applyImportDecisionAction({
-			organizationId: ids.organization,
 			batchId,
 			rowIds: [rowId],
 			decision,
@@ -601,26 +599,17 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 		});
 		await expect(
 			applyImportDecisionAction({
-				organizationId: ids.organization,
 				batchId,
 				rowIds: [row.id],
 				decision: "accepted",
 			}),
 		).resolves.toMatchObject({ success: false });
 
-		// An admin of another organization cannot decide on this batch.
+		// An admin of another organization cannot decide on this batch: the action works in
+		// their active organization, where the batch is not found.
 		actAs(ids.otherAdminUser, ids.otherOrganization);
 		await expect(
 			applyImportDecisionAction({
-				organizationId: ids.organization,
-				batchId,
-				rowIds: [row.id],
-				decision: "accepted",
-			}),
-		).resolves.toMatchObject({ success: false });
-		await expect(
-			applyImportDecisionAction({
-				organizationId: ids.otherOrganization,
 				batchId,
 				rowIds: [row.id],
 				decision: "accepted",
@@ -630,13 +619,12 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 		actAs(ids.adminUser, ids.organization);
 		await expect(
 			applyImportDecisionAction({
-				organizationId: ids.organization,
 				batchId,
 				rowIds: [row.id],
 				decision: "accepted",
 				choice: { kind: "link", targetId: ids.foreignCustomer },
 			}),
-		).resolves.toEqual({
+		).resolves.toMatchObject({
 			success: false,
 			error: "The chosen customer does not exist in this organization",
 		});

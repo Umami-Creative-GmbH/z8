@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import type { ApprovalTriagePolicy } from "@/lib/approvals/triage-policy-config";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 export function ApprovalTriageSettingsForm({
 	policy,
@@ -54,7 +55,12 @@ export function ApprovalTriageSettingsForm({
 					smallCorrectionMinutes: Number(value.smallCorrectionMinutes),
 				});
 				if (!result.success) {
-					toast.error(result.error);
+					toast.error(
+						actionErrorMessage(t, result, {}, [
+							"settings.approvalTriage.saveError",
+							"Unable to save triage settings. Please try again.",
+						]),
+					);
 					return;
 				}
 				toast.success(

@@ -271,7 +271,7 @@ describe("ApiKeyCreateDialog", () => {
 		await user.click(createButton);
 
 		await waitFor(() => expect(mocks.createApiKey).toHaveBeenCalledOnce());
-		expect(mocks.createApiKey).toHaveBeenCalledWith("org-1", {
+		expect(mocks.createApiKey).toHaveBeenCalledWith({
 			name: "Payroll integration",
 			expiresInDays: 30,
 			scopes: ["time-entries:read"],
@@ -303,7 +303,7 @@ describe("ApiKeyCreateDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Create Key" }));
 
 		await waitFor(() => expect(mocks.createApiKey).toHaveBeenCalledOnce());
-		expect(mocks.createApiKey).toHaveBeenCalledWith("org-1", {
+		expect(mocks.createApiKey).toHaveBeenCalledWith({
 			name: "Payroll integration",
 			expiresInDays: 30,
 			scopes: ["employees:read"],

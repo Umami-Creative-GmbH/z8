@@ -94,6 +94,7 @@ it("shows server refusal as a toast while preserving the administrator's edits",
 	transport.save.mockResolvedValue({
 		success: false,
 		error: "Only organization admins can change approval triage settings.",
+		code: "AuthorizationError",
 	});
 	render(
 		<ApprovalTriageSettingsForm
@@ -106,7 +107,7 @@ it("shows server refusal as a toast while preserving the administrator's edits",
 	fireEvent.click(screen.getByRole("button", { name: "Save triage settings" }));
 	await waitFor(() =>
 		expect(transport.error).toHaveBeenCalledWith(
-			expect.stringContaining("Only organization admins"),
+			"You do not have access to this setting.",
 		),
 	);
 	expect(

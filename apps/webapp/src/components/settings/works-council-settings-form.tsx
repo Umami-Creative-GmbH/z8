@@ -20,6 +20,7 @@ import type {
 	WorksCouncilAbsenceVisibility,
 	WorksCouncilIdentityVisibility,
 } from "@/db/schema";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { WorksCouncilSettingsFormValues } from "@/lib/works-council/settings";
 import { runWithBusyState } from "./run-with-busy-state";
 
@@ -34,7 +35,7 @@ interface WorksCouncilSettingsFormProps {
 	initialSettings: WorksCouncilSettingsFormValues & { organizationId?: string };
 	onSave?: (
 		values: WorksCouncilSettingsFormValues,
-	) => Promise<{ success: boolean; error?: string }>;
+	) => Promise<{ success: boolean; error?: string; code?: string; refusal?: string }>;
 }
 
 export function WorksCouncilSettingsForm({
@@ -69,11 +70,10 @@ export function WorksCouncilSettingsForm({
 						);
 					} else {
 						toast.error(
-							result.error ??
-								t(
-									"settings.worksCouncil.saveError",
-									"Failed to save Works Council settings",
-								),
+							actionErrorMessage(t, result, {}, [
+								"settings.worksCouncil.saveError",
+								"Failed to save Works Council settings",
+							]),
 						);
 					}
 				} catch {

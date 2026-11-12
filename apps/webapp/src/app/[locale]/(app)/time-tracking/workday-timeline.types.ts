@@ -11,8 +11,13 @@ export type WorkdayTimelineItemType =
 
 export type WorkdayTimelineSeverity = "info" | "warning" | "danger";
 
+/**
+ * Display copy is English with an optional translation key: the client translates a
+ * keyed text and shows an unkeyed one (user content such as a category name) as is.
+ */
 export interface WorkdayTimelineLink {
 	label: string;
+	labelKey?: string;
 	href: string;
 }
 
@@ -20,12 +25,16 @@ interface WorkdayTimelineBaseItem {
 	id: string;
 	type: WorkdayTimelineItemType;
 	title: string;
+	titleKey?: string;
 	subtitle?: string;
+	subtitleKey?: string;
+	subtitleParams?: Record<string, string | number>;
 	startTime?: Date;
 	endTime?: Date | null;
 	startLabel?: string;
 	endLabel?: string;
 	badge?: string;
+	badgeKey?: string;
 	severity?: WorkdayTimelineSeverity;
 	link?: WorkdayTimelineLink;
 }

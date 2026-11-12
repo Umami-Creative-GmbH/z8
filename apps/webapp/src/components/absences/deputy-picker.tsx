@@ -16,35 +16,47 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { DeputyRefusal, PlainDateSpan } from "@/lib/absences/deputy";
+import { useSession } from "@/lib/auth-client";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDateRange } from "@/lib/datetime/temporal-format";
-import { useSession } from "@/lib/auth-client";
+import {
+	actionErrorMessage,
+	actionMessageText,
+	type RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
+/** The deputy refusals' texts (#1011), an override map for `actionErrorMessage`. */
+const DEPUTY_REFUSALS = {
+	deputy_required: [
+		"absences.deputy.errors.required",
+		"Choose a deputy: this absence type requires one.",
+	],
+	deputy_is_absent_employee: [
+		"absences.deputy.errors.self",
+		"An employee cannot be their own deputy.",
+	],
+	deputy_unavailable: [
+		"absences.deputy.errors.unavailable",
+		"The deputy must be an active employee of this organization.",
+	],
+} satisfies RefusalMessages<DeputyRefusal>;
+
 /**
  * The deputy field's error for a server refusal code (#1011, the failed
- * result's `refusal`), or null for any other failure.
+ * result's `refusal`), or null for any other failure, which the form shows
+ * elsewhere.
  */
 export function deputyRefusalText(t: Translate, refusal: string | undefined): string | null {
-	switch (refusal as DeputyRefusal | undefined) {
-		case "deputy_required":
-			return deputyRequiredText(t);
-		case "deputy_is_absent_employee":
-			return t("absences.deputy.errors.self", "An employee cannot be their own deputy.");
-		case "deputy_unavailable":
-			return t(
-				"absences.deputy.errors.unavailable",
-				"The deputy must be an active employee of this organization.",
-			);
-		default:
-			return null;
-	}
+	return refusal !== undefined && Object.hasOwn(DEPUTY_REFUSALS, refusal)
+		? actionErrorMessage(t, { refusal }, DEPUTY_REFUSALS)
+		: null;
 }
 
 export function deputyRequiredText(t: Translate): string {
-	return t("absences.deputy.errors.required", "Choose a deputy: this absence type requires one.");
+	return actionMessageText(t, DEPUTY_REFUSALS.deputy_required);
 }
 
 /** The select's value for "no deputy"; a Radix item cannot have an empty value. */

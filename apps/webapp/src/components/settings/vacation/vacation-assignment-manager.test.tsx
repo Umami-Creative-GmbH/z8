@@ -276,10 +276,7 @@ describe("vacation history settings", () => {
 		});
 		await user.click(screen.getByRole("button", { name: "Save end date" }));
 		await waitFor(() =>
-			expect(deleteVacationPolicyAssignment).toHaveBeenCalledWith(
-				"assignment-1",
-				"2027-01-01",
-			),
+			expect(deleteVacationPolicyAssignment).toHaveBeenCalledWith({ assignmentId: "assignment-1", effectiveOn: "2027-01-01" }),
 		);
 	});
 	it("previews an employee on the selected date and exposes conflicts without a fallback policy", async () => {
@@ -297,10 +294,7 @@ describe("vacation history settings", () => {
 		fireEvent.change(date, { target: { value: "2026-07-01" } });
 		await user.click(screen.getByRole("button", { name: "Preview policy" }));
 		expect(await screen.findByText("Conflicting policies")).toBeTruthy();
-		expect(previewEmployeeVacationPolicy).toHaveBeenCalledWith(
-			"employee-1",
-			"2026-07-01",
-		);
+		expect(previewEmployeeVacationPolicy).toHaveBeenCalledWith({ employeeId: "employee-1", date: "2026-07-01" });
 		expect(
 			screen.getByText(
 				"Resolve the overlapping assignments before this date can use a policy.",

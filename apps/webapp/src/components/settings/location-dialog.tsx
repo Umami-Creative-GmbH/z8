@@ -23,9 +23,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface LocationDialogProps {
-	organizationId: string;
 	location: LocationListItem | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -41,13 +41,7 @@ interface FormValues {
 	isActive: boolean;
 }
 
-export function LocationDialog({
-	organizationId,
-	location,
-	open,
-	onOpenChange,
-	onSuccess,
-}: LocationDialogProps) {
+export function LocationDialog({ location, open, onOpenChange, onSuccess }: LocationDialogProps) {
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!location;
@@ -66,13 +60,16 @@ export function LocationDialog({
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
 			if (isEditing && location) {
-				const result = await updateLocation(location.id, {
-					name: value.name,
-					street: value.street || undefined,
-					city: value.city || undefined,
-					postalCode: value.postalCode || undefined,
-					country: value.country || undefined,
-					isActive: value.isActive,
+				const result = await updateLocation({
+					locationId: location.id,
+					data: {
+						name: value.name,
+						street: value.street || undefined,
+						city: value.city || undefined,
+						postalCode: value.postalCode || undefined,
+						country: value.country || undefined,
+						isActive: value.isActive,
+					},
 				}).then(
 					(response) => response,
 					() => null,
@@ -83,12 +80,14 @@ export function LocationDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error || t("settings.locations.updateFailed", "Failed to update location"),
+						actionErrorMessage(t, result, {}, [
+							"settings.locations.updateFailed",
+							"Failed to update location",
+						]),
 					);
 				}
 			} else {
 				const result = await createLocation({
-					organizationId,
 					name: value.name,
 					street: value.street || undefined,
 					city: value.city || undefined,
@@ -104,7 +103,10 @@ export function LocationDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error || t("settings.locations.createFailed", "Failed to create location"),
+						actionErrorMessage(t, result, {}, [
+							"settings.locations.createFailed",
+							"Failed to create location",
+						]),
 					);
 				}
 			}

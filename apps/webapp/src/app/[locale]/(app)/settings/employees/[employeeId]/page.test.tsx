@@ -8,7 +8,7 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 const mockState = vi.hoisted(() => ({
-	getCurrentApprovedMembership: vi.fn(),
+	getCurrentSettingsAccess: vi.fn(),
 	getCurrentSettingsRouteContext: vi.fn(),
 	getEmployee: vi.fn(),
 	loadPersonnelFilePanelCapability: vi.fn(),
@@ -21,10 +21,8 @@ const mockState = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ redirect: mockState.redirect }));
 vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
 vi.mock("@/lib/auth-helpers", () => ({
+	getCurrentSettingsAccess: mockState.getCurrentSettingsAccess,
 	getCurrentSettingsRouteContext: mockState.getCurrentSettingsRouteContext,
-}));
-vi.mock("../current-approved-membership", () => ({
-	getCurrentApprovedMembership: mockState.getCurrentApprovedMembership,
 }));
 vi.mock("../actions", () => ({ getEmployee: mockState.getEmployee }));
 vi.mock("@/lib/personnel-file/panel", () => ({
@@ -43,7 +41,7 @@ function getContentElement(page: ReturnType<typeof EmployeeDetailPage>) {
 	return page.props.children;
 }
 
-describe("EmployeeDetailPage actor membership", () => {
+describe("EmployeeDetailPage viewer settings access", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.getEmployeeEquipment.mockResolvedValue({
@@ -75,8 +73,11 @@ describe("EmployeeDetailPage actor membership", () => {
 		expect(mockState.getEmployee).not.toHaveBeenCalled();
 	});
 
-	it("passes the approved membership role to detail controls", async () => {
-		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "owner" });
+	it("passes the viewer's settings access to detail controls", async () => {
+		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: "owner",
+		});
 
 		const page = EmployeeDetailPage({
 			params: Promise.resolve({ employeeId: "employee-1" }),
@@ -84,13 +85,10 @@ describe("EmployeeDetailPage actor membership", () => {
 		const contentElement = getContentElement(page);
 		const detailPage = await contentElement.type(contentElement.props);
 
-		expect(mockState.getCurrentApprovedMembership).toHaveBeenCalledWith({
-			userId: "user-1",
-			organizationId: "org-1",
-		});
+		expect(mockState.getCurrentSettingsAccess).toHaveBeenCalledTimes(1);
 		expect(detailPage.props).toMatchObject({
 			currentUserId: "user-1",
-			currentMemberRole: "owner",
+			settingsAccess: "owner",
 			organizationId: "org-1",
 			initialSnapshot: {
 				scope: { userId: "user-1", organizationId: "org-1" },
@@ -100,7 +98,10 @@ describe("EmployeeDetailPage actor membership", () => {
 		});
 	});
 	it("loads equipment through its independent permission boundary for an employee profile", async () => {
-		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "owner" });
+		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: "owner",
+		});
 		const equipment = {
 			assignments: [{ identifier: "L-01" }],
 			canManage: true,
@@ -118,7 +119,10 @@ describe("EmployeeDetailPage actor membership", () => {
 	});
 
 	it("passes the personnel file panel only when the resolver grants it (#865)", async () => {
-		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "owner" });
+		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: "owner",
+		});
 		const capability = {
 			employeeId: "employee-1",
 			categories: ["contract", "payslip"],
@@ -139,8 +143,9 @@ describe("EmployeeDetailPage actor membership", () => {
 	});
 
 	it("passes no personnel file panel to managers the resolver refuses", async () => {
-		mockState.getCurrentApprovedMembership.mockResolvedValue({
-			role: "member",
+		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: "scopedManager",
 		});
 		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
 			authContext: {
@@ -160,8 +165,11 @@ describe("EmployeeDetailPage actor membership", () => {
 		expect(detailPage.props.personnelFile).toBeNull();
 	});
 
-	it("denies detail access when no approved membership exists", async () => {
-		mockState.getCurrentApprovedMembership.mockResolvedValue(null);
+	it("denies detail access when the viewer has no settings access", async () => {
+		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: null,
+		});
 
 		const page = EmployeeDetailPage({
 			params: Promise.resolve({ employeeId: "employee-1" }),

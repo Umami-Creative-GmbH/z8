@@ -1,11 +1,8 @@
-import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { BillingPageClient } from "@/components/billing/billing-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { runtime } from "@/lib/effect/runtime";
@@ -20,6 +17,7 @@ import { kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
 import { stripeConfigFromEnv } from "@/lib/effect/services/billing/stripe.service";
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 
 const logger = createLogger("billing-settings-page");
 const billingCheckFailedAccess: BillingAccessResult = {
@@ -36,15 +34,7 @@ async function BillingSettingsContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
-
-	// Get member record to check role
-	const memberRecord = await db.query.member.findFirst({
-		where: and(
-			eq(authSchema.member.userId, authContext.user.id),
-			eq(authSchema.member.organizationId, organizationId),
-		),
-	});
+	const { organizationId, settingsAccess } = await requireOrgAdminSettingsAccess();
 
 	// Fetch subscription info
 	const program = Effect.flatMap(SubscriptionService, (subscriptionService) =>
@@ -96,7 +86,7 @@ async function BillingSettingsContent() {
 					: null
 			}
 			accessResult={serializedAccessResult}
-			isOwner={memberRecord?.role === "owner"}
+			isOwner={meetsSettingsAccess(settingsAccess, "owner")}
 			kioskSeatsEnabled={kioskSeatsEnabled(stripeConfigFromEnv())}
 		/>
 	);

@@ -40,10 +40,26 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { runWithBusyState } from "../run-with-busy-state";
 import { buildPresetReviewValues } from "./work-policy-preset-utils";
+import { WORK_POLICY_PRESET_REFUSALS, WORK_POLICY_REFUSALS } from "./work-policy-refusals";
 
 type ReviewMode = "createCustom" | "editCustom" | "copySystem" | "useAsPolicy";
+
+/** A preset mode submitted without a selected preset; refused before any action runs. */
+const NO_PRESET = "no_preset";
+
+/** A name conflict is the policy's when one is created from the preset, else the preset's. */
+function presetReviewRefusals(mode: ReviewMode): RefusalOverrides {
+	return {
+		...(mode === "useAsPolicy" ? WORK_POLICY_REFUSALS : WORK_POLICY_PRESET_REFUSALS),
+		[NO_PRESET]: ["settings.workPolicies.presetReview.selectPreset", "Select a preset to continue"],
+	};
+}
 
 const defaultBreakRule = {
 	workingMinutesThreshold: 360,
@@ -229,41 +245,22 @@ function WorkPolicyPresetReviewDialogContent({
 				try {
 					const result = await (async () => {
 						if (mode === "createCustom") {
-							return createWorkPolicyPreset(organizationId, reviewedValue);
+							return createWorkPolicyPreset(reviewedValue);
 						}
 
 						if (!preset) {
-							return {
-								success: false,
-								error: t(
-									"settings.workPolicies.presetReview.selectPreset",
-									"Select a preset to continue",
-								),
-							} as const;
+							return { success: false, code: NO_PRESET } as const;
 						}
 
 						if (mode === "editCustom") {
-							return updateWorkPolicyPreset(
-								organizationId,
-								preset.id,
-								reviewedValue,
-							);
+							return updateWorkPolicyPreset({ presetId: preset.id, input: reviewedValue });
 						}
 
 						if (mode === "copySystem") {
-							return copySystemWorkPolicyPreset(
-								organizationId,
-								preset.id,
-								reviewedValue,
-							);
+							return copySystemWorkPolicyPreset({ presetId: preset.id, input: reviewedValue });
 						}
 
-						return createWorkPolicyFromPreset(
-							organizationId,
-							preset.id,
-							reviewedValue,
-							setAsDefault,
-						);
+						return createWorkPolicyFromPreset({ presetId: preset.id, input: reviewedValue, setAsDefault });
 					})();
 
 					if (result.success) {
@@ -274,11 +271,10 @@ function WorkPolicyPresetReviewDialogContent({
 					}
 
 					setServerError(
-						result.error ??
-							t(
-								"settings.workPolicies.presetReviewError",
-								"Failed to save preset",
-							),
+						actionErrorMessage(t, result, presetReviewRefusals(mode), [
+							"settings.workPolicies.presetReviewError",
+							"Failed to save preset",
+						]),
 					);
 				} catch {
 					setServerError(

@@ -442,7 +442,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 				csv: csv().replace("2019-01-01", "2018-01-01"),
 				fingerprint: first.fingerprint,
 			}),
-		).toMatchObject({ success: false, code: "stale_preview" });
+		).toMatchObject({ success: false, refusal: "stale_preview" });
 		await assertOriginalDates();
 		await fixture.pool.query(
 			`update employee set position='Intervening personnel change' where id=$1`,
@@ -453,7 +453,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 				csv: csv(),
 				fingerprint: first.fingerprint,
 			}),
-		).toMatchObject({ success: false, code: "stale_preview" });
+		).toMatchObject({ success: false, refusal: "stale_preview" });
 		await assertOriginalDates();
 		const current = await readyUpload();
 		expect(
@@ -467,7 +467,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 				csv: csv(),
 				fingerprint: current.fingerprint,
 			}),
-		).toMatchObject({ success: false, code: "stale_preview" });
+		).toMatchObject({ success: false, refusal: "stale_preview" });
 	});
 	it("refuses the entire batch while one affected month is closed, then permits a fresh review after explicit reopening", async () => {
 		const months = await import("@/app/[locale]/(app)/settings/closed-months/actions");
@@ -523,7 +523,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 					csv: csv(),
 					fingerprint: review.fingerprint,
 				}),
-			).toMatchObject({ success: false, code: "failed" });
+			).toMatchObject({ success: false, code: "DatabaseError" });
 			await assertOriginalDates();
 			expect([...(await vacation()).values()].map((balance) => balance.allowanceDays)).toEqual([
 				4, 4,
@@ -545,12 +545,12 @@ describe("reviewed bulk employment corrections through public upload actions", (
 				csv: csv(),
 				fingerprint: review.fingerprint,
 			}),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 		const member = await fixture.seedEmployee();
 		harness.userId = member.userId;
 		expect(await actions.previewEmploymentDateUploadAction({ csv: csv() })).toMatchObject({
 			success: false,
-			code: "not_permitted",
+			code: "AuthorizationError",
 		});
 		harness.userId = fixture.ownerUserId;
 		harness.organizationId = await fixture.createOrganization();
@@ -559,7 +559,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 				csv: csv(),
 				fingerprint: review.fingerprint,
 			}),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 	it("keeps employee exceptions, checkpoints and unrelated vacation choices when applying every reviewed row", async () => {
 		const adjustment = await import("@/app/[locale]/(app)/settings/employees/work-balance-actions");
@@ -657,6 +657,6 @@ describe("reviewed bulk employment corrections through public upload actions", (
 				csv: csv(),
 				fingerprint: unchanged.fingerprint,
 			}),
-		).toMatchObject({ success: false, code: "stale_preview" });
+		).toMatchObject({ success: false, refusal: "stale_preview" });
 	});
 });

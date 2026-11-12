@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface EmployeeCustomRolesCardProps {
 	employeeId: string;
@@ -41,8 +42,8 @@ export function EmployeeCustomRolesCard({
 	const { data: assignedRoles, isLoading: isLoadingAssigned } = useQuery({
 		queryKey: ["employee-custom-roles", employeeId],
 		queryFn: async () => {
-			const result = await getEmployeeCustomRoles(employeeId);
-			if (!result.success) throw new Error(result.error);
+			const result = await getEmployeeCustomRoles({ employeeId });
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 	});
@@ -51,7 +52,7 @@ export function EmployeeCustomRolesCard({
 		queryKey: ["custom-roles", organizationId],
 		queryFn: async () => {
 			const result = await listCustomRoles();
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 		enabled: isAssignOpen,
@@ -59,8 +60,8 @@ export function EmployeeCustomRolesCard({
 
 	const assignMutation = useMutation({
 		mutationFn: async (roleId: string) => {
-			const result = await assignRoleToEmployee(employeeId, roleId);
-			if (!result.success) throw new Error(result.error);
+			const result = await assignRoleToEmployee({ employeeId, roleId });
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 		},
 		onSuccess: () => {
 			toast.success(t("settings.roles.toast.assigned", "Role assigned"));
@@ -74,8 +75,8 @@ export function EmployeeCustomRolesCard({
 
 	const unassignMutation = useMutation({
 		mutationFn: async (roleId: string) => {
-			const result = await unassignRoleFromEmployee(employeeId, roleId);
-			if (!result.success) throw new Error(result.error);
+			const result = await unassignRoleFromEmployee({ employeeId, roleId });
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 		},
 		onSuccess: () => {
 			toast.success(t("settings.roles.toast.removed", "Role removed"));

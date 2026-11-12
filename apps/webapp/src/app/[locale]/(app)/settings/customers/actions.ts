@@ -1,29 +1,32 @@
-"use server";
+﻿"use server";
 
-import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import * as z from "zod";
 import { customer, project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import {
 	keepCustomFieldRefusal,
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
-import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
 import {
-	ensureSettingsActorCanAccessCustomerTarget,
-	ensureSettingsActorCanAccessProjectTarget,
 	getManagedCustomerIdsForSettingsActor,
-	getProjectSettingsActorContext,
-	getProjectTarget,
+	reachesCustomer,
+	reachesProject,
 } from "../projects/project-scope";
+import {
+	customFieldValuesSchema,
+	loadOrganizationCustomer,
+	loadOrganizationProject,
+	projectSettingsActorOf,
+} from "../projects/project-settings-actor";
 
 // Types
 export interface CustomerData {
@@ -45,556 +48,359 @@ export interface CustomerData {
 	missingRequiredCustomFields?: boolean;
 }
 
-export interface CreateCustomerInput {
-	organizationId: string;
-	name: string;
-	projectId?: string;
-	address?: string;
-	vatId?: string;
-	email?: string;
-	contactPerson?: string;
-	phone?: string;
-	website?: string;
-	/** The dialog's custom field values (#818); required fields are enforced when present. */
-	customFieldValues?: CustomFieldValuesInput;
-}
+const customerNameSchema = z.string().trim().min(1, "Customer name is required");
 
-export interface UpdateCustomerInput {
-	name?: string;
-	address?: string | null;
-	vatId?: string | null;
-	email?: string | null;
-	contactPerson?: string | null;
-	phone?: string | null;
-	website?: string | null;
+const createCustomerSchema = z.strictObject({
+	name: customerNameSchema,
+	/** The project the new customer is attached to; a scoped manager must name one they manage. */
+	projectId: z.string().min(1).optional(),
+	address: z.string().optional(),
+	vatId: z.string().optional(),
+	email: z.string().optional(),
+	contactPerson: z.string().optional(),
+	phone: z.string().optional(),
+	website: z.string().optional(),
 	/** The dialog's custom field values (#818); required fields are enforced when present. */
-	customFieldValues?: CustomFieldValuesInput;
-}
+	customFieldValues: customFieldValuesSchema.optional(),
+});
+
+const customerChangesSchema = z.strictObject({
+	customerId: z.string().min(1),
+	name: customerNameSchema.optional(),
+	address: z.string().nullable().optional(),
+	vatId: z.string().nullable().optional(),
+	email: z.string().nullable().optional(),
+	contactPerson: z.string().nullable().optional(),
+	phone: z.string().nullable().optional(),
+	website: z.string().nullable().optional(),
+	/** The dialog's custom field values (#818); required fields are enforced when present. */
+	customFieldValues: customFieldValuesSchema.optional(),
+});
+
+export type CreateCustomerInput = z.input<typeof createCustomerSchema>;
+/** The customer dialog's changes; fields left out keep their value. */
+export type UpdateCustomerInput = Omit<z.input<typeof customerChangesSchema>, "customerId">;
 
 /**
- * Get all customers for an organization
+ * Get the organization's active customers: an org admin's all, a scoped
+ * manager's those only their managed projects use.
  */
-export async function getCustomers(
-	organizationId: string,
-): Promise<ServerActionResult<CustomerData[]>> {
-	const tracer = trace.getTracer("customers");
+export const getCustomers = organizationAction(
+	{ name: "customers.list", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
+			const managedCustomerIds = yield* getManagedCustomerIdsForSettingsActor(projectActor);
+			const dbService = yield* DatabaseService;
 
-	const effect = tracer.startActiveSpan(
-		"getCustomers",
-		{
-			attributes: { "organization.id": organizationId },
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getProjectSettingsActorContext({
+			const customers = yield* dbService.query("getCustomers", async () => {
+				return await dbService.db.query.customer.findMany({
+					where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
+					orderBy: [desc(customer.createdAt)],
+				});
+			});
+
+			const visibleCustomers = managedCustomerIds
+				? customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id))
+				: customers;
+			const missingRequired = yield* dbService.query("customFields.customersMissingRequired", () =>
+				findRecordsMissingRequiredValues(dbService.db, {
 					organizationId,
-					queryName: "getCustomers:actor",
-				});
-				const managedCustomerIds = yield* getManagedCustomerIdsForSettingsActor(actor);
-				const dbService = actor.dbService;
-
-				// Fetch all active customers
-				const customers = yield* dbService.query("getCustomers", async () => {
-					return await db.query.customer.findMany({
-						where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
-						orderBy: [desc(customer.createdAt)],
-					});
-				});
-
-				const visibleCustomers = managedCustomerIds
-					? customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id))
-					: customers;
-				const missingRequired = yield* dbService.query(
-					"customFields.customersMissingRequired",
-					() =>
-						findRecordsMissingRequiredValues(dbService.db, {
-							organizationId,
-							entity: "customer",
-							recordIds: visibleCustomers.map((customerRecord) => customerRecord.id),
-							viewer: { kind: "actor", userId: actor.session.user.id },
-						}),
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return visibleCustomers.map(
-					(customerRecord): CustomerData => ({
-						...(customerRecord as CustomerData),
-						missingRequiredCustomFields: missingRequired.has(customerRecord.id),
-					}),
-				);
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, organizationId }, "Failed to get customers");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.ensuring(Effect.sync(() => span.end())),
+					entity: "customer",
+					recordIds: visibleCustomers.map((customerRecord) => customerRecord.id),
+					viewer: { kind: "actor", userId: actor.userId },
+				}),
 			);
-		},
-	);
 
-	return runServerActionSafe(effect);
-}
+			return visibleCustomers.map(
+				(customerRecord): CustomerData => ({
+					...(customerRecord as CustomerData),
+					missingRequiredCustomFields: missingRequired.has(customerRecord.id),
+				}),
+			);
+		}),
+);
 
 /**
- * Create a new customer
+ * Create a new customer. A scoped manager whose reach is not the whole
+ * organization creates one only for a project they manage, which it is attached to.
  */
-export async function createCustomer(
-	input: CreateCustomerInput,
-): Promise<ServerActionResult<{ id: string }>> {
-	const tracer = trace.getTracer("customers");
+export const createCustomer = organizationAction(
+	{ name: "customers.create", requires: "scopedManager", schema: createCustomerSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
+			const dbService = yield* DatabaseService;
 
-	const effect = tracer.startActiveSpan(
-		"createCustomer",
-		{
-			attributes: {
-				"organization.id": input.organizationId,
-				"customer.name": input.name,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getProjectSettingsActorContext({
-					organizationId: input.organizationId,
-					queryName: "createCustomer:actor",
-				});
-				const session = actor.session;
-				const dbService = actor.dbService;
-
-				let scopedProjectId: string | null = null;
-				let scopedProjectOrganizationId: string | null = null;
-
-				if (actor.accessTier !== "orgAdmin") {
-					const projectId = input.projectId;
-
-					if (!projectId) {
-						return yield* Effect.fail(
-							new AuthorizationError({
-								message: "Managers can only create customers for managed projects",
-								userId: session.user.id,
-								resource: "customer",
-								action: "create",
-							}),
-						);
-					}
-
-					const scopedProject = yield* getProjectTarget(projectId, "createCustomer:getProject");
-
-					yield* ensureSettingsActorCanAccessProjectTarget(actor, scopedProject, {
-						message: "You do not have access to create customers for this project",
+			if (!projectActor.organizationWide && !input.projectId) {
+				return yield* Effect.fail(
+					new AuthorizationError({
+						message: "Managers can only create customers for managed projects",
+						userId: actor.userId,
 						resource: "customer",
 						action: "create",
+					}),
+				);
+			}
+
+			const scopedProject = input.projectId
+				? yield* loadOrganizationProject(organizationId, input.projectId)
+				: null;
+			if (scopedProject) {
+				yield* refuseUnless(yield* reachesProject(projectActor, scopedProject), {
+					userId: projectActor.session.user.id,
+					message: "You do not have access to create customers for this project",
+					resource: "customer",
+					action: "create",
+				});
+			}
+
+			// Duplicate names are refused among active customers only.
+			const existing = yield* dbService.query("checkDuplicate", async () => {
+				return await dbService.db.query.customer.findFirst({
+					where: and(
+						eq(customer.organizationId, organizationId),
+						eq(customer.name, input.name),
+						eq(customer.isActive, true),
+					),
+				});
+			});
+
+			if (existing) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "A customer with this name already exists",
+						field: "name",
+					}),
+				);
+			}
+
+			const created = yield* dbService
+				.query("customer.create", async () => {
+					return await dbService.db.transaction(async (tx) => {
+						const [newCustomer] = await tx
+							.insert(customer)
+							.values({
+								organizationId,
+								name: input.name,
+								address: input.address || null,
+								vatId: input.vatId || null,
+								email: input.email || null,
+								contactPerson: input.contactPerson || null,
+								phone: input.phone || null,
+								website: input.website || null,
+								isActive: true,
+								createdBy: actor.userId,
+								updatedAt: new Date(),
+							})
+							.returning();
+
+						if (scopedProject) {
+							await tx
+								.update(project)
+								.set({ customerId: newCustomer.id, updatedBy: actor.userId })
+								.where(
+									and(eq(project.id, scopedProject.id), eq(project.organizationId, organizationId)),
+								);
+						}
+
+						await saveFormCustomFieldValues(tx, {
+							organizationId,
+							actorUserId: actor.userId,
+							entity: "customer",
+							recordId: newCustomer.id,
+							values: input.customFieldValues,
+						});
+
+						return newCustomer;
 					});
+				})
+				.pipe(keepCustomFieldRefusal);
 
-					scopedProjectId = scopedProject.id;
-					scopedProjectOrganizationId = scopedProject.organizationId;
-				} else if (input.projectId) {
-					const scopedProject = yield* getProjectTarget(
-						input.projectId,
-						"createCustomer:getProjectForOrgAdmin",
-					);
+			logAudit({
+				action: AuditAction.CUSTOMER_CREATED,
+				actorId: actor.userId,
+				targetId: created.id,
+				targetType: "customer",
+				organizationId,
+				changes: { name: input.name },
+				metadata: { customerName: input.name },
+				timestamp: new Date(),
+			}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
-					if (scopedProject.organizationId !== input.organizationId) {
-						yield* Effect.fail(
-							new ValidationError({
-								message: "Project not found",
-								field: "projectId",
-							}),
-						);
-					}
+			revalidatePath("/settings/customers");
+			return { id: created.id };
+		}),
+);
 
-					scopedProjectId = scopedProject.id;
-					scopedProjectOrganizationId = scopedProject.organizationId;
-				}
+/**
+ * Update a customer.
+ */
+export const updateCustomer = organizationAction(
+	{ name: "customers.update", requires: "scopedManager", schema: customerChangesSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { customerId, customFieldValues, ...customerChanges } = input;
+			const existingCustomer = yield* loadOrganizationCustomer(organizationId, customerId);
+			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
+			const dbService = yield* DatabaseService;
 
-				// Check for duplicate name (only among active customers)
-				const existing = yield* dbService.query("checkDuplicate", async () => {
-					return await db.query.customer.findFirst({
+			yield* refuseUnless(yield* reachesCustomer(projectActor, existingCustomer), {
+				userId: projectActor.session.user.id,
+				message: "You do not have access to update this customer",
+				resource: "customer",
+				action: "update",
+			});
+
+			// Duplicate names are refused among active customers only.
+			if (input.name && input.name !== existingCustomer.name) {
+				const duplicate = yield* dbService.query("checkDuplicate", async () => {
+					return await dbService.db.query.customer.findFirst({
 						where: and(
-							eq(customer.organizationId, input.organizationId),
-							eq(customer.name, input.name),
+							eq(customer.organizationId, organizationId),
+							eq(customer.name, input.name!),
 							eq(customer.isActive, true),
 						),
 					});
 				});
 
-				if (existing) {
-					yield* Effect.fail(
+				if (duplicate) {
+					return yield* Effect.fail(
 						new ValidationError({
 							message: "A customer with this name already exists",
 							field: "name",
 						}),
 					);
 				}
+			}
 
-				const created = yield* dbService
-					.query("customer.create", async () => {
-						return await db.transaction(async (tx) => {
-							const [newCustomer] = await tx
-								.insert(customer)
-								.values({
-									organizationId: input.organizationId,
-									name: input.name,
-									address: input.address || null,
-									vatId: input.vatId || null,
-									email: input.email || null,
-									contactPerson: input.contactPerson || null,
-									phone: input.phone || null,
-									website: input.website || null,
-									isActive: true,
-									createdBy: session.user.id,
-									updatedAt: new Date(),
-								})
-								.returning();
+			const updateData: Partial<typeof customer.$inferInsert> = {
+				updatedBy: actor.userId,
+			};
 
-							if (scopedProjectId && scopedProjectOrganizationId === input.organizationId) {
-								await tx
-									.update(project)
-									.set({ customerId: newCustomer.id, updatedBy: session.user.id })
-									.where(eq(project.id, scopedProjectId));
-							}
+			if (input.name !== undefined) updateData.name = input.name;
+			if (input.address !== undefined) updateData.address = input.address;
+			if (input.vatId !== undefined) updateData.vatId = input.vatId;
+			if (input.email !== undefined) updateData.email = input.email;
+			if (input.contactPerson !== undefined) updateData.contactPerson = input.contactPerson;
+			if (input.phone !== undefined) updateData.phone = input.phone;
+			if (input.website !== undefined) updateData.website = input.website;
 
-							await saveFormCustomFieldValues(tx, {
-								organizationId: input.organizationId,
-								actorUserId: session.user.id,
-								entity: "customer",
-								recordId: newCustomer.id,
-								values: input.customFieldValues,
-							});
-
-							return newCustomer;
-						});
-					})
-					.pipe(keepCustomFieldRefusal);
-
-				// Log audit (fire-and-forget)
-				logAudit({
-					action: AuditAction.CUSTOMER_CREATED,
-					actorId: session.user.id,
-					targetId: created.id,
-					targetType: "customer",
-					organizationId: input.organizationId,
-					changes: { name: input.name },
-					metadata: { customerName: input.name },
-					timestamp: new Date(),
-				}).catch((err) => logger.error({ err }, "Failed to log audit"));
-
-				revalidatePath("/settings/customers");
-				span.setStatus({ code: SpanStatusCode.OK });
-				return { id: created.id };
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, input }, "Failed to create customer");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.ensuring(Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Update a customer
- */
-export async function updateCustomer(
-	customerId: string,
-	input: UpdateCustomerInput,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("customers");
-
-	const effect = tracer.startActiveSpan(
-		"updateCustomer",
-		{
-			attributes: { "customer.id": customerId },
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-
-				// Get the customer and verify access
-				const existingCustomer = yield* dbService
-					.query("getCustomer", async () => {
-						return await db.query.customer.findFirst({
-							where: eq(customer.id, customerId),
-						});
-					})
-					.pipe(
-						Effect.flatMap((c) =>
-							c
-								? Effect.succeed(c)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Customer not found",
-											entityType: "customer",
-										}),
-									),
-						),
-					);
-
-				const actor = yield* getProjectSettingsActorContext({
-					organizationId: existingCustomer.organizationId,
-					queryName: "updateCustomer:actor",
-				});
-				const session = actor.session;
-
-				yield* ensureSettingsActorCanAccessCustomerTarget(actor, existingCustomer, {
-					message: "You do not have access to update this customer",
-					resource: "customer",
-					action: "update",
-				});
-
-				// Check for duplicate name if updating name (only among active customers)
-				if (input.name && input.name !== existingCustomer.name) {
-					const duplicate = yield* dbService.query("checkDuplicate", async () => {
-						return await db.query.customer.findFirst({
-							where: and(
-								eq(customer.organizationId, existingCustomer.organizationId),
-								eq(customer.name, input.name!),
-								eq(customer.isActive, true),
-							),
-						});
-					});
-
-					if (duplicate) {
-						yield* Effect.fail(
-							new ValidationError({
-								message: "A customer with this name already exists",
-								field: "name",
-							}),
-						);
-					}
-				}
-
-				// Build update object
-				const { customFieldValues: _customFieldValues, ...customerChanges } = input;
-				const updateData: Partial<typeof customer.$inferInsert> = {
-					updatedBy: session.user.id,
-				};
-
-				if (input.name !== undefined) updateData.name = input.name;
-				if (input.address !== undefined) updateData.address = input.address;
-				if (input.vatId !== undefined) updateData.vatId = input.vatId;
-				if (input.email !== undefined) updateData.email = input.email;
-				if (input.contactPerson !== undefined) updateData.contactPerson = input.contactPerson;
-				if (input.phone !== undefined) updateData.phone = input.phone;
-				if (input.website !== undefined) updateData.website = input.website;
-
-				// Update the customer, with the dialog's custom field values (#818) in the same transaction.
-				yield* dbService
-					.query("customer.update", async () => {
-						await dbService.db.transaction(async (tx) => {
-							await tx
-								.update(customer)
-								.set(updateData)
-								.where(
-									and(
-										eq(customer.id, customerId),
-										eq(customer.organizationId, existingCustomer.organizationId),
-									),
-								);
-							await saveFormCustomFieldValues(tx, {
-								organizationId: existingCustomer.organizationId,
-								actorUserId: session.user.id,
-								entity: "customer",
-								recordId: customerId,
-								values: input.customFieldValues,
-							});
-						});
-					})
-					.pipe(keepCustomFieldRefusal);
-
-				// Log audit (fire-and-forget)
-				logAudit({
-					action: AuditAction.CUSTOMER_UPDATED,
-					actorId: session.user.id,
-					targetId: customerId,
-					targetType: "customer",
-					organizationId: existingCustomer.organizationId,
-					changes: customerChanges as Record<string, unknown>,
-					metadata: { previousName: existingCustomer.name },
-					timestamp: new Date(),
-				}).catch((err) => logger.error({ err }, "Failed to log audit"));
-
-				revalidatePath("/settings/customers");
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, customerId, input }, "Failed to update customer");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.ensuring(Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Delete a customer (soft delete via isActive flag)
- */
-export async function deleteCustomer(customerId: string): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("customers");
-
-	const effect = tracer.startActiveSpan(
-		"deleteCustomer",
-		{
-			attributes: { "customer.id": customerId },
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-
-				// Get the customer
-				const existingCustomer = yield* dbService
-					.query("getCustomer", async () => {
-						return await db.query.customer.findFirst({
-							where: eq(customer.id, customerId),
-						});
-					})
-					.pipe(
-						Effect.flatMap((c) =>
-							c
-								? Effect.succeed(c)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Customer not found",
-											entityType: "customer",
-										}),
-									),
-						),
-					);
-
-				const actor = yield* getProjectSettingsActorContext({
-					organizationId: existingCustomer.organizationId,
-					queryName: "deleteCustomer:actor",
-				});
-				const session = actor.session;
-
-				yield* ensureSettingsActorCanAccessCustomerTarget(actor, existingCustomer, {
-					message: "You do not have access to delete this customer",
-					resource: "customer",
-					action: "delete",
-				});
-
-				// Soft delete. Its projects are now without customer (Billable Time, #768),
-				// so their billable default switches off with it; existing work is unchanged.
-				yield* dbService.query("customer.delete", async () => {
+			// Update the customer, with the dialog's custom field values (#818) in the same transaction.
+			yield* dbService
+				.query("customer.update", async () => {
 					await dbService.db.transaction(async (tx) => {
 						await tx
 							.update(customer)
-							.set({ isActive: false, updatedBy: session.user.id })
-							.where(
-								and(
-									eq(customer.id, customerId),
-									eq(customer.organizationId, existingCustomer.organizationId),
-								),
-							);
-						await tx
-							.update(project)
-							.set({ billableDefault: false, updatedBy: session.user.id })
-							.where(
-								and(
-									eq(project.customerId, customerId),
-									eq(project.organizationId, existingCustomer.organizationId),
-									eq(project.billableDefault, true),
-								),
-							);
+							.set(updateData)
+							.where(and(eq(customer.id, customerId), eq(customer.organizationId, organizationId)));
+						await saveFormCustomFieldValues(tx, {
+							organizationId,
+							actorUserId: actor.userId,
+							entity: "customer",
+							recordId: customerId,
+							values: customFieldValues,
+						});
 					});
-				});
+				})
+				.pipe(keepCustomFieldRefusal);
 
-				// Log audit (fire-and-forget)
-				logAudit({
-					action: AuditAction.CUSTOMER_DELETED,
-					actorId: session.user.id,
-					targetId: customerId,
-					targetType: "customer",
-					organizationId: existingCustomer.organizationId,
-					changes: { isActive: false },
-					metadata: { customerName: existingCustomer.name },
-					timestamp: new Date(),
-				}).catch((err) => logger.error({ err }, "Failed to log audit"));
+			logAudit({
+				action: AuditAction.CUSTOMER_UPDATED,
+				actorId: actor.userId,
+				targetId: customerId,
+				targetType: "customer",
+				organizationId,
+				changes: customerChanges as Record<string, unknown>,
+				metadata: { previousName: existingCustomer.name },
+				timestamp: new Date(),
+			}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
-				revalidatePath("/settings/customers");
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, customerId }, "Failed to delete customer");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.ensuring(Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
+			revalidatePath("/settings/customers");
+		}),
+);
 
 /**
- * Get customers for selection (lightweight, for project dialog dropdown)
- * Available to any authenticated user in the organization.
+ * Delete a customer (soft delete via isActive flag).
  */
-export async function getCustomersForSelection(
-	organizationId: string,
-): Promise<ServerActionResult<{ id: string; name: string }[]>> {
-	const tracer = trace.getTracer("customers");
+export const deleteCustomer = organizationAction(
+	{
+		name: "customers.delete",
+		requires: "scopedManager",
+		schema: z.strictObject({ customerId: z.string().min(1) }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { customerId } = input;
+			const existingCustomer = yield* loadOrganizationCustomer(organizationId, customerId);
+			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
+			const dbService = yield* DatabaseService;
 
-	const effect = tracer.startActiveSpan(
-		"getCustomersForSelection",
-		{
-			attributes: { "organization.id": organizationId },
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getProjectSettingsActorContext({
-					organizationId,
-					queryName: "getCustomersForSelection:actor",
+			yield* refuseUnless(yield* reachesCustomer(projectActor, existingCustomer), {
+				userId: projectActor.session.user.id,
+				message: "You do not have access to delete this customer",
+				resource: "customer",
+				action: "delete",
+			});
+
+			// Soft delete. Its projects are now without customer (Billable Time, #768),
+			// so their billable default switches off with it; existing work is unchanged.
+			yield* dbService.query("customer.delete", async () => {
+				await dbService.db.transaction(async (tx) => {
+					await tx
+						.update(customer)
+						.set({ isActive: false, updatedBy: actor.userId })
+						.where(and(eq(customer.id, customerId), eq(customer.organizationId, organizationId)));
+					await tx
+						.update(project)
+						.set({ billableDefault: false, updatedBy: actor.userId })
+						.where(
+							and(
+								eq(project.customerId, customerId),
+								eq(project.organizationId, organizationId),
+								eq(project.billableDefault, true),
+							),
+						);
 				});
-				const managedCustomerIds = yield* getManagedCustomerIdsForSettingsActor(actor);
-				const dbService = actor.dbService;
+			});
 
-				const customers = yield* dbService.query("getCustomersForSelection", async () => {
-					return await db.query.customer.findMany({
-						where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
-						columns: { id: true, name: true },
-						orderBy: [customer.name],
-					});
+			logAudit({
+				action: AuditAction.CUSTOMER_DELETED,
+				actorId: actor.userId,
+				targetId: customerId,
+				targetType: "customer",
+				organizationId,
+				changes: { isActive: false },
+				metadata: { customerName: existingCustomer.name },
+				timestamp: new Date(),
+			}).catch((err) => logger.error({ err }, "Failed to log audit"));
+
+			revalidatePath("/settings/customers");
+		}),
+);
+
+/**
+ * Get customers for selection (lightweight, for the project dialog dropdown),
+ * in the caller's customer scope.
+ */
+export const getCustomersForSelection = organizationAction(
+	{ name: "customers.forSelection", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
+			const managedCustomerIds = yield* getManagedCustomerIdsForSettingsActor(projectActor);
+			const dbService = yield* DatabaseService;
+
+			const customers = yield* dbService.query("getCustomersForSelection", async () => {
+				return await dbService.db.query.customer.findMany({
+					where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
+					columns: { id: true, name: true },
+					orderBy: [customer.name],
 				});
+			});
 
-				span.setStatus({ code: SpanStatusCode.OK });
-				return managedCustomerIds
-					? customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id))
-					: customers;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, organizationId }, "Failed to get customers for selection");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.ensuring(Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
+			return managedCustomerIds
+				? customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id))
+				: customers;
+		}),
+);

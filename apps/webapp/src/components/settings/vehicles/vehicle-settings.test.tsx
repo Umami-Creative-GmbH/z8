@@ -132,7 +132,7 @@ describe("VehicleSettings", () => {
 		});
 		changeMock.mockResolvedValue({
 			success: true,
-			data: { ok: true, vehicles: [created] },
+			data: [created],
 		});
 		render(<VehicleSettings initialData={data([])} />);
 
@@ -161,8 +161,10 @@ describe("VehicleSettings", () => {
 
 	it("shows why the server refused a change", async () => {
 		changeMock.mockResolvedValue({
-			success: true,
-			data: { ok: false, reason: "licence_plate_taken" },
+			success: false,
+			error: "The vehicle change was refused",
+			code: "ValidationError",
+			refusal: "licence_plate_taken",
 		});
 		render(<VehicleSettings initialData={data([vehicle({ archived: true })])} />);
 
@@ -178,12 +180,14 @@ describe("VehicleSettings", () => {
 	it("offers archiving when a vehicle recorded on work cannot be deleted", async () => {
 		changeMock
 			.mockResolvedValueOnce({
-				success: true,
-				data: { ok: false, reason: "vehicle_used" },
+				success: false,
+				error: "The vehicle change was refused",
+				code: "ValidationError",
+				refusal: "vehicle_used",
 			})
 			.mockResolvedValueOnce({
 				success: true,
-				data: { ok: true, vehicles: [vehicle({ archived: true })] },
+				data: [vehicle({ archived: true })],
 			});
 		render(<VehicleSettings initialData={data([vehicle()])} />);
 

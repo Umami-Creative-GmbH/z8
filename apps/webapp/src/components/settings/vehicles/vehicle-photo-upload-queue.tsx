@@ -13,6 +13,15 @@ import {
 	MAX_VEHICLE_PHOTOS,
 	type VehiclePhotoView,
 } from "@/lib/organization/vehicles/vehicle-photo-types";
+import {
+	type ActionFailure,
+	actionErrorMessage,
+} from "@/lib/organization-action/action-error-message";
+import {
+	isRetryableUploadRefusal,
+	UPLOAD_FAILED,
+	VEHICLE_PHOTO_UPLOAD_REFUSALS,
+} from "./vehicle-photo-refusals";
 
 type UploadEntry = {
 	id: string;
@@ -48,72 +57,16 @@ export function useVehiclePhotoUploadQueue({
 		Object.assign(entry, patch);
 		setEntries(queue.current.map((entry) => ({ ...entry })));
 	}
-	function error(reason?: string) {
-		switch (reason) {
-			case "heic_unsupported":
-			case "unsupported_image":
-			case "animated_image":
-				return t(
-					"settings.vehicles.photos.unsupported",
-					"Choose a JPEG, PNG or WebP photo. HEIC and other formats are not supported.",
-				);
-			case "invalid_image":
-				return t(
-					"settings.vehicles.photos.invalid",
-					"This image could not be read. Choose another JPEG, PNG or WebP photo.",
-				);
-			case "photo_too_large":
-				return t(
-					"settings.vehicles.photos.tooLarge",
-					"Choose a photo no larger than 10 MB.",
-				);
-			case "vehicle_archived":
-				onArchived();
-				return t(
-					"settings.vehicles.photos.archived",
-					"This vehicle is archived. Restore it to add or remove photos.",
-				);
-			case "photo_limit":
-				return t(
-					"settings.vehicles.photos.full",
-					"This vehicle has 20 photos. Remove a photo before adding another.",
-				);
-			case "forbidden":
-				return t(
-					"settings.vehicles.photos.accessChanged",
-					"Your access changed. Reopen vehicle settings to check your permissions.",
-				);
-			case "vehicle_not_found":
-				return t(
-					"settings.vehicles.photos.vehicleMissing",
-					"This vehicle is no longer available in your organization.",
-				);
-			case "upload_not_found":
-			case "upload_expired":
-				return t(
-					"settings.vehicles.photos.expired",
-					"This upload expired. Select the photo again to upload it.",
-				);
-			default:
-				return t(
-					"settings.vehicles.photos.uploadFailed",
-					"The photo could not be uploaded. Try again.",
-				);
-		}
+	/** A failed action result, an upload route refusal (`{ refusal }`) or none: an unknown failure. */
+	function message(failure?: ActionFailure) {
+		return actionErrorMessage(t, failure, VEHICLE_PHOTO_UPLOAD_REFUSALS, UPLOAD_FAILED);
 	}
-	function fail(entry: UploadEntry, reason?: string) {
+	function fail(entry: UploadEntry, failure?: ActionFailure) {
+		if (failure?.refusal === "vehicle_archived") onArchived();
 		update(entry, {
 			status: "failed",
-			message: error(reason),
-			retryable: ![
-				"invalid_image",
-				"unsupported_image",
-				"heic_unsupported",
-				"animated_image",
-				"photo_too_large",
-				"upload_expired",
-				"upload_not_found",
-			].includes(reason ?? ""),
+			message: message(failure),
+			retryable: isRetryableUploadRefusal(failure?.refusal),
 		});
 	}
 	async function transfer(entry: UploadEntry) {
@@ -134,8 +87,8 @@ export function useVehiclePhotoUploadQueue({
 				fail(
 					entry,
 					response.status === 401 || response.status === 403
-						? "forbidden"
-						: failure.reason,
+						? { code: "AuthorizationError" }
+						: { refusal: failure.reason },
 				);
 				return;
 			}
@@ -143,33 +96,21 @@ export function useVehiclePhotoUploadQueue({
 				| { ok: true; photo: VehiclePhotoView }
 				| { ok: false; reason?: string } = await response.json();
 			if (!outcome.ok) {
-				fail(entry, outcome.reason);
+				fail(entry, { refusal: outcome.reason });
 				return;
 			}
 			update(entry, { status: "saved", photo: outcome.photo });
 			onSaved(outcome.photo);
 		} catch {
-			update(entry, { status: "failed", message: error() });
+			update(entry, { status: "failed", message: message() });
 		}
 	}
 	async function resume(entry: UploadEntry) {
 		if (!entry.uploadId) return;
 		try {
-			const result = await reconcileVehiclePhotoUpload(
-				vehicleId,
-				entry.uploadId,
-			);
-			if (!result.success || !result.data.ok) {
-				const reason =
-					result.success && !result.data.ok
-						? result.data.reason
-						: !result.success &&
-								["AuthenticationError", "AuthorizationError"].includes(
-									result.code ?? "",
-								)
-							? "forbidden"
-							: undefined;
-				fail(entry, reason);
+			const result = await reconcileVehiclePhotoUpload({ vehicleId, uploadId: entry.uploadId });
+			if (!result.success) {
+				fail(entry, result);
 				return;
 			}
 			if (result.data.photo) {
@@ -185,7 +126,7 @@ export function useVehiclePhotoUploadQueue({
 						(other.status === "queued" || other.status === "uploading"),
 				).length;
 			if (occupied >= MAX_VEHICLE_PHOTOS) {
-				fail(entry, "photo_limit");
+				fail(entry, { refusal: "photo_limit" });
 				return;
 			}
 			await transfer(entry);
@@ -199,35 +140,12 @@ export function useVehiclePhotoUploadQueue({
 		reconcile = false,
 	) {
 		try {
-			const result = await initiateVehiclePhotoBatchUpload(
+			const result = await initiateVehiclePhotoBatchUpload({
 				vehicleId,
-				batch.map((entry) => entry.id),
-			);
-			if (!result.success || !result.data.ok) {
-				const reason =
-					result.success && !result.data.ok
-						? result.data.reason
-						: !result.success &&
-								["AuthenticationError", "AuthorizationError"].includes(
-									result.code ?? "",
-								)
-							? "forbidden"
-							: undefined;
-				for (const entry of targets) {
-					fail(entry, reason);
-					if (
-						result.success &&
-						!result.data.ok &&
-						result.data.remaining !== undefined
-					)
-						update(entry, {
-							message: t(
-								"settings.vehicles.photos.capacityChanged",
-								"The gallery changed. {count} photo slots remain. Reopen it and choose fewer photos.",
-								{ count: result.data.remaining },
-							),
-						});
-				}
+				uploadIds: batch.map((entry) => entry.id),
+			});
+			if (!result.success) {
+				for (const entry of targets) fail(entry, result);
 				return;
 			}
 			for (const [index, entry] of batch.entries())
@@ -286,13 +204,13 @@ export function useVehiclePhotoUploadQueue({
 			if (!["image/jpeg", "image/png", "image/webp"].includes(entry.file.type))
 				update(entry, {
 					status: "failed",
-					message: error("unsupported_image"),
+					message: message({ refusal: "unsupported_image" }),
 					retryable: false,
 				});
 			else if (entry.file.size > MAX_VEHICLE_PHOTO_BYTES)
 				update(entry, {
 					status: "failed",
-					message: error("photo_too_large"),
+					message: message({ refusal: "photo_too_large" }),
 					retryable: false,
 				});
 		}
@@ -312,7 +230,7 @@ export function useVehiclePhotoUploadQueue({
 		selectionError,
 		select,
 		retry,
-		error,
+		message,
 		disabled,
 		full: photos.length >= MAX_VEHICLE_PHOTOS,
 	};
@@ -330,7 +248,7 @@ export function VehiclePhotoUploadQueue({
 		selectionError,
 		select,
 		retry,
-		error,
+		message,
 		disabled,
 		full,
 	} = queue;
@@ -360,7 +278,9 @@ export function VehiclePhotoUploadQueue({
 				)}
 			</p>
 			{full ? (
-				<p className="text-muted-foreground text-sm">{error("photo_limit")}</p>
+				<p className="text-muted-foreground text-sm">
+					{message({ refusal: "photo_limit" })}
+				</p>
 			) : null}
 			{selectionError ? (
 				<p role="alert" className="text-destructive text-sm">

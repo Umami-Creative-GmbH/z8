@@ -44,6 +44,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { SuccessFactorsConfig } from "@/lib/payroll-export/types";
 import {
 	customFieldIdentifierItems,
@@ -52,7 +53,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface SuccessFactorsConfigFormProps {
-	organizationId: string;
 	initialConfig?: SuccessFactorsConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the match key (#821). */
@@ -75,7 +75,6 @@ export function SuccessFactorsConfigForm(props: SuccessFactorsConfigFormProps) {
 }
 
 function SuccessFactorsSettingsView({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -89,7 +88,6 @@ function SuccessFactorsSettingsView({
 		onSubmit: async ({ value }) =>
 			startTransition(async () => {
 				const result = await saveSuccessFactorsConfigAction({
-					organizationId,
 					config: value,
 				});
 				if (result.success) {
@@ -106,7 +104,7 @@ function SuccessFactorsSettingsView({
 							"settings.payrollExport.successfactors.saveError",
 							"Failed to save configuration",
 						),
-						{ description: result.error },
+						{ description: actionErrorMessage(t, result) },
 					);
 			}),
 	});
@@ -117,7 +115,6 @@ function SuccessFactorsSettingsView({
 	const testConnection = async () => {
 		setIsTestingConnection(true);
 		const result = await testSuccessFactorsConnectionAction({
-			organizationId,
 			config: form.state.values,
 		}).then(
 			(response) => response,
@@ -131,7 +128,11 @@ function SuccessFactorsSettingsView({
 				),
 			);
 		else {
-			const description = result?.success ? result.data?.error : result?.error;
+			const description = result?.success
+				? result.data?.error
+				: result
+					? actionErrorMessage(t, result)
+					: undefined;
 			toast.error(
 				t(
 					"settings.payrollExport.successfactors.connectionFailed",

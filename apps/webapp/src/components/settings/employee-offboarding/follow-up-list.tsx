@@ -17,10 +17,12 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { FUTURE_STAGE_REVIEW_REASON } from "@/lib/employee-lifecycle/review-reasons";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRequestIdentity } from "@/lib/query/use-employee-offboarding";
 import type { AssignDepartureReplacementInput } from "@/lib/validations/employee-offboarding";
 import { Link } from "@/navigation";
 import { useOffboardingLabels } from "./labels";
+import { OFFBOARDING_REFUSALS } from "./offboarding-refusals";
 
 type Review = EmployeeOffboardingView["reviews"][number];
 
@@ -157,7 +159,7 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 		const result = await trackPending(setPending, () =>
 			props.resolveReview({ reviewId: review.id, resolution: note }),
 		);
-		if (!result.success) setError(result.error ?? null);
+		if (!result.success) setError(actionErrorMessage(t, result, OFFBOARDING_REFUSALS));
 		else setNote("");
 	}
 
@@ -250,7 +252,7 @@ function ReplacementAssignment(props: {
 			props.assignReplacement({ ...intent, requestId: requestIdentity.forPayload(intent) }),
 		);
 		if (result.success) requestIdentity.complete();
-		else setError(result.error ?? null);
+		else setError(actionErrorMessage(t, result, OFFBOARDING_REFUSALS));
 	}
 
 	return (
@@ -308,7 +310,7 @@ function FailedTaskItem(props: {
 	async function retry() {
 		setError(null);
 		const result = await trackPending(setPending, () => props.retryTask({ taskId: props.taskId }));
-		if (!result.success) setError(result.error ?? null);
+		if (!result.success) setError(actionErrorMessage(t, result, OFFBOARDING_REFUSALS));
 	}
 
 	return (

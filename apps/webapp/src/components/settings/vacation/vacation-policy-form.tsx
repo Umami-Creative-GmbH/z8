@@ -41,6 +41,7 @@ import {
 	isAccrualPolicy,
 } from "@/lib/absences/vacation-policy-settings";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { runWithBusyState } from "../run-with-busy-state";
 
@@ -138,22 +139,24 @@ export function VacationPolicyForm({
 			await runWithBusyState(setLoading, async () => {
 				try {
 					const result = existingPolicy
-						? await updateVacationPolicy(existingPolicy.id, {
-								name: value.name,
-								startDate: value.startDate,
-								validUntil: value.validUntil ?? undefined,
-								isCompanyDefault: value.isCompanyDefault,
-								defaultAnnualDays: value.defaultAnnualDays,
-								accrualType: value.accrualType,
-								accrualStartMonth: value.accrualStartMonth,
-								allowCarryover: value.allowCarryover,
-								maxCarryoverDays: value.maxCarryoverDays || undefined,
-								carryoverExpiryMonths: value.carryoverExpiryMonths,
-								prorateInStartAndExitYear: value.prorateInStartAndExitYear,
-								statutoryMinimumDays: value.statutoryMinimumDays,
+						? await updateVacationPolicy({
+								policyId: existingPolicy.id,
+								data: {
+									name: value.name,
+									startDate: value.startDate,
+									validUntil: value.validUntil ?? undefined,
+									isCompanyDefault: value.isCompanyDefault,
+									defaultAnnualDays: value.defaultAnnualDays,
+									accrualType: value.accrualType,
+									accrualStartMonth: value.accrualStartMonth,
+									allowCarryover: value.allowCarryover,
+									maxCarryoverDays: value.maxCarryoverDays || undefined,
+									carryoverExpiryMonths: value.carryoverExpiryMonths,
+									prorateInStartAndExitYear: value.prorateInStartAndExitYear,
+									statutoryMinimumDays: value.statutoryMinimumDays,
+								},
 							})
 						: await createVacationPolicy({
-								organizationId,
 								startDate: value.startDate,
 								validUntil: value.validUntil ?? undefined,
 								isCompanyDefault: value.isCompanyDefault,
@@ -177,7 +180,12 @@ export function VacationPolicyForm({
 						onOpenChange(false);
 						router.refresh();
 					} else {
-						toast.error(result.error || t("settings.vacation.saveFailed", "Failed to save policy"));
+						toast.error(
+							actionErrorMessage(t, result, {}, [
+								"settings.vacation.saveFailed",
+								"Failed to save policy",
+							]),
+						);
 					}
 				} catch (_error) {
 					toast.error(t("common.unexpectedError", "An unexpected error occurred"));

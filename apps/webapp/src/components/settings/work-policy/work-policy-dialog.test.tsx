@@ -185,7 +185,7 @@ describe("WorkPolicyDialog", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
 		await waitFor(() => expect(updateWorkPolicy).toHaveBeenCalled());
-		const [, input] = vi.mocked(updateWorkPolicy).mock.calls[0];
+		const [{ data: input }] = vi.mocked(updateWorkPolicy).mock.calls[0];
 		const latest = Object.fromEntries(
 			(input.schedule?.days ?? []).map((day) => [day.dayOfWeek, day.latestClockIn]),
 		);

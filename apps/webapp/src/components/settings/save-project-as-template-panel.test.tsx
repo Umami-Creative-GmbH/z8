@@ -55,7 +55,8 @@ describe("SaveProjectAsTemplatePanel", () => {
 		expect(within(form).getByLabelText(/^Template name/)).toHaveProperty("value", "Acme relaunch");
 		await user.click(within(form).getByRole("button", { name: "Save as template" }));
 
-		expect(fromTemplateActions.saveProjectAsTemplate).toHaveBeenCalledWith("project-1", {
+		expect(fromTemplateActions.saveProjectAsTemplate).toHaveBeenCalledWith({
+			projectId: "project-1",
 			name: "Acme relaunch",
 		});
 		expect(toast.success).toHaveBeenCalledWith("Template Acme relaunch saved");
@@ -81,7 +82,8 @@ describe("SaveProjectAsTemplatePanel", () => {
 		await user.type(name, "Relaunch blueprint");
 		await user.click(within(form).getByRole("button", { name: "Save as template" }));
 
-		expect(fromTemplateActions.saveProjectAsTemplate).toHaveBeenCalledWith("project-1", {
+		expect(fromTemplateActions.saveProjectAsTemplate).toHaveBeenCalledWith({
+			projectId: "project-1",
 			name: "Relaunch blueprint",
 		});
 		expect(toast.warning).toHaveBeenCalledWith("Not copied: Lee Left (left the organization)");
@@ -91,6 +93,7 @@ describe("SaveProjectAsTemplatePanel", () => {
 		const user = userEvent.setup();
 		fromTemplateActions.saveProjectAsTemplate.mockResolvedValue({
 			success: false,
+			code: "ValidationError",
 			error: "A project template with this name already exists",
 		});
 		const { onOpenChange } = renderPanel();
@@ -104,7 +107,7 @@ describe("SaveProjectAsTemplatePanel", () => {
 		await user.type(within(form).getByLabelText(/^Template name/), "Website relaunch");
 		await user.click(within(form).getByRole("button", { name: "Save as template" }));
 
-		expect(toast.error).toHaveBeenCalledWith("A project template with this name already exists");
+		expect(toast.error).toHaveBeenCalledWith("Check your input and try again.");
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 	});
 });

@@ -1,4 +1,4 @@
-import type { useTranslate } from "@tolgee/react";
+﻿import type { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
 	createProject,
@@ -7,6 +7,10 @@ import {
 	updateProject,
 } from "@/app/[locale]/(app)/settings/projects/actions";
 import { createProjectFromTemplate } from "@/app/[locale]/(app)/settings/projects/from-template-actions";
+import {
+	type ActionFailure,
+	actionErrorMessage,
+} from "@/lib/organization-action/action-error-message";
 import type { useCustomFieldDrafts } from "./custom-fields/use-custom-field-drafts";
 import type { useNotCopiedMessage } from "./project-template-preview";
 
@@ -75,19 +79,16 @@ function parsedValues(value: ProjectFormValues, billableTimeEnabled: boolean) {
 
 /** Shows how a save went: the success toast (and `succeed`), or the error toast. */
 function reportSave(
-	result: { success: true } | { success: false; error?: string } | null,
+	t: Translate,
+	result: { success: true } | (ActionFailure & { success: false }) | null,
 	messages: { success: string; failure: string },
 	succeed: () => void,
 ) {
-	if (!result) {
-		toast.error(messages.failure);
-		return;
-	}
-	if (result.success) {
+	if (result?.success) {
 		toast.success(messages.success);
 		succeed();
 	} else {
-		toast.error(result.error || messages.failure);
+		toast.error(actionErrorMessage(t, result, {}, () => messages.failure));
 	}
 }
 
@@ -101,7 +102,8 @@ async function saveEditedProject(
 		value,
 		context.billableTimeEnabled,
 	);
-	const result = await updateProject(project.id, {
+	const result = await updateProject({
+		projectId: project.id,
 		name: value.name,
 		description: value.description || undefined,
 		status: value.status,
@@ -118,6 +120,7 @@ async function saveEditedProject(
 		customFieldValues: context.customFieldValues(),
 	}).catch(() => null);
 	reportSave(
+		t,
 		result,
 		{
 			success: t("settings.projects.updated", "Project updated"),
@@ -147,7 +150,12 @@ async function createFromTemplate(value: ProjectFormValues, context: ProjectSubm
 		}
 		context.succeed();
 	} else {
-		toast.error(result?.error || t("settings.projects.createFailed", "Failed to create project"));
+		toast.error(
+			actionErrorMessage(t, result, {}, [
+				"settings.projects.createFailed",
+				"Failed to create project",
+			]),
+		);
 	}
 }
 
@@ -158,7 +166,6 @@ async function createBlankProject(value: ProjectFormValues, context: ProjectSubm
 		context.billableTimeEnabled,
 	);
 	const result = await createProject({
-		organizationId: context.organizationId,
 		name: value.name,
 		description: value.description || undefined,
 		status: value.status,
@@ -171,6 +178,7 @@ async function createBlankProject(value: ProjectFormValues, context: ProjectSubm
 		customFieldValues: context.customFieldValues(),
 	}).catch(() => null);
 	reportSave(
+		t,
 		result,
 		{
 			success: t("settings.projects.created", "Project created"),

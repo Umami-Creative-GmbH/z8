@@ -1,353 +1,212 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
-const mockState = vi.hoisted(() => ({
-	session: {
-		user: { id: "user-1", email: "user@example.com" },
-		session: { activeOrganizationId: "org-1" },
-	},
-	membershipRole: "member" as "owner" | "admin" | "member" | null,
-	currentEmployee: {
-		id: "employee-1",
-		organizationId: "org-1",
-		role: "manager" as "admin" | "manager" | "employee",
-		teamId: "team-1",
-		isActive: true,
-	},
-	locationRecord: {
-		id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-		organizationId: "org-1",
-		name: "North Hub",
-	},
-	subareaRecord: {
-		id: "11111111-1111-4111-8111-111111111111",
-		locationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-		location: {
-			id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-			organizationId: "org-1",
-			name: "North Hub",
+const LOCATION_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const SUBAREA_ID = "11111111-1111-4111-8111-111111111111";
+const EMPLOYEE_ID = "22222222-2222-4222-8222-222222222222";
+const ASSIGNMENT_ID = "33333333-3333-4333-8333-333333333333";
+
+const state = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
+	formerEmployeeIds: new Set<string>(),
+	location: null as Record<string, unknown> | null,
+	subarea: null as Record<string, unknown> | null,
+	targetEmployee: null as Record<string, unknown> | null,
+	locationAssignment: null as Record<string, unknown> | null,
+	subareaAssignment: null as Record<string, unknown> | null,
+	inserted: [] as unknown[],
+	updated: [] as unknown[],
+	deleted: 0,
+}));
+
+const db = vi.hoisted(() => ({
+	query: {
+		location: { findFirst: vi.fn(async () => state.location) },
+		locationSubarea: { findFirst: vi.fn(async () => state.subarea) },
+		employee: { findFirst: vi.fn(async () => state.targetEmployee) },
+		locationEmployee: {
+			// The duplicate check has no `with`; the assignment lookup loads the location.
+			findFirst: vi.fn(async (args: { with?: unknown }) =>
+				args.with ? state.locationAssignment : null,
+			),
+		},
+		subareaEmployee: {
+			findFirst: vi.fn(async (args: { with?: unknown }) =>
+				args.with ? state.subareaAssignment : null,
+			),
 		},
 	},
-	targetEmployee: {
-		id: "22222222-2222-4222-8222-222222222222",
-		organizationId: "org-1",
-		isActive: true,
-	},
-	insertCalls: [] as Array<any>,
-	updateCalls: [] as Array<any>,
-	deleteCalls: [] as Array<any>,
-	formerEmployeeIds: new Set<string>(),
+	insert: vi.fn(() => ({
+		values: (value: unknown) => ({
+			returning: async () => {
+				state.inserted.push(value);
+				return [{ id: "assignment-1" }];
+			},
+		}),
+	})),
+	update: vi.fn(() => ({
+		set: (value: unknown) => ({
+			where: async () => {
+				state.updated.push(value);
+			},
+		}),
+	})),
+	delete: vi.fn(() => ({
+		where: async () => {
+			state.deleted += 1;
+		},
+	})),
 }));
 
 vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
 	(
 		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
-	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+	).currentRosterGuardModule(() => state.formerEmployeeIds),
 );
-
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: { id: "id", userId: "userId", organizationId: "organizationId", isActive: "isActive" },
-	location: { id: "id", organizationId: "organizationId" },
-	locationEmployee: { id: "id", locationId: "locationId", employeeId: "employeeId" },
-	locationSubarea: { id: "id" },
-	subareaEmployee: { id: "id", subareaId: "subareaId", employeeId: "employeeId" },
-	teamPermissions: {
-		employeeId: "employeeId",
-		organizationId: "organizationId",
-		teamId: "teamId",
-		canManageTeamSettings: "canManageTeamSettings",
-	},
-}));
-
-vi.mock("@/db/auth-schema", () => ({
-	member: { userId: "userId", organizationId: "organizationId", role: "role" },
-}));
-
-vi.mock("@/lib/auth-helpers", () => ({
-	getSettingsAccessTierForUser: vi.fn(async () => {
-		if (mockState.membershipRole === "owner" || mockState.membershipRole === "admin") {
-			return "orgAdmin";
-		}
-		if (
-			mockState.currentEmployee?.role === "manager" ||
-			mockState.currentEmployee?.role === "admin"
-		) {
-			return "manager";
-		}
-		return "member";
-	}),
-}));
-
-vi.mock("@/db", () => ({ db: {} }));
-
+vi.mock("@/db", () => ({ db }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/logger", () => ({
-	logger: { error: vi.fn() },
-	createLogger: vi.fn(() => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() })),
-}));
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	return { AuthService: Context.Service<any>("AuthService") };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
-	return { DatabaseService: Context.Service<any>("DatabaseService") };
-});
-
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
-
-	const db = {
-		query: {
-			member: { findFirst: vi.fn(async () => ({ role: mockState.membershipRole })) },
-			employee: {
-				findFirst: vi.fn(async ({ where }: { where?: any }) => {
-					const lookedUpId = where?.and?.find((item: any) => item?.eq?.[0] === "id")?.eq?.[1];
-					if (lookedUpId) return mockState.targetEmployee;
-					return mockState.currentEmployee;
-				}),
-				findMany: vi.fn(async () => []),
-			},
-			location: { findFirst: vi.fn(async () => mockState.locationRecord) },
-			locationEmployee: {
-				findFirst: vi.fn(async ({ where, with: withRelations }: { where?: any; with?: any }) => {
-					const assignmentId = where?.eq?.[1];
-					if (!assignmentId) return null;
-					return withRelations?.location
-						? {
-								id: assignmentId,
-								locationId: mockState.locationRecord.id,
-								location: mockState.locationRecord,
-							}
-						: null;
-				}),
-			},
-			subareaEmployee: {
-				findMany: vi.fn(async () => []),
-				findFirst: vi.fn(async ({ where, with: withRelations }: { where?: any; with?: any }) => {
-					const assignmentId = where?.eq?.[1];
-					if (!assignmentId) return null;
-					return withRelations?.subarea
-						? {
-								id: assignmentId,
-								subareaId: mockState.subareaRecord.id,
-								subarea: mockState.subareaRecord,
-							}
-						: null;
-				}),
-			},
-			teamPermissions: { findMany: vi.fn(async () => []) },
-			locationSubarea: { findFirst: vi.fn(async () => mockState.subareaRecord) },
-		},
-		insert: vi.fn(() => ({
-			values: vi.fn((value: unknown) => ({
-				returning: vi.fn(async () => {
-					mockState.insertCalls.push(value);
-					return [{ id: "assignment-1" }];
-				}),
-			})),
-		})),
-		update: vi.fn(() => ({
-			set: vi.fn((value: unknown) => ({
-				where: vi.fn(async () => {
-					mockState.updateCalls.push(value);
-				}),
-			})),
-		})),
-		delete: vi.fn(() => ({
-			where: vi.fn(async (value: unknown) => {
-				mockState.deleteCalls.push(value);
-			}),
-		})),
-	};
-
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.mergeAll(
-			Layer.succeed(AuthService, { getSession: () => Effect.succeed(mockState.session) }),
-			Layer.succeed(DatabaseService, {
-				db,
-				query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-			}),
-		),
-	);
-});
-
-vi.mock("@/lib/effect/result", async () => {
-	const { runtime } = await import("@/lib/effect/runtime");
-	const { Cause, Exit, Option, Result } = await import("effect");
-	return {
-		runServerActionSafe: async <T>(effect: any) => {
-			const exit = await runtime.runPromiseExit(effect);
-			return Exit.match(exit, {
-				onSuccess: (data) => ({ success: true as const, data: data as T }),
-				onFailure: (cause) => {
-					const defect = Result.getOrNull(Cause.findDefect(cause));
-					const failure = Option.getOrNull(Cause.findErrorOption(cause));
-					const error = defect ?? failure ?? cause;
-					return {
-						success: false as const,
-						error:
-							error && typeof error === "object" && "message" in error
-								? (error as { message: string }).message
-								: "Unknown error",
-					};
-				},
-			});
-		},
-	};
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => state.caller, { db }));
 });
 
 const {
 	assignLocationEmployee,
-	updateLocationEmployee,
-	removeLocationEmployee,
 	assignSubareaEmployee,
-	updateSubareaEmployee,
+	removeLocationEmployee,
 	removeSubareaEmployee,
+	updateLocationEmployee,
+	updateSubareaEmployee,
 } = await import("./assignment-actions");
 
-describe("location assignment org-admin parity", () => {
-	beforeEach(() => {
-		mockState.membershipRole = "member";
-		mockState.currentEmployee = {
-			id: "employee-1",
-			organizationId: "org-1",
-			role: "manager",
-			teamId: "team-1",
-			isActive: true,
-		};
-		mockState.insertCalls = [];
-		mockState.updateCalls = [];
-		mockState.deleteCalls = [];
-		mockState.formerEmployeeIds = new Set();
+const owner: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "owner",
+	employee: { id: "employee-1", role: "employee", former: false },
+};
+const scopedManager: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "manager", former: false },
+};
+
+function inOrganization(organizationId: string) {
+	state.location = { id: LOCATION_ID, organizationId, name: "North Hub" };
+	state.subarea = { id: SUBAREA_ID, locationId: LOCATION_ID, location: { organizationId } };
+	state.locationAssignment = {
+		id: ASSIGNMENT_ID,
+		locationId: LOCATION_ID,
+		location: { organizationId },
+	};
+	state.subareaAssignment = {
+		id: ASSIGNMENT_ID,
+		subareaId: SUBAREA_ID,
+		subarea: { locationId: LOCATION_ID, location: { organizationId } },
+	};
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	state.caller = owner;
+	state.formerEmployeeIds = new Set();
+	inOrganization("org-1");
+	state.targetEmployee = { id: EMPLOYEE_ID, organizationId: "org-1" };
+	state.inserted = [];
+	state.updated = [];
+	state.deleted = 0;
+});
+
+const assignLocation = () =>
+	assignLocationEmployee({ locationId: LOCATION_ID, employeeId: EMPLOYEE_ID, isPrimary: false });
+const assignSubarea = () =>
+	assignSubareaEmployee({ subareaId: SUBAREA_ID, employeeId: EMPLOYEE_ID, isPrimary: false });
+
+describe("location and subarea assignments", () => {
+	it("refuses a scoped manager every assignment change, one level below an org admin", async () => {
+		state.caller = scopedManager;
+
+		const results = [
+			await assignLocation(),
+			await updateLocationEmployee({ assignmentId: ASSIGNMENT_ID, isPrimary: true }),
+			await removeLocationEmployee(ASSIGNMENT_ID),
+			await assignSubarea(),
+			await updateSubareaEmployee({ assignmentId: ASSIGNMENT_ID, isPrimary: true }),
+			await removeSubareaEmployee(ASSIGNMENT_ID),
+		];
+
+		for (const result of results) {
+			expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		}
+		expect(state.inserted).toEqual([]);
+		expect(state.updated).toEqual([]);
+		expect(state.deleted).toBe(0);
+	});
+
+	it("lets an owner without an admin employee role change every assignment", async () => {
+		expect(await assignLocation()).toEqual({ success: true, data: { id: "assignment-1" } });
+		expect(await updateLocationEmployee({ assignmentId: ASSIGNMENT_ID, isPrimary: true })).toEqual({
+			success: true,
+			data: undefined,
+		});
+		expect(await removeLocationEmployee(ASSIGNMENT_ID)).toEqual({
+			success: true,
+			data: undefined,
+		});
+		expect(await assignSubarea()).toEqual({ success: true, data: { id: "assignment-1" } });
+		expect(await updateSubareaEmployee({ assignmentId: ASSIGNMENT_ID, isPrimary: true })).toEqual({
+			success: true,
+			data: undefined,
+		});
+		expect(await removeSubareaEmployee(ASSIGNMENT_ID)).toEqual({ success: true, data: undefined });
+		expect(state.inserted).toEqual([
+			expect.objectContaining({
+				locationId: LOCATION_ID,
+				employeeId: EMPLOYEE_ID,
+				createdBy: "user-1",
+			}),
+			expect.objectContaining({
+				subareaId: SUBAREA_ID,
+				employeeId: EMPLOYEE_ID,
+				createdBy: "user-1",
+			}),
+		]);
+		expect(state.updated).toHaveLength(2);
+		expect(state.deleted).toBe(2);
 	});
 
 	it("refuses assigning a former employee to a location or subarea (#1438)", async () => {
-		mockState.membershipRole = "owner";
-		mockState.formerEmployeeIds = new Set([mockState.targetEmployee.id]);
+		state.formerEmployeeIds = new Set([EMPLOYEE_ID]);
 
-		const location = await assignLocationEmployee({
-			locationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-			employeeId: mockState.targetEmployee.id,
-			isPrimary: false,
-		});
-		const subarea = await assignSubareaEmployee({
-			subareaId: "11111111-1111-4111-8111-111111111111",
-			employeeId: mockState.targetEmployee.id,
-			isPrimary: false,
-		});
-
-		expect(location).toEqual({
+		expect(await assignLocation()).toMatchObject({
 			success: false,
-			error: "Former employees can't be assigned. Choose someone on the current roster.",
+			code: "ValidationError",
+			refusal: "former_employee",
 		});
-		expect(subarea).toMatchObject({ success: false });
-		expect(mockState.insertCalls).toEqual([]);
+		expect(await assignSubarea()).toMatchObject({ success: false, refusal: "former_employee" });
+		expect(state.inserted).toEqual([]);
 	});
 
-	it("rejects manager assignment mutations", async () => {
-		const result = await assignLocationEmployee({
-			locationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-			employeeId: "22222222-2222-4222-8222-222222222222",
-			isPrimary: false,
-		});
+	it("treats another organization's location, subarea or assignment as not found", async () => {
+		inOrganization("org-2");
+		state.location = null;
 
-		expect(result).toEqual({
-			success: false,
-			error: "Only org admins can assign employees to locations",
-		});
-		expect(mockState.insertCalls).toEqual([]);
-	});
+		const results = [
+			await assignLocation(),
+			await updateLocationEmployee({ assignmentId: ASSIGNMENT_ID, isPrimary: true }),
+			await removeLocationEmployee(ASSIGNMENT_ID),
+			await assignSubarea(),
+			await updateSubareaEmployee({ assignmentId: ASSIGNMENT_ID, isPrimary: true }),
+			await removeSubareaEmployee(ASSIGNMENT_ID),
+		];
 
-	it("keeps owner membership parity for location assignment mutations", async () => {
-		mockState.membershipRole = "owner";
-		mockState.currentEmployee = {
-			id: "employee-1",
-			organizationId: "org-1",
-			role: "employee",
-			teamId: null,
-			isActive: true,
-		};
-
-		const result = await assignLocationEmployee({
-			locationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-			employeeId: "22222222-2222-4222-8222-222222222222",
-			isPrimary: false,
-		});
-
-		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
-		expect(mockState.insertCalls).toHaveLength(1);
-	});
-
-	it("rejects manager updates and deletes across the other location/subarea assignment mutations", async () => {
-		expect(await updateLocationEmployee("assignment-1", { isPrimary: true })).toEqual({
-			success: false,
-			error: "Only org admins can update location assignments",
-		});
-		expect(await removeLocationEmployee("assignment-1")).toEqual({
-			success: false,
-			error: "Only org admins can remove location assignments",
-		});
-		expect(
-			await assignSubareaEmployee({
-				subareaId: "11111111-1111-4111-8111-111111111111",
-				employeeId: "22222222-2222-4222-8222-222222222222",
-				isPrimary: false,
-			}),
-		).toEqual({ success: false, error: "Only org admins can assign employees to subareas" });
-		expect(await updateSubareaEmployee("assignment-2", { isPrimary: true })).toEqual({
-			success: false,
-			error: "Only org admins can update subarea assignments",
-		});
-		expect(await removeSubareaEmployee("assignment-2")).toEqual({
-			success: false,
-			error: "Only org admins can remove subarea assignments",
-		});
-		expect(mockState.insertCalls).toEqual([]);
-		expect(mockState.updateCalls).toEqual([]);
-		expect(mockState.deleteCalls).toEqual([]);
-	});
-
-	it("keeps owner membership parity across the other location/subarea assignment mutations", async () => {
-		mockState.membershipRole = "owner";
-		mockState.currentEmployee = {
-			id: "employee-1",
-			organizationId: "org-1",
-			role: "employee",
-			teamId: null,
-			isActive: true,
-		};
-
-		expect(await updateLocationEmployee("assignment-1", { isPrimary: true })).toEqual({
-			success: true,
-			data: undefined,
-		});
-		expect(await removeLocationEmployee("assignment-1")).toEqual({
-			success: true,
-			data: undefined,
-		});
-		expect(
-			await assignSubareaEmployee({
-				subareaId: "11111111-1111-4111-8111-111111111111",
-				employeeId: "22222222-2222-4222-8222-222222222222",
-				isPrimary: false,
-			}),
-		).toEqual({ success: true, data: { id: "assignment-1" } });
-		expect(await updateSubareaEmployee("assignment-2", { isPrimary: true })).toEqual({
-			success: true,
-			data: undefined,
-		});
-		expect(await removeSubareaEmployee("assignment-2")).toEqual({ success: true, data: undefined });
-		expect(mockState.insertCalls).toHaveLength(1);
-		expect(mockState.updateCalls).toHaveLength(2);
-		expect(mockState.deleteCalls).toHaveLength(2);
+		for (const result of results) {
+			expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		}
+		expect(state.inserted).toEqual([]);
+		expect(state.updated).toEqual([]);
+		expect(state.deleted).toBe(0);
 	});
 });

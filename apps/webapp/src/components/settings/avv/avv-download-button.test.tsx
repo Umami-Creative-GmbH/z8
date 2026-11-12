@@ -57,7 +57,7 @@ afterEach(() => {
 });
 
 it("downloads a newly prepared PDF with current legal details on every click", async () => {
-	render(<AvvDownloadButton organizationId="org-1" missingFields={[]} />);
+	render(<AvvDownloadButton missingFields={[]} />);
 	fireEvent.click(screen.getByRole("button"));
 	await waitFor(() =>
 		expect(downloadedFilename).toMatch(/^avv-current-legal-ltd-/),
@@ -88,7 +88,7 @@ it("shows newly missing fields from the server and does not generate an incomple
 		success: true,
 		data: { ready: false, missingFields: ["addressLine1"] },
 	});
-	render(<AvvDownloadButton organizationId="org-1" missingFields={[]} />);
+	render(<AvvDownloadButton missingFields={[]} />);
 	fireEvent.click(screen.getByRole("button"));
 	await waitFor(() =>
 		expect(screen.getByRole("status").textContent).toContain("Address line 1"),
@@ -106,7 +106,7 @@ it.each(["denied", "rejected"])(
 				code: "AuthorizationError",
 			});
 		else mocks.prepare.mockRejectedValue(new Error("Network unavailable"));
-		render(<AvvDownloadButton organizationId="org-1" missingFields={[]} />);
+		render(<AvvDownloadButton missingFields={[]} />);
 		fireEvent.click(screen.getByRole("button"));
 		await waitFor(() =>
 			expect(screen.getByRole("alert").textContent).toContain(
@@ -125,7 +125,7 @@ it("prevents duplicate clicks while preparing and generating the document", asyn
 			finish = resolve;
 		}),
 	);
-	render(<AvvDownloadButton organizationId="org-1" missingFields={[]} />);
+	render(<AvvDownloadButton missingFields={[]} />);
 	fireEvent.click(screen.getByRole("button"));
 	expect(
 		screen

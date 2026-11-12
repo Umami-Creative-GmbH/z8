@@ -26,9 +26,11 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRequestIdentity } from "@/lib/query/use-employee-offboarding";
 import type { RehireEmployeeInput } from "@/lib/validations/employee-offboarding";
 import { hourlyWageFromForm } from "@/lib/validations/employment-history";
+import { OFFBOARDING_REFUSALS } from "./offboarding-refusals";
 
 const NONE = "__none__";
 
@@ -124,8 +126,10 @@ export function RehireForm(props: RehireFormProps) {
 				return;
 			}
 			setSubmitError(
-				result.error ||
-					t("settings.employees.offboarding.rehireFailed", "The employee could not be rehired."),
+				actionErrorMessage(t, result, OFFBOARDING_REFUSALS, [
+					"settings.employees.offboarding.rehireFailed",
+					"The employee could not be rehired.",
+				]),
 			);
 			requestAnimationFrame(() => errorRef.current?.focus());
 		},

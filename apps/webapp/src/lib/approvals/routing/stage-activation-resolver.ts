@@ -1,4 +1,6 @@
 import { sql } from "drizzle-orm";
+import type { Instant } from "@/lib/datetime/temporal-core";
+import { rosterCheckInstant } from "@/lib/employee-lifecycle/current-roster";
 import {
 	type EscalationCandidateExecutor,
 	hasApprovalDecisionPath,
@@ -281,6 +283,11 @@ export async function loadApprovalStageDirectory(
 	input: {
 		organizationId: string;
 		hasDecisionPath?: ReplacementDecisionPath;
+		/**
+		 * The instant departures are decided at (an approval route preview's instant); the
+		 * database's current time when absent.
+		 */
+		at?: Instant;
 	} & (
 		| { namedApproverId: null }
 		| { namedApproverId: string; stageId: string; requesterEmployeeId: string }
@@ -288,6 +295,7 @@ export async function loadApprovalStageDirectory(
 ): Promise<ApprovalStageReviewerDirectory> {
 	const hasDecisionPath = input.hasDecisionPath ?? hasApprovalDecisionPath;
 	const { organizationId } = input;
+	const decidedAt = rosterCheckInstant(input.at);
 	const named = input.namedApproverId === null ? null : input;
 	// Replacement rows only for an explicitly named approver who left.
 	const replacementsSql =
@@ -355,7 +363,7 @@ export async function loadApprovalStageDirectory(
 							and member.status = 'approved'
 					)
 					and not employee_departure_denies_access(
-						replacement.organization_id, replacement.id, now()
+						replacement.organization_id, replacement.id, ${decidedAt}
 					)
 				), '[]'::json)`;
 	const directoryResult = await executor.execute(sql`
@@ -367,7 +375,7 @@ export async function loadApprovalStageDirectory(
 								'organizationId', employee.organization_id,
 								-- A due departure ends activity before it is materialized.
 								'isActive', employee.is_active AND NOT employee_departure_denies_access(
-									employee.organization_id, employee.id, now()
+									employee.organization_id, employee.id, ${decidedAt}
 								),
 								'role', employee.role,
 								'teamId', employee.team_id

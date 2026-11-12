@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type * as authSchema from "@/db/auth-schema";
 import { useImageUpload } from "@/hooks/use-image-upload";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { useRouter } from "@/navigation";
 import { EditOrganizationDialog } from "./edit-organization-dialog";
 import { OrganizationLogo } from "./organization-logo";
@@ -16,7 +20,8 @@ import { OrganizationLogo } from "./organization-logo";
 interface OrganizationDetailsCardProps {
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 function getOrganizationDescription(metadata: unknown): string | null {
@@ -29,7 +34,7 @@ function getOrganizationDescription(metadata: unknown): string | null {
 export function OrganizationDetailsCard({
 	organization,
 	memberCount,
-	currentMemberRole,
+	settingsAccess,
 }: OrganizationDetailsCardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -47,7 +52,7 @@ export function OrganizationDetailsCard({
 			? logoOverride.value
 			: organization.logo;
 
-	const canEdit = currentMemberRole === "owner";
+	const canEdit = meetsSettingsAccess(settingsAccess, "owner");
 	const metadataDescription = getOrganizationDescription(organization.metadata);
 
 	// Image upload hook
@@ -85,7 +90,7 @@ export function OrganizationDetailsCard({
 
 	const handleRemoveLogo = async () => {
 		setIsRemovingLogo(true);
-		const result = await removeOrganizationLogo(organization.id);
+		const result = await removeOrganizationLogo();
 		setIsRemovingLogo(false);
 
 		if (!result.success) {

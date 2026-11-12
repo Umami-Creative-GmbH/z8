@@ -599,7 +599,8 @@
       "billable": "Fatturabile",
       "editedBy": "(modificato da {name} il {date})",
       "missingTask": "Attività mancante",
-      "missingTaskHint": "Attività mancante: aggiungi un'attività"
+      "missingTaskHint": "Attività mancante: aggiungi un'attività",
+      "breakEnforcementNote": "Adeguato automaticamente: applicazione delle pause"
     },
     "workStatus": {
       "overRequirement": "sopra il requisito",

@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useEmployeeClockStatuses } from "@/lib/query";
 
 interface Manager {
@@ -113,7 +114,7 @@ export function ManagerAssignment({
 			isPrimary: managerId === primaryManager,
 		}));
 
-		const result = await assignManagers(employeeId, { managers }).catch(() => null);
+		const result = await assignManagers({ employeeId, data: { managers } }).catch(() => null);
 
 		if (!result) {
 			toast.error(t("settings.managerAssignment.unexpectedError", "An unexpected error occurred"));
@@ -128,7 +129,10 @@ export function ManagerAssignment({
 			onSuccess?.();
 		} else {
 			toast.error(
-				result.error || t("settings.managerAssignment.assignFailed", "Failed to assign managers"),
+				actionErrorMessage(t, result, {}, [
+					"settings.managerAssignment.assignFailed",
+					"Failed to assign managers",
+				]),
 			);
 		}
 

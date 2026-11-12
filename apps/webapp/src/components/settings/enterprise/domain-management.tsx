@@ -1,8 +1,6 @@
 "use client";
 
-import {
-	IconExternalLink,
-} from "@tabler/icons-react";
+import { IconExternalLink } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +11,7 @@ import {
 	updateDomainAuthConfigAction,
 	verifyDomainAction,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
+import { actionData } from "@/components/settings/enterprise/action-data";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -74,7 +73,7 @@ export function DomainManagement({
 
 	const handleVerify = async (domainId: string) => {
 		setIsVerifying(true);
-		const verified = await verifyDomainAction(domainId).catch(() => null);
+		const verified = await actionData(verifyDomainAction({ domainId })).catch(() => null);
 		if (verified) {
 			setDomain((prev) =>
 				prev ? { ...prev, domainVerified: true, verificationToken: null } : null,
@@ -90,7 +89,9 @@ export function DomainManagement({
 	};
 
 	const handleRegenerateToken = async (domainId: string) => {
-		const newToken = await regenerateVerificationTokenAction(domainId).catch(() => null);
+		const newToken = await actionData(regenerateVerificationTokenAction({ domainId })).catch(
+			() => null,
+		);
 		if (!newToken) {
 			toast.error(
 				t("settings.enterprise.domains.regenerateTokenFailed", "Failed to regenerate token"),
@@ -119,7 +120,9 @@ export function DomainManagement({
 	) => {
 		// Store Turnstile secret in Vault if provided
 		if (turnstileSecretKey && config.turnstileSiteKey) {
-			const secretStored = await storeTurnstileSecretAction(turnstileSecretKey)
+			const secretStored = await actionData(
+				storeTurnstileSecretAction({ secretKey: turnstileSecretKey }),
+			)
 				.then(() => true)
 				.catch(() => false);
 			if (!secretStored) {
@@ -133,7 +136,7 @@ export function DomainManagement({
 			}
 		}
 
-		const authUpdated = await updateDomainAuthConfigAction(domainId, config)
+		const authUpdated = await actionData(updateDomainAuthConfigAction({ domainId, config }))
 			.then(() => true)
 			.catch(() => false);
 		if (!authUpdated) {
@@ -154,7 +157,7 @@ export function DomainManagement({
 	const handleDelete = async () => {
 		if (!deleteDialog.domain) return;
 
-		const deleted = await deleteDomainAction(deleteDialog.domain.id)
+		const deleted = await actionData(deleteDomainAction({ domainId: deleteDialog.domain.id }))
 			.then(() => true)
 			.catch(() => false);
 		if (deleted) {
@@ -221,9 +224,7 @@ export function DomainManagement({
 						onConfigure={(selectedDomain) =>
 							setAuthConfigDialog({ isOpen: true, domain: selectedDomain })
 						}
-						onDelete={(selectedDomain) =>
-							setDeleteDialog({ isOpen: true, domain: selectedDomain })
-						}
+						onDelete={(selectedDomain) => setDeleteDialog({ isOpen: true, domain: selectedDomain })}
 						onVerify={(selectedDomain) =>
 							setVerificationDialog({ isOpen: true, domain: selectedDomain })
 						}

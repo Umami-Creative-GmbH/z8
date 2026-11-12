@@ -8,8 +8,14 @@ import {
 	type SerializableWorkdayTimelineResult,
 } from "./personal-workday-timeline";
 
+const translation = vi.hoisted(() => ({
+	lookup: (_key: string): string | undefined => undefined,
+}));
+
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (key: string, fallback: string) => translation.lookup(key) ?? fallback,
+	}),
 }));
 
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
@@ -107,6 +113,49 @@ describe("PersonalWorkdayTimeline", () => {
 		row.focus();
 		expect(document.activeElement).toBe(row);
 		expect(document.getElementById("shift-1")).toBeNull();
+	});
+
+	it("translates keyed copy and shows unkeyed copy as is", () => {
+		const translations: Record<string, string> = {
+			"timeTracking.timeline.workPeriod.title": "Erfasste Arbeit",
+			"timeTracking.timeline.status.approved": "Genehmigt",
+			"timeTracking.timeline.link.viewAbsence": "Abwesenheit anzeigen",
+		};
+		translation.lookup = (key) => translations[key];
+
+		render(
+			<PersonalWorkdayTimeline
+				result={success({
+					items: [
+						{
+							id: "absence:1",
+							type: "absence",
+							title: "Urlaub",
+							link: {
+								label: "View absence",
+								labelKey: "timeTracking.timeline.link.viewAbsence",
+								href: "/absences",
+							},
+						},
+						{
+							id: "work-period:w-1",
+							type: "work-period",
+							workPeriodId: "w-1",
+							title: "Recorded work",
+							titleKey: "timeTracking.timeline.workPeriod.title",
+							badge: "Approved",
+							badgeKey: "timeTracking.timeline.status.approved",
+						},
+					],
+				})}
+			/>,
+		);
+
+		expect(screen.getByText("Erfasste Arbeit")).toBeTruthy();
+		expect(screen.getByText("Genehmigt")).toBeTruthy();
+		expect(screen.getByText("Urlaub")).toBeTruthy();
+		expect(screen.getByRole("link", { name: /Abwesenheit anzeigen/ })).toBeTruthy();
+		translation.lookup = () => undefined;
 	});
 
 	it("renders a useful empty state", () => {

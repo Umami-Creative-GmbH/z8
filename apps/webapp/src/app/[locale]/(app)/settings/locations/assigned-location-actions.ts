@@ -1,13 +1,12 @@
 "use server";
 
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
+import * as z from "zod";
 import { withAuditTrail } from "@/lib/audit-trail";
-import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
-import { runRefusalAction } from "@/lib/effect/refusal-action";
-import {
-	type AssignedLocationActionResult,
-	AssignedLocationRefusal,
-} from "@/lib/time-tracking/assigned-locations/errors";
+import { organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
+import { AssignedLocationRefusal } from "@/lib/time-tracking/assigned-locations/errors";
 import {
 	type AssignableEmployee,
 	type AssignableLocation,
@@ -18,12 +17,12 @@ import {
 	listLocationAssignedEmployees,
 	removeAssignedLocation,
 } from "@/lib/time-tracking/assigned-locations/store";
-import { isUuid } from "@/lib/validations/uuid";
 
 /**
  * Assigned locations (#858): the locations an employee works at, managed by
- * organization owners and admins from the employee's and the location's
- * settings. Distinct from location supervisors (`assignment-actions.ts`).
+ * org admins from the employee's and the location's settings. Distinct from
+ * location supervisors (`assignment-actions.ts`). A store refusal comes back
+ * as a `ValidationError` whose `refusal` is its `AssignedLocationErrorCode`.
  */
 
 export type EmployeeAssignedLocationsData = {
@@ -38,88 +37,85 @@ export type LocationAssignedEmployeesData = {
 
 export type AssignedLocationInput = { employeeId: string; locationId: string };
 
-export async function getEmployeeAssignedLocationsAction(input: {
-	employeeId: string;
-}): Promise<AssignedLocationActionResult<EmployeeAssignedLocationsData>> {
-	return runRefusalAction("assignedLocations.ofEmployee", AssignedLocationRefusal, async (db) => {
-		const { organizationId } = await requireAssignedLocationAdmin();
-		return listEmployeeAssignedLocations(db, {
-			organizationId,
-			employeeId: parseUuid(input?.employeeId, "employeeId"),
-		});
-	});
-}
+const invalidSelection = (field: string) => ({
+	error: `Invalid selection: ${field}.`,
+});
 
-export async function getLocationAssignedEmployeesAction(input: {
-	locationId: string;
-}): Promise<AssignedLocationActionResult<LocationAssignedEmployeesData>> {
-	return runRefusalAction("assignedLocations.ofLocation", AssignedLocationRefusal, async (db) => {
-		const { organizationId } = await requireAssignedLocationAdmin();
-		return listLocationAssignedEmployees(db, {
-			organizationId,
-			locationId: parseUuid(input?.locationId, "locationId"),
-		});
-	});
-}
+const assignedLocationInput = z.strictObject({
+	employeeId: z.uuid(invalidSelection("employeeId")),
+	locationId: z.uuid(invalidSelection("locationId")),
+});
 
-export async function addAssignedLocationAction(
-	input: AssignedLocationInput,
-): Promise<AssignedLocationActionResult<AssignedLocationInput>> {
-	return runRefusalAction("assignedLocations.add", AssignedLocationRefusal, async (db) => {
-		const { organizationId, userId } = await requireAssignedLocationAdmin();
-		const target = parseInput(input);
-		await withAuditTrail((audit) =>
-			db.transaction((tx) =>
-				addAssignedLocation(tx, audit, { organizationId, actorUserId: userId, ...target }),
-			),
-		);
-		revalidateAssignedLocationPaths(target);
-		return target;
-	});
-}
+export const getEmployeeAssignedLocationsAction = organizationAction(
+	{
+		name: "assignedLocations.ofEmployee",
+		requires: "orgAdmin",
+		schema: z.strictObject({ employeeId: assignedLocationInput.shape.employeeId }),
+	},
+	({ organizationId, input }) =>
+		storeStep<EmployeeAssignedLocationsData>(
+			"assignedLocations.ofEmployee",
+			(db) => listEmployeeAssignedLocations(db, { organizationId, employeeId: input.employeeId }),
+			{ refusal: AssignedLocationRefusal },
+		),
+);
 
-export async function removeAssignedLocationAction(
-	input: AssignedLocationInput,
-): Promise<AssignedLocationActionResult<AssignedLocationInput>> {
-	return runRefusalAction("assignedLocations.remove", AssignedLocationRefusal, async (db) => {
-		const { organizationId, userId } = await requireAssignedLocationAdmin();
-		const target = parseInput(input);
-		await withAuditTrail((audit) =>
-			db.transaction((tx) =>
-				removeAssignedLocation(tx, audit, { organizationId, actorUserId: userId, ...target }),
-			),
-		);
-		revalidateAssignedLocationPaths(target);
-		return target;
-	});
-}
+export const getLocationAssignedEmployeesAction = organizationAction(
+	{
+		name: "assignedLocations.ofLocation",
+		requires: "orgAdmin",
+		schema: z.strictObject({ locationId: assignedLocationInput.shape.locationId }),
+	},
+	({ organizationId, input }) =>
+		storeStep<LocationAssignedEmployeesData>(
+			"assignedLocations.ofLocation",
+			(db) => listLocationAssignedEmployees(db, { organizationId, locationId: input.locationId }),
+			{ refusal: AssignedLocationRefusal },
+		),
+);
 
-/** Organization owners and admins of the active organization only. */
-function requireAssignedLocationAdmin() {
-	return requireOrganizationAdmin(
-		() =>
-			new AssignedLocationRefusal(
-				"admin_only",
-				"Only organization owners and admins can manage assigned locations.",
-			),
-	);
-}
+export const addAssignedLocationAction = organizationAction(
+	{
+		name: "assignedLocations.add",
+		requires: "orgAdmin",
+		schema: assignedLocationInput,
+		// A former employee gets no new assigned location (#1438).
+		addsEmployees: (input) => [input.employeeId],
+	},
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"assignedLocations.add",
+			(db) =>
+				withAuditTrail((audit) =>
+					db.transaction((tx) =>
+						addAssignedLocation(tx, audit, { organizationId, actorUserId: actor.userId, ...input }),
+					),
+				),
+			{ refusal: AssignedLocationRefusal },
+		).pipe(Effect.map(() => revalidated(input))),
+);
 
-function revalidateAssignedLocationPaths(target: AssignedLocationInput) {
+export const removeAssignedLocationAction = organizationAction(
+	{ name: "assignedLocations.remove", requires: "orgAdmin", schema: assignedLocationInput },
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"assignedLocations.remove",
+			(db) =>
+				withAuditTrail((audit) =>
+					db.transaction((tx) =>
+						removeAssignedLocation(tx, audit, {
+							organizationId,
+							actorUserId: actor.userId,
+							...input,
+						}),
+					),
+				),
+			{ refusal: AssignedLocationRefusal },
+		).pipe(Effect.map(() => revalidated(input))),
+);
+
+function revalidated(target: AssignedLocationInput): AssignedLocationInput {
 	revalidatePath(`/settings/locations/${target.locationId}`);
 	revalidatePath(`/settings/employees/${target.employeeId}`);
-}
-
-function parseInput(input: AssignedLocationInput): AssignedLocationInput {
-	return {
-		employeeId: parseUuid(input?.employeeId, "employeeId"),
-		locationId: parseUuid(input?.locationId, "locationId"),
-	};
-}
-
-function parseUuid(value: unknown, field: string): string {
-	if (!isUuid(value)) {
-		throw new AssignedLocationRefusal("invalid_selection", `Invalid selection: ${field}.`);
-	}
-	return value;
+	return target;
 }

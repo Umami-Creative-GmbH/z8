@@ -594,7 +594,55 @@
       "title": "Chronologie de la journée de travail",
       "today": "Aujourd'hui",
       "unavailableDescription": "Le suivi du temps fonctionne toujours. Essayez d'actualiser cette vue plus tard.",
-      "unavailableTitle": "Chronologie indisponible"
+      "unavailableTitle": "Chronologie indisponible",
+      "workPeriod": {
+        "title": "Travail enregistré"
+      },
+      "shift": {
+        "title": "Poste planifié"
+      },
+      "status": {
+        "approved": "Approuvé",
+        "pending": "En attente",
+        "rejected": "Refusé",
+        "cancelled": "Annulé",
+        "published": "Publié",
+        "draft": "Brouillon",
+        "active": "Actif"
+      },
+      "absence": {
+        "fullDay": "Journée entière",
+        "morning": "Matin",
+        "afternoon": "Après-midi"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Demande de correction de temps",
+          "subtitle": "Correction d'une saisie de temps"
+        },
+        "absence": {
+          "title": "Demande d'absence",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Voir l'absence",
+        "reviewRequest": "Examiner la demande"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Demande de modification en attente",
+          "description": "Cette période de travail comporte des modifications en attente d'approbation."
+        },
+        "missingClockOut": {
+          "title": "Pointage de sortie manquant",
+          "description": "Cette période de travail est toujours active."
+        },
+        "autoAdjusted": {
+          "title": "Saisie ajustée automatiquement",
+          "description": "Des règles de pause ou de conformité ont ajusté cette période de travail."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Annuler",
@@ -669,7 +717,10 @@
     "workLocationHome": "Domicile",
     "workLocationOffice": "Bureau",
     "workLocationOther": "Autre",
-    "workLocationRemote": "À distance"
+    "workLocationRemote": "À distance",
+    "systemNote": {
+      "breakEnforcement": "Ajusté automatiquement : application des pauses"
+    }
   },
   "wellness": {
     "water": {

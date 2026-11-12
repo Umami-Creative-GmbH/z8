@@ -67,9 +67,9 @@ describe("vehicle photo batch uploads", () => {
 		});
 		let next = 0;
 		initiateUpload.mockImplementation(
-			async (_vehicleId: string, ids: string[]) => ({
+			async ({ uploadIds: ids }: { uploadIds: string[] }) => ({
 				success: true,
-				data: { ok: true, uploadIds: ids.map(() => `upload-${++next}`) },
+				data: { uploadIds: ids.map(() => `upload-${++next}`) },
 			}),
 		);
 	});
@@ -139,6 +139,71 @@ describe("vehicle photo batch uploads", () => {
 		);
 		expect(request).toHaveBeenCalledTimes(2);
 	});
+	it("reports a refused reservation on every photo with the slots that remain", async () => {
+		initiateUpload.mockResolvedValue({
+			success: false,
+			error: "Vehicle photo refused: photo_limit",
+			code: "ValidationError",
+			refusal: "photo_limit",
+			details: { remaining: 1 },
+		});
+		const request = vi.fn();
+		vi.stubGlobal("fetch", request);
+		render(<VehiclePhotosDialog vehicle={vehicle} />);
+		await open();
+		await userEvent.upload(screen.getByLabelText("Add photo"), [
+			file("a.png"),
+			file("b.png"),
+		]);
+		const alerts = await screen.findAllByText(/1 photo slots remain/);
+		expect(alerts.map((alert) => alert.textContent)).toEqual([
+			"a.png: The gallery changed. 1 photo slots remain. Reopen it and choose fewer photos.",
+			"b.png: The gallery changed. 1 photo slots remain. Reopen it and choose fewer photos.",
+		]);
+		expect(screen.getAllByRole("button", { name: /^Retry/ })).toHaveLength(2);
+		expect(request).not.toHaveBeenCalled();
+	});
+	it("explains a lost access on reservation and keeps the photo retryable", async () => {
+		initiateUpload.mockResolvedValue({
+			success: false,
+			error: "You do not have access to this setting",
+			code: "AuthorizationError",
+		});
+		vi.stubGlobal("fetch", vi.fn());
+		render(<VehiclePhotosDialog vehicle={vehicle} />);
+		await open();
+		await userEvent.upload(screen.getByLabelText("Add photo"), file("a.png"));
+		expect(
+			await screen.findByText(
+				"a.png: Your access changed. Reopen vehicle settings to check your permissions.",
+			),
+		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Retry a.png" })).toBeTruthy();
+	});
+	it("stops retrying an upload that reconciliation reports expired", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockRejectedValueOnce(new Error("connection lost")),
+		);
+		reconcile.mockResolvedValue({
+			success: false,
+			error: "Vehicle photo refused: upload_expired",
+			code: "ValidationError",
+			refusal: "upload_expired",
+		});
+		render(<VehiclePhotosDialog vehicle={vehicle} />);
+		await open();
+		await userEvent.upload(screen.getByLabelText("Add photo"), file("a.png"));
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Retry a.png" }),
+		);
+		expect(
+			await screen.findByText(
+				"a.png: This upload expired. Select the photo again to upload it.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Retry a.png" })).toBeNull();
+	});
 	it("retains partial success and retries only the failed file with its stable upload identity", async () => {
 		const request = vi
 			.fn()
@@ -148,7 +213,7 @@ describe("vehicle photo batch uploads", () => {
 		vi.stubGlobal("fetch", request);
 		reconcile.mockResolvedValue({
 			success: true,
-			data: { ok: true, photo: null },
+			data: { photo: null },
 		});
 		render(<VehiclePhotosDialog vehicle={vehicle} />);
 		await open();
@@ -180,7 +245,7 @@ describe("vehicle photo batch uploads", () => {
 		vi.stubGlobal("fetch", request);
 		reconcile.mockResolvedValue({
 			success: true,
-			data: { ok: true, photo: photo("saved", 1) },
+			data: { photo: photo("saved", 1) },
 		});
 		render(<VehiclePhotosDialog vehicle={vehicle} />);
 		await open();
@@ -296,11 +361,11 @@ describe("vehicle photo batch uploads", () => {
 			.mockRejectedValueOnce(new Error("initiation response lost"))
 			.mockResolvedValueOnce({
 				success: true,
-				data: { ok: true, uploadIds: ["upload-1", "upload-2"] },
+				data: { uploadIds: ["upload-1", "upload-2"] },
 			});
 		reconcile.mockResolvedValue({
 			success: true,
-			data: { ok: true, photo: null },
+			data: { photo: null },
 		});
 		const request = vi
 			.fn()
@@ -324,9 +389,9 @@ describe("vehicle photo batch uploads", () => {
 		expect(
 			screen.getAllByRole("img").map((img) => img.getAttribute("src")),
 		).toEqual(["/photos/first", "/photos/second"]);
-		expect(initiateUpload.mock.calls[0][1]).toHaveLength(2);
-		expect(initiateUpload.mock.calls[1][1]).toEqual(
-			initiateUpload.mock.calls[0][1],
+		expect(initiateUpload.mock.calls[0][0].uploadIds).toHaveLength(2);
+		expect(initiateUpload.mock.calls[1][0].uploadIds).toEqual(
+			initiateUpload.mock.calls[0][0].uploadIds,
 		);
 		expect(initiateUpload).toHaveBeenCalledTimes(2);
 	});

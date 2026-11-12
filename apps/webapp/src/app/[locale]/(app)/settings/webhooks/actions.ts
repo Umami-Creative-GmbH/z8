@@ -1,93 +1,29 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { trace } from "@opentelemetry/api";
-import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
+import { z } from "zod";
 import { env } from "@/env";
-import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import {
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
-import {
-	NOTIFICATION_TYPES,
-	type NotificationType,
-} from "@/lib/notifications/types";
+import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications/types";
+import { organizationAction } from "@/lib/organization-action/organization-action";
 import {
 	createDeliveryRecord,
 	createWebhookEndpoint,
 	deleteWebhookEndpoint,
 	getDeliveryLogs,
 	getWebhookEndpoint,
-	getWebhookEndpointsByOrganization,
 	regenerateWebhookSecret,
 	updateWebhookEndpoint,
 } from "@/lib/webhooks";
-import type {
-	PublicWebhookEndpoint,
-	WebhookDelivery,
-	WebhookEndpoint,
-	WebhookPayloadData,
-} from "@/lib/webhooks/types";
+import type { WebhookPayloadData } from "@/lib/webhooks/types";
 import { isPrivateIP } from "@/lib/webhooks/url-validation";
 import { addWebhookJob } from "@/lib/webhooks/webhook-queue";
 
 const logger = createLogger("WebhookActions");
 
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-/**
- * Verify the current user is an organization owner
- */
-function verifyOwnerRole(
-	memberRecord: { role: string } | null | undefined,
-	userId: string,
-) {
-	return Effect.gen(function* () {
-		if (!hasOrganizationRole(memberRecord?.role, "owner")) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Only organization owners can manage webhooks",
-					userId,
-					resource: "webhook",
-					action: "manage",
-				}),
-			);
-		}
-	});
-}
-
-function requireSessionOrganizationId(session: {
-	session: { activeOrganizationId?: string | null };
-	user: { id: string };
-}) {
-	if (session.session.activeOrganizationId) {
-		return Effect.succeed(session.session.activeOrganizationId);
-	}
-
-	return Effect.fail(
-		new AuthorizationError({
-			message: "An active organization is required",
-			userId: session.user.id,
-			resource: "webhook",
-			action: "read",
-		}),
-	);
-}
+// Webhooks are owner-only settings (ADR 0002 keeps the level each action had).
 
 /**
  * Validate webhook URL
@@ -98,15 +34,12 @@ function validateWebhookUrl(url: string): { valid: boolean; reason?: string } {
 	try {
 		const parsed = new URL(url);
 
-		// Check protocol
 		if (env.NODE_ENV === "production") {
 			if (parsed.protocol !== "https:") {
 				return { valid: false, reason: "HTTPS is required in production" };
 			}
-		} else {
-			if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-				return { valid: false, reason: "Only HTTP(S) protocols are allowed" };
-			}
+		} else if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+			return { valid: false, reason: "Only HTTP(S) protocols are allowed" };
 		}
 
 		// SSRF protection: block private/internal IPs
@@ -123,14 +56,57 @@ function validateWebhookUrl(url: string): { valid: boolean; reason?: string } {
 	}
 }
 
-/**
- * Validate subscribed events
- */
-function validateEvents(events: string[]): events is NotificationType[] {
-	return events.every((e) =>
-		NOTIFICATION_TYPES.includes(e as NotificationType),
+function checkWebhookUrl(url: string) {
+	const validation = validateWebhookUrl(url);
+	return validation.valid
+		? Effect.void
+		: Effect.fail(
+				new ValidationError({
+					message: validation.reason ?? "Invalid webhook URL",
+					field: "url",
+					value: url,
+				}),
+			);
+}
+
+function checkWebhookEvents(events: string[]) {
+	if (!events.length) {
+		return Effect.fail(
+			new ValidationError({
+				message: "At least one event must be selected",
+				field: "subscribedEvents",
+			}),
+		);
+	}
+	if (!events.every((event) => NOTIFICATION_TYPES.includes(event as NotificationType))) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Invalid event type(s) selected",
+				field: "subscribedEvents",
+			}),
+		);
+	}
+	return Effect.void;
+}
+
+/** The webhook with this ID in the session's organization; another organization's reads as not found. */
+function loadWebhook(webhookId: string, organizationId: string) {
+	return Effect.promise(() => getWebhookEndpoint(webhookId, organizationId)).pipe(
+		Effect.flatMap((webhook) =>
+			webhook ? Effect.succeed(webhook) : Effect.fail(webhookNotFound(webhookId)),
+		),
 	);
 }
+
+function webhookNotFound(webhookId: string) {
+	return new NotFoundError({
+		message: "Webhook not found",
+		entityType: "webhook",
+		entityId: webhookId,
+	});
+}
+
+const webhookIdSchema = z.string().min(1);
 
 // ============================================
 // WEBHOOK CRUD ACTIONS
@@ -140,406 +116,111 @@ function validateEvents(events: string[]): events is NotificationType[] {
  * Create a new webhook endpoint
  * Returns the endpoint and secret (secret is only shown once)
  */
-export async function createWebhook(data: {
-	organizationId: string;
-	name: string;
-	url: string;
-	subscribedEvents: string[];
-	description?: string;
-}): Promise<ServerActionResult<{ endpoint: WebhookEndpoint; secret: string }>> {
-	const tracer = trace.getTracer("webhooks");
+export const createWebhook = organizationAction(
+	{
+		name: "webhooks.create",
+		requires: "owner",
+		schema: z.strictObject({
+			name: z.string(),
+			url: z.string(),
+			subscribedEvents: z.array(z.string()),
+			description: z.string().optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* checkWebhookUrl(input.url);
+			yield* checkWebhookEvents(input.subscribedEvents);
 
-	return runServerActionSafe(
-		tracer.startActiveSpan("createWebhook", (span) =>
-			Effect.gen(function* () {
-				const authService = yield* AuthService;
-				const session = yield* authService.getSession();
-				const dbService = yield* DatabaseService;
+			const result = yield* Effect.promise(() =>
+				createWebhookEndpoint({
+					organizationId,
+					name: input.name.trim(),
+					url: input.url.trim(),
+					subscribedEvents: input.subscribedEvents as NotificationType[],
+					description: input.description?.trim(),
+					createdBy: actor.userId,
+				}),
+			);
 
-				span.setAttribute("organization.id", data.organizationId);
-				span.setAttribute("webhook.name", data.name);
-				yield* requireActiveOrganizationActionActor({
-					userId: session.user.id,
-					organizationId: data.organizationId,
-					requiredRole: "owner",
-					message: "Only active approved owners can manage webhooks",
-					resource: "webhook",
-					action: "create",
-				});
-
-				// Get current user's member record
-				const memberRecord = yield* dbService.query(
-					"getCurrentMember",
-					async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, data.organizationId),
-							),
-						});
-					},
-				);
-
-				// Verify owner role
-				yield* verifyOwnerRole(memberRecord, session.user.id);
-
-				// Validate URL
-				const urlValidation = validateWebhookUrl(data.url);
-				if (!urlValidation.valid) {
-					yield* Effect.fail(
-						new ValidationError({
-							message: urlValidation.reason ?? "Invalid webhook URL",
-							field: "url",
-							value: data.url,
-						}),
-					);
-				}
-
-				// Validate events
-				if (!data.subscribedEvents.length) {
-					yield* Effect.fail(
-						new ValidationError({
-							message: "At least one event must be selected",
-							field: "subscribedEvents",
-						}),
-					);
-				}
-
-				if (!validateEvents(data.subscribedEvents)) {
-					yield* Effect.fail(
-						new ValidationError({
-							message: "Invalid event type(s) selected",
-							field: "subscribedEvents",
-						}),
-					);
-				}
-
-				// Create webhook
-				const result = yield* Effect.promise(() =>
-					createWebhookEndpoint({
-						organizationId: data.organizationId,
-						name: data.name.trim(),
-						url: data.url.trim(),
-						subscribedEvents: data.subscribedEvents as NotificationType[],
-						description: data.description?.trim(),
-						createdBy: session.user.id,
-					}),
-				);
-
-				logger.info(
-					{
-						webhookId: result.endpoint.id,
-						organizationId: data.organizationId,
-					},
-					"Webhook created",
-				);
-
-				span.setAttribute("webhook.id", result.endpoint.id);
-
-				return result;
-			}),
-		),
-	);
-}
+			logger.info({ webhookId: result.endpoint.id, organizationId }, "Webhook created");
+			return result;
+		}),
+);
 
 /**
  * Update a webhook endpoint
  */
-export async function updateWebhook(
-	webhookId: string,
-	data: {
-		name?: string;
-		url?: string;
-		subscribedEvents?: string[];
-		description?: string;
-		isActive?: boolean;
+export const updateWebhook = organizationAction(
+	{
+		name: "webhooks.update",
+		requires: "owner",
+		schema: z.strictObject({
+			webhookId: webhookIdSchema,
+			name: z.string().optional(),
+			url: z.string().optional(),
+			subscribedEvents: z.array(z.string()).optional(),
+			description: z.string().optional(),
+			isActive: z.boolean().optional(),
+		}),
 	},
-): Promise<ServerActionResult<{ endpoint: WebhookEndpoint }>> {
-	const tracer = trace.getTracer("webhooks");
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const { webhookId, ...data } = input;
+			yield* loadWebhook(webhookId, organizationId);
 
-	return runServerActionSafe(
-		tracer.startActiveSpan("updateWebhook", (span) =>
-			Effect.gen(function* () {
-				const authService = yield* AuthService;
-				const session = yield* authService.getSession();
-				const dbService = yield* DatabaseService;
-				const organizationId = yield* requireSessionOrganizationId(session);
+			if (data.url) yield* checkWebhookUrl(data.url);
+			if (data.subscribedEvents) yield* checkWebhookEvents(data.subscribedEvents);
 
-				span.setAttribute("webhook.id", webhookId);
+			const updated = yield* Effect.promise(() =>
+				updateWebhookEndpoint(webhookId, {
+					name: data.name?.trim(),
+					url: data.url?.trim(),
+					subscribedEvents: data.subscribedEvents as NotificationType[] | undefined,
+					description: data.description?.trim(),
+					isActive: data.isActive,
+				}),
+			);
+			if (!updated) return yield* Effect.fail(webhookNotFound(webhookId));
 
-				// Get webhook to verify ownership
-				const webhook = yield* Effect.promise(() =>
-					getWebhookEndpoint(webhookId, organizationId),
-				).pipe(
-					Effect.flatMap((w) =>
-						w
-							? Effect.succeed(w)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Webhook not found",
-										entityType: "webhook",
-										entityId: webhookId,
-									}),
-								),
-					),
-				);
-				yield* requireActiveOrganizationActionActor({
-					userId: session.user.id,
-					organizationId: webhook.organizationId,
-					requiredRole: "owner",
-					message: "Only active approved owners can manage webhooks",
-					resource: "webhook",
-					action: "update",
-				});
-
-				// Get member record
-				const memberRecord = yield* dbService.query(
-					"getCurrentMember",
-					async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, webhook.organizationId),
-							),
-						});
-					},
-				);
-
-				// Verify owner role
-				yield* verifyOwnerRole(memberRecord, session.user.id);
-
-				// Validate URL if provided
-				if (data.url) {
-					const urlValidation = validateWebhookUrl(data.url);
-					if (!urlValidation.valid) {
-						yield* Effect.fail(
-							new ValidationError({
-								message: urlValidation.reason ?? "Invalid webhook URL",
-								field: "url",
-								value: data.url,
-							}),
-						);
-					}
-				}
-
-				// Validate events if provided
-				if (data.subscribedEvents) {
-					if (!data.subscribedEvents.length) {
-						yield* Effect.fail(
-							new ValidationError({
-								message: "At least one event must be selected",
-								field: "subscribedEvents",
-							}),
-						);
-					}
-
-					if (!validateEvents(data.subscribedEvents)) {
-						yield* Effect.fail(
-							new ValidationError({
-								message: "Invalid event type(s) selected",
-								field: "subscribedEvents",
-							}),
-						);
-					}
-				}
-
-				// Update webhook
-				const updated = yield* Effect.promise(() =>
-					updateWebhookEndpoint(webhookId, {
-						name: data.name?.trim(),
-						url: data.url?.trim(),
-						subscribedEvents: data.subscribedEvents as
-							| NotificationType[]
-							| undefined,
-						description: data.description?.trim(),
-						isActive: data.isActive,
-					}),
-				).pipe(
-					Effect.flatMap((w) =>
-						w
-							? Effect.succeed(w)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Webhook not found",
-										entityType: "webhook",
-										entityId: webhookId,
-									}),
-								),
-					),
-				);
-
-				logger.info({ webhookId }, "Webhook updated");
-
-				return { endpoint: updated };
-			}),
-		),
-	);
-}
+			logger.info({ webhookId }, "Webhook updated");
+			return { endpoint: updated };
+		}),
+);
 
 /**
  * Delete a webhook endpoint
  */
-export async function deleteWebhook(
-	webhookId: string,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("webhooks");
+export const deleteWebhook = organizationAction(
+	{ name: "webhooks.delete", requires: "owner", schema: webhookIdSchema },
+	({ organizationId, input: webhookId }) =>
+		Effect.gen(function* () {
+			yield* loadWebhook(webhookId, organizationId);
 
-	return runServerActionSafe(
-		tracer.startActiveSpan("deleteWebhook", (span) =>
-			Effect.gen(function* () {
-				const authService = yield* AuthService;
-				const session = yield* authService.getSession();
-				const dbService = yield* DatabaseService;
-				const organizationId = yield* requireSessionOrganizationId(session);
+			const deleted = yield* Effect.promise(() => deleteWebhookEndpoint(webhookId));
+			if (!deleted) return yield* Effect.fail(webhookNotFound(webhookId));
 
-				span.setAttribute("webhook.id", webhookId);
-
-				// Get webhook to verify ownership
-				const webhook = yield* Effect.promise(() =>
-					getWebhookEndpoint(webhookId, organizationId),
-				).pipe(
-					Effect.flatMap((w) =>
-						w
-							? Effect.succeed(w)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Webhook not found",
-										entityType: "webhook",
-										entityId: webhookId,
-									}),
-								),
-					),
-				);
-				yield* requireActiveOrganizationActionActor({
-					userId: session.user.id,
-					organizationId: webhook.organizationId,
-					requiredRole: "owner",
-					message: "Only active approved owners can manage webhooks",
-					resource: "webhook",
-					action: "delete",
-				});
-
-				// Get member record
-				const memberRecord = yield* dbService.query(
-					"getCurrentMember",
-					async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, webhook.organizationId),
-							),
-						});
-					},
-				);
-
-				// Verify owner role
-				yield* verifyOwnerRole(memberRecord, session.user.id);
-
-				// Delete webhook
-				const deleted = yield* Effect.promise(() =>
-					deleteWebhookEndpoint(webhookId),
-				);
-
-				if (!deleted) {
-					yield* Effect.fail(
-						new NotFoundError({
-							message: "Webhook not found",
-							entityType: "webhook",
-							entityId: webhookId,
-						}),
-					);
-				}
-
-				logger.info({ webhookId }, "Webhook deleted");
-			}),
-		),
-	);
-}
+			logger.info({ webhookId }, "Webhook deleted");
+		}),
+);
 
 /**
  * Regenerate webhook secret
  * Returns the new secret (only shown once)
  */
-export async function regenerateSecret(
-	webhookId: string,
-): Promise<ServerActionResult<{ secret: string }>> {
-	const tracer = trace.getTracer("webhooks");
+export const regenerateSecret = organizationAction(
+	{ name: "webhooks.regenerateSecret", requires: "owner", schema: webhookIdSchema },
+	({ organizationId, input: webhookId }) =>
+		Effect.gen(function* () {
+			yield* loadWebhook(webhookId, organizationId);
 
-	return runServerActionSafe(
-		tracer.startActiveSpan("regenerateWebhookSecret", (span) =>
-			Effect.gen(function* () {
-				const authService = yield* AuthService;
-				const session = yield* authService.getSession();
-				const dbService = yield* DatabaseService;
-				const organizationId = yield* requireSessionOrganizationId(session);
+			const result = yield* Effect.promise(() => regenerateWebhookSecret(webhookId));
+			if (!result) return yield* Effect.fail(webhookNotFound(webhookId));
 
-				span.setAttribute("webhook.id", webhookId);
-
-				// Get webhook to verify ownership
-				const webhook = yield* Effect.promise(() =>
-					getWebhookEndpoint(webhookId, organizationId),
-				).pipe(
-					Effect.flatMap((w) =>
-						w
-							? Effect.succeed(w)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Webhook not found",
-										entityType: "webhook",
-										entityId: webhookId,
-									}),
-								),
-					),
-				);
-				yield* requireActiveOrganizationActionActor({
-					userId: session.user.id,
-					organizationId: webhook.organizationId,
-					requiredRole: "owner",
-					message: "Only active approved owners can manage webhooks",
-					resource: "webhook",
-					action: "regenerateSecret",
-				});
-
-				// Get member record
-				const memberRecord = yield* dbService.query(
-					"getCurrentMember",
-					async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, webhook.organizationId),
-							),
-						});
-					},
-				);
-
-				// Verify owner role
-				yield* verifyOwnerRole(memberRecord, session.user.id);
-
-				// Regenerate secret
-				const result = yield* Effect.promise(() =>
-					regenerateWebhookSecret(webhookId),
-				).pipe(
-					Effect.flatMap((r) =>
-						r
-							? Effect.succeed(r)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Webhook not found",
-										entityType: "webhook",
-										entityId: webhookId,
-									}),
-								),
-					),
-				);
-
-				logger.info({ webhookId }, "Webhook secret regenerated");
-
-				return result;
-			}),
-		),
-	);
-}
+			logger.info({ webhookId }, "Webhook secret regenerated");
+			return result;
+		}),
+);
 
 // ============================================
 // WEBHOOK TESTING
@@ -548,210 +229,77 @@ export async function regenerateSecret(
 /**
  * Send a test ping to a webhook endpoint
  */
-export async function testWebhook(
-	webhookId: string,
-): Promise<ServerActionResult<{ deliveryId: string }>> {
-	const tracer = trace.getTracer("webhooks");
+export const testWebhook = organizationAction(
+	{ name: "webhooks.test", requires: "owner", schema: webhookIdSchema },
+	({ organizationId, input: webhookId }) =>
+		Effect.gen(function* () {
+			const webhook = yield* loadWebhook(webhookId, organizationId);
 
-	return runServerActionSafe(
-		tracer.startActiveSpan("testWebhook", (span) =>
-			Effect.gen(function* () {
-				const authService = yield* AuthService;
-				const session = yield* authService.getSession();
-				const dbService = yield* DatabaseService;
-				const organizationId = yield* requireSessionOrganizationId(session);
+			const payload: WebhookPayloadData = {
+				id: randomUUID(),
+				type: "password_changed", // Use a valid type for the test
+				createdAt: new Date().toISOString(),
+				data: {
+					test: true,
+					message: "This is a test webhook event from Z8",
+					organizationId,
+					timestamp: new Date().toISOString(),
+				},
+			};
 
-				span.setAttribute("webhook.id", webhookId);
+			const deliveryId = yield* Effect.promise(() =>
+				createDeliveryRecord({
+					webhookEndpointId: webhook.id,
+					organizationId,
+					url: webhook.url,
+					eventType: "password_changed",
+					payload,
+				}),
+			);
 
-				// Get webhook to verify ownership
-				const webhook = yield* Effect.promise(() =>
-					getWebhookEndpoint(webhookId, organizationId),
-				).pipe(
-					Effect.flatMap((w) =>
-						w
-							? Effect.succeed(w)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Webhook not found",
-										entityType: "webhook",
-										entityId: webhookId,
-									}),
-								),
-					),
-				);
-				yield* requireActiveOrganizationActionActor({
-					userId: session.user.id,
-					organizationId: webhook.organizationId,
-					requiredRole: "owner",
-					message: "Only active approved owners can manage webhooks",
-					resource: "webhook",
-					action: "test",
-				});
+			yield* Effect.promise(() =>
+				addWebhookJob({
+					deliveryId,
+					webhookEndpointId: webhook.id,
+					organizationId,
+					url: webhook.url,
+					payload,
+					eventType: "password_changed",
+					attemptNumber: 1,
+				}),
+			);
 
-				// Get member record
-				const memberRecord = yield* dbService.query(
-					"getCurrentMember",
-					async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, webhook.organizationId),
-							),
-						});
-					},
-				);
-
-				// Verify owner role
-				yield* verifyOwnerRole(memberRecord, session.user.id);
-
-				// Create test payload
-				const payload: WebhookPayloadData = {
-					id: randomUUID(),
-					type: "password_changed", // Use a valid type for the test
-					createdAt: new Date().toISOString(),
-					data: {
-						test: true,
-						message: "This is a test webhook event from Z8",
-						organizationId: webhook.organizationId,
-						timestamp: new Date().toISOString(),
-					},
-				};
-
-				// Create delivery record
-				const deliveryId = yield* Effect.promise(() =>
-					createDeliveryRecord({
-						webhookEndpointId: webhook.id,
-						organizationId: webhook.organizationId,
-						url: webhook.url,
-						eventType: "password_changed",
-						payload,
-					}),
-				);
-
-				// Queue delivery job
-				yield* Effect.promise(() =>
-					addWebhookJob({
-						deliveryId,
-						webhookEndpointId: webhook.id,
-						organizationId: webhook.organizationId,
-						url: webhook.url,
-						payload,
-						eventType: "password_changed",
-						attemptNumber: 1,
-					}),
-				);
-
-				logger.info({ webhookId, deliveryId }, "Test webhook queued");
-
-				span.setAttribute("delivery.id", deliveryId);
-
-				return { deliveryId };
-			}),
-		),
-	);
-}
+			logger.info({ webhookId, deliveryId }, "Test webhook queued");
+			return { deliveryId };
+		}),
+);
 
 // ============================================
 // WEBHOOK QUERIES
 // ============================================
 
 /**
- * Get all webhooks for an organization
- */
-export async function getWebhooks(
-	organizationId: string,
-): Promise<ServerActionResult<{ webhooks: PublicWebhookEndpoint[] }>> {
-	return runServerActionSafe(
-		Effect.gen(function* () {
-			const authService = yield* AuthService;
-			const session = yield* authService.getSession();
-			yield* requireActiveOrganizationActionActor({
-				userId: session.user.id,
-				organizationId,
-				requiredRole: "owner",
-				message: "Only active approved owners can view webhooks",
-				resource: "webhook",
-				action: "read",
-			});
-
-			// Get webhooks
-			const webhooks = yield* Effect.promise(() =>
-				getWebhookEndpointsByOrganization(organizationId),
-			);
-
-			return { webhooks };
-		}),
-	);
-}
-
-/**
  * Get delivery logs for a webhook
  */
-export async function getWebhookDeliveryLogs(
-	webhookId: string,
-	options: { limit?: number; offset?: number } = {},
-): Promise<
-	ServerActionResult<{
-		deliveries: WebhookDelivery[];
-		total: number;
-		hasMore: boolean;
-	}>
-> {
-	return runServerActionSafe(
+export const getWebhookDeliveryLogs = organizationAction(
+	{
+		name: "webhooks.deliveryLogs",
+		requires: "owner",
+		schema: z.strictObject({
+			webhookId: webhookIdSchema,
+			limit: z.number().int().positive().optional(),
+			offset: z.number().int().nonnegative().optional(),
+		}),
+	},
+	({ organizationId, input }) =>
 		Effect.gen(function* () {
-			const authService = yield* AuthService;
-			const session = yield* authService.getSession();
-			const organizationId = yield* requireSessionOrganizationId(session);
-			yield* requireActiveOrganizationActionActor({
-				userId: session.user.id,
-				organizationId,
-				requiredRole: "owner",
-				message: "Only active approved owners can view webhook delivery logs",
-				resource: "webhook",
-				action: "read",
-			});
+			const { webhookId, limit = 50, offset = 0 } = input;
+			yield* loadWebhook(webhookId, organizationId);
 
-			// Get webhook to verify ownership
-			yield* Effect.promise(() =>
-				getWebhookEndpoint(webhookId, organizationId),
-			).pipe(
-				Effect.flatMap((w) =>
-					w
-						? Effect.succeed(w)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Webhook not found",
-									entityType: "webhook",
-									entityId: webhookId,
-								}),
-							),
-				),
-			);
-
-			// Get delivery logs
-			const { limit = 50, offset = 0 } = options;
 			const { deliveries, total } = yield* Effect.promise(() =>
 				getDeliveryLogs(webhookId, organizationId, { limit, offset }),
 			);
 
-			return {
-				deliveries,
-				total,
-				hasMore: offset + deliveries.length < total,
-			};
+			return { deliveries, total, hasMore: offset + deliveries.length < total };
 		}),
-	);
-}
-
-/**
- * Get available event types for webhook subscription
- */
-export async function getAvailableEventTypes(): Promise<
-	ServerActionResult<{ eventTypes: NotificationType[] }>
-> {
-	return runServerActionSafe(
-		Effect.succeed({
-			eventTypes: [...NOTIFICATION_TYPES],
-		}),
-	);
-}
+);

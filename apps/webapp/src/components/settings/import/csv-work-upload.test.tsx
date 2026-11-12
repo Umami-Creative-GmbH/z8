@@ -23,7 +23,7 @@ it("uploads the selected file and explicit timezone, then opens its durable prev
 		success: true,
 		data: { batchId: "batch-1133" },
 	});
-	render(<CsvWorkUpload organizationId="org-1133" />);
+	render(<CsvWorkUpload />);
 	const user = userEvent.setup();
 	const csv =
 		"personnel_number,starts_at,ends_at\n0042,2026-07-22T08:00,2026-07-22T09:00\n";
@@ -39,7 +39,6 @@ it("uploads the selected file and explicit timezone, then opens its durable prev
 		expect(remote.push).toHaveBeenCalledWith("/settings/import/batch-1133"),
 	);
 	expect(remote.upload).toHaveBeenCalledWith({
-		organizationId: "org-1133",
 		csv,
 		fileName: "work.csv",
 		timezone: "Europe/Berlin",

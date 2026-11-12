@@ -98,8 +98,93 @@ describe("normalizeWorkdayTimeline", () => {
 		]);
 		expect(result.dayWarnings[0].link).toEqual({
 			label: "Review request",
+			labelKey: "timeTracking.timeline.link.reviewRequest",
 			href: "/my-requests",
 		});
+	});
+
+	it("gives fixed copy translation keys and keeps user content unkeyed", () => {
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
+			workPeriods: [
+				{
+					id: "done",
+					startTime: new Date("2026-05-03T07:00:00.000Z"),
+					endTime: new Date("2026-05-03T11:00:00.000Z"),
+					durationMinutes: 240,
+					approvalStatus: "approved",
+					pendingChanges: null,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+				{
+					id: "running",
+					startTime: new Date("2026-05-03T12:00:00.000Z"),
+					endTime: null,
+					durationMinutes: null,
+					approvalStatus: "approved",
+					pendingChanges: null,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+			],
+			shifts: [],
+			absences: [
+				{
+					id: "absence-1",
+					startDate: "2026-05-01",
+					endDate: "2026-05-03",
+					startPeriod: "full_day",
+					endPeriod: "am",
+					status: "pending",
+					categoryName: "Urlaub",
+					categoryColor: null,
+				},
+			],
+			pendingRequests: [
+				{
+					id: "absence:req-1",
+					sourceType: "absence",
+					status: "pending",
+					title: "absence",
+					subtitle: "2026-05-01 to 2026-05-03",
+					submittedAt: new Date("2026-05-03T08:00:00.000Z"),
+					sourceHref: "/absences",
+				},
+			],
+		});
+
+		expect(result.items).toEqual([
+			expect.objectContaining({
+				id: "absence:absence-1",
+				title: "Urlaub",
+				subtitle: "Morning",
+				subtitleKey: "timeTracking.timeline.absence.morning",
+				badge: "Pending",
+				badgeKey: "timeTracking.timeline.status.pending",
+			}),
+			expect.objectContaining({
+				id: "work-period:done",
+				title: "Recorded work",
+				titleKey: "timeTracking.timeline.workPeriod.title",
+				badge: "Approved",
+				badgeKey: "timeTracking.timeline.status.approved",
+			}),
+			expect.objectContaining({
+				id: "pending-request:absence:req-1",
+				titleKey: "timeTracking.timeline.request.absence.title",
+				subtitleKey: "timeTracking.timeline.request.absence.dateRange",
+				subtitleParams: { startDate: "2026-05-01", endDate: "2026-05-03" },
+			}),
+			expect.objectContaining({
+				id: "work-period:running",
+				badge: "Active",
+				badgeKey: "timeTracking.timeline.status.active",
+			}),
+		]);
+		expect(result.items[0]).not.toHaveProperty("titleKey");
 	});
 
 	it("does not send pending manual work or a pending policy clock-out to My Requests, which has no request for them", () => {

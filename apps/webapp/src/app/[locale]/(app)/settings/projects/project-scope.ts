@@ -1,21 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
-import { customer, employee, project, projectManager } from "@/db/schema";
-import {
-	AuthorizationError,
-	type DatabaseError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import {
-	isSettingsAccessMembershipRole,
-	resolveSettingsAccessTier,
-	type SettingsAccessTier,
-} from "@/lib/settings-access";
+import { customer, type employee, project, projectManager } from "@/db/schema";
+import { type DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 
 export interface ProjectSettingsActor {
 	session: { user: { id: string }; session: { activeOrganizationId: string | null } };
@@ -23,117 +11,14 @@ export interface ProjectSettingsActor {
 		query: <T>(name: string, fn: () => Promise<T>) => Effect.Effect<T, DatabaseError>;
 	};
 	organizationId: string;
-	accessTier: SettingsAccessTier;
-	currentEmployee: typeof employee.$inferSelect | null;
-}
-
-/** What a refused project settings access reports. */
-interface AuthorizationFailureDetails {
-	message: string;
-	resource: string;
-	action: string;
-}
-
-function actorAuthorizationError(
-	actor: { session: { user: { id: string } } },
-	options: AuthorizationFailureDetails,
-) {
-	return new AuthorizationError({
-		message: options.message,
-		userId: actor.session.user.id,
-		resource: options.resource,
-		action: options.action,
-	});
-}
-
-export function getProjectSettingsActorContext(options?: {
-	organizationId?: string;
-	queryName?: string;
-}) {
-	return Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession(options?.organizationId);
-		const dbService = yield* DatabaseService;
-		const organizationId = options?.organizationId ?? session.session.activeOrganizationId;
-
-		if (!organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "No active organization selected",
-					userId: session.user.id,
-					resource: "project_settings",
-					action: "access",
-				}),
-			);
-		}
-
-		const [membershipRecord, employeeRecord] = yield* Effect.all([
-			dbService.query(`${options?.queryName ?? "getProjectSettingsActor"}:membership`, async () => {
-				return await db.query.member.findFirst({
-					where: and(
-						eq(member.userId, session.user.id),
-						eq(member.organizationId, organizationId),
-						eq(member.status, "approved"),
-					),
-					columns: { role: true },
-				});
-			}),
-			dbService.query(`${options?.queryName ?? "getProjectSettingsActor"}:employee`, async () => {
-				return await db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, organizationId),
-					),
-				});
-			}),
-		]);
-
-		// A former employee has no settings access, whatever their membership.
-		if (employeeRecord?.isActive === false) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Organization access is inactive",
-					userId: session.user.id,
-					resource: "project_settings",
-					action: "access",
-				}),
-			);
-		}
-
-		const authorizedEmployeeRecord = membershipRecord ? employeeRecord : null;
-
-		const accessTier = resolveSettingsAccessTier({
-			activeOrganizationId: organizationId,
-			membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
-				? membershipRecord.role
-				: null,
-			employeeRole: authorizedEmployeeRecord?.role ?? null,
-		});
-
-		if (accessTier === "member") {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "You do not have access to project settings",
-					userId: session.user.id,
-					resource: "project_settings",
-					action: "access",
-				}),
-			);
-		}
-
-		return {
-			session,
-			dbService,
-			organizationId,
-			accessTier,
-			currentEmployee: authorizedEmployeeRecord ?? null,
-		};
-	});
+	/** An org admin or a workforce admin: every project and customer of the organization. */
+	organizationWide: boolean;
+	currentEmployee: Pick<typeof employee.$inferSelect, "id" | "role"> | null;
 }
 
 export function getManagedProjectIdsForSettingsActor(actor: ProjectSettingsActor) {
 	return Effect.gen(function* () {
-		if (actor.accessTier === "orgAdmin") {
+		if (actor.organizationWide) {
 			return null as Set<string> | null;
 		}
 
@@ -166,58 +51,25 @@ export function filterItemsToManagedProjects<T extends { id: string }>(
 	return items.filter((item) => managedProjectIds.has(item.id));
 }
 
-export function ensureSettingsActorCanAccessProjectTarget(
-	actor: ProjectSettingsActor,
-	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
-	options: AuthorizationFailureDetails,
-) {
-	return Effect.gen(function* () {
-		if (targetProject.organizationId !== actor.organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Cannot access project from different organization",
-					userId: actor.session.user.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-
-		if (actor.accessTier === "orgAdmin") {
-			return;
-		}
-
-		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
-
-		if (managedProjectIds?.has(targetProject.id)) {
-			return;
-		}
-
-		return yield* Effect.fail(actorAuthorizationError(actor, options));
-	});
-}
-
 /**
- * Adding or removing project managers is reserved for org admins (#367):
- * a manager-tier project manager may manage assignments, not other managers.
+ * Whether the project is in the actor's reach: a project of their organization
+ * that they administer (org admin, workforce admin) or manage. Callers refuse with `refuseUnless`.
  */
-export function ensureSettingsActorCanManageProjectManagers(
+export function reachesProject(
 	actor: ProjectSettingsActor,
 	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
-	options: AuthorizationFailureDetails,
 ) {
 	return Effect.gen(function* () {
-		yield* ensureSettingsActorCanAccessProjectTarget(actor, targetProject, options);
-
-		if (actor.accessTier !== "orgAdmin") {
-			return yield* Effect.fail(actorAuthorizationError(actor, options));
-		}
+		if (targetProject.organizationId !== actor.organizationId) return false;
+		if (actor.organizationWide) return true;
+		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
+		return managedProjectIds?.has(targetProject.id) ?? false;
 	});
 }
 
 export function getManagedCustomerIdsForSettingsActor(actor: ProjectSettingsActor) {
 	return Effect.gen(function* () {
-		if (actor.accessTier === "orgAdmin") {
+		if (actor.organizationWide) {
 			return null as Set<string> | null;
 		}
 
@@ -272,52 +124,38 @@ function getCustomerProjects(actor: ProjectSettingsActor, customerId: string, qu
 	});
 }
 
-export function ensureSettingsActorCanAccessCustomerTarget(
+/**
+ * Whether the customer is in the actor's reach: a customer of their
+ * organization that they administer (org admin, workforce admin), or whose active projects they
+ * all manage. Callers refuse with `refuseUnless`.
+ */
+export function reachesCustomer(
 	actor: ProjectSettingsActor,
 	targetCustomer: Pick<typeof customer.$inferSelect, "id" | "organizationId">,
-	options: AuthorizationFailureDetails,
 ) {
 	return Effect.gen(function* () {
-		if (targetCustomer.organizationId !== actor.organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Cannot access customer from different organization",
-					userId: actor.session.user.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-
-		if (actor.accessTier === "orgAdmin") {
-			return;
-		}
-
+		if (targetCustomer.organizationId !== actor.organizationId) return false;
+		if (actor.organizationWide) return true;
 		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
 		const customerProjects = yield* getCustomerProjects(
 			actor,
 			targetCustomer.id,
 			"getCustomerProjectsForSettingsActor",
 		);
-
-		if (
-			managedProjectIds &&
+		return (
+			managedProjectIds !== null &&
 			customerProjects.length > 0 &&
 			customerProjects.every((customerProject) => managedProjectIds.has(customerProject.id))
-		) {
-			return;
-		}
-
-		return yield* Effect.fail(actorAuthorizationError(actor, options));
+		);
 	});
 }
 
 /**
  * The active customer of the actor's organization that a project may be
- * created for, or a refusal: unknown customers fail validation, customers
- * outside the actor's scope fail authorization.
+ * created for: unknown customers fail validation, customers outside the
+ * actor's reach fail authorization.
  */
-export function ensureSettingsActorCanUseProjectCustomer(
+export function loadAssignableCustomer(
 	actor: ProjectSettingsActor,
 	customerId: string,
 	action: string,
@@ -339,36 +177,12 @@ export function ensureSettingsActorCanUseProjectCustomer(
 			);
 		}
 
-		yield* ensureSettingsActorCanAccessCustomerTarget(actor, customerExists, {
+		yield* refuseUnless(yield* reachesCustomer(actor, customerExists), {
+			userId: actor.session.user.id,
 			message: "You do not have access to assign this customer",
 			resource: "project",
 			action,
 		});
-	});
-}
-
-export function getProjectTarget(projectId: string, queryName = "getProjectTarget") {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-
-		return yield* dbService
-			.query(queryName, async () => {
-				return await db.query.project.findFirst({
-					where: eq(project.id, projectId),
-				});
-			})
-			.pipe(
-				Effect.flatMap((value) =>
-					value
-						? Effect.succeed(value)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Project not found",
-									entityType: "project",
-									entityId: projectId,
-								}),
-							),
-				),
-			);
+		return customerExists;
 	});
 }

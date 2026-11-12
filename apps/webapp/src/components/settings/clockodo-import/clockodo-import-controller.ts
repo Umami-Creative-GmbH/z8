@@ -29,6 +29,26 @@ import type {
 	UserMappingType,
 } from "@/lib/clockodo/types";
 import type { ImportEntityType } from "@/lib/import-review/types";
+import {
+	type ActionMessage,
+	actionErrorMessage,
+} from "@/lib/organization-action/action-error-message";
+
+/** The import's own texts for a failed step, after the action's refusal and code. */
+const FAILURES = {
+	connection: ["settings.clockodoImport.errors.connectionFailed", "Failed to connect to Clockodo"],
+	users: ["settings.clockodoImport.errors.fetchUsersFailed", "Failed to fetch user data"],
+	projects: ["settings.clockodoImport.errors.fetchProjectsFailed", "Failed to fetch project data"],
+	userMappings: [
+		"settings.clockodoImport.errors.saveMappingsFailed",
+		"Failed to save user mappings",
+	],
+	projectMappings: [
+		"settings.clockodoImport.errors.saveProjectMappingsFailed",
+		"Failed to save project mappings",
+	],
+	import: ["settings.clockodoImport.errors.importFailed", "Import review scan failed"],
+} satisfies Record<string, ActionMessage>;
 
 export type ClockodoWizardStep =
 	| "credentials"
@@ -170,7 +190,7 @@ function buildUserMappings(
 	});
 }
 
-export function useClockodoImportController(organizationId: string) {
+export function useClockodoImportController() {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [step, setStep] = useState<ClockodoWizardStep>("credentials");
@@ -200,13 +220,14 @@ export function useClockodoImportController(organizationId: string) {
 	const validateMutation = useMutation({
 		mutationFn: async () => {
 			const [credResult, countsResult] = await Promise.all([
-				validateClockodoCredentials(email, apiKey, organizationId),
-				getExistingDataCounts(organizationId),
+				validateClockodoCredentials({ email, apiKey }),
+				getExistingDataCounts(),
 			]);
 			return { credResult, countsResult };
 		},
 		onSuccess: ({ credResult, countsResult }) => {
-			if (!credResult.success) return toast.error(credResult.error);
+			if (!credResult.success)
+				return toast.error(actionErrorMessage(t, credResult, {}, FAILURES.connection));
 			queryClient.invalidateQueries();
 			setPreview(credResult.data);
 			if (countsResult.success) setExistingCounts(countsResult.data);
@@ -221,18 +242,18 @@ export function useClockodoImportController(organizationId: string) {
 	const fetchUsersMutation = useMutation({
 		mutationFn: async () => {
 			const [usersResult, employeesResult] = await Promise.all([
-				fetchClockodoUsers(email, apiKey, organizationId),
-				fetchZ8Employees(organizationId),
+				fetchClockodoUsers({ email, apiKey }),
+				fetchZ8Employees(),
 			]);
 			return { usersResult, employeesResult };
 		},
 		onSuccess: ({ usersResult, employeesResult }) => {
 			if (!usersResult.success) {
-				toast.error(usersResult.error);
+				toast.error(actionErrorMessage(t, usersResult, {}, FAILURES.users));
 				return;
 			}
 			if (!employeesResult.success) {
-				toast.error(employeesResult.error);
+				toast.error(actionErrorMessage(t, employeesResult, {}, FAILURES.users));
 				return;
 			}
 			queryClient.invalidateQueries();
@@ -249,9 +270,9 @@ export function useClockodoImportController(organizationId: string) {
 	// This user-triggered read populates wizard-local mappings; it does not mutate server data.
 	// react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
 	const fetchProjectsMutation = useMutation({
-		mutationFn: () => fetchProjectMappingData(email, apiKey, organizationId),
+		mutationFn: () => fetchProjectMappingData({ email, apiKey }),
 		onSuccess: (result) => {
-			if (!result.success) return toast.error(result.error);
+			if (!result.success) return toast.error(actionErrorMessage(t, result, {}, FAILURES.projects));
 			setZ8Projects(result.data.z8Projects);
 			setProjectMappings(
 				buildProjectMappings(
@@ -270,9 +291,10 @@ export function useClockodoImportController(organizationId: string) {
 	});
 
 	const saveMappingsMutation = useMutation({
-		mutationFn: () => saveUserMappings(organizationId, userMappings),
+		mutationFn: () => saveUserMappings({ mappings: userMappings }),
 		onSuccess: (result) => {
-			if (!result.success) return toast.error(result.error);
+			if (!result.success)
+				return toast.error(actionErrorMessage(t, result, {}, FAILURES.userMappings));
 			queryClient.invalidateQueries();
 			fetchProjectsMutation.mutate();
 		},
@@ -283,9 +305,10 @@ export function useClockodoImportController(organizationId: string) {
 	});
 
 	const saveProjectMappingsMutation = useMutation({
-		mutationFn: () => saveProjectMappings(organizationId, projectMappings),
+		mutationFn: () => saveProjectMappings({ mappings: projectMappings }),
 		onSuccess: (result) => {
-			if (!result.success) return toast.error(result.error);
+			if (!result.success)
+				return toast.error(actionErrorMessage(t, result, {}, FAILURES.projectMappings));
 			queryClient.invalidateQueries();
 			setStep("selection");
 		},
@@ -302,7 +325,6 @@ export function useClockodoImportController(organizationId: string) {
 	const importMutation = useMutation({
 		mutationFn: () =>
 			startImportReviewScan({
-				organizationId,
 				provider: "clockodo",
 				credential: JSON.stringify({ email, apiKey }),
 				selectedScope: selections,
@@ -314,7 +336,7 @@ export function useClockodoImportController(organizationId: string) {
 			}),
 		onSuccess: (result) => {
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result, {}, FAILURES.import));
 				setStep("selection");
 				return;
 			}

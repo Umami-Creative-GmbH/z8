@@ -128,14 +128,12 @@ describe("wage type mapping updates", () => {
 		async (code, name, format) => {
 			const created = saved(
 				await saveMappingAction({
-					organizationId: ORG,
 					workCategoryId: CATEGORY,
 					...codes,
 				}),
 			);
 			const updated = saved(
 				await saveMappingAction({
-					organizationId: ORG,
 					workCategoryId: CATEGORY,
 					[code]: null,
 					[name]: null,
@@ -143,7 +141,7 @@ describe("wage type mapping updates", () => {
 			);
 			const expected = { id: created.id, ...codes, [code]: null, [name]: null };
 			expect(updated).toMatchObject(expected);
-			const mappings = saved(await getMappingsAction(ORG));
+			const mappings = saved(await getMappingsAction());
 			expect(mappings).toEqual([expect.objectContaining(expected)]);
 			expect(wageTypeCodeFor(mappings[0], format)).toBeNull();
 		},
@@ -152,13 +150,12 @@ describe("wage type mapping updates", () => {
 	it("persists a SuccessFactors-only mapping", async () => {
 		const mapping = saved(
 			await saveMappingAction({
-				organizationId: ORG,
 				workCategoryId: CATEGORY,
 				successFactorsTimeTypeCode: "SF-ONLY",
 				successFactorsTimeTypeName: "Attendance",
 			}),
 		);
-		expect(saved(await getMappingsAction(ORG))).toEqual([
+		expect(saved(await getMappingsAction())).toEqual([
 			expect.objectContaining({
 				id: mapping.id,
 				datevWageTypeCode: null,
@@ -173,24 +170,21 @@ describe("wage type mapping updates", () => {
 	it("preserves saved unsupported categories when an unrelated mapping is saved and permits explicit deletion", async () => {
 		const reduction = saved(
 			await saveMappingAction({
-				organizationId: ORG,
 				specialCategory: "overtime_reduction",
 				...codes,
 			}),
 		);
 		const holiday = saved(
 			await saveMappingAction({
-				organizationId: ORG,
 				specialCategory: "holiday_compensation",
 				...codes,
 			}),
 		);
 		await saveMappingAction({
-			organizationId: ORG,
 			workCategoryId: CATEGORY,
 			datevWageTypeCode: "OTHER",
 		});
-		expect(saved(await getMappingsAction(ORG))).toEqual(
+		expect(saved(await getMappingsAction())).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					id: reduction.id,
@@ -207,15 +201,14 @@ describe("wage type mapping updates", () => {
 		expect(
 			(
 				await deleteMappingAction({
-					organizationId: ORG,
 					mappingId: reduction.id,
 				})
 			).success,
 		).toBe(true);
 		expect(
-			saved(await getMappingsAction(ORG)).map(({ id }) => id),
+			saved(await getMappingsAction()).map(({ id }) => id),
 		).not.toContain(reduction.id);
-		expect(saved(await getMappingsAction(ORG))).toContainEqual(
+		expect(saved(await getMappingsAction())).toContainEqual(
 			expect.objectContaining({ id: holiday.id, ...codes }),
 		);
 	});
@@ -225,7 +218,6 @@ describe("wage type mapping updates", () => {
 		session.organizationId = OTHER_ORG;
 		const foreign = saved(
 			await saveMappingAction({
-				organizationId: OTHER_ORG,
 				workCategoryId: OTHER_CATEGORY,
 				...codes,
 			}),
@@ -235,7 +227,6 @@ describe("wage type mapping updates", () => {
 		expect(
 			(
 				await saveMappingAction({
-					organizationId: ORG,
 					workCategoryId: OTHER_CATEGORY,
 					datevWageTypeCode: "BAD",
 				})
@@ -244,17 +235,15 @@ describe("wage type mapping updates", () => {
 		expect(
 			(
 				await saveMappingAction({
-					organizationId: OTHER_ORG,
 					workCategoryId: OTHER_CATEGORY,
 					successFactorsTimeTypeCode: null,
 				})
 			).success,
 		).toBe(false);
-		expect((await getMappingsAction(OTHER_ORG)).success).toBe(false);
-		expect(saved(await getMappingsAction(ORG))).toEqual([]);
+		expect(saved(await getMappingsAction())).toEqual([]);
 		session.userId = OTHER_USER;
 		session.organizationId = OTHER_ORG;
-		expect(saved(await getMappingsAction(OTHER_ORG))).toEqual([
+		expect(saved(await getMappingsAction())).toEqual([
 			expect.objectContaining({ id: foreign.id, ...codes }),
 		]);
 	});

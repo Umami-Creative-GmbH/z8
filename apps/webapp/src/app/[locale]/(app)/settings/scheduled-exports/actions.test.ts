@@ -1,11 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 type Row = Record<string, unknown>;
 type Condition = { column: string; value: unknown };
 
+const orgAdmin: StubCaller = {
+	userId: "admin-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: { id: "employee-admin-1", role: "admin", former: false },
+};
+
 const mockState = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
 	schedules: [] as Row[],
-	adminOrgs: ["org-1", "org-2"],
 	reportConfigErrors: [] as string[],
 	/** Users who are org admins of org-1, and so may own its schedules. */
 	eligibleOwners: ["admin-1", "admin-2"],
@@ -17,7 +25,10 @@ const AUDIT_LOG = vi.hoisted(() => ({ table: "audit_log" }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-vi.mock("@/db/schema", () => ({ auditLog: AUDIT_LOG }));
+vi.mock("@/db/schema", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/db/schema")>()),
+	auditLog: AUDIT_LOG,
+}));
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
@@ -50,66 +61,28 @@ vi.mock("@/lib/scheduled-exports/application/executors/registry", () => ({
 }));
 
 // A fake that honours `where`: conditions are flattened to column = value pairs.
-vi.mock("drizzle-orm", () => ({
+vi.mock("drizzle-orm", async (importOriginal) => ({
+	...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: vi.fn((...conditions: unknown[]) => conditions.flat()),
 	asc: vi.fn((value: unknown) => value),
 	desc: vi.fn((value: unknown) => value),
 	eq: vi.fn((column: string, value: unknown) => [{ column, value }]),
 }));
 
-vi.mock("@/lib/auth-helpers", () => ({
-	isOrgAdminCasl: vi.fn(async (organizationId: string) =>
-		mockState.adminOrgs.includes(organizationId),
-	),
-}));
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context, Effect, Layer } = await import("effect");
-	const AuthService = Context.Service<any>("AuthService");
-	const AuthServiceLive = Layer.succeed(AuthService, {
-		getSession: () => Effect.succeed({ user: { id: "admin-1" }, session: {} }),
-	});
-	return { AuthService, AuthServiceLive };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context, Effect, Layer } = await import("effect");
-	const dbModule = await import("@/db");
-	const DatabaseService = Context.Service<any>("DatabaseService");
-	const DatabaseServiceLive = Layer.succeed(DatabaseService, {
-		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-		get db() {
-			return dbModule.db;
-		},
-	});
-	return { DatabaseService, DatabaseServiceLive };
-});
-
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Layer } = await import("effect");
-	const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.mergeAll(AuthServiceLive, DatabaseServiceLive),
-	);
-});
-
-vi.mock("@/db", () => {
+const fakeDb = vi.hoisted(() => {
 	const matches = (row: Row, where: Condition[]) =>
 		where.every(({ column, value }) => row[column] === value);
 
 	const db = {
 		query: {
 			scheduledExport: {
-				findFirst: vi.fn(
-					async ({ where }: { where: Condition[] }) =>
-						mockState.schedules.find((row) => matches(row, where)) ?? undefined,
-				),
+				findFirst: async ({ where }: { where: Condition[] }) =>
+					mockState.schedules.find((row) => matches(row, where)) ?? undefined,
 			},
 		},
 		// One connection: a transaction runs on the same fake.
 		transaction: async <T>(run: (tx: unknown) => Promise<T>) => run(db),
-		insert: vi.fn((table: unknown) => ({
+		insert: (table: unknown) => ({
 			values: (values: Row) => {
 				if (table === AUDIT_LOG) {
 					mockState.audit.push(values);
@@ -127,8 +100,8 @@ vi.mock("@/db", () => {
 					},
 				};
 			},
-		})),
-		update: vi.fn(() => ({
+		}),
+		update: () => ({
 			set: (updates: Row) => ({
 				where: (where: Condition[]) => ({
 					returning: async () => {
@@ -138,8 +111,8 @@ vi.mock("@/db", () => {
 					},
 				}),
 			}),
-		})),
-		delete: vi.fn(() => ({
+		}),
+		delete: () => ({
 			where: (where: Condition[]) => ({
 				returning: async () => {
 					const deleted = mockState.schedules.filter((row) => matches(row, where));
@@ -147,21 +120,34 @@ vi.mock("@/db", () => {
 					return deleted;
 				},
 			}),
-		})),
+		}),
 	};
+	return db;
+});
 
-	return {
-		scheduledExport: { id: "id", organizationId: "organizationId", createdAt: "createdAt" },
-		scheduledExportExecution: {},
-		payrollExportConfig: {},
-		db,
-	};
+vi.mock("@/db", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/db")>()),
+	scheduledExport: { id: "id", organizationId: "organizationId", createdAt: "createdAt" },
+	db: fakeDb,
+}));
+
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mockState.caller, { db: fakeDb }));
 });
 
 const {
 	changeScheduledExportOwnerAction,
 	createScheduledExportAction,
 	deleteScheduledExportAction,
+	getExecutionHistoryAction,
+	getFilterOptionsAction,
+	getPayrollConfigsAction,
+	getScheduledExportAction,
+	getScheduledExportsAction,
+	getScheduleOwnerCandidatesAction,
+	previewNextExecutionsAction,
 	runScheduledExportNowAction,
 	toggleScheduledExportAction,
 	updateScheduledExportAction,
@@ -185,7 +171,6 @@ function storedSchedule(overrides: Row = {}): Row {
 }
 
 const createInput = {
-	organizationId: "org-1",
 	name: "Monthly payroll",
 	scheduleType: "monthly",
 	reportType: "payroll_export",
@@ -195,9 +180,12 @@ const createInput = {
 	emailRecipients: ["payroll@example.com"],
 } as const;
 
+/** Signed in as an admin of org-2, where schedule-1 belongs to org-1. */
+const otherOrgAdmin: StubCaller = { ...orgAdmin, activeOrganizationId: "org-2" };
+
 beforeEach(() => {
+	mockState.caller = orgAdmin;
 	mockState.schedules = [storedSchedule()];
-	mockState.adminOrgs = ["org-1", "org-2"];
 	mockState.reportConfigErrors = [];
 	mockState.eligibleOwners = ["admin-1", "admin-2"];
 	mockState.audit = [];
@@ -217,6 +205,70 @@ function auditEntries() {
 	}));
 }
 
+describe("scheduled export settings access", () => {
+	const scopedManager: StubCaller = {
+		...orgAdmin,
+		membershipRole: "member",
+		employee: { id: "employee-manager", role: "manager", former: false },
+	};
+
+	it.each([
+		["create", () => createScheduledExportAction(createInput)],
+		["list", () => getScheduledExportsAction()],
+		["owner candidates", () => getScheduleOwnerCandidatesAction()],
+		["get", () => getScheduledExportAction({ scheduleId: "schedule-1" })],
+		["update", () => updateScheduledExportAction({ id: "schedule-1", name: "Renamed" })],
+		[
+			"change owner",
+			() => changeScheduledExportOwnerAction({ scheduleId: "schedule-1", newOwnerId: "admin-2" }),
+		],
+		["delete", () => deleteScheduledExportAction({ scheduleId: "schedule-1" })],
+		["toggle", () => toggleScheduledExportAction({ scheduleId: "schedule-1", isActive: false })],
+		["execution history", () => getExecutionHistoryAction({ scheduleId: "schedule-1" })],
+		["run now", () => runScheduledExportNowAction({ scheduleId: "schedule-1" })],
+		["filter options", () => getFilterOptionsAction()],
+		["payroll configs", () => getPayrollConfigsAction()],
+	])("refuses %s to a scoped manager", async (_name, run) => {
+		mockState.caller = scopedManager;
+		const before = structuredClone(mockState.schedules);
+
+		expect(await run()).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.schedules).toEqual(before);
+		expect(mockState.audit).toEqual([]);
+		expect(mockState.executed).toEqual([]);
+	});
+
+	it("previews the next runs for an org member, and refuses a pending membership", async () => {
+		mockState.caller = {
+			...orgAdmin,
+			membershipRole: "member",
+			employee: { id: "employee-member", role: "employee", former: false },
+		};
+		const input = { scheduleType: "daily", timezone: "UTC", count: 2 } as const;
+
+		expect(await previewNextExecutionsAction(input)).toMatchObject({
+			success: true,
+			data: [expect.any(String), expect.any(String)],
+		});
+
+		mockState.caller = { ...orgAdmin, membershipRole: null };
+		expect(await previewNextExecutionsAction(input)).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+	});
+
+	it("refuses an invalid cron expression as a validation error", async () => {
+		const result = await previewNextExecutionsAction({
+			scheduleType: "cron",
+			cronExpression: "not a cron",
+			timezone: "UTC",
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+	});
+});
+
 describe("scheduled export owner", () => {
 	it("makes the creating admin the owner and audits the creation", async () => {
 		const created = await createScheduledExportAction(createInput);
@@ -227,6 +279,7 @@ describe("scheduled export owner", () => {
 		});
 		const id = created.success ? created.data.id : "";
 		expect(mockState.schedules.find((row) => row.id === id)).toMatchObject({
+			organizationId: "org-1",
 			ownerId: "admin-1",
 			createdBy: "admin-1",
 		});
@@ -252,7 +305,7 @@ describe("scheduled export owner", () => {
 	it("refuses resuming a schedule whose owner is no longer an org admin", async () => {
 		mockState.schedules = [storedSchedule({ isActive: false, ownerId: "former-admin" })];
 
-		const result = await toggleScheduledExportAction("org-1", "schedule-1", true);
+		const result = await toggleScheduledExportAction({ scheduleId: "schedule-1", isActive: true });
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
 		expect(mockState.schedules[0]?.isActive).toBe(false);
@@ -262,7 +315,7 @@ describe("scheduled export owner", () => {
 	it("refuses running a schedule now whose owner is no longer an org admin", async () => {
 		mockState.schedules = [storedSchedule({ ownerId: "former-admin" })];
 
-		const result = await runScheduledExportNowAction("org-1", "schedule-1");
+		const result = await runScheduledExportNowAction({ scheduleId: "schedule-1" });
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
 		expect(mockState.executed).toEqual([]);
@@ -272,7 +325,7 @@ describe("scheduled export owner", () => {
 	it("audits a run-now request and runs it on behalf of the owner", async () => {
 		mockState.schedules = [storedSchedule({ ownerId: "admin-2" })];
 
-		const result = await runScheduledExportNowAction("org-1", "schedule-1");
+		const result = await runScheduledExportNowAction({ scheduleId: "schedule-1" });
 
 		expect(result.success).toBe(true);
 		expect(mockState.executed).toEqual([
@@ -291,7 +344,10 @@ describe("scheduled export owner", () => {
 	it("hands a schedule to another org admin and audits the change", async () => {
 		mockState.schedules = [storedSchedule({ isActive: false, ownerId: "former-admin" })];
 
-		const result = await changeScheduledExportOwnerAction("org-1", "schedule-1", "admin-2");
+		const result = await changeScheduledExportOwnerAction({
+			scheduleId: "schedule-1",
+			newOwnerId: "admin-2",
+		});
 
 		expect(result).toMatchObject({ success: true, data: { ownerId: "admin-2", isActive: false } });
 		expect(mockState.schedules[0]).toMatchObject({ ownerId: "admin-2", updatedBy: "admin-1" });
@@ -306,7 +362,10 @@ describe("scheduled export owner", () => {
 	});
 
 	it("refuses handing a schedule to someone who isn't an org admin", async () => {
-		const result = await changeScheduledExportOwnerAction("org-1", "schedule-1", "payroll-clerk");
+		const result = await changeScheduledExportOwnerAction({
+			scheduleId: "schedule-1",
+			newOwnerId: "payroll-clerk",
+		});
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
 		expect(mockState.schedules[0]?.ownerId).toBe("admin-1");
@@ -314,7 +373,12 @@ describe("scheduled export owner", () => {
 	});
 
 	it("treats another organization's schedule as not found when changing its owner", async () => {
-		const result = await changeScheduledExportOwnerAction("org-2", "schedule-1", "admin-2");
+		mockState.caller = otherOrgAdmin;
+
+		const result = await changeScheduledExportOwnerAction({
+			scheduleId: "schedule-1",
+			newOwnerId: "admin-2",
+		});
 
 		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
 		expect(mockState.schedules[0]?.ownerId).toBe("admin-1");
@@ -325,7 +389,6 @@ describe("scheduled export lifecycle audit", () => {
 	it("audits an update with a before/after diff, and a pause as its own entry", async () => {
 		const result = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			emailRecipients: ["payroll@example.com", "tax@example.com"],
 			isActive: false,
 		});
@@ -357,7 +420,6 @@ describe("scheduled export lifecycle audit", () => {
 	it("writes no entry for an update that changes nothing", async () => {
 		const result = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			name: "Monthly payroll",
 		});
 
@@ -366,7 +428,7 @@ describe("scheduled export lifecycle audit", () => {
 	});
 
 	it("audits a deletion with what the schedule was", async () => {
-		const result = await deleteScheduledExportAction("org-1", "schedule-1");
+		const result = await deleteScheduledExportAction({ scheduleId: "schedule-1" });
 
 		expect(result.success).toBe(true);
 		expect(mockState.schedules).toEqual([]);
@@ -385,7 +447,9 @@ describe("scheduled export lifecycle audit", () => {
 	});
 
 	it("deletes nothing and audits nothing for another organization's schedule", async () => {
-		const result = await deleteScheduledExportAction("org-2", "schedule-1");
+		mockState.caller = otherOrgAdmin;
+
+		const result = await deleteScheduledExportAction({ scheduleId: "schedule-1" });
 
 		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
 		expect(mockState.schedules).toHaveLength(1);
@@ -404,11 +468,10 @@ describe("scheduled export report configuration", () => {
 		});
 		const updated = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			reportConfig: { formatId: "sage_lohn" },
 		});
 
-		expect(created).toEqual({
+		expect(created).toMatchObject({
 			success: false,
 			error: "Payroll export format is not configured: sage_lohn",
 			code: "ValidationError",
@@ -426,7 +489,6 @@ describe("scheduled export recipient validation", () => {
 		});
 		const updated = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			emailRecipients: ["not-an-email"],
 		});
 
@@ -443,7 +505,6 @@ describe("scheduled export recipient validation", () => {
 
 		const result = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			deliveryMethod: "s3_and_email",
 		});
 
@@ -461,7 +522,6 @@ describe("scheduled export recipient validation", () => {
 
 		const result = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			deliveryMethod: "email_only",
 			emailRecipients: [],
 		});
@@ -479,7 +539,6 @@ describe("scheduled export recipient validation", () => {
 	it("refuses clearing the recipients of a schedule that delivers by email", async () => {
 		const result = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			emailRecipients: [],
 		});
 
@@ -493,7 +552,6 @@ describe("scheduled export recipient validation", () => {
 	it("allows clearing the recipients while switching to S3-only delivery", async () => {
 		const result = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			deliveryMethod: "s3_only",
 			emailRecipients: [],
 		});
@@ -511,7 +569,6 @@ describe("scheduled export recipient validation", () => {
 		});
 		const updated = await updateScheduledExportAction({
 			id: "schedule-1",
-			organizationId: "org-1",
 			emailRecipients: recipients,
 		});
 
@@ -531,18 +588,12 @@ describe("scheduled export update org scoping", () => {
 	] as const)("treats another organization's schedule as not found on %s", async (_, changes) => {
 		const before = structuredClone(mockState.schedules);
 
-		const otherOrg = await updateScheduledExportAction({
-			id: "schedule-1",
-			organizationId: "org-2",
-			...changes,
-		});
-		const unknown = await updateScheduledExportAction({
-			id: "schedule-missing",
-			organizationId: "org-1",
-			...changes,
-		});
+		mockState.caller = otherOrgAdmin;
+		const otherOrg = await updateScheduledExportAction({ id: "schedule-1", ...changes });
+		mockState.caller = orgAdmin;
+		const unknown = await updateScheduledExportAction({ id: "schedule-missing", ...changes });
 
-		expect(otherOrg).toEqual({
+		expect(otherOrg).toMatchObject({
 			success: false,
 			error: "Scheduled export not found",
 			code: "NotFoundError",

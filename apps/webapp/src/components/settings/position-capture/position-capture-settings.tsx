@@ -15,8 +15,8 @@ import {
 	savePositionCaptureSettingsAction,
 	setPositionCaptureAssignmentAction,
 } from "@/app/[locale]/(app)/settings/position-capture/actions";
-import { positionCaptureErrorMessage } from "@/components/position-capture/error-message";
 import { formatRecordedPositionInstant } from "@/components/position-capture/format";
+import { POSITION_CAPTURE_REFUSALS } from "@/components/position-capture/position-capture-refusals";
 import { PositionNoticeText } from "@/components/position-capture/position-notice-text";
 import {
 	FeatureSettingsTabs,
@@ -41,12 +41,23 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	POSITION_PURPOSE_MAX_LENGTH,
 	POSITION_RETENTION_MAX_DAYS,
 	POSITION_RETENTION_MIN_DAYS,
 	requiresNewNoticeVersion,
 } from "@/lib/time-tracking/position-capture/policy";
+
+/**
+ * The calendar's texts plus a settings-only `AuthorizationError` text: a caller
+ * without settings access here is not an owner or admin, so they get the
+ * feature's admin-only text instead of the generic one.
+ */
+const POSITION_CAPTURE_SETTINGS_REFUSALS = {
+	...POSITION_CAPTURE_REFUSALS,
+	AuthorizationError: POSITION_CAPTURE_REFUSALS.admin_only,
+};
 
 interface PositionCaptureSettingsProps {
 	data: PositionCaptureAdminData;
@@ -92,11 +103,10 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						positionCaptureErrorMessage(t, result.code) ??
-							t(
-								"settings.positionCapture.saveFailed",
-								"Position capture settings were not saved",
-							),
+						actionErrorMessage(t, result, POSITION_CAPTURE_SETTINGS_REFUSALS, [
+							"settings.positionCapture.saveFailed",
+							"Position capture settings were not saved",
+						]),
 					);
 					return;
 				}
@@ -335,11 +345,10 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						positionCaptureErrorMessage(t, result.code) ??
-							t(
-								"settings.positionCapture.assignmentFailed",
-								"The assignment was not saved",
-							),
+						actionErrorMessage(t, result, POSITION_CAPTURE_SETTINGS_REFUSALS, [
+							"settings.positionCapture.assignmentFailed",
+							"The assignment was not saved",
+						]),
 					);
 					return false;
 				}
@@ -355,11 +364,10 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						positionCaptureErrorMessage(t, result.code) ??
-							t(
-								"settings.positionCapture.assignmentRemoveFailed",
-								"The assignment was not removed",
-							),
+						actionErrorMessage(t, result, POSITION_CAPTURE_SETTINGS_REFUSALS, [
+							"settings.positionCapture.assignmentRemoveFailed",
+							"The assignment was not removed",
+						]),
 					);
 					return false;
 				}

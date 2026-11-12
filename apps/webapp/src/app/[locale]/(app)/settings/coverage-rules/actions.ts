@@ -2,368 +2,218 @@
 
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
-import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
+import * as z from "zod";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import {
-	type CoverageRuleWithRelations,
-	CoverageService,
-	type CoverageSettingsData,
-	type TargetCoverageGap,
-} from "@/lib/effect/services/coverage.service";
+import { CoverageService } from "@/lib/effect/services/coverage.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { resolveScheduleDateRange } from "@/lib/scheduling/schedule-local-input";
+import { createCoverageRuleSchema, updateCoverageRuleSchema } from "@/lib/validations/coverage";
 import {
-	canManageScopedSchedulingSubarea,
-	filterItemsToManageableSubareas,
-	getCoverageRuleScopeTarget,
-	getSchedulingSettingsAccessContext,
-} from "@/lib/settings-scheduling-access";
-import {
-	type CreateCoverageRule,
-	createCoverageRuleSchema,
-	type UpdateCoverageRule,
-	updateCoverageRuleSchema,
-} from "@/lib/validations/coverage";
+	coverageRuleSubareaScope,
+	inSubareaScope,
+	loadCoverageRuleTarget,
+	withinSubareaScope,
+} from "./coverage-rule-scope";
+
+function revalidateCoverageRulePages() {
+	revalidatePath("/settings/coverage-rules");
+	revalidatePath("/settings/shifts");
+}
+
+function organizationTimezone(organizationId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const currentOrganization = yield* dbService.query("coverageRules.organizationTimezone", () =>
+			dbService.db.query.organization.findFirst({
+				where: (table, { eq }) => eq(table.id, organizationId),
+				columns: { timezone: true },
+			}),
+		);
+		return currentOrganization?.timezone ?? "UTC";
+	});
+}
+
+const ruleIdSchema = z.strictObject({ ruleId: z.string().min(1, "Invalid coverage rule ID") });
 
 // ============================================
 // COVERAGE RULE CRUD
 // ============================================
 
-/**
- * Get all coverage rules for the organization.
- */
-export async function getCoverageRules(
-	subareaId?: string,
-): Promise<ServerActionResult<CoverageRuleWithRelations[]>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canAccessCoverageRules) {
-		return { success: false, error: "Unauthorized" };
-	}
+/** The organization's coverage rules, limited to a scoped manager's subareas. */
+export const getCoverageRules = organizationAction(
+	{
+		name: "coverageRules.list",
+		requires: "scopedManager",
+		schema: z.strictObject({ subareaId: z.uuid("Invalid subarea ID").optional() }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const scope = yield* coverageRuleSubareaScope(actor);
+			if (input.subareaId) yield* withinSubareaScope(actor, scope, input.subareaId);
+			const coverageService = yield* CoverageService;
+			const rules = yield* coverageService.getCoverageRules(organizationId, input.subareaId);
+			return rules.filter((rule) => inSubareaScope(scope, rule.subareaId));
+		}),
+);
 
-	if (
-		subareaId &&
-		!canManageScopedSchedulingSubarea(
-			accessContext.accessTier,
-			accessContext.manageableSubareaIds,
-			subareaId,
-		)
-	) {
-		return { success: false, error: "Unauthorized" };
-	}
+/** One coverage rule of the organization. */
+export const getCoverageRule = organizationAction(
+	{ name: "coverageRules.get", requires: "scopedManager", schema: ruleIdSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const scope = yield* coverageRuleSubareaScope(actor);
+			const target = yield* loadCoverageRuleTarget(organizationId, input.ruleId);
+			yield* withinSubareaScope(actor, scope, target.subareaId);
+			const coverageService = yield* CoverageService;
+			return yield* coverageService.getCoverageRuleById(target.id);
+		}),
+);
 
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.getCoverageRules(accessContext.organizationId, subareaId);
-	});
+export const createCoverageRule = organizationAction(
+	{ name: "coverageRules.create", requires: "scopedManager", schema: createCoverageRuleSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const scope = yield* coverageRuleSubareaScope(actor);
+			yield* withinSubareaScope(actor, scope, input.subareaId);
+			const coverageService = yield* CoverageService;
+			const rule = yield* coverageService.createCoverageRule({
+				organizationId,
+				subareaId: input.subareaId,
+				dayOfWeek: input.dayOfWeek,
+				startTime: input.startTime,
+				endTime: input.endTime,
+				minimumStaffCount: input.minimumStaffCount,
+				priority: input.priority ?? 0,
+				createdBy: actor.userId,
+			});
+			revalidateCoverageRulePages();
+			return rule;
+		}),
+);
 
-	const result = await runServerActionSafe(effect);
-	if (!result.success) {
-		return result;
-	}
+export const updateCoverageRule = organizationAction(
+	{
+		name: "coverageRules.update",
+		requires: "scopedManager",
+		schema: z.strictObject({
+			ruleId: z.string().min(1, "Invalid coverage rule ID"),
+			data: updateCoverageRuleSchema,
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const scope = yield* coverageRuleSubareaScope(actor);
+			const target = yield* loadCoverageRuleTarget(organizationId, input.ruleId);
+			yield* withinSubareaScope(actor, scope, target.subareaId);
+			yield* withinSubareaScope(actor, scope, input.data.subareaId ?? target.subareaId);
+			const coverageService = yield* CoverageService;
+			const rule = yield* coverageService.updateCoverageRule(target.id, {
+				...input.data,
+				updatedBy: actor.userId,
+			});
+			revalidateCoverageRulePages();
+			return rule;
+		}),
+);
 
-	return {
-		success: true,
-		data: filterItemsToManageableSubareas(result.data, accessContext.manageableSubareaIds),
-	};
-}
-
-/**
- * Get a single coverage rule by ID.
- */
-export async function getCoverageRule(
-	ruleId: string,
-): Promise<ServerActionResult<CoverageRuleWithRelations | null>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canAccessCoverageRules) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.getCoverageRuleById(ruleId);
-	});
-
-	const result = await runServerActionSafe(effect);
-	if (!result.success || !result.data) {
-		return result;
-	}
-
-	if (
-		!canManageScopedSchedulingSubarea(
-			accessContext.accessTier,
-			accessContext.manageableSubareaIds,
-			result.data.subareaId,
-		)
-	) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	return result;
-}
-
-/**
- * Create a new coverage rule.
- */
-export async function createCoverageRule(
-	data: CreateCoverageRule,
-): Promise<ServerActionResult<CoverageRuleWithRelations>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canAccessCoverageRules) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	// Validate input
-	const validated = createCoverageRuleSchema.safeParse(data);
-	if (!validated.success) {
-		return { success: false, error: validated.error.issues[0]?.message ?? "Invalid data" };
-	}
-
-	if (
-		!canManageScopedSchedulingSubarea(
-			accessContext.accessTier,
-			accessContext.manageableSubareaIds,
-			validated.data.subareaId,
-		)
-	) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.createCoverageRule({
-			organizationId: accessContext.organizationId,
-			subareaId: validated.data.subareaId,
-			dayOfWeek: validated.data.dayOfWeek,
-			startTime: validated.data.startTime,
-			endTime: validated.data.endTime,
-			minimumStaffCount: validated.data.minimumStaffCount,
-			priority: validated.data.priority ?? 0,
-			createdBy: accessContext.authContext.user.id,
-		});
-	});
-
-	const result = await runServerActionSafe(effect);
-	if (result.success) {
-		revalidatePath("/settings/coverage-rules");
-		revalidatePath("/settings/shifts");
-	}
-	return result;
-}
-
-/**
- * Update a coverage rule.
- */
-export async function updateCoverageRule(
-	ruleId: string,
-	data: UpdateCoverageRule,
-): Promise<ServerActionResult<CoverageRuleWithRelations>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canAccessCoverageRules) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	const existingRuleTarget = await getCoverageRuleScopeTarget(ruleId);
-	if (!existingRuleTarget) {
-		return { success: false, error: "Coverage rule not found" };
-	}
-
-	if (existingRuleTarget.organizationId !== accessContext.organizationId) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	// Validate input
-	const validated = updateCoverageRuleSchema.safeParse(data);
-	if (!validated.success) {
-		return { success: false, error: validated.error.issues[0]?.message ?? "Invalid data" };
-	}
-
-	const nextSubareaId = validated.data.subareaId ?? existingRuleTarget.subareaId;
-	if (
-		!canManageScopedSchedulingSubarea(
-			accessContext.accessTier,
-			accessContext.manageableSubareaIds,
-			nextSubareaId,
-		)
-	) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.updateCoverageRule(ruleId, {
-			...validated.data,
-			updatedBy: accessContext.authContext.user.id,
-		});
-	});
-
-	const result = await runServerActionSafe(effect);
-	if (result.success) {
-		revalidatePath("/settings/coverage-rules");
-		revalidatePath("/settings/shifts");
-	}
-	return result;
-}
-
-/**
- * Delete a coverage rule.
- */
-export async function deleteCoverageRule(ruleId: string): Promise<ServerActionResult<void>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canAccessCoverageRules) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	const existingRuleTarget = await getCoverageRuleScopeTarget(ruleId);
-	if (!existingRuleTarget) {
-		return { success: false, error: "Coverage rule not found" };
-	}
-
-	if (existingRuleTarget.organizationId !== accessContext.organizationId) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	if (
-		!canManageScopedSchedulingSubarea(
-			accessContext.accessTier,
-			accessContext.manageableSubareaIds,
-			existingRuleTarget.subareaId,
-		)
-	) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.deleteCoverageRule(ruleId);
-	});
-
-	const result = await runServerActionSafe(effect);
-	if (result.success) {
-		revalidatePath("/settings/coverage-rules");
-		revalidatePath("/settings/shifts");
-	}
-	return result;
-}
+export const deleteCoverageRule = organizationAction(
+	{ name: "coverageRules.delete", requires: "scopedManager", schema: ruleIdSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const scope = yield* coverageRuleSubareaScope(actor);
+			const target = yield* loadCoverageRuleTarget(organizationId, input.ruleId);
+			yield* withinSubareaScope(actor, scope, target.subareaId);
+			const coverageService = yield* CoverageService;
+			yield* coverageService.deleteCoverageRule(target.id);
+			revalidateCoverageRulePages();
+		}),
+);
 
 // ============================================
 // COVERAGE CALCULATION
 // ============================================
 
-/**
- * Get heatmap data for coverage visualization in the scheduler.
- */
-export async function getTargetHeatmapData(params: {
-	startDate: string;
-	endDateExclusive: string;
-	subareaIds?: string[];
-}): Promise<ServerActionResult<HeatmapDataPoint[]>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canAccessCoverageRules) {
-		return { success: false, error: "Unauthorized" };
-	}
-	const currentOrganization = await db.query.organization.findFirst({
-		where: (table, { eq }) => eq(table.id, accessContext.organizationId),
-		columns: { timezone: true },
-	});
-	const range = resolveScheduleDateRange(
-		{ startDate: params.startDate, endDateExclusive: params.endDateExclusive },
-		currentOrganization?.timezone ?? "UTC",
-	);
+/** Heatmap data for the scheduler, limited to a scoped manager's subareas. */
+export const getTargetHeatmapData = organizationAction(
+	{
+		name: "coverageRules.targetHeatmap",
+		requires: "scopedManager",
+		schema: z.strictObject({
+			startDate: z.string().min(1),
+			endDateExclusive: z.string().min(1),
+			subareaIds: z.array(z.uuid()).optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const scope = yield* coverageRuleSubareaScope(actor);
+			const timezone = yield* organizationTimezone(organizationId);
+			const range = resolveScheduleDateRange(
+				{ startDate: input.startDate, endDateExclusive: input.endDateExclusive },
+				timezone,
+			);
+			const subareaIds = scope
+				? (input.subareaIds?.filter((subareaId) => scope.has(subareaId)) ?? [...scope])
+				: input.subareaIds;
+			const coverageService = yield* CoverageService;
+			return yield* coverageService.getTargetHeatmapData({
+				organizationId,
+				startDate: dateFromInstant(range.start),
+				endDate: dateFromInstant(range.endExclusive),
+				timezone,
+				subareaIds,
+			});
+		}),
+);
 
-	const scopedSubareaIds = accessContext.manageableSubareaIds
-		? (params.subareaIds?.filter((subareaId) =>
-				accessContext.manageableSubareaIds?.has(subareaId),
-			) ?? [...accessContext.manageableSubareaIds])
-		: params.subareaIds;
-
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.getTargetHeatmapData({
-			organizationId: accessContext.organizationId,
-			startDate: dateFromInstant(range.start),
-			endDate: dateFromInstant(range.endExclusive),
-			timezone: currentOrganization?.timezone ?? "UTC",
-			subareaIds: scopedSubareaIds,
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Validate if a schedule can be published (check for coverage gaps).
- */
-export async function validateScheduleForPublish(params: {
-	startDate: Date;
-	endDate: Date;
-}): Promise<ServerActionResult<{ canPublish: boolean; gaps: TargetCoverageGap[] }>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canAccessCoverageRules || accessContext.accessTier !== "orgAdmin") {
-		return { success: false, error: "Unauthorized" };
-	}
-	const currentOrganization = await db.query.organization.findFirst({
-		where: (table, { eq }) => eq(table.id, accessContext.organizationId),
-		columns: { timezone: true },
-	});
-
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.validateScheduleCanPublish({
-			organizationId: accessContext.organizationId,
-			startDate: params.startDate,
-			endDate: params.endDate,
-			timezone: currentOrganization?.timezone ?? "UTC",
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
+/** Whether a schedule can be published (checks for coverage gaps). */
+export const validateScheduleForPublish = organizationAction(
+	{
+		name: "coverageRules.validateScheduleForPublish",
+		requires: "orgAdmin",
+		schema: z.strictObject({ startDate: z.date(), endDate: z.date() }),
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const timezone = yield* organizationTimezone(organizationId);
+			const coverageService = yield* CoverageService;
+			return yield* coverageService.validateScheduleCanPublish({
+				organizationId,
+				startDate: input.startDate,
+				endDate: input.endDate,
+				timezone,
+			});
+		}),
+);
 
 // ============================================
 // COVERAGE SETTINGS
 // ============================================
 
-/**
- * Get coverage settings for the organization.
- */
-export async function getCoverageSettings(): Promise<ServerActionResult<CoverageSettingsData>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canAccessCoverageRules || accessContext.accessTier !== "orgAdmin") {
-		return { success: false, error: "Unauthorized" };
-	}
+export const getCoverageSettings = organizationAction(
+	{ name: "coverageRules.getSettings", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const coverageService = yield* CoverageService;
+			return yield* coverageService.getCoverageSettings(organizationId);
+		}),
+);
 
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.getCoverageSettings(accessContext.organizationId);
-	});
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Update coverage settings for the organization.
- */
-export async function updateCoverageSettings(settings: {
-	allowPublishWithGaps: boolean;
-}): Promise<ServerActionResult<CoverageSettingsData>> {
-	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext?.canManageCoverageSettings) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	const effect = Effect.gen(function* () {
-		const coverageService = yield* CoverageService;
-		return yield* coverageService.updateCoverageSettings(accessContext.organizationId, {
-			allowPublishWithGaps: settings.allowPublishWithGaps,
-			updatedBy: accessContext.authContext.user.id,
-		});
-	});
-
-	const result = await runServerActionSafe(effect);
-	if (result.success) {
-		revalidatePath("/settings/coverage-rules");
-		revalidatePath("/settings/shifts");
-	}
-	return result;
-}
+export const updateCoverageSettings = organizationAction(
+	{
+		name: "coverageRules.updateSettings",
+		requires: "orgAdmin",
+		schema: z.strictObject({ allowPublishWithGaps: z.boolean() }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const coverageService = yield* CoverageService;
+			const settings = yield* coverageService.updateCoverageSettings(organizationId, {
+				allowPublishWithGaps: input.allowPublishWithGaps,
+				updatedBy: actor.userId,
+			});
+			revalidateCoverageRulePages();
+			return settings;
+		}),
+);

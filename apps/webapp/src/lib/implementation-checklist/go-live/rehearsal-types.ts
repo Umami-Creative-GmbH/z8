@@ -1,5 +1,5 @@
 import type { WeekdayName } from "@/lib/absences/working-days";
-import type { ApproverGoLiveKind } from "./approver-routing";
+import type { ApprovalRouteKind } from "@/lib/approvals/route-preview/types";
 import type { PayrollPrerequisites } from "./payroll-prerequisites";
 import {
 	type GoLiveFixLink,
@@ -93,7 +93,7 @@ export interface GoLiveRehearsalVariant {
 }
 
 export interface GoLiveRehearsalKind {
-	kind: ApproverGoLiveKind;
+	kind: ApprovalRouteKind;
 	label: GoLiveMessage;
 	/** The same status the approver go-live check gives this member for the kind. */
 	status: "routed" | "skipped" | "unroutable";
@@ -117,7 +117,7 @@ export interface GoLiveRehearsal {
 	approvals: {
 		kinds: GoLiveRehearsalKind[];
 		/** Kinds switched off for the organization, so not traced. */
-		offKinds: ApproverGoLiveKind[];
+		offKinds: ApprovalRouteKind[];
 	};
 	/** Only when the organization exports payroll (has an active payroll export target). */
 	payroll: {
@@ -130,8 +130,3 @@ export interface GoLiveRehearsal {
 export type GoLiveRehearsalResult =
 	| { ok: true; rehearsal: GoLiveRehearsal }
 	| { ok: false; refusal: GoLiveRehearsalRefusal };
-
-/** What the rehearsal server action answers. `unavailable`: a lookup failed; try again. */
-export type GoLiveRehearsalActionResult =
-	| { success: true; data: GoLiveRehearsal }
-	| { success: false; error: GoLiveRehearsalRefusal | "unavailable" };

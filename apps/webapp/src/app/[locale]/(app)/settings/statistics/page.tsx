@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { reachesWholeOrganization } from "@/lib/organization-action/managed-scope";
 import { getTranslate } from "@/tolgee/server";
 import type { ManagerStatisticsReadView, OrganizationStats } from "./actions";
 import { getManagerStatisticsReadView, getOrganizationStats } from "./actions";
@@ -72,6 +73,10 @@ async function StatisticsContent() {
 	}
 
 	const canViewOrgWideStatistics = accessTier === "orgAdmin";
+	// A workforce admin reads the organization's statistics too, without the sessions count (#1651).
+	const readsWholeOrganization =
+		canViewOrgWideStatistics ||
+		reachesWholeOrganization({ settingsAccess: "scopedManager", employee: authContext.employee });
 	const statsResult = await (canViewOrgWideStatistics
 		? getOrganizationStats()
 		: getManagerStatisticsReadView());
@@ -84,7 +89,7 @@ async function StatisticsContent() {
 						{t("settings.statistics.title", "Statistics")}
 					</h1>
 					<p className="text-muted-foreground">
-						{canViewOrgWideStatistics
+						{readsWholeOrganization
 							? t(
 									"settings.statistics.description",
 									"View statistics and metrics about your instance",
@@ -128,7 +133,7 @@ async function StatisticsContent() {
 						{t("settings.statistics.title", "Statistics")}
 					</h1>
 					<p className="text-muted-foreground">
-						{canViewOrgWideStatistics
+						{readsWholeOrganization
 							? t(
 									"settings.statistics.description",
 									"View statistics and metrics about your instance",
@@ -147,7 +152,7 @@ async function StatisticsContent() {
 			<section>
 				<h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
 					<IconUsers className="size-5" />
-					{canViewOrgWideStatistics
+					{readsWholeOrganization
 						? t("settings.statistics.sections.coreCounts", "Core Counts")
 						: t(
 								"settings.statistics.sections.managedScope",

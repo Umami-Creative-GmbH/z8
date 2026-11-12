@@ -42,16 +42,16 @@ import {
 import { formatDateOnly, formatTimeOnly } from "@/lib/datetime/format";
 import type { ExportCategory } from "@/lib/export/types";
 import { type ExportRecord, formatFileSize } from "@/lib/export/utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import { EXPORT_CATEGORY_COPY } from "./export-category-copy";
 
 interface ExportHistoryProps {
 	exports: ExportRecord[];
-	organizationId: string;
 }
 
-export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
+export function ExportHistory({ exports }: ExportHistoryProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const timezone = useOrganizationTimezone();
@@ -60,7 +60,7 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 
 	const handleDownload = async (exportId: string) => {
 		setLoadingAction(`download-${exportId}`);
-		const result = await regenerateDownloadUrlAction(exportId, organizationId).catch(
+		const result = await regenerateDownloadUrlAction({ exportId }).catch(
 			(error: unknown) => {
 				toast.error(
 					t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"),
@@ -84,7 +84,10 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 			toast.success(t("settings.dataExport.history.downloadSuccess", "Download started"));
 		} else {
 			toast.error(
-				result.error || t("settings.dataExport.history.downloadError", "Failed to download"),
+				actionErrorMessage(t, result, {}, [
+					"settings.dataExport.history.downloadError",
+					"Failed to download",
+				]),
 			);
 		}
 
@@ -93,7 +96,7 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 
 	const handleDelete = async (exportId: string) => {
 		setLoadingAction(`delete-${exportId}`);
-		const result = await deleteExportAction(exportId, organizationId).catch((error: unknown) => {
+		const result = await deleteExportAction({ exportId }).catch((error: unknown) => {
 			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
 			console.error("Delete error:", error);
 			return null;
@@ -109,7 +112,10 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 			router.refresh();
 		} else {
 			toast.error(
-				result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"),
+				actionErrorMessage(t, result, {}, [
+					"settings.dataExport.history.deleteError",
+					"Failed to delete export",
+				]),
 			);
 		}
 

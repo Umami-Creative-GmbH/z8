@@ -14,12 +14,10 @@ import type { AvvRequiredField } from "@/lib/avv/profile";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 
 interface AvvDownloadButtonProps {
-	organizationId: string;
 	missingFields: AvvRequiredField[];
 }
 
 export function AvvDownloadButton({
-	organizationId,
 	missingFields,
 }: AvvDownloadButtonProps) {
 	const { t } = useTranslate();
@@ -51,7 +49,7 @@ export function AvvDownloadButton({
 		setDownloadMissingFields([]);
 		await runWithCleanup(
 			async () => {
-				const prepared = await prepareAvvDownload(organizationId).catch(
+				const prepared = await prepareAvvDownload().catch(
 					() => null,
 				);
 				if (!prepared?.success) {

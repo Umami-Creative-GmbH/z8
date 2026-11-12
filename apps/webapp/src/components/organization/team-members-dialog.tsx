@@ -81,7 +81,7 @@ export function TeamMembersDialog({
 	// Add member mutation
 	const addMutation = useMutation({
 		mutationFn: ({ teamId, employeeId, previewToken }: TeamMemberChange) =>
-			addTeamMember(teamId, employeeId, { drivingLicencePreviewToken: previewToken }),
+			addTeamMember({ teamId, employeeId, drivingLicencePreviewToken: previewToken }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("organization.teams.members.addSuccess", "Member added to team"));
@@ -102,7 +102,7 @@ export function TeamMembersDialog({
 	// Remove member mutation
 	const removeMutation = useMutation({
 		mutationFn: ({ teamId, employeeId, previewToken }: TeamMemberChange) =>
-			removeTeamMember(teamId, employeeId, { drivingLicencePreviewToken: previewToken }),
+			removeTeamMember({ teamId, employeeId, drivingLicencePreviewToken: previewToken }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("organization.teams.members.removeSuccess", "Member removed from team"));
@@ -148,7 +148,7 @@ export function TeamMembersDialog({
 		if (!selectedEmployeeId) return;
 		const employeeId = selectedEmployeeId;
 		const previewToken = await confirmTeamChange(() =>
-			previewTeamMemberChangeDrivingImpact(team.id, employeeId, "add"),
+			previewTeamMemberChangeDrivingImpact({ teamId: team.id, employeeId, change: "add" }),
 		);
 		if (previewToken === null) return;
 		addMutation.mutate({ teamId: team.id, employeeId, previewToken });
@@ -156,7 +156,7 @@ export function TeamMembersDialog({
 
 	const handleRemoveMember = async (employeeId: string) => {
 		const previewToken = await confirmTeamChange(() =>
-			previewTeamMemberChangeDrivingImpact(team.id, employeeId, "remove"),
+			previewTeamMemberChangeDrivingImpact({ teamId: team.id, employeeId, change: "remove" }),
 		);
 		if (previewToken === null) return;
 		removeMutation.mutate({ teamId: team.id, employeeId, previewToken });

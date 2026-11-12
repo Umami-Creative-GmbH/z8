@@ -39,6 +39,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyTableProps {
@@ -70,7 +71,7 @@ export function ChangePolicyTable({
 	} = useQuery({
 		queryKey: queryKeys.changePolicies.list(organizationId),
 		queryFn: async () => {
-			const result = await getChangePolicies(organizationId);
+			const result = await getChangePolicies();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -94,7 +95,12 @@ export function ChangePolicyTable({
 				setDeleteDialogOpen(false);
 				policyToDeleteRef.current = null;
 			} else {
-				toast.error(result.error || t("settings.changePolicies.deleteFailed", "Failed to delete"));
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.changePolicies.deleteFailed",
+						"Failed to delete",
+					]),
+				);
 			}
 		},
 		onError: () => {

@@ -594,7 +594,55 @@
       "title": "Vija kohore e ditës së punës",
       "today": "Sot",
       "unavailableDescription": "Regjistrimi i orarit funksionon ende. Provoni ta rifreskoni këtë pamje më vonë.",
-      "unavailableTitle": "Vija kohore nuk është e disponueshme"
+      "unavailableTitle": "Vija kohore nuk është e disponueshme",
+      "workPeriod": {
+        "title": "Punë e regjistruar"
+      },
+      "shift": {
+        "title": "Turn i planifikuar"
+      },
+      "status": {
+        "approved": "Miratuar",
+        "pending": "Në pritje",
+        "rejected": "Refuzuar",
+        "cancelled": "Anuluar",
+        "published": "Publikuar",
+        "draft": "Draft",
+        "active": "Aktiv"
+      },
+      "absence": {
+        "fullDay": "Ditë e plotë",
+        "morning": "Paradite",
+        "afternoon": "Pasdite"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Kërkesë për korrigjim kohe",
+          "subtitle": "Korrigjim i një regjistrimi kohe"
+        },
+        "absence": {
+          "title": "Kërkesë për mungesë",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Shiko mungesën",
+        "reviewRequest": "Shqyrto kërkesën"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Kërkesë për ndryshim në pritje",
+          "description": "Kjo periudhë pune ka ndryshime që presin miratim."
+        },
+        "missingClockOut": {
+          "title": "Mungon dalja",
+          "description": "Kjo periudhë pune është ende aktive."
+        },
+        "autoAdjusted": {
+          "title": "Regjistrim i rregulluar automatikisht",
+          "description": "Rregullat e pushimeve ose të përputhshmërisë e rregulluan këtë periudhë pune."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Anulo",
@@ -669,7 +717,10 @@
     "workLocationHome": "Shtëpi",
     "workLocationOffice": "Zyrë",
     "workLocationOther": "Tjetër",
-    "workLocationRemote": "Nga distanca"
+    "workLocationRemote": "Nga distanca",
+    "systemNote": {
+      "breakEnforcement": "Rregulluar automatikisht: zbatimi i pushimeve"
+    }
   },
   "wellness": {
     "water": {

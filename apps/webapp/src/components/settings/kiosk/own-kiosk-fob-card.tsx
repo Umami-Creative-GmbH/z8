@@ -9,11 +9,21 @@ import {
 } from "@/app/[locale]/(app)/settings/security/kiosk-fob-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KioskFobManagementRefusal } from "@/lib/time-tracking/kiosk/fob-errors";
+import {
+	type ActionFailure,
+	actionErrorMessage,
+} from "@/lib/organization-action/action-error-message";
 import { KioskFobRemoveControls } from "./kiosk-fob-remove-controls";
-import { kioskFobDetails, kioskFobErrorMessage } from "./kiosk-fob-text";
+import { KIOSK_FOB_FAILED, KIOSK_FOB_REFUSALS, kioskFobDetails } from "./kiosk-fob-text";
 
 const OWN_FOB_STATUS_KEY = ["kiosk", "own-fob-status"] as const;
+
+/** The failed status read, carried through the query's error. */
+class FobStatusFailure extends Error {
+	constructor(readonly failure: ActionFailure & { error: string }) {
+		super(failure.error);
+	}
+}
 
 /**
  * The signed-in employee's own kiosk fob (#1508), next to their kiosk PIN on the
@@ -30,8 +40,10 @@ export function OwnKioskFobCard() {
 		queryKey: OWN_FOB_STATUS_KEY,
 		queryFn: async () => {
 			const result = await getOwnKioskFobStatusAction();
-			if (!result.success) throw new KioskFobManagementRefusal(result.code, result.error);
-			return result.data;
+			if (result.success) return result.data;
+			// Without settings access here (no approved membership, a former employee) there is no own fob.
+			if (result.code === "AuthorizationError") return null;
+			throw new FobStatusFailure(result);
 		},
 	});
 	const status = statusQuery.data;
@@ -59,11 +71,11 @@ export function OwnKioskFobCard() {
 				{failed || !status ? (
 					<div className="flex flex-col items-start gap-3">
 						<p className="text-sm" role="alert">
-							{kioskFobErrorMessage(
+							{actionErrorMessage(
 								t,
-								statusQuery.error instanceof KioskFobManagementRefusal
-									? statusQuery.error.code
-									: "failed",
+								statusQuery.error instanceof FobStatusFailure ? statusQuery.error.failure : null,
+								KIOSK_FOB_REFUSALS,
+								KIOSK_FOB_FAILED,
 							)}
 						</p>
 						<Button variant="outline" onClick={() => void statusQuery.refetch()}>

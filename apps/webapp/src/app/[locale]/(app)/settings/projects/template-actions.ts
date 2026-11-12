@@ -2,15 +2,11 @@
 
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import * as z from "zod";
 import { AuditAction } from "@/lib/audit-logger";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import type {
-	NormalizedProjectTemplateInput,
-	ProjectTemplate,
-	ProjectTemplateInput,
-	ProjectTemplateSummary,
-} from "@/lib/projects/project-template-model";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import type { NormalizedProjectTemplateInput } from "@/lib/projects/project-template-model";
 import {
 	deleteProjectTemplateRow,
 	getProjectTemplate,
@@ -19,31 +15,30 @@ import {
 } from "@/lib/projects/project-templates";
 import {
 	auditTemplate,
-	getTemplateAdmin,
 	keepTypedTemplateError,
 	normalizedTemplateInput,
-	type TemplateAdmin,
+	projectTemplateInputSchema,
+	templateEmployeeIds,
 	templateNotFound,
 } from "./project-template-access";
-import { tracedProjectAction as traced } from "./traced-project-action";
 
 /**
  * Project template management (#878). Templates live under the project
- * settings and are managed by org owners and admins only; everyone else is
- * refused here on the server. Every action runs in the caller's active
- * organization.
+ * settings and are managed by org owners and admins only (settings access
+ * `orgAdmin`); everyone else is refused here on the server. Every action runs
+ * in the session's active organization.
  */
 
-function readTemplate(admin: TemplateAdmin, templateId: string, queryName: string) {
-	return admin.actor.dbService
-		.query(queryName, () =>
-			getProjectTemplate({ organizationId: admin.organizationId, templateId }),
-		)
-		.pipe(
-			Effect.flatMap((template) =>
-				template ? Effect.succeed(template) : Effect.fail(templateNotFound(templateId)),
-			),
+const templateId = z.string().min(1, "Template is required");
+
+function readTemplate(organizationId: string, templateId: string, queryName: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const template = yield* dbService.query(queryName, () =>
+			getProjectTemplate({ organizationId, templateId }),
 		);
+		return template ?? (yield* Effect.fail(templateNotFound(templateId)));
+	});
 }
 
 function auditedContents(values: NormalizedProjectTemplateInput) {
@@ -52,136 +47,113 @@ function auditedContents(values: NormalizedProjectTemplateInput) {
 }
 
 /** The organization's project templates, by name. */
-export async function getProjectTemplates(): Promise<ServerActionResult<ProjectTemplateSummary[]>> {
-	return runServerActionSafe(
-		traced(
-			"getProjectTemplates",
-			{},
-			Effect.gen(function* () {
-				const admin = yield* getTemplateAdmin("list");
-				return yield* admin.actor.dbService.query("listProjectTemplates", () =>
-					listProjectTemplates({ organizationId: admin.organizationId }),
-				);
-			}),
-		),
-	);
-}
+export const getProjectTemplates = organizationAction(
+	{ name: "projectTemplate.list", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("projectTemplate.list", () =>
+				listProjectTemplates({ organizationId }),
+			);
+		}),
+);
 
 /** One template with its tasks, managers and assignments, for the template editor. */
-export async function getProjectTemplateDetails(
-	templateId: string,
-): Promise<ServerActionResult<ProjectTemplate>> {
-	return runServerActionSafe(
-		traced(
-			"getProjectTemplateDetails",
-			{ "template.id": templateId },
-			Effect.gen(function* () {
-				const admin = yield* getTemplateAdmin("read");
-				return yield* readTemplate(admin, templateId, "getProjectTemplate");
-			}),
-		),
-	);
-}
+export const getProjectTemplateDetails = organizationAction(
+	{ name: "projectTemplate.get", requires: "orgAdmin", schema: templateId },
+	({ organizationId, input }) => readTemplate(organizationId, input, "projectTemplate.get"),
+);
 
-export async function createProjectTemplate(
-	input: ProjectTemplateInput,
-): Promise<ServerActionResult<{ id: string }>> {
-	return runServerActionSafe(
-		traced(
-			"createProjectTemplate",
-			{},
-			Effect.gen(function* () {
-				const admin = yield* getTemplateAdmin("create");
-				const values = yield* normalizedTemplateInput(input);
-				const created = yield* admin.actor.dbService
-					.query("projectTemplate.create", () =>
-						db.transaction((tx) =>
-							writeProjectTemplate(
-								tx,
-								{ organizationId: admin.organizationId, userId: admin.userId },
-								values,
-							),
-						),
-					)
-					.pipe(Effect.mapError(keepTypedTemplateError));
+/** Creates a template; a former employee cannot become its manager or assignee. */
+export const createProjectTemplate = organizationAction(
+	{
+		name: "projectTemplate.create",
+		requires: "orgAdmin",
+		schema: projectTemplateInputSchema,
+		addsEmployees: templateEmployeeIds,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const values = yield* normalizedTemplateInput(input);
+			const dbService = yield* DatabaseService;
+			const created = yield* dbService
+				.query("projectTemplate.create", () =>
+					dbService.db.transaction((tx) =>
+						writeProjectTemplate(tx, { organizationId, userId: actor.userId }, values),
+					),
+				)
+				.pipe(Effect.mapError(keepTypedTemplateError));
 
-				auditTemplate(
-					admin,
-					AuditAction.PROJECT_TEMPLATE_CREATED,
-					{ id: created.id, name: values.name },
-					auditedContents(values),
-				);
-				revalidatePath("/settings/projects");
-				return created;
-			}),
-		),
-	);
-}
+			auditTemplate(
+				{ userId: actor.userId, organizationId },
+				AuditAction.PROJECT_TEMPLATE_CREATED,
+				{ id: created.id, name: values.name },
+				auditedContents(values),
+			);
+			revalidatePath("/settings/projects");
+			return created;
+		}),
+);
 
 /**
  * Replaces everything a template holds. References to removed teams and
- * employees are dropped; a departed employee may stay but not be added.
+ * employees are dropped; a departed employee may stay but not be added, which
+ * `writeProjectTemplate` checks against what the template already holds.
  */
-export async function updateProjectTemplate(
-	templateId: string,
-	input: ProjectTemplateInput,
-): Promise<ServerActionResult<void>> {
-	return runServerActionSafe(
-		traced(
-			"updateProjectTemplate",
-			{ "template.id": templateId },
-			Effect.gen(function* () {
-				const admin = yield* getTemplateAdmin("update");
-				const values = yield* normalizedTemplateInput(input);
-				const existing = yield* readTemplate(admin, templateId, "projectTemplate.update:read");
-				yield* admin.actor.dbService
-					.query("projectTemplate.update", () =>
-						db.transaction((tx) =>
-							writeProjectTemplate(
-								tx,
-								{
-									organizationId: admin.organizationId,
-									userId: admin.userId,
-									templateId: existing.id,
-								},
-								values,
-							),
+export const updateProjectTemplate = organizationAction(
+	{
+		name: "projectTemplate.update",
+		requires: "orgAdmin",
+		schema: projectTemplateInputSchema.extend({ templateId }),
+	},
+	({ actor, organizationId, input: { templateId, ...input } }) =>
+		Effect.gen(function* () {
+			const values = yield* normalizedTemplateInput(input);
+			const existing = yield* readTemplate(
+				organizationId,
+				templateId,
+				"projectTemplate.update:read",
+			);
+			const dbService = yield* DatabaseService;
+			yield* dbService
+				.query("projectTemplate.update", () =>
+					dbService.db.transaction((tx) =>
+						writeProjectTemplate(
+							tx,
+							{ organizationId, userId: actor.userId, templateId: existing.id },
+							values,
 						),
-					)
-					.pipe(Effect.mapError(keepTypedTemplateError));
+					),
+				)
+				.pipe(Effect.mapError(keepTypedTemplateError));
 
-				auditTemplate(
-					admin,
-					AuditAction.PROJECT_TEMPLATE_UPDATED,
-					{ id: existing.id, name: values.name },
-					auditedContents(values),
-				);
-				revalidatePath("/settings/projects");
-			}),
-		),
-	);
-}
+			auditTemplate(
+				{ userId: actor.userId, organizationId },
+				AuditAction.PROJECT_TEMPLATE_UPDATED,
+				{ id: existing.id, name: values.name },
+				auditedContents(values),
+			);
+			revalidatePath("/settings/projects");
+		}),
+);
 
 /** Deletes a template. Projects created from it are unaffected. */
-export async function deleteProjectTemplate(templateId: string): Promise<ServerActionResult<void>> {
-	return runServerActionSafe(
-		traced(
-			"deleteProjectTemplate",
-			{ "template.id": templateId },
-			Effect.gen(function* () {
-				const admin = yield* getTemplateAdmin("delete");
-				const existing = yield* readTemplate(admin, templateId, "projectTemplate.delete:read");
-				const deleted = yield* admin.actor.dbService.query("projectTemplate.delete", () =>
-					deleteProjectTemplateRow(db, {
-						organizationId: admin.organizationId,
-						templateId: existing.id,
-					}),
-				);
-				if (!deleted) return yield* Effect.fail(templateNotFound(templateId));
+export const deleteProjectTemplate = organizationAction(
+	{ name: "projectTemplate.delete", requires: "orgAdmin", schema: templateId },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const existing = yield* readTemplate(organizationId, input, "projectTemplate.delete:read");
+			const dbService = yield* DatabaseService;
+			const deleted = yield* dbService.query("projectTemplate.delete", () =>
+				deleteProjectTemplateRow(dbService.db, { organizationId, templateId: existing.id }),
+			);
+			if (!deleted) return yield* Effect.fail(templateNotFound(input));
 
-				auditTemplate(admin, AuditAction.PROJECT_TEMPLATE_DELETED, existing);
-				revalidatePath("/settings/projects");
-			}),
-		),
-	);
-}
+			auditTemplate(
+				{ userId: actor.userId, organizationId },
+				AuditAction.PROJECT_TEMPLATE_DELETED,
+				existing,
+			);
+			revalidatePath("/settings/projects");
+		}),
+);

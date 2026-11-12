@@ -123,8 +123,8 @@ const admin = integrationAdminPool();
 let vehicleId: string;
 const origin = "https://z8.example.test";
 async function start(id = vehicleId) {
-	const result = await initiateVehiclePhotoUpload(id);
-	if (!result.success || !result.data.ok)
+	const result = await initiateVehiclePhotoUpload({ vehicleId: id });
+	if (!result.success)
 		throw new Error(JSON.stringify(result));
 	return result.data.uploadId;
 }
@@ -149,7 +149,7 @@ async function read(id: string, vehicle = vehicleId) {
 	});
 }
 async function gallery() {
-	const result = await listVehiclePhotos(vehicleId);
+	const result = await listVehiclePhotos({ vehicleId: vehicleId });
 	if (!result.success) throw new Error(result.error);
 	return result.data;
 }
@@ -206,9 +206,9 @@ beforeEach(async () => {
 		licencePlate: "PHOTO 1",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!result.success || !result.data.ok)
+	if (!result.success)
 		throw new Error(JSON.stringify(result));
-	vehicleId = result.data.vehicles[0].id;
+	vehicleId = result.data[0].id;
 });
 afterAll(cleanup);
 afterEach(() => vi.restoreAllMocks());
@@ -248,7 +248,7 @@ it("keeps failed cleanup recoverable after vehicle deletion and never cleans att
 	expect((await read(id)).status).toBe(200);
 	harness.failDelete = true;
 	const removed = await changeVehicles({ kind: "delete", vehicleId });
-	expect(removed).toMatchObject({ success: true, data: { ok: true } });
+	expect(removed).toMatchObject({ success: true });
 	expect((await read(id)).status).toBe(404);
 	expect(await runVehiclePhotoCleanupJob()).toMatchObject({ failed: 1 });
 	expect(harness.objects.size).toBe(1);
@@ -398,9 +398,10 @@ it("serializes simultaneous finalizations at twenty and repeated finalization do
 	const accepted = rows.find((p) => p.id === a || p.id === b);
 	if (!accepted) throw new Error("Missing accepted photo");
 	expect((await upload(accepted.id, Buffer.alloc(0))).status).toBe(200);
-	expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "photo_limit" },
+	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
+		success: false,
+		code: "ValidationError",
+		refusal: "photo_limit",
 	});
 	expect(
 		(
@@ -418,10 +419,10 @@ it.each(["photo-member", "photo-manager", "photo-employee-admin", ""])(
 		expect((await upload(id, await image())).status).toBe(200);
 		const pending = await start();
 		harness.userId = userId;
-		expect(await listVehiclePhotos(vehicleId)).toMatchObject({
+		expect(await listVehiclePhotos({ vehicleId: vehicleId })).toMatchObject({
 			success: false,
 		});
-		expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
+		expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
 			success: false,
 		});
 		expect((await read(id)).status).toBe(userId ? 403 : 401);
@@ -442,8 +443,8 @@ it("permits organization admin access but denies other-organization and mismatch
 		licencePlate: "PHOTO 2",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!other.success || !other.data.ok) throw new Error("create failed");
-	const otherVehicle = other.data.vehicles.find((v) => v.id !== vehicleId);
+	if (!other.success) throw new Error("create failed");
+	const otherVehicle = other.data.find((v) => v.id !== vehicleId);
 	if (!otherVehicle) throw new Error("Missing other vehicle");
 	expect((await read(id, otherVehicle.id)).status).toBe(404);
 	harness.userId = "photo-owner";
@@ -452,11 +453,12 @@ it("permits organization admin access but denies other-organization and mismatch
 		"insert into member(id,organization_id,user_id,role,status,created_at) values('photo-other-membership','photo-other','photo-owner','owner','approved',now())",
 	);
 	expect((await read(id)).status).toBe(404);
-	expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "vehicle_not_found" },
+	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
+		success: false,
+		code: "ValidationError",
+		refusal: "vehicle_not_found",
 	});
-	expect(await listVehiclePhotos(vehicleId)).toMatchObject({ success: false });
+	expect(await listVehiclePhotos({ vehicleId: vehicleId })).toMatchObject({ success: false });
 });
 it("refuses cross-origin binary uploads", async () => {
 	const id = await start();
@@ -484,9 +486,10 @@ it("keeps archived photos viewable, refuses attachment, and allows fresh uploads
 	await changeVehicles({ kind: "archive", vehicleId });
 	expect((await gallery()).archived).toBe(true);
 	expect((await read(saved)).status).toBe(200);
-	expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "vehicle_archived" },
+	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
+		success: false,
+		code: "ValidationError",
+		refusal: "vehicle_archived",
 	});
 	expect((await upload(pending, await image())).status).toBe(409);
 	expect((await gallery()).photos).toHaveLength(1);
@@ -529,10 +532,7 @@ it.each(["archive", "delete"] as const)(
 			params: Promise.resolve({ vehicleId, photoId: id }),
 		});
 		await reading;
-		expect(await changeVehicles({ kind, vehicleId })).toMatchObject({
-			success: true,
-			data: { ok: true },
-		});
+		expect(await changeVehicles({ kind, vehicleId })).toMatchObject({ success: true });
 		release();
 		expect((await pending).status).toBe(409);
 		expect((await read(id)).status).toBe(404);
@@ -598,8 +598,8 @@ it("preserves the gallery when existing work usage prevents vehicle deletion", a
 			[vehicleId],
 		);
 		expect(await changeVehicles({ kind: "delete", vehicleId })).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "vehicle_used" },
+			success: false,
+			refusal: "vehicle_used",
 		});
 		expect((await read(id)).status).toBe(200);
 		await runVehiclePhotoCleanupJob();
@@ -706,9 +706,9 @@ it("rate limits expensive uploads before reading invalid content without changin
 		licencePlate: "RATE 2",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!other.success || !other.data.ok)
+	if (!other.success)
 		throw new Error("Other vehicle missing");
-	const otherId = other.data.vehicles[0].id;
+	const otherId = other.data[0].id;
 	expect(
 		(await upload(await start(otherId), await image(), "image/png", otherId))
 			.status,

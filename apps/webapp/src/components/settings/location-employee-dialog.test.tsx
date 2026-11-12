@@ -107,7 +107,6 @@ describe("LocationEmployeeDialog", () => {
 						Open
 					</button>
 					<LocationEmployeeDialog
-						organizationId="org-1"
 						locationId="loc-1"
 						open={open}
 						onOpenChange={setOpen}

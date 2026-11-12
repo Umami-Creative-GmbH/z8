@@ -79,10 +79,10 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { WageTypeMapping } from "@/lib/payroll-export/types";
 
 interface WageTypeMappingsProps {
-	organizationId: string;
 	/** Whether any export format that reads wage type mappings is configured. */
 	hasMappingFormat: boolean;
 }
@@ -128,7 +128,6 @@ const EMPTY_DRAFT: MappingDraft = {
 };
 
 export function WageTypeMappings({
-	organizationId,
 	hasMappingFormat,
 }: WageTypeMappingsProps) {
 	const { t } = useTranslate();
@@ -201,9 +200,9 @@ export function WageTypeMappings({
 		let failure: unknown;
 		try {
 			const [mappingsResult, workResult, absenceResult] = await Promise.all([
-				getMappingsAction(organizationId),
-				getWorkCategoriesAction(organizationId),
-				getAbsenceCategoriesAction(organizationId),
+				getMappingsAction(),
+				getWorkCategoriesAction(),
+				getAbsenceCategoriesAction(),
 			]);
 			if (mappingsResult.success) setMappings(mappingsResult.data);
 			if (workResult.success) setWorkCategories(workResult.data);
@@ -244,7 +243,6 @@ export function WageTypeMappings({
 		if (!hasMappingFormat) return;
 		startTransition(async () => {
 			const result = await saveMappingAction({
-				organizationId,
 				workCategoryId:
 					draft.sourceType === "work_category" ? draft.workCategoryId : null,
 				absenceCategoryId:
@@ -275,13 +273,13 @@ export function WageTypeMappings({
 						"settings.payrollExport.mappings.saveError",
 						"Failed to save mapping",
 					),
-					{ description: result.error },
+					{ description: actionErrorMessage(t, result) },
 				);
 		});
 	};
 	const deleteMapping = (mappingId: string) =>
 		startTransition(async () => {
-			const result = await deleteMappingAction({ organizationId, mappingId });
+			const result = await deleteMappingAction({ mappingId });
 			if (result.success) {
 				toast.success(
 					t("settings.payrollExport.mappings.deleteSuccess", "Mapping deleted"),
@@ -293,7 +291,7 @@ export function WageTypeMappings({
 						"settings.payrollExport.mappings.deleteError",
 						"Failed to delete mapping",
 					),
-					{ description: result.error },
+					{ description: actionErrorMessage(t, result) },
 				);
 		});
 

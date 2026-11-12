@@ -111,7 +111,6 @@ describe("customer import decisions (#906)", () => {
 	it("shows each contact, its match and why a row was held", () => {
 		render(
 			<CustomerImportReviewTable
-				organizationId="org_1"
 				batchId="batch_1"
 				editable
 				linkTargets={targets}
@@ -160,7 +159,6 @@ describe("customer import decisions (#906)", () => {
 	it("creates customers for every staged contact without a match in one decision", async () => {
 		render(
 			<CustomerImportReviewTable
-				organizationId="org_1"
 				batchId="batch_1"
 				editable
 				linkTargets={[]}
@@ -183,7 +181,6 @@ describe("customer import decisions (#906)", () => {
 
 		await waitFor(() => expect(refresh).toHaveBeenCalled());
 		expect(applyImportDecisionAction).toHaveBeenCalledWith({
-			organizationId: "org_1",
 			batchId: "batch_1",
 			rowIds: ["new-1", "new-2"],
 			decision: "accepted",
@@ -194,7 +191,6 @@ describe("customer import decisions (#906)", () => {
 	it("words the bulk decision for a single contact in the singular", () => {
 		render(
 			<CustomerImportReviewTable
-				organizationId="org_1"
 				batchId="batch_1"
 				editable
 				linkTargets={[]}
@@ -210,7 +206,6 @@ describe("customer import decisions (#906)", () => {
 	it("offers no bulk decision once the batch left review", () => {
 		render(
 			<CustomerImportReviewTable
-				organizationId="org_1"
 				batchId="batch_1"
 				editable={false}
 				linkTargets={[]}
@@ -224,7 +219,6 @@ describe("customer import decisions (#906)", () => {
 	it("pages through a long import instead of cutting it off", () => {
 		const { rerender } = render(
 			<CustomerImportReviewTable
-				organizationId="org_1"
 				batchId="batch_1"
 				editable
 				linkTargets={[]}
@@ -243,7 +237,6 @@ describe("customer import decisions (#906)", () => {
 
 		rerender(
 			<CustomerImportReviewTable
-				organizationId="org_1"
 				batchId="batch_1"
 				editable
 				linkTargets={[]}

@@ -15,6 +15,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	normalizeWeekStartDay,
 	WEEK_START_OPTIONS,
@@ -55,7 +56,10 @@ export function WeekStartSettings({ currentWeekStartDay, onUpdate }: WeekStartSe
 			refresh();
 		} else {
 			toast.error(
-				result.error || t("settings.weekStart.updateFailed", "Failed to update week start day"),
+				actionErrorMessage(t, result, {}, [
+					"settings.weekStart.updateFailed",
+					"Failed to update week start day",
+				]),
 			);
 		}
 

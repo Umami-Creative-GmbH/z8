@@ -14,12 +14,10 @@ import { WebhookEndpointCard } from "./webhook-endpoint-card";
 import { WebhookFormDialog } from "./webhook-form-dialog";
 
 interface WebhooksPageClientProps {
-	organizationId: string;
 	webhooks: PublicWebhookEndpoint[];
 }
 
 export function WebhooksPageClient({
-	organizationId,
 	webhooks: initialWebhooks,
 }: WebhooksPageClientProps) {
 	const { t } = useTranslate();
@@ -105,7 +103,6 @@ export function WebhooksPageClient({
 			</div>
 
 			<WebhookFormDialog
-				organizationId={organizationId}
 				open={isCreateDialogOpen}
 				onOpenChange={setIsCreateDialogOpen}
 				onSuccess={handleWebhookCreated}

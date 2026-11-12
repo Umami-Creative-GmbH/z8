@@ -11,7 +11,6 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { AuditTrail } from "@/lib/audit-trail";
 import { auth, runAuthMutation } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
 import { systemClock } from "@/lib/datetime/temporal-core";
@@ -21,10 +20,10 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { deactivate } from "@/lib/employee-lifecycle/deactivation/command";
 import { previewEmployeeDeactivation } from "@/lib/employee-lifecycle/deactivation/preview";
-import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
 import {
 	checkLifecycleTarget,
 	type LifecycleTargetCheck,
@@ -34,14 +33,9 @@ import { tryLockLifecycleOrganization } from "@/lib/employee-lifecycle/locks";
 import { executeReactivation } from "@/lib/employee-lifecycle/reactivation";
 import { DeactivationRequestConflictError } from "@/lib/employee-lifecycle/receipts";
 import { createLogger } from "@/lib/logger";
+import { organizationAction } from "@/lib/organization-action/organization-action";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
-import {
-	getEmployeeSettingsActorContext,
-	requireOrgAdminEmployeeSettingsAccess,
-	revalidateEmployeesCache,
-	runTracedEmployeeAction,
-	validateInput,
-} from "./employee-action-utils";
+import { revalidateEmployeesCache } from "./employee-action-utils";
 
 const logger = createLogger("EmployeeLifecycleActions");
 const employeeIdSchema = z.uuid("Invalid employee ID");
@@ -197,47 +191,54 @@ function lifecycleRefusalError(
 	}
 }
 
+/** The signed-in actor's email, for the deactivation ledger and the audit entry. */
+function actorEmail() {
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		return session.user.email;
+	});
+}
+
+/** Logs a failed lifecycle action and passes the failure on. */
+function logged<A, E, R>(
+	effect: Effect.Effect<A, E, R>,
+	message: string,
+	fields: Record<string, unknown>,
+) {
+	return effect.pipe(
+		Effect.tapError((error) => Effect.sync(() => logger.error({ error, ...fields }, message))),
+	);
+}
+
 /**
  * Deactivate (#1440, Organization ADR 0006): the employee becomes a former
  * employee with the same consequences as a departure taking effect, applied in
  * one transaction. The deactivation module (`deactivation/command.ts`) does all
- * of it; this action authenticates the actor, parses the input and words the
- * refusals.
+ * of it; this action parses the input and words the refusals.
+ * `{ employeeId, requestId, replacementManagers }`; a retry with the same request ID replays.
  */
-function deactivateEmployee(input: unknown) {
-	const employeeId =
-		typeof input === "object" && input !== null && "employeeId" in input
-			? String((input as { employeeId: unknown }).employeeId)
-			: "";
-
-	return runTracedEmployeeAction({
-		name: "deactivateEmployee",
-		attributes: {
-			"employee.id": employeeId,
-			"employee.lifecycleState": "inactive",
-		},
-		logError: (error) => {
-			logger.error({ error, employeeId, state: "inactive" }, "Failed to deactivate employee");
-		},
-		execute: () =>
+export const deactivateEmployeeAction = organizationAction(
+	{
+		name: "employees.deactivate",
+		requires: "orgAdmin",
+		schema: deactivateEmployeeSchema,
+		// The replacement managers take on the reports; each must be on the current roster.
+		addsEmployees: (input) => Object.values(input.replacementManagers),
+	},
+	({ actor, organizationId, input: data }) =>
+		logged(
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({
-					queryName: "setEmployeeLifecycleState:actor",
-				});
-				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Only organization owners and admins can change employee lifecycle state",
-					resource: "employee",
-					action: "deactivate",
-				});
-				const data = yield* validateInput(deactivateEmployeeSchema, input, "employeeId");
+				const dbService = yield* DatabaseService;
+				const email = yield* actorEmail();
 				// The deactivation module takes its own locks, replays the request ID,
 				// checks the owner rules, applies and runs its after-commit work.
-				const outcome = yield* actor.dbService
+				const outcome = yield* dbService
 					.query("setEmployeeLifecycleState", () =>
-						deactivate(actor.dbService.db, {
-							organizationId: actor.organizationId,
-							actorUserId: actor.session.user.id,
-							actorEmail: actor.session.user.email,
+						deactivate(dbService.db, {
+							organizationId,
+							actorUserId: actor.userId,
+							actorEmail: email,
 							employeeId: data.employeeId,
 							requestId: data.requestId,
 							replacementManagers: data.replacementManagers,
@@ -276,68 +277,47 @@ function deactivateEmployee(input: unknown) {
 					return yield* Effect.fail(
 						lifecycleRefusalError(outcome.refusal, {
 							action: "deactivate",
-							userId: actor.session.user.id,
+							userId: actor.userId,
 						}),
 					);
 				}
 
-				revalidateEmployeesCache(actor.organizationId);
+				revalidateEmployeesCache(organizationId);
 			}),
-	});
-}
+			"Failed to deactivate employee",
+			{ employeeId: data.employeeId, state: "inactive" },
+		),
+);
 
 /**
  * Reactivate: the employee is on the current roster again. Nothing ended at
  * the deactivation is restored (Organization ADR 0006); the deactivation's
  * pending handovers stop.
  */
-function reactivateEmployee(employeeId: string) {
-	return runTracedEmployeeAction({
-		name: "reactivateEmployee",
-		attributes: {
-			"employee.id": employeeId,
-			"employee.lifecycleState": "active",
-		},
-		logError: (error) => {
-			logger.error({ error, employeeId, state: "active" }, "Failed to reactivate employee");
-		},
-		execute: () =>
+export const reactivateEmployeeAction = organizationAction(
+	{ name: "employees.reactivate", requires: "orgAdmin", schema: employeeIdSchema },
+	({ actor, organizationId, input: employeeId }) =>
+		logged(
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({
-					queryName: "setEmployeeLifecycleState:actor",
-				});
-				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Only organization owners and admins can change employee lifecycle state",
-					resource: "employee",
-					action: "reactivate",
-				});
-
-				const validatedEmployeeId = yield* validateInput(
-					employeeIdSchema,
-					employeeId,
-					"employeeId",
-				);
+				const dbService = yield* DatabaseService;
 				// Identifies this reactivation in the ledger, the history event and the audit entry.
 				const requestId = randomUUID();
-				const transactionResult = yield* actor.dbService
+				const transactionResult = yield* dbService
 					.query("setEmployeeLifecycleState", async () => {
 						// The target's active state feeds manual creation, so its protection
 						// precedes the organization row lock and every write.
 						return await withAuthorizationMutation(
-							{
-								organizationId: actor.organizationId,
-								employeeIds: [validatedEmployeeId],
-							},
+							{ organizationId, employeeIds: [employeeId] },
 							async (tx): Promise<ReactivationTransactionResult> => {
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
+								if (!(await tryLockLifecycleOrganization(tx, organizationId))) {
 									return { type: "not_found" };
 								}
 
 								const check = await checkLifecycleTarget(tx, {
-									organizationId: actor.organizationId,
-									actorUserId: actor.session.user.id,
-									employeeId: validatedEmployeeId,
+									organizationId,
+									actorUserId: actor.userId,
+									employeeId,
 									isActive: true,
 								});
 								if (check.type === "unchanged") {
@@ -355,9 +335,9 @@ function reactivateEmployee(employeeId: string) {
 								const reactivation = await executeReactivation(
 									tx,
 									{
-										organizationId: actor.organizationId,
-										actorUserId: actor.session.user.id,
-										employeeId: validatedEmployeeId,
+										organizationId,
+										actorUserId: actor.userId,
+										employeeId,
 										requestId,
 										at: systemClock.nowInstant(),
 									},
@@ -372,7 +352,7 @@ function reactivateEmployee(employeeId: string) {
 									audit,
 								};
 							},
-							actor.dbService.db,
+							dbService.db,
 						);
 					})
 					.pipe(
@@ -390,22 +370,23 @@ function reactivateEmployee(employeeId: string) {
 					return yield* Effect.fail(
 						lifecycleRefusalError(transactionResult, {
 							action: "reactivate",
-							userId: actor.session.user.id,
+							userId: actor.userId,
 						}),
 					);
 				}
 
 				if (transactionResult.changed) {
 					transactionResult.audit?.forwardCommitted();
+					const email = yield* actorEmail();
 					yield* Effect.promise(() =>
 						logAudit({
 							action: AuditAction.EMPLOYEE_REACTIVATED,
-							actorId: actor.session.user.id,
-							actorEmail: actor.session.user.email,
+							actorId: actor.userId,
+							actorEmail: email,
 							employeeId: transactionResult.targetEmployee.id,
 							targetId: transactionResult.targetEmployee.id,
 							targetType: "employee",
-							organizationId: actor.organizationId,
+							organizationId,
 							changes: {
 								isActive: {
 									from: transactionResult.targetEmployee.isActive,
@@ -419,58 +400,40 @@ function reactivateEmployee(employeeId: string) {
 					);
 					// Reactivation takes a paid seat again (#1439).
 					yield* Effect.promise(() =>
-						reconcileBillingSeatsForOrganization(actor.organizationId, {
+						reconcileBillingSeatsForOrganization(organizationId, {
 							alsoWhenBillingDisabled: true,
 						}),
 					);
 				}
 
-				revalidateEmployeesCache(actor.organizationId);
+				revalidateEmployeesCache(organizationId);
 			}),
-	});
-}
-
-export async function deactivateEmployeeAction(
-	input: DeactivateEmployeeInput,
-): Promise<ServerActionResult<void>> {
-	return deactivateEmployee(input);
-}
-
-export async function reactivateEmployeeAction(
-	employeeId: string,
-): Promise<ServerActionResult<void>> {
-	return reactivateEmployee(employeeId);
-}
+			"Failed to reactivate employee",
+			{ employeeId, state: "active" },
+		),
+);
 
 /**
  * The advisory preview of Deactivate (#1440): what the deactivation would
  * change now with these replacement picks. Writes nothing; the deactivation
  * recomputes it on submit.
  */
-export async function previewEmployeeDeactivationAction(
-	input: PreviewEmployeeDeactivationInput,
-): Promise<ServerActionResult<DeactivationPreview>> {
-	return runTracedEmployeeAction({
-		name: "previewEmployeeDeactivation",
-		logError: (error) => {
-			logger.error({ error }, "Failed to preview employee deactivation");
-		},
-		execute: () =>
+export const previewEmployeeDeactivationAction = organizationAction(
+	{
+		name: "employees.previewDeactivation",
+		requires: "orgAdmin",
+		schema: previewEmployeeDeactivationSchema,
+	},
+	({ actor, organizationId, input: data }) =>
+		logged(
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({
-					queryName: "previewEmployeeDeactivation:actor",
-				});
-				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Only organization owners and admins can change employee lifecycle state",
-					resource: "employee",
-					action: "deactivate",
-				});
-				const data = yield* validateInput(previewEmployeeDeactivationSchema, input, "employeeId");
-				const result = yield* actor.dbService.query("previewEmployeeDeactivation", () =>
-					previewEmployeeDeactivation(actor.dbService.db, {
-						organizationId: actor.organizationId,
+				const dbService = yield* DatabaseService;
+				const refusalOptions = { action: "deactivate" as const, userId: actor.userId };
+				const result = yield* dbService.query("previewEmployeeDeactivation", () =>
+					previewEmployeeDeactivation(dbService.db, {
+						organizationId,
 						employeeId: data.employeeId,
-						actorUserId: actor.session.user.id,
+						actorUserId: actor.userId,
 						replacementManagers: data.replacementManagers,
 						now: systemClock.nowInstant(),
 					}),
@@ -479,12 +442,7 @@ export async function previewEmployeeDeactivationAction(
 					case "ok":
 						return result.plan;
 					case "not_found":
-						return yield* Effect.fail(
-							lifecycleRefusalError(
-								{ type: "not_found" },
-								{ action: "deactivate", userId: actor.session.user.id },
-							),
-						);
+						return yield* Effect.fail(lifecycleRefusalError({ type: "not_found" }, refusalOptions));
 					case "forbidden":
 						return yield* Effect.fail(
 							lifecycleRefusalError(
@@ -494,7 +452,7 @@ export async function previewEmployeeDeactivationAction(
 											? "actor_membership_missing"
 											: result.code,
 								},
-								{ action: "deactivate", userId: actor.session.user.id },
+								refusalOptions,
 							),
 						);
 					case "invalid":
@@ -504,68 +462,27 @@ export async function previewEmployeeDeactivationAction(
 										message: "This employee is already deactivated.",
 										field: "employeeId",
 									})
-								: lifecycleRefusalError(
-										{ type: result.code },
-										{ action: "deactivate", userId: actor.session.user.id },
-									),
+								: lifecycleRefusalError({ type: result.code }, refusalOptions),
 						);
 				}
 			}),
-	});
-}
+			"Failed to preview employee deactivation",
+			{ employeeId: data.employeeId },
+		),
+);
 
-export async function removeEmployeeAccessAction(
-	employeeId: string,
-): Promise<ServerActionResult<void>> {
-	return runTracedEmployeeAction({
-		name: "removeEmployeeAccess",
-		attributes: { "employee.id": employeeId },
-		logError: (error) => {
-			logger.error({ error, employeeId }, "Failed to remove employee access");
-		},
-		execute: () =>
+/** Removes the employee's organization access; owners only. */
+export const removeEmployeeAccessAction = organizationAction(
+	{ name: "employees.removeAccess", requires: "owner", schema: employeeIdSchema },
+	({ actor, organizationId, input: employeeId }) =>
+		logged(
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({
-					queryName: "removeEmployeeAccess:actor",
-				});
-				const validatedEmployeeId = yield* validateInput(
-					employeeIdSchema,
-					employeeId,
-					"employeeId",
-				);
-
-				const actorMembership = yield* actor.dbService.query(
-					"removeEmployeeAccess:actorMembership",
-					async () => {
-						return await actor.dbService.db.query.member.findFirst({
-							where: and(
-								eq(member.userId, actor.session.user.id),
-								eq(member.organizationId, actor.organizationId),
-								eq(member.status, "approved"),
-							),
-							columns: { role: true },
-						});
-					},
-				);
-				if (!actorMembership || !hasOrganizationRole(actorMembership.role, "owner")) {
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "Only organization owners can remove employee access",
-							userId: actor.session.user.id,
-							resource: "employee",
-							action: "remove_access",
-						}),
-					);
-				}
-
-				const targetEmployee = yield* actor.dbService.query(
+				const dbService = yield* DatabaseService;
+				const targetEmployee = yield* dbService.query(
 					"removeEmployeeAccess:targetEmployee",
 					async () => {
-						return await actor.dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.id, validatedEmployeeId),
-								eq(employee.organizationId, actor.organizationId),
-							),
+						return await dbService.db.query.employee.findFirst({
+							where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 							columns: { id: true, userId: true },
 						});
 					},
@@ -578,11 +495,11 @@ export async function removeEmployeeAccessAction(
 						}),
 					);
 				}
-				if (targetEmployee.userId === actor.session.user.id) {
+				if (targetEmployee.userId === actor.userId) {
 					return yield* Effect.fail(
 						new AuthorizationError({
 							message: "You cannot remove your own organization access",
-							userId: actor.session.user.id,
+							userId: actor.userId,
 							resource: "employee",
 							action: "remove_access",
 						}),
@@ -592,10 +509,10 @@ export async function removeEmployeeAccessAction(
 					Effect.tryPromise({
 						try: () =>
 							completeRemovedMemberCleanup({
-								organizationId: actor.organizationId,
+								organizationId,
 								userId: targetEmployee.userId,
 								// Its deputy release is audited under this admin (#1014).
-								actorUserId: actor.session.user.id,
+								actorUserId: actor.userId,
 							}),
 						catch: () =>
 							new ValidationError({
@@ -605,13 +522,13 @@ export async function removeEmployeeAccessAction(
 							}),
 					});
 
-				const targetMembership = yield* actor.dbService.query(
+				const targetMembership = yield* dbService.query(
 					"removeEmployeeAccess:targetMembership",
 					async () => {
-						return await actor.dbService.db.query.member.findFirst({
+						return await dbService.db.query.member.findFirst({
 							where: and(
 								eq(member.userId, targetEmployee.userId),
-								eq(member.organizationId, actor.organizationId),
+								eq(member.organizationId, organizationId),
 								eq(member.status, "approved"),
 							),
 							columns: { id: true },
@@ -619,7 +536,7 @@ export async function removeEmployeeAccessAction(
 					},
 				);
 				if (!targetMembership) {
-					revalidateEmployeesCache(actor.organizationId);
+					revalidateEmployeesCache(organizationId);
 					yield* retryPostRemovalCleanup();
 					return;
 				}
@@ -631,7 +548,7 @@ export async function removeEmployeeAccessAction(
 						await runAuthMutation(() =>
 							auth.api.removeMember({
 								body: {
-									organizationId: actor.organizationId,
+									organizationId,
 									memberIdOrEmail: targetMembership.id,
 								},
 								headers: requestHeaders,
@@ -645,13 +562,13 @@ export async function removeEmployeeAccessAction(
 				);
 
 				if (!removalOutcome.success) {
-					const remainingMembership = yield* actor.dbService.query(
+					const remainingMembership = yield* dbService.query(
 						"removeEmployeeAccess:commitCheck",
 						async () => {
-							return await actor.dbService.db.query.member.findFirst({
+							return await dbService.db.query.member.findFirst({
 								where: and(
 									eq(member.id, targetMembership.id),
-									eq(member.organizationId, actor.organizationId),
+									eq(member.organizationId, organizationId),
 								),
 								columns: { id: true },
 							});
@@ -669,21 +586,23 @@ export async function removeEmployeeAccessAction(
 						);
 					}
 
-					revalidateEmployeesCache(actor.organizationId);
+					revalidateEmployeesCache(organizationId);
 					yield* retryPostRemovalCleanup();
 					return;
 				}
 
 				// A removed owner or admin can no longer own scheduled exports (#988).
-				yield* actor.dbService.query("scheduledExport.pauseAfterRemoval", () =>
-					pauseSchedulesAfterOwnerAccessChange(actor.dbService.db, {
-						organizationId: actor.organizationId,
+				yield* dbService.query("scheduledExport.pauseAfterRemoval", () =>
+					pauseSchedulesAfterOwnerAccessChange(dbService.db, {
+						organizationId,
 						owner: { userId: targetEmployee.userId },
-						actorUserId: actor.session.user.id,
+						actorUserId: actor.userId,
 					}),
 				);
 
-				revalidateEmployeesCache(actor.organizationId);
+				revalidateEmployeesCache(organizationId);
 			}),
-	});
-}
+			"Failed to remove employee access",
+			{ employeeId },
+		),
+);

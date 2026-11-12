@@ -87,9 +87,10 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-const { updateEmployeeInvitationDraftAction } = await import(
-	"./employee-mutations.actions"
-);
+const employeeMutations = await import("./employee-mutations.actions");
+/** The draft save, by encoded draft ID and form values. */
+const updateEmployeeInvitationDraftAction = (draftEmployeeId: string, data: { employeeNumber?: string; position?: string }) =>
+	employeeMutations.updateEmployeeInvitationDraftAction({ draftEmployeeId, data });
 
 function takenBy(name: string) {
 	return {

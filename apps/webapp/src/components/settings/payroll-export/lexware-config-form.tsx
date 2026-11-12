@@ -37,6 +37,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { PersonnelNumberType } from "@/lib/payroll-export/personnel-identifier";
 import type { LexwareLohnConfig } from "@/lib/payroll-export/types";
 import {
@@ -46,7 +47,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface LexwareConfigFormProps {
-	organizationId: string;
 	initialConfig?: LexwareConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the personnel number (#821). */
@@ -61,7 +61,6 @@ const DEFAULT_CONFIG: LexwareLohnConfig = {
 };
 
 export function LexwareConfigForm({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -75,7 +74,6 @@ export function LexwareConfigForm({
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await saveLexwareConfigAction({
-					organizationId,
 					config: value,
 				});
 
@@ -94,7 +92,7 @@ export function LexwareConfigForm({
 							"Failed to save configuration",
 						),
 						{
-							description: result.error,
+							description: actionErrorMessage(t, result),
 						},
 					);
 				}

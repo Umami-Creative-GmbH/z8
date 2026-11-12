@@ -616,7 +616,7 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 
 			function saveRequirement(projectId: string, requiresTask: boolean) {
 				actAs(ids.ownerUser);
-				return projectSettings.updateProject(projectId, { requiresTask });
+				return projectSettings.updateProject({ projectId, requiresTask });
 			}
 
 			/** Makes the lapsed project's task requirement active, so its bookings are marked too. */
@@ -840,7 +840,8 @@ describe("marking bookings that came in missing a task on PostgreSQL (#1295)", (
 
 				const saved = await whileRequirementTurnsOn(() => {
 					actAs(ids.ownerUser);
-					return projectSettings.updateProject(ids.project, {
+					return projectSettings.updateProject({
+						projectId: ids.project,
 						requiresTask: false,
 					});
 				});

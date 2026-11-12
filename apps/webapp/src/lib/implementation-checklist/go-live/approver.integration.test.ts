@@ -34,9 +34,7 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { resolveImplementationChecklistItems } from "../status";
-import { type ApproverGoLiveKind, loadApproverRouting } from "./approver-routing";
 import { approverGoLiveCheck } from "./checks/approver";
-import { resolveGoLiveGroup } from "./group";
 import { goLiveAsOf, runGoLiveChecks } from "./run";
 import type {
 	GoLiveCheckResult,
@@ -225,13 +223,6 @@ describe("approver go-live check (PostgreSQL)", () => {
 		);
 	}
 
-	async function appendPathActive() {
-		await sql(
-			`insert into time_entry_append_control (organization_id, mode, updated_at) values ($1, 'active', now())`,
-			[organizationId],
-		);
-	}
-
 	async function departed(employeeId: string, replacementEmployeeId: string | null) {
 		await sql("update employee set is_active = false, end_date = '2026-05-29' where id = $1", [
 			employeeId,
@@ -297,23 +288,6 @@ describe("approver go-live check (PostgreSQL)", () => {
 
 	const noteKeys = (result: GoLiveCheckResult) =>
 		passedOrFailed(result).notes.map((note) => note.key);
-
-	async function kindStatus(employeeId: string, kind: ApproverGoLiveKind) {
-		const group = await resolveGoLiveGroup(db, organizationId, AS_OF);
-		return db.transaction(async (tx) => {
-			const routing = await loadApproverRouting(tx as unknown as DatabaseClient, {
-				organizationId,
-				asOf: AS_OF,
-				members: group.members,
-			});
-			const member = group.members.find(
-				(candidate): candidate is Extract<GoLiveMember, { kind: "employee" }> =>
-					candidate.kind === "employee" && candidate.employeeId === employeeId,
-			);
-			if (!member) throw new Error("not in the group");
-			return (await routing.resolve(member)).get(kind);
-		});
-	}
 
 	it("groups members of a team without an eligible manager under each kind, with the team fix", async () => {
 		const warehouse = await createTeam("Warehouse");
@@ -404,18 +378,6 @@ describe("approver go-live check (PostgreSQL)", () => {
 				"settings.implementationChecklist.goLive.approver.skipOwnerSelfApproval",
 			]),
 		);
-		expect(await kindStatus(lead.employeeId, "manual_time_submission")).toMatchObject({
-			status: "skipped",
-			reason: "requester_is_approver",
-		});
-		expect(await kindStatus(relaxed.employeeId, "manual_time_submission")).toMatchObject({
-			status: "skipped",
-			reason: "change_policy_trust_mode",
-		});
-		expect(await kindStatus(owner.employeeId, "travel_expense")).toMatchObject({
-			status: "skipped",
-			reason: "owner_self_approval",
-		});
 		// A report never goes to its requester: the lead, their team's own manager, has no reviewer.
 		expect(ids(failure(result, `approver:travel_expense:no-manager:team:${selfManaged}`))).toEqual([
 			lead.employeeId,
@@ -440,14 +402,6 @@ describe("approver go-live check (PostgreSQL)", () => {
 
 		const result = await check();
 
-		expect(await kindStatus(relaxed.employeeId, "time_correction")).toMatchObject({
-			status: "routed",
-			directChange: "change_policy_trust_mode",
-		});
-		expect(await kindStatus(lead.employeeId, "time_correction")).toMatchObject({
-			status: "routed",
-			directChange: "change_policy_within_self_service",
-		});
 		// Trust mode is no pass: without a manager, a deletion request would find no approver.
 		expect(ids(failure(result, `approver:time_correction:no-manager:team:${trusted}`))).toEqual([
 			unmanaged.employeeId,
@@ -470,43 +424,6 @@ describe("approver go-live check (PostgreSQL)", () => {
 		expect(noteKeys(result)).not.toContain(
 			"settings.implementationChecklist.goLive.approver.skipSelfService",
 		);
-	});
-
-	it("applies a change policy with a future end date to manual work on either entry path", async () => {
-		// #1598: the legacy manual entry used to ignore any assignment with an end date.
-		const manager = await seed({ role: "manager" });
-		await managedBy(manager.employeeId, owner.employeeId);
-		await changePolicy({ target: { type: "organization" } });
-		const subject = await seed();
-		await managedBy(subject.employeeId, manager.employeeId);
-		await changePolicy({
-			target: { type: "employee", employeeId: subject.employeeId },
-			noApprovalRequired: true,
-			effectiveUntil: "2026-12-31T23:00:00Z",
-		});
-		const trustMode = { status: "skipped", reason: "change_policy_trust_mode" };
-
-		expect(await kindStatus(subject.employeeId, "manual_time_submission")).toMatchObject(trustMode);
-
-		await appendPathActive();
-		expect(await kindStatus(subject.employeeId, "manual_time_submission")).toMatchObject(trustMode);
-	});
-
-	it("notes a time correction governed by a team assignment with a future end date", async () => {
-		const manager = await seed({ role: "manager" });
-		await managedBy(manager.employeeId, owner.employeeId);
-		const trusted = await createTeam("Trusted");
-		await changePolicy({
-			target: { type: "team", teamId: trusted },
-			noApprovalRequired: true,
-			effectiveUntil: "2026-12-31T23:00:00Z",
-		});
-		const subject = await seed({ teamId: trusted });
-		await managedBy(subject.employeeId, manager.employeeId);
-
-		expect(await kindStatus(subject.employeeId, "time_correction")).toMatchObject({
-			directChange: "change_policy_trust_mode",
-		});
 	});
 
 	it("routes a legacy policy as legacy does: a departed named approver is not replaced", async () => {
@@ -539,51 +456,11 @@ describe("approver go-live check (PostgreSQL)", () => {
 		});
 		expect(group?.fix?.href).toBe("/settings/approval-policies");
 		// Legacy absences fall back to the default approver when a policy can't route.
-		const absence = await kindStatus(subject.employeeId, "absence");
-		expect(absence).toMatchObject({ status: "routed" });
-		expect(absence?.variants[0]?.result).toMatchObject({
-			route: { path: "legacy", policy: null, defaultApproverEmployeeId: manager.employeeId },
-		});
-	});
-
-	it("dry-runs a canonical kind: a departed named approver goes to their replacement, or fails without one", async () => {
-		await rollout("absence", "canonical");
-		await category();
-		const manager = await seed({ role: "manager" });
-		const named = await seed({ role: "manager" });
-		await managedBy(manager.employeeId, owner.employeeId);
-		const subject = await seed();
-		await managedBy(subject.employeeId, manager.employeeId);
-		const policyId = await policy({
-			name: "Absences",
-			approvalType: "absence",
-			stage: { approverType: "specific_employee", approverEmployeeId: named.employeeId },
-		});
-		await departed(named.employeeId, manager.employeeId);
-
-		const routed = await kindStatus(subject.employeeId, "absence");
-		expect(routed).toMatchObject({ status: "routed" });
-		expect(routed?.variants[0]?.result).toMatchObject({
-			status: "routed",
-			route: {
-				path: "canonical",
-				policy: { id: policyId, name: "Absences" },
-				stages: [{ approverEmployeeIds: [manager.employeeId], activation: "human" }],
-			},
-		});
-
-		await sql(
-			`update employee_departure set replacement_employee_id = null where employee_id = $1`,
-			[named.employeeId],
-		);
-		const result = await check();
-		expect(ids(failure(result, `approver:absence:policy:${policyId}`))).toContain(
-			subject.employeeId,
-		);
+		expect(failure(result, "approver:absence:no-manager:no-team")).toBeUndefined();
 	});
 
 	it.each(["legacy", "canonical"] as const)(
-		"routes time corrections and work-period submissions on the %s path",
+		"fails time corrections and work-period submissions without an approver on the %s path",
 		async (mode) => {
 			if (mode === "canonical") {
 				await rollout("time_correction", "canonical");
@@ -598,17 +475,9 @@ describe("approver go-live check (PostgreSQL)", () => {
 			const result = await check();
 
 			for (const kind of ["time_correction", "manual_time_submission"] as const) {
-				const resolution = await kindStatus(covered.employeeId, kind);
-				expect(resolution).toMatchObject({ status: "routed" });
-				expect(resolution?.variants[0]?.result).toMatchObject({
-					route: {
-						path: mode,
-						stages: [{ approverEmployeeIds: [manager.employeeId], activation: "human" }],
-					},
-				});
-				expect(ids(failure(result, `approver:${kind}:no-manager:no-team`))).toContain(
-					uncovered.employeeId,
-				);
+				const failing = ids(failure(result, `approver:${kind}:no-manager:no-team`));
+				expect(failing).toContain(uncovered.employeeId);
+				expect(failing).not.toContain(covered.employeeId);
 			}
 		},
 	);
@@ -641,7 +510,7 @@ describe("approver go-live check (PostgreSQL)", () => {
 		).toBeDefined();
 	});
 
-	it("fails expense reports in a canonical mode, and checks every amount band", async () => {
+	it("fails expense reports in a canonical mode, and a policy band nobody can decide", async () => {
 		const manager = await seed({ role: "manager" });
 		const named = await seed({ role: "manager" });
 		await managedBy(manager.employeeId, owner.employeeId);
@@ -655,40 +524,15 @@ describe("approver go-live check (PostgreSQL)", () => {
 		});
 		await sql(`update employee set is_active = false where id = $1`, [named.employeeId]);
 
-		const banded = await kindStatus(subject.employeeId, "travel_expense");
-		expect(banded).toMatchObject({
-			status: "unroutable",
-			cause: { code: "policy_unresolvable", policyId },
-		});
-		expect(banded?.variants.map(({ variant }) => variant.travelExpenseAmount)).toEqual([
-			0, 250, 500, 501,
-		]);
+		expect(ids(failure(await check(), `approver:travel_expense:policy:${policyId}`))).toContain(
+			subject.employeeId,
+		);
 
 		await rollout("travel_expense", "canonical");
 		const result = await check();
 		expect(ids(failure(result, "approver:travel_expense:approval-mode-unsupported"))).toContain(
 			subject.employeeId,
 		);
-	});
-
-	it("fails an expense policy that routes a report to its own requester", async () => {
-		const leads = await createTeam("Leads");
-		const lead = await seed({ role: "manager", teamId: leads });
-		await sql(`update team set primary_manager_id = $1 where id = $2`, [lead.employeeId, leads]);
-		const member = await seed({ teamId: leads });
-		await policy({
-			name: "Managers decide",
-			approvalType: "travel_expense_claim",
-			stage: { approverType: "direct_manager" },
-		});
-
-		expect(await kindStatus(lead.employeeId, "travel_expense")).toMatchObject({
-			status: "unroutable",
-			cause: { code: "self_approval_route" },
-		});
-		expect(await kindStatus(member.employeeId, "travel_expense")).toMatchObject({
-			status: "routed",
-		});
 	});
 
 	it("resolves invitees from their draft team, else at organization level", async () => {

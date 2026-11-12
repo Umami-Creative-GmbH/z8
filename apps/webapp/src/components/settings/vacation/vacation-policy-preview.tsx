@@ -31,10 +31,7 @@ export function VacationPolicyPreview({
 	const context = useVacationPolicyHistoryContext(organizationId);
 	const preview = useMutation({
 		mutationFn: async (value: { employeeId: string; date: string }) => {
-			const result = await previewEmployeeVacationPolicy(
-				value.employeeId,
-				value.date,
-			);
+			const result = await previewEmployeeVacationPolicy(value);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

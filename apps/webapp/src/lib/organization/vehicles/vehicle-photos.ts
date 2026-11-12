@@ -18,9 +18,11 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import {
 	MAX_VEHICLE_PHOTOS,
-	type VehiclePhotoRefusal,
+	VehiclePhotoRefusal,
+	type VehiclePhotoRefusalCode,
 	type VehiclePhotoView,
 } from "./vehicle-photo-types";
 
@@ -65,6 +67,21 @@ const uploadScope = (actor: PhotoActor, vehicleId: string, id: string) =>
 		eq(upload.id, id),
 		eq(upload.uploadedBy, actor.userId),
 	);
+/** The caller lost owner/admin access between the action's check and the photo transaction. */
+function accessChanged(actor: PhotoActor) {
+	return new AuthorizationError({
+		message: "You do not have access to this setting",
+		userId: actor.userId,
+		resource: "vehiclePhotos",
+	});
+}
+/** An upload identity of another user, vehicle or organization: not this caller's upload. */
+function foreignUpload() {
+	return new NotFoundError({
+		message: "Upload not found",
+		entityType: "vehicle_photo_upload",
+	});
+}
 /** Recheck current membership inside the attachment transaction, after processing. */
 async function currentActor(tx: PhotoTransaction, actor: PhotoActor) {
 	const [membership] = await tx
@@ -104,7 +121,7 @@ export async function listPhotos(
 		.select()
 		.from(organizationVehicle)
 		.where(vehicleScope(actor.organizationId, vehicleId));
-	if (!vehicle) throw new Error("Vehicle not found");
+	if (!vehicle) throw new VehiclePhotoRefusal("vehicle_not_found");
 	const rows = await database
 		.select()
 		.from(photo)
@@ -112,113 +129,100 @@ export async function listPhotos(
 		.orderBy(asc(photo.uploadOrder), asc(photo.id));
 	return { photos: rows.map(photoView), archived: vehicle.archivedAt !== null };
 }
-export type InitiatePhotoResult =
-	| { ok: true; uploadId: string }
-	| { ok: false; reason: VehiclePhotoRefusal };
-export type InitiatePhotoBatchResult =
-	| { ok: true; uploadIds: string[] }
-	| { ok: false; reason: VehiclePhotoRefusal; remaining?: number };
-class PhotoUploadIdentityConflict extends Error {}
+/**
+ * Reserve one upload. Throws a `VehiclePhotoRefusal`, an `AuthorizationError`
+ * on lost access or a `NotFoundError` on a foreign identity, as the batch does.
+ */
 export async function initiatePhotoUpload(
 	database: Database,
 	actor: PhotoActor,
 	vehicleId: string,
-): Promise<InitiatePhotoResult> {
-	const result = await initiatePhotoBatchUpload(database, actor, vehicleId, [
+): Promise<{ uploadId: string }> {
+	const { uploadIds } = await initiatePhotoBatchUpload(database, actor, vehicleId, [
 		randomUUID(),
 	]);
-	return result.ok ? { ok: true, uploadId: result.uploadIds[0] } : result;
+	return { uploadId: uploadIds[0] };
 }
-/** Reserve one complete ordered selection. Replaying its client-known identities is read-only. */
+/**
+ * Reserve one complete ordered selection. Replaying its client-known identities is read-only.
+ * A full gallery refuses with `photo_limit`, its details saying how many slots remain.
+ */
 export async function initiatePhotoBatchUpload(
 	database: Database,
 	actor: PhotoActor,
 	vehicleId: string,
 	uploadIds: string[],
-): Promise<InitiatePhotoBatchResult> {
-	try {
-		return await database.transaction(
-			async (tx): Promise<InitiatePhotoBatchResult> => {
-				const [vehicle] = await tx
-					.select()
-					.from(organizationVehicle)
-					.where(vehicleScope(actor.organizationId, vehicleId))
-					.for("update");
-				if (!(await currentActor(tx, actor)))
-					return { ok: false, reason: "forbidden" };
-				if (!vehicle) return { ok: false, reason: "vehicle_not_found" };
-				const existing = await tx
-					.select()
-					.from(upload)
-					.where(
-						and(
-							eq(upload.organizationId, actor.organizationId),
-							inArray(upload.id, uploadIds),
-						),
-					);
-				if (existing.length) {
-					if (
-						existing.length !== uploadIds.length ||
-						existing.some(
-							(intent) =>
-								intent.vehicleId !== vehicleId ||
-								intent.uploadedBy !== actor.userId,
-						)
-					)
-						return { ok: false, reason: "forbidden" };
-					return { ok: true, uploadIds };
-				}
-				if (vehicle.archivedAt)
-					return { ok: false, reason: "vehicle_archived" };
-				const [{ count }] = await tx
-					.select({ count: sql<number>`count(*)::int` })
-					.from(photo)
-					.where(photoScope(actor.organizationId, vehicleId));
-				if (count + uploadIds.length > MAX_VEHICLE_PHOTOS)
-					return {
-						ok: false,
-						reason: "photo_limit",
-						remaining: Math.max(0, MAX_VEHICLE_PHOTOS - count),
-					};
-				const [{ last }] = await tx
-					.select({
-						last: sql<number>`coalesce(max(${upload.uploadOrder}),0)::int`,
-					})
-					.from(upload)
-					.where(
-						and(
-							eq(upload.organizationId, actor.organizationId),
-							eq(upload.vehicleId, vehicleId),
-						),
-					);
-				const now = systemClock.nowInstant();
-				const inserted = await tx
-					.insert(upload)
-					.values(
-						uploadIds.map((id, index) => ({
-							id,
-							organizationId: actor.organizationId,
-							vehicleId,
-							uploadedBy: actor.userId,
-							uploadOrder: last + index + 1,
-							storageKey: `vehicle-photos/${actor.organizationId}/${vehicleId}/${id}.webp`,
-							createdAt: dateFromInstant(now),
-							nextAttemptAt: dateFromInstant(now.add({ hours: 1 })),
-						})),
-					)
-					.onConflictDoNothing({ target: upload.id })
-					.returning({ id: upload.id });
-				// A collision outside this scope must roll back every identity in the selection.
-				if (inserted.length !== uploadIds.length)
-					throw new PhotoUploadIdentityConflict();
-				return { ok: true, uploadIds };
-			},
-		);
-	} catch (error) {
-		if (error instanceof PhotoUploadIdentityConflict)
-			return { ok: false, reason: "forbidden" };
-		throw error;
-	}
+): Promise<{ uploadIds: string[] }> {
+	return database.transaction(async (tx): Promise<{ uploadIds: string[] }> => {
+		const [vehicle] = await tx
+			.select()
+			.from(organizationVehicle)
+			.where(vehicleScope(actor.organizationId, vehicleId))
+			.for("update");
+		if (!(await currentActor(tx, actor))) throw accessChanged(actor);
+		if (!vehicle) throw new VehiclePhotoRefusal("vehicle_not_found");
+		const existing = await tx
+			.select()
+			.from(upload)
+			.where(
+				and(
+					eq(upload.organizationId, actor.organizationId),
+					inArray(upload.id, uploadIds),
+				),
+			);
+		if (existing.length) {
+			if (
+				existing.length !== uploadIds.length ||
+				existing.some(
+					(intent) =>
+						intent.vehicleId !== vehicleId ||
+						intent.uploadedBy !== actor.userId,
+				)
+			)
+				throw foreignUpload();
+			return { uploadIds };
+		}
+		if (vehicle.archivedAt) throw new VehiclePhotoRefusal("vehicle_archived");
+		const [{ count }] = await tx
+			.select({ count: sql<number>`count(*)::int` })
+			.from(photo)
+			.where(photoScope(actor.organizationId, vehicleId));
+		if (count + uploadIds.length > MAX_VEHICLE_PHOTOS)
+			throw new VehiclePhotoRefusal("photo_limit", {
+				remaining: Math.max(0, MAX_VEHICLE_PHOTOS - count),
+			});
+		const [{ last }] = await tx
+			.select({
+				last: sql<number>`coalesce(max(${upload.uploadOrder}),0)::int`,
+			})
+			.from(upload)
+			.where(
+				and(
+					eq(upload.organizationId, actor.organizationId),
+					eq(upload.vehicleId, vehicleId),
+				),
+			);
+		const now = systemClock.nowInstant();
+		const inserted = await tx
+			.insert(upload)
+			.values(
+				uploadIds.map((id, index) => ({
+					id,
+					organizationId: actor.organizationId,
+					vehicleId,
+					uploadedBy: actor.userId,
+					uploadOrder: last + index + 1,
+					storageKey: `vehicle-photos/${actor.organizationId}/${vehicleId}/${id}.webp`,
+					createdAt: dateFromInstant(now),
+					nextAttemptAt: dateFromInstant(now.add({ hours: 1 })),
+				})),
+			)
+			.onConflictDoNothing({ target: upload.id })
+			.returning({ id: upload.id });
+		// A collision outside this scope must roll back every identity in the selection.
+		if (inserted.length !== uploadIds.length) throw foreignUpload();
+		return { uploadIds };
+	});
 }
 export async function findPhoto(
 	database: Database,
@@ -262,9 +266,14 @@ export async function rejectPhotoUpload(
 			and(uploadScope(actor, vehicleId, id), eq(upload.status, "pending")),
 		);
 }
+/**
+ * The upload route's outcome, sent as its HTTP body (not a server action
+ * result). A refusal returns rather than throws, so the transaction commits
+ * the intent's `cleanup_required` mark; `forbidden` becomes a 403.
+ */
 export type FinalizePhotoResult =
 	| { ok: true; photo: VehiclePhotoView }
-	| { ok: false; reason: VehiclePhotoRefusal };
+	| { ok: false; reason: VehiclePhotoRefusalCode | "forbidden" };
 /**
  * Keep the vehicle then upload locks through the object write and attachment.
  * Cleanup takes the upload lock too: it cannot delete an in-flight/attached image.
@@ -292,7 +301,7 @@ export async function finalizePhotoUpload(
 			.for("update");
 		if (!intent) return { ok: false, reason: "upload_not_found" };
 		const refuse = async (
-			reason: VehiclePhotoRefusal,
+			reason: VehiclePhotoRefusalCode | "forbidden",
 		): Promise<FinalizePhotoResult> => {
 			if (intent.status !== "attached")
 				await tx
@@ -423,26 +432,25 @@ export async function notePhotoUploadFailure(
 		);
 }
 
-export type RemovePhotoResult =
-	| { ok: true; removed: boolean }
-	| { ok: false; reason: VehiclePhotoRefusal };
-/** The vehicle lock serializes removal with attachment and vehicle lifecycle writes. */
+/**
+ * The vehicle lock serializes removal with attachment and vehicle lifecycle writes.
+ * `removed: false` is an already removed photo. Refusals throw before any write.
+ */
 export async function removePhoto(
 	database: Database,
 	actor: PhotoActor,
 	vehicleId: string,
 	photoId: string,
-): Promise<RemovePhotoResult> {
+): Promise<{ removed: boolean }> {
 	return database.transaction(async (tx) => {
 		const [vehicle] = await tx
 			.select()
 			.from(organizationVehicle)
 			.where(vehicleScope(actor.organizationId, vehicleId))
 			.for("update");
-		if (!(await currentActor(tx, actor)))
-			return { ok: false, reason: "forbidden" };
-		if (!vehicle) return { ok: false, reason: "vehicle_not_found" };
-		if (vehicle.archivedAt) return { ok: false, reason: "vehicle_archived" };
+		if (!(await currentActor(tx, actor))) throw accessChanged(actor);
+		if (!vehicle) throw new VehiclePhotoRefusal("vehicle_not_found");
+		if (vehicle.archivedAt) throw new VehiclePhotoRefusal("vehicle_archived");
 		const [existing] = await tx
 			.select()
 			.from(photo)
@@ -464,9 +472,9 @@ export async function removePhoto(
 						eq(upload.id, photoId),
 					),
 				);
-			return removed && ["cleanup_required", "cleaned"].includes(removed.status)
-				? { ok: true, removed: false }
-				: { ok: false, reason: "photo_not_found" };
+			if (removed && ["cleanup_required", "cleaned"].includes(removed.status))
+				return { removed: false };
+			throw new VehiclePhotoRefusal("photo_not_found");
 		}
 		// The database DELETE trigger retains the object identity in the durable ledger.
 		await tx
@@ -486,6 +494,6 @@ export async function removePhoto(
 			action: AuditAction.VEHICLE_PHOTO_REMOVED,
 			changes: JSON.stringify({ photoId }),
 		});
-		return { ok: true, removed: true };
+		return { removed: true };
 	});
 }

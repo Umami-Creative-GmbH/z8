@@ -26,8 +26,3 @@ export class KioskSettingsRefusal extends Error {
 		this.code = code;
 	}
 }
-
-/** A kiosk server action's result; a failure always carries a stable code. */
-export type KioskSettingsActionResult<T> =
-	| { success: true; data: T }
-	| { success: false; error: string; code: KioskSettingsErrorCode };

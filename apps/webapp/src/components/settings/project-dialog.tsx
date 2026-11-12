@@ -92,7 +92,7 @@ function useProjectDialogController({
 	const { data: customersData } = useQuery({
 		queryKey: queryKeys.customers.selection(organizationId),
 		queryFn: async () => {
-			const result = await getCustomersForSelection(organizationId);
+			const result = await getCustomersForSelection();
 			if (!result.success) return [];
 			return result.data;
 		},

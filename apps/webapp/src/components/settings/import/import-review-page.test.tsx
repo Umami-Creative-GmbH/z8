@@ -64,7 +64,6 @@ describe("ImportReviewPage", () => {
 	it("disables commit when blocked rows remain", () => {
 		render(
 			<ImportReviewPage
-				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, blockedRows: 1 }}
 				rows={[
@@ -80,14 +79,7 @@ describe("ImportReviewPage", () => {
 	});
 
 	it("enables commit when accepted rows exist and no rows are blocked", () => {
-		render(
-			<ImportReviewPage
-				organizationId="org_1"
-				batchId="batch_1"
-				summary={baseSummary}
-				rows={[acceptedRow]}
-			/>,
-		);
+		render(<ImportReviewPage batchId="batch_1" summary={baseSummary} rows={[acceptedRow]} />);
 
 		expect(screen.getByRole("button", { name: /commit accepted rows/i })).toHaveProperty(
 			"disabled",
@@ -96,20 +88,12 @@ describe("ImportReviewPage", () => {
 	});
 
 	it("starts commit for the current organization and batch", async () => {
-		render(
-			<ImportReviewPage
-				organizationId="org_1"
-				batchId="batch_1"
-				summary={baseSummary}
-				rows={[acceptedRow]}
-			/>,
-		);
+		render(<ImportReviewPage batchId="batch_1" summary={baseSummary} rows={[acceptedRow]} />);
 
 		fireEvent.click(screen.getByRole("button", { name: /commit accepted rows/i }));
 
 		await waitFor(() => {
 			expect(startImportCommitAction).toHaveBeenCalledWith({
-				organizationId: "org_1",
 				batchId: "batch_1",
 			});
 		});
@@ -118,7 +102,6 @@ describe("ImportReviewPage", () => {
 	it("does not start commit when blocked rows keep the button disabled", async () => {
 		render(
 			<ImportReviewPage
-				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, blockedRows: 1 }}
 				rows={[
@@ -135,7 +118,6 @@ describe("ImportReviewPage", () => {
 	it("does not start commit when there are no accepted rows", async () => {
 		render(
 			<ImportReviewPage
-				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, acceptedRows: 0 }}
 				rows={[]}
@@ -150,7 +132,6 @@ describe("ImportReviewPage", () => {
 	it("renders the title and summary values", () => {
 		render(
 			<ImportReviewPage
-				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, committedRows: 5 }}
 				rows={[acceptedRow]}
@@ -174,7 +155,6 @@ describe("ImportReviewPage", () => {
 	it("explains why the work operation held a row for review", () => {
 		render(
 			<ImportReviewPage
-				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, blockedRows: 2 }}
 				rows={[
@@ -205,7 +185,6 @@ describe("ImportReviewPage", () => {
 	it("pages through a work import's rows instead of cutting them off (#937)", () => {
 		render(
 			<ImportReviewPage
-				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, totalRows: 250 }}
 				rows={[{ ...acceptedRow, id: "row_101" }]}
@@ -226,7 +205,6 @@ describe("ImportReviewPage", () => {
 	it("counts issue markers across the whole import, not just the shown page (#937)", () => {
 		render(
 			<ImportReviewPage
-				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, totalRows: 250, blockingIssueRows: 140, warningIssueRows: 30 }}
 				rows={[{ ...acceptedRow, id: "row_101", rowStatus: "blocked", issueSeverity: "blocking" }]}

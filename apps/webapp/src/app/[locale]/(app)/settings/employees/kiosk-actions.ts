@@ -1,15 +1,18 @@
 "use server";
 
 import { and, asc, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import { employee, location } from "@/db/schema";
-import type { OrganizationActor } from "@/lib/auth/current-organization-actor";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
-import { isOrganizationAdmin } from "@/lib/authorization/organization-admin";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
-import type { KioskBadgeActionResult } from "@/lib/time-tracking/kiosk/badge-errors";
-import { runKioskBadgeAction } from "@/lib/time-tracking/kiosk/badge-action";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { storeStep } from "@/lib/organization-action/store-step";
+import { KioskBadgeRefusal } from "@/lib/time-tracking/kiosk/badge-errors";
 import { renderKioskBadgePdf } from "@/lib/time-tracking/kiosk/badge-pdf";
 import {
 	issueKioskBadge,
@@ -19,8 +22,7 @@ import {
 	replaceKioskBadge,
 	revokeKioskBadge,
 } from "@/lib/time-tracking/kiosk/badge-store";
-import { runKioskFobAction } from "@/lib/time-tracking/kiosk/fob-action";
-import type { KioskFobActionResult } from "@/lib/time-tracking/kiosk/fob-errors";
+import { KioskFobManagementRefusal } from "@/lib/time-tracking/kiosk/fob-errors";
 import {
 	type KioskFobViewState,
 	kioskFobViewState,
@@ -33,8 +35,7 @@ import {
 	addEmailToKioskOnlyEmployee,
 	createKioskOnlyEmployee,
 } from "@/lib/time-tracking/kiosk/kiosk-only-employee";
-import { runKioskPinAction } from "@/lib/time-tracking/kiosk/kiosk-pin-action";
-import { type KioskPinActionResult, KioskPinRefusal } from "@/lib/time-tracking/kiosk/pin-errors";
+import { KioskPinRefusal } from "@/lib/time-tracking/kiosk/pin-errors";
 import {
 	canManageEmployeeKioskPin,
 	issueKioskPin,
@@ -45,6 +46,13 @@ import {
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isUuid } from "@/lib/validations/uuid";
 import { getTranslate } from "@/tolgee/server";
+
+/**
+ * Kiosk PINs, badges, fobs and kiosk-only employees on the employee page. Any
+ * org member reaches them (as before); who may manage whose kiosk credentials
+ * is the stores' object-level authority (owners, admins, direct managers).
+ * Refusals come back as `ValidationError`s whose `refusal` is the store's code.
+ */
 
 export type EmployeeKioskState = {
 	/** Whether the viewer may issue, reset or unlock this employee's PIN. */
@@ -108,74 +116,74 @@ export type IssuedKioskBadgePdf = {
 
 const EMPLOYEES_PATH = "/settings/employees";
 
-function employeeIdOf(value: unknown): string {
-	return typeof value === "string" ? value : "";
-}
+// The stores refuse an unknown or malformed employee themselves, with their own codes.
+const employeeIdSchema = z.string();
+const employeeBadgeSchema = z.strictObject({
+	employeeId: z.string(),
+	expectedBadgeId: z.string(),
+});
 
 /** What the employee detail page's kiosk card shows. Hidden when the viewer may do nothing. */
-export async function getEmployeeKioskStateAction(
-	employeeId: string,
-): Promise<KioskPinActionResult<EmployeeKioskState | null>> {
-	return runKioskPinAction("kiosk.employeeState", async (db, actor) => {
-		const id = employeeIdOf(employeeId);
-		const [target] = isUuid(id)
-			? await db
-					.select({ email: user.email })
-					.from(employee)
-					.innerJoin(user, eq(user.id, employee.userId))
-					.where(and(eq(employee.id, id), eq(employee.organizationId, actor.organizationId)))
-					.limit(1)
-			: [];
-		if (!target) return null;
-		const input = {
-			organizationId: actor.organizationId,
-			actorUserId: actor.userId,
-			employeeId: id,
-		};
-		const [canManagePin, isAdmin] = await Promise.all([
-			canManageEmployeeKioskPin(db, input),
-			isOrganizationAdmin(db, actor),
-		]);
-		const kioskOnly = isReservedEmail(target.email);
-		if (!canManagePin && !(kioskOnly && isAdmin)) return null;
-		const [status, badge, fob, timezone] = canManagePin
-			? await Promise.all([
-					readKioskPinStatus(db, input),
-					readKioskBadgeStatus(db, input),
-					readKioskFobStatus(db, input),
-					loadOrganizationTimezone(db, actor.organizationId),
-				])
-			: [{ hasPin: false, lockedUntil: null }, null, null, "UTC"];
-		return {
-			canManagePin,
-			hasPin: status.hasPin,
-			lockedUntil: status.lockedUntil ? instantToCanonicalString(status.lockedUntil) : null,
-			kioskOnly,
-			canAddEmail: kioskOnly && isAdmin,
-			badge: badge && {
-				activeBadgeId: badge.active?.badgeId ?? null,
-				activeIssuedAt: badge.active ? instantToCanonicalString(badge.active.issuedAt) : null,
-				lastRevokedAt: badge.lastRevoked
-					? instantToCanonicalString(badge.lastRevoked.revokedAt)
-					: null,
-				lastRevokedReason: badge.lastRevoked?.reason ?? null,
-				departureLastWorkingDay: badge.lastRevoked?.lastWorkingDay?.toString() ?? null,
-				timezone,
-				canIssue: badge.canIssue,
+export const getEmployeeKioskStateAction = organizationAction(
+	{ name: "kiosk.employeeState", requires: "member", schema: employeeIdSchema },
+	({ actor, organizationId, input: id }) =>
+		storeStep(
+			"kiosk.employeeState",
+			async (db) => {
+				const [target] = isUuid(id)
+					? await db
+							.select({ email: user.email })
+							.from(employee)
+							.innerJoin(user, eq(user.id, employee.userId))
+							.where(and(eq(employee.id, id), eq(employee.organizationId, organizationId)))
+							.limit(1)
+					: [];
+				if (!target) return null;
+				const input = { organizationId, actorUserId: actor.userId, employeeId: id };
+				const canManagePin = await canManageEmployeeKioskPin(db, input);
+				const isAdmin = meetsSettingsAccess(actor.settingsAccess, "orgAdmin");
+				const kioskOnly = isReservedEmail(target.email);
+				if (!canManagePin && !(kioskOnly && isAdmin)) return null;
+				const [status, badge, fob, timezone] = canManagePin
+					? await Promise.all([
+							readKioskPinStatus(db, input),
+							readKioskBadgeStatus(db, input),
+							readKioskFobStatus(db, input),
+							loadOrganizationTimezone(db, organizationId),
+						])
+					: [{ hasPin: false, lockedUntil: null }, null, null, "UTC"];
+				return {
+					canManagePin,
+					hasPin: status.hasPin,
+					lockedUntil: status.lockedUntil ? instantToCanonicalString(status.lockedUntil) : null,
+					kioskOnly,
+					canAddEmail: kioskOnly && isAdmin,
+					badge: badge && {
+						activeBadgeId: badge.active?.badgeId ?? null,
+						activeIssuedAt: badge.active ? instantToCanonicalString(badge.active.issuedAt) : null,
+						lastRevokedAt: badge.lastRevoked
+							? instantToCanonicalString(badge.lastRevoked.revokedAt)
+							: null,
+						lastRevokedReason: badge.lastRevoked?.reason ?? null,
+						departureLastWorkingDay: badge.lastRevoked?.lastWorkingDay?.toString() ?? null,
+						timezone,
+						canIssue: badge.canIssue,
+					},
+					fob: fob && {
+						active: fob.active && kioskFobViewState(fob.active),
+						lastEnded: fob.lastEnded && {
+							at: instantToCanonicalString(fob.lastEnded.endedAt),
+							reason: fob.lastEnded.reason,
+							departureLastWorkingDay: fob.lastEnded.lastWorkingDay?.toString() ?? null,
+						},
+						fobReaderInUse: fob.fobReaderInUse,
+						timezone,
+					},
+				} satisfies EmployeeKioskState;
 			},
-			fob: fob && {
-				active: fob.active && kioskFobViewState(fob.active),
-				lastEnded: fob.lastEnded && {
-					at: instantToCanonicalString(fob.lastEnded.endedAt),
-					reason: fob.lastEnded.reason,
-					departureLastWorkingDay: fob.lastEnded.lastWorkingDay?.toString() ?? null,
-				},
-				fobReaderInUse: fob.fobReaderInUse,
-				timezone,
-			},
-		};
-	});
-}
+			{ refusal: KioskPinRefusal },
+		),
+);
 
 /**
  * Removes the employee's kiosk fob the viewer saw (`expectedFobId`, #1508):
@@ -183,20 +191,27 @@ export async function getEmployeeKioskStateAction(
  * and kiosk badge are unchanged. Refused with `fob_changed` when the employee's
  * fob changed meanwhile.
  */
-export async function removeEmployeeKioskFobAction(
-	employeeId: string,
-	expectedFobId: string,
-): Promise<KioskFobActionResult<{ removed: true }>> {
-	return runKioskFobAction("kiosk.removeFob", async (db, actor) => {
-		await removeKioskFob(db, {
-			organizationId: actor.organizationId,
-			actorUserId: actor.userId,
-			employeeId: employeeIdOf(employeeId),
-			expectedFobId,
-		});
-		return { removed: true as const };
-	});
-}
+export const removeEmployeeKioskFobAction = organizationAction(
+	{
+		name: "kiosk.removeFob",
+		requires: "member",
+		schema: z.strictObject({ employeeId: z.string(), expectedFobId: z.string() }),
+	},
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"kiosk.removeFob",
+			async (db) => {
+				await removeKioskFob(db, {
+					organizationId,
+					actorUserId: actor.userId,
+					employeeId: input.employeeId,
+					expectedFobId: input.expectedFobId,
+				});
+				return { removed: true as const };
+			},
+			{ refusal: KioskFobManagementRefusal },
+		),
+);
 
 /** The PDF's file name: ASCII letters and digits of the employee's name. */
 function badgeFilename(employeeName: string): string {
@@ -225,177 +240,173 @@ async function renderBadgeFor(badge: KioskBadgeDelivery): Promise<IssuedKioskBad
 	return { filename: badgeFilename(badge.employeeName), pdf: pdf.toString("base64") };
 }
 
-function badgeManagementInput(actor: OrganizationActor, employeeId: unknown) {
-	return {
-		organizationId: actor.organizationId,
-		actorUserId: actor.userId,
-		employeeId: employeeIdOf(employeeId),
-	};
-}
-
-/** A replacement or revocation names the active badge the issuer saw (`activeBadgeId`). */
-function badgeChangeInput(actor: OrganizationActor, employeeId: unknown, expectedBadgeId: unknown) {
-	return {
-		...badgeManagementInput(actor, employeeId),
-		expectedBadgeId: typeof expectedBadgeId === "string" ? expectedBadgeId : "",
-	};
-}
-
 /**
  * Issues a kiosk badge (#1364). The printable PDF is in the result once and
  * nowhere else: the server keeps only a hash of the credential.
  */
-export async function issueEmployeeKioskBadgeAction(
-	employeeId: string,
-): Promise<KioskBadgeActionResult<IssuedKioskBadgePdf>> {
-	return runKioskBadgeAction("kiosk.issueBadge", async (db, actor) => {
-		const issued = await issueKioskBadge(
-			db,
-			badgeManagementInput(actor, employeeId),
-			renderBadgeFor,
-		);
-		return issued.delivery;
-	});
-}
+export const issueEmployeeKioskBadgeAction = organizationAction(
+	{ name: "kiosk.issueBadge", requires: "member", schema: employeeIdSchema },
+	({ actor, organizationId, input: employeeId }) =>
+		storeStep(
+			"kiosk.issueBadge",
+			async (db) => {
+				const issued = await issueKioskBadge(
+					db,
+					{ organizationId, actorUserId: actor.userId, employeeId },
+					renderBadgeFor,
+				);
+				return issued.delivery;
+			},
+			{ refusal: KioskBadgeRefusal },
+		),
+);
 
 /**
  * Replaces the employee's kiosk badge the issuer saw (`expectedBadgeId`): every
  * copy of it stops working. Refused with `badge_changed` when another change
  * got there first. The new badge's PDF is in the result once and nowhere else.
  */
-export async function replaceEmployeeKioskBadgeAction(
-	employeeId: string,
-	expectedBadgeId: string,
-): Promise<KioskBadgeActionResult<IssuedKioskBadgePdf>> {
-	return runKioskBadgeAction("kiosk.replaceBadge", async (db, actor) => {
-		const issued = await replaceKioskBadge(
-			db,
-			badgeChangeInput(actor, employeeId, expectedBadgeId),
-			renderBadgeFor,
-		);
-		return issued.delivery;
-	});
-}
+export const replaceEmployeeKioskBadgeAction = organizationAction(
+	{ name: "kiosk.replaceBadge", requires: "member", schema: employeeBadgeSchema },
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"kiosk.replaceBadge",
+			async (db) => {
+				const issued = await replaceKioskBadge(
+					db,
+					{ organizationId, actorUserId: actor.userId, ...input },
+					renderBadgeFor,
+				);
+				return issued.delivery;
+			},
+			{ refusal: KioskBadgeRefusal },
+		),
+);
 
 /**
  * Revokes the employee's kiosk badge the issuer saw (`expectedBadgeId`) without
  * a replacement; their kiosk PIN is unchanged. `badge_changed` as for replace.
  */
-export async function revokeEmployeeKioskBadgeAction(
-	employeeId: string,
-	expectedBadgeId: string,
-): Promise<KioskBadgeActionResult<{ revoked: true }>> {
-	return runKioskBadgeAction("kiosk.revokeBadge", async (db, actor) => {
-		await revokeKioskBadge(db, badgeChangeInput(actor, employeeId, expectedBadgeId));
-		return { revoked: true as const };
-	});
-}
+export const revokeEmployeeKioskBadgeAction = organizationAction(
+	{ name: "kiosk.revokeBadge", requires: "member", schema: employeeBadgeSchema },
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"kiosk.revokeBadge",
+			async (db) => {
+				await revokeKioskBadge(db, { organizationId, actorUserId: actor.userId, ...input });
+				return { revoked: true as const };
+			},
+			{ refusal: KioskBadgeRefusal },
+		),
+);
 
 /** Issues a generated PIN; the PIN is in the result once and nowhere else. */
-export async function issueEmployeeKioskPinAction(
-	employeeId: string,
-): Promise<KioskPinActionResult<{ pin: string }>> {
-	return runKioskPinAction("kiosk.issuePin", (db, actor) =>
-		issueKioskPin(db, {
-			organizationId: actor.organizationId,
-			actorUserId: actor.userId,
-			employeeId: employeeIdOf(employeeId),
-		}),
-	);
-}
+export const issueEmployeeKioskPinAction = organizationAction(
+	{ name: "kiosk.issuePin", requires: "member", schema: employeeIdSchema },
+	({ actor, organizationId, input: employeeId }) =>
+		storeStep(
+			"kiosk.issuePin",
+			(db) => issueKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId }),
+			{ refusal: KioskPinRefusal },
+		),
+);
 
 /** Replaces the PIN with a generated one; the PIN is in the result once and nowhere else. */
-export async function resetEmployeeKioskPinAction(
-	employeeId: string,
-): Promise<KioskPinActionResult<{ pin: string }>> {
-	return runKioskPinAction("kiosk.resetPin", (db, actor) =>
-		resetKioskPin(db, {
-			organizationId: actor.organizationId,
-			actorUserId: actor.userId,
-			employeeId: employeeIdOf(employeeId),
-		}),
-	);
-}
+export const resetEmployeeKioskPinAction = organizationAction(
+	{ name: "kiosk.resetPin", requires: "member", schema: employeeIdSchema },
+	({ actor, organizationId, input: employeeId }) =>
+		storeStep(
+			"kiosk.resetPin",
+			(db) => resetKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId }),
+			{ refusal: KioskPinRefusal },
+		),
+);
 
-export async function unlockEmployeeKioskPinAction(
-	employeeId: string,
-): Promise<KioskPinActionResult<{ unlocked: true }>> {
-	return runKioskPinAction("kiosk.unlockPin", async (db, actor) => {
-		await unlockKioskPin(db, {
-			organizationId: actor.organizationId,
-			actorUserId: actor.userId,
-			employeeId: employeeIdOf(employeeId),
-		});
-		return { unlocked: true as const };
-	});
-}
+export const unlockEmployeeKioskPinAction = organizationAction(
+	{ name: "kiosk.unlockPin", requires: "member", schema: employeeIdSchema },
+	({ actor, organizationId, input: employeeId }) =>
+		storeStep(
+			"kiosk.unlockPin",
+			async (db) => {
+				await unlockKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId });
+				return { unlocked: true as const };
+			},
+			{ refusal: KioskPinRefusal },
+		),
+);
 
-export type CreateKioskOnlyEmployeeActionInput = {
-	firstName: string;
-	lastName: string;
-	teamId: string | null;
+const createKioskOnlyEmployeeSchema = z.strictObject({
+	firstName: z.string(),
+	lastName: z.string(),
+	teamId: z.string().nullable(),
 	/** Assigned locations, whose kiosks accept the employee. */
-	locationIds: string[];
-};
+	locationIds: z.array(z.string()),
+});
+
+export type CreateKioskOnlyEmployeeActionInput = z.input<typeof createKioskOnlyEmployeeSchema>;
 
 export type KioskOnlyEmployeeLocationOption = { id: string; name: string };
 
 /** The active locations an owner or admin can assign a new kiosk-only employee to. */
-export async function getKioskOnlyEmployeeLocationsAction(): Promise<
-	KioskPinActionResult<KioskOnlyEmployeeLocationOption[]>
-> {
-	return runKioskPinAction("kiosk.kioskOnlyEmployeeLocations", async (db, actor) => {
-		if (!(await isOrganizationAdmin(db, actor))) {
-			throw new KioskPinRefusal(
-				"not_allowed",
-				"Only organization owners and admins can manage kiosk-only employees.",
+export const getKioskOnlyEmployeeLocationsAction = organizationAction(
+	{ name: "kiosk.kioskOnlyEmployeeLocations", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query(
+				"kiosk.kioskOnlyEmployeeLocations",
+				(): Promise<KioskOnlyEmployeeLocationOption[]> =>
+					dbService.db
+						.select({ id: location.id, name: location.name })
+						.from(location)
+						.where(and(eq(location.organizationId, organizationId), eq(location.isActive, true)))
+						.orderBy(asc(location.name)),
 			);
-		}
-		return db
-			.select({ id: location.id, name: location.name })
-			.from(location)
-			.where(and(eq(location.organizationId, actor.organizationId), eq(location.isActive, true)))
-			.orderBy(asc(location.name));
-	});
-}
+		}),
+);
 
 /** Creates a kiosk-only employee (no email, no sign-in) in the active organization. */
-export async function createKioskOnlyEmployeeAction(
-	input: CreateKioskOnlyEmployeeActionInput,
-): Promise<KioskPinActionResult<{ employeeId: string }>> {
-	return runKioskPinAction("kiosk.createKioskOnlyEmployee", async (db, actor) => {
-		const { employeeId } = await createKioskOnlyEmployee(db, {
-			organizationId: actor.organizationId,
-			actorUserId: actor.userId,
-			firstName: typeof input?.firstName === "string" ? input.firstName : "",
-			lastName: typeof input?.lastName === "string" ? input.lastName : "",
-			teamId: typeof input?.teamId === "string" ? input.teamId : null,
-			locationIds: Array.isArray(input?.locationIds)
-				? input.locationIds.filter((id): id is string => typeof id === "string")
-				: [],
-		});
-		revalidatePath(EMPLOYEES_PATH);
-		return { employeeId };
-	});
-}
+export const createKioskOnlyEmployeeAction = organizationAction(
+	{
+		name: "kiosk.createKioskOnlyEmployee",
+		requires: "member",
+		schema: createKioskOnlyEmployeeSchema,
+	},
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"kiosk.createKioskOnlyEmployee",
+			async (db) => {
+				const { employeeId } = await createKioskOnlyEmployee(db, {
+					organizationId,
+					actorUserId: actor.userId,
+					...input,
+				});
+				revalidatePath(EMPLOYEES_PATH);
+				return { employeeId };
+			},
+			{ refusal: KioskPinRefusal },
+		),
+);
 
 /** Gives a kiosk-only employee a real email and sends them the invitation to choose a password. */
-export async function addKioskOnlyEmployeeEmailAction(input: {
-	employeeId: string;
-	email: string;
-}): Promise<KioskPinActionResult<{ invitationSent: boolean }>> {
-	return runKioskPinAction("kiosk.addKioskOnlyEmployeeEmail", async (db, actor) => {
-		const result = await addEmailToKioskOnlyEmployee(
-			db,
-			{
-				organizationId: actor.organizationId,
-				actorUserId: actor.userId,
-				employeeId: employeeIdOf(input?.employeeId),
-				email: typeof input?.email === "string" ? input.email : "",
+export const addKioskOnlyEmployeeEmailAction = organizationAction(
+	{
+		name: "kiosk.addKioskOnlyEmployeeEmail",
+		requires: "member",
+		schema: z.strictObject({ employeeId: z.string(), email: z.string() }),
+	},
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"kiosk.addKioskOnlyEmployeeEmail",
+			async (db) => {
+				const result = await addEmailToKioskOnlyEmployee(
+					db,
+					{ organizationId, actorUserId: actor.userId, ...input },
+					kioskOnlyEmailUpgradeDeps,
+				);
+				revalidatePath(EMPLOYEES_PATH);
+				return result;
 			},
-			kioskOnlyEmailUpgradeDeps,
-		);
-		revalidatePath(EMPLOYEES_PATH);
-		return result;
-	});
-}
+			{ refusal: KioskPinRefusal },
+		),
+);

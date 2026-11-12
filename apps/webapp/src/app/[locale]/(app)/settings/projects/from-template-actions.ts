@@ -3,19 +3,24 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import * as z from "zod";
 import { project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import {
+	noInput,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import {
 	keepCustomFieldRefusal,
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
-import { isProjectNameConflict, type NewProjectStatus } from "@/lib/projects/project-creation";
+import { isProjectNameConflict } from "@/lib/projects/project-creation";
 import {
 	createProjectFromTemplateRows,
 	projectAsTemplateInput,
@@ -24,7 +29,6 @@ import {
 import {
 	normalizeProjectTemplateInput,
 	type ProjectTemplatePreviewData,
-	type ProjectTemplateSummary,
 } from "@/lib/projects/project-template-model";
 import {
 	getProjectTemplate,
@@ -34,42 +38,45 @@ import {
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	projectBillableDefault,
-	requireBillableTimeForDefaultChange,
+	validateBillableDefaultChange,
 } from "./project-billable-default-input";
-import {
-	ensureSettingsActorCanUseProjectCustomer,
-	getProjectSettingsActorContext,
-} from "./project-scope";
+import { loadAssignableCustomer } from "./project-scope";
+import { projectSettingsActorOf } from "./project-settings-actor";
 import {
 	auditTemplate,
-	getTemplateAdmin,
 	keepTypedTemplateError,
 	templateInputProblem,
 	templateNotFound,
 } from "./project-template-access";
-import { tracedProjectAction } from "./traced-project-action";
 
 /**
  * Project templates in use (#880): creating a project from a template, and
- * saving a project as a template. Every action runs in the caller's active
- * organization. Whoever may create projects may create one from a template
- * (and so read the templates); saving a project as a template is for org
- * owners and admins, like managing templates.
+ * saving a project as a template. Every action runs in the session's active
+ * organization. Whoever may create projects (settings access `scopedManager`)
+ * may create one from a template and so read the templates; saving a project as
+ * a template is for org owners and admins, like managing templates.
  */
 
 const DUPLICATE_PROJECT_NAME = "A project with this name already exists";
 
-export interface CreateProjectFromTemplateInput {
-	templateId: string;
-	name: string;
-	description?: string | null;
-	status?: NewProjectStatus;
-	customerId?: string | null;
+const templateId = z.string().min(1, "Template is required");
+
+const createProjectFromTemplateSchema = z.strictObject({
+	templateId,
+	name: z.string({ error: "Project name is required" }),
+	description: z.string().nullable().optional(),
+	status: z.enum(["planned", "active", "paused", "completed", "archived"]).optional(),
+	customerId: z.string().nullable().optional(),
 	/** Billable default (#900); only a project with a customer can have it on. */
-	billableDefault?: boolean;
-	/** The dialog's custom field values (#818); required fields are enforced when present. */
-	customFieldValues?: CustomFieldValuesInput;
-}
+	billableDefault: z.boolean({ error: "Invalid billable default" }).optional(),
+	/** The dialog's custom field values (#818); `saveFormCustomFieldValues` checks each. */
+	customFieldValues: z
+		.record(z.string(), z.unknown())
+		.optional()
+		.transform((values) => values as CustomFieldValuesInput | undefined),
+});
+
+export type CreateProjectFromTemplateInput = z.input<typeof createProjectFromTemplateSchema>;
 
 function keepTypedCreationError(error: DatabaseError) {
 	return isProjectNameConflict(error.cause)
@@ -81,24 +88,16 @@ function keepTypedCreationError(error: DatabaseError) {
  * The organization's templates, for anyone who may create projects. Managing
  * them stays with org owners and admins (`./template-actions`).
  */
-export async function getProjectTemplateChoices(): Promise<
-	ServerActionResult<ProjectTemplateSummary[]>
-> {
-	return runServerActionSafe(
-		tracedProjectAction(
-			"getProjectTemplateChoices",
-			{},
-			Effect.gen(function* () {
-				const actor = yield* getProjectSettingsActorContext({
-					queryName: "getProjectTemplateChoices:actor",
-				});
-				return yield* actor.dbService.query("listProjectTemplates", () =>
-					listProjectTemplates({ organizationId: actor.organizationId }),
-				);
-			}),
-		),
-	);
-}
+export const getProjectTemplateChoices = organizationAction(
+	{ name: "projectTemplate.choices", requires: "scopedManager", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("projectTemplate.choices", () =>
+				listProjectTemplates({ organizationId }),
+			);
+		}),
+);
 
 /**
  * One template with what creating a project from it would copy, including
@@ -106,141 +105,137 @@ export async function getProjectTemplateChoices(): Promise<
  * false for a creator who is not an org owner or admin: only they assign
  * project managers (#367), so the template's managers are left out.
  */
-export async function getProjectTemplatePreview(
-	templateId: string,
-): Promise<ServerActionResult<ProjectTemplatePreviewData>> {
-	return runServerActionSafe(
-		tracedProjectAction(
-			"getProjectTemplatePreview",
-			{ "template.id": templateId },
-			Effect.gen(function* () {
-				const actor = yield* getProjectSettingsActorContext({
-					queryName: "getProjectTemplatePreview:actor",
-				});
-				const template = yield* actor.dbService.query("getProjectTemplate", () =>
-					getProjectTemplate({ organizationId: actor.organizationId, templateId }),
-				);
-				if (!template) return yield* Effect.fail(templateNotFound(templateId));
-				return { ...template, managersCopied: actor.accessTier === "orgAdmin" };
-			}),
-		),
-	);
-}
+export const getProjectTemplatePreview = organizationAction(
+	{ name: "projectTemplate.preview", requires: "scopedManager", schema: templateId },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const template = yield* dbService.query("projectTemplate.preview", () =>
+				getProjectTemplate({ organizationId, templateId: input }),
+			);
+			if (!template) return yield* Effect.fail(templateNotFound(input));
+			return {
+				...template,
+				managersCopied: meetsSettingsAccess(actor.settingsAccess, "orgAdmin"),
+			} satisfies ProjectTemplatePreviewData;
+		}),
+);
 
 /**
  * Creates a project from a template, copying it once. Managers and
  * assignments whose employee has left or whose team or employee no longer
  * exists are skipped and returned in `skipped`; the project is still created.
  */
-export async function createProjectFromTemplate(
-	input: CreateProjectFromTemplateInput,
-): Promise<ServerActionResult<{ id: string; skipped: SkippedManagerOrAssignment[] }>> {
-	return runServerActionSafe(
-		tracedProjectAction(
-			"createProjectFromTemplate",
-			{ "template.id": input.templateId },
-			Effect.gen(function* () {
-				const actor = yield* getProjectSettingsActorContext({
-					queryName: "createProjectFromTemplate:actor",
-				});
-				const userId = actor.session.user.id;
-				const name = input.name.trim();
-				if (name.length === 0) {
-					return yield* Effect.fail(
-						new ValidationError({ message: "Project name is required", field: "name" }),
-					);
-				}
-
-				const duplicate = yield* actor.dbService.query("createProjectFromTemplate:name", () =>
-					db.query.project.findFirst({
-						where: and(eq(project.organizationId, actor.organizationId), eq(project.name, name)),
-						columns: { id: true },
-					}),
+export const createProjectFromTemplate = organizationAction(
+	{
+		name: "project.createFromTemplate",
+		requires: "scopedManager",
+		schema: createProjectFromTemplateSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const userId = actor.userId;
+			const isOrgAdmin = meetsSettingsAccess(actor.settingsAccess, "orgAdmin");
+			const name = input.name.trim();
+			if (name.length === 0) {
+				return yield* Effect.fail(
+					new ValidationError({ message: "Project name is required", field: "name" }),
 				);
-				if (duplicate) {
-					return yield* Effect.fail(
-						new ValidationError({ message: DUPLICATE_PROJECT_NAME, field: "name" }),
-					);
-				}
+			}
 
-				const customerId = input.customerId || null;
-				if (customerId) {
-					yield* ensureSettingsActorCanUseProjectCustomer(actor, customerId, "create");
-				}
+			const duplicate = yield* dbService.query("project.createFromTemplate:name", () =>
+				dbService.db.query.project.findFirst({
+					where: and(eq(project.organizationId, organizationId), eq(project.name, name)),
+					columns: { id: true },
+				}),
+			);
+			if (duplicate) {
+				return yield* Effect.fail(
+					new ValidationError({ message: DUPLICATE_PROJECT_NAME, field: "name" }),
+				);
+			}
 
-				// The same billable default rules as a hand-made project (#900).
-				yield* requireBillableTimeForDefaultChange(actor.dbService, actor.organizationId, {
-					requested: input.billableDefault,
-					current: false,
-				});
-				const billableDefault = yield* projectBillableDefault({
-					requested: input.billableDefault,
-					current: false,
+			const customerId = input.customerId || null;
+			if (customerId) {
+				yield* loadAssignableCustomer(
+					yield* projectSettingsActorOf(actor, organizationId),
 					customerId,
-				});
+					"create",
+				);
+			}
 
-				const status = input.status ?? "planned";
-				// Assignments change what is bookable, so the copy serializes with
-				// booking preparation like any assignment change (#315).
-				const created = yield* actor.dbService
-					.query("project.createFromTemplate", () =>
-						withOrganizationConfigurationMutation(db, actor.organizationId, async (tx) => {
-							const copied = await createProjectFromTemplateRows(
-								tx,
-								{
-									organizationId: actor.organizationId,
-									userId,
-									templateId: input.templateId,
-									now: systemClock.nowInstant(),
-									alsoManagedBy:
-										actor.accessTier === "manager" ? (actor.currentEmployee?.id ?? null) : null,
-									assignsManagers: actor.accessTier === "orgAdmin",
-								},
-								{
-									name,
-									description: input.description?.trim() || null,
-									status,
-									customerId,
-									billableDefault,
-								},
-							);
-							if (copied) {
-								await saveFormCustomFieldValues(tx, {
-									organizationId: actor.organizationId,
-									actorUserId: userId,
-									entity: "project",
-									recordId: copied.id,
-									values: input.customFieldValues,
-								});
-							}
-							return copied;
-						}),
-					)
-					.pipe(Effect.mapError(keepTypedCreationError), keepCustomFieldRefusal);
-				if (!created) return yield* Effect.fail(templateNotFound(input.templateId));
+			// The same billable default rules as a hand-made project (#900).
+			yield* validateBillableDefaultChange(dbService, organizationId, {
+				requested: input.billableDefault,
+				current: false,
+			});
+			const billableDefault = yield* projectBillableDefault({
+				requested: input.billableDefault,
+				current: false,
+				customerId,
+			});
 
-				logAudit({
-					action: AuditAction.PROJECT_CREATED,
-					actorId: userId,
-					targetId: created.id,
-					targetType: "project",
-					organizationId: actor.organizationId,
-					changes: { name, status },
-					metadata: {
-						projectName: name,
-						fromTemplateId: created.template.id,
-						fromTemplateName: created.template.name,
-						skippedMembers: created.skipped,
-					},
-					timestamp: new Date(),
-				}).catch((err) => logger.error({ err }, "Failed to log audit"));
+			const status = input.status ?? "planned";
+			// Assignments change what is bookable, so the copy serializes with
+			// booking preparation like any assignment change (#315).
+			const created = yield* dbService
+				.query("project.createFromTemplate", () =>
+					withOrganizationConfigurationMutation(dbService.db, organizationId, async (tx) => {
+						const copied = await createProjectFromTemplateRows(
+							tx,
+							{
+								organizationId,
+								userId,
+								templateId: input.templateId,
+								now: systemClock.nowInstant(),
+								// A scoped manager manages the project they create.
+								alsoManagedBy: isOrgAdmin ? null : (actor.employee?.id ?? null),
+								assignsManagers: isOrgAdmin,
+							},
+							{
+								name,
+								description: input.description?.trim() || null,
+								status,
+								customerId,
+								billableDefault,
+							},
+						);
+						if (copied) {
+							await saveFormCustomFieldValues(tx, {
+								organizationId,
+								actorUserId: userId,
+								entity: "project",
+								recordId: copied.id,
+								values: input.customFieldValues,
+							});
+						}
+						return copied;
+					}),
+				)
+				.pipe(Effect.mapError(keepTypedCreationError), keepCustomFieldRefusal);
+			if (!created) return yield* Effect.fail(templateNotFound(input.templateId));
 
-				revalidatePath("/settings/projects");
-				return { id: created.id, skipped: created.skipped };
-			}),
-		),
-	);
-}
+			logAudit({
+				action: AuditAction.PROJECT_CREATED,
+				actorId: userId,
+				targetId: created.id,
+				targetType: "project",
+				organizationId,
+				changes: { name, status },
+				metadata: {
+					projectName: name,
+					fromTemplateId: created.template.id,
+					fromTemplateName: created.template.name,
+					skippedMembers: created.skipped,
+				},
+				timestamp: new Date(),
+			}).catch((err) => logger.error({ err }, "Failed to log audit"));
+
+			revalidatePath("/settings/projects");
+			return { id: created.id, skipped: created.skipped };
+		}),
+);
 
 /**
  * Saves a project as a new template (org owners and admins only): its icon,
@@ -249,82 +244,80 @@ export async function createProjectFromTemplate(
  * skipped and returned in `skipped`. The template is named after the project
  * unless `name` is given.
  */
-export async function saveProjectAsTemplate(
-	projectId: string,
-	input: { name?: string } = {},
-): Promise<
-	ServerActionResult<{ id: string; name: string; skipped: SkippedManagerOrAssignment[] }>
-> {
-	return runServerActionSafe(
-		tracedProjectAction(
-			"saveProjectAsTemplate",
-			{ "project.id": projectId },
-			Effect.gen(function* () {
-				const admin = yield* getTemplateAdmin("saveFromProject");
-				// One transaction reads the project and writes the template, so someone
-				// leaving in between is skipped and reported, never refusing the save.
-				const saved = yield* admin.actor.dbService
-					.query("projectTemplate.saveFromProject", () =>
-						db.transaction(async (tx) => {
-							const source = await projectAsTemplateInput(tx, {
-								organizationId: admin.organizationId,
-								projectId,
-							});
-							if (!source) return null;
-							const normalized = normalizeProjectTemplateInput({
-								...source.input,
-								name: input.name ?? source.project.name,
-							});
-							if (!normalized.ok) throw templateInputProblem(normalized.problem);
-							const values = normalized.value;
-							const written = await writeProjectTemplate(
-								tx,
-								{ organizationId: admin.organizationId, userId: admin.userId },
-								values,
-								{ skipDeparted: true },
-							);
-							const managerIds = new Set(values.managerEmployeeIds);
-							const employeeIds = new Set(values.employeeIds);
-							const leftMeanwhile = written.departed.flatMap(
-								({ employeeId, name }): SkippedManagerOrAssignment[] => [
-									...(managerIds.has(employeeId)
-										? [{ role: "manager" as const, name, reason: "departed" as const }]
-										: []),
-									...(employeeIds.has(employeeId)
-										? [{ role: "employee" as const, name, reason: "departed" as const }]
-										: []),
-								],
-							);
-							return {
-								id: written.id,
-								values,
-								projectId: source.project.id,
-								skipped: [...source.skipped, ...leftMeanwhile],
-							};
-						}),
-					)
-					.pipe(Effect.mapError(keepTypedTemplateError));
-				if (!saved) {
-					return yield* Effect.fail(
-						new NotFoundError({
-							message: "Project not found",
-							entityType: "project",
-							entityId: projectId,
-						}),
-					);
-				}
-
-				auditTemplate(
-					admin,
-					AuditAction.PROJECT_TEMPLATE_CREATED,
-					{ id: saved.id, name: saved.values.name },
-					{ name: saved.values.name, taskNames: saved.values.tasks.map((task) => task.name) },
-					{ fromProjectId: saved.projectId, skippedMembers: saved.skipped },
+export const saveProjectAsTemplate = organizationAction(
+	{
+		name: "projectTemplate.saveFromProject",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			projectId: z.string().min(1, "Project is required"),
+			name: z.string().optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			// One transaction reads the project and writes the template, so someone
+			// leaving in between is skipped and reported, never refusing the save.
+			const saved = yield* dbService
+				.query("projectTemplate.saveFromProject", () =>
+					dbService.db.transaction(async (tx) => {
+						const source = await projectAsTemplateInput(tx, {
+							organizationId,
+							projectId: input.projectId,
+						});
+						if (!source) return null;
+						const normalized = normalizeProjectTemplateInput({
+							...source.input,
+							name: input.name ?? source.project.name,
+						});
+						if (!normalized.ok) throw templateInputProblem(normalized.problem);
+						const values = normalized.value;
+						const written = await writeProjectTemplate(
+							tx,
+							{ organizationId, userId: actor.userId },
+							values,
+							{ skipDeparted: true },
+						);
+						const managerIds = new Set(values.managerEmployeeIds);
+						const employeeIds = new Set(values.employeeIds);
+						const leftMeanwhile = written.departed.flatMap(
+							({ employeeId, name }): SkippedManagerOrAssignment[] => [
+								...(managerIds.has(employeeId)
+									? [{ role: "manager" as const, name, reason: "departed" as const }]
+									: []),
+								...(employeeIds.has(employeeId)
+									? [{ role: "employee" as const, name, reason: "departed" as const }]
+									: []),
+							],
+						);
+						return {
+							id: written.id,
+							values,
+							projectId: source.project.id,
+							skipped: [...source.skipped, ...leftMeanwhile],
+						};
+					}),
+				)
+				.pipe(Effect.mapError(keepTypedTemplateError));
+			if (!saved) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Project not found",
+						entityType: "project",
+						entityId: input.projectId,
+					}),
 				);
+			}
 
-				revalidatePath("/settings/projects");
-				return { id: saved.id, name: saved.values.name, skipped: saved.skipped };
-			}),
-		),
-	);
-}
+			auditTemplate(
+				{ userId: actor.userId, organizationId },
+				AuditAction.PROJECT_TEMPLATE_CREATED,
+				{ id: saved.id, name: saved.values.name },
+				{ name: saved.values.name, taskNames: saved.values.tasks.map((task) => task.name) },
+				{ fromProjectId: saved.projectId, skippedMembers: saved.skipped },
+			);
+
+			revalidatePath("/settings/projects");
+			return { id: saved.id, name: saved.values.name, skipped: saved.skipped };
+		}),
+);

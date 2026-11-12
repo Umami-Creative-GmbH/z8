@@ -599,7 +599,8 @@
       "billable": "Debiterbar",
       "editedBy": "(redigerad av {name} {date})",
       "missingTask": "Uppgift saknas",
-      "missingTaskHint": "Uppgift saknas: lägg till en uppgift"
+      "missingTaskHint": "Uppgift saknas: lägg till en uppgift",
+      "breakEnforcementNote": "Automatiskt justerad: rastregler"
     },
     "workStatus": {
       "overRequirement": "över kravet",

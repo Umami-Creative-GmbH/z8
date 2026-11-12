@@ -1,9 +1,11 @@
 "use server";
 
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { z } from "zod";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { DatabaseError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	confirmImplementationChecklistItem,
 	unconfirmImplementationChecklistItem,
@@ -14,101 +16,79 @@ import {
 	type ImplementationChecklistItemId,
 	isImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
-import { createLogger } from "@/lib/logger";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { loadImplementationChecklistForContext } from "./queries";
 
-import {
-	type ImplementationChecklistActionResult,
-	type ImplementationChecklistViewModel,
-	loadImplementationChecklistForContext,
-} from "./queries";
-
-export type {
-	ImplementationChecklistActionResult,
-	ImplementationChecklistViewModel,
-} from "./queries";
+export type { ImplementationChecklistViewModel } from "./queries";
 
 const IMPLEMENTATION_CHECKLIST_MUTATION_ERROR = "Failed to update checklist item.";
-const logger = createLogger("ImplementationChecklist");
 
-type ImplementationChecklistActionFailure = { success: false; error: string };
-type ImplementationChecklistQuerySuccess<T> = { success: true; data: T };
+/** An item an org admin may confirm or unconfirm by hand. */
+const manualItemId = z
+	.custom<ImplementationChecklistItemId>(
+		(value) => typeof value === "string" && isImplementationChecklistItemId(value),
+		"Unknown implementation checklist item",
+	)
+	.refine(
+		(itemId) =>
+			IMPLEMENTATION_CHECKLIST_ITEMS.find((item) => item.id === itemId)?.canManualComplete === true,
+		"Implementation checklist item cannot be manually completed",
+	);
 
-type ManualItemValidationResult =
-	| ImplementationChecklistQuerySuccess<ImplementationChecklistItemId>
-	| ImplementationChecklistActionFailure;
-
-function validateManualItemId(itemId: string): ManualItemValidationResult {
-	if (!isImplementationChecklistItemId(itemId)) {
-		return { success: false, error: "Unknown implementation checklist item" };
-	}
-
-	const item = IMPLEMENTATION_CHECKLIST_ITEMS.find((checklistItem) => checklistItem.id === itemId);
-
-	if (!item?.canManualComplete) {
-		return {
-			success: false,
-			error: "Implementation checklist item cannot be manually completed",
-		};
-	}
-
-	return { success: true, data: itemId };
-}
-
-export async function getImplementationChecklist(): Promise<
-	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
-> {
-	return loadImplementationChecklistForContext(await requireOrgAdminSettingsAccess());
-}
-
-export async function markImplementationChecklistItemComplete(
-	itemId: string,
-): Promise<ImplementationChecklistActionResult<undefined>> {
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
-	const validation = validateManualItemId(itemId);
-
-	if (!validation.success) {
-		return validation;
-	}
-
-	try {
-		await confirmImplementationChecklistItem(db, {
-			organizationId,
-			itemId: validation.data,
-			actorUserId: authContext.user.id,
-			confirmedAt: dateFromInstant(systemClock.nowInstant()),
+/** A failed write, with a message safe to show the admin. */
+function mutationFailure(operation: string) {
+	return (error: DatabaseError) =>
+		new DatabaseError({
+			message: IMPLEMENTATION_CHECKLIST_MUTATION_ERROR,
+			operation,
+			cause: error.cause,
 		});
-	} catch (error) {
-		logger.error({ organizationId, itemId, error }, "Could not confirm checklist item");
-		return { success: false, error: IMPLEMENTATION_CHECKLIST_MUTATION_ERROR };
-	}
-
-	revalidatePath(IMPLEMENTATION_CHECKLIST_PATH);
-
-	return { success: true };
 }
 
-export async function markImplementationChecklistItemIncomplete(
-	itemId: string,
-): Promise<ImplementationChecklistActionResult<undefined>> {
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
-	const validation = validateManualItemId(itemId);
+export const getImplementationChecklist = organizationAction(
+	{ name: "implementationChecklist.load", requires: "orgAdmin", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("implementationChecklist.load", () =>
+				loadImplementationChecklistForContext({ organizationId, userId: actor.userId }),
+			);
+		}),
+);
 
-	if (!validation.success) {
-		return validation;
-	}
+export const markImplementationChecklistItemComplete = organizationAction(
+	{ name: "implementationChecklist.confirmItem", requires: "orgAdmin", schema: manualItemId },
+	({ actor, organizationId, input: itemId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService
+				.query("implementationChecklist.confirmItem", () =>
+					confirmImplementationChecklistItem(dbService.db, {
+						organizationId,
+						itemId,
+						actorUserId: actor.userId,
+						confirmedAt: dateFromInstant(systemClock.nowInstant()),
+					}),
+				)
+				.pipe(Effect.mapError(mutationFailure("implementationChecklist.confirmItem")));
+			revalidatePath(IMPLEMENTATION_CHECKLIST_PATH);
+		}),
+);
 
-	try {
-		await unconfirmImplementationChecklistItem(db, {
-			organizationId,
-			itemId: validation.data,
-			actorUserId: authContext.user.id,
-		});
-	} catch (error) {
-		logger.error({ organizationId, itemId, error }, "Could not unconfirm checklist item");
-		return { success: false, error: IMPLEMENTATION_CHECKLIST_MUTATION_ERROR };
-	}
-
-	revalidatePath(IMPLEMENTATION_CHECKLIST_PATH);
-
-	return { success: true };
-}
+export const markImplementationChecklistItemIncomplete = organizationAction(
+	{ name: "implementationChecklist.unconfirmItem", requires: "orgAdmin", schema: manualItemId },
+	({ actor, organizationId, input: itemId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService
+				.query("implementationChecklist.unconfirmItem", () =>
+					unconfirmImplementationChecklistItem(dbService.db, {
+						organizationId,
+						itemId,
+						actorUserId: actor.userId,
+					}),
+				)
+				.pipe(Effect.mapError(mutationFailure("implementationChecklist.unconfirmItem")));
+			revalidatePath(IMPLEMENTATION_CHECKLIST_PATH);
+		}),
+);

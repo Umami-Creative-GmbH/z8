@@ -594,7 +594,55 @@
       "title": "Vremenska traka radnog dana",
       "today": "Danas",
       "unavailableDescription": "Evidencija radnog vremena i dalje radi. Pokušajte osvježiti ovaj prikaz kasnije.",
-      "unavailableTitle": "Vremenska traka nije dostupna"
+      "unavailableTitle": "Vremenska traka nije dostupna",
+      "workPeriod": {
+        "title": "Evidentirani rad"
+      },
+      "shift": {
+        "title": "Planirana smjena"
+      },
+      "status": {
+        "approved": "Odobreno",
+        "pending": "Na čekanju",
+        "rejected": "Odbijeno",
+        "cancelled": "Otkazano",
+        "published": "Objavljeno",
+        "draft": "Nacrt",
+        "active": "Aktivno"
+      },
+      "absence": {
+        "fullDay": "Cijeli dan",
+        "morning": "Prijepodne",
+        "afternoon": "Poslijepodne"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Zahtjev za ispravku vremena",
+          "subtitle": "Ispravka vremenskog unosa"
+        },
+        "absence": {
+          "title": "Zahtjev za odsustvo",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Prikaži odsustvo",
+        "reviewRequest": "Pregledaj zahtjev"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Zahtjev za izmjenu na čekanju",
+          "description": "Ovaj radni period ima izmjene koje čekaju odobrenje."
+        },
+        "missingClockOut": {
+          "title": "Nedostaje odjava",
+          "description": "Ovaj radni period je još aktivan."
+        },
+        "autoAdjusted": {
+          "title": "Automatski prilagođen zapis",
+          "description": "Pravila o pauzama ili usklađenosti prilagodila su ovaj radni period."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Otkaži",
@@ -669,7 +717,10 @@
     "workLocationHome": "Kuća",
     "workLocationOffice": "Kancelarija",
     "workLocationOther": "Ostalo",
-    "workLocationRemote": "Rad na daljinu"
+    "workLocationRemote": "Rad na daljinu",
+    "systemNote": {
+      "breakEnforcement": "Automatski prilagođeno: primjena pauza"
+    }
   },
   "wellness": {
     "water": {

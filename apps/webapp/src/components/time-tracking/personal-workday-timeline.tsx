@@ -44,10 +44,14 @@ export interface SerializableWorkdayTimelineItem {
 	id: string;
 	type: WorkdayTimelineItemType;
 	title: string;
+	titleKey?: string;
 	subtitle?: string;
+	subtitleKey?: string;
+	subtitleParams?: Record<string, string | number>;
 	startLabel?: string;
 	endLabel?: string;
 	badge?: string;
+	badgeKey?: string;
 	severity?: WorkdayTimelineSeverity;
 	link?: WorkdayTimelineLink;
 	/** A work entry's work period, which a period blocker link focuses (#1349). */
@@ -56,7 +60,11 @@ export interface SerializableWorkdayTimelineItem {
 
 export type SerializableWorkdayTimelineResult =
 	| { success: true; data: SerializableWorkdayTimelineData }
-	| { success: false; selectedDate: SerializableSelectedWorkdayDate; error: string };
+	| {
+			success: false;
+			selectedDate: SerializableSelectedWorkdayDate;
+			error: string;
+	  };
 
 interface PersonalWorkdayTimelineProps {
 	result: SerializableWorkdayTimelineResult;
@@ -76,7 +84,11 @@ export function PersonalWorkdayTimeline({ result }: PersonalWorkdayTimelineProps
 							{t("timeTracking.timeline.title", "Workday timeline")}
 						</h2>
 					</CardTitle>
-					<CardDescription>{Temporal.PlainDate.from(selectedDate.dateKey).toLocaleString(locale, { dateStyle: "long" })}</CardDescription>
+					<CardDescription>
+						{Temporal.PlainDate.from(selectedDate.dateKey).toLocaleString(locale, {
+							dateStyle: "long",
+						})}
+					</CardDescription>
 				</div>
 				<DayPicker selectedDate={selectedDate} />
 			</CardHeader>
@@ -155,19 +167,49 @@ function WarningSummary({ warnings }: { warnings: SerializableWorkdayTimelineIte
 	);
 }
 
+/** A timeline item's copy in the viewer's language; unkeyed copy is user content shown as is. */
+function useItemText(item: SerializableWorkdayTimelineItem) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const subtitleParams = item.subtitleParams
+		? Object.fromEntries(
+				Object.entries(item.subtitleParams).map(([name, value]) => [
+					name,
+					typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+						? Temporal.PlainDate.from(value).toLocaleString(locale, {
+								dateStyle: "medium",
+							})
+						: value,
+				]),
+			)
+		: undefined;
+
+	return {
+		title: item.titleKey ? t(item.titleKey, item.title) : item.title,
+		subtitle:
+			item.subtitle && item.subtitleKey
+				? t(item.subtitleKey, item.subtitle, subtitleParams)
+				: item.subtitle,
+		badge: item.badge && item.badgeKey ? t(item.badgeKey, item.badge) : item.badge,
+		linkLabel: item.link?.labelKey ? t(item.link.labelKey, item.link.label) : item.link?.label,
+	};
+}
+
 function WarningAlert({ warning }: { warning: SerializableWorkdayTimelineItem }) {
+	const text = useItemText(warning);
+
 	return (
 		<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
 			<IconAlertTriangle aria-hidden="true" className="text-amber-600 dark:text-amber-400" />
-			<AlertTitle>{warning.title}</AlertTitle>
+			<AlertTitle>{text.title}</AlertTitle>
 			<AlertDescription>
-				{warning.subtitle && <p>{warning.subtitle}</p>}
+				{text.subtitle && <p>{text.subtitle}</p>}
 				{warning.link && (
 					<Link
 						className="font-medium text-amber-900 underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 dark:text-amber-100 dark:focus-visible:ring-amber-400"
 						href={warning.link.href}
 					>
-						{warning.link.label}
+						{text.linkLabel}
 					</Link>
 				)}
 			</AlertDescription>
@@ -176,8 +218,9 @@ function WarningAlert({ warning }: { warning: SerializableWorkdayTimelineItem })
 }
 
 function TimelineRow({ item }: { item: SerializableWorkdayTimelineItem }) {
+	const text = useItemText(item);
 	const timeRange = getTimeRange(item);
-	const content = <TimelineRowContent item={item} timeRange={timeRange} />;
+	const content = <TimelineRowContent severity={item.severity} text={text} timeRange={timeRange} />;
 	// A work entry's row is where a period blocker link focuses it (#1349).
 	const focusTargetId =
 		item.type === "work-period" && item.workPeriodId
@@ -200,7 +243,7 @@ function TimelineRow({ item }: { item: SerializableWorkdayTimelineItem }) {
 					href={item.link.href}
 				>
 					{content}
-					<span className="sr-only"> {item.link.label}</span>
+					<span className="sr-only"> {text.linkLabel}</span>
 				</Link>
 			) : (
 				content
@@ -210,27 +253,27 @@ function TimelineRow({ item }: { item: SerializableWorkdayTimelineItem }) {
 }
 
 function TimelineRowContent({
-	item,
+	text,
+	severity,
 	timeRange,
 }: {
-	item: SerializableWorkdayTimelineItem;
+	text: ReturnType<typeof useItemText>;
+	severity: WorkdayTimelineSeverity | undefined;
 	timeRange: string | null;
 }) {
 	return (
 		<div className="flex gap-3 px-4 py-3">
-			<div
-				className={cn("mt-1 size-2.5 shrink-0 rounded-full", severityClassName(item.severity))}
-			/>
+			<div className={cn("mt-1 size-2.5 shrink-0 rounded-full", severityClassName(severity))} />
 			<div className="min-w-0 flex-1 space-y-1">
 				<div className="flex flex-wrap items-center gap-2">
-					<p className="break-words font-medium text-sm leading-5">{item.title}</p>
-					{item.badge && <Badge variant="secondary">{item.badge}</Badge>}
+					<p className="break-words font-medium text-sm leading-5">{text.title}</p>
+					{text.badge && <Badge variant="secondary">{text.badge}</Badge>}
 				</div>
 				{timeRange && (
 					<p className="font-medium text-muted-foreground text-xs tabular-nums">{timeRange}</p>
 				)}
-				{item.subtitle && (
-					<p className="break-words text-muted-foreground text-sm leading-5">{item.subtitle}</p>
+				{text.subtitle && (
+					<p className="break-words text-muted-foreground text-sm leading-5">{text.subtitle}</p>
 				)}
 			</div>
 		</div>

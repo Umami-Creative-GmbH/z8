@@ -192,10 +192,7 @@ describe("surcharge model save refresh", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Create" }));
 		await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
-		expect(actions.create).toHaveBeenCalledWith(
-			"org-a",
-			expect.objectContaining({ name: "New model" }),
-		);
+		expect(actions.create).toHaveBeenCalledWith(expect.objectContaining({ name: "New model" }));
 		expect(list).toHaveBeenCalledTimes(2);
 		expect(assignments).toHaveBeenCalledTimes(1);
 		expect(other).toHaveBeenCalledTimes(1);
@@ -247,8 +244,8 @@ describe("surcharge model save refresh", () => {
 			data: [{ ...model, name }],
 		}));
 		actions.update.mockImplementation(
-			async (_id: string, value: { name: string }) => {
-				name = value.name;
+			async (input: { modelId: string; data: { name: string } }) => {
+				name = input.data.name;
 				return { success: true, data: undefined };
 			},
 		);

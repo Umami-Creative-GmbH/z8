@@ -61,6 +61,10 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDateOnly } from "@/lib/datetime/format";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import {
@@ -70,7 +74,8 @@ import {
 
 interface PendingMembersCardProps {
 	organizationId: string;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 const NO_TEAM_VALUE = "none";
@@ -383,7 +388,7 @@ function PendingMemberDialogStack({
 
 export function PendingMembersCard({
 	organizationId,
-	currentMemberRole,
+	settingsAccess,
 }: PendingMembersCardProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -400,12 +405,12 @@ export function PendingMembersCard({
 	>({});
 
 	const canManage =
-		currentMemberRole === "admin" || currentMemberRole === "owner";
+		meetsSettingsAccess(settingsAccess, "orgAdmin");
 
 	// Fetch pending members
 	const { data: pendingMembersResult, isLoading } = useQuery({
 		queryKey: queryKeys.pendingMembers.list(organizationId),
-		queryFn: () => listPendingMembers(organizationId),
+		queryFn: () => listPendingMembers(),
 		enabled: canManage,
 	});
 
@@ -416,7 +421,7 @@ export function PendingMembersCard({
 	// Fetch teams for assignment
 	const { data: teamsResult } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
-		queryFn: () => listTeams(organizationId),
+		queryFn: () => listTeams(),
 		enabled: canManage && pendingMembers.length > 0,
 	});
 
@@ -433,7 +438,6 @@ export function PendingMembersCard({
 		}) => {
 			const result = await approvePendingMember({
 				memberId,
-				organizationId,
 				assignedTeamId: teamId,
 			});
 			if (!result.success) throw new Error(result.error || "Failed to approve");
@@ -458,7 +462,6 @@ export function PendingMembersCard({
 		mutationFn: async (memberId: string) => {
 			const result = await rejectPendingMember({
 				memberId,
-				organizationId,
 			});
 			if (!result.success) throw new Error(result.error || "Failed to reject");
 		},
@@ -488,7 +491,6 @@ export function PendingMembersCard({
 				requests.map(async ({ memberId, teamId }) => {
 					const result = await approvePendingMember({
 						memberId,
-						organizationId,
 						assignedTeamId: teamId,
 					});
 
@@ -523,7 +525,7 @@ export function PendingMembersCard({
 	const bulkRejectMutation = useMutation({
 		mutationFn: async () => {
 			const memberIds = Array.from(selectedMembers);
-			const result = await bulkRejectPendingMembers(memberIds, organizationId);
+			const result = await bulkRejectPendingMembers({ memberIds });
 			if (!result.success) throw new Error(result.error || "Failed to reject");
 			return result.data;
 		},

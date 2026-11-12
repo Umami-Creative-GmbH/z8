@@ -1,85 +1,85 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { Effect } from "effect";
 import { z } from "zod";
-import { db } from "@/db";
 import { travelExpenseSettings } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
-import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
+import { auditLater, revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
  * Whether employees may submit an explained missing-receipt exception (#604).
- * Only expense administrators (organization settings managers) change it;
- * submitted reports keep the exceptions they were submitted with.
+ * Only org admins change it; submitted reports keep the exceptions they were
+ * submitted with.
  */
 
 export interface ReceiptExceptionSettings {
 	missingReceiptExceptionsAllowed: boolean;
 }
 
-const requireOrgAdmin = () => requireExpenseAdministrator();
+export const getReceiptExceptionSettings = organizationAction(
+	{ name: "travelExpenses.getReceiptExceptions", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const allowed = yield* storeStep(
+				"travelExpenses.getReceiptExceptions",
+				(database) => loadReceiptExceptionsAllowed(database, organizationId),
+				{ failure: "Failed to load the missing-receipt setting" },
+			);
+			return { missingReceiptExceptionsAllowed: allowed } satisfies ReceiptExceptionSettings;
+		}),
+);
 
-export async function getReceiptExceptionSettings(): Promise<
-	ServerActionResult<ReceiptExceptionSettings>
-> {
-	try {
-		const access = await requireOrgAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		return {
-			success: true,
-			data: {
-				missingReceiptExceptionsAllowed: await loadReceiptExceptionsAllowed(
-					db,
-					access.organizationId,
-				),
-			},
-		};
-	} catch (error) {
-		logger.error({ error }, "Failed to load the missing-receipt exception setting");
-		return { success: false, error: "Failed to load the missing-receipt setting" };
-	}
-}
-
-const saveSchema = z.object({ missingReceiptExceptionsAllowed: z.boolean() });
-
-export async function saveReceiptExceptionSettings(
-	input: ReceiptExceptionSettings,
-): Promise<ServerActionResult<ReceiptExceptionSettings>> {
-	try {
-		const access = await requireOrgAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		const parsed = saveSchema.safeParse(input);
-		if (!parsed.success) return { success: false, error: "Invalid setting" };
-		const allowed = parsed.data.missingReceiptExceptionsAllowed;
-		const now = new Date();
-		await db
-			.insert(travelExpenseSettings)
-			.values({
-				organizationId: access.organizationId,
-				missingReceiptExceptionsAllowed: allowed,
-				updatedAt: now,
-				updatedBy: access.userId,
-			})
-			// Only this setting; the other columns belong to other settings.
-			.onConflictDoUpdate({
-				target: travelExpenseSettings.organizationId,
-				set: { missingReceiptExceptionsAllowed: allowed, updatedAt: now, updatedBy: access.userId },
-			});
-		logAudit({
-			action: AuditAction.TRAVEL_EXPENSE_RECEIPT_EXCEPTIONS_CHANGED,
-			actorId: access.userId,
-			targetType: "organization",
-			organizationId: access.organizationId,
-			metadata: { missingReceiptExceptionsAllowed: allowed },
-			timestamp: now,
-		}).catch((error) => logger.error({ error }, "Failed to log the missing-receipt setting"));
-		revalidatePath("/settings/travel-expenses");
-		return { success: true, data: { missingReceiptExceptionsAllowed: allowed } };
-	} catch (error) {
-		logger.error({ error }, "Failed to save the missing-receipt exception setting");
-		return { success: false, error: "Failed to save the missing-receipt setting" };
-	}
-}
+export const saveReceiptExceptionSettings = organizationAction(
+	{
+		name: "travelExpenses.saveReceiptExceptions",
+		requires: "orgAdmin",
+		schema: z.object(
+			{ missingReceiptExceptionsAllowed: z.boolean({ error: "Invalid setting" }) },
+			"Invalid setting",
+		),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const allowed = input.missingReceiptExceptionsAllowed;
+			const now = new Date();
+			yield* storeStep(
+				"travelExpenses.saveReceiptExceptions",
+				(database) =>
+					database
+						.insert(travelExpenseSettings)
+						.values({
+							organizationId,
+							missingReceiptExceptionsAllowed: allowed,
+							updatedAt: now,
+							updatedBy: actor.userId,
+						})
+						// Only this setting; the other columns belong to other settings.
+						.onConflictDoUpdate({
+							target: travelExpenseSettings.organizationId,
+							set: {
+								missingReceiptExceptionsAllowed: allowed,
+								updatedAt: now,
+								updatedBy: actor.userId,
+							},
+						}),
+				{ failure: "Failed to save the missing-receipt setting" },
+			);
+			yield* auditLater(
+				() =>
+					logAudit({
+						action: AuditAction.TRAVEL_EXPENSE_RECEIPT_EXCEPTIONS_CHANGED,
+						actorId: actor.userId,
+						targetType: "organization",
+						organizationId,
+						metadata: { missingReceiptExceptionsAllowed: allowed },
+						timestamp: now,
+					}),
+				"Failed to log the missing-receipt setting",
+			);
+			yield* revalidateExpenseSettings();
+			return { missingReceiptExceptionsAllowed: allowed } satisfies ReceiptExceptionSettings;
+		}),
+);

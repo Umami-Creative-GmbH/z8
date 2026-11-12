@@ -599,7 +599,8 @@
       "billable": "Abrechenbar",
       "editedBy": "(bearbeitet von {name} am {date})",
       "missingTask": "Fehlende Aufgabe",
-      "missingTaskHint": "Fehlende Aufgabe: Aufgabe hinzufügen"
+      "missingTaskHint": "Fehlende Aufgabe: Aufgabe hinzufügen",
+      "breakEnforcementNote": "Automatisch angepasst: Pausenregelung"
     },
     "workStatus": {
       "overRequirement": "über der Anforderung",

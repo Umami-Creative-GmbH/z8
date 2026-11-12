@@ -35,6 +35,7 @@ import {
 	type PolicyClockOutBreakSnapshot,
 	regulationFromSnapshot,
 } from "./policy-clock-out-break-snapshot";
+import { BREAK_ENFORCEMENT_NOTE } from "./system-notes";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { assertNoUnrelatedWorkPeriodReview } from "./work-period-review";
 import {
@@ -123,7 +124,6 @@ export const POLICY_CLOCK_OUT_BREAK_OPERATION_RESULT_VERSION = 1;
 export const POLICY_CLOCK_OUT_BREAK_WRITER_VERSION = 1;
 
 const OPERATION_NAMESPACE = "z8:policy-clock-out-break:v1";
-const BREAK_NOTE = "Auto-adjusted: break enforcement";
 const BREAK_SOURCE = { ipAddress: "system", deviceInfo: "break-enforcement" } as const;
 
 /** One segment by value: committed evidence, not a pointer to current rows. */
@@ -286,7 +286,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		},
 		regulation,
 		takenBefore: "approved_work_of_local_day",
-		notes: BREAK_NOTE,
+		notes: BREAK_ENFORCEMENT_NOTE,
 		actorUserId: input.actorUserId,
 		entries: {
 			createdBy: input.actorUserId,

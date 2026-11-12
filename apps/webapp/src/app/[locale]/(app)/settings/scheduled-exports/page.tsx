@@ -19,13 +19,13 @@ export const metadata = {
 async function ScheduledExportsContent() {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 
-	// Fetch initial data in parallel after the org access guard supplies organizationId.
+	// Fetch initial data in parallel after the org access guard.
 	// eslint-disable-next-line react-doctor/server-sequential-independent-await
 	const [schedulesResult, filterOptionsResult, payrollConfigsResult] =
 		await Promise.all([
-			getScheduledExportsAction(organizationId),
-			getFilterOptionsAction(organizationId),
-			getPayrollConfigsAction(organizationId),
+			getScheduledExportsAction(),
+			getFilterOptionsAction(),
+			getPayrollConfigsAction(),
 		]);
 
 	const schedules = schedulesResult.success ? schedulesResult.data : [];

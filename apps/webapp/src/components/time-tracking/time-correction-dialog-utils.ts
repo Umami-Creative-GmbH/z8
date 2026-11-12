@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
+import { systemNoteOf } from "@/lib/time-tracking/system-notes";
 import {
 	isWorkLocationType,
 	normalizeWorkLocationType,
@@ -53,7 +54,8 @@ export function getTimeCorrectionDefaultValues(
 		clockInTime: clockIn.time,
 		clockOutDate: clockOut?.date ?? "",
 		clockOutTime: clockOut?.time ?? "",
-		reason: workPeriod.clockOut?.notes || "",
+		// A system note is no reason a person gave; the correction starts without one.
+		reason: systemNoteOf(workPeriod.clockOut?.notes) ? "" : workPeriod.clockOut?.notes || "",
 		workLocationType: isWorkLocationType(workPeriod.workLocationType)
 			? workPeriod.workLocationType
 			: normalizeWorkLocationType(workPeriod.workLocationType),

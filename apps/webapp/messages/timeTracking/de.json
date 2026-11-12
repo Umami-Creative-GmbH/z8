@@ -594,7 +594,55 @@
       "title": "Arbeitstag-Zeitstrahl",
       "today": "Heute",
       "unavailableDescription": "Die Zeiterfassung läuft noch. Versuchen Sie später, diese Ansicht zu aktualisieren.",
-      "unavailableTitle": "Zeitstrahl nicht verfügbar"
+      "unavailableTitle": "Zeitstrahl nicht verfügbar",
+      "workPeriod": {
+        "title": "Erfasste Arbeit"
+      },
+      "shift": {
+        "title": "Geplante Schicht"
+      },
+      "status": {
+        "approved": "Genehmigt",
+        "pending": "Ausstehend",
+        "rejected": "Abgelehnt",
+        "cancelled": "Storniert",
+        "published": "Veröffentlicht",
+        "draft": "Entwurf",
+        "active": "Aktiv"
+      },
+      "absence": {
+        "fullDay": "Ganzer Tag",
+        "morning": "Vormittag",
+        "afternoon": "Nachmittag"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Zeitkorrekturantrag",
+          "subtitle": "Korrektur eines Zeiteintrags"
+        },
+        "absence": {
+          "title": "Abwesenheitsantrag",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Abwesenheit anzeigen",
+        "reviewRequest": "Antrag prüfen"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Änderungsantrag ausstehend",
+          "description": "Für diesen Arbeitszeitraum warten Änderungen auf Genehmigung."
+        },
+        "missingClockOut": {
+          "title": "Fehlendes Ausstempeln",
+          "description": "Dieser Arbeitszeitraum ist noch aktiv."
+        },
+        "autoAdjusted": {
+          "title": "Automatisch angepasster Eintrag",
+          "description": "Pausen- oder Compliance-Regeln haben diesen Arbeitszeitraum angepasst."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Abbrechen",
@@ -669,7 +717,10 @@
     "workLocationHome": "Homeoffice",
     "workLocationOffice": "Büro",
     "workLocationOther": "Sonstiges",
-    "workLocationRemote": "Mobil"
+    "workLocationRemote": "Mobil",
+    "systemNote": {
+      "breakEnforcement": "Automatisch angepasst: Pausenregelung"
+    }
   },
   "wellness": {
     "water": {

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EMPTY_EXPENSE_WAGE_TYPE_CODES } from "@/lib/payroll-export/expense-wage-type.types";
 import { PAYROLL_LINE_KINDS } from "@/lib/travel-expenses/payroll-line-kind";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
-	requireExpenseAdministrator: vi.fn(),
+	caller: null as StubCaller | null,
 	getReimbursementChannel: vi.fn(),
 	getExpenseWageTypeMappings: vi.fn(),
 	saveExpenseWageTypeMapping: vi.fn(),
@@ -11,11 +12,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
-vi.mock("@/db", () => ({ db: {} }));
-vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
-vi.mock("@/lib/travel-expenses/expense-administrator", () => ({
-	requireExpenseAdministrator: mocks.requireExpenseAdministrator,
-}));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller));
+});
 vi.mock("@/lib/travel-expenses/reimbursement-channel", () => ({
 	getReimbursementChannel: mocks.getReimbursementChannel,
 }));
@@ -28,7 +29,18 @@ const { getExpenseWageTypeSetting, saveExpenseWageTypeSetting } = await import(
 	"./expense-wage-type-actions"
 );
 
-const admin = { organizationId: "org-1", userId: "user-1", employeeId: null };
+const admin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "owner",
+	employee: null,
+};
+const scopedManager: StubCaller = {
+	userId: "user-2",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-2", role: "manager", former: false },
+};
 const unmapped = PAYROLL_LINE_KINDS.map((kind) => ({
 	kind,
 	codes: EMPTY_EXPENSE_WAGE_TYPE_CODES,
@@ -37,26 +49,24 @@ const unmapped = PAYROLL_LINE_KINDS.map((kind) => ({
 describe("expense wage type actions (#851)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.requireExpenseAdministrator.mockResolvedValue(admin);
+		mocks.caller = admin;
 		mocks.getReimbursementChannel.mockResolvedValue("payroll_run");
 		mocks.getExpenseWageTypeMappings.mockResolvedValue(unmapped);
 	});
 
-	it("refuses a non-admin without reading or saving mappings", async () => {
-		mocks.requireExpenseAdministrator.mockResolvedValue({
-			error: "Unauthorized: Admin access required",
-		});
+	it("refuses a scoped manager without reading or saving mappings", async () => {
+		mocks.caller = scopedManager;
 
-		expect(await getExpenseWageTypeSetting()).toEqual({
+		expect(await getExpenseWageTypeSetting()).toMatchObject({
 			success: false,
-			error: "Unauthorized: Admin access required",
+			code: "AuthorizationError",
 		});
 		expect(
 			await saveExpenseWageTypeSetting({
 				kind: "receipt_meals",
 				codes: EMPTY_EXPENSE_WAGE_TYPE_CODES,
 			}),
-		).toEqual({ success: false, error: "Unauthorized: Admin access required" });
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mocks.getExpenseWageTypeMappings).not.toHaveBeenCalled();
 		expect(mocks.saveExpenseWageTypeMapping).not.toHaveBeenCalled();
 	});
@@ -76,8 +86,9 @@ describe("expense wage type actions (#851)", () => {
 		mocks.saveExpenseWageTypeMapping.mockResolvedValue({ status: "invalid" });
 		const codes = { ...EMPTY_EXPENSE_WAGE_TYPE_CODES, datev_lohn: "x".repeat(40) };
 
-		expect(await saveExpenseWageTypeSetting({ kind: "receipt_meals", codes })).toEqual({
+		expect(await saveExpenseWageTypeSetting({ kind: "receipt_meals", codes })).toMatchObject({
 			success: false,
+			code: "ValidationError",
 			error: "Invalid wage type mapping",
 		});
 		expect(mocks.saveExpenseWageTypeMapping).toHaveBeenCalledWith(

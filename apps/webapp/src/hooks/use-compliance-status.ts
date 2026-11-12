@@ -45,7 +45,7 @@ export interface UseComplianceStatusOptions {
 }
 
 async function checkException(exceptionType: string) {
-	const result = await hasValidException(exceptionType);
+	const result = await hasValidException({ exceptionType });
 	if (!result.success) {
 		return { hasException: false };
 	}
@@ -92,7 +92,7 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 	const alertsQuery = useQuery({
 		queryKey: queryKeys.compliance.alerts(employeeId),
 		queryFn: async (): Promise<ComplianceAlert[]> => {
-			const result = await getProactiveAlerts(currentSessionMinutes);
+			const result = await getProactiveAlerts({ currentSessionMinutes });
 			if (!result.success) {
 				throw new Error(result.error ?? "Failed to get compliance alerts");
 			}
@@ -107,7 +107,7 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 	const statusQuery = useQuery({
 		queryKey: queryKeys.compliance.status(employeeId),
 		queryFn: async (): Promise<ComplianceStatus> => {
-			const result = await getComplianceStatus(currentSessionMinutes);
+			const result = await getComplianceStatus({ currentSessionMinutes });
 			if (!result.success) {
 				throw new Error(result.error ?? "Failed to get compliance status");
 			}
@@ -136,7 +136,7 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 	const myExceptionsQuery = useQuery({
 		queryKey: queryKeys.compliance.exceptions.my(employeeId, false),
 		queryFn: async (): Promise<ExceptionWithDetails[]> => {
-			const result = await getMyExceptions(false);
+			const result = await getMyExceptions({ includeExpired: false });
 			if (!result.success) {
 				throw new Error(result.error ?? "Failed to get exceptions");
 			}

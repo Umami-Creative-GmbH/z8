@@ -1,181 +1,75 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
-const mockState = vi.hoisted(() => ({
-	session: {
-		user: {
-			id: "user-manager",
-			email: "manager@example.com",
-		},
-		session: {
-			activeOrganizationId: "org-1",
-		},
-	},
-	membershipRecord: { role: "member" as const },
-	currentEmployee: {
-		id: "employee-manager",
-		organizationId: "org-1",
-		role: "manager" as const,
-	},
-	teamPermissionsRows: [{ teamId: "team-managed", canManageTeamSettings: true }],
-	teamScopedEmployees: [
-		{ id: "employee-1", isActive: true },
-		{ id: "employee-2", isActive: false },
-	],
+const mocks = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
+	teamPermissionsRows: [] as Array<{ teamId: string | null }>,
+	teamScopedEmployees: [] as Array<{ id: string; isActive: boolean }>,
 	selectResults: [] as Array<Array<{ count: number }>>,
+	select: vi.fn(),
 }));
 
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	count: vi.fn(() => ({ count: true })),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
-	lt: vi.fn((left: unknown, right: unknown) => ({ lt: [left, right] })),
-	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
-}));
-
-vi.mock("@/db/auth-schema", () => ({
-	member: {
-		userId: "userId",
-		organizationId: "organizationId",
-		role: "role",
+const db = vi.hoisted(() => ({
+	select: () => {
+		mocks.select();
+		return {
+			from: () => ({
+				where: async () => mocks.selectResults.shift() ?? [{ count: 0 }],
+			}),
+		};
 	},
-	organization: { id: "organizationId" },
-	session: { id: "sessionId" },
-	user: { id: "userId" },
-}));
-
-vi.mock("@/db/schema", () => ({
-	absenceEntry: {
-		employeeId: "employeeId",
-		organizationId: "organizationId",
-		status: "status",
-	},
-	approvalRequest: {
-		approverId: "approverId",
-		organizationId: "organizationId",
-		requestedBy: "requestedBy",
-		status: "status",
-	},
-	employee: {
-		id: "id",
-		organizationId: "organizationId",
-		isActive: "isActive",
-		role: "role",
-		teamId: "teamId",
-		userId: "userId",
-	},
-	team: {
-		id: "id",
-		organizationId: "organizationId",
-	},
-	teamPermissions: {
-		employeeId: "employeeId",
-		organizationId: "organizationId",
-		teamId: "teamId",
-		canManageTeamSettings: "canManageTeamSettings",
-	},
-	timeEntry: {
-		employeeId: "employeeId",
-		organizationId: "organizationId",
-		timestamp: "timestamp",
+	query: {
+		organization: { findFirst: async () => ({ timezone: "Europe/Berlin" }) },
+		teamPermissions: { findMany: async () => mocks.teamPermissionsRows },
+		employee: { findMany: async () => mocks.teamScopedEmployees },
 	},
 }));
-
-vi.mock("@/db", () => {
-	const nextResult = () => Promise.resolve(mockState.selectResults.shift() ?? [{ count: 0 }]);
-	const select = vi.fn(() => ({
-		from: vi.fn(() => {
-			let consumed = false;
-			let cachedResult: Promise<Array<{ count: number }>> | null = null;
-			const resolveResult = () => {
-				if (!cachedResult) {
-					cachedResult = nextResult();
-				}
-				consumed = true;
-				return cachedResult;
-			};
-
-			return {
-				where: vi.fn(() => {
-					consumed = true;
-					return nextResult();
-				}),
-				then: (...args: Parameters<Promise<Array<{ count: number }>>["then"]>) =>
-					resolveResult().then(...args),
-				catch: (...args: Parameters<Promise<Array<{ count: number }>>["catch"]>) =>
-					(consumed ? resolveResult() : resolveResult()).catch(...args),
-				finally: (...args: Parameters<Promise<Array<{ count: number }>>["finally"]>) =>
-					resolveResult().finally(...args),
-			};
-		}),
-	}));
-
-	return {
-		db: {
-			select,
-			query: {
-				member: {
-					findFirst: vi.fn(async () => mockState.membershipRecord),
-				},
-				employee: {
-					findFirst: vi.fn(async () => mockState.currentEmployee),
-					findMany: vi.fn(async () => mockState.teamScopedEmployees),
-				},
-				teamPermissions: {
-					findMany: vi.fn(async () => mockState.teamPermissionsRows),
-				},
-			},
-		},
-	};
-});
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	const AuthService = Context.Service<any>("AuthService");
-	return { AuthService };
-});
 
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-
-	const authService = {
-		getSession: vi.fn(() => Effect.succeed(mockState.session)),
-	};
-
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.merge(Layer.succeed(AuthService, authService), DatabaseServiceLive),
-	);
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db }));
 });
+
+const { getManagerStatisticsReadView, getOrganizationStats } = await import("./actions");
+
+const owner: StubCaller = {
+	userId: "user-owner",
+	activeOrganizationId: "org-1",
+	membershipRole: "owner",
+	employee: null,
+};
+const manager: StubCaller = {
+	userId: "user-manager",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-manager", role: "manager", former: false },
+};
+const workforceAdmin: StubCaller = {
+	...manager,
+	employee: { id: "employee-workforce-admin", role: "admin", former: false },
+};
+const orgMember: StubCaller = {
+	...manager,
+	employee: { id: "employee-member", role: "employee", former: false },
+};
+
+const refused = { success: false, code: "AuthorizationError" };
 
 describe("statistics actions", () => {
 	beforeEach(() => {
-		mockState.session = {
-			user: {
-				id: "user-manager",
-				email: "manager@example.com",
-			},
-			session: {
-				activeOrganizationId: "org-1",
-			},
-		};
-		mockState.currentEmployee = {
-			id: "employee-manager",
-			organizationId: "org-1",
-			role: "manager",
-		};
-		mockState.membershipRecord = { role: "member" };
-		mockState.teamPermissionsRows = [{ teamId: "team-managed", canManageTeamSettings: true }];
-		mockState.teamScopedEmployees = [
+		mocks.caller = manager;
+		mocks.teamPermissionsRows = [{ teamId: "team-managed" }];
+		mocks.teamScopedEmployees = [
 			{ id: "employee-1", isActive: true },
 			{ id: "employee-2", isActive: false },
 		];
-		mockState.selectResults = [];
+		mocks.selectResults = [];
+		mocks.select.mockClear();
 	});
 
 	it("returns only team-scoped analytics for manager read access", async () => {
-		mockState.selectResults = [
+		mocks.selectResults = [
 			[{ count: 1 }],
 			[{ count: 6 }],
 			[{ count: 4 }],
@@ -188,14 +82,10 @@ describe("statistics actions", () => {
 			[{ count: 1 }],
 		];
 
-		const { getManagerStatisticsReadView } = await import("./actions");
 		const result = await getManagerStatisticsReadView();
 
 		expect(result.success).toBe(true);
-		if (!result.success) {
-			return;
-		}
-
+		if (!result.success) return;
 		expect(result.data).toMatchObject({
 			totalEmployees: 2,
 			activeEmployees: 1,
@@ -212,16 +102,74 @@ describe("statistics actions", () => {
 			pendingApprovals: 1,
 		});
 		expect(result.data).not.toHaveProperty("activeSessions");
-		expect(result.data).not.toHaveProperty("totalOrganizations");
-		expect(result.data).not.toHaveProperty("totalUsers");
 		expect(typeof result.data.fetchedAt).toBe("string");
 	});
 
+	it("gives a workforce admin the organization's statistics without the org-admin sessions count", async () => {
+		mocks.caller = workforceAdmin;
+		mocks.teamPermissionsRows = [];
+		mocks.selectResults = [
+			[{ count: 8 }],
+			[{ count: 6 }],
+			[{ count: 4 }],
+			[{ count: 30 }],
+			[{ count: 12 }],
+			[{ count: 9 }],
+			[{ count: 7 }],
+			[{ count: 2 }],
+			[{ count: 3 }],
+			[{ count: 2 }],
+			[{ count: 6 }],
+			[{ count: 1 }],
+		];
+
+		const result = await getManagerStatisticsReadView();
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).toMatchObject({
+			totalEmployees: 8,
+			activeEmployees: 6,
+			inactiveEmployees: 2,
+			totalTeams: 4,
+			totalTimeEntries: 30,
+			timeEntriesThisMonth: 12,
+			timeEntriesLastMonth: 9,
+			totalAbsences: 7,
+			pendingAbsences: 2,
+			approvedAbsences: 3,
+			rejectedAbsences: 2,
+			totalApprovals: 6,
+			pendingApprovals: 1,
+		});
+		expect(result.data).not.toHaveProperty("activeSessions");
+		expect(mocks.select).toHaveBeenCalledTimes(12);
+	});
+
+	it("still refuses a workforce admin the org-admin statistics", async () => {
+		mocks.caller = workforceAdmin;
+
+		await expect(getOrganizationStats()).resolves.toMatchObject(refused);
+	});
+
+	it("gives a scoped manager without managed teams empty statistics", async () => {
+		mocks.teamPermissionsRows = [];
+
+		const result = await getManagerStatisticsReadView();
+
+		expect(result).toMatchObject({ success: true, data: { totalEmployees: 0, totalTeams: 0 } });
+		expect(mocks.select).not.toHaveBeenCalled();
+	});
+
+	it("refuses an org member the manager statistics", async () => {
+		mocks.caller = orgMember;
+
+		await expect(getManagerStatisticsReadView()).resolves.toMatchObject(refused);
+	});
+
 	it("keeps owner and admin parity with active-organization statistics only", async () => {
-		mockState.session.user.id = "user-owner";
-		mockState.membershipRecord = { role: "owner" };
-		mockState.currentEmployee = null;
-		mockState.selectResults = [
+		mocks.caller = owner;
+		mocks.selectResults = [
 			[{ count: 8 }],
 			[{ count: 6 }],
 			[{ count: 4 }],
@@ -237,14 +185,10 @@ describe("statistics actions", () => {
 			[{ count: 5 }],
 		];
 
-		const { getOrganizationStats } = await import("./actions");
 		const result = await getOrganizationStats();
 
 		expect(result.success).toBe(true);
-		if (!result.success) {
-			return;
-		}
-
+		if (!result.success) return;
 		expect(result.data).toMatchObject({
 			totalEmployees: 8,
 			activeEmployees: 6,
@@ -261,31 +205,16 @@ describe("statistics actions", () => {
 			pendingApprovals: 1,
 			activeSessions: 5,
 		});
-		expect(result.data).not.toHaveProperty("totalUsers");
-		expect(result.data).not.toHaveProperty("totalOrganizations");
 	});
 
-	it("rejects managers from reading org-wide statistics directly", async () => {
-		const { getOrganizationStats } = await import("./actions");
-		const result = await getOrganizationStats();
-
-		expect(result).toEqual({
-			success: false,
-			error: "Only org admins can view instance statistics",
-			code: "AuthorizationError",
-		});
+	it("refuses a scoped manager the org-wide statistics", async () => {
+		await expect(getOrganizationStats()).resolves.toMatchObject(refused);
+		expect(mocks.select).not.toHaveBeenCalled();
 	});
 
-	it("keeps the statistics actor lookup restricted to active employee rows", async () => {
-		const { getOrganizationStats } = await import("./actions");
-		const { db } = await import("@/db");
+	it("refuses a former owner the org-wide statistics", async () => {
+		mocks.caller = { ...owner, employee: { id: "employee-owner", role: "admin", former: true } };
 
-		await getOrganizationStats();
-
-		expect(vi.mocked(db.query.employee.findFirst).mock.calls[0]?.[0]).toMatchObject({
-			where: {
-				and: expect.arrayContaining([{ eq: ["isActive", true] }]),
-			},
-		});
+		await expect(getOrganizationStats()).resolves.toMatchObject(refused);
 	});
 });

@@ -599,7 +599,8 @@
       "billable": "Fakturerbar",
       "editedBy": "(redigert av {name} {date})",
       "missingTask": "Mangler oppgave",
-      "missingTaskHint": "Mangler oppgave: legg til en oppgave"
+      "missingTaskHint": "Mangler oppgave: legg til en oppgave",
+      "breakEnforcementNote": "Automatisk justert: pauseregler"
     },
     "workStatus": {
       "overRequirement": "over kravet",

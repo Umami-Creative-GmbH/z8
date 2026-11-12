@@ -62,6 +62,7 @@ import {
 	APPROVAL_AMOUNT_THRESHOLD_CURRENCY,
 	type ApprovalPolicyEvaluationContext,
 } from "../policies/types";
+import { expenseSelfApprovalRule } from "../route-rules";
 import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
 import type { ApprovalDbService } from "./types";
 
@@ -479,34 +480,45 @@ export async function submitTravelExpenseReport(
 				throw failure;
 			}
 			const routing = routingExit.value;
-			// The owner alone: their default request, or a matching policy whose
-			// stages all named them, completed. Anyone else's completed route is refused.
-			const selfApproved = ownerAlone && routing.kind === "auto_completed";
-			if (routing.kind === "auto_completed" && !selfApproved) {
-				refuse({ kind: "self_approval_route" });
-			}
-			if (routing.kind === "chain_created") {
-				// A policy stage resolved to the requester was approved by the system.
-				const selfStages = await tx
-					.select({ id: approvalChainStageInstance.id })
-					.from(approvalChainStageInstance)
-					.where(
-						and(
-							eq(approvalChainStageInstance.organizationId, owner.organizationId),
-							eq(approvalChainStageInstance.chainInstanceId, routing.chainInstanceId),
-							eq(approvalChainStageInstance.resolvedApproverEmployeeId, owner.employeeId),
-						),
-					)
-					.orderBy(asc(approvalChainStageInstance.stepOrder))
-					.limit(1);
-				if (selfStages.length > 0) refuse({ kind: "self_approval_route" });
-			}
+			// A policy chain's stages, each resolved to an approver.
+			const chainApproverIds =
+				routing.kind === "chain_created"
+					? (
+							await tx
+								.select({
+									approverEmployeeId: approvalChainStageInstance.resolvedApproverEmployeeId,
+								})
+								.from(approvalChainStageInstance)
+								.where(
+									and(
+										eq(approvalChainStageInstance.organizationId, owner.organizationId),
+										eq(approvalChainStageInstance.chainInstanceId, routing.chainInstanceId),
+									),
+								)
+								.orderBy(asc(approvalChainStageInstance.stepOrder))
+						).flatMap((stage) => (stage.approverEmployeeId ? [stage.approverEmployeeId] : []))
+					: [];
+			// The owner alone may approve their own report (#679); any other route that
+			// completes, or reaches the requester, is refused. The approval route
+			// preview applies the same rule (#1603).
+			const selfApprovalOf = (stageApproverIds: readonly string[]) =>
+				expenseSelfApprovalRule({
+					requesterEmployeeId: owner.employeeId,
+					autoCompleted: routing.kind === "auto_completed",
+					stageApproverIds,
+					ownerAlone,
+				});
+			// Refused before the lifecycle check, so a lifecycle failure can't hide the refusal.
+			const selfApproval = selfApprovalOf(chainApproverIds);
+			if (selfApproval === "refused") refuse({ kind: "self_approval_route" });
+			const selfApproved = selfApproval === "owner_self_approval";
 			const lifecycle = await verifyTravelExpenseReportLifecycle(tx, {
 				organizationId: owner.organizationId,
 				reportId: input.reportId,
 				routing,
 			});
-			if (!selfApproved && lifecycle.approverEmployeeId === owner.employeeId) {
+			// The request's own approver: a default request has no chain stages.
+			if (selfApprovalOf([lifecycle.approverEmployeeId]) === "refused") {
 				refuse({ kind: "self_approval_route" });
 			}
 

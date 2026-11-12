@@ -1,11 +1,7 @@
 import { Effect } from "effect";
+import * as z from "zod";
 import { type AuditAction, logAudit } from "@/lib/audit-logger";
-import {
-	AuthorizationError,
-	type DatabaseError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { logger } from "@/lib/logger";
 import {
 	normalizeProjectTemplateInput,
@@ -16,14 +12,53 @@ import {
 	isProjectTemplateNameConflict,
 	ProjectTemplateReferenceError,
 } from "@/lib/projects/project-templates";
-import { getProjectSettingsActorContext, type ProjectSettingsActor } from "./project-scope";
 
 /**
- * Who may manage project templates (org owners and admins, #878) and how
- * template failures read, shared by the template actions and "save as
- * template" (#880).
+ * What template input looks like and how template failures read, shared by the
+ * template actions and "save as template" (#880). Managing templates needs
+ * settings access `orgAdmin` (#878), declared on each action.
  */
-const TEMPLATE_ACCESS_DENIED = "Only organization admins can manage project templates";
+
+const hours = z.union([z.number(), z.string()]).nullable().optional();
+const optionalText = z.string().nullable().optional();
+
+/**
+ * The shape of `ProjectTemplateInput`. The template rules themselves (lengths,
+ * hours, offsets, unique task names) stay with `normalizeProjectTemplateInput`,
+ * so their messages read the same in every template form.
+ */
+export const projectTemplateInputSchema = z.strictObject({
+	name: z.string({ error: "Template name is required" }),
+	description: optionalText,
+	icon: optionalText,
+	color: optionalText,
+	budgetHours: hours,
+	deadlineOffsetDays: z.number().nullable().optional(),
+	requiresTask: z.boolean({ error: "Task requirement must be on or off" }).optional(),
+	tasks: z
+		.array(z.strictObject({ name: z.string(), description: optionalText, estimateHours: hours }))
+		.optional(),
+	managerEmployeeIds: z.array(z.string()).optional(),
+	assignments: z
+		.array(z.strictObject({ type: z.enum(["team", "employee"]), targetId: z.string() }))
+		.optional(),
+});
+
+/** Who changed a template, for the audit log. */
+export interface TemplateActor {
+	userId: string;
+	organizationId: string;
+}
+
+/** The employees a template save names: its managers and employee assignments. */
+export function templateEmployeeIds(input: z.output<typeof projectTemplateInputSchema>) {
+	return [
+		...(input.managerEmployeeIds ?? []),
+		...(input.assignments ?? []).flatMap((assignment) =>
+			assignment.type === "employee" ? [assignment.targetId] : [],
+		),
+	];
+}
 const DUPLICATE_NAME_MESSAGE = "A project template with this name already exists";
 
 const INPUT_PROBLEM_MESSAGES: Record<
@@ -87,7 +122,7 @@ export function templateInputProblem(problem: ProjectTemplateInputProblem) {
 
 /** Records a template change in the audit log; a failed write is logged, never thrown. */
 export function auditTemplate(
-	admin: TemplateAdmin,
+	actor: TemplateActor,
 	action: AuditAction,
 	template: { id: string; name: string },
 	changes?: Record<string, unknown>,
@@ -95,37 +130,15 @@ export function auditTemplate(
 ) {
 	logAudit({
 		action,
-		actorId: admin.userId,
+		actorId: actor.userId,
 		targetId: template.id,
 		targetType: "project_template",
-		organizationId: admin.organizationId,
+		organizationId: actor.organizationId,
 		changes,
 		metadata: { templateName: template.name, ...metadata },
 		timestamp: new Date(),
 	}).catch((err) => logger.error({ err }, "Failed to log audit"));
 }
-
-/** The caller as an org owner or admin of their active organization, or a refusal. */
-export function getTemplateAdmin(action: string) {
-	return Effect.gen(function* () {
-		const actor: ProjectSettingsActor = yield* getProjectSettingsActorContext({
-			queryName: `projectTemplate.${action}:actor`,
-		});
-		if (actor.accessTier !== "orgAdmin") {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: TEMPLATE_ACCESS_DENIED,
-					userId: actor.session.user.id,
-					resource: "project_template",
-					action,
-				}),
-			);
-		}
-		return { actor, userId: actor.session.user.id, organizationId: actor.organizationId };
-	});
-}
-
-export type TemplateAdmin = Effect.Success<ReturnType<typeof getTemplateAdmin>>;
 
 export function templateNotFound(templateId: string) {
 	return new NotFoundError({

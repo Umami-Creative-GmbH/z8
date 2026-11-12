@@ -8,6 +8,7 @@ import { saveDeputyDecisionsEnabledAction } from "@/app/[locale]/(app)/settings/
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 /**
  * The "Deputies can decide approvals" approval setting (#1015, Approvals ADR
@@ -25,7 +26,7 @@ export function DeputyDecisionsSetting({ enabled }: { enabled: boolean }) {
 			const result = await saveDeputyDecisionsEnabledAction({ enabled: next });
 			if (!result.success) {
 				setChecked(!next);
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				return;
 			}
 			toast.success(

@@ -38,6 +38,10 @@ import {
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
 import { Link } from "@/navigation";
 import {
@@ -64,7 +68,8 @@ export interface EmployeeLifecycleActionsProps {
 	organizationId: string;
 	target: EmployeeLifecycleTarget;
 	currentUserId: string;
-	currentMemberRole: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	onOptimisticStatusChange?(employeeId: string, isActive: boolean): void;
 	onRemoved?(employeeId: string): void;
 	/** A single button-compatible element that forwards its ref and received DOM props. */
@@ -352,7 +357,7 @@ export function EmployeeLifecycleActions({
 	organizationId,
 	target,
 	currentUserId,
-	currentMemberRole,
+	settingsAccess,
 	onOptimisticStatusChange,
 	onRemoved,
 	trigger,
@@ -373,8 +378,9 @@ export function EmployeeLifecycleActions({
 		};
 	}, []);
 	const reactivation = useReactivationChecklistOffer(mounted);
-	const isOwner = hasOrganizationRole(currentMemberRole, "owner");
-	const isAdmin = hasOrganizationRole(currentMemberRole, "admin");
+	// The viewer's capabilities follow settings access (ADR 0002); the target's role is data.
+	const isOwner = meetsSettingsAccess(settingsAccess, "owner");
+	const isAdmin = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const hasApprovedMembership = target.membership?.status === "approved";
 	const targetIsOwner = hasOrganizationRole(target.membership?.role, "owner");
 	const canChangeStatus =

@@ -90,7 +90,7 @@ describe("SurchargeManagement", () => {
 		);
 
 		await screen.findByText("Night");
-		expect(getSurchargeModelsMock).toHaveBeenCalledWith("org-approved");
+		expect(getSurchargeModelsMock).toHaveBeenCalledWith();
 		expect(screen.queryByText("Old")).toBeNull();
 		expect(
 			screen

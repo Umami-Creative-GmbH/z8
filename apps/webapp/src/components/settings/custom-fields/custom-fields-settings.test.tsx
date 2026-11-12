@@ -191,7 +191,7 @@ describe("CustomFieldsSettings", () => {
 		const field = definition({ id: "a" });
 		changeMock.mockResolvedValue({
 			success: true,
-			data: { ok: true, fields: [{ ...field, archived: true }] },
+			data: [{ ...field, archived: true }],
 		});
 		render(<CustomFieldsSettings entities={ALL_ENTITIES} initialFields={[field]} />);
 
@@ -208,7 +208,12 @@ describe("CustomFieldsSettings", () => {
 	});
 
 	it("shows why the server refused a change", async () => {
-		changeMock.mockResolvedValue({ success: true, data: { ok: false, reason: "name_taken" } });
+		changeMock.mockResolvedValue({
+			success: false,
+			error: "The custom field change was refused",
+			code: "ValidationError",
+			refusal: "name_taken",
+		});
 		render(
 			<CustomFieldsSettings
 				entities={ALL_ENTITIES}
@@ -226,7 +231,7 @@ describe("CustomFieldsSettings", () => {
 	});
 
 	it("creates a field from the dialog", async () => {
-		changeMock.mockResolvedValue({ success: true, data: { ok: true, fields: [] } });
+		changeMock.mockResolvedValue({ success: true, data: [] });
 		render(<CustomFieldsSettings entities={ALL_ENTITIES} initialFields={[]} />);
 
 		await userEvent.click(screen.getByRole("button", { name: "Add custom field" }));

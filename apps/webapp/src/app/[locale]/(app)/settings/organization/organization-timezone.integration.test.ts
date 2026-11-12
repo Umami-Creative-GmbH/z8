@@ -198,7 +198,7 @@ describe("organization timezone changes and balance rebuilds on PostgreSQL", () 
 
 	function changeTimezone(timezone: string, as: string = ids.ownerUser) {
 		actAs(as);
-		return updateOrganizationTimezone(ids.organization, timezone);
+		return updateOrganizationTimezone(timezone);
 	}
 
 	async function setAppend(mode: "active" | null) {

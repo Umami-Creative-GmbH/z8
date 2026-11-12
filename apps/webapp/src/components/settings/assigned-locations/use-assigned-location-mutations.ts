@@ -8,7 +8,10 @@ import {
 	addAssignedLocationAction,
 	removeAssignedLocationAction,
 } from "@/app/[locale]/(app)/settings/locations/assigned-location-actions";
-import type { AssignedLocationErrorCode } from "@/lib/time-tracking/assigned-locations/errors";
+import {
+	type AssignedLocationErrorCode,
+	assignedLocationErrorCodeOf,
+} from "@/lib/time-tracking/assigned-locations/errors";
 import { useAssignedLocationErrorMessage } from "./use-assigned-location-error";
 
 /** Prefix of every assigned-location query; both settings cards refresh after a change. */
@@ -21,11 +24,11 @@ class AssignedLocationActionError extends Error {
 }
 
 async function unwrap(
-	action: Promise<{ success: true } | { success: false; code: AssignedLocationErrorCode }>,
+	action: Promise<{ success: true } | { success: false; code?: string; refusal?: string }>,
 ) {
 	const result = await action.catch(() => null);
 	if (!result) throw new AssignedLocationActionError(null);
-	if (!result.success) throw new AssignedLocationActionError(result.code);
+	if (!result.success) throw new AssignedLocationActionError(assignedLocationErrorCodeOf(result));
 }
 
 /** Add and remove an assigned location, with toasts and a refresh of both cards. */

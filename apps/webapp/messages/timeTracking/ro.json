@@ -594,7 +594,55 @@
       "title": "Cronologia zilei de lucru",
       "today": "Astăzi",
       "unavailableDescription": "Pontajul funcționează în continuare. Încercați să reîmprospătați această vizualizare mai târziu.",
-      "unavailableTitle": "Cronologie indisponibilă"
+      "unavailableTitle": "Cronologie indisponibilă",
+      "workPeriod": {
+        "title": "Muncă înregistrată"
+      },
+      "shift": {
+        "title": "Tură planificată"
+      },
+      "status": {
+        "approved": "Aprobat",
+        "pending": "În așteptare",
+        "rejected": "Respins",
+        "cancelled": "Anulat",
+        "published": "Publicat",
+        "draft": "Ciornă",
+        "active": "Activ"
+      },
+      "absence": {
+        "fullDay": "Zi întreagă",
+        "morning": "Dimineață",
+        "afternoon": "După-amiază"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Cerere de corectare a timpului",
+          "subtitle": "Corectarea unei înregistrări de timp"
+        },
+        "absence": {
+          "title": "Cerere de absență",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Vezi absența",
+        "reviewRequest": "Examinează cererea"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Cerere de modificare în așteptare",
+          "description": "Această perioadă de lucru are modificări care așteaptă aprobarea."
+        },
+        "missingClockOut": {
+          "title": "Lipsește pontajul de ieșire",
+          "description": "Această perioadă de lucru este încă activă."
+        },
+        "autoAdjusted": {
+          "title": "Înregistrare ajustată automat",
+          "description": "Regulile privind pauzele sau conformitatea au ajustat această perioadă de lucru."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Anulare",
@@ -669,7 +717,10 @@
     "workLocationHome": "Acasă",
     "workLocationOffice": "Birou",
     "workLocationOther": "Altul",
-    "workLocationRemote": "La distanță"
+    "workLocationRemote": "La distanță",
+    "systemNote": {
+      "breakEnforcement": "Ajustat automat: aplicarea pauzelor"
+    }
   },
   "wellness": {
     "water": {

@@ -32,8 +32,3 @@ export class KioskPinRefusal extends Error {
 		this.code = code;
 	}
 }
-
-/** A kiosk PIN server action's result; a failure always carries a stable code. */
-export type KioskPinActionResult<T> =
-	| { success: true; data: T }
-	| { success: false; error: string; code: KioskPinErrorCode };

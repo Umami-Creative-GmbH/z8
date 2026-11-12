@@ -1,5 +1,3 @@
-export type EmployeeSettingsActorRole = "admin" | "manager" | "employee";
-
 const SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS = [
 	"gender",
 	"pronouns",
@@ -8,17 +6,6 @@ const SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS = [
 ] as const;
 
 type ScopedManagerEditableEmployeeField = (typeof SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS)[number];
-
-export function canAccessManagedEmployeeSettingsTarget(input: {
-	actorRole: EmployeeSettingsActorRole;
-	isManagedEmployee: boolean;
-}) {
-	if (input.actorRole === "admin") {
-		return true;
-	}
-
-	return input.actorRole === "manager" && input.isManagedEmployee;
-}
 
 export function filterEmployeeUpdateForScopedManager<T extends Record<string, unknown>>(data: T) {
 	const result = {} as Partial<Pick<T, ScopedManagerEditableEmployeeField>>;

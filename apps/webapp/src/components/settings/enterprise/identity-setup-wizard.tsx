@@ -1,5 +1,6 @@
 "use client";
 
+import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
@@ -387,13 +388,13 @@ function useIdentitySetupController({
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				try {
-					const next = await updateEnterpriseIdentityProviderAction({
+					const next = await actionData(updateEnterpriseIdentityProviderAction({
 						preset: value.preset as EnterpriseIdentityProviderPresetId,
 						protocol: value.protocol as EnterpriseIdentityProtocol,
 						providerId: value.providerId,
 						domain: value.domain,
 						currentStep: "domain",
-					});
+					}));
 					setSetup(next.state);
 					toast.success(
 						t(
@@ -403,12 +404,7 @@ function useIdentitySetupController({
 					);
 				} catch (error) {
 					toast.error(
-						error instanceof Error
-							? error.message
-							: t(
-									"settings.enterprise.identity.toast.providerSaveFailed",
-									"Failed to save provider",
-								),
+						enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.providerSaveFailed", "Failed to save provider"]),
 					);
 				}
 			});
@@ -436,7 +432,7 @@ function useIdentitySetupController({
 				}
 
 				try {
-					const next = await registerEnterpriseIdentitySSOProviderAction(
+					const next = await actionData(registerEnterpriseIdentitySSOProviderAction(
 						protocol === "oidc"
 							? {
 									protocol: "oidc",
@@ -454,7 +450,7 @@ function useIdentitySetupController({
 									domain: setup.domain.domain,
 									metadata: value.metadata,
 								},
-					);
+					));
 					setSetup(next.state);
 					toast.success(
 						t(
@@ -464,12 +460,7 @@ function useIdentitySetupController({
 					);
 				} catch (error) {
 					toast.error(
-						error instanceof Error
-							? error.message
-							: t(
-									"settings.enterprise.identity.toast.ssoRegisterFailed",
-									"Failed to register SSO provider",
-								),
+						enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.ssoRegisterFailed", "Failed to register SSO provider"]),
 					);
 				}
 			});
@@ -489,7 +480,7 @@ function useIdentitySetupController({
 			}
 
 			try {
-				const next = await recordEnterpriseIdentitySsoTestAction({
+				const next = await actionData(recordEnterpriseIdentitySsoTestAction({
 					providerId,
 					testEmail,
 					status,
@@ -501,7 +492,7 @@ function useIdentitySetupController({
 									"Live SSO test failed",
 								)
 							: null,
-				});
+				}));
 				setSetup(next.state);
 				toast.success(
 					status === "passed"
@@ -516,12 +507,7 @@ function useIdentitySetupController({
 				);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.ssoTestRecordFailed",
-								"Failed to record SSO test",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.ssoTestRecordFailed", "Failed to record SSO test"]),
 				);
 			}
 		});
@@ -530,7 +516,7 @@ function useIdentitySetupController({
 	const refreshDomainStatus = () => {
 		startTransition(async () => {
 			try {
-				const next = await refreshEnterpriseIdentityDomainStatusAction();
+				const next = await actionData(refreshEnterpriseIdentityDomainStatusAction());
 				setSetup(next.state);
 				toast.success(
 					t(
@@ -540,12 +526,7 @@ function useIdentitySetupController({
 				);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.domainStatusFailed",
-								"Failed to refresh domain status",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.domainStatusFailed", "Failed to refresh domain status"]),
 				);
 			}
 		});
@@ -554,13 +535,13 @@ function useIdentitySetupController({
 	const saveAccessPolicy = () => {
 		startTransition(async () => {
 			try {
-				const next = await updateEnterpriseIdentityAccessPolicyAction({
+				const next = await actionData(updateEnterpriseIdentityAccessPolicyAction({
 					ssoRequired: setup.enforcement.ssoRequired,
 					domainRestrictionEnabled: setup.enforcement.domainRestrictionEnabled,
 					inviteRestrictionEnabled: setup.enforcement.inviteRestrictionEnabled,
 					defaultRoleTemplateId:
 						defaultRoleTemplateId === "none" ? null : defaultRoleTemplateId,
-				});
+				}));
 				setSetup(next.state);
 				setDefaultRoleTemplateId(next.defaultRoleTemplateId ?? "none");
 				toast.success(
@@ -571,12 +552,7 @@ function useIdentitySetupController({
 				);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.accessPolicyFailed",
-								"Failed to save access policy",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.accessPolicyFailed", "Failed to save access policy"]),
 				);
 			}
 		});
@@ -585,7 +561,7 @@ function useIdentitySetupController({
 	const activateSetup = () => {
 		startTransition(async () => {
 			try {
-				const next = await activateEnterpriseIdentitySetupAction();
+				const next = await actionData(activateEnterpriseIdentitySetupAction());
 				setSetup(next.state);
 				toast.success(
 					t(
@@ -595,12 +571,7 @@ function useIdentitySetupController({
 				);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.activateFailed",
-								"Failed to activate setup",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.activateFailed", "Failed to activate setup"]),
 				);
 			}
 		});

@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyAssignmentManagerProps {
@@ -436,7 +437,7 @@ export function ChangePolicyAssignmentManager({
 	} = useQuery({
 		queryKey: queryKeys.changePolicies.assignments(organizationId),
 		queryFn: async () => {
-			const result = await getChangePolicyAssignments(organizationId);
+			const result = await getChangePolicyAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
@@ -457,8 +458,10 @@ export function ChangePolicyAssignmentManager({
 				setSelectedAssignment(null);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.changePolicies.assignmentDeleteFailed", "Failed to remove assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.changePolicies.assignmentDeleteFailed",
+						"Failed to remove assignment",
+					]),
 				);
 			}
 		},

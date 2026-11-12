@@ -594,7 +594,55 @@
       "title": "Cronología de la jornada laboral",
       "today": "Hoy",
       "unavailableDescription": "El registro de tiempo sigue funcionando. Intenta actualizar esta vista más tarde.",
-      "unavailableTitle": "Cronología no disponible"
+      "unavailableTitle": "Cronología no disponible",
+      "workPeriod": {
+        "title": "Trabajo registrado"
+      },
+      "shift": {
+        "title": "Turno programado"
+      },
+      "status": {
+        "approved": "Aprobado",
+        "pending": "Pendiente",
+        "rejected": "Rechazado",
+        "cancelled": "Cancelado",
+        "published": "Publicado",
+        "draft": "Borrador",
+        "active": "Activo"
+      },
+      "absence": {
+        "fullDay": "Día completo",
+        "morning": "Mañana",
+        "afternoon": "Tarde"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Solicitud de corrección de tiempo",
+          "subtitle": "Corrección de un registro de tiempo"
+        },
+        "absence": {
+          "title": "Solicitud de ausencia",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Ver ausencia",
+        "reviewRequest": "Revisar solicitud"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Solicitud de modificación pendiente",
+          "description": "Este período de trabajo tiene cambios pendientes de aprobación."
+        },
+        "missingClockOut": {
+          "title": "Falta el fichaje de salida",
+          "description": "Este período de trabajo sigue activo."
+        },
+        "autoAdjusted": {
+          "title": "Registro ajustado automáticamente",
+          "description": "Las reglas de pausas o de cumplimiento ajustaron este período de trabajo."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Cancelar",
@@ -669,7 +717,10 @@
     "workLocationHome": "Casa",
     "workLocationOffice": "Oficina",
     "workLocationOther": "Otro",
-    "workLocationRemote": "Remoto"
+    "workLocationRemote": "Remoto",
+    "systemNote": {
+      "breakEnforcement": "Ajustado automáticamente: aplicación de pausas"
+    }
   },
   "wellness": {
     "water": {

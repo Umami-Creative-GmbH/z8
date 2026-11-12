@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
+import { displayEntryNotes } from "@/lib/time-tracking/system-notes";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
@@ -159,7 +160,7 @@ export function getTimeEntriesColumns({
 			id: "description",
 			header: t("timeTracking.table.description", "Description"),
 			cell: ({ row }) => {
-				const notes = row.original.clockOut?.notes;
+				const notes = displayEntryNotes(row.original.clockOut?.notes, t);
 				const description = notes ? (
 					<span className="block max-w-[200px] truncate text-sm" title={notes}>
 						{notes}

@@ -73,7 +73,7 @@ describe("approval workflow repository integration CI contract", () => {
 
 		expect(workflow).toContain(
 			// biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression
-			"pnpm --filter webapp test --shard=${{ matrix.shard }}/2",
+			"pnpm --filter webapp test --shard=${{ matrix.shard }}/4",
 		);
 	});
 });

@@ -1,16 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { z } from "zod";
 import { instantToCanonicalString, systemClock } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
-import { listPositionStampAccessLog } from "@/lib/time-tracking/position-capture/access-log";
-import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/action-runner";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
-	type PositionCaptureActionResult,
-	PositionCaptureRefusal,
-	requireUuid,
-} from "@/lib/time-tracking/position-capture/errors";
+	noInput,
+	type OrganizationActionContext,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
+import { listPositionStampAccessLog } from "@/lib/time-tracking/position-capture/access-log";
+import { PositionCaptureRefusal, requireUuid } from "@/lib/time-tracking/position-capture/errors";
 import type { PositionConsentDecision } from "@/lib/time-tracking/position-capture/policy";
 import { resolvePositionCapture } from "@/lib/time-tracking/position-capture/resolver";
 import {
@@ -43,30 +45,6 @@ export type OwnPositionCaptureData = {
 	asksForConsent: boolean;
 };
 
-const PAGE_PATH = "/settings/position-stamps";
-
-export async function getOwnPositionCaptureAction(): Promise<
-	PositionCaptureActionResult<OwnPositionCaptureData>
-> {
-	return runPositionCaptureAction("positionCapture.own", async (db) => {
-		const subject = await requireOwnEmployee();
-		const resolution = await resolvePositionCapture(db, subject);
-		return {
-			captureOn: resolution.captureOn,
-			retentionDays: resolution.retentionDays,
-			notice: resolution.notice
-				? {
-						...resolution.notice,
-						createdAt: instantToCanonicalString(resolution.notice.createdAt),
-					}
-				: null,
-			consent: toConsentData(resolution.consent),
-			canWithdraw: resolution.canWithdraw,
-			asksForConsent: resolution.asksForConsent,
-		};
-	});
-}
-
 /** One entry of the employee's own position stamp access log, serializable. */
 export type OwnPositionStampAccessEntry = {
 	id: string;
@@ -78,92 +56,136 @@ export type OwnPositionStampAccessEntry = {
 	workPeriods: Array<{ id: string; date: string | null }>;
 };
 
-/** Who was shown the signed-in employee's position stamps, newest first. */
-export async function getOwnPositionStampAccessLogAction(): Promise<
-	PositionCaptureActionResult<OwnPositionStampAccessEntry[]>
-> {
-	return runPositionCaptureAction("positionCapture.ownAccessLog", async (db) => {
-		const subject = await requireOwnEmployee();
-		const entries = await listPositionStampAccessLog(db, {
-			organizationId: subject.organizationId,
-			subjectEmployeeId: subject.employeeId,
-		});
-		return entries.map((entry) => ({
-			id: entry.id,
-			kind: entry.kind,
-			viewerName: entry.viewer?.name ?? null,
-			accessedAt: instantToCanonicalString(entry.accessedAt),
-			workPeriods: entry.workPeriods.map((period) => ({
-				id: period.id,
-				date:
-					period.startedAt && period.utcOffsetMinutes !== null
-						? period.startedAt
-								.toZonedDateTimeISO(offsetMinutesToTimeZoneId(period.utcOffsetMinutes))
-								.toPlainDate()
-								.toString()
-						: null,
-			})),
-		}));
-	});
+const PAGE_PATH = "/settings/position-stamps";
+
+/** The notice the employee was shown; a malformed ID is refused as `invalid_notice` by the store rules. */
+const noticeInput = z.strictObject({ noticeId: z.unknown() });
+
+type OwnSubject = { organizationId: string; employeeId: string };
+
+/**
+ * Runs position capture work for the signed-in user's own employee profile in
+ * the active organization, never anyone else's. A `PositionCaptureRefusal`
+ * comes back as its code; without an employee profile here (an owner or admin
+ * without one) the code is `employee_profile_required`.
+ */
+function forOwnEmployee<T>(
+	name: string,
+	{ actor, organizationId }: OrganizationActionContext<unknown>,
+	run: (db: DatabaseClient, subject: OwnSubject) => Promise<T>,
+) {
+	return storeStep(
+		name,
+		(db) => {
+			if (!actor.employee) {
+				throw new PositionCaptureRefusal(
+					"employee_profile_required",
+					"An employee profile in this organization is required.",
+				);
+			}
+			return run(db, { organizationId, employeeId: actor.employee.id });
+		},
+		{ refusal: PositionCaptureRefusal },
+	);
 }
+
+export const getOwnPositionCaptureAction = organizationAction(
+	{ name: "positionCapture.own", requires: "member", schema: noInput },
+	(context) =>
+		forOwnEmployee(
+			"positionCapture.own",
+			context,
+			async (db, subject): Promise<OwnPositionCaptureData> => {
+				const resolution = await resolvePositionCapture(db, subject);
+				return {
+					captureOn: resolution.captureOn,
+					retentionDays: resolution.retentionDays,
+					notice: resolution.notice
+						? {
+								...resolution.notice,
+								createdAt: instantToCanonicalString(resolution.notice.createdAt),
+							}
+						: null,
+					consent: toConsentData(resolution.consent),
+					canWithdraw: resolution.canWithdraw,
+					asksForConsent: resolution.asksForConsent,
+				};
+			},
+		),
+);
+
+/** Who was shown the signed-in employee's position stamps, newest first. */
+export const getOwnPositionStampAccessLogAction = organizationAction(
+	{ name: "positionCapture.ownAccessLog", requires: "member", schema: noInput },
+	(context) =>
+		forOwnEmployee(
+			"positionCapture.ownAccessLog",
+			context,
+			async (db, subject): Promise<OwnPositionStampAccessEntry[]> => {
+				const entries = await listPositionStampAccessLog(db, {
+					organizationId: subject.organizationId,
+					subjectEmployeeId: subject.employeeId,
+				});
+				return entries.map((entry) => ({
+					id: entry.id,
+					kind: entry.kind,
+					viewerName: entry.viewer?.name ?? null,
+					accessedAt: instantToCanonicalString(entry.accessedAt),
+					workPeriods: entry.workPeriods.map((period) => ({
+						id: period.id,
+						date:
+							period.startedAt && period.utcOffsetMinutes !== null
+								? period.startedAt
+										.toZonedDateTimeISO(offsetMinutesToTimeZoneId(period.utcOffsetMinutes))
+										.toPlainDate()
+										.toString()
+								: null,
+					})),
+				}));
+			},
+		),
+);
 
 /** Gives the signed-in employee's position consent to the notice version they were shown. */
-export async function agreeToPositionNoticeAction(input: {
-	noticeId: string;
-}): Promise<PositionCaptureActionResult<{ grantedAt: string }>> {
-	return runPositionCaptureAction("positionCapture.agree", async (db) => {
-		const subject = await requireOwnEmployee();
-		const noticeId = parseNoticeId(input?.noticeId);
-		const { grantedAt } = await db.transaction((tx) =>
-			agreeToPositionNotice(tx, { ...subject, noticeId, now: systemClock.nowInstant() }),
-		);
-		revalidatePath(PAGE_PATH);
-		return { grantedAt: instantToCanonicalString(grantedAt) };
-	});
-}
+export const agreeToPositionNoticeAction = organizationAction(
+	{ name: "positionCapture.agree", requires: "member", schema: noticeInput },
+	(context) =>
+		forOwnEmployee("positionCapture.agree", context, async (db, subject) => {
+			const noticeId = parseNoticeId(context.input.noticeId);
+			const { grantedAt } = await db.transaction((tx) =>
+				agreeToPositionNotice(tx, { ...subject, noticeId, now: systemClock.nowInstant() }),
+			);
+			revalidatePath(PAGE_PATH);
+			return { grantedAt: instantToCanonicalString(grantedAt) };
+		}),
+);
 
 /** "Not now" for the notice version they were shown; asked again only for a new version. */
-export async function declinePositionNoticeAction(input: {
-	noticeId: string;
-}): Promise<PositionCaptureActionResult<{ declined: true }>> {
-	return runPositionCaptureAction("positionCapture.decline", async (db) => {
-		const subject = await requireOwnEmployee();
-		const noticeId = parseNoticeId(input?.noticeId);
-		await db.transaction((tx) =>
-			declinePositionNotice(tx, { ...subject, noticeId, now: systemClock.nowInstant() }),
-		);
-		revalidatePath(PAGE_PATH);
-		return { declined: true };
-	});
-}
+export const declinePositionNoticeAction = organizationAction(
+	{ name: "positionCapture.decline", requires: "member", schema: noticeInput },
+	(context) =>
+		forOwnEmployee("positionCapture.decline", context, async (db, subject) => {
+			const noticeId = parseNoticeId(context.input.noticeId);
+			await db.transaction((tx) =>
+				declinePositionNotice(tx, { ...subject, noticeId, now: systemClock.nowInstant() }),
+			);
+			revalidatePath(PAGE_PATH);
+			return { declined: true as const };
+		}),
+);
 
 /** Withdraws the signed-in employee's position consent. */
-export async function withdrawPositionConsentAction(): Promise<
-	PositionCaptureActionResult<{ withdrawn: number }>
-> {
-	return runPositionCaptureAction("positionCapture.withdraw", async (db) => {
-		const subject = await requireOwnEmployee();
-		const { withdrawnConsentIds } = await db.transaction((tx) =>
-			withdrawPositionConsent(tx, { ...subject, now: systemClock.nowInstant() }),
-		);
-		revalidatePath(PAGE_PATH);
-		return { withdrawn: withdrawnConsentIds.length };
-	});
-}
-
-/** The signed-in user's own employee profile in the active organization; never anyone else's. */
-async function requireOwnEmployee(): Promise<{ organizationId: string; employeeId: string }> {
-	const authContext = await getAuthContext();
-	const organizationId = authContext?.session.activeOrganizationId ?? null;
-	const ownEmployee = authContext?.employee;
-	if (!ownEmployee || !organizationId || ownEmployee.organizationId !== organizationId) {
-		throw new PositionCaptureRefusal(
-			"employee_profile_required",
-			"An employee profile in this organization is required.",
-		);
-	}
-	return { organizationId, employeeId: ownEmployee.id };
-}
+export const withdrawPositionConsentAction = organizationAction(
+	{ name: "positionCapture.withdraw", requires: "member", schema: noInput },
+	(context) =>
+		forOwnEmployee("positionCapture.withdraw", context, async (db, subject) => {
+			const { withdrawnConsentIds } = await db.transaction((tx) =>
+				withdrawPositionConsent(tx, { ...subject, now: systemClock.nowInstant() }),
+			);
+			revalidatePath(PAGE_PATH);
+			return { withdrawn: withdrawnConsentIds.length };
+		}),
+);
 
 function parseNoticeId(value: unknown): string {
 	return requireUuid(value, { code: "invalid_notice", message: "Invalid position notice." });

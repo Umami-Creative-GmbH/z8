@@ -65,7 +65,7 @@ const closedMonthStart = today.with({ day: 1 }).subtract({ months: 1 });
 const closedMonth = closedMonthStart.toPlainYearMonth().toString();
 const closedDay = closedMonthStart.add({ days: 9 });
 const workDay = closedMonthStart.add({ days: 4 });
-const monthClosedRefusal = { success: false, code: "month_closed", closedMonth };
+const monthClosedRefusal = { success: false, refusal: "month_closed", details: { closedMonth } };
 
 describe("balance adjustments in closed months on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });

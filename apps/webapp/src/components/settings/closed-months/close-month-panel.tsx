@@ -31,6 +31,7 @@ import {
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	closeScopeFromValue,
 	closeScopeValue,
@@ -73,7 +74,7 @@ export function CloseMonthPanel({
 			if (!month || !scope) return;
 			const result = await closeMonthAction({ month, scope });
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				return;
 			}
 			switch (result.data.kind) {

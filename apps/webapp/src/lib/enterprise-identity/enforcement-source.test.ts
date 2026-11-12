@@ -19,7 +19,7 @@ describe("enterprise identity enforcement source contracts", () => {
 	it("enforces active invite restrictions before direct invitations", () => {
 		expect(organizationsActionsSource).toContain("assertEnterpriseIdentityInvitationAllowed");
 		expect(enforcementSource).toContain("inviteRestrictionEnabled");
-		expect(organizationsActionsSource).toContain("validatedData.email");
+		expect(organizationsActionsSource).toContain("validateInvitationAllowed(organizationId, input.email)");
 	});
 
 	it("enforces active domain restrictions before invite code membership creation", () => {

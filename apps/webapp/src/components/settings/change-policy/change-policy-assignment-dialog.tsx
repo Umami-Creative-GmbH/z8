@@ -30,6 +30,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyAssignmentDialogProps {
@@ -106,7 +107,7 @@ export function ChangePolicyAssignmentDialog({
 	const { data: policies, isLoading: policiesLoading } = useQuery({
 		queryKey: queryKeys.changePolicies.list(organizationId),
 		queryFn: async () => {
-			const result = await getChangePolicies(organizationId);
+			const result = await getChangePolicies();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -119,7 +120,7 @@ export function ChangePolicyAssignmentDialog({
 	const { data: teams, isLoading: teamsLoading } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -132,7 +133,7 @@ export function ChangePolicyAssignmentDialog({
 	const { data: employees, isLoading: employeesLoading } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
 		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
+			const result = await getEmployeesForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch employees");
 			}
@@ -159,8 +160,7 @@ export function ChangePolicyAssignmentDialog({
 	});
 
 	const createMutation = useMutation({
-		mutationFn: (input: CreateAssignmentInput) =>
-			createChangePolicyAssignment(organizationId, input),
+		mutationFn: (input: CreateAssignmentInput) => createChangePolicyAssignment(input),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -174,7 +174,10 @@ export function ChangePolicyAssignmentDialog({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error || t("settings.changePolicies.assignmentFailed", "Failed to assign policy"),
+					actionErrorMessage(t, result, {}, [
+						"settings.changePolicies.assignmentFailed",
+						"Failed to assign policy",
+					]),
 				);
 			}
 		},

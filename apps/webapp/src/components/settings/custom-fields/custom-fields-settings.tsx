@@ -40,8 +40,9 @@ import {
 	MAX_ACTIVE_CUSTOM_FIELDS,
 } from "@/lib/organization/custom-fields/definition-rules";
 import type { CustomFieldDefinitionView } from "@/lib/organization/custom-fields/definitions";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { CustomFieldDialog } from "./custom-field-dialog";
-import { entityLabel, levelLabel, refusalMessage, typeLabel } from "./custom-field-labels";
+import { CUSTOM_FIELD_REFUSALS, entityLabel, levelLabel, typeLabel } from "./custom-field-labels";
 
 export type RunCustomFieldChange = (change: CustomFieldChange) => Promise<boolean>;
 
@@ -115,14 +116,15 @@ export function CustomFieldsSettings({
 			return false;
 		}
 		if (!result.success) {
-			toast.error(result.error);
+			toast.error(
+				actionErrorMessage(t, result, CUSTOM_FIELD_REFUSALS, [
+					"settings.customFields.saveFailed",
+					"The change could not be saved.",
+				]),
+			);
 			return false;
 		}
-		if (!result.data.ok) {
-			toast.error(refusalMessage(t, result.data.reason, result.data.configurations));
-			return false;
-		}
-		setFields(result.data.fields);
+		setFields(result.data);
 		return true;
 	};
 

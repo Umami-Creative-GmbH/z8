@@ -43,7 +43,8 @@ describe("organization tracking review", () => {
 		});
 		mocks.commit.mockResolvedValue({
 			success: false,
-			code: "stale_preview",
+			code: "ValidationError",
+			refusal: "stale_preview",
 			error: "The reviewed inputs changed. Generate a new preview before saving.",
 		});
 		render(

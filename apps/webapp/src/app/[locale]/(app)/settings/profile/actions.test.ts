@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => {
 	const employeeFindFirst = vi.fn();
@@ -52,16 +52,6 @@ const mockState = vi.hoisted(() => {
 
 vi.mock("next/headers", () => ({
 	headers: vi.fn(async () => mockState.headers),
-}));
-
-vi.mock("@/lib/auth", () => ({
-	auth: {
-		api: {
-			updateUser: mockState.updateUser,
-			changePassword: vi.fn(),
-			getSession: vi.fn(),
-		},
-	},
 }));
 
 vi.mock("@/lib/user-preferences/user-settings-mutation", () => ({
@@ -209,10 +199,17 @@ const {
 	updateTimezone,
 	updateWeekStartDay,
 } = await import("./actions");
+const { auth } = await import("@/lib/auth");
 
 describe("profile actions", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// The Better Auth call itself is the real `auth.api.updateUser`, replaced per test.
+		vi.spyOn(auth.api, "updateUser").mockImplementation(mockState.updateUser as never);
 		mockState.session.user.name = "Existing Name";
 		mockState.session.user.firstName = "Stored";
 		mockState.session.user.lastName = "User";

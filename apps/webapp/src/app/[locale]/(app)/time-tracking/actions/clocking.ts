@@ -15,8 +15,10 @@ import {
 	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "@/lib/approvals/server/work-period-approvals";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";
+import { isOwnerOrAdminSelfRecording, manualWorkExemption } from "@/lib/approvals/route-rules";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
-import { isOrgAdminCasl } from "@/lib/auth-helpers";
+import { getPrincipalContext } from "@/lib/auth-helpers";
+import { defineAbilityFor } from "@/lib/authorization";
 import {
 	dateFromInstant,
 	type Instant,
@@ -1287,12 +1289,16 @@ export async function createManualTimeEntry(
 	}
 	let requiresApproval: boolean;
 	try {
-		// Organization owners and admins are not limited to employee self-service windows.
-		const exemption = !isOwnEntry
-			? "on_behalf"
-			: (await isOrgAdminCasl(targetEmployee.organizationId))
-				? "owner_admin_self"
-				: null;
+		// Organization owners and admins are not limited to employee self-service windows: the
+		// permission system decides who they are, for the session's organization, by the rule
+		// protected manual preparation applies too.
+		const recorder = isOwnEntry ? await getPrincipalContext() : null;
+		const exemption = manualWorkExemption({
+			isOwnEntry,
+			ownerOrAdminSelf:
+				recorder?.activeOrganizationId === targetEmployee.organizationId &&
+				isOwnerOrAdminSelfRecording(defineAbilityFor(recorder)),
+		});
 		const verdict = await readChangePolicyVerdict(db, {
 			organizationId: targetEmployee.organizationId,
 			employeeId: targetEmployee.id,

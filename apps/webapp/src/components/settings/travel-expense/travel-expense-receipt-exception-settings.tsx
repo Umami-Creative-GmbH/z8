@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 const queryKey = queryKeys.travelExpenses.receiptExceptionSettings();
@@ -31,11 +32,10 @@ function ReceiptExceptionForm({ settings }: { settings: ReceiptExceptionSettings
 			});
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.travelExpenses.receiptExceptions.saveFailed",
-							"Failed to save the missing-receipt setting",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.travelExpenses.receiptExceptions.saveFailed",
+						"Failed to save the missing-receipt setting",
+					]),
 				);
 				return;
 			}

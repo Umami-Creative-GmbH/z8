@@ -39,7 +39,8 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { kioskSettingsErrorMessage } from "./kiosk-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import { KIOSK_SETTINGS_REFUSALS } from "./kiosk-settings-refusals";
 
 const NAME_MAX_LENGTH = 100;
 
@@ -119,8 +120,10 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 					});
 					if (!result.success) {
 						toast.error(
-							kioskSettingsErrorMessage(t, result.code) ??
-								t("settings.kiosks.createFailed", "The kiosk could not be created"),
+							actionErrorMessage(t, result, KIOSK_SETTINGS_REFUSALS, [
+								"settings.kiosks.createFailed",
+								"The kiosk could not be created",
+							]),
 						);
 						return;
 					}
@@ -141,8 +144,10 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						kioskSettingsErrorMessage(t, result.code) ??
-							t("settings.kiosks.saveFailed", "The kiosk could not be saved"),
+						actionErrorMessage(t, result, KIOSK_SETTINGS_REFUSALS, [
+							"settings.kiosks.saveFailed",
+							"The kiosk could not be saved",
+						]),
 					);
 					return;
 				}

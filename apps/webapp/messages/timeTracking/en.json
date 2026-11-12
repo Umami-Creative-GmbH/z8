@@ -594,7 +594,55 @@
       "title": "Workday timeline",
       "today": "Today",
       "unavailableDescription": "Clocking time still works. Try refreshing this view later.",
-      "unavailableTitle": "Timeline unavailable"
+      "unavailableTitle": "Timeline unavailable",
+      "workPeriod": {
+        "title": "Recorded work"
+      },
+      "shift": {
+        "title": "Scheduled shift"
+      },
+      "status": {
+        "approved": "Approved",
+        "pending": "Pending",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled",
+        "published": "Published",
+        "draft": "Draft",
+        "active": "Active"
+      },
+      "absence": {
+        "fullDay": "Full day",
+        "morning": "Morning",
+        "afternoon": "Afternoon"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Time correction request",
+          "subtitle": "Correction for a time entry"
+        },
+        "absence": {
+          "title": "Absence request",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "View absence",
+        "reviewRequest": "Review request"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Pending edit request",
+          "description": "This work period has changes awaiting approval."
+        },
+        "missingClockOut": {
+          "title": "Missing clock-out",
+          "description": "This work period is still active."
+        },
+        "autoAdjusted": {
+          "title": "Auto-adjusted record",
+          "description": "Break or compliance rules adjusted this work period."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Cancel",
@@ -669,7 +717,10 @@
     "workLocationHome": "Home",
     "workLocationOffice": "Office",
     "workLocationOther": "Other",
-    "workLocationRemote": "Remote"
+    "workLocationRemote": "Remote",
+    "systemNote": {
+      "breakEnforcement": "Auto-adjusted: break enforcement"
+    }
   },
   "wellness": {
     "water": {

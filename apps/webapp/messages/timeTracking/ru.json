@@ -594,7 +594,55 @@
       "title": "Временная шкала рабочего дня",
       "today": "Сегодня",
       "unavailableDescription": "Учет времени по-прежнему работает. Попробуйте обновить этот экран позже.",
-      "unavailableTitle": "Временная шкала недоступна"
+      "unavailableTitle": "Временная шкала недоступна",
+      "workPeriod": {
+        "title": "Учтённая работа"
+      },
+      "shift": {
+        "title": "Запланированная смена"
+      },
+      "status": {
+        "approved": "Одобрено",
+        "pending": "Ожидает",
+        "rejected": "Отклонено",
+        "cancelled": "Отменено",
+        "published": "Опубликовано",
+        "draft": "Черновик",
+        "active": "Активно"
+      },
+      "absence": {
+        "fullDay": "Весь день",
+        "morning": "Утро",
+        "afternoon": "После обеда"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Запрос на исправление времени",
+          "subtitle": "Исправление записи времени"
+        },
+        "absence": {
+          "title": "Запрос на отсутствие",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Показать отсутствие",
+        "reviewRequest": "Проверить запрос"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Ожидающий запрос на изменение",
+          "description": "В этом рабочем периоде есть изменения, ожидающие одобрения."
+        },
+        "missingClockOut": {
+          "title": "Нет отметки об уходе",
+          "description": "Этот рабочий период всё ещё активен."
+        },
+        "autoAdjusted": {
+          "title": "Автоматически скорректированная запись",
+          "description": "Правила перерывов или соответствия скорректировали этот рабочий период."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Отмена",
@@ -669,7 +717,10 @@
     "workLocationHome": "Дом",
     "workLocationOffice": "Офис",
     "workLocationOther": "Другое",
-    "workLocationRemote": "Удаленно"
+    "workLocationRemote": "Удаленно",
+    "systemNote": {
+      "breakEnforcement": "Автоматически скорректировано: соблюдение перерывов"
+    }
   },
   "wellness": {
     "water": {

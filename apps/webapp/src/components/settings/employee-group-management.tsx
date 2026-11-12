@@ -17,7 +17,10 @@ import {
 const employeeGroupQueryKey = (organizationId: string) =>
 	["approval-policy-employee-groups", organizationId] as const;
 
-type EmployeeGroupData = Awaited<ReturnType<typeof getEmployeeGroups>>[number];
+type EmployeeGroupData = Extract<
+	Awaited<ReturnType<typeof getEmployeeGroups>>,
+	{ success: true }
+>["data"][number];
 
 interface EmployeeGroupManagementProps {
 	organizationId: string;
@@ -31,7 +34,11 @@ export function EmployeeGroupManagement({ organizationId }: EmployeeGroupManagem
 	const { t } = useTranslate();
 	const { data, isLoading, isError } = useQuery({
 		queryKey: employeeGroupQueryKey(organizationId),
-		queryFn: getEmployeeGroups,
+		queryFn: async () => {
+			const result = await getEmployeeGroups();
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
 	});
 	const groups = data || [];
 

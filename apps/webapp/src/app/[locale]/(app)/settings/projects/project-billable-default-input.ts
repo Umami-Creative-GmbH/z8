@@ -41,7 +41,7 @@ export function projectBillableDefault(input: {
  * request that would change it is refused (#768). Defaults already set keep being
  * applied to new work, and the automatic switch-off on customer removal still runs.
  */
-export function requireBillableTimeForDefaultChange(
+export function validateBillableDefaultChange(
 	dbService: typeof DatabaseService.Service,
 	organizationId: string,
 	input: { requested: unknown; current: boolean },

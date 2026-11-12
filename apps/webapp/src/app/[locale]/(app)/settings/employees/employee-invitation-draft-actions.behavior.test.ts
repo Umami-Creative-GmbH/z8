@@ -3,32 +3,54 @@ import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invitation } from "@/db/auth-schema";
 import { employeeInvitationDraft } from "@/db/schema";
-import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
-import { toServerActionResult } from "@/lib/effect/result";
+import { CACHE_TAGS } from "@/lib/cache/tags";
+import { DatabaseError } from "@/lib/effect/errors";
+import type { StubCaller } from "@/test/organization-action";
 import {
 	type InvitationDraftEligibilityModel,
 	predicateMatchesInvitationDraftModel,
 } from "./employee-invitation-draft-condition-fake.test-utils";
 
 const mocks = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
+	dbService: null as null | {
+		db: Record<string, unknown>;
+		query: (name: string, run: () => Promise<unknown>) => unknown;
+	},
 	ensureEmployeeProfiles: vi.fn(),
-	getEmployeeSettingsActorContext: vi.fn(),
 	logAudit: vi.fn(async () => undefined),
 	predicateInputs: vi.fn(),
-	requireOrgAdminEmployeeSettingsAccess: vi.fn(),
-	revalidateEmployeesCache: vi.fn(),
-	validateInput: vi.fn(),
+	revalidateTag: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/organization-member-provisioning", () => ({
 	ensureEmployeeProfilesForOrganizationMembers: mocks.ensureEmployeeProfiles,
 }));
 
-vi.mock("@/lib/effect/runtime", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/effect/runtime")>();
-	const { Layer } = await import("effect");
-	return { ...actual, AppLayer: Layer.empty };
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect } = await import("effect");
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	// Each test's fake database, behind the stub's one `DatabaseService`.
+	const db = new Proxy(
+		{},
+		{ get: (_target, property) => mocks.dbService?.db[property as string] },
+	);
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db,
+			query: (name, run) =>
+				name === "organizationAction.managedScope"
+					? (Effect.succeed([[], []]) as never)
+					: (mocks.dbService?.query(name, run) as never),
+		}),
+	);
 });
+
+vi.mock("next/cache", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/cache")>()),
+	revalidateTag: mocks.revalidateTag,
+}));
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
@@ -36,33 +58,13 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({ error: vi.fn(), info: vi.fn() }),
+	createLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: vi.fn(),
 	requestEmployeeWorkBalanceFullRebuild: vi.fn(),
 }));
-
-vi.mock("./employee-action-utils", () => ({
-	ensureSettingsActorCanAccessEmployeeTarget: vi.fn(() => Effect.void),
-	getEmployeeContext: vi.fn(),
-	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
-	getTargetEmployee: vi.fn(),
-	getTargetUser: vi.fn(),
-	parseHourlyRate: vi.fn(() => null),
-	requireOrgAdminEmployeeSettingsAccess:
-		mocks.requireOrgAdminEmployeeSettingsAccess,
-	revalidateEmployeesCache: mocks.revalidateEmployeesCache,
-	runTracedEmployeeAction: vi.fn(async (options) => {
-		const exit = await Effect.runPromiseExit(
-			options.execute({ setAttribute: vi.fn() }),
-		);
-		return toServerActionResult(exit);
-	}),
-	validateInput: mocks.validateInput,
-}));
-
 vi.mock("./employee-invitation-draft-eligibility", async (importOriginal) => {
 	const actual =
 		await importOriginal<
@@ -410,18 +412,17 @@ function setActor(
 	accessTier: "orgAdmin" | "manager",
 	dbService: ReturnType<typeof createConditionAwareDb>["dbService"],
 ) {
-	mocks.getEmployeeSettingsActorContext.mockReturnValue(
-		Effect.succeed({
-			accessTier,
-			organizationId: "org-1",
-			session: { user: { id: "admin-user-1", email: "admin@example.com" } },
-			currentEmployee: {
-				id: "22222222-2222-4222-8222-222222222222",
-				role: accessTier === "orgAdmin" ? "admin" : "manager",
-			},
-			dbService,
-		}),
-	);
+	mocks.dbService = dbService;
+	mocks.caller = {
+		userId: "admin-user-1",
+		activeOrganizationId: "org-1",
+		membershipRole: accessTier === "orgAdmin" ? "admin" : "member",
+		employee: {
+			id: "22222222-2222-4222-8222-222222222222",
+			role: accessTier === "orgAdmin" ? "admin" : "manager",
+			former: false,
+		},
+	};
 }
 
 describe("invitation draft action eligibility", () => {
@@ -429,10 +430,7 @@ describe("invitation draft action eligibility", () => {
 		vi.clearAllMocks();
 		vi.spyOn(console, "error").mockImplementation(() => undefined);
 		mocks.ensureEmployeeProfiles.mockResolvedValue(undefined);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
-		mocks.validateInput.mockImplementation((_schema, data) =>
-			Effect.succeed(data),
-		);
+
 	});
 
 	afterEach(() => {
@@ -447,7 +445,7 @@ describe("invitation draft action eligibility", () => {
 		const fake = createConditionAwareDb(model);
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await listEmployeesAction();
+		const result = await listEmployeesAction({});
 
 		expect(result.success).toBe(true);
 		if (!result.success) return;
@@ -491,12 +489,10 @@ describe("invitation draft action eligibility", () => {
 		const fake = createConditionAwareDb(model);
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{
-				position: "Changed",
-			},
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result.success).toBe(eligible);
 		expect(fake.update).toHaveBeenCalledTimes(eligible ? 1 : 0);
@@ -512,7 +508,7 @@ describe("invitation draft action eligibility", () => {
 			expect(mocks.predicateInputs).not.toHaveBeenCalled();
 		}
 		if (eligible) {
-			expect(mocks.revalidateEmployeesCache).toHaveBeenCalledWith("org-1");
+			expect(mocks.revalidateTag).toHaveBeenCalledWith(CACHE_TAGS.EMPLOYEES("org-1"), "max");
 		} else {
 			expect(result).toEqual(
 				expect.objectContaining({
@@ -528,7 +524,7 @@ describe("invitation draft action eligibility", () => {
 		const fake = createConditionAwareDb(baseModel);
 		setActor("manager", fake.dbService);
 
-		const result = await listEmployeesAction();
+		const result = await listEmployeesAction({});
 
 		expect(result).toEqual({
 			success: true,
@@ -556,30 +552,14 @@ describe("invitation draft action eligibility", () => {
 	it("manager edit is denied before invitation draft lookup", async () => {
 		const fake = createConditionAwareDb(baseModel);
 		setActor("manager", fake.dbService);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(
-			Effect.fail(
-				new AuthorizationError({
-					message:
-						"Only organization admins can update invited employee drafts",
-					userId: "manager-user-1",
-					resource: "employee_invitation_draft",
-					action: "update",
-				}),
-			),
-		);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${baseModel.draft.id}`,
-			{
-				position: "Changed",
-			},
-		);
 
-		expect(result).toEqual({
-			success: false,
-			error: "Only organization admins can update invited employee drafts",
-			code: "AuthorizationError",
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${baseModel.draft.id}`,
+			data: { position: "Changed" },
 		});
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(fake.draftSources).toHaveLength(0);
 		expect(mocks.predicateInputs).not.toHaveBeenCalled();
 	});
@@ -589,12 +569,10 @@ describe("invitation draft action eligibility", () => {
 		const fake = createConditionAwareDb(model);
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{
-				position: "Changed",
-			},
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result.success).toBe(true);
 		expect(fake.transaction).toHaveBeenCalledOnce();
@@ -647,10 +625,10 @@ describe("invitation draft action eligibility", () => {
 		const fake = createConditionAwareDb(model);
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{ teamId },
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { teamId },
+		});
 
 		expect(result).toMatchObject({ success: true });
 		expect(fake.transaction).toHaveBeenCalledOnce();
@@ -676,10 +654,10 @@ describe("invitation draft action eligibility", () => {
 		setActor("orgAdmin", fake.dbService);
 		const birthday = new Date("1990-05-01T00:00:00.000Z");
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${baseModel.draft.id}`,
-			{ birthday },
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${baseModel.draft.id}`,
+			data: { birthday },
+		});
 
 		expect(result).toMatchObject({ success: true });
 		expect(fake.updateValues).toEqual([expect.objectContaining({ birthday })]);
@@ -702,10 +680,10 @@ describe("invitation draft action eligibility", () => {
 		});
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${baseModel.draft.id}`,
-			{ position: "Changed", birthday: new Date("1990-05-01T00:00:00.000Z") },
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${baseModel.draft.id}`,
+			data: { position: "Changed", birthday: new Date("1990-05-01T00:00:00.000Z") },
+		});
 
 		expect(result).toMatchObject({ success: true });
 		expect(mocks.logAudit).not.toHaveBeenCalled();
@@ -720,12 +698,10 @@ describe("invitation draft action eligibility", () => {
 		});
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{
-				position: "Changed",
-			},
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result).toEqual(
 			expect.objectContaining({ success: false, code: "ValidationError" }),
@@ -743,12 +719,10 @@ describe("invitation draft action eligibility", () => {
 		const fake = createConditionAwareDb(model, { forceZeroRowUpdate: true });
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{
-				position: "Changed",
-			},
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result).toEqual(
 			expect.objectContaining({ success: false, code: "ValidationError" }),
@@ -759,7 +733,7 @@ describe("invitation draft action eligibility", () => {
 			"lock:invitation:update",
 			"update",
 		]);
-		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+		expect(mocks.revalidateTag).not.toHaveBeenCalled();
 	});
 
 	it("excludes an invitation that expires during employee reconciliation", async () => {
@@ -773,7 +747,7 @@ describe("invitation draft action eligibility", () => {
 		const fake = createConditionAwareDb(model);
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await listEmployeesAction();
+		const result = await listEmployeesAction({});
 
 		expect(result.success).toBe(true);
 		if (!result.success) return;
@@ -783,24 +757,25 @@ describe("invitation draft action eligibility", () => {
 		);
 	});
 
-	it("excludes an invitation that expires during edit validation", async () => {
+	it("excludes an invitation that expires between the draft lookup and the locked recheck", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-07-18T10:00:00.000Z"));
 		const model = structuredClone(baseModel);
 		model.invitation.expiresAt = new Date("2026-07-18T10:01:00.000Z");
-		mocks.validateInput.mockImplementation((_schema, data) => {
-			vi.setSystemTime(new Date("2026-07-18T10:02:00.000Z"));
-			return Effect.succeed(data);
-		});
 		const fake = createConditionAwareDb(model);
+		const query = fake.dbService.query;
+		fake.dbService.query = vi.fn((name: string, run: () => Promise<unknown>) => {
+			if (name === "getEmployeeInvitationDraftForUpdate") {
+				vi.setSystemTime(new Date("2026-07-18T10:02:00.000Z"));
+			}
+			return query(name, run);
+		});
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{
-				position: "Changed",
-			},
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result).toEqual(
 			expect.objectContaining({ success: false, code: "ValidationError" }),
@@ -821,12 +796,10 @@ describe("invitation draft action eligibility", () => {
 		});
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{
-				position: "Changed",
-			},
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result).toEqual(
 			expect.objectContaining({ success: false, code: "ValidationError" }),
@@ -853,10 +826,10 @@ describe("invitation draft action eligibility", () => {
 		});
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{ position: "Changed" },
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result).toEqual(
 			expect.objectContaining({ success: false, code: "ValidationError" }),
@@ -889,10 +862,10 @@ describe("invitation draft action eligibility", () => {
 		});
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{ position: "Changed" },
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result).toEqual(
 			expect.objectContaining({ success: false, code: "ValidationError" }),
@@ -916,18 +889,18 @@ describe("invitation draft action eligibility", () => {
 		const fake = createConditionAwareDb(model, { serializationConflict });
 		setActor("orgAdmin", fake.dbService);
 
-		const result = await updateEmployeeInvitationDraftAction(
-			`draft:${model.draft.id}`,
-			{ position: "Changed" },
-		);
+		const result = await updateEmployeeInvitationDraftAction({
+			draftEmployeeId: `draft:${model.draft.id}`,
+			data: { position: "Changed" },
+		});
 
 		expect(result).toEqual({
 			success: false,
 			error: "Database query failed: updateEmployeeInvitationDraft",
 			code: "DatabaseError",
 		});
-		expect(result.error).not.toContain(serializationConflict.message);
+		expect(result.success ? "" : result.error).not.toContain(serializationConflict.message);
 		expect(fake.update).toHaveBeenCalledOnce();
-		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+		expect(mocks.revalidateTag).not.toHaveBeenCalled();
 	});
 });

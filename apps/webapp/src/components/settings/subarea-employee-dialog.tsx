@@ -28,10 +28,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface SubareaEmployeeDialogProps {
-	organizationId: string;
 	subareaId: string;
 	subareaName: string;
 	open: boolean;
@@ -65,7 +65,6 @@ export function SubareaEmployeeDialog(props: SubareaEmployeeDialogProps) {
 }
 
 function SubareaEmployeeDialogContent({
-	organizationId,
 	subareaId,
 	subareaName,
 	open,
@@ -102,8 +101,10 @@ function SubareaEmployeeDialogContent({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result?.error ||
-						t("settings.locations.employeeAssignFailed", "Failed to assign employee"),
+					actionErrorMessage(t, result, {}, [
+						"settings.locations.employeeAssignFailed",
+						"Failed to assign employee",
+					]),
 				);
 			}
 
@@ -122,7 +123,7 @@ function SubareaEmployeeDialogContent({
 	const { data: employees, isLoading } = useQuery({
 		queryKey: [...queryKeys.locations.subareas.employees(subareaId), "available"],
 		queryFn: async () => {
-			const result = await getAvailableEmployees(organizationId, undefined, subareaId);
+			const result = await getAvailableEmployees({ excludeSubareaId: subareaId });
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch employees");
 			}

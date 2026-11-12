@@ -225,12 +225,12 @@ const ROSTER_SURFACES: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
-		functions: ["getPersonnelFileOfficerAdminData"],
+		functions: ["loadOfficerAdminData"],
 		note: "personnel file officer picker",
 	},
 	{
 		file: "app/[locale]/(app)/settings/payroll-access/actions.ts",
-		functions: ["getPayrollAccessAdminDataAction"],
+		functions: ["loadPayrollAccessAdminData"],
 		note: "payroll access picker",
 	},
 	{
@@ -245,12 +245,12 @@ const ROSTER_SURFACES: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/position-capture/actions.ts",
-		functions: ["getPositionCaptureAdminDataAction"],
+		functions: ["loadPositionCaptureAdminData"],
 		note: "position capture assignment picker",
 	},
 	{
 		file: "app/[locale]/(app)/settings/vehicle-use/actions.ts",
-		functions: ["getVehicleUseAdminDataAction"],
+		functions: ["loadVehicleUseAdminData"],
 		note: "vehicle use assignment picker",
 	},
 	{
@@ -301,7 +301,7 @@ const HISTORY_VIEWS: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/employees/employee-queries.actions.ts",
-		functions: ["getEmployeesByIdsAction", "loadEmployeePage"],
+		functions: ["loadEmployeesByIds", "loadEmployeePage"],
 		note: "already-selected employees resolve, and the directory filters by the status asked for",
 	},
 ];
@@ -359,7 +359,7 @@ const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/employees/selectable-employees.ts",
-		functions: ["loadSelectableEmployeePage"],
+		functions: ["selectableEmployeePage"],
 		note: "filters through employeeStatusCondition, current roster by default",
 	},
 	{
@@ -370,11 +370,11 @@ const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
 	{
 		file: "app/[locale]/(app)/settings/teams/actions.ts",
 		functions: [
-			"resolveTeamSettingsActor",
+			"authorizeTeamMemberChange",
 			"writeTeamMemberRemoval",
 			"listTeams",
 		],
-		note: "the acting user, and removals, which stay possible for former employees",
+		note: "the change's target, whose addition the action's addsEmployees refuses for a former employee, and removals, which stay possible for former employees",
 	},
 	{
 		file: "lib/organization/driving-licence/verifier-actions.ts",
@@ -418,7 +418,15 @@ function collectFunctionBodies(
 				(ts.isVariableDeclaration(node) || ts.isPropertyAssignment(node)) &&
 				ts.isIdentifier(node.name)
 			) {
-				const fn = functionLike(node.initializer);
+				// `const x = organizationAction(declaration, handler)`: the handler is the body.
+				const fn =
+					functionLike(node.initializer) ??
+					(node.initializer &&
+					ts.isCallExpression(node.initializer) &&
+					ts.isIdentifier(node.initializer.expression) &&
+					node.initializer.expression.text === "organizationAction"
+						? functionLike(node.initializer.arguments.at(-1))
+						: undefined);
 				if (fn) record(node.name.text, fn.body);
 			}
 			node.forEachChild(visit);

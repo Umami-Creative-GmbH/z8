@@ -1,31 +1,7 @@
 "use server";
 
-import type { employee } from "@/db/schema";
-import type { ServerActionResult } from "@/lib/effect/result";
-import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
-import type { ExecuteDepartureResult } from "@/lib/employee-lifecycle/types";
-import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
-import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
-import type {
-	AssignManagers,
-	CreateEmployee,
-	PersonalInformation,
-	UpdateEmployee,
-	UpdateEmployeeInvitationDraft,
-} from "@/lib/validations/employee";
-import type {
-	EmployeeDetailRecord,
-	EmployeeListParams,
-	EmployeeSelectParams,
-	EmployeeSelectResponse,
-	EmployeeWithRelations,
-	PaginatedEmployeeResponse,
-	SelectableEmployee,
-} from "./employee-action-types";
 import {
-	type DeactivateEmployeeInput,
 	deactivateEmployeeAction,
-	type PreviewEmployeeDeactivationInput,
 	previewEmployeeDeactivationAction,
 	reactivateEmployeeAction,
 	removeEmployeeAccessAction,
@@ -42,7 +18,6 @@ import {
 	deleteEmployeeInvitationDraftAction,
 	previewEmployeeTeamChangeDrivingImpact,
 	requestEmployeeWorkBalanceRecalculationAction,
-	type UpdateEmployeeOptions,
 	updateEmployeeAction,
 	updateEmployeeInvitationDraftAction,
 	updateOwnProfileAction,
@@ -64,129 +39,28 @@ export type {
 	SelectableEmployee,
 } from "./employee-action-types";
 
-export async function createEmployee(
-	data: CreateEmployee,
-): Promise<ServerActionResult<typeof employee.$inferSelect>> {
-	return createEmployeeAction(data);
-}
-
-export async function updateEmployee(
-	employeeId: string,
-	data: UpdateEmployee,
-	customFieldValues?: CustomFieldValuesInput,
-	options?: UpdateEmployeeOptions,
-): Promise<ServerActionResult<void>> {
-	return updateEmployeeAction(employeeId, data, customFieldValues, options);
-}
-
+// The employee settings actions under their client names; each is an `organizationAction`.
+export const createEmployee = createEmployeeAction;
+export const updateEmployee = updateEmployeeAction;
 /** The driving licence warning a Team field change confirmed (#1425), read before the save. */
-export async function previewEmployeeTeamChange(
-	employeeId: string,
-	teamId: string | null,
-): Promise<ServerActionResult<DrivingLicenceTeamChangeImpact>> {
-	return previewEmployeeTeamChangeDrivingImpact(employeeId, teamId);
-}
-
+export const previewEmployeeTeamChange = previewEmployeeTeamChangeDrivingImpact;
 /** `{ employeeId, requestId, replacementManagers }`; a retry with the same request ID replays. */
-export async function deactivateEmployee(
-	input: DeactivateEmployeeInput,
-): Promise<ServerActionResult<void>> {
-	return deactivateEmployeeAction(input);
-}
-
+export const deactivateEmployee = deactivateEmployeeAction;
 /** What Deactivate would change now, for the dialog (#1440). */
-export async function previewEmployeeDeactivation(
-	input: PreviewEmployeeDeactivationInput,
-): Promise<ServerActionResult<DeactivationPreview>> {
-	return previewEmployeeDeactivationAction(input);
-}
-
-export async function reactivateEmployee(
-	employeeId: string,
-): Promise<ServerActionResult<void>> {
-	return reactivateEmployeeAction(employeeId);
-}
-
-export async function scheduleEmployeeDeparture(
-	input: unknown,
-): Promise<ServerActionResult<{ departureId: string; revision: number }>> {
-	return scheduleEmployeeDepartureAction(input);
-}
-
-export async function cancelEmployeeDeparture(input: unknown): Promise<ServerActionResult<void>> {
-	return cancelEmployeeDepartureAction(input);
-}
-
-export async function offboardEmployeeNow(
-	input: unknown,
-): Promise<ServerActionResult<ExecuteDepartureResult>> {
-	return offboardEmployeeNowAction(input);
-}
-
-export async function rehireEmployee(
-	input: unknown,
-): Promise<ServerActionResult<{ employmentPeriodId: string }>> {
-	return rehireEmployeeAction(input);
-}
-
-export async function removeEmployeeAccess(
-	employeeId: string,
-): Promise<ServerActionResult<void>> {
-	return removeEmployeeAccessAction(employeeId);
-}
-
-export async function updateEmployeeInvitationDraft(
-	draftEmployeeId: string,
-	data: UpdateEmployeeInvitationDraft,
-): Promise<ServerActionResult<void>> {
-	return updateEmployeeInvitationDraftAction(draftEmployeeId, data);
-}
-
-export async function deleteEmployeeInvitationDraft(
-	draftEmployeeId: string,
-): Promise<ServerActionResult<void>> {
-	return deleteEmployeeInvitationDraftAction(draftEmployeeId);
-}
-
-export async function updateOwnProfile(
-	data: PersonalInformation,
-): Promise<ServerActionResult<void>> {
-	return updateOwnProfileAction(data);
-}
-
-export async function getEmployee(
-	employeeId: string,
-): Promise<ServerActionResult<EmployeeDetailRecord>> {
-	return getEmployeeAction(employeeId);
-}
-
-export async function listEmployees(
-	params: EmployeeListParams = {},
-): Promise<ServerActionResult<PaginatedEmployeeResponse>> {
-	return listEmployeesAction(params);
-}
-
-export async function assignManagers(
-	employeeId: string,
-	data: AssignManagers,
-): Promise<ServerActionResult<void>> {
-	return assignManagersAction(employeeId, data);
-}
-
-export async function requestEmployeeWorkBalanceRecalculation(
-	employeeId: string,
-): Promise<ServerActionResult<void>> {
-	return requestEmployeeWorkBalanceRecalculationAction(employeeId);
-}
-
-export async function listEmployeesForSelect(
-	params: EmployeeSelectParams = {},
-): Promise<ServerActionResult<EmployeeSelectResponse>> {
-	return listEmployeesForSelectAction(params);
-}
-
-export async function getEmployeesByIds(
-	employeeIds: string[],
-): Promise<ServerActionResult<SelectableEmployee[]>> {
-	return getEmployeesByIdsAction(employeeIds);
-}
+export const previewEmployeeDeactivation = previewEmployeeDeactivationAction;
+export const reactivateEmployee = reactivateEmployeeAction;
+export const scheduleEmployeeDeparture = scheduleEmployeeDepartureAction;
+export const cancelEmployeeDeparture = cancelEmployeeDepartureAction;
+export const offboardEmployeeNow = offboardEmployeeNowAction;
+export const rehireEmployee = rehireEmployeeAction;
+export const removeEmployeeAccess = removeEmployeeAccessAction;
+export const updateEmployeeInvitationDraft = updateEmployeeInvitationDraftAction;
+export const deleteEmployeeInvitationDraft = deleteEmployeeInvitationDraftAction;
+export const updateOwnProfile = updateOwnProfileAction;
+export const getEmployee = getEmployeeAction;
+export const listEmployees = listEmployeesAction;
+export const assignManagers = assignManagersAction;
+export const requestEmployeeWorkBalanceRecalculation =
+	requestEmployeeWorkBalanceRecalculationAction;
+export const listEmployeesForSelect = listEmployeesForSelectAction;
+export const getEmployeesByIds = getEmployeesByIdsAction;

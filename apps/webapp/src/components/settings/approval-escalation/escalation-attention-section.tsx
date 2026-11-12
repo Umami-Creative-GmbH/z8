@@ -38,6 +38,7 @@ import {
 } from "@/lib/approvals/escalation/kinds";
 import type { EscalationAttentionView } from "@/lib/approvals/escalation/management-overview";
 import type { EscalationCandidateView } from "@/lib/approvals/escalation/transfer";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { Link } from "@/navigation";
 import {
 	attentionEventLabel,
@@ -595,11 +596,10 @@ function TransferAssignmentDialog({
 					</div>
 				) : !candidates.data?.success ? (
 					<p className="text-sm text-destructive" role="alert">
-						{candidates.data?.error ??
-							t(
-								"settings.approvalEscalation.transfer.loadFailed",
-								"Eligible managers could not be loaded.",
-							)}
+						{actionErrorMessage(t, candidates.data, {}, [
+							"settings.approvalEscalation.transfer.loadFailed",
+							"Eligible managers could not be loaded.",
+						])}
 					</p>
 				) : candidates.data.data.candidates.length === 0 ? (
 					<p className="text-sm text-muted-foreground">

@@ -30,6 +30,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface WorkCategoryAssignmentDialogProps {
@@ -87,7 +88,7 @@ export function WorkCategoryAssignmentDialog({
 	const { data: categorySets, isLoading: setsLoading } = useQuery({
 		queryKey: queryKeys.workCategorySets.list(organizationId),
 		queryFn: async () => {
-			const result = await getWorkCategorySets(organizationId);
+			const result = await getWorkCategorySets();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch category sets");
 			}
@@ -100,7 +101,7 @@ export function WorkCategoryAssignmentDialog({
 	const { data: teams, isLoading: teamsLoading } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -113,7 +114,7 @@ export function WorkCategoryAssignmentDialog({
 	const { data: employees, isLoading: employeesLoading } = useQuery({
 		queryKey: ["employees-for-assignment", organizationId],
 		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
+			const result = await getEmployeesForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch employees");
 			}
@@ -128,7 +129,6 @@ export function WorkCategoryAssignmentDialog({
 			const teamId = assignmentType === "team" ? selectedTeamId : null;
 			const employeeId = assignmentType === "employee" ? selectedEmployeeId : null;
 			return createSetAssignment({
-				organizationId,
 				setId: selectedSetId,
 				assignmentType,
 				teamId,
@@ -145,8 +145,10 @@ export function WorkCategoryAssignmentDialog({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.assignmentCreateFailed", "Failed to create assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workCategories.assignmentCreateFailed",
+						"Failed to create assignment",
+					]),
 				);
 			}
 		},

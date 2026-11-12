@@ -1,30 +1,64 @@
 import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
-import { Effect, Exit } from "effect";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { user } from "@/db/auth-schema";
-import {
-	AuthorizationError,
-	DatabaseError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import { toServerActionResult } from "@/lib/effect/result";
-import { ManagerService } from "@/lib/effect/services/manager.service";
+import { CACHE_TAGS } from "@/lib/cache/tags";
+import { DatabaseError, ValidationError } from "@/lib/effect/errors";
+import type { StubCaller } from "@/test/organization-action";
+
+const validUserId = "11111111-1111-4111-8111-111111111111";
+const validTeamId = "22222222-2222-4222-8222-222222222222";
+const validEmployeeId = "33333333-3333-4333-8333-333333333333";
+const validManagerEmployeeId = "55555555-5555-4555-8555-555555555555";
+const otherManagerId = "66666666-6666-4666-8666-666666666666";
+
+type FakeDbService = {
+	db: Record<string, unknown>;
+	query: (name: string, run: () => Promise<unknown>) => Effect.Effect<unknown, unknown>;
+};
 
 const mocks = vi.hoisted(() => ({
-	ensureSettingsActorCanAccessEmployeeTarget: vi.fn(),
-	getEmployeeSettingsActorContext: vi.fn(),
-	getTargetEmployee: vi.fn(),
-	getTargetUser: vi.fn(),
-	parseHourlyRate: vi.fn(),
-	requireOrgAdminEmployeeSettingsAccess: vi.fn(),
-	revalidateEmployeesCache: vi.fn(),
-	runTracedEmployeeAction: vi.fn(),
-	validateInput: vi.fn(),
+	caller: null as StubCaller | null,
+	dbService: null as FakeDbService | null,
+	/** The employees a scoped manager manages, by `actor.managedScope()`. */
+	managedEmployeeIds: [] as string[],
+	managerService: null as Record<string, unknown> | null,
 	markEmployeeWorkBalanceDirty: vi.fn(),
 	requestEmployeeWorkBalanceFullRebuild: vi.fn(),
 	writeFirstEmploymentTerms: vi.fn(),
 	logAudit: vi.fn(async () => undefined),
+	revalidateTag: vi.fn(),
+}));
+
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect, Layer } = await import("effect");
+	const { ManagerService } = await import("@/lib/effect/services/manager.service");
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	// Each test's fake database, behind the stub's one `DatabaseService`.
+	const db = new Proxy({}, { get: (_target, property) => mocks.dbService?.db[property as string] });
+	const managerService = new Proxy(
+		{},
+		{ get: (_target, property) => mocks.managerService?.[property as string] },
+	);
+	return runtimeModuleOver(
+		Layer.mergeAll(
+			organizationActionStubLayer(() => mocks.caller, {
+				db,
+				query: (name, run) =>
+					name === "organizationAction.managedScope"
+						? (Effect.succeed([mocks.managedEmployeeIds.map((id) => ({ id })), []]) as never)
+						: (mocks.dbService?.query(name, run) as never),
+			}),
+			Layer.succeed(ManagerService, managerService as never),
+		),
+	);
+});
+
+vi.mock("next/cache", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/cache")>()),
+	revalidateTag: mocks.revalidateTag,
 }));
 
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
@@ -38,26 +72,7 @@ vi.mock("@/lib/employment-history/first-terms", () => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({
-		error: vi.fn(),
-		info: vi.fn(),
-	}),
-}));
-
-vi.mock("./employee-action-utils", () => ({
-	ensureCanAccessEmployeeSettingsTarget: vi.fn(),
-	ensureSettingsActorCanAccessEmployeeTarget:
-		mocks.ensureSettingsActorCanAccessEmployeeTarget,
-	getEmployeeContext: vi.fn(),
-	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
-	getTargetEmployee: mocks.getTargetEmployee,
-	getTargetUser: mocks.getTargetUser,
-	parseHourlyRate: mocks.parseHourlyRate,
-	requireOrgAdminEmployeeSettingsAccess:
-		mocks.requireOrgAdminEmployeeSettingsAccess,
-	revalidateEmployeesCache: mocks.revalidateEmployeesCache,
-	runTracedEmployeeAction: mocks.runTracedEmployeeAction,
-	validateInput: mocks.validateInput,
+	createLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
 }));
 
 // Protection is covered by authorization-mutation.test.ts and the PostgreSQL
@@ -80,6 +95,14 @@ vi.mock("@/lib/organization/custom-fields/form-values", () => ({
 	saveFormCustomFieldValues: vi.fn(async () => undefined),
 }));
 
+// Personnel numbers (#881) are covered by personnel-number-uniqueness.integration.test.ts.
+vi.mock("@/lib/organization/personnel-number-uniqueness", () => ({
+	assertPersonnelNumberFree: vi.fn(async () => undefined),
+	assertPersonnelNumberLocallyEditable: vi.fn(async () => undefined),
+	findPersonnelNumberHolder: vi.fn(async () => null),
+	keepPersonnelNumberRefusal: () => (effect: unknown) => effect,
+}));
+
 // The placement itself is covered by primary-team.integration.test.ts (#1575).
 const setPrimaryTeam = vi.hoisted(() =>
 	vi.fn(async (_tx: unknown, input: { teamId: string | null }) => ({
@@ -100,8 +123,7 @@ vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
-	requestEmployeeWorkBalanceFullRebuild:
-		mocks.requestEmployeeWorkBalanceFullRebuild,
+	requestEmployeeWorkBalanceFullRebuild: mocks.requestEmployeeWorkBalanceFullRebuild,
 }));
 
 import {
@@ -113,50 +135,93 @@ import {
 import {
 	assignManagersAction,
 	createEmployeeAction,
+	previewEmployeeTeamChangeDrivingImpact,
 	requestEmployeeWorkBalanceRecalculationAction,
 	updateEmployeeAction,
+	updateOwnProfileAction,
 } from "./employee-mutations.actions";
 
-const validUserId = "11111111-1111-4111-8111-111111111111";
-const validTeamId = "22222222-2222-4222-8222-222222222222";
-const validEmployeeId = "33333333-3333-4333-8333-333333333333";
-const validAdminEmployeeId = "44444444-4444-4444-8444-444444444444";
+const orgAdmin: StubCaller = {
+	userId: "user-admin-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: { id: "44444444-4444-4444-8444-444444444444", role: "admin", former: false },
+};
+const scopedManager: StubCaller = {
+	userId: "user-manager-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: validManagerEmployeeId, role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	userId: "user-member-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "77777777-7777-4777-8777-777777777777", role: "employee", former: false },
+};
+const pendingMember: StubCaller = { ...orgMember, membershipRole: null };
+
+/** A database whose queries fail the way DatabaseService wraps them. */
+function fakeDatabase(db: Record<string, unknown>): FakeDbService {
+	const dbService: FakeDbService = {
+		db,
+		query: vi.fn((name: string, run: () => Promise<unknown>) =>
+			Effect.tryPromise({
+				try: run,
+				catch: (cause) =>
+					new DatabaseError({ message: `Database query failed: ${name}`, operation: name, cause }),
+			}),
+		),
+	};
+	mocks.dbService = dbService;
+	return dbService;
+}
+
+function targetEmployee(overrides: Record<string, unknown> = {}) {
+	return {
+		id: validEmployeeId,
+		userId: validUserId,
+		organizationId: "org-1",
+		contractType: "fixed",
+		...overrides,
+	};
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	protection.scopes = [];
+	mocks.caller = orgAdmin;
+	mocks.dbService = null;
+	mocks.managedEmployeeIds = [];
+	mocks.managerService = null;
+});
 
 describe("employee mutation schemas", () => {
-	it("exposes a draft update action guarded by org admin access", () => {
-		const source = readFileSync(
-			new URL("./employee-mutations.actions.ts", import.meta.url),
-			"utf8",
+	const source = () =>
+		readFileSync(new URL("./employee-mutations.actions.ts", import.meta.url), "utf8");
+
+	it("exposes a draft update action that requires org admin access", () => {
+		const draftAction = source().slice(
+			source().indexOf("export const updateEmployeeInvitationDraftAction"),
+			source().indexOf("export const deleteEmployeeInvitationDraftAction"),
 		);
-		expect(source).toContain("updateEmployeeInvitationDraftAction");
-		expect(source).toContain("requireOrgAdminEmployeeSettingsAccess(actor");
-		expect(source).toContain("employeeInvitationDraft");
-		expect(source).toContain("getEmployeeInvitationDraftForUpdate");
+		expect(draftAction).toContain('requires: "orgAdmin"');
+		expect(draftAction).toContain("employeeInvitationDraft");
+		expect(draftAction).toContain("getEmployeeInvitationDraftForUpdate");
 	});
 
 	it("does not clear draft hourly rates when hourlyRate is omitted", () => {
-		const source = readFileSync(
-			new URL("./employee-mutations.actions.ts", import.meta.url),
-			"utf8",
-		);
-		expect(source).toContain('Object.hasOwn(validatedData, "hourlyRate")');
-		expect(source).toContain("...(hasHourlyRateUpdate");
+		expect(source()).toContain('Object.hasOwn(validatedData, "hourlyRate")');
+		expect(source()).toContain("...(hasHourlyRateUpdate");
 	});
 
 	it("uses the shared pending-future predicate for the locked eligibility recheck", () => {
-		const source = readFileSync(
-			new URL("./employee-mutations.actions.ts", import.meta.url),
-			"utf8",
-		);
-		expect(
-			source.match(/buildEligibleInvitationDraftPredicate\(\{/g),
-		).toHaveLength(1);
-		expect(source).toContain("dateFromInstant(systemClock.nowInstant())");
-		expect(source).toContain("organizationId: actor.organizationId");
-		expect(source).toContain("draftId,");
-		expect(source).not.toContain("realEmployeeUser");
-		expect(source).not.toContain("realEmployee");
-		expect(source).not.toContain("invitedVia");
+		expect(source().match(/buildEligibleInvitationDraftPredicate\(\{/g)).toHaveLength(1);
+		expect(source()).toContain("dateFromInstant(systemClock.nowInstant())");
+		expect(source()).toContain("draftId,");
+		expect(source()).not.toContain("realEmployeeUser");
+		expect(source()).not.toContain("realEmployee");
+		expect(source()).not.toContain("invitedVia");
 	});
 
 	it("strips employee-owned names from create employee input", () => {
@@ -189,10 +254,7 @@ describe("employee mutation schemas", () => {
 	});
 
 	it("rejects blank auth user names when provided in update employee input", () => {
-		const result = updateEmployeeSchema.safeParse({
-			firstName: " ",
-			lastName: "Lovelace",
-		});
+		const result = updateEmployeeSchema.safeParse({ firstName: " ", lastName: "Lovelace" });
 
 		expect(result.success).toBe(false);
 		if (result.success) return;
@@ -200,696 +262,12 @@ describe("employee mutation schemas", () => {
 	});
 
 	it("keeps structured names in self-service profile validation", () => {
-		const result = personalInformationSchema.safeParse({
-			firstName: "Ada",
-			lastName: "Lovelace",
-		});
+		const result = personalInformationSchema.safeParse({ firstName: "Ada", lastName: "Lovelace" });
 
 		expect(result.success).toBe(true);
 		if (!result.success) return;
 		expect(result.data.firstName).toBe("Ada");
 		expect(result.data.lastName).toBe("Lovelace");
-	});
-});
-
-describe("createEmployeeAction", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
-	it("does not expose employee identity values through the generic validation result", () => {
-		const source = readFileSync(
-			new URL("./employee-mutations.actions.ts", import.meta.url),
-			"utf8",
-		);
-		const createAction = source.slice(
-			source.indexOf("export async function createEmployeeAction"),
-			source.indexOf("export async function updateEmployeeAction"),
-		);
-
-		expect(createAction).not.toContain("value: validatedData.userId");
-	});
-
-	it("does not write employee-owned names into the employee insert payload", async () => {
-		const returning = vi.fn().mockResolvedValue([
-			{
-				id: "employee-1",
-				userId: validUserId,
-				organizationId: "org-1",
-			},
-		]);
-		const values = vi.fn(() => ({ returning }));
-		const insert = vi.fn(() => ({ values }));
-		const dbService = {
-			db: {
-				insert,
-				query: {
-					employee: {
-						findFirst: vi.fn().mockResolvedValue(null),
-					},
-				},
-			},
-			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-				Effect.promise(run),
-			),
-		};
-
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1" } },
-				currentEmployee: { id: "employee-admin-1", role: "admin" },
-				dbService,
-			}),
-		);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
-		mocks.getTargetUser.mockReturnValue(Effect.succeed({ id: validUserId }));
-		mocks.validateInput.mockReturnValue(
-			Effect.succeed({
-				userId: validUserId,
-				organizationId: "org-1",
-				teamId: validTeamId,
-				role: "employee",
-				position: "Engineer",
-				firstName: "Ada",
-				lastName: "Lovelace",
-			}),
-		);
-
-		await createEmployeeAction({
-			userId: validUserId,
-			organizationId: "org-1",
-			teamId: validTeamId,
-			role: "employee",
-			firstName: "Ada",
-			lastName: "Lovelace",
-		} as Parameters<typeof createEmployeeAction>[0]);
-
-		expect(values).toHaveBeenCalledWith(
-			expect.not.objectContaining({
-				firstName: expect.anything(),
-				lastName: expect.anything(),
-			}),
-		);
-		// The team is a membership and the primary team (Organization ADR 0010).
-		expect(setPrimaryTeam).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({ organizationId: "org-1", teamId: validTeamId }),
-		);
-		// The absent employee row is inserted under the new user's protection.
-		expect(protection.scopes).toContainEqual({
-			organizationId: "org-1",
-			userIds: [validUserId],
-		});
-	});
-
-	it("translates the serialized employee identity conflict without leaking database details", async () => {
-		const triggerError = Object.assign(
-			new Error("Employee identity already exists in organization"),
-			{ code: "23505", detail: "private-row-detail" },
-		);
-		const dbService = {
-			db: {
-				query: { employee: { findFirst: vi.fn().mockResolvedValue(null) } },
-				insert: vi.fn(() => ({
-					values: vi.fn(() => ({ returning: vi.fn() })),
-				})),
-			},
-			query: vi.fn((name: string, run: () => Promise<unknown>) =>
-				name === "createEmployee"
-					? Effect.fail(
-							new DatabaseError({
-								message: "Database query failed: createEmployee",
-								operation: "createEmployee",
-								cause: triggerError,
-							}),
-						)
-					: Effect.promise(run),
-			),
-		};
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(
-				toServerActionResult,
-			),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1" } },
-				currentEmployee: null,
-				dbService,
-			}),
-		);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
-		mocks.getTargetUser.mockReturnValue(Effect.succeed({ id: validUserId }));
-		mocks.validateInput.mockReturnValue(
-			Effect.succeed({
-				userId: validUserId,
-				organizationId: "org-1",
-				role: "employee",
-			}),
-		);
-
-		const result = await createEmployeeAction({
-			userId: validUserId,
-			organizationId: "org-1",
-			role: "employee",
-		} as Parameters<typeof createEmployeeAction>[0]);
-
-		expect(result).toEqual({
-			success: false,
-			code: "ValidationError",
-			error: "Employee already exists for this user in this organization",
-		});
-		expect(JSON.stringify(result)).not.toContain("private-row-detail");
-	});
-
-	describe("first employment terms", () => {
-		const startDate = new Date("2026-03-01T00:00:00.000Z");
-		const createdEmployee = {
-			id: "employee-1",
-			userId: validUserId,
-			organizationId: "org-1",
-		};
-
-		/** A database whose queries fail the way DatabaseService wraps them. */
-		function arrange(validated: Record<string, unknown>) {
-			const returning = vi.fn().mockResolvedValue([createdEmployee]);
-			const values = vi.fn(() => ({ returning }));
-			const insert = vi.fn(() => ({ values }));
-			const db = {
-				insert,
-				query: { employee: { findFirst: vi.fn().mockResolvedValue(null) } },
-			};
-			const dbService = {
-				db,
-				query: vi.fn((name: string, run: () => Promise<unknown>) =>
-					Effect.tryPromise({
-						try: run,
-						catch: (cause) =>
-							new DatabaseError({
-								message: `Database query failed: ${name}`,
-								operation: name,
-								cause,
-							}),
-					}),
-				),
-			};
-			mocks.runTracedEmployeeAction.mockImplementation((options) =>
-				Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(
-					toServerActionResult,
-				),
-			);
-			mocks.getEmployeeSettingsActorContext.mockReturnValue(
-				Effect.succeed({
-					accessTier: "orgAdmin",
-					organizationId: "org-1",
-					session: { user: { id: "user-admin-1" } },
-					currentEmployee: null,
-					dbService,
-				}),
-			);
-			mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
-			mocks.getTargetUser.mockReturnValue(Effect.succeed({ id: validUserId }));
-			mocks.validateInput.mockReturnValue(
-				Effect.succeed({
-					userId: validUserId,
-					organizationId: "org-1",
-					role: "employee",
-					...validated,
-				}),
-			);
-			return { db, insert, values };
-		}
-
-		const create = () =>
-			createEmployeeAction({
-				userId: validUserId,
-				organizationId: "org-1",
-				role: "employee",
-			} as Parameters<typeof createEmployeeAction>[0]);
-
-		it("writes an hourly employee's first terms in the employee transaction, and no rate history", async () => {
-			const { db, insert } = arrange({
-				contractType: "hourly",
-				hourlyRate: "25.50",
-				startDate,
-			});
-			mocks.writeFirstEmploymentTerms.mockResolvedValue({
-				validFrom: startDate,
-				reviewState: "confirmed",
-			});
-
-			const result = await create();
-
-			expect(result).toMatchObject({ success: true, data: createdEmployee });
-			// The fake protection runs the mutation on the database itself.
-			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(
-				db,
-				{
-					organizationId: "org-1",
-					employeeId: "employee-1",
-					actorUserId: "user-admin-1",
-					contractType: "hourly",
-					hourlyRate: 25.5,
-					startDate,
-				},
-			);
-			expect(insert).toHaveBeenCalledOnce();
-			expect(
-				mocks.markEmployeeWorkBalanceDirty,
-			).toHaveBeenCalledExactlyOnceWith({
-				employeeId: "employee-1",
-				organizationId: "org-1",
-				dirtyFromDate: "2026-03-01",
-			});
-		});
-
-		it("writes no terms and marks no balance for a fixed employee", async () => {
-			arrange({ contractType: "fixed" });
-			mocks.writeFirstEmploymentTerms.mockResolvedValue(null);
-
-			const result = await create();
-
-			expect(result).toMatchObject({ success: true });
-			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(
-				expect.anything(),
-				expect.objectContaining({ contractType: "fixed", hourlyRate: null }),
-			);
-			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		});
-
-		it("fails the creation with the terms refusal when the terms write fails", async () => {
-			arrange({ contractType: "hourly", hourlyRate: "25.50", startDate });
-			mocks.writeFirstEmploymentTerms.mockRejectedValue(
-				new ValidationError({
-					message:
-						"Employment terms cannot start before the current employment period.",
-					field: "validFrom",
-				}),
-			);
-
-			const result = await create();
-
-			expect(result).toEqual({
-				success: false,
-				code: "ValidationError",
-				error:
-					"Employment terms cannot start before the current employment period.",
-			});
-			expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
-			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		});
-
-		it("refuses an hourly wage that employment terms cannot hold", async () => {
-			const { insert } = arrange({
-				contractType: "hourly",
-				hourlyRate: "25.555",
-				startDate,
-			});
-
-			const result = await create();
-
-			expect(result).toMatchObject({ success: false, code: "ValidationError" });
-			expect(insert).not.toHaveBeenCalled();
-			expect(mocks.writeFirstEmploymentTerms).not.toHaveBeenCalled();
-		});
-	});
-});
-
-describe("updateEmployeeAction", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
-	it("refuses to switch an employee on or off, leaving that to Deactivate and Reactivate (#1439)", async () => {
-		const update = vi.fn();
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
-				dbService: { db: { update }, query: vi.fn() },
-			}),
-		);
-
-		for (const isActive of [false, true]) {
-			const exit = (await updateEmployeeAction("employee-1", {
-				position: "Engineer",
-				isActive,
-			} as unknown as Parameters<typeof updateEmployeeAction>[1])) as unknown as Exit.Exit<
-				unknown,
-				unknown
-			>;
-
-			expect(Exit.isFailure(exit)).toBe(true);
-			expect(JSON.stringify(exit)).toContain('"field":"isActive"');
-		}
-		expect(mocks.validateInput).not.toHaveBeenCalled();
-		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
-		expect(update).not.toHaveBeenCalled();
-	});
-
-	it("writes auth names to the linked user and not the employee update payload", async () => {
-		const employeeWhere = vi.fn().mockResolvedValue(undefined);
-		const employeeSet = vi.fn(() => ({ where: employeeWhere }));
-		const userWhere = vi.fn().mockResolvedValue(undefined);
-		const userSet = vi.fn(() => ({ where: userWhere }));
-		const update = vi
-			.fn()
-			.mockReturnValueOnce({ set: employeeSet })
-			.mockReturnValueOnce({ set: userSet });
-		const dbService = {
-			db: {
-				update,
-			},
-			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-				Effect.promise(run),
-			),
-		};
-
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
-				dbService,
-			}),
-		);
-		mocks.getTargetEmployee.mockReturnValue(
-			Effect.succeed({
-				id: "employee-1",
-				userId: validUserId,
-				organizationId: "org-1",
-				contractType: "fixed",
-				user: {
-					firstName: "Old",
-					lastName: "Name",
-					name: "Old Name",
-				},
-			}),
-		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
-			Effect.void,
-		);
-		mocks.validateInput.mockReturnValue(
-			Effect.succeed({
-				position: "Engineer",
-				firstName: "Ada",
-				lastName: "Lovelace",
-			}),
-		);
-
-		await updateEmployeeAction("employee-1", {
-			position: "Engineer",
-			firstName: "Ada",
-			lastName: "Lovelace",
-		} as Parameters<typeof updateEmployeeAction>[1]);
-
-		expect(employeeSet).toHaveBeenCalledWith(
-			expect.not.objectContaining({
-				firstName: expect.anything(),
-				lastName: expect.anything(),
-			}),
-		);
-		expect(userSet).toHaveBeenCalledWith(
-			expect.objectContaining({
-				firstName: "Ada",
-				lastName: "Lovelace",
-				name: "Ada Lovelace",
-			}),
-		);
-		expect(update).toHaveBeenNthCalledWith(2, user);
-		expect(userWhere).toHaveBeenCalledWith(eq(user.id, validUserId));
-	});
-
-	it("preserves existing auth name parts when only one name is provided", async () => {
-		const employeeWhere = vi.fn().mockResolvedValue(undefined);
-		const employeeSet = vi.fn(() => ({ where: employeeWhere }));
-		const userWhere = vi.fn().mockResolvedValue(undefined);
-		const userSet = vi.fn(() => ({ where: userWhere }));
-		const update = vi
-			.fn()
-			.mockReturnValueOnce({ set: employeeSet })
-			.mockReturnValueOnce({ set: userSet });
-		const dbService = {
-			db: { update },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-				Effect.promise(run),
-			),
-		};
-
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
-				dbService,
-			}),
-		);
-		mocks.getTargetEmployee.mockReturnValue(
-			Effect.succeed({
-				id: "employee-1",
-				userId: validUserId,
-				organizationId: "org-1",
-				contractType: "fixed",
-				user: {
-					firstName: "ExistingFirst",
-					lastName: "ExistingLast",
-					name: "ExistingFirst ExistingLast",
-				},
-			}),
-		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
-			Effect.void,
-		);
-		mocks.validateInput.mockReturnValue(
-			Effect.succeed({
-				position: "Engineer",
-				firstName: "Ada",
-			}),
-		);
-
-		await updateEmployeeAction("employee-1", {
-			position: "Engineer",
-			firstName: "Ada",
-		} as Parameters<typeof updateEmployeeAction>[1]);
-
-		expect(employeeSet).toHaveBeenCalledWith(
-			expect.not.objectContaining({
-				firstName: expect.anything(),
-				lastName: expect.anything(),
-			}),
-		);
-		expect(userSet).toHaveBeenCalledWith(
-			expect.objectContaining({
-				firstName: "Ada",
-				lastName: "ExistingLast",
-				name: "Ada ExistingLast",
-			}),
-		);
-		expect(update).toHaveBeenNthCalledWith(2, user);
-		expect(userWhere).toHaveBeenCalledWith(eq(user.id, validUserId));
-	});
-
-	it("does not allow manager-scoped updates to change auth names", async () => {
-		const employeeSet = vi.fn(() => ({
-			where: vi.fn().mockResolvedValue(undefined),
-		}));
-		const userSet = vi.fn(() => ({
-			where: vi.fn().mockResolvedValue(undefined),
-		}));
-		const update = vi.fn((table) => ({
-			set: table === user ? userSet : employeeSet,
-		}));
-		const dbService = {
-			db: { update },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-				Effect.promise(run),
-			),
-		};
-
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "manager",
-				organizationId: "org-1",
-				session: {
-					user: { id: "user-manager-1", email: "manager@example.com" },
-				},
-				dbService,
-			}),
-		);
-		mocks.getTargetEmployee.mockReturnValue(
-			Effect.succeed({
-				id: "employee-1",
-				userId: validUserId,
-				organizationId: "org-1",
-				contractType: "fixed",
-			}),
-		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
-			Effect.void,
-		);
-		mocks.validateInput.mockReturnValue(
-			Effect.succeed({
-				position: "Engineer",
-			}),
-		);
-
-		await updateEmployeeAction("employee-1", {
-			position: "Engineer",
-			firstName: "Ada",
-			lastName: "Lovelace",
-		} as Parameters<typeof updateEmployeeAction>[1]);
-
-		// A manager's save never touches the wage or contract type (#1177).
-		expect(employeeSet).toHaveBeenCalledWith({
-			position: "Engineer",
-			updatedAt: expect.anything(),
-		});
-		expect(userSet).not.toHaveBeenCalled();
-	});
-
-	describe("birthday (#1579)", () => {
-		const storedBirthday = new Date("1990-05-01T00:00:00.000Z");
-
-		function saveAs(
-			accessTier: "orgAdmin" | "manager",
-			validated: Record<string, unknown>,
-			lockedBirthday: Date | null = storedBirthday,
-		) {
-			const employeeSet = vi.fn(() => ({
-				where: vi.fn().mockResolvedValue(undefined),
-			}));
-			// The row as the save's transaction locks it.
-			const select = vi.fn(() => ({
-				from: vi.fn(() => ({
-					where: vi.fn(() => ({
-						for: vi.fn().mockResolvedValue([{ birthday: lockedBirthday }]),
-					})),
-				})),
-			}));
-			const dbService = {
-				db: { update: vi.fn(() => ({ set: employeeSet })), select },
-				query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-					Effect.promise(run),
-				),
-			};
-			mocks.runTracedEmployeeAction.mockImplementation((options) =>
-				Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
-			);
-			mocks.getEmployeeSettingsActorContext.mockReturnValue(
-				Effect.succeed({
-					accessTier,
-					organizationId: "org-1",
-					session: { user: { id: "user-actor-1", email: "actor@example.com" } },
-					dbService,
-				}),
-			);
-			mocks.getTargetEmployee.mockReturnValue(
-				Effect.succeed({
-					id: "employee-1",
-					userId: validUserId,
-					organizationId: "org-1",
-					contractType: "fixed",
-					birthday: storedBirthday,
-				}),
-			);
-			mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
-				Effect.void,
-			);
-			mocks.validateInput.mockImplementation((_schema, input) =>
-				Effect.succeed(accessTier === "orgAdmin" ? validated : input),
-			);
-			return { employeeSet };
-		}
-
-		beforeEach(() => {
-			vi.clearAllMocks();
-		});
-
-		it.each([
-			{ change: "changed", birthday: new Date("1990-05-02T00:00:00.000Z") },
-			{ change: "cleared", birthday: null },
-		])(
-			"records that an org admin $change the birthday, without the dates",
-			async ({ change, birthday }) => {
-				const { employeeSet } = saveAs("orgAdmin", { position: "Engineer", birthday });
-
-				await updateEmployeeAction("employee-1", { position: "Engineer", birthday });
-
-				expect(employeeSet).toHaveBeenCalledWith(
-					expect.objectContaining({ birthday }),
-				);
-				expect(mocks.logAudit).toHaveBeenCalledTimes(1);
-				const [entry] = mocks.logAudit.mock.calls[0];
-				expect(entry).toMatchObject({
-					action: "employee.updated",
-					actorId: "user-actor-1",
-					targetType: "employee",
-					targetId: "employee-1",
-					employeeId: "employee-1",
-					organizationId: "org-1",
-					metadata: { field: "birthday", change },
-				});
-				expect(JSON.stringify(entry)).not.toContain("1990");
-			},
-		);
-
-		it("records nothing when the saved birthday is unchanged", async () => {
-			saveAs("orgAdmin", {
-				position: "Engineer",
-				birthday: new Date("1990-05-01T00:00:00.000Z"),
-			});
-
-			await updateEmployeeAction("employee-1", {
-				position: "Engineer",
-				birthday: new Date("1990-05-01T00:00:00.000Z"),
-			});
-
-			expect(mocks.logAudit).not.toHaveBeenCalled();
-		});
-
-		it("compares with the birthday the save replaced, not the one read before it", async () => {
-			// The employee changed it to May 2 after the admin's form loaded May 1.
-			const may2 = new Date("1990-05-02T00:00:00.000Z");
-			saveAs("orgAdmin", { birthday: may2 }, may2);
-
-			await updateEmployeeAction("employee-1", { birthday: may2 });
-
-			expect(mocks.logAudit).not.toHaveBeenCalled();
-		});
-
-		it("neither writes nor records a birthday a manager sends", async () => {
-			const { employeeSet } = saveAs("manager", {});
-
-			await updateEmployeeAction("employee-1", {
-				position: "Engineer",
-				birthday: new Date("2000-01-01T00:00:00.000Z"),
-			});
-
-			expect(employeeSet).toHaveBeenCalledWith(
-				expect.not.objectContaining({ birthday: expect.anything() }),
-			);
-			expect(mocks.logAudit).not.toHaveBeenCalled();
-		});
 	});
 
 	it("strips contract type and wage from the employee update input", () => {
@@ -912,221 +290,513 @@ describe("updateEmployeeAction", () => {
 
 		expect(result.success).toBe(true);
 		if (!result.success) return;
-		expect(result.data).toEqual({
-			contractType: "hourly",
-			hourlyRate: "42.50",
+		expect(result.data).toEqual({ contractType: "hourly", hourlyRate: "42.50" });
+	});
+});
+
+describe("createEmployeeAction", () => {
+	const createdEmployee = { id: "employee-1", userId: validUserId, organizationId: "org-1" };
+
+	function arrange() {
+		const returning = vi.fn().mockResolvedValue([createdEmployee]);
+		const values = vi.fn(() => ({ returning }));
+		const insert = vi.fn(() => ({ values }));
+		const db = {
+			insert,
+			query: {
+				employee: { findFirst: vi.fn().mockResolvedValue(null) },
+				user: { findFirst: vi.fn().mockResolvedValue({ id: validUserId }) },
+			},
+		};
+		const dbService = fakeDatabase(db);
+		return { db, dbService, insert, values };
+	}
+
+	const create = (input: Record<string, unknown> = {}) =>
+		createEmployeeAction({ userId: validUserId, role: "employee", ...input });
+
+	it("does not write employee-owned names into the employee insert payload", async () => {
+		const { values } = arrange();
+		mocks.writeFirstEmploymentTerms.mockResolvedValue(null);
+
+		await expect(
+			create({
+				teamId: validTeamId,
+				position: "Engineer",
+				firstName: "Ada",
+				lastName: "Lovelace",
+			}),
+		).resolves.toMatchObject({ success: true });
+
+		expect(values).toHaveBeenCalledWith(
+			expect.not.objectContaining({ firstName: expect.anything(), lastName: expect.anything() }),
+		);
+		expect(values).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1" }));
+		// The team is a membership and the primary team (Organization ADR 0010).
+		expect(setPrimaryTeam).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-1", teamId: validTeamId }),
+		);
+		// The absent employee row is inserted under the new user's protection.
+		expect(protection.scopes).toContainEqual({ organizationId: "org-1", userIds: [validUserId] });
+		expect(mocks.revalidateTag).toHaveBeenCalledWith(CACHE_TAGS.EMPLOYEES("org-1"), "max");
+	});
+
+	it("creates the employee in the session's organization, not one the client names", async () => {
+		const { values } = arrange();
+		mocks.writeFirstEmploymentTerms.mockResolvedValue(null);
+
+		await expect(create({ organizationId: "org-2" })).resolves.toMatchObject({ success: true });
+
+		expect(values).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1" }));
+	});
+
+	it("refuses a scoped manager, one level below org admin", async () => {
+		const { insert } = arrange();
+		mocks.caller = scopedManager;
+
+		await expect(create()).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(insert).not.toHaveBeenCalled();
+	});
+
+	it("translates the serialized employee identity conflict without leaking database details", async () => {
+		const triggerError = Object.assign(
+			new Error("Employee identity already exists in organization"),
+			{ code: "23505", detail: "private-row-detail" },
+		);
+		const { dbService } = arrange();
+		const query = dbService.query;
+		dbService.query = vi.fn((name: string, run: () => Promise<unknown>) =>
+			name === "createEmployee"
+				? Effect.fail(
+						new DatabaseError({
+							message: "Database query failed: createEmployee",
+							operation: "createEmployee",
+							cause: triggerError,
+						}),
+					)
+				: query(name, run),
+		);
+
+		const result = await create();
+
+		expect(result).toEqual({
+			success: false,
+			code: "ValidationError",
+			error: "Employee already exists for this user in this organization",
+		});
+		expect(JSON.stringify(result)).not.toContain("private-row-detail");
+	});
+
+	describe("first employment terms", () => {
+		const startDate = new Date("2026-03-01T00:00:00.000Z");
+
+		it("writes an hourly employee's first terms in the employee transaction, and no rate history", async () => {
+			const { insert } = arrange();
+			mocks.writeFirstEmploymentTerms.mockResolvedValue({
+				validFrom: startDate,
+				reviewState: "confirmed",
+			});
+
+			const result = await create({ contractType: "hourly", hourlyRate: "25.50", startDate });
+
+			expect(result).toMatchObject({ success: true, data: createdEmployee });
+			// The fake protection runs the mutation on the database itself.
+			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				actorUserId: "user-admin-1",
+				contractType: "hourly",
+				hourlyRate: 25.5,
+				startDate,
+			});
+			expect(insert).toHaveBeenCalledOnce();
+			expect(mocks.markEmployeeWorkBalanceDirty).toHaveBeenCalledExactlyOnceWith({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				dirtyFromDate: "2026-03-01",
+			});
+		});
+
+		it("writes no terms and marks no balance for a fixed employee", async () => {
+			arrange();
+			mocks.writeFirstEmploymentTerms.mockResolvedValue(null);
+
+			const result = await create({ contractType: "fixed" });
+
+			expect(result).toMatchObject({ success: true });
+			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(
+				expect.anything(),
+				expect.objectContaining({ contractType: "fixed", hourlyRate: null }),
+			);
+			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		});
+
+		it("fails the creation with the terms refusal when the terms write fails", async () => {
+			arrange();
+			mocks.writeFirstEmploymentTerms.mockRejectedValue(
+				new ValidationError({
+					message: "Employment terms cannot start before the current employment period.",
+					field: "validFrom",
+				}),
+			);
+
+			const result = await create({ contractType: "hourly", hourlyRate: "25.50", startDate });
+
+			expect(result).toEqual({
+				success: false,
+				code: "ValidationError",
+				error: "Employment terms cannot start before the current employment period.",
+			});
+			expect(mocks.revalidateTag).not.toHaveBeenCalled();
+			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		});
+
+		it("refuses an hourly wage that employment terms cannot hold", async () => {
+			const { insert } = arrange();
+
+			const result = await create({ contractType: "hourly", hourlyRate: "25.555", startDate });
+
+			expect(result).toMatchObject({ success: false, code: "ValidationError" });
+			expect(insert).not.toHaveBeenCalled();
+			expect(mocks.writeFirstEmploymentTerms).not.toHaveBeenCalled();
+		});
+	});
+});
+
+describe("updateEmployeeAction", () => {
+	/** The detail save's fake database: the employee update, then the auth user's. */
+	function arrange(target = targetEmployee(), lockedBirthday: Date | null = null) {
+		const employeeSet = vi.fn((_values: unknown) => ({
+			where: vi.fn().mockResolvedValue(undefined),
+		}));
+		const userWhere = vi.fn().mockResolvedValue(undefined);
+		const userSet = vi.fn((_values: unknown) => ({ where: userWhere }));
+		const update = vi.fn((table: unknown) => ({ set: table === user ? userSet : employeeSet }));
+		// The row as the save's transaction locks it.
+		const select = vi.fn(() => ({
+			from: vi.fn(() => ({
+				where: vi.fn(() => ({
+					for: vi.fn().mockResolvedValue([{ birthday: lockedBirthday }]),
+				})),
+			})),
+		}));
+		const findFirst = vi.fn().mockResolvedValue(target);
+		fakeDatabase({ update, select, query: { employee: { findFirst } } });
+		return { employeeSet, userSet, userWhere, update, findFirst };
+	}
+
+	const save = (data: Record<string, unknown>) =>
+		updateEmployeeAction({ employeeId: validEmployeeId, data });
+
+	it("refuses to switch an employee on or off, leaving that to Deactivate and Reactivate (#1439)", async () => {
+		const { update, findFirst } = arrange();
+
+		for (const isActive of [false, true]) {
+			await expect(save({ position: "Engineer", isActive })).resolves.toMatchObject({
+				success: false,
+				code: "ValidationError",
+				error: "Use Deactivate or Reactivate to change whether an employee is active.",
+			});
+		}
+		expect(findFirst).not.toHaveBeenCalled();
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("refuses an org member, one level below scoped manager", async () => {
+		const { update } = arrange();
+		mocks.caller = orgMember;
+
+		await expect(save({ position: "Engineer" })).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("loads the employee by ID in the session's organization only", async () => {
+		const { findFirst, update } = arrange(null as never);
+
+		await expect(save({ position: "Engineer" })).resolves.toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
+		expect(findFirst).toHaveBeenCalledOnce();
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("refuses a scoped manager an employee they do not manage", async () => {
+		const { update } = arrange();
+		mocks.caller = scopedManager;
+		mocks.managedEmployeeIds = [otherManagerId];
+
+		await expect(save({ position: "Engineer" })).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("writes auth names to the linked user and not the employee update payload", async () => {
+		const { employeeSet, userSet, userWhere, update } = arrange(
+			targetEmployee({ user: { firstName: "Old", lastName: "Name", name: "Old Name" } }),
+		);
+
+		await expect(
+			save({ position: "Engineer", firstName: "Ada", lastName: "Lovelace" }),
+		).resolves.toMatchObject({ success: true });
+
+		expect(employeeSet).toHaveBeenCalledWith(
+			expect.not.objectContaining({ firstName: expect.anything(), lastName: expect.anything() }),
+		);
+		expect(userSet).toHaveBeenCalledWith(
+			expect.objectContaining({ firstName: "Ada", lastName: "Lovelace", name: "Ada Lovelace" }),
+		);
+		expect(update).toHaveBeenNthCalledWith(2, user);
+		expect(userWhere).toHaveBeenCalledWith(eq(user.id, validUserId));
+		expect(mocks.revalidateTag).toHaveBeenCalledWith(CACHE_TAGS.EMPLOYEES("org-1"), "max");
+	});
+
+	it("preserves existing auth name parts when only one name is provided", async () => {
+		const { employeeSet, userSet } = arrange(
+			targetEmployee({
+				user: {
+					firstName: "ExistingFirst",
+					lastName: "ExistingLast",
+					name: "ExistingFirst ExistingLast",
+				},
+			}),
+		);
+
+		await save({ position: "Engineer", firstName: "Ada" });
+
+		expect(employeeSet).toHaveBeenCalledWith(
+			expect.not.objectContaining({ firstName: expect.anything(), lastName: expect.anything() }),
+		);
+		expect(userSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				firstName: "Ada",
+				lastName: "ExistingLast",
+				name: "Ada ExistingLast",
+			}),
+		);
+	});
+
+	it("lets a scoped manager save only manager fields of an employee they manage", async () => {
+		const { employeeSet, userSet } = arrange();
+		mocks.caller = scopedManager;
+		mocks.managedEmployeeIds = [validEmployeeId];
+
+		await expect(
+			save({ position: "Engineer", firstName: "Ada", lastName: "Lovelace", role: "admin" }),
+		).resolves.toMatchObject({ success: true });
+
+		// A manager's save never touches the wage or contract type (#1177).
+		expect(employeeSet).toHaveBeenCalledWith({
+			position: "Engineer",
+			updatedAt: expect.anything(),
+		});
+		expect(userSet).not.toHaveBeenCalled();
+	});
+
+	describe("birthday (#1579)", () => {
+		const storedBirthday = new Date("1990-05-01T00:00:00.000Z");
+
+		it.each([
+			{ change: "changed", birthday: new Date("1990-05-02T00:00:00.000Z") },
+			{ change: "cleared", birthday: null },
+		])(
+			"records that an org admin $change the birthday, without the dates",
+			async ({ change, birthday }) => {
+				const { employeeSet } = arrange(
+					targetEmployee({ birthday: storedBirthday }),
+					storedBirthday,
+				);
+
+				await save({ position: "Engineer", birthday });
+
+				expect(employeeSet).toHaveBeenCalledWith(expect.objectContaining({ birthday }));
+				expect(mocks.logAudit).toHaveBeenCalledTimes(1);
+				const [entry] = mocks.logAudit.mock.calls[0] as unknown as [Record<string, unknown>];
+				expect(entry).toMatchObject({
+					action: "employee.updated",
+					actorId: "user-admin-1",
+					actorEmail: "user-admin-1@example.test",
+					targetType: "employee",
+					targetId: validEmployeeId,
+					employeeId: validEmployeeId,
+					organizationId: "org-1",
+					metadata: { field: "birthday", change },
+				});
+				expect(JSON.stringify(entry)).not.toContain("1990");
+			},
+		);
+
+		it("records nothing when the saved birthday is unchanged", async () => {
+			arrange(targetEmployee({ birthday: storedBirthday }), storedBirthday);
+
+			await save({ position: "Engineer", birthday: new Date("1990-05-01T00:00:00.000Z") });
+
+			expect(mocks.logAudit).not.toHaveBeenCalled();
+		});
+
+		it("compares with the birthday the save replaced, not the one read before it", async () => {
+			// The employee changed it to May 2 after the admin's form loaded May 1.
+			const may2 = new Date("1990-05-02T00:00:00.000Z");
+			arrange(targetEmployee({ birthday: storedBirthday }), may2);
+
+			await save({ birthday: may2 });
+
+			expect(mocks.logAudit).not.toHaveBeenCalled();
+		});
+
+		it("neither writes nor records a birthday a manager sends", async () => {
+			const { employeeSet } = arrange(targetEmployee({ birthday: storedBirthday }), storedBirthday);
+			mocks.caller = scopedManager;
+			mocks.managedEmployeeIds = [validEmployeeId];
+
+			await save({ position: "Engineer", birthday: new Date("2000-01-01T00:00:00.000Z") });
+
+			expect(employeeSet).toHaveBeenCalledWith(
+				expect.not.objectContaining({ birthday: expect.anything() }),
+			);
+			expect(mocks.logAudit).not.toHaveBeenCalled();
 		});
 	});
 
 	it.each([
 		{ change: "changing", startDate: new Date("2026-05-01T00:00:00.000Z") },
 		{ change: "clearing", startDate: null },
-	])(
-		"requires reviewed correction when $change the actual joining date",
-		async ({ startDate }) => {
-			const update = vi.fn();
-			const selectWhere = vi
-				.fn()
-				.mockResolvedValue([
-					{ startDate: new Date("2026-05-10T00:00:00.000Z") },
-				]);
-			const select = vi.fn(() => ({
-				from: vi.fn(() => ({ where: selectWhere })),
-			}));
-			const dbService = {
-				db: { update, select },
-				query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-					Effect.promise(run),
-				),
-			};
-			mocks.runTracedEmployeeAction.mockImplementation(async (options) =>
-				toServerActionResult(
-					await Effect.runPromiseExit(
-						options.execute({ setAttribute: vi.fn() }),
-					),
-				),
-			);
-			mocks.getEmployeeSettingsActorContext.mockReturnValue(
-				Effect.succeed({
-					accessTier: "orgAdmin",
-					organizationId: "org-1",
-					session: { user: { id: "user-admin-1", email: "admin@example.com" } },
-					dbService,
-				}),
-			);
-			mocks.getTargetEmployee.mockReturnValue(
-				Effect.succeed({
-					id: "employee-1",
-					userId: validUserId,
-					organizationId: "org-1",
-					contractType: "fixed",
-					startDate: new Date("2026-05-10T00:00:00.000Z"),
-				}),
-			);
-			mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
-				Effect.void,
-			);
-			mocks.validateInput.mockReturnValue(Effect.succeed({ startDate }));
-			expect(
-				await updateEmployeeAction("employee-1", { startDate }),
-			).toMatchObject({
-				success: false,
-				code: "ValidationError",
-				error:
-					"Review the actual employment start correction before saving it.",
-			});
-			expect(selectWhere).toHaveBeenCalled();
-			expect(update).not.toHaveBeenCalled();
-			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-			expect(
-				mocks.requestEmployeeWorkBalanceFullRebuild,
-			).not.toHaveBeenCalled();
-			expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
-		},
-	);
+	])("requires reviewed correction when $change the actual joining date", async ({ startDate }) => {
+		const update = vi.fn();
+		const selectWhere = vi
+			.fn()
+			.mockResolvedValue([{ startDate: new Date("2026-05-10T00:00:00.000Z") }]);
+		const select = vi.fn(() => ({ from: vi.fn(() => ({ where: selectWhere })) }));
+		const dbService = fakeDatabase({
+			update,
+			select,
+			query: {
+				employee: {
+					findFirst: vi
+						.fn()
+						.mockResolvedValue(targetEmployee({ startDate: new Date("2026-05-10T00:00:00.000Z") })),
+				},
+			},
+		});
+		// The refusal thrown inside the transaction reaches the client as itself.
+		dbService.query = vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run));
+
+		expect(await save({ startDate })).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Review the actual employment start correction before saving it.",
+		});
+		expect(selectWhere).toHaveBeenCalled();
+		expect(update).not.toHaveBeenCalled();
+		expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(mocks.requestEmployeeWorkBalanceFullRebuild).not.toHaveBeenCalled();
+		expect(mocks.revalidateTag).not.toHaveBeenCalled();
+	});
+});
+
+describe("previewEmployeeTeamChangeDrivingImpact", () => {
+	it("refuses an org member, one level below scoped manager", async () => {
+		const findFirst = vi.fn();
+		fakeDatabase({ query: { employee: { findFirst } } });
+		mocks.caller = orgMember;
+
+		await expect(
+			previewEmployeeTeamChangeDrivingImpact({ employeeId: validEmployeeId, teamId: validTeamId }),
+		).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(findFirst).not.toHaveBeenCalled();
+	});
+});
+
+describe("updateOwnProfileAction", () => {
+	it("writes the caller's own employee record in the session's organization", async () => {
+		const set = vi.fn((_values: unknown) => ({ where: vi.fn().mockResolvedValue(undefined) }));
+		fakeDatabase({ update: vi.fn(() => ({ set })) });
+		mocks.caller = orgMember;
+
+		await expect(
+			updateOwnProfileAction({ firstName: "Ada", pronouns: "she/her" }),
+		).resolves.toEqual({ success: true, data: undefined });
+		expect(set).toHaveBeenCalledWith(expect.not.objectContaining({ firstName: expect.anything() }));
+	});
+
+	it("refuses a pending membership, below org member", async () => {
+		const update = vi.fn();
+		fakeDatabase({ update });
+		mocks.caller = pendingMember;
+
+		await expect(updateOwnProfileAction({ pronouns: "she/her" })).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(update).not.toHaveBeenCalled();
+	});
 });
 
 describe("assignManagersAction", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
-	it("records manager assignments as assigned by the session user", async () => {
-		const assignManager = vi.fn(() => Effect.void);
-		const managerService = {
+	function arrange() {
+		const assignManager = vi.fn((..._args: unknown[]) => Effect.void);
+		mocks.managerService = {
 			assignManager,
 			getManagers: vi.fn(() => Effect.succeed([])),
-			getManagedEmployees: vi.fn(),
-			getPrimaryManager: vi.fn(),
-			isManagerOf: vi.fn(),
-			removeManager: vi.fn(),
+			removeManager: vi.fn(() => Effect.void),
 		};
+		fakeDatabase({
+			query: { employee: { findFirst: vi.fn().mockResolvedValue(targetEmployee()) } },
+		});
+		return { assignManager };
+	}
 
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromise(
-				options
-					.execute({ setAttribute: vi.fn() })
-					.pipe(Effect.provideService(ManagerService, managerService)),
-			),
-		);
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1" } },
-				currentEmployee: { id: "employee-admin-1", role: "admin" },
-			}),
-		);
-		mocks.getTargetEmployee.mockReturnValue(
-			Effect.succeed({ id: "employee-1", organizationId: "org-1" }),
-		);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
-			Effect.void,
-		);
-		mocks.validateInput.mockReturnValue(
-			Effect.succeed({
-				managers: [{ managerId: "manager-1", isPrimary: true }],
-			}),
-		);
-
-		await assignManagersAction("employee-1", {
-			managers: [{ managerId: "manager-1", isPrimary: true }],
+	const assign = () =>
+		assignManagersAction({
+			employeeId: validEmployeeId,
+			data: { managers: [{ managerId: otherManagerId, isPrimary: true }] },
 		});
 
+	it("records manager assignments as assigned by the session user", async () => {
+		const { assignManager } = arrange();
+
+		await expect(assign()).resolves.toEqual({ success: true, data: undefined });
 		expect(assignManager).toHaveBeenCalledWith(
-			"employee-1",
-			"manager-1",
+			validEmployeeId,
+			otherManagerId,
 			true,
 			"user-admin-1",
 		);
 	});
+
+	it("refuses a scoped manager, one level below org admin", async () => {
+		const { assignManager } = arrange();
+		mocks.caller = scopedManager;
+		mocks.managedEmployeeIds = [validEmployeeId];
+
+		await expect(assign()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(assignManager).not.toHaveBeenCalled();
+	});
 });
 
 describe("requestEmployeeWorkBalanceRecalculationAction", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		mocks.validateInput.mockImplementation(
-			(schema, data, fallbackField = "data") => {
-				const result = schema.safeParse(data);
-				if (result.success) {
-					return Effect.succeed(result.data);
-				}
-
-				const issue = result.error.issues[0];
-				return Effect.fail(
-					new ValidationError({
-						message: issue?.message ?? "Invalid input",
-						field: issue?.path?.join(".") || fallbackField,
-					}),
-				);
-			},
-		);
-	});
-
-	it("requires org admin access and requests a full work balance rebuild", async () => {
-		const setAttribute = vi.fn();
-		const findFirst = vi
-			.fn()
-			.mockResolvedValue({ id: validEmployeeId, organizationId: "org-1" });
-		const dbService = {
-			db: { query: { employee: { findFirst } } },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-				Effect.promise(run),
-			),
-		};
-		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
-			expect(options.attributes).toBeUndefined();
-			const exit = await Effect.runPromiseExit(
-				options.execute({ setAttribute }),
-			);
-			return toServerActionResult(exit);
-		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1" } },
-				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
-				dbService,
-			}),
-		);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+	it("requests a full work balance rebuild of the employee in the session's organization", async () => {
+		const findFirst = vi.fn().mockResolvedValue({ id: validEmployeeId, organizationId: "org-1" });
+		const dbService = fakeDatabase({ query: { employee: { findFirst } } });
 		mocks.requestEmployeeWorkBalanceFullRebuild.mockResolvedValue(undefined);
 
-		const result =
-			await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(mocks.requireOrgAdminEmployeeSettingsAccess).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				accessTier: "orgAdmin",
-			}),
-			{
-				message:
-					"Only organization admins can recalculate employee work balances",
-				resource: "employee_work_balance",
-				action: "recalculate_work_balance",
-			},
-		);
-		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
 		expect(dbService.query).toHaveBeenCalledWith(
 			"getEmployeeForWorkBalanceRecalculation",
 			expect.any(Function),
 		);
-		expect(findFirst).toHaveBeenCalledWith(
-			expect.objectContaining({ where: expect.anything() }),
-		);
-		expect(setAttribute).toHaveBeenCalledWith("employee.id", validEmployeeId);
-		expect(setAttribute).toHaveBeenCalledWith(
-			"employee.organizationId",
-			"org-1",
-		);
-		expect(setAttribute).toHaveBeenCalledWith(
-			"requestedBy.userId",
-			"user-admin-1",
-		);
+		expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.anything() }));
 		expect(mocks.requestEmployeeWorkBalanceFullRebuild).toHaveBeenCalledWith({
 			employeeId: validEmployeeId,
 			organizationId: "org-1",
@@ -1134,119 +804,42 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 	});
 
 	it("does not request recalculation when the employee is not in the active organization", async () => {
-		const findFirst = vi.fn().mockResolvedValue(null);
-		const dbService = {
-			db: { query: { employee: { findFirst } } },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
-				Effect.promise(run),
-			),
-		};
-		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
-			const exit = await Effect.runPromiseExit(
-				options.execute({ setAttribute: vi.fn() }),
-			);
-			return toServerActionResult(exit);
-		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1" } },
-				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
-				dbService,
-			}),
-		);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+		fakeDatabase({ query: { employee: { findFirst: vi.fn().mockResolvedValue(null) } } });
 
-		const result =
-			await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
 
 		expect(result).toEqual({
 			success: false,
 			error: "Employee not found",
 			code: "NotFoundError",
 		});
-		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
-		expect(findFirst).toHaveBeenCalledWith(
-			expect.objectContaining({ where: expect.anything() }),
-		);
 		expect(mocks.requestEmployeeWorkBalanceFullRebuild).not.toHaveBeenCalled();
 	});
 
 	it("rejects invalid employee IDs before target lookup or rebuild", async () => {
-		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
-			expect(options.attributes).toBeUndefined();
-			const exit = await Effect.runPromiseExit(
-				options.execute({ setAttribute: vi.fn() }),
-			);
-			return toServerActionResult(exit);
-		});
+		const findFirst = vi.fn();
+		fakeDatabase({ query: { employee: { findFirst } } });
 
-		const result =
-			await requestEmployeeWorkBalanceRecalculationAction("not-a-uuid");
+		const result = await requestEmployeeWorkBalanceRecalculationAction("not-a-uuid");
 
 		expect(result).toEqual({
 			success: false,
 			error: "Invalid employee ID",
 			code: "ValidationError",
 		});
-		expect(mocks.getEmployeeSettingsActorContext).not.toHaveBeenCalled();
-		expect(mocks.requireOrgAdminEmployeeSettingsAccess).not.toHaveBeenCalled();
-		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
+		expect(findFirst).not.toHaveBeenCalled();
 		expect(mocks.requestEmployeeWorkBalanceFullRebuild).not.toHaveBeenCalled();
 	});
 
-	it("does not lookup or rebuild when org admin access is denied", async () => {
-		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
-			const exit = await Effect.runPromiseExit(
-				options.execute({ setAttribute: vi.fn() }),
-			);
-			return toServerActionResult(exit);
-		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "manager",
-				organizationId: "org-1",
-				session: { user: { id: "user-manager-1" } },
-				currentEmployee: {
-					id: "55555555-5555-4555-8555-555555555555",
-					role: "manager",
-				},
-			}),
-		);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(
-			Effect.fail(
-				new AuthorizationError({
-					message:
-						"Only organization admins can recalculate employee work balances",
-					userId: "user-manager-1",
-					resource: "employee_work_balance",
-					action: "recalculate_work_balance",
-				}),
-			),
-		);
+	it("refuses a scoped manager, one level below org admin, before lookup or rebuild", async () => {
+		const findFirst = vi.fn();
+		fakeDatabase({ query: { employee: { findFirst } } });
+		mocks.caller = scopedManager;
 
-		const result =
-			await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
 
-		expect(result).toEqual({
-			success: false,
-			error: "Only organization admins can recalculate employee work balances",
-			code: "AuthorizationError",
-		});
-		expect(mocks.requireOrgAdminEmployeeSettingsAccess).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				accessTier: "manager",
-			}),
-			{
-				message:
-					"Only organization admins can recalculate employee work balances",
-				resource: "employee_work_balance",
-				action: "recalculate_work_balance",
-			},
-		);
-		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(findFirst).not.toHaveBeenCalled();
 		expect(mocks.requestEmployeeWorkBalanceFullRebuild).not.toHaveBeenCalled();
 	});
 });

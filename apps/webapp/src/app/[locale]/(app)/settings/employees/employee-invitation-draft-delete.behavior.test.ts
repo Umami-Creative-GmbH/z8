@@ -4,42 +4,48 @@ import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invitation } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft } from "@/db/schema";
-import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
-import { toServerActionResult } from "@/lib/effect/result";
+import { CACHE_TAGS } from "@/lib/cache/tags";
+import { DatabaseError } from "@/lib/effect/errors";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
-	getEmployeeSettingsActorContext: vi.fn(),
+	caller: null as StubCaller | null,
+	dbService: null as null | {
+		db: Record<string, unknown>;
+		query: (name: string, run: () => Promise<unknown>) => unknown;
+	},
 	loggerError: vi.fn(),
-	requireOrgAdminEmployeeSettingsAccess: vi.fn(),
-	revalidateEmployeesCache: vi.fn(),
+	revalidateTag: vi.fn(),
+}));
+
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	// Each test's fake database, behind the stub's one `DatabaseService`.
+	const db = new Proxy(
+		{},
+		{ get: (_target, property) => mocks.dbService?.db[property as string] },
+	);
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db,
+			query: (name, run) => mocks.dbService?.query(name, run) as never,
+		}),
+	);
+});
+
+vi.mock("next/cache", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/cache")>()),
+	revalidateTag: mocks.revalidateTag,
 }));
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({ error: mocks.loggerError, info: vi.fn() }),
+	createLogger: () => ({ error: mocks.loggerError, info: vi.fn(), warn: vi.fn() }),
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: vi.fn(),
 	requestEmployeeWorkBalanceFullRebuild: vi.fn(),
-}));
-
-vi.mock("./employee-action-utils", () => ({
-	ensureSettingsActorCanAccessEmployeeTarget: vi.fn(() => Effect.void),
-	getEmployeeContext: vi.fn(),
-	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
-	getTargetEmployee: vi.fn(),
-	getTargetUser: vi.fn(),
-	parseHourlyRate: vi.fn(() => null),
-	requireOrgAdminEmployeeSettingsAccess:
-		mocks.requireOrgAdminEmployeeSettingsAccess,
-	revalidateEmployeesCache: mocks.revalidateEmployeesCache,
-	runTracedEmployeeAction: vi.fn(async (options) => {
-		const exit = await Effect.runPromiseExit(
-			options.execute({ setAttribute: vi.fn() }),
-		);
-		return toServerActionResult(exit);
-	}),
-	validateInput: vi.fn((_schema, data) => Effect.succeed(data)),
 }));
 
 import { deleteEmployeeInvitationDraftAction } from "./employee-mutations.actions";
@@ -253,22 +259,23 @@ function createDeleteDb(
 	};
 }
 
-function setActor(dbService: ReturnType<typeof createDeleteDb>["dbService"]) {
-	mocks.getEmployeeSettingsActorContext.mockReturnValue(
-		Effect.succeed({
-			accessTier: "orgAdmin",
-			organizationId: "org-1",
-			session: { user: { id: "admin-1", email: "admin@example.com" } },
-			currentEmployee: { id: "admin-employee-1", role: "admin" },
-			dbService,
-		}),
-	);
+function setActor(
+	dbService: ReturnType<typeof createDeleteDb>["dbService"],
+	caller: Partial<StubCaller> = {},
+) {
+	mocks.dbService = dbService;
+	mocks.caller = {
+		userId: "admin-1",
+		activeOrganizationId: "org-1",
+		membershipRole: "admin",
+		employee: { id: "admin-employee-1", role: "admin", former: false },
+		...caller,
+	};
 }
 
 describe("deleteEmployeeInvitationDraftAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
 	});
 
 	afterEach(() => {
@@ -280,8 +287,9 @@ describe("deleteEmployeeInvitationDraftAction", () => {
 			new URL("./actions.ts", import.meta.url),
 			"utf8",
 		);
-		expect(source).toContain("deleteEmployeeInvitationDraftAction");
-		expect(source).toContain("deleteEmployeeInvitationDraft(");
+		expect(source).toContain(
+			"export const deleteEmployeeInvitationDraft = deleteEmployeeInvitationDraftAction;",
+		);
 	});
 
 	it("decodes the draft ID and scopes both draft and invitation to the actor organization", async () => {
@@ -305,20 +313,13 @@ describe("deleteEmployeeInvitationDraftAction", () => {
 		expect(draftQuery.params).toEqual([draftId, "org-1", "org-1"]);
 	});
 
-	it("denies non-admin settings actors before loading a draft", async () => {
+	it("denies a scoped manager, one level below org admin, before loading a draft", async () => {
 		const fake = createDeleteDb(createModel());
-		setActor(fake.dbService);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(
-			Effect.fail(
-				new AuthorizationError({
-					message:
-						"Only organization admins can delete invited employee drafts",
-					userId: "manager-1",
-					resource: "employee_invitation_draft",
-					action: "delete",
-				}),
-			),
-		);
+		setActor(fake.dbService, {
+			userId: "manager-1",
+			membershipRole: "member",
+			employee: { id: "manager-employee-1", role: "manager", former: false },
+		});
 
 		const result = await deleteEmployeeInvitationDraftAction(
 			`draft:${draftId}`,
@@ -370,7 +371,7 @@ describe("deleteEmployeeInvitationDraftAction", () => {
 		expect(model.invitation.status).toBe("canceled");
 		expect(fake.deletedTables).toEqual([employeeInvitationDraft]);
 		expect(fake.deletedTables).not.toContain(invitation);
-		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledWith("org-1");
+		expect(mocks.revalidateTag).toHaveBeenCalledWith(CACHE_TAGS.EMPLOYEES("org-1"), "max");
 	});
 
 	it.each([
@@ -458,7 +459,7 @@ describe("deleteEmployeeInvitationDraftAction", () => {
 		);
 		expect(model.invitation.status).toBe("pending");
 		expect(fake.deletedTables).toHaveLength(0);
-		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+		expect(mocks.revalidateTag).not.toHaveBeenCalled();
 	});
 
 	it("handles a zero-row conditional delete as a safe race loss", async () => {
@@ -474,7 +475,7 @@ describe("deleteEmployeeInvitationDraftAction", () => {
 		expect(result).toEqual(
 			expect.objectContaining({ success: false, code: "ValidationError" }),
 		);
-		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+		expect(mocks.revalidateTag).not.toHaveBeenCalled();
 	});
 
 	it("keeps a stale draft when resend makes its invitation actionable before deletion", async () => {

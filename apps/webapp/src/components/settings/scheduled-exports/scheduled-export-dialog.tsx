@@ -26,6 +26,7 @@ import type {
 	ScheduledExportFilters,
 	ScheduledExportReportConfig,
 } from "@/db/schema/scheduled-export";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type {
 	DateRangeStrategy,
 	DeliveryMethod,
@@ -70,7 +71,6 @@ export interface ScheduledExportFormValues {
 interface ScheduledExportDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	organizationId: string;
 	editScheduleId?: string;
 	initialValues?: Partial<ScheduledExportFormValues>;
 	payrollConfigs: Array<{ id: string; formatId: string; formatName: string }>;
@@ -93,7 +93,6 @@ const DEFAULT_VALUES: ScheduledExportFormValues = {
 export function ScheduledExportDialog({
 	open,
 	onOpenChange,
-	organizationId,
 	editScheduleId,
 	initialValues,
 	payrollConfigs,
@@ -141,13 +140,9 @@ export function ScheduledExportDialog({
 				const result = await (isEditing
 					? updateScheduledExportAction({
 							id: editScheduleId!,
-							organizationId,
 							...value,
 						})
-					: createScheduledExportAction({
-							organizationId,
-							...value,
-						})
+					: createScheduledExportAction(value)
 				).then(
 					(response) => response,
 					() => null,
@@ -185,7 +180,7 @@ export function ScheduledExportDialog({
 							? t("settings.scheduledExports.toast.updateError", "Failed to update schedule")
 							: t("settings.scheduledExports.toast.createError", "Failed to create schedule"),
 						{
-							description: result.error,
+							description: actionErrorMessage(t, result),
 						},
 					);
 				}

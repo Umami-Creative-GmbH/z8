@@ -41,7 +41,7 @@ describe("PersonioConfigForm", () => {
 
 	it("keeps credentials organization-scoped and clears them after saving", async () => {
 		render(
-			<PersonioConfigForm organizationId="org_123" initialConfig={null} />,
+			<PersonioConfigForm initialConfig={null} />,
 		);
 
 		fireEvent.change(screen.getByLabelText("Client ID"), {
@@ -54,7 +54,6 @@ describe("PersonioConfigForm", () => {
 
 		await waitFor(() => {
 			expect(savePersonioCredentialsActionMock).toHaveBeenCalledWith({
-				organizationId: "org_123",
 				clientId: "client-1",
 				clientSecret: "secret-1",
 			});
@@ -65,7 +64,7 @@ describe("PersonioConfigForm", () => {
 
 	it("preserves the complete Personio configuration payload", async () => {
 		render(
-			<PersonioConfigForm organizationId="org_123" initialConfig={null} />,
+			<PersonioConfigForm initialConfig={null} />,
 		);
 
 		const settingsForm = screen
@@ -77,7 +76,6 @@ describe("PersonioConfigForm", () => {
 
 		await waitFor(() => {
 			expect(savePersonioConfigActionMock).toHaveBeenCalledWith({
-				organizationId: "org_123",
 				config: {
 					employeeMatchStrategy: "employeeNumber",
 					includeZeroHours: false,

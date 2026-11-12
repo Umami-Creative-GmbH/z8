@@ -1,13 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { teamPermissions } from "@/db/schema";
-import type { AnyAppError } from "@/lib/effect/errors";
-import {
-	getEmployeeSettingsActorContext,
-	getManagedEmployeeIdsForSettingsActor,
-} from "../employees/employee-action-utils";
-
-type DatabaseClient = typeof import("@/db").db;
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import type { OrganizationActor } from "@/lib/organization-action/organization-action";
 
 export type HolidayScopeAssignment = {
 	assignmentType: "organization" | "team" | "employee";
@@ -15,75 +10,51 @@ export type HolidayScopeAssignment = {
 	employeeId: string | null;
 };
 
-type TeamPermissionRow = {
-	teamId: string | null;
-	canManageTeamSettings: boolean;
+/** Whom a scoped manager sees holiday assignments for; both null for an org admin. */
+export type HolidayScope = {
+	managedEmployeeIds: ReadonlySet<string> | null;
+	/** Teams whose settings the manager may manage. */
+	manageableTeamIds: ReadonlySet<string> | null;
 };
 
-export type ScopedHolidaySettingsActor = {
-	accessTier: "manager" | "orgAdmin";
-	organizationId: string;
-	session: { user: { id: string } };
-	currentEmployee: { id: string; role: "admin" | "manager" | "employee" } | null;
-	dbService: {
-		db: DatabaseClient;
-		query: <T>(key: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
-	};
-};
-
-export type ScopedHolidayAccessContext = {
-	actor: ScopedHolidaySettingsActor;
-	managedEmployeeIds: Set<string> | null;
-	manageableTeamIds: Set<string> | null;
-};
-
-export function getScopedHolidayAccessContext(organizationId: string, queryName: string) {
+export function holidayScopeOf(actor: OrganizationActor, organizationId: string) {
 	return Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName,
-		})) as ScopedHolidaySettingsActor;
-
-		if (actor.accessTier === "orgAdmin") {
-			return {
-				actor,
-				managedEmployeeIds: null,
-				manageableTeamIds: null,
-			} satisfies ScopedHolidayAccessContext;
+		const scope = yield* actor.managedScope();
+		if (scope.organizationWide) {
+			return { managedEmployeeIds: null, manageableTeamIds: null } satisfies HolidayScope;
 		}
 
-		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
-		const teamPermissionRows = actor.currentEmployee
-			? ((yield* actor.dbService.query(`${queryName}:teamPermissions`, async () => {
-					return await actor.dbService.db.query.teamPermissions.findMany({
+		const dbService = yield* DatabaseService;
+		const managerId = actor.employee?.id;
+		const teamPermissionRows = managerId
+			? yield* dbService.query("holidays.scope.teamPermissions", () =>
+					dbService.db.query.teamPermissions.findMany({
 						where: and(
-							eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
+							eq(teamPermissions.employeeId, managerId),
 							eq(teamPermissions.organizationId, organizationId),
 						),
 						columns: { teamId: true, canManageTeamSettings: true },
-					});
-				})) as TeamPermissionRow[])
+					}),
+				)
 			: [];
 
-		const manageableTeamIds = new Set(
-			teamPermissionRows.flatMap((permission) =>
-				permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
-			),
-		);
-
 		return {
-			actor,
-			managedEmployeeIds,
-			manageableTeamIds,
-		} satisfies ScopedHolidayAccessContext;
+			managedEmployeeIds: scope.employeeIds,
+			manageableTeamIds: new Set(
+				teamPermissionRows.flatMap((permission) =>
+					permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
+				),
+			),
+		} satisfies HolidayScope;
 	});
 }
 
+/** The organization-wide assignments plus those of the manager's teams and reports. */
 export function filterAssignmentsForManagerHolidayScope<T extends HolidayScopeAssignment>(
 	assignments: T[],
-	manageableTeamIds: Set<string> | null,
-	managedEmployeeIds: Set<string> | null,
+	scope: HolidayScope,
 ) {
+	const { manageableTeamIds, managedEmployeeIds } = scope;
 	if (!manageableTeamIds || !managedEmployeeIds) {
 		return assignments;
 	}

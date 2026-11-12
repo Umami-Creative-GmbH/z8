@@ -29,6 +29,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { positiveHoursText } from "@/lib/projects/project-task-model";
 import {
 	type ManagerOrAssignmentAvailability,
@@ -179,11 +180,11 @@ function useProjectTemplateForm({
 
 	const { data: teams = [] } = useQuery({
 		queryKey: queryKeys.projects.teamSelection(organizationId),
-		queryFn: () => selectionOptions(getTeamsForSelection(organizationId)),
+		queryFn: () => selectionOptions(getTeamsForSelection()),
 	});
 	const { data: employees = [] } = useQuery({
 		queryKey: queryKeys.projects.employeeSelection(organizationId),
-		queryFn: () => selectionOptions(getEmployeesForSelection(organizationId)),
+		queryFn: () => selectionOptions(getEmployeesForSelection()),
 	});
 
 	// Names and states of what the template already holds; departed employees
@@ -220,7 +221,7 @@ function useProjectTemplateForm({
 		onSubmit: async ({ value }) => {
 			const input = toInput(value);
 			const result = await (template
-				? updateProjectTemplate(template.id, input)
+				? updateProjectTemplate({ templateId: template.id, ...input })
 				: createProjectTemplate(input)
 			).catch(() => null);
 			if (result?.success) {
@@ -233,10 +234,14 @@ function useProjectTemplateForm({
 				return;
 			}
 			toast.error(
-				result?.error ||
-					(template
-						? t("settings.projects.templates.updateFailed", "Failed to update template")
-						: t("settings.projects.templates.createFailed", "Failed to create template")),
+				actionErrorMessage(
+					t,
+					result,
+					{},
+					template
+						? ["settings.projects.templates.updateFailed", "Failed to update template"]
+						: ["settings.projects.templates.createFailed", "Failed to create template"],
+				),
 			);
 		},
 	});

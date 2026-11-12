@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { EQUIPMENT_REFUSALS } from "@/components/settings/equipment/equipment-refusals";
 import { Button } from "@/components/ui/button";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { changeEquipment } from "@/lib/organization/equipment/actions";
@@ -12,8 +13,9 @@ import type {
 	EquipmentCondition,
 	EquipmentReadinessItemView,
 } from "@/lib/organization/equipment/contracts";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
-import { conditionLabel, handoverRefusalMessage } from "./equipment-copy";
+import { conditionLabel } from "./equipment-copy";
 import { actualDateError } from "./equipment-handover-validation";
 import {
 	ActualDateField,
@@ -190,7 +192,7 @@ function useAnonymousReceiptCommands() {
 				}
 				if (!result.data.ok) {
 					setFeedback({ error: true });
-					toast.error(handoverRefusalMessage(result.data.reason, t));
+					toast.error(actionErrorMessage(t, { refusal: result.data.reason }, EQUIPMENT_REFUSALS));
 					return;
 				}
 				setFeedback({ error: false });

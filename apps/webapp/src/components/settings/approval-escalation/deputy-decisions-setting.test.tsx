@@ -45,15 +45,14 @@ describe("DeputyDecisionsSetting", () => {
 		vi.mocked(saveDeputyDecisionsEnabledAction).mockResolvedValue({
 			success: false,
 			error: "You do not have permission to manage approval settings.",
+			code: "AuthorizationError",
 		});
 		render(<DeputyDecisionsSetting enabled={false} />);
 
 		await user.click(toggle());
 
 		await waitFor(() =>
-			expect(toast.error).toHaveBeenCalledWith(
-				"You do not have permission to manage approval settings.",
-			),
+			expect(toast.error).toHaveBeenCalledWith("You do not have access to this setting."),
 		);
 		expect(toggle().getAttribute("aria-checked")).toBe("false");
 	});
