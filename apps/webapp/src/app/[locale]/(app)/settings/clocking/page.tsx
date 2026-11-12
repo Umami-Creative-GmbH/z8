@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { OrganizationAutoClockOutCard } from "@/components/organization/organization-auto-clock-out-card";
 import { OrganizationClockingRemindersCard } from "@/components/organization/organization-clocking-reminders-card";
@@ -7,7 +7,7 @@ import { OrganizationTrackingCard } from "@/components/organization/organization
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { db } from "@/db";
-import { member, organization } from "@/db/auth-schema";
+import { organization } from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
@@ -18,13 +18,12 @@ import { loadPeriodSubmissionSettings } from "@/lib/time-tracking/period-submiss
 import { getTranslate } from "@/tolgee/server";
 
 async function ClockingSettingsContent() {
-	const [{ authContext, organizationId }, t] = await Promise.all([
+	const [{ organizationId, settingsAccess }, t] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
 	]);
 	const [
 		organizationRecord,
-		currentMembers,
 		trackingSettings,
 		autoClockOutSettings,
 		clockingReminderSettings,
@@ -33,27 +32,12 @@ async function ClockingSettingsContent() {
 		db.query.organization.findFirst({
 			where: eq(organization.id, organizationId),
 		}),
-		db
-			.select({ role: member.role })
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, authContext.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
-			.limit(1),
 		loadOrganizationTrackingSettings(db, organizationId),
 		loadAutoClockOutSettings(db, organizationId),
 		loadClockingReminderSettings(db, organizationId),
 		loadPeriodSubmissionSettings(db, organizationId, { clock: systemClock }),
 	]);
-	if (!organizationRecord || !currentMembers[0])
-		return redirectWithLocale("/settings");
-	const currentMemberRole = currentMembers[0].role as
-		| "owner"
-		| "admin"
-		| "member";
+	if (!organizationRecord) return redirectWithLocale("/settings");
 	return (
 		<SettingsTabbedPage
 			key={organizationId}
@@ -86,7 +70,7 @@ async function ClockingSettingsContent() {
 						<OrganizationAutoClockOutCard
 							organizationId={organizationId}
 							settings={autoClockOutSettings}
-							currentMemberRole={currentMemberRole}
+							settingsAccess={settingsAccess}
 						/>
 					),
 				},
@@ -104,7 +88,7 @@ async function ClockingSettingsContent() {
 						<OrganizationClockingRemindersCard
 							organizationId={organizationId}
 							settings={clockingReminderSettings}
-							currentMemberRole={currentMemberRole}
+							settingsAccess={settingsAccess}
 						/>
 					),
 				},
@@ -122,7 +106,7 @@ async function ClockingSettingsContent() {
 						<OrganizationPeriodSubmissionsCard
 							organizationId={organizationId}
 							settings={periodSubmissionSettings}
-							currentMemberRole={currentMemberRole}
+							settingsAccess={settingsAccess}
 						/>
 					),
 				},

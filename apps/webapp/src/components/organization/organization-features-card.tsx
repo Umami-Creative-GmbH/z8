@@ -42,6 +42,10 @@ import { Switch } from "@/components/ui/switch";
 import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DrivingLicenceFeature } from "./driving-licence-feature";
@@ -70,7 +74,8 @@ interface OrganizationFeaturesCardProps {
 	drivingLicence?: DrivingLicenceFeatureState;
 	/** Prefills the driving licence deadline timezone on its first switch-on. */
 	organizationTimezone?: string;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 export function OrganizationFeaturesCard({
@@ -100,7 +105,7 @@ export function OrganizationFeaturesCard({
 
 function useOrganizationFeatures({
 	organizationId,
-	currentMemberRole,
+	settingsAccess,
 	billableCurrency,
 	initialFeatures,
 }: Omit<OrganizationFeaturesCardProps, OrganizationFeature> & {
@@ -115,9 +120,9 @@ function useOrganizationFeatures({
 	const [currencyDialogOpen, setCurrencyDialogOpen] = useState(false);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
-	const canEdit = currentMemberRole === "owner";
-	// Personnel files are switched by owners and admins (#865).
-	const canEditPersonnelFiles = canEdit || currentMemberRole === "admin";
+	const canEdit = meetsSettingsAccess(settingsAccess, "owner");
+	// Personnel files are switched by org admins and owners (#865).
+	const canEditPersonnelFiles = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	// Driving licence control (#1421) and equipment tracking (#1572) too: the same
 	// owner-or-admin rule, under their own names.
 	const canSwitchDrivingLicence = canEditPersonnelFiles;
@@ -233,7 +238,7 @@ function useOrganizationFeatures({
 
 function OrganizationFeaturesCardContent({
 	organizationId,
-	currentMemberRole,
+	settingsAccess,
 	billableCurrency,
 	drivingLicence,
 	organizationTimezone,
@@ -261,7 +266,7 @@ function OrganizationFeaturesCardContent({
 		setConfirmEquipmentOff,
 	} = useOrganizationFeatures({
 		organizationId,
-		currentMemberRole,
+		settingsAccess,
 		billableCurrency,
 		initialFeatures,
 	});
