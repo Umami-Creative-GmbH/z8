@@ -1,7 +1,6 @@
 "use server";
 
 import { and, eq, isNull, or } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
@@ -12,6 +11,13 @@ import {
 	type SocialOAuthProviderConfig,
 } from "@/db/schema";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import {
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	parseInstant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import {
 	deleteCustomDomain,
 	getOrganizationBranding,
@@ -125,13 +131,19 @@ export interface EnterpriseIdentityAccessPolicyInput {
 	defaultRoleTemplateId?: string | null;
 }
 
+/** A stored instant as a UTC ISO string with milliseconds; null when missing or invalid. */
 function toIsoFromDate(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
+	try {
+		const instant = value instanceof Date ? instantFromDate(value) : parseInstant(value);
+		return isoWithMilliseconds(instant);
+	} catch {
+		return null;
+	}
+}
 
-	const dateTime =
-		value instanceof Date ? DateTime.fromJSDate(value, { zone: "utc" }) : DateTime.fromISO(value);
-
-	return dateTime.isValid ? dateTime.toUTC().toISO() : null;
+function isoWithMilliseconds(instant: Instant): string {
+	return instant.toString({ fractionalSecondDigits: 3 });
 }
 
 function normalizeEnterpriseIdentitySetupRecord(
@@ -491,7 +503,7 @@ export const recordEnterpriseIdentitySsoTestAction = organizationAction(
 			if (!providerId || !testEmail) refuse("Provider ID and test email are required");
 
 			await getOrCreateEnterpriseIdentitySetupRecord(organizationId, actor.userId);
-			const now = DateTime.utc().toISO();
+			const now = isoWithMilliseconds(systemClock.nowInstant());
 
 			await updateEnterpriseIdentitySetupRecord(database, organizationId, {
 				currentStep: input.status === "passed" ? "scim" : "ssoTest",
@@ -607,10 +619,9 @@ export const activateEnterpriseIdentitySetupAction = organizationAction(
 				});
 			}
 
-			const activatedAt = DateTime.utc();
 			await updateEnterpriseIdentitySetupRecord(database, organizationId, {
 				activated: true,
-				activatedAt: activatedAt.toJSDate(),
+				activatedAt: dateFromInstant(systemClock.nowInstant()),
 				updatedBy: actor.userId,
 			});
 

@@ -2,7 +2,6 @@
 
 import { desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { z } from "zod";
 import { auditExportPackage } from "@/db";
 import type { AuditPackAppendAssurance } from "@/db/schema/audit-pack";
@@ -10,6 +9,12 @@ import { configurationService, verificationService } from "@/lib/audit-export";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { addAuditPackJob } from "@/lib/audit-pack/application/audit-pack-service";
 import { auditPackRequestRepository } from "@/lib/audit-pack/application/request-repository";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	type PlainDate,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -189,14 +194,30 @@ export interface AuditPackRequestInfo {
 	} | null;
 }
 
+/** The audit pack's whole UTC days, first to last, or null for an invalid range. */
+function auditPackRange(startDateIso: string, endDateIso: string) {
+	try {
+		const first = parsePlainDate(startDateIso);
+		const last = parsePlainDate(endDateIso);
+		if (comparePlainDates(first, last) > 0) return null;
+		const startOfUtcDay = (day: PlainDate) => day.toZonedDateTime({ timeZone: "UTC" }).toInstant();
+		return {
+			first,
+			last,
+			start: dateFromInstant(startOfUtcDay(first)),
+			end: dateFromInstant(startOfUtcDay(last.add({ days: 1 })).subtract({ milliseconds: 1 })),
+		};
+	} catch {
+		return null;
+	}
+}
+
 export const createAuditPackAction = organizationAction(
 	{ name: "auditExport.createAuditPack", requires: "orgAdmin", schema: createAuditPackSchema },
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const startDate = DateTime.fromISO(input.startDateIso, { zone: "utc" }).startOf("day");
-			const endDate = DateTime.fromISO(input.endDateIso, { zone: "utc" }).endOf("day");
-
-			if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
+			const range = auditPackRange(input.startDateIso, input.endDateIso);
+			if (!range) {
 				return yield* Effect.fail(
 					new ValidationError({ message: "Invalid audit pack date range" }),
 				);
@@ -206,8 +227,8 @@ export const createAuditPackAction = organizationAction(
 				auditPackRequestRepository.createRequest({
 					organizationId,
 					requestedById: actor.userId,
-					startDate: startDate.toJSDate(),
-					endDate: endDate.toJSDate(),
+					startDate: range.start,
+					endDate: range.end,
 				}),
 			);
 
@@ -236,8 +257,8 @@ export const createAuditPackAction = organizationAction(
 					targetType: "audit_pack_request",
 					organizationId,
 					metadata: {
-						startDateIso: startDate.toISODate(),
-						endDateIso: endDate.toISODate(),
+						startDateIso: range.first.toString(),
+						endDateIso: range.last.toString(),
 						jobId,
 					},
 					timestamp: new Date(),

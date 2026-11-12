@@ -2,7 +2,6 @@
 
 import { and, eq, gt, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { z } from "zod";
 import { invitation, user } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft, team } from "@/db/schema";
@@ -15,7 +14,14 @@ import {
 import { isInvitationActionable } from "@/lib/auth/employee-invitation-draft";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	instantFromDate,
+	parseInstant,
+	parsePlainDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -1047,13 +1053,21 @@ export const requestEmployeeWorkBalanceRecalculationAction = organizationAction(
 		}),
 );
 
+/**
+ * The UTC calendar date of a stored date or ISO string (`YYYY-MM-DD`); an
+ * ISO string without an offset is read as UTC. Null when missing or invalid.
+ */
 function dateToUtcIsoDate(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
-	return (
-		typeof value === "string"
-			? DateTime.fromISO(value, { zone: "utc" })
-			: DateTime.fromJSDate(value, { zone: "utc" })
-	).toISODate();
+	try {
+		if (value instanceof Date) return plainDateAt(instantFromDate(value), "UTC").toString();
+		if (/(Z|[+-]\d{2}:?\d{2})$/i.test(value)) {
+			return plainDateAt(parseInstant(value), "UTC").toString();
+		}
+		return parsePlainDate(value.slice(0, 10)).toString();
+	} catch {
+		return null;
+	}
 }
 
 /** The caller's own personal information on their employee record in the organization. */

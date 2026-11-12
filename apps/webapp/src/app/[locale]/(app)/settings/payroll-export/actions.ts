@@ -2,7 +2,6 @@
 
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
@@ -12,6 +11,7 @@ import {
 	payrollWageTypeMapping,
 	workCategory,
 } from "@/db";
+import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
@@ -34,6 +34,7 @@ import {
 	type SageLohnConfig,
 	type WorkdayConfig,
 } from "@/lib/payroll-export";
+import { parsePayrollLogicalDate } from "@/lib/payroll-export/calendar-boundaries";
 import { PayrollIdentifierDuplicateError } from "@/lib/payroll-export/personnel-identifier";
 import { payrollIdentifierDuplicateConflict } from "@/lib/payroll-export/personnel-identifier-refusal";
 import {
@@ -1217,6 +1218,25 @@ export const getFilterOptionsAction = organizationAction(
 // EXPORT ACTIONS
 // ============================================
 
+/** The export's first and last logical date; refused when malformed or backwards. */
+function payrollDateRange(startDate: string, endDate: string) {
+	return Effect.gen(function* () {
+		const parse = (value: string, field: string) =>
+			Effect.try({
+				try: () => parsePlainDate(value),
+				catch: () => new ValidationError({ message: "Invalid date format provided", field }),
+			});
+		const start = yield* parse(startDate, "startDate");
+		const end = yield* parse(endDate, "endDate");
+		if (comparePlainDates(end, start) < 0) {
+			return yield* Effect.fail(
+				new ValidationError({ message: "End date must be after start date", field: "endDate" }),
+			);
+		}
+		return { start, end };
+	});
+}
+
 /**
  * Start a payroll export
  */
@@ -1231,22 +1251,13 @@ export const startExportAction = organizationAction(
 					new NotFoundError({ message: "Employee profile not found", entityType: "employee" }),
 				);
 			}
-			// Parse and validate dates
-			const startDate = DateTime.fromISO(input.startDate);
-			const endDate = DateTime.fromISO(input.endDate);
-
-			if (!startDate.isValid || !endDate.isValid) {
-				throw new Error("Invalid date format provided");
-			}
-
-			if (endDate < startDate) {
-				throw new Error("End date must be after start date");
-			}
+			// The range is logical dates (YYYY-MM-DD), not instants: no time zone applies.
+			const range = yield* payrollDateRange(input.startDate, input.endDate);
 
 			const filters: PayrollExportFilters = {
 				dateRange: {
-					start: startDate,
-					end: endDate,
+					start: parsePayrollLogicalDate(range.start.toString()),
+					end: parsePayrollLogicalDate(range.end.toString()),
 				},
 				employeeIds: input.employeeIds,
 				teamIds: input.teamIds,

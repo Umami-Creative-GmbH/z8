@@ -19,6 +19,7 @@ const db = vi.hoisted(() => ({
 		};
 	},
 	query: {
+		organization: { findFirst: async () => ({ timezone: "Europe/Berlin" }) },
 		teamPermissions: { findMany: async () => mocks.teamPermissionsRows },
 		employee: { findMany: async () => mocks.teamScopedEmployees },
 	},

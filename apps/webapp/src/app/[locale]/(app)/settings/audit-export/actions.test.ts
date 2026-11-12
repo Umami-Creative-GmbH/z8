@@ -166,14 +166,22 @@ describe("audit export actions", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: { requestId: "request-1", jobId: "job-1" } });
-		expect(mocks.createRequest).toHaveBeenCalledWith(
-			expect.objectContaining({ organizationId: "org-1", requestedById: "user-1" }),
-		);
+		expect(mocks.createRequest).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			requestedById: "user-1",
+			// Whole UTC days, first to last.
+			startDate: new Date("2026-01-01T00:00:00.000Z"),
+			endDate: new Date("2026-01-31T23:59:59.999Z"),
+		});
 		expect(mocks.logAudit).toHaveBeenCalledWith(
 			expect.objectContaining({
 				actorId: "user-1",
 				actorEmail: "user-1@example.test",
 				organizationId: "org-1",
+				metadata: expect.objectContaining({
+					startDateIso: "2026-01-01",
+					endDateIso: "2026-01-31",
+				}),
 			}),
 		);
 	});

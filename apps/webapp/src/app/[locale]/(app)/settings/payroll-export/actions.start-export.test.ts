@@ -128,6 +128,30 @@ describe("startExportAction", () => {
 		expect(mockState.processExportJob).not.toHaveBeenCalled();
 	});
 
+	it("exports the requested logical dates, whatever the server's time zone", async () => {
+		await startExportAction({
+			formatId: "workday_api",
+			startDate: "2026-01-01",
+			endDate: "2026-01-31",
+		});
+
+		const { filters } = mockState.createExportJob.mock.calls[0][0];
+		expect(filters.dateRange.start.toISODate()).toBe("2026-01-01");
+		expect(filters.dateRange.end.toISODate()).toBe("2026-01-31");
+	});
+
+	it("refuses a range that ends before it starts, or a malformed date", async () => {
+		for (const [startDate, endDate] of [
+			["2026-02-01", "2026-01-01"],
+			["2026-13-01", "2026-01-31"],
+		]) {
+			expect(
+				await startExportAction({ formatId: "workday_api", startDate, endDate }),
+			).toMatchObject({ success: false, code: "ValidationError" });
+		}
+		expect(mockState.createExportJob).not.toHaveBeenCalled();
+	});
+
 	it("processes synchronous exports inline with the organization scope", async () => {
 		mockState.createExportJob.mockResolvedValueOnce({ jobId: "job-sync", isAsync: false });
 		mockState.processExportJob.mockResolvedValueOnce({

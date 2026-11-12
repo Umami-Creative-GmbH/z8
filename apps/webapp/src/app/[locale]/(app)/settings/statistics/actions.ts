@@ -2,8 +2,7 @@
 
 import { and, count, eq, gte, inArray, lt } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
-import { session } from "@/db/auth-schema";
+import { organization, session } from "@/db/auth-schema";
 import {
 	absenceEntry,
 	approvalRequest,
@@ -12,12 +11,15 @@ import {
 	teamPermissions,
 	timeEntry,
 } from "@/db/schema";
+import { instantToCanonicalString, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	noInput,
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
+import { monthStartsAt } from "./month-starts";
 
 interface StatisticsBase {
 	totalEmployees: number;
@@ -75,6 +77,21 @@ function manageableTeamIds(actor: OrganizationActor, organizationId: string) {
 	});
 }
 
+/** This and last month's starts in the organization's time zone (docs/refs/timekeeping.md). */
+function organizationMonthStarts(organizationId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const row = yield* dbService.query("statistics.organizationTimezone", () =>
+			dbService.db.query.organization.findFirst({
+				where: eq(organization.id, organizationId),
+				columns: { timezone: true },
+			}),
+		);
+		const { timezone } = resolveOrganizationTimezone(row?.timezone);
+		return monthStartsAt(systemClock.nowInstant(), timezone);
+	});
+}
+
 function buildStatisticsBase(params: {
 	totalEmployees: number;
 	activeEmployees: number;
@@ -92,7 +109,7 @@ function buildStatisticsBase(params: {
 	return {
 		...params,
 		inactiveEmployees: params.totalEmployees - params.activeEmployees,
-		fetchedAt: DateTime.utc().toISO() ?? new Date().toISOString(),
+		fetchedAt: instantToCanonicalString(systemClock.nowInstant()),
 	};
 }
 
@@ -111,8 +128,8 @@ function organizationStats(organizationId: string) {
 		const dbService = yield* DatabaseService;
 		const { db } = dbService;
 
-		const firstDayThisMonth = DateTime.now().startOf("month").toJSDate();
-		const firstDayLastMonth = DateTime.now().minus({ months: 1 }).startOf("month").toJSDate();
+		const { thisMonth: firstDayThisMonth, lastMonth: firstDayLastMonth } =
+			yield* organizationMonthStarts(organizationId);
 
 		const results = yield* dbService.query("statistics.getOrganizationCounts", () =>
 			Promise.all([
@@ -265,8 +282,8 @@ export const getManagerStatisticsReadView = organizationAction(
 			}
 
 			const teamIds = [...teamIdSet];
-			const firstDayThisMonth = DateTime.now().startOf("month").toJSDate();
-			const firstDayLastMonth = DateTime.now().minus({ months: 1 }).startOf("month").toJSDate();
+			const { thisMonth: firstDayThisMonth, lastMonth: firstDayLastMonth } =
+				yield* organizationMonthStarts(organizationId);
 
 			const teamScopedEmployees = yield* dbService.query("statistics.getScopedEmployees", () =>
 				db.query.employee.findMany({
