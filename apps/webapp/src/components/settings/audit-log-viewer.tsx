@@ -362,7 +362,7 @@ function AuditLogViewerForOrganization({
 			toast.error(
 				actionErrorMessage(t, result, {}, [
 					"settings.auditLog.exportFailed",
-					"Failed to export audit logs",
+					`Failed to export audit logs`,
 				]),
 			);
 		}

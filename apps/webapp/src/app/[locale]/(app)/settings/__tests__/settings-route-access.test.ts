@@ -901,9 +901,9 @@ describe("org-admin settings route access", () => {
 			),
 		);
 
-		expect(pageClientSource.includes('props.accessTier === "orgAdmin"')).toBe(
-			true,
-		);
+		expect(
+			pageClientSource.includes('meetsSettingsAccess(props.settingsAccess, "orgAdmin")'),
+		).toBe(true);
 		expect(pageClientSource.includes("{isAdmin && (")).toBe(false);
 		expect(
 			querySource.includes('currentEmployeeQuery.data?.role === "admin"'),

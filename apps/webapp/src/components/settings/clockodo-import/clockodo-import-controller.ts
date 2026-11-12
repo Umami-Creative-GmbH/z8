@@ -29,7 +29,26 @@ import type {
 	UserMappingType,
 } from "@/lib/clockodo/types";
 import type { ImportEntityType } from "@/lib/import-review/types";
-import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import {
+	type ActionMessage,
+	actionErrorMessage,
+} from "@/lib/organization-action/action-error-message";
+
+/** The import's own texts for a failed step, after the action's refusal and code. */
+const FAILURES = {
+	connection: ["settings.clockodoImport.errors.connectionFailed", "Failed to connect to Clockodo"],
+	users: ["settings.clockodoImport.errors.fetchUsersFailed", "Failed to fetch user data"],
+	projects: ["settings.clockodoImport.errors.fetchProjectsFailed", "Failed to fetch project data"],
+	userMappings: [
+		"settings.clockodoImport.errors.saveMappingsFailed",
+		"Failed to save user mappings",
+	],
+	projectMappings: [
+		"settings.clockodoImport.errors.saveProjectMappingsFailed",
+		"Failed to save project mappings",
+	],
+	import: ["settings.clockodoImport.errors.importFailed", "Import review scan failed"],
+} satisfies Record<string, ActionMessage>;
 
 export type ClockodoWizardStep =
 	| "credentials"
@@ -208,12 +227,7 @@ export function useClockodoImportController() {
 		},
 		onSuccess: ({ credResult, countsResult }) => {
 			if (!credResult.success)
-				return toast.error(
-					actionErrorMessage(t, credResult, {}, [
-						"settings.clockodoImport.errors.connectionFailed",
-						"Failed to connect to Clockodo",
-					]),
-				);
+				return toast.error(actionErrorMessage(t, credResult, {}, FAILURES.connection));
 			queryClient.invalidateQueries();
 			setPreview(credResult.data);
 			if (countsResult.success) setExistingCounts(countsResult.data);
@@ -235,21 +249,11 @@ export function useClockodoImportController() {
 		},
 		onSuccess: ({ usersResult, employeesResult }) => {
 			if (!usersResult.success) {
-				toast.error(
-					actionErrorMessage(t, usersResult, {}, [
-						"settings.clockodoImport.errors.fetchUsersFailed",
-						"Failed to fetch user data",
-					]),
-				);
+				toast.error(actionErrorMessage(t, usersResult, {}, FAILURES.users));
 				return;
 			}
 			if (!employeesResult.success) {
-				toast.error(
-					actionErrorMessage(t, employeesResult, {}, [
-						"settings.clockodoImport.errors.fetchUsersFailed",
-						"Failed to fetch user data",
-					]),
-				);
+				toast.error(actionErrorMessage(t, employeesResult, {}, FAILURES.users));
 				return;
 			}
 			queryClient.invalidateQueries();
@@ -268,13 +272,7 @@ export function useClockodoImportController() {
 	const fetchProjectsMutation = useMutation({
 		mutationFn: () => fetchProjectMappingData({ email, apiKey }),
 		onSuccess: (result) => {
-			if (!result.success)
-				return toast.error(
-					actionErrorMessage(t, result, {}, [
-						"settings.clockodoImport.errors.fetchProjectsFailed",
-						"Failed to fetch project data",
-					]),
-				);
+			if (!result.success) return toast.error(actionErrorMessage(t, result, {}, FAILURES.projects));
 			setZ8Projects(result.data.z8Projects);
 			setProjectMappings(
 				buildProjectMappings(
@@ -296,12 +294,7 @@ export function useClockodoImportController() {
 		mutationFn: () => saveUserMappings({ mappings: userMappings }),
 		onSuccess: (result) => {
 			if (!result.success)
-				return toast.error(
-					actionErrorMessage(t, result, {}, [
-						"settings.clockodoImport.errors.saveMappingsFailed",
-						"Failed to save user mappings",
-					]),
-				);
+				return toast.error(actionErrorMessage(t, result, {}, FAILURES.userMappings));
 			queryClient.invalidateQueries();
 			fetchProjectsMutation.mutate();
 		},
@@ -315,12 +308,7 @@ export function useClockodoImportController() {
 		mutationFn: () => saveProjectMappings({ mappings: projectMappings }),
 		onSuccess: (result) => {
 			if (!result.success)
-				return toast.error(
-					actionErrorMessage(t, result, {}, [
-						"settings.clockodoImport.errors.saveProjectMappingsFailed",
-						"Failed to save project mappings",
-					]),
-				);
+				return toast.error(actionErrorMessage(t, result, {}, FAILURES.projectMappings));
 			queryClient.invalidateQueries();
 			setStep("selection");
 		},
@@ -348,12 +336,7 @@ export function useClockodoImportController() {
 			}),
 		onSuccess: (result) => {
 			if (!result.success) {
-				toast.error(
-					actionErrorMessage(t, result, {}, [
-						"settings.clockodoImport.errors.importFailed",
-						"Import review scan failed",
-					]),
-				);
+				toast.error(actionErrorMessage(t, result, {}, FAILURES.import));
 				setStep("selection");
 				return;
 			}
