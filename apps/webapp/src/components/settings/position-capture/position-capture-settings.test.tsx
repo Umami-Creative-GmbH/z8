@@ -185,6 +185,35 @@ describe("PositionCaptureSettings", () => {
 		expect(refreshMock).not.toHaveBeenCalled();
 	});
 
+	it("tells a caller without settings access that only owners and admins manage position capture", async () => {
+		saveMock.mockResolvedValue({
+			success: false,
+			error: "You do not have access to this setting",
+			code: "AuthorizationError",
+		});
+		render(
+			<PositionCaptureSettings
+				data={adminData({
+					settings: {
+						enabled: true,
+						purposeStatement: "Customer proof",
+						retentionDays: 90,
+					},
+				})}
+			/>,
+		);
+
+		await userEvent.click(
+			screen.getByRole("button", { name: "Save settings" }),
+		);
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith(
+				"Only organization owners and admins can manage position capture.",
+			),
+		);
+	});
+
 	it("warns that editing the purpose publishes a new version and lapses consents", async () => {
 		render(
 			<PositionCaptureSettings

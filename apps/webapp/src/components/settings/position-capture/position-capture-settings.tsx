@@ -49,6 +49,16 @@ import {
 	requiresNewNoticeVersion,
 } from "@/lib/time-tracking/position-capture/policy";
 
+/**
+ * The calendar's texts plus a settings-only `AuthorizationError` text: a caller
+ * without settings access here is not an owner or admin, so they get the
+ * feature's admin-only text instead of the generic one.
+ */
+const POSITION_CAPTURE_SETTINGS_REFUSALS = {
+	...POSITION_CAPTURE_REFUSALS,
+	AuthorizationError: POSITION_CAPTURE_REFUSALS.admin_only,
+};
+
 interface PositionCaptureSettingsProps {
 	data: PositionCaptureAdminData;
 }
@@ -93,7 +103,7 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						actionErrorMessage(t, result, POSITION_CAPTURE_REFUSALS, [
+						actionErrorMessage(t, result, POSITION_CAPTURE_SETTINGS_REFUSALS, [
 							"settings.positionCapture.saveFailed",
 							"Position capture settings were not saved",
 						]),
@@ -335,7 +345,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						actionErrorMessage(t, result, POSITION_CAPTURE_REFUSALS, [
+						actionErrorMessage(t, result, POSITION_CAPTURE_SETTINGS_REFUSALS, [
 							"settings.positionCapture.assignmentFailed",
 							"The assignment was not saved",
 						]),
@@ -354,7 +364,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						actionErrorMessage(t, result, POSITION_CAPTURE_REFUSALS, [
+						actionErrorMessage(t, result, POSITION_CAPTURE_SETTINGS_REFUSALS, [
 							"settings.positionCapture.assignmentRemoveFailed",
 							"The assignment was not removed",
 						]),
