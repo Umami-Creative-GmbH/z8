@@ -1,39 +1,14 @@
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
+import { ValidationError } from "@/lib/effect/errors";
 import { logger } from "@/lib/logger";
 import type { OrganizationActor } from "@/lib/organization-action/organization-action";
 
 /**
  * Shared steps of the travel expense settings actions (#1617). Who may
  * configure travel expenses is decided by `organizationAction` (org admin);
- * these helpers only run the travel expense stores and attribute the writes.
+ * these helpers only attribute the writes. Store work runs through `storeStep`.
  */
-
-/**
- * Runs travel expense store work on the database. A failure reaches the
- * administrator as `failure`, except the validation and not-found errors the
- * stores write for them, which keep their own message.
- */
-export function expenseStore<T>(
-	name: string,
-	failure: string,
-	run: (database: DatabaseClient) => Promise<T>,
-): Effect.Effect<T, ValidationError | NotFoundError | DatabaseError, DatabaseService> {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		return yield* dbService
-			.query(name, () => run(dbService.db))
-			.pipe(
-				Effect.mapError((error) =>
-					error.cause instanceof ValidationError || error.cause instanceof NotFoundError
-						? error.cause
-						: new DatabaseError({ message: failure, operation: name, cause: error.cause }),
-				),
-			);
-	});
-}
 
 /** The writer of an authorization, override or approval: the administrator's employee profile. */
 export interface ExpenseAdministrator {
