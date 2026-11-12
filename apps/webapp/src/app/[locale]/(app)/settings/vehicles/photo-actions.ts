@@ -1,8 +1,7 @@
 "use server";
-import { Effect } from "effect";
 import { z } from "zod";
-import { DatabaseService } from "@/lib/effect/services/database.service";
 import { reconcilePhotoUpload } from "@/lib/organization/vehicles/vehicle-photo-reconciliation";
+import { VehiclePhotoRefusal } from "@/lib/organization/vehicles/vehicle-photo-types";
 import {
 	initiatePhotoBatchUpload,
 	initiatePhotoUpload,
@@ -13,6 +12,7 @@ import {
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 
 /** The photo helpers' actor: the session's organization and the caller. */
 const photoActor = (actor: OrganizationActor, organizationId: string) => ({
@@ -20,28 +20,29 @@ const photoActor = (actor: OrganizationActor, organizationId: string) => ({
 	userId: actor.userId,
 });
 
+/** A refused photo action fails with `refusal` set to its `VehiclePhotoRefusalCode`. */
+const refusal = { refusal: VehiclePhotoRefusal };
+
 const vehicleSchema = z.strictObject({ vehicleId: z.string() });
 
 export const listVehiclePhotos = organizationAction(
 	{ name: "vehiclePhotos.list", requires: "orgAdmin", schema: vehicleSchema },
 	({ actor, organizationId, input }) =>
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			return yield* service.query("vehiclePhotos.list", () =>
-				listPhotos(service.db, photoActor(actor, organizationId), input.vehicleId),
-			);
-		}),
+		storeStep(
+			"vehiclePhotos.list",
+			(db) => listPhotos(db, photoActor(actor, organizationId), input.vehicleId),
+			refusal,
+		),
 );
 
 export const initiateVehiclePhotoUpload = organizationAction(
 	{ name: "vehiclePhotos.initiate", requires: "orgAdmin", schema: vehicleSchema },
 	({ actor, organizationId, input }) =>
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			return yield* service.query("vehiclePhotos.initiate", () =>
-				initiatePhotoUpload(service.db, photoActor(actor, organizationId), input.vehicleId),
-			);
-		}),
+		storeStep(
+			"vehiclePhotos.initiate",
+			(db) => initiatePhotoUpload(db, photoActor(actor, organizationId), input.vehicleId),
+			refusal,
+		),
 );
 
 export const removeVehiclePhoto = organizationAction(
@@ -54,12 +55,11 @@ export const removeVehiclePhoto = organizationAction(
 		}),
 	},
 	({ actor, organizationId, input }) =>
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			return yield* service.query("vehiclePhotos.remove", () =>
-				removePhoto(service.db, photoActor(actor, organizationId), input.vehicleId, input.photoId),
-			);
-		}),
+		storeStep(
+			"vehiclePhotos.remove",
+			(db) => removePhoto(db, photoActor(actor, organizationId), input.vehicleId, input.photoId),
+			refusal,
+		),
 );
 
 export const reconcileVehiclePhotoUpload = organizationAction(
@@ -69,17 +69,17 @@ export const reconcileVehiclePhotoUpload = organizationAction(
 		schema: z.strictObject({ vehicleId: z.string(), uploadId: z.string() }),
 	},
 	({ actor, organizationId, input }) =>
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			return yield* service.query("vehiclePhotos.reconcile", () =>
+		storeStep(
+			"vehiclePhotos.reconcile",
+			(db) =>
 				reconcilePhotoUpload(
-					service.db,
+					db,
 					photoActor(actor, organizationId),
 					input.vehicleId,
 					input.uploadId,
 				),
-			);
-		}),
+			refusal,
+		),
 );
 
 const batchError = "Choose between 1 and 20 photos with unique upload identities";
@@ -98,15 +98,15 @@ export const initiateVehiclePhotoBatchUpload = organizationAction(
 		}),
 	},
 	({ actor, organizationId, input }) =>
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			return yield* service.query("vehiclePhotos.initiateBatch", () =>
+		storeStep(
+			"vehiclePhotos.initiateBatch",
+			(db) =>
 				initiatePhotoBatchUpload(
-					service.db,
+					db,
 					photoActor(actor, organizationId),
 					input.vehicleId,
 					input.uploadIds,
 				),
-			);
-		}),
+			refusal,
+		),
 );

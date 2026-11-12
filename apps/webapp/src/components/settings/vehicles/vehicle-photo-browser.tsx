@@ -26,6 +26,11 @@ import {
 } from "@/components/ui/dialog";
 import type { VehiclePhotoView } from "@/lib/organization/vehicles/vehicle-photo-types";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
+import {
+	actionErrorMessage,
+	actionMessageText,
+} from "@/lib/organization-action/action-error-message";
+import { REMOVE_FAILED, VEHICLE_PHOTO_REMOVAL_REFUSALS } from "./vehicle-photo-refusals";
 export function VehiclePhotoBrowser({
 	vehicle,
 	photos,
@@ -68,26 +73,11 @@ export function VehiclePhotoBrowser({
 		setError(null);
 		try {
 			const result = await removeVehiclePhoto({ vehicleId: vehicle.id, photoId: current.id });
-			if (!result.success || !result.data.ok) {
-				if (
-					result.success &&
-					!result.data.ok &&
-					result.data.reason === "vehicle_archived"
-				) {
-					onArchived();
-					setError(
-						t(
-							"settings.vehicles.photos.archived",
-							"This vehicle is archived. Restore it to add or remove photos.",
-						),
-					);
-				} else
-					setError(
-						t(
-							"settings.vehicles.photos.removeFailed",
-							"The photo could not be removed. Try again.",
-						),
-					);
+			if (!result.success) {
+				if (result.refusal === "vehicle_archived") onArchived();
+				setError(
+					actionErrorMessage(t, result, VEHICLE_PHOTO_REMOVAL_REFUSALS, REMOVE_FAILED),
+				);
 				setConfirming(false);
 				setRemoving(false);
 				return;
@@ -97,12 +87,7 @@ export function VehiclePhotoBrowser({
 			onRemoved(current.id);
 			setConfirming(false);
 		} catch {
-			setError(
-				t(
-					"settings.vehicles.photos.removeFailed",
-					"The photo could not be removed. Try again.",
-				),
-			);
+			setError(actionMessageText(t, REMOVE_FAILED));
 			setConfirming(false);
 		}
 		setRemoving(false);

@@ -82,7 +82,7 @@ describe("vehicle photo removal", () => {
 		});
 		removePhoto.mockResolvedValue({
 			success: true,
-			data: { ok: true, removed: true },
+			data: { removed: true },
 		});
 	});
 	afterEach(cleanup);
@@ -170,6 +170,25 @@ describe("vehicle photo removal", () => {
 			await screen.findByRole("dialog", { name: "Photo 1 of 1" }),
 		).toBeTruthy();
 	});
+	it("words a lost-access refusal as a removal failure, never the server text", async () => {
+		removePhoto.mockResolvedValueOnce({
+			success: false,
+			error: "You do not have access to this setting",
+			code: "AuthorizationError",
+		});
+		render(<VehicleSettings initialData={data()} />);
+		await openPhotos();
+		await userEvent.click(
+			await screen.findByRole("button", { name: "View photo 1 of Van" }),
+		);
+		await userEvent.click(screen.getByRole("button", { name: "Remove photo" }));
+		await userEvent.click(
+			screen.getByRole("button", { name: "Permanently remove photo" }),
+		);
+		expect((await screen.findByRole("alert")).textContent).toBe(
+			"The photo could not be removed. Try again.",
+		);
+	});
 	it("keeps archived photos viewable without a removal control", async () => {
 		listPhotos.mockResolvedValue({
 			success: true,
@@ -186,8 +205,10 @@ describe("vehicle photo removal", () => {
 	});
 	it("handles a stale archived refusal and preserves the photo", async () => {
 		removePhoto.mockResolvedValue({
-			success: true,
-			data: { ok: false, reason: "vehicle_archived" },
+			success: false,
+			error: "The server's diagnostic text",
+			code: "ValidationError",
+			refusal: "vehicle_archived",
 		});
 		render(<VehicleSettings initialData={data()} />);
 		await openPhotos();

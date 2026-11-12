@@ -118,9 +118,12 @@ describe("vehicle settings actions", () => {
 	});
 
 	it("lists photos of a vehicle in the session's organization", async () => {
-		mocks.listPhotos.mockResolvedValue([]);
+		mocks.listPhotos.mockResolvedValue({ photos: [], archived: false });
 
-		await expect(listVehiclePhotos({ vehicleId })).resolves.toEqual({ success: true, data: [] });
+		await expect(listVehiclePhotos({ vehicleId })).resolves.toEqual({
+			success: true,
+			data: { photos: [], archived: false },
+		});
 		expect(mocks.listPhotos).toHaveBeenCalledWith(
 			expect.anything(),
 			{ organizationId: "org-1", userId: "user-1" },
@@ -135,6 +138,32 @@ describe("vehicle settings actions", () => {
 			error: "Choose a valid vehicle photo",
 		});
 		expect(mocks.removePhoto).not.toHaveBeenCalled();
+	});
+
+	it("fails a refused photo batch with its refusal code and remaining slots", async () => {
+		const { VehiclePhotoRefusal } = await import("@/lib/organization/vehicles/vehicle-photo-types");
+		mocks.initiatePhotoBatchUpload.mockRejectedValue(
+			new VehiclePhotoRefusal("photo_limit", { remaining: 1 }),
+		);
+
+		expect(await initiateVehiclePhotoBatchUpload({ vehicleId, uploadIds: [photoId] })).toEqual({
+			success: false,
+			code: "ValidationError",
+			error: expect.any(String),
+			refusal: "photo_limit",
+			details: { remaining: 1 },
+		});
+	});
+
+	it("fails a refused photo removal with its refusal code", async () => {
+		const { VehiclePhotoRefusal } = await import("@/lib/organization/vehicles/vehicle-photo-types");
+		mocks.removePhoto.mockRejectedValue(new VehiclePhotoRefusal("vehicle_archived"));
+
+		expect(await removeVehiclePhoto({ vehicleId, photoId })).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "vehicle_archived",
+		});
 	});
 
 	it("refuses a photo batch with duplicate upload identities", async () => {
