@@ -937,8 +937,10 @@ export function resolvePolicyAndCreateApproval(
 			loaded.employees,
 			loaded.context.requesterEmployeeId,
 		);
+		if (handled) return yield* handled;
 		if (decision.kind === "failure") {
-			return yield* handled ?? Effect.fail(decision.error);
+			if (decision.reason === "invalid_policies") throw decision.error;
+			return yield* Effect.fail(decision.error);
 		}
 
 		if (decision.kind === "default") {
