@@ -23,12 +23,13 @@ vi.mock("@/lib/effect/runtime", async () => {
 	const { Effect } = await import("effect");
 	const { runtimeModuleOver } = await import("@/test/effect-runtime");
 	const { organizationActionStubLayer } = await import("@/test/organization-action");
-	const { APPROVAL_MANAGEMENT_PRINCIPAL_QUERY } = await import("./approval-management");
+	const { ORGANIZATION_ABILITY_QUERY } = await import("@/lib/authorization/organization-ability");
+	const { defineAbilityFor } = await import("@/lib/authorization/ability");
 	return runtimeModuleOver(
 		organizationActionStubLayer(() => mocks.caller, {
 			query: (name, fn) => {
-				if (name === APPROVAL_MANAGEMENT_PRINCIPAL_QUERY) {
-					return Effect.succeed(mocks.principal) as never;
+				if (name === ORGANIZATION_ABILITY_QUERY) {
+					return Effect.sync(() => defineAbilityFor(mocks.principal as PrincipalContext)) as never;
 				}
 				if (name === "employeeLifecycle.findNotOnCurrentRoster") {
 					return Effect.succeed([]) as never;

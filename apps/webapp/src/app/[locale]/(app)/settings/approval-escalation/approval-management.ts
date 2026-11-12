@@ -1,12 +1,7 @@
 import { Effect } from "effect";
-import { defineAbilityFor } from "@/lib/authorization/ability";
-import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
+import { organizationAbility } from "@/lib/authorization/organization-ability";
 import { AuthorizationError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { OrganizationActor } from "@/lib/organization-action/organization-action";
-
-/** The `DatabaseService.query` name the actor's CASL principal loads under; tests answer it. */
-export const APPROVAL_MANAGEMENT_PRINCIPAL_QUERY = "approvalEscalation.principal";
 
 /**
  * Escalation and deputy decisions are approval-management concerns, not
@@ -21,11 +16,8 @@ export function approvalManagementRefusal(
 	message = "You do not have permission to manage approval escalation.",
 ) {
 	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const principal = yield* dbService.query(APPROVAL_MANAGEMENT_PRINCIPAL_QUERY, () =>
-			loadOrganizationPrincipalContext(dbService.db, { userId: actor.userId, organizationId }),
-		);
-		if (defineAbilityFor(principal).cannot("manage", "Approval")) {
+		const ability = yield* organizationAbility({ userId: actor.userId, organizationId });
+		if (ability.cannot("manage", "Approval")) {
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message,

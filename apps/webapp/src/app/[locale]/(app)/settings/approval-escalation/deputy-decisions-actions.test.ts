@@ -13,13 +13,14 @@ vi.mock("@/lib/effect/runtime", async () => {
 	const { Effect } = await import("effect");
 	const { runtimeModuleOver } = await import("@/test/effect-runtime");
 	const { organizationActionStubLayer } = await import("@/test/organization-action");
-	const { APPROVAL_MANAGEMENT_PRINCIPAL_QUERY } = await import("./approval-management");
+	const { ORGANIZATION_ABILITY_QUERY } = await import("@/lib/authorization/organization-ability");
+	const { defineAbilityFor } = await import("@/lib/authorization/ability");
 	return runtimeModuleOver(
 		organizationActionStubLayer(() => mocks.caller, {
 			db: { marker: "db" },
 			query: (name, fn) =>
-				name === APPROVAL_MANAGEMENT_PRINCIPAL_QUERY
-					? (Effect.succeed(mocks.principal) as never)
+				name === ORGANIZATION_ABILITY_QUERY
+					? (Effect.sync(() => defineAbilityFor(mocks.principal as PrincipalContext)) as never)
 					: Effect.promise(fn),
 		}),
 	);
