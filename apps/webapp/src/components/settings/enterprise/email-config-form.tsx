@@ -42,6 +42,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { formatDateTime } from "@/lib/datetime/format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { SecretStoreStatus } from "@/lib/vault";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
@@ -204,8 +205,7 @@ function useEmailConfigController({
 					);
 				} else {
 					toast.error(
-						result.error ||
-							t("settings.enterprise.email.saveFailed", "Failed to save"),
+						actionErrorMessage(t, result, {}, ["settings.enterprise.email.saveFailed", "Failed to save"]),
 					);
 				}
 			});
@@ -242,11 +242,7 @@ function useEmailConfigController({
 			);
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.enterprise.email.testFailed",
-						"Failed to send test email",
-					),
+				actionErrorMessage(t, result, {}, ["settings.enterprise.email.testFailed", "Failed to send test email"]),
 			);
 		}
 
@@ -273,8 +269,7 @@ function useEmailConfigController({
 				);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.enterprise.email.deleteFailed", "Failed to delete"),
+					actionErrorMessage(t, result, {}, ["settings.enterprise.email.deleteFailed", "Failed to delete"]),
 				);
 			}
 		});

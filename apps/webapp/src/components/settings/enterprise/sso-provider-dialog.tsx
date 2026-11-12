@@ -1,6 +1,6 @@
 "use client";
 
-import { actionData } from "@/components/settings/enterprise/action-data";
+import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
@@ -152,12 +152,7 @@ function useSsoProviderForm({
 				onOpenChange(false);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.sso.addError",
-								"Failed to add SSO provider",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.sso.addError", "Failed to add SSO provider"]),
 				);
 			}
 		},

@@ -1,6 +1,6 @@
 "use client";
 
-import { actionData } from "@/components/settings/enterprise/action-data";
+import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -87,21 +87,14 @@ function useSocialOAuthController({
 	const isEditing = !!editConfig;
 
 	const handleSubmissionError = (error: unknown) => {
-		if (error instanceof Error) {
-			toast.error(error.message);
-			return;
-		}
-
 		toast.error(
-			isEditing
-				? t(
-						"settings.enterprise.socialOAuth.updateConfigError",
-						"Failed to update config",
-					)
-				: t(
-						"settings.enterprise.socialOAuth.addProviderError",
-						"Failed to add provider",
-					),
+			enterpriseErrorMessage(
+				t,
+				error,
+				isEditing
+					? ["settings.enterprise.socialOAuth.updateConfigError", "Failed to update config"]
+					: ["settings.enterprise.socialOAuth.addProviderError", "Failed to add provider"],
+			),
 		);
 	};
 

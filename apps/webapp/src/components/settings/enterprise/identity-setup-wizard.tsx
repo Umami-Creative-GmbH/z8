@@ -1,6 +1,6 @@
 "use client";
 
-import { actionData } from "@/components/settings/enterprise/action-data";
+import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
@@ -404,12 +404,7 @@ function useIdentitySetupController({
 					);
 				} catch (error) {
 					toast.error(
-						error instanceof Error
-							? error.message
-							: t(
-									"settings.enterprise.identity.toast.providerSaveFailed",
-									"Failed to save provider",
-								),
+						enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.providerSaveFailed", "Failed to save provider"]),
 					);
 				}
 			});
@@ -465,12 +460,7 @@ function useIdentitySetupController({
 					);
 				} catch (error) {
 					toast.error(
-						error instanceof Error
-							? error.message
-							: t(
-									"settings.enterprise.identity.toast.ssoRegisterFailed",
-									"Failed to register SSO provider",
-								),
+						enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.ssoRegisterFailed", "Failed to register SSO provider"]),
 					);
 				}
 			});
@@ -517,12 +507,7 @@ function useIdentitySetupController({
 				);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.ssoTestRecordFailed",
-								"Failed to record SSO test",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.ssoTestRecordFailed", "Failed to record SSO test"]),
 				);
 			}
 		});
@@ -541,12 +526,7 @@ function useIdentitySetupController({
 				);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.domainStatusFailed",
-								"Failed to refresh domain status",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.domainStatusFailed", "Failed to refresh domain status"]),
 				);
 			}
 		});
@@ -572,12 +552,7 @@ function useIdentitySetupController({
 				);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.accessPolicyFailed",
-								"Failed to save access policy",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.accessPolicyFailed", "Failed to save access policy"]),
 				);
 			}
 		});
@@ -596,12 +571,7 @@ function useIdentitySetupController({
 				);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.activateFailed",
-								"Failed to activate setup",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.identity.toast.activateFailed", "Failed to activate setup"]),
 				);
 			}
 		});
