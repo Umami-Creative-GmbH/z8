@@ -90,7 +90,7 @@ const INPUT_PROBLEM_MESSAGES: Record<ProjectTaskInputProblem, { message: string;
 	};
 
 function inputProblem(problem: ProjectTaskInputProblem) {
-	return new ValidationError(INPUT_PROBLEM_MESSAGES[problem]);
+	return new ValidationError({ ...INPUT_PROBLEM_MESSAGES[problem], refusal: problem });
 }
 
 function validated<T>(
@@ -109,7 +109,11 @@ function taskBooked() {
 /** Typed failures raised inside a database callback keep their type. */
 function keepTypedTaskError(error: DatabaseError) {
 	if (isProjectTaskNameConflict(error.cause)) {
-		return new ValidationError({ message: DUPLICATE_NAME_MESSAGE, field: "name" });
+		return new ValidationError({
+			message: DUPLICATE_NAME_MESSAGE,
+			field: "name",
+			refusal: "duplicate_name",
+		});
 	}
 	// A booking's foreign key refusing the delete is a booked task too.
 	if (isProjectTaskBookingReference(error.cause)) return taskBooked();

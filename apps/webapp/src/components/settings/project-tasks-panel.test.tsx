@@ -143,7 +143,9 @@ describe("ProjectTasksPanel", () => {
 		const user = userEvent.setup();
 		actions.createProjectTask.mockResolvedValue({
 			success: false,
-			error: "A task with this name already exists in this project",
+			error: "server text",
+			code: "ValidationError",
+			refusal: "duplicate_name",
 		});
 		renderPanel();
 
@@ -153,7 +155,7 @@ describe("ProjectTasksPanel", () => {
 		await user.click(within(form).getByRole("button", { name: "Add task" }));
 
 		expect(toast.error).toHaveBeenCalledWith(
-			"A task with this name already exists in this project",
+			"A task with this name already exists in this project.",
 		);
 		expect((name as HTMLInputElement).value).toBe("Design");
 	});

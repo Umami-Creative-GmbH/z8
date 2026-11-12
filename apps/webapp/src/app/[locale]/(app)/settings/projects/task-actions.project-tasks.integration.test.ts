@@ -450,10 +450,12 @@ describe("project tasks on PostgreSQL", () => {
 			expect(duplicate).toMatchObject({
 				success: false,
 				error: expect.stringMatching(/already exists/i),
+				refusal: "duplicate_name",
 			});
 			expect(renamedOntoFirst).toMatchObject({
 				success: false,
 				error: expect.stringMatching(/already exists/i),
+				refusal: "duplicate_name",
 			});
 			expect((await taskRows()).map((row) => row.id).sort()).toEqual(
 				[first, second].sort(),

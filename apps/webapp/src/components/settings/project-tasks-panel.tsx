@@ -39,6 +39,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	PROJECT_TASK_DESCRIPTION_MAX_LENGTH,
 	type ProjectTask,
@@ -52,6 +53,7 @@ import {
 	PROJECT_TASK_NAME_INPUT,
 	useProjectTaskFieldRules,
 } from "./project-task-fields";
+import { PROJECT_TASK_SETTINGS_REFUSALS } from "./project-task-settings-refusals";
 
 interface ProjectTasksPanelProps {
 	project: { id: string; name: string } | null;
@@ -220,7 +222,9 @@ function TaskRow({ task, onChanged }: { task: ProjectTask; onChanged: () => void
 			onChanged();
 			return true;
 		}
-		toast.error(result?.error || messages.failure);
+		toast.error(
+			actionErrorMessage(t, result, PROJECT_TASK_SETTINGS_REFUSALS, () => messages.failure),
+		);
 		return false;
 	}
 
@@ -371,7 +375,9 @@ export function ProjectTasksPanel({ project, open, onOpenChange }: ProjectTasksP
 		queryKey: queryKeys.projects.tasks(projectId),
 		queryFn: async () => {
 			const result = await getProjectTasks({ projectId });
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				throw new Error(actionErrorMessage(t, result, PROJECT_TASK_SETTINGS_REFUSALS));
+			}
 			return result.data;
 		},
 		enabled: open && projectId !== "",
@@ -408,7 +414,10 @@ export function ProjectTasksPanel({ project, open, onOpenChange }: ProjectTasksP
 										return true;
 									}
 									toast.error(
-										result?.error || t("settings.projects.tasks.addFailed", "Failed to add task"),
+										actionErrorMessage(t, result, PROJECT_TASK_SETTINGS_REFUSALS, [
+											"settings.projects.tasks.addFailed",
+											"Failed to add task",
+										]),
 									);
 									return false;
 								}}
