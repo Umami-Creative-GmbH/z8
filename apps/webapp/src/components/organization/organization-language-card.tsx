@@ -1,6 +1,5 @@
 "use client";
 
-import { useServerDataState } from "@/hooks/use-server-data-state";
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -16,20 +15,26 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { useRouter } from "@/navigation";
 import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 interface OrganizationLanguageCardProps {
 	organizationId: string;
 	defaultLanguage: string;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 export function OrganizationLanguageCard({
 	organizationId,
 	defaultLanguage: initialDefaultLanguage,
-	currentMemberRole,
+	settingsAccess,
 }: OrganizationLanguageCardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -37,7 +42,7 @@ export function OrganizationLanguageCard({
 	const [isSaving, setIsSaving] = useState(false);
 	const [defaultLanguage, setDefaultLanguage] = useServerDataState(initialDefaultLanguage);
 
-	const canEdit = currentMemberRole === "admin" || currentMemberRole === "owner";
+	const canEdit = meetsSettingsAccess(settingsAccess, "orgAdmin");
 
 	const handleLanguageChange = async (newDefaultLanguage: string) => {
 		if (!canEdit || isSaving || newDefaultLanguage === defaultLanguage) return;

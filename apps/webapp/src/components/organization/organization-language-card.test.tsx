@@ -92,7 +92,7 @@ describe("OrganizationLanguageCard", () => {
 			<OrganizationLanguageCard
 				organizationId="org-1"
 				defaultLanguage="en"
-				currentMemberRole="admin"
+				settingsAccess="orgAdmin"
 			/>,
 		);
 
@@ -112,7 +112,7 @@ describe("OrganizationLanguageCard", () => {
 			<OrganizationLanguageCard
 				organizationId="org-1"
 				defaultLanguage="en"
-				currentMemberRole="member"
+				settingsAccess="member"
 			/>,
 		);
 
@@ -136,7 +136,7 @@ describe("OrganizationLanguageCard", () => {
 			<OrganizationLanguageCard
 				organizationId="org-1"
 				defaultLanguage="en"
-				currentMemberRole="admin"
+				settingsAccess="orgAdmin"
 			/>,
 		);
 
@@ -161,7 +161,7 @@ describe("OrganizationLanguageCard", () => {
 			<OrganizationLanguageCard
 				organizationId="org-1"
 				defaultLanguage="en"
-				currentMemberRole="admin"
+				settingsAccess="orgAdmin"
 			/>,
 		);
 
@@ -177,7 +177,7 @@ describe("OrganizationLanguageCard", () => {
 			<OrganizationLanguageCard
 				organizationId="org-1"
 				defaultLanguage="en"
-				currentMemberRole="admin"
+				settingsAccess="orgAdmin"
 			/>,
 		);
 
@@ -198,7 +198,7 @@ describe("OrganizationLanguageCard", () => {
 			<OrganizationLanguageCard
 				organizationId="org-1"
 				defaultLanguage="en"
-				currentMemberRole="admin"
+				settingsAccess="orgAdmin"
 			/>,
 		);
 

@@ -48,6 +48,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -67,6 +68,8 @@ export interface EmployeesPagePeopleProps {
 	invitations: InvitationWithInviter[];
 	currentMemberRole: "owner" | "admin" | "member";
 	currentUserId: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 export function EmployeesPageClient(props: {
@@ -195,7 +198,7 @@ export function EmployeesPageClient(props: {
 					/>
 					<PendingMembersCard
 						organizationId={props.organizationId}
-						currentMemberRole={people.currentMemberRole}
+						settingsAccess={people.settingsAccess}
 					/>
 				</TabsContent>
 
@@ -203,7 +206,7 @@ export function EmployeesPageClient(props: {
 					<InviteCodeManagement
 						organizationId={props.organizationId}
 						organizationToday={people.organizationToday}
-						currentMemberRole={people.currentMemberRole}
+						settingsAccess={people.settingsAccess}
 					/>
 				</TabsContent>
 			</Tabs>
@@ -211,7 +214,7 @@ export function EmployeesPageClient(props: {
 			<InviteMemberDialog
 				organizationId={props.organizationId}
 				organizationName={people.organizationName}
-				currentMemberRole={people.currentMemberRole}
+				settingsAccess={people.settingsAccess}
 				open={inviteDialogOpen}
 				onOpenChange={setInviteDialogOpen}
 			/>

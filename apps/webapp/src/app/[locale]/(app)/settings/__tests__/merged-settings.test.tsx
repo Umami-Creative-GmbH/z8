@@ -192,6 +192,7 @@ beforeEach(() => {
 	mocks.access.mockResolvedValue({
 		organizationId: "org-1",
 		authContext: { user: { id: "user-1" } },
+		settingsAccess: "orgAdmin",
 	});
 	mocks.email.mockResolvedValue(null);
 	mocks.secretStatus.mockResolvedValue({ connected: false });
@@ -318,7 +319,7 @@ describe("merged organization settings", () => {
 		);
 		expect(page.props.tabs[1].panel.props).toMatchObject({
 			organizationId: "org-1",
-			currentMemberRole: "admin",
+			settingsAccess: "orgAdmin",
 		});
 	});
 	it.each([
