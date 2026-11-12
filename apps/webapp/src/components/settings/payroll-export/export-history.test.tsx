@@ -55,16 +55,13 @@ describe("ExportHistory", () => {
 		const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 
 		render(
-			<ExportHistory organizationId="org-1" exports={[completedExport]} />,
+			<ExportHistory exports={[completedExport]} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Download export" }));
 
 		await waitFor(() => {
-			expect(getExportDownloadUrlActionMock).toHaveBeenCalledWith(
-				"org-1",
-				"job-1",
-			);
+			expect(getExportDownloadUrlActionMock).toHaveBeenCalledWith({ jobId: "job-1" });
 			expect(openSpy).toHaveBeenCalledWith(
 				"https://storage.example.test/signed-export",
 				"_blank",
@@ -75,13 +72,12 @@ describe("ExportHistory", () => {
 
 	it("reports the overtime payouts an export left out for want of a wage type (#1001)", () => {
 		const { rerender } = render(
-			<ExportHistory organizationId="org-1" exports={[completedExport]} />,
+			<ExportHistory exports={[completedExport]} />,
 		);
 		expect(screen.queryByText(/not exported/)).toBeNull();
 
 		rerender(
 			<ExportHistory
-				organizationId="org-1"
 				exports={[{ ...completedExport, unmappedOvertimePayoutCount: 2 }]}
 			/>,
 		);

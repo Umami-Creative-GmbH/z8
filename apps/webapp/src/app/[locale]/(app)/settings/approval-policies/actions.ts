@@ -1,23 +1,23 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { db } from "@/db";
 import {
 	absenceCategory,
 	approvalPolicy,
 	approvalPolicyCondition,
 	approvalPolicyStage,
-	type employee,
 	employeeGroup,
 	employeeGroupMember,
 	location,
 	team,
 } from "@/db/schema";
-import { findEmployeesNotOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
+import { DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import {
-	firstZodError,
 	normalizeApprovalPolicyInputForTest,
 	type PolicyInput,
 	uniqueValues,
@@ -32,19 +32,14 @@ const employeeGroupInputSchema = z.object({
 	employeeIds: z.array(z.string().trim().min(1)),
 });
 
-type DatabaseApproverType = Exclude<
-	PolicyInput["stages"][number]["approverType"],
-	"team_lead"
->;
+type DatabaseApproverType = Exclude<PolicyInput["stages"][number]["approverType"], "team_lead">;
 type OvertimeRiskValue = "none" | "warning" | "violation";
 
 function isOvertimeRiskValue(value: string): value is OvertimeRiskValue {
 	return value === "none" || value === "warning" || value === "violation";
 }
 
-function valuesForReferenceCondition(
-	condition: PolicyInput["conditions"][number],
-) {
+function valuesForReferenceCondition(condition: PolicyInput["conditions"][number]) {
 	if (condition.operator === "equals") {
 		return condition.value ? [condition.value] : [];
 	}
@@ -56,53 +51,20 @@ function valuesForReferenceCondition(
 	return [];
 }
 
-async function requirePolicyAdmin() {
-	const { getCurrentEmployee } = await import(
-		"@/app/[locale]/(app)/absences/current-employee"
+/** The approvers a policy names; each must be on the current roster. */
+function specificApproverIds(input: Pick<PolicyInput, "stages">) {
+	return input.stages.flatMap((stage) =>
+		stage.approverType === "specific_employee" && stage.approverEmployeeId
+			? [stage.approverEmployeeId]
+			: [],
 	);
-	const currentEmployee = await getCurrentEmployee();
-	if (currentEmployee?.role !== "admin") {
-		throw new Error("Only organization admins can manage approval policies.");
-	}
-
-	return currentEmployee;
-}
-
-async function existingPolicyForOrganization(
-	policyId: string,
-	organizationId: string,
-) {
-	return db.query.approvalPolicy.findFirst({
-		where: and(
-			eq(approvalPolicy.id, policyId),
-			eq(approvalPolicy.organizationId, organizationId),
-		),
-		columns: { id: true },
-	});
-}
-
-async function existingEmployeeGroupForOrganization(
-	groupId: string,
-	organizationId: string,
-) {
-	return db.query.employeeGroup.findFirst({
-		where: and(
-			eq(employeeGroup.id, groupId),
-			eq(employeeGroup.organizationId, organizationId),
-		),
-		columns: { id: true },
-	});
 }
 
 async function findMissingOrganizationReferences(
+	db: DatabaseClient,
 	organizationId: string,
 	ids: string[],
-	table:
-		| typeof team
-		| typeof location
-		| typeof absenceCategory
-		| typeof employeeGroup
-		| typeof employee,
+	table: typeof team | typeof location | typeof absenceCategory,
 ) {
 	const uniqueIds = uniqueValues(ids);
 	if (uniqueIds.length === 0) {
@@ -112,26 +74,14 @@ async function findMissingOrganizationReferences(
 	const rows = await db
 		.select({ id: table.id })
 		.from(table)
-		.where(
-			and(
-				eq(table.organizationId, organizationId),
-				inArray(table.id, uniqueIds),
-			),
-		);
+		.where(and(eq(table.organizationId, organizationId), inArray(table.id, uniqueIds)));
 	const foundIds = new Set(rows.map((row) => row.id));
 
 	return uniqueIds.filter((id) => !foundIds.has(id));
 }
 
-async function findMissingActiveOrganizationEmployees(
-	organizationId: string,
-	ids: string[],
-) {
-	// The current roster (#1438): a due departure counts the same as a deactivation.
-	return findEmployeesNotOnCurrentRoster(db, { organizationId, employeeIds: ids });
-}
-
 async function findMissingActiveEmployeeGroups(
+	db: DatabaseClient,
 	organizationId: string,
 	ids: string[],
 ) {
@@ -155,7 +105,13 @@ async function findMissingActiveEmployeeGroups(
 	return uniqueIds.filter((id) => !foundIds.has(id));
 }
 
-async function validatePolicyReferences(
+/**
+ * The teams, locations, absence categories and employee groups a policy names
+ * must belong to the organization. Its specific approvers are checked by the
+ * action's current-roster check.
+ */
+async function hasInvalidPolicyReferences(
+	db: DatabaseClient,
 	organizationId: string,
 	input: PolicyInput,
 ) {
@@ -177,41 +133,14 @@ async function validatePolicyReferences(
 		}
 	}
 
-	const specificApproverIds = input.stages.flatMap((stage) =>
-		stage.approverType === "specific_employee" && stage.approverEmployeeId
-			? [stage.approverEmployeeId]
-			: [],
-	);
-
-	const [
-		missingTeams,
-		missingLocations,
-		missingAbsenceCategories,
-		missingGroups,
-		missingApprovers,
-	] = await Promise.all([
-		findMissingOrganizationReferences(organizationId, teamIds, team),
-		findMissingOrganizationReferences(organizationId, locationIds, location),
-		findMissingOrganizationReferences(
-			organizationId,
-			absenceCategoryIds,
-			absenceCategory,
-		),
-		findMissingActiveEmployeeGroups(organizationId, employeeGroupIds),
-		findMissingActiveOrganizationEmployees(organizationId, specificApproverIds),
+	const missing = await Promise.all([
+		findMissingOrganizationReferences(db, organizationId, teamIds, team),
+		findMissingOrganizationReferences(db, organizationId, locationIds, location),
+		findMissingOrganizationReferences(db, organizationId, absenceCategoryIds, absenceCategory),
+		findMissingActiveEmployeeGroups(db, organizationId, employeeGroupIds),
 	]);
 
-	if (
-		missingTeams.length > 0 ||
-		missingLocations.length > 0 ||
-		missingAbsenceCategories.length > 0 ||
-		missingGroups.length > 0 ||
-		missingApprovers.length > 0
-	) {
-		return "One or more policy references are invalid.";
-	}
-
-	return null;
+	return missing.some((ids) => ids.length > 0);
 }
 
 function conditionInsertValue(
@@ -220,8 +149,7 @@ function conditionInsertValue(
 	condition: PolicyInput["conditions"][number],
 ) {
 	const valueJson = { value: condition.value, values: condition.values };
-	const equalValue =
-		condition.operator === "equals" ? condition.value : undefined;
+	const equalValue = condition.operator === "equals" ? condition.value : undefined;
 	const overtimeRisk = isOvertimeRiskValue(equalValue ?? "")
 		? (equalValue as OvertimeRiskValue)
 		: undefined;
@@ -234,14 +162,11 @@ function conditionInsertValue(
 		valueJson,
 		amountMin: condition.amountMin?.toString(),
 		amountMax: condition.amountMax?.toString(),
-		overtimeRisk:
-			condition.conditionType === "overtime_risk" ? overtimeRisk : undefined,
+		overtimeRisk: condition.conditionType === "overtime_risk" ? overtimeRisk : undefined,
 		teamId: condition.conditionType === "team" ? equalValue : undefined,
 		locationId: condition.conditionType === "location" ? equalValue : undefined,
-		absenceCategoryId:
-			condition.conditionType === "absence_category" ? equalValue : undefined,
-		employeeGroupId:
-			condition.conditionType === "employee_group" ? equalValue : undefined,
+		absenceCategoryId: condition.conditionType === "absence_category" ? equalValue : undefined,
+		employeeGroupId: condition.conditionType === "employee_group" ? equalValue : undefined,
 	};
 }
 
@@ -255,262 +180,254 @@ function databaseApproverType(
 	return approverType;
 }
 
-export async function getApprovalPolicies() {
-	"use server";
-
-	const currentEmployee = await requirePolicyAdmin();
-	return db.query.approvalPolicy.findMany({
-		where: (table, { eq: equals }) =>
-			equals(table.organizationId, currentEmployee.organizationId),
-		with: { conditions: true, stages: true },
-		orderBy: (table, { asc }) => [asc(table.priority)],
-	});
+/** A failed save, with a message safe to show users. */
+function saveFailed(message: string) {
+	return (error: DatabaseError) => new DatabaseError({ ...error, message });
 }
 
-export async function upsertApprovalPolicy(
-	input: PolicyInput & { id?: string },
-) {
-	"use server";
+export const getApprovalPolicies = organizationAction(
+	{ name: "approvalPolicies.list", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("approvalPolicies.list", () =>
+				dbService.db.query.approvalPolicy.findMany({
+					where: (table, { eq: equals }) => equals(table.organizationId, organizationId),
+					with: { conditions: true, stages: true },
+					orderBy: (table, { asc }) => [asc(table.priority)],
+				}),
+			);
+		}),
+);
 
-	const currentEmployee = await requirePolicyAdmin();
-	const parsed = upsertPolicyInputSchema.safeParse(input);
-	if (!parsed.success) {
-		return { success: false as const, error: firstZodError(parsed.error) };
-	}
+export const upsertApprovalPolicy = organizationAction(
+	{
+		name: "approvalPolicies.upsert",
+		requires: "orgAdmin",
+		schema: upsertPolicyInputSchema,
+		addsEmployees: specificApproverIds,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const normalized = normalizeApprovalPolicyInputForTest(input);
+			if (!normalized.success) {
+				return yield* Effect.fail(new ValidationError({ message: normalized.error }));
+			}
+			const policy = normalized.data;
+			const dbService = yield* DatabaseService;
+			const db = dbService.db;
 
-	const normalized = normalizeApprovalPolicyInputForTest(parsed.data);
-	if (!normalized.success) {
-		return normalized;
-	}
-
-	if (parsed.data.id) {
-		const existingPolicy = await existingPolicyForOrganization(
-			parsed.data.id,
-			currentEmployee.organizationId,
-		);
-		if (!existingPolicy) {
-			return {
-				success: false as const,
-				error: "Approval policy could not be saved.",
-			};
-		}
-	}
-
-	const referenceError = await validatePolicyReferences(
-		currentEmployee.organizationId,
-		normalized.data,
-	);
-	if (referenceError) {
-		return { success: false as const, error: referenceError };
-	}
-
-	try {
-		await db.transaction(async (tx) => {
-			const [savedPolicy] = await tx
-				.insert(approvalPolicy)
-				.values({
-					id: parsed.data.id,
-					organizationId: currentEmployee.organizationId,
-					name: normalized.data.name,
-					description: normalized.data.description || null,
-					isActive: normalized.data.isActive,
-					priority: normalized.data.priority,
-					createdBy: currentEmployee.userId,
-					updatedBy: currentEmployee.userId,
-				})
-				.onConflictDoUpdate({
-					target: approvalPolicy.id,
-					set: {
-						name: normalized.data.name,
-						description: normalized.data.description || null,
-						isActive: normalized.data.isActive,
-						priority: normalized.data.priority,
-						updatedBy: currentEmployee.userId,
-					},
-					where: eq(
-						approvalPolicy.organizationId,
-						currentEmployee.organizationId,
-					),
-				})
-				.returning();
-
-			await Promise.all([
-				(async () => {
-					await tx
-						.delete(approvalPolicyCondition)
-						.where(
-							and(
-								eq(approvalPolicyCondition.policyId, savedPolicy.id),
-								eq(
-									approvalPolicyCondition.organizationId,
-									currentEmployee.organizationId,
-								),
-							),
-						);
-
-					if (normalized.data.conditions.length > 0) {
-						await tx
-							.insert(approvalPolicyCondition)
-							.values(
-								normalized.data.conditions.map((condition) =>
-									conditionInsertValue(
-										currentEmployee.organizationId,
-										savedPolicy.id,
-										condition,
-									),
-								),
-							);
-					}
-				})(),
-				(async () => {
-					await tx
-						.delete(approvalPolicyStage)
-						.where(
-							and(
-								eq(approvalPolicyStage.policyId, savedPolicy.id),
-								eq(
-									approvalPolicyStage.organizationId,
-									currentEmployee.organizationId,
-								),
-							),
-						);
-
-					if (normalized.data.stages.length > 0) {
-						await tx.insert(approvalPolicyStage).values(
-							normalized.data.stages.map((stage) => ({
-								organizationId: currentEmployee.organizationId,
-								policyId: savedPolicy.id,
-								stepOrder: stage.stepOrder,
-								label: stage.label,
-								approverType: databaseApproverType(stage.approverType),
-								approverEmployeeId: stage.approverEmployeeId,
-								fallbackBehavior: stage.fallbackBehavior,
-							})),
-						);
-					}
-				})(),
-			]);
-		});
-	} catch {
-		return {
-			success: false as const,
-			error: "Approval policy could not be saved.",
-		};
-	}
-
-	revalidatePath("/settings/approval-policies");
-	return { success: true as const };
-}
-
-export async function getEmployeeGroups() {
-	"use server";
-
-	const currentEmployee = await requirePolicyAdmin();
-	return db.query.employeeGroup.findMany({
-		where: (table, { eq: equals }) =>
-			equals(table.organizationId, currentEmployee.organizationId),
-		with: { members: true },
-	});
-}
-
-export async function upsertEmployeeGroup(
-	input: z.infer<typeof employeeGroupInputSchema>,
-) {
-	"use server";
-
-	const currentEmployee = await requirePolicyAdmin();
-	const parsed = employeeGroupInputSchema.safeParse(input);
-	if (!parsed.success) {
-		return { success: false as const, error: firstZodError(parsed.error) };
-	}
-
-	const employeeIds = uniqueValues(parsed.data.employeeIds);
-	if (employeeIds.length !== parsed.data.employeeIds.length) {
-		return {
-			success: false as const,
-			error: "Employee group members must be unique.",
-		};
-	}
-
-	if (parsed.data.id) {
-		const existingGroup = await existingEmployeeGroupForOrganization(
-			parsed.data.id,
-			currentEmployee.organizationId,
-		);
-		if (!existingGroup) {
-			return {
-				success: false as const,
-				error: "Employee group could not be saved.",
-			};
-		}
-	}
-
-	const missingEmployees = await findMissingActiveOrganizationEmployees(
-		currentEmployee.organizationId,
-		employeeIds,
-	);
-	if (missingEmployees.length > 0) {
-		return {
-			success: false as const,
-			error: "One or more employee group members are invalid.",
-		};
-	}
-
-	try {
-		await db.transaction(async (tx) => {
-			const [group] = await tx
-				.insert(employeeGroup)
-				.values({
-					id: parsed.data.id,
-					organizationId: currentEmployee.organizationId,
-					name: parsed.data.name,
-					description: parsed.data.description || null,
-					isActive: parsed.data.isActive,
-				})
-				.onConflictDoUpdate({
-					target: employeeGroup.id,
-					set: {
-						name: parsed.data.name,
-						description: parsed.data.description || null,
-						isActive: parsed.data.isActive,
-					},
-					where: eq(
-						employeeGroup.organizationId,
-						currentEmployee.organizationId,
-					),
-				})
-				.returning();
-
-			await tx
-				.delete(employeeGroupMember)
-				.where(
-					and(
-						eq(employeeGroupMember.groupId, group.id),
-						eq(
-							employeeGroupMember.organizationId,
-							currentEmployee.organizationId,
+			if (input.id) {
+				const policyId = input.id;
+				const existingPolicy = yield* dbService.query("approvalPolicies.findExisting", () =>
+					db.query.approvalPolicy.findFirst({
+						where: and(
+							eq(approvalPolicy.id, policyId),
+							eq(approvalPolicy.organizationId, organizationId),
 						),
-					),
+						columns: { id: true },
+					}),
 				);
+				if (!existingPolicy) {
+					return yield* Effect.fail(
+						new ValidationError({ message: "Approval policy could not be saved." }),
+					);
+				}
+			}
 
-			if (employeeIds.length > 0) {
-				await tx.insert(employeeGroupMember).values(
-					employeeIds.map((employeeId) => ({
-						organizationId: currentEmployee.organizationId,
-						groupId: group.id,
-						employeeId,
-						createdBy: currentEmployee.userId,
-					})),
+			const invalidReferences = yield* dbService.query("approvalPolicies.checkReferences", () =>
+				hasInvalidPolicyReferences(db, organizationId, policy),
+			);
+			if (invalidReferences) {
+				return yield* Effect.fail(
+					new ValidationError({ message: "One or more policy references are invalid." }),
 				);
 			}
-		});
-	} catch {
-		return {
-			success: false as const,
-			error: "Employee group could not be saved.",
-		};
-	}
 
-	revalidatePath("/settings/approval-policies");
-	return { success: true as const };
-}
+			yield* dbService
+				.query("approvalPolicies.save", () =>
+					db.transaction(async (tx) => {
+						const [savedPolicy] = await tx
+							.insert(approvalPolicy)
+							.values({
+								id: input.id,
+								organizationId,
+								name: policy.name,
+								description: policy.description || null,
+								isActive: policy.isActive,
+								priority: policy.priority,
+								createdBy: actor.userId,
+								updatedBy: actor.userId,
+							})
+							.onConflictDoUpdate({
+								target: approvalPolicy.id,
+								set: {
+									name: policy.name,
+									description: policy.description || null,
+									isActive: policy.isActive,
+									priority: policy.priority,
+									updatedBy: actor.userId,
+								},
+								where: eq(approvalPolicy.organizationId, organizationId),
+							})
+							.returning();
+
+						await Promise.all([
+							(async () => {
+								await tx
+									.delete(approvalPolicyCondition)
+									.where(
+										and(
+											eq(approvalPolicyCondition.policyId, savedPolicy.id),
+											eq(approvalPolicyCondition.organizationId, organizationId),
+										),
+									);
+
+								if (policy.conditions.length > 0) {
+									await tx
+										.insert(approvalPolicyCondition)
+										.values(
+											policy.conditions.map((condition) =>
+												conditionInsertValue(organizationId, savedPolicy.id, condition),
+											),
+										);
+								}
+							})(),
+							(async () => {
+								await tx
+									.delete(approvalPolicyStage)
+									.where(
+										and(
+											eq(approvalPolicyStage.policyId, savedPolicy.id),
+											eq(approvalPolicyStage.organizationId, organizationId),
+										),
+									);
+
+								if (policy.stages.length > 0) {
+									await tx.insert(approvalPolicyStage).values(
+										policy.stages.map((stage) => ({
+											organizationId,
+											policyId: savedPolicy.id,
+											stepOrder: stage.stepOrder,
+											label: stage.label,
+											approverType: databaseApproverType(stage.approverType),
+											approverEmployeeId: stage.approverEmployeeId,
+											fallbackBehavior: stage.fallbackBehavior,
+										})),
+									);
+								}
+							})(),
+						]);
+					}),
+				)
+				.pipe(Effect.mapError(saveFailed("Approval policy could not be saved.")));
+
+			revalidatePath("/settings/approval-policies");
+		}),
+);
+
+export const getEmployeeGroups = organizationAction(
+	{ name: "approvalPolicies.listEmployeeGroups", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("approvalPolicies.listEmployeeGroups", () =>
+				dbService.db.query.employeeGroup.findMany({
+					where: (table, { eq: equals }) => equals(table.organizationId, organizationId),
+					with: { members: true },
+				}),
+			);
+		}),
+);
+
+export const upsertEmployeeGroup = organizationAction(
+	{
+		name: "approvalPolicies.upsertEmployeeGroup",
+		requires: "orgAdmin",
+		schema: employeeGroupInputSchema,
+		// The save replaces the members, so every member must be on the current roster.
+		addsEmployees: (input) => input.employeeIds,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const employeeIds = uniqueValues(input.employeeIds);
+			if (employeeIds.length !== input.employeeIds.length) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Employee group members must be unique.",
+						field: "employeeIds",
+					}),
+				);
+			}
+
+			const dbService = yield* DatabaseService;
+			const db = dbService.db;
+			if (input.id) {
+				const groupId = input.id;
+				const existingGroup = yield* dbService.query(
+					"approvalPolicies.findExistingEmployeeGroup",
+					() =>
+						db.query.employeeGroup.findFirst({
+							where: and(
+								eq(employeeGroup.id, groupId),
+								eq(employeeGroup.organizationId, organizationId),
+							),
+							columns: { id: true },
+						}),
+				);
+				if (!existingGroup) {
+					return yield* Effect.fail(
+						new ValidationError({ message: "Employee group could not be saved." }),
+					);
+				}
+			}
+
+			yield* dbService
+				.query("approvalPolicies.saveEmployeeGroup", () =>
+					db.transaction(async (tx) => {
+						const [group] = await tx
+							.insert(employeeGroup)
+							.values({
+								id: input.id,
+								organizationId,
+								name: input.name,
+								description: input.description || null,
+								isActive: input.isActive,
+							})
+							.onConflictDoUpdate({
+								target: employeeGroup.id,
+								set: {
+									name: input.name,
+									description: input.description || null,
+									isActive: input.isActive,
+								},
+								where: eq(employeeGroup.organizationId, organizationId),
+							})
+							.returning();
+
+						await tx
+							.delete(employeeGroupMember)
+							.where(
+								and(
+									eq(employeeGroupMember.groupId, group.id),
+									eq(employeeGroupMember.organizationId, organizationId),
+								),
+							);
+
+						if (employeeIds.length > 0) {
+							await tx.insert(employeeGroupMember).values(
+								employeeIds.map((employeeId) => ({
+									organizationId,
+									groupId: group.id,
+									employeeId,
+									createdBy: actor.userId,
+								})),
+							);
+						}
+					}),
+				)
+				.pipe(Effect.mapError(saveFailed("Employee group could not be saved.")));
+
+			revalidatePath("/settings/approval-policies");
+		}),
+);

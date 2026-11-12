@@ -29,8 +29,8 @@ export async function renderExportSettingsView({
 		await Promise.all([
 			getTranslate(),
 			isExportS3Configured(organizationId),
-			getStorageConfigAction(organizationId),
-			getExportHistoryAction(organizationId),
+			getStorageConfigAction(),
+			getExportHistoryAction(),
 		]);
 
 	const storageConfig = storageConfigResult.success
@@ -69,7 +69,7 @@ export async function renderExportSettingsView({
 				</TabsList>
 				<TabsContent value="export" className="mt-4">
 					{s3Configured ? (
-						<ExportForm organizationId={organizationId} />
+						<ExportForm />
 					) : (
 						<Card className="border-warning">
 							<CardHeader>
@@ -90,13 +90,10 @@ export async function renderExportSettingsView({
 					)}
 				</TabsContent>
 				<TabsContent value="history" className="mt-4">
-					<ExportHistory exports={exports} organizationId={organizationId} />
+					<ExportHistory exports={exports} />
 				</TabsContent>
 				<TabsContent value="storage" className="mt-4">
-					<StorageSettingsForm
-						organizationId={organizationId}
-						initialConfig={storageConfig}
-					/>
+					<StorageSettingsForm initialConfig={storageConfig} />
 				</TabsContent>
 			</Tabs>
 		</div>

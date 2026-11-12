@@ -613,7 +613,7 @@ describe("payroll file exports carry expense lines (#852)", () => {
 		const { discardPayrollRunAction } = await import(
 			"@/app/[locale]/(app)/settings/payroll-export/actions"
 		);
-		const discarded = await discardPayrollRunAction(ORG, run.jobId);
+		const discarded = await discardPayrollRunAction({ jobId: run.jobId });
 
 		expect(discarded).toEqual({
 			success: true,
@@ -632,7 +632,7 @@ describe("payroll file exports carry expense lines (#852)", () => {
 		expect(next.content).toContain(datevLine("P-REQ", "9100", "100.00", overlapping));
 		// Discarding again finds nothing to discard.
 		signIn("finance");
-		expect(await discardPayrollRunAction(ORG, run.jobId)).toEqual({
+		expect(await discardPayrollRunAction({ jobId: run.jobId })).toEqual({
 			success: true,
 			data: { status: "not_found" },
 		});

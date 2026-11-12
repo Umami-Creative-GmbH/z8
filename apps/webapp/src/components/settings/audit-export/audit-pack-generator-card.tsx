@@ -172,7 +172,7 @@ function AuditPackGeneratorCardForOrganization({
 			setIsLoadingRequests(true);
 		}
 		const actionResult = await settle(
-			getAuditPackRequestsAction(organizationId, 10),
+			getAuditPackRequestsAction({ limit: 10 }),
 		);
 		if (
 			organizationOperationRef.current !== organizationOperation ||
@@ -249,7 +249,6 @@ function AuditPackGeneratorCardForOrganization({
 		await runWithBusyState(setIsSubmitting, async () => {
 			const actionResult = await settle(
 				createAuditPackAction({
-					organizationId,
 					startDateIso: value.startDate,
 					endDateIso: value.endDate,
 				}),
@@ -323,7 +322,7 @@ function AuditPackGeneratorCardForOrganization({
 		const organizationOperation = organizationOperationRef.current;
 		setDownloadingRequestId(requestId);
 		const actionResult = await settle(
-			getAuditPackDownloadUrlAction(requestId, organizationId),
+			getAuditPackDownloadUrlAction({ requestId }),
 		);
 		if (
 			organizationOperationRef.current !== organizationOperation ||

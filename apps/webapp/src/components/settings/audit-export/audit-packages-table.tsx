@@ -61,12 +61,10 @@ function formatFileSize(bytes: number): string {
 }
 
 interface AuditPackagesTableProps {
-	organizationId: string;
 	packages: AuditPackageInfo[];
 }
 
 export function AuditPackagesTable({
-	organizationId,
 	packages,
 }: AuditPackagesTableProps) {
 	const { t } = useTranslate();
@@ -82,7 +80,7 @@ export function AuditPackagesTable({
 	const handleVerify = async (packageId: string) => {
 		setVerifying(packageId);
 		try {
-			const result = await verifyAuditPackageAction(packageId, organizationId);
+			const result = await verifyAuditPackageAction({ packageId });
 			if (result.success) {
 				setVerificationResult({ packageId, result: result.data });
 			} else {

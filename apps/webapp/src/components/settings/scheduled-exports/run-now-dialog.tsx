@@ -23,7 +23,6 @@ import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-st
 interface RunNowDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	organizationId: string;
 	scheduleId: string;
 	scheduleName: string;
 	dateRangeStrategy: string;
@@ -68,7 +67,6 @@ function getEstimatedDateRange(
 export function RunNowDialog({
 	open,
 	onOpenChange,
-	organizationId,
 	scheduleId,
 	scheduleName,
 	dateRangeStrategy,
@@ -91,7 +89,7 @@ export function RunNowDialog({
 
 	const handleRunNow = () => {
 		startTransition(async () => {
-			const result = await runScheduledExportNowAction(organizationId, scheduleId).catch(() => {
+			const result = await runScheduledExportNowAction({ scheduleId }).catch(() => {
 				toast.error(
 					t("settings.scheduledExports.toast.unexpectedError", "An unexpected error occurred"),
 				);

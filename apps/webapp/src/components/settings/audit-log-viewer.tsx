@@ -314,7 +314,7 @@ function AuditLogViewerForOrganization({
 		};
 		operationRef.current = operation;
 		setExporting(true);
-		const result = await exportAuditLogsAction(startDate, endDate).catch(
+		const result = await exportAuditLogsAction({ startDate, endDate }).catch(
 			() => null,
 		);
 		if (
@@ -332,7 +332,7 @@ function AuditLogViewerForOrganization({
 			return;
 		}
 
-		if (result.success && result.data) {
+		if (result.success) {
 			// Create and download JSON file
 			const blob = new Blob([JSON.stringify(result.data, null, 2)], {
 				type: "application/json",

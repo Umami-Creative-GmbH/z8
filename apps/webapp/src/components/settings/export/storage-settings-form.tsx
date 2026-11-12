@@ -45,16 +45,11 @@ import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 
 interface StorageSettingsFormProps {
-	organizationId: string;
 	initialConfig?: StorageConfigResult | null;
 	onConfigChange?: (hasConfig: boolean) => void;
 }
 
-function useStorageSettingsForm({
-	organizationId,
-	initialConfig,
-	onConfigChange,
-}: StorageSettingsFormProps) {
+function useStorageSettingsForm({ initialConfig, onConfigChange }: StorageSettingsFormProps) {
 	const { t } = useTranslate();
 	const displayContext = useDisplayContext();
 	const [isPending, startTransition] = useTransition();
@@ -83,7 +78,6 @@ function useStorageSettingsForm({
 				let result: Awaited<ReturnType<typeof saveStorageConfigAction>>;
 				try {
 					result = await saveStorageConfigAction({
-						organizationId,
 						bucket: value.bucket,
 						region: value.region,
 						endpoint: value.endpoint || undefined,
@@ -139,7 +133,7 @@ function useStorageSettingsForm({
 		: null;
 
 	useViewRefresh(async () => {
-		const result = await getStorageConfigAction(organizationId);
+		const result = await getStorageConfigAction();
 		if (!result.success) throw new Error(result.error);
 		setConfig(result.data);
 		onConfigChange?.(Boolean(result.data));
@@ -161,7 +155,7 @@ function useStorageSettingsForm({
 	useEffect(() => {
 		if (!initialConfig) {
 			startTransition(async () => {
-				const result = await getStorageConfigAction(organizationId);
+				const result = await getStorageConfigAction();
 				if (result.success && result.data) {
 					setConfig(result.data);
 					if (!form.store.state.isDirty)
@@ -178,7 +172,7 @@ function useStorageSettingsForm({
 				}
 			});
 		}
-	}, [organizationId, initialConfig, form]);
+	}, [initialConfig, form]);
 
 	const handleTestConnection = () => {
 		setIsTesting(true);
@@ -200,9 +194,7 @@ function useStorageSettingsForm({
 						}
 					: undefined;
 
-			const result = await testStorageConnectionAction(organizationId, testConfig).catch(
-				() => null,
-			);
+			const result = await testStorageConnectionAction({ testConfig }).catch(() => null);
 			if (!result) {
 				setTestResult({
 					success: false,
@@ -216,7 +208,7 @@ function useStorageSettingsForm({
 				setTestResult(result.data);
 				if (result.data.success) {
 					// Refresh config to get updated verification status
-					const configResult = await getStorageConfigAction(organizationId).catch(() => null);
+					const configResult = await getStorageConfigAction().catch(() => null);
 					if (configResult?.success && configResult.data) {
 						setConfig(configResult.data);
 					}
@@ -237,7 +229,7 @@ function useStorageSettingsForm({
 		startTransition(async () => {
 			let result: Awaited<ReturnType<typeof deleteStorageConfigAction>>;
 			try {
-				result = await deleteStorageConfigAction(organizationId);
+				result = await deleteStorageConfigAction();
 			} catch {
 				toast.error(t("settings.dataExport.storage.deleteError", "Failed to delete configuration"));
 				return;

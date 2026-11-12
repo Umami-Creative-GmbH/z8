@@ -74,7 +74,6 @@ describe("StorageSettingsForm", () => {
 		const onConfigChange = vi.fn();
 		render(
 			<StorageSettingsForm
-				organizationId="org-1"
 				onConfigChange={onConfigChange}
 				initialConfig={existingConfig}
 			/>,
@@ -86,7 +85,6 @@ describe("StorageSettingsForm", () => {
 		await waitFor(() => expect(onConfigChange).toHaveBeenCalledWith(true));
 		expect(toast.success).toHaveBeenCalledWith("Configuration saved", expect.any(Object));
 		expect(saveMock.mock.calls[0]?.[0]).toEqual({
-			organizationId: "org-1",
 			bucket: "existing-bucket",
 			region: "eu-central-1",
 			endpoint: undefined,
@@ -97,10 +95,7 @@ describe("StorageSettingsForm", () => {
 		saveMock.mockRejectedValue(new Error("save rejected"));
 		deleteMock.mockRejectedValue(new Error("delete rejected"));
 		render(
-			<StorageSettingsForm
-				organizationId="org-1"
-				initialConfig={existingConfig}
-			/>,
+			<StorageSettingsForm initialConfig={existingConfig} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
@@ -123,7 +118,7 @@ describe("StorageSettingsForm", () => {
 	});
 	it("accepts fresh untouched config after mount loading and preserves credential drafts", async () => {
 		getMock.mockResolvedValue({ success: true, data: existingConfig });
-		render(<StorageSettingsForm organizationId="org-1" />);
+		render(<StorageSettingsForm />);
 		await screen.findByDisplayValue("existing-bucket");
 		getMock.mockResolvedValue({ success: true, data: { ...existingConfig, bucket: "fresh-bucket" } });
 		await act(async () => {

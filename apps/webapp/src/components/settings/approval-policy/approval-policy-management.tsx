@@ -33,9 +33,10 @@ import { ApprovalPolicyPreview } from "./approval-policy-preview";
 const approvalPolicyQueryKey = (organizationId: string) =>
 	["approval-policies", organizationId] as const;
 
-type ApprovalPolicyData = Awaited<
-	ReturnType<typeof getApprovalPolicies>
->[number];
+type ApprovalPolicyData = Extract<
+	Awaited<ReturnType<typeof getApprovalPolicies>>,
+	{ success: true }
+>["data"][number];
 type ApprovalPolicyPayload = ReturnType<typeof buildApprovalPolicyPayload>;
 
 interface ApprovalPolicyManagementProps {
@@ -59,7 +60,11 @@ export function ApprovalPolicyManagement({
 	const policyQueryKey = approvalPolicyQueryKey(organizationId);
 	const { data, isLoading, isError } = useQuery({
 		queryKey: policyQueryKey,
-		queryFn: getApprovalPolicies,
+		queryFn: async () => {
+			const result = await getApprovalPolicies();
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
 	});
 	const mutation = useMutation({
 		mutationFn: upsertApprovalPolicy,

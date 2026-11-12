@@ -255,11 +255,11 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "demo/actions.ts"), "utf8"),
 		);
 
-		expect(pageSource.includes("assertDemoDataEnabledForOrganization(")).toBe(
+		expect(pageSource.includes("isDemoDataEnabledForOrganization(")).toBe(
 			true,
 		);
 		expect(pageSource.includes("notFound(")).toBe(true);
-		expect(actionsSource.includes("canUseDemoData(")).toBe(true);
+		expect(actionsSource.includes("demoDataFeatureGate(")).toBe(true);
 		expect(actionsSource).not.toMatch(
 			/Effect\.promise\(\(\) => isOrgAdminCasl\(/,
 		);
@@ -769,7 +769,7 @@ describe("org-admin settings route access", () => {
 			auditLogSource.includes('authContext.employee?.role !== "admin"'),
 		).toBe(false);
 		expect(
-			auditLogActionsSource.includes("canManageCurrentOrganizationSettings("),
+			auditLogActionsSource.includes('requires: "orgAdmin"'),
 		).toBe(true);
 		expect(auditLogActionsSource.includes('employee?.role !== "admin"')).toBe(
 			false,

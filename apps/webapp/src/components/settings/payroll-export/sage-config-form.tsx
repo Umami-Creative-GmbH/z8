@@ -46,7 +46,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface SageConfigFormProps {
-	organizationId: string;
 	initialConfig?: SageConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the personnel number (#821). */
@@ -60,7 +59,6 @@ const DEFAULT_CONFIG: SageLohnConfig = {
 };
 
 export function SageConfigForm({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -74,7 +72,6 @@ export function SageConfigForm({
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await saveSageConfigAction({
-					organizationId,
 					config: value,
 				});
 

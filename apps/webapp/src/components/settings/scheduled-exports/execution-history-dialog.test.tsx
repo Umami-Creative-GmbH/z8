@@ -163,18 +163,14 @@ describe("ExecutionHistoryDialog", () => {
 
 		expect(screen.getByText(/new-start/)).toBeTruthy();
 		expect(screen.queryByText(/old-start/)).toBeNull();
-		expect(mocks.getExecutionHistoryAction).toHaveBeenNthCalledWith(
-			1,
-			"org-old",
-			"schedule-old",
-			50,
-		);
-		expect(mocks.getExecutionHistoryAction).toHaveBeenNthCalledWith(
-			2,
-			"org-new",
-			"schedule-new",
-			50,
-		);
+		expect(mocks.getExecutionHistoryAction).toHaveBeenNthCalledWith(1, {
+			scheduleId: "schedule-old",
+			limit: 50,
+		});
+		expect(mocks.getExecutionHistoryAction).toHaveBeenNthCalledWith(2, {
+			scheduleId: "schedule-new",
+			limit: 50,
+		});
 	});
 
 	it("hides committed history during the render that switches schedule keys", async () => {

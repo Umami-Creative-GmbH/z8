@@ -140,7 +140,7 @@ function KeyManagementForOrganization({
 		const organizationOperation = organizationOperationRef.current;
 		const keyOperation = ++rotateOperationRef.current;
 		setLoading(true);
-		const actionResult = await settle(rotateSigningKeyAction(organizationId));
+		const actionResult = await settle(rotateSigningKeyAction());
 		if (
 			organizationOperationRef.current !== organizationOperation ||
 			!organizationOperation.active ||
@@ -177,7 +177,7 @@ function KeyManagementForOrganization({
 		const keyOperation = ++historyOperationRef.current;
 		setHistoryLoading(true);
 		const actionResult = await settle(
-			getSigningKeyHistoryAction(organizationId),
+			getSigningKeyHistoryAction(),
 		);
 		if (
 			organizationOperationRef.current !== organizationOperation ||
@@ -211,7 +211,7 @@ function KeyManagementForOrganization({
 		const organizationOperation = organizationOperationRef.current;
 		const keyOperation = ++publicKeyOperationRef.current;
 		setPublicKeyLoading(true);
-		const actionResult = await settle(exportPublicKeyAction(organizationId));
+		const actionResult = await settle(exportPublicKeyAction());
 		if (
 			organizationOperationRef.current !== organizationOperation ||
 			!organizationOperation.active ||

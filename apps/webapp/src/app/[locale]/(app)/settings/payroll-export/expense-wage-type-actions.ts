@@ -1,9 +1,11 @@
 "use server";
 
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
+import { z } from "zod";
+import { ValidationError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import {
 	getExpenseWageTypeMappings,
 	saveExpenseWageTypeMapping,
@@ -12,7 +14,6 @@ import type {
 	ExpenseWageTypeCodes,
 	ExpenseWageTypeMapping,
 } from "@/lib/payroll-export/expense-wage-type.types";
-import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 import type { PayrollLineKind } from "@/lib/travel-expenses/payroll-line-kind";
 import { getReimbursementChannel } from "@/lib/travel-expenses/reimbursement-channel";
 import type { ReimbursementChannel } from "@/lib/travel-expenses/reimbursement-channel.types";
@@ -29,46 +30,54 @@ export interface ExpenseWageTypeSetting {
 	mappings: ExpenseWageTypeMapping[];
 }
 
-export async function getExpenseWageTypeSetting(): Promise<
-	ServerActionResult<ExpenseWageTypeSetting>
-> {
-	try {
-		const admin = await requireExpenseAdministrator();
-		if ("error" in admin) return { success: false, error: admin.error };
-		const [channel, mappings] = await Promise.all([
-			getReimbursementChannel(admin.organizationId, { database: db }),
-			getExpenseWageTypeMappings(admin.organizationId, { database: db }),
-		]);
-		return { success: true, data: { channel, mappings } };
-	} catch (error) {
-		logger.error({ error }, "Failed to load the expense wage types");
-		return { success: false, error: "Failed to load the expense wage types" };
-	}
-}
+// The store checks the kind and the codes and answers "invalid" for anything else.
+const saveExpenseWageTypeSchema = z.strictObject({
+	kind: z.custom<PayrollLineKind>(
+		(value) => typeof value === "string",
+		"Invalid wage type mapping",
+	),
+	codes: z.custom<ExpenseWageTypeCodes>(
+		(value) => typeof value === "object" && value !== null,
+		"Invalid wage type mapping",
+	),
+});
 
-export async function saveExpenseWageTypeSetting(input: {
-	kind: PayrollLineKind;
-	codes: ExpenseWageTypeCodes;
-}): Promise<ServerActionResult<ExpenseWageTypeMapping>> {
-	try {
-		const admin = await requireExpenseAdministrator();
-		if ("error" in admin) return { success: false, error: admin.error };
-		const result = await saveExpenseWageTypeMapping(
-			{
-				organizationId: admin.organizationId,
-				actorUserId: admin.userId,
-				kind: input?.kind,
-				codes: input?.codes,
-			},
-			{ database: db },
-		);
-		if (result.status === "invalid") {
-			return { success: false, error: "Invalid wage type mapping" };
-		}
-		if (result.status === "saved") revalidatePath("/settings/payroll-export");
-		return { success: true, data: result.mapping };
-	} catch (error) {
-		logger.error({ error }, "Failed to save the expense wage type");
-		return { success: false, error: "Failed to save the expense wage type" };
-	}
-}
+export const getExpenseWageTypeSetting = organizationAction(
+	{ name: "payrollExport.getExpenseWageTypes", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const [channel, mappings] = yield* dbService.query("payrollExport.getExpenseWageTypes", () =>
+				Promise.all([
+					getReimbursementChannel(organizationId, { database: dbService.db }),
+					getExpenseWageTypeMappings(organizationId, { database: dbService.db }),
+				]),
+			);
+			return { channel, mappings } satisfies ExpenseWageTypeSetting;
+		}),
+);
+
+export const saveExpenseWageTypeSetting = organizationAction(
+	{
+		name: "payrollExport.saveExpenseWageType",
+		requires: "orgAdmin",
+		schema: saveExpenseWageTypeSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const result = yield* dbService.query("payrollExport.saveExpenseWageType", () =>
+				saveExpenseWageTypeMapping(
+					{ organizationId, actorUserId: actor.userId, kind: input.kind, codes: input.codes },
+					{ database: dbService.db },
+				),
+			);
+			if (result.status === "invalid") {
+				return yield* Effect.fail(
+					new ValidationError({ message: "Invalid wage type mapping", field: "codes" }),
+				);
+			}
+			if (result.status === "saved") revalidatePath("/settings/payroll-export");
+			return result.mapping;
+		}),
+);

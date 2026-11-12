@@ -230,7 +230,7 @@ const ROSTER_SURFACES: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/payroll-access/actions.ts",
-		functions: ["getPayrollAccessAdminDataAction"],
+		functions: ["loadPayrollAccessAdminData"],
 		note: "payroll access picker",
 	},
 	{

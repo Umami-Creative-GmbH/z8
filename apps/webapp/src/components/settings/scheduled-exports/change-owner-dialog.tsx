@@ -50,7 +50,7 @@ export function ChangeOwnerDialog({
 	const { data: candidates, isLoading } = useSWR(
 		open ? ["scheduled-export-owner-candidates", organizationId] : null,
 		async () => {
-			const result = await getScheduleOwnerCandidatesAction(organizationId);
+			const result = await getScheduleOwnerCandidatesAction();
 			if (result.success) return result.data;
 			throw new Error(result.error);
 		},
@@ -60,11 +60,10 @@ export function ChangeOwnerDialog({
 	const form = useForm({
 		defaultValues: { ownerId: schedule.ownerEligible ? schedule.ownerId : "" },
 		onSubmit: async ({ value }) => {
-			const result = await changeScheduledExportOwnerAction(
-				organizationId,
-				schedule.id,
-				value.ownerId,
-			).catch(() => null);
+			const result = await changeScheduledExportOwnerAction({
+				scheduleId: schedule.id,
+				newOwnerId: value.ownerId,
+			}).catch(() => null);
 			if (!result?.success) {
 				toast.error(
 					t("settings.scheduledExports.owner.changeFailed", "Couldn't change the owner"),

@@ -144,11 +144,9 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 		let roleId = role?.id;
 
 		if (isEditing && roleId) {
-			const updateResult = await updateCustomRole(roleId, {
-				name,
-				description,
-				baseTier,
-				color,
+			const updateResult = await updateCustomRole({
+				roleId,
+				input: { name, description, baseTier, color },
 			}).catch(() => null);
 			if (!updateResult?.success) {
 				toast.error(
@@ -186,7 +184,10 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 			return [{ action: action!, subject: subject! }];
 		});
 
-		const permResult = await setRolePermissions(roleId!, permsToSave).catch(() => null);
+		const permResult = await setRolePermissions({
+			roleId: roleId!,
+			permissions: permsToSave,
+		}).catch(() => null);
 		if (!permResult?.success) {
 			toast.error(
 				permResult?.error ??

@@ -37,7 +37,6 @@ import {
 import type { PayrollExportJobSummary } from "@/lib/payroll-export/types";
 
 interface ExportHistoryProps {
-	organizationId: string;
 	exports: PayrollExportJobSummary[];
 }
 
@@ -59,13 +58,13 @@ function formatFileSize(bytes: number | null) {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
+export function ExportHistory({ exports }: ExportHistoryProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 
 	const handleDownload = async (jobId: string) => {
 		startTransition(async () => {
-			const result = await getExportDownloadUrlAction(organizationId, jobId);
+			const result = await getExportDownloadUrlAction({ jobId });
 
 			if (result.success && result.data) {
 				window.open(result.data, "_blank", "noopener,noreferrer");
@@ -231,7 +230,7 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 											{exp.payrollRunIncludedReports > 0 && (
 												<DiscardPayrollRunButton
 													includedReports={exp.payrollRunIncludedReports}
-													discard={() => discardPayrollRunAction(organizationId, exp.id)}
+													discard={() => discardPayrollRunAction({ jobId: exp.id })}
 												/>
 											)}
 											{exp.status === "completed" && exp.fileName && (

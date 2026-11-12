@@ -81,11 +81,10 @@ export function ExecutionHistoryDialog({
 		const fetchHistory = async () => {
 			setIsLoading(true);
 			setError(null);
-			const result = await getExecutionHistoryAction(
-				organizationId,
+			const result = await getExecutionHistoryAction({
 				scheduleId,
-				50,
-			).then(
+				limit: 50,
+			}).then(
 				(response) => response,
 				() => null,
 			);
@@ -121,7 +120,7 @@ export function ExecutionHistoryDialog({
 		return () => {
 			cancelled = true;
 		};
-	}, [open, organizationId, requestKey, scheduleId, t]);
+	}, [open, requestKey, scheduleId, t]);
 
 	const isCurrentKey = loadedKey === requestKey;
 	const visibleExecutions = isCurrentKey ? executions : [];

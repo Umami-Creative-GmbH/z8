@@ -43,8 +43,9 @@ describe("RoleEditor", () => {
 		fireEvent.click(screen.getByRole("button", { name: /save/i }));
 
 		await waitFor(() => expect(onSaved).toHaveBeenCalled());
-		expect(actions.setRolePermissions).toHaveBeenCalledWith("role-1", [
-			{ action: "read", subject: "Report" },
-		]);
+		expect(actions.setRolePermissions).toHaveBeenCalledWith({
+			roleId: "role-1",
+			permissions: [{ action: "read", subject: "Report" }],
+		});
 	});
 });

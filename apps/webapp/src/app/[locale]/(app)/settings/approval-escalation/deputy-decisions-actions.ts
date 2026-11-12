@@ -1,11 +1,14 @@
 "use server";
 
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { z } from "zod";
 import { saveDeputyDecisionsEnabled } from "@/lib/approvals/approval-settings";
-import { getAbility, getAuthContext } from "@/lib/auth-helpers";
-import type { ServerActionResult } from "@/lib/effect/result";
+import { DatabaseError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import { organizationAction } from "@/lib/organization-action/organization-action";
+import { approvalManagementRefusal } from "./approval-management";
 
 const APPROVAL_ESCALATION_PATH = "/settings/approval-policies";
 
@@ -14,28 +17,37 @@ const APPROVAL_ESCALATION_PATH = "/settings/approval-policies";
  * setting that users who can manage approvals change, like the escalation
  * policy on the same page. Changes are audit-logged.
  */
-export async function saveDeputyDecisionsEnabledAction(input: {
-	enabled: unknown;
-}): Promise<ServerActionResult<{ deputyDecisionsEnabled: boolean }>> {
-	try {
-		const authContext = await getAuthContext();
-		const organizationId = authContext?.session.activeOrganizationId;
-		const ability = authContext && organizationId ? await getAbility() : null;
-		if (!authContext || !organizationId || !ability || ability.cannot("manage", "Approval")) {
-			return { success: false, error: "You do not have permission to manage approval settings." };
-		}
-		if (typeof input?.enabled !== "boolean") {
-			return { success: false, error: "Invalid setting" };
-		}
-		const result = await saveDeputyDecisionsEnabled(db, {
-			organizationId,
-			enabled: input.enabled,
-			actorUserId: authContext.user.id,
-		});
-		revalidatePath(APPROVAL_ESCALATION_PATH);
-		return { success: true, data: { deputyDecisionsEnabled: result.deputyDecisionsEnabled } };
-	} catch (error) {
-		logger.error({ error }, "Failed to save the deputy decisions setting");
-		return { success: false, error: "Failed to save the setting" };
-	}
-}
+export const saveDeputyDecisionsEnabledAction = organizationAction(
+	{
+		name: "approvalSettings.saveDeputyDecisionsEnabled",
+		requires: "member",
+		schema: z.object({ enabled: z.boolean("Invalid setting") }, "Invalid setting"),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* approvalManagementRefusal(
+				actor,
+				organizationId,
+				"You do not have permission to manage approval settings.",
+			);
+			const dbService = yield* DatabaseService;
+			const result = yield* Effect.tryPromise({
+				try: () =>
+					saveDeputyDecisionsEnabled(dbService.db, {
+						organizationId,
+						enabled: input.enabled,
+						actorUserId: actor.userId,
+					}),
+				catch: (error) => {
+					logger.error({ error }, "Failed to save the deputy decisions setting");
+					return new DatabaseError({
+						message: "Failed to save the setting",
+						operation: "approvalSettings.saveDeputyDecisionsEnabled",
+						cause: error,
+					});
+				},
+			});
+			revalidatePath(APPROVAL_ESCALATION_PATH);
+			return { deputyDecisionsEnabled: result.deputyDecisionsEnabled };
+		}),
+);

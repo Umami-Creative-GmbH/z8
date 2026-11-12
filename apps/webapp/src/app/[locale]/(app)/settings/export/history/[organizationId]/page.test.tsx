@@ -46,9 +46,7 @@ vi.mock("@/components/settings/export/export-form", () => ({
 	ExportForm: () => <div>export form</div>,
 }));
 vi.mock("@/components/settings/export/export-history", () => ({
-	ExportHistory: ({ organizationId }: { organizationId: string }) => (
-		<div>export history of {organizationId}</div>
-	),
+	ExportHistory: () => <div>export history list</div>,
 }));
 vi.mock("@/components/settings/export/storage-settings-form", () => ({
 	StorageSettingsForm: () => <div>storage settings form</div>,
@@ -89,7 +87,7 @@ describe("organization export history route", () => {
 		expect(screen.getByRole("tab", { name: "Export History" }).getAttribute("aria-selected")).toBe(
 			"true",
 		);
-		expect(screen.getByText("export history of org-active")).toBeTruthy();
+		expect(screen.getByText("export history list")).toBeTruthy();
 	});
 
 	it("offers a switch to the export's organization without loading any history", async () => {
@@ -106,7 +104,7 @@ describe("organization export history route", () => {
 		expect(target.pathname).toBe("/init");
 		expect(target.searchParams.get("organizationId")).toBe("org-export");
 		expect(target.searchParams.get("callbackUrl")).toBe("/settings/export/history/org-export");
-		expect(screen.queryByText(/export history of/)).toBeNull();
+		expect(screen.queryByText(/export history list/)).toBeNull();
 		expect(mocks.requireOrgAdminSettingsAccess).not.toHaveBeenCalled();
 	});
 
@@ -122,6 +120,6 @@ describe("organization export history route", () => {
 		mocks.requireOrgAdminSettingsAccess.mockResolvedValue({ organizationId: "org-other" });
 
 		await expect(renderPageFor("org-active")).rejects.toThrow("redirect:/settings");
-		expect(screen.queryByText(/export history of/)).toBeNull();
+		expect(screen.queryByText(/export history list/)).toBeNull();
 	});
 });

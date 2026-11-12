@@ -14,11 +14,7 @@ import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import { EXPORT_CATEGORY_COPY } from "./export-category-copy";
 
-interface ExportFormProps {
-	organizationId: string;
-}
-
-export function ExportForm({ organizationId }: ExportFormProps) {
+export function ExportForm() {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [selectedCategories, setSelectedCategories] = useState<Set<ExportCategory>>(new Set());
@@ -56,7 +52,6 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 		setIsSubmitting(true);
 		await runWithCleanup(async () => {
 			const result = await startExportAction({
-				organizationId,
 				categories: Array.from(selectedCategories),
 			}).catch((error: unknown) => {
 				toast.error(t("settings.dataExport.form.unexpectedError", "An unexpected error occurred"));

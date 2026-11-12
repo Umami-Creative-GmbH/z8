@@ -26,11 +26,10 @@ import type { AuditExportConfigData } from "@/lib/audit-export";
 import { useRouter } from "@/navigation";
 
 interface AuditConfigFormProps {
-	organizationId: string;
 	initialConfig: AuditExportConfigData | null;
 }
 
-export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFormProps) {
+export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
@@ -39,7 +38,7 @@ export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFo
 	const handleInitialize = async () => {
 		setLoading(true);
 		try {
-			const result = await initializeAuditExportAction(organizationId);
+			const result = await initializeAuditExportAction();
 			if (result.success) {
 				setConfig(result.data.config);
 				toast.success(
@@ -64,10 +63,7 @@ export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFo
 	const handleUpdate = async (updates: Partial<UpdateAuditConfigInput>) => {
 		setLoading(true);
 		try {
-			const result = await updateAuditConfigAction({
-				organizationId,
-				...updates,
-			});
+			const result = await updateAuditConfigAction(updates);
 			if (result.success) {
 				setConfig(result.data);
 				toast.success(t("settings.auditExport.config.updateSuccess", "Configuration updated"));

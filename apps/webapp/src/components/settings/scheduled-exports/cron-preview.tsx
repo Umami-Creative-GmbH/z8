@@ -29,12 +29,12 @@ export function CronPreview({ scheduleType, cronExpression, timezone }: CronPrev
 			setIsLoading(true);
 			setError(null);
 
-			const result = await previewNextExecutionsAction(
+			const result = await previewNextExecutionsAction({
 				scheduleType,
 				cronExpression,
 				timezone,
-				5,
-			).then(
+				count: 5,
+			}).then(
 				(response) => response,
 				() => null,
 			);

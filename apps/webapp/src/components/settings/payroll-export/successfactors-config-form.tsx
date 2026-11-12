@@ -52,7 +52,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface SuccessFactorsConfigFormProps {
-	organizationId: string;
 	initialConfig?: SuccessFactorsConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the match key (#821). */
@@ -75,7 +74,6 @@ export function SuccessFactorsConfigForm(props: SuccessFactorsConfigFormProps) {
 }
 
 function SuccessFactorsSettingsView({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -89,7 +87,6 @@ function SuccessFactorsSettingsView({
 		onSubmit: async ({ value }) =>
 			startTransition(async () => {
 				const result = await saveSuccessFactorsConfigAction({
-					organizationId,
 					config: value,
 				});
 				if (result.success) {
@@ -117,7 +114,6 @@ function SuccessFactorsSettingsView({
 	const testConnection = async () => {
 		setIsTestingConnection(true);
 		const result = await testSuccessFactorsConnectionAction({
-			organizationId,
 			config: form.state.values,
 		}).then(
 			(response) => response,

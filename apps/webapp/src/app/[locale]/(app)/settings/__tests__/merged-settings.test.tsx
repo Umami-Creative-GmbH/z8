@@ -276,8 +276,8 @@ describe("merged organization settings", () => {
 			organizationId: "org-1",
 			organizationTimezone: "Europe/Berlin",
 		});
-		expect(mocks.auditConfig).toHaveBeenCalledWith("org-1");
-		expect(mocks.packages).toHaveBeenCalledWith("org-1");
+		expect(mocks.auditConfig).toHaveBeenCalledWith();
+		expect(mocks.packages).toHaveBeenCalledWith({});
 	});
 	it("keeps signing keys unavailable until audit configuration exists", async () => {
 		mocks.auditConfig.mockResolvedValue({ success: true, data: null });

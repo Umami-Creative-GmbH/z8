@@ -58,7 +58,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface WorkdayConfigFormProps {
-	organizationId: string;
 	initialConfig?: WorkdayConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the match key (#821). */
@@ -77,7 +76,6 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 type RunTransition = (task: () => Promise<void>) => void;
 
 export function WorkdayConfigForm({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -102,7 +100,6 @@ export function WorkdayConfigForm({
 		}
 		run(async () => {
 			const result = await saveWorkdayCredentialsAction({
-				organizationId,
 				clientId,
 				clientSecret,
 			});
@@ -130,7 +127,7 @@ export function WorkdayConfigForm({
 	};
 	const deleteCredentials = () =>
 		run(async () => {
-			const result = await deleteWorkdayCredentialsAction(organizationId);
+			const result = await deleteWorkdayCredentialsAction();
 			if (result.success) {
 				toast.success(
 					t(
@@ -173,7 +170,6 @@ export function WorkdayConfigForm({
 			/>
 			<WorkdaySettingsCard
 				t={t}
-				organizationId={organizationId}
 				initialConfig={initialConfig}
 				hasConfiguredCredentials={!showCredentialsForm}
 				isPending={isPending}
@@ -411,7 +407,6 @@ function DeleteCredentialsButton({
 
 function WorkdaySettingsCard({
 	t,
-	organizationId,
 	initialConfig,
 	hasConfiguredCredentials,
 	isPending,
@@ -420,7 +415,6 @@ function WorkdaySettingsCard({
 	identifierFields,
 }: {
 	t: Translate;
-	organizationId: string;
 	initialConfig?: WorkdayConfigResult | null;
 	hasConfiguredCredentials: boolean;
 	isPending: boolean;
@@ -435,7 +429,6 @@ function WorkdaySettingsCard({
 		onSubmit: async ({ value }) =>
 			run(async () => {
 				const result = await saveWorkdayConfigAction({
-					organizationId,
 					config: value,
 				});
 				if (result.success) {
@@ -463,7 +456,6 @@ function WorkdaySettingsCard({
 	const testConnection = async () => {
 		setIsTesting(true);
 		const result = await testWorkdayConnectionAction({
-			organizationId,
 			config: form.state.values,
 		}).catch(() => null);
 		if (result?.success && result.data.success)

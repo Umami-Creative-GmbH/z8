@@ -33,8 +33,8 @@ async function AuditExportSettingsContent() {
 	const organizationTimezone = ownedOrganization?.timezone ?? "UTC";
 
 	const [configResult, packagesResult] = await Promise.all([
-		getAuditConfigAction(organizationId),
-		getAuditPackagesAction(organizationId),
+		getAuditConfigAction(),
+		getAuditPackagesAction({}),
 	]);
 
 	const config = configResult.success ? configResult.data : null;
@@ -68,10 +68,7 @@ async function AuditExportSettingsContent() {
 						"GoBD-compliant export hardening with digital signatures and WORM retention",
 					),
 					panel: (
-						<AuditConfigForm
-							organizationId={organizationId}
-							initialConfig={config}
-						/>
+						<AuditConfigForm initialConfig={config} />
 					),
 				},
 				{
@@ -87,10 +84,7 @@ async function AuditExportSettingsContent() {
 								organizationId={organizationId}
 								organizationTimezone={organizationTimezone}
 							/>
-							<AuditPackagesTable
-								organizationId={organizationId}
-								packages={packages}
-							/>
+							<AuditPackagesTable packages={packages} />
 						</div>
 					),
 				},
