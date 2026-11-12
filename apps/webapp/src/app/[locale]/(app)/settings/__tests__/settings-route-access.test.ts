@@ -758,9 +758,8 @@ describe("org-admin settings route access", () => {
 		expect(
 			travelExpensesSource.includes('authContext.employee.role !== "admin"'),
 		).toBe(false);
-		expect(
-			enterpriseActionsSource.includes("canManageCurrentOrganizationSettings("),
-		).toBe(true);
+		// Enterprise settings actions authorize through the organization action module (#1612).
+		expect(enterpriseActionsSource.includes('requires: "orgAdmin"')).toBe(true);
 		expect(
 			enterpriseActionsSource.includes(
 				'authContext.employee?.role !== "admin"',
