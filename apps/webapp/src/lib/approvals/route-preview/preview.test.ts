@@ -711,6 +711,20 @@ describe("approval route preview: shift requests", () => {
 		expect(new Set(approversOf(found))).toEqual(new Set([manager.id, admin.id]));
 	});
 
+	it("names a requesting decider among the deciders, as the decision check admits them", async () => {
+		const org = organization();
+		const lead = org.person({ role: "manager" });
+		const admin = org.person({ role: "admin" });
+
+		const own = await route(org.snapshot, employee(lead), "shift_request");
+
+		expect(own.variants[0]?.outcome).toMatchObject({
+			stages: [{ activation: "human" }],
+			notes: [],
+		});
+		expect(new Set(approversOf(own))).toEqual(new Set([lead.id, admin.id]));
+	});
+
 	it("notes a lone decider's own requests wait for them, and is unroutable with no decider", async () => {
 		const org = organization();
 		const lead = org.person({ role: "manager" });

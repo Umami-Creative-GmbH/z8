@@ -706,8 +706,8 @@ export async function routeApprovalRequesters(
 	function shiftRequestRoute(requester: Requester): ApprovalRoute {
 		const deciders = shiftRequestDeciders(snapshot.roster);
 		if (deciders.length === 0) return unroutable({ code: "no_decider" });
-		const others = deciders.filter((id) => id !== requester.id);
-		const alone = others.length === 0;
+		// Exactly the employees the decision check admits: a requesting decider among them (#1604).
+		const alone = deciders.every((id) => id === requester.id);
 		return combine([
 			{
 				variant: {},
@@ -722,7 +722,7 @@ export async function routeApprovalRequesters(
 							label: null,
 							approverType: "manager_or_admin",
 							fallbackBehavior: null,
-							approverEmployeeIds: alone ? deciders : others,
+							approverEmployeeIds: deciders,
 							activation: alone ? "requester_auto_approve" : "human",
 						},
 					],

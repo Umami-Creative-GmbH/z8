@@ -172,6 +172,16 @@ describe("shift request route parity (PostgreSQL)", () => {
 		expect(await decisionCheckDeciders()).toEqual(previewDeciders(route));
 	});
 
+	it("names a requesting manager among the deciders, as the decision check admits them", async () => {
+		await sql("update employee set role = 'manager' where id = $1", [requester.employeeId]);
+		const manager = await seed("manager");
+
+		const route = await previewRoute();
+
+		expect(previewDeciders(route)).toEqual(new Set([requester.employeeId, manager.employeeId]));
+		expect(await decisionCheckDeciders()).toEqual(previewDeciders(route));
+	});
+
 	it("is unroutable on an employee-only roster, where the decision check admits nobody", async () => {
 		await seed("employee");
 
