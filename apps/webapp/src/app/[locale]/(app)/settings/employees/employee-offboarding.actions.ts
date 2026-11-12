@@ -106,7 +106,7 @@ function toAppError(failure: DatabaseError, actor: LifecycleActor, action: strin
 	if (error.code === "employee_not_found") {
 		return new NotFoundError({ message, entityType: "employee" });
 	}
-	return new ValidationError({ message, field: error.code });
+	return new ValidationError({ message, field: error.code, refusal: error.code });
 }
 
 const lifecycleActorOf = (context: OrganizationActionContext<unknown>): LifecycleActor => ({
@@ -238,7 +238,7 @@ function toFollowUpError(
 				action,
 			});
 		}
-		return new ValidationError({ message, field: error.code });
+		return new ValidationError({ message, field: error.code, refusal: error.code });
 	}
 	return failure;
 }

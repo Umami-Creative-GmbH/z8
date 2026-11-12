@@ -290,6 +290,8 @@ function validateEligibleOwner(owner: ScheduleOwner, field: string) {
 				new ValidationError({
 					message: `The schedule owner, ${owner.name ?? owner.email ?? owner.userId}, is no longer an org admin. Make yourself or another org admin its owner first.`,
 					field,
+					refusal: "owner_not_org_admin",
+					value: { owner: owner.name ?? owner.email ?? owner.userId },
 				}),
 			);
 }
