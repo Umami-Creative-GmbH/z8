@@ -55,10 +55,13 @@ const OFF_MESSAGE = "Only owners and admins can manage personnel file officers";
 /** The shape of a grant; the store checks IDs, ownership and the scope rules. */
 const officerGrantSchema = z.strictObject(
 	{
-		officerEmployeeId: z.string("officerEmployeeId is required"),
+		officerEmployeeId: z.string({ error: "officerEmployeeId is required" }),
 		scope: z.enum(["all", "specific"], "Choose which employees the personnel file officer covers"),
-		teamIds: z.array(z.string("teamIds is required"), "teamIds must be an array"),
-		employeeIds: z.array(z.string("employeeIds is required"), "employeeIds must be an array"),
+		teamIds: z.array(z.string({ error: "teamIds is required" }), "teamIds must be an array"),
+		employeeIds: z.array(
+			z.string({ error: "employeeIds is required" }),
+			"employeeIds must be an array",
+		),
 		categories: z.array(
 			z.enum(DOCUMENT_CATEGORIES),
 			"Document categories must be contract, payslip, certificate, sick note or other",
@@ -157,7 +160,7 @@ export const revokePersonnelFileOfficerGrantAction = organizationAction(
 	{
 		name: "personnelFile.revokeOfficerGrant",
 		requires: "orgAdmin",
-		schema: z.strictObject({ grantId: z.string("grantId is required") }),
+		schema: z.strictObject({ grantId: z.string({ error: "grantId is required" }) }),
 	},
 	({ actor, organizationId, input }) =>
 		whilePersonnelFilesOn(

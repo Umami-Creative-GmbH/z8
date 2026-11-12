@@ -21,7 +21,7 @@ export const saveDeputyDecisionsEnabledAction = organizationAction(
 	{
 		name: "approvalSettings.saveDeputyDecisionsEnabled",
 		requires: "member",
-		schema: z.object({ enabled: z.boolean("Invalid setting") }, "Invalid setting"),
+		schema: z.object({ enabled: z.boolean({ error: "Invalid setting" }) }, "Invalid setting"),
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {

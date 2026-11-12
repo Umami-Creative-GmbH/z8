@@ -158,8 +158,8 @@ const workdayConfigInputSchema = configInputSchema<WorkdayConfig>();
 const personioConfigInputSchema = configInputSchema<PersonioConfig>();
 
 const credentialsInputSchema = z.strictObject({
-	clientId: z.string("Client ID is required"),
-	clientSecret: z.string("Client secret is required"),
+	clientId: z.string({ error: "Client ID is required" }),
+	clientSecret: z.string({ error: "Client secret is required" }),
 });
 
 const optionalCode = z.string().nullish();
@@ -181,19 +181,19 @@ const saveMappingSchema = z.strictObject({
 }) satisfies z.ZodType<SaveMappingInput>;
 
 const deleteMappingSchema = z.strictObject({
-	mappingId: z.string("Mapping is required"),
+	mappingId: z.string({ error: "Mapping is required" }),
 }) satisfies z.ZodType<DeleteMappingInput>;
 
 const startExportSchema = z.strictObject({
-	formatId: z.string("Export format is required"),
-	startDate: z.string("Start date is required"),
-	endDate: z.string("End date is required"),
+	formatId: z.string({ error: "Export format is required" }),
+	startDate: z.string({ error: "Start date is required" }),
+	endDate: z.string({ error: "End date is required" }),
 	employeeIds: z.array(z.string()).optional(),
 	teamIds: z.array(z.string()).optional(),
 	projectIds: z.array(z.string()).optional(),
 }) satisfies z.ZodType<StartExportInput>;
 
-const exportJobSchema = z.strictObject({ jobId: z.string("Export job is required") });
+const exportJobSchema = z.strictObject({ jobId: z.string({ error: "Export job is required" }) });
 
 export interface FilterOptions {
 	employees: Array<{

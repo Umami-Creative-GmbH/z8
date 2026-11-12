@@ -240,67 +240,7 @@ export function EmploymentDateCorrectionCard({
 							"Employment correction review",
 						)}
 					>
-						<p className="text-sm">
-							{t("settings.employmentCorrection.dateChange", "Actual employment start:")}{" "}
-							{review.previousEmploymentStartDate ??
-								t("settings.employmentCorrection.unknown", "Not recorded")}{" "}
-							→ {review.employmentStartDate}
-						</p>
-						{review.vacation.map((row) => (
-							<div key={row.year} className="rounded-md border p-3 text-sm">
-								<h3 className="font-medium">
-									{row.year} · {t("settings.employmentCorrection.vacation", "Vacation (days)")}
-								</h3>
-								<VacationPolicyConfigurationMessage
-									configuration={row.beforeConfiguration}
-									label={t("organization.tracking.before", "Before")}
-									className="mt-1 text-muted-foreground"
-								/>
-								<VacationPolicyConfigurationMessage
-									configuration={row.afterConfiguration}
-									label={t("organization.tracking.after", "After")}
-									className="mt-1 text-muted-foreground"
-								/>
-
-								<dl className="grid gap-2 sm:grid-cols-3">
-									<div>
-										<dt>{t("settings.employmentCorrection.allowance", "Allowance")}</dt>
-										<dd>
-											{row.before?.allowanceDays ?? "—"} → {row.after?.allowanceDays ?? "—"}
-										</dd>
-									</div>
-									<div>
-										<dt>{t("settings.employmentCorrection.total", "Total before usage")}</dt>
-										<dd>
-											{row.before?.totalDays ?? "—"} → {row.after?.totalDays ?? "—"}
-										</dd>
-									</div>
-									<div>
-										<dt>{t("settings.employmentCorrection.remaining", "Remaining")}</dt>
-										<dd>
-											{row.before?.remainingDays ?? "—"} → {row.after?.remainingDays ?? "—"}
-										</dd>
-									</div>
-								</dl>
-							</div>
-						))}
-						{review.employmentBlockers.length ? (
-							<ul role="alert" className="list-disc pl-5 text-sm text-destructive">
-								{review.employmentBlockers.map((item) => (
-									<li key={item.code}>{item.message}</li>
-								))}
-							</ul>
-						) : null}
-						<OrganizationTrackingImpact
-							impact={{
-								...review,
-								employees: review.employees.map((row) => ({ ...row, vacation: [] })),
-							}}
-							description={t(
-								"settings.employmentCorrection.workReview",
-								"Review required time and accumulated work balances below. Organization tracking dates, employee exceptions and opening-balance checkpoints stay unchanged.",
-							)}
-						/>
+						<CorrectionReviewDetails review={review} />
 						<form.Field name="reason">
 							{(field) => (
 								<div className="space-y-2">
@@ -331,5 +271,75 @@ export function EmploymentDateCorrectionCard({
 				) : null}
 			</CardContent>
 		</Card>
+	);
+}
+
+/** What the reviewed correction changes: the date, each vacation year, blockers and work balances. */
+function CorrectionReviewDetails({ review }: { review: EmploymentDateCorrectionImpact }) {
+	const { t } = useTranslate();
+	return (
+		<>
+			<p className="text-sm">
+				{t("settings.employmentCorrection.dateChange", "Actual employment start:")}{" "}
+				{review.previousEmploymentStartDate ??
+					t("settings.employmentCorrection.unknown", "Not recorded")}{" "}
+				→ {review.employmentStartDate}
+			</p>
+			{review.vacation.map((row) => (
+				<div key={row.year} className="rounded-md border p-3 text-sm">
+					<h3 className="font-medium">
+						{row.year} · {t("settings.employmentCorrection.vacation", "Vacation (days)")}
+					</h3>
+					<VacationPolicyConfigurationMessage
+						configuration={row.beforeConfiguration}
+						label={t("organization.tracking.before", "Before")}
+						className="mt-1 text-muted-foreground"
+					/>
+					<VacationPolicyConfigurationMessage
+						configuration={row.afterConfiguration}
+						label={t("organization.tracking.after", "After")}
+						className="mt-1 text-muted-foreground"
+					/>
+
+					<dl className="grid gap-2 sm:grid-cols-3">
+						<div>
+							<dt>{t("settings.employmentCorrection.allowance", "Allowance")}</dt>
+							<dd>
+								{row.before?.allowanceDays ?? "—"} → {row.after?.allowanceDays ?? "—"}
+							</dd>
+						</div>
+						<div>
+							<dt>{t("settings.employmentCorrection.total", "Total before usage")}</dt>
+							<dd>
+								{row.before?.totalDays ?? "—"} → {row.after?.totalDays ?? "—"}
+							</dd>
+						</div>
+						<div>
+							<dt>{t("settings.employmentCorrection.remaining", "Remaining")}</dt>
+							<dd>
+								{row.before?.remainingDays ?? "—"} → {row.after?.remainingDays ?? "—"}
+							</dd>
+						</div>
+					</dl>
+				</div>
+			))}
+			{review.employmentBlockers.length ? (
+				<ul role="alert" className="list-disc pl-5 text-sm text-destructive">
+					{review.employmentBlockers.map((item) => (
+						<li key={item.code}>{item.message}</li>
+					))}
+				</ul>
+			) : null}
+			<OrganizationTrackingImpact
+				impact={{
+					...review,
+					employees: review.employees.map((row) => ({ ...row, vacation: [] })),
+				}}
+				description={t(
+					"settings.employmentCorrection.workReview",
+					"Review required time and accumulated work balances below. Organization tracking dates, employee exceptions and opening-balance checkpoints stay unchanged.",
+				)}
+			/>
+		</>
 	);
 }

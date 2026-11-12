@@ -199,7 +199,9 @@ export const disposeApprovalEscalationAttention = organizationAction(
 );
 
 const retryDeliverySchema = z.object(
-	{ attentionId: z.string("Attention item not found.").uuid("Attention item not found.") },
+	{
+		attentionId: z.string({ error: "Attention item not found." }).uuid("Attention item not found."),
+	},
 	"Attention item not found.",
 );
 

@@ -37,7 +37,7 @@ export const saveReceiptExceptionSettings = organizationAction(
 		name: "travelExpenses.saveReceiptExceptions",
 		requires: "orgAdmin",
 		schema: z.object(
-			{ missingReceiptExceptionsAllowed: z.boolean("Invalid setting") },
+			{ missingReceiptExceptionsAllowed: z.boolean({ error: "Invalid setting" }) },
 			"Invalid setting",
 		),
 	},

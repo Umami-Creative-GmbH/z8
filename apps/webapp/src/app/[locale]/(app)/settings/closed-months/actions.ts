@@ -91,7 +91,7 @@ const parseMonth = (value: string) =>
 		catch: () => new ValidationError({ message: "Choose a calendar month", field: "month" }),
 	});
 
-const monthSchema = z.string("Choose a calendar month").transform((value, context) => {
+const monthSchema = z.string({ error: "Choose a calendar month" }).transform((value, context) => {
 	try {
 		return parseClosedMonth(value);
 	} catch {

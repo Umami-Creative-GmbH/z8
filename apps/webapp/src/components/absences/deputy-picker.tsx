@@ -29,7 +29,7 @@ import { queryKeys } from "@/lib/query/keys";
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 /** The deputy refusals' texts (#1011), an override map for `actionErrorMessage`. */
-export const DEPUTY_REFUSALS = {
+const DEPUTY_REFUSALS = {
 	deputy_required: [
 		"absences.deputy.errors.required",
 		"Choose a deputy: this absence type requires one.",

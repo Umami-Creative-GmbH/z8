@@ -71,7 +71,7 @@ export const approveReferenceRateSource = organizationAction(
 		schema: z.strictObject({
 			provider: z.enum(REFERENCE_RATE_PROVIDERS, "Unknown reference rate source"),
 			acknowledged: z
-				.boolean("Confirm how the reference rates may be used")
+				.boolean({ error: "Confirm how the reference rates may be used" })
 				.refine((acknowledged) => acknowledged, "Confirm how the reference rates may be used"),
 		}),
 	},
