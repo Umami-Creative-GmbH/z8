@@ -84,7 +84,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 
 	const deleteMutation = useMutation({
 		mutationFn: async (roleId: string) => {
-			const result = await deleteCustomRole(roleId);
+			const result = await deleteCustomRole({ roleId });
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {

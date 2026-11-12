@@ -1,194 +1,116 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
-const mockState = vi.hoisted(() => ({
-	session: {
-		user: {
-			id: "user-1",
-			email: "user@example.com",
-			name: "User",
-		},
-		session: {
-			activeOrganizationId: "org-1",
-		},
-	},
-	settingsAccessTier: "orgAdmin" as "orgAdmin" | "manager" | "member" | null,
-	employeeRow: null as any,
+const mocks = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
 	listRoles: vi.fn(),
 	createRole: vi.fn(),
-	employeeFindFirst: vi.fn(async () => mockState.employeeRow),
+	assignRole: vi.fn(),
+	rosterFindMany: vi.fn(),
 }));
-
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: {
-		userId: "userId",
-		organizationId: "organizationId",
-		isActive: "isActive",
-	},
-}));
-
-// Role mutations are services mocked below; protection is covered by its own suites.
-vi.mock("@/lib/authorization/authorization-mutation", () => ({
-	withAuthorizationMutation: vi.fn(),
-}));
-
-vi.mock("@/lib/auth-helpers", () => ({
-	getSettingsAccessTierForUser: vi.fn(async () => mockState.settingsAccessTier),
-}));
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	const AuthService = Context.Service<any>("AuthService");
-	return { AuthService };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
-	const DatabaseService = Context.Service<any>("DatabaseService");
-	return { DatabaseService };
-});
 
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
 	const { CustomRoleService } = await import("@/lib/effect/services/custom-role.service");
+	const call =
+		(fn: (...args: unknown[]) => unknown) =>
+		(...args: unknown[]) =>
+			Effect.promise(async () => fn(...args));
 
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+	return runtimeModuleOver(
 		Layer.mergeAll(
-			Layer.succeed(AuthService, {
-				getSession: () => Effect.succeed(mockState.session),
-			}),
-			Layer.succeed(DatabaseService, {
-				db: {
-					query: {
-						employee: {
-							findFirst: mockState.employeeFindFirst,
-						},
-					},
-				},
-				query: <T>(_key: string, fn: () => Promise<T>) => Effect.promise(fn),
+			organizationActionStubLayer(() => mocks.caller, {
+				db: { query: { employee: { findMany: mocks.rosterFindMany } } },
 			}),
 			Layer.succeed(CustomRoleService, {
-				listRoles: (organizationId: string) =>
-					Effect.promise(() => mockState.listRoles(organizationId)),
-				createRole: (organizationId: string, input: unknown, createdBy: string) =>
-					Effect.promise(() => mockState.createRole(organizationId, input, createdBy)),
+				listRoles: call(mocks.listRoles),
+				createRole: call(mocks.createRole),
+				assignRole: call(mocks.assignRole),
 				getRole: vi.fn(),
 				updateRole: vi.fn(),
 				deleteRole: vi.fn(),
 				setPermissions: vi.fn(),
-				assignRole: vi.fn(),
 				unassignRole: vi.fn(),
 				getEmployeeRoles: vi.fn(),
-			}),
+			} as never),
 		),
 	);
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { runtime } = await import("@/lib/effect/runtime");
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
+const { assignRoleToEmployee, createCustomRole, listCustomRoles } = await import("./actions");
 
-	const toServerActionResult = <_T>(exit: unknown) =>
-		Exit.match(exit as never, {
-			onFailure: (cause) => {
-				const defect = Result.getOrNull(Cause.findDefect(cause));
-				const failure = Option.getOrNull(Cause.findErrorOption(cause));
-				const error = defect ?? failure ?? cause;
-
-				if (error && typeof error === "object" && "_tag" in error) {
-					return {
-						success: false as const,
-						error: (error as { message: string }).message,
-						code: (error as { _tag: string })._tag,
-					};
-				}
-
-				return {
-					success: false as const,
-					error: error instanceof Error ? error.message : "An unexpected error occurred",
-					code: "UNKNOWN_ERROR",
-				};
-			},
-			onSuccess: (data) => ({ success: true as const, data }),
-		});
-
-	return {
-		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromiseExit<T>>[0]) => {
-			const exit = await runtime.runPromiseExit(effect);
-			return toServerActionResult(exit);
-		},
-	};
-});
-
-const { createCustomRole, listCustomRoles } = await import("./actions");
+const ownerWithoutEmployee: StubCaller = {
+	userId: "user-owner",
+	activeOrganizationId: "org-1",
+	membershipRole: "owner",
+	employee: null,
+};
+const scopedManager: StubCaller = {
+	userId: "user-manager",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-manager", role: "manager", former: false },
+};
 
 describe("custom role settings access", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.session = {
-			user: {
-				id: "user-1",
-				email: "user@example.com",
-				name: "User",
-			},
-			session: {
-				activeOrganizationId: "org-1",
-			},
-		};
-		mockState.settingsAccessTier = "orgAdmin";
-		mockState.employeeRow = null;
-		mockState.listRoles.mockResolvedValue([]);
-		mockState.createRole.mockResolvedValue("role-1");
+		mocks.caller = ownerWithoutEmployee;
+		mocks.listRoles.mockResolvedValue([]);
+		mocks.createRole.mockResolvedValue("role-1");
+		mocks.assignRole.mockResolvedValue(undefined);
 	});
 
-	it("allows owners without an employee row to list custom roles", async () => {
-		mockState.session.user.id = "user-owner";
-		mockState.listRoles.mockResolvedValue([{ id: "role-1" }]);
+	it("lets an owner without an employee record list the active organization's roles", async () => {
+		mocks.listRoles.mockResolvedValue([{ id: "role-1" }]);
 
 		const result = await listCustomRoles();
 
 		expect(result).toEqual({ success: true, data: [{ id: "role-1" }] });
-		expect(mockState.listRoles).toHaveBeenCalledWith("org-1");
+		expect(mocks.listRoles).toHaveBeenCalledWith("org-1");
 	});
 
-	it("allows owners without an employee row to create custom roles", async () => {
-		mockState.session.user.id = "user-owner";
-
-		const input = {
-			name: "Supervisor",
-			baseTier: "manager" as const,
-		};
+	it("creates a role in the active organization for the caller", async () => {
+		const input = { name: "Supervisor", baseTier: "manager" as const };
 
 		const result = await createCustomRole(input);
 
 		expect(result).toEqual({ success: true, data: { id: "role-1" } });
-		expect(mockState.createRole).toHaveBeenCalledWith("org-1", input, "user-owner");
+		expect(mocks.createRole).toHaveBeenCalledWith("org-1", input, "user-owner");
 	});
 
-	it("scopes acting employee lookup to the active organization and active rows", async () => {
-		mockState.employeeRow = {
-			id: "emp-1",
-			organizationId: "org-1",
-			role: "admin",
-		};
-
-		await listCustomRoles();
-
-		expect(mockState.employeeFindFirst).toHaveBeenCalledTimes(1);
-		expect(mockState.employeeFindFirst).toHaveBeenCalledWith({
-			where: {
-				and: [
-					{ eq: ["userId", "user-1"] },
-					{ eq: ["organizationId", "org-1"] },
-					{ eq: ["isActive", true] },
-				],
+	it.each([
+		["a scoped manager", scopedManager],
+		["a pending membership", { ...ownerWithoutEmployee, membershipRole: null }],
+		[
+			"a former employee",
+			{
+				...ownerWithoutEmployee,
+				employee: { id: "employee-owner", role: "admin" as const, former: true },
 			},
+		],
+	])("refuses %s", async (_case, caller) => {
+		mocks.caller = caller;
+
+		expect(await listCustomRoles()).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(await createCustomRole({ name: "X", baseTier: "employee" })).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
 		});
+		expect(
+			await assignRoleToEmployee({ employeeId: "employee-1", roleId: "role-1" }),
+		).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mocks.listRoles).not.toHaveBeenCalled();
+		expect(mocks.createRole).not.toHaveBeenCalled();
+		expect(mocks.assignRole).not.toHaveBeenCalled();
+	});
+
+	it("rejects a role without a base tier before creating it", async () => {
+		const result = await createCustomRole({ name: "Supervisor" } as never);
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mocks.createRole).not.toHaveBeenCalled();
 	});
 });

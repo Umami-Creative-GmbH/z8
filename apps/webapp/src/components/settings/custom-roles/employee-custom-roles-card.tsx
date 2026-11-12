@@ -41,7 +41,7 @@ export function EmployeeCustomRolesCard({
 	const { data: assignedRoles, isLoading: isLoadingAssigned } = useQuery({
 		queryKey: ["employee-custom-roles", employeeId],
 		queryFn: async () => {
-			const result = await getEmployeeCustomRoles(employeeId);
+			const result = await getEmployeeCustomRoles({ employeeId });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -59,7 +59,7 @@ export function EmployeeCustomRolesCard({
 
 	const assignMutation = useMutation({
 		mutationFn: async (roleId: string) => {
-			const result = await assignRoleToEmployee(employeeId, roleId);
+			const result = await assignRoleToEmployee({ employeeId, roleId });
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {
@@ -74,7 +74,7 @@ export function EmployeeCustomRolesCard({
 
 	const unassignMutation = useMutation({
 		mutationFn: async (roleId: string) => {
-			const result = await unassignRoleFromEmployee(employeeId, roleId);
+			const result = await unassignRoleFromEmployee({ employeeId, roleId });
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {
