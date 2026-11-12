@@ -66,7 +66,7 @@ function renderWizard() {
 		},
 	});
 
-	return render(<ClockodoImportWizard organizationId="org_123" />, {
+	return render(<ClockodoImportWizard />, {
 		wrapper: ({ children }: { children: ReactNode }) => (
 			<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 		),
@@ -148,7 +148,6 @@ describe("ClockodoImportWizard", () => {
 
 		await waitFor(() => {
 			expect(mocks.startImportReviewScan).toHaveBeenCalledWith({
-				organizationId: "org_123",
 				provider: "clockodo",
 				credential: JSON.stringify({ email: "admin@example.com", apiKey: "api-key-123" }),
 				selectedScope: {
@@ -378,11 +377,10 @@ describe("ClockodoImportWizard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Map Users" }));
 		fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
 		await screen.findByText("Map Projects");
-		expect(mocks.fetchProjectMappingData).toHaveBeenCalledWith(
-			"admin@example.com",
-			"api-key-123",
-			"org_123",
-		);
+		expect(mocks.fetchProjectMappingData).toHaveBeenCalledWith({
+			email: "admin@example.com",
+			apiKey: "api-key-123",
+		});
 
 		// The second row (Support) has no name match and starts unmapped.
 		fireEvent.click(screen.getAllByRole("combobox", { name: "Z8 project for {project}" })[1]);
@@ -395,21 +393,23 @@ describe("ClockodoImportWizard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 		await screen.findByText("Select Data for Review");
 
-		expect(mocks.saveProjectMappings).toHaveBeenCalledWith("org_123", [
-			{
-				clockodoProjectId: 31,
-				clockodoProjectName: "Website",
-				clockodoCustomerName: "Acme GmbH",
-				projectId: "project_website",
-				source: "name",
-			},
-			{
-				clockodoProjectId: 32,
-				clockodoProjectName: "Support",
-				clockodoCustomerName: "Acme GmbH",
-				projectId: "project_internal",
-				source: "manual",
-			},
-		]);
+		expect(mocks.saveProjectMappings).toHaveBeenCalledWith({
+			mappings: [
+				{
+					clockodoProjectId: 31,
+					clockodoProjectName: "Website",
+					clockodoCustomerName: "Acme GmbH",
+					projectId: "project_website",
+					source: "name",
+				},
+				{
+					clockodoProjectId: 32,
+					clockodoProjectName: "Support",
+					clockodoCustomerName: "Acme GmbH",
+					projectId: "project_internal",
+					source: "manual",
+				},
+			],
+		});
 	});
 });

@@ -26,14 +26,12 @@ const selectClass =
 	"h-9 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
 export function CsvWorkMapping({
-	organizationId,
 	batchId,
 	view,
 	disabled,
 	onSuccess,
 	onError,
 }: {
-	organizationId: string;
 	batchId: string;
 	view: CsvWorkReviewData;
 	disabled: boolean;
@@ -46,7 +44,6 @@ export function CsvWorkMapping({
 		defaultValues: defaults,
 		onSubmit: async ({ value }) => {
 			const result = await mapCsvWorkAction({
-				organizationId,
 				batchId,
 				...value,
 			});

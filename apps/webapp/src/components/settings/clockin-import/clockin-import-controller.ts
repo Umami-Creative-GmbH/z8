@@ -35,7 +35,7 @@ export interface ClockinMappingRow {
 	mappingType: ClockinImportUserMapping["mappingType"];
 }
 
-export function useClockinImportController(organizationId: string) {
+export function useClockinImportController() {
 	const { t } = useTranslate();
 	const [step, setStep] = useState<ClockinWizardStep>("connect");
 	const [token, setToken] = useState("");
@@ -61,7 +61,7 @@ export function useClockinImportController(organizationId: string) {
 	const handleConnect = async () => {
 		setBusyAction("connect");
 		try {
-			const result = await validateClockinCredentials(token, organizationId);
+			const result = await validateClockinCredentials({ token });
 			if (!result.success) {
 				toast.error(result.error);
 				setBusyAction(null);
@@ -80,8 +80,8 @@ export function useClockinImportController(organizationId: string) {
 		setBusyAction("mapping");
 		try {
 			const [clockinResult, z8Result] = await Promise.all([
-				fetchClockinEmployees(token, organizationId),
-				fetchZ8Employees(organizationId),
+				fetchClockinEmployees({ token }),
+				fetchZ8Employees(),
 			]);
 			if (!clockinResult.success) {
 				toast.error(clockinResult.error);
@@ -140,7 +140,6 @@ export function useClockinImportController(organizationId: string) {
 				...(selections.absences ? (["absence"] as const) : []),
 			];
 			const result = await startImportReviewScan({
-				organizationId,
 				provider: "clockin",
 				credential: token,
 				selectedScope: selections,

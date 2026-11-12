@@ -71,7 +71,7 @@ describe("ClockinImportWizard", () => {
 			data: { employees: 3, workdays: 12, absences: 2, schedules: 0 },
 		});
 
-		render(<ClockinImportWizard organizationId="org_123" />);
+		render(<ClockinImportWizard />);
 
 		expect(screen.getByText("Clockin API Token")).toBeTruthy();
 		fireEvent.change(screen.getByLabelText("Bearer Token"), {
@@ -80,7 +80,7 @@ describe("ClockinImportWizard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Connect & Preview" }));
 
 		await waitFor(() => {
-			expect(mocks.validateClockinCredentials).toHaveBeenCalledWith("token-123", "org_123");
+			expect(mocks.validateClockinCredentials).toHaveBeenCalledWith({ token: "token-123" });
 		});
 
 		expect(await screen.findByText("Clockin Preview")).toBeTruthy();
@@ -108,7 +108,7 @@ describe("ClockinImportWizard", () => {
 		});
 		mocks.startImportReviewScan.mockResolvedValue({ success: true, data: { batchId: "batch_1" } });
 
-		render(<ClockinImportWizard organizationId="org_123" />);
+		render(<ClockinImportWizard />);
 
 		fireEvent.change(screen.getByLabelText("Bearer Token"), {
 			target: { value: "token-123" },
@@ -128,7 +128,6 @@ describe("ClockinImportWizard", () => {
 
 		await waitFor(() => {
 			expect(mocks.startImportReviewScan).toHaveBeenCalledWith({
-				organizationId: "org_123",
 				provider: "clockin",
 				credential: "token-123",
 				selectedScope: {
@@ -166,7 +165,7 @@ describe("ClockinImportWizard", () => {
 		});
 		mocks.startImportReviewScan.mockResolvedValue({ success: false, error: "Scan failed" });
 
-		render(<ClockinImportWizard organizationId="org_123" />);
+		render(<ClockinImportWizard />);
 
 		fireEvent.change(screen.getByLabelText("Bearer Token"), {
 			target: { value: "token-123" },

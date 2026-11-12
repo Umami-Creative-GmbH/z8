@@ -105,7 +105,6 @@ const statusLabels: Record<ImportReviewRowStatus, { key: string; fallback: strin
 };
 
 interface CustomerImportReviewTableProps {
-	organizationId: string;
 	batchId: string;
 	/** The contacts of the current page. */
 	rows: CustomerImportReviewRow[];
@@ -116,7 +115,6 @@ interface CustomerImportReviewTableProps {
 }
 
 export function CustomerImportReviewTable({
-	organizationId,
 	batchId,
 	rows,
 	linkTargets,
@@ -137,7 +135,6 @@ export function CustomerImportReviewTable({
 	) {
 		startTransition(async () => {
 			const result = await applyImportDecisionAction({
-				organizationId,
 				batchId,
 				rowIds,
 				decision,

@@ -5,13 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { uploadCsvWorkAction } from "@/app/[locale]/(app)/settings/import/csv-actions";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	TFormControl,
@@ -20,13 +14,10 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
-import {
-	CSV_WORK_MAX_BYTES,
-	csvWorkTemplate,
-} from "@/lib/import-review/csv-work-format";
+import { CSV_WORK_MAX_BYTES, csvWorkTemplate } from "@/lib/import-review/csv-work-format";
 import { useRouter } from "@/navigation";
 
-export function CsvWorkUpload({ organizationId }: { organizationId: string }) {
+export function CsvWorkUpload() {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
@@ -35,18 +26,15 @@ export function CsvWorkUpload({ organizationId }: { organizationId: string }) {
 		defaultValues: { csv: "", fileName: "", timezone: "" },
 		onSubmit: async ({ value }) => {
 			setError(null);
-			const result = await uploadCsvWorkAction({ organizationId, ...value });
-			if (result.success)
-				router.push(`/settings/import/${result.data.batchId}`);
+			const result = await uploadCsvWorkAction(value);
+			if (result.success) router.push(`/settings/import/${result.data.batchId}`);
 			else setError(result.error);
 		},
 	});
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
-					{t("settings.import.csv.title", "CSV completed work")}
-				</CardTitle>
+				<CardTitle>{t("settings.import.csv.title", "CSV completed work")}</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.import.csv.description",
@@ -90,12 +78,7 @@ export function CsvWorkUpload({ organizationId }: { organizationId: string }) {
 									setError(null);
 									if (!file) return;
 									if (file.size > CSV_WORK_MAX_BYTES) {
-										setError(
-											t(
-												"settings.import.csv.tooLarge",
-												"CSV files must be at most 500 KB",
-											),
-										);
+										setError(t("settings.import.csv.tooLarge", "CSV files must be at most 500 KB"));
 										return;
 									}
 									setReading(true);
@@ -106,10 +89,7 @@ export function CsvWorkUpload({ organizationId }: { organizationId: string }) {
 										form.setFieldValue("fileName", file.name);
 									} catch {
 										setError(
-											t(
-												"settings.import.csv.readFailed",
-												"The selected file could not be read",
-											),
+											t("settings.import.csv.readFailed", "The selected file could not be read"),
 										);
 									}
 									setReading(false);
@@ -121,10 +101,7 @@ export function CsvWorkUpload({ organizationId }: { organizationId: string }) {
 						{(field) => (
 							<TFormItem>
 								<TFormLabel>
-									{t(
-										"settings.import.csv.timezone",
-										"Timezone for local timestamps",
-									)}
+									{t("settings.import.csv.timezone", "Timezone for local timestamps")}
 								</TFormLabel>
 								<TFormControl>
 									<Input

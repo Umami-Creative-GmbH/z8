@@ -27,8 +27,12 @@ import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-
 import { runtime } from "@/lib/effect/runtime";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
-import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import {
+	meetsSettingsAccess,
+	resolveCallerSettingsAccess,
+} from "@/lib/organization-action/settings-access";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import {
 	hasSettingsAccessTier,
 	isSettingsAccessMembershipRole,
@@ -778,21 +782,27 @@ export async function requireOrgAdminSettingsAccess(): Promise<{
 	organizationId: string;
 }> {
 	const authContext = await requireUser();
-	const organizationId = authContext.session.activeOrganizationId;
+	// The same resolver `organizationAction` authorizes with (ADR 0002).
+	// A refusal redirects; a failed database read still throws.
+	const caller = await runtime.runPromise(
+		resolveCallerSettingsAccess().pipe(
+			Effect.catch((error) =>
+				error._tag === "DatabaseError" ? Effect.fail(error) : Effect.succeed(null),
+			),
+		),
+	);
 
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
-
-	const settingsAccessTier = await getCurrentSettingsAccessTier();
-
-	if (settingsAccessTier !== "orgAdmin") {
+	if (
+		!caller ||
+		caller.organizationId !== authContext.session.activeOrganizationId ||
+		!meetsSettingsAccess(caller.settingsAccess, "orgAdmin")
+	) {
 		return redirectWithLocale("/settings");
 	}
 
 	return {
 		authContext,
-		organizationId,
+		organizationId: caller.organizationId,
 	};
 }
 

@@ -67,7 +67,7 @@ export function TelegramSettings({
 	const { data: config } = useQuery({
 		queryKey: queryKeys.telegram.config(organizationId),
 		queryFn: async () => {
-			const result = await getTelegramConfig(organizationId);
+			const result = await getTelegramConfig();
 			return result.success ? result.data : null;
 		},
 		initialData: initialConfig,
@@ -78,7 +78,7 @@ export function TelegramSettings({
 	const { data: userLink } = useQuery({
 		queryKey: queryKeys.telegram.link(userId, organizationId),
 		queryFn: async () => {
-			const result = await getUserTelegramLink(userId, organizationId);
+			const result = await getUserTelegramLink();
 			return result.success ? result.data : null;
 		},
 		initialData: initialUserLink,
@@ -136,7 +136,7 @@ function BotConnectionCard({
 	const isConnected = config?.setupStatus === "active";
 
 	const setupMutation = useMutation({
-		mutationFn: () => setupTelegramBot(botToken, organizationId),
+		mutationFn: () => setupTelegramBot({ botToken }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.telegram.connected", "Telegram bot connected successfully"));
@@ -152,7 +152,7 @@ function BotConnectionCard({
 	});
 
 	const disconnectMutation = useMutation({
-		mutationFn: () => disconnectTelegramBot(organizationId),
+		mutationFn: () => disconnectTelegramBot(),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.telegram.disconnected", "Telegram bot disconnected"));
@@ -304,7 +304,7 @@ function FeatureSettingsCard({
 		},
 		onSubmit: async ({ value }) => {
 			setLoading(true);
-			const result = await updateTelegramSettings(organizationId, value);
+			const result = await updateTelegramSettings(value);
 			setLoading(false);
 
 			if (result.success) {
@@ -558,7 +558,7 @@ function AccountLinkingCard({
 	const [copied, setCopied] = useState(false);
 
 	const generateCodeMutation = useMutation({
-		mutationFn: () => generateTelegramLinkCode(userId, organizationId),
+		mutationFn: () => generateTelegramLinkCode(),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -575,7 +575,7 @@ function AccountLinkingCard({
 	});
 
 	const unlinkMutation = useMutation({
-		mutationFn: () => unlinkTelegramAccount(userId, organizationId),
+		mutationFn: () => unlinkTelegramAccount(),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.telegram.unlinked", "Telegram account unlinked"));

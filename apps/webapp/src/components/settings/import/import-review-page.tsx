@@ -32,7 +32,6 @@ export interface ImportReviewSummary {
 }
 
 interface ImportReviewPageProps {
-	organizationId: string;
 	batchId: string;
 	summary: ImportReviewSummary;
 	rows: ImportReviewRow[];
@@ -72,7 +71,6 @@ const summaryItems = [
 const numberFormatter = new Intl.NumberFormat();
 
 export function ImportReviewPage({
-	organizationId,
 	batchId,
 	summary,
 	rows,
@@ -86,7 +84,7 @@ export function ImportReviewPage({
 
 	function commitAcceptedRows() {
 		startTransition(async () => {
-			const result = await startImportCommitAction({ organizationId, batchId });
+			const result = await startImportCommitAction({ batchId });
 
 			if (result.success) {
 				toast.success(
@@ -141,7 +139,6 @@ export function ImportReviewPage({
 
 			{customerImport ? (
 				<CustomerImportReviewTable
-					organizationId={organizationId}
 					batchId={batchId}
 					rows={customerImport.rows}
 					linkTargets={customerImport.linkTargets}

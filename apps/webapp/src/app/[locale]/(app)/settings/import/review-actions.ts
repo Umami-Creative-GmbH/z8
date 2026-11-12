@@ -1,12 +1,13 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { db } from "@/db";
+import { z } from "zod";
 import { employee } from "@/db/schema";
 import { env } from "@/env";
-import { runActiveOrganizationActionActorCheck } from "@/lib/auth/organization-action-authorization";
-import { requireUser } from "@/lib/auth-helpers";
+import { ValidationError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { encryptImportCredential } from "@/lib/import-review/credential-secret";
 import { partitionDateRangeByMonth } from "@/lib/import-review/partitioning";
 import {
@@ -31,14 +32,10 @@ import type {
 	ImportDateRange,
 	ImportEmployeeMapping,
 	ImportEntityType,
-	ImportProvider,
 	ImportRowChoice,
 	ImportRowStatus,
 } from "@/lib/import-review/types";
-
-type ActionResult<T> =
-	| { success: true; data: T }
-	| { success: false; error: string };
+import { organizationAction } from "@/lib/organization-action/organization-action";
 
 const MAX_EMPLOYEE_IDS = 500;
 const MAX_EMPLOYEE_ID_LENGTH = 128;
@@ -88,7 +85,6 @@ function isImportEntityType(value: string): value is ImportEntityType {
 }
 
 export interface StartImportReviewScanInput {
-	organizationId: string;
 	provider: ImportApiProvider;
 	credential: string;
 	selectedScope: Record<string, unknown>;
@@ -105,7 +101,6 @@ interface ValidatedStartImportReviewScanInput
 }
 
 interface ImportReviewBatchInput {
-	organizationId: string;
 	batchId: string;
 }
 
@@ -160,7 +155,6 @@ function validateImportReviewBatchInput(
 	if (!isRecord(input)) throw new Error("Invalid import review input");
 
 	return {
-		organizationId: validateSafeId(input.organizationId, "Organization ID"),
 		batchId: validateSafeId(input.batchId, "Import batch ID"),
 	};
 }
@@ -271,13 +265,6 @@ function validateStartImportReviewScanInput(
 		throw new Error("Invalid import review scan input");
 	}
 
-	if (
-		typeof input.organizationId !== "string" ||
-		input.organizationId.trim().length === 0
-	) {
-		throw new Error("Organization ID is required");
-	}
-
 	if (typeof input.provider !== "string" || !isImportProvider(input.provider)) {
 		throw new Error("Invalid import provider");
 	}
@@ -375,7 +362,6 @@ function validateStartImportReviewScanInput(
 	}
 
 	return {
-		organizationId: input.organizationId,
 		provider: input.provider as ImportApiProvider,
 		credential,
 		selectedScope: input.selectedScope,
@@ -386,32 +372,22 @@ function validateStartImportReviewScanInput(
 	};
 }
 
-async function validateMappedEmployeeOwnership(
-	employeeMappings: ImportEmployeeMapping[],
-	organizationId: string,
-): Promise<void> {
-	if (employeeMappings.length === 0) return;
-
-	const mappedEmployeeIds = [
-		...new Set(employeeMappings.map((mapping) => mapping.employeeId)),
-	];
-	const validEmployees = await db
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				inArray(employee.id, mappedEmployeeIds),
-			),
-		);
-
-	const validIds = new Set(validEmployees.map((entry) => entry.id));
-	const invalidIds = mappedEmployeeIds.filter((id) => !validIds.has(id));
-	if (invalidIds.length > 0) {
-		throw new Error(
-			"One or more mapped employee IDs do not belong to this organization",
-		);
-	}
+/**
+ * A zod schema over one of the validators above, so the input is checked after
+ * authorization and a refusal keeps the validator's message.
+ */
+function validatedBy<T>(validate: (input: unknown) => T) {
+	return z.unknown().transform((input, context) => {
+		try {
+			return validate(input);
+		} catch (error) {
+			context.addIssue({
+				code: "custom",
+				message: error instanceof Error ? error.message : "Invalid import review input",
+			});
+			return z.NEVER;
+		}
+	});
 }
 
 function sanitizeErrorMessage(
@@ -426,88 +402,114 @@ function sanitizeErrorMessage(
 	return message.length > 500 ? `${message.slice(0, 497)}...` : message;
 }
 
-export async function requireImportAdmin(organizationId: string) {
-	const authContext = await requireUser();
-	await runActiveOrganizationActionActorCheck({
-		userId: authContext.user.id,
-		organizationId,
-		requiredRole: "admin",
-		message: "Only active approved admins and owners can manage imports",
-		resource: "importReview",
-		action: "manage",
-	});
-
-	return authContext;
+/**
+ * Import review work that still runs on Promise helpers. A failure reaches the
+ * client as its sanitized message (`UNKNOWN_ERROR`), never with the credential.
+ */
+function importReview<T>(
+	run: () => Promise<T>,
+	options: { credential?: string; fallback?: string } = {},
+) {
+	return Effect.tryPromise({
+		try: run,
+		catch: (error) => new Error(sanitizeErrorMessage(error, options.credential, options.fallback)),
+	}).pipe(Effect.orDie);
 }
 
-export async function startImportReviewScan(
-	input: unknown,
-): Promise<ActionResult<{ batchId: string }>> {
-	let batchContext: { id: string; organizationId: string } | null = null;
-	let credential: string | undefined;
-
-	try {
-		const validated = validateStartImportReviewScanInput(input);
-		credential = validated.credential;
-		const authContext = await requireImportAdmin(validated.organizationId);
-		await validateMappedEmployeeOwnership(
-			validated.employeeMappings,
-			validated.organizationId,
+/** Refuses mapped employees outside the organization (tampered client requests). */
+function ensureMappedEmployeesInOrganization(
+	employeeMappings: ImportEmployeeMapping[],
+	organizationId: string,
+) {
+	return Effect.gen(function* () {
+		const mappedEmployeeIds = [...new Set(employeeMappings.map((mapping) => mapping.employeeId))];
+		if (mappedEmployeeIds.length === 0) return;
+		const dbService = yield* DatabaseService;
+		const validEmployees = yield* dbService.query("importReview.mappedEmployees", () =>
+			dbService.db
+				.select({ id: employee.id })
+				.from(employee)
+				.where(
+					and(
+						eq(employee.organizationId, organizationId),
+						inArray(employee.id, mappedEmployeeIds),
+					),
+				),
 		);
+		const validIds = new Set(validEmployees.map((entry) => entry.id));
+		if (mappedEmployeeIds.some((id) => !validIds.has(id))) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "One or more mapped employee IDs do not belong to this organization",
+					field: "employeeMappings",
+				}),
+			);
+		}
+	});
+}
 
+export const startImportReviewScan = organizationAction(
+	{
+		name: "importReview.startScan",
+		requires: "orgAdmin",
+		schema: validatedBy(validateStartImportReviewScanInput),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* ensureMappedEmployeesInOrganization(input.employeeMappings, organizationId);
+			return yield* importReview(() => startScan(input, organizationId, actor.userId), {
+				credential: input.credential,
+			});
+		}),
+);
+
+async function startScan(
+	validated: ValidatedStartImportReviewScanInput,
+	organizationId: string,
+	startedBy: string,
+): Promise<{ batchId: string }> {
+	let batchId: string | null = null;
+	try {
 		const datePartitions = partitionDateRangeByMonth(
 			validated.dateRange.startDate,
 			validated.dateRange.endDate,
 		);
 		const batch = await createImportBatch({
-			organizationId: validated.organizationId,
+			organizationId,
 			provider: validated.provider,
 			selectedScope: validated.selectedScope,
 			dateRange: validated.dateRange,
-			startedBy: authContext.user.id,
+			startedBy,
 		});
-		batchContext = { id: batch.id, organizationId: validated.organizationId };
+		batchId = batch.id;
 
 		const secret = await saveImportJobSecret({
 			batchId: batch.id,
-			organizationId: validated.organizationId,
-			credential: encryptImportCredential(credential, env.BETTER_AUTH_SECRET),
+			organizationId,
+			credential: encryptImportCredential(validated.credential, env.BETTER_AUTH_SECRET),
 		});
-
-		let scanJobs: Array<{
-			jobId: string;
-			entityType: ImportEntityType;
-			dateRange: ImportDateRange;
-		}> = [];
 
 		const scanJobInputs = validated.entityTypes.flatMap((entityType) =>
 			datePartitions.map((dateRange) => ({ entityType, dateRange })),
 		);
-
-		scanJobs = await Promise.all(
+		const scanJobs = await Promise.all(
 			scanJobInputs.map(async ({ entityType, dateRange }) => {
 				const partitionKey = `${entityType}:${dateRange.startDate}:${dateRange.endDate}`;
 				const job = await createImportBatchJob({
 					batchId: batch.id,
-					organizationId: validated.organizationId,
+					organizationId,
 					kind: "scan",
 					entityType,
 					partitionKey,
 				});
-
 				if (!job) {
 					throw new Error("Failed to create import scan job");
 				}
-
 				return { jobId: job.id, entityType, dateRange };
 			}),
 		);
 
-		await updateImportBatchStatus({
-			batchId: batch.id,
-			organizationId: validated.organizationId,
-			status: "scanning",
-		});
+		await updateImportBatchStatus({ batchId: batch.id, organizationId, status: "scanning" });
 
 		await Promise.all(
 			scanJobs.map((job) =>
@@ -515,7 +517,7 @@ export async function startImportReviewScan(
 					type: "import-review-scan",
 					batchId: batch.id,
 					jobId: job.jobId,
-					organizationId: validated.organizationId,
+					organizationId,
 					provider: validated.provider,
 					entityType: job.entityType,
 					dateRange: job.dateRange,
@@ -526,102 +528,73 @@ export async function startImportReviewScan(
 			),
 		);
 
-		return { success: true, data: { batchId: batch.id } };
+		return { batchId: batch.id };
 	} catch (error) {
-		const errorMessage = sanitizeErrorMessage(error, credential);
-
-		if (batchContext) {
+		if (batchId) {
 			await updateImportBatchStatus({
-				batchId: batchContext.id,
-				organizationId: batchContext.organizationId,
+				batchId,
+				organizationId,
 				status: "scan_failed",
-				errorMessage,
+				errorMessage: sanitizeErrorMessage(error, validated.credential),
 			});
 		}
-
-		return {
-			success: false,
-			error: errorMessage,
-		};
+		throw error;
 	}
 }
 
-export async function getImportReviewSummaryAction(
-	organizationId: unknown,
-	batchId: unknown,
-): Promise<ActionResult<Awaited<ReturnType<typeof getImportReviewSummary>>>> {
-	try {
-		const validated = {
-			organizationId: validateSafeId(organizationId, "Organization ID"),
-			batchId: validateSafeId(batchId, "Import batch ID"),
-		};
-		await requireImportAdmin(validated.organizationId);
-		const summary = await getImportReviewSummary(validated);
-		return { success: true, data: summary };
-	} catch (error) {
-		return { success: false, error: sanitizeErrorMessage(error) };
-	}
-}
+export const getImportReviewSummaryAction = organizationAction(
+	{
+		name: "importReview.getSummary",
+		requires: "orgAdmin",
+		schema: validatedBy(validateImportReviewBatchInput),
+	},
+	({ organizationId, input }) =>
+		importReview(() => getImportReviewSummary({ ...input, organizationId })),
+);
 
-export async function listImportReviewRowsAction(
-	input: unknown,
-): Promise<ActionResult<Awaited<ReturnType<typeof listImportReviewRows>>>> {
-	try {
-		const validated = validateListImportReviewRowsInput(input);
-		await requireImportAdmin(validated.organizationId);
-		const rows = await listImportReviewRows(validated);
-		return { success: true, data: rows };
-	} catch (error) {
-		return { success: false, error: sanitizeErrorMessage(error) };
-	}
-}
+export const listImportReviewRowsAction = organizationAction(
+	{
+		name: "importReview.listRows",
+		requires: "orgAdmin",
+		schema: validatedBy(validateListImportReviewRowsInput),
+	},
+	({ organizationId, input }) =>
+		importReview(() => listImportReviewRows({ ...input, organizationId })),
+);
 
-export async function applyImportDecisionAction(
-	input: unknown,
-): Promise<ActionResult<{ updatedCount: number }>> {
-	try {
-		const validated = validateApplyImportDecisionInput(input);
-		const authContext = await requireImportAdmin(validated.organizationId);
-		const result = await applyImportRowDecision({
-			...validated,
-			decidedBy: authContext.user.id,
-		});
-		return { success: true, data: result };
-	} catch (error) {
-		return { success: false, error: sanitizeErrorMessage(error) };
-	}
-}
+export const applyImportDecisionAction = organizationAction(
+	{
+		name: "importReview.applyDecision",
+		requires: "orgAdmin",
+		schema: validatedBy(validateApplyImportDecisionInput),
+	},
+	({ actor, organizationId, input }) =>
+		importReview(() =>
+			applyImportRowDecision({ ...input, organizationId, decidedBy: actor.userId }),
+		),
+);
 
-export async function exportRejectedRowsAction(
-	input: unknown,
-): Promise<
-	ActionResult<{ exportId: string; fileName: string; content: string }>
-> {
-	try {
-		const validated = validateImportReviewBatchInput(input);
-		const authContext = await requireImportAdmin(validated.organizationId);
-		const rows = await listRejectedImportReviewRowsForExport(validated);
-		const fileName = `import-${validated.batchId}-rejected.csv`;
-		const content = buildRejectedRowsCsv(rows);
-		const rejectedExport = await recordRejectedExport({
-			...validated,
-			exportedBy: authContext.user.id,
-			rowCount: rows.length,
-			fileName,
-		});
-
-		return {
-			success: true,
-			data: {
-				exportId: rejectedExport.id,
-				fileName: rejectedExport.fileName,
-				content,
-			},
-		};
-	} catch (error) {
-		return { success: false, error: sanitizeErrorMessage(error) };
-	}
-}
+export const exportRejectedRowsAction = organizationAction(
+	{
+		name: "importReview.exportRejectedRows",
+		requires: "orgAdmin",
+		schema: validatedBy(validateImportReviewBatchInput),
+	},
+	({ actor, organizationId, input }) =>
+		importReview(async () => {
+			const batch = { ...input, organizationId };
+			const rows = await listRejectedImportReviewRowsForExport(batch);
+			const fileName = `import-${input.batchId}-rejected.csv`;
+			const content = buildRejectedRowsCsv(rows);
+			const rejectedExport = await recordRejectedExport({
+				...batch,
+				exportedBy: actor.userId,
+				rowCount: rows.length,
+				fileName,
+			});
+			return { exportId: rejectedExport.id, fileName: rejectedExport.fileName, content };
+		}),
+);
 
 function csvCell(value: unknown): string {
 	const text = typeof value === "string" ? value : JSON.stringify(value ?? "");
@@ -658,67 +631,73 @@ function buildRejectedRowsCsv(
 	return [header.join(","), ...lines].join("\n");
 }
 
-export async function startImportCommitAction(
-	input: unknown,
-): Promise<ActionResult<{ queuedCount: number }>> {
-	let batchContext: ImportReviewBatchInput | null = null;
+export const startImportCommitAction = organizationAction(
+	{
+		name: "importReview.startCommit",
+		requires: "orgAdmin",
+		schema: validatedBy(validateImportReviewBatchInput),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const batch = { ...input, organizationId };
+			const summary = yield* importReview(() => getImportReviewSummary(batch), {
+				fallback: GENERIC_COMMIT_START_ERROR,
+			});
+			if (summary.blockedRows > 0) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Resolve blocked import review rows before committing",
+					}),
+				);
+			}
 
+			const jobs = yield* importReview(() => createCommitJobsForAcceptedRows(batch), {
+				fallback: GENERIC_COMMIT_START_ERROR,
+			});
+			if (jobs.length === 0) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "No accepted import review rows are available to commit",
+					}),
+				);
+			}
+
+			return yield* importReview(() => startCommit(batch, jobs, actor.userId), {
+				fallback: GENERIC_COMMIT_START_ERROR,
+			});
+		}),
+);
+
+async function startCommit(
+	batch: ImportReviewBatchInput & { organizationId: string },
+	jobs: Awaited<ReturnType<typeof createCommitJobsForAcceptedRows>>,
+	committedBy: string,
+): Promise<{ queuedCount: number }> {
+	await updateImportBatchStatus({
+		...batch,
+		status: "committing",
+		expectedStatus: "needs_review",
+	});
 	try {
-		const validated = validateImportReviewBatchInput(input);
-		const authContext = await requireImportAdmin(validated.organizationId);
-		const summary = await getImportReviewSummary(validated);
-
-		if (summary.blockedRows > 0) {
-			return {
-				success: false,
-				error: "Resolve blocked import review rows before committing",
-			};
-		}
-
-		const jobs = await createCommitJobsForAcceptedRows(validated);
-		if (jobs.length === 0) {
-			return {
-				success: false,
-				error: "No accepted import review rows are available to commit",
-			};
-		}
-
-		await updateImportBatchStatus({
-			...validated,
-			status: "committing",
-			expectedStatus: "needs_review",
-		});
-		batchContext = validated;
-
 		await Promise.all(
 			readyCommitJobsFromJobs(jobs).map((job) =>
 				enqueueImportCommitJob({
 					type: "import-review-commit",
-					batchId: validated.batchId,
+					batchId: batch.batchId,
 					jobId: job.id,
-					organizationId: validated.organizationId,
+					organizationId: batch.organizationId,
 					entityType: job.entityType as ImportEntityType,
-					committedBy: authContext.user.id,
+					committedBy,
 				}),
 			),
 		);
-
-		return { success: true, data: { queuedCount: jobs.length } };
 	} catch (error) {
-		const errorMessage = sanitizeErrorMessage(
-			error,
-			undefined,
-			GENERIC_COMMIT_START_ERROR,
-		);
-
-		if (batchContext) {
-			await updateImportBatchStatus({
-				...batchContext,
-				status: "commit_failed",
-				errorMessage,
-			});
-		}
-
-		return { success: false, error: errorMessage };
+		await updateImportBatchStatus({
+			...batch,
+			status: "commit_failed",
+			errorMessage: sanitizeErrorMessage(error, undefined, GENERIC_COMMIT_START_ERROR),
+		});
+		throw error;
 	}
+	return { queuedCount: jobs.length };
 }

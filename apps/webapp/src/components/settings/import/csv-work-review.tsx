@@ -51,12 +51,10 @@ export interface CsvWorkReviewData {
 }
 
 export function CsvWorkReview({
-	organizationId,
 	batchId,
 	view,
 	paging,
 }: {
-	organizationId: string;
 	batchId: string;
 	view: CsvWorkReviewData;
 	paging?: ImportReviewPaging;
@@ -84,7 +82,6 @@ export function CsvWorkReview({
 				decision === "accepted" ? validSelected : selectedRows
 			).map((row) => row.id);
 			const result = await decideCsvWorkAction({
-				organizationId,
 				batchId,
 				rowIds,
 				decision,
@@ -99,7 +96,6 @@ export function CsvWorkReview({
 		startTransition(async () => {
 			setError(null);
 			const result = await commitCsvWorkAction({
-				organizationId,
 				batchId,
 			});
 			if (!result.success) setError(result.error);
@@ -110,7 +106,6 @@ export function CsvWorkReview({
 		startTransition(async () => {
 			setError(null);
 			const result = await refreshCsvWorkAction({
-				organizationId,
 				batchId,
 			});
 			if (result.success) {
@@ -143,7 +138,6 @@ export function CsvWorkReview({
 				)}
 			</p>
 			<CsvWorkMapping
-				organizationId={organizationId}
 				batchId={batchId}
 				view={view}
 				disabled={!editable}

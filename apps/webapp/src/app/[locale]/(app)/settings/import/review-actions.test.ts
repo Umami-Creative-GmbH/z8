@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mockState = vi.hoisted(() => ({
-	requireUser: vi.fn(),
-	requireActiveActor: vi.fn(),
+	caller: null as StubCaller | null,
 	findMember: vi.fn(),
 	createImportBatch: vi.fn(),
 	createImportBatchJob: vi.fn(),
@@ -27,18 +27,26 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/env", () => ({
-	env: { BETTER_AUTH_SECRET: "test-secret-that-is-long-enough" },
+vi.mock("@/env", async (importOriginal) => ({
+	env: {
+		...(await importOriginal<typeof import("@/env")>()).env,
+		BETTER_AUTH_SECRET: "test-secret-that-is-long-enough",
+	},
 }));
 
-vi.mock("@/lib/auth-helpers", () => ({
-	requireUser: mockState.requireUser,
-}));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { db } = await import("@/db");
+	return runtimeModuleOver(organizationActionStubLayer(() => mockState.caller, { db }));
+});
 
-vi.mock("@/lib/auth/organization-action-authorization", () => ({
-	runActiveOrganizationActionActorCheck: mockState.requireActiveActor,
-}));
-
+const orgAdmin: StubCaller = {
+	userId: "user_1",
+	activeOrganizationId: "org_1",
+	membershipRole: "admin",
+	employee: null,
+};
 vi.mock("@/db", () => ({
 	db: {
 		query: {
@@ -81,16 +89,14 @@ vi.mock("@/lib/import-review/queue", () => ({
 	enqueueImportScanJob: mockState.enqueueImportScanJob,
 }));
 
-const { requireImportAdmin, startImportReviewScan } = await import(
+const { startImportReviewScan } = await import(
 	"./review-actions"
 );
 
 describe("import review actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.requireUser.mockResolvedValue({ user: { id: "user_1" } });
-		mockState.findMember.mockResolvedValue({ role: "admin" });
-		mockState.requireActiveActor.mockResolvedValue({});
+		mockState.caller = orgAdmin;
 		mockState.createImportBatch.mockResolvedValue({ id: "batch_1" });
 		mockState.createImportBatchJob.mockImplementation(
 			async (input: { partitionKey: string }) => ({
@@ -110,29 +116,21 @@ describe("import review actions", () => {
 		mockState.selectWhere.mockResolvedValue([]);
 	});
 
-	it("requires owner or admin membership in the requested organization", async () => {
-		await expect(requireImportAdmin("org_1")).resolves.toEqual({
-			user: { id: "user_1" },
-		});
+	it.each([
+		["an org member", { membershipRole: "member" }],
+		["a scoped manager", { membershipRole: "member", employee: { id: "e_1", role: "manager" as const, former: false } }],
+		["an admin who is a former employee", { employee: { id: "e_1", role: "admin" as const, former: true } }],
+		["a pending membership", { membershipRole: null }],
+	])("refuses %s before validating or creating a batch", async (_case, caller) => {
+		mockState.caller = { ...orgAdmin, ...caller };
 
-		expect(mockState.requireActiveActor).toHaveBeenCalledWith({
-			userId: "user_1",
-			organizationId: "org_1",
-			requiredRole: "admin",
-			message: "Only active approved admins and owners can manage imports",
-			resource: "importReview",
-			action: "manage",
-		});
+		const result = await startImportReviewScan({ provider: "unknown" });
 
-		mockState.requireActiveActor.mockRejectedValueOnce(
-			new Error("Unauthorized"),
-		);
-		await expect(requireImportAdmin("org_1")).rejects.toThrow("Unauthorized");
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.createImportBatch).not.toHaveBeenCalled();
 	});
-
 	it("creates a scanning batch and enqueues a scan job for each entity and monthly partition", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "  token_1  ",
 			selectedScope: { workdays: true },
@@ -205,7 +203,6 @@ describe("import review actions", () => {
 		mockState.selectWhere.mockResolvedValue([{ id: "emp_1" }]);
 
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: { workdays: true },
@@ -222,8 +219,7 @@ describe("import review actions", () => {
 			entityTypes: ["work_period"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error:
 				"One or more mapped employee IDs do not belong to this organization",
 		});
@@ -233,7 +229,6 @@ describe("import review actions", () => {
 
 	it("rejects unknown providers before creating a batch", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "unknown",
 			credential: "token_1",
 			selectedScope: {},
@@ -242,8 +237,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Invalid import provider",
 		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
@@ -251,7 +245,6 @@ describe("import review actions", () => {
 
 	it("rejects unknown entity types before creating a batch", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: {},
@@ -260,8 +253,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee", "unknown"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Invalid import entity type",
 		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
@@ -269,7 +261,6 @@ describe("import review actions", () => {
 
 	it("rejects invalid date strings before creating a batch", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: {},
@@ -278,8 +269,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Invalid import start date: 2026-2-01",
 		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
@@ -287,7 +277,6 @@ describe("import review actions", () => {
 
 	it("rejects blank credentials without creating a batch", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "   ",
 			selectedScope: {},
@@ -296,8 +285,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Import credential is required",
 		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
@@ -305,7 +293,6 @@ describe("import review actions", () => {
 
 	it("rejects empty entity selections without creating a batch", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: {},
@@ -314,8 +301,7 @@ describe("import review actions", () => {
 			entityTypes: [],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "At least one import entity type is required",
 		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
@@ -323,7 +309,6 @@ describe("import review actions", () => {
 
 	it("returns date partition validation errors without creating a batch", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: {},
@@ -332,8 +317,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Import start date must be on or before end date",
 		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
@@ -341,7 +325,6 @@ describe("import review actions", () => {
 
 	it("rejects abusive employee ID payloads before creating a batch", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: {},
@@ -350,8 +333,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Too many employee IDs requested",
 		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
@@ -359,7 +341,6 @@ describe("import review actions", () => {
 
 	it("rejects non-plain selected scopes before creating a batch", async () => {
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: [],
@@ -368,8 +349,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Import selected scope must be a plain object",
 		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
@@ -381,7 +361,6 @@ describe("import review actions", () => {
 			.mockRejectedValueOnce(new Error("queue failed for token_1"));
 
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: {},
@@ -390,8 +369,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Failed to start import review scan",
 		});
 		expect(mockState.createImportBatchJob).toHaveBeenCalledTimes(2);
@@ -419,7 +397,6 @@ describe("import review actions", () => {
 		);
 
 		const result = await startImportReviewScan({
-			organizationId: "org_1",
 			provider: "clockin",
 			credential: "token_1",
 			selectedScope: {},
@@ -428,7 +405,7 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({ success: false, error: "database unavailable" });
+		expect(result).toMatchObject({ success: false, error: "database unavailable" });
 		expect(JSON.stringify(result)).not.toContain("token_1");
 	});
 });

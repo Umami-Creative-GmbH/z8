@@ -3,13 +3,8 @@
 import { useClockodoImportController } from "./clockodo-import-controller";
 import { ClockodoImportStepRenderer } from "./clockodo-import-steps";
 
-interface ClockodoImportWizardProps {
-	organizationId: string;
-}
-
-export function ClockodoImportWizard({
-	organizationId,
-}: ClockodoImportWizardProps) {
-	const controller = useClockodoImportController(organizationId);
+/** Imports run in the caller's active organization; the actions take it from the session. */
+export function ClockodoImportWizard() {
+	const controller = useClockodoImportController();
 	return <ClockodoImportStepRenderer controller={controller} />;
 }

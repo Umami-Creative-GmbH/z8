@@ -146,69 +146,6 @@ const actionCases = [
 		"getWebhookDeliveryLogs",
 		"getDeliveryLogs(",
 	],
-	[
-		"Clockodo mappings",
-		"[locale]/(app)/settings/clockodo-import/actions.ts",
-		"saveUserMappings",
-		"db\n\t\t\t\t\t.insert(clockodoUserMapping)",
-		"requireAdmin(",
-	],
-	[
-		"Clockodo project mappings",
-		"[locale]/(app)/settings/clockodo-import/actions.ts",
-		"saveProjectMappings",
-		".insert(clockodoProjectMapping)",
-		"requireAdmin(",
-	],
-	[
-		"Clockin credentials",
-		"[locale]/(app)/settings/import/clockin-actions.ts",
-		"validateClockinCredentials",
-		"new ClockinClient(",
-		"requireAdmin(",
-	],
-	[
-		"import review scan",
-		"[locale]/(app)/settings/import/review-actions.ts",
-		"startImportReviewScan",
-		"createImportBatch(",
-		"requireImportAdmin(",
-	],
-	[
-		"import review decision",
-		"[locale]/(app)/settings/import/review-actions.ts",
-		"applyImportDecisionAction",
-		"applyImportRowDecision(",
-		"requireImportAdmin(",
-	],
-	[
-		"import review commit",
-		"[locale]/(app)/settings/import/review-actions.ts",
-		"startImportCommitAction",
-		"createCommitJobsForAcceptedRows(",
-		"requireImportAdmin(",
-	],
-	[
-		"Telegram setup",
-		"[locale]/(app)/settings/telegram/actions.ts",
-		"setupTelegramBot",
-		"storeOrgSecret(",
-		"requireAdmin(",
-	],
-	[
-		"Telegram settings",
-		"[locale]/(app)/settings/telegram/actions.ts",
-		"updateTelegramSettings",
-		".update(telegramBotConfig)",
-		"requireAdmin(",
-	],
-	[
-		"Telegram disconnect",
-		"[locale]/(app)/settings/telegram/actions.ts",
-		"disconnectTelegramBot",
-		"deleteOrgSecret(",
-		"requireAdmin(",
-	],
 ] as const;
 
 function actionSection(source: string, action: string) {
@@ -230,16 +167,6 @@ describe("explicit-organization privileged server actions", () => {
 
 		expect(guard, `${action} guard`).toBeGreaterThanOrEqual(0);
 		expect(mutation, `${action} side effect`).toBeGreaterThan(guard);
-	});
-
-	it.each([
-		["Clockodo", "[locale]/(app)/settings/clockodo-import/actions.ts"],
-		["Clockin", "[locale]/(app)/settings/import/clockin-actions.ts"],
-		["import review", "[locale]/(app)/settings/import/review-actions.ts"],
-		["Telegram", "[locale]/(app)/settings/telegram/actions.ts"],
-	] as const)("uses the lifecycle-aware actor check in the shared %s gate", (_name, path) => {
-		const source = readTestText(join(appDir, path), "utf8");
-		expect(source).toContain("runActiveOrganizationActionActorCheck({");
 	});
 
 	it.each([
