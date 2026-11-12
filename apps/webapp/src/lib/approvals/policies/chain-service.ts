@@ -21,7 +21,10 @@ import type { WorkTransactionContext } from "@/lib/time-tracking/web-clock-out-t
 import { logApprovalPolicyEvent } from "../infrastructure/audit-logger";
 import type { ApprovalDbService } from "../server/types";
 import type { resolveApproverFromDirectory } from "./approver-resolution";
-import { decideLegacyRoute } from "./legacy-route-decision";
+import {
+	decideLegacyRoute,
+	type LegacyRouteFailure,
+} from "./legacy-route-decision";
 import {
 	classifyLegacyStage,
 	type LegacyStageDisposition,
@@ -119,6 +122,17 @@ export interface ResolvePolicyAndCreateApprovalInput {
 	metadataForResultKind?: (
 		kind: ResolvePolicyAndCreateApprovalResult["kind"],
 	) => Record<string, unknown> | undefined;
+	/**
+	 * Handles a route that can't be created in place of failing, or `null` to fail as usual.
+	 * Called with the loaded decision before anything is written.
+	 */
+	onRouteFailure?: (
+		failure: LegacyRouteFailure,
+	) => Effect.Effect<
+		ResolvePolicyAndCreateApprovalResult,
+		AnyAppError,
+		never
+	> | null;
 }
 
 export type ResolvePolicyAndCreateApprovalResult =
@@ -907,7 +921,15 @@ export function resolvePolicyAndCreateApproval(
 			...loaded,
 			defaultApproverId: input.defaultApproverId,
 		});
-		if (decision.kind === "failure" && decision.reason === "invalid_policies") {
+		const handled =
+			decision.kind === "failure"
+				? (input.onRouteFailure?.(decision) ?? null)
+				: null;
+		if (
+			decision.kind === "failure" &&
+			decision.reason === "invalid_policies" &&
+			!handled
+		) {
 			// Thrown, not failed: invalid policies have always surfaced as the matcher's throw.
 			throw decision.error;
 		}
@@ -915,7 +937,10 @@ export function resolvePolicyAndCreateApproval(
 			loaded.employees,
 			loaded.context.requesterEmployeeId,
 		);
+		if (handled) return yield* handled;
 		if (decision.kind === "failure") {
+			// Unhandled invalid policies threw above; this narrows the error to a ValidationError.
+			if (decision.reason === "invalid_policies") throw decision.error;
 			return yield* Effect.fail(decision.error);
 		}
 

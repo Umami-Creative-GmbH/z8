@@ -155,6 +155,8 @@ const { cancelMyTimeCorrectionRequest } = await import("../../my-requests/action
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");
+const { readOnlyTransaction } = await import("@/db/read-only-transaction");
+const { previewApprovalRoutes } = await import("@/lib/approvals/route-preview/preview");
 const { expectRecordAgreement } = await import(
 	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
 );
@@ -646,6 +648,83 @@ describe("approval-based correction lifecycles on PostgreSQL", () => {
 		await recordWork(at("2026-07-22T12:00:00Z"), at("2026-07-22T13:00:00Z"));
 		expect(await position()).toMatchObject({ last_operation: "live_clock_out" });
 	});
+
+	it("routes like the approval route preview: a stored team counts only as a team membership (#1603)", async () => {
+		const field = randomUUID();
+		await admin.query(
+			`insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Field', now())`,
+			[field, ids.organization],
+		);
+		await admin.query("update employee set team_id = $1 where id = $2", [field, ids.requester]);
+		const { rows: policies } = await admin.query<{ id: string }>(
+			`insert into approval_policy (organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, 'Field corrections', true, 1, $2, now()) returning id`,
+			[ids.organization, ids.adminUser],
+		);
+		const policyId = only(policies).id;
+		await admin.query(
+			`insert into approval_policy_condition (organization_id, policy_id, condition_type, operator, value_json, updated_at)
+			 values ($1, $2, 'approval_type', 'equals', $3, now()), ($1, $2, 'team', 'equals', $4, now())`,
+			[
+				ids.organization,
+				policyId,
+				JSON.stringify({ value: "time_entry" }),
+				JSON.stringify({ value: field }),
+			],
+		);
+		await admin.query(
+			`insert into approval_policy_stage
+			 (organization_id, policy_id, step_order, label, approver_type, approver_employee_id, fallback_behavior, updated_at)
+			 values ($1, $2, 1, 'Field', 'specific_employee', $3, 'fail', now())`,
+			[ids.organization, policyId, ids.admin],
+		);
+
+		async function previewedApprovers() {
+			const preview = await readOnlyTransaction(db as never, (reader) =>
+				previewApprovalRoutes(reader, {
+					organizationId: ids.organization,
+					at: at("2026-07-22T12:00:00Z"),
+					requesters: [{ kind: "employee", employeeId: ids.requester }],
+				}),
+			);
+			const route = preview.routes.get(`employee:${ids.requester}`)?.get("time_correction");
+			expect(route?.kind).toBe("routed");
+			return (route?.variants ?? []).flatMap(({ outcome }) =>
+				outcome.kind === "routed"
+					? outcome.stages.flatMap((stage) => stage.approverEmployeeIds)
+					: [],
+			);
+		}
+
+		async function submittedApprover(start: string) {
+			const work = await recordWork(
+				at(`2026-07-22T${start}:00Z`),
+				at(`2026-07-22T${start.slice(0, 2)}:45:00Z`),
+			);
+			const submitted = await requestEdit(work.id, {
+				clockIn: `${start.slice(0, 2)}:15`,
+				clockOut: `${start.slice(0, 2)}:45`,
+			});
+			expect(submitted).toMatchObject({ success: true, data: { status: "pending" } });
+			const { rows } = await admin.query<{ approver_id: string }>(
+				"select approver_id from approval_request where id = $1",
+				[await pendingApprovalId(work.id)],
+			);
+			return only(rows).approver_id;
+		}
+
+		// Stored on the employee without a membership: routing ignores the team.
+		expect(await previewedApprovers()).toEqual([ids.manager]);
+		expect(await submittedApprover("08:00")).toBe(ids.manager);
+
+		await admin.query(
+			"insert into team_membership (organization_id, team_id, employee_id) values ($1, $2, $3)",
+			[ids.organization, field, ids.requester],
+		);
+		expect(await previewedApprovers()).toEqual([ids.admin]);
+		expect(await submittedApprover("10:00")).toBe(ids.admin);
+	});
+
 
 	it("replays an exact submission retry without writes and refuses a changed one", async () => {
 		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));

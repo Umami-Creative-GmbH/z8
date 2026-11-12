@@ -110,8 +110,8 @@ import {
 	resolvePolicyAndCreateApproval,
 } from "../policies/chain-service";
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
-import { classifyLegacyStage } from "../policies/requester-auto-approval";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
+import { absenceRouteFallback } from "../route-rules";
 import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import type { ApprovalWorkflowRepository } from "../workflow/repository";
@@ -1165,21 +1165,26 @@ export function createAbsenceApprovalWorkflow(
 		context: buildAbsenceApprovalPolicyContext(input.absence),
 		defaultApproverId: input.defaultApproverId,
 		transactionBehavior: input.transactionBehavior,
-	}).pipe(
-		Effect.catchTag("ValidationError", (error) => {
-			const defaultApproverId = input.defaultApproverId;
-			if (defaultApproverId === null) {
+		// The rule the approval route preview applies too.
+		onRouteFailure: (failure) => {
+			const fallback = absenceRouteFallback({
+				failure,
+				requesterEmployeeId: input.absence.employeeId,
+				defaultApproverId: input.defaultApproverId,
+			});
+			if (!fallback) return null;
+			if (fallback.kind === "no_default_approver") {
 				return Effect.fail(
 					new ValidationError({
 						message: "No manager assigned to approve absence requests",
-						field: error.field ?? "managerId",
+						field:
+							(failure.error instanceof ValidationError
+								? failure.error.field
+								: undefined) ?? "managerId",
 					}),
 				);
 			}
-			const disposition = classifyLegacyStage({
-				requesterEmployeeId: input.absence.employeeId,
-				approverEmployeeId: defaultApproverId,
-			});
+			const { approverEmployeeId: defaultApproverId, disposition } = fallback;
 			return dbService.query(
 				"createDefaultAbsenceApprovalFallback",
 				async () => {
@@ -1215,8 +1220,8 @@ export function createAbsenceApprovalWorkflow(
 						: ({ kind: "default_created", approvalRequestId } as const);
 				},
 			);
-		}),
-	);
+		},
+	});
 
 	return resolveApproval.pipe(
 		Effect.flatMap(

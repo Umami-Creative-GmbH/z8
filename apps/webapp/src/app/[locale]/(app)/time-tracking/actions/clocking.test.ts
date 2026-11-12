@@ -20,7 +20,6 @@ const mockState = vi.hoisted(() => ({
 	employeeHasAccessToCategory: vi.fn(),
 	createTimeEntry: vi.fn(),
 	getEditCapabilityForPeriod: vi.fn(),
-	isOrgAdminCasl: vi.fn(),
 	createClockOutApprovalRequest: vi.fn(),
 	createManualEntryApprovalRequest: vi.fn(),
 	executeOrdinarySubmission: vi.fn(),
@@ -879,7 +878,6 @@ function createdChange(call = 0): CreatedChange {
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getPrincipalContext: mockState.getPrincipalContext,
-	isOrgAdminCasl: mockState.isOrgAdminCasl,
 }));
 
 function principalFor(
@@ -926,7 +924,7 @@ describe("createManualTimeEntry", () => {
 		mockState.transaction.mockReset();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
-		mockState.isOrgAdminCasl.mockReset().mockResolvedValue(false);
+		mockState.getPrincipalContext.mockReset();
 
 		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
 		mockState.getCurrentEmployee.mockResolvedValue({
@@ -1113,7 +1111,18 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("allows an organization owner or admin to create their own entry beyond the approval window", async () => {
-		mockState.isOrgAdminCasl.mockResolvedValue(true);
+		mockState.getPrincipalContext.mockResolvedValue(
+			principalFor(
+				{
+					id: "employee-1",
+					userId: "user-1",
+					organizationId: "org-1",
+					teamId: null,
+					role: "employee",
+				},
+				{ orgRole: "owner" },
+			),
+		);
 		mockState.getEditCapabilityForPeriod.mockResolvedValue({
 			type: "forbidden",
 			reason: "beyond_approval_window",
@@ -1138,11 +1147,11 @@ describe("createManualTimeEntry", () => {
 			success: true,
 			data: { requiresApproval: false },
 		});
-		expect(mockState.isOrgAdminCasl).toHaveBeenCalledWith("org-1");
+		expect(mockState.getPrincipalContext).toHaveBeenCalled();
 	});
 
 	it("fails closed when organization privilege verification fails", async () => {
-		mockState.isOrgAdminCasl.mockRejectedValueOnce(
+		mockState.getPrincipalContext.mockRejectedValueOnce(
 			new Error("authorization unavailable"),
 		);
 
@@ -1725,7 +1734,7 @@ describe("createManualTimeEntry", () => {
 		}));
 		mockState.executeOrdinarySubmission.mockReset();
 		mockState.createManualEntryApprovalRequest.mockReset();
-		mockState.isOrgAdminCasl.mockReset().mockResolvedValue(false);
+		mockState.getPrincipalContext.mockReset();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
 
@@ -1828,7 +1837,6 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("submits entries beyond the approval window as pending for their manager", async () => {
-		mockState.isOrgAdminCasl.mockResolvedValue(false);
 		mockState.getEditCapabilityForPeriod.mockResolvedValue({
 			type: "forbidden",
 			reason: "beyond_approval_window",
