@@ -599,7 +599,8 @@
       "billable": "Χρεώσιμο",
       "editedBy": "(επεξεργάστηκε από {name} στις {date})",
       "missingTask": "Λείπει εργασία",
-      "missingTaskHint": "Λείπει εργασία: προσθέστε μια εργασία"
+      "missingTaskHint": "Λείπει εργασία: προσθέστε μια εργασία",
+      "breakEnforcementNote": "Αυτόματη προσαρμογή: εφαρμογή διαλειμμάτων"
     },
     "workStatus": {
       "overRequirement": "πάνω από την απαίτηση",

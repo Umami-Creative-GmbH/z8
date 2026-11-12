@@ -594,7 +594,55 @@
       "title": "Χρονοδιάγραμμα εργάσιμης ημέρας",
       "today": "Σήμερα",
       "unavailableDescription": "Η καταγραφή χρόνου λειτουργεί ακόμα. Δοκιμάστε να ανανεώσετε αυτήν την προβολή αργότερα.",
-      "unavailableTitle": "Το χρονοδιάγραμμα δεν είναι διαθέσιμο"
+      "unavailableTitle": "Το χρονοδιάγραμμα δεν είναι διαθέσιμο",
+      "workPeriod": {
+        "title": "Καταγεγραμμένη εργασία"
+      },
+      "shift": {
+        "title": "Προγραμματισμένη βάρδια"
+      },
+      "status": {
+        "approved": "Εγκρίθηκε",
+        "pending": "Σε εκκρεμότητα",
+        "rejected": "Απορρίφθηκε",
+        "cancelled": "Ακυρώθηκε",
+        "published": "Δημοσιεύτηκε",
+        "draft": "Πρόχειρο",
+        "active": "Ενεργό"
+      },
+      "absence": {
+        "fullDay": "Ολόκληρη ημέρα",
+        "morning": "Πρωί",
+        "afternoon": "Απόγευμα"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Αίτημα διόρθωσης χρόνου",
+          "subtitle": "Διόρθωση καταχώρισης χρόνου"
+        },
+        "absence": {
+          "title": "Αίτημα απουσίας",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Προβολή απουσίας",
+        "reviewRequest": "Έλεγχος αιτήματος"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Εκκρεμές αίτημα αλλαγής",
+          "description": "Αυτή η περίοδος εργασίας έχει αλλαγές που αναμένουν έγκριση."
+        },
+        "missingClockOut": {
+          "title": "Λείπει η αποχώρηση",
+          "description": "Αυτή η περίοδος εργασίας είναι ακόμα ενεργή."
+        },
+        "autoAdjusted": {
+          "title": "Αυτόματα προσαρμοσμένη καταχώριση",
+          "description": "Κανόνες διαλειμμάτων ή συμμόρφωσης προσάρμοσαν αυτή την περίοδο εργασίας."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Ακύρωση",
@@ -669,7 +717,10 @@
     "workLocationHome": "Σπίτι",
     "workLocationOffice": "Γραφείο",
     "workLocationOther": "Άλλο",
-    "workLocationRemote": "Εξ αποστάσεως"
+    "workLocationRemote": "Εξ αποστάσεως",
+    "systemNote": {
+      "breakEnforcement": "Αυτόματη προσαρμογή: εφαρμογή διαλειμμάτων"
+    }
   },
   "wellness": {
     "water": {

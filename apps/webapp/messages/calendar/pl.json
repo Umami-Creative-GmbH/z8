@@ -599,7 +599,8 @@
       "billable": "Rozliczalne",
       "editedBy": "(edytowane przez {name}, {date})",
       "missingTask": "Brak zadania",
-      "missingTaskHint": "Brak zadania: dodaj zadanie"
+      "missingTaskHint": "Brak zadania: dodaj zadanie",
+      "breakEnforcementNote": "Automatycznie dostosowano: egzekwowanie przerw"
     },
     "workStatus": {
       "overRequirement": "powyżej wymogu",

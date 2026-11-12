@@ -16,6 +16,7 @@ import {
 	timeEntry,
 	workPeriod,
 } from "@/db/schema";
+import { systemNoteOf } from "@/lib/time-tracking/system-notes";
 import { vehicleUseFromColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
 import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
@@ -295,7 +296,9 @@ export async function getWorkPeriodsForMonth(
 				vehicle,
 				automaticExecution,
 			}) => {
-				const notes = clockOutEntry?.notes?.trim();
+				// A system note is shown translated, never as a person's notes.
+				const systemNote = systemNoteOf(clockOutEntry?.notes);
+				const notes = systemNote ? undefined : clockOutEntry?.notes?.trim();
 				// Vehicle use (#1120), with the vehicle's label while the organization has it.
 				const vehicleUse = vehicleUseFromColumns(period);
 				const vehicleMetadata = vehicleUse
@@ -455,10 +458,17 @@ export async function getWorkPeriodsForMonth(
 					date: period.startTime,
 					endDate: period.endTime ?? undefined,
 					title,
-					description: notes || "Work period",
-					descriptionKey: notes
-						? undefined
-						: "calendar.calendar.workPeriod.fallbackDescription",
+					...(systemNote === "break_enforcement"
+						? {
+								description: "Auto-adjusted: break enforcement",
+								descriptionKey: "calendar.workPeriod.breakEnforcementNote",
+							}
+						: {
+								description: notes || "Work period",
+								descriptionKey: notes
+									? undefined
+									: "calendar.calendar.workPeriod.fallbackDescription",
+							}),
 					color: eventColor,
 					metadata: {
 						workLocationType: period.workLocationType ?? null,

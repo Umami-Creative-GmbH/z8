@@ -599,7 +599,8 @@
       "billable": "Billable",
       "editedBy": "(edited by {name} at {date})",
       "missingTask": "Missing task",
-      "missingTaskHint": "Missing task: add a task"
+      "missingTaskHint": "Missing task: add a task",
+      "breakEnforcementNote": "Auto-adjusted: break enforcement"
     },
     "workStatus": {
       "overRequirement": "over requirement",

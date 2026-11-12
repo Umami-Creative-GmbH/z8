@@ -43,15 +43,33 @@ function serializeSelectedDate({
 }
 
 function serializeTimelineItem(item: WorkdayTimelineItem): SerializableWorkdayTimelineItem {
-	const { id, type, title, subtitle, startLabel, endLabel, badge, severity, link } = item;
+	const {
+		id,
+		type,
+		title,
+		titleKey,
+		subtitle,
+		subtitleKey,
+		subtitleParams,
+		startLabel,
+		endLabel,
+		badge,
+		badgeKey,
+		severity,
+		link,
+	} = item;
 	return {
 		id,
 		type,
 		title,
+		titleKey,
 		subtitle,
+		subtitleKey,
+		subtitleParams,
 		startLabel,
 		endLabel,
 		badge,
+		badgeKey,
 		severity,
 		link,
 		...(item.type === "work-period" ? { workPeriodId: item.workPeriodId } : {}),

@@ -594,7 +594,55 @@
       "title": "Tidslinje for arbeidsdag",
       "today": "I dag",
       "unavailableDescription": "Stempling fungerer fortsatt. Prøv å oppdatere denne visningen senere.",
-      "unavailableTitle": "Tidslinje utilgjengelig"
+      "unavailableTitle": "Tidslinje utilgjengelig",
+      "workPeriod": {
+        "title": "Registrert arbeid"
+      },
+      "shift": {
+        "title": "Planlagt skift"
+      },
+      "status": {
+        "approved": "Godkjent",
+        "pending": "Venter",
+        "rejected": "Avvist",
+        "cancelled": "Kansellert",
+        "published": "Publisert",
+        "draft": "Utkast",
+        "active": "Aktiv"
+      },
+      "absence": {
+        "fullDay": "Hel dag",
+        "morning": "Formiddag",
+        "afternoon": "Ettermiddag"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Forespørsel om tidskorrigering",
+          "subtitle": "Korrigering av en tidsoppføring"
+        },
+        "absence": {
+          "title": "Fraværssøknad",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Vis fravær",
+        "reviewRequest": "Gå gjennom forespørsel"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Ventende endringsforespørsel",
+          "description": "Denne arbeidsperioden har endringer som venter på godkjenning."
+        },
+        "missingClockOut": {
+          "title": "Mangler utstempling",
+          "description": "Denne arbeidsperioden er fortsatt aktiv."
+        },
+        "autoAdjusted": {
+          "title": "Automatisk justert oppføring",
+          "description": "Pause- eller samsvarsregler justerte denne arbeidsperioden."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Avbryt",
@@ -669,7 +717,10 @@
     "workLocationHome": "Hjemme",
     "workLocationOffice": "Kontor",
     "workLocationOther": "Annet",
-    "workLocationRemote": "Fjernarbeid"
+    "workLocationRemote": "Fjernarbeid",
+    "systemNote": {
+      "breakEnforcement": "Automatisk justert: pauseregler"
+    }
   },
   "wellness": {
     "water": {

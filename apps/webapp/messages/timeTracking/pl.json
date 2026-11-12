@@ -594,7 +594,55 @@
       "title": "Oś czasu dnia pracy",
       "today": "Dzisiaj",
       "unavailableDescription": "Rejestrowanie czasu nadal działa. Spróbuj odświeżyć ten widok później.",
-      "unavailableTitle": "Oś czasu niedostępna"
+      "unavailableTitle": "Oś czasu niedostępna",
+      "workPeriod": {
+        "title": "Zarejestrowana praca"
+      },
+      "shift": {
+        "title": "Zaplanowana zmiana"
+      },
+      "status": {
+        "approved": "Zatwierdzone",
+        "pending": "Oczekujące",
+        "rejected": "Odrzucone",
+        "cancelled": "Anulowane",
+        "published": "Opublikowane",
+        "draft": "Szkic",
+        "active": "Aktywne"
+      },
+      "absence": {
+        "fullDay": "Cały dzień",
+        "morning": "Przedpołudnie",
+        "afternoon": "Popołudnie"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Wniosek o korektę czasu",
+          "subtitle": "Korekta wpisu czasu"
+        },
+        "absence": {
+          "title": "Wniosek o nieobecność",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Pokaż nieobecność",
+        "reviewRequest": "Sprawdź wniosek"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Oczekujący wniosek o zmianę",
+          "description": "Ten okres pracy ma zmiany oczekujące na zatwierdzenie."
+        },
+        "missingClockOut": {
+          "title": "Brak odbicia wyjścia",
+          "description": "Ten okres pracy jest nadal aktywny."
+        },
+        "autoAdjusted": {
+          "title": "Wpis automatycznie dostosowany",
+          "description": "Zasady dotyczące przerw lub zgodności dostosowały ten okres pracy."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Anuluj",
@@ -669,7 +717,10 @@
     "workLocationHome": "Dom",
     "workLocationOffice": "Biuro",
     "workLocationOther": "Inne",
-    "workLocationRemote": "Zdalnie"
+    "workLocationRemote": "Zdalnie",
+    "systemNote": {
+      "breakEnforcement": "Automatycznie dostosowano: egzekwowanie przerw"
+    }
   },
   "wellness": {
     "water": {

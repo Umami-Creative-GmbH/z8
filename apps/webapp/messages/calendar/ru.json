@@ -599,7 +599,8 @@
       "billable": "Оплачиваемое",
       "editedBy": "(отредактировано: {name}, {date})",
       "missingTask": "Не указана задача",
-      "missingTaskHint": "Не указана задача: добавьте задачу"
+      "missingTaskHint": "Не указана задача: добавьте задачу",
+      "breakEnforcementNote": "Автоматически скорректировано: соблюдение перерывов"
     },
     "workStatus": {
       "overRequirement": "сверх нормы",

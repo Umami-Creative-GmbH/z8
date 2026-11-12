@@ -599,7 +599,8 @@
       "billable": "Faturalandırılabilir",
       "editedBy": "({name} tarafından {date} tarihinde düzenlendi)",
       "missingTask": "Eksik görev",
-      "missingTaskHint": "Eksik görev: bir görev ekleyin"
+      "missingTaskHint": "Eksik görev: bir görev ekleyin",
+      "breakEnforcementNote": "Otomatik düzeltildi: mola uygulaması"
     },
     "workStatus": {
       "overRequirement": "gereksinimin üzerinde",

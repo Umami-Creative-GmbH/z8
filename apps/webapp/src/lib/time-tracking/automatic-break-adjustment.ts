@@ -57,6 +57,7 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
+import { BREAK_ENFORCEMENT_NOTE } from "./system-notes";
 import { capturedZone } from "./timezone-capture";
 import {
 	assertNoUnresolvedWorkPeriodReview,
@@ -76,7 +77,6 @@ export const AUTOMATIC_BREAK_ADJUSTMENT_COMMAND_VERSION = 1;
 export const AUTOMATIC_BREAK_ADJUSTMENT_RESULT_VERSION = 1;
 export const AUTOMATIC_BREAK_ENFORCEMENT_WRITER_VERSION = 1;
 
-const ADJUSTMENT_NOTE = "Auto-adjusted: break enforcement";
 const ADJUSTMENT_SOURCE = { ipAddress: "system", deviceInfo: "break-enforcement" } as const;
 /** Intents one scheduled run re-evaluates, least recently checked first. */
 const DEFAULT_INTENT_BATCH = 100;
@@ -384,7 +384,7 @@ export async function adjustAutomaticBreakInTransaction(
 		expected: current.expected,
 		regulation,
 		takenBefore: "earlier_breaks",
-		notes: ADJUSTMENT_NOTE,
+		notes: BREAK_ENFORCEMENT_NOTE,
 		actorUserId: null,
 		entries: {
 			// Rows need a user: the triggering human, else the human who completed the work.

@@ -599,7 +599,8 @@
       "billable": "Naplativo",
       "editedBy": "(uredio {name} u {date})",
       "missingTask": "Nedostaje zadatak",
-      "missingTaskHint": "Nedostaje zadatak: dodajte zadatak"
+      "missingTaskHint": "Nedostaje zadatak: dodajte zadatak",
+      "breakEnforcementNote": "Automatski prilagođeno: primjena stanki"
     },
     "workStatus": {
       "overRequirement": "iznad zahtjeva",

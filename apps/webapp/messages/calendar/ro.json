@@ -599,7 +599,8 @@
       "billable": "Facturabil",
       "editedBy": "(editat de {name} la {date})",
       "missingTask": "Sarcină lipsă",
-      "missingTaskHint": "Sarcină lipsă: adăugați o sarcină"
+      "missingTaskHint": "Sarcină lipsă: adăugați o sarcină",
+      "breakEnforcementNote": "Ajustat automat: aplicarea pauzelor"
     },
     "workStatus": {
       "overRequirement": "peste cerință",

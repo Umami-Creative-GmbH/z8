@@ -599,7 +599,8 @@
       "billable": "Verrechebar",
       "editedBy": "(bearbeitet vo {name} am {date})",
       "missingTask": "Fählendi Ufgab",
-      "missingTaskHint": "Fählendi Ufgab: Füeg e Ufgab dezue"
+      "missingTaskHint": "Fählendi Ufgab: Füeg e Ufgab dezue",
+      "breakEnforcementNote": "Automatisch aapasst: Pauseregelig"
     },
     "workStatus": {
       "overRequirement": "über Anforderung",
