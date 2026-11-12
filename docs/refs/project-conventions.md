@@ -46,7 +46,7 @@ Settings server actions authorize by **settings access**, not CASL ([ADR 0002](.
 
 The older `SettingsAccessTier` (`member | manager | orgAdmin`) in `lib/settings-access.ts` still backs `getCurrentSettingsAccessTier` and the sidebar. Keep it apart from the four levels above.
 
-Settings folders still being migrated are listed in `NOT_YET_MIGRATED` in `settings/__tests__/organization-action-coverage.test.ts`. That test fails on any export of a settings `"use server"` module that `organizationAction` did not produce; a migrated folder leaves the list.
+`settings/__tests__/organization-action-coverage.test.ts` fails on any export of a settings `"use server"` module that `organizationAction` did not produce. Its only exceptions are the account actions in `ACCOUNT_EXEMPTIONS`, each with a reason. The same test fails any settings action unit test that `vi.mock`s `@/lib/auth-helpers`, `@/lib/auth` or the auth service: stub `AuthService` with `organizationActionStubLayer`, and spy on the real `auth.api` method for a Better Auth call.
 
 [CASL](https://casl.js.org/) decides object-level checks inside handlers, such as whether this manager may edit this employee, and authorization outside settings. Use the existing ability checks there instead of ad-hoc role checks.
 
