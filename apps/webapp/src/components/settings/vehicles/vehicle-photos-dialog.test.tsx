@@ -102,6 +102,8 @@ describe("vehicle photo settings", () => {
 		expect(within(viewer).getByRole("img").getAttribute("src")).toBe(
 			"/api/organization/vehicles/van/photos/first",
 		);
+		// The dialog moves focus inside on the next frame; keys go to the focused element.
+		await waitFor(() => expect(viewer.contains(document.activeElement)).toBe(true));
 		await userEvent.keyboard("{ArrowRight}");
 		expect(screen.getByRole("dialog", { name: "Photo 2 of 2" })).toBeTruthy();
 		await userEvent.click(
