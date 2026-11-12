@@ -17,6 +17,8 @@ export type ServerActionResult<T> =
 			closedMonth?: string;
 		/** A machine-readable refusal a form maps to its own copy, e.g. a deputy refusal (#1011). */
 		refusal?: string;
+			/** What a refusal carries beside its code, e.g. the conflicting payouts (`refusalStep`). */
+			details?: Record<string, unknown>;
 	  };
 
 export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): ServerActionResult<T> {
@@ -57,6 +59,9 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 				}
 				if (appError._tag === "ValidationError" && appError.refusal) {
 					result.refusal = appError.refusal;
+					if (appError.value && typeof appError.value === "object") {
+						result.details = appError.value as Record<string, unknown>;
+					}
 				}
 				if (appError._tag === "MonthClosedError") {
 					result.closedMonth = appError.month;
