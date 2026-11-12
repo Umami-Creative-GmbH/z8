@@ -132,18 +132,19 @@ export async function loadApprovalRouteSnapshot(
 				"travel_expense",
 			] as const),
 		() => loadApprovalStageDirectory(reader, { organizationId, namedApproverId: null, at }),
+		// Legacy routing reads the stored activity flag, as `getPrimaryEligibleManagerIdForRequester` does.
 		() =>
-			reader
-				.select({
-					id: employee.id,
-					organizationId: employee.organizationId,
-					isActive: employee.isActive,
-					role: employee.role,
-					teamId: employee.teamId,
-					userId: employee.userId,
-				})
-				.from(employee)
-				.where(eq(employee.organizationId, organizationId)),
+			reader.query.employee.findMany({
+				columns: {
+					id: true,
+					organizationId: true,
+					isActive: true,
+					role: true,
+					teamId: true,
+					userId: true,
+				},
+				where: eq(employee.organizationId, organizationId),
+			}),
 		() =>
 			reader
 				.select({
