@@ -173,7 +173,7 @@ describe("assigned locations on PostgreSQL", () => {
 		for (const userId of [manager.userId, member.userId]) {
 			expect(await assign(fixture.employeeId, store, userId)).toMatchObject({
 				success: false,
-				code: "admin_only",
+				code: "AuthorizationError",
 			});
 			actAs(userId);
 			expect(
@@ -181,12 +181,12 @@ describe("assigned locations on PostgreSQL", () => {
 					employeeId: member.employeeId,
 					locationId: store,
 				}),
-			).toMatchObject({ success: false, code: "admin_only" });
+			).toMatchObject({ success: false, code: "AuthorizationError" });
 			expect(
 				await actions.getEmployeeAssignedLocationsAction({ employeeId: member.employeeId }),
-			).toMatchObject({ success: false, code: "admin_only" });
+			).toMatchObject({ success: false, code: "AuthorizationError" });
 			expect(await actions.getLocationAssignedEmployeesAction({ locationId: store })).toMatchObject(
-				{ success: false, code: "admin_only" },
+				{ success: false, code: "AuthorizationError" },
 			);
 		}
 
@@ -205,11 +205,12 @@ describe("assigned locations on PostgreSQL", () => {
 
 		expect(await assign(fixture.employeeId, foreignStore)).toMatchObject({
 			success: false,
-			code: "location_not_found",
+			refusal: "location_not_found",
 		});
+		// Another organization's employee is not on this organization's current roster.
 		expect(await assign(foreignOwner.employeeId, store)).toMatchObject({
 			success: false,
-			code: "employee_not_found",
+			refusal: "former_employee",
 		});
 
 		for (const row of [
@@ -238,7 +239,7 @@ describe("assigned locations on PostgreSQL", () => {
 
 		expect(await assign(leaver.employeeId, warehouse)).toMatchObject({
 			success: false,
-			code: "former_employee",
+			refusal: "former_employee",
 		});
 		actAs(owner.userId);
 		expect(

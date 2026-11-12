@@ -1,13 +1,14 @@
 "use server";
 
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { Effect } from "effect";
+import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import { employee, travelExpenseSettings } from "@/db/schema";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
-import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
+import { ValidationError } from "@/lib/effect/errors";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { expenseStore, revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
  * The organization expense approver (#602): the last reviewer fallback, after
@@ -20,12 +21,11 @@ export interface TravelExpenseApproverSettings {
 	candidates: { id: string; name: string; role: "manager" | "admin" }[];
 }
 
-const requireOrgAdmin = () => requireExpenseAdministrator();
-
 async function loadApproverCandidates(
+	database: DatabaseClient,
 	organizationId: string,
 ): Promise<TravelExpenseApproverSettings["candidates"]> {
-	const rows = await db
+	const rows = await database
 		.select({ id: employee.id, name: user.name, role: employee.role })
 		.from(employee)
 		.innerJoin(user, eq(user.id, employee.userId))
@@ -42,67 +42,76 @@ async function loadApproverCandidates(
 	);
 }
 
-export async function getTravelExpenseApproverSettings(): Promise<
-	ServerActionResult<TravelExpenseApproverSettings>
-> {
-	try {
-		const access = await requireOrgAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		const [settings, candidates] = await Promise.all([
-			db
-				.select({ expenseApproverEmployeeId: travelExpenseSettings.expenseApproverEmployeeId })
-				.from(travelExpenseSettings)
-				.where(eq(travelExpenseSettings.organizationId, access.organizationId))
-				.limit(1),
-			loadApproverCandidates(access.organizationId),
-		]);
-		return {
-			success: true,
-			data: {
+export const getTravelExpenseApproverSettings = organizationAction(
+	{ name: "travelExpenses.getApprover", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const [settings, candidates] = yield* expenseStore(
+				"travelExpenses.getApprover",
+				"Failed to load the expense approver",
+				(database) =>
+					Promise.all([
+						database
+							.select({
+								expenseApproverEmployeeId: travelExpenseSettings.expenseApproverEmployeeId,
+							})
+							.from(travelExpenseSettings)
+							.where(eq(travelExpenseSettings.organizationId, organizationId))
+							.limit(1),
+						loadApproverCandidates(database, organizationId),
+					]),
+			);
+			return {
 				expenseApproverEmployeeId: settings[0]?.expenseApproverEmployeeId ?? null,
 				candidates,
-			},
-		};
-	} catch (error) {
-		logger.error({ error }, "Failed to load the travel expense approver");
-		return { success: false, error: "Failed to load the expense approver" };
-	}
-}
+			} satisfies TravelExpenseApproverSettings;
+		}),
+);
 
-export async function saveTravelExpenseApprover(input: {
-	expenseApproverEmployeeId: string | null;
-}): Promise<ServerActionResult<{ expenseApproverEmployeeId: string | null }>> {
-	try {
-		const access = await requireOrgAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		const approverId = input.expenseApproverEmployeeId;
-		if (approverId !== null) {
-			const candidates = await loadApproverCandidates(access.organizationId);
-			// Never another organization's employee, nor one who cannot open the inbox.
-			if (!candidates.some((candidate) => candidate.id === approverId)) {
-				return {
-					success: false,
-					error: "Choose an active manager or administrator of this organization",
-				};
+const notACandidate = "Choose an active manager or administrator of this organization";
+
+export const saveTravelExpenseApprover = organizationAction(
+	{
+		name: "travelExpenses.saveApprover",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			expenseApproverEmployeeId: z.string(notACandidate).nullable(),
+		}),
+		addsEmployees: (input) => [input.expenseApproverEmployeeId],
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const failure = "Failed to save the expense approver";
+			const approverId = input.expenseApproverEmployeeId;
+			if (approverId !== null) {
+				const candidates = yield* expenseStore(
+					"travelExpenses.loadApproverCandidates",
+					failure,
+					(database) => loadApproverCandidates(database, organizationId),
+				);
+				// Never another organization's employee, nor one who cannot open the inbox.
+				if (!candidates.some((candidate) => candidate.id === approverId)) {
+					return yield* Effect.fail(
+						new ValidationError({ message: notACandidate, field: "expenseApproverEmployeeId" }),
+					);
+				}
 			}
-		}
-		const now = new Date();
-		await db
-			.insert(travelExpenseSettings)
-			.values({
-				organizationId: access.organizationId,
-				expenseApproverEmployeeId: approverId,
-				updatedAt: now,
-				updatedBy: access.userId,
-			})
-			.onConflictDoUpdate({
-				target: travelExpenseSettings.organizationId,
-				set: { expenseApproverEmployeeId: approverId, updatedAt: now, updatedBy: access.userId },
-			});
-		revalidatePath("/settings/travel-expenses");
-		return { success: true, data: { expenseApproverEmployeeId: approverId } };
-	} catch (error) {
-		logger.error({ error }, "Failed to save the travel expense approver");
-		return { success: false, error: "Failed to save the expense approver" };
-	}
-}
+			const now = new Date();
+			yield* expenseStore("travelExpenses.saveApprover", failure, (database) =>
+				database
+					.insert(travelExpenseSettings)
+					.values({
+						organizationId,
+						expenseApproverEmployeeId: approverId,
+						updatedAt: now,
+						updatedBy: actor.userId,
+					})
+					.onConflictDoUpdate({
+						target: travelExpenseSettings.organizationId,
+						set: { expenseApproverEmployeeId: approverId, updatedAt: now, updatedBy: actor.userId },
+					}),
+			);
+			yield* revalidateExpenseSettings();
+			return { expenseApproverEmployeeId: approverId };
+		}),
+);

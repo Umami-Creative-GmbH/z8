@@ -56,7 +56,7 @@ export function EditOrganizationDialog({
 				description: formData.description,
 			});
 
-			const result = await updateOrganizationDetails(organization.id, {
+			const result = await updateOrganizationDetails({
 				name: formData.name !== organization.name ? formData.name : undefined,
 				slug: formData.slug !== organization.slug ? formData.slug : undefined,
 				metadata: formData.description !== existingMetadata.description ? metadata : undefined,

@@ -285,7 +285,7 @@ export function InviteCodeDialog({
 	// Fetch teams for team selection
 	const { data: teamsResult } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
-		queryFn: () => listTeams(organizationId),
+		queryFn: () => listTeams(),
 		enabled: open,
 	});
 
@@ -345,7 +345,6 @@ export function InviteCodeDialog({
 	const createMutation = useMutation({
 		mutationFn: async (formValues: InviteCodeFormValues) => {
 			const result = await createInviteCode({
-				organizationId,
 				code: formValues.code || undefined,
 				label: formValues.label,
 				description: formValues.description || undefined,
@@ -377,7 +376,8 @@ export function InviteCodeDialog({
 	// Update mutation
 	const updateMutation = useMutation({
 		mutationFn: async (formValues: InviteCodeFormValues) => {
-			const result = await updateInviteCode(inviteCode!.id, organizationId, {
+			const result = await updateInviteCode({
+				inviteCodeId: inviteCode!.id,
 				label: formValues.label,
 				description: formValues.description || null,
 				maxUses: formValues.maxUses ? parseInt(formValues.maxUses, 10) : null,

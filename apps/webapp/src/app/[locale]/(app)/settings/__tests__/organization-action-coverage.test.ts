@@ -20,46 +20,19 @@ const NOT_YET_MIGRATED = [
 	"approval-policies",
 	"audit-export",
 	"audit-log",
-	"avv",
 	"billable-time",
-	"calendar",
 	"closed-months",
 	"compliance",
-	"coverage-rules",
 	"custom-fields",
-	"customers",
 	"demo",
-	"email-templates",
 	"employees",
 	"enterprise",
 	"export",
-	"implementation-checklist",
-	"kiosks",
-	"locations",
-	"my-data",
-	"notification-channels",
-	"notifications",
-	"organization",
 	"payroll-access",
 	"payroll-export",
-	"permissions",
-	"personnel-files",
-	"position-capture",
-	"position-stamps",
-	"profile",
-	"projects",
 	"roles",
 	"scheduled-exports",
-	"security",
-	"skills",
-	"statistics",
-	"surcharges",
-	"teams",
-	"travel-expenses",
-	"vehicle-use",
 	"vehicles",
-	"webhooks",
-	"wellness",
 ];
 
 /**
@@ -67,7 +40,25 @@ const NOT_YET_MIGRATED = [
  * govern them (ADR 0002). Each permanent exemption names its export as
  * `<path under settings>#<export>` and gives the reason.
  */
-const ACCOUNT_EXEMPTIONS: Record<string, string> = {};
+const ACCOUNT_EXEMPTIONS: Record<string, string> = {
+	"profile/actions.ts#changePassword":
+		"The password signs the user in to every organization; Better Auth checks the current password.",
+	"profile/actions.ts#updateProfileImage":
+		"The profile picture is the user's own, shown in every organization they belong to.",
+	"profile/actions.ts#updateProfileDetails":
+		"The user's name and personal details are their own across organizations; it only mirrors them onto their own active employee record.",
+	"profile/actions.ts#updateProfile":
+		"Dispatches to updateProfileDetails or updateProfileImage, both account actions.",
+	"profile/actions.ts#updateTimezone":
+		"The user's own time zone applies in every organization; usable before and outside any membership.",
+	"profile/actions.ts#getCurrentTimezone": "Reads the user's own time zone, an account detail.",
+	"profile/actions.ts#updateWeekStartDay":
+		"The user's own week start is a display preference across organizations.",
+	"profile/actions.ts#getWeekStartDay": "Reads the user's own week start, an account detail.",
+	"profile/actions.ts#updateTimeFormat":
+		"The user's own 12h/24h time format is a display preference across organizations.",
+	"profile/actions.ts#getTimeFormat": "Reads the user's own time format, an account detail.",
+};
 
 function sourceFiles(dir: string): string[] {
 	return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

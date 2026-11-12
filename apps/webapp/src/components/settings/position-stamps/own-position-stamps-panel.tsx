@@ -13,8 +13,8 @@ import {
 	type OwnPositionStampAccessEntry,
 	withdrawPositionConsentAction,
 } from "@/app/[locale]/(app)/settings/position-stamps/actions";
-import { positionCaptureErrorMessage } from "@/components/position-capture/error-message";
 import { formatRecordedPositionInstant } from "@/components/position-capture/format";
+import { POSITION_CAPTURE_REFUSALS } from "@/components/position-capture/position-capture-refusals";
 import { PositionNoticeText } from "@/components/position-capture/position-notice-text";
 import {
 	AlertDialog,
@@ -29,8 +29,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+
+/**
+ * The consent actions run on `organizationAction` (#1619): their sign-in and
+ * access refusals arrive as error tags and keep the position capture wording.
+ */
+const OWN_POSITION_REFUSALS: RefusalOverrides = {
+	...POSITION_CAPTURE_REFUSALS,
+	AuthenticationError: POSITION_CAPTURE_REFUSALS.sign_in_required,
+	AuthorizationError: POSITION_CAPTURE_REFUSALS.employee_profile_required,
+};
 
 /** What the employee decided about the position notice, in one sentence. */
 function consentStatusText(
@@ -95,8 +109,10 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 				router.refresh();
 			} else {
 				toast.error(
-					positionCaptureErrorMessage(t, result.code) ??
-						t("settings.positionStamps.agreeFailed", "Your consent could not be saved"),
+					actionErrorMessage(t, result, OWN_POSITION_REFUSALS, [
+						"settings.positionStamps.agreeFailed",
+						"Your consent could not be saved",
+					]),
 				);
 			}
 		})().finally(() => {
@@ -119,8 +135,10 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 				router.refresh();
 			} else {
 				toast.error(
-					positionCaptureErrorMessage(t, result.code) ??
-						t("settings.positionStamps.withdrawFailed", "Your consent could not be withdrawn"),
+					actionErrorMessage(t, result, OWN_POSITION_REFUSALS, [
+						"settings.positionStamps.withdrawFailed",
+						"Your consent could not be withdrawn",
+					]),
 				);
 			}
 		})().finally(() => {

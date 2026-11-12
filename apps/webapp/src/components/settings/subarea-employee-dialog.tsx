@@ -31,7 +31,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
 
 interface SubareaEmployeeDialogProps {
-	organizationId: string;
 	subareaId: string;
 	subareaName: string;
 	open: boolean;
@@ -65,7 +64,6 @@ export function SubareaEmployeeDialog(props: SubareaEmployeeDialogProps) {
 }
 
 function SubareaEmployeeDialogContent({
-	organizationId,
 	subareaId,
 	subareaName,
 	open,
@@ -122,7 +120,7 @@ function SubareaEmployeeDialogContent({
 	const { data: employees, isLoading } = useQuery({
 		queryKey: [...queryKeys.locations.subareas.employees(subareaId), "available"],
 		queryFn: async () => {
-			const result = await getAvailableEmployees(organizationId, undefined, subareaId);
+			const result = await getAvailableEmployees({ excludeSubareaId: subareaId });
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch employees");
 			}

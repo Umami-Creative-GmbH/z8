@@ -173,7 +173,7 @@ function useMembersTableController({
 			memberId: string;
 			userId: string;
 			role: "owner" | "admin" | "member";
-		}) => updateMemberRole(organizationId, memberId, { role }),
+		}) => updateMemberRole({ memberId, role }),
 		onMutate: async ({ userId, role }) => {
 			const previousMembers = members;
 			setMembers((prev) =>
@@ -273,7 +273,7 @@ function useMembersTableController({
 	// Resend invitation mutation
 	const resendInvitationMutation = useMutation({
 		mutationFn: (invitation: InvitationWithInviter) =>
-			resendInvitation(organizationId, invitation.id),
+			resendInvitation(invitation.id),
 		onSuccess: async (result, invitation) => {
 			if (result.success) {
 				setInvitations((current) =>

@@ -12,9 +12,10 @@ import {
 } from "@/app/[locale]/(app)/calendar/position-stamps-actions";
 import { Button } from "@/components/ui/button";
 import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import type { PositionCaptureErrorCode } from "@/lib/time-tracking/position-capture/errors";
-import { positionCaptureErrorMessage } from "./error-message";
+import { POSITION_CAPTURE_REFUSALS } from "./position-capture-refusals";
 
 interface WorkPeriodPositionsSectionProps {
 	workPeriodId: string;
@@ -106,8 +107,10 @@ export function WorkPeriodPositionsSection({
 			) : null}
 			{shown.state === "failed" ? (
 				<p className="text-sm text-destructive">
-					{positionCaptureErrorMessage(t, shown.code) ??
-						t("calendar.details.positions.failed", "Positions could not be loaded")}
+					{actionErrorMessage(t, shown, POSITION_CAPTURE_REFUSALS, [
+						"calendar.details.positions.failed",
+						"Positions could not be loaded",
+					])}
 				</p>
 			) : null}
 			{shown.state === "shown" ? <PositionStampList stamps={shown.stamps} /> : null}

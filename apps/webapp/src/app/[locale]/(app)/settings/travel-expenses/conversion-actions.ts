@@ -1,169 +1,187 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { Effect } from "effect";
 import { z } from "zod";
-import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
+import { ValidationError } from "@/lib/effect/errors";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { loadOrganizationReimbursementCurrency } from "@/lib/travel-expenses/conversion-read";
 import {
 	type AuthorizeRateResult,
 	authorizeManualConversionRate,
-	type ConversionAdministrator,
 	clearItemConversion,
 	type ForeignDraftItem,
 	listForeignDraftItems,
 	type RemoveConversionResult,
 	saveOrganizationReimbursementCurrency,
 } from "@/lib/travel-expenses/conversion-store";
-import { requireExpenseAdministrator as requireExpenseAdministratorAccess } from "@/lib/travel-expenses/expense-administrator";
+import {
+	auditLater,
+	expenseAdministrator,
+	expenseStore,
+	revalidateExpenseSettings,
+} from "./expense-settings-effects";
 
 /**
  * Expense administrator settings of #607: the organization's reimbursement
  * currency for new reports, and documented manual rates for foreign-currency
- * expenses of draft reports. Only organization administrators
- * (`canManageCurrentOrganizationSettings`) may use them; every read and write
- * is scoped to their active organization.
+ * expenses of draft reports. Only org admins with an employee profile in the
+ * session's organization use them; every read and write is scoped to it.
  */
 
-/** Authorizations are attributed to the administrator's employee profile. */
-async function requireExpenseAdministrator(): Promise<{ error: string } | ConversionAdministrator> {
-	return requireExpenseAdministratorAccess({ requireEmployee: true });
-}
+export const getReimbursementCurrencySetting = organizationAction(
+	{ name: "travelExpenses.getReimbursementCurrency", requires: "orgAdmin", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			yield* expenseAdministrator(actor, organizationId);
+			const currency = yield* expenseStore(
+				"travelExpenses.getReimbursementCurrency",
+				"Failed to load the reimbursement currency",
+				(database) => loadOrganizationReimbursementCurrency(database, organizationId),
+			);
+			return { currency };
+		}),
+);
 
-export async function getReimbursementCurrencySetting(): Promise<
-	ServerActionResult<{ currency: string }>
-> {
-	try {
-		const admin = await requireExpenseAdministrator();
-		if ("error" in admin) return { success: false, error: admin.error };
-		return {
-			success: true,
-			data: { currency: await loadOrganizationReimbursementCurrency(db, admin.organizationId) },
-		};
-	} catch (error) {
-		logger.error({ error }, "Failed to load the reimbursement currency");
-		return { success: false, error: "Failed to load the reimbursement currency" };
-	}
-}
+const currencyRefusal = "Choose a currency code with at most two decimal places, e.g. EUR";
 
-export async function saveReimbursementCurrencySetting(input: {
-	currency: string;
-}): Promise<ServerActionResult<{ currency: string }>> {
-	try {
-		const admin = await requireExpenseAdministrator();
-		if ("error" in admin) return { success: false, error: admin.error };
-		const result = await saveOrganizationReimbursementCurrency(db, {
-			organizationId: admin.organizationId,
-			userId: admin.userId,
-			currency: String(input.currency ?? ""),
-		});
-		if (result.kind !== "saved") {
-			return {
-				success: false,
-				error: "Choose a currency code with at most two decimal places, e.g. EUR",
-			};
-		}
-		logAudit({
-			action: AuditAction.TRAVEL_EXPENSE_REIMBURSEMENT_CURRENCY_UPDATED,
-			actorId: admin.userId,
-			employeeId: admin.employeeId,
-			targetType: "organization",
-			organizationId: admin.organizationId,
-			metadata: { currency: result.currency },
-			timestamp: new Date(),
-		}).catch((error) => logger.error({ error }, "Failed to log reimbursement currency change"));
-		revalidatePath("/settings/travel-expenses");
-		return { success: true, data: { currency: result.currency } };
-	} catch (error) {
-		logger.error({ error }, "Failed to save the reimbursement currency");
-		return { success: false, error: "Failed to save the reimbursement currency" };
-	}
-}
+export const saveReimbursementCurrencySetting = organizationAction(
+	{
+		name: "travelExpenses.saveReimbursementCurrency",
+		requires: "orgAdmin",
+		schema: z.strictObject({ currency: z.string(currencyRefusal).max(20, currencyRefusal) }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const admin = yield* expenseAdministrator(actor, organizationId);
+			const result = yield* expenseStore(
+				"travelExpenses.saveReimbursementCurrency",
+				"Failed to save the reimbursement currency",
+				(database) =>
+					saveOrganizationReimbursementCurrency(database, {
+						organizationId,
+						userId: actor.userId,
+						currency: input.currency,
+					}),
+			);
+			if (result.kind !== "saved") {
+				return yield* Effect.fail(
+					new ValidationError({ message: currencyRefusal, field: "currency" }),
+				);
+			}
+			yield* auditLater(
+				() =>
+					logAudit({
+						action: AuditAction.TRAVEL_EXPENSE_REIMBURSEMENT_CURRENCY_UPDATED,
+						actorId: actor.userId,
+						employeeId: admin.employeeId,
+						targetType: "organization",
+						organizationId,
+						metadata: { currency: result.currency },
+						timestamp: new Date(),
+					}),
+				"Failed to log reimbursement currency change",
+			);
+			yield* revalidateExpenseSettings();
+			return { currency: result.currency };
+		}),
+);
 
-export async function getForeignDraftExpenses(): Promise<ServerActionResult<ForeignDraftItem[]>> {
-	try {
-		const admin = await requireExpenseAdministrator();
-		if ("error" in admin) return { success: false, error: admin.error };
-		return { success: true, data: await listForeignDraftItems(db, admin.organizationId) };
-	} catch (error) {
-		logger.error({ error }, "Failed to list foreign-currency expenses");
-		return { success: false, error: "Failed to load foreign-currency expenses" };
-	}
-}
+export const getForeignDraftExpenses = organizationAction(
+	{ name: "travelExpenses.listForeignDraftExpenses", requires: "orgAdmin", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			yield* expenseAdministrator(actor, organizationId);
+			return yield* expenseStore(
+				"travelExpenses.listForeignDraftExpenses",
+				"Failed to load foreign-currency expenses",
+				(database): Promise<ForeignDraftItem[]> => listForeignDraftItems(database, organizationId),
+			);
+		}),
+);
 
-const itemInput = z.object({
-	reportId: z.uuid(),
-	itemId: z.uuid(),
-	expectedVersion: z.number().int().positive(),
-});
+const itemInput = z.object(
+	{
+		reportId: z.uuid("Invalid expense"),
+		itemId: z.uuid("Invalid expense"),
+		expectedVersion: z.number("Invalid expense").int("Invalid expense").positive("Invalid expense"),
+	},
+	"Invalid expense",
+);
 
 const rateInput = itemInput.extend({
-	rate: z.object({
-		base: z.string().max(3),
-		quote: z.string().max(3),
-		rate: z.string().max(40),
-		rateDate: z.string().max(10),
-		reason: z.string().max(2000),
-		evidence: z.string().max(4000),
-	}),
+	rate: z.object(
+		{
+			base: z.string("Invalid conversion rate").max(3, "Invalid conversion rate"),
+			quote: z.string("Invalid conversion rate").max(3, "Invalid conversion rate"),
+			rate: z.string("Invalid conversion rate").max(40, "Invalid conversion rate"),
+			rateDate: z.string("Invalid conversion rate").max(10, "Invalid conversion rate"),
+			reason: z.string("Invalid conversion rate").max(2000, "Invalid conversion rate"),
+			evidence: z.string("Invalid conversion rate").max(4000, "Invalid conversion rate"),
+		},
+		"Invalid conversion rate",
+	),
 });
 
-export async function authorizeManualConversionRateAction(
-	input: z.input<typeof rateInput>,
-): Promise<ServerActionResult<AuthorizeRateResult>> {
-	try {
-		const admin = await requireExpenseAdministrator();
-		if ("error" in admin) return { success: false, error: admin.error };
-		const parsed = rateInput.safeParse(input);
-		if (!parsed.success) return { success: false, error: "Invalid conversion rate" };
-		const result = await authorizeManualConversionRate(db, admin, parsed.data);
-		if (result.kind === "saved") {
-			logAudit({
-				action: AuditAction.TRAVEL_EXPENSE_CONVERSION_RECORDED,
-				actorId: admin.userId,
-				employeeId: admin.employeeId,
-				targetId: parsed.data.reportId,
-				targetType: "approval",
-				organizationId: admin.organizationId,
-				metadata: { itemId: parsed.data.itemId, basis: "manual_rate" },
-				timestamp: new Date(),
-			}).catch((error) => logger.error({ error }, "Failed to log manual conversion rate"));
-			revalidatePath("/settings/travel-expenses");
-		}
-		return { success: true, data: result };
-	} catch (error) {
-		logger.error({ error }, "Failed to authorize a manual conversion rate");
-		return { success: false, error: "Failed to save the conversion rate" };
-	}
-}
+export const authorizeManualConversionRateAction = organizationAction(
+	{ name: "travelExpenses.authorizeManualConversionRate", requires: "orgAdmin", schema: rateInput },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const admin = yield* expenseAdministrator(actor, organizationId);
+			const result = yield* expenseStore(
+				"travelExpenses.authorizeManualConversionRate",
+				"Failed to save the conversion rate",
+				(database): Promise<AuthorizeRateResult> =>
+					authorizeManualConversionRate(database, admin, input),
+			);
+			if (result.kind === "saved") {
+				yield* auditLater(
+					() =>
+						logAudit({
+							action: AuditAction.TRAVEL_EXPENSE_CONVERSION_RECORDED,
+							actorId: actor.userId,
+							employeeId: admin.employeeId,
+							targetId: input.reportId,
+							targetType: "approval",
+							organizationId,
+							metadata: { itemId: input.itemId, basis: "manual_rate" },
+							timestamp: new Date(),
+						}),
+					"Failed to log manual conversion rate",
+				);
+				yield* revalidateExpenseSettings();
+			}
+			return result;
+		}),
+);
 
-export async function clearItemConversionAction(
-	input: z.input<typeof itemInput>,
-): Promise<ServerActionResult<Exclude<RemoveConversionResult, { kind: "not_allowed" }>>> {
-	try {
-		const admin = await requireExpenseAdministrator();
-		if ("error" in admin) return { success: false, error: admin.error };
-		const parsed = itemInput.safeParse(input);
-		if (!parsed.success) return { success: false, error: "Invalid expense" };
-		const result = await clearItemConversion(db, admin, parsed.data);
-		if (result.kind === "removed") {
-			logAudit({
-				action: AuditAction.TRAVEL_EXPENSE_CONVERSION_REMOVED,
-				actorId: admin.userId,
-				employeeId: admin.employeeId,
-				targetId: parsed.data.reportId,
-				targetType: "approval",
-				organizationId: admin.organizationId,
-				metadata: { itemId: parsed.data.itemId },
-				timestamp: new Date(),
-			}).catch((error) => logger.error({ error }, "Failed to log conversion removal"));
-			revalidatePath("/settings/travel-expenses");
-		}
-		return { success: true, data: result };
-	} catch (error) {
-		logger.error({ error }, "Failed to clear an item conversion");
-		return { success: false, error: "Failed to remove the conversion" };
-	}
-}
+export const clearItemConversionAction = organizationAction(
+	{ name: "travelExpenses.clearItemConversion", requires: "orgAdmin", schema: itemInput },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const admin = yield* expenseAdministrator(actor, organizationId);
+			const result = yield* expenseStore(
+				"travelExpenses.clearItemConversion",
+				"Failed to remove the conversion",
+				(database) => clearItemConversion(database, admin, input),
+			);
+			if (result.kind === "removed") {
+				yield* auditLater(
+					() =>
+						logAudit({
+							action: AuditAction.TRAVEL_EXPENSE_CONVERSION_REMOVED,
+							actorId: actor.userId,
+							employeeId: admin.employeeId,
+							targetId: input.reportId,
+							targetType: "approval",
+							organizationId,
+							metadata: { itemId: input.itemId },
+							timestamp: new Date(),
+						}),
+					"Failed to log conversion removal",
+				);
+				yield* revalidateExpenseSettings();
+			}
+			return result as Exclude<RemoveConversionResult, { kind: "not_allowed" }>;
+		}),
+);

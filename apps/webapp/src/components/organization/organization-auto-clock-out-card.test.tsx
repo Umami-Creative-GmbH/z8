@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import userEvent from "@testing-library/user-event";
 import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { createTestTolgee } from "@/test/render-with-translations";
 import deCatalog from "../../../messages/organization/de.json";
 
@@ -24,7 +25,7 @@ vi.mock("@/app/[locale]/(app)/settings/organization/auto-clock-out-actions", () 
 
 import { OrganizationAutoClockOutCard } from "./organization-auto-clock-out-card";
 
-function show(role: "owner" | "admin" | "member" = "admin", minutes = 720, locale = "en") {
+function show(access: SettingsAccess | null = "orgAdmin", minutes = 720, locale = "en") {
 	const translations =
 		locale === "de"
 			? Object.fromEntries(
@@ -37,13 +38,12 @@ function show(role: "owner" | "admin" | "member" = "admin", minutes = 720, local
 	return render(
 		<TolgeeProvider tolgee={createTestTolgee(locale, translations)}>
 			<OrganizationAutoClockOutCard
-				organizationId="org-1"
 				settings={{
 					autoClockOutEnabled: true,
 					maxUninterruptedMinutes: minutes,
 					revision: 0,
 				}}
-				currentMemberRole={role}
+				settingsAccess={access}
 			/>
 		</TolgeeProvider>,
 	);
@@ -74,7 +74,6 @@ describe("OrganizationAutoClockOutCard", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 			await waitFor(() =>
 				expect(mocks.save).toHaveBeenCalledWith({
-					organizationId: "org-1",
 					autoClockOutEnabled: false,
 					maxUninterruptedMinutes: 485,
 				}),
@@ -90,7 +89,6 @@ describe("OrganizationAutoClockOutCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.save).toHaveBeenCalledWith({
-				organizationId: "org-1",
 				autoClockOutEnabled: false,
 				maxUninterruptedMinutes: 540,
 			}),
@@ -114,7 +112,6 @@ describe("OrganizationAutoClockOutCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.save).toHaveBeenCalledWith({
-				organizationId: "org-1",
 				autoClockOutEnabled: false,
 				maxUninterruptedMinutes: 485,
 			}),
@@ -183,7 +180,7 @@ describe("OrganizationAutoClockOutCard", () => {
 		expect(screen.getByRole("button", { name: "Save changes" })).toHaveProperty("disabled", true);
 	});
 	it("renders German catalog labels and save feedback", async () => {
-		show("admin", 720, "de");
+		show("orgAdmin", 720, "de");
 		expect(screen.getByRole("switch", { name: "Automatisches Ausstempeln" })).toBeTruthy();
 		expect(screen.getByLabelText("Stunden")).toHaveProperty("value", "12");
 		fireEvent.click(screen.getByRole("button", { name: "Änderungen speichern" }));

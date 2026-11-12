@@ -1,7 +1,5 @@
 "use client";
 
-import { useServerDataState } from "@/hooks/use-server-data-state";
-
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
@@ -10,19 +8,23 @@ import { updateOrganizationTimezone } from "@/app/[locale]/(app)/settings/organi
 import { TimezonePicker } from "@/components/settings/timezone-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useServerDataState } from "@/hooks/use-server-data-state";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface OrganizationTimezoneCardProps {
-	organizationId: string;
 	timezone: string;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 export function OrganizationTimezoneCard({
-	organizationId,
 	timezone: initialTimezone,
-	currentMemberRole,
+	settingsAccess,
 }: OrganizationTimezoneCardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -30,7 +32,7 @@ export function OrganizationTimezoneCard({
 	const [timezone, setTimezone] = useServerDataState(initialTimezone);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
-	const canEdit = currentMemberRole === "owner";
+	const canEdit = meetsSettingsAccess(settingsAccess, "owner");
 
 	const handleTimezoneChange = async (newTimezone: string) => {
 		if (!canEdit) return;
@@ -41,7 +43,7 @@ export function OrganizationTimezoneCard({
 		setTimezone(newTimezone);
 		setOrgSettings({ timezone: newTimezone });
 
-		const result = await updateOrganizationTimezone(organizationId, newTimezone);
+		const result = await updateOrganizationTimezone(newTimezone);
 
 		if (result.success) {
 			// The save is committed; balances follow once they are rebuilt.

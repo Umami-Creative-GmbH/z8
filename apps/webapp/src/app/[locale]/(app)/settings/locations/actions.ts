@@ -1,9 +1,9 @@
 "use server";
 
-import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath, revalidateTag } from "next/cache";
+import * as z from "zod";
 import {
 	employee,
 	location,
@@ -13,30 +13,17 @@ import {
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
-import {
-	AuthorizationError,
-	ConflictError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import {
-	type CreateLocation,
-	type CreateSubarea,
-	createLocationSchema,
-	createSubareaSchema,
-	type UpdateLocation,
-	type UpdateSubarea,
+	locationSchema,
+	subareaSchema,
 	updateLocationSchema,
 	updateSubareaSchema,
 } from "@/lib/validations/location";
-import {
-	getLocationSettingsActorContext,
-	requireLocationOrgAdminAccess,
-} from "./location-settings-actor";
+import { loadLocationScope, reachesLocation, subareasInScope } from "./location-scope";
 
 // ============================================
 // TYPES
@@ -120,975 +107,471 @@ type SubareaWithLocation = typeof locationSubarea.$inferSelect & {
 	location: Pick<typeof location.$inferSelect, "organizationId">;
 };
 
-function getScopedLocationSubareas<T extends { id: string }>(
-	locationId: string,
-	accessTier: SettingsAccessTier,
-	manageableLocationIds: Set<string> | null,
-	manageableSubareaIds: Set<string> | null,
-	subareas: T[],
-) {
-	if (accessTier === "orgAdmin") {
-		return subareas;
-	}
+function toEmployeeData(row: LocationEmployeeRow): LocationEmployeeData {
+	return {
+		id: row.id,
+		employeeId: row.employeeId,
+		isPrimary: row.isPrimary,
+		employee: {
+			id: row.employee.id,
+			firstName: row.employee.user.firstName,
+			lastName: row.employee.user.lastName,
+			user: { name: row.employee.user.name, email: row.employee.user.email },
+		},
+	};
+}
 
-	if (manageableLocationIds?.has(locationId)) {
-		return subareas;
-	}
+function locationNotFound(locationId: string) {
+	return new NotFoundError({
+		message: "Location not found",
+		entityType: "location",
+		entityId: locationId,
+	});
+}
 
-	if (!manageableSubareaIds) {
-		return subareas;
-	}
+function subareaNotFound(subareaId: string) {
+	return new NotFoundError({
+		message: "Subarea not found",
+		entityType: "subarea",
+		entityId: subareaId,
+	});
+}
 
-	return subareas.filter((subarea) => manageableSubareaIds.has(subarea.id));
+/** The location `locationId` of the session's organization; another organization's is not found. */
+function loadLocation(organizationId: string, locationId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const row = yield* dbService.query("locations.get", () =>
+			dbService.db.query.location.findFirst({
+				where: and(eq(location.id, locationId), eq(location.organizationId, organizationId)),
+			}),
+		);
+		return row ?? (yield* Effect.fail(locationNotFound(locationId)));
+	});
+}
+
+/** The subarea `subareaId` of a location of the session's organization. */
+function loadSubarea(organizationId: string, subareaId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const row = (yield* dbService.query("locations.getSubarea", () =>
+			dbService.db.query.locationSubarea.findFirst({
+				where: eq(locationSubarea.id, subareaId),
+				with: { location: { columns: { organizationId: true } } },
+			}),
+		)) as SubareaWithLocation | undefined;
+		if (!row || row.location?.organizationId !== organizationId) {
+			return yield* Effect.fail(subareaNotFound(subareaId));
+		}
+		return row;
+	});
+}
+
+function duplicateName(message: string) {
+	return new ConflictError({
+		message,
+		conflictType: "duplicate_name",
+		details: { field: "name" },
+	});
+}
+
+function audit(entry: Parameters<typeof logAudit>[0]) {
+	logAudit(entry).catch((err) => logger.error({ err }, "Failed to log audit"));
 }
 
 // ============================================
 // LOCATION CRUD
 // ============================================
 
-/**
- * Get all locations for an organization
- */
-export async function getLocations(
-	organizationId: string,
-): Promise<ServerActionResult<LocationListItem[]>> {
-	const tracer = trace.getTracer("locations");
+/** The locations of the session's organization the caller reaches. */
+export const getLocations = organizationAction(
+	{ name: "locations.list", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const scope = yield* loadLocationScope(actor, organizationId);
+			const locations = (yield* dbService.query("locations.list", () =>
+				dbService.db.query.location.findMany({
+					where: eq(location.organizationId, organizationId),
+					orderBy: [desc(location.createdAt)],
+					with: { subareas: true, employees: true },
+				}),
+			)) as unknown as LocationListRow[];
 
-	const effect = tracer.startActiveSpan(
-		"getLocations",
-		{ attributes: { "organization.id": organizationId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId,
-					queryName: "getLocationsActor",
-				});
+			return locations.flatMap((loc): LocationListItem[] => {
+				const subareas = subareasInScope(scope, loc.id, loc.subareas);
+				if (!reachesLocation(scope, loc.id, subareas)) return [];
+				return [
+					{
+						id: loc.id,
+						name: loc.name,
+						city: loc.city,
+						country: loc.country,
+						isActive: loc.isActive,
+						subareaCount: subareas.length,
+						employeeCount: loc.employees.length,
+					},
+				];
+			});
+		}),
+);
 
-				// Fetch all locations with relations
-				const locations = yield* actor.dbService.query("getLocations", async () => {
-					return await actor.dbService.db.query.location.findMany({
-						where: eq(location.organizationId, organizationId),
-						orderBy: [desc(location.createdAt)],
-						with: {
-							subareas: true,
-							employees: true,
+/** A location with its subareas and employees, narrowed to the caller's scope. */
+export const getLocation = organizationAction(
+	{ name: "locations.get", requires: "scopedManager", schema: z.uuid() },
+	({ actor, organizationId, input: locationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const loc = (yield* dbService.query("locations.getDetail", () =>
+				dbService.db.query.location.findFirst({
+					where: and(eq(location.id, locationId), eq(location.organizationId, organizationId)),
+					with: {
+						subareas: {
+							with: { employees: { with: { employee: { with: { user: true } } } } },
 						},
-					});
-				});
+						employees: { with: { employee: { with: { user: true } } } },
+					},
+				}),
+			)) as unknown as LocationDetailRow | undefined;
+			if (!loc) return yield* Effect.fail(locationNotFound(locationId));
 
-				// Map to list items
-				const typedLocations = locations as unknown as LocationListRow[];
-				const result: LocationListItem[] = typedLocations.flatMap((loc) => {
-					const subareas = getScopedLocationSubareas(
-						loc.id,
-						actor.accessTier,
-						actor.manageableLocationIds,
-						actor.manageableSubareaIds,
-						loc.subareas,
-					);
-					if (
-						actor.accessTier !== "orgAdmin" &&
-						!actor.manageableLocationIds?.has(loc.id) &&
-						subareas.length === 0
-					) {
-						return [];
-					}
-					return [
-						{
-							id: loc.id,
-							name: loc.name,
-							city: loc.city,
-							country: loc.country,
-							isActive: loc.isActive,
-							subareaCount: subareas.length,
-							employeeCount: loc.employees.length,
-						},
-					];
-				});
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return result;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to get locations");
-						return yield* Effect.fail(error);
+			const scope = yield* loadLocationScope(actor, organizationId);
+			const subareas = subareasInScope(scope, loc.id, loc.subareas);
+			if (!reachesLocation(scope, loc.id, subareas)) {
+				return yield* Effect.fail(
+					new AuthorizationError({
+						message: "Only org admins can manage locations",
+						userId: actor.userId,
+						resource: "location",
+						action: "read",
 					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Get a single location with all details
- */
-export async function getLocation(
-	locationId: string,
-): Promise<ServerActionResult<LocationWithDetails>> {
-	const tracer = trace.getTracer("locations");
-
-	const effect = tracer.startActiveSpan(
-		"getLocation",
-		{ attributes: { "location.id": locationId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-				// Fetch location with relations
-				const loc = yield* dbService
-					.query("getLocation", async () => {
-						return await dbService.db.query.location.findFirst({
-							where: eq(location.id, locationId),
-							with: {
-								subareas: {
-									with: {
-										employees: {
-											with: {
-												employee: {
-													with: { user: true },
-												},
-											},
-										},
-									},
-								},
-								employees: {
-									with: {
-										employee: {
-											with: { user: true },
-										},
-									},
-								},
-							},
-						});
-					})
-					.pipe(
-						Effect.flatMap((loc) =>
-							loc
-								? Effect.succeed(loc)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Location not found",
-											entityType: "location",
-											entityId: locationId,
-										}),
-									),
-						),
-					);
-
-				const typedLocation = loc as unknown as LocationDetailRow;
-
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId: typedLocation.organizationId,
-					queryName: "getLocationActor",
-				});
-				const scopedSubareas = getScopedLocationSubareas(
-					typedLocation.id,
-					actor.accessTier,
-					actor.manageableLocationIds,
-					actor.manageableSubareaIds,
-					typedLocation.subareas,
 				);
+			}
 
-				if (
-					actor.accessTier !== "orgAdmin" &&
-					!actor.manageableLocationIds?.has(typedLocation.id) &&
-					scopedSubareas.length === 0
-				) {
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "Only org admins can manage locations",
-							userId: actor.session.user.id,
-							resource: "location",
-							action: "read",
-						}),
-					);
-				}
+			return {
+				id: loc.id,
+				organizationId: loc.organizationId,
+				name: loc.name,
+				street: loc.street,
+				city: loc.city,
+				postalCode: loc.postalCode,
+				country: loc.country,
+				isActive: loc.isActive,
+				createdAt: loc.createdAt,
+				createdBy: loc.createdBy,
+				updatedAt: loc.updatedAt,
+				updatedBy: loc.updatedBy,
+				subareas: subareas.map((sub) => ({
+					id: sub.id,
+					locationId: sub.locationId,
+					name: sub.name,
+					isActive: sub.isActive,
+					createdAt: sub.createdAt,
+					employeeCount: sub.employees.length,
+					employees: sub.employees.map(toEmployeeData),
+				})),
+				employees: loc.employees.map(toEmployeeData),
+				subareaCount: subareas.length,
+				employeeCount: loc.employees.length,
+			} satisfies LocationWithDetails;
+		}),
+);
 
-				// Map to LocationWithDetails
-				const result: LocationWithDetails = {
-					id: typedLocation.id,
-					organizationId: typedLocation.organizationId,
-					name: typedLocation.name,
-					street: typedLocation.street,
-					city: typedLocation.city,
-					postalCode: typedLocation.postalCode,
-					country: typedLocation.country,
-					isActive: typedLocation.isActive,
-					createdAt: typedLocation.createdAt,
-					createdBy: typedLocation.createdBy,
-					updatedAt: typedLocation.updatedAt,
-					updatedBy: typedLocation.updatedBy,
-					subareas: scopedSubareas.map((sub) => ({
-						id: sub.id,
-						locationId: sub.locationId,
-						name: sub.name,
-						isActive: sub.isActive,
-						createdAt: sub.createdAt,
-						employeeCount: sub.employees.length,
-						employees: sub.employees.map((e) => ({
-							id: e.id,
-							employeeId: e.employeeId,
-							isPrimary: e.isPrimary,
-							employee: {
-								id: e.employee.id,
-								firstName: e.employee.user.firstName,
-								lastName: e.employee.user.lastName,
-								user: {
-									name: e.employee.user.name,
-									email: e.employee.user.email,
-								},
-							},
-						})),
-					})),
-					employees: typedLocation.employees.map((e) => ({
-						id: e.id,
-						employeeId: e.employeeId,
-						isPrimary: e.isPrimary,
-						employee: {
-							id: e.employee.id,
-							firstName: e.employee.user.firstName,
-							lastName: e.employee.user.lastName,
-							user: {
-								name: e.employee.user.name,
-								email: e.employee.user.email,
-							},
-						},
-					})),
-					subareaCount: scopedSubareas.length,
-					employeeCount: typedLocation.employees.length,
-				};
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return result;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to get location");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+/** Creates a location in the session's organization. */
+export const createLocation = organizationAction(
+	{
+		name: "locations.create",
+		requires: "orgAdmin",
+		schema: z.strictObject(locationSchema.shape),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const existing = yield* dbService.query("locations.checkDuplicate", () =>
+				dbService.db.query.location.findFirst({
+					where: and(eq(location.organizationId, organizationId), eq(location.name, input.name)),
+				}),
 			);
-		},
-	);
+			if (existing) {
+				return yield* Effect.fail(duplicateName("A location with this name already exists"));
+			}
 
-	return runServerActionSafe(effect);
-}
-
-/**
- * Create a new location
- */
-export async function createLocation(
-	input: CreateLocation,
-): Promise<ServerActionResult<{ id: string }>> {
-	const tracer = trace.getTracer("locations");
-
-	const effect = tracer.startActiveSpan(
-		"createLocation",
-		{ attributes: { "organization.id": input.organizationId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId: input.organizationId,
-					queryName: "createLocationActor",
-				});
-
-				// Validate input
-				const validationResult = createLocationSchema.safeParse(input);
-				if (!validationResult.success) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: validationResult.error.issues[0]?.message || "Invalid input",
-							field: validationResult.error.issues[0]?.path?.join(".") || "input",
-						}),
-					);
-				}
-
-				yield* requireLocationOrgAdminAccess(actor, {
-					message: "Only org admins can create locations",
-					action: "create",
-				});
-
-				// Check for duplicate name
-				const existing = yield* actor.dbService.query("checkDuplicate", async () => {
-					return await actor.dbService.db.query.location.findFirst({
-						where: and(
-							eq(location.organizationId, input.organizationId),
-							eq(location.name, input.name),
-						),
-					});
-				});
-
-				if (existing) {
-					return yield* Effect.fail(
-						new ConflictError({
-							message: "A location with this name already exists",
-							conflictType: "duplicate_name",
-							details: { field: "name" },
-						}),
-					);
-				}
-
-				// Create location
-				const [created] = yield* actor.dbService.query("createLocation", async () => {
-					return await actor.dbService.db
-						.insert(location)
-						.values({
-							organizationId: input.organizationId,
-							name: input.name,
-							street: input.street,
-							city: input.city,
-							postalCode: input.postalCode,
-							country: input.country,
-							createdBy: actor.session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning({ id: location.id });
-				});
-
-				// Log audit
-				logAudit({
-					action: AuditAction.LOCATION_CREATED,
-					actorId: actor.session.user.id,
-					targetId: created.id,
-					targetType: "location",
-					organizationId: input.organizationId,
-					changes: { name: input.name },
-					metadata: { locationName: input.name },
-					timestamp: new Date(),
-				}).catch((err) => logger.error({ err }, "Failed to log audit"));
-
-				// Invalidate locations cache
-				revalidateTag(CACHE_TAGS.LOCATIONS(input.organizationId), "max");
-
-				revalidatePath("/settings/locations");
-				span.setStatus({ code: SpanStatusCode.OK });
-				return { id: created.id };
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to create location");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Update a location
- */
-export async function updateLocation(
-	locationId: string,
-	input: UpdateLocation,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("locations");
-
-	const effect = tracer.startActiveSpan(
-		"updateLocation",
-		{ attributes: { "location.id": locationId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-
-				// Validate input
-				const validationResult = updateLocationSchema.safeParse(input);
-				if (!validationResult.success) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: validationResult.error.issues[0]?.message || "Invalid input",
-							field: validationResult.error.issues[0]?.path?.join(".") || "input",
-						}),
-					);
-				}
-
-				// Fetch existing location
-				const existing = yield* dbService
-					.query("getLocation", async () => {
-						return await dbService.db.query.location.findFirst({
-							where: eq(location.id, locationId),
-						});
+			const [created] = yield* dbService.query("locations.create", () =>
+				dbService.db
+					.insert(location)
+					.values({
+						organizationId,
+						name: input.name,
+						street: input.street,
+						city: input.city,
+						postalCode: input.postalCode,
+						country: input.country,
+						createdBy: actor.userId,
+						updatedAt: new Date(),
 					})
-					.pipe(
-						Effect.flatMap((loc) =>
-							loc
-								? Effect.succeed(loc)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Location not found",
-											entityType: "location",
-											entityId: locationId,
-										}),
-									),
-						),
-					);
+					.returning({ id: location.id }),
+			);
 
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId: existing.organizationId,
-					queryName: "updateLocationActor",
-				});
-				yield* requireLocationOrgAdminAccess(actor, {
-					message: "Only org admins can update locations",
-					action: "update",
-				});
+			audit({
+				action: AuditAction.LOCATION_CREATED,
+				actorId: actor.userId,
+				targetId: created.id,
+				targetType: "location",
+				organizationId,
+				changes: { name: input.name },
+				metadata: { locationName: input.name },
+				timestamp: new Date(),
+			});
+			revalidateTag(CACHE_TAGS.LOCATIONS(organizationId), "max");
+			revalidatePath("/settings/locations");
+			return { id: created.id };
+		}),
+);
 
-				// Check for duplicate name if name is being changed
-				if (input.name && input.name !== existing.name) {
-					const duplicate = yield* actor.dbService.query("checkDuplicate", async () => {
-						return await actor.dbService.db.query.location.findFirst({
-							where: and(
-								eq(location.organizationId, existing.organizationId),
-								eq(location.name, input.name!),
-							),
-						});
-					});
+/** Updates a location of the session's organization. */
+export const updateLocation = organizationAction(
+	{
+		name: "locations.update",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			locationId: z.uuid(),
+			data: z.strictObject(updateLocationSchema.shape),
+		}),
+	},
+	({ actor, organizationId, input: { locationId, data } }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const existing = yield* loadLocation(organizationId, locationId);
 
-					if (duplicate) {
-						return yield* Effect.fail(
-							new ConflictError({
-								message: "A location with this name already exists",
-								conflictType: "duplicate_name",
-								details: { field: "name" },
-							}),
-						);
-					}
+			if (data.name && data.name !== existing.name) {
+				const name = data.name;
+				const duplicate = yield* dbService.query("locations.checkDuplicate", () =>
+					dbService.db.query.location.findFirst({
+						where: and(eq(location.organizationId, organizationId), eq(location.name, name)),
+					}),
+				);
+				if (duplicate) {
+					return yield* Effect.fail(duplicateName("A location with this name already exists"));
 				}
+			}
 
-				// Update location
-				yield* actor.dbService.query("updateLocation", async () => {
-					return await actor.dbService.db
-						.update(location)
-						.set({
-							...input,
-							updatedBy: actor.session.user.id,
-						})
-						.where(eq(location.id, locationId));
-				});
-
-				// Log audit
-				logAudit({
-					action: AuditAction.LOCATION_UPDATED,
-					actorId: actor.session.user.id,
-					targetId: locationId,
-					targetType: "location",
-					organizationId: existing.organizationId,
-					changes: input,
-					metadata: { locationName: input.name || existing.name },
-					timestamp: new Date(),
-				}).catch((err) => logger.error({ err }, "Failed to log audit"));
-
-				// Invalidate locations cache
-				revalidateTag(CACHE_TAGS.LOCATIONS(existing.organizationId), "max");
-
-				revalidatePath("/settings/locations");
-				revalidatePath(`/settings/locations/${locationId}`);
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to update location");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+			yield* dbService.query("locations.update", () =>
+				dbService.db
+					.update(location)
+					.set({ ...data, updatedBy: actor.userId })
+					.where(and(eq(location.id, locationId), eq(location.organizationId, organizationId))),
 			);
-		},
-	);
 
-	return runServerActionSafe(effect);
-}
+			audit({
+				action: AuditAction.LOCATION_UPDATED,
+				actorId: actor.userId,
+				targetId: locationId,
+				targetType: "location",
+				organizationId,
+				changes: data,
+				metadata: { locationName: data.name || existing.name },
+				timestamp: new Date(),
+			});
+			revalidateTag(CACHE_TAGS.LOCATIONS(organizationId), "max");
+			revalidatePath("/settings/locations");
+			revalidatePath(`/settings/locations/${locationId}`);
+		}),
+);
 
-/**
- * Delete a location (cascades to subareas and assignments)
- */
-export async function deleteLocation(locationId: string): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("locations");
+/** Deletes a location of the session's organization (cascades to subareas and assignments). */
+export const deleteLocation = organizationAction(
+	{ name: "locations.delete", requires: "orgAdmin", schema: z.uuid() },
+	({ actor, organizationId, input: locationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const existing = yield* loadLocation(organizationId, locationId);
 
-	const effect = tracer.startActiveSpan(
-		"deleteLocation",
-		{ attributes: { "location.id": locationId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-
-				// Fetch existing location
-				const existing = yield* dbService
-					.query("getLocation", async () => {
-						return await dbService.db.query.location.findFirst({
-							where: eq(location.id, locationId),
-						});
-					})
-					.pipe(
-						Effect.flatMap((loc) =>
-							loc
-								? Effect.succeed(loc)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Location not found",
-											entityType: "location",
-											entityId: locationId,
-										}),
-									),
-						),
-					);
-
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId: existing.organizationId,
-					queryName: "deleteLocationActor",
-				});
-				yield* requireLocationOrgAdminAccess(actor, {
-					message: "Only org admins can delete locations",
-					action: "delete",
-				});
-
-				// Delete location (cascade handles subareas and assignments)
-				yield* actor.dbService.query("deleteLocation", async () => {
-					return await actor.dbService.db.delete(location).where(eq(location.id, locationId));
-				});
-
-				// Log audit
-				logAudit({
-					action: AuditAction.LOCATION_DELETED,
-					actorId: actor.session.user.id,
-					targetId: locationId,
-					targetType: "location",
-					organizationId: existing.organizationId,
-					changes: { deleted: true },
-					metadata: { locationName: existing.name },
-					timestamp: new Date(),
-				}).catch((err) => logger.error({ err }, "Failed to log audit"));
-
-				// Invalidate locations cache
-				revalidateTag(CACHE_TAGS.LOCATIONS(existing.organizationId), "max");
-
-				revalidatePath("/settings/locations");
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to delete location");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+			yield* dbService.query("locations.delete", () =>
+				dbService.db
+					.delete(location)
+					.where(and(eq(location.id, locationId), eq(location.organizationId, organizationId))),
 			);
-		},
-	);
 
-	return runServerActionSafe(effect);
-}
+			audit({
+				action: AuditAction.LOCATION_DELETED,
+				actorId: actor.userId,
+				targetId: locationId,
+				targetType: "location",
+				organizationId,
+				changes: { deleted: true },
+				metadata: { locationName: existing.name },
+				timestamp: new Date(),
+			});
+			revalidateTag(CACHE_TAGS.LOCATIONS(organizationId), "max");
+			revalidatePath("/settings/locations");
+		}),
+);
 
 // ============================================
 // SUBAREA CRUD
 // ============================================
 
-/**
- * Create a new subarea
- */
-export async function createSubarea(
-	input: CreateSubarea,
-): Promise<ServerActionResult<{ id: string }>> {
-	const tracer = trace.getTracer("locations");
+/** Creates a subarea of a location of the session's organization. */
+export const createSubarea = organizationAction(
+	{
+		name: "locations.createSubarea",
+		requires: "orgAdmin",
+		schema: z.strictObject({ ...subareaSchema.shape, locationId: z.uuid("Invalid location ID") }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* loadLocation(organizationId, input.locationId);
 
-	const effect = tracer.startActiveSpan(
-		"createSubarea",
-		{ attributes: { "location.id": input.locationId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
+			const existing = yield* dbService.query("locations.checkDuplicateSubarea", () =>
+				dbService.db.query.locationSubarea.findFirst({
+					where: and(
+						eq(locationSubarea.locationId, input.locationId),
+						eq(locationSubarea.name, input.name),
+					),
+				}),
+			);
+			if (existing) {
+				return yield* Effect.fail(
+					duplicateName("A subarea with this name already exists in this location"),
+				);
+			}
 
-				// Validate input
-				const validationResult = createSubareaSchema.safeParse(input);
-				if (!validationResult.success) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: validationResult.error.issues[0]?.message || "Invalid input",
-							field: validationResult.error.issues[0]?.path?.join(".") || "input",
-						}),
-					);
-				}
-
-				// Fetch location to verify ownership
-				const loc = yield* dbService
-					.query("getLocation", async () => {
-						return await dbService.db.query.location.findFirst({
-							where: eq(location.id, input.locationId),
-						});
+			const [created] = yield* dbService.query("locations.createSubarea", () =>
+				dbService.db
+					.insert(locationSubarea)
+					.values({
+						locationId: input.locationId,
+						name: input.name,
+						createdBy: actor.userId,
+						updatedAt: new Date(),
 					})
-					.pipe(
-						Effect.flatMap((loc) =>
-							loc
-								? Effect.succeed(loc)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Location not found",
-											entityType: "location",
-											entityId: input.locationId,
-										}),
-									),
-						),
-					);
+					.returning({ id: locationSubarea.id }),
+			);
 
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId: loc.organizationId,
-					queryName: "createSubareaActor",
-				});
-				yield* requireLocationOrgAdminAccess(actor, {
-					message: "Only org admins can create subareas",
-					action: "create",
-				});
+			revalidatePath(`/settings/locations/${input.locationId}`);
+			return { id: created.id };
+		}),
+);
 
-				// Check for duplicate name within location
-				const existing = yield* actor.dbService.query("checkDuplicate", async () => {
-					return await actor.dbService.db.query.locationSubarea.findFirst({
+/** Updates a subarea of a location of the session's organization. */
+export const updateSubarea = organizationAction(
+	{
+		name: "locations.updateSubarea",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			subareaId: z.uuid(),
+			data: z.strictObject(updateSubareaSchema.shape),
+		}),
+	},
+	({ actor, organizationId, input: { subareaId, data } }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const existing = yield* loadSubarea(organizationId, subareaId);
+
+			if (data.name && data.name !== existing.name) {
+				const name = data.name;
+				const duplicate = yield* dbService.query("locations.checkDuplicateSubarea", () =>
+					dbService.db.query.locationSubarea.findFirst({
 						where: and(
-							eq(locationSubarea.locationId, input.locationId),
-							eq(locationSubarea.name, input.name),
+							eq(locationSubarea.locationId, existing.locationId),
+							eq(locationSubarea.name, name),
 						),
-					});
-				});
-
-				if (existing) {
+					}),
+				);
+				if (duplicate) {
 					return yield* Effect.fail(
-						new ConflictError({
-							message: "A subarea with this name already exists in this location",
-							conflictType: "duplicate_name",
-							details: { field: "name" },
-						}),
+						duplicateName("A subarea with this name already exists in this location"),
 					);
 				}
+			}
 
-				// Create subarea
-				const [created] = yield* actor.dbService.query("createSubarea", async () => {
-					return await actor.dbService.db
-						.insert(locationSubarea)
-						.values({
-							locationId: input.locationId,
-							name: input.name,
-							createdBy: actor.session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning({ id: locationSubarea.id });
-				});
-
-				revalidatePath(`/settings/locations/${input.locationId}`);
-				span.setStatus({ code: SpanStatusCode.OK });
-				return { id: created.id };
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to create subarea");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+			yield* dbService.query("locations.updateSubarea", () =>
+				dbService.db
+					.update(locationSubarea)
+					.set({ ...data, updatedBy: actor.userId })
+					.where(eq(locationSubarea.id, subareaId)),
 			);
-		},
-	);
 
-	return runServerActionSafe(effect);
-}
+			revalidatePath(`/settings/locations/${existing.locationId}`);
+		}),
+);
+
+/** Deletes a subarea of a location of the session's organization. */
+export const deleteSubarea = organizationAction(
+	{ name: "locations.deleteSubarea", requires: "orgAdmin", schema: z.uuid() },
+	({ organizationId, input: subareaId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const existing = yield* loadSubarea(organizationId, subareaId);
+
+			yield* dbService.query("locations.deleteSubarea", () =>
+				dbService.db.delete(locationSubarea).where(eq(locationSubarea.id, subareaId)),
+			);
+
+			revalidatePath(`/settings/locations/${existing.locationId}`);
+		}),
+);
 
 /**
- * Update a subarea
+ * The active employees of the session's organization not yet assigned to the
+ * given location or subarea.
  */
-export async function updateSubarea(
-	subareaId: string,
-	input: UpdateSubarea,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("locations");
-
-	const effect = tracer.startActiveSpan(
-		"updateSubarea",
-		{ attributes: { "subarea.id": subareaId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-
-				// Validate input
-				const validationResult = updateSubareaSchema.safeParse(input);
-				if (!validationResult.success) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: validationResult.error.issues[0]?.message || "Invalid input",
-							field: validationResult.error.issues[0]?.path?.join(".") || "input",
-						}),
-					);
-				}
-
-				// Fetch existing subarea with location
-				const existing = yield* dbService
-					.query("getSubarea", async () => {
-						return await dbService.db.query.locationSubarea.findFirst({
-							where: eq(locationSubarea.id, subareaId),
-							with: { location: true },
-						});
-					})
-					.pipe(
-						Effect.flatMap((sub) =>
-							sub
-								? Effect.succeed(sub)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Subarea not found",
-											entityType: "subarea",
-											entityId: subareaId,
-										}),
-									),
-						),
-					);
-
-				const typedExisting = existing as unknown as SubareaWithLocation;
-
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId: typedExisting.location.organizationId,
-					queryName: "updateSubareaActor",
-				});
-				yield* requireLocationOrgAdminAccess(actor, {
-					message: "Only org admins can update subareas",
-					action: "update",
-				});
-
-				// Check for duplicate name if name is being changed
-				if (input.name && input.name !== typedExisting.name) {
-					const duplicate = yield* actor.dbService.query("checkDuplicate", async () => {
-						return await actor.dbService.db.query.locationSubarea.findFirst({
-							where: and(
-								eq(locationSubarea.locationId, typedExisting.locationId),
-								eq(locationSubarea.name, input.name!),
-							),
-						});
-					});
-
-					if (duplicate) {
-						return yield* Effect.fail(
-							new ConflictError({
-								message: "A subarea with this name already exists in this location",
-								conflictType: "duplicate_name",
-								details: { field: "name" },
-							}),
-						);
-					}
-				}
-
-				// Update subarea
-				yield* actor.dbService.query("updateSubarea", async () => {
-					return await actor.dbService.db
-						.update(locationSubarea)
-						.set({
-							...input,
-							updatedBy: actor.session.user.id,
-						})
-						.where(eq(locationSubarea.id, subareaId));
-				});
-
-				revalidatePath(`/settings/locations/${existing.locationId}`);
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to update subarea");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+export const getAvailableEmployees = organizationAction(
+	{
+		name: "locations.availableEmployees",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			excludeLocationId: z.uuid().optional(),
+			excludeSubareaId: z.uuid().optional(),
+		}),
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const employees = yield* dbService.query("locations.availableEmployees", () =>
+				dbService.db.query.employee.findMany({
+					where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+					with: { user: true },
+				}),
 			);
-		},
-	);
 
-	return runServerActionSafe(effect);
-}
-
-/**
- * Delete a subarea
- */
-export async function deleteSubarea(subareaId: string): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("locations");
-
-	const effect = tracer.startActiveSpan(
-		"deleteSubarea",
-		{ attributes: { "subarea.id": subareaId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-
-				// Fetch existing subarea with location
-				const existing = yield* dbService
-					.query("getSubarea", async () => {
-						return await dbService.db.query.locationSubarea.findFirst({
-							where: eq(locationSubarea.id, subareaId),
-							with: { location: true },
-						});
-					})
-					.pipe(
-						Effect.flatMap((sub) =>
-							sub
-								? Effect.succeed(sub)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Subarea not found",
-											entityType: "subarea",
-											entityId: subareaId,
-										}),
-									),
-						),
-					);
-
-				const typedExisting = existing as unknown as SubareaWithLocation;
-
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId: typedExisting.location.organizationId,
-					queryName: "deleteSubareaActor",
-				});
-				yield* requireLocationOrgAdminAccess(actor, {
-					message: "Only org admins can delete subareas",
-					action: "delete",
-				});
-
-				// Delete subarea (cascade handles employee assignments)
-				yield* actor.dbService.query("deleteSubarea", async () => {
-					return await actor.dbService.db
-						.delete(locationSubarea)
-						.where(eq(locationSubarea.id, subareaId));
-				});
-
-				revalidatePath(`/settings/locations/${existing.locationId}`);
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to delete subarea");
-						return yield* Effect.fail(error);
+			let assignedIds: string[] = [];
+			const { excludeLocationId, excludeSubareaId } = input;
+			if (excludeLocationId) {
+				const assignments = yield* dbService.query("locations.locationAssignments", () =>
+					dbService.db.query.locationEmployee.findMany({
+						where: eq(locationEmployee.locationId, excludeLocationId),
 					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-			);
-		},
-	);
+				);
+				assignedIds = assignments.map((a) => a.employeeId);
+			}
+			if (excludeSubareaId) {
+				const assignments = yield* dbService.query("locations.subareaAssignments", () =>
+					dbService.db.query.subareaEmployee.findMany({
+						where: eq(subareaEmployee.subareaId, excludeSubareaId),
+					}),
+				);
+				assignedIds = assignments.map((a) => a.employeeId);
+			}
 
-	return runServerActionSafe(effect);
-}
-
-/**
- * Get available employees for assignment (not already assigned to the location/subarea)
- */
-export async function getAvailableEmployees(
-	organizationId: string,
-	excludeLocationId?: string,
-	excludeSubareaId?: string,
-): Promise<
-	ServerActionResult<
-		Array<{
-			id: string;
-			firstName: string | null;
-			lastName: string | null;
-			user: { name: string | null; email: string };
-		}>
-	>
-> {
-	const tracer = trace.getTracer("locations");
-
-	const effect = tracer.startActiveSpan(
-		"getAvailableEmployees",
-		{ attributes: { "organization.id": organizationId } },
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getLocationSettingsActorContext({
-					organizationId,
-					queryName: "getAvailableEmployeesActor",
-				});
-				yield* requireLocationOrgAdminAccess(actor, {
-					message: "Only org admins can view employees",
-					action: "create",
-				});
-
-				// Get all active employees
-				const employees = yield* actor.dbService.query("getEmployees", async () => {
-					return await actor.dbService.db.query.employee.findMany({
-						where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-						with: { user: true },
-					});
-				});
-
-				// Get already assigned employee IDs
-				let assignedIds: string[] = [];
-
-				if (excludeLocationId) {
-					const assignments = yield* actor.dbService.query("getLocationAssignments", async () => {
-						return await actor.dbService.db.query.locationEmployee.findMany({
-							where: eq(locationEmployee.locationId, excludeLocationId),
-						});
-					});
-					assignedIds = assignments.map((a) => a.employeeId);
-				}
-
-				if (excludeSubareaId) {
-					const assignments = yield* actor.dbService.query("getSubareaAssignments", async () => {
-						return await actor.dbService.db.query.subareaEmployee.findMany({
-							where: eq(subareaEmployee.subareaId, excludeSubareaId),
-						});
-					});
-					assignedIds = assignments.map((a) => a.employeeId);
-				}
-
-				// Filter out assigned employees
-				const assignedIdSet = new Set(assignedIds);
-				const available = employees.flatMap((e) =>
-					!assignedIdSet.has(e.id)
-						? [
-								{
-									id: e.id,
+			const assignedIdSet = new Set(assignedIds);
+			return employees.flatMap((e) =>
+				assignedIdSet.has(e.id)
+					? []
+					: [
+							{
+								id: e.id,
+								firstName: e.user.firstName,
+								lastName: e.user.lastName,
+								user: {
 									firstName: e.user.firstName,
 									lastName: e.user.lastName,
-									user: {
-										firstName: e.user.firstName,
-										lastName: e.user.lastName,
-										name: e.user.name,
-										email: e.user.email,
-									},
+									name: e.user.name,
+									email: e.user.email,
 								},
-							]
-						: [],
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return available;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR });
-						logger.error({ error }, "Failed to get available employees");
-						return yield* Effect.fail(error);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+							},
+						],
 			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
+		}),
+);

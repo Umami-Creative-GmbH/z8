@@ -89,7 +89,7 @@ export function useUpdateSkill(organizationId: string) {
 				isActive?: boolean;
 			};
 		}) => {
-			const result = await updateSkill(skillId, data);
+			const result = await updateSkill({ skillId, data });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -219,7 +219,7 @@ export function useRemoveSkillFromEmployee() {
 
 	return useMutation({
 		mutationFn: async ({ employeeId, skillId }: { employeeId: string; skillId: string }) => {
-			const result = await removeSkillFromEmployee(employeeId, skillId);
+			const result = await removeSkillFromEmployee({ employeeId, skillId });
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: (_, variables) => {
@@ -245,7 +245,7 @@ export function useSetSubareaSkillRequirements() {
 			subareaId: string;
 			requirements: Array<{ skillId: string; isRequired: boolean }>;
 		}) => {
-			const result = await setSubareaSkillRequirements(subareaId, requirements);
+			const result = await setSubareaSkillRequirements({ subareaId, requirements });
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: (_, variables) => {
@@ -267,7 +267,7 @@ export function useSetTemplateSkillRequirements() {
 			templateId: string;
 			requirements: Array<{ skillId: string; isRequired: boolean }>;
 		}) => {
-			const result = await setTemplateSkillRequirements(templateId, requirements);
+			const result = await setTemplateSkillRequirements({ templateId, requirements });
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: (_, variables) => {
@@ -303,10 +303,9 @@ export function useSkillValidation(options: UseSkillValidationOptions) {
 	return useQuery({
 		queryKey: queryKeys.skills.validation(employeeId, subareaId, date, templateId ?? undefined),
 		queryFn: async (): Promise<SkillValidationResult> => {
-			const result = await validateEmployeeForShift(employeeId, {
-				subareaId,
-				templateId,
-				date,
+			const result = await validateEmployeeForShift({
+				employeeId,
+				shift: { subareaId, templateId, date },
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -329,7 +328,7 @@ export function useQualifiedEmployees(options: UseQualifiedEmployeesOptions) {
 	return useQuery({
 		queryKey: queryKeys.skills.qualified(skillIds, date),
 		queryFn: async (): Promise<string[]> => {
-			const result = await getQualifiedEmployeesForSkills(skillIds, date);
+			const result = await getQualifiedEmployeesForSkills({ skillIds, shiftDate: date });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

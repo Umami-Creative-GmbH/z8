@@ -350,7 +350,7 @@ describe("project membership settings on PostgreSQL", () => {
 	describe("project managers", () => {
 		it("a manager-tier project manager cannot add a project manager", async () => {
 			const result = await actAs(ids.projectManagerUser, () =>
-				projects.addProjectManager(ids.project, ids.employee),
+				projects.addProjectManager({ projectId: ids.project, employeeId: ids.employee }),
 			);
 
 			expect(result.success).toBe(false);
@@ -359,7 +359,7 @@ describe("project membership settings on PostgreSQL", () => {
 
 		it("a manager-tier project manager cannot remove a project manager, including themselves", async () => {
 			const result = await actAs(ids.projectManagerUser, () =>
-				projects.removeProjectManager(ids.project, ids.projectManager),
+				projects.removeProjectManager({ projectId: ids.project, employeeId: ids.projectManager }),
 			);
 
 			expect(result.success).toBe(false);
@@ -369,7 +369,7 @@ describe("project membership settings on PostgreSQL", () => {
 
 		it("an org admin adds and removes a project manager", async () => {
 			const added = await actAs(ids.ownerUser, () =>
-				projects.addProjectManager(ids.project, ids.employee),
+				projects.addProjectManager({ projectId: ids.project, employeeId: ids.employee }),
 			);
 			expect(added).toEqual({ success: true, data: undefined });
 			expect(await managerIds()).toEqual(
@@ -377,7 +377,7 @@ describe("project membership settings on PostgreSQL", () => {
 			);
 
 			const removed = await actAs(ids.ownerUser, () =>
-				projects.removeProjectManager(ids.project, ids.projectManager),
+				projects.removeProjectManager({ projectId: ids.project, employeeId: ids.projectManager }),
 			);
 			expect(removed).toEqual({ success: true, data: undefined });
 			expect(await managerIds()).toEqual([ids.employee]);
@@ -385,7 +385,7 @@ describe("project membership settings on PostgreSQL", () => {
 
 		it("removing an employee who is not a manager of the project fails and writes no audit entry", async () => {
 			const result = await actAs(ids.ownerUser, () =>
-				projects.removeProjectManager(ids.project, ids.employee),
+				projects.removeProjectManager({ projectId: ids.project, employeeId: ids.employee }),
 			);
 
 			expect(result).toMatchObject({
@@ -399,7 +399,7 @@ describe("project membership settings on PostgreSQL", () => {
 		it("rejects inactive and foreign employees as project managers", async () => {
 			for (const employeeId of [ids.inactiveEmployee, ids.otherEmployee]) {
 				const result = await actAs(ids.ownerUser, () =>
-					projects.addProjectManager(ids.project, employeeId),
+					projects.addProjectManager({ projectId: ids.project, employeeId }),
 				);
 				expect(result.success).toBe(false);
 			}
@@ -414,10 +414,10 @@ describe("project membership settings on PostgreSQL", () => {
 			);
 
 			const added = await actAs(ids.ownerUser, () =>
-				projects.addProjectManager(ids.otherProject, ids.employee),
+				projects.addProjectManager({ projectId: ids.otherProject, employeeId: ids.employee }),
 			);
 			const removed = await actAs(ids.ownerUser, () =>
-				projects.removeProjectManager(ids.otherProject, ids.otherEmployee),
+				projects.removeProjectManager({ projectId: ids.otherProject, employeeId: ids.otherEmployee }),
 			);
 
 			expect(added.success).toBe(false);
@@ -430,14 +430,10 @@ describe("project membership settings on PostgreSQL", () => {
 	describe("project assignments", () => {
 		it("a manager-tier project manager assigns a team and an employee to a managed project and removes one", async () => {
 			const team = await actAs(ids.projectManagerUser, () =>
-				projects.addProjectAssignment(ids.project, "team", ids.team),
+				projects.addProjectAssignment({ projectId: ids.project, type: "team", targetId: ids.team }),
 			);
 			const employee = await actAs(ids.projectManagerUser, () =>
-				projects.addProjectAssignment(
-					ids.project,
-					"employee",
-					ids.soloEmployee,
-				),
+				projects.addProjectAssignment({ projectId: ids.project, type: "employee", targetId: ids.soloEmployee }),
 			);
 			expect(team).toEqual({ success: true, data: undefined });
 			expect(employee).toEqual({ success: true, data: undefined });
@@ -447,7 +443,7 @@ describe("project membership settings on PostgreSQL", () => {
 
 			const teamAssignmentId = await assignmentIdFor(ids.team);
 			const removed = await actAs(ids.projectManagerUser, () =>
-				projects.removeProjectAssignment(teamAssignmentId),
+				projects.removeProjectAssignment({ assignmentId: teamAssignmentId }),
 			);
 			expect(removed).toEqual({ success: true, data: undefined });
 			expect((await assignments()).map((row) => row.target)).toEqual([
@@ -462,14 +458,10 @@ describe("project membership settings on PostgreSQL", () => {
 			);
 
 			const added = await actAs(ids.projectManagerUser, () =>
-				projects.addProjectAssignment(
-					ids.unmanagedProject,
-					"employee",
-					ids.soloEmployee,
-				),
+				projects.addProjectAssignment({ projectId: ids.unmanagedProject, type: "employee", targetId: ids.soloEmployee }),
 			);
 			const removed = await actAs(ids.projectManagerUser, () =>
-				projects.removeProjectAssignment(existingId),
+				projects.removeProjectAssignment({ assignmentId: existingId }),
 			);
 
 			expect(added.success).toBe(false);
@@ -487,7 +479,7 @@ describe("project membership settings on PostgreSQL", () => {
 			] as const;
 			for (const [type, targetId] of targets) {
 				const result = await actAs(ids.projectManagerUser, () =>
-					projects.addProjectAssignment(ids.project, type, targetId),
+					projects.addProjectAssignment({ projectId: ids.project, type, targetId }),
 				);
 				expect(result.success).toBe(false);
 			}
@@ -502,10 +494,10 @@ describe("project membership settings on PostgreSQL", () => {
 
 			const results = await actAs(ids.employeeUser, () =>
 				Promise.all([
-					projects.addProjectAssignment(ids.project, "employee", ids.employee),
-					projects.removeProjectAssignment(existingId),
-					projects.addProjectManager(ids.project, ids.employee),
-					projects.removeProjectManager(ids.project, ids.projectManager),
+					projects.addProjectAssignment({ projectId: ids.project, type: "employee", targetId: ids.employee }),
+					projects.removeProjectAssignment({ assignmentId: existingId }),
+					projects.addProjectManager({ projectId: ids.project, employeeId: ids.employee }),
+					projects.removeProjectManager({ projectId: ids.project, employeeId: ids.projectManager }),
 				]),
 			);
 
@@ -528,7 +520,7 @@ describe("project membership settings on PostgreSQL", () => {
 			] as const;
 			for (const [type, targetId] of targets) {
 				const result = await actAs(ids.ownerUser, () =>
-					projects.addProjectAssignment(ids.project, type, targetId),
+					projects.addProjectAssignment({ projectId: ids.project, type, targetId }),
 				);
 				expect(result.success).toBe(false);
 			}
@@ -543,12 +535,12 @@ describe("project membership settings on PostgreSQL", () => {
 			};
 			expect(
 				await actAs(ids.ownerUser, () =>
-					projects.addProjectAssignment(ids.project, "employee", ids.inactiveEmployee),
+					projects.addProjectAssignment({ projectId: ids.project, type: "employee", targetId: ids.inactiveEmployee }),
 				),
 			).toMatchObject(refusal);
 			expect(
 				await actAs(ids.ownerUser, () =>
-					projects.addProjectManager(ids.project, ids.inactiveEmployee),
+					projects.addProjectManager({ projectId: ids.project, employeeId: ids.inactiveEmployee }),
 				),
 			).toMatchObject(refusal);
 			expect(await assignments()).toEqual([]);
@@ -556,14 +548,10 @@ describe("project membership settings on PostgreSQL", () => {
 
 		it("rejects assignment changes on a foreign project", async () => {
 			const added = await actAs(ids.ownerUser, () =>
-				projects.addProjectAssignment(
-					ids.otherProject,
-					"employee",
-					ids.employee,
-				),
+				projects.addProjectAssignment({ projectId: ids.otherProject, type: "employee", targetId: ids.employee }),
 			);
 			const removed = await actAs(ids.ownerUser, () =>
-				projects.removeProjectAssignment(ids.otherAssignment),
+				projects.removeProjectAssignment({ assignmentId: ids.otherAssignment }),
 			);
 
 			expect(added.success).toBe(false);
@@ -609,7 +597,7 @@ describe("project membership settings on PostgreSQL", () => {
 			);
 
 			const result = await actAs(ids.ownerUser, () =>
-				projects.addProjectAssignment(ids.project, "team", ids.team),
+				projects.addProjectAssignment({ projectId: ids.project, type: "team", targetId: ids.team }),
 			);
 			expect(result.success).toBe(true);
 
@@ -623,11 +611,7 @@ describe("project membership settings on PostgreSQL", () => {
 
 		it("an employee assignment offers the project to that employee until it is removed", async () => {
 			const result = await actAs(ids.ownerUser, () =>
-				projects.addProjectAssignment(
-					ids.project,
-					"employee",
-					ids.soloEmployee,
-				),
+				projects.addProjectAssignment({ projectId: ids.project, type: "employee", targetId: ids.soloEmployee }),
 			);
 			expect(result.success).toBe(true);
 			expect(await offeredProjects(ids.soloUser, ids.soloEmployee)).toEqual(
@@ -636,7 +620,7 @@ describe("project membership settings on PostgreSQL", () => {
 
 			const assignmentId = await assignmentIdFor(ids.soloEmployee);
 			const removed = await actAs(ids.ownerUser, () =>
-				projects.removeProjectAssignment(assignmentId),
+				projects.removeProjectAssignment({ assignmentId }),
 			);
 			expect(removed.success).toBe(true);
 			expect(await offeredProjects(ids.soloUser, ids.soloEmployee)).toEqual(

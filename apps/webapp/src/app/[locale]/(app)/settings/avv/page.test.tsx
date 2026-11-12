@@ -76,7 +76,7 @@ it("renders for an authorized organization when billing is enabled at runtime", 
 	await expect(pageContent()).resolves.toBeTruthy();
 	expect(mocks.connection).toHaveBeenCalledOnce();
 	expect(mocks.access).toHaveBeenCalledOnce();
-	expect(mocks.profile).toHaveBeenCalledWith("org-1");
+	expect(mocks.profile).toHaveBeenCalledWith();
 });
 
 it("shows the legal identity and full address with a profile editor link", async () => {

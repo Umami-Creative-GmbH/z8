@@ -292,9 +292,7 @@ describe("org-admin settings route access", () => {
 		expect(actionsSource.includes("projectAssignment.organizationId")).toBe(
 			true,
 		);
-		expect(
-			actionsSource.includes("requireOrgAdminCalendarSettingsAccess("),
-		).toBe(true);
+		expect(actionsSource.includes('requires: "orgAdmin"')).toBe(true);
 		expect(actionsSource.includes("getManagerCalendarReadView")).toBe(true);
 	});
 
@@ -312,7 +310,8 @@ describe("org-admin settings route access", () => {
 		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
 			true,
 		);
-		expect(actionsSource.includes("requireOrgAdminSurchargeActor(")).toBe(true);
+		expect(actionsSource.includes("requireOrgAdminSurchargeActor(")).toBe(false);
+		expect(actionsSource.includes('requires: "orgAdmin"')).toBe(true);
 		expect(actionsSource.includes("projectManager")).toBe(true);
 		expect(actionsSource.includes("locationEmployee")).toBe(true);
 		expect(actionsSource.includes("subareaEmployee")).toBe(true);
@@ -344,7 +343,7 @@ describe("org-admin settings route access", () => {
 		expect(source.includes('accessTier === "member"')).toBe(true);
 	});
 
-	it("uses shared org-admin parity helpers for location assignment mutations", () => {
+	it("leaves location assignment mutations to organization-action settings access", () => {
 		const source = stripComments(
 			readTestText(
 				join(SETTINGS_ROOT, "locations/assignment-actions.ts"),
@@ -352,8 +351,7 @@ describe("org-admin settings route access", () => {
 			),
 		);
 
-		expect(source.includes("getLocationSettingsActorContext(")).toBe(true);
-		expect(source.includes("requireLocationOrgAdminAccess(")).toBe(true);
+		expect(source.includes('requires: "orgAdmin"')).toBe(true);
 		expect(source.includes('emp?.role === "admin"')).toBe(false);
 	});
 
@@ -688,7 +686,7 @@ describe("org-admin settings route access", () => {
 		);
 
 		expect(
-			projectActionsSource.includes("getProjectSettingsActorContext("),
+			projectActionsSource.includes("projectSettingsActorOf("),
 		).toBe(true);
 		expect(
 			projectActionsSource.includes(
@@ -697,7 +695,7 @@ describe("org-admin settings route access", () => {
 		).toBe(true);
 		expect(projectActionsSource.includes('emp?.role === "admin"')).toBe(false);
 		expect(
-			customerActionsSource.includes("getProjectSettingsActorContext("),
+			customerActionsSource.includes("projectSettingsActorOf("),
 		).toBe(true);
 		expect(
 			customerActionsSource.includes(
@@ -727,12 +725,9 @@ describe("org-admin settings route access", () => {
 		expect(templateActionsSource.includes("requireManagerEmployee(")).toBe(
 			false,
 		);
-		expect(
-			coverageActionsSource.includes("getSchedulingSettingsAccessContext("),
-		).toBe(true);
-		expect(
-			coverageActionsSource.includes("canManageScopedSchedulingSubarea("),
-		).toBe(true);
+		expect(coverageActionsSource.includes("coverageRuleSubareaScope(")).toBe(
+			true,
+		);
 		expect(
 			coverageActionsSource.includes('authContext.employee.role !== "admin"'),
 		).toBe(false);
@@ -786,14 +781,10 @@ describe("org-admin settings route access", () => {
 		expect(permissionsSource.includes('currentEmployee.role !== "admin"')).toBe(
 			false,
 		);
+		expect(permissionsActionsSource.includes("organizationAction(")).toBe(true);
 		expect(
 			permissionsActionsSource.includes("getEmployeeSettingsActorContext("),
-		).toBe(true);
-		expect(
-			permissionsActionsSource.includes(
-				"requireOrgAdminEmployeeSettingsAccess(",
-			),
-		).toBe(true);
+		).toBe(false);
 		expect(
 			permissionsActionsSource.includes('currentEmployee.role !== "admin"'),
 		).toBe(false);
@@ -817,9 +808,8 @@ describe("org-admin settings route access", () => {
 				"utf8",
 			),
 		);
-		expect(travelExpensesSource.includes("requireExpenseAdministrator(")).toBe(
-			true,
-		);
+		// Travel expense settings actions authorize through the organization action module (#1617).
+		expect(travelExpensesSource.includes('requires: "orgAdmin"')).toBe(true);
 		expect(
 			expenseAdministratorSource.includes(
 				"canManageCurrentOrganizationSettings(",
@@ -990,10 +980,10 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "organization/page.tsx"), "utf8"),
 		);
 
-		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
-		expect(source.includes('accessTier !== "orgAdmin"')).toBe(true);
+		// The shared settings access resolver guards the page and feeds its controls (#1623).
+		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
+		expect(source.includes("settingsAccess={settingsAccess}")).toBe(true);
 		expect(source.includes("loadTeamSettingsPageData(")).toBe(false);
-		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 	});
 
 	it("derives team detail capabilities from scoped team data instead of employee-only checks", () => {

@@ -44,11 +44,12 @@ const projectReportReadersSource = readFileSync(
 	"utf8",
 );
 
+/** An exported function's or organization action's source, up to the next export. */
 function functionBody(source: string, name: string) {
-	const start = source.indexOf(`export async function ${name}`);
+	const start = source.search(new RegExp(`export (async function|const) ${name}\\b`));
 	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
-	const nextExport = source.indexOf("export async function", start + 1);
-	return source.slice(start, nextExport === -1 ? undefined : nextExport);
+	const next = source.slice(start + 1).search(/\nexport (async function|const) /);
+	return source.slice(start, next === -1 ? undefined : start + 1 + next);
 }
 
 /** A module-private function's source, up to the next top-level declaration. */
@@ -63,16 +64,17 @@ describe("project relationship tenant security", () => {
 	it("validates project managers against the project's organization", () => {
 		const body = functionBody(projectsSource, "addProjectManager");
 
-		expect(body).toContain("getProjectRelationshipEmployee");
-		expect(body).toContain("existingProject.organizationId");
+		// The project and the new manager are both loaded in the session's organization.
+		expect(body).toContain("loadOrganizationProject(organizationId, input.projectId)");
+		expect(body).toContain("getProjectRelationshipEmployee(input.employeeId, organizationId");
 	});
 
 	it("validates team and employee assignment targets against the project's organization", () => {
 		const body = functionBody(projectsSource, "addProjectAssignment");
 
 		expect(body).toContain("getProjectAssignmentTarget");
-		expect(body).toContain("existingProject.organizationId");
-		expect(body).toContain("eq(projectAssignment.organizationId, existingProject.organizationId)");
+		expect(body).toContain("loadOrganizationProject(organizationId, projectId)");
+		expect(body).toContain("eq(projectAssignment.organizationId, organizationId)");
 	});
 
 	it("requires organization scope when validating time-entry project assignments", () => {
@@ -92,9 +94,12 @@ describe("project relationship tenant security", () => {
 	});
 
 	it("scopes project selectors and assigned-project reads to the requested organization", () => {
-		for (const name of ["getTeamsForSelection", "getEmployeesForSelection"]) {
-			expect(functionBody(projectsSource, name)).toContain("getProjectSettingsActorContext({");
-		}
+		expect(functionBody(projectsSource, "getTeamsForSelection")).toContain(
+			"eq(team.organizationId, organizationId)",
+		);
+		expect(functionBody(projectsSource, "getEmployeesForSelection")).toContain(
+			"onCurrentRoster(organizationId)",
+		);
 
 		const assignedProjectsBody = functionBody(entryHelpersSource, "getAssignedProjectsWithHours");
 		expect(assignedProjectsBody).toContain(

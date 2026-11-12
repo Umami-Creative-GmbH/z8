@@ -42,7 +42,7 @@ export function EmployeeDraftActions({
 
 	const resendMutation = useMutation({
 		mutationFn: async () => {
-			const result = await resendInvitation(organizationId, invitationId);
+			const result = await resendInvitation(invitationId);
 			if (!result.success) {
 				throw new Error("Resend invitation failed");
 			}

@@ -612,6 +612,7 @@ describe("expense officer access (#747)", () => {
 		});
 		expect(foreignTeam).toEqual({
 			success: false,
+			code: "ValidationError",
 			error: "All teams must belong to the active organization",
 		});
 	});

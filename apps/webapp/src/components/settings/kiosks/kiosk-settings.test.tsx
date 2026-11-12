@@ -368,7 +368,8 @@ describe("KioskSettings", () => {
 			mocks.updateKioskAction.mockResolvedValue({
 				success: false,
 				error: "Offline mode needs an adopted organization.",
-				code: "offline_needs_adoption",
+				code: "ValidationError",
+				refusal: "offline_needs_adoption",
 			});
 			renderSettings([kiosk()], { organizationAdopted: true });
 

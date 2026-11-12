@@ -24,16 +24,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type * as authSchema from "@/db/auth-schema";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { useRouter } from "@/navigation";
 
 interface OrganizationDangerZoneCardProps {
 	organization: typeof authSchema.organization.$inferSelect;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 export function OrganizationDangerZoneCard({
 	organization,
-	currentMemberRole,
+	settingsAccess,
 }: OrganizationDangerZoneCardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -42,7 +47,7 @@ export function OrganizationDangerZoneCard({
 	const [confirmationName, setConfirmationName] = useState("");
 	const [isPending, startTransition] = useTransition();
 
-	const canManage = currentMemberRole === "owner" || currentMemberRole === "admin";
+	const canManage = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const isDeleted = !!organization.deletedAt;
 	const isConfirmationValid = confirmationName === organization.name;
 
@@ -58,7 +63,7 @@ export function OrganizationDangerZoneCard({
 		if (!isConfirmationValid) return;
 
 		startTransition(async () => {
-			const result = await deleteOrganization(organization.id, confirmationName);
+			const result = await deleteOrganization({ confirmationName });
 
 			if (result.success) {
 				toast.success(
@@ -80,7 +85,7 @@ export function OrganizationDangerZoneCard({
 
 	const handleRecover = () => {
 		startTransition(async () => {
-			const result = await recoverOrganization(organization.id);
+			const result = await recoverOrganization();
 
 			if (result.success) {
 				toast.success(t("organization.recover.success", "Organization recovered successfully"));

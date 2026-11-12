@@ -235,7 +235,6 @@ export function LocationDetail({
 			{/* Edit Location Dialog */}
 			{canManageLocations && (
 				<LocationDialog
-					organizationId={organizationId}
 					location={{
 						id: location.id,
 						name: location.name,
@@ -265,7 +264,6 @@ export function LocationDetail({
 			{/* Add Employee Dialog */}
 			{canManageLocations && (
 				<LocationEmployeeDialog
-					organizationId={organizationId}
 					locationId={locationId}
 					open={addEmployeeOpen}
 					onOpenChange={setAddEmployeeOpen}
@@ -312,7 +310,6 @@ export function LocationDetail({
 			{/* Subarea Employee Dialog */}
 			{canManageLocations && subareaEmployeeDialog && (
 				<SubareaEmployeeDialog
-					organizationId={organizationId}
 					subareaId={subareaEmployeeDialog.subareaId}
 					subareaName={subareaEmployeeDialog.subareaName}
 					open={subareaEmployeeDialog.open}

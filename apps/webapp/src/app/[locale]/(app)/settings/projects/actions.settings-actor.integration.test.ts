@@ -135,7 +135,7 @@ describe("project settings actor on PostgreSQL", () => {
 	])("refuses an %s who is a former employee", async (_role, userId) => {
 		harness.userId = userId();
 
-		const result = await getTeamsForSelection(fixture.organizationId);
+		const result = await getTeamsForSelection();
 
 		expect(result).toMatchObject({
 			success: false,
@@ -149,7 +149,7 @@ describe("project settings actor on PostgreSQL", () => {
 	])("serves %s as an org admin", async (_case, userId) => {
 		harness.userId = userId();
 
-		const result = await getTeamsForSelection(fixture.organizationId);
+		const result = await getTeamsForSelection();
 
 		expect(result).toEqual({
 			success: true,

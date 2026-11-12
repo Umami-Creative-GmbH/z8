@@ -2,6 +2,7 @@
 
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { render } from "@/test/render-with-translations";
 
 const mocks = vi.hoisted(() => ({
@@ -21,11 +22,10 @@ function renderCard(input: {
 	personnelFilesEnabled?: boolean;
 	equipmentEnabled?: boolean;
 	equipmentOutstandingReturns?: number;
-	role: "owner" | "admin" | "member";
+	access: SettingsAccess | null;
 }) {
 	return render(
 		<OrganizationFeaturesCard
-			organizationId="org-1"
 			shiftsEnabled={false}
 			projectsEnabled={false}
 			surchargesEnabled={false}
@@ -36,7 +36,7 @@ function renderCard(input: {
 			personnelFilesEnabled={input.personnelFilesEnabled ?? false}
 			equipmentEnabled={input.equipmentEnabled ?? false}
 			equipmentOutstandingReturns={input.equipmentOutstandingReturns}
-			currentMemberRole={input.role}
+			settingsAccess={input.access}
 		/>,
 	);
 }
@@ -48,17 +48,17 @@ describe("OrganizationFeaturesCard personnel files toggle (#865)", () => {
 	afterEach(cleanup);
 
 	it("lets an admin turn personnel files on without confirmation", async () => {
-		renderCard({ personnelFilesEnabled: false, role: "admin" });
+		renderCard({ personnelFilesEnabled: false, access: "orgAdmin" });
 
 		fireEvent.click(screen.getByRole("switch", { name: "Toggle personnel files" }));
 
 		await waitFor(() =>
-			expect(mocks.toggle).toHaveBeenCalledWith("org-1", "personnelFilesEnabled", true),
+			expect(mocks.toggle).toHaveBeenCalledWith({ feature: "personnelFilesEnabled", enabled: true }),
 		);
 	});
 
 	it("asks before turning personnel files off and says documents stay stored", async () => {
-		renderCard({ personnelFilesEnabled: true, role: "admin" });
+		renderCard({ personnelFilesEnabled: true, access: "orgAdmin" });
 
 		fireEvent.click(screen.getByRole("switch", { name: "Toggle personnel files" }));
 
@@ -71,12 +71,12 @@ describe("OrganizationFeaturesCard personnel files toggle (#865)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Turn off" }));
 
 		await waitFor(() =>
-			expect(mocks.toggle).toHaveBeenCalledWith("org-1", "personnelFilesEnabled", false),
+			expect(mocks.toggle).toHaveBeenCalledWith({ feature: "personnelFilesEnabled", enabled: false }),
 		);
 	});
 
 	it("keeps personnel files on when the confirmation is cancelled", async () => {
-		renderCard({ personnelFilesEnabled: true, role: "owner" });
+		renderCard({ personnelFilesEnabled: true, access: "owner" });
 
 		fireEvent.click(screen.getByRole("switch", { name: "Toggle personnel files" }));
 		fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
@@ -88,7 +88,7 @@ describe("OrganizationFeaturesCard personnel files toggle (#865)", () => {
 	});
 
 	it("leaves the other features owner-only", () => {
-		renderCard({ personnelFilesEnabled: false, role: "admin" });
+		renderCard({ personnelFilesEnabled: false, access: "orgAdmin" });
 
 		expect(
 			screen.getByRole("switch", { name: "Toggle work shifts" }).hasAttribute("disabled"),
@@ -106,17 +106,17 @@ describe("OrganizationFeaturesCard equipment toggle (#1572)", () => {
 	afterEach(cleanup);
 
 	it("lets an admin turn equipment on without confirmation", async () => {
-		renderCard({ equipmentEnabled: false, role: "admin" });
+		renderCard({ equipmentEnabled: false, access: "orgAdmin" });
 
 		fireEvent.click(screen.getByRole("switch", { name: "Toggle equipment" }));
 
 		await waitFor(() =>
-			expect(mocks.toggle).toHaveBeenCalledWith("org-1", "equipmentEnabled", true),
+			expect(mocks.toggle).toHaveBeenCalledWith({ feature: "equipmentEnabled", enabled: true }),
 		);
 	});
 
 	it("warns with the outstanding returns before turning equipment off", async () => {
-		renderCard({ equipmentEnabled: true, equipmentOutstandingReturns: 3, role: "admin" });
+		renderCard({ equipmentEnabled: true, equipmentOutstandingReturns: 3, access: "orgAdmin" });
 
 		fireEvent.click(screen.getByRole("switch", { name: "Toggle equipment" }));
 
@@ -129,12 +129,12 @@ describe("OrganizationFeaturesCard equipment toggle (#1572)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Turn off" }));
 
 		await waitFor(() =>
-			expect(mocks.toggle).toHaveBeenCalledWith("org-1", "equipmentEnabled", false),
+			expect(mocks.toggle).toHaveBeenCalledWith({ feature: "equipmentEnabled", enabled: false }),
 		);
 	});
 
 	it("leaves out the outstanding warning when nothing is outstanding", async () => {
-		renderCard({ equipmentEnabled: true, equipmentOutstandingReturns: 0, role: "owner" });
+		renderCard({ equipmentEnabled: true, equipmentOutstandingReturns: 0, access: "owner" });
 
 		fireEvent.click(screen.getByRole("switch", { name: "Toggle equipment" }));
 
@@ -143,10 +143,46 @@ describe("OrganizationFeaturesCard equipment toggle (#1572)", () => {
 	});
 
 	it("does not let members switch equipment", () => {
-		renderCard({ equipmentEnabled: false, role: "member" });
+		renderCard({ equipmentEnabled: false, access: "member" });
 
 		expect(
 			screen.getByRole("switch", { name: "Toggle equipment" }).hasAttribute("disabled"),
 		).toBe(true);
+	});
+});
+
+describe("OrganizationFeaturesCard by settings access (#1623)", () => {
+	afterEach(cleanup);
+
+	function disabled(name: string) {
+		return screen.getByRole("switch", { name }).hasAttribute("disabled");
+	}
+
+	it("lets an owner switch every feature", () => {
+		renderCard({ access: "owner" });
+
+		expect(disabled("Toggle work shifts")).toBe(false);
+		expect(disabled("Toggle personnel files")).toBe(false);
+		expect(disabled("Toggle equipment")).toBe(false);
+	});
+
+	it("lets an org admin switch only personnel files and equipment", () => {
+		renderCard({ access: "orgAdmin" });
+
+		expect(disabled("Toggle work shifts")).toBe(true);
+		expect(disabled("Toggle personnel files")).toBe(false);
+		expect(disabled("Toggle equipment")).toBe(false);
+	});
+
+	it.each([
+		["a scoped manager", "scopedManager"],
+		["an org member", "member"],
+		["a former employee (no settings access)", null],
+	] as const)("lets %s switch nothing", (_label, access) => {
+		renderCard({ access });
+
+		expect(disabled("Toggle work shifts")).toBe(true);
+		expect(disabled("Toggle personnel files")).toBe(true);
+		expect(disabled("Toggle equipment")).toBe(true);
 	});
 });

@@ -1,10 +1,13 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { z } from "zod";
+import { user } from "@/db/auth-schema";
 import { type EmailTemplateKey, organizationEmailTemplate } from "@/db/schema";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { ExternalServiceError, NotFoundError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { sendEmail } from "@/lib/email/email-service";
 import {
 	EMAIL_TEMPLATE_REGISTRY,
@@ -12,15 +15,15 @@ import {
 	getEmailTemplateDefinition,
 } from "@/lib/email/template-registry";
 import {
-	type EmailTemplateActionResult,
 	type SaveEmailTemplateInput,
 	validateEmailTemplateInput,
 } from "@/lib/email/template-settings";
 import { interpolateTemplate, sanitizeEmailHtml } from "@/lib/email/template-validation";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 
 const EMAIL_TEMPLATE_SETTINGS_PATH = "/settings/email-templates";
 
-type EmailTemplateListEntry = Omit<EmailTemplateDefinition, "renderDefault"> & {
+export type EmailTemplateListEntry = Omit<EmailTemplateDefinition, "renderDefault"> & {
 	override: typeof organizationEmailTemplate.$inferSelect | null;
 	starterDraftHtml: string;
 	starterDraftPlainText: string;
@@ -115,138 +118,176 @@ async function createSystemDraft(definition: EmailTemplateDefinition) {
 	return { starterDraftHtml, starterDraftPlainText };
 }
 
-export async function listEmailTemplates(): Promise<EmailTemplateListEntry[]> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const overrides = await db.query.organizationEmailTemplate.findMany({
-		where: and(
-			eq(organizationEmailTemplate.organizationId, organizationId),
-			eq(organizationEmailTemplate.isEnabled, true),
-		),
-	});
-	const overridesByTemplateKey = new Map(
-		overrides.flatMap((override) =>
-			override.isEnabled ? [[override.templateKey, override] as const] : [],
-		),
-	);
+/**
+ * A draft of an organization email template: the registry's template, content
+ * that uses only its variables (`validateEmailTemplateInput`), and a body that
+ * is not empty once sanitized. The parsed draft carries the sanitized body.
+ */
+const emailTemplateDraftSchema = z
+	.custom<SaveEmailTemplateInput>()
+	.superRefine((value, ctx) => {
+		const draft =
+			typeof value === "object" && value !== null ? value : ({} as SaveEmailTemplateInput);
+		for (const message of validateEmailTemplateInput(draft).errors) {
+			ctx.addIssue({ code: "custom", message });
+		}
+	})
+	.transform((draft) => ({ ...draft, html: sanitizeEmailHtml(draft.html) }))
+	.refine((draft) => draft.html.trim() !== "", "HTML body is required");
 
-	return Promise.all(
-		EMAIL_TEMPLATE_REGISTRY.map(async (definition) => {
-			const { renderDefault: _renderDefault, ...publicDefinition } = definition;
+const emailTemplateKeySchema = z.custom<EmailTemplateKey>(
+	(value) =>
+		typeof value === "string" &&
+		EMAIL_TEMPLATE_REGISTRY.some((definition) => definition.key === value),
+	"Unknown email template",
+);
 
-			return {
-				...publicDefinition,
-				...(await createSystemDraft(definition)),
-				override: overridesByTemplateKey.get(definition.key) ?? null,
-			};
+function revalidateEmailTemplatePages() {
+	revalidatePath(EMAIL_TEMPLATE_SETTINGS_PATH);
+	revalidatePath("/settings/enterprise/email");
+}
+
+export const listEmailTemplates = organizationAction(
+	{ name: "emailTemplates.list", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const overrides = yield* dbService.query("emailTemplates.list", () =>
+				dbService.db.query.organizationEmailTemplate.findMany({
+					where: and(
+						eq(organizationEmailTemplate.organizationId, organizationId),
+						eq(organizationEmailTemplate.isEnabled, true),
+					),
+				}),
+			);
+			const overridesByTemplateKey = new Map(
+				overrides.flatMap((override) =>
+					override.isEnabled ? [[override.templateKey, override] as const] : [],
+				),
+			);
+
+			return yield* Effect.promise(
+				(): Promise<EmailTemplateListEntry[]> =>
+					Promise.all(
+						EMAIL_TEMPLATE_REGISTRY.map(async (definition) => {
+							const { renderDefault: _renderDefault, ...publicDefinition } = definition;
+
+							return {
+								...publicDefinition,
+								...(await createSystemDraft(definition)),
+								override: overridesByTemplateKey.get(definition.key) ?? null,
+							};
+						}),
+					),
+			);
 		}),
-	);
-}
+);
 
-export async function saveEmailTemplate(
-	input: SaveEmailTemplateInput,
-): Promise<EmailTemplateActionResult> {
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
-	const validation = validateEmailTemplateInput(input);
+export const saveEmailTemplate = organizationAction(
+	{ name: "emailTemplates.save", requires: "orgAdmin", schema: emailTemplateDraftSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const plainText = input.plainText?.trim() ? input.plainText : null;
+			yield* dbService.query("emailTemplates.save", () =>
+				dbService.db
+					.insert(organizationEmailTemplate)
+					.values({
+						organizationId,
+						templateKey: input.templateKey,
+						subject: input.subject,
+						editorDocument: input.editorDocument as Record<string, unknown>,
+						html: input.html,
+						plainText,
+						isEnabled: true,
+						createdByUserId: actor.userId,
+						updatedByUserId: actor.userId,
+					})
+					.onConflictDoUpdate({
+						target: [
+							organizationEmailTemplate.organizationId,
+							organizationEmailTemplate.templateKey,
+						],
+						set: {
+							subject: input.subject,
+							editorDocument: input.editorDocument as Record<string, unknown>,
+							html: input.html,
+							plainText,
+							isEnabled: true,
+							updatedByUserId: actor.userId,
+						},
+					}),
+			);
 
-	if (!validation.success) {
-		return { success: false, errors: validation.errors };
-	}
+			revalidateEmailTemplatePages();
+			return undefined;
+		}),
+);
 
-	const sanitizedHtml = sanitizeEmailHtml(input.html);
+export const resetEmailTemplate = organizationAction(
+	{ name: "emailTemplates.reset", requires: "orgAdmin", schema: emailTemplateKeySchema },
+	({ organizationId, input: templateKey }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("emailTemplates.reset", () =>
+				dbService.db
+					.delete(organizationEmailTemplate)
+					.where(
+						and(
+							eq(organizationEmailTemplate.organizationId, organizationId),
+							eq(organizationEmailTemplate.templateKey, templateKey),
+						),
+					),
+			);
 
-	if (!sanitizedHtml.trim()) {
-		return { success: false, errors: ["HTML body is required"] };
-	}
+			revalidateEmailTemplatePages();
+			return undefined;
+		}),
+);
 
-	await db
-		.insert(organizationEmailTemplate)
-		.values({
-			organizationId,
-			templateKey: input.templateKey,
-			subject: input.subject,
-			editorDocument: input.editorDocument as Record<string, unknown>,
-			html: sanitizedHtml,
-			plainText: input.plainText?.trim() ? input.plainText : null,
-			isEnabled: true,
-			createdByUserId: authContext.user.id,
-			updatedByUserId: authContext.user.id,
-		})
-		.onConflictDoUpdate({
-			target: [organizationEmailTemplate.organizationId, organizationEmailTemplate.templateKey],
-			set: {
-				subject: input.subject,
-				editorDocument: input.editorDocument as Record<string, unknown>,
-				html: sanitizedHtml,
-				plainText: input.plainText?.trim() ? input.plainText : null,
-				isEnabled: true,
-				updatedByUserId: authContext.user.id,
-			},
-		});
+/** Sends the draft, filled with the template's preview data, to the caller; nothing is saved. */
+export const sendEmailTemplateTest = organizationAction(
+	{ name: "emailTemplates.sendTest", requires: "orgAdmin", schema: emailTemplateDraftSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const caller = yield* dbService.query("emailTemplates.sendTest.caller", () =>
+				dbService.db.query.user.findFirst({
+					where: eq(user.id, actor.userId),
+					columns: { email: true },
+				}),
+			);
+			if (!caller) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "User not found",
+						entityType: "user",
+						entityId: actor.userId,
+					}),
+				);
+			}
 
-	revalidatePath(EMAIL_TEMPLATE_SETTINGS_PATH);
-	revalidatePath("/settings/enterprise/email");
-
-	return { success: true };
-}
-
-export async function resetEmailTemplate(
-	templateKey: EmailTemplateKey,
-): Promise<EmailTemplateActionResult> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-
-	try {
-		getEmailTemplateDefinition(templateKey);
-	} catch {
-		return { success: false, errors: ["Unknown email template"] };
-	}
-
-	await db
-		.delete(organizationEmailTemplate)
-		.where(
-			and(
-				eq(organizationEmailTemplate.organizationId, organizationId),
-				eq(organizationEmailTemplate.templateKey, templateKey),
-			),
-		);
-
-	revalidatePath(EMAIL_TEMPLATE_SETTINGS_PATH);
-	revalidatePath("/settings/enterprise/email");
-
-	return { success: true };
-}
-
-export async function sendEmailTemplateTest(
-	input: SaveEmailTemplateInput,
-): Promise<EmailTemplateActionResult> {
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
-	const validation = validateEmailTemplateInput(input);
-
-	if (!validation.success) {
-		return { success: false, errors: validation.errors };
-	}
-
-	const sanitizedHtml = sanitizeEmailHtml(input.html);
-
-	if (!sanitizedHtml.trim()) {
-		return { success: false, errors: ["HTML body is required"] };
-	}
-
-	const result = await sendEmail({
-		to: authContext.user.email,
-		organizationId,
-		subject: interpolateTemplate(
-			input.subject,
-			getEmailTemplateDefinition(input.templateKey).previewData,
-		),
-		html: interpolateTemplate(
-			sanitizedHtml,
-			getEmailTemplateDefinition(input.templateKey).previewData,
-		),
-	});
-
-	if (!result.success) {
-		return { success: false, errors: ["Failed to send test email"] };
-	}
-
-	return { success: true };
-}
+			const { previewData } = getEmailTemplateDefinition(input.templateKey);
+			const failed = (cause?: unknown) =>
+				new ExternalServiceError({
+					message: "Failed to send test email",
+					service: "email",
+					operation: "sendTemplateTest",
+					cause,
+				});
+			const result = yield* Effect.tryPromise({
+				try: () =>
+					sendEmail({
+						to: caller.email,
+						organizationId,
+						subject: interpolateTemplate(input.subject, previewData),
+						html: interpolateTemplate(input.html, previewData),
+					}),
+				catch: failed,
+			});
+			if (!result.success) {
+				return yield* Effect.fail(failed());
+			}
+			return undefined;
+		}),
+);

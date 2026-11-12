@@ -4,6 +4,8 @@
  * Reads live in `./project-tasks` (server only).
  */
 
+import type { RefusalMessages } from "@/lib/organization-action/action-error-message";
+
 export const PROJECT_TASK_STATES = ["open", "done"] as const;
 export type ProjectTaskState = (typeof PROJECT_TASK_STATES)[number];
 
@@ -49,8 +51,11 @@ export type ProjectTaskRefusalReason =
 	/** The project's task requirement is active and the booking names no task (#884). */
 	| "task_required";
 
-/** The Tolgee key and English default each surface shows for a task refusal. */
-const PROJECT_TASK_REFUSAL_MESSAGES = {
+/**
+ * The Tolgee key and English default each surface shows for a task refusal;
+ * also the override map project task forms pass to `actionErrorMessage`.
+ */
+export const PROJECT_TASK_REFUSALS = {
 	task_not_found: ["timeTracking.errors.taskNotFound", "This task no longer exists"],
 	task_other_project: [
 		"timeTracking.errors.taskOtherProject",
@@ -65,13 +70,13 @@ const PROJECT_TASK_REFUSAL_MESSAGES = {
 		"timeTracking.errors.taskRequired",
 		"This project requires a task. Choose one and try again.",
 	],
-} as const satisfies Record<ProjectTaskRefusalReason, readonly [string, string]>;
+} as const satisfies RefusalMessages<ProjectTaskRefusalReason>;
 
 /** Whether a booking refusal code is one of the task refusals. */
 export function isProjectTaskRefusal(
 	code: string | null | undefined,
 ): code is ProjectTaskRefusalReason {
-	return code != null && Object.hasOwn(PROJECT_TASK_REFUSAL_MESSAGES, code);
+	return code != null && Object.hasOwn(PROJECT_TASK_REFUSALS, code);
 }
 
 /**
@@ -81,7 +86,7 @@ export function isProjectTaskRefusal(
 export function projectTaskRefusalMessage(
 	code: string | null | undefined,
 ): readonly [key: string, fallback: string] | null {
-	return isProjectTaskRefusal(code) ? PROJECT_TASK_REFUSAL_MESSAGES[code] : null;
+	return isProjectTaskRefusal(code) ? PROJECT_TASK_REFUSALS[code] : null;
 }
 
 export const PROJECT_TASK_NAME_MAX_LENGTH = 200;

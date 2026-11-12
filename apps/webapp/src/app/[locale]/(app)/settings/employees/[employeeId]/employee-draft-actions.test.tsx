@@ -124,10 +124,7 @@ describe("EmployeeDraftActions", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Resend invitation" }));
 
 		await waitFor(() => {
-			expect(resendInvitationMock).toHaveBeenCalledWith(
-				"org-1",
-				"invitation-1",
-			);
+			expect(resendInvitationMock).toHaveBeenCalledWith("invitation-1");
 			expect(invalidateQueries).toHaveBeenCalledWith({
 				queryKey: queryKeys.invitations.list("org-1"),
 			});

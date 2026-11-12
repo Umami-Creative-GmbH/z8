@@ -73,7 +73,7 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 	} = useQuery({
 		queryKey: queryKeys.customers.list(organizationId),
 		queryFn: async () => {
-			const result = await getCustomers(organizationId);
+			const result = await getCustomers();
 			if (!result.success) throw new Error(result.error ?? "Unknown error");
 			return result.data;
 		},
@@ -83,7 +83,7 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 	const { data: scopedProjectsResult } = useQuery({
 		queryKey: queryKeys.projects.list(organizationId, { scope: "customer-management" }),
 		queryFn: async () => {
-			const result = await getProjects(organizationId);
+			const result = await getProjects();
 			if (!result.success) {
 				return [];
 			}
@@ -117,7 +117,7 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 	const handleDelete = async () => {
 		if (!deletingCustomer) return;
 		setIsDeleting(true);
-		const result = await deleteCustomer(deletingCustomer.id).then(
+		const result = await deleteCustomer({ customerId: deletingCustomer.id }).then(
 			(response) => response,
 			() => null,
 		);

@@ -24,7 +24,7 @@ export interface ProjectSettingsActor {
 	};
 	organizationId: string;
 	accessTier: SettingsAccessTier;
-	currentEmployee: typeof employee.$inferSelect | null;
+	currentEmployee: Pick<typeof employee.$inferSelect, "id" | "role"> | null;
 }
 
 /** What a refused project settings access reports. */
@@ -194,24 +194,6 @@ export function ensureSettingsActorCanAccessProjectTarget(
 		}
 
 		return yield* Effect.fail(actorAuthorizationError(actor, options));
-	});
-}
-
-/**
- * Adding or removing project managers is reserved for org admins (#367):
- * a manager-tier project manager may manage assignments, not other managers.
- */
-export function ensureSettingsActorCanManageProjectManagers(
-	actor: ProjectSettingsActor,
-	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
-	options: AuthorizationFailureDetails,
-) {
-	return Effect.gen(function* () {
-		yield* ensureSettingsActorCanAccessProjectTarget(actor, targetProject, options);
-
-		if (actor.accessTier !== "orgAdmin") {
-			return yield* Effect.fail(actorAuthorizationError(actor, options));
-		}
 	});
 }
 

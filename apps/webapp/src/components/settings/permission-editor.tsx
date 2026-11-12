@@ -142,10 +142,10 @@ export function PermissionEditor({
 	const handleRevoke = async () => {
 		setLoading(true);
 
-		const result = await revokeTeamPermissions(
+		const result = await revokeTeamPermissions({
 			employeeId,
-			teamScope === "all" ? undefined : teamScope,
-		).then(
+			teamId: teamScope === "all" ? undefined : teamScope,
+		}).then(
 			(response) => response,
 			() => null,
 		);

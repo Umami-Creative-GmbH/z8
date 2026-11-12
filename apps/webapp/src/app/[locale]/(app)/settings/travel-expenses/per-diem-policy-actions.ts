@@ -1,13 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { Effect } from "effect";
 import { z } from "zod";
-import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
+import { NotFoundError } from "@/lib/effect/errors";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { activeVersionTimeline, type TimelineEntry } from "@/lib/travel-expenses/allowance-policy";
-import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 import {
 	type PerDiemPolicyInputErrors,
 	type PerDiemPolicyVersionFormInput,
@@ -25,12 +23,12 @@ import {
 	STATUTORY_PER_DIEM_DEFAULTS,
 	type StatutoryPerDiemDefault,
 } from "@/lib/travel-expenses/statutory-per-diem-defaults";
+import { auditLater, expenseStore, revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
- * Dated per diem policy of the organization (#609), managed by expense
- * administrators (`canManageCurrentOrganizationSettings`). Every change is a
- * new immutable version activated in one transaction; nothing is adopted
- * automatically.
+ * Dated per diem policy of the organization (#609), managed by org admins.
+ * Every change is a new immutable version activated in one transaction;
+ * nothing is adopted automatically.
  */
 
 export interface PerDiemPolicySettings {
@@ -41,20 +39,17 @@ export interface PerDiemPolicySettings {
 	rules: PerDiemRuleSet;
 }
 
-const requireExpenseAdmin = () => requireExpenseAdministrator();
-
-export async function getPerDiemPolicySettings(): Promise<
-	ServerActionResult<PerDiemPolicySettings>
-> {
-	try {
-		const access = await requireExpenseAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		const versions = await loadPerDiemPolicyVersions(db, access.organizationId, {
-			includeWithdrawn: true,
-		});
-		return {
-			success: true,
-			data: {
+export const getPerDiemPolicySettings = organizationAction(
+	{ name: "travelExpenses.getPerDiemPolicy", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const versions = yield* expenseStore(
+				"travelExpenses.getPerDiemPolicy",
+				"Failed to load the per diem policy",
+				(database) =>
+					loadPerDiemPolicyVersions(database, organizationId, { includeWithdrawn: true }),
+			);
+			return {
 				timeline: activeVersionTimeline(versions),
 				withdrawn: versions
 					.filter((version) => version.withdrawnAt)
@@ -63,13 +58,9 @@ export async function getPerDiemPolicySettings(): Promise<
 					),
 				defaults: [...STATUTORY_PER_DIEM_DEFAULTS],
 				rules: GERMAN_DOMESTIC_PER_DIEM_RULES,
-			},
-		};
-	} catch (error) {
-		logger.error({ error }, "Failed to load the per diem policy");
-		return { success: false, error: "Failed to load the per diem policy" };
-	}
-}
+			} satisfies PerDiemPolicySettings;
+		}),
+);
 
 export type ActivatePerDiemPolicyOutcome =
 	| { status: "activated"; versionId: string }
@@ -78,107 +69,126 @@ export type ActivatePerDiemPolicyOutcome =
 	| { status: "stale_replacement" };
 
 const text = z.string().max(2000).nullable().optional();
-const activateSchema = z.object({
-	source: z.enum(["organization", "statutory_default"]),
-	effectiveFrom: text,
-	currency: text,
-	rates: z
-		.object({
-			fullDay: text,
-			partialDay: text,
-			breakfastDeduction: text,
-			lunchDeduction: text,
-			dinnerDeduction: text,
-		})
-		.partial()
-		.optional(),
-	sourceReference: text,
-	sourceVersion: text,
-	defaultKey: text,
-	note: text,
-	replacesVersionId: z.uuid().nullable().optional(),
-});
+const activateSchema = z.object(
+	{
+		source: z.enum(["organization", "statutory_default"], "Invalid per diem policy"),
+		effectiveFrom: text,
+		currency: text,
+		rates: z
+			.object({
+				fullDay: text,
+				partialDay: text,
+				breakfastDeduction: text,
+				lunchDeduction: text,
+				dinnerDeduction: text,
+			})
+			.partial()
+			.optional(),
+		sourceReference: text,
+		sourceVersion: text,
+		defaultKey: text,
+		note: text,
+		replacesVersionId: z.uuid("Invalid per diem policy").nullable().optional(),
+	},
+	"Invalid per diem policy",
+) satisfies z.ZodType<PerDiemPolicyVersionFormInput>;
 
-export async function activatePerDiemPolicyVersionAction(
-	input: PerDiemPolicyVersionFormInput,
-): Promise<ServerActionResult<ActivatePerDiemPolicyOutcome>> {
-	try {
-		const access = await requireExpenseAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		const shape = activateSchema.safeParse(input);
-		if (!shape.success) return { success: false, error: "Invalid per diem policy" };
-		const parsed = parsePerDiemPolicyVersionInput(shape.data);
-		if (!parsed.ok) return { success: true, data: { status: "invalid", errors: parsed.errors } };
-		const result = await activatePerDiemPolicyVersion(
-			db,
-			{ organizationId: access.organizationId, userId: access.userId },
-			parsed.input,
-		);
-		if (result.kind !== "activated") {
-			return {
-				success: true,
-				data:
+export const activatePerDiemPolicyVersionAction = organizationAction(
+	{ name: "travelExpenses.activatePerDiemPolicy", requires: "orgAdmin", schema: activateSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const parsed = parsePerDiemPolicyVersionInput(input);
+			if (!parsed.ok) {
+				return { status: "invalid", errors: parsed.errors } satisfies ActivatePerDiemPolicyOutcome;
+			}
+			const result = yield* expenseStore(
+				"travelExpenses.activatePerDiemPolicy",
+				"Failed to save the per diem policy",
+				(database) =>
+					activatePerDiemPolicyVersion(
+						database,
+						{ organizationId, userId: actor.userId },
+						parsed.input,
+					),
+			);
+			if (result.kind !== "activated") {
+				return (
 					result.kind === "start_taken"
 						? { status: "start_taken", existingVersionId: result.existingVersionId }
-						: { status: "stale_replacement" },
-			};
-		}
-		logAudit({
-			action: AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED,
-			actorId: access.userId,
-			employeeId: access.employeeId ?? undefined,
-			targetId: result.versionId,
-			targetType: "travel_expense_policy_version",
-			organizationId: access.organizationId,
-			metadata: {
-				kind: "per_diem",
-				effectiveFrom: parsed.input.effectiveFrom,
-				currency: parsed.input.currency,
-				rates: parsed.input.rates,
-				source: parsed.input.source,
-				replacesVersionId: parsed.input.replacesVersionId,
-			},
-			timestamp: new Date(),
-		}).catch((error) => logger.error({ error }, "Failed to log per diem policy activation"));
-		revalidatePath("/settings/travel-expenses");
-		return { success: true, data: { status: "activated", versionId: result.versionId } };
-	} catch (error) {
-		logger.error({ error }, "Failed to activate the per diem policy version");
-		return { success: false, error: "Failed to save the per diem policy" };
-	}
-}
+						: { status: "stale_replacement" }
+				) satisfies ActivatePerDiemPolicyOutcome;
+			}
+			yield* auditLater(
+				() =>
+					logAudit({
+						action: AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED,
+						actorId: actor.userId,
+						employeeId: actor.employee?.id,
+						targetId: result.versionId,
+						targetType: "travel_expense_policy_version",
+						organizationId,
+						metadata: {
+							kind: "per_diem",
+							effectiveFrom: parsed.input.effectiveFrom,
+							currency: parsed.input.currency,
+							rates: parsed.input.rates,
+							source: parsed.input.source,
+							replacesVersionId: parsed.input.replacesVersionId,
+						},
+						timestamp: new Date(),
+					}),
+				"Failed to log per diem policy activation",
+			);
+			yield* revalidateExpenseSettings();
+			return {
+				status: "activated",
+				versionId: result.versionId,
+			} satisfies ActivatePerDiemPolicyOutcome;
+		}),
+);
 
-export async function withdrawPerDiemPolicyVersionAction(input: {
-	versionId: string;
-}): Promise<ServerActionResult<{ versionId: string }>> {
-	try {
-		const access = await requireExpenseAdmin();
-		if ("error" in access) return { success: false, error: access.error };
-		if (!z.uuid().safeParse(input.versionId).success) {
-			return { success: false, error: "Per diem policy version not found" };
-		}
-		const result = await withdrawPerDiemPolicyVersion(
-			db,
-			{ organizationId: access.organizationId, userId: access.userId },
-			{ versionId: input.versionId },
-		);
-		if (result.kind === "not_found") {
-			return { success: false, error: "Per diem policy version not found" };
-		}
-		logAudit({
-			action: AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN,
-			actorId: access.userId,
-			employeeId: access.employeeId ?? undefined,
-			targetId: input.versionId,
-			targetType: "travel_expense_policy_version",
-			organizationId: access.organizationId,
-			metadata: { kind: "per_diem" },
-			timestamp: new Date(),
-		}).catch((error) => logger.error({ error }, "Failed to log per diem policy withdrawal"));
-		revalidatePath("/settings/travel-expenses");
-		return { success: true, data: { versionId: input.versionId } };
-	} catch (error) {
-		logger.error({ error }, "Failed to withdraw the per diem policy version");
-		return { success: false, error: "Failed to withdraw the per diem policy version" };
-	}
-}
+export const withdrawPerDiemPolicyVersionAction = organizationAction(
+	{
+		name: "travelExpenses.withdrawPerDiemPolicy",
+		requires: "orgAdmin",
+		schema: z.strictObject({ versionId: z.uuid("Per diem policy version not found") }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const result = yield* expenseStore(
+				"travelExpenses.withdrawPerDiemPolicy",
+				"Failed to withdraw the per diem policy version",
+				(database) =>
+					withdrawPerDiemPolicyVersion(
+						database,
+						{ organizationId, userId: actor.userId },
+						{ versionId: input.versionId },
+					),
+			);
+			if (result.kind === "not_found") {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Per diem policy version not found",
+						entityType: "travel_expense_policy_version",
+						entityId: input.versionId,
+					}),
+				);
+			}
+			yield* auditLater(
+				() =>
+					logAudit({
+						action: AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN,
+						actorId: actor.userId,
+						employeeId: actor.employee?.id,
+						targetId: input.versionId,
+						targetType: "travel_expense_policy_version",
+						organizationId,
+						metadata: { kind: "per_diem" },
+						timestamp: new Date(),
+					}),
+				"Failed to log per diem policy withdrawal",
+			);
+			yield* revalidateExpenseSettings();
+			return { versionId: input.versionId };
+		}),
+);

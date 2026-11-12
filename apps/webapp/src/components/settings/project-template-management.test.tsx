@@ -262,7 +262,8 @@ describe("ProjectTemplateManagement", () => {
 		await user.type(name, "Relaunch");
 		await user.click(within(form).getByRole("button", { name: "Save changes" }));
 
-		expect(templateActions.updateProjectTemplate).toHaveBeenCalledWith("template-1", {
+		expect(templateActions.updateProjectTemplate).toHaveBeenCalledWith({
+			templateId: "template-1",
 			name: "Relaunch",
 			description: "Our standard relaunch",
 			icon: null,
@@ -311,8 +312,7 @@ describe("ProjectTemplateManagement", () => {
 		await user.click(within(form).getByRole("button", { name: "Save changes" }));
 
 		expect(templateActions.updateProjectTemplate).toHaveBeenCalledWith(
-			"template-1",
-			expect.objectContaining({ requiresTask: true }),
+			expect.objectContaining({ templateId: "template-1", requiresTask: true }),
 		);
 	});
 

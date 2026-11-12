@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import { createTestTolgee } from "@/test/render-with-translations";
 
@@ -23,13 +24,12 @@ vi.mock("@/app/[locale]/(app)/settings/organization/clocking-reminder-actions", 
 
 import { OrganizationClockingRemindersCard } from "./organization-clocking-reminders-card";
 
-function show(role: "owner" | "admin" | "member" = "admin") {
+function show(access: SettingsAccess | null = "orgAdmin") {
 	return render(
 		<TolgeeProvider tolgee={createTestTolgee("en", {})}>
 			<OrganizationClockingRemindersCard
-				organizationId="org-1"
 				settings={DEFAULT_CLOCKING_REMINDER_SETTINGS}
-				currentMemberRole={role}
+				settingsAccess={access}
 			/>
 		</TolgeeProvider>,
 	);
@@ -74,7 +74,6 @@ describe("OrganizationClockingRemindersCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.save).toHaveBeenCalledWith({
-				organizationId: "org-1",
 				missedClockIn: { enabled: true, graceMinutes: 10 },
 				forgottenClockOut: { enabled: false, graceMinutes: 30 },
 				breakDue: { enabled: true, leadMinutes: 20 },

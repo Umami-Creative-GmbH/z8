@@ -1,18 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mockState = vi.hoisted(() => ({
-	actorSession: {
-		user: { id: "user-1", email: "manager@example.com", name: "Manager" },
-		session: { activeOrganizationId: "org-1" },
-	},
-	employeeRecord: {
-		id: "employee-1",
-		userId: "user-1",
-		organizationId: "org-1",
-		role: "manager" as const,
-		isActive: true,
-	},
-	membershipRecord: { role: "member" as const },
+	caller: null as StubCaller | null,
 	projectRows: [] as Array<any>,
 	projectManagers: [] as Array<any>,
 	projectAssignments: [] as Array<any>,
@@ -29,23 +19,15 @@ vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
 }));
 
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	desc: vi.fn((value: unknown) => value),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
-	sql: vi.fn((strings: TemplateStringsArray) => strings.join("")),
-}));
-
 // Billable Time reads (#768) run on PostgreSQL in actions.billable-default.integration.test.ts.
 vi.mock("@/lib/billable-time/settings", () => ({
 	getBillableTimeSettings: vi.fn(async () => ({ enabled: true, currency: "EUR" })),
 }));
 vi.mock("@/lib/reports/completed-work", () => ({
-	completedWorkPeriodCondition: vi.fn(() => ({ completedWork: true })),
+	completedWorkPeriodCondition: vi.fn(() => undefined),
 }));
 vi.mock("@/lib/billable-time/project-customer", () => ({
-	projectHasActiveCustomerSql: vi.fn(() => ({ projectHasActiveCustomer: true })),
+	projectHasActiveCustomerSql: vi.fn(() => undefined),
 	readProjectActiveCustomerId: vi.fn(async () => "customer-active"),
 }));
 
@@ -58,43 +40,6 @@ vi.mock("@/lib/organization/custom-fields/form-values", () => ({
 	saveFormCustomFieldValues: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/db/schema", () => ({
-	customer: { id: "id", organizationId: "organizationId", isActive: "isActive" },
-	employee: {
-		id: "id",
-		userId: "userId",
-		organizationId: "organizationId",
-		isActive: "isActive",
-		role: "role",
-	},
-	project: {
-		id: "id",
-		organizationId: "organizationId",
-		name: "name",
-		createdAt: "createdAt",
-		$inferInsert: {},
-	},
-	projectAssignment: {
-		id: "id",
-		projectId: "projectId",
-		employeeId: "employeeId",
-		teamId: "teamId",
-	},
-	projectManager: { id: "id", projectId: "projectId", employeeId: "employeeId" },
-	projectNotificationState: { projectId: "projectId" },
-	team: { id: "id", organizationId: "organizationId", name: "name" },
-	workPeriod: { projectId: "projectId", durationMinutes: "durationMinutes" },
-}));
-
-vi.mock("@/db/auth-schema", () => ({
-	member: {
-		userId: "userId",
-		organizationId: "organizationId",
-		role: "role",
-		status: "status",
-	},
-}));
-
 vi.mock("@/lib/audit-logger", () => ({
 	AuditAction: {
 		PROJECT_CREATED: "PROJECT_CREATED",
@@ -103,171 +48,114 @@ vi.mock("@/lib/audit-logger", () => ({
 	logAudit: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/lib/logger", () => ({
-	logger: {
-		error: vi.fn(),
-	},
-}));
-
-vi.mock("@opentelemetry/api", () => ({
-	SpanStatusCode: { OK: "OK", ERROR: "ERROR" },
-	trace: {
-		getTracer: () => ({
-			startActiveSpan: (_name: string, ...args: any[]) => {
-				const callback = args[args.length - 1];
-				return callback({
-					setStatus: vi.fn(),
-					recordException: vi.fn(),
-					end: vi.fn(),
-				});
+vi.mock("@/db", async () => {
+	const { project } = await import("@/db/schema");
+	return {
+		db: {
+			query: {
+				project: {
+					findMany: vi.fn(async () => mockState.projectRows),
+					findFirst: vi.fn(async () => mockState.projectQueue.shift() ?? null),
+				},
+				projectManager: {
+					findMany: vi.fn(async () => mockState.projectManagers),
+					findFirst: vi.fn(async () => null),
+				},
+				projectAssignment: {
+					findMany: vi.fn(async () => mockState.projectAssignments),
+					findFirst: vi.fn(async () => null),
+				},
+				customer: {
+					findFirst: vi.fn(async () => mockState.customerQueue.shift() ?? null),
+				},
 			},
-		}),
-	},
-}));
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context, Effect, Layer } = await import("effect");
-	const AuthService = Context.Service<any>("AuthService");
-	const AuthServiceLive = Layer.succeed(AuthService, {
-		getSession: () => Effect.succeed(mockState.actorSession),
-	});
-	return { AuthService, AuthServiceLive };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context, Effect, Layer } = await import("effect");
-	const dbModule = await import("@/db");
-	const DatabaseService = Context.Service<any>("DatabaseService");
-	const DatabaseServiceLive = Layer.succeed(DatabaseService, {
-		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-		get db() {
-			return dbModule.db;
-		},
-	});
-	return { DatabaseService, DatabaseServiceLive };
-});
-
-// The shared runtime over the stub AppLayer members the actions read.
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Layer } = await import("effect");
-	const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.mergeAll(AuthServiceLive, DatabaseServiceLive),
-	);
-});
-
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			employee: {
-				findFirst: vi.fn(async () => mockState.employeeRecord),
-			},
-			member: {
-				findFirst: vi.fn(async () => mockState.membershipRecord),
-			},
-			project: {
-				findMany: vi.fn(async () => mockState.projectRows),
-				findFirst: vi.fn(async () => mockState.projectQueue.shift() ?? null),
-			},
-			projectManager: {
-				findMany: vi.fn(async () => mockState.projectManagers),
-				findFirst: vi.fn(async () => null),
-			},
-			projectAssignment: {
-				findMany: vi.fn(async () => mockState.projectAssignments),
-				findFirst: vi.fn(async () => null),
-			},
-			customer: {
-				findFirst: vi.fn(async () => mockState.customerQueue.shift() ?? null),
-			},
-		},
-		select: vi.fn(() => ({
-			from: vi.fn(() => ({
-				// Awaited directly: the projects with an active customer (none here).
-				where: vi.fn(() =>
-					Object.assign(Promise.resolve([]), {
-						groupBy: vi.fn(async () => mockState.hoursBooked),
-					}),
-				),
-			})),
-		})),
-		update: vi.fn(() => ({
-			set: vi.fn(() => ({
-				where: vi.fn(async (whereArg: unknown) => {
-					mockState.updateWhereArgs.push(whereArg);
-					return undefined;
-				}),
-			})),
-		})),
-		insert: vi.fn(() => ({
-			values: vi.fn((values: unknown) => {
-				mockState.insertCalls.push(values);
-				return {
-					returning: vi.fn(async () => [{ id: "created-project-1" }]),
-				};
-			}),
-		})),
-		transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => {
-			mockState.transactionCalls += 1;
-			const tx = {
-				update: vi.fn(() => ({
-					set: vi.fn(() => ({
-						where: vi.fn(async (whereArg: unknown) => {
-							mockState.updateWhereArgs.push(whereArg);
-							return undefined;
+			select: vi.fn(() => ({
+				from: vi.fn(() => ({
+					// Awaited directly: the projects with an active customer (none here).
+					where: vi.fn(() =>
+						Object.assign(Promise.resolve([]), {
+							groupBy: vi.fn(async () => mockState.hoursBooked),
 						}),
-					})),
+					),
 				})),
-				insert: vi.fn((table: any) => {
-					if (table?.name === "name") {
+			})),
+			transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => {
+				mockState.transactionCalls += 1;
+				const tx = {
+					update: vi.fn(() => ({
+						set: vi.fn(() => ({
+							where: vi.fn(async (whereArg: unknown) => {
+								mockState.updateWhereArgs.push(whereArg);
+								return undefined;
+							}),
+						})),
+					})),
+					insert: vi.fn((table: unknown) => {
+						if (table === project) {
+							return {
+								values: vi.fn((values: unknown) => {
+									mockState.insertCalls.push(values);
+									return {
+										returning: vi.fn(async () => [{ id: "created-project-1" }]),
+									};
+								}),
+							};
+						}
+
 						return {
-							values: vi.fn((values: unknown) => {
+							values: vi.fn(async (values: unknown) => {
+								if (mockState.transactionProjectManagerShouldFail) {
+									throw new Error("project-manager-insert-failed");
+								}
+
 								mockState.insertCalls.push(values);
-								return {
-									returning: vi.fn(async () => [{ id: "created-project-1" }]),
-								};
+								return undefined;
 							}),
 						};
-					}
+					}),
+				};
 
-					return {
-						values: vi.fn(async (values: unknown) => {
-							if (
-								table?.employeeId === "employeeId" &&
-								mockState.transactionProjectManagerShouldFail
-							) {
-								throw new Error("project-manager-insert-failed");
-							}
+				return await callback(tx);
+			}),
+		},
+	};
+});
 
-							mockState.insertCalls.push(values);
-							return undefined;
-						}),
-					};
-				}),
-			};
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { db } = await import("@/db");
+	return runtimeModuleOver(organizationActionStubLayer(() => mockState.caller, { db }));
+});
 
-			return await callback(tx);
-		}),
-	},
-}));
+const {
+	addProjectAssignment,
+	addProjectManager,
+	archiveProject,
+	createProject,
+	getEmployeesForSelection,
+	getProjects,
+	getTeamsForSelection,
+	removeProjectAssignment,
+	removeProjectManager,
+	updateProject,
+} = await import("./actions");
 
-const { createProject, getProjects, updateProject } = await import("./actions");
+const scopedManager: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	...scopedManager,
+	employee: { id: "employee-1", role: "employee", former: false },
+};
+const owner: StubCaller = { ...scopedManager, membershipRole: "owner", employee: null };
 
 describe("project settings manager scope", () => {
 	beforeEach(() => {
-		mockState.actorSession = {
-			user: { id: "user-1", email: "manager@example.com", name: "Manager" },
-			session: { activeOrganizationId: "org-1" },
-		};
-		mockState.employeeRecord = {
-			id: "employee-1",
-			userId: "user-1",
-			organizationId: "org-1",
-			role: "manager",
-			isActive: true,
-		};
-		mockState.membershipRecord = { role: "member" };
+		mockState.caller = scopedManager;
 		mockState.projectRows = [
 			{
 				id: "project-1",
@@ -325,7 +213,7 @@ describe("project settings manager scope", () => {
 	});
 
 	it("shows managers only their managed projects", async () => {
-		const result = await getProjects("org-1");
+		const result = await getProjects();
 
 		expect(result).toEqual({
 			success: true,
@@ -343,27 +231,35 @@ describe("project settings manager scope", () => {
 			},
 		];
 
-		const result = await updateProject("project-1", { name: "Managed Project Updated" });
+		const result = await updateProject({ projectId: "project-1", name: "Managed Project Updated" });
 
 		expect(result).toEqual({ success: true, data: undefined });
 		expect(mockState.updateWhereArgs).toHaveLength(1);
 	});
 
+	it("reads another organization's project as not found", async () => {
+		mockState.projectQueue = [null];
+
+		const result = await updateProject({ projectId: "project-elsewhere", name: "Taken over" });
+
+		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(mockState.updateWhereArgs).toHaveLength(0);
+	});
+
 	it("lets managers create projects and scopes them by assigning themselves as manager", async () => {
-		const result = await createProject({
-			organizationId: "org-1",
-			name: "New Managed Project",
-		});
+		const result = await createProject({ name: "New Managed Project" });
 
 		expect(result).toEqual({ success: true, data: { id: "created-project-1" } });
 		// One insert may carry several rows.
-		const managerAssignmentInserts = mockState.insertCalls.flat().filter(
-			(value) =>
-				value &&
-				typeof value === "object" &&
-				"projectId" in (value as Record<string, unknown>) &&
-				"employeeId" in (value as Record<string, unknown>),
-		);
+		const managerAssignmentInserts = mockState.insertCalls
+			.flat()
+			.filter(
+				(value) =>
+					value &&
+					typeof value === "object" &&
+					"projectId" in (value as Record<string, unknown>) &&
+					"employeeId" in (value as Record<string, unknown>),
+			);
 
 		expect(managerAssignmentInserts).toEqual([
 			expect.objectContaining({
@@ -377,10 +273,7 @@ describe("project settings manager scope", () => {
 	it("does not leave a created project behind when manager assignment fails", async () => {
 		mockState.transactionProjectManagerShouldFail = true;
 
-		const result = await createProject({
-			organizationId: "org-1",
-			name: "Broken Managed Project",
-		});
+		const result = await createProject({ name: "Broken Managed Project" });
 
 		expect(result).toMatchObject({ success: false });
 		expect(mockState.transactionCalls).toBe(1);
@@ -400,7 +293,7 @@ describe("project settings manager scope", () => {
 			{ id: "project-2", organizationId: "org-1", customerId: "customer-2", isActive: true },
 		];
 
-		const result = await updateProject("project-1", { customerId: "customer-2" });
+		const result = await updateProject({ projectId: "project-1", customerId: "customer-2" });
 
 		expect(result).toEqual({
 			success: false,
@@ -410,10 +303,9 @@ describe("project settings manager scope", () => {
 	});
 
 	it("keeps owner membership parity with org admins for project reads", async () => {
-		mockState.membershipRecord = { role: "owner" };
-		mockState.employeeRecord = null;
+		mockState.caller = owner;
 
-		const result = await getProjects("org-1");
+		const result = await getProjects();
 
 		expect(result).toEqual({
 			success: true,
@@ -422,5 +314,53 @@ describe("project settings manager scope", () => {
 				expect.objectContaining({ id: "project-2" }),
 			]),
 		});
+	});
+
+	it("refuses a task requirement that is not a boolean", async () => {
+		const result = await createProject({ name: "Odd", requiresTask: "yes" as never });
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.transactionCalls).toBe(0);
+	});
+});
+
+describe("project settings access levels", () => {
+	beforeEach(() => {
+		mockState.projectQueue = [];
+		mockState.transactionCalls = 0;
+	});
+
+	it.each([
+		["getProjects", () => getProjects()],
+		["createProject", () => createProject({ name: "New" })],
+		["updateProject", () => updateProject({ projectId: "project-1", name: "Renamed" })],
+		["archiveProject", () => archiveProject({ projectId: "project-1" })],
+		[
+			"addProjectAssignment",
+			() => addProjectAssignment({ projectId: "project-1", type: "team", targetId: "team-1" }),
+		],
+		["removeProjectAssignment", () => removeProjectAssignment({ assignmentId: "assignment-1" })],
+		["getTeamsForSelection", () => getTeamsForSelection()],
+		["getEmployeesForSelection", () => getEmployeesForSelection()],
+	])("refuses %s to an org member", async (_name, call) => {
+		mockState.caller = orgMember;
+
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.transactionCalls).toBe(0);
+	});
+
+	it.each([
+		[
+			"addProjectManager",
+			() => addProjectManager({ projectId: "project-1", employeeId: "employee-2" }),
+		],
+		[
+			"removeProjectManager",
+			() => removeProjectManager({ projectId: "project-1", employeeId: "employee-2" }),
+		],
+	])("refuses %s to a scoped manager", async (_name, call) => {
+		mockState.caller = scopedManager;
+
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 });

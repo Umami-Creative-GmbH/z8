@@ -86,7 +86,8 @@ describe("WebhookDeliveryLogsDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Next" }));
 
 		await waitFor(() => {
-			expect(mocks.getWebhookDeliveryLogs).toHaveBeenLastCalledWith("webhook-1", {
+			expect(mocks.getWebhookDeliveryLogs).toHaveBeenLastCalledWith({
+				webhookId: "webhook-1",
 				limit: 20,
 				offset: 20,
 			});
@@ -162,7 +163,8 @@ describe("WebhookDeliveryLogsDialog", () => {
 		await screen.findByText("delivery");
 		await user.click(screen.getByRole("button", { name: "Next" }));
 		await waitFor(() =>
-			expect(mocks.getWebhookDeliveryLogs).toHaveBeenLastCalledWith("webhook-a", {
+			expect(mocks.getWebhookDeliveryLogs).toHaveBeenLastCalledWith({
+				webhookId: "webhook-a",
 				limit: 20,
 				offset: 20,
 			}),
@@ -177,7 +179,8 @@ describe("WebhookDeliveryLogsDialog", () => {
 			/>,
 		);
 		await waitFor(() =>
-			expect(mocks.getWebhookDeliveryLogs).toHaveBeenLastCalledWith("webhook-b", {
+			expect(mocks.getWebhookDeliveryLogs).toHaveBeenLastCalledWith({
+				webhookId: "webhook-b",
 				limit: 20,
 				offset: 0,
 			}),
@@ -192,7 +195,8 @@ describe("WebhookDeliveryLogsDialog", () => {
 			/>,
 		);
 		await waitFor(() =>
-			expect(mocks.getWebhookDeliveryLogs).toHaveBeenLastCalledWith("webhook-a", {
+			expect(mocks.getWebhookDeliveryLogs).toHaveBeenLastCalledWith({
+				webhookId: "webhook-a",
 				limit: 20,
 				offset: 0,
 			}),

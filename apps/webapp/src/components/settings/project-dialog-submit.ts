@@ -1,4 +1,4 @@
-import type { useTranslate } from "@tolgee/react";
+﻿import type { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
 	createProject,
@@ -101,7 +101,8 @@ async function saveEditedProject(
 		value,
 		context.billableTimeEnabled,
 	);
-	const result = await updateProject(project.id, {
+	const result = await updateProject({
+		projectId: project.id,
 		name: value.name,
 		description: value.description || undefined,
 		status: value.status,
@@ -158,7 +159,6 @@ async function createBlankProject(value: ProjectFormValues, context: ProjectSubm
 		context.billableTimeEnabled,
 	);
 	const result = await createProject({
-		organizationId: context.organizationId,
 		name: value.name,
 		description: value.description || undefined,
 		status: value.status,

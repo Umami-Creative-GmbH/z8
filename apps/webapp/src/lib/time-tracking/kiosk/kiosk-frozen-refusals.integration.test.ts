@@ -601,7 +601,7 @@ describe("refused frozen kiosk commands on PostgreSQL", () => {
 				actAs(userId);
 				expect(await settings.getKioskAdminDataAction()).toMatchObject({
 					success: false,
-					code: "admin_only",
+					code: "AuthorizationError",
 				});
 			}
 			actAs(ids.foreignUser, ids.otherOrganization);

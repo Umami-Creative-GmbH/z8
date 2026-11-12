@@ -14,7 +14,6 @@ import { useRouter } from "@/navigation";
 import { EVENT_CATEGORIES } from "./webhook-event-categories";
 
 export interface WebhookFormDialogProps {
-	organizationId: string;
 	webhook?: PublicWebhookEndpoint;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -36,7 +35,6 @@ function getWebhookFormDefaults(webhook?: PublicWebhookEndpoint) {
 }
 
 export function useWebhookFormController({
-	organizationId,
 	webhook,
 	webhookIdentity,
 	onOpenChange,
@@ -102,7 +100,8 @@ export function useWebhookFormController({
 			if (isEditing) {
 				let result: Awaited<ReturnType<typeof updateWebhook>>;
 				try {
-					result = await updateWebhook(webhook.id, {
+					result = await updateWebhook({
+						webhookId: webhook.id,
 						name: value.name.trim(),
 						url: value.url.trim(),
 						description: value.description.trim() || undefined,
@@ -131,7 +130,6 @@ export function useWebhookFormController({
 				let result: Awaited<ReturnType<typeof createWebhook>>;
 				try {
 					result = await createWebhook({
-						organizationId,
 						name: value.name.trim(),
 						url: value.url.trim(),
 						description: value.description.trim() || undefined,

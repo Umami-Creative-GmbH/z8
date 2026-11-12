@@ -43,7 +43,9 @@ import type {
 	DrivingLicenceVerifierGrantView,
 	SaveDrivingLicenceVerifierGrantInput,
 } from "@/lib/organization/driving-licence/verifiers";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
+import { VERIFIER_FAILED, VERIFIER_REFUSALS } from "./verifier-refusals";
 
 const EMPTY: SaveDrivingLicenceVerifierGrantInput = {
 	verifierEmployeeId: "",
@@ -157,17 +159,7 @@ function VerifierEditor({
 			});
 			if (!result.success) {
 				toast.error(
-					result.error === "until_in_past"
-						? t(
-								"settings.drivingLicence.verifiers.untilInPast",
-								"The until date can't be in the past.",
-							)
-						: result.error === "former_employee"
-							? t(
-									"settings.drivingLicence.verifiers.formerEmployee",
-									"Former employees can't be added. Choose employees on the current roster.",
-								)
-							: result.error,
+					actionErrorMessage(t, { code: result.error }, VERIFIER_REFUSALS, VERIFIER_FAILED),
 				);
 				return;
 			}
@@ -223,7 +215,9 @@ function VerifierEditor({
 				grantId: revoking.id,
 			});
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, { code: result.error }, VERIFIER_REFUSALS, VERIFIER_FAILED),
+				);
 				return;
 			}
 			await onSaved();

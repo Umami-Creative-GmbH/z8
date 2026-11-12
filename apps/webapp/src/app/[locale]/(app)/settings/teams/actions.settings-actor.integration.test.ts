@@ -88,6 +88,7 @@ describe("team settings actor on PostgreSQL", () => {
 	let inactiveOwnerUserId: string;
 	let ownerWithoutEmployeeUserId: string;
 	const teamId = randomUUID();
+	const foreignTeamId = randomUUID();
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
@@ -116,6 +117,11 @@ describe("team settings actor on PostgreSQL", () => {
 			`insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Ops', now())`,
 			[teamId, fixture.organizationId],
 		);
+		const foreignOrganizationId = await fixture.createOrganization();
+		await fixture.pool.query(
+			`insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Elsewhere', now())`,
+			[foreignTeamId, foreignOrganizationId],
+		);
 	});
 
 	afterAll(async () => {
@@ -132,7 +138,7 @@ describe("team settings actor on PostgreSQL", () => {
 	])("refuses %s", async (_case, userId) => {
 		harness.userId = userId();
 
-		expect(await listTeams(fixture.organizationId)).toMatchObject({
+		expect(await listTeams()).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 		});
@@ -145,9 +151,18 @@ describe("team settings actor on PostgreSQL", () => {
 	it("serves an owner without an employee record as an org admin", async () => {
 		harness.userId = ownerWithoutEmployeeUserId;
 
-		const result = await listTeams(fixture.organizationId);
+		const result = await listTeams();
 
 		if (!result.success) throw new Error(result.error);
 		expect(result.data.map((teamRecord) => teamRecord.id)).toEqual([teamId]);
+	});
+
+	it("reports another organization's team as not found", async () => {
+		harness.userId = ownerWithoutEmployeeUserId;
+
+		expect(await getTeam(foreignTeamId)).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
 	});
 });

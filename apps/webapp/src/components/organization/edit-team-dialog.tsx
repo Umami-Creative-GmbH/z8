@@ -55,7 +55,8 @@ export function EditTeamDialog({
 			description?: string;
 			primaryManagerId?: string | null;
 		}) =>
-			updateTeam(data.teamId, {
+			updateTeam({
+				teamId: data.teamId,
 				name: data.name,
 				description: data.description,
 				primaryManagerId: data.primaryManagerId,

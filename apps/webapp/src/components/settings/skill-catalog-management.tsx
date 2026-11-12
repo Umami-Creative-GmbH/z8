@@ -425,12 +425,15 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 
 	const updateMutation = useMutation({
 		mutationFn: async (data: SkillFormValues & { skillId: string }) => {
-			const result = await updateSkill(data.skillId, {
-				name: data.name,
-				description: data.description || undefined,
-				category: data.category,
-				customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
-				requiresExpiry: data.requiresExpiry,
+			const result = await updateSkill({
+				skillId: data.skillId,
+				data: {
+					name: data.name,
+					description: data.description || undefined,
+					category: data.category,
+					customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
+					requiresExpiry: data.requiresExpiry,
+				},
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;

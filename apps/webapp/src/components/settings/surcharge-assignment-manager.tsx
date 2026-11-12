@@ -61,7 +61,7 @@ export function SurchargeAssignmentManager({
 	} = useQuery({
 		queryKey: queryKeys.surcharges.assignments.list(organizationId),
 		queryFn: async () => {
-			const result = await getSurchargeAssignments(organizationId);
+			const result = await getSurchargeAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}

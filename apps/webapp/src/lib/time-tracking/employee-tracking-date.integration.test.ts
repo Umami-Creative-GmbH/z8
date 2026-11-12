@@ -4,6 +4,7 @@ import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
@@ -305,7 +306,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				fingerprint: conflict.data.fingerprint,
 				reason: "Invalidates employee exception",
 			}),
-		).toMatchObject({ success: false, code: "blocked" });
+		).toMatchObject({ success: false, refusal: "blocked" });
 		expect(await actions.getEmployeeTrackingDateAction(fixture.employeeId)).toMatchObject({
 			success: true,
 			data: {

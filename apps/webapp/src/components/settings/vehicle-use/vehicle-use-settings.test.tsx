@@ -122,7 +122,7 @@ describe("VehicleUseSettings", () => {
 		saveMock.mockResolvedValue({
 			success: false,
 			error: "diagnostic",
-			code: "admin_only",
+			code: "AuthorizationError",
 		});
 		render(<VehicleUseSettings data={adminData()} />);
 

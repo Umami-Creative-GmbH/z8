@@ -31,6 +31,8 @@ import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import {
 	meetsSettingsAccess,
 	resolveCallerSettingsAccess,
+	type SettingsAccess,
+	type SettingsAccessCaller,
 } from "@/lib/organization-action/settings-access";
 import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import {
@@ -777,23 +779,34 @@ export const getCurrentSettingsRouteContext = cache(
 	},
 );
 
-export async function requireOrgAdminSettingsAccess(): Promise<{
-	authContext: AuthContext;
-	organizationId: string;
-}> {
-	const authContext = await requireUser();
-	// The same resolver `organizationAction` authorizes with (ADR 0002).
-	// A refusal redirects; a failed database read still throws.
-	const caller = await runtime.runPromise(
+/**
+ * The viewer's settings access in the session's active organization, for pages
+ * that show or hide settings controls (#1623). The same resolver
+ * `organizationAction` authorizes with (ADR 0002). A refusal (signed out, no
+ * active organization, SSO/MFA gate) is `null`; a failed database read throws.
+ */
+export async function getCurrentSettingsAccess(): Promise<SettingsAccessCaller | null> {
+	return runtime.runPromise(
 		resolveCallerSettingsAccess().pipe(
 			Effect.catch((error) =>
 				error._tag === "DatabaseError" ? Effect.fail(error) : Effect.succeed(null),
 			),
 		),
 	);
+}
+
+export async function requireOrgAdminSettingsAccess(): Promise<{
+	authContext: AuthContext;
+	organizationId: string;
+	/** The viewer's settings access: org admin or owner. */
+	settingsAccess: SettingsAccess;
+}> {
+	const authContext = await requireUser();
+	// A refusal redirects; a failed database read still throws.
+	const caller = await getCurrentSettingsAccess();
 
 	if (
-		!caller ||
+		!caller?.settingsAccess ||
 		caller.organizationId !== authContext.session.activeOrganizationId ||
 		!meetsSettingsAccess(caller.settingsAccess, "orgAdmin")
 	) {
@@ -803,6 +816,7 @@ export async function requireOrgAdminSettingsAccess(): Promise<{
 	return {
 		authContext,
 		organizationId: caller.organizationId,
+		settingsAccess: caller.settingsAccess,
 	};
 }
 

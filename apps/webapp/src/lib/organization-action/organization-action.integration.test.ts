@@ -122,6 +122,9 @@ describe("organizationAction on PostgreSQL", () => {
 		await setEmployeeRole(formerManager.employeeId, "manager");
 		users.formerManager = formerManager.userId;
 		formerEmployeeId = formerManager.employeeId;
+		const formerWorkforceAdmin = await fixture.seedEmployee({ isActive: false });
+		await setEmployeeRole(formerWorkforceAdmin.employeeId, "admin");
+		users.formerWorkforceAdmin = formerWorkforceAdmin.userId;
 
 		const ownerWithoutEmployee = await fixture.seedEmployee({ role: "owner", withPeriod: false });
 		await fixture.pool.query(`delete from employee where id = $1`, [
@@ -158,6 +161,11 @@ describe("organizationAction on PostgreSQL", () => {
 		["an owner who is a former employee", { userId: () => users.formerOwner }, null],
 		["an admin who is a former employee", { userId: () => users.formerAdmin }, null],
 		["a manager who is a former employee", { userId: () => users.formerManager }, null],
+		[
+			"a workforce admin who is a former employee",
+			{ userId: () => users.formerWorkforceAdmin },
+			null,
+		],
 		["a user of another organization", { userId: () => users.otherOrganizationOwner }, null],
 		[
 			"an owner without an active organization",
@@ -302,6 +310,12 @@ describe("organizationAction on PostgreSQL", () => {
 
 		it("is the whole organization for an org admin", async () => {
 			signIn({ userId: () => users.admin });
+
+			await expect(readScope()).resolves.toEqual({ success: true, data: "organization" });
+		});
+
+		it("is the whole organization for a workforce admin (ADR 0002)", async () => {
+			signIn({ userId: () => users.workforceAdmin });
 
 			await expect(readScope()).resolves.toEqual({ success: true, data: "organization" });
 		});
