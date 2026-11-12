@@ -58,7 +58,7 @@ test("base dependency warming cannot execute arbitrary PR refs or repeat an exac
   assert.doesNotMatch(warm, /schedule:|tauri build|cargo build|actions: write/);
   for (const source of [tests, desktop, warm]) {
     assert.match(source, /setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e/);
-    assert.match(source, /node-version: 24\s+cache: pnpm/);
+    assert.match(source, /node-version: 26\s+cache: pnpm/);
   }
 });
 test("draft PRs skip every validation job, including setup, summary and reusable debounce", () => {
