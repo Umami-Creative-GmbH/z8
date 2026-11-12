@@ -927,48 +927,6 @@ export async function canManageCurrentOrganizationSettings(): Promise<boolean> {
 }
 
 /**
- * Check if the current user is an organization owner.
- * Uses CASL ability to check if user can manage OrgBilling.
- *
- * @param organizationId - The organization to check owner status for
- * @returns true if user is owner, false otherwise
- */
-export async function isOrgOwnerCasl(organizationId: string): Promise<boolean> {
-	const session = await getRequestSession();
-	if (
-		!session?.user ||
-		!(await canAccessOrganization(session.session, organizationId))
-	) {
-		return false;
-	}
-
-	// Check if this is the active organization
-	if (session.session?.activeOrganizationId !== organizationId) {
-		// Need to check membership directly for non-active org
-		const [memberRecord] = await db
-			.select()
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-
-		return memberRecord?.role === "owner";
-	}
-
-	// For active organization, use CASL
-	const ability = await getAbility();
-	if (!ability) {
-		return false;
-	}
-
-	return ability.can("manage", "OrgBilling");
-}
-
-/**
  * Require org admin access, throwing if not authorized.
  * Uses CASL ability to check if user can manage OrgSettings.
  *

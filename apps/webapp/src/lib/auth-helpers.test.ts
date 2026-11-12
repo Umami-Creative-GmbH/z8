@@ -116,14 +116,19 @@ describe("SSO-required organization authorization boundaries", () => {
 	});
 
 	it("denies membership and admin/owner checks for a nonactive SSO organization", async () => {
-		const { verifyOrgMembership, getVerifiedOrgContext, isOrgOwnerCasl } =
-			await import("./auth-helpers");
+		const { verifyOrgMembership, getVerifiedOrgContext } = await import(
+			"./auth-helpers"
+		);
 		expect(await verifyOrgMembership("org-other")).toMatchObject({
 			isValid: false,
 		});
 		expect(await getVerifiedOrgContext("org-other")).toBeNull();
 		expect(await isOrgAdminCasl("org-other")).toBe(false);
-		expect(await isOrgOwnerCasl("org-other")).toBe(false);
+	});
+
+	it("no longer exports isOrgOwnerCasl", async () => {
+		const helpers = await import("./auth-helpers");
+		expect(helpers).not.toHaveProperty("isOrgOwnerCasl");
 	});
 
 	it("does not derive settings authorization from membership alone", async () => {
