@@ -67,7 +67,7 @@ describe("vehicle photo batch uploads", () => {
 		});
 		let next = 0;
 		initiateUpload.mockImplementation(
-			async (_vehicleId: string, ids: string[]) => ({
+			async ({ uploadIds: ids }: { uploadIds: string[] }) => ({
 				success: true,
 				data: { ok: true, uploadIds: ids.map(() => `upload-${++next}`) },
 			}),
@@ -324,9 +324,9 @@ describe("vehicle photo batch uploads", () => {
 		expect(
 			screen.getAllByRole("img").map((img) => img.getAttribute("src")),
 		).toEqual(["/photos/first", "/photos/second"]);
-		expect(initiateUpload.mock.calls[0][1]).toHaveLength(2);
-		expect(initiateUpload.mock.calls[1][1]).toEqual(
-			initiateUpload.mock.calls[0][1],
+		expect(initiateUpload.mock.calls[0][0].uploadIds).toHaveLength(2);
+		expect(initiateUpload.mock.calls[1][0].uploadIds).toEqual(
+			initiateUpload.mock.calls[0][0].uploadIds,
 		);
 		expect(initiateUpload).toHaveBeenCalledTimes(2);
 	});

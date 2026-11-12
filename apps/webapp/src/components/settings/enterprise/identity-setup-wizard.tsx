@@ -1,5 +1,6 @@
 "use client";
 
+import { actionData } from "@/components/settings/enterprise/action-data";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
@@ -387,13 +388,13 @@ function useIdentitySetupController({
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				try {
-					const next = await updateEnterpriseIdentityProviderAction({
+					const next = await actionData(updateEnterpriseIdentityProviderAction({
 						preset: value.preset as EnterpriseIdentityProviderPresetId,
 						protocol: value.protocol as EnterpriseIdentityProtocol,
 						providerId: value.providerId,
 						domain: value.domain,
 						currentStep: "domain",
-					});
+					}));
 					setSetup(next.state);
 					toast.success(
 						t(
@@ -436,7 +437,7 @@ function useIdentitySetupController({
 				}
 
 				try {
-					const next = await registerEnterpriseIdentitySSOProviderAction(
+					const next = await actionData(registerEnterpriseIdentitySSOProviderAction(
 						protocol === "oidc"
 							? {
 									protocol: "oidc",
@@ -454,7 +455,7 @@ function useIdentitySetupController({
 									domain: setup.domain.domain,
 									metadata: value.metadata,
 								},
-					);
+					));
 					setSetup(next.state);
 					toast.success(
 						t(
@@ -489,7 +490,7 @@ function useIdentitySetupController({
 			}
 
 			try {
-				const next = await recordEnterpriseIdentitySsoTestAction({
+				const next = await actionData(recordEnterpriseIdentitySsoTestAction({
 					providerId,
 					testEmail,
 					status,
@@ -501,7 +502,7 @@ function useIdentitySetupController({
 									"Live SSO test failed",
 								)
 							: null,
-				});
+				}));
 				setSetup(next.state);
 				toast.success(
 					status === "passed"
@@ -530,7 +531,7 @@ function useIdentitySetupController({
 	const refreshDomainStatus = () => {
 		startTransition(async () => {
 			try {
-				const next = await refreshEnterpriseIdentityDomainStatusAction();
+				const next = await actionData(refreshEnterpriseIdentityDomainStatusAction());
 				setSetup(next.state);
 				toast.success(
 					t(
@@ -554,13 +555,13 @@ function useIdentitySetupController({
 	const saveAccessPolicy = () => {
 		startTransition(async () => {
 			try {
-				const next = await updateEnterpriseIdentityAccessPolicyAction({
+				const next = await actionData(updateEnterpriseIdentityAccessPolicyAction({
 					ssoRequired: setup.enforcement.ssoRequired,
 					domainRestrictionEnabled: setup.enforcement.domainRestrictionEnabled,
 					inviteRestrictionEnabled: setup.enforcement.inviteRestrictionEnabled,
 					defaultRoleTemplateId:
 						defaultRoleTemplateId === "none" ? null : defaultRoleTemplateId,
-				});
+				}));
 				setSetup(next.state);
 				setDefaultRoleTemplateId(next.defaultRoleTemplateId ?? "none");
 				toast.success(
@@ -585,7 +586,7 @@ function useIdentitySetupController({
 	const activateSetup = () => {
 		startTransition(async () => {
 			try {
-				const next = await activateEnterpriseIdentitySetupAction();
+				const next = await actionData(activateEnterpriseIdentitySetupAction());
 				setSetup(next.state);
 				toast.success(
 					t(

@@ -86,7 +86,7 @@ function VehiclePhotoGallery({
 			setError(null);
 			try {
 				const version = changes.current;
-				const result = await listVehiclePhotos(vehicle.id);
+				const result = await listVehiclePhotos({ vehicleId: vehicle.id });
 				if (cancelled) return;
 				if (result.success) {
 					if (changes.current === version) setPhotos(result.data.photos);

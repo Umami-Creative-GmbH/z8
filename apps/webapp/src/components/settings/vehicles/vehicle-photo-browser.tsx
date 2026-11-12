@@ -67,7 +67,7 @@ export function VehiclePhotoBrowser({
 		setRemoving(true);
 		setError(null);
 		try {
-			const result = await removeVehiclePhoto(vehicle.id, current.id);
+			const result = await removeVehiclePhoto({ vehicleId: vehicle.id, photoId: current.id });
 			if (!result.success || !result.data.ok) {
 				if (
 					result.success &&

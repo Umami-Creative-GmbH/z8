@@ -15,14 +15,20 @@ const actions = vi.hoisted(() => ({
 }));
 const toast = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
+/** The actions resolve with a `ServerActionResult` around what the mock returns. */
+const succeeding = vi.hoisted(
+	() =>
+		(fn: (...args: unknown[]) => unknown) =>
+		async (...args: unknown[]) => ({ success: true, data: await fn(...args) }),
+);
 vi.mock("@/app/[locale]/(app)/settings/enterprise/scim-actions", () => ({
-	createEnterpriseIdentityScimConnectionAction: actions.create,
-	getEnterpriseIdentityScimStatusAction: actions.get,
-	listEnterpriseIdentityScimEventsAction: actions.events,
-	reconcileEnterpriseIdentityScimCreationAction: actions.reconcile,
-	rotateEnterpriseIdentityScimCredentialAction: actions.rotate,
-	revokeEnterpriseIdentityScimCredentialAction: actions.revoke,
-	decommissionEnterpriseIdentityScimConnectionAction: actions.decommission,
+	createEnterpriseIdentityScimConnectionAction: succeeding(actions.create),
+	getEnterpriseIdentityScimStatusAction: succeeding(actions.get),
+	listEnterpriseIdentityScimEventsAction: succeeding(actions.events),
+	reconcileEnterpriseIdentityScimCreationAction: succeeding(actions.reconcile),
+	rotateEnterpriseIdentityScimCredentialAction: succeeding(actions.rotate),
+	revokeEnterpriseIdentityScimCredentialAction: succeeding(actions.revoke),
+	decommissionEnterpriseIdentityScimConnectionAction: succeeding(actions.decommission),
 }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -63,9 +69,7 @@ describe("useScimAdminController", () => {
 		await waitFor(() => expect(result.current.status).toEqual(safeStatus));
 		expect(result.current.credential).toBe("raw-token");
 		expect(JSON.stringify(result.current.status)).not.toContain("raw-token");
-		expect(toast.error).not.toHaveBeenCalledWith(
-			expect.stringContaining("raw-token"),
-		);
+		expect(toast.error).not.toHaveBeenCalledWith(expect.stringContaining("raw-token"));
 	});
 
 	it("refreshes safe metadata after rotate and confirmed revoke without retaining its token in status", async () => {
@@ -76,22 +80,18 @@ describe("useScimAdminController", () => {
 		const { result } = renderHook(() => useScimAdminController(setup));
 		act(() => result.current.rotate());
 		await waitFor(() =>
-			expect(actions.rotate).toHaveBeenCalledWith("connection-1"),
+			expect(actions.rotate).toHaveBeenCalledWith({ connectionId: "connection-1" }),
 		);
-		await waitFor(() =>
-			expect(result.current.credential).toBe("rotated-token"),
-		);
+		await waitFor(() => expect(result.current.credential).toBe("rotated-token"));
 		act(() => result.current.requestRevoke("credential-1"));
 		act(() => result.current.confirm());
 		await waitFor(() =>
-			expect(actions.revoke).toHaveBeenCalledWith(
-				"connection-1",
-				"credential-1",
-			),
+			expect(actions.revoke).toHaveBeenCalledWith({
+				connectionId: "connection-1",
+				credentialId: "credential-1",
+			}),
 		);
-		expect(JSON.stringify(result.current.status)).not.toContain(
-			"rotated-token",
-		);
+		expect(JSON.stringify(result.current.status)).not.toContain("rotated-token");
 	});
 
 	it("does not mutate on cancelled confirmation and clears status after decommission", async () => {
@@ -103,11 +103,9 @@ describe("useScimAdminController", () => {
 		act(() => result.current.requestDecommission());
 		act(() => result.current.confirm());
 		await waitFor(() =>
-			expect(actions.decommission).toHaveBeenCalledWith("connection-1"),
+			expect(actions.decommission).toHaveBeenCalledWith({ connectionId: "connection-1" }),
 		);
-		await waitFor(() =>
-			expect(result.current.lifecycle).toBe("decommissioned"),
-		);
+		await waitFor(() => expect(result.current.lifecycle).toBe("decommissioned"));
 	});
 
 	it("maps a deferred decommission result to reconciliation rather than completion", async () => {
@@ -115,9 +113,7 @@ describe("useScimAdminController", () => {
 		const { result } = renderHook(() => useScimAdminController(setup));
 		act(() => result.current.requestDecommission());
 		act(() => result.current.confirm());
-		await waitFor(() =>
-			expect(result.current.lifecycle).toBe("decommissioning"),
-		);
+		await waitFor(() => expect(result.current.lifecycle).toBe("decommissioning"));
 	});
 
 	it.each(["creating", "creation_failed"] as const)(
@@ -168,13 +164,9 @@ describe("useScimAdminController", () => {
 		act(() => result.current.create("role-1"));
 		expect(actions.create).toHaveBeenCalledTimes(createCalls);
 		act(() => result.current.reconcileCreation("role-1"));
-		await waitFor(() =>
-			expect(result.current.lifecycle).toBe("creation_failed"),
-		);
+		await waitFor(() => expect(result.current.lifecycle).toBe("creation_failed"));
 		act(() => result.current.create("role-1"));
-		await waitFor(() =>
-			expect(actions.create).toHaveBeenCalledTimes(createCalls + 1),
-		);
+		await waitFor(() => expect(actions.create).toHaveBeenCalledTimes(createCalls + 1));
 		expect(JSON.stringify(result.current)).not.toContain("raw-token");
 	});
 });

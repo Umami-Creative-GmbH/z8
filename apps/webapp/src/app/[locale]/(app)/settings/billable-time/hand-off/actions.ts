@@ -1,6 +1,7 @@
 "use server";
 
 import { Effect } from "effect";
+import { z } from "zod";
 import { defaultAccountingDependencies } from "@/lib/billable-time/accounting/connection-store";
 import type { InvoiceDraftCapabilityProblem } from "@/lib/billable-time/accounting/invoice-draft";
 import { groupChangedWork } from "@/lib/billable-time/hand-off/changed-work-groups";
@@ -32,24 +33,20 @@ import {
 	resolveChangedAfterInvoicing,
 } from "@/lib/billable-time/hand-off/resolution-store";
 import type {
-	DraftToolStatusView,
 	HandOffBlockerView,
 	HandOffCustomerOption,
-	HandOffPreview,
 	InvoiceDraftDetailView,
 	InvoiceDraftSummaryView,
 	MarkedWorkItemView,
-	ResolveOutcomeView,
 } from "@/lib/billable-time/hand-off/views";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { activeOrganizationActor } from "../action-actor";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import {
 	accountingProviderRefusalError,
 	accountingProviderRefusalMessage,
+	billableTimeCurrency,
 	billableTimeOff,
-	requireBillableTimeOn,
 } from "../module-guard";
 
 /**
@@ -60,16 +57,11 @@ import {
  * and resolving marks, which stay possible to clean up).
  */
 
-const ADMIN_ONLY = "Only owners and admins can hand off billable work";
-
-const actor = (action: string) =>
-	activeOrganizationActor({ requiredRole: "admin", message: ADMIN_ONLY, action });
-
 const draftNotFound = () =>
 	new NotFoundError({ message: "The hand-off was not found", entityType: "invoice_draft" });
 
-const requireModuleOn = (organizationId: string) =>
-	requireBillableTimeOn(organizationId, "billableTime.handOff.settings");
+const moduleCurrency = (organizationId: string) =>
+	billableTimeCurrency(organizationId, "billableTime.handOff.settings");
 
 function requestRefusalError(reason: HandOffRequestRefusal) {
 	switch (reason) {
@@ -228,6 +220,37 @@ function outcomeError(outcome: Exclude<HandOffOutcome, { ok: true }>) {
 	}
 }
 
+const handOffRequestShape = {
+	customerId: z.string().max(255),
+	periodFrom: z.string().max(32),
+	periodTo: z.string().max(32),
+	projectIds: z.array(z.string().max(255)).max(1000).nullable(),
+	includeTimesheet: z.boolean(),
+	locale: z.string().max(35),
+};
+/** `parseHandOffRequest` reads the request, so its refusals keep their wording. */
+const previewHandOffActionSchema = z.object(handOffRequestShape);
+const confirmHandOffActionSchema = z.object({
+	...handOffRequestShape,
+	idempotencyKey: z.string().max(255),
+	fingerprint: z.string().max(255),
+});
+const draftIdSchema = z.strictObject({ draftId: z.string().max(255) });
+const retryHandOffActionSchema = draftIdSchema;
+const getInvoiceDraftActionSchema = draftIdSchema;
+const checkInvoiceDraftStatusActionSchema = draftIdSchema;
+const downloadDraftReconciliationCsvActionSchema = draftIdSchema;
+const releaseInvoiceDraftActionSchema = z.strictObject({
+	draftId: z.string().max(255),
+	reason: z.string().max(5000).optional(),
+});
+/** `parseResolutionInput` reads the items and texts, so its refusal codes stay. */
+const resolveChangedAfterInvoicingActionSchema = z.strictObject({
+	items: z.custom<ResolveItem[]>((value) => Array.isArray(value), { error: "Choose marked work" }),
+	explanation: z.string(),
+	accountingReference: z.string().nullable().optional(),
+});
+
 export interface HandOffOverview {
 	customers: HandOffCustomerOption[];
 	drafts: InvoiceDraftSummaryView[];
@@ -235,19 +258,19 @@ export interface HandOffOverview {
 }
 
 /** The hand-off area: customers to choose from, hand-offs and marked work. */
-export async function getHandOffOverview(): Promise<ServerActionResult<HandOffOverview>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("readHandOffs");
-		yield* requireModuleOn(organizationId);
-		const dbService = yield* DatabaseService;
-		return yield* dbService.query("billableTime.handOff.overview", async () => ({
-			customers: await listHandOffCustomers(dbService.db, organizationId),
-			drafts: await listInvoiceDrafts(dbService.db, organizationId),
-			changedAfterInvoicing: await listMarkedItems(dbService.db, organizationId),
-		}));
-	});
-	return runServerActionSafe(effect);
-}
+export const getHandOffOverview = organizationAction(
+	{ name: "billableTime.handOff.readHandOffs", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			yield* moduleCurrency(organizationId);
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("billableTime.handOff.overview", async () => ({
+				customers: await listHandOffCustomers(dbService.db, organizationId),
+				drafts: await listInvoiceDrafts(dbService.db, organizationId),
+				changedAfterInvoicing: await listMarkedItems(dbService.db, organizationId),
+			}));
+		}),
+);
 
 export interface HandOffRequestInput {
 	customerId: string;
@@ -259,154 +282,168 @@ export interface HandOffRequestInput {
 }
 
 /** Previews a hand-off. Nothing is written; the accounting tool is not called. */
-export async function previewHandOffAction(
-	input: HandOffRequestInput,
-): Promise<ServerActionResult<HandOffPreview>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("previewHandOff");
-		yield* requireModuleOn(organizationId);
-		const parsed = parseHandOffRequest(input);
-		if (!parsed.ok) return yield* Effect.fail(requestRefusalError(parsed.reason));
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.handOff.preview", () =>
-			previewHandOff(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				request: parsed.request,
-			}),
-		);
-		if (!outcome.ok) return yield* Effect.fail(requestRefusalError(outcome.reason));
-		return outcome.preview;
-	});
-	return runServerActionSafe(effect);
-}
+export const previewHandOffAction = organizationAction(
+	{
+		name: "billableTime.handOff.previewHandOff",
+		requires: "orgAdmin",
+		schema: previewHandOffActionSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* moduleCurrency(organizationId);
+			const parsed = parseHandOffRequest(input);
+			if (!parsed.ok) return yield* Effect.fail(requestRefusalError(parsed.reason));
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.handOff.preview", () =>
+				previewHandOff(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					request: parsed.request,
+				}),
+			);
+			if (!outcome.ok) return yield* Effect.fail(requestRefusalError(outcome.reason));
+			return outcome.preview;
+		}),
+);
 
 /**
  * Confirms a hand-off: creates one invoice draft in the accounting tool. Pass
  * the same `idempotencyKey` when retrying after a timeout; it never creates a
  * second draft or invoices work twice. `fingerprint` is the preview's.
  */
-export async function confirmHandOffAction(
-	input: HandOffRequestInput & { idempotencyKey: string; fingerprint: string },
-): Promise<ServerActionResult<HandOffConfirmation>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("confirmHandOff");
-		const parsed = parseHandOffRequest(input);
-		if (!parsed.ok) return yield* Effect.fail(requestRefusalError(parsed.reason));
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.handOff.confirm", () =>
-			confirmHandOff(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				actorUserId: userId,
-				request: parsed.request,
-				idempotencyKey: input.idempotencyKey,
-				expectedFingerprint: input.fingerprint,
-			}),
-		);
-		const confirmation = confirmationOf(outcome);
-		if (confirmation) return confirmation;
-		return yield* Effect.fail(outcomeError(outcome as Exclude<HandOffOutcome, { ok: true }>));
-	});
-	return runServerActionSafe(effect);
-}
+export const confirmHandOffAction = organizationAction(
+	{
+		name: "billableTime.handOff.confirmHandOff",
+		requires: "orgAdmin",
+		schema: confirmHandOffActionSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const parsed = parseHandOffRequest(input);
+			if (!parsed.ok) return yield* Effect.fail(requestRefusalError(parsed.reason));
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.handOff.confirm", () =>
+				confirmHandOff(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					actorUserId: userId,
+					request: parsed.request,
+					idempotencyKey: input.idempotencyKey,
+					expectedFingerprint: input.fingerprint,
+				}),
+			);
+			const confirmation = confirmationOf(outcome);
+			if (confirmation) return confirmation;
+			return yield* Effect.fail(outcomeError(outcome as Exclude<HandOffOutcome, { ok: true }>));
+		}),
+);
 
 /** Retries a pending hand-off with its recorded key and lines. */
-export async function retryHandOffAction(input: {
-	draftId: string;
-}): Promise<ServerActionResult<HandOffConfirmation>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("retryHandOff");
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.handOff.retry", () =>
-			retryHandOff(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				actorUserId: userId,
-				draftId: String(input.draftId),
-			}),
-		);
-		const confirmation = confirmationOf(outcome);
-		if (confirmation) return confirmation;
-		return yield* Effect.fail(outcomeError(outcome as Exclude<HandOffOutcome, { ok: true }>));
-	});
-	return runServerActionSafe(effect);
-}
+export const retryHandOffAction = organizationAction(
+	{
+		name: "billableTime.handOff.retryHandOff",
+		requires: "orgAdmin",
+		schema: retryHandOffActionSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.handOff.retry", () =>
+				retryHandOff(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					actorUserId: userId,
+					draftId: String(input.draftId),
+				}),
+			);
+			const confirmation = confirmationOf(outcome);
+			if (confirmation) return confirmation;
+			return yield* Effect.fail(outcomeError(outcome as Exclude<HandOffOutcome, { ok: true }>));
+		}),
+);
 
 /** One hand-off with lines, work, marks and its timesheet. */
-export async function getInvoiceDraftAction(input: {
-	draftId: string;
-}): Promise<ServerActionResult<InvoiceDraftDetailView>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("readHandOff");
-		const dbService = yield* DatabaseService;
-		const detail = yield* dbService.query("billableTime.handOff.detail", async () => {
-			const draft = await getInvoiceDraftDetail(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				draftId: String(input.draftId),
+export const getInvoiceDraftAction = organizationAction(
+	{
+		name: "billableTime.handOff.readHandOff",
+		requires: "orgAdmin",
+		schema: getInvoiceDraftActionSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const detail = yield* dbService.query("billableTime.handOff.detail", async () => {
+				const draft = await getInvoiceDraftDetail(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					draftId: String(input.draftId),
+				});
+				if (!draft) return null;
+				const reconciliation = await readDraftReconciliation(dbService.db, {
+					organizationId,
+					draftId: draft.id,
+				});
+				return { ...draft, ...reconciliation } satisfies InvoiceDraftDetailView;
 			});
-			if (!draft) return null;
-			const reconciliation = await readDraftReconciliation(dbService.db, {
-				organizationId,
-				draftId: draft.id,
-			});
-			return { ...draft, ...reconciliation } satisfies InvoiceDraftDetailView;
-		});
-		if (!detail) return yield* Effect.fail(draftNotFound());
-		return detail;
-	});
-	return runServerActionSafe(effect);
-}
+			if (!detail) return yield* Effect.fail(draftNotFound());
+			return detail;
+		}),
+);
 
 /**
  * Asks the accounting tool for a draft's status (called when a hand-off is
  * opened). A draft reported as gone suggests a release; nothing is released.
  */
-export async function checkInvoiceDraftStatusAction(input: {
-	draftId: string;
-}): Promise<ServerActionResult<DraftToolStatusView>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("checkInvoiceDraftStatus");
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.handOff.status", () =>
-			checkInvoiceDraftStatus(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				draftId: String(input.draftId),
-			}),
-		);
-		if (!outcome.ok) return yield* Effect.fail(draftNotFound());
-		return outcome.status;
-	});
-	return runServerActionSafe(effect);
-}
+export const checkInvoiceDraftStatusAction = organizationAction(
+	{
+		name: "billableTime.handOff.checkInvoiceDraftStatus",
+		requires: "orgAdmin",
+		schema: checkInvoiceDraftStatusActionSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.handOff.status", () =>
+				checkInvoiceDraftStatus(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					draftId: String(input.draftId),
+				}),
+			);
+			if (!outcome.ok) return yield* Effect.fail(draftNotFound());
+			return outcome.status;
+		}),
+);
 
 /** Releases a hand-off: its work is un-invoiced again. Audited. */
-export async function releaseInvoiceDraftAction(input: {
-	draftId: string;
-	reason?: string;
-}): Promise<ServerActionResult<{ workReturned: number }>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("releaseInvoiceDraft");
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.handOff.release", () =>
-			releaseInvoiceDraft(dbService.db, {
-				organizationId,
-				actorUserId: userId,
-				draftId: String(input.draftId),
-				reason: input.reason,
-			}),
-		);
-		if (!outcome.ok) {
-			return yield* Effect.fail(
-				outcome.reason === "not_found"
-					? draftNotFound()
-					: new ConflictError({
-							message: "This hand-off was already released or failed",
-							conflictType: "hand_off_not_releasable",
-						}),
+export const releaseInvoiceDraftAction = organizationAction(
+	{
+		name: "billableTime.handOff.releaseInvoiceDraft",
+		requires: "orgAdmin",
+		schema: releaseInvoiceDraftActionSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.handOff.release", () =>
+				releaseInvoiceDraft(dbService.db, {
+					organizationId,
+					actorUserId: userId,
+					draftId: String(input.draftId),
+					reason: input.reason,
+				}),
 			);
-		}
-		return { workReturned: outcome.workReturned };
-	});
-	return runServerActionSafe(effect);
-}
+			if (!outcome.ok) {
+				return yield* Effect.fail(
+					outcome.reason === "not_found"
+						? draftNotFound()
+						: new ConflictError({
+								message: "This hand-off was already released or failed",
+								conflictType: "hand_off_not_releasable",
+							}),
+				);
+			}
+			return { workReturned: outcome.workReturned };
+		}),
+);
 
 export interface ReconciliationCsvFile {
 	fileName: string;
@@ -427,52 +464,52 @@ const reconciliationCsvOf = (build: () => string) =>
  * A draft's reconciliation CSV (#1504): its items marked or resolved, released
  * drafts included. Works while the module is off.
  */
-export async function downloadDraftReconciliationCsvAction(input: {
-	draftId: string;
-}): Promise<ServerActionResult<ReconciliationCsvFile>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("downloadDraftReconciliationCsv");
-		const dbService = yield* DatabaseService;
-		const reconciliation = yield* dbService.query("billableTime.handOff.reconciliationCsv", () =>
-			readDraftReconciliationItems(dbService.db, {
-				organizationId,
-				draftId: String(input.draftId),
-			}),
-		);
-		if (!reconciliation) return yield* Effect.fail(draftNotFound());
-		const { period, items } = reconciliation;
-		return {
-			fileName: `reconciliation-${period.from}_${period.to}.csv`,
-			content: yield* reconciliationCsvOf(() => reconciliationCsv(items)),
-		};
-	});
-	return runServerActionSafe(effect);
-}
+export const downloadDraftReconciliationCsvAction = organizationAction(
+	{
+		name: "billableTime.handOff.downloadDraftReconciliationCsv",
+		requires: "orgAdmin",
+		schema: downloadDraftReconciliationCsvActionSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const reconciliation = yield* dbService.query("billableTime.handOff.reconciliationCsv", () =>
+				readDraftReconciliationItems(dbService.db, {
+					organizationId,
+					draftId: String(input.draftId),
+				}),
+			);
+			if (!reconciliation) return yield* Effect.fail(draftNotFound());
+			const { period, items } = reconciliation;
+			return {
+				fileName: `reconciliation-${period.from}_${period.to}.csv`,
+				content: yield* reconciliationCsvOf(() => reconciliationCsv(items)),
+			};
+		}),
+);
 
 /**
  * Every item currently marked as changed after invoicing as a reconciliation
  * CSV (#1504), in the changed-work list's order. Works while the module is off.
  */
-export async function downloadChangedWorkCsvAction(): Promise<
-	ServerActionResult<ReconciliationCsvFile>
-> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("downloadChangedWorkCsv");
-		const dbService = yield* DatabaseService;
-		const marked = yield* dbService.query("billableTime.handOff.changedWorkCsv", () =>
-			listMarkedItems(dbService.db, organizationId),
-		);
-		const content = yield* reconciliationCsvOf(() =>
-			reconciliationCsv(
-				groupChangedWork(marked).flatMap((customer) =>
-					customer.drafts.flatMap((draft) => draft.items),
+export const downloadChangedWorkCsvAction = organizationAction(
+	{ name: "billableTime.handOff.downloadChangedWorkCsv", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const marked = yield* dbService.query("billableTime.handOff.changedWorkCsv", () =>
+				listMarkedItems(dbService.db, organizationId),
+			);
+			const content = yield* reconciliationCsvOf(() =>
+				reconciliationCsv(
+					groupChangedWork(marked).flatMap((customer) =>
+						customer.drafts.flatMap((draft) => draft.items),
+					),
 				),
-			),
-		);
-		return { fileName: "changed-after-invoicing.csv", content };
-	});
-	return runServerActionSafe(effect);
-}
+			);
+			return { fileName: "changed-after-invoicing.csv", content };
+		}),
+);
 
 /** Server messages are English; the dialog shows its own copy per refusal. */
 const characterCount = (count: number) => count.toLocaleString("en-US");
@@ -510,33 +547,34 @@ function resolutionInputError(error: ResolutionFieldError) {
  * loaded, and as `released` when an item's draft was released (#1503). Works
  * while the module is off.
  */
-export async function resolveChangedAfterInvoicingAction(input: {
-	items: ResolveItem[];
-	explanation: string;
-	accountingReference?: string | null;
-}): Promise<ServerActionResult<ResolveOutcomeView>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("resolveChangedAfterInvoicing");
-		const parsed = parseResolutionInput(input);
-		if (!parsed.ok) return yield* Effect.fail(resolutionInputError(parsed.errors[0]));
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.handOff.resolveMarks", () =>
-			resolveChangedAfterInvoicing(dbService.db, {
-				organizationId,
-				actorUserId: userId,
-				resolution: parsed.value,
-			}),
-		);
-		if (outcome.ok) return { status: "resolved", resolved: outcome.resolved } as const;
-		if (outcome.reason === "stale" || outcome.reason === "released") {
-			return { status: outcome.reason, invoicedWorkIds: outcome.invoicedWorkIds } as const;
-		}
-		return yield* Effect.fail(
-			new NotFoundError({
-				message: "Some of this work was not found. Reload and try again",
-				entityType: "invoiced_work",
-			}),
-		);
-	});
-	return runServerActionSafe(effect);
-}
+export const resolveChangedAfterInvoicingAction = organizationAction(
+	{
+		name: "billableTime.handOff.resolveChangedAfterInvoicing",
+		requires: "orgAdmin",
+		schema: resolveChangedAfterInvoicingActionSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const parsed = parseResolutionInput(input);
+			if (!parsed.ok) return yield* Effect.fail(resolutionInputError(parsed.errors[0]));
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.handOff.resolveMarks", () =>
+				resolveChangedAfterInvoicing(dbService.db, {
+					organizationId,
+					actorUserId: userId,
+					resolution: parsed.value,
+				}),
+			);
+			if (outcome.ok) return { status: "resolved", resolved: outcome.resolved } as const;
+			if (outcome.reason === "stale" || outcome.reason === "released") {
+				return { status: outcome.reason, invoicedWorkIds: outcome.invoicedWorkIds } as const;
+			}
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Some of this work was not found. Reload and try again",
+					entityType: "invoiced_work",
+				}),
+			);
+		}),
+);

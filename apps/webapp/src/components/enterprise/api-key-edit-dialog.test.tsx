@@ -422,7 +422,8 @@ describe("ApiKeyEditDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Save" }));
 
 		await waitFor(() =>
-			expect(updateApiKey).toHaveBeenCalledWith("org-1", "key-1", {
+			expect(updateApiKey).toHaveBeenCalledWith({
+				keyId: "key-1",
 				name: "Production API",
 				enabled: false,
 				scopes: ["time-entries:read", "employees:read"],
@@ -449,7 +450,8 @@ describe("ApiKeyEditDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Save" }));
 
 		await waitFor(() =>
-			expect(updateApiKey).toHaveBeenCalledWith("org-1", "key-1", {
+			expect(updateApiKey).toHaveBeenCalledWith({
+				keyId: "key-1",
 				name: "Payroll export",
 				enabled: true,
 				scopes: ["time-entries:read", "customers:read"],

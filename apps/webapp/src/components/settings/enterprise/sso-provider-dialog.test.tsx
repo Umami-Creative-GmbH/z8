@@ -11,6 +11,10 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// The actions are mocked as plain values; the result unwrap is identity here.
+vi.mock("@/components/settings/enterprise/action-data", () => ({
+	actionData: <T,>(result: Promise<T>) => result,
+}));
 vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	registerSSOProviderAction: vi.fn(),
 }));

@@ -1,5 +1,6 @@
 "use client";
 
+import { actionData } from "@/components/settings/enterprise/action-data";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -129,12 +130,13 @@ function useSocialOAuthController({
 					: undefined;
 
 			if (isEditing && editConfig) {
-				const updated = await updateSocialOAuthConfigAction(editConfig.id, {
+				const updated = await actionData(updateSocialOAuthConfigAction({
+					configId: editConfig.id,
 					clientId: value.clientId,
 					clientSecret: value.clientSecret || undefined,
 					isActive: value.isActive,
 					providerConfig,
-				}).catch((error: unknown) => {
+				})).catch((error: unknown) => {
 					handleSubmissionError(error);
 					return null;
 				});
@@ -161,12 +163,12 @@ function useSocialOAuthController({
 				return;
 			}
 
-			const config = await addSocialOAuthConfigAction({
+			const config = await actionData(addSocialOAuthConfigAction({
 				provider: value.provider as SocialOAuthProvider,
 				clientId: value.clientId,
 				clientSecret: value.clientSecret,
 				providerConfig,
-			}).catch((error: unknown) => {
+			})).catch((error: unknown) => {
 				handleSubmissionError(error);
 				return null;
 			});

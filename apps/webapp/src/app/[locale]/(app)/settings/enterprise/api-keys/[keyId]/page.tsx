@@ -10,11 +10,8 @@ interface ApiKeyDetailPageProps {
 }
 
 async function ApiKeyDetailPageContent({ params }: ApiKeyDetailPageProps) {
-	const [{ keyId }, { organizationId }] = await Promise.all([
-		params,
-		requireOrgAdminSettingsAccess(),
-	]);
-	const result = await getApiKeyDetail(organizationId, keyId);
+	const [{ keyId }] = await Promise.all([params, requireOrgAdminSettingsAccess()]);
+	const result = await getApiKeyDetail({ keyId });
 	if (!result.success) notFound();
 	return <ApiKeyDetailView detail={result.data} />;
 }

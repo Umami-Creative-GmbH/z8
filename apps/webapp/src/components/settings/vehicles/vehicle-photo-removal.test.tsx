@@ -107,7 +107,7 @@ describe("vehicle photo removal", () => {
 				name: "Permanently remove photo",
 			}),
 		);
-		expect(removePhoto).toHaveBeenCalledWith("van", "first");
+		expect(removePhoto).toHaveBeenCalledWith({ vehicleId: "van", photoId: "first" });
 		const viewer = await screen.findByRole("dialog", { name: "Photo 1 of 1" });
 		expect(within(viewer).getByRole("img").getAttribute("src")).toBe(
 			"/api/organization/vehicles/van/photos/second",
@@ -215,7 +215,7 @@ describe("vehicle photo removal", () => {
 		await userEvent.click(
 			screen.getByRole("button", { name: "Permanently remove photo" }),
 		);
-		expect(removePhoto).toHaveBeenCalledWith("van", "first");
+		expect(removePhoto).toHaveBeenCalledWith({ vehicleId: "van", photoId: "first" });
 	});
 	it("keeps removal after closing and reopening and releases full-gallery capacity", async () => {
 		const photos = Array.from({ length: 20 }, (_, index) =>

@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Suspense } from "react";
+import { actionData } from "@/components/settings/enterprise/action-data";
 import { DomainsAndBrandingTabs } from "@/components/settings/enterprise/domains-branding-tabs";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { db } from "@/db";
@@ -20,8 +21,8 @@ async function DomainSettingsContent({
 	if (tab === "sso" || tab === "social-oauth")
 		return redirectWithLocale(`/settings/enterprise/identity-setup?tab=${tab}`);
 	const [domains, branding, organizationRecord] = await Promise.all([
-		listDomainsAction(),
-		getBrandingAction(),
+		actionData(listDomainsAction()),
+		actionData(getBrandingAction()),
 
 		db.query.organization.findFirst({
 			where: eq(organization.id, organizationId),
@@ -43,9 +44,7 @@ async function DomainSettingsContent({
 	);
 }
 
-export default function CustomDomainsPage(props: {
-	searchParams: Promise<{ tab?: string }>;
-}) {
+export default function CustomDomainsPage(props: { searchParams: Promise<{ tab?: string }> }) {
 	return (
 		<Suspense
 			fallback={

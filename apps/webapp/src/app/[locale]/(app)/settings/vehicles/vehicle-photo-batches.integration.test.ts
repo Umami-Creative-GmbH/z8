@@ -77,7 +77,7 @@ const admin = integrationAdminPool();
 let vehicleId: string;
 const origin = "https://z8.example.test";
 async function start(id = vehicleId) {
-	const result = await initiateVehiclePhotoUpload(id);
+	const result = await initiateVehiclePhotoUpload({ vehicleId: id });
 	if (!result.success || !result.data.ok)
 		throw new Error(JSON.stringify(result));
 	return result.data.uploadId;
@@ -103,7 +103,7 @@ async function read(id: string, vehicle = vehicleId) {
 	});
 }
 async function gallery() {
-	const result = await listVehiclePhotos(vehicleId);
+	const result = await listVehiclePhotos({ vehicleId: vehicleId });
 	if (!result.success) throw new Error(result.error);
 	return result.data;
 }
@@ -168,12 +168,12 @@ describe("vehicle photo batch reconciliation", () => {
 	it("recovers a completed identity without another body and never duplicates its attachment audit", async () => {
 		const id = await start();
 		expect((await upload(id, await image())).status).toBe(200);
-		const recovered = await reconcileVehiclePhotoUpload(vehicleId, id);
+		const recovered = await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id });
 		expect(recovered).toMatchObject({
 			success: true,
 			data: { ok: true, photo: { id } },
 		});
-		expect(await reconcileVehiclePhotoUpload(vehicleId, id)).toEqual(recovered);
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toEqual(recovered);
 		expect((await gallery()).photos).toHaveLength(1);
 		expect(
 			(
@@ -199,7 +199,7 @@ describe("vehicle photo batch reconciliation", () => {
 			second,
 			third,
 		]);
-		expect(await reconcileVehiclePhotoUpload(vehicleId, first)).toMatchObject({
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: first })).toMatchObject({
 			success: true,
 			data: { ok: true, photo: null },
 		});
@@ -224,10 +224,10 @@ describe("vehicle photo batch reconciliation", () => {
 		for (let index = 0; index < 19; index++)
 			expect((await upload(await start(), bytes)).status).toBe(200);
 		expect(
-			await initiateVehiclePhotoBatchUpload(vehicleId, [
+			await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: [
 				"12710000-0000-4000-8000-000000000005",
 				"12710000-0000-4000-8000-000000000006",
-			]),
+			] }),
 		).toMatchObject({
 			success: true,
 			data: { ok: false, reason: "photo_limit", remaining: 1 },
@@ -268,12 +268,12 @@ describe("vehicle photo batch reconciliation", () => {
 		const id = await start();
 		expect((await upload(id, await image())).status).toBe(200);
 		harness.userId = "batch-admin";
-		expect(await reconcileVehiclePhotoUpload(vehicleId, id)).toMatchObject({
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toMatchObject({
 			success: true,
 			data: { ok: false, reason: "upload_not_found" },
 		});
 		harness.userId = "batch-member";
-		expect(await reconcileVehiclePhotoUpload(vehicleId, id)).toMatchObject({
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toMatchObject({
 			success: false,
 		});
 		harness.userId = "batch-owner";
@@ -281,16 +281,13 @@ describe("vehicle photo batch reconciliation", () => {
 		await admin.query(
 			"insert into member(id,organization_id,user_id,role,status,created_at) values('batch-other-owner','batch-other','batch-owner','owner','approved',now())",
 		);
-		expect(await reconcileVehiclePhotoUpload(vehicleId, id)).toMatchObject({
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toMatchObject({
 			success: true,
 			data: { ok: false, reason: "upload_not_found" },
 		});
 		harness.organizationId = "batch-org";
 		expect(
-			await reconcileVehiclePhotoUpload(
-				"00000000-0000-4000-8000-000000000001",
-				id,
-			),
+			await reconcileVehiclePhotoUpload({ vehicleId: "00000000-0000-4000-8000-000000000001", uploadId: id }),
 		).toMatchObject({
 			success: true,
 			data: { ok: false, reason: "upload_not_found" },
@@ -301,7 +298,7 @@ describe("vehicle photo batch reconciliation", () => {
 		await admin.query(
 			"update member set role='member' where organization_id='batch-org' and user_id='batch-owner'",
 		);
-		expect(await reconcileVehiclePhotoUpload(vehicleId, id)).toMatchObject({
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toMatchObject({
 			success: false,
 		});
 	});
@@ -310,16 +307,16 @@ describe("vehicle photo batch reconciliation", () => {
 		const pending = await start();
 		expect((await upload(saved, await image())).status).toBe(200);
 		await changeVehicles({ kind: "archive", vehicleId });
-		expect(await reconcileVehiclePhotoUpload(vehicleId, pending)).toMatchObject(
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: pending })).toMatchObject(
 			{ success: true, data: { ok: false, reason: "vehicle_archived" } },
 		);
-		expect(await reconcileVehiclePhotoUpload(vehicleId, saved)).toMatchObject({
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: saved })).toMatchObject({
 			success: true,
 			data: { ok: true, photo: { id: saved } },
 		});
 		await changeVehicles({ kind: "restore", vehicleId });
 		await changeVehicles({ kind: "delete", vehicleId });
-		expect(await reconcileVehiclePhotoUpload(vehicleId, pending)).toMatchObject(
+		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: pending })).toMatchObject(
 			{ success: true, data: { ok: false, reason: "vehicle_not_found" } },
 		);
 	});
@@ -340,7 +337,7 @@ describe("vehicle photo batch reconciliation", () => {
 		);
 		await runVehiclePhotoCleanupJob();
 		expect(
-			await reconcileVehiclePhotoUpload(vehicleId, abandoned),
+			await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: abandoned }),
 		).toMatchObject({
 			success: true,
 			data: { ok: false, reason: "upload_expired" },
@@ -363,10 +360,10 @@ describe("vehicle photo batch reconciliation", () => {
 			"12710000-0000-4000-8000-000000000001",
 			"12710000-0000-4000-8000-000000000002",
 		];
-		expect(await initiateVehiclePhotoBatchUpload(vehicleId, ids)).toMatchObject(
+		expect(await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: ids })).toMatchObject(
 			{ success: true, data: { ok: true, uploadIds: ids } },
 		);
-		expect(await initiateVehiclePhotoBatchUpload(vehicleId, ids)).toMatchObject(
+		expect(await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: ids })).toMatchObject(
 			{ success: true, data: { ok: true, uploadIds: ids } },
 		);
 		expect((await upload(ids[1], await image())).status).toBe(200);
@@ -385,13 +382,13 @@ describe("vehicle photo batch reconciliation", () => {
 		const fresh = "12710000-0000-4000-8000-000000000003";
 		harness.userId = "batch-admin";
 		expect(
-			await initiateVehiclePhotoBatchUpload(vehicleId, [existing]),
+			await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: [existing] }),
 		).toMatchObject({
 			success: true,
 			data: { ok: false, reason: "forbidden" },
 		});
 		expect(
-			await initiateVehiclePhotoBatchUpload(vehicleId, [existing, fresh]),
+			await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: [existing, fresh] }),
 		).toMatchObject({
 			success: true,
 			data: { ok: false, reason: "forbidden" },
@@ -410,10 +407,10 @@ describe("vehicle photo batch reconciliation", () => {
 		if (!created.success || !created.data.ok)
 			throw new Error("Vehicle creation failed");
 		expect(
-			await initiateVehiclePhotoBatchUpload(created.data.vehicles[0].id, [
+			await initiateVehiclePhotoBatchUpload({ vehicleId: created.data.vehicles[0].id, uploadIds: [
 				fresh,
 				existing,
-			]),
+			] }),
 		).toMatchObject({
 			success: true,
 			data: { ok: false, reason: "forbidden" },
@@ -435,15 +432,15 @@ describe("vehicle photo batch reconciliation", () => {
 	});
 	it("refuses invalid selection identities before creating any intent", async () => {
 		const id = "12710000-0000-4000-8000-000000000004";
-		expect(await initiateVehiclePhotoBatchUpload(vehicleId, [])).toMatchObject({
+		expect(await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: [] })).toMatchObject({
 			success: false,
 			code: "ValidationError",
 		});
 		expect(
-			await initiateVehiclePhotoBatchUpload(vehicleId, [id, id]),
+			await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: [id, id] }),
 		).toMatchObject({ success: false, code: "ValidationError" });
 		expect(
-			await initiateVehiclePhotoBatchUpload(vehicleId, ["invalid"]),
+			await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: ["invalid"] }),
 		).toMatchObject({ success: false, code: "ValidationError" });
 		expect(
 			(

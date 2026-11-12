@@ -1,10 +1,7 @@
 "use server";
 
 import { Effect } from "effect";
-import type {
-	CostRatePeriodView,
-	SuggestedWage,
-} from "@/lib/billable-time/cost-rate";
+import type { CostRatePeriodView, SuggestedWage } from "@/lib/billable-time/cost-rate";
 import {
 	changeCostRate,
 	employeeExists,
@@ -14,7 +11,6 @@ import {
 } from "@/lib/billable-time/cost-rates";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { createRateActions } from "../rate-actions";
 
@@ -39,7 +35,7 @@ const employeeNotFound = () =>
 	});
 
 const rateActions = createRateActions({
-	adminOnly: "Only owners and admins can see and change cost rates",
+	targetKey: "employeeId",
 	queryPrefix: "billableTime.costRates",
 	actions: { read: "readCostRates", set: "setCostRate", end: "endCostRate" },
 	parseTarget: (input: unknown) =>
@@ -52,24 +48,19 @@ const rateActions = createRateActions({
 					}),
 				),
 	notFound: employeeNotFound,
-	loadHistory: Effect.fnUntraced(
-		function* (service, organizationId, employeeId, currency) {
-			const exists = yield* service.query(
-				"billableTime.costRates.employee",
-				() => employeeExists(service.db, organizationId, employeeId),
-			);
-			if (!exists) return yield* Effect.fail(employeeNotFound());
-			const [periods, suggestedWage] = yield* service.query(
-				"billableTime.costRates.history",
-				() =>
-					Promise.all([
-						listCostRateHistory(service.db, organizationId, employeeId),
-						getSuggestedWage(service.db, organizationId, employeeId, currency),
-					]),
-			);
-			return { currency, periods, suggestedWage };
-		},
-	),
+	loadHistory: Effect.fnUntraced(function* (service, organizationId, employeeId, currency) {
+		const exists = yield* service.query("billableTime.costRates.employee", () =>
+			employeeExists(service.db, organizationId, employeeId),
+		);
+		if (!exists) return yield* Effect.fail(employeeNotFound());
+		const [periods, suggestedWage] = yield* service.query("billableTime.costRates.history", () =>
+			Promise.all([
+				listCostRateHistory(service.db, organizationId, employeeId),
+				getSuggestedWage(service.db, organizationId, employeeId, currency),
+			]),
+		);
+		return { currency, periods, suggestedWage };
+	}),
 	change: (database, { target: employeeId, ...input }) =>
 		changeCostRate(database, { ...input, employeeId }),
 	logChange: (organizationId, employeeId, changed) => {
@@ -77,26 +68,11 @@ const rateActions = createRateActions({
 	},
 });
 
-/** One employee's cost rates and optional wage suggestion; owners and admins only. */
-export async function getCostRateHistory(input: {
-	employeeId: unknown;
-}): Promise<ServerActionResult<CostRateHistory>> {
-	return rateActions.read(input.employeeId);
-}
+/** One employee's cost rates and optional wage suggestion; org admins only. */
+export const getCostRateHistory = rateActions.read;
 
 /** Sets an employee's cost rate from a date, for any contract type. Never changes the wage. */
-export async function setCostRate(input: {
-	employeeId: unknown;
-	effectiveFrom: string;
-	rate: string;
-}): Promise<ServerActionResult<CostRateChangeResult>> {
-	return rateActions.set(input.employeeId, input);
-}
+export const setCostRate = rateActions.set;
 
 /** Ends the cost rate from a date; cost is unknown until the next rate. */
-export async function endCostRate(input: {
-	employeeId: unknown;
-	effectiveFrom: string;
-}): Promise<ServerActionResult<CostRateChangeResult>> {
-	return rateActions.end(input.employeeId, input);
-}
+export const endCostRate = rateActions.end;

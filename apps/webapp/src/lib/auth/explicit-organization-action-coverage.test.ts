@@ -84,27 +84,6 @@ const actionCases = [
 		"pendingMemberService.bulkReject(",
 	],
 	[
-		"API key create",
-		"[locale]/(app)/settings/enterprise/api-keys/actions.ts",
-		"createApiKey",
-		"createOrganizationApiKey(",
-		"verifyApiKeyPermission(",
-	],
-	[
-		"API key update",
-		"[locale]/(app)/settings/enterprise/api-keys/actions.ts",
-		"updateApiKey",
-		"updateOrganizationApiKey(",
-		"verifyApiKeyPermission(",
-	],
-	[
-		"API key delete",
-		"[locale]/(app)/settings/enterprise/api-keys/actions.ts",
-		"deleteApiKey",
-		"revokeOrganizationApiKey(",
-		"verifyApiKeyPermission(",
-	],
-	[
 		"webhook create",
 		"[locale]/(app)/settings/webhooks/actions.ts",
 		"createWebhook",

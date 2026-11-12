@@ -1,16 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
-const calls: string[] = [];
-const {
-	requireEnterpriseOrgAdminMock,
-	controlPlaneMock,
-	findTemplateMock,
-	decommissionMock,
-	getOrCreateSetupMock,
-	updateMock,
-} = vi.hoisted(() => ({
-	requireEnterpriseOrgAdminMock: vi.fn(),
-	controlPlaneMock: {
+const mocks = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
+	controlPlane: {
 		create: vi.fn(),
 		getCreationState: vi.fn(),
 		get: vi.fn(),
@@ -18,75 +11,75 @@ const {
 		revoke: vi.fn(),
 		listEvents: vi.fn(),
 	},
-	findTemplateMock: vi.fn(),
-	decommissionMock: vi.fn(),
-	getOrCreateSetupMock: vi.fn(),
-	updateMock: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
+	findTemplate: vi.fn(),
+	decommission: vi.fn(),
+	getOrCreateSetup: vi.fn(),
+	updateWhere: vi.fn(),
 }));
 
-vi.mock("./actions", () => ({
-	requireEnterpriseOrgAdmin: requireEnterpriseOrgAdminMock,
-}));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db: {
+				query: { roleTemplate: { findFirst: mocks.findTemplate } },
+				update: () => ({ set: () => ({ where: mocks.updateWhere }) }),
+			},
+		}),
+	);
+});
 
 vi.mock("./identity-setup-record", () => ({
-	getOrCreateEnterpriseIdentitySetupRecord: getOrCreateSetupMock,
+	getOrCreateEnterpriseIdentitySetupRecord: mocks.getOrCreateSetup,
 }));
-
-vi.mock("@/db", () => ({
-	db: {
-		query: { roleTemplate: { findFirst: findTemplateMock } },
-		update: updateMock,
-	},
-}));
-
 vi.mock("@/lib/scim/managed-control-plane", () => ({
-	createSCIMManagedControlPlane: vi.fn(() => controlPlaneMock),
+	createSCIMManagedControlPlane: vi.fn(() => mocks.controlPlane),
 	createSCIMManagedControlPlaneStore: vi.fn(),
 }));
 vi.mock("@/lib/scim/decommission", () => ({
 	createSCIMDecommissionStore: vi.fn(),
-	decommissionSCIMConnection: decommissionMock,
-}));
-
-vi.mock("@/lib/auth", () => ({ auth: { api: {} } }));
-vi.mock("@/db/schema", () => ({
-	enterpriseIdentitySetup: {},
-	roleTemplate: {},
+	decommissionSCIMConnection: mocks.decommission,
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 const actions = await import("./scim-actions");
 
+const templateId = "11111111-1111-4111-8111-111111111111";
+const orgAdmin: StubCaller = {
+	userId: "actor-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: null,
+};
+const connection = {
+	connectionId: "connection-1",
+	provisioningDomainId: "org-1",
+	createdAt: "2026-08-25T10:00:00.000Z",
+};
+
+const ok = <T>(result: { success: true; data: T } | { success: false; error: string }) => {
+	if (!result.success) throw new Error(result.error);
+	return result.data;
+};
+
 describe("enterprise identity SCIM actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		calls.length = 0;
-		requireEnterpriseOrgAdminMock.mockImplementation(async () => {
-			calls.push("authorize");
-			return {
-				authContext: { user: { id: "actor-1" } },
-				organizationId: "org-1",
-			};
-		});
-		findTemplateMock.mockResolvedValue({
-			id: "11111111-1111-4111-8111-111111111111",
+		mocks.caller = orgAdmin;
+		mocks.updateWhere.mockResolvedValue(undefined);
+		mocks.findTemplate.mockResolvedValue({
+			id: templateId,
 			organizationId: "org-1",
 			isActive: true,
 			isGlobal: false,
 		});
-		controlPlaneMock.create.mockResolvedValue({
-			connection: {
-				connectionId: "connection-1",
-				provisioningDomainId: "org-1",
-				createdAt: "2026-08-25T10:00:00.000Z",
-			},
-			credential: {
-				credentialId: "credential-1",
-				createdAt: "2026-08-25T10:00:00.000Z",
-			},
+		mocks.controlPlane.create.mockResolvedValue({
+			connection,
+			credential: { credentialId: "credential-1", createdAt: "2026-08-25T10:00:00.000Z" },
 			token: "secret-token",
 		});
-		controlPlaneMock.getCreationState.mockResolvedValue({
+		mocks.controlPlane.getCreationState.mockResolvedValue({
 			connectionId: null,
 			status: "creation_failed",
 		});
@@ -104,232 +97,216 @@ describe("enterprise identity SCIM actions", () => {
 		]);
 	});
 
-	it("authorizes before validation or dependent work for every action", async () => {
-		requireEnterpriseOrgAdminMock.mockRejectedValue(new Error("Unauthorized"));
-
+	it("refuses a scoped manager before validation or dependent work for every action", async () => {
+		mocks.caller = {
+			...orgAdmin,
+			membershipRole: "member",
+			employee: { id: "employee-1", role: "manager", former: false },
+		};
 		const operations = [
-			() => actions.createEnterpriseIdentityScimConnectionAction({}),
-			() => actions.getEnterpriseIdentityScimStatusAction("connection-1"),
+			() => actions.createEnterpriseIdentityScimConnectionAction({} as never),
+			() => actions.getEnterpriseIdentityScimStatusAction({ connectionId: "connection-1" }),
+			() => actions.rotateEnterpriseIdentityScimCredentialAction({ connectionId: "connection-1" }),
 			() =>
-				actions.rotateEnterpriseIdentityScimCredentialAction("connection-1"),
+				actions.revokeEnterpriseIdentityScimCredentialAction({
+					connectionId: "connection-1",
+					credentialId: "credential-1",
+				}),
+			() => actions.listEnterpriseIdentityScimEventsAction({ connectionId: "connection-1" }),
+			() => actions.reconcileEnterpriseIdentityScimCreationAction({} as never),
 			() =>
-				actions.revokeEnterpriseIdentityScimCredentialAction(
-					"connection-1",
-					"credential-1",
-				),
-			() => actions.listEnterpriseIdentityScimEventsAction("connection-1"),
-			() => actions.reconcileEnterpriseIdentityScimCreationAction({}),
-			() =>
-				actions.decommissionEnterpriseIdentityScimConnectionAction(
-					"connection-1",
-				),
+				actions.decommissionEnterpriseIdentityScimConnectionAction({
+					connectionId: "connection-1",
+				}),
 		];
 
-		for (const operation of operations)
-			await expect(operation()).rejects.toThrow("Unauthorized");
+		for (const operation of operations) {
+			await expect(operation()).resolves.toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
+		}
+		expect(mocks.findTemplate).not.toHaveBeenCalled();
+		for (const fn of Object.values(mocks.controlPlane)) expect(fn).not.toHaveBeenCalled();
+		expect(mocks.decommission).not.toHaveBeenCalled();
+	});
 
-		expect(requireEnterpriseOrgAdminMock).toHaveBeenCalledTimes(
-			operations.length,
-		);
-		expect(findTemplateMock).not.toHaveBeenCalled();
-		expect(controlPlaneMock.create).not.toHaveBeenCalled();
-		expect(controlPlaneMock.get).not.toHaveBeenCalled();
-		expect(controlPlaneMock.rotate).not.toHaveBeenCalled();
-		expect(controlPlaneMock.revoke).not.toHaveBeenCalled();
-		expect(controlPlaneMock.listEvents).not.toHaveBeenCalled();
-		expect(decommissionMock).not.toHaveBeenCalled();
+	it("refuses an invalid connection input", async () => {
+		await expect(
+			actions.getEnterpriseIdentityScimStatusAction({ connectionId: "  " }),
+		).resolves.toMatchObject({ success: false, code: "ValidationError" });
+		expect(mocks.controlPlane.get).not.toHaveBeenCalled();
 	});
 
 	it("recovers an authorized reservation without returning a credential or token", async () => {
-		const result = await actions.reconcileEnterpriseIdentityScimCreationAction({
-			defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
-		});
-		expect(controlPlaneMock.create).toHaveBeenCalledWith(
+		const result = ok(
+			await actions.reconcileEnterpriseIdentityScimCreationAction({
+				defaultRoleTemplateId: templateId,
+			}),
+		);
+		expect(mocks.controlPlane.create).toHaveBeenCalledWith(
 			expect.objectContaining({ organizationId: "org-1", actorId: "actor-1" }),
 		);
 		expect(JSON.stringify(result)).not.toContain("secret-token");
-		expect(updateMock).toHaveBeenCalled();
+		expect(mocks.updateWhere).toHaveBeenCalled();
 	});
 
 	it("adopts an activated connection after setup persistence fails without issuing another token", async () => {
-		const persistenceFailure = new Error("setup persistence unavailable");
-		updateMock.mockImplementationOnce(() => ({
-			set: vi.fn(() => ({
-				where: vi.fn().mockRejectedValue(persistenceFailure),
-			})),
-		}));
+		mocks.updateWhere.mockRejectedValueOnce(new Error("setup persistence unavailable"));
 
 		await expect(
-			actions.createEnterpriseIdentityScimConnectionAction({
-				defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
-			}),
-		).rejects.toThrow(persistenceFailure);
+			actions.createEnterpriseIdentityScimConnectionAction({ defaultRoleTemplateId: templateId }),
+		).resolves.toMatchObject({ success: false, error: "setup persistence unavailable" });
 
-		controlPlaneMock.getCreationState.mockResolvedValueOnce({
+		mocks.controlPlane.getCreationState.mockResolvedValueOnce({
 			connectionId: "connection-1",
 			status: "active",
 		});
-		controlPlaneMock.get.mockResolvedValueOnce({
-			connection: {
-				connectionId: "connection-1",
-				provisioningDomainId: "org-1",
-				createdAt: "2026-08-25T10:00:00.000Z",
-			},
-			credentials: [],
-		});
+		mocks.controlPlane.get.mockResolvedValueOnce({ connection, credentials: [] });
 
-		const recovered =
+		const recovered = ok(
 			await actions.reconcileEnterpriseIdentityScimCreationAction({
-				defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
-			});
+				defaultRoleTemplateId: templateId,
+			}),
+		);
 
 		expect(recovered).toEqual({
 			connection: expect.objectContaining({ connectionId: "connection-1" }),
 			status: "active",
 		});
 		expect(JSON.stringify(recovered)).not.toContain("secret-token");
-		expect(controlPlaneMock.create).toHaveBeenCalledOnce();
-		expect(controlPlaneMock.get).toHaveBeenCalledWith({
+		expect(mocks.controlPlane.create).toHaveBeenCalledOnce();
+		expect(mocks.controlPlane.get).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			connectionId: "connection-1",
 		});
 	});
 
 	it("creates an organization-bound connection and exposes its token only in the issue response", async () => {
-		const result = await actions.createEnterpriseIdentityScimConnectionAction({
-			autoActivateUsers: true,
-			deprovisionAction: "suspend",
-			defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(findTemplateMock).toHaveBeenCalledWith(
-			expect.objectContaining({ where: expect.anything() }),
+		const result = ok(
+			await actions.createEnterpriseIdentityScimConnectionAction({
+				autoActivateUsers: true,
+				deprovisionAction: "suspend",
+				defaultRoleTemplateId: templateId,
+			}),
 		);
-		expect(controlPlaneMock.create).toHaveBeenCalledWith({
+
+		expect(mocks.controlPlane.create).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			actorId: "actor-1",
 			autoActivateUsers: true,
 			deprovisionAction: "suspend",
-			defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
+			defaultRoleTemplateId: templateId,
 			creationRequestId: expect.any(String),
 		});
 		expect(result).toMatchObject({
-			connection: {
-				connectionId: "connection-1",
-				provisioningDomainId: "org-1",
-			},
+			connection: { connectionId: "connection-1", provisioningDomainId: "org-1" },
 			credential: { credentialId: "credential-1" },
 			token: "secret-token",
 		});
 	});
 
-	it("rejects inactive or foreign role templates without exposing template metadata", async () => {
-		findTemplateMock.mockResolvedValueOnce(null).mockResolvedValueOnce({
+	it("refuses inactive or foreign role templates without exposing template metadata", async () => {
+		mocks.findTemplate.mockResolvedValueOnce(null).mockResolvedValueOnce({
 			id: "22222222-2222-4222-8222-222222222222",
 			organizationId: "foreign-org",
 			isActive: true,
 			isGlobal: false,
 		});
 
-		await expect(
-			actions.createEnterpriseIdentityScimConnectionAction({
-				defaultRoleTemplateId: "22222222-2222-4222-8222-222222222222",
-			}),
-		).rejects.toThrow(
-			"Default role template is not available for this organization",
-		);
-		await expect(
-			actions.createEnterpriseIdentityScimConnectionAction({
-				defaultRoleTemplateId: "22222222-2222-4222-8222-222222222222",
-			}),
-		).rejects.toThrow(
-			"Default role template is not available for this organization",
-		);
-		expect(controlPlaneMock.create).not.toHaveBeenCalled();
+		for (let attempt = 0; attempt < 2; attempt++) {
+			await expect(
+				actions.createEnterpriseIdentityScimConnectionAction({
+					defaultRoleTemplateId: "22222222-2222-4222-8222-222222222222",
+				}),
+			).resolves.toMatchObject({
+				success: false,
+				code: "ValidationError",
+				error: "Default role template is not available for this organization",
+			});
+		}
+		expect(mocks.controlPlane.create).not.toHaveBeenCalled();
 	});
 
-	it("accepts only active organization-owned or global role templates", async () => {
-		findTemplateMock.mockResolvedValue({
-			id: "11111111-1111-4111-8111-111111111111",
+	it("accepts a global role template", async () => {
+		mocks.findTemplate.mockResolvedValue({
+			id: templateId,
 			organizationId: null,
 			isActive: true,
 			isGlobal: true,
 		});
 
-		await actions.createEnterpriseIdentityScimConnectionAction({
-			defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
-		});
+		ok(
+			await actions.createEnterpriseIdentityScimConnectionAction({
+				defaultRoleTemplateId: templateId,
+			}),
+		);
 
-		expect(controlPlaneMock.create).toHaveBeenCalledOnce();
+		expect(mocks.controlPlane.create).toHaveBeenCalledOnce();
 	});
 
-	it("returns ISO-safe status and events without credentials or tokens", async () => {
-		controlPlaneMock.get.mockResolvedValue({
-			connection: {
-				connectionId: "connection-1",
-				provisioningDomainId: "org-1",
-				createdAt: "2026-08-25T10:00:00.000Z",
-			},
-			credentials: [
-				{ credentialId: "credential-1", expiresAt: "2026-09-01T10:00:00.000Z" },
-			],
+	it("returns status and events without credentials or tokens", async () => {
+		mocks.controlPlane.get.mockResolvedValue({
+			connection,
+			credentials: [{ credentialId: "credential-1", expiresAt: "2026-09-01T10:00:00.000Z" }],
 		});
-		controlPlaneMock.listEvents.mockResolvedValue([
+		mocks.controlPlane.listEvents.mockResolvedValue([
 			{ eventId: "event-1", createdAt: "2026-08-25T10:00:00.000Z" },
 		]);
 
-		const status =
-			await actions.getEnterpriseIdentityScimStatusAction("connection-1");
-		const events =
-			await actions.listEnterpriseIdentityScimEventsAction("connection-1");
+		const status = ok(
+			await actions.getEnterpriseIdentityScimStatusAction({ connectionId: "connection-1" }),
+		);
+		const events = ok(
+			await actions.listEnterpriseIdentityScimEventsAction({ connectionId: "connection-1" }),
+		);
 
 		expect(status.connection.createdAt).toBe("2026-08-25T10:00:00.000Z");
 		expect(JSON.stringify(status)).not.toContain("token");
 		expect(events[0].createdAt).toBe("2026-08-25T10:00:00.000Z");
-		expect(JSON.stringify(events)).not.toContain("token");
-		expect(controlPlaneMock.listEvents).toHaveBeenCalledWith({
+		expect(mocks.controlPlane.listEvents).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			connectionId: "connection-1",
 		});
 	});
 
-	it("uses the authorized tenant and actor for credential and decommission operations", async () => {
-		controlPlaneMock.rotate.mockResolvedValue({
-			connection: {
-				connectionId: "connection-1",
-				provisioningDomainId: "org-1",
-			},
+	it("uses the session's organization and actor for credential and decommission operations", async () => {
+		mocks.controlPlane.rotate.mockResolvedValue({
+			connection,
 			credential: { credentialId: "credential-2" },
 			token: "rotated-secret-token",
 		});
-		controlPlaneMock.revoke.mockResolvedValue(undefined);
-		decommissionMock.mockResolvedValue("completed");
+		mocks.controlPlane.revoke.mockResolvedValue(undefined);
+		mocks.decommission.mockResolvedValue("completed");
 
-		const rotated =
-			await actions.rotateEnterpriseIdentityScimCredentialAction(
-				"connection-1",
-			);
-		await actions.revokeEnterpriseIdentityScimCredentialAction(
-			"connection-1",
-			"credential-1",
+		const rotated = ok(
+			await actions.rotateEnterpriseIdentityScimCredentialAction({ connectionId: "connection-1" }),
 		);
-		await actions.decommissionEnterpriseIdentityScimConnectionAction(
-			"connection-1",
+		ok(
+			await actions.revokeEnterpriseIdentityScimCredentialAction({
+				connectionId: "connection-1",
+				credentialId: "credential-1",
+			}),
+		);
+		ok(
+			await actions.decommissionEnterpriseIdentityScimConnectionAction({
+				connectionId: "connection-1",
+			}),
 		);
 
 		expect(rotated).toHaveProperty("token", "rotated-secret-token");
-		expect(controlPlaneMock.rotate).toHaveBeenCalledWith({
+		expect(mocks.controlPlane.rotate).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			connectionId: "connection-1",
 			actorId: "actor-1",
 		});
-		expect(controlPlaneMock.revoke).toHaveBeenCalledWith({
+		expect(mocks.controlPlane.revoke).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			connectionId: "connection-1",
 			credentialId: "credential-1",
 			actorId: "actor-1",
 		});
-		expect(decommissionMock).toHaveBeenCalledWith(
+		expect(mocks.decommission).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-1",
 				connectionId: "connection-1",
@@ -338,31 +315,21 @@ describe("enterprise identity SCIM actions", () => {
 		);
 	});
 
-	it("normalizes unknown and cross-organization connection errors identically", async () => {
-		const unknown = new Error("Connection not found");
-		const crossOrganization = new Error(
-			"Connection belongs to another organization",
-		);
-		controlPlaneMock.get
-			.mockRejectedValueOnce(unknown)
-			.mockRejectedValueOnce(crossOrganization);
+	it("reports unknown and cross-organization connections identically", async () => {
+		mocks.controlPlane.get
+			.mockRejectedValueOnce(new Error("Connection not found"))
+			.mockRejectedValueOnce(new Error("Connection belongs to another organization"));
 
-		const first = await actions
-			.getEnterpriseIdentityScimStatusAction("missing")
-			.catch((error: Error) => error.message);
-		const second = await actions
-			.getEnterpriseIdentityScimStatusAction("other-org")
-			.catch((error: Error) => error.message);
-
-		expect(first).toBe(second);
-		expect(first).toBe("SCIM connection not found");
-		expect(controlPlaneMock.get).toHaveBeenNthCalledWith(1, {
-			organizationId: "org-1",
-			connectionId: "missing",
-		});
-		expect(controlPlaneMock.get).toHaveBeenNthCalledWith(2, {
-			organizationId: "org-1",
+		const first = await actions.getEnterpriseIdentityScimStatusAction({ connectionId: "missing" });
+		const second = await actions.getEnterpriseIdentityScimStatusAction({
 			connectionId: "other-org",
+		});
+
+		expect(first).toEqual(second);
+		expect(first).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+			error: "SCIM connection not found",
 		});
 	});
 });

@@ -403,10 +403,21 @@ function collectFunctionBodies(
 					body: source.slice(body.getStart(sourceFile), body.getEnd()),
 				});
 		};
-		const functionLike = (node: ts.Node | undefined) =>
-			node && (ts.isArrowFunction(node) || ts.isFunctionExpression(node))
-				? node
-				: undefined;
+		const functionLike = (
+			node: ts.Node | undefined,
+		): ts.ArrowFunction | ts.FunctionExpression | undefined => {
+			if (!node) return undefined;
+			if (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) return node;
+			// `const x = organizationAction(declaration, handler)`: the handler (#1592).
+			if (
+				ts.isCallExpression(node) &&
+				ts.isIdentifier(node.expression) &&
+				node.expression.text === "organizationAction"
+			) {
+				return functionLike(node.arguments.at(-1));
+			}
+			return undefined;
+		};
 
 		function visit(node: ts.Node) {
 			if (
