@@ -729,7 +729,11 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 					level: "organization",
 				});
 			},
-			write: () => policyActions.updateChangePolicy({ policyId: ids.trustPolicy, data: { noApprovalRequired: false } }),
+			write: () =>
+				policyActions.updateChangePolicy({
+					policyId: ids.trustPolicy,
+					data: { noApprovalRequired: false },
+				}),
 			before: { approval: false },
 			after: { approval: true },
 		},
@@ -921,7 +925,10 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 			try {
 				writer = track(
 					asOwner(() =>
-						policyActions.updateChangePolicy({ policyId: ids.strictPolicy, data: { noApprovalRequired: true } }),
+						policyActions.updateChangePolicy({
+							policyId: ids.strictPolicy,
+							data: { noApprovalRequired: true },
+						}),
 					),
 				);
 				await waitFor(
@@ -985,7 +992,10 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 			expectOutcome(committed, { approval: true });
 			await expect(
 				asOwner(() =>
-					policyActions.updateChangePolicy({ policyId: ids.strictPolicy, data: { noApprovalRequired: true } }),
+					policyActions.updateChangePolicy({
+						policyId: ids.strictPolicy,
+						data: { noApprovalRequired: true },
+					}),
 				),
 			).resolves.toMatchObject({ success: true });
 			const before = await workSnapshot();

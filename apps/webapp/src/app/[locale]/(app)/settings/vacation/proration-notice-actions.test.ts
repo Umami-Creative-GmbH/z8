@@ -45,7 +45,10 @@ describe("dismissProrationNoticeAction (#1112)", () => {
 	it("dismisses the notice for the caller's active organization through the action's database", async () => {
 		mocks.caller = orgAdmin;
 
-		await expect(dismissProrationNoticeAction()).resolves.toEqual({ success: true, data: undefined });
+		await expect(dismissProrationNoticeAction()).resolves.toEqual({
+			success: true,
+			data: undefined,
+		});
 		expect(mocks.dismissProrationNotice).toHaveBeenCalledWith(mocks.scopedDb, {
 			organizationId: "org-1",
 			actorUserId: "user-1",

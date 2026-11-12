@@ -874,7 +874,10 @@ export const createWorkPolicyAssignment = organizationAction(
 
 			const policy = yield* dbService.query("getAssignmentPolicy", () =>
 				dbService.db.query.workPolicy.findFirst({
-					where: and(eq(workPolicy.id, data.policyId), eq(workPolicy.organizationId, organizationId)),
+					where: and(
+						eq(workPolicy.id, data.policyId),
+						eq(workPolicy.organizationId, organizationId),
+					),
 					columns: { id: true },
 				}),
 			);
@@ -1533,8 +1536,14 @@ export const getEmployeeEffectiveScheduleDetails = organizationAction(
 			const effectiveNow = [
 				eq(workPolicyAssignment.organizationId, organizationId),
 				eq(workPolicyAssignment.isActive, true),
-				or(isNull(workPolicyAssignment.effectiveFrom), lte(workPolicyAssignment.effectiveFrom, now)),
-				or(isNull(workPolicyAssignment.effectiveUntil), gt(workPolicyAssignment.effectiveUntil, now)),
+				or(
+					isNull(workPolicyAssignment.effectiveFrom),
+					lte(workPolicyAssignment.effectiveFrom, now),
+				),
+				or(
+					isNull(workPolicyAssignment.effectiveUntil),
+					gt(workPolicyAssignment.effectiveUntil, now),
+				),
 			];
 			const latestFirst = (
 				assignment: typeof workPolicyAssignment._.columns,

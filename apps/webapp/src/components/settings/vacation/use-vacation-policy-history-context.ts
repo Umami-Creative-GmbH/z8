@@ -3,10 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getVacationPolicyHistoryContext } from "@/app/[locale]/(app)/settings/vacation/assignment-actions";
 
-export function useVacationPolicyHistoryContext(
-	organizationId: string,
-	enabled = true,
-) {
+export function useVacationPolicyHistoryContext(organizationId: string, enabled = true) {
 	return useQuery({
 		queryKey: ["vacation-policy-history-context", organizationId],
 		queryFn: async () => {

@@ -18,7 +18,9 @@ import { organizationAction } from "@/lib/organization-action/organization-actio
 
 function refusalOf(error: unknown) {
 	const refusal = historicalVacationRefusalOf(error);
-	return refusal ? new ValidationError({ message: refusal.message, refusal: refusal.refusal }) : null;
+	return refusal
+		? new ValidationError({ message: refusal.message, refusal: refusal.refusal })
+		: null;
 }
 
 /**
@@ -47,7 +49,11 @@ export const previewHistoricalVacationReconciliation = organizationAction(
 
 /** The staged absence rows of an import batch and the categories to map them to. */
 export const getHistoricalImportReviewContext = organizationAction(
-	{ name: "vacation.historicalImportReviewContext", requires: "orgAdmin", schema: z.string().min(1) },
+	{
+		name: "vacation.historicalImportReviewContext",
+		requires: "orgAdmin",
+		schema: z.string().min(1),
+	},
 	({ organizationId, input: batchId }) =>
 		Effect.gen(function* () {
 			const service = yield* DatabaseService;
@@ -182,7 +188,10 @@ export const commitHistoricalVacationImport = organizationAction(
 									.update(importBatch)
 									.set({ status: "committing", committedBy: actor.userId })
 									.where(
-										and(eq(importBatch.id, plan.batchId), eq(importBatch.organizationId, organizationId)),
+										and(
+											eq(importBatch.id, plan.batchId),
+											eq(importBatch.organizationId, organizationId),
+										),
 									);
 								return {
 									type: "import-review-commit" as const,

@@ -188,7 +188,10 @@ describe("historical vacation reconciliation", () => {
 
 describe("employee sick note setting", () => {
 	it("saves the setting for the active organization", async () => {
-		mocks.saveEmployeeSickNoteUpload.mockResolvedValue({ kind: "saved", employeeSickNoteUpload: true });
+		mocks.saveEmployeeSickNoteUpload.mockResolvedValue({
+			kind: "saved",
+			employeeSickNoteUpload: true,
+		});
 
 		await expect(saveEmployeeSickNoteUploadAction({ enabled: true })).resolves.toEqual({
 			success: true,

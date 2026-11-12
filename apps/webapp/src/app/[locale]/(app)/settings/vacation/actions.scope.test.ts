@@ -16,7 +16,9 @@ const mockState = vi.hoisted(() => {
 		const params = (
 			globalThis as unknown as { __vacationParamsOf: (where: unknown) => unknown[] }
 		).__vacationParamsOf(where);
-		const namesKind = params.some((param) => typeof param === "string" && param.startsWith(idPrefix));
+		const namesKind = params.some(
+			(param) => typeof param === "string" && param.startsWith(idPrefix),
+		);
 		return params.includes(row.organizationId) && (!namesKind || params.includes(row.id));
 	}
 
@@ -56,7 +58,9 @@ const mockState = vi.hoisted(() => {
 		] as Array<Record<string, unknown>>,
 		absenceCategoryFindFirst: vi.fn(async () => null),
 		employeeFindFirst: vi.fn(async (options?: { where?: unknown }) =>
-			matches(mockState.targetEmployee, options?.where, "employee-") ? mockState.targetEmployee : null,
+			matches(mockState.targetEmployee, options?.where, "employee-")
+				? mockState.targetEmployee
+				: null,
 		),
 		assignmentRow: null as Record<string, unknown> | null,
 		selectQueue: [] as Array<unknown>,
@@ -87,9 +91,9 @@ const mockState = vi.hoisted(() => {
 	};
 });
 
-(globalThis as unknown as { __vacationParamsOf: (where: unknown) => unknown[] }).__vacationParamsOf = (
-	where,
-) => (where ? rendered(where as SQL).params : []);
+(
+	globalThis as unknown as { __vacationParamsOf: (where: unknown) => unknown[] }
+).__vacationParamsOf = (where) => (where ? rendered(where as SQL).params : []);
 
 function callerOf(): StubCaller {
 	const { accessTier, currentEmployee } = mockState.actor;
@@ -261,7 +265,7 @@ describe("vacation settings scope actions", () => {
 		];
 		mockState.selectQueue = [];
 		mockState.selectWhereCalls = [];
-		
+
 		mockState.insertQueue = [];
 		mockState.policyFindFirst.mockClear();
 		mockState.selectFor.mockClear();
@@ -272,8 +276,6 @@ describe("vacation settings scope actions", () => {
 		mockState.insertValues.mockClear();
 		mockState.updateSet.mockClear();
 		mockState.logAudit.mockClear();
-
-
 	});
 
 	it("lets managers read vacation policy definitions", async () => {
@@ -349,11 +351,14 @@ describe("vacation settings scope actions", () => {
 		it("updates both settings", async () => {
 			mockState.insertQueue = [[{ id: "policy-1" }]];
 
-			const result = await updateVacationPolicy({ policyId: "policy-1", data: {
-				...policyInput,
-				prorateInStartAndExitYear: false,
-				statutoryMinimumDays: "25",
-			} });
+			const result = await updateVacationPolicy({
+				policyId: "policy-1",
+				data: {
+					...policyInput,
+					prorateInStartAndExitYear: false,
+					statutoryMinimumDays: "25",
+				},
+			});
 
 			expect(result).toMatchObject({ success: true });
 			expect(mockState.updateSet).toHaveBeenCalledWith(
@@ -367,7 +372,10 @@ describe("vacation settings scope actions", () => {
 			// Lowering the annual days below the stored statutory minimum of 20.
 			{ statutoryMinimumDays: undefined, defaultAnnualDays: "18" },
 		])("refuses to update a policy to %o", async (input) => {
-			const result = await updateVacationPolicy({ policyId: "policy-1", data: { ...policyInput, ...input } });
+			const result = await updateVacationPolicy({
+				policyId: "policy-1",
+				data: { ...policyInput, ...input },
+			});
 
 			expect(result).toMatchObject({ success: false, code: "ValidationError" });
 			expect(mockState.updateSet).not.toHaveBeenCalled();
@@ -376,10 +384,13 @@ describe("vacation settings scope actions", () => {
 		it("does not let an admin update another organization's policy", async () => {
 			mockState.policyRows = [{ ...storedPolicy, organizationId: "org-2" }];
 
-			const result = await updateVacationPolicy({ policyId: "policy-1", data: {
-				...policyInput,
-				statutoryMinimumDays: "10",
-			} });
+			const result = await updateVacationPolicy({
+				policyId: "policy-1",
+				data: {
+					...policyInput,
+					statutoryMinimumDays: "10",
+				},
+			});
 
 			expect(result).toMatchObject({ success: false, code: "NotFoundError" });
 			expect(mockState.updateSet).not.toHaveBeenCalled();
@@ -479,14 +490,17 @@ describe("vacation settings scope actions", () => {
 			drawsOnWorkBalance: true,
 			...combined,
 		});
-		const updated = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "custom",
-			name: "Overtime off",
-			requiresApproval: true,
-			drawsOnWorkBalance: true,
-			isActive: true,
-			...combined,
-		} });
+		const updated = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "custom",
+				name: "Overtime off",
+				requiresApproval: true,
+				drawsOnWorkBalance: true,
+				isActive: true,
+				...combined,
+			},
+		});
 
 		for (const result of [created, updated]) {
 			expect(result).toMatchObject({
@@ -529,16 +543,19 @@ describe("vacation settings scope actions", () => {
 		];
 		mockState.selectQueue = [[{ id: "absence-1" }]];
 
-		const result = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "vacation",
-			name: "Vacation",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: false,
-			drawsOnWorkBalance: true,
-			color: "#2563eb",
-			isActive: true,
-		} });
+		const result = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "vacation",
+				name: "Vacation",
+				requiresWorkTime: false,
+				requiresApproval: true,
+				countsAgainstVacation: false,
+				drawsOnWorkBalance: true,
+				color: "#2563eb",
+				isActive: true,
+			},
+		});
 
 		expect(result).toMatchObject({ success: false, code: "ConflictError" });
 		expect(mockState.updateSet).not.toHaveBeenCalled();
@@ -550,15 +567,21 @@ describe("vacation settings scope actions", () => {
 			{ id: "absence-category-2", organizationId: "org-2", name: "Other", isActive: true },
 		];
 
-		const updated = await updateAbsenceCategory({ categoryId: "absence-category-2", data: {
-			type: "custom",
-			name: "Personal",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: false,
-			isActive: true,
-		} });
-		const toggled = await setAbsenceCategoryActive({ categoryId: "absence-category-2", isActive: false });
+		const updated = await updateAbsenceCategory({
+			categoryId: "absence-category-2",
+			data: {
+				type: "custom",
+				name: "Personal",
+				requiresWorkTime: false,
+				requiresApproval: true,
+				countsAgainstVacation: false,
+				isActive: true,
+			},
+		});
+		const toggled = await setAbsenceCategoryActive({
+			categoryId: "absence-category-2",
+			isActive: false,
+		});
 		const deleted = await deleteAbsenceCategory("absence-category-2");
 
 		expect(updated).toMatchObject({ success: false, code: "NotFoundError" });
@@ -570,15 +593,18 @@ describe("vacation settings scope actions", () => {
 		mockState.actor.accessTier = "orgAdmin";
 		mockState.selectQueue = [[{ id: "absence-1" }]];
 
-		const result = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "custom",
-			name: "Vacation",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: true,
-			color: "#2563eb",
-			isActive: true,
-		} });
+		const result = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "custom",
+				name: "Vacation",
+				requiresWorkTime: false,
+				requiresApproval: true,
+				countsAgainstVacation: true,
+				color: "#2563eb",
+				isActive: true,
+			},
+		});
 
 		expect(result).toMatchObject({
 			success: false,
@@ -593,15 +619,18 @@ describe("vacation settings scope actions", () => {
 		mockState.actor.accessTier = "orgAdmin";
 		mockState.selectQueue = [[], [{ recordId: "record-1" }]];
 
-		const result = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "vacation",
-			name: "Vacation",
-			requiresWorkTime: true,
-			requiresApproval: true,
-			countsAgainstVacation: true,
-			color: "#2563eb",
-			isActive: true,
-		} });
+		const result = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "vacation",
+				name: "Vacation",
+				requiresWorkTime: true,
+				requiresApproval: true,
+				countsAgainstVacation: true,
+				color: "#2563eb",
+				isActive: true,
+			},
+		});
 
 		expect(result).toMatchObject({
 			success: false,
@@ -616,15 +645,18 @@ describe("vacation settings scope actions", () => {
 		mockState.actor.accessTier = "orgAdmin";
 		mockState.selectQueue = [[{ id: "absence-1" }]];
 
-		const result = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "vacation",
-			name: "Vacation",
-			requiresWorkTime: false,
-			requiresApproval: false,
-			countsAgainstVacation: true,
-			color: "#2563eb",
-			isActive: true,
-		} });
+		const result = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "vacation",
+				name: "Vacation",
+				requiresWorkTime: false,
+				requiresApproval: false,
+				countsAgainstVacation: true,
+				color: "#2563eb",
+				isActive: true,
+			},
+		});
 
 		expect(result).toMatchObject({
 			success: false,
@@ -639,15 +671,18 @@ describe("vacation settings scope actions", () => {
 		mockState.actor.accessTier = "orgAdmin";
 		mockState.selectQueue = [[{ id: "absence-1" }]];
 
-		const result = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "vacation",
-			name: "Vacation",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: false,
-			color: "#2563eb",
-			isActive: true,
-		} });
+		const result = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "vacation",
+				name: "Vacation",
+				requiresWorkTime: false,
+				requiresApproval: true,
+				countsAgainstVacation: false,
+				color: "#2563eb",
+				isActive: true,
+			},
+		});
 
 		expect(result).toMatchObject({
 			success: false,
@@ -672,16 +707,19 @@ describe("vacation settings scope actions", () => {
 			],
 		];
 
-		const result = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "vacation",
-			name: "Paid vacation",
-			description: "Updated description",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: true,
-			color: "#0f766e",
-			isActive: false,
-		} });
+		const result = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "vacation",
+				name: "Paid vacation",
+				description: "Updated description",
+				requiresWorkTime: false,
+				requiresApproval: true,
+				countsAgainstVacation: true,
+				color: "#0f766e",
+				isActive: false,
+			},
+		});
 
 		expect(result).toMatchObject({
 			success: true,
@@ -711,15 +749,18 @@ describe("vacation settings scope actions", () => {
 			],
 		];
 
-		const result = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "vacation",
-			name: "Vacation renamed",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: true,
-			color: "#2563eb",
-			isActive: true,
-		} });
+		const result = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "vacation",
+				name: "Vacation renamed",
+				requiresWorkTime: false,
+				requiresApproval: true,
+				countsAgainstVacation: true,
+				color: "#2563eb",
+				isActive: true,
+			},
+		});
 
 		expect(result).toMatchObject({
 			success: true,
@@ -733,15 +774,18 @@ describe("vacation settings scope actions", () => {
 	it("returns not found when the locked absence category update returns no row", async () => {
 		mockState.actor.accessTier = "orgAdmin";
 
-		const result = await updateAbsenceCategory({ categoryId: "absence-category-1", data: {
-			type: "vacation",
-			name: "Vacation renamed",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: true,
-			color: "#2563eb",
-			isActive: true,
-		} });
+		const result = await updateAbsenceCategory({
+			categoryId: "absence-category-1",
+			data: {
+				type: "vacation",
+				name: "Vacation renamed",
+				requiresWorkTime: false,
+				requiresApproval: true,
+				countsAgainstVacation: true,
+				color: "#2563eb",
+				isActive: true,
+			},
+		});
 
 		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
 		expect(mockState.transaction).toHaveBeenCalledTimes(1);
@@ -762,7 +806,10 @@ describe("vacation settings scope actions", () => {
 			],
 		];
 
-		const result = await setAbsenceCategoryActive({ categoryId: "absence-category-1", isActive: false });
+		const result = await setAbsenceCategoryActive({
+			categoryId: "absence-category-1",
+			isActive: false,
+		});
 
 		expect(result).toMatchObject({
 			success: true,
@@ -772,7 +819,10 @@ describe("vacation settings scope actions", () => {
 	});
 
 	it("requires org admin access before looking up absence category status updates", async () => {
-		const result = await setAbsenceCategoryActive({ categoryId: "absence-category-1", isActive: false });
+		const result = await setAbsenceCategoryActive({
+			categoryId: "absence-category-1",
+			isActive: false,
+		});
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mockState.absenceCategoryFindFirst).not.toHaveBeenCalled();
@@ -782,7 +832,10 @@ describe("vacation settings scope actions", () => {
 	it("returns not found when absence category active status update returns no row", async () => {
 		mockState.actor.accessTier = "orgAdmin";
 
-		const result = await setAbsenceCategoryActive({ categoryId: "absence-category-1", isActive: false });
+		const result = await setAbsenceCategoryActive({
+			categoryId: "absence-category-1",
+			isActive: false,
+		});
 
 		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
 		expect(mockState.updateSet).toHaveBeenCalledWith({ isActive: false });
@@ -963,10 +1016,14 @@ describe("vacation settings scope actions", () => {
 			[{ id: "adjustment-1", employeeId: "employee-1", year: 2026, days: "2" }],
 		];
 
-		const result = await createVacationAdjustmentAction({ employeeId: "employee-1", year: 2026, data: {
-			days: "2",
-			reason: "Carryover correction",
-		} });
+		const result = await createVacationAdjustmentAction({
+			employeeId: "employee-1",
+			year: 2026,
+			data: {
+				days: "2",
+				reason: "Carryover correction",
+			},
+		});
 
 		expect(result).toMatchObject({
 			success: true,
@@ -980,10 +1037,14 @@ describe("vacation settings scope actions", () => {
 		mockState.actor.accessTier = "orgAdmin";
 		mockState.actor.currentEmployee = null;
 
-		const result = await createVacationAdjustmentAction({ employeeId: "employee-1", year: 2026, data: {
-			days: "3",
-			reason: "Owner correction",
-		} });
+		const result = await createVacationAdjustmentAction({
+			employeeId: "employee-1",
+			year: 2026,
+			data: {
+				days: "3",
+				reason: "Owner correction",
+			},
+		});
 
 		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
 		expect(mockState.logAudit).not.toHaveBeenCalled();
@@ -996,10 +1057,14 @@ describe("vacation settings scope actions", () => {
 			role: "employee",
 		};
 
-		const result = await createVacationAdjustmentAction({ employeeId: "employee-3", year: 2026, data: {
-			days: "1",
-			reason: "Manual correction",
-		} });
+		const result = await createVacationAdjustmentAction({
+			employeeId: "employee-3",
+			year: 2026,
+			data: {
+				days: "1",
+				reason: "Manual correction",
+			},
+		});
 
 		expect(result).toMatchObject({
 			success: false,
@@ -1019,7 +1084,9 @@ describe("vacation settings scope actions", () => {
 
 			expect(result).toMatchObject({ success: true });
 			expect(mockState.updateSet).toHaveBeenCalledWith({ isActive: false });
-			expect(mockState.updateWhere.mock.calls.map(([where]) => rendered(where as SQL).params)).toContainEqual(["policy-1", "org-1"]);
+			expect(
+				mockState.updateWhere.mock.calls.map(([where]) => rendered(where as SQL).params),
+			).toContainEqual(["policy-1", "org-1"]);
 		});
 
 		it("does not let an admin delete another organization's policy", async () => {
@@ -1053,7 +1120,9 @@ describe("vacation settings scope actions", () => {
 			const result = await deleteVacationPolicyAssignment({ assignmentId: "assignment-1" });
 
 			expect(result).toMatchObject({ success: true });
-			expect(mockState.updateWhere.mock.calls.map(([where]) => rendered(where as SQL).params)).toContainEqual(["assignment-1", "org-1"]);
+			expect(
+				mockState.updateWhere.mock.calls.map(([where]) => rendered(where as SQL).params),
+			).toContainEqual(["assignment-1", "org-1"]);
 		});
 	});
 });
@@ -1106,7 +1175,10 @@ describe("vacation settings access", () => {
 			"setEmployeePolicyAssignment",
 			() => setEmployeePolicyAssignment({ employeeId: "employee-1", policyId: null }),
 		],
-		["deleteVacationPolicyAssignment", () => deleteVacationPolicyAssignment({ assignmentId: "a-1" })],
+		[
+			"deleteVacationPolicyAssignment",
+			() => deleteVacationPolicyAssignment({ assignmentId: "a-1" }),
+		],
 		["getCompanyDefaultPolicies", () => getCompanyDefaultPolicies()],
 		[
 			"previewEmployeeVacationPolicy",
@@ -1157,7 +1229,8 @@ describe("vacation settings access", () => {
 		["deleteAbsenceCategory", () => deleteAbsenceCategory("absence-category-1")],
 		[
 			"createVacationPolicyAssignment for the organization",
-			() => createVacationPolicyAssignment({ policyId: "policy-1", assignmentType: "organization" }),
+			() =>
+				createVacationPolicyAssignment({ policyId: "policy-1", assignmentType: "organization" }),
 		],
 	])("refuses %s to a scoped manager", async (_name, call) => {
 		mockState.actor.accessTier = "manager";

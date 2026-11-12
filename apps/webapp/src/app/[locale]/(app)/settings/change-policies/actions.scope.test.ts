@@ -17,15 +17,27 @@ const teamRows = [
 ];
 
 const employeeRows = [
-	{ id: "employee-managed", teamId: "team-managed", user: { firstName: "Mina", lastName: "Miller" } },
+	{
+		id: "employee-managed",
+		teamId: "team-managed",
+		user: { firstName: "Mina", lastName: "Miller" },
+	},
 	{ id: "employee-fallback", teamId: null, user: { firstName: "Fall", lastName: "Back" } },
 	{ id: "employee-other", teamId: "team-other", user: { firstName: "Otto", lastName: "Other" } },
 ];
 
 const policyRows = [
 	{ id: "policy-org", name: "Org Default", createdAt: new Date("2026-01-01T00:00:00.000Z") },
-	{ id: "policy-team", name: "Managed Team Policy", createdAt: new Date("2026-01-02T00:00:00.000Z") },
-	{ id: "policy-other", name: "Other Team Policy", createdAt: new Date("2026-01-03T00:00:00.000Z") },
+	{
+		id: "policy-team",
+		name: "Managed Team Policy",
+		createdAt: new Date("2026-01-02T00:00:00.000Z"),
+	},
+	{
+		id: "policy-other",
+		name: "Other Team Policy",
+		createdAt: new Date("2026-01-03T00:00:00.000Z"),
+	},
 ];
 
 function assignment(
@@ -86,7 +98,9 @@ const db = {
 		changePolicyAssignment: { findMany: vi.fn(async () => assignmentRows) },
 		team: { findMany: vi.fn(async () => teamRows) },
 		employee: {
-			findMany: vi.fn(async () => employeeRows.filter((row) => state.managedEmployeeIds.has(row.id))),
+			findMany: vi.fn(async () =>
+				employeeRows.filter((row) => state.managedEmployeeIds.has(row.id)),
+			),
 		},
 		teamPermissions: {
 			findMany: vi.fn(async () =>
@@ -127,10 +141,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 			db,
 			query: (name, fn) =>
 				name === "organizationAction.managedScope"
-					? (Effect.succeed([
-							[...state.managedEmployeeIds].map((id) => ({ id })),
-							[],
-						]) as never)
+					? (Effect.succeed([[...state.managedEmployeeIds].map((id) => ({ id })), []]) as never)
 					: Effect.promise(fn),
 		}),
 	);
@@ -211,7 +222,11 @@ describe("change policy scoped access", () => {
 	it("shows an org admin every policy", async () => {
 		state.caller = orgAdmin;
 
-		expect(ids(await actions.getChangePolicies())).toEqual(["policy-org", "policy-team", "policy-other"]);
+		expect(ids(await actions.getChangePolicies())).toEqual([
+			"policy-org",
+			"policy-team",
+			"policy-other",
+		]);
 	});
 });
 
@@ -228,12 +243,18 @@ describe("change policy settings access", () => {
 
 	it.each([
 		["createChangePolicy", () => actions.createChangePolicy(validPolicy)],
-		["updateChangePolicy", () => actions.updateChangePolicy({ policyId: "policy-org", data: validPolicy })],
+		[
+			"updateChangePolicy",
+			() => actions.updateChangePolicy({ policyId: "policy-org", data: validPolicy }),
+		],
 		["deleteChangePolicy", () => actions.deleteChangePolicy("policy-org")],
 		[
 			"createChangePolicyAssignment",
 			() =>
-				actions.createChangePolicyAssignment({ policyId: "policy-org", assignmentType: "organization" }),
+				actions.createChangePolicyAssignment({
+					policyId: "policy-org",
+					assignmentType: "organization",
+				}),
 		],
 		["deleteChangePolicyAssignment", () => actions.deleteChangePolicyAssignment("assignment-org")],
 		["getTeamsForAssignment", () => actions.getTeamsForAssignment()],
@@ -255,7 +276,9 @@ describe("change policy settings access", () => {
 	])("refuses policy creation to %s", async (_case, caller) => {
 		state.caller = caller;
 
-		await expect(actions.createChangePolicy(validPolicy)).resolves.toMatchObject({ success: false });
+		await expect(actions.createChangePolicy(validPolicy)).resolves.toMatchObject({
+			success: false,
+		});
 		expect(state.insertedPolicies).toHaveLength(0);
 	});
 

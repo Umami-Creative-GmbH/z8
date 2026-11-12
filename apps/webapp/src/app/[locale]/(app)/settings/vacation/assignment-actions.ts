@@ -159,7 +159,10 @@ export const getVacationPolicyAssignments = organizationAction(
 						)
 						.leftJoin(
 							team,
-							and(eq(vacationPolicyAssignment.teamId, team.id), eq(team.organizationId, organizationId)),
+							and(
+								eq(vacationPolicyAssignment.teamId, team.id),
+								eq(team.organizationId, organizationId),
+							),
 						)
 						.leftJoin(
 							employee,
@@ -286,7 +289,11 @@ export const createVacationPolicyAssignment = organizationAction(
  * An employee's direct policy assignment in effect today, if any
  */
 export const getEmployeePolicyAssignment = organizationAction(
-	{ name: "vacation.employeePolicyAssignment", requires: "scopedManager", schema: z.string().min(1) },
+	{
+		name: "vacation.employeePolicyAssignment",
+		requires: "scopedManager",
+		schema: z.string().min(1),
+	},
 	({ actor, organizationId, input: employeeId }) =>
 		Effect.gen(function* () {
 			yield* findManagedEmployee(actor, organizationId, employeeId, RESOURCE, "read");

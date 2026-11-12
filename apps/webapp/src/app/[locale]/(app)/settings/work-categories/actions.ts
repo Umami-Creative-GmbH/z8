@@ -199,7 +199,9 @@ function findOrganizationWorkCategory(organizationId: string, categoryId: string
 			const [category] = await dbService.db
 				.select({ id: workCategory.id })
 				.from(workCategory)
-				.where(and(eq(workCategory.id, categoryId), eq(workCategory.organizationId, organizationId)))
+				.where(
+					and(eq(workCategory.id, categoryId), eq(workCategory.organizationId, organizationId)),
+				)
 				.limit(1);
 
 			return category ?? null;
@@ -214,7 +216,9 @@ function findOrganizationWorkCategorySet(organizationId: string, setId: string) 
 			const [set] = await dbService.db
 				.select({ id: workCategorySet.id })
 				.from(workCategorySet)
-				.where(and(eq(workCategorySet.id, setId), eq(workCategorySet.organizationId, organizationId)))
+				.where(
+					and(eq(workCategorySet.id, setId), eq(workCategorySet.organizationId, organizationId)),
+				)
 				.limit(1);
 
 			return set ?? null;
@@ -254,7 +258,10 @@ function refuseForeignCategoryIds(organizationId: string, categoryIds: string[])
 				.select({ id: workCategory.id })
 				.from(workCategory)
 				.where(
-					and(eq(workCategory.organizationId, organizationId), inArray(workCategory.id, categoryIds)),
+					and(
+						eq(workCategory.organizationId, organizationId),
+						inArray(workCategory.id, categoryIds),
+					),
 				);
 		});
 
@@ -811,7 +818,9 @@ export const getWorkCategorySets = organizationAction(
 						}),
 					);
 				})
-				.pipe(Effect.mapError(failedRead("Failed to fetch work category sets", "work_category_set")));
+				.pipe(
+					Effect.mapError(failedRead("Failed to fetch work category sets", "work_category_set")),
+				);
 
 			const visibleSetIds = yield* visibleSetIdsOf(scope);
 			if (!visibleSetIds) {
@@ -839,11 +848,16 @@ export const getWorkCategorySetDetail = organizationAction(
 						.select()
 						.from(workCategorySet)
 						.where(
-							and(eq(workCategorySet.id, setId), eq(workCategorySet.organizationId, organizationId)),
+							and(
+								eq(workCategorySet.id, setId),
+								eq(workCategorySet.organizationId, organizationId),
+							),
 						)
 						.limit(1),
 				)
-				.pipe(Effect.mapError(failedRead("Failed to fetch work category set", "work_category_set")));
+				.pipe(
+					Effect.mapError(failedRead("Failed to fetch work category set", "work_category_set")),
+				);
 
 			if (!set) {
 				return yield* notFound("work_category_set", setId, "Work category set not found");
@@ -1132,7 +1146,11 @@ export const updateSetCategories = organizationAction(
  * Reorder categories within a set (updates sortOrder in junction table)
  */
 export const reorderSetCategories = organizationAction(
-	{ name: "workCategories.reorderSetCategories", requires: "orgAdmin", schema: setCategoriesSchema },
+	{
+		name: "workCategories.reorderSetCategories",
+		requires: "orgAdmin",
+		schema: setCategoriesSchema,
+	},
 	({ organizationId, input: { setId, categoryIds } }) =>
 		Effect.gen(function* () {
 			const scopedSet = yield* findOrganizationWorkCategorySet(organizationId, setId);
@@ -1546,7 +1564,9 @@ export const getAvailableCategoriesForEmployee = organizationAction(
 						limit: 1,
 					}),
 				);
-				const typedTeamAssignment = teamAssignment as EffectiveWorkCategorySetAssignment | undefined;
+				const typedTeamAssignment = teamAssignment as
+					| EffectiveWorkCategorySetAssignment
+					| undefined;
 
 				if (typedTeamAssignment?.set?.isActive) {
 					return yield* categoriesOfSet(typedTeamAssignment.setId, "getCategoriesFromTeamSet");

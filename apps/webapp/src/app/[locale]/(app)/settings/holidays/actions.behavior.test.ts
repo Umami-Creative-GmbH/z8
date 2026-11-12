@@ -118,7 +118,12 @@ describe("holiday settings scope behavior", () => {
 	it("shows an org admin every holiday assignment", async () => {
 		harness.caller = orgAdmin;
 
-		expect(ids(await actions.getHolidayAssignments())).toEqual(["org", "team", "employee", "other-team"]);
+		expect(ids(await actions.getHolidayAssignments())).toEqual([
+			"org",
+			"team",
+			"employee",
+			"other-team",
+		]);
 	});
 
 	it("creates holiday category assignments in the active organization for org admins", async () => {
@@ -172,7 +177,11 @@ describe("holiday settings scope behavior", () => {
 			teamId: "team-other-org",
 		});
 
-		expect(teamResult).toMatchObject({ success: false, code: "NotFoundError", error: "Team not found" });
+		expect(teamResult).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+			error: "Team not found",
+		});
 
 		harness.database.state.selects = [[{ id: "category-org" }], []];
 
@@ -221,7 +230,9 @@ describe("holiday settings scope behavior", () => {
 
 		harness.database.state.updateReturn = [];
 
-		const missingResult = await actions.deleteHolidayCategoryAssignment("category-assignment-other-org");
+		const missingResult = await actions.deleteHolidayCategoryAssignment(
+			"category-assignment-other-org",
+		);
 
 		expect(missingResult).toMatchObject({
 			success: false,
@@ -284,7 +295,11 @@ describe("holiday settings access", () => {
 		],
 		[
 			"createHolidayAssignment",
-			() => actions.createHolidayAssignment({ holidayId: "holiday-org", assignmentType: "organization" }),
+			() =>
+				actions.createHolidayAssignment({
+					holidayId: "holiday-org",
+					assignmentType: "organization",
+				}),
 		],
 		["deleteHolidayAssignment", () => actions.deleteHolidayAssignment("assignment-org")],
 	])("refuses %s to a scoped manager", async (_name, call) => {

@@ -45,7 +45,10 @@ describe("dismissWorkingWeekNoticeAction (#990)", () => {
 	it("dismisses the notice for the caller's active organization through the action's database", async () => {
 		mocks.caller = orgAdmin;
 
-		await expect(dismissWorkingWeekNoticeAction()).resolves.toEqual({ success: true, data: undefined });
+		await expect(dismissWorkingWeekNoticeAction()).resolves.toEqual({
+			success: true,
+			data: undefined,
+		});
 		expect(mocks.dismissWorkingWeekNotice).toHaveBeenCalledWith(mocks.scopedDb, {
 			organizationId: "org-1",
 			actorUserId: "user-1",

@@ -35,7 +35,10 @@ function reviewSchema(commit: boolean) {
 			});
 			return z.NEVER;
 		}
-		return { ...parsed.data, fingerprint: typeof fingerprint === "string" ? fingerprint : undefined };
+		return {
+			...parsed.data,
+			fingerprint: typeof fingerprint === "string" ? fingerprint : undefined,
+		};
 	});
 }
 

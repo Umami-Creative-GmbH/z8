@@ -159,8 +159,7 @@ export function ChangePolicyAssignmentDialog({
 	});
 
 	const createMutation = useMutation({
-		mutationFn: (input: CreateAssignmentInput) =>
-			createChangePolicyAssignment(input),
+		mutationFn: (input: CreateAssignmentInput) => createChangePolicyAssignment(input),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({

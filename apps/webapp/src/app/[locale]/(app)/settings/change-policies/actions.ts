@@ -500,7 +500,10 @@ export const createChangePolicyAssignment = organizationAction(
 						.select({ id: changePolicy.id })
 						.from(changePolicy)
 						.where(
-							and(eq(changePolicy.id, data.policyId), eq(changePolicy.organizationId, organizationId)),
+							and(
+								eq(changePolicy.id, data.policyId),
+								eq(changePolicy.organizationId, organizationId),
+							),
 						)
 						.limit(1);
 					if (!policy) return { invalid: "policyId" as const };
@@ -551,7 +554,9 @@ export const createChangePolicyAssignment = organizationAction(
 				);
 			}
 			if ("former" in created) {
-				return yield* Effect.fail(formerEmployeeRefusal({ field: "employeeId" }, created.former ?? []));
+				return yield* Effect.fail(
+					formerEmployeeRefusal({ field: "employeeId" }, created.former ?? []),
+				);
 			}
 
 			return { id: created.id };

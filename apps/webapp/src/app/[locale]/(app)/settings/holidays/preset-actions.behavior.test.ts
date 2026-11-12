@@ -26,7 +26,14 @@ function presetAssignment(
 		effectiveUntil: null,
 		isActive: true,
 		createdAt: new Date("2026-01-01T00:00:00.000Z"),
-		preset: { id: `preset-${id}`, name: id, year: 2026, color: null, countryCode: "DE", stateCode: null },
+		preset: {
+			id: `preset-${id}`,
+			name: id,
+			year: 2026,
+			color: null,
+			countryCode: "DE",
+			stateCode: null,
+		},
 		team: null,
 		employee: null,
 	};
@@ -114,7 +121,11 @@ const orgAdmin: StubCaller = {
 	membershipRole: "admin",
 	employee: { id: "admin-1", role: "admin", former: false },
 };
-const ownerWithoutEmployee: StubCaller = { ...scopedManager, membershipRole: "owner", employee: null };
+const ownerWithoutEmployee: StubCaller = {
+	...scopedManager,
+	membershipRole: "owner",
+	employee: null,
+};
 
 const presetDetails = {
 	name: "Bavaria",
@@ -366,7 +377,10 @@ describe("holiday preset settings access", () => {
 			() => actions.updateHolidayPreset({ presetId: PRESET_ID, data: presetDetails }),
 		],
 		["deleteHolidayPreset", () => actions.deleteHolidayPreset(PRESET_ID)],
-		["addHolidayToPreset", () => actions.addHolidayToPreset({ presetId: PRESET_ID, data: presetHoliday })],
+		[
+			"addHolidayToPreset",
+			() => actions.addHolidayToPreset({ presetId: PRESET_ID, data: presetHoliday }),
+		],
 		[
 			"bulkAddHolidaysToPreset",
 			() => actions.bulkAddHolidaysToPreset({ presetId: PRESET_ID, holidays: [presetHoliday] }),

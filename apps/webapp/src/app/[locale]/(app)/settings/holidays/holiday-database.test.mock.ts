@@ -24,8 +24,10 @@ export function holidayTestDatabase(query: Record<string, unknown>) {
 			{
 				get(_target, property) {
 					if (property === "then") {
-						return (onFulfilled: (value: unknown) => unknown, onRejected?: (error: unknown) => unknown) =>
-							Promise.resolve().then(resolve).then(onFulfilled, onRejected);
+						return (
+							onFulfilled: (value: unknown) => unknown,
+							onRejected?: (error: unknown) => unknown,
+						) => Promise.resolve().then(resolve).then(onFulfilled, onRejected);
 					}
 					return (...args: unknown[]) => {
 						if (property === "where") onWhere?.(args[0]);

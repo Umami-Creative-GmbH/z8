@@ -271,8 +271,7 @@ function useWorkPolicyForm({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (data: CreateWorkPolicyInput) =>
-			createWorkPolicy(data),
+		mutationFn: (data: CreateWorkPolicyInput) => createWorkPolicy(data),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.workPolicies.created", "Policy created"));

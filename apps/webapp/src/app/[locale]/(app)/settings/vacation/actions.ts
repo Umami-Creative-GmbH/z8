@@ -184,7 +184,10 @@ const STATUTORY_MINIMUM_DAYS_MESSAGES = {
 	above_annual_days: "The statutory minimum cannot exceed the policy's annual days",
 } as const;
 
-function rejectInvalidStatutoryMinimumDays(statutoryMinimumDays: string, defaultAnnualDays: string) {
+function rejectInvalidStatutoryMinimumDays(
+	statutoryMinimumDays: string,
+	defaultAnnualDays: string,
+) {
 	const problem = checkStatutoryMinimumDays(statutoryMinimumDays, defaultAnnualDays);
 	if (!problem) return Effect.void;
 	return Effect.fail(
@@ -294,7 +297,11 @@ function absenceCategoryNotFound(categoryId: string) {
 
 function policyNotFound(policyId: string) {
 	return Effect.fail(
-		new NotFoundError({ message: "Policy not found", entityType: "vacation_policy", entityId: policyId }),
+		new NotFoundError({
+			message: "Policy not found",
+			entityType: "vacation_policy",
+			entityId: policyId,
+		}),
 	);
 }
 
@@ -674,7 +681,13 @@ export const createVacationAdjustmentAction = organizationAction(
 					}),
 				);
 			}
-			yield* findManagedEmployee(actor, organizationId, employeeId, "vacation_adjustment", "create");
+			yield* findManagedEmployee(
+				actor,
+				organizationId,
+				employeeId,
+				"vacation_adjustment",
+				"create",
+			);
 			const dbService = yield* DatabaseService;
 
 			const adjustment = yield* dbService
@@ -744,7 +757,10 @@ export const getVacationPolicies = organizationAction(
 						eq(vacationAllowance.isActive, true),
 					),
 					with: { creator: true },
-					orderBy: (table, { desc: descOrder, asc }) => [descOrder(table.startDate), asc(table.name)],
+					orderBy: (table, { desc: descOrder, asc }) => [
+						descOrder(table.startDate),
+						asc(table.name),
+					],
 				}),
 			);
 		}),
@@ -766,12 +782,20 @@ export const getAbsenceCategoriesForSettings = organizationAction(
 						],
 					}),
 				)
-				.pipe(Effect.mapError(dbError("Failed to fetch absence categories", "select", "absence_category")));
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to fetch absence categories", "select", "absence_category"),
+					),
+				);
 		}),
 );
 
 export const createAbsenceCategory = organizationAction(
-	{ name: "vacation.createAbsenceCategory", requires: "orgAdmin", schema: absenceCategoryWriteSchema },
+	{
+		name: "vacation.createAbsenceCategory",
+		requires: "orgAdmin",
+		schema: absenceCategoryWriteSchema,
+	},
 	({ organizationId, input: data }) =>
 		Effect.gen(function* () {
 			const normalized = yield* normalizedAbsenceCategory(data);
@@ -798,7 +822,11 @@ export const createAbsenceCategory = organizationAction(
 						})
 						.returning(),
 				)
-				.pipe(Effect.mapError(dbError("Failed to create absence category", "insert", "absence_category")));
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to create absence category", "insert", "absence_category"),
+					),
+				);
 
 			return created;
 		}),
@@ -843,7 +871,10 @@ export const updateAbsenceCategory = organizationAction(
 							organizationId,
 						);
 
-						if (hasAbsenceReferences && hasOperationalAbsenceCategoryChanges(category, normalized)) {
+						if (
+							hasAbsenceReferences &&
+							hasOperationalAbsenceCategoryChanges(category, normalized)
+						) {
 							return { type: "conflict" as const };
 						}
 
@@ -879,7 +910,11 @@ export const updateAbsenceCategory = organizationAction(
 						return { type: "updated" as const, category: updated };
 					}),
 				)
-				.pipe(Effect.mapError(dbError("Failed to update absence category", "update", "absence_category")));
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to update absence category", "update", "absence_category"),
+					),
+				);
 
 			if (updateResult.type === "not_found") {
 				return yield* absenceCategoryNotFound(categoryId);
@@ -1017,7 +1052,11 @@ export const deleteAbsenceCategory = organizationAction(
 						return { type: "deleted" as const };
 					}),
 				)
-				.pipe(Effect.mapError(dbError("Failed to delete absence category", "delete", "absence_category")));
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to delete absence category", "delete", "absence_category"),
+					),
+				);
 
 			if (deleteResult.type === "not_found") {
 				return yield* absenceCategoryNotFound(categoryId);
@@ -1102,7 +1141,11 @@ export type EmployeeAdjustmentSummary = VacationAdjustmentSums & {
  * reader adds (#1105, #1106) and the history of manual adjustments.
  */
 export const getEmployeeAdjustmentSummary = organizationAction(
-	{ name: "vacation.employeeAdjustmentSummary", requires: "scopedManager", schema: employeeYearSchema },
+	{
+		name: "vacation.employeeAdjustmentSummary",
+		requires: "scopedManager",
+		schema: employeeYearSchema,
+	},
 	({ actor, organizationId, input: { employeeId, year } }) =>
 		Effect.gen(function* () {
 			yield* findManagedEmployee(actor, organizationId, employeeId, "vacation_adjustment", "read");

@@ -191,13 +191,20 @@ export const getHolidays = organizationAction(
 			const visibleHolidayIds = yield* visibleScopedHolidayIds(organizationId, scope);
 
 			if (visibleHolidayIds && visibleHolidayIds.length === 0) {
-				return { data: [], total: 0, hasMore: false } satisfies PaginatedResponse<HolidayWithCategory>;
+				return {
+					data: [],
+					total: 0,
+					hasMore: false,
+				} satisfies PaginatedResponse<HolidayWithCategory>;
 			}
 
 			const dbService = yield* DatabaseService;
 			const holidays = (yield* dbService
 				.query("getHolidays", () => {
-					const conditions = [eq(holiday.organizationId, organizationId), eq(holiday.isActive, true)];
+					const conditions = [
+						eq(holiday.organizationId, organizationId),
+						eq(holiday.isActive, true),
+					];
 					if (visibleHolidayIds) {
 						conditions.push(inArray(holiday.id, visibleHolidayIds));
 					}
@@ -439,7 +446,10 @@ export const deleteCategory = organizationAction(
 
 function withAuthNames<
 	T extends {
-		employee: { id: string; user: { firstName: string | null; lastName: string | null } | null } | null;
+		employee: {
+			id: string;
+			user: { firstName: string | null; lastName: string | null } | null;
+		} | null;
 	},
 >(assignment: T) {
 	return {
@@ -547,12 +557,18 @@ export const getHolidayCategoryAssignments = organizationAction(
 );
 
 function teamNotFound(teamId: string) {
-	return Effect.fail(new NotFoundError({ message: "Team not found", entityType: "team", entityId: teamId }));
+	return Effect.fail(
+		new NotFoundError({ message: "Team not found", entityType: "team", entityId: teamId }),
+	);
 }
 
 function employeeNotFound(employeeId: string) {
 	return Effect.fail(
-		new NotFoundError({ message: "Employee not found", entityType: "employee", entityId: employeeId }),
+		new NotFoundError({
+			message: "Employee not found",
+			entityType: "employee",
+			entityId: employeeId,
+		}),
 	);
 }
 
@@ -616,7 +632,10 @@ export const createHolidayCategoryAssignment = organizationAction(
 							.select({ id: employee.id })
 							.from(employee)
 							.where(
-								and(eq(employee.id, assignmentEmployeeId), eq(employee.organizationId, organizationId)),
+								and(
+									eq(employee.id, assignmentEmployeeId),
+									eq(employee.organizationId, organizationId),
+								),
 							)
 							.limit(1),
 				);

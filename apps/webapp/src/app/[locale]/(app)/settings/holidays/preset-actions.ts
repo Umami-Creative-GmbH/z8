@@ -20,7 +20,10 @@ import {
 } from "@/lib/holidays/validation";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { filterAssignmentsForManagerHolidayScope, holidayScopeOf } from "./holiday-scope";
-import { assignmentRangesOverlap, buildPresetLocationConflictConditions } from "./preset-scheduling";
+import {
+	assignmentRangesOverlap,
+	buildPresetLocationConflictConditions,
+} from "./preset-scheduling";
 
 // Type definitions for return values
 type HolidayPresetListItem = {
@@ -125,7 +128,11 @@ function dbError(message: string, operation: string, table: string) {
 
 function presetNotFound(presetId: string) {
 	return Effect.fail(
-		new NotFoundError({ message: "Preset not found", entityType: "holiday_preset", entityId: presetId }),
+		new NotFoundError({
+			message: "Preset not found",
+			entityType: "holiday_preset",
+			entityId: presetId,
+		}),
 	);
 }
 
@@ -136,7 +143,9 @@ function findPreset(presetId: string, organizationId: string) {
 			dbService.db
 				.select()
 				.from(holidayPreset)
-				.where(and(eq(holidayPreset.id, presetId), eq(holidayPreset.organizationId, organizationId)))
+				.where(
+					and(eq(holidayPreset.id, presetId), eq(holidayPreset.organizationId, organizationId)),
+				)
 				.limit(1),
 		);
 		return preset ?? (yield* presetNotFound(presetId));
@@ -152,7 +161,10 @@ function refuseForeignCategory(categoryId: string | undefined, organizationId: s
 				.select({ id: holidayCategory.id })
 				.from(holidayCategory)
 				.where(
-					and(eq(holidayCategory.id, categoryId), eq(holidayCategory.organizationId, organizationId)),
+					and(
+						eq(holidayCategory.id, categoryId),
+						eq(holidayCategory.organizationId, organizationId),
+					),
 				)
 				.limit(1),
 		);
@@ -297,7 +309,9 @@ export const getHolidayPresets = organizationAction(
 						}),
 					);
 				})
-				.pipe(Effect.mapError(dbError("Failed to fetch holiday presets", "select", "holiday_preset")));
+				.pipe(
+					Effect.mapError(dbError("Failed to fetch holiday presets", "select", "holiday_preset")),
+				);
 		}),
 );
 
@@ -393,7 +407,9 @@ export const createHolidayPreset = organizationAction(
 						.returning();
 					return preset;
 				})
-				.pipe(Effect.mapError(dbError("Failed to create holiday preset", "insert", "holiday_preset")));
+				.pipe(
+					Effect.mapError(dbError("Failed to create holiday preset", "insert", "holiday_preset")),
+				);
 		}),
 );
 
@@ -430,11 +446,15 @@ export const updateHolidayPreset = organizationAction(
 							isActive: data.isActive ?? true,
 							updatedBy: actor.userId,
 						})
-						.where(and(eq(holidayPreset.id, presetId), eq(holidayPreset.organizationId, organizationId)))
+						.where(
+							and(eq(holidayPreset.id, presetId), eq(holidayPreset.organizationId, organizationId)),
+						)
 						.returning();
 					return preset;
 				})
-				.pipe(Effect.mapError(dbError("Failed to update holiday preset", "update", "holiday_preset")));
+				.pipe(
+					Effect.mapError(dbError("Failed to update holiday preset", "update", "holiday_preset")),
+				);
 		}),
 );
 
@@ -465,7 +485,9 @@ export const deleteHolidayPreset = organizationAction(
 						)
 						.returning({ id: holidayPreset.id }),
 				)
-				.pipe(Effect.mapError(dbError("Failed to delete holiday preset", "delete", "holiday_preset")));
+				.pipe(
+					Effect.mapError(dbError("Failed to delete holiday preset", "delete", "holiday_preset")),
+				);
 
 			if (deletedRows.length === 0) {
 				return yield* Effect.fail(
@@ -530,7 +552,11 @@ export const addHolidayToPreset = organizationAction(
  * Bulk add holidays to a preset
  */
 export const bulkAddHolidaysToPreset = organizationAction(
-	{ name: "holidayPresets.bulkAddHolidays", requires: "orgAdmin", schema: bulkPresetHolidaysSchema },
+	{
+		name: "holidayPresets.bulkAddHolidays",
+		requires: "orgAdmin",
+		schema: bulkPresetHolidaysSchema,
+	},
 	({ organizationId, input: { presetId, holidays, categoryId } }) =>
 		Effect.gen(function* () {
 			yield* findPreset(presetId, organizationId);
@@ -599,7 +625,9 @@ export const deleteHolidayFromPreset = organizationAction(
 			// Delete (hard delete since it's a preset holiday)
 			yield* dbService
 				.query("deleteHoliday", async () => {
-					await dbService.db.delete(holidayPresetHoliday).where(eq(holidayPresetHoliday.id, holidayId));
+					await dbService.db
+						.delete(holidayPresetHoliday)
+						.where(eq(holidayPresetHoliday.id, holidayId));
 				})
 				.pipe(
 					Effect.mapError(

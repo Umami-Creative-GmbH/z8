@@ -97,7 +97,12 @@ const orgMember: StubCaller = {
 	...scopedManager,
 	employee: { id: "employee-manager-1", role: "employee", former: false },
 };
-const owner: StubCaller = { ...scopedManager, userId: "user-owner-1", membershipRole: "owner", employee: null };
+const owner: StubCaller = {
+	...scopedManager,
+	userId: "user-owner-1",
+	membershipRole: "owner",
+	employee: null,
+};
 
 function assignment(
 	id: string,
@@ -211,7 +216,13 @@ describe("work category settings manager scope", () => {
 		state.assignmentRows = [assignment("assignment-org", "set-org", "organization")];
 		state.selectQueue = [
 			[
-				{ id: "set-org", name: "Org Default", description: null, isActive: true, createdAt: new Date() },
+				{
+					id: "set-org",
+					name: "Org Default",
+					description: null,
+					isActive: true,
+					createdAt: new Date(),
+				},
 				{
 					id: "set-team-managed",
 					name: "Managed Team Set",
@@ -241,7 +252,15 @@ describe("work category settings manager scope", () => {
 		state.selectQueue = [
 			[{ workCategoryId: "category-team" }],
 			[{ workCategoryId: "category-project" }],
-			[{ id: "set-other", organizationId: "org-1", isActive: true, name: "Other Set", description: null }],
+			[
+				{
+					id: "set-other",
+					organizationId: "org-1",
+					isActive: true,
+					name: "Other Set",
+					description: null,
+				},
+			],
 			[],
 		];
 
@@ -263,7 +282,10 @@ describe("work category settings manager scope", () => {
 				},
 			],
 			[{ categoryId: "category-team", setId: "set-team-managed" }],
-			[{ ...category("category-team"), sortOrder: 0 }, { ...category("category-other"), sortOrder: 1 }],
+			[
+				{ ...category("category-team"), sortOrder: 0 },
+				{ ...category("category-other"), sortOrder: 1 },
+			],
 		];
 
 		const allowed = await actions.getWorkCategorySetDetail("set-team-managed");
@@ -289,7 +311,11 @@ describe("work category settings manager scope", () => {
 
 	it("keeps owner parity with org admins for category reads", async () => {
 		state.caller = owner;
-		state.selectQueue = [[category("category-org"), category("category-other")], [{ count: 1 }], [{ count: 0 }]];
+		state.selectQueue = [
+			[category("category-org"), category("category-other")],
+			[{ count: 1 }],
+			[{ count: 0 }],
+		];
 
 		const result = await actions.getOrganizationCategories();
 
@@ -306,7 +332,10 @@ describe("work category settings manager scope", () => {
 		state.caller = owner;
 		state.selectQueue = [[]];
 
-		const result = await actions.createOrganizationCategory({ name: "Owner Category", factor: "1.00" });
+		const result = await actions.createOrganizationCategory({
+			name: "Owner Category",
+			factor: "1.00",
+		});
 
 		expect(result).toEqual({ success: true, data: { id: "category-created" } });
 		expect(state.insertValues).toEqual([

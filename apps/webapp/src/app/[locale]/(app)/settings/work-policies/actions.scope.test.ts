@@ -137,7 +137,11 @@ const presetInput = {
 	description: "Warehouse hours",
 	scheduleEnabled: true,
 	regulationEnabled: false,
-	schedule: { scheduleCycle: "weekly" as const, workingDaysPreset: "weekdays" as const, hoursPerCycle: "40" },
+	schedule: {
+		scheduleCycle: "weekly" as const,
+		workingDaysPreset: "weekdays" as const,
+		hoursPerCycle: "40",
+	},
 };
 
 const policyInput = {
@@ -164,7 +168,9 @@ describe("work policy settings scope actions", () => {
 		vi.clearAllMocks();
 		state.caller = scopedManager;
 		state.managedEmployeeIds = new Set(["employee-1"]);
-		state.workPolicies = [{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true }];
+		state.workPolicies = [
+			{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true },
+		];
 		state.workPolicyQueue = [];
 		state.workPolicyPresets = [];
 		state.workPolicyPresetQueue = [];
@@ -195,7 +201,11 @@ describe("work policy settings scope actions", () => {
 			employeeId: "employee-1",
 		});
 
-		expect(result).toMatchObject({ success: false, code: "ValidationError", refusal: "former_employee" });
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "former_employee",
+		});
 		expect(state.insertValues).toHaveLength(0);
 	});
 
@@ -392,7 +402,11 @@ describe("work policy settings scope actions", () => {
 			presence: null,
 		};
 		state.workPolicyQueue = [null, created];
-		state.insertQueue = [[{ id: "policy-from-preset" }], [{ id: "regulation-1" }], [{ id: "break-rule-1" }]];
+		state.insertQueue = [
+			[{ id: "policy-from-preset" }],
+			[{ id: "regulation-1" }],
+			[{ id: "break-rule-1" }],
+		];
 
 		const result = await actions.createWorkPolicyFromPreset({
 			presetId: "system-preset",
@@ -415,7 +429,9 @@ describe("work policy settings scope actions", () => {
 			name: "Reviewed Policy",
 			description: "Reviewed description",
 		});
-		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({ organizationId: "org-1" });
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
 	});
 
 	it("rejects malformed reviewed preset break option data", async () => {
@@ -480,7 +496,11 @@ describe("work policy settings scope actions", () => {
 				isActive: true,
 				breakRulesJson: {
 					rules: [
-						{ workingMinutesThreshold: 360, requiredBreakMinutes: 30, options: [{ splitCount: "one" }] },
+						{
+							workingMinutesThreshold: 360,
+							requiredBreakMinutes: 30,
+							options: [{ splitCount: "one" }],
+						},
 					],
 				},
 			},
@@ -548,7 +568,9 @@ describe("work policy settings scope actions", () => {
 
 		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
 		expect(state.insertValues[0]).toMatchObject({ organizationId: "org-1", createdBy: "user-1" });
-		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({ organizationId: "org-1" });
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
 	});
 
 	it("refuses a manager an organization-wide assignment", async () => {
@@ -563,13 +585,20 @@ describe("work policy settings scope actions", () => {
 
 	it("marks organization work balances dirty after deleting a work policy assignment", async () => {
 		state.assignmentQueue = [
-			{ id: "assignment-1", organizationId: "org-1", assignmentType: "employee", employeeId: "employee-1" },
+			{
+				id: "assignment-1",
+				organizationId: "org-1",
+				assignmentType: "employee",
+				employeeId: "employee-1",
+			},
 		];
 
 		const result = await actions.deleteWorkPolicyAssignment("assignment-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({ organizationId: "org-1" });
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
 	});
 
 	it("marks organization work balances dirty after schedule-affecting work policy updates", async () => {
@@ -596,7 +625,9 @@ describe("work policy settings scope actions", () => {
 		});
 
 		expect(result).toMatchObject({ success: true });
-		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({ organizationId: "org-1" });
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
 	});
 
 	describe("latest clock-in on detailed schedule days", () => {
@@ -630,7 +661,10 @@ describe("work policy settings scope actions", () => {
 				},
 			});
 		const storedDays = () =>
-			state.insertValues.find(Array.isArray) as Array<{ dayOfWeek: string; latestClockIn: string | null }>;
+			state.insertValues.find(Array.isArray) as Array<{
+				dayOfWeek: string;
+				latestClockIn: string | null;
+			}>;
 
 		beforeEach(() => {
 			state.caller = orgAdmin;
@@ -646,7 +680,9 @@ describe("work policy settings scope actions", () => {
 			]);
 
 			expect(result).toMatchObject({ success: true });
-			expect(Object.fromEntries(storedDays().map((row) => [row.dayOfWeek, row.latestClockIn]))).toEqual({
+			expect(
+				Object.fromEntries(storedDays().map((row) => [row.dayOfWeek, row.latestClockIn])),
+			).toEqual({
 				monday: "09:00",
 				tuesday: null,
 				saturday: null,
@@ -668,7 +704,9 @@ describe("work policy settings scope actions", () => {
 		const result = await actions.deleteWorkPolicy("policy-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({ organizationId: "org-1" });
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
 	});
 
 	it("marks organization work balances dirty after changing the default work policy", async () => {
@@ -678,7 +716,9 @@ describe("work policy settings scope actions", () => {
 		const result = await actions.setDefaultWorkPolicy("policy-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({ organizationId: "org-1" });
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
 	});
 
 	it("reads another organization's policy as not found", async () => {
@@ -744,7 +784,9 @@ describe("work policy settings scope actions", () => {
 	});
 
 	it("looks up effective assignments using date predicates and null effective dates as fallback", async () => {
-		state.employeeQueue = [{ id: "employee-1", organizationId: "org-1", teamId: "team-1", team: null }];
+		state.employeeQueue = [
+			{ id: "employee-1", organizationId: "org-1", teamId: "team-1", team: null },
+		];
 
 		const result = await actions.getEmployeeEffectiveScheduleDetails("employee-1");
 
@@ -833,7 +875,10 @@ describe("work policy settings access", () => {
 		],
 		["deleteWorkPolicyAssignment", () => actions.deleteWorkPolicyAssignment("assignment-1")],
 		["getWorkPolicyPresets", () => actions.getWorkPolicyPresets()],
-		["getEmployeeEffectiveScheduleDetails", () => actions.getEmployeeEffectiveScheduleDetails("employee-1")],
+		[
+			"getEmployeeEffectiveScheduleDetails",
+			() => actions.getEmployeeEffectiveScheduleDetails("employee-1"),
+		],
 		["getTeamsForAssignment", () => actions.getTeamsForAssignment()],
 		["getEmployeesForAssignment", () => actions.getEmployeesForAssignment()],
 	])("refuses %s to an org member", async (_name, call) => {
@@ -844,7 +889,10 @@ describe("work policy settings access", () => {
 
 	it.each([
 		["createWorkPolicy", () => actions.createWorkPolicy(policyInput)],
-		["updateWorkPolicy", () => actions.updateWorkPolicy({ policyId: "policy-1", data: { name: "X" } })],
+		[
+			"updateWorkPolicy",
+			() => actions.updateWorkPolicy({ policyId: "policy-1", data: { name: "X" } }),
+		],
 		["deleteWorkPolicy", () => actions.deleteWorkPolicy("policy-1")],
 		["setDefaultWorkPolicy", () => actions.setDefaultWorkPolicy("policy-1")],
 		["duplicateWorkPolicy", () => actions.duplicateWorkPolicy("policy-1")],
