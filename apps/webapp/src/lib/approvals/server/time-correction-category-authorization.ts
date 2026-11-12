@@ -8,6 +8,7 @@ import {
 	workCategorySetAssignment,
 	workCategorySetCategory,
 } from "@/db/schema";
+import { timeCorrectionRoutingTeam } from "@/lib/approvals/route-preview/rules";
 import { compareInstants, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import { instantFromTimeCorrectionBoundary } from "@/lib/time-tracking/time-correction-temporal";
@@ -55,20 +56,16 @@ export async function lockTrustedTimeCorrectionEmployeeTeamId(input: {
 				.for("update")
 		: [];
 
-	return input.employeeTeamId &&
-		lockedMemberships.some(
-			(membership) =>
-				membership.employeeId === input.employeeId &&
-				membership.organizationId === input.organizationId &&
-				membership.teamId === input.employeeTeamId,
-		) &&
-		lockedTeams.some(
-			(currentTeam) =>
-				currentTeam.id === input.employeeTeamId &&
-				currentTeam.organizationId === input.organizationId,
-		)
-		? input.employeeTeamId
-		: null;
+	// The rule the approval route preview applies too (#1603).
+	return timeCorrectionRoutingTeam({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		storedTeamId: input.employeeTeamId,
+		memberships: lockedMemberships.filter(
+			(membership) => membership.organizationId === input.organizationId,
+		),
+		teams: lockedTeams,
+	});
 }
 
 export async function authorizeTimeCorrectionCategoryChange(input: {

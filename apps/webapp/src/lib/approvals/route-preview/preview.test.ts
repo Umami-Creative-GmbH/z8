@@ -426,6 +426,35 @@ describe("approval route preview: time corrections", () => {
 		});
 	});
 
+	it("routes by the stored team only when it is also one of the requester's team memberships", async () => {
+		const org = organization();
+		const manager = org.person({ role: "manager" });
+		const fieldLead = org.person({ role: "manager" });
+		const subject = org.person();
+		org.managedBy(subject.id, manager.id);
+		const field = org.team();
+		// Stored on the employee, but not a membership.
+		for (const row of [...org.snapshot.employees, ...org.snapshot.stageDirectory.employees]) {
+			if (row.id === subject.id) row.teamId = field;
+		}
+		const policy = org.policy({
+			name: "Field corrections",
+			approvalType: "time_entry",
+			stages: [{ approverType: "specific_employee", approverEmployeeId: fieldLead.id }],
+		});
+		policy.conditions.push({ conditionType: "team", operator: "equals", value: field });
+		org.snapshot.legacyPolicies.push(policy);
+
+		expect(approversOf(await route(org.snapshot, employee(subject), "time_correction"))).toEqual([
+			manager.id,
+		]);
+
+		org.joinTeam(subject.id, field);
+		expect(approversOf(await route(org.snapshot, employee(subject), "time_correction"))).toEqual([
+			fieldLead.id,
+		]);
+	});
+
 	it("is unroutable on a legacy policy whose named approver left: legacy has no stand-in", async () => {
 		const org = organization();
 		const manager = org.person({ role: "manager" });

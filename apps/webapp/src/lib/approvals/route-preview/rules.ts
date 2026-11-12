@@ -135,6 +135,30 @@ export function timeCorrectionDirectChange(
 	return null;
 }
 
+/**
+ * The team a time correction routes by: the requester's stored team, only when it is also one of
+ * their team memberships and a team of the organization. Otherwise none. The rows are the
+ * organization's.
+ */
+export function timeCorrectionRoutingTeam(input: {
+	organizationId: string;
+	employeeId: string;
+	storedTeamId: string | null;
+	memberships: ReadonlyArray<{ employeeId: string; teamId: string }>;
+	teams: ReadonlyArray<{ id: string; organizationId: string }>;
+}): string | null {
+	const { storedTeamId } = input;
+	if (!storedTeamId) return null;
+	const isMember = input.memberships.some(
+		(membership) =>
+			membership.employeeId === input.employeeId && membership.teamId === storedTeamId,
+	);
+	const isTeam = input.teams.some(
+		(team) => team.id === storedTeamId && team.organizationId === input.organizationId,
+	);
+	return isMember && isTeam ? storedTeamId : null;
+}
+
 // --- Expense report --------------------------------------------------------------------------
 
 /**

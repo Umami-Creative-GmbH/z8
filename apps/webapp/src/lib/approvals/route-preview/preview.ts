@@ -39,6 +39,7 @@ import {
 	manualWorkChangePolicyRule,
 	shiftRequestDeciders,
 	timeCorrectionDirectChange,
+	timeCorrectionRoutingTeam,
 } from "./rules";
 import {
 	type ApprovalRouteCanonicalKind,
@@ -557,9 +558,16 @@ export async function routeApprovalRequesters(
 
 	async function timeCorrectionRoute(requester: Requester): Promise<ApprovalRoute> {
 		const direct = timeCorrectionDirectChange(changePolicyOf(requester));
+		const teamId = timeCorrectionRoutingTeam({
+			organizationId,
+			employeeId: requester.id,
+			storedTeamId: requester.teamId,
+			memberships: legacyDirectory.teamMemberships,
+			teams: legacyDirectory.teams,
+		});
 		return routeTimeKind(
 			"time_correction",
-			requester,
+			{ ...requester, teamId },
 			direct ? [{ code: "direct_change", cause: direct }] : [],
 		);
 	}
