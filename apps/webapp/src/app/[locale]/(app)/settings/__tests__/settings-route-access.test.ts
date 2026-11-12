@@ -981,10 +981,10 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "organization/page.tsx"), "utf8"),
 		);
 
-		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
-		expect(source.includes('accessTier !== "orgAdmin"')).toBe(true);
+		// The shared settings access resolver guards the page and feeds its controls (#1623).
+		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
+		expect(source.includes("settingsAccess={settingsAccess}")).toBe(true);
 		expect(source.includes("loadTeamSettingsPageData(")).toBe(false);
-		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 	});
 
 	it("derives team detail capabilities from scoped team data instead of employee-only checks", () => {

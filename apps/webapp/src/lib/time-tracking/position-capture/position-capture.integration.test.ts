@@ -473,7 +473,7 @@ describe("position capture settings and consent on PostgreSQL", () => {
 
 		expect(
 			await own.agreeToPositionNoticeAction({ noticeId: first.notice?.id ?? "" }),
-		).toMatchObject({ success: false, code: "notice_changed" });
+		).toMatchObject({ success: false, refusal: "notice_changed" });
 		expect(await consentRows(ids.field)).toEqual([]);
 	});
 

@@ -764,10 +764,11 @@ describe("personal data export pipeline (#1165)", () => {
 			code: "AuthorizationError",
 		});
 
+		// A former employee has no settings access (ADR 0002); the page shows "unavailable".
 		signIn("former");
-		expect(await getMyDataOverview()).toEqual({
-			success: true,
-			data: { status: "unavailable" },
+		expect(await getMyDataOverview()).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
 		});
 		expect(await requestMyPersonalDataExport()).toMatchObject({
 			success: false,

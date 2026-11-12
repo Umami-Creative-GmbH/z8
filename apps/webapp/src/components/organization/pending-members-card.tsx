@@ -61,6 +61,10 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDateOnly } from "@/lib/datetime/format";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import {
@@ -70,7 +74,8 @@ import {
 
 interface PendingMembersCardProps {
 	organizationId: string;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 const NO_TEAM_VALUE = "none";
@@ -383,7 +388,7 @@ function PendingMemberDialogStack({
 
 export function PendingMembersCard({
 	organizationId,
-	currentMemberRole,
+	settingsAccess,
 }: PendingMembersCardProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -400,7 +405,7 @@ export function PendingMembersCard({
 	>({});
 
 	const canManage =
-		currentMemberRole === "admin" || currentMemberRole === "owner";
+		meetsSettingsAccess(settingsAccess, "orgAdmin");
 
 	// Fetch pending members
 	const { data: pendingMembersResult, isLoading } = useQuery({
