@@ -197,6 +197,18 @@ describe("location reads", () => {
 		expect(db.query.teamPermissions.findMany).not.toHaveBeenCalled();
 	});
 
+	it("lists every location for a workforce admin, whose scope is the whole organization", async () => {
+		state.caller = {
+			...scopedManager,
+			employee: { id: "employee-1", role: "admin", former: false },
+		};
+
+		const result = await getLocations();
+
+		expect(result.success && result.data.map((row) => row.id)).toEqual([NORTH, SOUTH]);
+		expect(db.query.teamPermissions.findMany).not.toHaveBeenCalled();
+	});
+
 	it("refuses an org member, one level below a scoped manager", async () => {
 		state.caller = member;
 

@@ -19,9 +19,22 @@ export type ManagedScope =
 const managerEmployee = alias(employee, "manager_employee");
 
 /**
- * The whole organization for an org admin and for a workforce admin (employee
- * role admin without an org-admin membership; ADR 0002), else the scoped
- * manager's reports and teams.
+ * True for an org admin and for a workforce admin (employee role admin without
+ * an org-admin membership; ADR 0002): their reach is the whole organization.
+ */
+export function reachesWholeOrganization(input: {
+	settingsAccess: SettingsAccess;
+	employee: { role: EmployeeRole } | null;
+}): boolean {
+	return (
+		meetsSettingsAccess(input.settingsAccess, "orgAdmin") ||
+		(input.settingsAccess === "scopedManager" && input.employee?.role === "admin")
+	);
+}
+
+/**
+ * The whole organization for an org admin and for a workforce admin, else the
+ * scoped manager's reports and teams.
  */
 export function loadManagedScope(input: {
 	organizationId: string;
@@ -29,10 +42,7 @@ export function loadManagedScope(input: {
 	employee: { id: string; role: EmployeeRole } | null;
 }) {
 	return Effect.gen(function* () {
-		if (
-			meetsSettingsAccess(input.settingsAccess, "orgAdmin") ||
-			(input.settingsAccess === "scopedManager" && input.employee?.role === "admin")
-		) {
+		if (reachesWholeOrganization(input)) {
 			return { organizationWide: true } as ManagedScope;
 		}
 		const managerId = input.employee?.id;

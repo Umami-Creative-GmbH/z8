@@ -3,11 +3,11 @@ import { Effect } from "effect";
 import { employee, subareaEmployee, teamPermissions } from "@/db/schema";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { OrganizationActor } from "@/lib/organization-action/organization-action";
-import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { reachesWholeOrganization } from "@/lib/organization-action/managed-scope";
 
 /**
  * The locations and subareas a location settings reader reaches: an org admin
- * the whole organization; a scoped manager whose employee role is manager the
+ * and a workforce admin the whole organization (as `managedScope()`); a scoped manager whose employee role is manager the
  * subareas they work in, and the locations and subareas the members of the teams
  * whose settings they manage are assigned to. Anyone else reaches none.
  */
@@ -27,7 +27,7 @@ const NO_LOCATIONS: LocationScope = {
 
 export function loadLocationScope(actor: OrganizationActor, organizationId: string) {
 	return Effect.gen(function* () {
-		if (meetsSettingsAccess(actor.settingsAccess, "orgAdmin")) {
+		if (reachesWholeOrganization(actor)) {
 			return { organizationWide: true } as LocationScope;
 		}
 		const managerId = actor.employee?.role === "manager" ? actor.employee.id : null;
