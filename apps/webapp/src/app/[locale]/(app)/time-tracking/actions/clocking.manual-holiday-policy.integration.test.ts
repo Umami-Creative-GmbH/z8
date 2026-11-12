@@ -899,7 +899,7 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 
 			const { written, submitted } = await submitBehindParkedWriter(
 				{ statement: "select id from team where id = $1 for update", values: [ids.team] },
-				() => teamActions.deleteTeam(ids.team),
+				() => teamActions.deleteTeam({ teamId: ids.team }),
 			);
 
 			expect(written).toMatchObject({ success: true });

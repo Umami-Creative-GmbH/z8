@@ -46,7 +46,7 @@ export function LocationManagement({
 	} = useQuery({
 		queryKey: queryKeys.locations.list(organizationId),
 		queryFn: async () => {
-			const result = await getLocations(organizationId);
+			const result = await getLocations();
 			if (!result.success) throw new Error(result.error ?? "Unknown error");
 			return result.data;
 		},
@@ -181,7 +181,6 @@ export function LocationManagement({
 
 			{canManageLocations && (
 				<LocationDialog
-					organizationId={organizationId}
 					location={editingLocation}
 					open={dialogOpen}
 					onOpenChange={setDialogOpen}

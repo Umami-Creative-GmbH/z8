@@ -510,7 +510,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand({ targetEmployeeId: ids.peer });
 			const submission = await pausedSubmission(command, ids.ownerUser);
 			actAs(ids.ownerUser);
-			const joining = addTeamMember(ids.team, ids.peer);
+			const joining = addTeamMember({ teamId: ids.team, employeeId: ids.peer });
 			await waitForWaiterOn(userGuard(ids.peerUser));
 			await submission.release();
 			await expect(submission.pending).resolves.toMatchObject({
@@ -678,7 +678,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand();
 			const submission = await pausedSubmission(command, ids.managerUser);
 			actAs(ids.ownerUser);
-			const deletion = deleteTeam(ids.emptyTeam);
+			const deletion = deleteTeam({ teamId: ids.emptyTeam });
 			await waitForWaiterOn(organizationGuard);
 			await submission.release();
 

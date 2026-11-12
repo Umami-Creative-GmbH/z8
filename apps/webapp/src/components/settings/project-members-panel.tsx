@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { IconCoin, IconLoader2, IconPlus, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
@@ -261,13 +261,13 @@ export function ProjectMembersPanel({
 
 	const { data: teams = [] } = useQuery({
 		queryKey: queryKeys.projects.teamSelection(organizationId),
-		queryFn: () => selectionOptions(getTeamsForSelection(organizationId)),
+		queryFn: () => selectionOptions(getTeamsForSelection()),
 		enabled: open,
 	});
 
 	const { data: employees = [] } = useQuery({
 		queryKey: queryKeys.projects.employeeSelection(organizationId),
-		queryFn: () => selectionOptions(getEmployeesForSelection(organizationId)),
+		queryFn: () => selectionOptions(getEmployeesForSelection()),
 		enabled: open,
 	});
 
@@ -321,7 +321,7 @@ export function ProjectMembersPanel({
 							rows={teamAssignments.map((assignment) => ({
 								key: assignment.id,
 								name: assignment.teamName ?? "",
-								onRemove: () => removeProjectAssignment(assignment.id),
+								onRemove: () => removeProjectAssignment({ assignmentId: assignment.id }),
 							}))}
 						>
 							{project && (
@@ -330,7 +330,9 @@ export function ProjectMembersPanel({
 									placeholder={t("settings.projects.members.selectTeam", "Select a team")}
 									submitLabel={t("settings.projects.members.assignTeam", "Assign team")}
 									options={teams.filter((team) => !assignedTeamIds.has(team.id))}
-									onAdd={(teamId) => addProjectAssignment(project.id, "team", teamId)}
+									onAdd={(teamId) =>
+										addProjectAssignment({ projectId: project.id, type: "team", targetId: teamId })
+									}
 									successMessage={t("settings.projects.members.teamAssigned", "Team assigned")}
 									failureMessage={t(
 										"settings.projects.members.teamAssignFailed",
@@ -357,7 +359,7 @@ export function ProjectMembersPanel({
 								name: assignment.employeeName ?? "",
 								isFormer: assignment.employeeIsFormer,
 								formerSince: assignment.employeeFormerSince,
-								onRemove: () => removeProjectAssignment(assignment.id),
+								onRemove: () => removeProjectAssignment({ assignmentId: assignment.id }),
 								action:
 									canSetBillableRates && assignment.employeeId ? (
 										<Button
@@ -388,7 +390,13 @@ export function ProjectMembersPanel({
 									placeholder={t("settings.projects.members.selectEmployee", "Select an employee")}
 									submitLabel={t("settings.projects.members.assignEmployee", "Assign employee")}
 									options={employees.filter((employee) => !assignedEmployeeIds.has(employee.id))}
-									onAdd={(employeeId) => addProjectAssignment(project.id, "employee", employeeId)}
+									onAdd={(employeeId) =>
+										addProjectAssignment({
+											projectId: project.id,
+											type: "employee",
+											targetId: employeeId,
+										})
+									}
 									successMessage={t(
 										"settings.projects.members.employeeAssigned",
 										"Employee assigned",
@@ -410,7 +418,11 @@ export function ProjectMembersPanel({
 								name: manager.employeeName,
 								onRemove:
 									project && canManageProjectManagers
-										? () => removeProjectManager(project.id, manager.employeeId)
+										? () =>
+												removeProjectManager({
+													projectId: project.id,
+													employeeId: manager.employeeId,
+												})
 										: undefined,
 							}))}
 						>
@@ -423,7 +435,7 @@ export function ProjectMembersPanel({
 									placeholder={t("settings.projects.members.selectEmployee", "Select an employee")}
 									submitLabel={t("settings.projects.members.addManager", "Add project manager")}
 									options={employees.filter((employee) => !managerEmployeeIds.has(employee.id))}
-									onAdd={(employeeId) => addProjectManager(project.id, employeeId)}
+									onAdd={(employeeId) => addProjectManager({ projectId: project.id, employeeId })}
 									successMessage={t(
 										"settings.projects.members.managerAdded",
 										"Project manager added",

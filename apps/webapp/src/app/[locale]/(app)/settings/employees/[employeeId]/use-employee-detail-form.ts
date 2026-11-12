@@ -51,7 +51,7 @@ export function useEmployeeDetailForm({
 	const teamOptions = useQuery({
 		queryKey: queryKeys.teams.options(employee?.organizationId ?? ""),
 		queryFn: async () => {
-			const result = await listTeams(employee?.organizationId);
+			const result = await listTeams();
 			if (!result.success) throw new Error(result.error);
 			return result.data.map((team) => ({ id: team.id, name: team.name }));
 		},

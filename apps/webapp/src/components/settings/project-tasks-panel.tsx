@@ -237,7 +237,7 @@ function TaskRow({ task, onChanged }: { task: ProjectTask; onChanged: () => void
 					submitLabel={t("settings.projects.tasks.save", "Save")}
 					onCancel={() => setMode("view")}
 					onSubmit={async (values) => {
-						const saved = await run(() => updateProjectTask(task.id, values), {
+						const saved = await run(() => updateProjectTask({ taskId: task.id, ...values }), {
 							success: t("settings.projects.tasks.updated", "Task updated"),
 							failure: t("settings.projects.tasks.updateFailed", "Failed to update task"),
 						});
@@ -370,7 +370,7 @@ export function ProjectTasksPanel({ project, open, onOpenChange }: ProjectTasksP
 	const { data: tasks = [], isLoading } = useQuery({
 		queryKey: queryKeys.projects.tasks(projectId),
 		queryFn: async () => {
-			const result = await getProjectTasks(projectId);
+			const result = await getProjectTasks({ projectId });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

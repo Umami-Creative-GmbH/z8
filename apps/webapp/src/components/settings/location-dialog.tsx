@@ -25,7 +25,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 interface LocationDialogProps {
-	organizationId: string;
 	location: LocationListItem | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -41,13 +40,7 @@ interface FormValues {
 	isActive: boolean;
 }
 
-export function LocationDialog({
-	organizationId,
-	location,
-	open,
-	onOpenChange,
-	onSuccess,
-}: LocationDialogProps) {
+export function LocationDialog({ location, open, onOpenChange, onSuccess }: LocationDialogProps) {
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!location;
@@ -66,13 +59,16 @@ export function LocationDialog({
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
 			if (isEditing && location) {
-				const result = await updateLocation(location.id, {
-					name: value.name,
-					street: value.street || undefined,
-					city: value.city || undefined,
-					postalCode: value.postalCode || undefined,
-					country: value.country || undefined,
-					isActive: value.isActive,
+				const result = await updateLocation({
+					locationId: location.id,
+					data: {
+						name: value.name,
+						street: value.street || undefined,
+						city: value.city || undefined,
+						postalCode: value.postalCode || undefined,
+						country: value.country || undefined,
+						isActive: value.isActive,
+					},
 				}).then(
 					(response) => response,
 					() => null,
@@ -88,7 +84,6 @@ export function LocationDialog({
 				}
 			} else {
 				const result = await createLocation({
-					organizationId,
 					name: value.name,
 					street: value.street || undefined,
 					city: value.city || undefined,

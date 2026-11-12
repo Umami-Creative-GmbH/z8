@@ -69,13 +69,13 @@ function getCustomerDefaultValues(
 
 /** Saves the dialog: updates `customer`, or creates one. Null when the request itself failed. */
 function saveCustomer(
-	organizationId: string,
 	customer: CustomerData | null,
 	value: CustomerDialogFormValues,
 	customFieldValues: CustomFieldValuesInput | undefined,
 ) {
 	const request = customer
-		? updateCustomer(customer.id, {
+		? updateCustomer({
+				customerId: customer.id,
 				name: value.name,
 				address: value.address || null,
 				vatId: value.vatId || null,
@@ -85,7 +85,7 @@ function saveCustomer(
 				website: value.website || null,
 				customFieldValues,
 			})
-		: createCustomer({ ...buildCreateCustomerInput(organizationId, value), customFieldValues });
+		: createCustomer({ ...buildCreateCustomerInput(value), customFieldValues });
 	return request.then(
 		(response) => response,
 		() => null,
@@ -121,7 +121,7 @@ export function CustomerDialog({
 			scope: "customer-dialog",
 		}),
 		queryFn: async () => {
-			const result = await getProjects(organizationId);
+			const result = await getProjects();
 			if (!result.success) {
 				return [];
 			}
@@ -152,7 +152,6 @@ export function CustomerDialog({
 			}
 
 			const result = await saveCustomer(
-				organizationId,
 				customer,
 				value,
 				customFields.values(),

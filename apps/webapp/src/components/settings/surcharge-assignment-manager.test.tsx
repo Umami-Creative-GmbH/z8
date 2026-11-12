@@ -119,7 +119,7 @@ describe("SurchargeAssignmentManager", () => {
 		const { onAssignClick } = renderManager();
 
 		await screen.findByText("Support");
-		expect(getSurchargeAssignmentsMock).toHaveBeenCalledWith("org-approved");
+		expect(getSurchargeAssignmentsMock).toHaveBeenCalledWith();
 		expect(screen.queryByText("Inactive Model")).toBeNull();
 		expect(
 			screen

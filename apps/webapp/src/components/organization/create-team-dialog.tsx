@@ -62,12 +62,8 @@ export function CreateTeamDialog({
 	});
 
 	const createMutation = useMutation({
-		mutationFn: (data: {
-			organizationId: string;
-			name: string;
-			description?: string;
-			primaryManagerId?: string | null;
-		}) => createTeam(data),
+		mutationFn: (data: { name: string; description?: string; primaryManagerId?: string | null }) =>
+			createTeam(data),
 		onSuccess: (result) => {
 			if (!result.success) {
 				toast.error(
@@ -94,7 +90,6 @@ export function CreateTeamDialog({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		createMutation.mutate({
-			organizationId,
 			name: formData.name,
 			description: formData.description || undefined,
 			primaryManagerId:

@@ -9,7 +9,7 @@ export function surchargeModelsQuery(organizationId: string) {
 	return queryOptions({
 		queryKey: queryKeys.surcharges.models.list(organizationId),
 		queryFn: async () => {
-			const result = await getSurchargeModels(organizationId);
+			const result = await getSurchargeModels();
 			if (!result.success)
 				throw new Error(result.error || "Surcharge models could not be loaded");
 			return result.data;

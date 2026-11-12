@@ -1,19 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { surchargeCalculation } from "@/db/schema";
+import type { StubCaller } from "@/test/organization-action";
+
+const manager: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "manager-1", role: "manager", former: false },
+};
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: { id: "admin-1", role: "admin", former: false },
+};
+const member: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "employee", former: false },
+};
 
 const mockState = vi.hoisted(() => ({
-	verifyOrgMembership: vi.fn(async () => ({ isValid: true })),
-	settingsActorAccessTier: "manager" as "manager" | "orgAdmin",
-	membershipRole: "member" as "member" | "admin" | "owner",
-	authContext: {
-		user: { id: "user-1" },
-		session: { activeOrganizationId: "org-1" },
-		employee: {
-			id: "manager-1",
-			organizationId: "org-1",
-			role: "manager" as const,
-			teamId: "team-managed",
-		},
-	},
+	caller: null as StubCaller | null,
 	teamPermissionsRows: [{ teamId: "team-managed", canManageTeamSettings: true }],
 	locationAssignments: [{ locationId: "location-managed" }],
 	subareaAssignments: [{ subareaId: "subarea-managed" }],
@@ -257,109 +266,24 @@ const mockState = vi.hoisted(() => ({
 	surchargeAssignmentDetail: undefined as any,
 	updateWhereCalls: [] as any[],
 	deleteWhereCalls: [] as any[],
-	workPeriodFindFirstCalls: 0,
+	insertCalls: 0,
 	workPeriodFindManyCalls: 0,
 	surchargeCalculationFindManyCalls: [] as any[],
 }));
 
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	desc: vi.fn((value: unknown) => value),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
-	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
-	lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
+vi.mock("drizzle-orm", async (importOriginal) => ({
+	...(await importOriginal<typeof import("drizzle-orm")>()),
+	// The column itself, so a test can read the ordering back.
+	desc: (value: unknown) => value,
 }));
 
 vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/effect/runtime", () => ({
-	AppLayer: {},
-}));
-
-vi.mock("../employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect");
-	const { AuthorizationError } = await import("@/lib/effect/errors");
-
-	return {
-		getEmployeeSettingsActorContext: vi.fn(() =>
-			Effect.succeed({
-				accessTier: mockState.settingsActorAccessTier,
-				organizationId: "org-1",
-				session: { user: { id: "user-1" } },
-				currentEmployee: mockState.authContext.employee,
-			}),
-		),
-		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: { accessTier: string }, options: any) =>
-			actor.accessTier === "orgAdmin"
-				? Effect.void
-				: Effect.fail(
-						new AuthorizationError({
-							message: options.message,
-							userId: "user-1",
-							resource: options.resource,
-							action: options.action,
-						}),
-					),
-		),
-	};
-});
-
-vi.mock("@/db/auth-schema", () => ({
-	member: { userId: "userId", organizationId: "organizationId" },
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: { organizationId: "organizationId", isActive: "isActive", id: "id" },
-	locationEmployee: { employeeId: "employeeId", locationId: "locationId" },
-	projectManager: { employeeId: "employeeId", projectId: "projectId" },
-	subareaEmployee: { employeeId: "employeeId", subareaId: "subareaId" },
-	surchargeCalculation: {
-		id: "id",
-		organizationId: "organizationId",
-		calculationDate: "calculationDate",
-		createdAt: "createdAt",
-		employeeId: "employeeId",
-	},
-	surchargeModel: {
-		id: "id",
-		organizationId: "organizationId",
-		createdAt: "createdAt",
-		isActive: "isActive",
-	},
-	surchargeModelAssignment: {
-		id: "id",
-		modelId: "modelId",
-		organizationId: "organizationId",
-		createdAt: "createdAt",
-		priority: "priority",
-		isActive: "isActive",
-	},
-	surchargeRule: { id: "id" },
-	team: { organizationId: "organizationId", name: "name" },
-	teamPermissions: {
-		employeeId: "employeeId",
-		organizationId: "organizationId",
-		teamId: "teamId",
-		canManageTeamSettings: "canManageTeamSettings",
-	},
-	workPeriod: {
-		id: "id",
-		organizationId: "organizationId",
-		projectId: "projectId",
-		locationId: "locationId",
-		subareaId: "subareaId",
-	},
-}));
-
 vi.mock("@/db", () => ({
 	db: {
 		query: {
-			member: {
-				findFirst: vi.fn(async () => ({ role: mockState.membershipRole })),
-			},
 			surchargeModel: {
 				findMany: vi.fn(async () => mockState.surchargeModels),
 				findFirst: vi.fn(async () =>
@@ -409,19 +333,12 @@ vi.mock("@/db", () => ({
 					mockState.workPeriodFindManyCalls += 1;
 					return Object.values(mockState.workPeriodsById);
 				}),
-				findFirst: vi.fn(async ({ where }: { where?: { eq?: [unknown, string] } }) => {
-					mockState.workPeriodFindFirstCalls += 1;
-					const workPeriodId = where?.eq?.[1];
-					return workPeriodId
-						? (mockState.workPeriodsById[workPeriodId as keyof typeof mockState.workPeriodsById] ??
-								null)
-						: null;
-				}),
 			},
 		},
-		insert: vi.fn(() => ({
-			values: vi.fn(() => ({ returning: vi.fn(async () => []) })),
-		})),
+		insert: vi.fn(() => {
+			mockState.insertCalls += 1;
+			return { values: vi.fn(() => ({ returning: vi.fn(async () => []) })) };
+		}),
 		update: vi.fn(() => ({
 			set: vi.fn(() => ({
 				where: vi.fn(async (where: unknown) => {
@@ -439,55 +356,89 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-vi.mock("@/lib/auth-helpers", () => ({
-	getAuthContext: vi.fn(async () => mockState.authContext),
-	verifyOrgMembership: mockState.verifyOrgMembership,
-}));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { db } = await import("@/db");
+	return runtimeModuleOver(organizationActionStubLayer(() => mockState.caller, { db }));
+});
 
 const {
+	addSurchargeRule,
+	createSurchargeAssignment,
 	createSurchargeModel,
 	deleteSurchargeAssignment,
 	deleteSurchargeModel,
 	deleteSurchargeRule,
+	getEmployeesForAssignment,
 	getSurchargeModel,
 	getSurchargeAssignments,
 	getSurchargeCalculationsForPeriod,
 	getSurchargeModels,
+	getTeamsForAssignment,
 	updateSurchargeModel,
 	updateSurchargeRule,
 } = await import("./actions");
 
+const february = {
+	startDate: new Date("2026-02-01T00:00:00.000Z"),
+	endDate: new Date("2026-02-28T23:59:59.999Z"),
+};
+
+const nightModel = {
+	name: "Night Premium",
+	description: null,
+	isActive: true,
+	rules: [
+		{
+			ruleType: "time_window" as const,
+			name: "Night",
+			description: null,
+			percentage: 0.25,
+			windowStartTime: "22:00",
+			windowEndTime: "06:00",
+			priority: 0,
+			validFrom: null,
+			validUntil: null,
+			isActive: true,
+		},
+	],
+};
+
+const refused = { success: false, code: "AuthorizationError" };
+
 describe("surcharge settings scope behavior", () => {
-	it("rejects a nonactive SSO organization even when the user has an owner membership", async () => {
-		mockState.membershipRole = "owner";
-		mockState.verifyOrgMembership.mockResolvedValueOnce({ isValid: false });
-		expect(await getSurchargeModels("locked")).toMatchObject({ success: false });
-	});
 	beforeEach(() => {
-		mockState.settingsActorAccessTier = "manager";
-		mockState.membershipRole = "member";
-		mockState.authContext = {
-			user: { id: "user-1" },
-			session: { activeOrganizationId: "org-1" },
-			employee: {
-				id: "manager-1",
-				organizationId: "org-1",
-				role: "manager",
-				teamId: "team-managed",
-			},
-		};
+		mockState.caller = manager;
 		mockState.surchargeModelDetail = undefined;
 		mockState.surchargeRuleDetail = undefined;
 		mockState.surchargeAssignmentDetail = undefined;
 		mockState.updateWhereCalls = [];
 		mockState.deleteWhereCalls = [];
-		mockState.workPeriodFindFirstCalls = 0;
+		mockState.insertCalls = 0;
 		mockState.workPeriodFindManyCalls = 0;
 		mockState.surchargeCalculationFindManyCalls = [];
 	});
 
+	it("refuses an organization the SSO/MFA gate refuses, even to an owner", async () => {
+		mockState.caller = { ...orgAdmin, membershipRole: "owner", organizationAccessRefused: true };
+		expect(await getSurchargeModels()).toMatchObject({
+			success: false,
+			code: "AuthenticationError",
+		});
+	});
+
+	it("refuses an org member every surcharge read", async () => {
+		mockState.caller = member;
+
+		expect(await getSurchargeModels()).toMatchObject(refused);
+		expect(await getSurchargeModel("model-org")).toMatchObject(refused);
+		expect(await getSurchargeAssignments()).toMatchObject(refused);
+		expect(await getSurchargeCalculationsForPeriod(february)).toMatchObject(refused);
+	});
+
 	it("lets managers read surcharge models applied to their teams, areas, and projects", async () => {
-		const result = await getSurchargeModels("org-1");
+		const result = await getSurchargeModels();
 
 		expect(result.success).toBe(true);
 		if (result.success) {
@@ -499,15 +450,16 @@ describe("surcharge settings scope behavior", () => {
 			]);
 		}
 		expect(mockState.workPeriodFindManyCalls).toBe(1);
-		expect(mockState.workPeriodFindFirstCalls).toBe(0);
+	});
+
+	it("refuses a manager a surcharge model outside their scope", async () => {
+		mockState.surchargeModelDetail = mockState.surchargeModels[4];
+
+		expect(await getSurchargeModel("model-other")).toMatchObject(refused);
 	});
 
 	it("lets managers read surcharge calculations for managed scope instead of self only", async () => {
-		const result = await getSurchargeCalculationsForPeriod(
-			"org-1",
-			new Date("2026-02-01T00:00:00.000Z"),
-			new Date("2026-02-28T23:59:59.999Z"),
-		);
+		const result = await getSurchargeCalculationsForPeriod(february);
 
 		expect(result.success).toBe(true);
 		if (result.success) {
@@ -519,11 +471,7 @@ describe("surcharge settings scope behavior", () => {
 	});
 
 	it("limits surcharge report queries to a bounded row count", async () => {
-		const result = await getSurchargeCalculationsForPeriod(
-			"org-1",
-			new Date("2026-02-01T00:00:00.000Z"),
-			new Date("2026-02-28T23:59:59.999Z"),
-		);
+		const result = await getSurchargeCalculationsForPeriod(february);
 
 		expect(result.success).toBe(true);
 		expect(mockState.surchargeCalculationFindManyCalls[0]).toMatchObject({ limit: 500 });
@@ -545,11 +493,7 @@ describe("surcharge settings scope behavior", () => {
 		];
 
 		try {
-			const result = await getSurchargeCalculationsForPeriod(
-				"org-1",
-				new Date("2026-02-01T00:00:00.000Z"),
-				new Date("2026-02-28T23:59:59.999Z"),
-			);
+			const result = await getSurchargeCalculationsForPeriod(february);
 
 			expect(result.success).toBe(true);
 			if (result.success) {
@@ -582,11 +526,7 @@ describe("surcharge settings scope behavior", () => {
 		}));
 
 		try {
-			const result = await getSurchargeCalculationsForPeriod(
-				"org-1",
-				new Date("2026-02-01T00:00:00.000Z"),
-				new Date("2026-02-28T23:59:59.999Z"),
-			);
+			const result = await getSurchargeCalculationsForPeriod(february);
 
 			expect(result.success).toBe(true);
 			if (result.success) {
@@ -604,32 +544,20 @@ describe("surcharge settings scope behavior", () => {
 	});
 
 	it("uses deterministic surcharge report ordering for tied calculation dates", async () => {
-		mockState.settingsActorAccessTier = "orgAdmin";
-		mockState.membershipRole = "admin";
-		mockState.authContext.employee = {
-			id: "admin-1",
-			organizationId: "org-1",
-			role: "admin",
-			teamId: null,
-		};
+		mockState.caller = orgAdmin;
 
-		const result = await getSurchargeCalculationsForPeriod(
-			"org-1",
-			new Date("2026-02-01T00:00:00.000Z"),
-			new Date("2026-02-28T23:59:59.999Z"),
-		);
+		const result = await getSurchargeCalculationsForPeriod(february);
 
 		expect(result.success).toBe(true);
 		expect(mockState.surchargeCalculationFindManyCalls[0]?.orderBy).toEqual([
-			"calculationDate",
-			"createdAt",
-			"id",
+			surchargeCalculation.calculationDate,
+			surchargeCalculation.createdAt,
+			surchargeCalculation.id,
 		]);
 	});
 
 	it("returns JSON string surcharge calculation details as an object", async () => {
-		mockState.settingsActorAccessTier = "orgAdmin";
-		mockState.membershipRole = "admin";
+		mockState.caller = orgAdmin;
 		const previousCalculations = mockState.surchargeCalculations;
 		mockState.surchargeCalculations = [
 			{
@@ -654,11 +582,7 @@ describe("surcharge settings scope behavior", () => {
 		];
 
 		try {
-			const result = await getSurchargeCalculationsForPeriod(
-				"org-1",
-				new Date("2026-02-01T00:00:00.000Z"),
-				new Date("2026-02-28T23:59:59.999Z"),
-			);
+			const result = await getSurchargeCalculationsForPeriod(february);
 
 			expect(result.success).toBe(true);
 			if (result.success) {
@@ -673,8 +597,7 @@ describe("surcharge settings scope behavior", () => {
 	});
 
 	it("returns null surcharge calculation details for invalid JSON without throwing", async () => {
-		mockState.settingsActorAccessTier = "orgAdmin";
-		mockState.membershipRole = "admin";
+		mockState.caller = orgAdmin;
 		const previousCalculations = mockState.surchargeCalculations;
 		mockState.surchargeCalculations = [
 			{
@@ -684,11 +607,7 @@ describe("surcharge settings scope behavior", () => {
 		];
 
 		try {
-			const result = await getSurchargeCalculationsForPeriod(
-				"org-1",
-				new Date("2026-02-01T00:00:00.000Z"),
-				new Date("2026-02-28T23:59:59.999Z"),
-			);
+			const result = await getSurchargeCalculationsForPeriod(february);
 
 			expect(result.success).toBe(true);
 			if (result.success) {
@@ -717,11 +636,7 @@ describe("surcharge settings scope behavior", () => {
 		];
 
 		try {
-			const result = await getSurchargeCalculationsForPeriod(
-				"org-1",
-				new Date("2026-02-01T00:00:00.000Z"),
-				new Date("2026-02-28T23:59:59.999Z"),
-			);
+			const result = await getSurchargeCalculationsForPeriod(february);
 
 			expect(result.success).toBe(true);
 			if (result.success) {
@@ -739,7 +654,7 @@ describe("surcharge settings scope behavior", () => {
 	});
 
 	it("lets managers read only surcharge assignments inside their visible team and employee scope", async () => {
-		const result = await getSurchargeAssignments("org-1");
+		const result = await getSurchargeAssignments();
 
 		expect(result.success).toBe(true);
 		if (result.success) {
@@ -751,96 +666,101 @@ describe("surcharge settings scope behavior", () => {
 		}
 	});
 
-	it("rejects direct manager surcharge mutations", async () => {
-		const result = await createSurchargeModel("org-1", {
-			name: "Night Premium",
-			description: null,
-			isActive: true,
-			rules: [
-				{
-					ruleType: "time_window",
-					name: "Night",
-					description: null,
-					percentage: 0.25,
-					windowStartTime: "22:00",
-					windowEndTime: "06:00",
-					priority: 0,
-					validFrom: null,
-					validUntil: null,
-					isActive: true,
-				},
-			],
-		});
+	it("refuses a manager every surcharge change and the assignment pickers", async () => {
+		mockState.surchargeRuleDetail = { id: "rule-1", modelId: "model-org" };
+		mockState.surchargeAssignmentDetail = { id: "assignment-org", modelId: "model-org" };
 
-		expect(result).toEqual({ success: false, error: "Unauthorized: Admin access required" });
+		expect(await createSurchargeModel(nightModel)).toMatchObject(refused);
+		expect(
+			await updateSurchargeModel({ modelId: "model-org", data: { name: "Updated" } }),
+		).toMatchObject(refused);
+		expect(await deleteSurchargeModel("model-org")).toMatchObject(refused);
+		expect(
+			await addSurchargeRule({ modelId: "model-org", rule: nightModel.rules[0] }),
+		).toMatchObject(refused);
+		expect(
+			await updateSurchargeRule({ ruleId: "rule-1", data: { name: "Updated" } }),
+		).toMatchObject(refused);
+		expect(await deleteSurchargeRule("rule-1")).toMatchObject(refused);
+		expect(
+			await createSurchargeAssignment({
+				modelId: "8f6a2a4e-58c4-4a49-9b51-3c4cbf5e7a01",
+				assignmentType: "organization",
+				isActive: true,
+			}),
+		).toMatchObject(refused);
+		expect(await deleteSurchargeAssignment("assignment-org")).toMatchObject(refused);
+		expect(await getTeamsForAssignment()).toMatchObject(refused);
+		expect(await getEmployeesForAssignment()).toMatchObject(refused);
+		expect(mockState.insertCalls).toBe(0);
+		expect(mockState.updateWhereCalls).toEqual([]);
+		expect(mockState.deleteWhereCalls).toEqual([]);
+	});
+
+	it("rejects an invalid surcharge model before saving", async () => {
+		mockState.caller = orgAdmin;
+
+		expect(await createSurchargeModel({ ...nightModel, rules: [] })).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "At least one rule is required",
+		});
+		expect(mockState.insertCalls).toBe(0);
 	});
 
 	it("rejects reading a surcharge model from another organization by bare id", async () => {
-		mockState.settingsActorAccessTier = "orgAdmin";
-		mockState.membershipRole = "admin";
-		mockState.authContext.employee = {
-			id: "admin-1",
-			organizationId: "org-1",
-			role: "admin",
-			teamId: null,
-		};
-		mockState.surchargeModelDetail = {
-			id: "model-foreign",
-			organizationId: "org-2",
-			name: "Foreign Model",
-			description: null,
-			isActive: true,
-			createdAt: new Date("2026-01-10T00:00:00.000Z"),
-			createdBy: "user-2",
-			updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-			updatedBy: null,
-			rules: [],
-		};
+		mockState.caller = orgAdmin;
+		mockState.surchargeModelDetail = null;
 
 		const result = await getSurchargeModel("model-foreign");
 
-		expect(result).toEqual({ success: false, error: "Surcharge model not found" });
+		expect(result).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+			error: "Surcharge model not found",
+		});
 	});
 
 	it("rejects cross-organization surcharge model and rule mutations by bare id", async () => {
-		mockState.settingsActorAccessTier = "orgAdmin";
-		mockState.membershipRole = "admin";
-		mockState.authContext.employee = {
-			id: "admin-1",
-			organizationId: "org-1",
-			role: "admin",
-			teamId: null,
-		};
+		mockState.caller = orgAdmin;
 		mockState.surchargeModelDetail = null;
 		mockState.surchargeRuleDetail = null;
 
-		const updateModelResult = await updateSurchargeModel("model-foreign", { name: "Updated" });
+		const updateModelResult = await updateSurchargeModel({
+			modelId: "model-foreign",
+			data: { name: "Updated" },
+		});
 		const deleteModelResult = await deleteSurchargeModel("model-foreign");
-		const updateRuleResult = await updateSurchargeRule("rule-foreign", { name: "Updated rule" });
+		const updateRuleResult = await updateSurchargeRule({
+			ruleId: "rule-foreign",
+			data: { name: "Updated rule" },
+		});
 		const deleteRuleResult = await deleteSurchargeRule("rule-foreign");
 
-		expect(updateModelResult).toEqual({ success: false, error: "Surcharge model not found" });
-		expect(deleteModelResult).toEqual({ success: false, error: "Surcharge model not found" });
-		expect(updateRuleResult).toEqual({ success: false, error: "Rule not found" });
-		expect(deleteRuleResult).toEqual({ success: false, error: "Rule not found" });
+		expect(updateModelResult).toMatchObject({ success: false, error: "Surcharge model not found" });
+		expect(deleteModelResult).toMatchObject({ success: false, error: "Surcharge model not found" });
+		expect(updateRuleResult).toMatchObject({ success: false, error: "Rule not found" });
+		expect(deleteRuleResult).toMatchObject({ success: false, error: "Rule not found" });
 		expect(mockState.updateWhereCalls).toEqual([]);
 		expect(mockState.deleteWhereCalls).toEqual([]);
 	});
 
 	it("rejects cross-organization surcharge assignment deletion by bare id", async () => {
-		mockState.settingsActorAccessTier = "orgAdmin";
-		mockState.membershipRole = "admin";
-		mockState.authContext.employee = {
-			id: "admin-1",
-			organizationId: "org-1",
-			role: "admin",
-			teamId: null,
-		};
+		mockState.caller = orgAdmin;
 		mockState.surchargeAssignmentDetail = null;
 
 		const result = await deleteSurchargeAssignment("assignment-foreign");
 
-		expect(result).toEqual({ success: false, error: "Surcharge assignment not found" });
+		expect(result).toMatchObject({ success: false, error: "Surcharge assignment not found" });
 		expect(mockState.updateWhereCalls).toEqual([]);
+	});
+
+	it("updates a surcharge model of the session's organization", async () => {
+		mockState.caller = orgAdmin;
+
+		expect(await updateSurchargeModel({ modelId: "model-org", data: { name: "Updated" } })).toEqual(
+			{ success: true, data: undefined },
+		);
+		expect(mockState.updateWhereCalls).toHaveLength(1);
 	});
 });

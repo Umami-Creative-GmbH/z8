@@ -133,14 +133,14 @@ export function SurchargeModelDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: ({ organizationId: targetOrganizationId, data }: { organizationId: string; data: {
+		mutationFn: ({ data }: { organizationId: string; data: {
 			name: string;
 			description: string | null;
 			rules: SurchargeRuleFormValues[];
 			isActive: boolean;
 		} }) =>
 			// Cast to SurchargeModelFormData to satisfy the discriminated union type
-			createSurchargeModel(targetOrganizationId, data as Parameters<typeof createSurchargeModel>[1]),
+			createSurchargeModel(data as Parameters<typeof createSurchargeModel>[0]),
 		onSuccess: (result, variables) => {
 			if (result.success) {
 				void queryClient.invalidateQueries({ queryKey: queryKeys.surcharges.models.list(variables.organizationId) });
@@ -160,7 +160,7 @@ export function SurchargeModelDialog({
 	// Update mutation
 	const updateMutation = useMutation({
 		mutationFn: ({ modelId, data }: { modelId: string; organizationId: string; data: { name?: string; description?: string | null; isActive?: boolean } }) =>
-			updateSurchargeModel(modelId, data),
+			updateSurchargeModel({ modelId, data }),
 		onSuccess: (result, variables) => {
 			if (result.success) {
 				void Promise.all([

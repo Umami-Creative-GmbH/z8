@@ -24,7 +24,26 @@ export class AssignedLocationRefusal extends Error {
 	}
 }
 
-/** An assigned-location server action's result; a failure always carries a stable code. */
-export type AssignedLocationActionResult<T> =
-	| { success: true; data: T }
-	| { success: false; error: string; code: AssignedLocationErrorCode };
+const REFUSAL_CODES: ReadonlySet<string> = new Set<AssignedLocationErrorCode>([
+	"invalid_selection",
+	"employee_not_found",
+	"former_employee",
+	"location_not_found",
+]);
+
+/**
+ * The refusal code of a failed assigned-location action (a `ServerActionResult`
+ * failure): a store refusal travels as `refusal`, missing settings access as
+ * `AuthorizationError`, invalid input as a `ValidationError` without one.
+ */
+export function assignedLocationErrorCodeOf(failure: {
+	code?: string;
+	refusal?: string;
+}): AssignedLocationErrorCode {
+	if (failure.refusal && REFUSAL_CODES.has(failure.refusal)) {
+		return failure.refusal as AssignedLocationErrorCode;
+	}
+	if (failure.code === "AuthorizationError") return "admin_only";
+	if (failure.code === "ValidationError") return "invalid_selection";
+	return "failed";
+}

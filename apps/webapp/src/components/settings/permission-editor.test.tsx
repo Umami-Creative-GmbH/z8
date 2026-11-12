@@ -110,6 +110,6 @@ describe("PermissionEditor mutation payloads", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Revoke All" }));
 
 		await waitFor(() => expect(mocks.revoke).toHaveBeenCalledOnce());
-		expect(mocks.revoke).toHaveBeenCalledWith("employee-1", undefined);
+		expect(mocks.revoke).toHaveBeenCalledWith({ employeeId: "employee-1", teamId: undefined });
 	});
 });

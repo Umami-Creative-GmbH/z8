@@ -371,7 +371,7 @@ export function TeamsTab({
 	// Delete mutation with optimistic update
 	const deleteMutation = useMutation({
 		mutationFn: ({ teamId, previewToken }: { teamId: string; previewToken: string }) =>
-			deleteTeam(teamId, { drivingLicencePreviewToken: previewToken }),
+			deleteTeam({ teamId, drivingLicencePreviewToken: previewToken }),
 		onMutate: async ({ teamId }) => {
 			const previousTeamPatches = teamPatches;
 			setTeamPatches((previous) => {

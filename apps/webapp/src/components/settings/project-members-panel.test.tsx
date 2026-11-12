@@ -1,4 +1,4 @@
-/* @vitest-environment jsdom */
+﻿/* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
@@ -187,7 +187,11 @@ describe("ProjectMembersPanel", () => {
 		await user.selectOptions(picker, "team-2");
 		await user.click(within(teams).getByRole("button", { name: "Assign team" }));
 
-		expect(actions.addProjectAssignment).toHaveBeenCalledWith("project-1", "team", "team-2");
+		expect(actions.addProjectAssignment).toHaveBeenCalledWith({
+			projectId: "project-1",
+			type: "team",
+			targetId: "team-2",
+		});
 		expect(toast.success).toHaveBeenCalledWith("Team assigned");
 		expect(onChanged).toHaveBeenCalledTimes(1);
 	});
@@ -200,7 +204,9 @@ describe("ProjectMembersPanel", () => {
 		const employees = screen.getByRole("region", { name: "Employees" });
 		await user.click(within(employees).getByRole("button", { name: "Remove Avery Employee" }));
 
-		expect(actions.removeProjectAssignment).toHaveBeenCalledWith("assignment-employee");
+		expect(actions.removeProjectAssignment).toHaveBeenCalledWith({
+			assignmentId: "assignment-employee",
+		});
 		expect(toast.success).toHaveBeenCalledWith("Avery Employee removed");
 		expect(onChanged).toHaveBeenCalledTimes(1);
 	});
@@ -221,7 +227,11 @@ describe("ProjectMembersPanel", () => {
 		await user.selectOptions(picker, "emp-2");
 		await user.click(within(employees).getByRole("button", { name: "Assign employee" }));
 
-		expect(actions.addProjectAssignment).toHaveBeenCalledWith("project-1", "employee", "emp-2");
+		expect(actions.addProjectAssignment).toHaveBeenCalledWith({
+			projectId: "project-1",
+			type: "employee",
+			targetId: "emp-2",
+		});
 		expect(toast.error).toHaveBeenCalledWith("Employee not found in this organization");
 		expect(onChanged).not.toHaveBeenCalled();
 	});
@@ -239,11 +249,17 @@ describe("ProjectMembersPanel", () => {
 
 		await user.selectOptions(picker, "emp-2");
 		await user.click(within(managers).getByRole("button", { name: "Add project manager" }));
-		expect(actions.addProjectManager).toHaveBeenCalledWith("project-1", "emp-2");
+		expect(actions.addProjectManager).toHaveBeenCalledWith({
+			projectId: "project-1",
+			employeeId: "emp-2",
+		});
 		expect(toast.success).toHaveBeenCalledWith("Project manager added");
 
 		await user.click(within(managers).getByRole("button", { name: "Remove Pat Manager" }));
-		expect(actions.removeProjectManager).toHaveBeenCalledWith("project-1", "emp-pm");
+		expect(actions.removeProjectManager).toHaveBeenCalledWith({
+			projectId: "project-1",
+			employeeId: "emp-pm",
+		});
 		expect(onChanged).toHaveBeenCalledTimes(2);
 	});
 

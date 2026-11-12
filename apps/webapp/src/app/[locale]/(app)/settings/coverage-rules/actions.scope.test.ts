@@ -10,26 +10,15 @@ function stripComments(source: string): string {
 }
 
 describe("coverage rule settings scope actions", () => {
-	it("uses the shared scheduling scope helper instead of employee-role checks", () => {
-		const source = stripComments(readFileSync(join(COVERAGE_RULES_ROOT, "actions.ts"), "utf8"));
+	const source = stripComments(readFileSync(join(COVERAGE_RULES_ROOT, "actions.ts"), "utf8"));
 
-		expect(source.includes("getSchedulingSettingsAccessContext(")).toBe(true);
-		expect(source.includes("canManageScopedSchedulingSubarea(")).toBe(true);
-		expect(source.includes("filterItemsToManageableSubareas(")).toBe(true);
-		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
-		expect(source.includes('authContext.employee.role !== "manager"')).toBe(false);
+	it("scopes managers by subarea instead of employee-role checks", () => {
+		expect(source.includes("coverageRuleSubareaScope(")).toBe(true);
+		expect(source.includes("getSchedulingSettingsAccessContext(")).toBe(false);
+		expect(source.includes('employee.role !== "admin"')).toBe(false);
 	});
 
-	it("checks existing rule targets before update and delete mutations", () => {
-		const source = stripComments(readFileSync(join(COVERAGE_RULES_ROOT, "actions.ts"), "utf8"));
-
-		expect(source.includes("getCoverageRuleScopeTarget(")).toBe(true);
-		expect(source.includes("canManageScopedSchedulingSubarea(")).toBe(true);
-	});
-
-	it("keeps org-wide coverage read actions off manager scope", () => {
-		const source = stripComments(readFileSync(join(COVERAGE_RULES_ROOT, "actions.ts"), "utf8"));
-
-		expect(source.includes('accessContext.accessTier !== "orgAdmin"')).toBe(true);
+	it("loads existing rules by ID and the session's organization before reading or changing them", () => {
+		expect(source.includes("loadCoverageRuleTarget(organizationId")).toBe(true);
 	});
 });

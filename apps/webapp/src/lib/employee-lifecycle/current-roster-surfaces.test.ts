@@ -370,11 +370,11 @@ const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
 	{
 		file: "app/[locale]/(app)/settings/teams/actions.ts",
 		functions: [
-			"resolveTeamSettingsActor",
+			"authorizeTeamMemberChange",
 			"writeTeamMemberRemoval",
 			"listTeams",
 		],
-		note: "the acting user, and removals, which stay possible for former employees",
+		note: "the change's target, whose addition the action's addsEmployees refuses for a former employee, and removals, which stay possible for former employees",
 	},
 	{
 		file: "lib/organization/driving-licence/verifier-actions.ts",

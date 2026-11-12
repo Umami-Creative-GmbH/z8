@@ -83,7 +83,7 @@ export function PermissionsPageClient(props: {
 		async function loadData() {
 			let result: Awaited<ReturnType<typeof loadPermissionsPageData>>;
 			try {
-				result = await loadPermissionsPageData(props.organizationId);
+				result = await loadPermissionsPageData();
 			} catch {
 				if (cancelled) return;
 				if (requestSequence.current !== requestId) return;
@@ -175,7 +175,7 @@ export function PermissionsPageClient(props: {
 
 		let result: Awaited<ReturnType<typeof loadPermissionsPageData>>;
 		try {
-			result = await loadPermissionsPageData(organizationId);
+			result = await loadPermissionsPageData();
 		} catch {
 			if (
 				!mounted.current ||

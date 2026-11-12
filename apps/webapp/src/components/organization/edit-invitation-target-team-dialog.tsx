@@ -56,7 +56,7 @@ export function EditInvitationTargetTeamDialog({
 
 	const { data: teamsResult } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
-		queryFn: () => listTeams(organizationId),
+		queryFn: () => listTeams(),
 		enabled: open,
 	});
 	const teams = teamsResult?.success ? teamsResult.data : [];
