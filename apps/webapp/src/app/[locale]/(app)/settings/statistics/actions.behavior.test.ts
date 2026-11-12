@@ -105,8 +105,55 @@ describe("statistics actions", () => {
 		expect(typeof result.data.fetchedAt).toBe("string");
 	});
 
-	it("gives a workforce admin, whose employee role is not manager, empty statistics as before", async () => {
+	it("gives a workforce admin the organization's statistics without the org-admin sessions count", async () => {
 		mocks.caller = workforceAdmin;
+		mocks.teamPermissionsRows = [];
+		mocks.selectResults = [
+			[{ count: 8 }],
+			[{ count: 6 }],
+			[{ count: 4 }],
+			[{ count: 30 }],
+			[{ count: 12 }],
+			[{ count: 9 }],
+			[{ count: 7 }],
+			[{ count: 2 }],
+			[{ count: 3 }],
+			[{ count: 2 }],
+			[{ count: 6 }],
+			[{ count: 1 }],
+		];
+
+		const result = await getManagerStatisticsReadView();
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).toMatchObject({
+			totalEmployees: 8,
+			activeEmployees: 6,
+			inactiveEmployees: 2,
+			totalTeams: 4,
+			totalTimeEntries: 30,
+			timeEntriesThisMonth: 12,
+			timeEntriesLastMonth: 9,
+			totalAbsences: 7,
+			pendingAbsences: 2,
+			approvedAbsences: 3,
+			rejectedAbsences: 2,
+			totalApprovals: 6,
+			pendingApprovals: 1,
+		});
+		expect(result.data).not.toHaveProperty("activeSessions");
+		expect(mocks.select).toHaveBeenCalledTimes(12);
+	});
+
+	it("still refuses a workforce admin the org-admin statistics", async () => {
+		mocks.caller = workforceAdmin;
+
+		await expect(getOrganizationStats()).resolves.toMatchObject(refused);
+	});
+
+	it("gives a scoped manager without managed teams empty statistics", async () => {
+		mocks.teamPermissionsRows = [];
 
 		const result = await getManagerStatisticsReadView();
 

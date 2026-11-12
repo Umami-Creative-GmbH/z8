@@ -3,18 +3,18 @@ import { Effect } from "effect";
 import { coverageRule, subareaEmployee } from "@/db/schema";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { reachesWholeOrganization } from "@/lib/organization-action/managed-scope";
 import type { OrganizationActor } from "@/lib/organization-action/organization-action";
-import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 
 /**
  * The subareas whose coverage rules the actor manages: every subarea (null) for an
- * org admin; for a scoped manager whose employee role is manager, the subareas they
- * are assigned to. Anyone else, or a manager without an assigned subarea, has no
- * coverage rule settings and is refused.
+ * org admin and a workforce admin (as `managedScope()`); for a scoped manager whose
+ * employee role is manager, the subareas they are assigned to. Anyone else, or a
+ * manager without an assigned subarea, has no coverage rule settings and is refused.
  */
 export function coverageRuleSubareaScope(actor: OrganizationActor) {
 	return Effect.gen(function* () {
-		if (meetsSettingsAccess(actor.settingsAccess, "orgAdmin")) {
+		if (reachesWholeOrganization(actor)) {
 			return null as ReadonlySet<string> | null;
 		}
 		const employeeId = actor.employee?.role === "manager" ? actor.employee.id : null;

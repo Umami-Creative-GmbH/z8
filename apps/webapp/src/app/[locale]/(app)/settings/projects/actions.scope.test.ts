@@ -152,6 +152,10 @@ const orgMember: StubCaller = {
 	employee: { id: "employee-1", role: "employee", former: false },
 };
 const owner: StubCaller = { ...scopedManager, membershipRole: "owner", employee: null };
+const workforceAdmin: StubCaller = {
+	...scopedManager,
+	employee: { id: "employee-workforce-admin", role: "admin", former: false },
+};
 
 describe("project settings manager scope", () => {
 	beforeEach(() => {
@@ -314,6 +318,65 @@ describe("project settings manager scope", () => {
 				expect.objectContaining({ id: "project-2" }),
 			]),
 		});
+	});
+
+	it("shows a workforce admin every project of the organization", async () => {
+		mockState.caller = workforceAdmin;
+
+		const result = await getProjects();
+
+		expect(result).toEqual({
+			success: true,
+			data: [
+				expect.objectContaining({ id: "project-1" }),
+				expect.objectContaining({ id: "project-2" }),
+			],
+		});
+	});
+
+	it("lets a workforce admin update a project they do not manage", async () => {
+		mockState.caller = workforceAdmin;
+		mockState.projectQueue = [
+			{ id: "project-2", organizationId: "org-1", name: "Unmanaged Project", customerId: null },
+		];
+
+		const result = await updateProject({ projectId: "project-2", name: "Renamed" });
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.updateWhereArgs).toHaveLength(1);
+	});
+
+	it("lets a workforce admin attach any customer of the organization", async () => {
+		mockState.caller = workforceAdmin;
+		mockState.projectQueue = [
+			{ id: "project-1", organizationId: "org-1", name: "Managed Project", customerId: null },
+		];
+		mockState.customerQueue = [{ id: "customer-2", organizationId: "org-1", isActive: true }];
+		mockState.projectRows = [
+			{ id: "project-2", organizationId: "org-1", customerId: "customer-2", isActive: true },
+		];
+
+		const result = await updateProject({ projectId: "project-1", customerId: "customer-2" });
+
+		expect(result).toEqual({ success: true, data: undefined });
+	});
+
+	it("does not make a workforce admin the manager of a project they create", async () => {
+		mockState.caller = workforceAdmin;
+
+		const result = await createProject({ name: "Organization Project" });
+
+		expect(result).toEqual({ success: true, data: { id: "created-project-1" } });
+		const managerAssignmentInserts = mockState.insertCalls
+			.flat()
+			.filter(
+				(value) =>
+					value &&
+					typeof value === "object" &&
+					"projectId" in (value as Record<string, unknown>) &&
+					"employeeId" in (value as Record<string, unknown>),
+			);
+		expect(managerAssignmentInserts).toEqual([]);
 	});
 
 	it("refuses a task requirement that is not a boolean", async () => {

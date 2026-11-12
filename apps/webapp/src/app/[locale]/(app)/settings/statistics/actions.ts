@@ -13,6 +13,7 @@ import {
 } from "@/db/schema";
 import { instantToCanonicalString, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { reachesWholeOrganization } from "@/lib/organization-action/managed-scope";
 import {
 	noInput,
 	type OrganizationActor,
@@ -119,11 +120,22 @@ function buildStatisticsBase(params: {
  */
 export const getOrganizationStats = organizationAction(
 	{ name: "statistics.getOrganizationStats", requires: "orgAdmin", schema: noInput },
-	({ organizationId }) => organizationStats(organizationId),
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const base = yield* organizationStatisticsBase(organizationId);
+			const dbService = yield* DatabaseService;
+			const [sessionsResult] = yield* dbService.query("statistics.getActiveSessions", () =>
+				dbService.db
+					.select({ count: count() })
+					.from(session)
+					.where(eq(session.activeOrganizationId, organizationId)),
+			);
+			return { ...base, activeSessions: sessionsResult?.count ?? 0 } satisfies OrganizationStats;
+		}),
 );
 
-
-function organizationStats(organizationId: string) {
+/** The organization's statistics: what an org admin and a workforce admin read. */
+function organizationStatisticsBase(organizationId: string) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const { db } = dbService;
@@ -209,10 +221,6 @@ function organizationStats(organizationId: string) {
 							eq(approvalRequest.status, "pending"),
 						),
 					),
-				db
-					.select({ count: count() })
-					.from(session)
-					.where(eq(session.activeOrganizationId, organizationId)),
 			]),
 		);
 
@@ -229,37 +237,37 @@ function organizationStats(organizationId: string) {
 			rejectedAbsencesResult,
 			approvalsResult,
 			pendingApprovalsResult,
-			sessionsResult,
 		] = results;
 
-		const totalEmployees = employeesResult[0]?.count ?? 0;
-		const activeEmployees = activeEmployeesResult[0]?.count ?? 0;
-
-		return {
-			...buildStatisticsBase({
-				totalEmployees,
-				activeEmployees,
-				totalTeams: teamsResult[0]?.count ?? 0,
-				totalTimeEntries: timeEntriesResult[0]?.count ?? 0,
-				timeEntriesThisMonth: timeEntriesThisMonthResult[0]?.count ?? 0,
-				timeEntriesLastMonth: timeEntriesLastMonthResult[0]?.count ?? 0,
-				totalAbsences: absencesResult[0]?.count ?? 0,
-				pendingAbsences: pendingAbsencesResult[0]?.count ?? 0,
-				approvedAbsences: approvedAbsencesResult[0]?.count ?? 0,
-				rejectedAbsences: rejectedAbsencesResult[0]?.count ?? 0,
-				totalApprovals: approvalsResult[0]?.count ?? 0,
-				pendingApprovals: pendingApprovalsResult[0]?.count ?? 0,
-			}),
-			activeSessions: sessionsResult[0]?.count ?? 0,
-		};
+		return buildStatisticsBase({
+			totalEmployees: employeesResult[0]?.count ?? 0,
+			activeEmployees: activeEmployeesResult[0]?.count ?? 0,
+			totalTeams: teamsResult[0]?.count ?? 0,
+			totalTimeEntries: timeEntriesResult[0]?.count ?? 0,
+			timeEntriesThisMonth: timeEntriesThisMonthResult[0]?.count ?? 0,
+			timeEntriesLastMonth: timeEntriesLastMonthResult[0]?.count ?? 0,
+			totalAbsences: absencesResult[0]?.count ?? 0,
+			pendingAbsences: pendingAbsencesResult[0]?.count ?? 0,
+			approvedAbsences: approvedAbsencesResult[0]?.count ?? 0,
+			rejectedAbsences: rejectedAbsencesResult[0]?.count ?? 0,
+			totalApprovals: approvalsResult[0]?.count ?? 0,
+			pendingApprovals: pendingApprovalsResult[0]?.count ?? 0,
+		});
 	});
 }
 
-/** Statistics of the teams whose settings a scoped manager manages. */
+/**
+ * The statistics a scoped manager reads: a workforce admin the organization's
+ * (as `managedScope()`, without the org-admin sessions count); a manager those
+ * of the teams whose settings they manage.
+ */
 export const getManagerStatisticsReadView = organizationAction(
 	{ name: "statistics.getManagerReadView", requires: "scopedManager", schema: noInput },
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
+			if (reachesWholeOrganization(actor)) {
+				return yield* organizationStatisticsBase(organizationId);
+			}
 			const dbService = yield* DatabaseService;
 			const { db } = dbService;
 			const teamIdSet = yield* manageableTeamIds(actor, organizationId);
