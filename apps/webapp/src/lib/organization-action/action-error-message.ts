@@ -4,8 +4,8 @@
  *
  * A failure is a `ServerActionResult` failure: `code` is the error's `_tag`
  * (`AuthorizationError`, `ValidationError`, …) and `refusal` a machine-readable
- * reason such as `former_employee`. Actions not yet on `organizationAction`
- * still put their feature reason in `code`; overrides are looked up by both.
+ * reason such as `former_employee`. Overrides are looked up by both, so a
+ * feature can word a refusal (`vehicle_used`) or a whole code (`NotFoundError`).
  */
 
 /** A Tolgee `t` (client `useTranslate` or server `getTranslate`). */

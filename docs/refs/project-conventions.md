@@ -46,7 +46,9 @@ Settings server actions authorize by **settings access**, not CASL ([ADR 0002](.
 
 The older `SettingsAccessTier` (`member | manager | orgAdmin`) in `lib/settings-access.ts` still backs `getCurrentSettingsAccessTier` and the sidebar. Keep it apart from the four levels above.
 
-`settings/__tests__/organization-action-coverage.test.ts` fails on any export of a settings `"use server"` module that `organizationAction` did not produce. Its only exceptions are the account actions in `ACCOUNT_EXEMPTIONS`, each with a reason. The same test fails any settings action unit test that `vi.mock`s `@/lib/auth-helpers`, `@/lib/auth` or the auth service: stub `AuthService` with `organizationActionStubLayer`, and spy on the real `auth.api` method for a Better Auth call.
+`settings/__tests__/organization-action-coverage.test.ts` fails on any export of a settings `"use server"` module that `organizationAction` did not produce. Its only exceptions are the account actions in `ACCOUNT_EXEMPTIONS`, each with a reason. The same test fails any settings action unit test that `vi.mock`s `@/lib/auth-helpers`, `@/lib/auth` or the auth service: stub `AuthService` with `organizationActionStubLayer`, and spy on the real `auth.api` method for a Better Auth call. PostgreSQL suites are exempt from that rule because they test the real session resolution. It also fails on any `require*`, `ensure*` or `assert*` function in a settings action file: work out access with a shared loader and refuse with `refuseUnless` ([Effect reference](effect.md#organization-actions)).
+
+Components decide which settings controls to show by the viewer's settings access (`meetsSettingsAccess(settingsAccess, "orgAdmin")`, from `lib/organization-action/settings-access-level.ts`), passed down from the page, never by comparing the membership role with `"owner"` or `"admin"`.
 
 [CASL](https://casl.js.org/) decides object-level checks inside handlers, such as whether this manager may edit this employee, and authorization outside settings. Use the existing ability checks there instead of ad-hoc role checks.
 

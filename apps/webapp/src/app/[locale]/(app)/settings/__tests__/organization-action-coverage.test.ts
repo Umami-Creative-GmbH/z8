@@ -107,8 +107,10 @@ function mockedAuthModules(source: string): string[] {
 
 /**
  * Unit tests of settings actions: test files that import a settings `"use server"`
- * module. PostgreSQL suites (`*.integration.test.ts`) drive the real `AuthService`
- * through a Better Auth session and are not action stubs.
+ * module. PostgreSQL suites (`*.integration.test.ts`) are exempt on purpose: they
+ * test the real `AuthService` against real membership and employee rows, so they
+ * stand in a Better Auth session by mocking `@/lib/auth` (`auth.api.getSession`);
+ * `organizationActionStubLayer` would skip the very resolution they cover.
  */
 const actionTests = settingsFiles
 	.filter((path) => isTestFile(path) && !/\.integration\.test\.tsx?$/.test(path))
