@@ -9,11 +9,31 @@ import {
 } from "@/app/[locale]/(app)/settings/security/kiosk-fob-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KioskFobManagementRefusal } from "@/lib/time-tracking/kiosk/fob-errors";
+import { refusalCodeOf } from "@/lib/effect/refusal-code";
+import {
+	type KioskFobActionResult,
+	type KioskFobManagementErrorCode,
+	KioskFobManagementRefusal,
+} from "@/lib/time-tracking/kiosk/fob-errors";
 import { KioskFobRemoveControls } from "./kiosk-fob-remove-controls";
 import { kioskFobDetails, kioskFobErrorMessage } from "./kiosk-fob-text";
 
 const OWN_FOB_STATUS_KEY = ["kiosk", "own-fob-status"] as const;
+
+function fobRefusalCode(failure: { code?: string; refusal?: string }) {
+	return refusalCodeOf<KioskFobManagementErrorCode>(failure, {
+		signedOut: "sign_in_required",
+		noAccess: "not_allowed",
+	});
+}
+
+/** Removes the fob, with the result in the shape the shared remove controls read. */
+async function removeOwnFob(fobId: string): Promise<KioskFobActionResult<{ removed: true }>> {
+	const result = await removeOwnKioskFobAction(fobId);
+	return result.success
+		? result
+		: { success: false, error: result.error, code: fobRefusalCode(result) };
+}
 
 /**
  * The signed-in employee's own kiosk fob (#1508), next to their kiosk PIN on the
@@ -30,8 +50,10 @@ export function OwnKioskFobCard() {
 		queryKey: OWN_FOB_STATUS_KEY,
 		queryFn: async () => {
 			const result = await getOwnKioskFobStatusAction();
-			if (!result.success) throw new KioskFobManagementRefusal(result.code, result.error);
-			return result.data;
+			if (result.success) return result.data;
+			// Without settings access here (no approved membership, a former employee) there is no own fob.
+			if (result.code === "AuthorizationError") return null;
+			throw new KioskFobManagementRefusal(fobRefusalCode(result), result.error);
 		},
 	});
 	const status = statusQuery.data;
@@ -83,7 +105,7 @@ export function OwnKioskFobCard() {
 						</p>
 						{fob && (
 							<KioskFobRemoveControls
-								remove={() => removeOwnKioskFobAction(fob.fobId)}
+								remove={() => removeOwnFob(fob.fobId)}
 								confirmText={t(
 									"settings.security.kioskFob.confirmRemoveText",
 									"If you lost it, remove it: it stops working at kiosks at once. Your kiosk PIN keeps working.",

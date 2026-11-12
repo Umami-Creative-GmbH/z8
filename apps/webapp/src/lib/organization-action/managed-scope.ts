@@ -3,7 +3,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { employee, employeeManagers, teamPermissions } from "@/db/schema";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { meetsSettingsAccess, type SettingsAccess } from "./settings-access";
+import { type EmployeeRole, meetsSettingsAccess, type SettingsAccess } from "./settings-access";
 
 /** Whom an organization action's actor manages. */
 export type ManagedScope =
@@ -18,16 +18,24 @@ export type ManagedScope =
 
 const managerEmployee = alias(employee, "manager_employee");
 
+/**
+ * The whole organization for an org admin and for a workforce admin (employee
+ * role admin without an org-admin membership; ADR 0002), else the scoped
+ * manager's reports and teams.
+ */
 export function loadManagedScope(input: {
 	organizationId: string;
 	settingsAccess: SettingsAccess;
-	employeeId: string | null;
+	employee: { id: string; role: EmployeeRole } | null;
 }) {
 	return Effect.gen(function* () {
-		if (meetsSettingsAccess(input.settingsAccess, "orgAdmin")) {
+		if (
+			meetsSettingsAccess(input.settingsAccess, "orgAdmin") ||
+			(input.settingsAccess === "scopedManager" && input.employee?.role === "admin")
+		) {
 			return { organizationWide: true } as ManagedScope;
 		}
-		const managerId = input.employeeId;
+		const managerId = input.employee?.id;
 		if (!managerId || input.settingsAccess !== "scopedManager") {
 			return {
 				organizationWide: false,

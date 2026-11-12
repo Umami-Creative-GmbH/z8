@@ -25,18 +25,24 @@ vi.mock("@/lib/auth/current-organization-actor", () => ({
 		return session.current;
 	},
 }));
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+// The security page's own-fob actions go through `organizationAction`: the session
+// comes from Better Auth, the membership and employee rows are real.
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
-// The employee page's kiosk actions are organization actions: the session comes from Better Auth.
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
 			getSession: async () =>
 				session.current
 					? {
-							user: { id: session.current.userId, role: "user" },
+							user: {
+								id: session.current.userId,
+								role: "user",
+								name: "Caller",
+								email: "c@example.test",
+							},
 							session: {
 								id: `session-${session.current.userId}`,
 								userId: session.current.userId,
@@ -46,6 +52,10 @@ vi.mock("@/lib/auth", () => ({
 					: null,
 		},
 	},
+}));
+vi.mock("@/lib/organization-mfa/organization-access", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/organization-mfa/organization-access")>()),
+	canAccessOrganization: async () => true,
 }));
 vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
@@ -110,8 +120,14 @@ function signIn(userId: string, organizationId: string = org) {
 	session.current = { userId, organizationId };
 }
 
+/** The result's stable code: a store refusal comes as `refusal`, settings access as the kiosk codes. */
 function codeOf(result: { success: boolean; code?: string; refusal?: string }) {
 	return result.success ? "success" : kioskRefusalCode(result);
+}
+
+/** The security page's own-fob actions: a store refusal as `refusal`, else the error tag. */
+function ownCodeOf(result: { success: boolean; code?: string; refusal?: string }) {
+	return result.success ? "success" : (result.refusal ?? result.code);
 }
 
 async function register(
@@ -484,8 +500,8 @@ describe("kiosk fob management on PostgreSQL", () => {
 			const coworkers = await register(ids.coworker, OTHER_SERIAL);
 
 			signIn(ids.workerUser);
-			expect(codeOf(await removeOwnKioskFobAction(coworkers.fobId))).toBe("fob_changed");
-			expect(codeOf(await removeOwnKioskFobAction(""))).toBe("fob_changed");
+			expect(ownCodeOf(await removeOwnKioskFobAction(coworkers.fobId))).toBe("fob_changed");
+			expect(ownCodeOf(await removeOwnKioskFobAction(""))).toBe("fob_changed");
 			expect(await fobHolder(OTHER_SERIAL)).toBe(ids.coworker);
 
 			expect(await removeOwnKioskFobAction(own.fobId)).toEqual({
@@ -494,8 +510,8 @@ describe("kiosk fob management on PostgreSQL", () => {
 			});
 			expect(await fobHolder()).toBeNull();
 			expect(await fobHolder(OTHER_SERIAL)).toBe(ids.coworker);
-			expect(codeOf(await removeOwnKioskFobAction(own.fobId))).toBe("fob_changed");
-			expect(codeOf(await removeOwnKioskFobAction(UNSEEN_FOB))).toBe("no_fob");
+			expect(ownCodeOf(await removeOwnKioskFobAction(own.fobId))).toBe("fob_changed");
+			expect(ownCodeOf(await removeOwnKioskFobAction(UNSEEN_FOB))).toBe("no_fob");
 
 			const stored = await pool.query(
 				"select ended_reason, ended_by_user_id from employee_kiosk_fob where id = $1",
@@ -514,22 +530,22 @@ describe("kiosk fob management on PostgreSQL", () => {
 			expect((await register(ids.worker)).outcome).toBe("registered");
 		});
 
-		it("is nothing for a user without an employee profile here or without organization access", async () => {
+		it("refuses a user without settings access here, a former employee and a signed-out user (ADR 0002)", async () => {
 			await register(ids.worker);
 			const foreign = await register(ids.foreign, SERIAL, ids.otherOrganization, ids.foreignKiosk);
 
-			// The foreign owner signed into our organization has no employee profile here.
+			// The foreign owner signed into our organization has no membership here.
 			signIn(ids.foreignUser, org);
-			expect(await getOwnKioskFobStatusAction()).toEqual({ success: true, data: null });
-			expect(codeOf(await removeOwnKioskFobAction(foreign.fobId))).toBe("employee_not_found");
+			expect(ownCodeOf(await getOwnKioskFobStatusAction())).toBe("AuthorizationError");
+			expect(ownCodeOf(await removeOwnKioskFobAction(foreign.fobId))).toBe("AuthorizationError");
 			expect(await fobHolder(SERIAL, ids.otherOrganization)).toBe(ids.foreign);
 			expect(await fobHolder()).toBe(ids.worker);
 
 			await pool.query("update employee set is_active = false where id = $1", [ids.worker]);
 			signIn(ids.workerUser);
-			expect(await getOwnKioskFobStatusAction()).toEqual({ success: true, data: null });
+			expect(ownCodeOf(await getOwnKioskFobStatusAction())).toBe("AuthorizationError");
 			session.current = null;
-			expect(codeOf(await removeOwnKioskFobAction(UNSEEN_FOB))).toBe("sign_in_required");
+			expect(ownCodeOf(await removeOwnKioskFobAction(UNSEEN_FOB))).toBe("AuthenticationError");
 		});
 
 		it("says whether any kiosk of the organization reads fobs", async () => {

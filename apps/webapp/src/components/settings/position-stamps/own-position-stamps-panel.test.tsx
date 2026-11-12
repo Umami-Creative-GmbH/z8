@@ -84,7 +84,8 @@ describe("OwnPositionStampsPanel", () => {
 		agreeMock.mockResolvedValue({
 			success: false,
 			error: "diagnostic text from the server",
-			code: "notice_changed",
+			code: "ValidationError",
+			refusal: "notice_changed",
 		});
 		render(<OwnPositionStampsPanel data={data({})} />);
 

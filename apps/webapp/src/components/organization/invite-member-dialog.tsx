@@ -12,8 +12,7 @@ import {
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organization/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
-import { kioskPinErrorMessage } from "@/components/settings/kiosk/kiosk-pin-error-message";
-import { kioskRefusalCode } from "@/components/settings/kiosk/kiosk-refusal-code";
+import { KIOSK_PIN_REFUSALS } from "@/components/settings/kiosk/kiosk-pin-refusals";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -34,14 +33,19 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
-import type { KioskPinErrorCode } from "@/lib/time-tracking/kiosk/pin-errors";
 import { useRouter } from "@/navigation";
 
 interface InviteMemberDialogProps {
 	organizationId: string;
 	organizationName: string;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
@@ -49,7 +53,7 @@ interface InviteMemberDialogProps {
 export function InviteMemberDialog({
 	organizationId,
 	organizationName,
-	currentMemberRole,
+	settingsAccess,
 	open,
 	onOpenChange,
 }: InviteMemberDialogProps) {
@@ -105,7 +109,7 @@ export function InviteMemberDialog({
 			}
 		},
 		onError: () => {
-			toast.error(kioskPinErrorMessage(t, "failed"));
+			toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS));
 		},
 	});
 
@@ -138,7 +142,7 @@ export function InviteMemberDialog({
 					onOpenChange(false);
 					refresh();
 				} else {
-					toast.error(kioskPinErrorMessage(t, kioskRefusalCode<KioskPinErrorCode>(created)));
+					toast.error(actionErrorMessage(t, created, KIOSK_PIN_REFUSALS));
 				}
 				return;
 			}
@@ -371,7 +375,7 @@ export function InviteMemberDialog({
 																	</span>
 																</div>
 															</SelectItem>
-															{currentMemberRole === "owner" && (
+															{meetsSettingsAccess(settingsAccess, "owner") && (
 																<SelectItem value="owner">
 																	<div className="flex flex-col items-start">
 																		<span className="font-medium">
@@ -424,7 +428,7 @@ export function InviteMemberDialog({
 							)}
 						</form.Field>
 
-						{currentMemberRole === "owner" && (
+						{meetsSettingsAccess(settingsAccess, "owner") && (
 							<form.Subscribe selector={(state) => state.values.kioskOnly}>
 								{(kioskOnly) =>
 									kioskOnly ? null : (
