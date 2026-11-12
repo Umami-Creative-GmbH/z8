@@ -12,7 +12,7 @@ import {
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organization/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
-import { kioskPinErrorMessage } from "@/components/settings/kiosk/kiosk-pin-error-message";
+import { KIOSK_PIN_REFUSALS } from "@/components/settings/kiosk/kiosk-pin-refusals";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -33,6 +33,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { useRouter } from "@/navigation";
 
@@ -103,7 +104,7 @@ export function InviteMemberDialog({
 			}
 		},
 		onError: () => {
-			toast.error(kioskPinErrorMessage(t, "failed"));
+			toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS));
 		},
 	});
 
@@ -136,7 +137,7 @@ export function InviteMemberDialog({
 					onOpenChange(false);
 					refresh();
 				} else {
-					toast.error(kioskPinErrorMessage(t, created.code));
+					toast.error(actionErrorMessage(t, created, KIOSK_PIN_REFUSALS));
 				}
 				return;
 			}

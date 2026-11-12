@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { isValidKioskPin, KIOSK_PIN_MAX_LENGTH } from "@/lib/time-tracking/kiosk/pin";
-import { kioskPinErrorMessage } from "./kiosk-pin-error-message";
+import { KIOSK_PIN_REFUSALS } from "./kiosk-pin-refusals";
 
 const OWN_PIN_STATUS_KEY = ["kiosk", "own-pin-status"] as const;
 
@@ -40,7 +41,7 @@ export function OwnKioskPinCard() {
 	});
 	const saveMutation = useMutation({
 		mutationFn: (pin: string) => setOwnKioskPinAction(pin),
-		onError: () => toast.error(kioskPinErrorMessage(t, "failed")),
+		onError: () => toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS)),
 	});
 	const form = useForm({
 		defaultValues: { pin: "", confirmation: "" },
@@ -48,7 +49,7 @@ export function OwnKioskPinCard() {
 			const result = await saveMutation.mutateAsync(value.pin).catch(() => null);
 			if (!result) return;
 			if (!result.success) {
-				toast.error(kioskPinErrorMessage(t, result.code));
+				toast.error(actionErrorMessage(t, result, KIOSK_PIN_REFUSALS));
 				return;
 			}
 			toast.success(t("settings.security.kioskPin.saved", "Kiosk PIN saved"));
