@@ -56,7 +56,7 @@ function validateWebhookUrl(url: string): { valid: boolean; reason?: string } {
 	}
 }
 
-function requireValidUrl(url: string) {
+function checkWebhookUrl(url: string) {
 	const validation = validateWebhookUrl(url);
 	return validation.valid
 		? Effect.void
@@ -69,7 +69,7 @@ function requireValidUrl(url: string) {
 			);
 }
 
-function requireValidEvents(events: string[]) {
+function checkWebhookEvents(events: string[]) {
 	if (!events.length) {
 		return Effect.fail(
 			new ValidationError({
@@ -129,8 +129,8 @@ export const createWebhook = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			yield* requireValidUrl(input.url);
-			yield* requireValidEvents(input.subscribedEvents);
+			yield* checkWebhookUrl(input.url);
+			yield* checkWebhookEvents(input.subscribedEvents);
 
 			const result = yield* Effect.promise(() =>
 				createWebhookEndpoint({
@@ -169,8 +169,8 @@ export const updateWebhook = organizationAction(
 			const { webhookId, ...data } = input;
 			yield* loadWebhook(webhookId, organizationId);
 
-			if (data.url) yield* requireValidUrl(data.url);
-			if (data.subscribedEvents) yield* requireValidEvents(data.subscribedEvents);
+			if (data.url) yield* checkWebhookUrl(data.url);
+			if (data.subscribedEvents) yield* checkWebhookEvents(data.subscribedEvents);
 
 			const updated = yield* Effect.promise(() =>
 				updateWebhookEndpoint(webhookId, {

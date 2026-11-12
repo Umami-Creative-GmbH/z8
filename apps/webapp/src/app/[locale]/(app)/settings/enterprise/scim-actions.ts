@@ -50,7 +50,7 @@ async function scimConnectionWork<T>(connectionId: string, run: () => Promise<T>
 	}
 }
 
-function assertCurrentOrganizationConnection(
+function currentOrganizationConnection(
 	connection: { connectionId?: string; provisioningDomainId?: string | null },
 	organizationId: string,
 ) {
@@ -60,7 +60,7 @@ function assertCurrentOrganizationConnection(
 	return connection;
 }
 
-async function assertDefaultRoleTemplate(
+async function validateDefaultRoleTemplate(
 	database: DatabaseClient,
 	organizationId: string,
 	defaultRoleTemplateId: string,
@@ -123,7 +123,7 @@ async function adoptActiveScimConnection(
 		organizationId: input.organizationId,
 		connectionId: creation.connectionId,
 	});
-	assertCurrentOrganizationConnection(result.connection, input.organizationId);
+	currentOrganizationConnection(result.connection, input.organizationId);
 	await persistScimConnection(database, { ...input, connection: result.connection });
 	return result.connection;
 }
@@ -133,7 +133,7 @@ async function prepareScimConnection(
 	database: DatabaseClient,
 	input: { organizationId: string; actorId: string; policy: ScimPolicy },
 ) {
-	await assertDefaultRoleTemplate(
+	await validateDefaultRoleTemplate(
 		database,
 		input.organizationId,
 		input.policy.defaultRoleTemplateId,
@@ -161,7 +161,7 @@ export const createEnterpriseIdentityScimConnectionAction = organizationAction(
 			});
 
 			if (result.connection) {
-				assertCurrentOrganizationConnection(result.connection, organizationId);
+				currentOrganizationConnection(result.connection, organizationId);
 				await persistScimConnection(database, { ...scope, connection: result.connection });
 			}
 
@@ -179,7 +179,7 @@ export const getEnterpriseIdentityScimStatusAction = organizationAction(
 					organizationId,
 					connectionId: input.connectionId,
 				});
-				assertCurrentOrganizationConnection(result.connection, organizationId);
+				currentOrganizationConnection(result.connection, organizationId);
 				return result;
 			}),
 		),
@@ -202,7 +202,7 @@ export const reconcileEnterpriseIdentityScimCreationAction = organizationAction(
 				creationRequestId: randomUUID(),
 			});
 			if ("connection" in result && result.connection) {
-				assertCurrentOrganizationConnection(result.connection, organizationId);
+				currentOrganizationConnection(result.connection, organizationId);
 				await persistScimConnection(database, { ...scope, connection: result.connection });
 				revalidatePath(IDENTITY_SETUP_PATH);
 				return { connection: result.connection, status: "active" as const };
@@ -222,7 +222,7 @@ export const rotateEnterpriseIdentityScimCredentialAction = organizationAction(
 					connectionId: input.connectionId,
 					actorId: actor.userId,
 				});
-				assertCurrentOrganizationConnection(result.connection, organizationId);
+				currentOrganizationConnection(result.connection, organizationId);
 				revalidatePath(IDENTITY_SETUP_PATH);
 				return result;
 			}),

@@ -2,7 +2,8 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { customer, type employee, project, projectManager } from "@/db/schema";
-import { AuthorizationError, type DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { type DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 
 export interface ProjectSettingsActor {
@@ -13,25 +14,6 @@ export interface ProjectSettingsActor {
 	organizationId: string;
 	accessTier: SettingsAccessTier;
 	currentEmployee: Pick<typeof employee.$inferSelect, "id" | "role"> | null;
-}
-
-/** What a refused project settings access reports. */
-interface AuthorizationFailureDetails {
-	message: string;
-	resource: string;
-	action: string;
-}
-
-function actorAuthorizationError(
-	actor: { session: { user: { id: string } } },
-	options: AuthorizationFailureDetails,
-) {
-	return new AuthorizationError({
-		message: options.message,
-		userId: actor.session.user.id,
-		resource: options.resource,
-		action: options.action,
-	});
 }
 
 export function getManagedProjectIdsForSettingsActor(actor: ProjectSettingsActor) {
@@ -69,34 +51,19 @@ export function filterItemsToManagedProjects<T extends { id: string }>(
 	return items.filter((item) => managedProjectIds.has(item.id));
 }
 
-export function ensureSettingsActorCanAccessProjectTarget(
+/**
+ * Whether the project is in the actor's reach: a project of their organization
+ * that they administer (org admin) or manage. Callers refuse with `refuseUnless`.
+ */
+export function reachesProject(
 	actor: ProjectSettingsActor,
 	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
-	options: AuthorizationFailureDetails,
 ) {
 	return Effect.gen(function* () {
-		if (targetProject.organizationId !== actor.organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Cannot access project from different organization",
-					userId: actor.session.user.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-
-		if (actor.accessTier === "orgAdmin") {
-			return;
-		}
-
+		if (targetProject.organizationId !== actor.organizationId) return false;
+		if (actor.accessTier === "orgAdmin") return true;
 		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
-
-		if (managedProjectIds?.has(targetProject.id)) {
-			return;
-		}
-
-		return yield* Effect.fail(actorAuthorizationError(actor, options));
+		return managedProjectIds?.has(targetProject.id) ?? false;
 	});
 }
 
@@ -157,52 +124,38 @@ function getCustomerProjects(actor: ProjectSettingsActor, customerId: string, qu
 	});
 }
 
-export function ensureSettingsActorCanAccessCustomerTarget(
+/**
+ * Whether the customer is in the actor's reach: a customer of their
+ * organization that they administer (org admin), or whose active projects they
+ * all manage. Callers refuse with `refuseUnless`.
+ */
+export function reachesCustomer(
 	actor: ProjectSettingsActor,
 	targetCustomer: Pick<typeof customer.$inferSelect, "id" | "organizationId">,
-	options: AuthorizationFailureDetails,
 ) {
 	return Effect.gen(function* () {
-		if (targetCustomer.organizationId !== actor.organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Cannot access customer from different organization",
-					userId: actor.session.user.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-
-		if (actor.accessTier === "orgAdmin") {
-			return;
-		}
-
+		if (targetCustomer.organizationId !== actor.organizationId) return false;
+		if (actor.accessTier === "orgAdmin") return true;
 		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
 		const customerProjects = yield* getCustomerProjects(
 			actor,
 			targetCustomer.id,
 			"getCustomerProjectsForSettingsActor",
 		);
-
-		if (
-			managedProjectIds &&
+		return (
+			managedProjectIds !== null &&
 			customerProjects.length > 0 &&
 			customerProjects.every((customerProject) => managedProjectIds.has(customerProject.id))
-		) {
-			return;
-		}
-
-		return yield* Effect.fail(actorAuthorizationError(actor, options));
+		);
 	});
 }
 
 /**
  * The active customer of the actor's organization that a project may be
- * created for, or a refusal: unknown customers fail validation, customers
- * outside the actor's scope fail authorization.
+ * created for: unknown customers fail validation, customers outside the
+ * actor's reach fail authorization.
  */
-export function ensureSettingsActorCanUseProjectCustomer(
+export function loadAssignableCustomer(
 	actor: ProjectSettingsActor,
 	customerId: string,
 	action: string,
@@ -224,10 +177,12 @@ export function ensureSettingsActorCanUseProjectCustomer(
 			);
 		}
 
-		yield* ensureSettingsActorCanAccessCustomerTarget(actor, customerExists, {
+		yield* refuseUnless(yield* reachesCustomer(actor, customerExists), {
+			userId: actor.session.user.id,
 			message: "You do not have access to assign this customer",
 			resource: "project",
 			action,
 		});
+		return customerExists;
 	});
 }

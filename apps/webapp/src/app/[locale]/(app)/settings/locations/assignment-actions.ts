@@ -57,7 +57,7 @@ function alreadyAssigned(message: string) {
 }
 
 /** The employee `employeeId` of the session's organization. */
-function ensureEmployeeOfOrganization(organizationId: string, employeeId: string) {
+function checkEmployeeInOrganization(organizationId: string, employeeId: string) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const row = yield* dbService.query("locations.getTargetEmployee", () =>
@@ -135,7 +135,7 @@ export const assignLocationEmployee = organizationAction(
 			if (!loc) {
 				return yield* Effect.fail(notFound("location", input.locationId, "Location not found"));
 			}
-			yield* ensureEmployeeOfOrganization(organizationId, input.employeeId);
+			yield* checkEmployeeInOrganization(organizationId, input.employeeId);
 
 			const existing = yield* dbService.query("locations.checkLocationAssignment", () =>
 				dbService.db.query.locationEmployee.findFirst({
@@ -226,7 +226,7 @@ export const assignSubareaEmployee = organizationAction(
 			if (!subarea || subarea.location?.organizationId !== organizationId) {
 				return yield* Effect.fail(notFound("subarea", input.subareaId, "Subarea not found"));
 			}
-			yield* ensureEmployeeOfOrganization(organizationId, input.employeeId);
+			yield* checkEmployeeInOrganization(organizationId, input.employeeId);
 
 			const existing = yield* dbService.query("locations.checkSubareaAssignment", () =>
 				dbService.db.query.subareaEmployee.findFirst({

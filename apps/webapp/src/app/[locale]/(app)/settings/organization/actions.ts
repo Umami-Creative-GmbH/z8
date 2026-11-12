@@ -47,7 +47,7 @@ const initialRoleOf = (role: string) =>
 	role === "admin" || role === "owner" ? "admin" : "employee";
 
 /** A target team of the session's organization, or a `ValidationError` naming the field. */
-function requireTargetTeam(organizationId: string, targetTeamId: string) {
+function validateTargetTeam(organizationId: string, targetTeamId: string) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const targetTeam = yield* dbService.query("getInvitationTargetTeam", () =>
@@ -67,7 +67,7 @@ function requireTargetTeam(organizationId: string, targetTeamId: string) {
 	});
 }
 
-function requireInvitationAllowed(organizationId: string, email: string) {
+function validateInvitationAllowed(organizationId: string, email: string) {
 	return Effect.tryPromise({
 		try: () => assertEnterpriseIdentityInvitationAllowed({ organizationId, email }),
 		catch: (error) =>
@@ -108,8 +108,8 @@ export const sendInvitation = organizationAction(
 				updatedBy: actor.userId,
 			} as const;
 
-			if (input.targetTeamId) yield* requireTargetTeam(organizationId, input.targetTeamId);
-			yield* requireInvitationAllowed(organizationId, input.email);
+			if (input.targetTeamId) yield* validateTargetTeam(organizationId, input.targetTeamId);
+			yield* validateInvitationAllowed(organizationId, input.email);
 
 			const existingInvitation = yield* dbService.query("checkExistingInvitation", () =>
 				dbService.db.query.invitation.findFirst({
@@ -257,7 +257,7 @@ export const resendInvitation = organizationAction(
 			}
 
 			// The restriction may have been activated after this invitation was created.
-			yield* requireInvitationAllowed(organizationId, normalizedEmail);
+			yield* validateInvitationAllowed(organizationId, normalizedEmail);
 
 			failurePhase = "createInvitation";
 			const resentInvitation = yield* Effect.tryPromise({
@@ -351,7 +351,7 @@ export const updateInvitationTargetTeam = organizationAction(
 				);
 			}
 
-			if (input.targetTeamId) yield* requireTargetTeam(organizationId, input.targetTeamId);
+			if (input.targetTeamId) yield* validateTargetTeam(organizationId, input.targetTeamId);
 
 			yield* Effect.tryPromise({
 				try: () =>

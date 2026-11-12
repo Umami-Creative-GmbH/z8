@@ -28,6 +28,7 @@ import { assertOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-g
 import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { logger } from "@/lib/logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import {
 	keepCustomFieldRefusal,
 	saveFormCustomFieldValues,
@@ -45,14 +46,14 @@ import { clearProjectMissingTasks } from "@/lib/time-tracking/work-records/proje
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	projectBillableDefault,
-	requireBillableTimeForDefaultChange,
+	validateBillableDefaultChange,
 } from "./project-billable-default-input";
 import {
-	ensureSettingsActorCanAccessCustomerTarget,
-	ensureSettingsActorCanAccessProjectTarget,
-	ensureSettingsActorCanUseProjectCustomer,
 	filterItemsToManagedProjects,
 	getManagedProjectIdsForSettingsActor,
+	loadAssignableCustomer,
+	reachesCustomer,
+	reachesProject,
 } from "./project-scope";
 import {
 	customFieldValuesSchema,
@@ -465,10 +466,10 @@ export const createProject = organizationAction(
 			}
 
 			if (input.customerId) {
-				yield* ensureSettingsActorCanUseProjectCustomer(projectActor, input.customerId, "create");
+				yield* loadAssignableCustomer(projectActor, input.customerId, "create");
 			}
 
-			yield* requireBillableTimeForDefaultChange(dbService, organizationId, {
+			yield* validateBillableDefaultChange(dbService, organizationId, {
 				requested: input.billableDefault,
 				current: false,
 			});
@@ -570,7 +571,8 @@ function saveProjectChanges(
 		const projectActor = yield* projectSettingsActorOf(actor, organizationId);
 		const dbService = yield* DatabaseService;
 
-		yield* ensureSettingsActorCanAccessProjectTarget(projectActor, existingProject, {
+		yield* refuseUnless(yield* reachesProject(projectActor, existingProject), {
+			userId: projectActor.session.user.id,
 			message: "You do not have access to update this project",
 			resource: "project",
 			action: "update",
@@ -608,7 +610,7 @@ function saveProjectChanges(
 		if (input.customerId !== undefined) updateData.customerId = input.customerId;
 		// Settable by whoever may edit the project while Billable Time is on; no
 		// configuration guard (ADR 0001).
-		yield* requireBillableTimeForDefaultChange(dbService, organizationId, {
+		yield* validateBillableDefaultChange(dbService, organizationId, {
 			requested: input.billableDefault,
 			current: existingProject.billableDefault,
 		});
@@ -657,7 +659,8 @@ function saveProjectChanges(
 				);
 			}
 
-			yield* ensureSettingsActorCanAccessCustomerTarget(projectActor, customerExists, {
+			yield* refuseUnless(yield* reachesCustomer(projectActor, customerExists), {
+				userId: projectActor.session.user.id,
 				message: "You do not have access to assign this customer",
 				resource: "project",
 				action: "update",
@@ -867,7 +870,8 @@ export const addProjectAssignment = organizationAction(
 			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
 			const dbService = yield* DatabaseService;
 
-			yield* ensureSettingsActorCanAccessProjectTarget(projectActor, existingProject, {
+			yield* refuseUnless(yield* reachesProject(projectActor, existingProject), {
+				userId: projectActor.session.user.id,
 				message: "You do not have access to update this project",
 				resource: "projectAssignment",
 				action: "create",
@@ -984,7 +988,8 @@ export const removeProjectAssignment = organizationAction(
 				existingAssignment.projectId,
 			);
 
-			yield* ensureSettingsActorCanAccessProjectTarget(projectActor, assignmentProject, {
+			yield* refuseUnless(yield* reachesProject(projectActor, assignmentProject), {
+				userId: projectActor.session.user.id,
 				message: "You do not have access to update this project",
 				resource: "projectAssignment",
 				action: "delete",

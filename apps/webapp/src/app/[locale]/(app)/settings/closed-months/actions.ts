@@ -8,13 +8,14 @@ import { organization, user } from "@/db/auth-schema";
 import { employee, location, team } from "@/db/schema";
 import { organizationAbility } from "@/lib/authorization/organization-ability";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
+import { ValidationError } from "@/lib/effect/errors";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	noInput,
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
+import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import {
 	type ClosedMonthSettings,
 	loadClosedMonthSettings,
@@ -58,33 +59,31 @@ const monthPermissions = (actor: OrganizationActor, organizationId: string) =>
 		};
 	});
 
-const requireMonthPermission = (
-	actor: OrganizationActor,
-	organizationId: string,
-	action: "read" | "close" | "reopen",
-) =>
-	Effect.gen(function* () {
-		const permissions = yield* monthPermissions(actor, organizationId);
-		const refuse = (message: string) =>
-			Effect.fail(
-				new AuthorizationError({
-					message,
-					userId: actor.userId,
-					resource: "closedMonth",
-					action,
-				}),
-			);
-		if (action === "close" && !permissions.canClose) {
-			return yield* refuse("You are not allowed to close months");
-		}
-		if (action === "reopen" && !permissions.canReopen) {
-			return yield* refuse("You are not allowed to reopen months");
-		}
-		if (action === "read" && !permissions.canClose && !permissions.canReopen) {
-			return yield* refuse("You are not allowed to see closed months");
-		}
-		return permissions;
-	});
+type MonthAction = "read" | "close" | "reopen";
+
+/** Reading needs either permission; closing and reopening need their own. */
+function permitsMonthAction(
+	permissions: { canClose: boolean; canReopen: boolean },
+	action: MonthAction,
+): boolean {
+	if (action === "close") return permissions.canClose;
+	if (action === "reopen") return permissions.canReopen;
+	return permissions.canClose || permissions.canReopen;
+}
+
+const MONTH_REFUSAL_MESSAGES: Record<MonthAction, string> = {
+	read: "You are not allowed to see closed months",
+	close: "You are not allowed to close months",
+	reopen: "You are not allowed to reopen months",
+};
+
+/** What `refuseUnless` reports when the actor may not do `action` with months. */
+const monthRefusal = (actor: OrganizationActor, action: MonthAction) => ({
+	userId: actor.userId,
+	message: MONTH_REFUSAL_MESSAGES[action],
+	resource: "closedMonth",
+	action,
+});
 
 const parseMonth = (value: string) =>
 	Effect.try({
@@ -169,7 +168,8 @@ export const getClosedMonthsOverview = organizationAction(
 	{ name: "closedMonths.overview", requires: "member", schema: noInput },
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
-			const permissions = yield* requireMonthPermission(actor, organizationId, "read");
+			const permissions = yield* monthPermissions(actor, organizationId);
+			yield* refuseUnless(permitsMonthAction(permissions, "read"), monthRefusal(actor, "read"));
 			const dbService = yield* DatabaseService;
 			return yield* dbService.query("closedMonths.overview", async () => {
 				const database = dbService.db;
@@ -244,7 +244,8 @@ export const closeMonthAction = organizationAction(
 	{ name: "closedMonths.close", requires: "member", schema: closeMonthSchema },
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			yield* requireMonthPermission(actor, organizationId, "close");
+			const permissions = yield* monthPermissions(actor, organizationId);
+			yield* refuseUnless(permitsMonthAction(permissions, "close"), monthRefusal(actor, "close"));
 			const dbService = yield* DatabaseService;
 			const result: CloseMonthResult = yield* dbService.query("closedMonths.close", () =>
 				closeMonth(dbService.db, {
@@ -268,7 +269,8 @@ export const getMonthCloseWarningsAction = organizationAction(
 	{ name: "closedMonths.closeWarnings", requires: "member", schema: closeMonthSchema },
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			yield* requireMonthPermission(actor, organizationId, "close");
+			const permissions = yield* monthPermissions(actor, organizationId);
+			yield* refuseUnless(permitsMonthAction(permissions, "close"), monthRefusal(actor, "close"));
 			const dbService = yield* DatabaseService;
 			const warnings: CloseMonthWarning[] = yield* dbService.query(
 				"closedMonths.closeWarnings",
@@ -293,7 +295,8 @@ export const reopenMonthAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			yield* requireMonthPermission(actor, organizationId, "reopen");
+			const permissions = yield* monthPermissions(actor, organizationId);
+			yield* refuseUnless(permitsMonthAction(permissions, "reopen"), monthRefusal(actor, "reopen"));
 			const dbService = yield* DatabaseService;
 			// Attaches the reopened employees' missing canonical work records after the commit (#1224).
 			const result: ReopenMonthResult = yield* dbService.query("closedMonths.reopen", () =>
@@ -377,7 +380,8 @@ export const saveClosedMonthSettingsAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			yield* requireMonthPermission(actor, organizationId, "close");
+			const permissions = yield* monthPermissions(actor, organizationId);
+			yield* refuseUnless(permitsMonthAction(permissions, "close"), monthRefusal(actor, "close"));
 			const dbService = yield* DatabaseService;
 			const saved = yield* dbService.query("closedMonths.saveSettings", () =>
 				saveClosedMonthSettings(dbService.db, {

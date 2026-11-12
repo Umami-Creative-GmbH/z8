@@ -417,7 +417,7 @@ function importReview<T>(
 }
 
 /** Refuses mapped employees outside the organization (tampered client requests). */
-function ensureMappedEmployeesInOrganization(
+function validateMappedEmployeesInOrganization(
 	employeeMappings: ImportEmployeeMapping[],
 	organizationId: string,
 ) {
@@ -456,7 +456,7 @@ export const startImportReviewScan = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			yield* ensureMappedEmployeesInOrganization(input.employeeMappings, organizationId);
+			yield* validateMappedEmployeesInOrganization(input.employeeMappings, organizationId);
 			return yield* importReview(() => startScan(input, organizationId, actor.userId), {
 				credential: input.credential,
 			});

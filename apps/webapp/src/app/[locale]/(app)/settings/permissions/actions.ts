@@ -65,7 +65,7 @@ const hasTeamPermissionSchema = z.strictObject({
 });
 
 /** The granter recorded on a permission change: the actor's employee record. */
-function requireActorEmployee(actor: OrganizationActor, action: "grant" | "revoke") {
+function granterEmployee(actor: OrganizationActor, action: "grant" | "revoke") {
 	return actor.employee
 		? Effect.succeed(actor.employee)
 		: Effect.fail(
@@ -94,7 +94,7 @@ export const grantTeamPermissions = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const permissionsService = yield* PermissionsService;
-			const granter = yield* requireActorEmployee(actor, "grant");
+			const granter = yield* granterEmployee(actor, "grant");
 
 			yield* permissionsService.grantPermissions(
 				input.employeeId,
@@ -121,7 +121,7 @@ export const revokeTeamPermissions = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const permissionsService = yield* PermissionsService;
-			yield* requireActorEmployee(actor, "revoke");
+			yield* granterEmployee(actor, "revoke");
 
 			yield* permissionsService.revokePermissions(
 				input.employeeId,

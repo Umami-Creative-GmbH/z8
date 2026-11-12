@@ -158,6 +158,49 @@ describe("settings server actions go through organizationAction", () => {
 	});
 });
 
+/**
+ * Functions named like a local access guard (`require*`, `ensure*`, `assert*`).
+ * Settings action files work out access with shared loaders and refuse through
+ * `refuseUnless`; data checks take other names (`validate*`, `load*`, `refuse*`).
+ */
+function guardShapedFunctions(source: string): string[] {
+	return [
+		...source.matchAll(
+			/(?:function\s+|(?:const|let)\s+)((?:require|ensure|assert)[A-Z]\w*)\s*(?:[=(<]|:)/g,
+		),
+	].map((match) => match[1]);
+}
+
+const settingsActionSources = sourceFiles.filter((path) => /\.ts$/.test(path));
+
+describe("settings action files keep no local access guards", () => {
+	it("tells a guard-shaped function from other names", () => {
+		expect(
+			guardShapedFunctions(`
+				function requireTeamPermission(actor) {}
+				export function ensureSettingsActorCanAccessProjectTarget(actor) {}
+				const requireMonthPermission = (actor) => actor;
+				async function assertDefaultRoleTemplate() {}
+				function refuseUnlessManaged() {}
+				const required = requireX;
+				yield* requireOther(actor);
+			`),
+		).toEqual([
+			"requireTeamPermission",
+			"ensureSettingsActorCanAccessProjectTarget",
+			"requireMonthPermission",
+			"assertDefaultRoleTemplate",
+		]);
+	});
+
+	it.each(settingsActionSources.map((path) => [settingsPath(path), path]))(
+		"%s defines no require*, ensure* or assert* function",
+		(_name, path) => {
+			expect(guardShapedFunctions(readFileSync(path, "utf8"))).toEqual([]);
+		},
+	);
+});
+
 describe("settings action tests stub AuthService instead of mocking auth modules", () => {
 	it("finds the settings action tests", () => {
 		expect(actionTests.length).toBeGreaterThan(50);

@@ -7,7 +7,6 @@ import * as z from "zod";
 import { projectTask } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
-	AuthorizationError,
 	ConflictError,
 	type DatabaseError,
 	NotFoundError,
@@ -20,6 +19,7 @@ import {
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
+import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import {
 	canManageProjectTasks,
@@ -129,24 +129,19 @@ function taskManagerOf(actor: OrganizationActor, organizationId: string): Projec
 	};
 }
 
-/** Refuses unless the actor may manage the tasks of this project of their organization. */
-function ensureCanManageTasksOf(manager: ProjectTaskManager, projectId: string, action: string) {
+/** Whether the actor may manage the tasks of this project of their organization. */
+function managesTasksOf(manager: ProjectTaskManager, projectId: string, action: string) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
-		const allowed = yield* dbService.query(`projectTask.${action}:permission`, () =>
+		return yield* dbService.query(`projectTask.${action}:permission`, () =>
 			canManageProjectTasks(manager, projectId),
 		);
-		if (!allowed) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: TASK_ACCESS_DENIED,
-					userId: manager.userId,
-					resource: "project_task",
-					action,
-				}),
-			);
-		}
 	});
+}
+
+/** What `refuseUnless` reports when the actor may not manage a project's tasks. */
+function taskRefusal(manager: ProjectTaskManager, action: string) {
+	return { userId: manager.userId, message: TASK_ACCESS_DENIED, resource: "project_task", action };
 }
 
 /** An existing task of the session's organization whose project the actor may manage. */
@@ -165,7 +160,10 @@ function manageableTask(manager: ProjectTaskManager, taskId: string, action: str
 				}),
 			);
 		}
-		yield* ensureCanManageTasksOf(manager, task.projectId, action);
+		yield* refuseUnless(
+			yield* managesTasksOf(manager, task.projectId, action),
+			taskRefusal(manager, action),
+		);
 		return task;
 	});
 }
@@ -198,7 +196,10 @@ export const getProjectTasks = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const manager = taskManagerOf(actor, organizationId);
-			yield* ensureCanManageTasksOf(manager, input.projectId, "read");
+			yield* refuseUnless(
+				yield* managesTasksOf(manager, input.projectId, "read"),
+				taskRefusal(manager, "read"),
+			);
 			const dbService = yield* DatabaseService;
 			return yield* dbService.query("projectTask.list", () =>
 				listProjectTasks(
@@ -214,7 +215,10 @@ export const createProjectTask = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const manager = taskManagerOf(actor, organizationId);
-			yield* ensureCanManageTasksOf(manager, input.projectId, "create");
+			yield* refuseUnless(
+				yield* managesTasksOf(manager, input.projectId, "create"),
+				taskRefusal(manager, "create"),
+			);
 			const name = yield* validated(normalizeProjectTaskName(input.name));
 			const description = yield* validated(normalizeProjectTaskDescription(input.description));
 			const estimateHours = yield* validated(normalizeProjectTaskEstimate(input.estimateHours));

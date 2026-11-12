@@ -10,15 +10,16 @@ import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import {
 	keepCustomFieldRefusal,
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
 import {
-	ensureSettingsActorCanAccessCustomerTarget,
-	ensureSettingsActorCanAccessProjectTarget,
 	getManagedCustomerIdsForSettingsActor,
+	reachesCustomer,
+	reachesProject,
 } from "../projects/project-scope";
 import {
 	customFieldValuesSchema,
@@ -146,7 +147,8 @@ export const createCustomer = organizationAction(
 				? yield* loadOrganizationProject(organizationId, input.projectId)
 				: null;
 			if (scopedProject) {
-				yield* ensureSettingsActorCanAccessProjectTarget(projectActor, scopedProject, {
+				yield* refuseUnless(yield* reachesProject(projectActor, scopedProject), {
+					userId: projectActor.session.user.id,
 					message: "You do not have access to create customers for this project",
 					resource: "customer",
 					action: "create",
@@ -243,7 +245,8 @@ export const updateCustomer = organizationAction(
 			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
 			const dbService = yield* DatabaseService;
 
-			yield* ensureSettingsActorCanAccessCustomerTarget(projectActor, existingCustomer, {
+			yield* refuseUnless(yield* reachesCustomer(projectActor, existingCustomer), {
+				userId: projectActor.session.user.id,
 				message: "You do not have access to update this customer",
 				resource: "customer",
 				action: "update",
@@ -333,7 +336,8 @@ export const deleteCustomer = organizationAction(
 			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
 			const dbService = yield* DatabaseService;
 
-			yield* ensureSettingsActorCanAccessCustomerTarget(projectActor, existingCustomer, {
+			yield* refuseUnless(yield* reachesCustomer(projectActor, existingCustomer), {
+				userId: projectActor.session.user.id,
 				message: "You do not have access to delete this customer",
 				resource: "customer",
 				action: "delete",

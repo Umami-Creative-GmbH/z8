@@ -37,6 +37,7 @@ import {
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
+import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import { buildTeamSettingsSurface, getScopedTeamFlags, type ScopedTeam } from "./team-scope";
 
@@ -310,24 +311,16 @@ function loadTeam(dbService: DatabaseServiceInstance, organizationId: string, te
 		);
 }
 
-/** An org admin may; a scoped manager needs `permission` on the team. */
-function requireTeamPermission(
+/** True for an org admin, else whether the scoped manager holds `permission` on the team. */
+function holdsTeamPermission(
 	actor: OrganizationActor,
 	permission: "canManageTeamMembers" | "canManageTeamSettings",
 	teamId: string,
-	refusal: { message: string; resource: string; action: string },
 ) {
 	return Effect.gen(function* () {
-		if (accessTierOf(actor) === "orgAdmin") return;
+		if (accessTierOf(actor) === "orgAdmin") return true;
 		const permissionsService = yield* PermissionsService;
-		const canManage = yield* permissionsService.hasTeamPermission(
-			actorIdOf(actor),
-			permission,
-			teamId,
-		);
-		if (!canManage) {
-			return yield* Effect.fail(new AuthorizationError({ ...refusal, userId: actorIdOf(actor) }));
-		}
+		return yield* permissionsService.hasTeamPermission(actorIdOf(actor), permission, teamId);
 	});
 }
 
@@ -347,7 +340,8 @@ function authorizeTeamMemberChange(
 		const dbService = yield* DatabaseService;
 		const targetTeam = yield* loadTeam(dbService, organizationId, teamId);
 
-		yield* requireTeamPermission(actor, "canManageTeamMembers", teamId, {
+		yield* refuseUnless(yield* holdsTeamPermission(actor, "canManageTeamMembers", teamId), {
+			userId: actorIdOf(actor),
 			message: "Insufficient permissions to manage team members",
 			resource: "team_member",
 			action: kind === "add" ? "create" : "delete",
@@ -420,7 +414,8 @@ function authorizeTeamDeletion(actor: OrganizationActor, organizationId: string,
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const targetTeam = yield* loadTeam(dbService, organizationId, teamId);
-		yield* requireTeamPermission(actor, "canManageTeamSettings", teamId, {
+		yield* refuseUnless(yield* holdsTeamPermission(actor, "canManageTeamSettings", teamId), {
+			userId: actorIdOf(actor),
 			message: "Insufficient permissions to delete team",
 			resource: "team",
 			action: "delete",
@@ -582,7 +577,8 @@ export const updateTeam = organizationAction(
 			const dbService = yield* DatabaseService;
 			const targetTeam = yield* loadTeam(dbService, organizationId, teamId);
 
-			yield* requireTeamPermission(actor, "canManageTeamSettings", teamId, {
+			yield* refuseUnless(yield* holdsTeamPermission(actor, "canManageTeamSettings", teamId), {
+				userId: actorIdOf(actor),
 				message: "Insufficient permissions to manage team settings",
 				resource: "team",
 				action: "update",

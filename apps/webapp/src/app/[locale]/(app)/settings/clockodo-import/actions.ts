@@ -136,7 +136,7 @@ function clockodo<T>(operation: string, fallback: string, run: () => Promise<T>)
 }
 
 /** Refuses employee IDs outside the organization (tampered client requests). */
-function ensureOrganizationEmployees(
+function validateOrganizationEmployees(
 	dbService: { db: DatabaseClient; query: DatabaseQuery },
 	employeeIds: string[],
 	organizationId: string,
@@ -162,7 +162,7 @@ function ensureOrganizationEmployees(
 }
 
 /** Refuses project IDs outside the organization (tampered client requests). */
-function ensureOrganizationProjects(
+function validateOrganizationProjects(
 	dbService: { db: DatabaseClient; query: DatabaseQuery },
 	projectIds: string[],
 	organizationId: string,
@@ -312,7 +312,7 @@ export const saveUserMappings = organizationAction(
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
 			const { mappings } = input;
-			yield* ensureOrganizationEmployees(
+			yield* validateOrganizationEmployees(
 				dbService,
 				mappings.flatMap((mapping) => (mapping.employeeId ? [mapping.employeeId] : [])),
 				organizationId,
@@ -441,7 +441,7 @@ export const saveProjectMappings = organizationAction(
 			const unmappedIds = input.mappings
 				.filter((mapping) => mapping.projectId === null)
 				.map((mapping) => mapping.clockodoProjectId);
-			yield* ensureOrganizationProjects(
+			yield* validateOrganizationProjects(
 				dbService,
 				mapped.map((mapping) => mapping.projectId),
 				organizationId,

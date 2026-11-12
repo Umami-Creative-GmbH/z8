@@ -283,7 +283,7 @@ function ownerOf(organizationId: string, userId: string) {
 }
 
 /** Resuming or running a schedule acts on behalf of its owner, who must still be an org admin. */
-function requireEligibleOwner(owner: ScheduleOwner, field: string) {
+function validateEligibleOwner(owner: ScheduleOwner, field: string) {
 	return owner.eligible
 		? Effect.void
 		: Effect.fail(
@@ -502,7 +502,7 @@ function updateSchedule(
 
 		const owner = yield* ownerOf(organizationId, existing.ownerId);
 		if (input.isActive === true && !existing.isActive) {
-			yield* requireEligibleOwner(owner, "isActive");
+			yield* validateEligibleOwner(owner, "isActive");
 		}
 
 		if (input.reportConfig !== undefined) {
@@ -820,7 +820,7 @@ export const runScheduledExportNowAction = organizationAction(
 				"scheduledExport.getForRun",
 			);
 			// The run acts on behalf of the owner, who must still be an org admin.
-			yield* requireEligibleOwner(yield* ownerOf(organizationId, schedule.ownerId), "ownerId");
+			yield* validateEligibleOwner(yield* ownerOf(organizationId, schedule.ownerId), "ownerId");
 
 			yield* auditedWrite("scheduledExport.auditRunRequest", (tx, audit) =>
 				audit.record(tx, {

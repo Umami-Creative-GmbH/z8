@@ -12,7 +12,6 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {
 	noInput,
-	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
@@ -39,12 +38,10 @@ import {
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	projectBillableDefault,
-	requireBillableTimeForDefaultChange,
+	validateBillableDefaultChange,
 } from "./project-billable-default-input";
-import {
-	ensureSettingsActorCanUseProjectCustomer,
-	type ProjectSettingsActor,
-} from "./project-scope";
+import { loadAssignableCustomer } from "./project-scope";
+import { projectSettingsActorOf } from "./project-settings-actor";
 import {
 	auditTemplate,
 	keepTypedTemplateError,
@@ -85,21 +82,6 @@ function keepTypedCreationError(error: DatabaseError) {
 	return isProjectNameConflict(error.cause)
 		? new ValidationError({ message: DUPLICATE_PROJECT_NAME, field: "name" })
 		: error;
-}
-
-/** The actor as the project settings scope helpers (`./project-scope`) read them. */
-function projectSettingsActorOf(
-	actor: OrganizationActor,
-	organizationId: string,
-	dbService: typeof DatabaseService.Service,
-): ProjectSettingsActor {
-	return {
-		session: { user: { id: actor.userId }, session: { activeOrganizationId: organizationId } },
-		dbService,
-		organizationId,
-		accessTier: meetsSettingsAccess(actor.settingsAccess, "orgAdmin") ? "orgAdmin" : "manager",
-		currentEmployee: actor.employee as ProjectSettingsActor["currentEmployee"],
-	};
 }
 
 /**
@@ -176,15 +158,15 @@ export const createProjectFromTemplate = organizationAction(
 
 			const customerId = input.customerId || null;
 			if (customerId) {
-				yield* ensureSettingsActorCanUseProjectCustomer(
-					projectSettingsActorOf(actor, organizationId, dbService),
+				yield* loadAssignableCustomer(
+					yield* projectSettingsActorOf(actor, organizationId),
 					customerId,
 					"create",
 				);
 			}
 
 			// The same billable default rules as a hand-made project (#900).
-			yield* requireBillableTimeForDefaultChange(dbService, organizationId, {
+			yield* validateBillableDefaultChange(dbService, organizationId, {
 				requested: input.billableDefault,
 				current: false,
 			});

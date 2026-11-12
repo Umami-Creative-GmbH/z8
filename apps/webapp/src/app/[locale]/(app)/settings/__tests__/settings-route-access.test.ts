@@ -629,7 +629,7 @@ describe("org-admin settings route access", () => {
 		).toBe(true);
 		expect(
 			projectActionsSource.includes(
-				"ensureSettingsActorCanAccessProjectTarget(",
+				"reachesProject(",
 			),
 		).toBe(true);
 		expect(projectActionsSource.includes('emp?.role === "admin"')).toBe(false);
@@ -638,7 +638,7 @@ describe("org-admin settings route access", () => {
 		).toBe(true);
 		expect(
 			customerActionsSource.includes(
-				"ensureSettingsActorCanAccessCustomerTarget(",
+				"reachesCustomer(",
 			),
 		).toBe(true);
 		expect(customerActionsSource.includes('emp?.role === "admin"')).toBe(false);

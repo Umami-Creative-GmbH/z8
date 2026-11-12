@@ -68,8 +68,8 @@ import { buildEligibleInvitationDraftPredicate } from "./employee-invitation-dra
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 import { keepTermsRefusal, markContractWorkBalanceDirty } from "./employment-history-helpers";
 import {
-	assertDraftPersonnelNumberFree,
 	findDraftPersonnelNumberHolder,
+	refuseTakenDraftPersonnelNumber,
 } from "./invitation-draft-personnel-number";
 import { loadManagedEmployee } from "./managed-employee";
 
@@ -724,7 +724,7 @@ export const updateEmployeeInvitationDraftAction = organizationAction(
 								personnelNumberKey(draftPersonnelNumber) !==
 									personnelNumberKey(lockedDraft.employeeNumber)
 							) {
-								await assertDraftPersonnelNumberFree(
+								await refuseTakenDraftPersonnelNumber(
 									tx,
 									draftPersonnelNumberScope(draftPersonnelNumber),
 								);
