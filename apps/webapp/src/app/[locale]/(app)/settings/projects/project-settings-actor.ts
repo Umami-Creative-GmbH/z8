@@ -4,15 +4,16 @@ import * as z from "zod";
 import { customer, project } from "@/db/schema";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { reachesWholeOrganization } from "@/lib/organization-action/managed-scope";
 import type { OrganizationActor } from "@/lib/organization-action/organization-action";
-import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import type { ProjectSettingsActor } from "./project-scope";
 
 /**
  * The project settings actor of an `organizationAction` caller (#1615): an org
- * admin reaches every project and customer, a scoped manager the projects they
- * manage (and the customers only those projects use), as before.
+ * admin and a workforce admin reach every project and customer (as
+ * `managedScope()`, #1651), a scoped manager the projects they manage (and the
+ * customers only those projects use).
  */
 export function projectSettingsActorOf(actor: OrganizationActor, organizationId: string) {
 	return Effect.gen(function* () {
@@ -21,11 +22,7 @@ export function projectSettingsActorOf(actor: OrganizationActor, organizationId:
 			session: { user: { id: actor.userId }, session: { activeOrganizationId: organizationId } },
 			dbService,
 			organizationId,
-			accessTier: meetsSettingsAccess(actor.settingsAccess, "orgAdmin")
-				? "orgAdmin"
-				: actor.settingsAccess === "scopedManager"
-					? "manager"
-					: "member",
+			organizationWide: reachesWholeOrganization(actor),
 			currentEmployee: actor.employee,
 		} satisfies ProjectSettingsActor;
 	});

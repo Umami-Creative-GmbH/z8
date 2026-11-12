@@ -107,6 +107,10 @@ const orgMember: StubCaller = {
 	employee: { id: "employee-1", role: "employee", former: false },
 };
 const owner: StubCaller = { ...scopedManager, membershipRole: "owner", employee: null };
+const workforceAdmin: StubCaller = {
+	...scopedManager,
+	employee: { id: "employee-workforce-admin", role: "admin", former: false },
+};
 
 describe("customer settings manager scope", () => {
 	beforeEach(() => {
@@ -162,6 +166,21 @@ describe("customer settings manager scope", () => {
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mockState.transactionCalls).toBe(0);
+	});
+
+	it("shows a workforce admin every customer and lets them create one without a project", async () => {
+		mockState.caller = workforceAdmin;
+
+		await expect(getCustomers()).resolves.toEqual({
+			success: true,
+			data: expect.arrayContaining([
+				expect.objectContaining({ id: "customer-1" }),
+				expect.objectContaining({ id: "customer-2" }),
+			]),
+		});
+		await expect(createCustomer({ name: "Loose Customer" })).resolves.toMatchObject({
+			success: true,
+		});
 	});
 
 	it("reads another organization's project as not found when attaching a new customer", async () => {

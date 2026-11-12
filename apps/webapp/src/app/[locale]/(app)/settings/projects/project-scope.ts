@@ -4,7 +4,6 @@ import { db } from "@/db";
 import { customer, type employee, project, projectManager } from "@/db/schema";
 import { type DatabaseError, ValidationError } from "@/lib/effect/errors";
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 
 export interface ProjectSettingsActor {
 	session: { user: { id: string }; session: { activeOrganizationId: string | null } };
@@ -12,13 +11,14 @@ export interface ProjectSettingsActor {
 		query: <T>(name: string, fn: () => Promise<T>) => Effect.Effect<T, DatabaseError>;
 	};
 	organizationId: string;
-	accessTier: SettingsAccessTier;
+	/** An org admin or a workforce admin: every project and customer of the organization. */
+	organizationWide: boolean;
 	currentEmployee: Pick<typeof employee.$inferSelect, "id" | "role"> | null;
 }
 
 export function getManagedProjectIdsForSettingsActor(actor: ProjectSettingsActor) {
 	return Effect.gen(function* () {
-		if (actor.accessTier === "orgAdmin") {
+		if (actor.organizationWide) {
 			return null as Set<string> | null;
 		}
 
@@ -53,7 +53,7 @@ export function filterItemsToManagedProjects<T extends { id: string }>(
 
 /**
  * Whether the project is in the actor's reach: a project of their organization
- * that they administer (org admin) or manage. Callers refuse with `refuseUnless`.
+ * that they administer (org admin, workforce admin) or manage. Callers refuse with `refuseUnless`.
  */
 export function reachesProject(
 	actor: ProjectSettingsActor,
@@ -61,7 +61,7 @@ export function reachesProject(
 ) {
 	return Effect.gen(function* () {
 		if (targetProject.organizationId !== actor.organizationId) return false;
-		if (actor.accessTier === "orgAdmin") return true;
+		if (actor.organizationWide) return true;
 		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
 		return managedProjectIds?.has(targetProject.id) ?? false;
 	});
@@ -69,7 +69,7 @@ export function reachesProject(
 
 export function getManagedCustomerIdsForSettingsActor(actor: ProjectSettingsActor) {
 	return Effect.gen(function* () {
-		if (actor.accessTier === "orgAdmin") {
+		if (actor.organizationWide) {
 			return null as Set<string> | null;
 		}
 
@@ -126,7 +126,7 @@ function getCustomerProjects(actor: ProjectSettingsActor, customerId: string, qu
 
 /**
  * Whether the customer is in the actor's reach: a customer of their
- * organization that they administer (org admin), or whose active projects they
+ * organization that they administer (org admin, workforce admin), or whose active projects they
  * all manage. Callers refuse with `refuseUnless`.
  */
 export function reachesCustomer(
@@ -135,7 +135,7 @@ export function reachesCustomer(
 ) {
 	return Effect.gen(function* () {
 		if (targetCustomer.organizationId !== actor.organizationId) return false;
-		if (actor.accessTier === "orgAdmin") return true;
+		if (actor.organizationWide) return true;
 		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
 		const customerProjects = yield* getCustomerProjects(
 			actor,

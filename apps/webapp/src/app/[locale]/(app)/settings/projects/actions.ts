@@ -497,7 +497,8 @@ export const createProject = organizationAction(
 							createdBy: actor.userId,
 						});
 
-						if (projectActor.accessTier === "manager" && projectActor.currentEmployee) {
+						// A scoped manager reaches only the projects they manage, so they manage what they create.
+						if (!projectActor.organizationWide && projectActor.currentEmployee) {
 							await insertProjectManagers(tx, {
 								projectId: newProject.id,
 								employeeIds: [projectActor.currentEmployee.id],

@@ -157,10 +157,31 @@ describe("coverage rule access", () => {
 		});
 	});
 
-	it("refuses a workforce admin, whose employee role is not manager, as before", async () => {
+	it("lets a workforce admin manage every coverage rule of the organization", async () => {
+		mocks.caller = workforceAdmin;
+		mocks.subareaAssignments = [];
+		mocks.ruleTarget = { id: "rule-2", subareaId: OTHER_SUBAREA };
+
+		await expect(getCoverageRules({})).resolves.toEqual({
+			success: true,
+			data: [
+				{ id: "rule-1", subareaId: MANAGED_SUBAREA },
+				{ id: "rule-2", subareaId: OTHER_SUBAREA },
+			],
+		});
+		await expect(createCoverageRule(newRule)).resolves.toMatchObject({ success: true });
+		await expect(deleteCoverageRule({ ruleId: "rule-2" })).resolves.toMatchObject({
+			success: true,
+		});
+		expect(mocks.coverageService.createCoverageRule).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: "org-1", subareaId: OTHER_SUBAREA }),
+		);
+	});
+
+	it("still refuses a workforce admin the org-admin coverage settings", async () => {
 		mocks.caller = workforceAdmin;
 
-		await expect(getCoverageRules({})).resolves.toMatchObject(refused);
+		await expect(getCoverageSettings()).resolves.toMatchObject(refused);
 	});
 
 	it("refuses a manager without an assigned subarea", async () => {

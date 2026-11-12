@@ -122,8 +122,8 @@ export const getCustomers = organizationAction(
 );
 
 /**
- * Create a new customer. A scoped manager creates one only for a project they
- * manage, which it is attached to.
+ * Create a new customer. A scoped manager whose reach is not the whole
+ * organization creates one only for a project they manage, which it is attached to.
  */
 export const createCustomer = organizationAction(
 	{ name: "customers.create", requires: "scopedManager", schema: createCustomerSchema },
@@ -132,7 +132,7 @@ export const createCustomer = organizationAction(
 			const projectActor = yield* projectSettingsActorOf(actor, organizationId);
 			const dbService = yield* DatabaseService;
 
-			if (projectActor.accessTier !== "orgAdmin" && !input.projectId) {
+			if (!projectActor.organizationWide && !input.projectId) {
 				return yield* Effect.fail(
 					new AuthorizationError({
 						message: "Managers can only create customers for managed projects",

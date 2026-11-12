@@ -13,7 +13,8 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-vi.mock("@/db/schema", () => ({
+vi.mock("@/db/schema", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/db/schema")>()),
 	coverageRule: { id: "id" },
 	location: { organizationId: "organizationId", createdAt: "createdAt" },
 	shiftTemplate: { id: "id" },
@@ -31,7 +32,17 @@ const {
 	canManageScopedSchedulingSubarea,
 	filterItemsToManageableSubareas,
 	getManagedShiftTemplateSubareaIds,
+	getSchedulingSettingsAccessContext,
 } = await import("@/lib/settings-scheduling-access");
+const { getCurrentSettingsRouteContext } = await import("@/lib/auth-helpers");
+
+/** A scoped manager's settings route context (`accessTier` manager) in org-1. */
+function routeContextFor(employee: { id: string; role: "admin" | "manager" }) {
+	return {
+		accessTier: "manager",
+		authContext: { session: { activeOrganizationId: "org-1" }, employee },
+	};
+}
 
 describe("settings scheduling access helpers", () => {
 	it("keeps org-admin parity for owner/admin level access", () => {
@@ -92,6 +103,38 @@ describe("settings scheduling access helpers", () => {
 		expect(filterItemsToManageableSubareas(items, new Set(["subarea-2"]))).toEqual([
 			{ id: "rule-2", subareaId: "subarea-2" },
 		]);
+	});
+
+	it("opens every coverage rule, but no shift template or coverage setting, to a workforce admin", async () => {
+		vi.mocked(getCurrentSettingsRouteContext).mockResolvedValueOnce(
+			routeContextFor({ id: "employee-workforce-admin", role: "admin" }) as never,
+		);
+
+		const context = await getSchedulingSettingsAccessContext();
+
+		expect(context).toMatchObject({
+			organizationId: "org-1",
+			canAccessCoverageRules: true,
+			manageableSubareaIds: null,
+			canManageCoverageSettings: false,
+			canAccessShiftTemplates: false,
+			canManageTeamSettings: false,
+		});
+		expect(context?.manageableShiftTemplateSubareaIds).toEqual(new Set());
+	});
+
+	it("keeps a scoped manager without an assigned subarea out of coverage rules", async () => {
+		vi.mocked(getCurrentSettingsRouteContext).mockResolvedValueOnce(
+			routeContextFor({ id: "employee-manager", role: "manager" }) as never,
+		);
+
+		const context = await getSchedulingSettingsAccessContext();
+
+		expect(context).toMatchObject({
+			canAccessCoverageRules: false,
+			canAccessShiftTemplates: false,
+		});
+		expect(context?.manageableSubareaIds).toEqual(new Set());
 	});
 
 	it("uses directly scoped permission and team-member queries for scheduling access", () => {
