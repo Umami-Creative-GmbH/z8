@@ -21,7 +21,6 @@ const mocks = vi.hoisted(() => ({
 		getPendingExceptions: vi.fn(),
 		approveException: vi.fn(),
 		rejectException: vi.fn(),
-		expireOldExceptions: vi.fn(),
 	},
 }));
 
@@ -141,7 +140,6 @@ beforeEach(() => {
 	mocks.userSettingsFindFirst.mockResolvedValue({ timezone: "Europe/Berlin" });
 	for (const fn of Object.values(mocks.service)) fn.mockResolvedValue(undefined);
 	mocks.service.requestException.mockResolvedValue("exception-1");
-	mocks.service.expireOldExceptions.mockResolvedValue({ expiredCount: 2 });
 });
 
 const serviceCalls = () =>
@@ -168,23 +166,6 @@ describe("compliance actions", () => {
 		expect(serviceCalls()).toBe(0);
 	});
 
-	it("refuses expiring exceptions for an org member", async () => {
-		expect(await actions.expireOldExceptions()).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(mocks.service.expireOldExceptions).not.toHaveBeenCalled();
-	});
-
-	it("expires the active organization's exceptions for an org admin", async () => {
-		mocks.caller = orgAdmin;
-
-		expect(await actions.expireOldExceptions()).toEqual({
-			success: true,
-			data: { expiredCount: 2 },
-		});
-		expect(mocks.service.expireOldExceptions).toHaveBeenCalledWith("org-1");
-	});
 
 	it("checks the rest period of the caller's own employee record in their timezone", async () => {
 		await actions.checkRestPeriod();

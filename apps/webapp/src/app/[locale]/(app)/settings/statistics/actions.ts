@@ -40,8 +40,6 @@ export interface OrganizationStats extends StatisticsBase {
 	activeSessions: number;
 }
 
-export interface InstanceStats extends OrganizationStats {}
-
 export interface ManagerStatisticsReadView extends StatisticsBase {}
 
 /**
@@ -107,11 +105,6 @@ export const getOrganizationStats = organizationAction(
 	({ organizationId }) => organizationStats(organizationId),
 );
 
-/** The active organization's statistics; the same as `getOrganizationStats`. */
-export const getInstanceStats = organizationAction(
-	{ name: "statistics.getInstanceStats", requires: "orgAdmin", schema: noInput },
-	({ organizationId }) => organizationStats(organizationId),
-);
 
 function organizationStats(organizationId: string) {
 	return Effect.gen(function* () {

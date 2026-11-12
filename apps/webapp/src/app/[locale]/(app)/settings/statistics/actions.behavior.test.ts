@@ -30,9 +30,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db }));
 });
 
-const { getInstanceStats, getManagerStatisticsReadView, getOrganizationStats } = await import(
-	"./actions"
-);
+const { getManagerStatisticsReadView, getOrganizationStats } = await import("./actions");
 
 const owner: StubCaller = {
 	userId: "user-owner",
@@ -163,7 +161,6 @@ describe("statistics actions", () => {
 
 	it("refuses a scoped manager the org-wide statistics", async () => {
 		await expect(getOrganizationStats()).resolves.toMatchObject(refused);
-		await expect(getInstanceStats()).resolves.toMatchObject(refused);
 		expect(mocks.select).not.toHaveBeenCalled();
 	});
 

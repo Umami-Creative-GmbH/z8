@@ -7,14 +7,13 @@ import { env } from "@/env";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications/types";
-import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { organizationAction } from "@/lib/organization-action/organization-action";
 import {
 	createDeliveryRecord,
 	createWebhookEndpoint,
 	deleteWebhookEndpoint,
 	getDeliveryLogs,
 	getWebhookEndpoint,
-	getWebhookEndpointsByOrganization,
 	regenerateWebhookSecret,
 	updateWebhookEndpoint,
 } from "@/lib/webhooks";
@@ -280,17 +279,6 @@ export const testWebhook = organizationAction(
 // ============================================
 
 /**
- * Get all webhooks of the active organization
- */
-export const getWebhooks = organizationAction(
-	{ name: "webhooks.list", requires: "owner", schema: noInput },
-	({ organizationId }) =>
-		Effect.promise(() => getWebhookEndpointsByOrganization(organizationId)).pipe(
-			Effect.map((webhooks) => ({ webhooks })),
-		),
-);
-
-/**
  * Get delivery logs for a webhook
  */
 export const getWebhookDeliveryLogs = organizationAction(
@@ -314,12 +302,4 @@ export const getWebhookDeliveryLogs = organizationAction(
 
 			return { deliveries, total, hasMore: offset + deliveries.length < total };
 		}),
-);
-
-/**
- * Get available event types for webhook subscription
- */
-export const getAvailableEventTypes = organizationAction(
-	{ name: "webhooks.eventTypes", requires: "owner", schema: noInput },
-	() => Effect.succeed({ eventTypes: [...NOTIFICATION_TYPES] }),
 );

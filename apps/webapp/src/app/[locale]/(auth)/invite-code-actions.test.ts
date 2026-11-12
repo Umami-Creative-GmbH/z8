@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
 	validateCode: vi.fn(),
 	setPendingInviteCode: vi.fn(),
 	processPendingInviteCode: vi.fn(),
-	getPendingInviteCode: vi.fn(),
 	useCode: vi.fn(),
 }));
 
@@ -25,8 +24,6 @@ vi.mock("@/lib/effect/services/invite-code.service", async (importOriginal) => {
 					Effect.sync(() => mocks.setPendingInviteCode(userId, code)),
 				processPendingInviteCode: (userId: string) =>
 					Effect.sync(() => mocks.processPendingInviteCode(userId)),
-				getPendingInviteCode: (userId: string) =>
-					Effect.sync(() => mocks.getPendingInviteCode(userId)),
 				useCode: (input: unknown) => Effect.sync(() => mocks.useCode(input)),
 			} as never),
 		),
@@ -58,7 +55,6 @@ vi.mock("@/lib/effect/runtime", async () => {
 });
 
 import {
-	getPendingInviteCode,
 	processPendingInviteCode,
 	redeemInviteCode,
 	storePendingInviteCode,
@@ -69,7 +65,6 @@ const preMembershipActions = [
 	"validateInviteCode",
 	"storePendingInviteCode",
 	"processPendingInviteCode",
-	"getPendingInviteCode",
 	"redeemInviteCode",
 ] as const;
 
@@ -131,15 +126,6 @@ describe("pre-membership invite-code actions", () => {
 		});
 	});
 
-	it("reads the signed-in user's pending code", async () => {
-		mocks.getPendingInviteCode.mockReturnValue("JOIN-TEAM");
-
-		expect(await getPendingInviteCode()).toEqual({
-			success: true,
-			data: "JOIN-TEAM",
-		});
-		expect(mocks.getPendingInviteCode).toHaveBeenCalledWith("user-1");
-	});
 
 	it("redeems a code as the signed-in user", async () => {
 		mocks.useCode.mockReturnValue({

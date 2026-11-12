@@ -484,18 +484,3 @@ export const rejectComplianceException = organizationAction(
 		),
 );
 
-// =============================================================================
-// ADMIN ACTIONS
-// =============================================================================
-
-/**
- * Expire old pre-approval exceptions (for cron jobs or admin use)
- */
-export const expireOldExceptions = organizationAction(
-	{ name: "compliance.expireOldExceptions", requires: "orgAdmin", schema: noInput },
-	({ organizationId }) =>
-		Effect.gen(function* () {
-			const complianceService = yield* ComplianceGuardrailService;
-			return yield* complianceService.expireOldExceptions(organizationId);
-		}).pipe(Effect.provide(ComplianceGuardrailServiceLive)),
-);

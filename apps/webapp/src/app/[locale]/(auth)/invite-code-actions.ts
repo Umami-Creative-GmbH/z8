@@ -128,20 +128,6 @@ export async function processPendingInviteCode(): Promise<ServerActionResult<Joi
 	);
 }
 
-/**
- * Get a user's pending invite code (if any)
- */
-export async function getPendingInviteCode(): Promise<ServerActionResult<string | null>> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const inviteCodeService = yield* InviteCodeService;
-
-		return yield* inviteCodeService.getPendingInviteCode(session.user.id);
-	});
-
-	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeServiceLive)));
-}
 
 /**
  * Use an invite code to join an organization (requires authentication)

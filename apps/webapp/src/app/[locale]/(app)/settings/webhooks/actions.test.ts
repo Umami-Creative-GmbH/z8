@@ -37,9 +37,7 @@ vi.mock("@/lib/logger", () => ({
 const {
 	createWebhook,
 	deleteWebhook,
-	getAvailableEventTypes,
 	getWebhookDeliveryLogs,
-	getWebhooks,
 	regenerateSecret,
 	testWebhook,
 	updateWebhook,
@@ -65,9 +63,7 @@ const actions = [
 	["deleteWebhook", () => deleteWebhook("webhook-1")],
 	["regenerateSecret", () => regenerateSecret("webhook-1")],
 	["testWebhook", () => testWebhook("webhook-1")],
-	["getWebhooks", () => getWebhooks()],
 	["getWebhookDeliveryLogs", () => getWebhookDeliveryLogs({ webhookId: "webhook-1" })],
-	["getAvailableEventTypes", () => getAvailableEventTypes()],
 ] as const;
 
 const sideEffects = () => [
