@@ -75,14 +75,19 @@ export async function loadSettingsAccessFacts(
 	};
 }
 
-/** The caller, in the session's active organization, with their settings access. */
-export interface SettingsAccessCaller {
+/**
+ * The caller, in the session's active organization, with their settings
+ * access. Settings access needs an approved membership, so a caller with one
+ * always has its role; without settings access the role may be missing.
+ */
+export type SettingsAccessCaller = {
 	userId: string;
 	organizationId: string;
-	membershipRole: string | null;
 	employee: { id: string; role: EmployeeRole } | null;
-	settingsAccess: SettingsAccess | null;
-}
+} & (
+	| { settingsAccess: SettingsAccess; membershipRole: string }
+	| { settingsAccess: null; membershipRole: string | null }
+);
 
 /**
  * The one settings access resolver, shared by `organizationAction` and the page
@@ -114,15 +119,20 @@ export function resolveCallerSettingsAccess(): Effect.Effect<
 			loadSettingsAccessFacts(dbService.db, { userId: session.user.id, organizationId }),
 		);
 		const settingsAccess = settingsAccessOf(facts);
+		const base = { userId: session.user.id, organizationId };
+		if (settingsAccess === null || facts.membershipRole === null) {
+			return {
+				...base,
+				employee: null,
+				settingsAccess: null,
+				membershipRole: facts.membershipRole,
+			} satisfies SettingsAccessCaller;
+		}
 		return {
-			userId: session.user.id,
-			organizationId,
-			membershipRole: facts.membershipRole,
-			employee:
-				facts.employee && settingsAccess
-					? { id: facts.employee.id, role: facts.employee.role }
-					: null,
+			...base,
+			employee: facts.employee ? { id: facts.employee.id, role: facts.employee.role } : null,
 			settingsAccess,
-		};
+			membershipRole: facts.membershipRole,
+		} satisfies SettingsAccessCaller;
 	});
 }

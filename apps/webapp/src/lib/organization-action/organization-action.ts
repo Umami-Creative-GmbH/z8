@@ -144,20 +144,23 @@ function authorizeAndRun<Schema extends InputSchema, T>(
 ): Effect.Effect<T, AnyAppError, AppServices> {
 	return Effect.gen(function* () {
 		const caller = yield* resolveCallerSettingsAccess();
+		const refusal = (level: SettingsAccess) =>
+			new AuthorizationError({
+				message: "You do not have access to this setting",
+				userId: caller.userId,
+				resource: declaration.name,
+				action: level,
+			});
+		if (
+			caller.settingsAccess === null ||
+			!meetsSettingsAccess(caller.settingsAccess, declaration.requires)
+		) {
+			return yield* Effect.fail(refusal(declaration.requires));
+		}
+		// The caller has settings access, so an approved membership with a role.
+		const { settingsAccess, membershipRole } = caller;
 		const require = (level: SettingsAccess) =>
-			meetsSettingsAccess(caller.settingsAccess, level)
-				? Effect.void
-				: Effect.fail(
-						new AuthorizationError({
-							message: "You do not have access to this setting",
-							userId: caller.userId,
-							resource: declaration.name,
-							action: level,
-						}),
-					);
-		yield* require(declaration.requires);
-		// Past `require`, the caller has settings access.
-		const settingsAccess = caller.settingsAccess as SettingsAccess;
+			meetsSettingsAccess(settingsAccess, level) ? Effect.void : Effect.fail(refusal(level));
 
 		const input = yield* parseInput(declaration.schema, rawInput);
 		if (declaration.addsEmployees) {
@@ -177,7 +180,7 @@ function authorizeAndRun<Schema extends InputSchema, T>(
 		);
 		const actor: OrganizationActor = {
 			userId: caller.userId,
-			membershipRole: caller.membershipRole ?? "",
+			membershipRole,
 			employee: caller.employee,
 			settingsAccess,
 			require,
