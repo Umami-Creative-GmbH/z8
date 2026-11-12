@@ -1,5 +1,4 @@
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { MANAGER_ROLES } from "@/lib/effect/services/shift-request.service";
 import type { LegacyRouteFailure } from "../policies/legacy-route-decision";
 import type { ApprovalPolicyDraft } from "../policies/types";
 import type { ApprovalDirectChange, ApprovalRouteNote, ApprovalRouteSkipReason } from "./types";
@@ -145,9 +144,5 @@ export function expenseAmountVariants(policies: readonly ApprovalPolicyDraft[]):
 
 // --- Shift request ---------------------------------------------------------------------------
 
-/** Shift requests are decided by any manager or admin on the roster at the instant. */
-export function shiftRequestDeciders(
-	roster: ReadonlyArray<{ id: string; role: string }>,
-): string[] {
-	return roster.filter((row) => MANAGER_ROLES.has(row.role)).map((row) => row.id);
-}
+/** Shared with the shift request decision check (#1604). */
+export { shiftRequestDeciders } from "../shift-request-deciders";

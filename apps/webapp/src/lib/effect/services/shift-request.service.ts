@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import type { db } from "@/db";
+import { isShiftRequestDecider } from "@/lib/approvals/shift-request-deciders";
 import {
 	auditLog,
 	employee,
@@ -42,8 +43,6 @@ type ShiftRequestDomainError =
 	| NotFoundError
 	| ValidationError;
 
-/** The employee roles that may decide shift requests. */
-export const MANAGER_ROLES: ReadonlySet<string> = new Set(["manager", "admin"]);
 const SAFE_EMPLOYEE_RELATION = {
 	columns: {
 		id: true,
@@ -173,7 +172,8 @@ async function requireApprover(
 	action: "approve" | "reject",
 ) {
 	const approver = await getActiveEmployee(tx, organizationId, approverId);
-	if (!approver || !MANAGER_ROLES.has(approver.role)) {
+	// The approval route preview names its deciders by the same rule (#1604).
+	if (!approver || !isShiftRequestDecider(approver)) {
 		abort(
 			new AuthorizationError({
 				message: `Only managers or admins can ${action} shift requests`,
@@ -659,7 +659,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 								),
 							}),
 					);
-					if (!approver || !MANAGER_ROLES.has(approver.role)) {
+					if (!approver || !isShiftRequestDecider(approver)) {
 						return yield* Effect.fail(
 							new AuthorizationError({
 								message: "Only managers or admins can view pending requests",
