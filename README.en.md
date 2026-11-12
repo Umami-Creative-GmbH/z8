@@ -6,7 +6,7 @@
 
 ## Local development
 
-Use Node.js 24 or newer and pnpm. After `pnpm install`, run
+Use Node.js 26 or newer and pnpm. After `pnpm install`, run
 `pnpm dev:webapp` with your usual Phase environment. The webapp uses
 [Portless](https://portless.sh) at **https://z8.localhost** instead of port 3000.
 `pnpm dev` and `pnpm --filter webapp dev` use the same setup. Portless assigns
