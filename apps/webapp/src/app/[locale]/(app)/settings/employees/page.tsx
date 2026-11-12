@@ -6,9 +6,10 @@ import type {
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { getCurrentApprovedMembership } from "./current-approved-membership";
 import { EmployeesPageClient } from "./employees-page-client";
 
@@ -16,6 +17,7 @@ async function loadPeopleManagementData(input: {
 	organizationId: string;
 	currentUserId: string;
 	currentMemberRole: string;
+	settingsAccess: SettingsAccess | null;
 }) {
 	const [organization, members, invitations] = await Promise.all([
 		db.query.organization.findFirst({
@@ -95,6 +97,7 @@ async function loadPeopleManagementData(input: {
 		})) as unknown as InvitationWithInviter[],
 		currentMemberRole: input.currentMemberRole as "owner" | "admin" | "member",
 		currentUserId: input.currentUserId,
+		settingsAccess: input.settingsAccess,
 	};
 }
 
@@ -127,6 +130,8 @@ export default async function EmployeesPage() {
 					organizationId,
 					currentUserId,
 					currentMemberRole: currentMember.role,
+					// People controls follow the shared settings access resolver (ADR 0002, #1623).
+					settingsAccess: (await getCurrentSettingsAccess())?.settingsAccess ?? null,
 				})
 			: undefined;
 

@@ -62,7 +62,7 @@ function renderCard() {
 		<OrganizationTimezoneCard
 			organizationId="org-1"
 			timezone="Europe/Berlin"
-			currentMemberRole="owner"
+			settingsAccess="owner"
 		/>,
 	);
 	fireEvent.change(screen.getByLabelText("Organization timezone"), {
