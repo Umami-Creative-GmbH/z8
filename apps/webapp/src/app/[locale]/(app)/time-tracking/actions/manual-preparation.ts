@@ -3,6 +3,10 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import {
+	isOwnerOrAdminSelfRecording,
+	manualWorkExemption,
+} from "@/lib/approvals/route-preview/rules";
 import { isAccountBanned } from "@/lib/auth/account-ban";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
@@ -318,16 +322,16 @@ export async function prepareManualWork(
 	}
 
 	// Days back are counted in the zone the entry is interpreted in, which is recorded with it.
+	const exemption = manualWorkExemption({
+		isOwnEntry,
+		ownerOrAdminSelf: isOwnEntry && isOwnerOrAdminSelfRecording(defineAbilityFor(principal)),
+	});
 	const verdict = await readChangePolicyVerdict(tx, {
 		organizationId: target.organizationId,
 		employeeId: target.id,
 		workEnd: interval.end,
 		now,
-		exemption: !isOwnEntry
-			? "on_behalf"
-			: defineAbilityFor(principal).can("manage", "OrgSettings")
-				? "owner_admin_self"
-				: null,
+		exemption,
 		timezone: zone.timezone,
 	});
 	const policy: ManualPolicyEvidence | null = verdict.policy && {

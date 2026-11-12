@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import { defineAbilityFor } from "@/lib/authorization";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { resolveChangePolicy } from "@/lib/time-tracking/change-policy/resolution";
@@ -37,6 +38,7 @@ import {
 	expenseSelfApprovalRule,
 	isOwnerOrAdminSelfRecording,
 	manualWorkChangePolicyRule,
+	manualWorkExemption,
 	shiftRequestDeciders,
 	timeCorrectionDirectChange,
 	timeCorrectionRoutingTeam,
@@ -572,10 +574,54 @@ export async function routeApprovalRequesters(
 		);
 	}
 
+	/**
+	 * The requester as the permission system sees them recording their own work at the instant,
+	 * loaded as `loadOrganizationPrincipalContext` loads them: someone who has left keeps no
+	 * organization role, employee record or custom role.
+	 */
+	function recorderOf(requester: Requester) {
+		const row = employeesById.get(requester.id);
+		const current = row !== undefined && activeStageIds.has(requester.id);
+		const memberRole =
+			current && requester.userId !== null ? snapshot.memberRoles.get(requester.userId) : undefined;
+		const employeeRole = row?.role as "admin" | "manager" | "employee";
+		return defineAbilityFor({
+			userId: requester.userId ?? requester.id,
+			isPlatformAdmin: false,
+			activeOrganizationId: organizationId,
+			orgMembership: memberRole
+				? {
+						organizationId,
+						role: memberRole as "owner" | "admin" | "member",
+						status: "active",
+					}
+				: null,
+			employee: current
+				? { id: requester.id, organizationId, role: employeeRole, teamId: requester.teamId }
+				: null,
+			permissions: { orgWide: null, byTeamId: new Map() },
+			managedEmployeeIds: [],
+			customRoles: current
+				? [
+						{
+							roleId: "approval-route-preview",
+							roleName: "approval-route-preview",
+							baseTier: employeeRole,
+							permissions: [...(snapshot.customRolePermissions.get(requester.id) ?? [])],
+						},
+					]
+				: [],
+		});
+	}
+
 	async function manualWorkRoute(requester: Requester): Promise<ApprovalRoute> {
-		if (!requester.prospective && isOwnerOrAdminSelfRecording(organizationRoleOf(requester))) {
-			return skipped("owner_admin_self");
-		}
+		// The preview routes a requester's own entries; on-behalf entries are exempt.
+		const exemption = manualWorkExemption({
+			isOwnEntry: true,
+			ownerOrAdminSelf:
+				!requester.prospective && isOwnerOrAdminSelfRecording(recorderOf(requester)),
+		});
+		if (exemption === "owner_admin_self") return skipped(exemption);
 		const rule = manualWorkChangePolicyRule(changePolicyOf(requester));
 		if (rule.skip) return skipped(rule.skip);
 		return routeTimeKind("manual_time_submission", requester, rule.notes);

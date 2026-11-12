@@ -15,6 +15,7 @@ import {
 	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "@/lib/approvals/server/work-period-approvals";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";
+import { manualWorkExemption } from "@/lib/approvals/route-preview/rules";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
@@ -1287,12 +1288,12 @@ export async function createManualTimeEntry(
 	}
 	let requiresApproval: boolean;
 	try {
-		// Organization owners and admins are not limited to employee self-service windows.
-		const exemption = !isOwnEntry
-			? "on_behalf"
-			: (await isOrgAdminCasl(targetEmployee.organizationId))
-				? "owner_admin_self"
-				: null;
+		// Organization owners and admins are not limited to employee self-service windows: the
+		// permission system decides who they are, for the session's organization.
+		const exemption = manualWorkExemption({
+			isOwnEntry,
+			ownerOrAdminSelf: isOwnEntry && (await isOrgAdminCasl(targetEmployee.organizationId)),
+		});
 		const verdict = await readChangePolicyVerdict(db, {
 			organizationId: targetEmployee.organizationId,
 			employeeId: targetEmployee.id,
