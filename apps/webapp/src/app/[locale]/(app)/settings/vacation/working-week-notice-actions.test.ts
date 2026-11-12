@@ -1,44 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
-	actor: null as null | {
-		accessTier: "orgAdmin" | "manager" | "member";
-		organizationId: string;
-		session: { user: { id: string } };
-	},
+	caller: null as StubCaller | null,
 	dismissWorkingWeekNotice: vi.fn(async (_database: unknown, _input: unknown) => undefined),
 	revalidatePath: vi.fn(),
 	scopedDb: { name: "scoped-db" },
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
-vi.mock("@/db", () => ({ db: { name: "global-db" } }));
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
 	const { runtimeModuleOver } = await import("@/test/effect-runtime");
-	return runtimeModuleOver(
-		Layer.succeed(
-			DatabaseService,
-			DatabaseService.of({
-				db: mocks.scopedDb as never,
-				query: (_name, query) => Effect.promise(query),
-			}),
-		),
-	);
-});
-vi.mock("../employees/employee-action-utils", async (importOriginal) => {
-	const { Effect } = await import("effect");
-	const { AuthorizationError } = await import("@/lib/effect/errors");
-	const original = await importOriginal<typeof import("../employees/employee-action-utils")>();
-	return {
-		...original,
-		getEmployeeSettingsActorContext: vi.fn(() =>
-			mocks.actor
-				? Effect.succeed(mocks.actor)
-				: Effect.fail(new AuthorizationError({ message: "Not signed in", userId: "unknown" })),
-		),
-	};
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db: mocks.scopedDb }));
 });
 vi.mock("@/lib/absences/working-week-notice-store", () => ({
 	dismissWorkingWeekNotice: mocks.dismissWorkingWeekNotice,
@@ -46,18 +20,30 @@ vi.mock("@/lib/absences/working-week-notice-store", () => ({
 
 const { dismissWorkingWeekNoticeAction } = await import("./working-week-notice-actions");
 
-function actor(accessTier: "orgAdmin" | "manager" | "member") {
-	return { accessTier, organizationId: "org-1", session: { user: { id: "user-1" } } };
-}
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: null,
+};
+const scopedManager: StubCaller = {
+	...orgAdmin,
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	...scopedManager,
+	employee: { id: "employee-1", role: "employee", former: false },
+};
 
 describe("dismissWorkingWeekNoticeAction (#990)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.actor = null;
+		mocks.caller = null;
 	});
 
-	it("dismisses the notice for the actor's organization through the action's database", async () => {
-		mocks.actor = actor("orgAdmin");
+	it("dismisses the notice for the caller's active organization through the action's database", async () => {
+		mocks.caller = orgAdmin;
 
 		await expect(dismissWorkingWeekNoticeAction()).resolves.toEqual({
 			success: true,
@@ -71,16 +57,25 @@ describe("dismissWorkingWeekNoticeAction (#990)", () => {
 		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/vacation/employees");
 	});
 
-	it.each(["manager", "member"] as const)("refuses a %s", async (accessTier) => {
-		mocks.actor = actor(accessTier);
+	it.each([
+		["a scoped manager", scopedManager],
+		["an org member", orgMember],
+		["a pending membership", { ...orgAdmin, membershipRole: null }],
+		["a signed-out caller", null],
+		["a caller without an active organization", { ...orgAdmin, activeOrganizationId: null }],
+	])("refuses %s", async (_case, caller) => {
+		mocks.caller = caller;
 
 		await expect(dismissWorkingWeekNoticeAction()).resolves.toMatchObject({ success: false });
 		expect(mocks.dismissWorkingWeekNotice).not.toHaveBeenCalled();
 		expect(mocks.revalidatePath).not.toHaveBeenCalled();
 	});
 
-	it("refuses without a session or an active organization", async () => {
+	it("reports a failed dismissal", async () => {
+		mocks.caller = orgAdmin;
+		mocks.dismissWorkingWeekNotice.mockRejectedValueOnce(new Error("connection lost"));
+
 		await expect(dismissWorkingWeekNoticeAction()).resolves.toMatchObject({ success: false });
-		expect(mocks.dismissWorkingWeekNotice).not.toHaveBeenCalled();
+		expect(mocks.revalidatePath).not.toHaveBeenCalled();
 	});
 });

@@ -8,6 +8,7 @@ import { saveEmployeeSickNoteUploadAction } from "@/app/[locale]/(app)/settings/
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { Link } from "@/navigation";
 
 /**
@@ -32,7 +33,7 @@ export function EmployeeSickNoteSetting({
 			const result = await saveEmployeeSickNoteUploadAction({ enabled: next });
 			if (!result.success) {
 				setChecked(!next);
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				return;
 			}
 			toast.success(

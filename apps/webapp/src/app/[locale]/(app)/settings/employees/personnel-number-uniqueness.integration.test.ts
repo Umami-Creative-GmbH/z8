@@ -86,7 +86,10 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-const { updateEmployeeAction } = await import("./employee-mutations.actions");
+const employeeMutations = await import("./employee-mutations.actions");
+/** The detail save, by employee and form values. */
+const updateEmployeeAction = (employeeId: string, data: Record<string, unknown>) =>
+	employeeMutations.updateEmployeeAction({ employeeId, data });
 
 const TAKEN = {
 	success: false,

@@ -377,7 +377,8 @@ describe("project templates in use on PostgreSQL", () => {
 			const templateBefore = await readTemplate(templateId);
 
 			const edited = await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(templateId, {
+				templates.updateProjectTemplate({
+					templateId,
 					name: "Website relaunch",
 					color: "#ef4444",
 					budgetHours: 5,
@@ -685,7 +686,8 @@ describe("project templates in use on PostgreSQL", () => {
 			const projectId = await seedProject();
 
 			const saved = await actAs(ids.adminUser, () =>
-				fromTemplate.saveProjectAsTemplate(projectId, {
+				fromTemplate.saveProjectAsTemplate({
+					projectId,
 					name: "Relaunch blueprint",
 				}),
 			);
@@ -745,7 +747,8 @@ describe("project templates in use on PostgreSQL", () => {
 			};
 
 			const saved = await actAs(ids.adminUser, () =>
-				fromTemplate.saveProjectAsTemplate(projectId, {
+				fromTemplate.saveProjectAsTemplate({
+					projectId,
 					name: "Relaunch blueprint",
 				}),
 			);
@@ -777,7 +780,7 @@ describe("project templates in use on PostgreSQL", () => {
 			);
 
 			const saved = await actAs(ids.adminUser, () =>
-				fromTemplate.saveProjectAsTemplate(projectId),
+				fromTemplate.saveProjectAsTemplate({ projectId }),
 			);
 
 			if (!saved.success) throw new Error(saved.error);
@@ -791,10 +794,11 @@ describe("project templates in use on PostgreSQL", () => {
 			const projectId = await seedProject();
 
 			const first = await actAs(ids.ownerUser, () =>
-				fromTemplate.saveProjectAsTemplate(projectId),
+				fromTemplate.saveProjectAsTemplate({ projectId }),
 			);
 			const second = await actAs(ids.ownerUser, () =>
-				fromTemplate.saveProjectAsTemplate(projectId, {
+				fromTemplate.saveProjectAsTemplate({
+					projectId,
 					name: "ACME RELAUNCH",
 				}),
 			);
@@ -824,15 +828,14 @@ describe("project templates in use on PostgreSQL", () => {
 
 			const refused = [
 				await actAs(ids.projectManagerUser, () =>
-					fromTemplate.saveProjectAsTemplate(projectId),
+					fromTemplate.saveProjectAsTemplate({ projectId }),
 				),
 				await actAs(ids.employeeUser, () =>
-					fromTemplate.saveProjectAsTemplate(projectId),
+					fromTemplate.saveProjectAsTemplate({ projectId }),
 				),
 				await actAs(ids.ownerUser, () =>
-					fromTemplate.saveProjectAsTemplate(
-						"e8800000-0000-4000-8000-000000000021",
-					),
+					fromTemplate.saveProjectAsTemplate({
+				projectId: "e8800000-0000-4000-8000-000000000021" }),
 				),
 			];
 

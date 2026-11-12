@@ -1,13 +1,15 @@
 import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import {
+	getCurrentSettingsAccess,
+	getCurrentSettingsRouteContext,
+} from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import type { EmployeeReadScope } from "@/lib/organization/employee-read-types";
 import { getEmployeeEquipment } from "@/lib/organization/equipment/actions";
 import { loadPersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { type EmployeeDetailRecord, getEmployee } from "../actions";
-import { getCurrentApprovedMembership } from "../current-approved-membership";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 
 interface EmployeeDetailPageProps {
@@ -50,12 +52,12 @@ async function EmployeeDetailPageContent({
 		return redirectWithLocale("/settings");
 	}
 	const currentUserId = settingsRouteContext.authContext.user.id;
-	const currentMember = await getCurrentApprovedMembership({
-		userId: currentUserId,
-		organizationId,
-	});
+	// Detail controls follow the shared settings access resolver (ADR 0002, #1623).
+	const caller = await getCurrentSettingsAccess();
+	const settingsAccess =
+		caller?.organizationId === organizationId ? caller.settingsAccess : null;
 
-	if (!currentMember) {
+	if (!settingsAccess) {
 		return redirectWithLocale("/settings");
 	}
 
@@ -85,7 +87,7 @@ async function EmployeeDetailPageContent({
 				{ userId: currentUserId, organizationId },
 				employeeResult.data,
 			)}
-			currentMemberRole={currentMember.role}
+			settingsAccess={settingsAccess}
 			highlightedReviewId={highlightedReviewId}
 			personnelFile={personnelFile}
 			equipment={equipment.success ? equipment.data : null}

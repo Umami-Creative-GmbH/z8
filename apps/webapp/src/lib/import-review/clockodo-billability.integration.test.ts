@@ -245,29 +245,31 @@ describe("Clockodo billable values in reviewed imports on PostgreSQL (#907)", ()
 		harness.userId = ids.ownerUser;
 		harness.organizationId = ids.organization;
 		await expect(
-			saveProjectMappings(ids.organization, [
-				{
-					clockodoProjectId: clockodo.customerProject,
-					clockodoProjectName: "Website",
-					clockodoCustomerName: "Acme GmbH",
-					projectId: ids.customerProject,
-					source: "name",
-				},
-				{
-					clockodoProjectId: clockodo.internalProject,
-					clockodoProjectName: "Internal tooling",
-					clockodoCustomerName: "Acme GmbH",
-					projectId: ids.internalProject,
-					source: "manual",
-				},
-				{
-					clockodoProjectId: clockodo.unmappedProject,
-					clockodoProjectName: "Support",
-					clockodoCustomerName: "Acme GmbH",
-					projectId: null,
-					source: null,
-				},
-			]),
+			saveProjectMappings({
+				mappings: [
+					{
+						clockodoProjectId: clockodo.customerProject,
+						clockodoProjectName: "Website",
+						clockodoCustomerName: "Acme GmbH",
+						projectId: ids.customerProject,
+						source: "name",
+					},
+					{
+						clockodoProjectId: clockodo.internalProject,
+						clockodoProjectName: "Internal tooling",
+						clockodoCustomerName: "Acme GmbH",
+						projectId: ids.internalProject,
+						source: "manual",
+					},
+					{
+						clockodoProjectId: clockodo.unmappedProject,
+						clockodoProjectName: "Support",
+						clockodoCustomerName: "Acme GmbH",
+						projectId: null,
+						source: null,
+					},
+				],
+			}),
 		).resolves.toEqual({ success: true, data: undefined });
 	}
 
@@ -385,16 +387,18 @@ describe("Clockodo billable values in reviewed imports on PostgreSQL (#907)", ()
 		]);
 
 		await expect(
-			saveProjectMappings(ids.organization, [
-				{
-					clockodoProjectId: clockodo.unmappedProject,
-					clockodoProjectName: "Support",
-					clockodoCustomerName: null,
-					projectId: randomUUID(),
-					source: "manual",
-				},
-			]),
-		).resolves.toEqual({
+			saveProjectMappings({
+				mappings: [
+					{
+						clockodoProjectId: clockodo.unmappedProject,
+						clockodoProjectName: "Support",
+						clockodoCustomerName: null,
+						projectId: randomUUID(),
+						source: "manual",
+					},
+				],
+			}),
+		).resolves.toMatchObject({
 			success: false,
 			error: "One or more projects do not belong to this organization",
 		});

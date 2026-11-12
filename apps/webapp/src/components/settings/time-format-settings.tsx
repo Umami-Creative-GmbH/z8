@@ -15,6 +15,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	normalizeTimeFormat,
 	TIME_FORMAT_OPTIONS,
@@ -55,7 +56,10 @@ export function TimeFormatSettings({ currentTimeFormat, onUpdate }: TimeFormatSe
 			refresh();
 		} else {
 			toast.error(
-				result.error || t("settings.timeFormat.updateFailed", "Failed to update time format"),
+				actionErrorMessage(t, result, {}, [
+					"settings.timeFormat.updateFailed",
+					"Failed to update time format",
+				]),
 			);
 		}
 

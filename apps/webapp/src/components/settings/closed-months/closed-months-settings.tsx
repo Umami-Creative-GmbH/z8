@@ -23,6 +23,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import type { MonthClosureStatus } from "@/lib/time-tracking/closed-months/store";
 import { useRouter } from "@/navigation";
@@ -134,7 +135,7 @@ function AutomaticCloseCard({ settings }: { settings: ClosedMonthsOverview["sett
 				refresh();
 				return;
 			}
-			toast.error(result.error);
+			toast.error(actionErrorMessage(t, result));
 		},
 	});
 	const daysInvalid = t(

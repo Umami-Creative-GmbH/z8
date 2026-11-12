@@ -9,24 +9,22 @@ import { loadImplementationChecklistForContext } from "./queries";
 
 export const metadata = {
 	title: "Implementation Checklist",
-	description:
-		"Track customer implementation readiness before inviting the full team.",
+	description: "Track customer implementation readiness before inviting the full team.",
 };
 
 async function ImplementationChecklistPageContent() {
-	const accessContext = await requireOrgAdminSettingsAccess();
+	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 
-	const result = await loadImplementationChecklistForContext(accessContext);
-
-	if (!result.success) {
-		throw new Error(result.error);
-	}
+	const checklist = await loadImplementationChecklistForContext({
+		organizationId,
+		userId: authContext.user.id,
+	});
 
 	return (
 		<div className="flex-1 p-6">
 			<div className="mx-auto max-w-4xl">
-				<GoLiveRehearsalProvider candidates={result.data.goLive.rehearsalCandidates}>
-					<ImplementationChecklistClient checklist={result.data} />
+				<GoLiveRehearsalProvider candidates={checklist.goLive.rehearsalCandidates}>
+					<ImplementationChecklistClient checklist={checklist} />
 				</GoLiveRehearsalProvider>
 			</div>
 		</div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { Effect } from "effect";
+import { z } from "zod";
 import type { AccountingProviderKind } from "@/lib/billable-time/accounting/provider";
 import { accountingProviderName } from "@/lib/billable-time/accounting/views";
 import {
@@ -9,12 +10,10 @@ import {
 	changeBillableCurrency,
 	setBillableTimeEnabled,
 } from "@/lib/billable-time/module-switch";
-import type { BillableTimeSettings } from "@/lib/billable-time/settings";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
-import { activeOrganizationActor } from "./action-actor";
+import { organizationAction } from "@/lib/organization-action/organization-action";
 import { billableTimeOff } from "./module-guard";
 
 const logger = createLogger("BillableTimeSettingsActions");
@@ -75,64 +74,57 @@ const settingsOf = (outcome: BillableTimeOutcome, organizationId: string) =>
  * module switch on the organization features card, it is the owner's. The first
  * switch-on must choose a billable currency; switching off keeps all data.
  */
-export async function switchBillableTime(input: {
-	enabled: boolean;
-	currency?: string | null;
-}): Promise<ServerActionResult<BillableTimeSettings>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* activeOrganizationActor({
-			requiredRole: "owner",
-			message: "Only owners can change organization features",
-			action: "switch",
-		});
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.switch", () =>
-			setBillableTimeEnabled(dbService.db, {
-				organizationId: actor.organizationId,
-				enabled: input.enabled === true,
-				currency: input.currency ?? null,
-				actorUserId: actor.userId,
-			}),
-		);
-		const settings = yield* settingsOf(outcome, actor.organizationId);
-		logger.info(
-			{ organizationId: actor.organizationId, enabled: settings.enabled },
-			`Billable Time ${settings.enabled ? "enabled" : "disabled"}`,
-		);
-		return settings;
-	});
-
-	return runServerActionSafe(effect);
-}
+export const switchBillableTime = organizationAction(
+	{
+		name: "billableTime.switch",
+		requires: "owner",
+		schema: z.strictObject({
+			enabled: z.boolean(),
+			currency: z.string().max(10).nullable().optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.switch", () =>
+				setBillableTimeEnabled(dbService.db, {
+					organizationId,
+					enabled: input.enabled,
+					currency: input.currency ?? null,
+					actorUserId: actor.userId,
+				}),
+			);
+			const settings = yield* settingsOf(outcome, organizationId);
+			logger.info(
+				{ organizationId, enabled: settings.enabled },
+				`Billable Time ${settings.enabled ? "enabled" : "disabled"}`,
+			);
+			return settings;
+		}),
+);
 
 /**
  * Changes the billable currency of the active organization. Org admins may do it
  * while the module is on and no billable rate or cost rate exists yet.
  */
-export async function updateBillableCurrency(input: {
-	currency: string;
-}): Promise<ServerActionResult<BillableTimeSettings>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* activeOrganizationActor({
-			requiredRole: "admin",
-			message: "Only owners and admins can change the billable currency",
-			action: "updateCurrency",
-		});
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.updateCurrency", () =>
-			changeBillableCurrency(dbService.db, {
-				organizationId: actor.organizationId,
-				currency: input.currency,
-				actorUserId: actor.userId,
-			}),
-		);
-		const settings = yield* settingsOf(outcome, actor.organizationId);
-		logger.info(
-			{ organizationId: actor.organizationId, currency: settings.currency },
-			"Billable currency changed",
-		);
-		return settings;
-	});
-
-	return runServerActionSafe(effect);
-}
+export const updateBillableCurrency = organizationAction(
+	{
+		name: "billableTime.updateCurrency",
+		requires: "orgAdmin",
+		schema: z.strictObject({ currency: z.string().max(10) }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.updateCurrency", () =>
+				changeBillableCurrency(dbService.db, {
+					organizationId,
+					currency: input.currency,
+					actorUserId: actor.userId,
+				}),
+			);
+			const settings = yield* settingsOf(outcome, organizationId);
+			logger.info({ organizationId, currency: settings.currency }, "Billable currency changed");
+			return settings;
+		}),
+);

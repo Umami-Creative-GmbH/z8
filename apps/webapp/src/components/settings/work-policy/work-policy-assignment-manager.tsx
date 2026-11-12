@@ -22,6 +22,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { getWorkPolicyAssignmentSectionVisibility } from "../policy-assignment-surface";
 import { WorkPolicyAssignmentSections } from "./work-policy-assignment-sections";
@@ -50,7 +51,7 @@ export function WorkPolicyAssignmentManager({
 	} = useQuery({
 		queryKey: queryKeys.workPolicies.assignments(organizationId),
 		queryFn: async () => {
-			const result = await getWorkPolicyAssignments(organizationId);
+			const result = await getWorkPolicyAssignments();
 			if (!result.success) {
 				return Promise.reject(result.error || "Failed to fetch assignments");
 			}
@@ -73,8 +74,10 @@ export function WorkPolicyAssignmentManager({
 				selectedAssignmentRef.current = null;
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workPolicies.assignmentDeleteFailed", "Failed to remove assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.assignmentDeleteFailed",
+						"Failed to remove assignment",
+					]),
 				);
 			}
 		},

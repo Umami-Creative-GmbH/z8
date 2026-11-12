@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { ContractTypeCell } from "./contract-type-cell";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
 import { EmployeeHeader } from "./employee-header";
@@ -19,7 +20,8 @@ import { ViewDetailsCell } from "./view-details-cell";
 export interface CreateEmployeeColumnsOptions {
 	organizationId: string;
 	currentUserId: string;
-	currentMemberRole: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	onOptimisticStatusChange(employeeId: string, isActive: boolean): void;
 	onRemoved(employeeId: string): void;
 }
@@ -27,7 +29,7 @@ export interface CreateEmployeeColumnsOptions {
 export function createEmployeeColumns({
 	organizationId,
 	currentUserId,
-	currentMemberRole,
+	settingsAccess,
 	onOptimisticStatusChange,
 	onRemoved,
 }: CreateEmployeeColumnsOptions): ColumnDef<
@@ -171,7 +173,7 @@ export function createEmployeeColumns({
 								membership: row.original.membership,
 							}}
 							currentUserId={currentUserId}
-							currentMemberRole={currentMemberRole}
+							settingsAccess={settingsAccess}
 							onOptimisticStatusChange={onOptimisticStatusChange}
 							onRemoved={onRemoved}
 						/>

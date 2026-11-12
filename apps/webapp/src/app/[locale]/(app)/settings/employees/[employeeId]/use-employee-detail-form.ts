@@ -51,7 +51,7 @@ export function useEmployeeDetailForm({
 	const teamOptions = useQuery({
 		queryKey: queryKeys.teams.options(employee?.organizationId ?? ""),
 		queryFn: async () => {
-			const result = await listTeams(employee?.organizationId);
+			const result = await listTeams();
 			if (!result.success) throw new Error(result.error);
 			return result.data.map((team) => ({ id: team.id, name: team.name }));
 		},
@@ -85,7 +85,7 @@ export function useEmployeeDetailForm({
 			let drivingLicencePreviewToken: string | undefined;
 			if ("teamId" in payload) {
 				const previewToken = await confirmTeamChange(() =>
-					previewEmployeeTeamChange(employeeId, payload.teamId ?? null),
+					previewEmployeeTeamChange({ employeeId, teamId: payload.teamId ?? null }),
 				);
 				if (previewToken === null) return;
 				drivingLicencePreviewToken = previewToken;

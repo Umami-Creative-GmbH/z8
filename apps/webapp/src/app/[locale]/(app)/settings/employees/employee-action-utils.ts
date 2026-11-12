@@ -1,93 +1,26 @@
-import {
-	type Attributes,
-	type Span,
-	SpanStatusCode,
-	trace,
-} from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
-import type { ZodType } from "zod";
 import { member, user } from "@/db/auth-schema";
-import { employee, team, teamPermissions } from "@/db/schema";
-import type { TeamPermissions } from "@/lib/authorization";
+import { employee } from "@/db/schema";
 import { CACHE_TAGS } from "@/lib/cache/tags";
-import {
-	type AnyAppError,
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { ManagerService } from "@/lib/effect/services/manager.service";
 import { createLogger } from "@/lib/logger";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,
 	type SettingsAccessTier,
 } from "@/lib/settings-access";
-import { getScopedTeamFlags } from "../teams/team-scope";
-import { canAccessManagedEmployeeSettingsTarget } from "./employee-scope";
 
 const settingsAccessLogger = createLogger("EmployeeSettingsAccess");
 
-const employeeNotFoundError = () =>
-	new NotFoundError({
-		message: "Employee profile not found",
-		entityType: "employee",
-	});
-
-export function getEmployeeContext(options?: {
-	organizationId?: string;
-	queryName?: string;
-}) {
-	return Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession(options?.organizationId);
-		const dbService = yield* DatabaseService;
-		const organizationId =
-			options?.organizationId ?? session.session.activeOrganizationId;
-
-		if (!organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "No active organization selected",
-					userId: session.user.id,
-					resource: "employee_profile",
-					action: "update",
-				}),
-			);
-		}
-
-		const where = and(
-			eq(employee.userId, session.user.id),
-			eq(employee.organizationId, organizationId),
-			eq(employee.isActive, true),
-		);
-
-		const currentEmployee = yield* dbService
-			.query(options?.queryName ?? "getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({ where });
-			})
-			.pipe(
-				Effect.flatMap((value) =>
-					value ? Effect.succeed(value) : Effect.fail(employeeNotFoundError()),
-				),
-			);
-
-		return {
-			session,
-			dbService,
-			currentEmployee: currentEmployee as typeof employee.$inferSelect,
-		};
-	});
-}
-
+/**
+ * The caller's employee-settings tier for reads outside the settings actions:
+ * the employee picker (`selectable-employees.ts`, also used by scheduling) and
+ * the employee detail read API. Settings actions use `organizationAction`.
+ */
 export function getEmployeeSettingsActorContext(options?: {
 	organizationId?: string;
 	queryName?: string;
@@ -96,8 +29,7 @@ export function getEmployeeSettingsActorContext(options?: {
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession(options?.organizationId);
 		const dbService = yield* DatabaseService;
-		const organizationId =
-			options?.organizationId ?? session.session.activeOrganizationId;
+		const organizationId = options?.organizationId ?? session.session.activeOrganizationId;
 		const queryName = options?.queryName ?? "getEmployeeSettingsActor";
 		const logDenial = (
 			reason:
@@ -106,10 +38,7 @@ export function getEmployeeSettingsActorContext(options?: {
 				| "inactive_employee"
 				| "insufficient_role",
 			membershipRecord: { role: string; status?: string | null } | null,
-			employeeRecord: Pick<
-				typeof employee.$inferSelect,
-				"id" | "role" | "isActive"
-			> | null,
+			employeeRecord: Pick<typeof employee.$inferSelect, "id" | "role" | "isActive"> | null,
 			accessTier: SettingsAccessTier | null = null,
 			membershipLookupFailed = false,
 		) =>
@@ -161,17 +90,14 @@ export function getEmployeeSettingsActorContext(options?: {
 					});
 				},
 			),
-			dbService.query(
-				`${options?.queryName ?? "getEmployeeSettingsActor"}:employee`,
-				async () => {
-					return await dbService.db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, session.user.id),
-							eq(employee.organizationId, organizationId),
-						),
-					});
-				},
-			),
+			dbService.query(`${options?.queryName ?? "getEmployeeSettingsActor"}:employee`, async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, organizationId),
+					),
+				});
+			}),
 		]);
 
 		if (!membershipRecord) {
@@ -228,12 +154,7 @@ export function getEmployeeSettingsActorContext(options?: {
 		});
 
 		if (accessTier === "member") {
-			yield* logDenial(
-				"insufficient_role",
-				membershipRecord,
-				employeeRecord ?? null,
-				accessTier,
-			);
+			yield* logDenial("insufficient_role", membershipRecord, employeeRecord ?? null, accessTier);
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message: "You do not have access to employee settings",
@@ -249,490 +170,8 @@ export function getEmployeeSettingsActorContext(options?: {
 			dbService,
 			organizationId,
 			accessTier,
-			currentEmployee: employeeRecord
-				? (employeeRecord as typeof employee.$inferSelect)
-				: null,
+			currentEmployee: employeeRecord ? (employeeRecord as typeof employee.$inferSelect) : null,
 		};
-	});
-}
-
-export function requireAdmin(
-	currentEmployee: typeof employee.$inferSelect,
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
-) {
-	if (currentEmployee.role === "admin") {
-		return Effect.void;
-	}
-
-	return Effect.fail(
-		new AuthorizationError({
-			message: options.message,
-			userId: currentEmployee.id,
-			resource: options.resource,
-			action: options.action,
-		}),
-	);
-}
-
-export function ensureCanAccessEmployeeSettingsTarget(
-	currentEmployee: typeof employee.$inferSelect,
-	targetEmployee: typeof employee.$inferSelect,
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
-) {
-	return Effect.gen(function* () {
-		yield* ensureSameOrganization(
-			currentEmployee,
-			targetEmployee,
-			options.resource,
-			options.action,
-		);
-
-		if (currentEmployee.role === "admin") {
-			return;
-		}
-
-		if (currentEmployee.role !== "manager") {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: options.message,
-					userId: currentEmployee.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-
-		const managerService = yield* ManagerService;
-		const isManagedEmployee = yield* managerService.isManagerOf(
-			currentEmployee.id,
-			targetEmployee.id,
-		);
-
-		if (
-			!canAccessManagedEmployeeSettingsTarget({
-				actorRole: currentEmployee.role,
-				isManagedEmployee,
-			})
-		) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: options.message,
-					userId: currentEmployee.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-	});
-}
-
-export function requireOrgAdminEmployeeSettingsAccess(
-	actor: {
-		accessTier: SettingsAccessTier;
-		organizationId: string;
-		session: { user: { id: string } };
-	},
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
-) {
-	if (actor.accessTier === "orgAdmin") {
-		return Effect.void;
-	}
-
-	return Effect.fail(
-		new AuthorizationError({
-			message: options.message,
-			userId: actor.session.user.id,
-			resource: options.resource,
-			action: options.action,
-		}),
-	);
-}
-
-export function ensureSettingsActorCanAccessEmployeeTarget(
-	actor: {
-		accessTier: SettingsAccessTier;
-		organizationId: string;
-		session: { user: { id: string } };
-		currentEmployee: typeof employee.$inferSelect | null;
-	},
-	targetEmployee: typeof employee.$inferSelect,
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
-) {
-	return Effect.gen(function* () {
-		if (actor.organizationId !== targetEmployee.organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Cannot access employee from different organization",
-					userId: actor.session.user.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-
-		if (actor.accessTier === "orgAdmin") {
-			return;
-		}
-
-		if (actor.currentEmployee?.role !== "manager") {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: options.message,
-					userId: actor.session.user.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-
-		const managerService = yield* ManagerService;
-		const isManagedEmployee = yield* managerService.isManagerOf(
-			actor.currentEmployee.id,
-			targetEmployee.id,
-		);
-
-		if (
-			!canAccessManagedEmployeeSettingsTarget({
-				actorRole: actor.currentEmployee.role,
-				isManagedEmployee,
-			})
-		) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: options.message,
-					userId: actor.session.user.id,
-					resource: options.resource,
-					action: options.action,
-				}),
-			);
-		}
-	});
-}
-
-export function requireSettingsActorEmployeeAssignmentAccess(
-	actor: {
-		accessTier: SettingsAccessTier;
-		session: { user: { id: string } };
-	},
-	assignmentType: "organization" | "team" | "employee",
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
-) {
-	if (actor.accessTier === "orgAdmin") {
-		return Effect.void;
-	}
-
-	if (assignmentType === "employee") {
-		return Effect.void;
-	}
-
-	return Effect.fail(
-		new AuthorizationError({
-			message: options.message,
-			userId: actor.session.user.id,
-			resource: options.resource,
-			action: options.action,
-		}),
-	);
-}
-
-export function validateAssignmentTargetFields(
-	assignmentType: "organization" | "team" | "employee",
-	input: {
-		teamId?: string;
-		employeeId?: string;
-	},
-) {
-	const hasTeamId = Boolean(input.teamId);
-	const hasEmployeeId = Boolean(input.employeeId);
-
-	if (assignmentType === "organization") {
-		if (hasTeamId || hasEmployeeId) {
-			return Effect.fail(
-				new ValidationError({
-					message: "Organization assignments cannot target teams or employees",
-					field: hasTeamId ? "teamId" : "employeeId",
-				}),
-			);
-		}
-
-		return Effect.void;
-	}
-
-	if (assignmentType === "team") {
-		if (!hasTeamId) {
-			return Effect.fail(
-				new ValidationError({
-					message: "Team assignments require a teamId",
-					field: "teamId",
-				}),
-			);
-		}
-
-		if (hasEmployeeId) {
-			return Effect.fail(
-				new ValidationError({
-					message: "Team assignments cannot target an employee",
-					field: "employeeId",
-				}),
-			);
-		}
-
-		return Effect.void;
-	}
-
-	if (!hasEmployeeId) {
-		return Effect.fail(
-			new ValidationError({
-				message: "Employee assignments require an employeeId",
-				field: "employeeId",
-			}),
-		);
-	}
-
-	if (hasTeamId) {
-		return Effect.fail(
-			new ValidationError({
-				message: "Employee assignments cannot target a team",
-				field: "teamId",
-			}),
-		);
-	}
-
-	return Effect.void;
-}
-
-export function getManagedEmployeeIdsForSettingsActor(actor: {
-	accessTier: SettingsAccessTier;
-	organizationId: string;
-	currentEmployee: Pick<typeof employee.$inferSelect, "id" | "role"> | null;
-}) {
-	return Effect.gen(function* () {
-		if (actor.accessTier === "orgAdmin") {
-			return null as Set<string> | null;
-		}
-
-		if (actor.currentEmployee?.role !== "manager") {
-			return new Set<string>();
-		}
-
-		const managerService = yield* ManagerService;
-		// Authority, not a roster: a manager keeps reaching a former report (#1438).
-		const managedEmployees = yield* managerService.getManagedEmployees(
-			actor.currentEmployee.id,
-			actor.organizationId,
-			{ roster: "all" },
-		);
-
-		return new Set(
-			managedEmployees.map((managedEmployee) => managedEmployee.id),
-		);
-	});
-}
-
-/**
- * The teams the actor may pick, by the team settings' scope rule: every team for
- * an org admin (null), else the teams they may manage members or settings of.
- */
-export function getManageableTeamIdsForSettingsActor(actor: {
-	accessTier: SettingsAccessTier;
-	organizationId: string;
-	currentEmployee: Pick<typeof employee.$inferSelect, "id"> | null;
-}) {
-	return Effect.gen(function* () {
-		if (actor.accessTier === "orgAdmin") {
-			return null as Set<string> | null;
-		}
-
-		const currentEmployeeId = actor.currentEmployee?.id;
-		if (!currentEmployeeId) {
-			return new Set<string>();
-		}
-
-		const dbService = yield* DatabaseService;
-		const permissionRows = yield* dbService.query(
-			"getManageableTeamIdsForSettingsActor",
-			async () => {
-				return await dbService.db.query.teamPermissions.findMany({
-					where: and(
-						eq(teamPermissions.employeeId, currentEmployeeId),
-						eq(teamPermissions.organizationId, actor.organizationId),
-					),
-				});
-			},
-		);
-		const permissions: TeamPermissions = { orgWide: null, byTeamId: new Map() };
-		for (const permissionRow of permissionRows) {
-			if (permissionRow.teamId) {
-				permissions.byTeamId.set(permissionRow.teamId, permissionRow);
-			}
-		}
-
-		return new Set(
-			[...permissions.byTeamId.keys()].filter((teamId) => {
-				const flags = getScopedTeamFlags({
-					accessTier: actor.accessTier,
-					permissions,
-					teamId,
-				});
-				return flags.canManageMembers || flags.canManageSettings;
-			}),
-		);
-	});
-}
-
-export function requireSettingsActorEmployeeRecord(
-	actor: {
-		session: { user: { id: string } };
-		currentEmployee: typeof employee.$inferSelect | null;
-	},
-	options?: {
-		message?: string;
-		resource?: string;
-		action?: string;
-	},
-) {
-	if (actor.currentEmployee) {
-		return Effect.succeed(actor.currentEmployee);
-	}
-
-	return Effect.fail(
-		new NotFoundError({
-			message: options?.message ?? "Employee profile not found",
-			entityType: options?.resource ?? "employee",
-			entityId: actor.session.user.id,
-		}),
-	);
-}
-
-export function filterItemsToManagedEmployees<
-	T extends {
-		employeeId?: string | null;
-		employee?: { id: string } | null;
-	},
->(items: T[], managedEmployeeIds: Set<string> | null) {
-	if (!managedEmployeeIds) {
-		return items;
-	}
-
-	return items.filter((item) => {
-		const employeeId = item.employeeId ?? item.employee?.id ?? null;
-		return employeeId ? managedEmployeeIds.has(employeeId) : false;
-	});
-}
-
-export function validateInput<T>(
-	schema: ZodType<T>,
-	data: unknown,
-	fallbackField = "data",
-) {
-	const result = schema.safeParse(data);
-	if (result.success) {
-		return Effect.succeed(result.data);
-	}
-
-	const issue = result.error.issues[0];
-	return Effect.fail(
-		new ValidationError({
-			message: issue?.message ?? "Invalid input",
-			field: issue?.path?.join(".") || fallbackField,
-		}),
-	);
-}
-
-export function getTargetEmployee(
-	employeeId: string,
-	queryName = "getTargetEmployee",
-	organizationId?: string,
-) {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-
-		return yield* dbService
-			.query(queryName, async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: organizationId
-						? and(
-								eq(employee.id, employeeId),
-								eq(employee.organizationId, organizationId),
-							)
-						: eq(employee.id, employeeId),
-					with: {
-						user: {
-							columns: {
-								firstName: true,
-								lastName: true,
-								name: true,
-							},
-						},
-					},
-				});
-			})
-			.pipe(
-				Effect.flatMap((value) =>
-					value
-						? Effect.succeed(value)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee not found",
-									entityType: "employee",
-									entityId: employeeId,
-								}),
-							),
-				),
-			);
-	});
-}
-
-export function getOrganizationTeam(
-	teamId: string,
-	organizationId: string,
-	queryName = "getOrganizationTeam",
-) {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-
-		return yield* dbService
-			.query(queryName, async () => {
-				return await dbService.db.query.team.findFirst({
-					where: and(
-						eq(team.id, teamId),
-						eq(team.organizationId, organizationId),
-					),
-				});
-			})
-			.pipe(
-				Effect.flatMap((value) =>
-					value
-						? Effect.succeed(value)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Team not found",
-									entityType: "team",
-									entityId: teamId,
-								}),
-							),
-				),
-			);
 	});
 }
 
@@ -762,69 +201,10 @@ export function getTargetUser(userId: string, queryName = "getTargetUser") {
 	});
 }
 
-export function ensureSameOrganization(
-	currentEmployee: typeof employee.$inferSelect,
-	targetEmployee: typeof employee.$inferSelect,
-	resource: string,
-	action: string,
-) {
-	if (currentEmployee.organizationId === targetEmployee.organizationId) {
-		return Effect.void;
-	}
-
-	return Effect.fail(
-		new AuthorizationError({
-			message: "Cannot access employee from different organization",
-			userId: currentEmployee.id,
-			resource,
-			action,
-		}),
-	);
-}
-
 export function parseHourlyRate(value?: string | null) {
 	return value ? Number.parseFloat(value) : null;
 }
 
 export function revalidateEmployeesCache(organizationId: string) {
 	revalidateTag(CACHE_TAGS.EMPLOYEES(organizationId), "max");
-}
-
-export function runTracedEmployeeAction<T>(options: {
-	name: string;
-	attributes?: Attributes;
-	logError: (error: unknown) => void;
-	execute: (span: Span) => Effect.Effect<T, AnyAppError, any>;
-}): Promise<ServerActionResult<T>> {
-	const tracer = trace.getTracer("employees");
-	const runWithSpan = (span: Span) =>
-		options.execute(span).pipe(
-			Effect.tap(() =>
-				Effect.sync(() => {
-					span.setStatus({ code: SpanStatusCode.OK });
-				}),
-			),
-			Effect.catch((error) =>
-				Effect.gen(function* () {
-					span.recordException(error as Error);
-					span.setStatus({
-						code: SpanStatusCode.ERROR,
-						message: String(error),
-					});
-					options.logError(error);
-					return yield* Effect.fail(error as AnyAppError);
-				}),
-			),
-			Effect.onExit(() => Effect.sync(() => span.end())),
-		);
-
-	const effect = options.attributes
-		? tracer.startActiveSpan(
-				options.name,
-				{ attributes: options.attributes },
-				runWithSpan,
-			)
-		: tracer.startActiveSpan(options.name, runWithSpan);
-
-	return runServerActionSafe(effect);
 }

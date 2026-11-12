@@ -13,6 +13,10 @@ import {
 import { DataTable, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import {
 	AbsenceCategoriesErrorState,
@@ -27,6 +31,14 @@ import {
 } from "./absence-categories-table-parts";
 import { filterAbsenceCategories, getCategoryTypeLabel } from "./absence-categories-table-utils";
 import type { AbsenceCategoryForSettings } from "./absence-category-form-utils";
+
+/** A delete refused because absences, approval policies or wage type mappings still use the category. */
+const DELETE_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.absenceCategories.deleteInUse",
+		"This category is still in use. Deactivate it instead, or remove what depends on it first.",
+	],
+};
 
 interface AbsenceCategoriesTableProps {
 	organizationId: string;
@@ -111,7 +123,7 @@ function useAbsenceCategoryMutations(queryKey: QueryKey, onDeleted: () => void) 
 
 	const toggleActiveMutation = useMutation({
 		mutationFn: (category: AbsenceCategoryForSettings) =>
-			setAbsenceCategoryActive(category.id, !category.isActive),
+			setAbsenceCategoryActive({ categoryId: category.id, isActive: !category.isActive }),
 		onSuccess: (result, category) => {
 			if (result.success) {
 				toast.success(
@@ -122,8 +134,10 @@ function useAbsenceCategoryMutations(queryKey: QueryKey, onDeleted: () => void) 
 				queryClient.invalidateQueries({ queryKey });
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.absenceCategories.statusUpdateFailed", "Could not update category status"),
+					actionErrorMessage(t, result, {}, [
+						"settings.absenceCategories.statusUpdateFailed",
+						"Could not update category status",
+					]),
 				);
 			}
 		},
@@ -143,7 +157,10 @@ function useAbsenceCategoryMutations(queryKey: QueryKey, onDeleted: () => void) 
 				onDeleted();
 			} else {
 				toast.error(
-					result.error || t("settings.absenceCategories.deleteFailed", "Could not delete category"),
+					actionErrorMessage(t, result, DELETE_REFUSALS, [
+						"settings.absenceCategories.deleteFailed",
+						"Could not delete category",
+					]),
 				);
 			}
 		},
@@ -179,7 +196,7 @@ export function AbsenceCategoriesTable({
 	} = useQuery({
 		queryKey,
 		queryFn: async () => {
-			const result = await getAbsenceCategoriesForSettings(organizationId);
+			const result = await getAbsenceCategoriesForSettings();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch absence categories");
 			}

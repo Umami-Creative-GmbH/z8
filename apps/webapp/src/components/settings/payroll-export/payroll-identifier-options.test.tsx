@@ -80,7 +80,6 @@ describe("payroll configuration forms with a custom field identifier (#821)", ()
 		};
 		render(
 			<DatevConfigForm
-				organizationId="org_123"
 				identifierFields={FIELDS}
 				initialConfig={{ id: "cfg", formatId: "datev_lohn", config, ...dates }}
 			/>,
@@ -92,14 +91,13 @@ describe("payroll configuration forms with a custom field identifier (#821)", ()
 		fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
 
 		await waitFor(() =>
-			expect(saveDatevConfigActionMock).toHaveBeenCalledWith({ organizationId: "org_123", config }),
+			expect(saveDatevConfigActionMock).toHaveBeenCalledWith({ config }),
 		);
 	});
 
 	it("keeps a saved field that is no longer offered visible as unavailable", () => {
 		render(
 			<PersonioConfigForm
-				organizationId="org_123"
 				identifierFields={FIELDS}
 				initialConfig={{
 					id: "cfg",

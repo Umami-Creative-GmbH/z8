@@ -100,7 +100,14 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 const { getCustomFieldSection, getOwnCustomFieldValues } = await import(
 	"./value-actions"
 );
-const { updateEmployee, listEmployees } = await import("../employees/actions");
+const employeeActions = await import("../employees/actions");
+const { listEmployees } = employeeActions;
+/** The employee detail save, by employee, form values and custom field values. */
+const updateEmployee = (
+	employeeId: string,
+	data: Record<string, unknown>,
+	customFieldValues?: Record<string, unknown>,
+) => employeeActions.updateEmployee({ employeeId, data, customFieldValues });
 const { archiveProject, createProject, updateProject, getProjects } =
 	await import("../projects/actions");
 const { createProjectFromTemplate } = await import(
@@ -456,7 +463,6 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			const created = await actAs(ids.ownerUser, () =>
 				ok(
 					createProject({
-						organizationId: ids.organization,
 						name: "Harbour",
 						customFieldValues: {
 							[fields.po.id]: "PO-7",
@@ -474,7 +480,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			});
 			await actAs(ids.ownerUser, () =>
 				ok(
-					updateProject(created.id, {
+					updateProject({
+						projectId: created.id,
 						customFieldValues: { [fields.budgetCode.id]: "" },
 					}),
 				),
@@ -487,7 +494,6 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			const customer = await actAs(ids.ownerUser, () =>
 				ok(
 					createCustomer({
-						organizationId: ids.organization,
 						name: "Globex",
 						customFieldValues: {
 							[fields.customerNo.id]: "C-1",
@@ -498,7 +504,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			);
 			await actAs(ids.ownerUser, () =>
 				ok(
-					updateCustomer(customer.id, {
+					updateCustomer({
+						customerId: customer.id,
 						customFieldValues: { [fields.customerNo.id]: "C-2" },
 					}),
 				),
@@ -532,7 +539,6 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				await actAs(ids.ownerUser, () =>
 					failure(
 						createCustomer({
-							organizationId: ids.organization,
 							name: "Future",
 							customFieldValues: {
 								[fields.customerNo.id]: "C-9",
@@ -549,7 +555,6 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			const customer = await actAs(ids.ownerUser, () =>
 				ok(
 					createCustomer({
-						organizationId: ids.organization,
 						name: "Globex",
 						customFieldValues: {
 							[fields.customerNo.id]: "C-1",
@@ -566,7 +571,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 
 			await actAs(ids.ownerUser, () =>
 				ok(
-					updateCustomer(customer.id, {
+					updateCustomer({
+						customerId: customer.id,
 						customFieldValues: {
 							[rateClass.id]: {
 								history: [
@@ -601,7 +607,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			expect(
 				await actAs(ids.ownerUser, () =>
 					failure(
-						updateCustomer(customer.id, {
+						updateCustomer({
+							customerId: customer.id,
 							customFieldValues: {
 								[rateClass.id]: {
 									history: [{ op: "delete", entryId: first.id }],
@@ -618,7 +625,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			expect(
 				await actAs(ids.ownerUser, () =>
 					failure(
-						updateCustomer(customer.id, {
+						updateCustomer({
+							customerId: customer.id,
 							customFieldValues: { [rateClass.id]: "R9" },
 						}),
 					),
@@ -635,7 +643,6 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				await actAs(ids.ownerUser, () =>
 					failure(
 						createProject({
-							organizationId: ids.organization,
 							name: "Bare",
 							customFieldValues: {},
 						}),
@@ -663,7 +670,6 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				await actAs(ids.ownerUser, () =>
 					failure(
 						createProject({
-							organizationId: ids.organization,
 							name: "Bad code",
 							customFieldValues: {
 								[fields.po.id]: "PO-1",
@@ -680,7 +686,6 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				await actAs(ids.ownerUser, () =>
 					failure(
 						createCustomer({
-							organizationId: ids.organization,
 							name: "Initech",
 							customFieldValues: { [fields.customerNo.id]: "" },
 						}),
@@ -699,7 +704,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			// Paths other than the forms (archiving a project) are not held to required fields.
 			expect(
 				await actAs(ids.ownerUser, () =>
-					failure(archiveProject(ids.unmanagedProject)),
+					failure(archiveProject({ projectId: ids.unmanagedProject })),
 				),
 			).toBe("accepted");
 			// A template creation with the required value goes through.
@@ -736,7 +741,6 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				await actAs(ids.ownerUser, () =>
 					failure(
 						createProject({
-							organizationId: ids.organization,
 							name: "No section",
 						}),
 					),
@@ -754,14 +758,13 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			).toEqual(required("PO number"));
 			expect(
 				await actAs(ids.ownerUser, () =>
-					failure(updateProject(ids.project, { name: "Renamed" })),
+					failure(updateProject({ projectId: ids.project, name: "Renamed" })),
 				),
 			).toEqual(required("PO number"));
 			expect(
 				await actAs(ids.ownerUser, () =>
 					failure(
 						createCustomer({
-							organizationId: ids.organization,
 							name: "No section",
 						}),
 					),
@@ -769,7 +772,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			).toEqual(required("Customer number"));
 			expect(
 				await actAs(ids.ownerUser, () =>
-					failure(updateCustomer(ids.customer, { name: "Renamed" })),
+					failure(updateCustomer({ customerId: ids.customer, name: "Renamed" })),
 				),
 			).toEqual(required("Customer number"));
 			const { rows } = await admin.query(
@@ -786,14 +789,16 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			);
 			await actAs(ids.ownerUser, () =>
 				ok(
-					updateProject(ids.project, {
+					updateProject({
+						projectId: ids.project,
 						customFieldValues: { [fields.po.id]: "PO-1" },
 					}),
 				),
 			);
 			await actAs(ids.ownerUser, () =>
 				ok(
-					updateCustomer(ids.customer, {
+					updateCustomer({
+						customerId: ids.customer,
 						customFieldValues: { [fields.customerNo.id]: "C-1" },
 					}),
 				),
@@ -802,10 +807,10 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				ok(updateEmployee(ids.employee, { position: "Lead" })),
 			);
 			await actAs(ids.ownerUser, () =>
-				ok(updateProject(ids.project, { name: "Renamed" })),
+				ok(updateProject({ projectId: ids.project, name: "Renamed" })),
 			);
 			await actAs(ids.ownerUser, () =>
-				ok(updateCustomer(ids.customer, { name: "Renamed" })),
+				ok(updateCustomer({ customerId: ids.customer, name: "Renamed" })),
 			);
 		});
 
@@ -838,13 +843,13 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			).toBe(false);
 
 			const projects = await actAs(ids.ownerUser, () =>
-				ok(getProjects(ids.organization)),
+				ok(getProjects()),
 			);
 			expect(
 				projects.find((p) => p.id === ids.project)?.missingRequiredCustomFields,
 			).toBe(true);
 			const customers = await actAs(ids.ownerUser, () =>
-				ok(getCustomers(ids.organization)),
+				ok(getCustomers()),
 			);
 			expect(
 				customers.find((c) => c.id === ids.customer)
@@ -931,7 +936,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 
 			await actAs(ids.managerUser, () =>
 				ok(
-					updateProject(ids.project, {
+					updateProject({
+						projectId: ids.project,
 						customFieldValues: { [fields.po.id]: "PO-M" },
 					}),
 				),
@@ -939,7 +945,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			expect(
 				await actAs(ids.managerUser, () =>
 					failure(
-						updateProject(ids.project, {
+						updateProject({
+							projectId: ids.project,
 							customFieldValues: { [fields.budgetCode.id]: "5" },
 						}),
 					),
@@ -954,7 +961,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				await actAs(ids.managerUser, () =>
 					failure(section("project", ids.otherProject)),
 				),
-			).toMatchObject({ code: "AuthorizationError" });
+				// Another organization's project is not found (ADR 0002).
+			).toMatchObject({ code: "NotFoundError" });
 
 			const customer = await actAs(ids.managerUser, () =>
 				ok(section("customer", ids.customer)),
@@ -965,7 +973,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			]);
 			await actAs(ids.managerUser, () =>
 				ok(
-					updateCustomer(ids.customer, {
+					updateCustomer({
+						customerId: ids.customer,
 						customFieldValues: { [fields.customerNo.id]: "C-M" },
 					}),
 				),
@@ -973,7 +982,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			expect(
 				await actAs(ids.managerUser, () =>
 					failure(
-						updateCustomer(ids.customer, {
+						updateCustomer({
+							customerId: ids.customer,
 							customFieldValues: { [fields.startedOn.id]: "2025-01-01" },
 						}),
 					),
@@ -981,7 +991,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			).toMatchObject({ code: "ValidationError" });
 
 			const projects = await actAs(ids.managerUser, () =>
-				ok(getProjects(ids.organization)),
+				ok(getProjects()),
 			);
 			expect(
 				projects.map((p) => [p.id, p.missingRequiredCustomFields]),

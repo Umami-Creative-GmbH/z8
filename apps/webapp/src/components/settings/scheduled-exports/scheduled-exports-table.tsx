@@ -66,6 +66,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import { SCHEDULED_EXPORT_REFUSALS } from "./scheduled-export-refusals";
 
 // Dynamic imports for heavy dialog components (bundle-dynamic-imports)
 const ScheduledExportDialog = dynamic(
@@ -137,16 +139,15 @@ export function ScheduledExportsTable({
 	} = useSWR(
 		["scheduled-exports", organizationId],
 		async () => {
-			const result = await getScheduledExportsAction(organizationId);
+			const result = await getScheduledExportsAction();
 			if (result.success) {
 				return result.data;
 			}
 			throw new Error(
-				result.error ||
-					t(
-						"settings.scheduledExports.error.loadFailed",
-						"Failed to load scheduled exports",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.scheduledExports.error.loadFailed",
+					"Failed to load scheduled exports",
+				]),
 			);
 		},
 		{
@@ -158,8 +159,8 @@ export function ScheduledExportsTable({
 	// Load filter options and payroll configs when dialog opens
 	const loadDialogData = async () => {
 		const [filterResult, configResult] = await Promise.all([
-			getFilterOptionsAction(organizationId),
-			getPayrollConfigsAction(organizationId),
+			getFilterOptionsAction(),
+			getPayrollConfigsAction(),
 		]);
 
 		if (filterResult.success) {
@@ -172,7 +173,7 @@ export function ScheduledExportsTable({
 
 	// Load schedule for editing
 	const loadScheduleForEdit = async (scheduleId: string) => {
-		const result = await getScheduledExportAction(organizationId, scheduleId);
+		const result = await getScheduledExportAction({ scheduleId });
 		if (result.success && result.data) {
 			const schedule = result.data;
 			setEditInitialValues({
@@ -223,18 +224,16 @@ export function ScheduledExportsTable({
 		try {
 			await mutate(
 				async () => {
-					const result = await toggleScheduledExportAction(
-						organizationId,
-						scheduleId,
-						isActive,
-					);
+					const result = await toggleScheduledExportAction({ scheduleId, isActive });
 					if (result.success) {
 						return optimisticData;
 					}
 					// Resuming is refused while the owner is no longer an org admin (#988).
 					throw new Error(
-						result.error ||
-							t("settings.scheduledExports.error.toggleFailed", "Toggle failed"),
+						actionErrorMessage(t, result, SCHEDULED_EXPORT_REFUSALS, [
+							"settings.scheduledExports.error.toggleFailed",
+							"Toggle failed",
+						]),
 					);
 				},
 				{
@@ -264,10 +263,7 @@ export function ScheduledExportsTable({
 
 		await mutate(
 			async () => {
-				const result = await deleteScheduledExportAction(
-					organizationId,
-					scheduleId,
-				);
+				const result = await deleteScheduledExportAction({ scheduleId });
 				if (result.success) {
 					return optimisticData;
 				}
@@ -829,7 +825,6 @@ function ScheduledExportDialogs({
 			<ScheduledExportDialog
 				open={isCreateDialogOpen}
 				onOpenChange={onCreateOpenChange}
-				organizationId={organizationId}
 				editScheduleId={editScheduleId ?? undefined}
 				initialValues={editInitialValues ?? undefined}
 				payrollConfigs={payrollConfigs}
@@ -849,7 +844,6 @@ function ScheduledExportDialogs({
 				<RunNowDialog
 					open={Boolean(runNowSchedule)}
 					onOpenChange={(open: boolean) => !open && onCloseRunNow()}
-					organizationId={organizationId}
 					scheduleId={runNowSchedule.id}
 					scheduleName={runNowSchedule.name}
 					dateRangeStrategy={runNowSchedule.dateRangeStrategy}

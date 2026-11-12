@@ -1,23 +1,17 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
-import { db } from "@/db";
+import { Effect } from "effect";
+import { z } from "zod";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { runActiveOrganizationActionActorCheck } from "@/lib/auth/organization-action-authorization";
-import { requireUser } from "@/lib/auth-helpers";
 import { ClockinClient } from "@/lib/clockin/client";
-import type {
-	ClockinImportResult,
-	ClockinImportSelections,
-	ClockinImportUserMapping,
-} from "@/lib/clockin/import-types";
-
-type ActionResult<T = void> =
-	| { success: true; data: T }
-	| { success: false; error: string };
+import type { ClockinImportResult } from "@/lib/clockin/import-types";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import { ExternalServiceError, ValidationError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 
 export interface ClockinPreview {
 	employees: number;
@@ -39,158 +33,124 @@ export interface Z8EmployeeInfo {
 	email: string;
 }
 
-async function requireAdmin(organizationId: string) {
-	const authContext = await requireUser();
-	await runActiveOrganizationActionActorCheck({
-		userId: authContext.user.id,
-		organizationId,
-		requiredRole: "admin",
-		message: "Only active approved admins and owners can manage imports",
-		resource: "clockinImport",
-		action: "manage",
-	});
+const tokenSchema = z.strictObject({
+	token: z.string().trim().min(1, "API token is required"),
+});
 
-	return authContext;
+/** A failed Clockin call; its message is shown as before. */
+function clockin<T>(operation: string, fallback: string, run: () => Promise<T>) {
+	return Effect.tryPromise({
+		try: run,
+		catch: (cause) =>
+			new ExternalServiceError({
+				message: cause instanceof Error ? cause.message : fallback,
+				service: "clockin",
+				operation,
+				cause,
+			}),
+	});
 }
 
-export async function validateClockinCredentials(
-	token: string,
-	organizationId: string,
-): Promise<ActionResult<ClockinPreview>> {
-	try {
-		if (!token.trim()) {
-			return { success: false, error: "API token is required" };
-		}
+export const validateClockinCredentials = organizationAction(
+	{ name: "clockinImport.validateCredentials", requires: "orgAdmin", schema: tokenSchema },
+	({ input }) =>
+		Effect.gen(function* () {
+			const failed = "Failed to validate Clockin credentials";
+			const client = new ClockinClient(input.token);
+			const connection = yield* clockin("testConnection", failed, () => client.testConnection());
+			if (!connection.success) {
+				return yield* Effect.fail(
+					new ValidationError({ message: connection.error, field: "token" }),
+				);
+			}
 
-		await requireAdmin(organizationId);
+			// The preview covers this calendar year so far, in UTC.
+			const today = systemClock.nowInstant().toZonedDateTimeISO("UTC").toPlainDate();
+			const startDate = today.with({ month: 1, day: 1 }).toString();
+			const endDate = today.toString();
 
-		const client = new ClockinClient(token.trim());
-		const connection = await client.testConnection();
-		if (!connection.success) {
-			return { success: false, error: connection.error };
-		}
+			const employees = yield* clockin("getEmployees", failed, () => client.getEmployees());
+			const employeeIds = employees.map((entry) => entry.id);
+			const [workdays, absences] =
+				employeeIds.length > 0
+					? yield* clockin("preview", failed, () =>
+							Promise.all([
+								client.searchWorkdays({ employeeIds, startDate, endDate }),
+								client.searchAbsences({ employeeIds, startDate, endDate }),
+							]),
+						)
+					: [[], []];
 
-		const startDate = DateTime.utc().startOf("year").toISODate();
-		const endDate = DateTime.utc().endOf("day").toISODate();
-		if (!startDate || !endDate) {
-			return { success: false, error: "Failed to build preview date range" };
-		}
-
-		const employees = await client.getEmployees();
-		const employeeIds = employees.map((entry) => entry.id);
-		const [workdays, absences] = await Promise.all([
-			employeeIds.length > 0
-				? client.searchWorkdays({ employeeIds, startDate, endDate })
-				: Promise.resolve([]),
-			employeeIds.length > 0
-				? client.searchAbsences({ employeeIds, startDate, endDate })
-				: Promise.resolve([]),
-		]);
-
-		return {
-			success: true,
-			data: {
+			return {
 				employees: employees.length,
 				workdays: workdays.length,
 				absences: absences.length,
 				schedules: 0,
-			},
-		};
-	} catch (error) {
-		return {
-			success: false,
-			error:
-				error instanceof Error
-					? error.message
-					: "Failed to validate Clockin credentials",
-		};
-	}
-}
+			} satisfies ClockinPreview;
+		}),
+);
 
-export async function fetchClockinEmployees(
-	token: string,
-	organizationId: string,
-): Promise<ActionResult<ClockinEmployeeInfo[]>> {
-	try {
-		if (!token.trim()) {
-			return { success: false, error: "API token is required" };
-		}
-
-		await requireAdmin(organizationId);
-
-		const client = new ClockinClient(token.trim());
-		const employees = await client.getEmployees();
-
-		return {
-			success: true,
-			data: employees.map((entry) => ({
-				id: entry.id,
-				name: `${entry.first_name} ${entry.last_name}`.trim(),
-				email: entry.email,
-			})),
-		};
-	} catch (error) {
-		return {
-			success: false,
-			error:
-				error instanceof Error
-					? error.message
-					: "Failed to fetch Clockin employees",
-		};
-	}
-}
-
-export async function fetchZ8Employees(
-	organizationId: string,
-): Promise<ActionResult<Z8EmployeeInfo[]>> {
-	try {
-		await requireAdmin(organizationId);
-
-		const employees = await db
-			.select({
-				id: employee.id,
-				userId: employee.userId,
-				firstName: authSchema.user.firstName,
-				lastName: authSchema.user.lastName,
-				email: authSchema.user.email,
-				userName: authSchema.user.name,
-			})
-			.from(employee)
-			.innerJoin(authSchema.user, eq(employee.userId, authSchema.user.id))
-			.where(eq(employee.organizationId, organizationId));
-
-		return {
-			success: true,
-			data: employees.map((entry) => ({
-				id: entry.id,
-				userId: entry.userId,
-				name: buildAuthUserDisplayName({
-					firstName: entry.firstName,
-					lastName: entry.lastName,
-					name: entry.userName,
+export const fetchClockinEmployees = organizationAction(
+	{ name: "clockinImport.fetchClockinEmployees", requires: "orgAdmin", schema: tokenSchema },
+	({ input }) =>
+		Effect.gen(function* () {
+			const client = new ClockinClient(input.token);
+			const employees = yield* clockin("getEmployees", "Failed to fetch Clockin employees", () =>
+				client.getEmployees(),
+			);
+			return employees.map(
+				(entry): ClockinEmployeeInfo => ({
+					id: entry.id,
+					name: `${entry.first_name} ${entry.last_name}`.trim(),
 					email: entry.email,
 				}),
-				email: entry.email,
-			})),
-		};
-	} catch (error) {
-		return {
-			success: false,
-			error:
-				error instanceof Error ? error.message : "Failed to fetch employees",
-		};
-	}
-}
+			);
+		}),
+);
 
-export async function importClockinData(
-	_token: string,
-	_organizationId: string,
-	_selections: ClockinImportSelections,
-	_mappings: ClockinImportUserMapping[],
-): Promise<ActionResult<ClockinImportResult>> {
-	return {
-		success: false,
-		error:
-			"Direct Clockin imports are disabled. Start an import review scan instead.",
-	};
-}
+export const fetchZ8Employees = organizationAction(
+	{ name: "clockinImport.fetchZ8Employees", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const employees = yield* dbService.query("clockinImport.fetchZ8Employees", () =>
+				dbService.db
+					.select({
+						id: employee.id,
+						userId: employee.userId,
+						firstName: authSchema.user.firstName,
+						lastName: authSchema.user.lastName,
+						email: authSchema.user.email,
+						userName: authSchema.user.name,
+					})
+					.from(employee)
+					.innerJoin(authSchema.user, eq(employee.userId, authSchema.user.id))
+					.where(eq(employee.organizationId, organizationId)),
+			);
+
+			return employees.map(
+				(entry): Z8EmployeeInfo => ({
+					id: entry.id,
+					userId: entry.userId,
+					name: buildAuthUserDisplayName({
+						firstName: entry.firstName,
+						lastName: entry.lastName,
+						name: entry.userName,
+						email: entry.email,
+					}),
+					email: entry.email,
+				}),
+			);
+		}),
+);
+
+/** Direct imports are disabled; imports go through an import review scan. */
+export const importClockinData = organizationAction(
+	{ name: "clockinImport.importData", requires: "orgAdmin", schema: noInput },
+	() =>
+		Effect.fail(
+			new ValidationError({
+				message: "Direct Clockin imports are disabled. Start an import review scan instead.",
+			}),
+		) as Effect.Effect<ClockinImportResult, ValidationError>,
+);

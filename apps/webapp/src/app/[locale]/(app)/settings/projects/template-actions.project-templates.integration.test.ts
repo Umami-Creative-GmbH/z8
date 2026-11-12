@@ -314,7 +314,8 @@ describe("project templates on PostgreSQL", () => {
 			const id = await createTemplate(ids.ownerUser, fullInput);
 
 			const updated = await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(id, {
+				templates.updateProjectTemplate({
+					templateId: id,
 					name: "Website relaunch XL",
 					color: "#ef4444",
 					budgetHours: null,
@@ -402,7 +403,7 @@ describe("project templates on PostgreSQL", () => {
 				templates.createProjectTemplate({ name: " relaunch " }),
 			);
 			const renamedOntoFirst = await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(second, { name: "RELAUNCH" }),
+				templates.updateProjectTemplate({ templateId: second, name: "RELAUNCH" }),
 			);
 
 			for (const result of [duplicate, renamedOntoFirst]) {
@@ -523,9 +524,11 @@ describe("project templates on PostgreSQL", () => {
 				}),
 			);
 
+			// The module's current-roster check of `addsEmployees` refuses it.
 			expect(result).toMatchObject({
 				success: false,
-				error: expect.stringMatching(/left/i),
+				code: "ValidationError",
+				refusal: "former_employee",
 			});
 			expect(await templateNames()).toEqual([]);
 		});
@@ -546,7 +549,8 @@ describe("project templates on PostgreSQL", () => {
 			});
 
 			const resaved = await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(id, {
+				templates.updateProjectTemplate({
+					templateId: id,
 					name: "Relaunch",
 					managerEmployeeIds: [ids.employee],
 					assignments: [{ type: "employee", targetId: ids.employee }],
@@ -595,7 +599,8 @@ describe("project templates on PostgreSQL", () => {
 			});
 
 			const resaved = await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(id, {
+				templates.updateProjectTemplate({
+					templateId: id,
 					name: "Relaunch",
 					tasks: [{ name: "Design" }],
 				}),
@@ -614,7 +619,7 @@ describe("project templates on PostgreSQL", () => {
 			const id = await createTemplate(ids.adminUser, fullInput);
 			const results = [
 				await actAs(ids.adminUser, () =>
-					templates.updateProjectTemplate(id, { name: "Renamed" }),
+					templates.updateProjectTemplate({ templateId: id, name: "Renamed" }),
 				),
 				await actAs(ids.adminUser, () =>
 					templates.getProjectTemplateDetails(id),
@@ -639,7 +644,7 @@ describe("project templates on PostgreSQL", () => {
 						templates.getProjectTemplates(),
 						templates.getProjectTemplateDetails(id),
 						templates.createProjectTemplate({ name: "Intrusion" }),
-						templates.updateProjectTemplate(id, { name: "Renamed" }),
+						templates.updateProjectTemplate({ templateId: id, name: "Renamed" }),
 						templates.deleteProjectTemplate(id),
 					]),
 				);
@@ -661,7 +666,8 @@ describe("project templates on PostgreSQL", () => {
 			const results = await actAs(ids.ownerUser, () =>
 				Promise.all([
 					templates.getProjectTemplateDetails(ids.otherTemplate),
-					templates.updateProjectTemplate(ids.otherTemplate, {
+					templates.updateProjectTemplate({
+						templateId: ids.otherTemplate,
 						name: "Renamed",
 					}),
 					templates.deleteProjectTemplate(ids.otherTemplate),

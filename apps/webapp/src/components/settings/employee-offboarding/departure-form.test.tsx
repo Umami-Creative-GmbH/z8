@@ -179,12 +179,13 @@ describe("DepartureForm", () => {
 		expect(screen.queryByRole("region", { name: "Outstanding equipment returns" })).toBeNull();
 	});
 
-	it("keeps entered values, focuses the server guidance and retries with the same request id", async () => {
+	it("keeps entered values, focuses the refusal and retries with the same request id", async () => {
 		const user = userEvent.setup();
 		const scheduleDeparture = vi
 			.fn()
 			.mockResolvedValueOnce({
 				success: false,
+				code: "ValidationError",
 				error: "This departure has already taken effect. Rehire the employee to restore access.",
 			})
 			.mockResolvedValueOnce({ success: true, data: {} });
@@ -194,7 +195,8 @@ describe("DepartureForm", () => {
 		await user.click(screen.getByRole("button", { name: "Schedule departure" }));
 
 		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain("already taken effect");
+		// The server's English text is never shown; the refusal is worded on the client.
+		expect(alert.textContent).toBe("Check your input and try again.");
 		await waitFor(() => expect(document.activeElement).toBe(alert));
 		expect((screen.getByLabelText("lastWorkingDay") as HTMLInputElement).value).toBe("2026-09-30");
 

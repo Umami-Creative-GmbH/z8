@@ -165,6 +165,8 @@ describe("runHolidayImport", () => {
 			messages: {
 				assignmentWarning: "Preset created but could not set as organization default",
 				success: 'Created preset "Germany 2026" with 1 holidays',
+				presetFailed: () => "Failed to create preset",
+				holidaysFailed: () => "Failed to add holidays to preset",
 			},
 			actions: { createPreset, addHolidays, createAssignment },
 			toast: { error: vi.fn(), warning, success },
@@ -184,5 +186,49 @@ describe("runHolidayImport", () => {
 		expect(success).toHaveBeenCalledWith('Created preset "Germany 2026" with 1 holidays');
 		expect(onSuccess).toHaveBeenCalledOnce();
 		expect(onClose).toHaveBeenCalledOnce();
+	});
+
+	it("words a refused preset creation through its message, never the server's text", async () => {
+		const refusal = {
+			success: false,
+			error: "You do not have permission to manage holidays.",
+			code: "AuthorizationError",
+		};
+		const presetFailed = vi.fn().mockReturnValue("You do not have access to this setting.");
+		const error = vi.fn();
+		const onSuccess = vi.fn();
+
+		const result = await runHolidayImport({
+			organizationId: "org-1",
+			preset: {
+				name: "Germany 2026",
+				description: "",
+				countryCode: "DE",
+				year: 2026,
+				color: "#4F46E5",
+				isActive: true,
+			},
+			holidays: [],
+			setAsOrgDefault: false,
+			messages: {
+				assignmentWarning: "Preset created but could not set as organization default",
+				success: "Created",
+				presetFailed,
+				holidaysFailed: () => "Failed to add holidays to preset",
+			},
+			actions: {
+				createPreset: vi.fn().mockResolvedValue(refusal),
+				addHolidays: vi.fn(),
+				createAssignment: vi.fn(),
+			},
+			toast: { error, warning: vi.fn(), success: vi.fn() },
+			onSuccess,
+			onClose: vi.fn(),
+		});
+
+		expect(result).toEqual({ success: false });
+		expect(presetFailed).toHaveBeenCalledWith(refusal);
+		expect(error).toHaveBeenCalledWith("You do not have access to this setting.");
+		expect(onSuccess).not.toHaveBeenCalled();
 	});
 });

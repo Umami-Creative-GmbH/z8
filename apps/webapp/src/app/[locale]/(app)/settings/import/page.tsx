@@ -36,7 +36,7 @@ async function ImportPageContent() {
 					</p>
 				</div>
 
-				<ImportHub organizationId={organizationId} />
+				<ImportHub />
 			</div>
 		</div>
 	);

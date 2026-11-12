@@ -2,13 +2,15 @@ import { readFileSync } from "node:fs";
 import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
-import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
-import { toServerActionResult } from "@/lib/effect/result";
+import { auth } from "@/lib/auth";
+import { CACHE_TAGS } from "@/lib/cache/tags";
+import { DatabaseError } from "@/lib/effect/errors";
 import { DeactivationRequestConflictError } from "@/lib/employee-lifecycle/receipts";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
 	authRemoveMember: vi.fn(),
@@ -18,7 +20,13 @@ const mocks = vi.hoisted(() => ({
 	get executeDeactivation() {
 		return this.deactivate;
 	},
-	getEmployeeSettingsActorContext: vi.fn(),
+	caller: null as StubCaller | null,
+	/** What the current-roster check of `addsEmployees` finds off the roster. */
+	notOnRoster: [] as string[],
+	dbService: null as null | {
+		db: unknown;
+		query: (name: string, run: () => Promise<unknown>) => Effect.Effect<unknown, DatabaseError>;
+	},
 	headers: vi.fn(),
 	logAudit: vi.fn(),
 	loggerWarn: vi.fn(),
@@ -27,10 +35,29 @@ const mocks = vi.hoisted(() => ({
 	previewEmployeeDeactivation: vi.fn(),
 	readDeactivationByRequest: vi.fn(),
 	reconcileBillingSeatsForOrganization: vi.fn(),
-	revalidateEmployeesCache: vi.fn(),
+	revalidateTag: vi.fn(),
 	revokeOrganizationActiveSessions: vi.fn(),
-	runTracedEmployeeAction: vi.fn(),
 }));
+
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect } = await import("effect");
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db: new Proxy(
+				{},
+				{ get: (_target, key) => Reflect.get((mocks.dbService?.db ?? {}) as object, key) },
+			),
+			query: (name, run) =>
+				name === "employeeLifecycle.findNotOnCurrentRoster"
+					? (Effect.succeed(mocks.notOnRoster) as never)
+					: (mocks.dbService?.query(name, run) as never),
+		}),
+	);
+});
+
+vi.mock("next/cache", () => ({ revalidateTag: mocks.revalidateTag }));
 
 // The deactivation is one call into its module (#1638). Its locks, replay,
 // target rules, consequences and after-commit work are covered against
@@ -67,16 +94,9 @@ vi.mock("@/lib/authorization/authorization-mutation", () => ({
 // The coordinated auth transaction (#314) is covered by auth-mutation-coordination
 // tests and the PostgreSQL suite; here it records that removal ran inside it.
 const coordination = vi.hoisted(() => ({ inside: false, removalsInside: 0 }));
-vi.mock("@/lib/auth", () => ({
-	auth: {
-		api: {
-			removeMember: (input: unknown) => {
-				if (coordination.inside) coordination.removalsInside += 1;
-				return mocks.authRemoveMember(input);
-			},
-		},
-	},
-	runAuthMutation: async (mutation: () => Promise<unknown>) => {
+vi.mock("@/lib/auth/auth-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/auth/auth-transaction")>()),
+	runCoordinatedAuthMutation: async (_context: unknown, mutation: () => Promise<unknown>) => {
 		coordination.inside = true;
 		try {
 			return await mutation();
@@ -126,13 +146,6 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-vi.mock("./employee-action-utils", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./employee-action-utils")>()),
-	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
-	revalidateEmployeesCache: mocks.revalidateEmployeesCache,
-	runTracedEmployeeAction: mocks.runTracedEmployeeAction,
-}));
-
 import {
 	deactivateEmployeeAction as deactivateEmployeeWithInput,
 	previewEmployeeDeactivationAction,
@@ -140,8 +153,21 @@ import {
 	removeEmployeeAccessAction,
 } from "./employee-lifecycle.actions";
 
+// The Better Auth call itself is the real `auth.api.removeMember`, replaced per test.
+beforeEach(() => {
+	vi.spyOn(auth.api, "removeMember").mockImplementation(((input: unknown) => {
+		if (coordination.inside) coordination.removalsInside += 1;
+		return mocks.authRemoveMember(input);
+	}) as never);
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
 const actorUserId = "actor-user";
-const actorEmail = "owner@example.com";
+// The stubbed session's email for the actor.
+const actorEmail = "actor-user@example.test";
 const employeeId = "33333333-3333-4333-8333-333333333333";
 const requestId = "44444444-4444-4444-8444-444444444444";
 const reportId = "55555555-5555-4555-8555-555555555555";
@@ -154,6 +180,38 @@ function deactivateEmployeeAction(id: string) {
 const targetUserId = "target-user";
 const organizationId = "org-1";
 const targetMembershipId = "target-membership";
+
+/** The caller at a settings access level, by membership and employee role. */
+function callerFor(
+	accessTier: "member" | "manager" | "orgAdmin" | "owner",
+	membershipRole?: unknown,
+): StubCaller {
+	return {
+		userId: actorUserId,
+		activeOrganizationId: organizationId,
+		membershipRole: (membershipRole ??
+			(accessTier === "owner"
+				? "owner"
+				: accessTier === "orgAdmin"
+					? "admin"
+					: "member")) as string,
+		employee:
+			accessTier === "member" || accessTier === "manager"
+				? {
+						id: "actor-employee",
+						role: accessTier === "manager" ? "manager" : "employee",
+						former: false,
+					}
+				: null,
+	};
+}
+
+/** How often the employees cache tag was revalidated for the organization. */
+function cacheRevalidations() {
+	return mocks.revalidateTag.mock.calls.filter(
+		([tag]) => tag === CACHE_TAGS.EMPLOYEES(organizationId),
+	).length;
+}
 
 type LifecycleState = {
 	accessTier?: "member" | "manager" | "orgAdmin";
@@ -180,9 +238,7 @@ type LifecycleState = {
 };
 
 function compilePredicate(table: unknown, predicate: unknown) {
-	return new PgDialect().sqlToQuery(
-		sql`select * from ${table as never} where ${predicate as SQL}`,
-	);
+	return new PgDialect().sqlToQuery(sql`select * from ${table as never} where ${predicate as SQL}`);
 }
 
 function setup(state: LifecycleState = {}) {
@@ -259,27 +315,18 @@ function setup(state: LifecycleState = {}) {
 		),
 	};
 
-	mocks.getEmployeeSettingsActorContext.mockReturnValue(
-		Effect.succeed({
-			accessTier: state.accessTier ?? "orgAdmin",
-			organizationId,
-			session: { user: { id: actorUserId, email: actorEmail } },
-			currentEmployee: null,
-			dbService,
-		}),
-	);
-	mocks.runTracedEmployeeAction.mockImplementation((options) =>
-		Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(
-			toServerActionResult,
-		),
-	);
+	mocks.dbService = dbService;
+	mocks.caller =
+		state.accessTier === "member" || state.accessTier === "manager"
+			? callerFor(state.accessTier)
+			: callerFor("owner");
 	mocks.logAudit.mockImplementation(async () => {
 		events.push("audit-logged");
 	});
 	mocks.reconcileBillingSeatsForOrganization.mockImplementation(async () => {
 		events.push("seats-reconciled");
 	});
-	mocks.revalidateEmployeesCache.mockImplementation(() => {
+	mocks.revalidateTag.mockImplementation(() => {
 		events.push("cache-revalidated");
 	});
 	mocks.revokeOrganizationActiveSessions.mockImplementation(async () => {
@@ -318,47 +365,33 @@ describe("employee lifecycle actions", () => {
 		vi.clearAllMocks();
 	});
 
-	it("requires the authenticated active-organization settings actor context", async () => {
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.fail(
-				new AuthorizationError({
-					message: "No active organization selected",
-					userId: actorUserId,
-					resource: "employee_settings",
-					action: "access",
-				}),
-			),
-		);
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(
-				toServerActionResult,
-			),
-		);
+	it("requires an active organization", async () => {
+		setup();
+		mocks.caller = { ...callerFor("orgAdmin"), activeOrganizationId: null };
 
 		await expect(deactivateEmployeeAction(employeeId)).resolves.toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 			error: "No active organization selected",
 		});
-		expect(mocks.getEmployeeSettingsActorContext).toHaveBeenCalledWith({
-			queryName: "setEmployeeLifecycleState:actor",
-		});
-	});
-
-	it.each([
-		"member",
-		"manager",
-	] as const)("denies %s settings actors", async (accessTier) => {
-		setup({ accessTier });
-
-		const result = await deactivateEmployeeAction(employeeId);
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
 		expect(mocks.deactivate).not.toHaveBeenCalled();
 	});
+
+	it.each(["member", "manager"] as const)(
+		"denies %s settings actors, below org admin",
+		async (accessTier) => {
+			setup({ accessTier });
+
+			for (const result of [
+				await deactivateEmployeeAction(employeeId),
+				await reactivateEmployeeAction(employeeId),
+			]) {
+				expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+			}
+			expect(mocks.deactivate).not.toHaveBeenCalled();
+			expect(mocks.logAudit).not.toHaveBeenCalled();
+		},
+	);
 
 	it.each([
 		{ label: "a missing request ID", input: { employeeId, replacementManagers: {} } },
@@ -378,7 +411,7 @@ describe("employee lifecycle actions", () => {
 	});
 
 	it("hands the deactivation the actor's database, organization and the parsed command", async () => {
-		const { dbService } = setup();
+		setup();
 
 		await deactivateEmployeeWithInput({
 			employeeId,
@@ -386,7 +419,7 @@ describe("employee lifecycle actions", () => {
 			replacementManagers: { [reportId]: replacementId },
 		});
 
-		expect(mocks.deactivate).toHaveBeenCalledExactlyOnceWith(dbService.db, {
+		expect(mocks.deactivate).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
 			organizationId,
 			actorUserId,
 			actorEmail,
@@ -408,16 +441,17 @@ describe("employee lifecycle actions", () => {
 			label: "left follow-up work pending",
 			outcome: { kind: "unchanged", warnings: ["Session cleanup is pending"] },
 		},
-	])("succeeds and revalidates the employees cache when the deactivation $label", async ({
-		outcome,
-	}) => {
-		setup({ outcome: { warnings: [], ...outcome } });
+	])(
+		"succeeds and revalidates the employees cache when the deactivation $label",
+		async ({ outcome }) => {
+			setup({ outcome: { warnings: [], ...outcome } });
 
-		const result = await deactivateEmployeeAction(employeeId);
+			const result = await deactivateEmployeeAction(employeeId);
 
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledExactlyOnceWith(organizationId);
-	});
+			expect(result).toEqual({ success: true, data: undefined });
+			expect(cacheRevalidations()).toBe(1);
+		},
+	);
 
 	it.each([
 		{ type: "not_found", code: "NotFoundError", error: "Employee not found" },
@@ -452,35 +486,36 @@ describe("employee lifecycle actions", () => {
 		const result = await deactivateEmployeeAction(employeeId);
 
 		expect(result).toMatchObject({ success: false, code, error });
-		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+		expect(cacheRevalidations()).toBe(0);
 	});
 
-	it.each([
-		reactivateEmployeeAction,
-	])("prohibits changing the actor's own lifecycle state", async (action) => {
-		const { update } = setup({
-			target: {
-				id: employeeId,
-				userId: actorUserId,
-				organizationId,
-				isActive: true,
-			},
-			targetMembership: {
-				userId: actorUserId,
-				role: "owner",
-				status: "approved",
-			},
-		});
+	it.each([reactivateEmployeeAction])(
+		"prohibits changing the actor's own lifecycle state",
+		async (action) => {
+			const { update } = setup({
+				target: {
+					id: employeeId,
+					userId: actorUserId,
+					organizationId,
+					isActive: true,
+				},
+				targetMembership: {
+					userId: actorUserId,
+					role: "owner",
+					status: "approved",
+				},
+			});
 
-		const result = await action(employeeId);
+			const result = await action(employeeId);
 
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(update).not.toHaveBeenCalled();
-		expect(mocks.executeDeactivation).not.toHaveBeenCalled();
-	});
+			expect(result).toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
+			expect(update).not.toHaveBeenCalled();
+			expect(mocks.executeDeactivation).not.toHaveBeenCalled();
+		},
+	);
 
 	it("reactivates under the target's configuration/access protection", async () => {
 		protection.scopes.length = 0;
@@ -497,9 +532,7 @@ describe("employee lifecycle actions", () => {
 		setup({
 			outcome: {
 				kind: "refused",
-				reports: [
-					{ employeeId: reportId, name: "Rita Report", refusal: "replacement_ineligible" },
-				],
+				reports: [{ employeeId: reportId, name: "Rita Report", refusal: "replacement_ineligible" }],
 			},
 		});
 
@@ -511,7 +544,7 @@ describe("employee lifecycle actions", () => {
 			error: "Choose a current admin or manager as the new manager of Rita Report.",
 			refusal: "replacement_required",
 		});
-		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+		expect(cacheRevalidations()).toBe(0);
 	});
 
 	it("refuses a request ID used before with other choices", async () => {
@@ -568,8 +601,7 @@ describe("employee lifecycle actions", () => {
 		expect(result).toEqual({
 			success: false,
 			code: "ValidationError",
-			error:
-				"Assign and activate another approved owner before deactivating this employee",
+			error: "Assign and activate another approved owner before deactivating this employee",
 		});
 		expect(JSON.stringify(result)).not.toContain("23514");
 	});
@@ -702,18 +734,33 @@ describe("employee lifecycle actions", () => {
 		expect(mocks.previewEmployeeDeactivation).not.toHaveBeenCalled();
 	});
 
-	it("exposes lifecycle wrappers from the employee action aggregator", () => {
-		const source = readFileSync(
-			new URL("./actions.ts", import.meta.url),
-			"utf8",
-		);
+	it("refuses a former employee as a replacement manager before deactivating (#1613)", async () => {
+		setup();
+		mocks.notOnRoster = [replacementId];
 
-		expect(source).toContain("export async function deactivateEmployee(");
-		expect(source).toContain("return deactivateEmployeeAction(input)");
-		expect(source).toContain("export async function previewEmployeeDeactivation(");
-		expect(source).toContain("return previewEmployeeDeactivationAction(input)");
-		expect(source).toContain("export async function reactivateEmployee(");
-		expect(source).toContain("return reactivateEmployeeAction(employeeId)");
+		const result = await deactivateEmployeeWithInput({
+			employeeId,
+			requestId,
+			replacementManagers: { [reportId]: replacementId },
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "former_employee",
+		});
+		expect(mocks.deactivate).not.toHaveBeenCalled();
+		mocks.notOnRoster = [];
+	});
+
+	it("exposes lifecycle wrappers from the employee action aggregator", () => {
+		const source = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
+
+		expect(source).toContain("export const deactivateEmployee = deactivateEmployeeAction;");
+		expect(source).toContain(
+			"export const previewEmployeeDeactivation = previewEmployeeDeactivationAction;",
+		);
+		expect(source).toContain("export const reactivateEmployee = reactivateEmployeeAction;");
 	});
 });
 
@@ -739,17 +786,9 @@ function setupRemoval(state: RemovalState = {}) {
 			: state.targetMembership;
 	const findMember = vi
 		.fn()
-		.mockResolvedValueOnce({
-			id: "actor-membership",
-			userId: actorUserId,
-			role: actorRole,
-			status: "approved",
-		})
 		.mockResolvedValueOnce(targetMembership)
 		.mockResolvedValueOnce(
-			state.membershipAfterAuth === undefined
-				? targetMembership
-				: state.membershipAfterAuth,
+			state.membershipAfterAuth === undefined ? targetMembership : state.membershipAfterAuth,
 		);
 	const findEmployee = vi.fn().mockResolvedValue(target);
 	const update = vi.fn();
@@ -776,20 +815,8 @@ function setupRemoval(state: RemovalState = {}) {
 		),
 	};
 
-	mocks.getEmployeeSettingsActorContext.mockReturnValue(
-		Effect.succeed({
-			accessTier: "orgAdmin",
-			organizationId,
-			session: { user: { id: actorUserId, email: actorEmail } },
-			currentEmployee: { isActive: true },
-			dbService,
-		}),
-	);
-	mocks.runTracedEmployeeAction.mockImplementation((options) =>
-		Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(
-			toServerActionResult,
-		),
-	);
+	mocks.dbService = dbService;
+	mocks.caller = callerFor("owner", actorRole);
 	const requestHeaders = new Headers({ cookie: "session=approved-owner" });
 	mocks.headers.mockResolvedValue(requestHeaders);
 	mocks.authRemoveMember.mockImplementation(async () => {
@@ -815,10 +842,7 @@ describe("removeEmployeeAccessAction", () => {
 		vi.clearAllMocks();
 	});
 
-	it.each([
-		"admin",
-		"member",
-	])("denies an approved %s actor", async (actorRole) => {
+	it.each(["admin", "member"])("denies an approved %s actor, below owner", async (actorRole) => {
 		setupRemoval({ actorRole });
 
 		const result = await removeEmployeeAccessAction(employeeId);
@@ -826,66 +850,34 @@ describe("removeEmployeeAccessAction", () => {
 		expect(result).toEqual({
 			success: false,
 			code: "AuthorizationError",
-			error: "Only organization owners can remove employee access",
+			error: "You do not have access to this setting",
 		});
 		expect(mocks.authRemoveMember).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		"owner",
-		"owner,admin",
-		" member , owner ",
-		["admin", "owner"],
-	])("accepts approved owner role token %j", async (actorRole) => {
-		setupRemoval({ actorRole });
+	it.each(["owner", "owner,admin", " member , owner ", ["admin", "owner"]])(
+		"accepts approved owner role token %j",
+		async (actorRole) => {
+			setupRemoval({ actorRole });
 
-		await expect(removeEmployeeAccessAction(employeeId)).resolves.toEqual({
-			success: true,
-			data: undefined,
-		});
-	});
+			await expect(removeEmployeeAccessAction(employeeId)).resolves.toEqual({
+				success: true,
+				data: undefined,
+			});
+		},
+	);
 
-	it("requires the active approved settings actor context", async () => {
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.fail(
-				new AuthorizationError({
-					message: "Organization access is inactive",
-					userId: actorUserId,
-					resource: "employee_settings",
-					action: "access",
-				}),
-			),
-		);
-		mocks.runTracedEmployeeAction.mockImplementation((options) =>
-			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(
-				toServerActionResult,
-			),
-		);
+	it("refuses an owner who is a former employee (ADR 0002)", async () => {
+		setupRemoval();
+		mocks.caller = {
+			...callerFor("owner"),
+			employee: { id: "actor-employee", role: "admin", former: true },
+		};
 
 		const result = await removeEmployeeAccessAction(employeeId);
 
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-			error: "Organization access is inactive",
-		});
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mocks.authRemoveMember).not.toHaveBeenCalled();
-	});
-
-	it("rechecks the actor as an approved organization member", async () => {
-		const { findMember } = setupRemoval();
-
-		await removeEmployeeAccessAction(employeeId);
-
-		const actorMembershipQuery = compilePredicate(
-			member,
-			findMember.mock.calls[0]?.[0]?.where,
-		);
-		expect(actorMembershipQuery.params).toEqual([
-			actorUserId,
-			organizationId,
-			"approved",
-		]);
 	});
 
 	it("denies removing the actor's own access", async () => {
@@ -915,10 +907,7 @@ describe("removeEmployeeAccessAction", () => {
 
 		await removeEmployeeAccessAction(employeeId);
 
-		const targetQuery = compilePredicate(
-			employee,
-			findEmployee.mock.calls[0]?.[0]?.where,
-		);
+		const targetQuery = compilePredicate(employee, findEmployee.mock.calls[0]?.[0]?.where);
 		expect(targetQuery.params).toEqual([employeeId, organizationId]);
 	});
 
@@ -940,15 +929,8 @@ describe("removeEmployeeAccessAction", () => {
 
 		await removeEmployeeAccessAction(employeeId);
 
-		const targetMembershipQuery = compilePredicate(
-			member,
-			findMember.mock.calls[1]?.[0]?.where,
-		);
-		expect(targetMembershipQuery.params).toEqual([
-			targetUserId,
-			organizationId,
-			"approved",
-		]);
+		const targetMembershipQuery = compilePredicate(member, findMember.mock.calls[0]?.[0]?.where);
+		expect(targetMembershipQuery.params).toEqual([targetUserId, organizationId, "approved"]);
 	});
 
 	it("idempotently retries post-removal cleanup when membership is already gone", async () => {
@@ -963,9 +945,7 @@ describe("removeEmployeeAccessAction", () => {
 			actorUserId: "actor-user",
 		});
 		expect(mocks.authRemoveMember).not.toHaveBeenCalled();
-		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledExactlyOnceWith(
-			organizationId,
-		);
+		expect(cacheRevalidations()).toBe(1);
 	});
 
 	it("delegates removal by membership ID with the actor organization and request headers", async () => {
@@ -983,9 +963,7 @@ describe("removeEmployeeAccessAction", () => {
 			},
 			headers: requestHeaders,
 		});
-		expect(JSON.stringify(mocks.authRemoveMember.mock.calls)).not.toContain(
-			targetUserId,
-		);
+		expect(JSON.stringify(mocks.authRemoveMember.mock.calls)).not.toContain(targetUserId);
 	});
 
 	it("leaves employee and history mutation to Better Auth hooks", async () => {
@@ -1006,9 +984,7 @@ describe("removeEmployeeAccessAction", () => {
 
 	it.each([
 		Object.assign(
-			new Error(
-				"Organization must retain an approved accessible owner: raw db detail",
-			),
+			new Error("Organization must retain an approved accessible owner: raw db detail"),
 			{ code: "23514" },
 		),
 		new Error("You cannot remove the last owner: raw Better Auth detail"),
@@ -1020,8 +996,7 @@ describe("removeEmployeeAccessAction", () => {
 		expect(result).toEqual({
 			success: false,
 			code: "ValidationError",
-			error:
-				"Assign and activate another approved owner before removing this employee's access",
+			error: "Assign and activate another approved owner before removing this employee's access",
 		});
 		expect(JSON.stringify(result)).not.toContain("raw");
 	});
@@ -1041,7 +1016,7 @@ describe("removeEmployeeAccessAction", () => {
 		expect(JSON.stringify(result)).not.toContain("secret-host");
 		expect(update).not.toHaveBeenCalled();
 		expect(deleteRows).not.toHaveBeenCalled();
-		expect(mocks.revalidateEmployeesCache).not.toHaveBeenCalled();
+		expect(cacheRevalidations()).toBe(0);
 	});
 
 	it("does not revoke access when Better Auth fails before removing membership", async () => {
@@ -1077,9 +1052,7 @@ describe("removeEmployeeAccessAction", () => {
 			userId: targetUserId,
 			actorUserId: "actor-user",
 		});
-		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledExactlyOnceWith(
-			organizationId,
-		);
+		expect(cacheRevalidations()).toBe(1);
 	});
 
 	it("returns fixed retry guidance when committed-removal cleanup keeps failing", async () => {
@@ -1094,15 +1067,12 @@ describe("removeEmployeeAccessAction", () => {
 		expect(result).toEqual({
 			success: false,
 			code: "ValidationError",
-			error:
-				"Employee access was removed, but cleanup is still pending. Retry removing access.",
+			error: "Employee access was removed, but cleanup is still pending. Retry removing access.",
 		});
 		expect(JSON.stringify(result)).not.toContain("secret-host");
 		expect(mocks.authRemoveMember).toHaveBeenCalledOnce();
 		expect(mocks.completeRemovedMemberCleanup).toHaveBeenCalledOnce();
-		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledExactlyOnceWith(
-			organizationId,
-		);
+		expect(cacheRevalidations()).toBe(1);
 	});
 
 	it("organization-scopes the membership commit check after Better Auth failure", async () => {
@@ -1113,10 +1083,7 @@ describe("removeEmployeeAccessAction", () => {
 
 		await removeEmployeeAccessAction(employeeId);
 
-		const commitCheck = compilePredicate(
-			member,
-			findMember.mock.calls[2]?.[0]?.where,
-		);
+		const commitCheck = compilePredicate(member, findMember.mock.calls[1]?.[0]?.where);
 		expect(commitCheck.params).toEqual([targetMembershipId, organizationId]);
 	});
 
@@ -1137,32 +1104,20 @@ describe("removeEmployeeAccessAction", () => {
 
 		await removeEmployeeAccessAction(employeeId);
 
-		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledExactlyOnceWith(
-			organizationId,
-		);
+		expect(cacheRevalidations()).toBe(1);
 	});
 
 	it("exposes employee access removal as the only application lifecycle wrapper", () => {
-		const employeeActionsSource = readFileSync(
-			new URL("./actions.ts", import.meta.url),
-			"utf8",
-		);
+		const employeeActionsSource = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
 		const organizationActionsSource = readFileSync(
 			new URL("../organization/actions.ts", import.meta.url),
 			"utf8",
 		);
 
 		expect(employeeActionsSource).toContain(
-			"export async function removeEmployeeAccess(",
+			"export const removeEmployeeAccess = removeEmployeeAccessAction;",
 		);
-		expect(employeeActionsSource).toContain(
-			"return removeEmployeeAccessAction(employeeId)",
-		);
-		expect(organizationActionsSource).not.toContain(
-			"export async function removeMember(",
-		);
-		expect(organizationActionsSource).not.toContain(
-			"export async function toggleEmployeeStatus(",
-		);
+		expect(organizationActionsSource).not.toContain("export async function removeMember(");
+		expect(organizationActionsSource).not.toContain("export async function toggleEmployeeStatus(");
 	});
 });

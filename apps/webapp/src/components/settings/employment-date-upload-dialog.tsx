@@ -24,6 +24,7 @@ import {
 	MAX_EMPLOYMENT_DATE_UPLOAD_CHARACTERS,
 } from "@/lib/employee-lifecycle/employment-date-upload-csv";
 import type { EmploymentDateUploadOutcome } from "@/lib/employee-lifecycle/employment-date-upload-types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import { EmploymentDateUploadReview } from "./employment-date-upload-review";
@@ -66,11 +67,10 @@ export function EmploymentDateUploadDialog() {
 					);
 					if (!result?.success) {
 						setError(
-							result?.error ??
-								t(
-									"settings.employmentUpload.preview-failed",
-									"Could not review the upload. Try again.",
-								),
+							actionErrorMessage(t, result, {}, [
+								"settings.employmentUpload.preview-failed",
+								"Could not review the upload. Try again.",
+							]),
 						);
 						return;
 					}
@@ -110,11 +110,10 @@ export function EmploymentDateUploadDialog() {
 				}).catch(() => null);
 				if (!result?.success) {
 					setError(
-						result?.error ??
-							t(
-								"settings.employmentUpload.commit-failed",
-								"Could not commit the batch. Generate a new preview before retrying.",
-							),
+						actionErrorMessage(t, result, {}, [
+							"settings.employmentUpload.commit-failed",
+							"Could not commit the batch. Generate a new preview before retrying.",
+						]),
 					);
 					setReview(null);
 					return;

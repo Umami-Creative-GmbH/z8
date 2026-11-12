@@ -62,7 +62,6 @@ vi.mock("@/components/ui/action-panel", () => ({
 
 const createdEndpoint = {
 	id: "webhook-1",
-	organizationId: "org-1",
 	name: "Payroll",
 	url: "https://example.com/payroll",
 	description: null,
@@ -97,7 +96,6 @@ function Harness() {
 				</button>
 			)}
 			<WebhookFormDialog
-				organizationId="org-1"
 				open={open}
 				onOpenChange={setOpen}
 				onSuccess={mocks.onSuccess}
@@ -117,7 +115,6 @@ function EditHarness() {
 				</button>
 			)}
 			<WebhookFormDialog
-				organizationId="org-1"
 				webhook={editableWebhook}
 				open={open}
 				onOpenChange={setOpen}
@@ -146,7 +143,6 @@ function ReplacementHarness({
 				</button>
 			)}
 			<WebhookFormDialog
-				organizationId="org-1"
 				webhook={webhook}
 				open={open}
 				onOpenChange={setOpen}
@@ -163,7 +159,6 @@ function renderCreateDialog() {
 function renderEditDialog() {
 	return render(
 		<WebhookFormDialog
-			organizationId="org-1"
 			webhook={editableWebhook}
 			open
 			onOpenChange={vi.fn()}
@@ -250,7 +245,8 @@ describe("WebhookFormDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Save" }));
 
 		await waitFor(() => expect(mocks.updateWebhook).toHaveBeenCalledOnce());
-		expect(mocks.updateWebhook).toHaveBeenCalledWith("webhook-1", {
+		expect(mocks.updateWebhook).toHaveBeenCalledWith({
+			webhookId: "webhook-1",
 			name: "Updated payroll",
 			url: "https://example.com/payroll",
 			description: undefined,
@@ -314,7 +310,6 @@ describe("WebhookFormDialog", () => {
 
 		rerender(
 			<WebhookFormDialog
-				organizationId="org-1"
 				webhook={nextWebhook}
 				open
 				onOpenChange={vi.fn()}
@@ -399,9 +394,9 @@ describe("WebhookFormDialog", () => {
 					<button type="button" onClick={() => setFormKey((key) => key + 1)}>
 						Replace form
 					</button>
+					<output>{renderVersion}</output>
 					<WebhookFormDialog
 						key={formKey}
-						organizationId={`org-${renderVersion}`}
 						open
 						onOpenChange={vi.fn()}
 						onSuccess={mocks.onSuccess}
@@ -490,7 +485,6 @@ describe("WebhookFormDialog", () => {
 
 		await waitFor(() => expect(mocks.createWebhook).toHaveBeenCalledOnce());
 		expect(mocks.createWebhook).toHaveBeenCalledWith({
-			organizationId: "org-1",
 			name: "Payroll",
 			url: "https://example.com/payroll",
 			description: "Payroll notifications",
@@ -684,8 +678,7 @@ describe("WebhookFormDialog", () => {
 
 		await waitFor(() => expect(mocks.updateWebhook).toHaveBeenCalledOnce());
 		expect(mocks.updateWebhook).toHaveBeenCalledWith(
-			"webhook-2",
-			expect.objectContaining({ name: "Absence updates" }),
+			expect.objectContaining({ webhookId: "webhook-2", name: "Absence updates" }),
 		);
 		expect(mocks.onSuccess).toHaveBeenCalledWith(replacementWebhook);
 		expect(
@@ -728,8 +721,7 @@ describe("WebhookFormDialog", () => {
 
 		await waitFor(() => expect(mocks.updateWebhook).toHaveBeenCalledTimes(2));
 		expect(mocks.updateWebhook).toHaveBeenLastCalledWith(
-			"webhook-2",
-			expect.objectContaining({ name: "Absence updates" }),
+			expect.objectContaining({ webhookId: "webhook-2", name: "Absence updates" }),
 		);
 		expect(mocks.onSuccess).toHaveBeenCalledWith(replacementWebhook);
 		expect(
@@ -765,7 +757,6 @@ describe("WebhookFormDialog", () => {
 						Replace webhook during commit
 					</button>
 					<WebhookFormDialog
-						organizationId="org-1"
 						webhook={webhook}
 						open
 						onOpenChange={vi.fn()}

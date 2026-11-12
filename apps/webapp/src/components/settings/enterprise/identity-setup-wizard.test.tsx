@@ -157,6 +157,11 @@ vi.mock("./sso-provider-management", () => ({
 	SSOProviderManagement: () => <div>SSO provider management</div>,
 }));
 
+// The actions are mocked as plain values; the result unwrap is identity here.
+vi.mock("@/components/settings/enterprise/action-data", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/components/settings/enterprise/action-data")>()),
+	actionData: <T,>(result: Promise<T>) => result,
+}));
 vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	activateEnterpriseIdentitySetupAction:
 		activateEnterpriseIdentitySetupActionMock,

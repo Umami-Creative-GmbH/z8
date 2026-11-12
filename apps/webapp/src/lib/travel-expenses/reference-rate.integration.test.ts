@@ -380,7 +380,8 @@ describe("approved reference rates (#608)", () => {
 		for (const who of ["requester", "manager"] as const) {
 			expect(await approveSource(who)).toEqual({
 				success: false,
-				error: "Unauthorized: Admin access required",
+				code: "AuthorizationError",
+				error: "You do not have access to this setting",
 			});
 		}
 		signIn("admin");

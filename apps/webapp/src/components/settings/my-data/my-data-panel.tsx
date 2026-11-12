@@ -5,7 +5,10 @@ import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { requestMyPersonalDataExport } from "@/app/[locale]/(app)/settings/my-data/actions";
+import {
+	type MyDataRefusal,
+	requestMyPersonalDataExport,
+} from "@/app/[locale]/(app)/settings/my-data/actions";
 import {
 	PersonalDataExportList,
 	type PersonalDataExportListLabels,
@@ -22,6 +25,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import {
+	actionErrorMessage,
+	type RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -57,30 +64,26 @@ function listLabels(t: Translate): PersonalDataExportListLabels {
 	};
 }
 
-function refusalMessage(t: Translate, refusal: string | undefined): string {
-	switch (refusal) {
-		case "in_progress":
-			return t(
-				"settings.myData.refusalInProgress",
-				"An export of your data is already being prepared. You'll be notified when it is ready.",
-			);
-		case "daily_limit":
-			return t(
-				"settings.myData.refusalDailyLimit",
-				"You can request one export of your data every 24 hours. Please try again later.",
-			);
-		case "storage_unavailable":
-			return t(
-				"settings.myData.refusalStorage",
-				"File storage is not set up for this organization yet. Please contact its admins.",
-			);
-		default:
-			return t(
-				"settings.myData.requestFailed",
-				"Your export could not be started. Please try again.",
-			);
-	}
-}
+/** My data's texts for `actionErrorMessage`, by the request's refusal. */
+const MY_DATA_REFUSALS = {
+	in_progress: [
+		"settings.myData.refusalInProgress",
+		"An export of your data is already being prepared. You'll be notified when it is ready.",
+	],
+	daily_limit: [
+		"settings.myData.refusalDailyLimit",
+		"You can request one export of your data every 24 hours. Please try again later.",
+	],
+	storage_unavailable: [
+		"settings.myData.refusalStorage",
+		"File storage is not set up for this organization yet. Please contact its admins.",
+	],
+} satisfies RefusalMessages<MyDataRefusal>;
+
+const REQUEST_FAILED = [
+	"settings.myData.requestFailed",
+	"Your export could not be started. Please try again.",
+] as const;
 
 interface MyDataPanelProps {
 	exports: PersonalDataExportSummary[];
@@ -118,10 +121,10 @@ export function MyDataPanel({ exports }: MyDataPanelProps) {
 				);
 				router.refresh();
 			} else {
-				toast.error(refusalMessage(t, result.refusal));
+				toast.error(actionErrorMessage(t, result, MY_DATA_REFUSALS, REQUEST_FAILED));
 			}
 		} catch {
-			toast.error(refusalMessage(t, undefined));
+			toast.error(t(...REQUEST_FAILED));
 		}
 		setRequesting(false);
 	};

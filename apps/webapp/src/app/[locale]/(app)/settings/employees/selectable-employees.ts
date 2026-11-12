@@ -2,6 +2,7 @@ import { and, asc, count, eq, ilike, inArray, notInArray, or, sql } from "drizzl
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	formerSinceDate,
 	isFormerEmployee,
@@ -54,9 +55,20 @@ export function buildEmployeeFilters(
 	params: Pick<
 		EmployeeFilterParams,
 		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds" | "managerId"
-	>,
+	> & {
+		/** Only these employees (a scoped manager's `managedScope()`); every one when omitted. */
+		onlyEmployeeIds?: ReadonlySet<string> | null;
+	},
 ) {
 	const conditions = [employeeStatusCondition(organizationId, params.status ?? "all")];
+
+	if (params.onlyEmployeeIds) {
+		conditions.push(
+			params.onlyEmployeeIds.size > 0
+				? inArray(employee.id, [...params.onlyEmployeeIds])
+				: sql<boolean>`false`,
+		);
+	}
 
 	if (params.role && params.role !== "all") {
 		conditions.push(eq(employee.role, params.role));
@@ -169,16 +181,41 @@ export function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 		const actor = yield* getEmployeeSettingsActorContext({
 			queryName: "loadSelectableEmployeePage:actor",
 		});
-		const { dbService } = actor;
+		return yield* selectableEmployeePage(
+			{
+				organizationId: actor.organizationId,
+				managerId:
+					actor.accessTier === "manager" && actor.currentEmployee
+						? actor.currentEmployee.id
+						: undefined,
+			},
+			params,
+		);
+	});
+}
+
+/**
+ * One page of the employees a settings actor may pick, for the organization and
+ * scope given: `onlyEmployeeIds` (a scoped manager's managed employees) or the
+ * legacy `managerId` link filter.
+ */
+export function selectableEmployeePage(
+	scope: {
+		organizationId: string;
+		onlyEmployeeIds?: ReadonlySet<string> | null;
+		managerId?: string;
+	},
+	params: EmployeeSelectParams,
+) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
-		const where = buildEmployeeFilters(actor.organizationId, {
+		const where = buildEmployeeFilters(scope.organizationId, {
 			...params,
 			status: normalizeEmployeeSelectStatus(params.status),
-			managerId:
-				actor.accessTier === "manager" && actor.currentEmployee
-					? actor.currentEmployee.id
-					: undefined,
+			managerId: scope.managerId,
+			onlyEmployeeIds: scope.onlyEmployeeIds,
 		});
 
 		const [totalResult, rows] = yield* Effect.all([

@@ -262,7 +262,7 @@ describe("role saves refuse former employees", () => {
 				[fixture.organizationId, `Model ${randomUUID()}`, fixture.ownerUserId],
 			);
 			const assign = (employeeId: string) =>
-				surcharges.createSurchargeAssignment(fixture.organizationId, {
+				surcharges.createSurchargeAssignment({
 					modelId,
 					assignmentType: "employee",
 					employeeId,
@@ -271,8 +271,9 @@ describe("role saves refuse former employees", () => {
 					isActive: true,
 				});
 			for (const [, former] of formers) {
-				expect(await assign(former.employeeId)).toEqual({
+				expect(await assign(former.employeeId)).toMatchObject({
 					success: false,
+					refusal: FORMER_EMPLOYEE_REFUSAL,
 					error: "Former employees can't be assigned. Choose someone on the current roster.",
 				});
 			}
@@ -286,7 +287,7 @@ describe("role saves refuse former employees", () => {
 				[fixture.organizationId, `Policy ${randomUUID()}`, fixture.ownerUserId],
 			);
 			const assign = (employeeId: string) =>
-				changePolicies.createChangePolicyAssignment(fixture.organizationId, {
+				changePolicies.createChangePolicyAssignment({
 					policyId,
 					assignmentType: "employee",
 					employeeId,
@@ -308,7 +309,6 @@ describe("role saves refuse former employees", () => {
 			);
 			const assign = (employeeId: string) =>
 				workCategories.createSetAssignment({
-					organizationId: fixture.organizationId,
 					setId,
 					assignmentType: "employee",
 					employeeId,

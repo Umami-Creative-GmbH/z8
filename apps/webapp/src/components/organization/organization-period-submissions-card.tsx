@@ -23,6 +23,10 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
+import {
 	DEFAULT_SUBMISSION_WEEK_START_DAY,
 	SUBMISSION_WEEKDAYS,
 	type SubmissionCadence,
@@ -37,9 +41,9 @@ import {
 import { useRouter } from "@/navigation";
 
 interface OrganizationPeriodSubmissionsCardProps {
-	organizationId: string;
 	settings: PeriodSubmissionSettings;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 /** Whole days within the allowed delay, or `null`. */
@@ -57,9 +61,8 @@ function cadenceFromFields(kind: SubmissionCadenceKind, weekStartDay: Submission
 }
 
 export function OrganizationPeriodSubmissionsCard({
-	organizationId,
 	settings,
-	currentMemberRole,
+	settingsAccess,
 }: OrganizationPeriodSubmissionsCardProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
@@ -69,7 +72,7 @@ export function OrganizationPeriodSubmissionsCard({
 	const helpId = `${id}-help`;
 	const delayErrorId = `${id}-delay-error`;
 	const submitting = useRef(false);
-	const canEdit = currentMemberRole === "owner" || currentMemberRole === "admin";
+	const canEdit = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const invalidDelay = t(
 		"organization.periodSubmissions.invalidDelay",
 		"Enter whole days from {min} to {max}.",
@@ -99,7 +102,6 @@ export function OrganizationPeriodSubmissionsCard({
 			submitting.current = true;
 			try {
 				const result = await updatePeriodSubmissionSettings({
-					organizationId,
 					cadence: cadenceFromFields(value.cadence, value.weekStartDay),
 					secondReminderDelayDays:
 						delayFromField(value.secondReminderDelay) ?? MIN_SECOND_REMINDER_DELAY_DAYS,

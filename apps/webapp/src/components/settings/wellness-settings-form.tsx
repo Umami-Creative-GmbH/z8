@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { WaterReminderSettings } from "@/lib/validations/wellness";
 import {
 	CUSTOM_INTERVAL_RANGE,
@@ -62,11 +63,10 @@ export function WellnessSettingsForm({
 						);
 					} else {
 						toast.error(
-							result.error ||
-								t(
-									"settings.wellness.saveError",
-									"Failed to save wellness settings",
-								),
+							actionErrorMessage(t, result, {}, [
+								"settings.wellness.saveError",
+								"Failed to save wellness settings",
+							]),
 						);
 					}
 				} catch {

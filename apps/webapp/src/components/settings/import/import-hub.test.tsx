@@ -6,15 +6,11 @@ import { ImportHub } from "@/components/settings/import/import-hub";
 import { render } from "@/test/render-with-translations";
 
 vi.mock("@/components/settings/clockodo-import/clockodo-import-wizard", () => ({
-	ClockodoImportWizard: ({ organizationId }: { organizationId: string }) => (
-		<div>Clockodo wizard {organizationId}</div>
-	),
+	ClockodoImportWizard: () => <div>Clockodo wizard</div>,
 }));
 
 vi.mock("@/components/settings/clockin-import/clockin-import-wizard", () => ({
-	ClockinImportWizard: ({ organizationId }: { organizationId: string }) => (
-		<div>Clockin wizard {organizationId}</div>
-	),
+	ClockinImportWizard: () => <div>Clockin wizard</div>,
 }));
 
 vi.mock("@/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -24,11 +20,11 @@ vi.mock("@/app/[locale]/(app)/settings/import/csv-actions", () => ({
 
 describe("ImportHub", () => {
 	it("renders Clockodo, Clockin and CSV work tabs", () => {
-		render(<ImportHub organizationId="org_123" />);
+		render(<ImportHub />);
 
 		expect(screen.getByRole("tab", { name: /clockodo/i })).toBeTruthy();
 		expect(screen.getByRole("tab", { name: /clockin/i })).toBeTruthy();
 		expect(screen.getByRole("tab", { name: /csv work/i })).toBeTruthy();
-		expect(screen.getByText(/clockodo wizard org_123/i)).toBeTruthy();
+		expect(screen.getByText(/clockodo wizard/i)).toBeTruthy();
 	});
 });

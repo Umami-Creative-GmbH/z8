@@ -290,13 +290,13 @@ describe("project billable default on PostgreSQL", () => {
 
 	it("lets an org admin switch a customer's project billable by default", async () => {
 		const result = await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.customerProject, { billableDefault: true }),
+			projects.updateProject({ projectId: ids.customerProject, billableDefault: true }),
 		);
 
 		expect(result).toEqual({ success: true, data: undefined });
 		expect(await billableDefault(ids.customerProject)).toBe(true);
 		const listed = await actAs(ids.ownerUser, () =>
-			projects.getProjects(ids.organization),
+			projects.getProjects(),
 		);
 		expect(
 			listed.success &&
@@ -306,7 +306,7 @@ describe("project billable default on PostgreSQL", () => {
 
 	it("refuses a billable default on a project without a customer", async () => {
 		const result = await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.internalProject, { billableDefault: true }),
+			projects.updateProject({ projectId: ids.internalProject, billableDefault: true }),
 		);
 
 		expect(result).toMatchObject({ success: false });
@@ -316,7 +316,6 @@ describe("project billable default on PostgreSQL", () => {
 	it("creates a project billable by default only with a customer", async () => {
 		const refused = await actAs(ids.ownerUser, () =>
 			projects.createProject({
-				organizationId: ids.organization,
 				name: "Internal billable",
 				billableDefault: true,
 			}),
@@ -330,7 +329,6 @@ describe("project billable default on PostgreSQL", () => {
 
 		const created = await actAs(ids.ownerUser, () =>
 			projects.createProject({
-				organizationId: ids.organization,
 				name: "Customer billable",
 				customerId: ids.customer,
 				billableDefault: true,
@@ -344,14 +342,14 @@ describe("project billable default on PostgreSQL", () => {
 	it("lets a project manager set it on their project, but not on another one", async () => {
 		await expect(
 			actAs(ids.projectManagerUser, () =>
-				projects.updateProject(ids.customerProject, { billableDefault: true }),
+				projects.updateProject({ projectId: ids.customerProject, billableDefault: true }),
 			),
 		).resolves.toMatchObject({ success: true });
 		expect(await billableDefault(ids.customerProject)).toBe(true);
 
 		await expect(
 			actAs(ids.projectManagerUser, () =>
-				projects.updateProject(ids.unmanagedProject, { billableDefault: true }),
+				projects.updateProject({ projectId: ids.unmanagedProject, billableDefault: true }),
 			),
 		).resolves.toMatchObject({ success: false });
 		expect(await billableDefault(ids.unmanagedProject)).toBe(false);
@@ -360,7 +358,7 @@ describe("project billable default on PostgreSQL", () => {
 	it("refuses users who cannot edit the project", async () => {
 		await expect(
 			actAs(ids.employeeUser, () =>
-				projects.updateProject(ids.customerProject, { billableDefault: true }),
+				projects.updateProject({ projectId: ids.customerProject, billableDefault: true }),
 			),
 		).resolves.toMatchObject({ success: false });
 		expect(await billableDefault(ids.customerProject)).toBe(false);
@@ -368,12 +366,12 @@ describe("project billable default on PostgreSQL", () => {
 
 	it("switches the default off when the project loses its customer", async () => {
 		await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.customerProject, { billableDefault: true }),
+			projects.updateProject({ projectId: ids.customerProject, billableDefault: true }),
 		);
 
 		await expect(
 			actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.customerProject, { customerId: null }),
+				projects.updateProject({ projectId: ids.customerProject, customerId: null }),
 			),
 		).resolves.toMatchObject({ success: true });
 		expect(await billableDefault(ids.customerProject)).toBe(false);
@@ -387,11 +385,11 @@ describe("project billable default on PostgreSQL", () => {
 		});
 
 		await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.customerProject, { billableDefault: true }),
+			projects.updateProject({ projectId: ids.customerProject, billableDefault: true }),
 		);
 		expect(await workBillability()).toEqual(before);
 		await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.customerProject, { billableDefault: false }),
+			projects.updateProject({ projectId: ids.customerProject, billableDefault: false }),
 		);
 		expect(await workBillability()).toEqual(before);
 	});
@@ -403,7 +401,7 @@ describe("project billable default on PostgreSQL", () => {
 
 		await expect(
 			actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.customerProject, { billableDefault: true }),
+				projects.updateProject({ projectId: ids.customerProject, billableDefault: true }),
 			),
 		).resolves.toMatchObject({ success: false });
 		expect(await billableDefault(ids.customerProject)).toBe(false);
@@ -415,7 +413,8 @@ describe("project billable default on PostgreSQL", () => {
 		);
 		await expect(
 			actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.unmanagedProject, {
+				projects.updateProject({
+					projectId: ids.unmanagedProject,
 					description: "Still running",
 				}),
 			),
@@ -424,10 +423,10 @@ describe("project billable default on PostgreSQL", () => {
 	});
 
 	it("lists a project whose customer was deleted without customer, naming the deleted one (#938)", async () => {
-		await actAs(ids.ownerUser, () => customers.deleteCustomer(ids.customer));
+		await actAs(ids.ownerUser, () => customers.deleteCustomer({ customerId: ids.customer }));
 
 		const listed = await actAs(ids.ownerUser, () =>
-			projects.getProjects(ids.organization),
+			projects.getProjects(),
 		);
 
 		expect(listed.success).toBe(true);
@@ -450,7 +449,7 @@ describe("project billable default on PostgreSQL", () => {
 
 	it("lists a project with an active customer under that customer (#938)", async () => {
 		const listed = await actAs(ids.ownerUser, () =>
-			projects.getProjects(ids.organization),
+			projects.getProjects(),
 		);
 
 		expect(
@@ -465,12 +464,12 @@ describe("project billable default on PostgreSQL", () => {
 
 	it("switches the billable default off on the customer's projects when the customer is deleted", async () => {
 		await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.customerProject, { billableDefault: true }),
+			projects.updateProject({ projectId: ids.customerProject, billableDefault: true }),
 		);
 		const before = await workBillability();
 
 		await expect(
-			actAs(ids.ownerUser, () => customers.deleteCustomer(ids.customer)),
+			actAs(ids.ownerUser, () => customers.deleteCustomer({ customerId: ids.customer })),
 		).resolves.toMatchObject({ success: true });
 
 		expect(await billableDefault(ids.customerProject)).toBe(false);
@@ -480,7 +479,7 @@ describe("project billable default on PostgreSQL", () => {
 
 	it("refuses to change the billable default while Billable Time is off, and keeps it", async () => {
 		await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.customerProject, { billableDefault: true }),
+			projects.updateProject({ projectId: ids.customerProject, billableDefault: true }),
 		);
 		await admin.query(
 			"update organization set billable_time_enabled = false where id = $1",
@@ -489,13 +488,12 @@ describe("project billable default on PostgreSQL", () => {
 
 		await expect(
 			actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.customerProject, { billableDefault: false }),
+				projects.updateProject({ projectId: ids.customerProject, billableDefault: false }),
 			),
 		).resolves.toMatchObject({ success: false });
 		await expect(
 			actAs(ids.ownerUser, () =>
 				projects.createProject({
-					organizationId: ids.organization,
 					name: "Created while off",
 					customerId: ids.customer,
 					billableDefault: true,
@@ -507,7 +505,8 @@ describe("project billable default on PostgreSQL", () => {
 		// Other edits still work and keep the default, which new work keeps taking.
 		await expect(
 			actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.customerProject, {
+				projects.updateProject({
+					projectId: ids.customerProject,
 					description: "Edited while off",
 				}),
 			),
@@ -537,7 +536,7 @@ describe("project billable default on PostgreSQL", () => {
 		);
 
 		const listed = await actAs(ids.ownerUser, () =>
-			projects.getProjects(ids.organization),
+			projects.getProjects(),
 		);
 		expect(
 			listed.success &&
@@ -550,7 +549,8 @@ describe("project billable default on PostgreSQL", () => {
 
 	it("refuses a billable default that is not a boolean", async () => {
 		const result = await actAs(ids.ownerUser, () =>
-			projects.updateProject(ids.customerProject, {
+			projects.updateProject({
+				projectId: ids.customerProject,
 				billableDefault: "yes" as never,
 			}),
 		);

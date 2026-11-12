@@ -42,7 +42,7 @@ describe("DomainAddDialog", () => {
 				false,
 			),
 		);
-		expect(toast.error).toHaveBeenCalledWith("Domain unavailable");
+		expect(toast.error).toHaveBeenCalledWith("Failed to add domain");
 		expect(toast.success).not.toHaveBeenCalled();
 		expect(onDomainAdded).not.toHaveBeenCalled();
 		expect(onOpenChange).not.toHaveBeenCalled();

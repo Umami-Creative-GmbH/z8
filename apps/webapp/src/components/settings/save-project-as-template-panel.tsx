@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { PROJECT_TEMPLATE_NAME_MAX_LENGTH } from "@/lib/projects/project-template-model";
 import { queryKeys } from "@/lib/query";
 import { useNotCopiedMessage } from "./project-template-preview";
@@ -85,13 +86,16 @@ function SaveProjectAsTemplateForm({
 	const form = useForm({
 		defaultValues: { name: project.name },
 		onSubmit: async ({ value }) => {
-			const result = await saveProjectAsTemplate(project.id, { name: value.name.trim() }).catch(
-				() => null,
-			);
+			const result = await saveProjectAsTemplate({
+				projectId: project.id,
+				name: value.name.trim(),
+			}).catch(() => null);
 			if (!result?.success) {
 				toast.error(
-					result?.error ||
-						t("settings.projects.saveAsTemplate.failed", "Failed to save the template"),
+					actionErrorMessage(t, result, {}, [
+						"settings.projects.saveAsTemplate.failed",
+						"Failed to save the template",
+					]),
 				);
 				return;
 			}

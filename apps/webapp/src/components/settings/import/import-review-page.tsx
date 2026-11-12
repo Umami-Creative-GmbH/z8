@@ -17,6 +17,7 @@ import {
 } from "@/components/settings/import/import-review-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 export interface ImportReviewSummary {
 	totalRows: number;
@@ -32,7 +33,6 @@ export interface ImportReviewSummary {
 }
 
 interface ImportReviewPageProps {
-	organizationId: string;
 	batchId: string;
 	summary: ImportReviewSummary;
 	rows: ImportReviewRow[];
@@ -72,7 +72,6 @@ const summaryItems = [
 const numberFormatter = new Intl.NumberFormat();
 
 export function ImportReviewPage({
-	organizationId,
 	batchId,
 	summary,
 	rows,
@@ -86,7 +85,7 @@ export function ImportReviewPage({
 
 	function commitAcceptedRows() {
 		startTransition(async () => {
-			const result = await startImportCommitAction({ organizationId, batchId });
+			const result = await startImportCommitAction({ batchId });
 
 			if (result.success) {
 				toast.success(
@@ -98,7 +97,10 @@ export function ImportReviewPage({
 			}
 
 			toast.error(
-				result.error ?? t("settings.import.review.commitFailed", "Failed to start import commit"),
+				actionErrorMessage(t, result, {}, [
+					"settings.import.review.commitFailed",
+					"Failed to start import commit",
+				]),
 			);
 		});
 	}
@@ -141,7 +143,6 @@ export function ImportReviewPage({
 
 			{customerImport ? (
 				<CustomerImportReviewTable
-					organizationId={organizationId}
 					batchId={batchId}
 					rows={customerImport.rows}
 					linkTargets={customerImport.linkTargets}

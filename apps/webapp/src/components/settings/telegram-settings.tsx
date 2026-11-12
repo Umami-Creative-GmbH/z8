@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TimeInput } from "@/components/ui/time-input";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 interface TelegramSettingsProps {
@@ -67,7 +68,7 @@ export function TelegramSettings({
 	const { data: config } = useQuery({
 		queryKey: queryKeys.telegram.config(organizationId),
 		queryFn: async () => {
-			const result = await getTelegramConfig(organizationId);
+			const result = await getTelegramConfig();
 			return result.success ? result.data : null;
 		},
 		initialData: initialConfig,
@@ -78,7 +79,7 @@ export function TelegramSettings({
 	const { data: userLink } = useQuery({
 		queryKey: queryKeys.telegram.link(userId, organizationId),
 		queryFn: async () => {
-			const result = await getUserTelegramLink(userId, organizationId);
+			const result = await getUserTelegramLink();
 			return result.success ? result.data : null;
 		},
 		initialData: initialUserLink,
@@ -136,14 +137,19 @@ function BotConnectionCard({
 	const isConnected = config?.setupStatus === "active";
 
 	const setupMutation = useMutation({
-		mutationFn: () => setupTelegramBot(botToken, organizationId),
+		mutationFn: () => setupTelegramBot({ botToken }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.telegram.connected", "Telegram bot connected successfully"));
 				setBotToken("");
 				queryClient.invalidateQueries({ queryKey: queryKeys.telegram.config(organizationId) });
 			} else {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.telegram.connectError",
+						"Failed to connect Telegram bot",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -152,13 +158,18 @@ function BotConnectionCard({
 	});
 
 	const disconnectMutation = useMutation({
-		mutationFn: () => disconnectTelegramBot(organizationId),
+		mutationFn: () => disconnectTelegramBot(),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.telegram.disconnected", "Telegram bot disconnected"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.telegram.config(organizationId) });
 			} else {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.telegram.disconnectError",
+						"Failed to disconnect Telegram bot",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -304,14 +315,14 @@ function FeatureSettingsCard({
 		},
 		onSubmit: async ({ value }) => {
 			setLoading(true);
-			const result = await updateTelegramSettings(organizationId, value);
+			const result = await updateTelegramSettings(value);
 			setLoading(false);
 
 			if (result.success) {
 				toast.success(t("settings.telegram.saved", "Telegram settings saved"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.telegram.config(organizationId) });
 			} else {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 			}
 		},
 	});
@@ -558,7 +569,7 @@ function AccountLinkingCard({
 	const [copied, setCopied] = useState(false);
 
 	const generateCodeMutation = useMutation({
-		mutationFn: () => generateTelegramLinkCode(userId, organizationId),
+		mutationFn: () => generateTelegramLinkCode(),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -566,7 +577,12 @@ function AccountLinkingCard({
 				});
 				setLinkCode(result.data);
 			} else {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.telegram.linkError",
+						"Failed to generate link code",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -575,7 +591,7 @@ function AccountLinkingCard({
 	});
 
 	const unlinkMutation = useMutation({
-		mutationFn: () => unlinkTelegramAccount(userId, organizationId),
+		mutationFn: () => unlinkTelegramAccount(),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.telegram.unlinked", "Telegram account unlinked"));
@@ -584,7 +600,12 @@ function AccountLinkingCard({
 					queryKey: queryKeys.telegram.link(userId, organizationId),
 				});
 			} else {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.telegram.unlinkError",
+						"Failed to unlink Telegram account",
+					]),
+				);
 			}
 		},
 		onError: () => {

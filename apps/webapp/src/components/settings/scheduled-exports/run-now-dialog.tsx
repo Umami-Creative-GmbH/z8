@@ -18,12 +18,13 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
+import { SCHEDULED_EXPORT_REFUSALS } from "./scheduled-export-refusals";
 
 interface RunNowDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	organizationId: string;
 	scheduleId: string;
 	scheduleName: string;
 	dateRangeStrategy: string;
@@ -68,7 +69,6 @@ function getEstimatedDateRange(
 export function RunNowDialog({
 	open,
 	onOpenChange,
-	organizationId,
 	scheduleId,
 	scheduleName,
 	dateRangeStrategy,
@@ -91,7 +91,7 @@ export function RunNowDialog({
 
 	const handleRunNow = () => {
 		startTransition(async () => {
-			const result = await runScheduledExportNowAction(organizationId, scheduleId).catch(() => {
+			const result = await runScheduledExportNowAction({ scheduleId }).catch(() => {
 				toast.error(
 					t("settings.scheduledExports.toast.unexpectedError", "An unexpected error occurred"),
 				);
@@ -113,7 +113,7 @@ export function RunNowDialog({
 				onSuccess?.();
 			} else {
 				toast.error(t("settings.scheduledExports.runNow.error", "Failed to start export"), {
-					description: result.error,
+					description: actionErrorMessage(t, result, SCHEDULED_EXPORT_REFUSALS),
 				});
 			}
 		});

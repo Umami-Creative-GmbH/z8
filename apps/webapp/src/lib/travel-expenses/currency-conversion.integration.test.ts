@@ -398,7 +398,11 @@ describe("foreign-currency conversion (#607)", () => {
 		for (const who of ["requester", "manager"] as const) {
 			expect(
 				await authorizeRate(who, target, { base: "EUR", quote: "USD", rate: "1.085" }),
-			).toEqual({ success: false, error: "Unauthorized: Admin access required" });
+			).toEqual({
+				success: false,
+				code: "AuthorizationError",
+				error: "You do not have access to this setting",
+			});
 		}
 		// An administrator of another organization never finds the report.
 		expect(
@@ -608,7 +612,8 @@ describe("foreign-currency conversion (#607)", () => {
 		signIn("requester");
 		expect(await settings.saveReimbursementCurrencySetting({ currency: "CHF" })).toEqual({
 			success: false,
-			error: "Unauthorized: Admin access required",
+			code: "AuthorizationError",
+			error: "You do not have access to this setting",
 		});
 		signIn("admin");
 		expect(await settings.saveReimbursementCurrencySetting({ currency: "KWD" })).toMatchObject({

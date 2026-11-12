@@ -35,12 +35,14 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { formatDepartureCutoff } from "@/lib/employee-lifecycle/cutoff-display";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useDeparturePreview, useRequestIdentity } from "@/lib/query/use-employee-offboarding";
 import type {
 	OffboardNowInput,
 	ScheduleDepartureInput,
 } from "@/lib/validations/employee-offboarding";
 import { useOffboardingLabels } from "./labels";
+import { OFFBOARDING_REFUSALS } from "./offboarding-refusals";
 
 const NO_REPLACEMENT = "__none__";
 
@@ -95,10 +97,12 @@ export function DepartureForm(props: DepartureFormProps) {
 				props.onCompleted();
 				return;
 			}
-			// Entered values stay in place; the server's guidance explains what to fix.
+			// Entered values stay in place; the translated refusal explains what to fix.
 			setSubmitError(
-				result.error ||
-					t("settings.employees.offboarding.saveFailed", "The departure could not be saved."),
+				actionErrorMessage(t, result, OFFBOARDING_REFUSALS, [
+					"settings.employees.offboarding.saveFailed",
+					"The departure could not be saved.",
+				]),
 			);
 			requestAnimationFrame(() => errorRef.current?.focus());
 		},
@@ -337,7 +341,8 @@ function DeparturePreviewFields({
 			)}
 			{preview.error && (
 				<p className="text-sm text-destructive" role="alert">
-					{preview.error.message}
+					{/* The preview query's error carries the server's English text; show ours. */}
+					{actionErrorMessage(t, null)}
 				</p>
 			)}
 			{data && (

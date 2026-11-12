@@ -13,10 +13,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { isValidKioskPin, KIOSK_PIN_MAX_LENGTH } from "@/lib/time-tracking/kiosk/pin";
-import { kioskPinErrorMessage } from "./kiosk-pin-error-message";
+import { KIOSK_PIN_REFUSALS } from "./kiosk-pin-refusals";
 
 const OWN_PIN_STATUS_KEY = ["kiosk", "own-pin-status"] as const;
+
+/**
+ * `setOwnKioskPinAction` runs on `organizationAction` (#1619): its sign-in and
+ * access refusals arrive as error tags and keep the kiosk PIN wording.
+ */
+const OWN_KIOSK_PIN_REFUSALS: RefusalOverrides = {
+	...KIOSK_PIN_REFUSALS,
+	AuthenticationError: KIOSK_PIN_REFUSALS.sign_in_required,
+	AuthorizationError: KIOSK_PIN_REFUSALS.not_allowed,
+};
 
 function FieldErrors({ errors }: { errors: unknown[] }) {
 	const messages = errors.filter((error): error is string => typeof error === "string");
@@ -40,7 +54,7 @@ export function OwnKioskPinCard() {
 	});
 	const saveMutation = useMutation({
 		mutationFn: (pin: string) => setOwnKioskPinAction(pin),
-		onError: () => toast.error(kioskPinErrorMessage(t, "failed")),
+		onError: () => toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS)),
 	});
 	const form = useForm({
 		defaultValues: { pin: "", confirmation: "" },
@@ -48,7 +62,9 @@ export function OwnKioskPinCard() {
 			const result = await saveMutation.mutateAsync(value.pin).catch(() => null);
 			if (!result) return;
 			if (!result.success) {
-				toast.error(kioskPinErrorMessage(t, result.code));
+				toast.error(
+					actionErrorMessage(t, result, OWN_KIOSK_PIN_REFUSALS, KIOSK_PIN_REFUSALS.failed),
+				);
 				return;
 			}
 			toast.success(t("settings.security.kioskPin.saved", "Kiosk PIN saved"));

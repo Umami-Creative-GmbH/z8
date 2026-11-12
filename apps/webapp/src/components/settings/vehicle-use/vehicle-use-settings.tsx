@@ -23,8 +23,9 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import type { VehicleUseErrorCode } from "@/lib/time-tracking/vehicle-use/errors";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { VehicleUseMode } from "@/lib/time-tracking/vehicle-use/policy";
+import { VEHICLE_USE_REFUSALS } from "./vehicle-use-refusals";
 
 interface VehicleUseSettingsProps {
 	data: VehicleUseAdminData;
@@ -46,55 +47,6 @@ export function VehicleUseSettings({ data }: VehicleUseSettingsProps) {
 		/>
 	);
 }
-function vehicleUseErrorMessage(
-	t: Translate,
-	code: VehicleUseErrorCode,
-): string {
-	switch (code) {
-		case "admin_only":
-			return t(
-				"settings.vehicleUse.error.adminOnly",
-				"Only organization owners and admins can manage vehicle use.",
-			);
-		case "team_not_found":
-			return t(
-				"settings.vehicleUse.error.teamNotFound",
-				"That team no longer exists.",
-			);
-		case "employee_not_found":
-			return t(
-				"settings.vehicleUse.error.employeeNotFound",
-				"That employee no longer exists.",
-			);
-		case "former_employee":
-			return t(
-				"settings.vehicleUse.error.formerEmployee",
-				"Former employees can't get a new assignment. Choose someone on the current roster.",
-			);
-		case "assignment_not_found":
-			return t(
-				"settings.vehicleUse.error.assignmentNotFound",
-				"That assignment no longer exists. Reload the page.",
-			);
-		case "invalid_target":
-		case "invalid_selection":
-			return t(
-				"settings.vehicleUse.error.invalidTarget",
-				"Choose who the assignment applies to.",
-			);
-		case "invalid_mode":
-			return t(
-				"settings.vehicleUse.error.invalidMode",
-				"Choose a mode for the assignment.",
-			);
-		case "failed":
-			return t(
-				"settings.vehicleUse.error.failed",
-				"Something went wrong. Try again.",
-			);
-	}
-}
-
 export function VehicleUseSwitch({ initialEnabled }: { initialEnabled: boolean }) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -108,7 +60,7 @@ export function VehicleUseSwitch({ initialEnabled }: { initialEnabled: boolean }
 			const result = await saveVehicleUseSettingsAction({ enabled: next });
 			if (!result.success) {
 				setEnabled(!next);
-				toast.error(vehicleUseErrorMessage(t, result.code));
+				toast.error(actionErrorMessage(t, result, VEHICLE_USE_REFUSALS));
 				return;
 			}
 			toast.success(
@@ -196,7 +148,7 @@ export function VehicleUseAssignments({ data }: VehicleUseSettingsProps) {
 			onSave={async (target, mode) => {
 				const result = await setVehicleUseAssignmentAction({ target, mode });
 				if (!result.success) {
-					toast.error(vehicleUseErrorMessage(t, result.code));
+					toast.error(actionErrorMessage(t, result, VEHICLE_USE_REFUSALS));
 					return false;
 				}
 				toast.success(
@@ -208,7 +160,7 @@ export function VehicleUseAssignments({ data }: VehicleUseSettingsProps) {
 			onRemove={async (assignmentId) => {
 				const result = await removeVehicleUseAssignmentAction({ assignmentId });
 				if (!result.success) {
-					toast.error(vehicleUseErrorMessage(t, result.code));
+					toast.error(actionErrorMessage(t, result, VEHICLE_USE_REFUSALS));
 					return false;
 				}
 				toast.success(

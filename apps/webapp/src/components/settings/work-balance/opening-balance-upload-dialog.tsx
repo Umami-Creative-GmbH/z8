@@ -25,9 +25,10 @@ import {
 	MAX_OPENING_BALANCE_UPLOAD_CHARACTERS,
 	openingBalanceCsvTemplate,
 } from "@/lib/work-balance/adjustments/opening-balance-csv";
-import type {
-	BalanceAdjustmentActionResult,
-	OpeningBalanceUploadOutcome,
+import {
+	type BalanceAdjustmentActionResult,
+	balanceAdjustmentFailureOf,
+	type OpeningBalanceUploadOutcome,
 } from "@/lib/work-balance/adjustments/types";
 import { OpeningBalanceUploadTable } from "./opening-balance-upload-table";
 import { useBalanceAdjustmentErrorMessage } from "./use-balance-adjustment-error";
@@ -92,10 +93,9 @@ export function OpeningBalanceUploadDialog() {
 		}).catch(() => null);
 		setPending(null);
 		if (!result?.success) {
+			const failure = result ? balanceAdjustmentFailureOf(result) : null;
 			toast.error(
-				actionError(result?.code ?? null, {
-					closedMonth: result?.success === false ? result.closedMonth : null,
-				}),
+				actionError(failure?.code ?? null, { closedMonth: failure?.details.closedMonth ?? null }),
 			);
 			return null;
 		}

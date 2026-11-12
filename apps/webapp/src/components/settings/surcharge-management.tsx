@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { surchargeModelsQuery } from "@/lib/query/surcharge-models";
 import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
@@ -70,8 +71,10 @@ export function SurchargeManagement({
 				);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.surcharges.deleteFailed", "Failed to delete"),
+					actionErrorMessage(t, result, {}, [
+						"settings.surcharges.deleteFailed",
+						"Failed to delete",
+					]),
 				);
 			}
 			setDeleteModelId(null);

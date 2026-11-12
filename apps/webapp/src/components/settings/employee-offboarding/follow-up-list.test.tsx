@@ -115,10 +115,11 @@ describe("FollowUpList", () => {
 		expect(screen.queryByRole("button", { name: /clear/i })).toBeNull();
 	});
 
-	it("requires a written resolution and surfaces the server's refusal", async () => {
+	it("requires a written resolution and surfaces a refusal", async () => {
 		const user = userEvent.setup();
 		const resolveReview = vi.fn().mockResolvedValue({
 			success: false,
+			code: "ValidationError",
 			error:
 				"The timer is still running. Correct it through time corrections before resolving this review.",
 		});
@@ -135,7 +136,8 @@ describe("FollowUpList", () => {
 			reviewId: "review-clock",
 			resolution: "Timer checked",
 		});
-		expect((await clock.findByRole("alert")).textContent).toContain("still running");
+		// The server's English text is never shown; the refusal is worded on the client.
+		expect((await clock.findByRole("alert")).textContent).toBe("Check your input and try again.");
 	});
 
 	it("assigns a replacement for a handover review with a stable request id across retries", async () => {

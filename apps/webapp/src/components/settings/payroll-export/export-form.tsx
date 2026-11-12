@@ -41,6 +41,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	type PayrollExportFormatId,
 	payrollExportFormatIds,
@@ -74,7 +75,7 @@ export function ExportForm({
 	const { data: filterOptions } = useQuery({
 		queryKey: ["payroll-export-filter-options", organizationId],
 		queryFn: async () => {
-			const result = await getFilterOptionsAction(organizationId);
+			const result = await getFilterOptionsAction();
 			return result.success ? result.data : null;
 		},
 	});
@@ -131,7 +132,6 @@ export function ExportForm({
 				: { start: customStartDate, end: customEndDate };
 		startTransition(async () => {
 			const result = await startExportAction({
-				organizationId,
 				formatId: selectedFormatId,
 				startDate: dateRange.start,
 				endDate: dateRange.end,
@@ -143,7 +143,7 @@ export function ExportForm({
 			});
 			if (!result.success) {
 				toast.error(t("settings.payrollExport.export.error", "Export failed"), {
-					description: result.error,
+					description: actionErrorMessage(t, result),
 				});
 				return;
 			}

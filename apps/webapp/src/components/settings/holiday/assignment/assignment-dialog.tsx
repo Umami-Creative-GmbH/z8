@@ -35,7 +35,19 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
+
+/** An assignment refused because one already covers the target in the range. */
+const ASSIGNMENT_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.holidays.assignments.overlap",
+		"An assignment already exists for this target in the selected date range.",
+	],
+};
 
 interface AssignmentDialogProps {
 	open: boolean;
@@ -154,7 +166,7 @@ export function AssignmentDialog({
 	const { data: presets, isLoading: presetsLoading } = useQuery({
 		queryKey: queryKeys.holidayPresets.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayPresets(organizationId);
+			const result = await getHolidayPresets();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch presets");
 			}
@@ -167,7 +179,7 @@ export function AssignmentDialog({
 	const { data: teams, isLoading: teamsLoading } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -185,7 +197,7 @@ export function AssignmentDialog({
 			effectiveFrom: string;
 			effectiveUntil: string;
 		}) =>
-			createPresetAssignment(organizationId, {
+			createPresetAssignment({
 				presetId: values.presetId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
@@ -204,8 +216,10 @@ export function AssignmentDialog({
 				handleOpenChange(false);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.holidays.assignments.createFailed", "Failed to create assignment"),
+					actionErrorMessage(t, result, ASSIGNMENT_REFUSALS, [
+						"settings.holidays.assignments.createFailed",
+						"Failed to create assignment",
+					]),
 				);
 			}
 		},

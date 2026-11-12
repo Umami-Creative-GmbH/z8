@@ -38,6 +38,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface ExecutionHistoryDialogProps {
 	open: boolean;
@@ -81,11 +82,10 @@ export function ExecutionHistoryDialog({
 		const fetchHistory = async () => {
 			setIsLoading(true);
 			setError(null);
-			const result = await getExecutionHistoryAction(
-				organizationId,
+			const result = await getExecutionHistoryAction({
 				scheduleId,
-				50,
-			).then(
+				limit: 50,
+			}).then(
 				(response) => response,
 				() => null,
 			);
@@ -107,11 +107,10 @@ export function ExecutionHistoryDialog({
 				setExecutions(result.data);
 			} else {
 				setError(
-					result.error ||
-						t(
-							"settings.scheduledExports.history.loadError",
-							"Failed to load execution history",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.scheduledExports.history.loadError",
+						"Failed to load execution history",
+					]),
 				);
 			}
 
@@ -121,7 +120,7 @@ export function ExecutionHistoryDialog({
 		return () => {
 			cancelled = true;
 		};
-	}, [open, organizationId, requestKey, scheduleId, t]);
+	}, [open, requestKey, scheduleId, t]);
 
 	const isCurrentKey = loadedKey === requestKey;
 	const visibleExecutions = isCurrentKey ? executions : [];

@@ -35,7 +35,6 @@ describe("SuccessFactorsConfigForm", () => {
 	it("preserves the organization-scoped SuccessFactors payload", async () => {
 		render(
 			<SuccessFactorsConfigForm
-				organizationId="org_123"
 				initialConfig={null}
 			/>,
 		);
@@ -55,7 +54,6 @@ describe("SuccessFactorsConfigForm", () => {
 
 		await waitFor(() => {
 			expect(saveSuccessFactorsConfigActionMock).toHaveBeenCalledWith({
-				organizationId: "org_123",
 				config: {
 					employeeMatchStrategy: "userId",
 					instanceUrl: "https://api.successfactors.example",

@@ -27,6 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 const queryKey = queryKeys.travelExpenses.expenseOfficers();
@@ -105,8 +106,10 @@ function ExpenseOfficerEditor({ data }: { data: ExpenseOfficerAdminData }) {
 			const result = await saveExpenseOfficerGrantAction(value);
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t("settings.travelExpenses.officers.saveFailed", "Failed to save the expense officer"),
+					actionErrorMessage(t, result, {}, [
+						"settings.travelExpenses.officers.saveFailed",
+						"Failed to save the expense officer",
+					]),
 				);
 				return;
 			}
@@ -147,11 +150,10 @@ function ExpenseOfficerEditor({ data }: { data: ExpenseOfficerAdminData }) {
 			const result = await revokeExpenseOfficerGrantAction({ grantId: revokingGrant.id });
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.travelExpenses.officers.revokeFailed",
-							"Failed to revoke the expense officer",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.travelExpenses.officers.revokeFailed",
+						"Failed to revoke the expense officer",
+					]),
 				);
 				return;
 			}

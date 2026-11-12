@@ -13,6 +13,7 @@ import type {
 	EmailTemplateKey,
 } from "@/db/schema";
 import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { getEmailTemplateCopy } from "./email-template-copy";
 import type { EmailTemplateEditorHandle } from "./email-template-editor";
@@ -170,11 +171,10 @@ export function useEmailTemplateSettings(
 				return;
 			}
 			toast.error(
-				result.errors?.join("\n") ??
-					t(
-						"settings.emailTemplates.saveFailed",
-						"Failed to save email template",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.emailTemplates.saveFailed",
+					"Failed to save email template",
+				]),
 			);
 		});
 	};
@@ -197,8 +197,10 @@ export function useEmailTemplateSettings(
 				return;
 			}
 			toast.error(
-				result.errors?.join("\n") ??
-					t("settings.emailTemplates.testFailed", "Failed to send test email"),
+				actionErrorMessage(t, result, {}, [
+					"settings.emailTemplates.testFailed",
+					"Failed to send test email",
+				]),
 			);
 		});
 	};
@@ -233,11 +235,10 @@ export function useEmailTemplateSettings(
 				return;
 			}
 			toast.error(
-				result.errors?.join("\n") ??
-					t(
-						"settings.emailTemplates.resetFailed",
-						"Failed to reset email template",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.emailTemplates.resetFailed",
+					"Failed to reset email template",
+				]),
 			);
 		});
 	};

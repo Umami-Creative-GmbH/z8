@@ -19,6 +19,10 @@ import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { EmployeeReadSnapshot } from "@/lib/organization/employee-read-types";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
@@ -117,7 +121,7 @@ vi.mock("@/components/organization/employee-lifecycle-actions", () => ({
 	EmployeeLifecycleActions: ({
 		target,
 		currentUserId,
-		currentMemberRole,
+		settingsAccess,
 		onOptimisticStatusChange,
 		onRemoved,
 	}: {
@@ -128,12 +132,12 @@ vi.mock("@/components/organization/employee-lifecycle-actions", () => ({
 			membership: { status: string; role: string } | null;
 		};
 		currentUserId: string;
-		currentMemberRole: string;
+		settingsAccess: SettingsAccess | null;
 		onOptimisticStatusChange(employeeId: string, isActive: boolean): void;
 		onRemoved(employeeId: string): void;
 	}) => {
-		const actorIsOwner = hasOrganizationRole(currentMemberRole, "owner");
-		const actorIsAdmin = hasOrganizationRole(currentMemberRole, "admin");
+		const actorIsOwner = meetsSettingsAccess(settingsAccess, "owner");
+		const actorIsAdmin = meetsSettingsAccess(settingsAccess, "orgAdmin");
 		const targetIsOwner = hasOrganizationRole(target.membership?.role, "owner");
 		if (
 			target.userId === currentUserId ||
@@ -295,13 +299,13 @@ function resolvedParams(employeeId: string) {
 function renderDetail({
 	employee = realEmployee,
 	currentUserId = "owner-user",
-	currentMemberRole = "owner",
+	settingsAccess = "owner",
 	accessTier = "orgAdmin",
 	personnelFile = null,
 }: {
 	employee?: EmployeeDetail;
 	currentUserId?: string;
-	currentMemberRole?: string;
+	settingsAccess?: SettingsAccess | null;
 	accessTier?: "orgAdmin" | "manager" | "member";
 	personnelFile?: { employeeId: string; categories: []; today: string } | null;
 } = {}) {
@@ -354,7 +358,7 @@ function renderDetail({
 					params={resolvedParams(employee.id)}
 					accessTier={accessTier}
 					currentUserId={currentUserId}
-					currentMemberRole={currentMemberRole}
+					settingsAccess={settingsAccess}
 					personnelFile={personnelFile}
 				/>
 			</QueryClientProvider>,
@@ -399,7 +403,7 @@ describe("employee detail Team field (#1575)", () => {
 					expect.objectContaining({ teamId: "team-2", drivingLicencePreviewToken: token }),
 				),
 			);
-			expect(teamApi.preview).toHaveBeenCalledWith("employee-2", "team-2");
+			expect(teamApi.preview).toHaveBeenCalledWith({ employeeId: "employee-2", teamId: "team-2" });
 		} finally {
 			formSection.real = false;
 		}
@@ -437,7 +441,7 @@ describe("employee detail Team field (#1575)", () => {
 	it("offers no Team field to a scoped manager", async () => {
 		formSection.real = true;
 		try {
-			renderDetail({ employee: inUmami, accessTier: "manager", currentMemberRole: "member" });
+			renderDetail({ employee: inUmami, accessTier: "manager", settingsAccess: "scopedManager" });
 			await screen.findByRole("textbox", { name: "Position" });
 			expect(screen.queryByRole("combobox", { name: "Team" })).toBeNull();
 			expect(teamApi.list).not.toHaveBeenCalled();
@@ -453,16 +457,16 @@ describe("employee detail admin-only custom roles (#1475)", () => {
 	it.each(["manager", "member"] as const)(
 		"does not mount the custom roles card for a %s viewer",
 		async (accessTier) => {
-			renderDetail({ accessTier, currentMemberRole: "member" });
+			renderDetail({ accessTier, settingsAccess: "member" });
 			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
 			expect(screen.queryByText(/Custom roles for/)).toBeNull();
 		},
 	);
 
-	it.each(["admin", "owner"])(
-		"mounts the custom roles card with the employee scope for an org %s",
-		async (currentMemberRole) => {
-			renderDetail({ accessTier: "orgAdmin", currentMemberRole });
+	it.each(["orgAdmin", "owner"] as const)(
+		"mounts the custom roles card with the employee scope for %s settings access",
+		async (settingsAccess) => {
+			renderDetail({ accessTier: "orgAdmin", settingsAccess });
 			expect(
 				(await screen.findByRole("region", { name: "Custom roles" })).textContent,
 			).toBe("Custom roles for employee-2 in org-1: admin");
@@ -479,7 +483,7 @@ describe("employee detail wage history merge note (#1176)", () => {
 	});
 
 	it("shows no note to managers", async () => {
-		renderDetail({ accessTier: "manager", currentMemberRole: "member" });
+		renderDetail({ accessTier: "manager", settingsAccess: "scopedManager" });
 		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
 		expect(screen.queryByText(/Merge note/)).toBeNull();
 	});
@@ -541,7 +545,7 @@ describe("employee detail Change wage (#1177)", () => {
 		renderDetail({
 			employee: hourlyToday,
 			accessTier: "manager",
-			currentMemberRole: "member",
+			settingsAccess: "scopedManager",
 		});
 		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
 
@@ -567,15 +571,15 @@ describe("employee detail lifecycle integration", () => {
 
 	it.each([
 		[realEmployee, "owner", "Deactivate", true],
-		[{ ...realEmployee, isActive: false }, "admin", "Reactivate", false],
-		[realEmployee, "member,owner", "Deactivate", true],
-		[realEmployee, "member,admin", "Deactivate", false],
+		[{ ...realEmployee, isActive: false }, "orgAdmin", "Reactivate", false],
+		[{ ...realEmployee, isActive: false }, "owner", "Reactivate", true],
+		[realEmployee, "orgAdmin", "Deactivate", false],
 	] as const)(
-		"renders authorized controls with tokenized role %s",
-		async (employee, role, statusAction, canRemove) => {
+		"renders authorized controls for settings access %s",
+		async (employee, settingsAccess, statusAction, canRemove) => {
 			renderDetail({
 				employee: employee as EmployeeDetail,
-				currentMemberRole: role,
+				settingsAccess,
 			});
 
 			expect(
@@ -598,7 +602,7 @@ describe("employee detail lifecycle integration", () => {
 					params={resolvedParams("employee-2")}
 					accessTier="manager"
 					currentUserId="manager-user"
-					currentMemberRole="member"
+					settingsAccess="scopedManager"
 				/>
 			</QueryClientProvider>,
 		);
@@ -609,7 +613,7 @@ describe("employee detail lifecycle integration", () => {
 		"hides lifecycle controls from admins for target owner role %s",
 		async (targetRole) => {
 			renderDetail({
-				currentMemberRole: "admin",
+				settingsAccess: "orgAdmin",
 				employee: {
 					...realEmployee,
 					membership: { ...approvedMembership, role: targetRole },
@@ -649,13 +653,15 @@ describe("employee detail lifecycle integration", () => {
 	});
 
 	it.each([
-		["manager", "admin"],
+		["manager", "orgAdmin"],
 		["member", "owner"],
 		["orgAdmin", "member"],
+		["orgAdmin", "scopedManager"],
+		["orgAdmin", null],
 	] as const)(
-		"hides draft actions for access tier %s with membership role %s",
-		async (accessTier, currentMemberRole) => {
-			renderDetail({ employee: draftEmployee, accessTier, currentMemberRole });
+		"hides draft actions for access tier %s with settings access %s",
+		async (accessTier, settingsAccess) => {
+			renderDetail({ employee: draftEmployee, accessTier, settingsAccess });
 
 			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
 			expect(screen.queryByText("Draft actions")).toBeNull();
@@ -868,7 +874,7 @@ describe("preseeded employee edit form baseline", () => {
 						params={resolvedParams(employee.id)}
 						accessTier="orgAdmin"
 						currentUserId="owner-user"
-						currentMemberRole="owner"
+						settingsAccess="owner"
 						organizationId={employee.organizationId}
 						initialSnapshot={snapshot}
 					/>

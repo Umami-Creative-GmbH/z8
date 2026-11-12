@@ -1,5 +1,6 @@
 "use client";
 
+import { actionData } from "@/components/settings/enterprise/action-data";
 import { IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -81,7 +82,7 @@ export function SSOProviderManagement({
 
 	const handleRequestVerificationToken = async (provider: SSOProvider) => {
 		setBusyProviderId(provider.id);
-		const result = await requestSSODomainVerificationAction(provider.id).then(
+		const result = await actionData(requestSSODomainVerificationAction({ providerId: provider.id })).then(
 			(response) => ({ ok: true as const, response }),
 			(error) => ({ ok: false as const, error }),
 		);
@@ -97,10 +98,8 @@ export function SSOProviderManagement({
 			return;
 		}
 
-		setTokenByProviderId((prev) => ({
-			...prev,
-			[provider.providerId]: result.response.domainVerificationToken,
-		}));
+		const token = result.response.domainVerificationToken;
+		setTokenByProviderId((prev) => ({ ...prev, [provider.providerId]: token }));
 		toast.success(
 			t(
 				"settings.enterprise.sso.tokenGenerated",
@@ -112,7 +111,7 @@ export function SSOProviderManagement({
 
 	const handleVerifyDomain = async (provider: SSOProvider) => {
 		setBusyProviderId(provider.id);
-		const verified = await verifySSODomainAction(provider.id)
+		const verified = await actionData(verifySSODomainAction({ providerId: provider.id }))
 			.then(() => true)
 			.catch(() => false);
 
@@ -149,7 +148,7 @@ export function SSOProviderManagement({
 		const provider = deleteDialog.provider;
 		if (!provider) return;
 
-		const didDelete = await deleteSSOProviderAction(provider.id)
+		const didDelete = await actionData(deleteSSOProviderAction({ providerId: provider.id }))
 			.then(() => true)
 			.catch(() => false);
 

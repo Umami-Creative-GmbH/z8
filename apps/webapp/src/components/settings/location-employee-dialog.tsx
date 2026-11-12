@@ -28,10 +28,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface LocationEmployeeDialogProps {
-	organizationId: string;
 	locationId: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -64,7 +64,6 @@ export function LocationEmployeeDialog(props: LocationEmployeeDialogProps) {
 }
 
 function LocationEmployeeDialogContent({
-	organizationId,
 	locationId,
 	open,
 	onOpenChange,
@@ -103,7 +102,10 @@ function LocationEmployeeDialogContent({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error || t("settings.locations.employeeAssignFailed", "Failed to assign employee"),
+					actionErrorMessage(t, result, {}, [
+						"settings.locations.employeeAssignFailed",
+						"Failed to assign employee",
+					]),
 				);
 			}
 
@@ -122,7 +124,7 @@ function LocationEmployeeDialogContent({
 	const { data: employees, isLoading } = useQuery({
 		queryKey: [...queryKeys.locations.employees(locationId), "available"],
 		queryFn: async () => {
-			const result = await getAvailableEmployees(organizationId, locationId);
+			const result = await getAvailableEmployees({ excludeLocationId: locationId });
 			if (!result.success) {
 				return Promise.reject(result.error || "Failed to fetch employees");
 			}

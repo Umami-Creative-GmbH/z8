@@ -1,183 +1,113 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mockState = vi.hoisted(() => ({
-	actor: {
-		accessTier: "orgAdmin" as const,
-		organizationId: "org-actor",
-		session: { user: { id: "user-admin", email: "admin@example.test" } },
-		currentEmployee: {
-			id: "employee-admin",
-			userId: "user-admin",
-			organizationId: "org-actor",
-			role: "admin" as const,
-		},
-	},
-	findEmployees: vi.fn(async () => [
-		{ id: "employee-actor", organizationId: "org-actor", userId: "user-actor" },
-	]),
-	findTeams: vi.fn(async () => [
-		{ id: "team-actor", organizationId: "org-actor", name: "Actor Team" },
-	]),
-	findPermissions: vi.fn(async () => []),
-	getEmployeePermissions: vi.fn(
-		(_employeeId: string, _organizationId: string) => [],
-	),
+	caller: null as StubCaller | null,
+	findEmployee: vi.fn(async (): Promise<unknown> => ({ id: "employee-actor" })),
+	findEmployees: vi.fn(async (): Promise<unknown[]> => []),
+	findTeams: vi.fn(async (): Promise<unknown[]> => []),
+	findPermissions: vi.fn(async (): Promise<unknown[]> => []),
+	getEmployeePermissions: vi.fn((_employeeId: string, _organizationId: string) => [] as unknown[]),
+	hasTeamPermission: vi.fn((..._args: unknown[]) => true),
 	grantPermissions: vi.fn(),
 	revokePermissions: vi.fn(),
 	transaction: vi.fn(),
-	requireOrgAdmin: vi.fn(),
-	loggerInfo: vi.fn(),
-	loggerError: vi.fn(),
+	formerEmployeeIds: new Set<string>(),
 }));
 
-const drizzleMocks = vi.hoisted(() => ({
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-}));
-
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...conditions: unknown[]) => ({ and: conditions })),
-	eq: drizzleMocks.eq,
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: {
-		id: "id",
-		userId: "userId",
-		organizationId: "organizationId",
-		$inferSelect: {},
-	},
-	team: {
-		id: "teamId",
-		name: "teamName",
-		organizationId: "teamOrganizationId",
-	},
-	teamPermissions: {
-		employeeId: "permissionEmployeeId",
-		organizationId: "permissionOrganizationId",
-	},
-}));
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+);
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({
-		info: mockState.loggerInfo,
-		error: mockState.loggerError,
-	}),
+	createLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
 }));
-
-vi.mock("../employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect");
-	return {
-		getEmployeeSettingsActorContext: vi.fn(() =>
-			Effect.succeed(mockState.actor),
-		),
-		requireSettingsActorEmployeeRecord: vi.fn(() =>
-			Effect.succeed(mockState.actor.currentEmployee),
-		),
-		requireOrgAdminEmployeeSettingsAccess:
-			mockState.requireOrgAdmin.mockImplementation(() => Effect.void),
-	};
-});
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	return { AuthService: Context.Service<unknown>("AuthService") };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
-	return { DatabaseService: Context.Service<unknown>("DatabaseService") };
-});
-
-vi.mock("@/lib/effect/services/permissions.service", async () => {
-	const { Context } = await import("effect");
-	return {
-		PermissionsService: Context.Service<unknown>("PermissionsService"),
-	};
-});
 
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Effect, Layer } = await import("effect");
-	const { DatabaseService } = await import(
-		"@/lib/effect/services/database.service"
-	);
-	const { PermissionsService } = await import(
-		"@/lib/effect/services/permissions.service"
-	);
+	const { PermissionsService } = await import("@/lib/effect/services/permissions.service");
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
 
-	const databaseLayer = Layer.succeed(DatabaseService, {
-		db: {
-			query: {
-				employee: { findMany: mockState.findEmployees },
-				team: { findMany: mockState.findTeams },
-				teamPermissions: { findMany: mockState.findPermissions },
-			},
-			transaction: mockState.transaction.mockImplementation(
-				async (operation: (tx: unknown) => Promise<unknown>) =>
-					operation({
-						query: {
-							employee: { findMany: mockState.findEmployees },
-							team: { findMany: mockState.findTeams },
-							teamPermissions: { findMany: mockState.findPermissions },
-						},
-					}),
-			),
-		},
-		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-	});
-	const permissionsLayer = Layer.succeed(PermissionsService, {
-		getEmployeePermissions: (employeeId: string, organizationId: string) =>
-			Effect.sync(() =>
-				mockState.getEmployeePermissions(employeeId, organizationId),
-			),
-		grantPermissions: (
-			employeeId: string,
-			organizationId: string,
-			permissions: unknown,
-			teamId: string | null,
-			grantedBy: string,
-		) =>
-			Effect.sync(() =>
-				mockState.grantPermissions(
-					employeeId,
-					organizationId,
-					permissions,
-					teamId,
-					grantedBy,
-				),
-			),
-		revokePermissions: (
-			employeeId: string,
-			organizationId: string,
-			teamId: string | null,
-		) =>
-			Effect.sync(() =>
-				mockState.revokePermissions(employeeId, organizationId, teamId),
-			),
-	});
+	const query = {
+		employee: { findFirst: mockState.findEmployee, findMany: mockState.findEmployees },
+		team: { findMany: mockState.findTeams },
+		teamPermissions: { findMany: mockState.findPermissions },
+	};
+	const db = {
+		query,
+		transaction: mockState.transaction.mockImplementation(
+			async (operation: (tx: unknown) => Promise<unknown>) => operation({ query }),
+		),
+	};
 
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.merge(databaseLayer, permissionsLayer),
+	return runtimeModuleOver(
+		Layer.mergeAll(
+			organizationActionStubLayer(() => mockState.caller, { db }),
+			Layer.succeed(
+				PermissionsService,
+				PermissionsService.of({
+					getEmployeePermissions: (employeeId: string, organizationId: string) =>
+						Effect.sync(() => mockState.getEmployeePermissions(employeeId, organizationId)),
+					hasTeamPermission: (...args: unknown[]) =>
+						Effect.sync(() => mockState.hasTeamPermission(...args)),
+					grantPermissions: (...args: unknown[]) =>
+						Effect.sync(() => mockState.grantPermissions(...args)),
+					revokePermissions: (...args: unknown[]) =>
+						Effect.sync(() => mockState.revokePermissions(...args)),
+				} as never),
+			),
+		),
 	);
 });
 
-const actions = await import("./actions");
 const {
+	getEmployeePermissions,
 	grantTeamPermissions,
+	hasTeamPermission,
 	listEmployeePermissions,
 	loadPermissionsPageData,
 	revokeTeamPermissions,
-} = actions;
+} = await import("./actions");
+
+const admin: StubCaller = {
+	userId: "user-admin",
+	activeOrganizationId: "org-actor",
+	membershipRole: "admin",
+	employee: { id: "employee-admin", role: "employee", former: false },
+};
+const ownerWithoutEmployee: StubCaller = {
+	userId: "user-owner",
+	activeOrganizationId: "org-actor",
+	membershipRole: "owner",
+	employee: null,
+};
+const scopedManager: StubCaller = {
+	userId: "user-manager",
+	activeOrganizationId: "org-actor",
+	membershipRole: "member",
+	employee: { id: "employee-manager", role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	userId: "user-member",
+	activeOrganizationId: "org-actor",
+	membershipRole: "member",
+	employee: { id: "employee-member", role: "employee", former: false },
+};
+
+const targetId = "10000000-0000-4000-8000-000000000001";
+const teamId = "20000000-0000-4000-8000-000000000001";
 
 describe("permissions settings server scope", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.actor.currentEmployee.role = "admin";
+		mockState.caller = admin;
+		mockState.formerEmployeeIds = new Set();
+		mockState.findEmployee.mockResolvedValue({ id: targetId });
 		mockState.findEmployees.mockResolvedValue([
-			{
-				id: "employee-actor",
-				organizationId: "org-actor",
-				userId: "user-actor",
-			},
+			{ id: "employee-actor", organizationId: "org-actor", userId: "user-actor" },
 		]);
 		mockState.findTeams.mockResolvedValue([
 			{ id: "team-actor", organizationId: "org-actor", name: "Actor Team" },
@@ -186,18 +116,53 @@ describe("permissions settings server scope", () => {
 		mockState.getEmployeePermissions.mockReturnValue([]);
 	});
 
-	it("derives grant organization and granter employee exclusively from the actor", async () => {
-		mockState.actor.currentEmployee.role = "employee";
+	it.each([
+		[
+			"grantTeamPermissions",
+			() => grantTeamPermissions({ employeeId: targetId, permissions: { canCreateTeams: true } }),
+		],
+		["revokeTeamPermissions", () => revokeTeamPermissions({ employeeId: targetId })],
+		["listEmployeePermissions", () => listEmployeePermissions()],
+		["loadPermissionsPageData", () => loadPermissionsPageData()],
+	])("refuses %s to a scoped manager, one level below an org admin", async (_name, run) => {
+		mockState.caller = scopedManager;
+
+		expect(await run()).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.grantPermissions).not.toHaveBeenCalled();
+		expect(mockState.revokePermissions).not.toHaveBeenCalled();
+		expect(mockState.findEmployees).not.toHaveBeenCalled();
+		expect(mockState.transaction).not.toHaveBeenCalled();
+	});
+
+	it("refuses getEmployeePermissions to an org member, one level below a scoped manager", async () => {
+		mockState.caller = orgMember;
+
+		expect(await getEmployeePermissions("employee-member")).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(mockState.getEmployeePermissions).not.toHaveBeenCalled();
+	});
+
+	it("refuses hasTeamPermission to a pending membership, below an org member", async () => {
+		mockState.caller = { ...orgMember, membershipRole: null };
+
+		expect(
+			await hasTeamPermission({ employeeId: targetId, permission: "canCreateTeams" }),
+		).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.hasTeamPermission).not.toHaveBeenCalled();
+	});
+
+	it("grants in the session's organization with the actor's employee as granter", async () => {
 		const result = await grantTeamPermissions({
-			employeeId: "10000000-0000-4000-8000-000000000001",
+			employeeId: targetId,
 			permissions: { canCreateTeams: true },
 			teamId: null,
-			organizationId: "org-attacker",
-		} as Parameters<typeof grantTeamPermissions>[0]);
+		});
 
 		expect(result.success).toBe(true);
 		expect(mockState.grantPermissions).toHaveBeenCalledWith(
-			"10000000-0000-4000-8000-000000000001",
+			targetId,
 			"org-actor",
 			{ canCreateTeams: true },
 			null,
@@ -205,56 +170,96 @@ describe("permissions settings server scope", () => {
 		);
 	});
 
-	it("derives revoke organization exclusively from the actor", async () => {
-		const result = await revokeTeamPermissions(
-			"10000000-0000-4000-8000-000000000001",
-			"20000000-0000-4000-8000-000000000001",
-		);
+	it("refuses an organization ID in the grant input", async () => {
+		const result = await grantTeamPermissions({
+			employeeId: targetId,
+			permissions: { canCreateTeams: true },
+			organizationId: "org-attacker",
+		} as never);
 
-		expect(result.success).toBe(true);
-		expect(mockState.revokePermissions).toHaveBeenCalledWith(
-			"10000000-0000-4000-8000-000000000001",
-			"org-actor",
-			"20000000-0000-4000-8000-000000000001",
-		);
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.grantPermissions).not.toHaveBeenCalled();
 	});
 
-	it("ignores a caller organization and lists only actor-organization employees", async () => {
-		const invokeWithHostileOrganization =
-			listEmployeePermissions as unknown as (
-				organizationId: string,
-			) => ReturnType<typeof listEmployeePermissions>;
+	it("refuses granting a permission to a former employee (#1438)", async () => {
+		mockState.formerEmployeeIds = new Set([targetId]);
 
-		const result = await invokeWithHostileOrganization("org-attacker");
+		const result = await grantTeamPermissions({
+			employeeId: targetId,
+			permissions: { canManageTeamMembers: true },
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.grantPermissions).not.toHaveBeenCalled();
+	});
+
+	it("still clears a former employee's permission flags (#1438)", async () => {
+		mockState.formerEmployeeIds = new Set([targetId]);
+
+		const result = await grantTeamPermissions({
+			employeeId: targetId,
+			permissions: { canManageTeamMembers: false },
+		});
 
 		expect(result.success).toBe(true);
-		expect(mockState.requireOrgAdmin).toHaveBeenCalledWith(
-			mockState.actor,
-			expect.objectContaining({ action: "list" }),
-		);
-		expect(drizzleMocks.eq).toHaveBeenCalledWith("organizationId", "org-actor");
-		expect(mockState.findEmployees).toHaveBeenCalledWith(
-			expect.objectContaining({
-				where: { eq: ["organizationId", "org-actor"] },
-			}),
-		);
+		expect(mockState.grantPermissions).toHaveBeenCalled();
+	});
+
+	it("needs an employee record to record who granted a permission", async () => {
+		mockState.caller = ownerWithoutEmployee;
+
+		const result = await grantTeamPermissions({
+			employeeId: targetId,
+			permissions: { canCreateTeams: true },
+		});
+
+		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(mockState.grantPermissions).not.toHaveBeenCalled();
+	});
+
+	it("revokes in the session's organization", async () => {
+		const result = await revokeTeamPermissions({ employeeId: targetId, teamId });
+
+		expect(result.success).toBe(true);
+		expect(mockState.revokePermissions).toHaveBeenCalledWith(targetId, "org-actor", teamId);
+	});
+
+	it("lets a scoped manager read only their own permissions", async () => {
+		mockState.caller = scopedManager;
+
+		expect(await getEmployeePermissions("employee-manager")).toMatchObject({ success: true });
+		expect(await getEmployeePermissions("employee-other")).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
 		expect(mockState.getEmployeePermissions).toHaveBeenCalledTimes(1);
-		expect(mockState.getEmployeePermissions).toHaveBeenCalledWith(
-			"employee-actor",
-			"org-actor",
-		);
+		expect(mockState.getEmployeePermissions).toHaveBeenCalledWith("employee-manager", "org-actor");
 	});
 
-	it("rejects a mismatched expected organization before any data query", async () => {
-		const result = await loadPermissionsPageData("org-other");
+	it("checks a permission of an employee in the session's organization", async () => {
+		mockState.caller = orgMember;
 
-		expect(result.success).toBe(false);
-		expect(mockState.requireOrgAdmin).toHaveBeenCalled();
-		expect(mockState.findEmployees).not.toHaveBeenCalled();
-		expect(mockState.findTeams).not.toHaveBeenCalled();
-		expect(mockState.findPermissions).not.toHaveBeenCalled();
-		expect(mockState.transaction).not.toHaveBeenCalled();
-		expect(mockState.getEmployeePermissions).not.toHaveBeenCalled();
+		expect(
+			await hasTeamPermission({ employeeId: targetId, permission: "canCreateTeams", teamId }),
+		).toEqual({ success: true, data: true });
+		expect(mockState.hasTeamPermission).toHaveBeenCalledWith(targetId, "canCreateTeams", teamId);
+	});
+
+	it("reports an employee outside the session's organization as not found", async () => {
+		mockState.findEmployee.mockResolvedValue(null);
+
+		expect(
+			await hasTeamPermission({ employeeId: targetId, permission: "canCreateTeams" }),
+		).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(mockState.hasTeamPermission).not.toHaveBeenCalled();
+	});
+
+	it("lists the session organization's employees with their permissions", async () => {
+		const result = await listEmployeePermissions();
+
+		expect(result.success).toBe(true);
+		expect(mockState.getEmployeePermissions).toHaveBeenCalledTimes(1);
+		expect(mockState.getEmployeePermissions).toHaveBeenCalledWith("employee-actor", "org-actor");
 	});
 
 	it("loads one scoped snapshot and returns only public fields", async () => {
@@ -279,20 +284,11 @@ describe("permissions settings server scope", () => {
 					image: null,
 					passwordHash: "secret",
 				},
-				team: {
-					id: "team-actor",
-					name: "Actor Team",
-					description: "private",
-				},
+				team: { id: "team-actor", name: "Actor Team", description: "private" },
 			},
 		]);
 		mockState.findTeams.mockResolvedValue([
-			{
-				id: "team-actor",
-				organizationId: "org-actor",
-				name: "Actor Team",
-				description: "private",
-			},
+			{ id: "team-actor", organizationId: "org-actor", name: "Actor Team", description: "private" },
 		]);
 		mockState.findPermissions.mockResolvedValue([
 			{
@@ -310,13 +306,13 @@ describe("permissions settings server scope", () => {
 				updatedAt: new Date("2026-07-29T08:00:00.000Z"),
 			},
 		]);
-		const result = await loadPermissionsPageData("org-actor");
+
+		const result = await loadPermissionsPageData();
 
 		expect(mockState.transaction).toHaveBeenCalledOnce();
 		expect(mockState.transaction).toHaveBeenCalledWith(expect.any(Function), {
 			isolationLevel: "repeatable read",
 		});
-		expect(mockState.getEmployeePermissions).not.toHaveBeenCalled();
 		expect(result).toEqual({
 			success: true,
 			data: {
@@ -343,9 +339,7 @@ describe("permissions settings server scope", () => {
 						team: { id: "team-actor", name: "Actor Team" },
 					},
 				],
-				teams: [
-					{ id: "team-actor", organizationId: "org-actor", name: "Actor Team" },
-				],
+				teams: [{ id: "team-actor", organizationId: "org-actor", name: "Actor Team" }],
 				permissions: [
 					{
 						employee: { id: "employee-actor" },
@@ -366,30 +360,15 @@ describe("permissions settings server scope", () => {
 				],
 			},
 		});
-		expect(drizzleMocks.eq).toHaveBeenCalledWith("organizationId", "org-actor");
-		expect(drizzleMocks.eq).toHaveBeenCalledWith(
-			"teamOrganizationId",
-			"org-actor",
-		);
-		expect(drizzleMocks.eq).toHaveBeenCalledWith(
-			"permissionOrganizationId",
-			"org-actor",
-		);
 	});
 
-	it("returns actor organization identity when all scoped collections are empty", async () => {
+	it("returns the session organization's identity when all scoped collections are empty", async () => {
 		mockState.findEmployees.mockResolvedValue([]);
 		mockState.findTeams.mockResolvedValue([]);
-		const result = await loadPermissionsPageData("org-actor");
 
-		expect(result).toMatchObject({
+		expect(await loadPermissionsPageData()).toMatchObject({
 			success: true,
-			data: {
-				organizationId: "org-actor",
-				employees: [],
-				teams: [],
-				permissions: [],
-			},
+			data: { organizationId: "org-actor", employees: [], teams: [], permissions: [] },
 		});
 	});
 });

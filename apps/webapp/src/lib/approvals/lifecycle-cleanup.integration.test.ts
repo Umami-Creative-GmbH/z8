@@ -389,9 +389,8 @@ describe("lifecycle cleanup across adopted lifecycles (PostgreSQL)", () => {
 		vi.useFakeTimers({ toFake: ["Date"], now: DEMO_NOW });
 		const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
 		try {
-			actAs(t.adminUser, null);
+			actAs(t.adminUser, t.organization);
 			const result = await generatePendingTimeCorrectionApprovalsStepAction({
-				organizationId: t.organization,
 				dateRangeType: "last30",
 				employeeIds: [t.requester],
 			});
@@ -408,9 +407,8 @@ describe("lifecycle cleanup across adopted lifecycles (PostgreSQL)", () => {
 		vi.useFakeTimers({ toFake: ["Date"], now: DEMO_NOW });
 		const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
 		try {
-			actAs(t.adminUser, null);
+			actAs(t.adminUser, t.organization);
 			const input = (employeeIds: string[]) => ({
-				organizationId: t.organization,
 				dateRangeType: "last30" as const,
 				employeeIds,
 			});
@@ -930,8 +928,8 @@ describe("lifecycle cleanup across adopted lifecycles (PostgreSQL)", () => {
 			);
 			expect(audited.length).toBeGreaterThan(0);
 
-			actAs(target.adminUser, null);
-			const result = await deleteNonAdminDataAction(target.organization);
+			actAs(target.adminUser, target.organization);
+			const result = await deleteNonAdminDataAction();
 
 			expect(result).toMatchObject({
 				success: true,
@@ -991,8 +989,8 @@ describe("lifecycle cleanup across adopted lifecycles (PostgreSQL)", () => {
 				[target.organization, reportId, target.manager, target.managerUser],
 			);
 
-			actAs(target.adminUser, null);
-			const result = await deleteNonAdminDataAction(target.organization);
+			actAs(target.adminUser, target.organization);
+			const result = await deleteNonAdminDataAction();
 			expect(result).toMatchObject({ success: true, data: { employeesDeleted: 2 } });
 			// The report and its history stay; only the deleted reviewer's identity is cleared.
 			expect(

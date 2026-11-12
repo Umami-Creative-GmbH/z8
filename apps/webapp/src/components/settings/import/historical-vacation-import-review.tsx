@@ -21,8 +21,9 @@ import type {
 	ReconciliationProof,
 	ReconciliationSource,
 } from "@/lib/absences/vacation-reconciliation-types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
-type Context = Awaited<ReturnType<typeof getHistoricalImportReviewContext>>;
+type Context = Extract<Awaited<ReturnType<typeof getHistoricalImportReviewContext>>, { success: true }>["data"];
 function ImportMappingForm({
 	batchId,
 	context,
@@ -60,7 +61,12 @@ function ImportMappingForm({
 			try {
 				const result = await commitHistoricalVacationImport(reviewed.proof);
 				if (!result.success) {
-					setMessage(result.error);
+					setMessage(
+						actionErrorMessage(t, result, {}, [
+							"absences.reconciliation.queueFailed",
+							"Could not queue the import. Review its status before retrying.",
+						]),
+					);
 					return;
 				}
 				setMessage(
@@ -254,7 +260,11 @@ export function HistoricalVacationImportReview({
 	const { t } = useTranslate();
 	const context = useQuery({
 		queryKey: ["historical-import-review", batchId],
-		queryFn: () => getHistoricalImportReviewContext(batchId),
+		queryFn: async () => {
+			const result = await getHistoricalImportReviewContext(batchId);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
 	});
 	if (context.error)
 		return (

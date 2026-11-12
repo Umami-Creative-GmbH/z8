@@ -117,10 +117,9 @@ describe("AuditPackGeneratorCard", () => {
 		await waitFor(() =>
 			expect(toast.success).toHaveBeenCalledWith("Download started"),
 		);
-		expect(getAuditPackDownloadUrlActionMock).toHaveBeenCalledWith(
-			"request-1",
-			"org-1",
-		);
+		expect(getAuditPackDownloadUrlActionMock).toHaveBeenCalledWith({
+			requestId: "request-1",
+		});
 		expect(openSpy).toHaveBeenCalledWith(
 			"https://storage.example.test/audit-pack",
 			"_blank",
@@ -165,7 +164,7 @@ describe("AuditPackGeneratorCard", () => {
 		resolveOrgOne?.({ success: true, data: [completedRequest] });
 
 		await waitFor(() =>
-			expect(getAuditPackRequestsActionMock).toHaveBeenCalledWith("org-2", 10),
+			expect(getAuditPackRequestsActionMock).toHaveBeenCalledWith({ limit: 10 }),
 		);
 		expect(screen.queryByText("3")).toBeNull();
 	});

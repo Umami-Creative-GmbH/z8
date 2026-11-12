@@ -10,6 +10,7 @@ import {
 	getWorkPolicyViolations,
 	type WorkPolicyViolationWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { AcknowledgementPanel } from "./work-policy-compliance/acknowledgement-panel";
 import {
@@ -57,7 +58,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 	const { data: violations, isLoading, error, refetch } = useQuery({
 		queryKey,
 		queryFn: async () => {
-			const result = await getWorkPolicyViolations(organizationId, range.start, range.end);
+			const result = await getWorkPolicyViolations({ startDate: range.start, endDate: range.end });
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch violations");
 			}
@@ -75,7 +76,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 
 	const acknowledgeMutation = useMutation({
 		mutationFn: ({ violationId, note }: { violationId: string; note?: string }) =>
-			acknowledgeWorkPolicyViolation(violationId, note),
+			acknowledgeWorkPolicyViolation({ violationId, note }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.workPolicies.violationAcknowledged", "Violation acknowledged"));
@@ -83,8 +84,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 				resetAcknowledgement();
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workPolicies.acknowledgeFailed", "Failed to acknowledge violation"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.acknowledgeFailed",
+						"Failed to acknowledge violation",
+					]),
 				);
 			}
 		},

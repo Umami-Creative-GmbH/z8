@@ -2,6 +2,7 @@
 import { useTranslate } from "@tolgee/react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { EQUIPMENT_REFUSALS } from "@/components/settings/equipment/equipment-refusals";
 import { ActionPanel, ActionPanelContent } from "@/components/ui/action-panel";
 import { changeEquipment } from "@/lib/organization/equipment/actions";
 import type {
@@ -9,8 +10,8 @@ import type {
 	EquipmentChange,
 	EquipmentView,
 } from "@/lib/organization/equipment/contracts";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
-import { handoverRefusalMessage } from "./equipment-copy";
 import {
 	CorrectionEditor,
 	type CorrectionTarget,
@@ -74,7 +75,7 @@ export function useEquipmentSubmit() {
 				if (!result.success) {
 					failed();
 				} else if (!result.data.ok) {
-					toast.error(handoverRefusalMessage(result.data.reason, t));
+					toast.error(actionErrorMessage(t, { refusal: result.data.reason }, EQUIPMENT_REFUSALS));
 				} else {
 					toast.success(savedMessage(change.kind, t));
 					router.refresh();

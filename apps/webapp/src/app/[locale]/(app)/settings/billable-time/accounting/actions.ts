@@ -1,6 +1,7 @@
 "use server";
 
 import { Effect } from "effect";
+import { z } from "zod";
 import {
 	type AccountingDependencies,
 	type ActiveAccountingConnection,
@@ -28,7 +29,6 @@ import {
 import {
 	ACCOUNTING_PROVIDER_KINDS,
 	type AccountingContact,
-	type AccountingContactPerson,
 } from "@/lib/billable-time/accounting/provider";
 import {
 	type AccountingConnectionView,
@@ -46,18 +46,17 @@ import {
 	QueueError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	createAccountingCustomerImport,
 	failAccountingCustomerImportStart,
 } from "@/lib/import-review/accounting-customer-adapter";
 import { enqueueImportScanJob } from "@/lib/import-review/queue";
-import { activeOrganizationActor } from "../action-actor";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import {
 	accountingProviderRefusalError,
+	billableTimeCurrency,
 	billableTimeOff,
-	requireBillableTimeOn,
 } from "../module-guard";
 
 /**
@@ -67,17 +66,12 @@ import {
  * and never returned, logged or audited.
  */
 
-const ADMIN_ONLY = "Only owners and admins can manage the accounting connection";
-
 export interface AccountingSettings {
 	currency: BillableCurrency;
 	connection: AccountingConnectionView | null;
 	providers: AccountingProviderOption[];
 	customers: CustomerAccountingView[];
 }
-
-const actor = (action: string) =>
-	activeOrganizationActor({ requiredRole: "admin", message: ADMIN_ONLY, action });
 
 /** A failure of the accounting tool or the secret store outside a mapped refusal. */
 const accountingServiceError = (operation: string, cause: unknown) =>
@@ -100,13 +94,48 @@ const invalidTaxTreatment = () =>
 		field: "taxTreatment",
 	});
 
-const requireModuleOn = (organizationId: string) =>
-	requireBillableTimeOn(organizationId, "billableTime.accounting.settings");
+const moduleCurrency = (organizationId: string) =>
+	billableTimeCurrency(organizationId, "billableTime.accounting.settings");
 
 const customerIdOf = (input: unknown) =>
 	isCustomerId(input)
 		? Effect.succeed(input)
 		: Effect.fail(new ValidationError({ message: "Choose a customer", field: "customerId" }));
+
+/**
+ * The input shapes. Tax treatments, provider kinds and customer IDs are read by
+ * the accounting store and `customerIdOf`, so their refusals keep their wording.
+ */
+const taxTreatmentSchema = z.custom<TaxTreatmentView>(
+	(value) => typeof value === "object" && value !== null,
+	{ error: "Choose a tax treatment" },
+);
+const connectionIdSchema = z.string().max(255);
+const customerIdSchema = z.string().max(255);
+const providerKeySchema = { providerKind: z.string().max(100), apiKey: z.string().max(4096) };
+
+const connectAccountingToolSchema = z.strictObject({
+	...providerKeySchema,
+	defaultTaxTreatment: taxTreatmentSchema,
+	settings: z.record(z.string(), z.unknown()).optional(),
+});
+const listAccountingContactPersonsSchema = z.strictObject(providerKeySchema);
+const updateAccountingDefaultsSchema = z.strictObject({
+	connectionId: connectionIdSchema,
+	defaultTaxTreatment: taxTreatmentSchema,
+});
+const removeAccountingToolSchema = z.strictObject({ connectionId: connectionIdSchema });
+const searchContactsSchema = z.strictObject({ query: z.string().max(200) });
+const getCustomerAccountingSchema = z.strictObject({ customerId: customerIdSchema });
+const linkCustomerContactSchema = z.strictObject({
+	customerId: customerIdSchema,
+	contactId: z.string().max(255),
+});
+const unlinkCustomerContactSchema = getCustomerAccountingSchema;
+const setCustomerTaxTreatmentSchema = z.strictObject({
+	customerId: customerIdSchema,
+	taxTreatment: taxTreatmentSchema.nullable(),
+});
 
 function providerOptions(dependencies: AccountingDependencies): AccountingProviderOption[] {
 	return ACCOUNTING_PROVIDER_KINDS.map((kind) => {
@@ -167,25 +196,25 @@ function readConnectionView(organizationId: string, dependencies: AccountingDepe
 }
 
 /** The accounting settings of the active organization: connection, tools and customers. */
-export async function getAccountingSettings(): Promise<ServerActionResult<AccountingSettings>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("readAccountingSettings");
-		const { currency } = yield* requireModuleOn(organizationId);
-		const dependencies = defaultAccountingDependencies();
-		const connection = yield* readConnectionView(organizationId, dependencies);
-		const dbService = yield* DatabaseService;
-		const customers = yield* dbService.query("billableTime.accounting.customers", () =>
-			listCustomerAccounting(dbService.db, organizationId),
-		);
-		return {
-			currency,
-			connection,
-			providers: providerOptions(dependencies),
-			customers: customers.map(customerView),
-		};
-	});
-	return runServerActionSafe(effect);
-}
+export const getAccountingSettings = organizationAction(
+	{ name: "billableTime.accounting.readAccountingSettings", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const { currency } = yield* moduleCurrency(organizationId);
+			const dependencies = defaultAccountingDependencies();
+			const connection = yield* readConnectionView(organizationId, dependencies);
+			const dbService = yield* DatabaseService;
+			const customers = yield* dbService.query("billableTime.accounting.customers", () =>
+				listCustomerAccounting(dbService.db, organizationId),
+			);
+			return {
+				currency,
+				connection,
+				providers: providerOptions(dependencies),
+				customers: customers.map(customerView),
+			};
+		}),
+);
 
 function connectRefusalError(refusal: ConnectAccountingRefusal) {
 	switch (refusal.reason) {
@@ -226,123 +255,130 @@ function connectRefusalError(refusal: ConnectAccountingRefusal) {
  * Connects the active organization to an accounting tool, or replaces its
  * connection. The API key goes into the organization secret store only.
  */
-export async function connectAccountingTool(input: {
-	providerKind: string;
-	apiKey: string;
-	defaultTaxTreatment: TaxTreatmentView;
-	settings?: Record<string, unknown>;
-}): Promise<ServerActionResult<AccountingConnectionView>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("connectAccounting");
-		const { currency } = yield* requireModuleOn(organizationId);
-		const dependencies = defaultAccountingDependencies();
-		// The tool and the secret store first, outside the database work.
-		const preparation = yield* Effect.tryPromise({
-			try: () =>
-				prepareAccountingConnection(dependencies, {
-					organizationId,
-					actorUserId: userId,
-					billableCurrency: currency,
-					providerKind: input.providerKind,
-					apiKey: input.apiKey,
-					settings: input.settings ?? {},
-					defaultTaxTreatment: input.defaultTaxTreatment,
-				}),
-			catch: (cause) => accountingServiceError("billableTime.accounting.prepareConnection", cause),
-		});
-		if (!preparation.ok) return yield* Effect.fail(connectRefusalError(preparation));
-		const { prepared } = preparation;
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService
-			.query("billableTime.accounting.connect", () =>
-				commitAccountingConnection(dbService.db, prepared),
-			)
-			.pipe(
-				Effect.tapError(() =>
-					Effect.promise(() => finishAccountingConnection(dependencies, prepared, null)),
-				),
-			);
-		yield* Effect.promise(() => finishAccountingConnection(dependencies, prepared, outcome));
-		if (!outcome.ok) return yield* Effect.fail(connectRefusalError(outcome));
-		const view = yield* readConnectionView(organizationId, dependencies);
-		if (!view) return yield* Effect.fail(notConnected());
-		return view;
-	});
-	return runServerActionSafe(effect);
-}
+export const connectAccountingTool = organizationAction(
+	{
+		name: "billableTime.accounting.connectAccounting",
+		requires: "orgAdmin",
+		schema: connectAccountingToolSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const { currency } = yield* moduleCurrency(organizationId);
+			const dependencies = defaultAccountingDependencies();
+			// The tool and the secret store first, outside the database work.
+			const preparation = yield* Effect.tryPromise({
+				try: () =>
+					prepareAccountingConnection(dependencies, {
+						organizationId,
+						actorUserId: userId,
+						billableCurrency: currency,
+						providerKind: input.providerKind,
+						apiKey: input.apiKey,
+						settings: input.settings ?? {},
+						defaultTaxTreatment: input.defaultTaxTreatment,
+					}),
+				catch: (cause) =>
+					accountingServiceError("billableTime.accounting.prepareConnection", cause),
+			});
+			if (!preparation.ok) return yield* Effect.fail(connectRefusalError(preparation));
+			const { prepared } = preparation;
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService
+				.query("billableTime.accounting.connect", () =>
+					commitAccountingConnection(dbService.db, prepared),
+				)
+				.pipe(
+					Effect.tapError(() =>
+						Effect.promise(() => finishAccountingConnection(dependencies, prepared, null)),
+					),
+				);
+			yield* Effect.promise(() => finishAccountingConnection(dependencies, prepared, outcome));
+			if (!outcome.ok) return yield* Effect.fail(connectRefusalError(outcome));
+			const view = yield* readConnectionView(organizationId, dependencies);
+			if (!view) return yield* Effect.fail(notConnected());
+			return view;
+		}),
+);
 
 /**
  * The users of the tool account behind an API key that is about to be
  * connected, for the contact person choice (sevdesk). The key is not stored.
  */
-export async function listAccountingContactPersons(input: {
-	providerKind: string;
-	apiKey: string;
-}): Promise<ServerActionResult<AccountingContactPerson[]>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("listAccountingContactPersons");
-		yield* requireModuleOn(organizationId);
-		const outcome = yield* Effect.tryPromise({
-			try: () => listToolContactPersons(defaultAccountingDependencies(), input),
-			catch: (cause) => accountingServiceError("billableTime.accounting.contactPersons", cause),
-		});
-		if (outcome.ok) return outcome.persons;
-		return yield* Effect.fail(connectRefusalError(outcome));
-	});
-	return runServerActionSafe(effect);
-}
+export const listAccountingContactPersons = organizationAction(
+	{
+		name: "billableTime.accounting.listAccountingContactPersons",
+		requires: "orgAdmin",
+		schema: listAccountingContactPersonsSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* moduleCurrency(organizationId);
+			const outcome = yield* Effect.tryPromise({
+				try: () => listToolContactPersons(defaultAccountingDependencies(), input),
+				catch: (cause) => accountingServiceError("billableTime.accounting.contactPersons", cause),
+			});
+			if (outcome.ok) return outcome.persons;
+			return yield* Effect.fail(connectRefusalError(outcome));
+		}),
+);
 
 /** Changes the active connection's default tax treatment. */
-export async function updateAccountingDefaults(input: {
-	connectionId: string;
-	defaultTaxTreatment: TaxTreatmentView;
-}): Promise<ServerActionResult<AccountingConnectionView>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("updateAccountingDefaults");
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.updateDefaults", () =>
-			updateAccountingConnectionDefaults(dbService.db, {
-				organizationId,
-				actorUserId: userId,
-				connectionId: String(input.connectionId),
-				defaultTaxTreatment: input.defaultTaxTreatment,
-			}),
-		);
-		if (!outcome.ok) {
-			return yield* Effect.fail(
-				outcome.reason === "billable_time_off"
-					? billableTimeOff()
-					: outcome.reason === "not_connected"
-						? notConnected()
-						: invalidTaxTreatment(),
+export const updateAccountingDefaults = organizationAction(
+	{
+		name: "billableTime.accounting.updateAccountingDefaults",
+		requires: "orgAdmin",
+		schema: updateAccountingDefaultsSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.accounting.updateDefaults", () =>
+				updateAccountingConnectionDefaults(dbService.db, {
+					organizationId,
+					actorUserId: userId,
+					connectionId: String(input.connectionId),
+					defaultTaxTreatment: input.defaultTaxTreatment,
+				}),
 			);
-		}
-		const view = yield* readConnectionView(organizationId, defaultAccountingDependencies());
-		if (!view) return yield* Effect.fail(notConnected());
-		return view;
-	});
-	return runServerActionSafe(effect);
-}
+			if (!outcome.ok) {
+				return yield* Effect.fail(
+					outcome.reason === "billable_time_off"
+						? billableTimeOff()
+						: outcome.reason === "not_connected"
+							? notConnected()
+							: invalidTaxTreatment(),
+				);
+			}
+			const view = yield* readConnectionView(organizationId, defaultAccountingDependencies());
+			if (!view) return yield* Effect.fail(notConnected());
+			return view;
+		}),
+);
 
 /** Removes the active connection and deletes its API key from the secret store. */
-export async function removeAccountingTool(input: {
-	connectionId: string;
-}): Promise<ServerActionResult<{ removed: true }>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("removeAccountingConnection");
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.remove", () =>
-			removeAccountingConnection(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				actorUserId: userId,
-				connectionId: String(input.connectionId),
-			}),
-		);
-		if (!outcome.ok) return yield* Effect.fail(notConnected());
-		return { removed: true as const };
-	});
-	return runServerActionSafe(effect);
-}
+export const removeAccountingTool = organizationAction(
+	{
+		name: "billableTime.accounting.removeAccountingConnection",
+		requires: "orgAdmin",
+		schema: removeAccountingToolSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.accounting.remove", () =>
+				removeAccountingConnection(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					actorUserId: userId,
+					connectionId: String(input.connectionId),
+				}),
+			);
+			if (!outcome.ok) return yield* Effect.fail(notConnected());
+			return { removed: true as const };
+		}),
+);
 
 export interface ContactSearchView {
 	contacts: AccountingContact[];
@@ -350,24 +386,26 @@ export interface ContactSearchView {
 }
 
 /** Searches the connected tool's contacts for the contact picker. */
-export async function searchContacts(input: {
-	query: string;
-}): Promise<ServerActionResult<ContactSearchView>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("searchAccountingContacts");
-		yield* requireModuleOn(organizationId);
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.searchContacts", () =>
-			searchAccountingContacts(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				query: input.query,
-			}),
-		);
-		if (outcome.ok) return { contacts: outcome.contacts, truncated: outcome.truncated };
-		return yield* Effect.fail(providerRefusalError(outcome));
-	});
-	return runServerActionSafe(effect);
-}
+export const searchContacts = organizationAction(
+	{
+		name: "billableTime.accounting.searchAccountingContacts",
+		requires: "orgAdmin",
+		schema: searchContactsSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* moduleCurrency(organizationId);
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.accounting.searchContacts", () =>
+				searchAccountingContacts(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					query: input.query,
+				}),
+			);
+			if (outcome.ok) return { contacts: outcome.contacts, truncated: outcome.truncated };
+			return yield* Effect.fail(providerRefusalError(outcome));
+		}),
+);
 
 function providerRefusalError(
 	refusal:
@@ -430,160 +468,174 @@ function readCustomerDetail(organizationId: string, customerId: string) {
 }
 
 /** A customer's accounting side, for the customer entry points. */
-export async function getCustomerAccounting(input: {
-	customerId: string;
-}): Promise<ServerActionResult<CustomerAccountingDetail>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId } = yield* actor("readCustomerAccounting");
-		yield* requireModuleOn(organizationId);
-		const customerId = yield* customerIdOf(input.customerId);
-		return yield* readCustomerDetail(organizationId, customerId);
-	});
-	return runServerActionSafe(effect);
-}
+export const getCustomerAccounting = organizationAction(
+	{
+		name: "billableTime.accounting.readCustomerAccounting",
+		requires: "orgAdmin",
+		schema: getCustomerAccountingSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* moduleCurrency(organizationId);
+			const customerId = yield* customerIdOf(input.customerId);
+			return yield* readCustomerDetail(organizationId, customerId);
+		}),
+);
 
 /** Links a customer to an existing contact in the connected tool. */
-export async function linkCustomerContact(input: {
-	customerId: string;
-	contactId: string;
-}): Promise<ServerActionResult<CustomerAccountingDetail>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("linkCustomerContact");
-		const customerId = yield* customerIdOf(input.customerId);
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.linkContact", () =>
-			linkCustomerToContact(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				actorUserId: userId,
-				customerId,
-				contactId: input.contactId,
-			}),
-		);
-		if (!outcome.ok) {
-			switch (outcome.reason) {
-				case "customer_not_found":
-					return yield* Effect.fail(customerNotFound());
-				case "contact_not_found":
-					return yield* Effect.fail(
-						new NotFoundError({
-							message: "The contact was not found in the accounting tool",
-							entityType: "accounting_contact",
-						}),
-					);
-				case "connection_changed":
-					return yield* Effect.fail(
-						new ConflictError({
-							message: "The accounting connection changed. Reload and try again",
-							conflictType: "accounting_connection",
-						}),
-					);
-				default:
-					return yield* Effect.fail(providerRefusalError(outcome));
+export const linkCustomerContact = organizationAction(
+	{
+		name: "billableTime.accounting.linkCustomerContact",
+		requires: "orgAdmin",
+		schema: linkCustomerContactSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const customerId = yield* customerIdOf(input.customerId);
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.accounting.linkContact", () =>
+				linkCustomerToContact(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					actorUserId: userId,
+					customerId,
+					contactId: input.contactId,
+				}),
+			);
+			if (!outcome.ok) {
+				switch (outcome.reason) {
+					case "customer_not_found":
+						return yield* Effect.fail(customerNotFound());
+					case "contact_not_found":
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "The contact was not found in the accounting tool",
+								entityType: "accounting_contact",
+							}),
+						);
+					case "connection_changed":
+						return yield* Effect.fail(
+							new ConflictError({
+								message: "The accounting connection changed. Reload and try again",
+								conflictType: "accounting_connection",
+							}),
+						);
+					default:
+						return yield* Effect.fail(providerRefusalError(outcome));
+				}
 			}
-		}
-		return yield* readCustomerDetail(organizationId, customerId);
-	});
-	return runServerActionSafe(effect);
-}
+			return yield* readCustomerDetail(organizationId, customerId);
+		}),
+);
 
 /** Removes a customer's contact link. */
-export async function unlinkCustomerContact(input: {
-	customerId: string;
-}): Promise<ServerActionResult<CustomerAccountingDetail>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("unlinkCustomerContact");
-		yield* requireModuleOn(organizationId);
-		const customerId = yield* customerIdOf(input.customerId);
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.unlinkContact", () =>
-			removeCustomerContactLink(dbService.db, { organizationId, actorUserId: userId, customerId }),
-		);
-		if (!outcome.ok) {
-			return yield* Effect.fail(
-				outcome.reason === "customer_not_found" ? customerNotFound() : notConnected(),
+export const unlinkCustomerContact = organizationAction(
+	{
+		name: "billableTime.accounting.unlinkCustomerContact",
+		requires: "orgAdmin",
+		schema: unlinkCustomerContactSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			yield* moduleCurrency(organizationId);
+			const customerId = yield* customerIdOf(input.customerId);
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.accounting.unlinkContact", () =>
+				removeCustomerContactLink(dbService.db, {
+					organizationId,
+					actorUserId: userId,
+					customerId,
+				}),
 			);
-		}
-		return yield* readCustomerDetail(organizationId, customerId);
-	});
-	return runServerActionSafe(effect);
-}
+			if (!outcome.ok) {
+				return yield* Effect.fail(
+					outcome.reason === "customer_not_found" ? customerNotFound() : notConnected(),
+				);
+			}
+			return yield* readCustomerDetail(organizationId, customerId);
+		}),
+);
 
 /**
  * Starts a customer import (#906) from the connected accounting tool: its
  * customer contacts are staged in a review batch; the admin decides per
  * contact on the import review page. Returns the batch to open.
  */
-export async function startCustomerImport(): Promise<ServerActionResult<{ batchId: string }>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("startCustomerImport");
-		yield* requireModuleOn(organizationId);
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.startCustomerImport", () =>
-			createAccountingCustomerImport(dbService.db, defaultAccountingDependencies(), {
-				organizationId,
-				actorUserId: userId,
-			}),
-		);
-		if (outcome.ok) {
-			const { batchId, scanJob } = outcome;
-			yield* Effect.tryPromise({
-				try: () => enqueueImportScanJob(scanJob),
-				catch: (cause) =>
-					new QueueError({
-						message: "The customer import could not be started",
-						operation: "billableTime.accounting.enqueueCustomerImportScan",
-						cause,
-					}),
-			}).pipe(
-				Effect.tapError(() =>
-					dbService.query("billableTime.accounting.failCustomerImportStart", () =>
-						failAccountingCustomerImportStart({ batchId, organizationId }),
-					),
-				),
-			);
-			return { batchId };
-		}
-		const { reason } = outcome;
-		if (reason === "import_not_supported") {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: "This accounting tool cannot import customers yet",
-					field: "accountingConnection",
+export const startCustomerImport = organizationAction(
+	{ name: "billableTime.accounting.startCustomerImport", requires: "orgAdmin", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			yield* moduleCurrency(organizationId);
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.accounting.startCustomerImport", () =>
+				createAccountingCustomerImport(dbService.db, defaultAccountingDependencies(), {
+					organizationId,
+					actorUserId: userId,
 				}),
 			);
-		}
-		return yield* Effect.fail(providerRefusalError({ reason }));
-	});
-	return runServerActionSafe(effect);
-}
+			if (outcome.ok) {
+				const { batchId, scanJob } = outcome;
+				yield* Effect.tryPromise({
+					try: () => enqueueImportScanJob(scanJob),
+					catch: (cause) =>
+						new QueueError({
+							message: "The customer import could not be started",
+							operation: "billableTime.accounting.enqueueCustomerImportScan",
+							cause,
+						}),
+				}).pipe(
+					Effect.tapError(() =>
+						dbService.query("billableTime.accounting.failCustomerImportStart", () =>
+							failAccountingCustomerImportStart({ batchId, organizationId }),
+						),
+					),
+				);
+				return { batchId };
+			}
+			const { reason } = outcome;
+			if (reason === "import_not_supported") {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "This accounting tool cannot import customers yet",
+						field: "accountingConnection",
+					}),
+				);
+			}
+			return yield* Effect.fail(providerRefusalError({ reason }));
+		}),
+);
 
 /** Sets a customer's tax treatment override, or clears it with `null`. */
-export async function setCustomerTaxTreatment(input: {
-	customerId: string;
-	taxTreatment: TaxTreatmentView | null;
-}): Promise<ServerActionResult<CustomerAccountingDetail>> {
-	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("setCustomerTaxTreatment");
-		const customerId = yield* customerIdOf(input.customerId);
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.customerTax", () =>
-			storeCustomerTaxTreatment(dbService.db, {
-				organizationId,
-				actorUserId: userId,
-				customerId,
-				treatment: input.taxTreatment,
-			}),
-		);
-		if (!outcome.ok) {
-			return yield* Effect.fail(
-				outcome.reason === "billable_time_off"
-					? billableTimeOff()
-					: outcome.reason === "customer_not_found"
-						? customerNotFound()
-						: invalidTaxTreatment(),
+export const setCustomerTaxTreatment = organizationAction(
+	{
+		name: "billableTime.accounting.setCustomerTaxTreatment",
+		requires: "orgAdmin",
+		schema: setCustomerTaxTreatmentSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const userId = actor.userId;
+			const customerId = yield* customerIdOf(input.customerId);
+			const dbService = yield* DatabaseService;
+			const outcome = yield* dbService.query("billableTime.accounting.customerTax", () =>
+				storeCustomerTaxTreatment(dbService.db, {
+					organizationId,
+					actorUserId: userId,
+					customerId,
+					treatment: input.taxTreatment,
+				}),
 			);
-		}
-		return yield* readCustomerDetail(organizationId, customerId);
-	});
-	return runServerActionSafe(effect);
-}
+			if (!outcome.ok) {
+				return yield* Effect.fail(
+					outcome.reason === "billable_time_off"
+						? billableTimeOff()
+						: outcome.reason === "customer_not_found"
+							? customerNotFound()
+							: invalidTaxTreatment(),
+				);
+			}
+			return yield* readCustomerDetail(organizationId, customerId);
+		}),
+);

@@ -10,11 +10,12 @@ import {
 	type SetOpeningBalanceInput,
 	setOpeningBalanceAction,
 } from "@/app/[locale]/(app)/settings/employees/work-balance-actions";
-import type {
-	BalanceAdjustmentActionResult,
-	BalanceAdjustmentErrorCode,
-	BalanceAdjustmentRefusalDetails,
-	ConflictingPayout,
+import {
+	type BalanceAdjustmentActionResult,
+	type BalanceAdjustmentErrorCode,
+	type BalanceAdjustmentRefusalDetails,
+	balanceAdjustmentFailureOf,
+	type ConflictingPayout,
 } from "@/lib/work-balance/adjustments/types";
 
 export const EMPLOYEE_WORK_BALANCE_QUERY_KEY = ["employeeWorkBalanceSection"] as const;
@@ -46,10 +47,8 @@ async function unwrap<T>(action: Promise<BalanceAdjustmentActionResult<T>>): Pro
 	const result = await action.catch(() => null);
 	if (!result) throw new BalanceAdjustmentActionError(null);
 	if (!result.success) {
-		throw new BalanceAdjustmentActionError(result.code, {
-			conflictingPayouts: result.conflictingPayouts,
-			closedMonth: result.closedMonth,
-		});
+		const failure = balanceAdjustmentFailureOf(result);
+		throw new BalanceAdjustmentActionError(failure.code, failure.details);
 	}
 	return result.data;
 }

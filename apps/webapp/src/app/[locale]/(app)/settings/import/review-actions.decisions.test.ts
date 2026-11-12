@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mockState = vi.hoisted(() => ({
-	requireUser: vi.fn(),
-	requireActiveActor: vi.fn(),
+	caller: null as StubCaller | null,
 	findMember: vi.fn(),
 	getImportReviewSummary: vi.fn(),
 	listImportReviewRows: vi.fn(),
@@ -32,18 +32,26 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/env", () => ({
-	env: { BETTER_AUTH_SECRET: "test-secret-that-is-long-enough" },
+vi.mock("@/env", async (importOriginal) => ({
+	env: {
+		...(await importOriginal<typeof import("@/env")>()).env,
+		BETTER_AUTH_SECRET: "test-secret-that-is-long-enough",
+	},
 }));
 
-vi.mock("@/lib/auth-helpers", () => ({
-	requireUser: mockState.requireUser,
-}));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { db } = await import("@/db");
+	return runtimeModuleOver(organizationActionStubLayer(() => mockState.caller, { db }));
+});
 
-vi.mock("@/lib/auth/organization-action-authorization", () => ({
-	runActiveOrganizationActionActorCheck: mockState.requireActiveActor,
-}));
-
+const orgAdmin: StubCaller = {
+	userId: "user_1",
+	activeOrganizationId: "org_1",
+	membershipRole: "admin",
+	employee: null,
+};
 vi.mock("@/db", () => ({
 	db: {
 		select: mockState.select,
@@ -110,9 +118,7 @@ const {
 describe("import review decision actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.requireUser.mockResolvedValue({ user: { id: "user_1" } });
-		mockState.findMember.mockResolvedValue({ role: "admin" });
-		mockState.requireActiveActor.mockResolvedValue({});
+		mockState.caller = orgAdmin;
 		mockState.getImportReviewSummary.mockResolvedValue({
 			totalRows: 4,
 			acceptedRows: 1,
@@ -148,17 +154,16 @@ describe("import review decision actions", () => {
 	});
 
 	it("requires owner or admin before reading review summaries", async () => {
-		mockState.requireActiveActor.mockRejectedValue(new Error("Unauthorized"));
+		mockState.caller = { ...orgAdmin, membershipRole: "member" };
 
-		const result = await getImportReviewSummaryAction("org_1", "batch_1");
+		const result = await getImportReviewSummaryAction({ batchId: "batch_1" });
 
-		expect(result).toEqual({ success: false, error: "Unauthorized" });
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mockState.getImportReviewSummary).not.toHaveBeenCalled();
 	});
 
 	it("validates and forwards paginated row list requests", async () => {
 		const result = await listImportReviewRowsAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 			status: "accepted",
 			limit: 50,
@@ -177,14 +182,12 @@ describe("import review decision actions", () => {
 
 	it("rejects invalid row list bounds before querying", async () => {
 		const result = await listImportReviewRowsAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 			limit: 501,
 			offset: 0,
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Invalid import review page limit",
 		});
 		expect(mockState.listImportReviewRows).not.toHaveBeenCalled();
@@ -192,7 +195,6 @@ describe("import review decision actions", () => {
 
 	it("applies accepted or rejected decisions with bounded non-empty row IDs", async () => {
 		const result = await applyImportDecisionAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 			rowIds: ["row_1", "row_2"],
 			decision: "accepted",
@@ -214,7 +216,6 @@ describe("import review decision actions", () => {
 	it("passes a link choice for one accepted row through (#906)", async () => {
 		const targetId = "90600000-0000-4000-8000-000000000001";
 		const result = await applyImportDecisionAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 			rowIds: ["row_1"],
 			decision: "accepted",
@@ -245,7 +246,6 @@ describe("import review decision actions", () => {
 		],
 	])("refuses a link choice with %s", async (_label, input, error) => {
 		const result = await applyImportDecisionAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 			rowIds: input.rowIds,
 			decision: input.decision,
@@ -255,20 +255,18 @@ describe("import review decision actions", () => {
 			},
 		});
 
-		expect(result).toEqual({ success: false, error });
+		expect(result).toMatchObject({ success: false, error });
 		expect(mockState.applyImportRowDecision).not.toHaveBeenCalled();
 	});
 
 	it("rejects empty decisions before updating rows", async () => {
 		const result = await applyImportDecisionAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 			rowIds: [],
 			decision: "rejected",
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "At least one import review row is required",
 		});
 		expect(mockState.applyImportRowDecision).not.toHaveBeenCalled();
@@ -285,7 +283,6 @@ describe("import review decision actions", () => {
 		});
 
 		const result = await exportRejectedRowsAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 		});
 
@@ -315,7 +312,6 @@ describe("import review decision actions", () => {
 
 	it("starts commit jobs for accepted rows and enqueues each job", async () => {
 		const result = await startImportCommitAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 		});
 
@@ -350,7 +346,6 @@ describe("import review decision actions", () => {
 		]);
 
 		const result = await startImportCommitAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 		});
 
@@ -372,12 +367,10 @@ describe("import review decision actions", () => {
 		mockState.createCommitJobsForAcceptedRows.mockResolvedValue([]);
 
 		const result = await startImportCommitAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "No accepted import review rows are available to commit",
 		});
 		expect(mockState.updateImportBatchStatus).not.toHaveBeenCalled();
@@ -395,12 +388,10 @@ describe("import review decision actions", () => {
 		});
 
 		const result = await startImportCommitAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "Resolve blocked import review rows before committing",
 		});
 		expect(mockState.createCommitJobsForAcceptedRows).not.toHaveBeenCalled();
@@ -409,14 +400,13 @@ describe("import review decision actions", () => {
 	});
 
 	it("does not mutate batch status when commit authorization fails", async () => {
-		mockState.requireActiveActor.mockRejectedValue(new Error("Unauthorized"));
+		mockState.caller = { ...orgAdmin, membershipRole: "member" };
 
 		const result = await startImportCommitAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 		});
 
-		expect(result).toEqual({ success: false, error: "Unauthorized" });
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mockState.updateImportBatchStatus).not.toHaveBeenCalled();
 		expect(mockState.createCommitJobsForAcceptedRows).not.toHaveBeenCalled();
 	});
@@ -427,12 +417,10 @@ describe("import review decision actions", () => {
 		);
 
 		const result = await startImportCommitAction({
-			organizationId: "org_1",
 			batchId: "batch_1",
 		});
 
-		expect(result).toEqual({
-			success: false,
+		expect(result).toMatchObject({ success: false,
 			error: "queue failed because secret token leaked",
 		});
 		expect(mockState.updateImportBatchStatus).toHaveBeenLastCalledWith({

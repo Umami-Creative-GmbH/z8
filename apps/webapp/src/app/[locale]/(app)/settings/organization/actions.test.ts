@@ -1,2158 +1,993 @@
-import { readFileSync } from "node:fs";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 import { isOrganizationFeature } from "./organization-features";
 
-const getSessionMock = vi.fn();
-const canAccessOrganizationMock = vi.fn();
-const assertEnterpriseIdentityInvitationAllowedMock = vi.fn();
-const createInvitationMock = vi.fn();
-const cancelInvitationMock = vi.fn();
-const updateMemberRoleMock = vi.fn();
-const headersMock = vi.fn();
-const loggerInfoMock = vi.fn();
-const loggerErrorMock = vi.fn();
-const loggerWarnMock = vi.fn();
-const spanRecordExceptionMock = vi.fn();
-const spanSetStatusMock = vi.fn();
-const memberFindFirstMock = vi.fn();
-const employeeFindFirstMock = vi.fn();
-const invitationFindFirstMock = vi.fn();
-const employeeInvitationDraftFindFirstMock = vi.fn();
-const teamFindFirstMock = vi.fn();
-const userFindFirstMock = vi.fn();
-const updateSetMock = vi.fn();
-const updateWhereMock = vi.fn();
-const insertValuesMock = vi.fn();
-const onConflictDoUpdateMock = vi.fn();
-const attachInvitationToEmployeeDraftMock = vi.fn();
-const persistEmployeeInvitationDraftMock = vi.fn();
-const syncInvitationTargetTeamMock = vi.fn();
-const changeOrganizationTimezoneMock = vi.fn();
-const processWorkBalanceRebuildIntentsMock = vi.fn();
-const transactionClient = {
-	update: vi.fn(() => ({
-		set: updateSetMock.mockReturnValue({ where: updateWhereMock }),
-	})),
-};
-const transactionMock = vi.fn(
-	async (callback: (tx: typeof transactionClient) => Promise<unknown>) =>
-		callback(transactionClient),
-);
-
-vi.mock("@opentelemetry/api", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@opentelemetry/api")>();
+const mocks = vi.hoisted(() => {
+	const updateWhere = vi.fn();
+	const updateSet = vi.fn(() => ({ where: updateWhere }));
+	const onConflictDoUpdate = vi.fn();
+	const insertValues = vi.fn(() => ({ onConflictDoUpdate }));
 	return {
-		...actual,
-		trace: {
-			getTracer: () => ({
-				startActiveSpan: (_name: string, ...args: unknown[]) => {
-					const callback = args.at(-1) as (span: unknown) => unknown;
-					return callback({
-						end: vi.fn(),
-						recordException: spanRecordExceptionMock,
-						setAttribute: vi.fn(),
-						setStatus: spanSetStatusMock,
-					});
-				},
-			}),
+		caller: null as StubCaller | null,
+		coordination: { inside: false, updatesInside: 0 },
+		db: {
+			query: {
+				member: { findFirst: vi.fn() },
+				invitation: { findFirst: vi.fn() },
+				employeeInvitationDraft: { findFirst: vi.fn() },
+				team: { findFirst: vi.fn() },
+				user: { findFirst: vi.fn() },
+				organization: { findFirst: vi.fn() },
+			},
+			update: vi.fn(() => ({ set: updateSet })),
+			insert: vi.fn(() => ({ values: insertValues })),
 		},
+		updateSet,
+		updateWhere,
+		insertValues,
+		onConflictDoUpdate,
+		headers: vi.fn(),
+		logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+		assertInvitationAllowed: vi.fn(),
+		persistDraft: vi.fn(),
+		syncTargetTeam: vi.fn(),
+		changeTimezone: vi.fn(),
+		rebuildIntents: vi.fn(),
+		revokeShareLinks: vi.fn(),
+		pauseSchedules: vi.fn(),
+		sendDeletionNotifications: vi.fn(),
 	};
 });
 
-vi.mock("next/headers", () => ({
-	headers: headersMock,
-}));
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => undefined,
-}));
-
-// Records that role updates run inside the coordinated auth transaction (#314).
-const authCoordination = vi.hoisted(() => ({
-	inside: false,
-	updatesInside: 0,
-}));
-vi.mock("@/lib/auth", () => ({
-	auth: {
-		api: {
-			getSession: getSessionMock,
-			createInvitation: createInvitationMock,
-			cancelInvitation: cancelInvitationMock,
-			updateMemberRole: (input: unknown) => {
-				if (authCoordination.inside) authCoordination.updatesInside += 1;
-				return updateMemberRoleMock(input);
-			},
-		},
-	},
-	runAuthMutation: async (mutation: () => Promise<unknown>) => {
-		authCoordination.inside = true;
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db: mocks.db }));
+});
+vi.mock("next/headers", () => ({ headers: mocks.headers }));
+vi.mock("@/lib/logger", () => ({ createLogger: () => mocks.logger }));
+// Role updates must commit inside the coordinated Better Auth transaction (#314).
+vi.mock("@/lib/auth/auth-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/auth/auth-transaction")>()),
+	runCoordinatedAuthMutation: async (_context: unknown, mutation: () => Promise<unknown>) => {
+		mocks.coordination.inside = true;
 		try {
 			return await mutation();
 		} finally {
-			authCoordination.inside = false;
+			mocks.coordination.inside = false;
 		}
 	},
 }));
-
-vi.mock("@/lib/auth/employee-invitation-draft", async (importOriginal) => {
-	const actual =
-		await importOriginal<
-			typeof import("@/lib/auth/employee-invitation-draft")
-		>();
-	return {
-		...actual,
-		attachInvitationToEmployeeDraft: attachInvitationToEmployeeDraftMock,
-		persistEmployeeInvitationDraft: persistEmployeeInvitationDraftMock,
-		syncInvitationTargetTeam: syncInvitationTargetTeamMock,
-	};
-});
-
-vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({
-		info: loggerInfoMock,
-		error: loggerErrorMock,
-		warn: loggerWarnMock,
-		debug: vi.fn(),
-	}),
+vi.mock("@/lib/auth/employee-invitation-draft", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/auth/employee-invitation-draft")>()),
+	persistEmployeeInvitationDraft: mocks.persistDraft,
+	syncInvitationTargetTeam: mocks.syncTargetTeam,
 }));
-
 vi.mock("@/lib/enterprise-identity/enforcement", () => ({
-	assertEnterpriseIdentityInvitationAllowed:
-		assertEnterpriseIdentityInvitationAllowedMock,
+	assertEnterpriseIdentityInvitationAllowed: mocks.assertInvitationAllowed,
 }));
-
-vi.mock("@/lib/organization-mfa/organization-access", () => ({
-	canAccessOrganization: canAccessOrganizationMock,
-}));
-
 vi.mock("@/lib/timezone/organization-timezone-change", () => ({
-	changeOrganizationTimezone: changeOrganizationTimezoneMock,
+	changeOrganizationTimezone: mocks.changeTimezone,
 }));
-
 vi.mock("@/lib/work-balance/rebuild-intents", () => ({
-	processWorkBalanceRebuildIntents: processWorkBalanceRebuildIntentsMock,
-	failureMessage: (error: unknown) =>
-		error instanceof Error ? error.message : String(error),
+	processWorkBalanceRebuildIntents: mocks.rebuildIntents,
+	failureMessage: (error: unknown) => (error instanceof Error ? error.message : String(error)),
+}));
+vi.mock("@/lib/projects/report-share/access-change", () => ({
+	revokeShareLinksAfterAccessChange: mocks.revokeShareLinks,
+}));
+vi.mock("@/lib/scheduled-exports/application/owner-access-change", () => ({
+	pauseSchedulesAfterOwnerAccessChange: mocks.pauseSchedules,
+}));
+vi.mock("@/lib/jobs/organization-deletion-notification", () => ({
+	sendOrganizationDeletionNotifications: mocks.sendDeletionNotifications,
 }));
 
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			member: { findFirst: memberFindFirstMock },
-			employee: { findFirst: employeeFindFirstMock },
-			invitation: { findFirst: invitationFindFirstMock },
-			employeeInvitationDraft: {
-				findFirst: employeeInvitationDraftFindFirstMock,
-			},
-			team: { findFirst: teamFindFirstMock },
-			user: { findFirst: userFindFirstMock },
-		},
-		update: vi.fn(() => ({
-			set: updateSetMock.mockReturnValue({ where: updateWhereMock }),
-		})),
-		insert: vi.fn(() => ({
-			values: insertValuesMock.mockReturnValue({
-				onConflictDoUpdate: onConflictDoUpdateMock,
-			}),
-		})),
-		transaction: transactionMock,
-	},
-}));
-
+const { auth } = await import("@/lib/auth");
 const {
 	cancelInvitation,
-	sendInvitation,
-	resendInvitation,
-	updateMemberRole,
-	updateInvitationTargetTeam,
-	updateOrganizationTimezone,
-	updateOrganizationDefaultNotificationLanguage,
-	toggleOrganizationFeature,
 	deleteOrganization,
+	recoverOrganization,
+	removeOrganizationLogo,
+	resendInvitation,
+	sendInvitation,
+	toggleOrganizationFeature,
+	updateInvitationTargetTeam,
+	updateMemberRole,
+	updateOrganizationDefaultNotificationLanguage,
+	updateOrganizationDetails,
+	updateOrganizationTimezone,
 } = await import("./actions");
+
+const owner: StubCaller = {
+	userId: "user-owner",
+	activeOrganizationId: "org-1",
+	membershipRole: "owner",
+	employee: { id: "employee-owner", role: "admin", former: false },
+};
+const orgAdmin: StubCaller = {
+	userId: "user-admin",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: null,
+};
+const scopedManager: StubCaller = {
+	userId: "user-manager",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-manager", role: "manager", former: false },
+};
+const formerAdmin: StubCaller = {
+	...orgAdmin,
+	employee: { id: "employee-admin", role: "admin", former: true },
+};
+
+const TEAM_ID = "11111111-1111-4111-8111-111111111111";
+const pendingInvitation = {
+	id: "invite-old",
+	organizationId: "org-1",
+	email: "invitee@example.com",
+	role: "member",
+	status: "pending",
+	expiresAt: new Date("2100-01-01T00:00:00.000Z"),
+	targetTeamId: null,
+	canCreateOrganizations: false,
+};
+
+const api = {
+	createInvitation: vi.fn(),
+	cancelInvitation: vi.fn(),
+	updateMemberRole: vi.fn(),
+	updateOrganization: vi.fn(),
+};
+const whereParams = (mock: { mock: { calls: unknown[][] } }, call = 0) =>
+	new PgDialect().sqlToQuery(
+		(mock.mock.calls[call]?.[0] as { where: never } | undefined)?.where as never,
+	).params;
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	mocks.caller = orgAdmin;
+	vi.spyOn(auth.api, "createInvitation").mockImplementation(api.createInvitation as never);
+	vi.spyOn(auth.api, "cancelInvitation").mockImplementation(api.cancelInvitation as never);
+	vi.spyOn(auth.api, "updateOrganization").mockImplementation(api.updateOrganization as never);
+	vi.spyOn(auth.api, "updateMemberRole").mockImplementation(((input: unknown) => {
+		if (mocks.coordination.inside) mocks.coordination.updatesInside += 1;
+		return api.updateMemberRole(input);
+	}) as never);
+	mocks.coordination.updatesInside = 0;
+	mocks.headers.mockResolvedValue(new Headers({ cookie: "session=token" }));
+	mocks.db.query.member.findFirst.mockResolvedValue(null);
+	mocks.db.query.invitation.findFirst.mockResolvedValue(null);
+	mocks.db.query.employeeInvitationDraft.findFirst.mockResolvedValue({
+		invitationId: "invite-old",
+	});
+	mocks.db.query.team.findFirst.mockResolvedValue({ id: TEAM_ID, organizationId: "org-1" });
+	mocks.db.query.user.findFirst.mockResolvedValue(null);
+	mocks.db.query.organization.findFirst.mockResolvedValue({
+		id: "org-1",
+		name: "Organization One",
+		deletedAt: null,
+	});
+	mocks.updateWhere.mockResolvedValue(undefined);
+	mocks.onConflictDoUpdate.mockResolvedValue(undefined);
+	mocks.assertInvitationAllowed.mockResolvedValue(undefined);
+	mocks.persistDraft.mockResolvedValue({ outcome: "persisted" });
+	mocks.syncTargetTeam.mockResolvedValue(undefined);
+	mocks.changeTimezone.mockResolvedValue({ status: "changed", rebuild: "intent" });
+	mocks.rebuildIntents.mockResolvedValue({ organizationsRebuilt: 1, failures: [] });
+	mocks.revokeShareLinks.mockResolvedValue(undefined);
+	mocks.pauseSchedules.mockResolvedValue(undefined);
+	mocks.sendDeletionNotifications.mockResolvedValue(undefined);
+	api.createInvitation.mockResolvedValue({ id: "invitation-created" });
+	api.cancelInvitation.mockResolvedValue({});
+	api.updateMemberRole.mockResolvedValue({});
+	api.updateOrganization.mockResolvedValue({});
+});
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 describe("organization feature allowlist", () => {
 	it("allows only supported organization feature flags", () => {
-		expect(isOrganizationFeature("shiftsEnabled")).toBe(true);
-		expect(isOrganizationFeature("projectsEnabled")).toBe(true);
-		expect(isOrganizationFeature("surchargesEnabled")).toBe(true);
-		expect(isOrganizationFeature("demoDataEnabled")).toBe(true);
-		expect(isOrganizationFeature("worksCouncilEnabled")).toBe(true);
-		expect(isOrganizationFeature("personnelFilesEnabled")).toBe(true);
-		expect(isOrganizationFeature("equipmentEnabled")).toBe(true);
+		for (const feature of [
+			"shiftsEnabled",
+			"projectsEnabled",
+			"surchargesEnabled",
+			"demoDataEnabled",
+			"worksCouncilEnabled",
+			"personnelFilesEnabled",
+			"equipmentEnabled",
+		]) {
+			expect(isOrganizationFeature(feature)).toBe(true);
+		}
 		expect(isOrganizationFeature("metadata")).toBe(false);
 		expect(isOrganizationFeature("deletedAt")).toBe(false);
 	});
 });
 
-describe("organization action authorization inventory", () => {
-	it.each([
-		["sendInvitation", "resendInvitation"],
-		["resendInvitation", "updateInvitationTargetTeam"],
-		["updateInvitationTargetTeam", "cancelInvitation"],
-		["cancelInvitation", "updateMemberRole"],
-		["updateMemberRole", "updateOrganizationDetails"],
-		["updateOrganizationDetails", "removeOrganizationLogo"],
-		["removeOrganizationLogo", "toggleOrganizationFeature"],
-		["toggleOrganizationFeature", "updateOrganizationTimezone"],
+describe("settings access of each organization action", () => {
+	const orgAdminActions = [
+		["sendInvitation", () => sendInvitation({ email: "invitee@example.com", role: "member" })],
+		["resendInvitation", () => resendInvitation("invite-old")],
 		[
-			"updateOrganizationTimezone",
-			"updateOrganizationDefaultNotificationLanguage",
+			"updateInvitationTargetTeam",
+			() => updateInvitationTargetTeam({ invitationId: "invite-old", targetTeamId: null }),
 		],
-		["updateOrganizationDefaultNotificationLanguage", "deleteOrganization"],
-		["deleteOrganization", "recoverOrganization"],
-		["recoverOrganization", null],
-	] as const)(
-		"routes %s through the central active-organization gate",
-		(action, next) => {
-			const source = readFileSync(
-				new URL("./actions.ts", import.meta.url),
-				"utf8",
-			);
-			const section = source.slice(
-				source.indexOf(`export async function ${action}(`),
-				next === null
-					? undefined
-					: source.indexOf(`export async function ${next}(`),
-			);
+		["cancelInvitation", () => cancelInvitation("invite-old")],
+		[
+			"toggleOrganizationFeature (personnel files)",
+			() => toggleOrganizationFeature({ feature: "personnelFilesEnabled", enabled: true }),
+		],
+		[
+			"updateOrganizationDefaultNotificationLanguage",
+			() => updateOrganizationDefaultNotificationLanguage("de"),
+		],
+		["deleteOrganization", () => deleteOrganization({ confirmationName: "Organization One" })],
+		["recoverOrganization", () => recoverOrganization()],
+	] as const;
+	const ownerActions = [
+		["updateMemberRole", () => updateMemberRole({ memberId: "target-member", role: "admin" })],
+		["updateOrganizationDetails", () => updateOrganizationDetails({ name: "Renamed" })],
+		["removeOrganizationLogo", () => removeOrganizationLogo()],
+		[
+			"toggleOrganizationFeature (shifts)",
+			() => toggleOrganizationFeature({ feature: "shiftsEnabled", enabled: true }),
+		],
+		["updateOrganizationTimezone", () => updateOrganizationTimezone("America/New_York")],
+	] as const;
 
-			expect(section).toContain("requireActiveOrganizationActionActor({");
+	const writes = () => [
+		api.createInvitation,
+		api.cancelInvitation,
+		api.updateMemberRole,
+		api.updateOrganization,
+		mocks.persistDraft,
+		mocks.syncTargetTeam,
+		mocks.updateSet,
+		mocks.insertValues,
+		mocks.changeTimezone,
+	];
+
+	it.each(orgAdminActions)("refuses %s to a scoped manager", async (_name, run) => {
+		mocks.caller = scopedManager;
+
+		expect(await run()).toMatchObject({ success: false, code: "AuthorizationError" });
+		for (const write of writes()) expect(write).not.toHaveBeenCalled();
+	});
+
+	it.each(ownerActions)(
+		"refuses %s to an org admin, since it stays owner-only",
+		async (_name, run) => {
+			mocks.caller = orgAdmin;
+
+			expect(await run()).toMatchObject({ success: false, code: "AuthorizationError" });
+			for (const write of writes()) expect(write).not.toHaveBeenCalled();
 		},
 	);
+
+	it.each([
+		["a former admin", formerAdmin],
+		["a pending membership", { ...orgAdmin, membershipRole: null }],
+		["a refused SSO session", { ...orgAdmin, organizationAccessRefused: true }],
+		["a signed-out caller", null],
+	])("refuses invitation actions to %s", async (_case, caller) => {
+		mocks.caller = caller;
+		mocks.db.query.invitation.findFirst.mockResolvedValue(pendingInvitation);
+
+		for (const [, run] of orgAdminActions.slice(0, 4)) {
+			expect(await run()).toMatchObject({ success: false });
+		}
+		for (const write of writes()) expect(write).not.toHaveBeenCalled();
+	});
+
+	it("refuses a former owner before any owner-only mutation", async () => {
+		mocks.caller = { ...owner, employee: { id: "employee-owner", role: "admin", former: true } };
+
+		for (const [, run] of ownerActions) {
+			expect(await run()).toMatchObject({ success: false, code: "AuthorizationError" });
+		}
+		for (const write of writes()) expect(write).not.toHaveBeenCalled();
+	});
 });
 
-describe("organization invitation actions", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		getSessionMock.mockReset();
-		canAccessOrganizationMock.mockReset().mockResolvedValue(true);
-		assertEnterpriseIdentityInvitationAllowedMock
-			.mockReset()
-			.mockResolvedValue(undefined);
-		createInvitationMock.mockReset();
-		cancelInvitationMock.mockReset();
-		updateMemberRoleMock.mockReset();
-		headersMock.mockReset();
-		loggerInfoMock.mockReset();
-		loggerErrorMock.mockReset();
-		loggerWarnMock.mockReset();
-		spanRecordExceptionMock.mockReset();
-		spanSetStatusMock.mockReset();
-		memberFindFirstMock.mockReset();
-		employeeFindFirstMock.mockReset();
-		invitationFindFirstMock.mockReset();
-		employeeInvitationDraftFindFirstMock.mockReset();
-		teamFindFirstMock.mockReset();
-		userFindFirstMock.mockReset();
-		updateSetMock.mockReset();
-		updateWhereMock.mockReset();
-		insertValuesMock.mockReset();
-		onConflictDoUpdateMock.mockReset();
-		attachInvitationToEmployeeDraftMock.mockReset();
-		persistEmployeeInvitationDraftMock.mockReset();
-		syncInvitationTargetTeamMock.mockReset();
-		changeOrganizationTimezoneMock.mockReset();
-		processWorkBalanceRebuildIntentsMock.mockReset();
-		transactionMock.mockClear();
-		getSessionMock.mockResolvedValue({
-			user: { id: "user-admin" },
-			session: {
-				id: "session-id",
-				userId: "user-admin",
-				expiresAt: new Date("2030-01-01T00:00:00.000Z"),
-				token: "token",
-				activeOrganizationId: "org-1",
-			},
-		});
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-admin",
-			userId: "user-admin",
-			organizationId: "org-1",
+describe("sendInvitation", () => {
+	it("invites through Better Auth with the normalized email and records the draft", async () => {
+		api.createInvitation.mockResolvedValue({ id: "better-auth-invitation" });
+
+		const result = await sendInvitation({
+			email: "  Invitee@Example.COM  ",
 			role: "admin",
-			status: "approved",
+			canCreateOrganizations: true,
+			targetTeamId: TEAM_ID,
 		});
-		employeeFindFirstMock.mockResolvedValue(null);
-		userFindFirstMock.mockResolvedValue(null);
-		invitationFindFirstMock.mockResolvedValue(null);
-		employeeInvitationDraftFindFirstMock.mockResolvedValue({
-			id: "draft-1",
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(api.createInvitation).toHaveBeenCalledWith({
+			body: { organizationId: "org-1", email: "invitee@example.com", role: "admin", resend: false },
+			headers: expect.any(Headers),
+		});
+		expect(mocks.persistDraft).toHaveBeenCalledWith(mocks.db, {
 			organizationId: "org-1",
 			normalizedEmail: "invitee@example.com",
-			invitationId: "invite-old",
+			invitationId: "better-auth-invitation",
+			canCreateOrganizations: true,
+			targetTeamId: TEAM_ID,
+			initialRole: "admin",
+			updatedBy: "user-admin",
 		});
-		teamFindFirstMock.mockResolvedValue({
-			id: "11111111-1111-4111-8111-111111111111",
-			organizationId: "org-1",
-		});
-		createInvitationMock.mockResolvedValue({ id: "invitation-created" });
-		headersMock.mockResolvedValue(new Headers({ cookie: "session=token" }));
-		attachInvitationToEmployeeDraftMock.mockResolvedValue({ id: "draft-1" });
-		persistEmployeeInvitationDraftMock.mockResolvedValue({
-			outcome: "persisted",
-		});
-		syncInvitationTargetTeamMock.mockResolvedValue(undefined);
-		updateSetMock.mockReturnValue({ where: updateWhereMock });
-		updateWhereMock.mockResolvedValue([{ id: "updated" }]);
-		insertValuesMock.mockReturnValue({
-			onConflictDoUpdate: onConflictDoUpdateMock,
-		});
-		onConflictDoUpdateMock.mockResolvedValue({ organizationId: "org-1" });
-		changeOrganizationTimezoneMock.mockResolvedValue({
-			status: "changed",
-			rebuild: "intent",
-		});
-		processWorkBalanceRebuildIntentsMock.mockResolvedValue({
-			organizationsRebuilt: 1,
-			failures: [],
-		});
+		expect(whereParams(mocks.db.query.team.findFirst)).toEqual([TEAM_ID, "org-1"]);
 	});
 
-	async function runInvitationActorAction(
-		action: "send" | "resend" | "update" | "cancel",
-	) {
-		switch (action) {
-			case "send":
-				return sendInvitation({
-					organizationId: "org-1",
-					email: "invitee@example.com",
-					role: "member",
-				});
-			case "resend":
-				invitationFindFirstMock.mockResolvedValue({
-					id: "invite-old",
-					organizationId: "org-1",
-					email: "invitee@example.com",
-					role: "member",
-					status: "pending",
-					expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-					targetTeamId: null,
-					canCreateOrganizations: false,
-				});
-				return resendInvitation("org-1", "invite-old");
-			case "update":
-				invitationFindFirstMock.mockResolvedValue({
-					id: "invite-1",
-					organizationId: "org-1",
-					status: "pending",
-				});
-				return updateInvitationTargetTeam({
-					invitationId: "invite-1",
-					organizationId: "org-1",
-					targetTeamId: null,
-				});
-			case "cancel":
-				invitationFindFirstMock.mockResolvedValue({
-					id: "invite-1",
-					organizationId: "org-1",
-					status: "pending",
-				});
-				return cancelInvitation("invite-1");
-		}
-	}
+	it("refuses a submitted organization ID instead of trusting it", async () => {
+		const result = await sendInvitation({
+			organizationId: "org-other",
+			email: "invitee@example.com",
+			role: "member",
+		} as Parameters<typeof sendInvitation>[0]);
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(api.createInvitation).not.toHaveBeenCalled();
+	});
 
 	it.each([
-		["send", "member,admin"],
-		["send", "member,owner"],
-		["resend", "member,admin"],
-		["resend", "member,owner"],
-		["update", "member,admin"],
-		["update", "member,owner"],
-		["cancel", "member,admin"],
-		["cancel", "member,owner"],
-	] as const)(
-		"allows %s invitation actions for compound role %s",
-		async (action, role) => {
-			memberFindFirstMock.mockResolvedValue({
-				id: "member-actor",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role,
-				status: "approved",
-			});
+		["an invalid email", { email: "not-an-email" }, "Invalid email address"],
+		["an unknown role", { role: "superuser" }, "Role must be owner, admin, or member"],
+	])("refuses %s before inviting", async (_case, overrides, error) => {
+		const result = await sendInvitation({
+			email: "invitee@example.com",
+			role: "member",
+			...overrides,
+		} as Parameters<typeof sendInvitation>[0]);
 
-			const result = await runInvitationActorAction(action);
-
-			expect(result).toMatchObject({ success: true });
-			expect(canAccessOrganizationMock).toHaveBeenCalledWith(
-				expect.objectContaining({ id: "session-id", userId: "user-admin" }),
-				"org-1",
-				expect.objectContaining({ query: expect.anything() }),
-			);
-		},
-	);
-
-	it.each(["send", "resend", "update", "cancel"] as const)(
-		"denies the %s invitation action when SSO access is denied",
-		async (action) => {
-			canAccessOrganizationMock.mockResolvedValue(false);
-
-			const result = await runInvitationActorAction(action);
-
-			expect(result).toMatchObject({
-				success: false,
-				code: "AuthorizationError",
-			});
-			expect(createInvitationMock).not.toHaveBeenCalled();
-			expect(cancelInvitationMock).not.toHaveBeenCalled();
-			expect(persistEmployeeInvitationDraftMock).not.toHaveBeenCalled();
-			expect(syncInvitationTargetTeamMock).not.toHaveBeenCalled();
-			expect(updateSetMock).not.toHaveBeenCalled();
-		},
-	);
-
-	it.each(["send", "resend", "update", "cancel"] as const)(
-		"denies a plain member from the %s invitation action",
-		async (action) => {
-			memberFindFirstMock.mockResolvedValue({
-				id: "member-actor",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "member",
-				status: "approved",
-			});
-
-			const result = await runInvitationActorAction(action);
-
-			expect(result).toMatchObject({
-				success: false,
-				code: "AuthorizationError",
-			});
-		},
-	);
-
-	it("uses the central tokenized capability gate for every invitation actor check", () => {
-		const source = readFileSync(
-			new URL("./actions.ts", import.meta.url),
-			"utf8",
-		);
-		const boundaries = [
-			[
-				"export async function sendInvitation(",
-				"export async function resendInvitation(",
-			],
-			[
-				"export async function resendInvitation(",
-				"export async function updateInvitationTargetTeam(",
-			],
-			[
-				"export async function updateInvitationTargetTeam(",
-				"export async function cancelInvitation(",
-			],
-			[
-				"export async function cancelInvitation(",
-				"export async function updateMemberRole(",
-			],
-		] as const;
-
-		for (const [start, end] of boundaries) {
-			const section = source.slice(source.indexOf(start), source.indexOf(end));
-			expect(section).toContain("requireActiveOrganizationActionActor({");
-			expect(section).toContain('requiredRole: "admin"');
-		}
+		expect(result).toMatchObject({ success: false, code: "ValidationError", error });
+		expect(api.createInvitation).not.toHaveBeenCalled();
 	});
 
-	it("allows an approved compound owner to update an approved target by member ID", async () => {
-		memberFindFirstMock
-			.mockResolvedValueOnce({
-				id: "actor-member",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "member,owner",
-				status: "approved",
-			})
-			.mockResolvedValueOnce({
-				id: "target-member",
-				userId: "target-user",
-				organizationId: "org-1",
-				role: "member",
-				status: "approved",
-			});
-		updateMemberRoleMock.mockResolvedValue({});
-		authCoordination.updatesInside = 0;
+	it("rejects a target team outside the organization", async () => {
+		mocks.db.query.team.findFirst.mockResolvedValue(null);
 
-		const result = await updateMemberRole("org-1", "target-member", {
-			role: "admin",
+		expect(
+			await sendInvitation({ email: "invitee@example.com", role: "member", targetTeamId: TEAM_ID }),
+		).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Target team not found in this organization",
+		});
+		expect(api.createInvitation).not.toHaveBeenCalled();
+	});
+
+	it("refuses an address the enterprise identity restriction does not allow", async () => {
+		mocks.assertInvitationAllowed.mockRejectedValue(
+			new Error("Email must use the enterprise identity domain acme.test"),
+		);
+
+		expect(await sendInvitation({ email: "invitee@example.com", role: "member" })).toMatchObject({
+			success: false,
+			error: "Email must use the enterprise identity domain acme.test",
+		});
+		expect(mocks.assertInvitationAllowed).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			email: "invitee@example.com",
+		});
+		expect(api.createInvitation).not.toHaveBeenCalled();
+	});
+
+	it("repairs app-owned fields on an existing actionable invitation without sending again", async () => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue({
+			...pendingInvitation,
+			id: "invite-existing",
 		});
 
-		expect(result).toMatchObject({ success: true });
-		expect(authCoordination.updatesInside).toBe(1);
-		expect(updateMemberRoleMock).toHaveBeenCalledExactlyOnceWith({
-			body: {
+		const result = await sendInvitation({
+			email: "invitee@example.com",
+			role: "member",
+			canCreateOrganizations: true,
+			targetTeamId: TEAM_ID,
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			error: "An invitation for this email is already pending",
+		});
+		expect(api.createInvitation).not.toHaveBeenCalled();
+		expect(mocks.persistDraft).toHaveBeenCalledWith(
+			mocks.db,
+			expect.objectContaining({
+				invitationId: "invite-existing",
+				canCreateOrganizations: true,
+				targetTeamId: TEAM_ID,
+			}),
+		);
+		expect(whereParams(mocks.db.query.invitation.findFirst)).toEqual(
+			expect.arrayContaining(["org-1", "invitee@example.com", "pending"]),
+		);
+	});
+
+	it("treats acceptance between Better Auth send and app persistence as completed", async () => {
+		mocks.persistDraft.mockResolvedValue({ outcome: "consumed" });
+
+		expect(await sendInvitation({ email: "invitee@example.com", role: "member" })).toEqual({
+			success: true,
+			data: undefined,
+		});
+		expect(api.createInvitation).toHaveBeenCalledOnce();
+	});
+
+	it("does not block on an expired pending invitation", async () => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue({
+			...pendingInvitation,
+			expiresAt: new Date("2000-01-01T00:00:00.000Z"),
+		});
+
+		expect(await sendInvitation({ email: "invitee@example.com", role: "member" })).toMatchObject({
+			success: true,
+		});
+		expect(api.createInvitation).toHaveBeenCalledOnce();
+	});
+
+	it("refuses to invite a user who is already a member", async () => {
+		mocks.db.query.user.findFirst.mockResolvedValue({ id: "user-existing" });
+		mocks.db.query.member.findFirst.mockResolvedValue({ id: "member-existing" });
+
+		expect(await sendInvitation({ email: "invitee@example.com", role: "member" })).toMatchObject({
+			success: false,
+			error: "This user is already a member of the organization",
+		});
+		expect(whereParams(mocks.db.query.member.findFirst)).toEqual(["user-existing", "org-1"]);
+		expect(api.createInvitation).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["Better Auth refuses the send", "createInvitation", undefined],
+		[
+			"the draft cannot be persisted after the email",
+			"persistInvitationState",
+			"better-auth-invitation",
+		],
+	])("returns a safe error and logs IDs when %s", async (_case, failurePhase, invitationId) => {
+		const secret = "select * where email=invitee@example.com token=auth-secret";
+		if (failurePhase === "createInvitation") {
+			api.createInvitation.mockRejectedValue(new Error(secret));
+		} else {
+			api.createInvitation.mockResolvedValue({ id: "better-auth-invitation" });
+			mocks.persistDraft.mockRejectedValue(new Error(secret));
+		}
+
+		const result = await sendInvitation({ email: "invitee@example.com", role: "member" });
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Failed to send invitation",
+		});
+		expect(mocks.logger.error).toHaveBeenCalledWith(
+			{
+				operation: "sendInvitation",
+				failurePhase,
 				organizationId: "org-1",
-				memberId: "target-member",
-				role: "admin",
+				...(invitationId ? { invitationId } : {}),
 			},
+			"Failed to send invitation",
+		);
+		expect(JSON.stringify([result, mocks.logger.error.mock.calls])).not.toContain(secret);
+	});
+});
+
+describe("resendInvitation", () => {
+	beforeEach(() => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue(pendingInvitation);
+		api.createInvitation.mockResolvedValue({ id: "invite-replacement" });
+	});
+
+	it("resends with the normalized email and same role, and relinks the stable draft", async () => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue({
+			...pendingInvitation,
+			email: "  Invitee@Example.COM  ",
+			role: "admin",
+			targetTeamId: TEAM_ID,
+			canCreateOrganizations: true,
+		});
+
+		expect(await resendInvitation("invite-old")).toEqual({ success: true, data: undefined });
+		expect(api.createInvitation).toHaveBeenCalledWith({
+			body: { organizationId: "org-1", email: "invitee@example.com", role: "admin", resend: true },
+			headers: expect.any(Headers),
+		});
+		expect(api.cancelInvitation).not.toHaveBeenCalled();
+		expect(mocks.persistDraft).toHaveBeenCalledWith(mocks.db, {
+			organizationId: "org-1",
+			normalizedEmail: "invitee@example.com",
+			invitationId: "invite-replacement",
+			canCreateOrganizations: true,
+			targetTeamId: TEAM_ID,
+			initialRole: "admin",
+			updatedBy: "user-admin",
+		});
+	});
+
+	it("treats another organization's invitation as not found", async () => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue(null);
+
+		expect(await resendInvitation("other-org-invitation")).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
+		expect(whereParams(mocks.db.query.invitation.findFirst)).toEqual([
+			"other-org-invitation",
+			"org-1",
+		]);
+		expect(api.createInvitation).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["a source that no longer owns the stable draft", { invitationId: "invite-newer" }, {}],
+		[
+			"an invitation that is no longer pending",
+			{ invitationId: "invite-old" },
+			{ status: "accepted" },
+		],
+	])("refuses to resend %s", async (_case, draft, invitation) => {
+		mocks.db.query.employeeInvitationDraft.findFirst.mockResolvedValue(draft);
+		mocks.db.query.invitation.findFirst.mockResolvedValue({ ...pendingInvitation, ...invitation });
+
+		expect(await resendInvitation("invite-old")).toMatchObject({
+			success: false,
+			error: "Invitation cannot be resent",
+		});
+		expect(api.createInvitation).not.toHaveBeenCalled();
+	});
+
+	it("checks the enterprise identity restriction before resending", async () => {
+		mocks.assertInvitationAllowed.mockRejectedValue(new Error("Email must use acme.test"));
+
+		expect(await resendInvitation("invite-old")).toMatchObject({
+			success: false,
+			error: "Email must use acme.test",
+		});
+		expect(api.createInvitation).not.toHaveBeenCalled();
+	});
+
+	it("does not report post-email persistence failure as a resend failure", async () => {
+		mocks.persistDraft.mockRejectedValue(new Error("database detail"));
+
+		expect(await resendInvitation("invite-old")).toMatchObject({ success: true });
+		expect(mocks.logger.warn).toHaveBeenCalledWith(
+			{
+				operation: "repairResentInvitationPersistence",
+				organizationId: "org-1",
+				invitationId: "invite-replacement",
+			},
+			"Resent invitation requires app-state repair",
+		);
+	});
+
+	it("returns a safe error when Better Auth refuses the resend", async () => {
+		api.createInvitation.mockRejectedValue(new Error("token=auth-secret"));
+
+		const result = await resendInvitation("invite-old");
+
+		expect(result).toMatchObject({ success: false, error: "Failed to resend invitation" });
+		expect(JSON.stringify(result)).not.toContain("auth-secret");
+	});
+});
+
+describe("updateInvitationTargetTeam", () => {
+	beforeEach(() => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue(pendingInvitation);
+	});
+
+	it("moves a pending invitation of the session's organization to a team", async () => {
+		expect(
+			await updateInvitationTargetTeam({ invitationId: "invite-old", targetTeamId: TEAM_ID }),
+		).toEqual({ success: true, data: undefined });
+		expect(whereParams(mocks.db.query.invitation.findFirst)).toEqual([
+			"invite-old",
+			"org-1",
+			"pending",
+		]);
+		expect(mocks.syncTargetTeam).toHaveBeenCalledWith(mocks.db, {
+			organizationId: "org-1",
+			invitationId: "invite-old",
+			email: "invitee@example.com",
+			targetTeamId: TEAM_ID,
+		});
+	});
+
+	it("clears the target team", async () => {
+		await updateInvitationTargetTeam({ invitationId: "invite-old", targetTeamId: null });
+
+		expect(mocks.syncTargetTeam).toHaveBeenCalledWith(
+			mocks.db,
+			expect.objectContaining({ targetTeamId: null }),
+		);
+		expect(mocks.db.query.team.findFirst).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["a malformed team ID", { targetTeamId: "not-a-uuid" }, "Invalid target team", () => null],
+		[
+			"a team outside the organization",
+			{ targetTeamId: TEAM_ID },
+			"Target team not found in this organization",
+			() => mocks.db.query.team.findFirst.mockResolvedValue(null),
+		],
+	])("refuses %s", async (_case, input, error, arrange) => {
+		arrange();
+
+		expect(
+			await updateInvitationTargetTeam({ invitationId: "invite-old", ...input }),
+		).toMatchObject({ success: false, code: "ValidationError", error });
+		expect(mocks.syncTargetTeam).not.toHaveBeenCalled();
+	});
+
+	it("treats a missing pending invitation as not found", async () => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue(null);
+
+		expect(
+			await updateInvitationTargetTeam({ invitationId: "invite-other", targetTeamId: null }),
+		).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(mocks.syncTargetTeam).not.toHaveBeenCalled();
+	});
+});
+
+describe("cancelInvitation", () => {
+	it("cancels an invitation of the session's organization", async () => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue(pendingInvitation);
+
+		expect(await cancelInvitation("invite-old")).toEqual({ success: true, data: undefined });
+		expect(whereParams(mocks.db.query.invitation.findFirst)).toEqual(["invite-old", "org-1"]);
+		expect(api.cancelInvitation).toHaveBeenCalledWith({
+			body: { invitationId: "invite-old" },
 			headers: expect.any(Headers),
 		});
 	});
 
-	it.each(["pending", "rejected"])(
-		"denies a direct role update from a %s owner membership",
-		async (status) => {
-			memberFindFirstMock.mockResolvedValueOnce({
-				id: "actor-member",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "owner",
-				status,
-			});
+	it("treats another organization's invitation as not found", async () => {
+		expect(await cancelInvitation("invite-other-org")).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
+		expect(api.cancelInvitation).not.toHaveBeenCalled();
+	});
 
-			const result = await updateMemberRole("org-1", "target-member", {
-				role: "admin",
-			});
+	it("returns a fixed safe error when Better Auth refuses", async () => {
+		mocks.db.query.invitation.findFirst.mockResolvedValue(pendingInvitation);
+		api.cancelInvitation.mockRejectedValue(new Error("secret detail"));
 
-			expect(result).toMatchObject({ success: false });
-			expect(updateMemberRoleMock).not.toHaveBeenCalled();
-		},
-	);
+		const result = await cancelInvitation("invite-old");
 
-	it.each(["pending", "rejected"])(
-		"denies a direct role update for a %s target membership",
-		async (status) => {
-			memberFindFirstMock
-				.mockResolvedValueOnce({
-					id: "actor-member",
-					userId: "user-admin",
-					organizationId: "org-1",
-					role: "owner",
-					status: "approved",
-				})
-				.mockResolvedValueOnce({
-					id: "target-member",
-					userId: "target-user",
-					organizationId: "org-1",
-					role: "member",
-					status,
-				});
+		expect(result).toMatchObject({ success: false, error: "Failed to cancel invitation" });
+		expect(JSON.stringify(result)).not.toContain("secret");
+	});
+});
 
-			const result = await updateMemberRole("org-1", "target-member", {
-				role: "admin",
-			});
+describe("updateMemberRole", () => {
+	beforeEach(() => {
+		mocks.caller = owner;
+		mocks.db.query.member.findFirst.mockResolvedValue({
+			id: "target-member",
+			userId: "target-user",
+			status: "approved",
+		});
+	});
 
-			expect(result).toMatchObject({ success: false });
-			expect(updateMemberRoleMock).not.toHaveBeenCalled();
-		},
-	);
+	it("updates an approved member of the session's organization inside the auth transaction", async () => {
+		expect(await updateMemberRole({ memberId: "target-member", role: "admin" })).toEqual({
+			success: true,
+			data: undefined,
+		});
+		expect(whereParams(mocks.db.query.member.findFirst)).toEqual([
+			"target-member",
+			"org-1",
+			"approved",
+		]);
+		expect(mocks.coordination.updatesInside).toBe(1);
+		expect(api.updateMemberRole).toHaveBeenCalledExactlyOnceWith({
+			body: { organizationId: "org-1", memberId: "target-member", role: "admin" },
+			headers: expect.any(Headers),
+		});
+		expect(mocks.revokeShareLinks).toHaveBeenCalledWith(mocks.db, {
+			organizationId: "org-1",
+			creator: { userId: "target-user" },
+			actorUserId: "user-owner",
+		});
+		expect(mocks.pauseSchedules).toHaveBeenCalledWith(mocks.db, {
+			organizationId: "org-1",
+			owner: { userId: "target-user" },
+			actorUserId: "user-owner",
+		});
+	});
 
-	it("rejects a direct self-role update", async () => {
-		memberFindFirstMock
-			.mockResolvedValueOnce({
-				id: "actor-member",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "owner",
-				status: "approved",
-			})
-			.mockResolvedValueOnce({
-				id: "actor-member",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "owner",
-				status: "approved",
-			});
+	it("treats a missing or unapproved target as not found", async () => {
+		mocks.db.query.member.findFirst.mockResolvedValue(undefined);
 
-		const result = await updateMemberRole("org-1", "actor-member", {
-			role: "member",
+		expect(await updateMemberRole({ memberId: "target-member", role: "admin" })).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
+		expect(api.updateMemberRole).not.toHaveBeenCalled();
+	});
+
+	it("rejects a self-role update", async () => {
+		mocks.db.query.member.findFirst.mockResolvedValue({
+			id: "owner-member",
+			userId: "user-owner",
+			status: "approved",
 		});
 
-		expect(result).toMatchObject({
+		expect(await updateMemberRole({ memberId: "owner-member", role: "member" })).toMatchObject({
 			success: false,
 			code: "ValidationError",
 			error: "You cannot change your own organization role",
 		});
-		expect(updateMemberRoleMock).not.toHaveBeenCalled();
+		expect(api.updateMemberRole).not.toHaveBeenCalled();
 	});
 
-	it("denies an inactive owner before updating a member role", async () => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "actor-member",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "owner",
-			status: "approved",
-		});
-		employeeFindFirstMock.mockResolvedValue({
-			id: "actor-employee",
-			userId: "user-admin",
-			organizationId: "org-1",
-			isActive: false,
-		});
-
-		const result = await updateMemberRole("org-1", "target-member", {
-			role: "admin",
-		});
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(updateMemberRoleMock).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		[
-			"owner-only organization settings",
-			"owner",
-			() => toggleOrganizationFeature("org-1", "shiftsEnabled", true),
-		],
-		[
-			"admin organization deletion",
-			"admin",
-			() => deleteOrganization("org-1", "Organization One"),
-		],
-	] as const)(
-		"denies an inactive actor before %s mutations",
-		async (_case, role, action) => {
-			memberFindFirstMock.mockResolvedValue({
-				id: "actor-member",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role,
-				status: "approved",
-			});
-			employeeFindFirstMock.mockResolvedValue({
-				id: "actor-employee",
-				userId: "user-admin",
-				organizationId: "org-1",
-				isActive: false,
-			});
-
-			const result = await action();
-
-			expect(result).toMatchObject({
-				success: false,
-				code: "AuthorizationError",
-			});
-			expect(updateSetMock).not.toHaveBeenCalled();
-			expect(updateMemberRoleMock).not.toHaveBeenCalled();
-		},
-	);
-
-	it("lets an admin switch personnel files (#865)", async () => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "actor-member",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "admin",
-			status: "approved",
-		});
-		updateWhereMock.mockResolvedValue(undefined);
-
-		const result = await toggleOrganizationFeature(
-			"org-1",
-			"personnelFilesEnabled",
-			false,
-		);
-
-		expect(result).toMatchObject({ success: true });
-		expect(updateSetMock).toHaveBeenCalledWith({
-			personnelFilesEnabled: false,
-		});
-	});
-
-	it("lets an admin switch equipment tracking (#1572)", async () => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "actor-member",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "admin",
-			status: "approved",
-		});
-		updateWhereMock.mockResolvedValue(undefined);
-
-		const result = await toggleOrganizationFeature(
-			"org-1",
-			"equipmentEnabled",
-			true,
-		);
-
-		expect(result).toMatchObject({ success: true });
-		expect(updateSetMock).toHaveBeenCalledWith({ equipmentEnabled: true });
-	});
-
-	it("does not let a member switch equipment tracking", async () => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "actor-member",
-			userId: "user-member",
-			organizationId: "org-1",
-			role: "member",
-			status: "approved",
-		});
-
-		const result = await toggleOrganizationFeature(
-			"org-1",
-			"equipmentEnabled",
-			true,
-		);
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(updateSetMock).not.toHaveBeenCalled();
-	});
-
-	it("keeps every other feature owner-only for admins", async () => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "actor-member",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "admin",
-			status: "approved",
-		});
-
-		const result = await toggleOrganizationFeature(
-			"org-1",
-			"shiftsEnabled",
-			true,
-		);
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(updateSetMock).not.toHaveBeenCalled();
-	});
-
-	it("scopes approved actor and target role-update lookups to the organization", async () => {
-		memberFindFirstMock
-			.mockResolvedValueOnce({
-				id: "actor-member",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "owner",
-				status: "approved",
-			})
-			.mockResolvedValueOnce({
-				id: "target-member",
-				userId: "target-user",
-				organizationId: "org-1",
-				role: "member",
-				status: "approved",
-			});
-		updateMemberRoleMock.mockResolvedValue({});
-
-		await updateMemberRole("org-1", "target-member", { role: "admin" });
-
-		expect(memberFindFirstMock).toHaveBeenCalledTimes(2);
-		const actorQuery = new PgDialect().sqlToQuery(
-			memberFindFirstMock.mock.calls[0]?.[0].where,
-		);
-		const targetQuery = new PgDialect().sqlToQuery(
-			memberFindFirstMock.mock.calls[1]?.[0].where,
-		);
-		expect(actorQuery.params).toEqual(["user-admin", "org-1", "approved"]);
-		expect(targetQuery.params).toEqual(["target-member", "org-1", "approved"]);
+	it("refuses an unknown role", async () => {
+		expect(
+			await updateMemberRole({ memberId: "target-member", role: "root" } as never),
+		).toMatchObject({ success: false, code: "ValidationError" });
+		expect(api.updateMemberRole).not.toHaveBeenCalled();
 	});
 
 	it("returns a safe error while preserving Better Auth owner protections", async () => {
-		memberFindFirstMock
-			.mockResolvedValueOnce({
-				id: "actor-member",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "owner",
-				status: "approved",
-			})
-			.mockResolvedValueOnce({
-				id: "target-member",
-				userId: "target-user",
-				organizationId: "org-1",
-				role: "owner",
-				status: "approved",
-			});
-		updateMemberRoleMock.mockRejectedValue(
-			new Error("secret database trigger detail"),
-		);
+		api.updateMemberRole.mockRejectedValue(new Error("secret database trigger detail"));
 
-		const result = await updateMemberRole("org-1", "target-member", {
-			role: "member",
-		});
+		const result = await updateMemberRole({ memberId: "target-member", role: "member" });
 
-		expect(updateMemberRoleMock).toHaveBeenCalledOnce();
-		expect(result).toMatchObject({
-			success: false,
-			error: "Failed to update member role",
-		});
+		expect(result).toMatchObject({ success: false, error: "Failed to update member role" });
 		expect(JSON.stringify(result)).not.toContain("secret");
+		expect(mocks.revokeShareLinks).not.toHaveBeenCalled();
+	});
+});
+
+describe("organization details", () => {
+	beforeEach(() => {
+		mocks.caller = owner;
 	});
 
-	it("keeps role updates member-ID correct and removes obsolete lifecycle exports", () => {
-		const source = readFileSync(
-			new URL("./actions.ts", import.meta.url),
-			"utf8",
-		);
-		const roleUpdate = source.slice(
-			source.indexOf("export async function updateMemberRole("),
-			source.indexOf("export async function updateOrganization("),
-		);
-
-		expect(roleUpdate).toContain("memberId: string");
-		expect(roleUpdate).toContain('"member.id": memberId');
-		expect(roleUpdate).toContain('requiredRole: "owner"');
-		expect(source).not.toContain("export async function removeMember(");
-		expect(source).not.toContain("export async function toggleEmployeeStatus(");
-	});
-
-	describe("updateOrganizationTimezone", () => {
-		beforeEach(() => {
-			memberFindFirstMock.mockResolvedValue({
-				id: "member-owner",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "owner",
-			});
-		});
-
-		it("saves through the protected writer, then rebuilds its organization separately", async () => {
-			const result = await updateOrganizationTimezone(
-				"org-1",
-				"America/New_York",
-			);
-
-			expect(result).toMatchObject({ success: true });
-			expect(changeOrganizationTimezoneMock).toHaveBeenCalledWith({
-				organizationId: "org-1",
-				actorUserId: "user-admin",
-				timezone: "America/New_York",
-			});
-			expect(processWorkBalanceRebuildIntentsMock).toHaveBeenCalledWith({
-				organizationId: "org-1",
-			});
-			expect(
-				changeOrganizationTimezoneMock.mock.invocationCallOrder[0],
-			).toBeLessThan(
-				processWorkBalanceRebuildIntentsMock.mock.invocationCallOrder[0] ?? 0,
-			);
-		});
-
-		it("keeps a committed save successful when its rebuild fails", async () => {
-			processWorkBalanceRebuildIntentsMock.mockResolvedValueOnce({
-				organizationsRebuilt: 0,
-				failures: [{ organizationId: "org-1", error: "lock timeout" }],
-			});
-			await expect(
-				updateOrganizationTimezone("org-1", "America/New_York"),
-			).resolves.toMatchObject({ success: true });
-
-			processWorkBalanceRebuildIntentsMock.mockRejectedValueOnce(
-				new Error("connection lost"),
-			);
-			await expect(
-				updateOrganizationTimezone("org-1", "America/New_York"),
-			).resolves.toMatchObject({ success: true });
-			expect(loggerWarnMock).toHaveBeenCalledTimes(2);
-		});
-
-		it("runs no separate rebuild for an unchanged or legacy save", async () => {
-			changeOrganizationTimezoneMock.mockResolvedValueOnce({
-				status: "unchanged",
-			});
-			await updateOrganizationTimezone("org-1", "Europe/Berlin");
-			changeOrganizationTimezoneMock.mockResolvedValueOnce({
-				status: "changed",
-				rebuild: "in_transaction",
-			});
-			await updateOrganizationTimezone("org-1", "America/New_York");
-
-			expect(processWorkBalanceRebuildIntentsMock).not.toHaveBeenCalled();
-		});
-
-		it("reports an owner revoked under protection as unauthorized", async () => {
-			changeOrganizationTimezoneMock.mockResolvedValueOnce({
-				status: "not_authorized",
-			});
-
-			await expect(
-				updateOrganizationTimezone("org-1", "America/New_York"),
-			).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
-			expect(processWorkBalanceRebuildIntentsMock).not.toHaveBeenCalled();
-		});
-
-		it("refuses an invalid zone and a non-owner before the writer", async () => {
-			await expect(
-				updateOrganizationTimezone("org-1", "Mars/Olympus"),
-			).resolves.toMatchObject({ success: false });
-			memberFindFirstMock.mockResolvedValue({
-				id: "member-admin",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "admin",
-			});
-			await expect(
-				updateOrganizationTimezone("org-1", "America/New_York"),
-			).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
-			expect(changeOrganizationTimezoneMock).not.toHaveBeenCalled();
+	it("updates the session organization's name and metadata through Better Auth", async () => {
+		expect(
+			await updateOrganizationDetails({ name: "Renamed", metadata: '{"description":"Hi"}' }),
+		).toEqual({ success: true, data: undefined });
+		expect(api.updateOrganization).toHaveBeenCalledWith({
+			body: { organizationId: "org-1", data: { name: "Renamed", metadata: { description: "Hi" } } },
+			headers: expect.any(Headers),
 		});
 	});
 
-	it("rejects a direct invite target team outside the organization", async () => {
-		teamFindFirstMock.mockResolvedValue(null);
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			targetTeamId: "22222222-2222-4222-8222-222222222222",
-		});
-
-		expect(result).toMatchObject({
+	it("refuses an invalid slug", async () => {
+		expect(await updateOrganizationDetails({ slug: "Not Valid" })).toMatchObject({
 			success: false,
 			code: "ValidationError",
-			error: "Target team not found in this organization",
 		});
-		expect(createInvitationMock).not.toHaveBeenCalled();
+		expect(api.updateOrganization).not.toHaveBeenCalled();
 	});
 
-	it("passes the normalized email to Better Auth", async () => {
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "  Invitee@Example.COM  ",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		const requestHeaders = await headersMock.mock.results[0]?.value;
-		expect(createInvitationMock).toHaveBeenCalledWith({
-			body: {
-				organizationId: "org-1",
-				email: "invitee@example.com",
-				role: "member",
-				resend: false,
-			},
-			headers: requestHeaders,
-		});
-	});
-
-	it("translates a pre-creation Better Auth send failure safely", async () => {
-		const secretText = "email=invitee@example.com&token=auth-secret";
-		const authError = new Error(secretText);
-		createInvitationMock.mockRejectedValue(authError);
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "ValidationError",
-			error: "Failed to send invitation",
-		});
-		expect(result).not.toMatchObject({ error: authError.message });
-		expect(loggerErrorMock).toHaveBeenCalledWith(
-			{
-				operation: "sendInvitation",
-				failurePhase: "createInvitation",
-				organizationId: "org-1",
-			},
-			"Failed to send invitation",
-		);
-		expect(JSON.stringify(loggerErrorMock.mock.calls)).not.toContain(
-			secretText,
-		);
-		const telemetryError = spanRecordExceptionMock.mock.calls[0]?.[0];
-		expect(telemetryError).toEqual(new Error("Invitation send failed"));
-		expect(telemetryError).not.toBe(authError);
-	});
-
-	it("requires an approved actor membership to send an invitation", async () => {
-		memberFindFirstMock.mockImplementation(async ({ where }) => {
-			const query = new PgDialect().sqlToQuery(where);
-			return query.params.includes("approved")
-				? null
-				: {
-						id: "member-admin",
-						userId: "user-admin",
-						organizationId: "org-1",
-						role: "admin",
-						status: "pending",
-					};
-		});
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({ success: false });
-		expect(createInvitationMock).not.toHaveBeenCalled();
-	});
-
-	it("rejects sending for an inactive employee in the actor organization", async () => {
-		employeeFindFirstMock.mockResolvedValue({
-			id: "employee-inactive",
-			organizationId: "org-1",
-			userId: "user-admin",
-			isActive: false,
-		});
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({ success: false });
-		const predicate = employeeFindFirstMock.mock.calls[0]?.[0].where;
-		expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
-			"user-admin",
+	it("removes the session organization's logo", async () => {
+		expect(await removeOrganizationLogo()).toEqual({ success: true, data: undefined });
+		expect(mocks.updateSet).toHaveBeenCalledWith({ logo: null });
+		expect(new PgDialect().sqlToQuery(mocks.updateWhere.mock.calls[0]?.[0]).params).toEqual([
 			"org-1",
 		]);
-		expect(createInvitationMock).not.toHaveBeenCalled();
 	});
+});
 
-	it("repairs app-owned fields on an existing actionable invitation without sending again", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-existing",
-			organizationId: "org-1",
-			status: "pending",
-			expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-		});
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			canCreateOrganizations: true,
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(result).toMatchObject({
-			success: false,
-			error: "An invitation for this email is already pending",
-		});
-		expect(createInvitationMock).not.toHaveBeenCalled();
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({
-				invitationId: "invite-existing",
-				canCreateOrganizations: true,
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-			}),
-		);
-	});
-
-	it("reattaches a missing stable draft on an existing actionable invitation without sending again", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-existing",
-			organizationId: "org-1",
-			status: "pending",
-			expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-		});
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "  Invitee@Example.COM  ",
-			role: "admin",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(result).toMatchObject({
-			success: false,
-			error: "An invitation for this email is already pending",
-		});
-		expect(createInvitationMock).not.toHaveBeenCalled();
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			{
-				organizationId: "org-1",
-				normalizedEmail: "invitee@example.com",
-				invitationId: "invite-existing",
-				canCreateOrganizations: false,
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-				initialRole: "admin",
-				updatedBy: "user-admin",
-			},
-		);
-	});
-
-	it("does not block on an expired database-pending invitation", async () => {
-		invitationFindFirstMock.mockResolvedValueOnce({
-			id: "invite-expired",
-			organizationId: "org-1",
-			status: "pending",
-			expiresAt: new Date("2000-01-01T00:00:00.000Z"),
-		});
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(createInvitationMock).toHaveBeenCalledOnce();
-	});
-
-	it("uses the invitation ID returned directly by Better Auth", async () => {
-		createInvitationMock.mockResolvedValue({ id: "better-auth-invitation" });
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({ invitationId: "better-auth-invitation" }),
-		);
-		expect(invitationFindFirstMock).toHaveBeenCalledOnce();
-	});
-
-	it("persists returned send state through the shared transactional helper", async () => {
-		createInvitationMock.mockResolvedValue({ id: "better-auth-invitation" });
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: " Invitee@Example.COM ",
-			role: "admin",
-			canCreateOrganizations: true,
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			{
-				organizationId: "org-1",
-				normalizedEmail: "invitee@example.com",
-				invitationId: "better-auth-invitation",
-				canCreateOrganizations: true,
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-				initialRole: "admin",
-				updatedBy: "user-admin",
-			},
-		);
-		expect(attachInvitationToEmployeeDraftMock).not.toHaveBeenCalled();
-	});
-
-	it("treats acceptance between Better Auth send and app persistence as completed", async () => {
-		createInvitationMock.mockResolvedValue({ id: "better-auth-invitation" });
-		persistEmployeeInvitationDraftMock.mockResolvedValue({
-			outcome: "consumed",
-		});
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(createInvitationMock).toHaveBeenCalledOnce();
-		expect(attachInvitationToEmployeeDraftMock).not.toHaveBeenCalled();
-	});
-
-	it("repairs post-email persistence on retry without sending another email", async () => {
-		createInvitationMock.mockResolvedValue({ id: "better-auth-invitation" });
-		persistEmployeeInvitationDraftMock
-			.mockRejectedValueOnce(new Error("database detail"))
-			.mockResolvedValueOnce({ outcome: "persisted" });
-
-		const firstResult = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-		expect(firstResult).toMatchObject({
-			success: false,
-			error: "Failed to send invitation",
-		});
-
-		invitationFindFirstMock.mockResolvedValue({
-			id: "better-auth-invitation",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			status: "pending",
-			expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-		});
-		const retryResult = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(retryResult).toMatchObject({
-			success: false,
-			error: "An invitation for this email is already pending",
-		});
-		expect(createInvitationMock).toHaveBeenCalledOnce();
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledTimes(2);
-		expect(JSON.stringify(loggerErrorMock.mock.calls)).not.toContain(
-			"database detail",
-		);
-	});
-
-	it("scopes app-owned invitation updates by returned ID and organization", async () => {
-		createInvitationMock.mockResolvedValue({ id: "better-auth-invitation" });
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			canCreateOrganizations: true,
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({
-				invitationId: "better-auth-invitation",
-				organizationId: "org-1",
-			}),
-		);
-	});
-
-	it("returns a safe error and logs authoritative IDs when send app-field persistence fails", async () => {
-		const secretText = "select * where email=invitee@example.com";
-		const databaseError = new Error(secretText);
-		createInvitationMock.mockResolvedValue({ id: "better-auth-invitation" });
-		persistEmployeeInvitationDraftMock.mockRejectedValue(databaseError);
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "ValidationError",
-			error: "Failed to send invitation",
-		});
-		expect(result).not.toMatchObject({ error: databaseError.message });
-		expect(loggerErrorMock).toHaveBeenCalledWith(
-			{
-				operation: "sendInvitation",
-				failurePhase: "persistInvitationState",
-				organizationId: "org-1",
-				invitationId: "better-auth-invitation",
-			},
-			"Failed to send invitation",
-		);
-		expect(JSON.stringify(loggerErrorMock.mock.calls)).not.toContain(
-			secretText,
-		);
-		expect(spanRecordExceptionMock.mock.calls[0]?.[0]).toEqual(
-			new Error("Invitation send failed"),
-		);
-	});
-
-	it("attaches by organization and normalized identity without local draft upsert", async () => {
-		createInvitationMock.mockResolvedValue({ id: "better-auth-invitation" });
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "  Invitee@Example.COM  ",
-			role: "admin",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			{
-				organizationId: "org-1",
-				normalizedEmail: "invitee@example.com",
-				invitationId: "better-auth-invitation",
-				canCreateOrganizations: false,
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-				initialRole: "admin",
-				updatedBy: "user-admin",
-			},
-		);
-		expect(insertValuesMock).not.toHaveBeenCalled();
-	});
-
-	it("returns a safe error and logs authoritative IDs when send draft attachment fails", async () => {
-		const secretText = "draft email=invitee@example.com salary=secret";
-		const attachmentError = new Error(secretText);
-		createInvitationMock.mockResolvedValue({ id: "better-auth-invitation" });
-		persistEmployeeInvitationDraftMock.mockRejectedValue(attachmentError);
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "ValidationError",
-			error: "Failed to send invitation",
-		});
-		expect(result).not.toMatchObject({ error: attachmentError.message });
-		expect(loggerErrorMock).toHaveBeenCalledWith(
-			{
-				operation: "sendInvitation",
-				failurePhase: "persistInvitationState",
-				organizationId: "org-1",
-				invitationId: "better-auth-invitation",
-			},
-			"Failed to send invitation",
-		);
-		expect(JSON.stringify(loggerErrorMock.mock.calls)).not.toContain(
-			secretText,
-		);
-		expect(spanRecordExceptionMock.mock.calls[0]?.[0]).toEqual(
-			new Error("Invitation send failed"),
-		);
-	});
-
-	it("treats the same email in another organization independently", async () => {
-		invitationFindFirstMock.mockResolvedValueOnce({
-			id: "other-org-invitation",
-			organizationId: "org-2",
-			status: "pending",
-			expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-		});
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(createInvitationMock).toHaveBeenCalledOnce();
-	});
-
-	it("rejects resending an invitation outside the requested organization", async () => {
-		invitationFindFirstMock.mockResolvedValue(null);
-
-		const result = await resendInvitation("org-1", "other-org-invitation");
-
-		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
-		const predicate = invitationFindFirstMock.mock.calls[0]?.[0].where;
-		const query = new PgDialect().sqlToQuery(predicate);
-		expect(query.params).toEqual(["other-org-invitation", "org-1"]);
-		expect(memberFindFirstMock).toHaveBeenCalledOnce();
-		expect(createInvitationMock).not.toHaveBeenCalled();
-	});
-
-	it("requires an approved owner or admin to resend an invitation", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			targetTeamId: null,
-			canCreateOrganizations: false,
-		});
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-admin",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "admin",
-			status: "pending",
-		});
-
-		const result = await resendInvitation("org-1", "invite-1");
-
-		expect(result).toMatchObject({ success: false });
-		expect(createInvitationMock).not.toHaveBeenCalled();
-	});
-
-	it("rejects resending for an inactive employee in the invitation organization", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			status: "pending",
-			expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-			targetTeamId: null,
-			canCreateOrganizations: true,
-		});
-		employeeFindFirstMock.mockResolvedValue({
-			id: "employee-inactive",
-			organizationId: "org-1",
-			userId: "user-admin",
-			isActive: false,
-		});
-
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toMatchObject({ success: false });
-		const predicate = employeeFindFirstMock.mock.calls[0]?.[0].where;
-		expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
-			"user-admin",
-			"org-1",
-		]);
-		expect(createInvitationMock).not.toHaveBeenCalled();
-	});
-
-	it("resends through Better Auth with normalized email and the same role without canceling", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			email: "  Invitee@Example.COM  ",
-			role: "admin",
-			status: "pending",
-			targetTeamId: null,
-			canCreateOrganizations: false,
-		});
-		createInvitationMock.mockResolvedValue({ id: "invite-1" });
-		employeeInvitationDraftFindFirstMock.mockResolvedValue({
-			invitationId: "invite-1",
-		});
-
-		const result = await resendInvitation("org-1", "invite-1");
-
-		expect(result).toMatchObject({ success: true });
-		expect(createInvitationMock).toHaveBeenCalledWith({
-			body: {
-				organizationId: "org-1",
-				email: "invitee@example.com",
-				role: "admin",
-				resend: true,
-			},
-			headers: await headersMock.mock.results[0]?.value,
-		});
-		expect(cancelInvitationMock).not.toHaveBeenCalled();
-	});
-
-	it("checks the enterprise identity invite restriction for the invitation's organization before resending", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "  Invitee@Example.COM  ",
-			role: "member",
-			status: "pending",
-			targetTeamId: null,
-			canCreateOrganizations: false,
-		});
-		createInvitationMock.mockResolvedValue({ id: "invite-replacement" });
-
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toMatchObject({ success: true });
-		expect(assertEnterpriseIdentityInvitationAllowedMock).toHaveBeenCalledWith({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-		});
-	});
-
-	it("refuses to resend an invitation outside the enterprise identity domain", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			status: "pending",
-			targetTeamId: null,
-			canCreateOrganizations: false,
-		});
-		assertEnterpriseIdentityInvitationAllowedMock.mockRejectedValue(
-			new Error("Email must use the enterprise identity domain acme.test"),
-		);
-
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toMatchObject({
-			success: false,
-			error: "Email must use the enterprise identity domain acme.test",
-		});
-		expect(createInvitationMock).not.toHaveBeenCalled();
-		expect(persistEmployeeInvitationDraftMock).not.toHaveBeenCalled();
-	});
-
-	it("persists returned resend state through the shared transactional helper", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "admin",
-			status: "pending",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-			canCreateOrganizations: true,
-		});
-		createInvitationMock.mockResolvedValue({ id: "invite-replacement" });
-
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toMatchObject({ success: true });
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			{
-				organizationId: "org-1",
-				normalizedEmail: "invitee@example.com",
-				invitationId: "invite-replacement",
-				canCreateOrganizations: true,
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-				initialRole: "admin",
-				updatedBy: "user-admin",
-			},
-		);
-		expect(attachInvitationToEmployeeDraftMock).not.toHaveBeenCalled();
-	});
-
-	it("rejects a stale pending resend source that no longer owns the stable draft", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-stale",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			status: "pending",
-			expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-			targetTeamId: null,
-			canCreateOrganizations: false,
-		});
-		employeeInvitationDraftFindFirstMock.mockResolvedValue({
-			invitationId: "invite-current",
-		});
-
-		const result = await resendInvitation("org-1", "invite-stale");
-
-		expect(result).toMatchObject({
-			success: false,
-			error: "Invitation cannot be resent",
-		});
-		expect(createInvitationMock).not.toHaveBeenCalled();
-	});
-
-	it.each(["canceled", "accepted", "rejected"])(
-		"rejects an anomalously linked %s resend source",
-		async (status) => {
-			invitationFindFirstMock.mockResolvedValue({
-				id: "invite-old",
-				organizationId: "org-1",
-				email: "invitee@example.com",
-				role: "member",
-				status,
-				expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-				targetTeamId: null,
-				canCreateOrganizations: false,
+describe("toggleOrganizationFeature", () => {
+	it.each(["personnelFilesEnabled", "equipmentEnabled"] as const)(
+		"lets an org admin switch %s",
+		async (feature) => {
+			expect(await toggleOrganizationFeature({ feature, enabled: false })).toEqual({
+				success: true,
+				data: undefined,
 			});
-
-			const result = await resendInvitation("org-1", "invite-old");
-
-			expect(result).toMatchObject({
-				success: false,
-				error: "Invitation cannot be resent",
-			});
-			expect(createInvitationMock).not.toHaveBeenCalled();
+			expect(mocks.updateSet).toHaveBeenCalledWith({ [feature]: false });
 		},
 	);
 
-	it("allows an expired pending resend source that still owns the stable draft", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "  Invitee@Example.COM  ",
-			role: "member",
-			status: "pending",
-			expiresAt: new Date("2000-01-01T00:00:00.000Z"),
-			targetTeamId: null,
-			canCreateOrganizations: false,
-		});
-		createInvitationMock.mockResolvedValue({ id: "invite-replacement" });
+	it("steps an org admin up to owner for every other feature", async () => {
+		expect(
+			await toggleOrganizationFeature({ feature: "shiftsEnabled", enabled: true }),
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toMatchObject({ success: true });
-		expect(createInvitationMock).toHaveBeenCalledOnce();
-		expect(employeeInvitationDraftFindFirstMock).toHaveBeenCalledOnce();
-		const predicate =
-			employeeInvitationDraftFindFirstMock.mock.calls[0]?.[0].where;
-		const query = new PgDialect().sqlToQuery(predicate);
-		expect(query.params).toEqual(["org-1", "invitee@example.com"]);
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({ invitationId: "invite-replacement" }),
-		);
+		mocks.caller = owner;
+		expect(
+			await toggleOrganizationFeature({ feature: "shiftsEnabled", enabled: true }),
+		).toMatchObject({ success: true });
+		expect(mocks.updateSet).toHaveBeenCalledExactlyOnceWith({ shiftsEnabled: true });
 	});
 
-	it("translates a pre-creation Better Auth resend failure safely", async () => {
-		const secretText = "email=invitee@example.com&token=resend-secret";
-		const authError = new Error(secretText);
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			status: "pending",
-			targetTeamId: null,
-			canCreateOrganizations: false,
+	it("switches Billable Time off with projects", async () => {
+		mocks.caller = owner;
+
+		await toggleOrganizationFeature({ feature: "projectsEnabled", enabled: false });
+
+		expect(mocks.updateSet).toHaveBeenCalledWith({
+			projectsEnabled: false,
+			billableTimeEnabled: false,
 		});
-		createInvitationMock.mockRejectedValue(authError);
+	});
 
-		const result = await resendInvitation("org-1", "invite-old");
+	it.each([
+		["an unknown column", "deletedAt", "Invalid organization feature"],
+		[
+			"Billable Time, which has its own switch",
+			"billableTimeEnabled",
+			"This feature has its own switch",
+		],
+	])("refuses %s", async (_case, feature, error) => {
+		mocks.caller = owner;
 
-		expect(result).toMatchObject({
+		expect(await toggleOrganizationFeature({ feature, enabled: true } as never)).toMatchObject({
 			success: false,
 			code: "ValidationError",
-			error: "Failed to resend invitation",
+			error,
 		});
-		expect(result).not.toMatchObject({ error: authError.message });
-		expect(loggerErrorMock).toHaveBeenCalledWith(
-			{
-				operation: "resendInvitation",
-				failurePhase: "createInvitation",
-				organizationId: "org-1",
-				invitationId: "invite-old",
-			},
-			"Failed to resend invitation",
-		);
-		expect(JSON.stringify(loggerErrorMock.mock.calls)).not.toContain(
-			secretText,
-		);
-		expect(spanRecordExceptionMock.mock.calls[0]?.[0]).toEqual(
-			new Error("Invitation resend failed"),
-		);
+		expect(mocks.updateSet).not.toHaveBeenCalled();
+	});
+});
+
+describe("updateOrganizationTimezone", () => {
+	beforeEach(() => {
+		mocks.caller = owner;
 	});
 
-	it("copies app-owned fields to a replacement invitation scoped by ID and organization", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
+	it("saves through the protected writer, then rebuilds its organization separately", async () => {
+		expect(await updateOrganizationTimezone("America/New_York")).toMatchObject({ success: true });
+		expect(mocks.changeTimezone).toHaveBeenCalledWith({
 			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			status: "pending",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-			canCreateOrganizations: true,
+			actorUserId: "user-owner",
+			timezone: "America/New_York",
 		});
-		createInvitationMock.mockResolvedValue({ id: "invite-replacement" });
-
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toMatchObject({ success: true });
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({
-				invitationId: "invite-replacement",
-				organizationId: "org-1",
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-				canCreateOrganizations: true,
-			}),
+		expect(mocks.rebuildIntents).toHaveBeenCalledWith({ organizationId: "org-1" });
+		expect(mocks.changeTimezone.mock.invocationCallOrder[0]).toBeLessThan(
+			mocks.rebuildIntents.mock.invocationCallOrder[0] ?? 0,
 		);
 	});
 
-	it("returns success and logs repair context when post-email resend persistence fails", async () => {
-		const secretText = "update invitation email=invitee@example.com";
-		const databaseError = new Error(secretText);
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			status: "pending",
-			targetTeamId: null,
-			canCreateOrganizations: true,
+	it("keeps a committed save successful when its rebuild fails", async () => {
+		mocks.rebuildIntents.mockResolvedValueOnce({
+			organizationsRebuilt: 0,
+			failures: [{ organizationId: "org-1", error: "lock timeout" }],
 		});
-		createInvitationMock.mockResolvedValue({ id: "invite-replacement" });
-		persistEmployeeInvitationDraftMock.mockRejectedValue(databaseError);
+		await expect(updateOrganizationTimezone("America/New_York")).resolves.toMatchObject({
+			success: true,
+		});
 
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(createInvitationMock).toHaveBeenCalledOnce();
-		expect(loggerWarnMock).toHaveBeenCalledWith(
-			{
-				operation: "repairResentInvitationPersistence",
-				organizationId: "org-1",
-				invitationId: "invite-replacement",
-			},
-			"Resent invitation requires app-state repair",
-		);
-		expect(JSON.stringify(loggerWarnMock.mock.calls)).not.toContain(secretText);
-		expect(spanRecordExceptionMock).not.toHaveBeenCalled();
+		mocks.rebuildIntents.mockRejectedValueOnce(new Error("connection lost"));
+		await expect(updateOrganizationTimezone("America/New_York")).resolves.toMatchObject({
+			success: true,
+		});
+		expect(mocks.logger.warn).toHaveBeenCalledTimes(2);
 	});
 
-	it("relinks the same identity-based draft to the returned invitation", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "  Invitee@Example.COM  ",
-			role: "admin",
-			status: "pending",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-			canCreateOrganizations: true,
-		});
-		createInvitationMock.mockResolvedValue({ id: "invite-replacement" });
+	it("runs no separate rebuild for an unchanged or legacy save", async () => {
+		mocks.changeTimezone.mockResolvedValueOnce({ status: "unchanged" });
+		await updateOrganizationTimezone("Europe/Berlin");
+		mocks.changeTimezone.mockResolvedValueOnce({ status: "changed", rebuild: "in_transaction" });
+		await updateOrganizationTimezone("America/New_York");
 
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toMatchObject({ success: true });
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			{
-				organizationId: "org-1",
-				normalizedEmail: "invitee@example.com",
-				invitationId: "invite-replacement",
-				canCreateOrganizations: true,
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-				initialRole: "admin",
-				updatedBy: "user-admin",
-			},
-		);
-		expect(insertValuesMock).not.toHaveBeenCalled();
+		expect(mocks.rebuildIntents).not.toHaveBeenCalled();
 	});
 
-	it("does not expose post-email draft persistence failure as a resend failure", async () => {
-		const secretText = "draft email=invitee@example.com salary=secret";
-		const attachmentError = new Error(secretText);
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-old",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			status: "pending",
-			targetTeamId: null,
-			canCreateOrganizations: false,
-		});
-		createInvitationMock.mockResolvedValue({ id: "invite-replacement" });
-		persistEmployeeInvitationDraftMock.mockRejectedValue(attachmentError);
+	it("reports an owner revoked under protection as unauthorized", async () => {
+		mocks.changeTimezone.mockResolvedValueOnce({ status: "not_authorized" });
 
-		const result = await resendInvitation("org-1", "invite-old");
-
-		expect(result).toEqual({ success: true, data: undefined });
-		expect(createInvitationMock).toHaveBeenCalledOnce();
-		expect(loggerWarnMock).toHaveBeenCalledWith(
-			{
-				operation: "repairResentInvitationPersistence",
-				organizationId: "org-1",
-				invitationId: "invite-replacement",
-			},
-			"Resent invitation requires app-state repair",
-		);
-		expect(JSON.stringify(loggerWarnMock.mock.calls)).not.toContain(secretText);
-		expect(spanRecordExceptionMock).not.toHaveBeenCalled();
-	});
-
-	it("persists target team and organization creation permission after creating an invitation", async () => {
-		invitationFindFirstMock.mockResolvedValueOnce(null).mockResolvedValueOnce({
-			id: "invite-created",
-			organizationId: "org-1",
-			status: "pending",
-		});
-
-		const result = await sendInvitation({
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			role: "member",
-			canCreateOrganizations: true,
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(createInvitationMock).toHaveBeenCalledOnce();
-		expect(persistEmployeeInvitationDraftMock).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({
-				canCreateOrganizations: true,
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-			}),
-		);
-	});
-
-	it("allows an admin to update the target team for a pending invitation", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			status: "pending",
-		});
-
-		const result = await updateInvitationTargetTeam({
-			invitationId: "invite-1",
-			organizationId: "org-1",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(syncInvitationTargetTeamMock).toHaveBeenCalledWith(
-			expect.anything(),
-			{
-				organizationId: "org-1",
-				invitationId: "invite-1",
-				email: "invitee@example.com",
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-			},
-		);
-	});
-
-	it("rejects invalid target teams when updating a pending invitation", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			status: "pending",
-		});
-		teamFindFirstMock.mockResolvedValue(null);
-
-		const result = await updateInvitationTargetTeam({
-			invitationId: "invite-1",
-			organizationId: "org-1",
-			targetTeamId: "22222222-2222-4222-8222-222222222222",
-		});
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "ValidationError",
-			error: "Target team not found in this organization",
-		});
-		expect(updateSetMock).not.toHaveBeenCalled();
-	});
-
-	it("rejects malformed target team ids before updating an invitation", async () => {
-		const result = await updateInvitationTargetTeam({
-			invitationId: "invite-1",
-			organizationId: "org-1",
-			targetTeamId: "not-a-uuid",
-		});
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "ValidationError",
-			error: "Invalid target team",
-		});
-		expect(invitationFindFirstMock).not.toHaveBeenCalled();
-		expect(teamFindFirstMock).not.toHaveBeenCalled();
-		expect(updateSetMock).not.toHaveBeenCalled();
-	});
-
-	it("requires admin or owner role to update an invitation target team", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			status: "pending",
-		});
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-regular",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "member",
-		});
-
-		const result = await updateInvitationTargetTeam({
-			invitationId: "invite-1",
-			organizationId: "org-1",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(result).toMatchObject({
+		await expect(updateOrganizationTimezone("America/New_York")).resolves.toMatchObject({
 			success: false,
 			code: "AuthorizationError",
-			error: "Only admins and owners can update invitations",
 		});
-		expect(updateSetMock).not.toHaveBeenCalled();
+		expect(mocks.rebuildIntents).not.toHaveBeenCalled();
 	});
 
-	it("rejects target-team updates for an inactive employee in the invitation organization", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			status: "pending",
+	it("refuses an invalid zone before the writer", async () => {
+		await expect(updateOrganizationTimezone("Mars/Olympus")).resolves.toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Timezone must be a valid timezone",
 		});
-		employeeFindFirstMock.mockResolvedValue({
-			id: "employee-inactive",
-			organizationId: "org-1",
-			userId: "user-admin",
-			isActive: false,
-		});
-
-		const result = await updateInvitationTargetTeam({
-			invitationId: "invite-1",
-			organizationId: "org-1",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
-
-		expect(result).toMatchObject({ success: false });
-		const predicate = employeeFindFirstMock.mock.calls[0]?.[0].where;
-		expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
-			"user-admin",
-			"org-1",
-		]);
-		expect(updateSetMock).not.toHaveBeenCalled();
+		expect(mocks.changeTimezone).not.toHaveBeenCalled();
 	});
 
-	it.each(["pending", "rejected"])(
-		"does not update an invitation target team for a %s admin membership",
-		async (status) => {
-			invitationFindFirstMock.mockResolvedValue({
-				id: "invite-1",
-				organizationId: "org-1",
-				status: "pending",
-			});
-			memberFindFirstMock.mockImplementation(async ({ where }) => {
-				const query = new PgDialect().sqlToQuery(where);
-				return query.params.includes("approved")
-					? null
-					: {
-							id: "member-admin",
-							userId: "user-admin",
-							organizationId: "org-1",
-							role: "admin",
-							status,
-						};
-			});
+	it("keeps statement text out of a rolled-back save", async () => {
+		mocks.changeTimezone.mockRejectedValueOnce(new Error("insert into secret_table"));
 
-			const result = await updateInvitationTargetTeam({
-				invitationId: "invite-1",
-				organizationId: "org-1",
-				targetTeamId: "11111111-1111-4111-8111-111111111111",
-			});
-
-			expect(result).toMatchObject({ success: false });
-			const predicate = memberFindFirstMock.mock.calls[0]?.[0].where;
-			expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
-				"user-admin",
-				"org-1",
-				"approved",
-			]);
-			expect(updateSetMock).not.toHaveBeenCalled();
-			expect(cancelInvitationMock).not.toHaveBeenCalled();
-		},
-	);
-
-	it("allows clearing the target team from a pending invitation", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			email: "invitee@example.com",
-			status: "pending",
-		});
-
-		const result = await updateInvitationTargetTeam({
-			invitationId: "invite-1",
-			organizationId: "org-1",
-			targetTeamId: null,
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(teamFindFirstMock).not.toHaveBeenCalled();
-		expect(syncInvitationTargetTeamMock).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({
-				email: "invitee@example.com",
-				targetTeamId: null,
-			}),
-		);
-	});
-
-	it("does not update when no pending invitation exists for the organization", async () => {
-		invitationFindFirstMock.mockResolvedValue(null);
-
-		const result = await updateInvitationTargetTeam({
-			invitationId: "invite-1",
-			organizationId: "wrong-org",
-			targetTeamId: "11111111-1111-4111-8111-111111111111",
-		});
+		const result = await updateOrganizationTimezone("America/New_York");
 
 		expect(result).toMatchObject({
 			success: false,
-			code: "NotFoundError",
-			error: "Invitation not found",
+			error: "Failed to update organization timezone",
 		});
-		expect(memberFindFirstMock).toHaveBeenCalledOnce();
-		expect(teamFindFirstMock).not.toHaveBeenCalled();
-		expect(updateSetMock).not.toHaveBeenCalled();
+		expect(JSON.stringify(result)).not.toContain("secret_table");
 	});
+});
 
-	it.each(["pending", "rejected"])(
-		"does not cancel an invitation for a %s admin membership",
-		async (status) => {
-			invitationFindFirstMock.mockResolvedValue({
-				id: "invite-1",
-				organizationId: "org-1",
-				status: "pending",
-			});
-			memberFindFirstMock.mockImplementation(async ({ where }) => {
-				const query = new PgDialect().sqlToQuery(where);
-				return query.params.includes("approved")
-					? null
-					: {
-							id: "member-admin",
-							userId: "user-admin",
-							organizationId: "org-1",
-							role: "admin",
-							status,
-						};
-			});
-
-			const result = await cancelInvitation("invite-1");
-
-			expect(result).toMatchObject({ success: false });
-			const predicate = memberFindFirstMock.mock.calls[0]?.[0].where;
-			expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
-				"user-admin",
-				"org-1",
-				"approved",
-			]);
-			expect(updateSetMock).not.toHaveBeenCalled();
-			expect(cancelInvitationMock).not.toHaveBeenCalled();
-		},
-	);
-
-	it("rejects cancellation for an inactive employee in the invitation organization", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			status: "pending",
+describe("updateOrganizationDefaultNotificationLanguage", () => {
+	it("lets an org admin set the session organization's default language", async () => {
+		expect(await updateOrganizationDefaultNotificationLanguage("de")).toEqual({
+			success: true,
+			data: undefined,
 		});
-		employeeFindFirstMock.mockResolvedValue({
-			id: "employee-inactive",
-			organizationId: "org-1",
-			userId: "user-admin",
-			isActive: false,
-		});
-
-		const result = await cancelInvitation("invite-1");
-
-		expect(result).toMatchObject({ success: false });
-		const predicate = employeeFindFirstMock.mock.calls[0]?.[0].where;
-		expect(new PgDialect().sqlToQuery(predicate).params).toEqual([
-			"user-admin",
-			"org-1",
-		]);
-		expect(cancelInvitationMock).not.toHaveBeenCalled();
-	});
-
-	it("allows an approved admin without an employee row to cancel an invitation", async () => {
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			status: "pending",
-		});
-
-		const result = await cancelInvitation("invite-1");
-
-		expect(result).toMatchObject({ success: true });
-		expect(employeeFindFirstMock).toHaveBeenCalledOnce();
-		expect(cancelInvitationMock).toHaveBeenCalledOnce();
-	});
-
-	it("returns and logs a fixed safe error when Better Auth cancellation fails", async () => {
-		const secretText = "token=cancel-secret&postgres=internal-host";
-		invitationFindFirstMock.mockResolvedValue({
-			id: "invite-1",
-			organizationId: "org-1",
-			status: "pending",
-		});
-		cancelInvitationMock.mockRejectedValue(new Error(secretText));
-
-		const result = await cancelInvitation("invite-1");
-
-		expect(result).toEqual({
-			success: false,
-			code: "ValidationError",
-			error: "Failed to cancel invitation",
-		});
-		expect(loggerErrorMock).toHaveBeenCalledWith(
-			{
-				operation: "cancelInvitation",
-				invitationId: "invite-1",
-				organizationId: "org-1",
-			},
-			"Failed to cancel invitation",
-		);
-		expect(JSON.stringify(loggerErrorMock.mock.calls)).not.toContain(
-			secretText,
-		);
-		expect(spanRecordExceptionMock.mock.calls[0]?.[0]).toEqual(
-			new Error("Invitation cancellation failed"),
-		);
-	});
-
-	it("allows an admin to update the organization default notification language", async () => {
-		const result = await updateOrganizationDefaultNotificationLanguage(
-			"org-1",
-			"de",
-		);
-
-		expect(result).toMatchObject({ success: true });
-		expect(updateSetMock).not.toHaveBeenCalledWith({ defaultLanguage: "de" });
-		expect(insertValuesMock).toHaveBeenCalledWith({
+		expect(mocks.insertValues).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			defaultLanguage: "de",
 		});
-		expect(onConflictDoUpdateMock).toHaveBeenCalledWith(
+		expect(mocks.onConflictDoUpdate).toHaveBeenCalledWith(
 			expect.objectContaining({ set: { defaultLanguage: "de" } }),
 		);
 	});
 
-	it("rejects unsupported organization default notification languages", async () => {
-		const result = await updateOrganizationDefaultNotificationLanguage(
-			"org-1",
-			"xx",
-		);
-
-		expect(result).toMatchObject({
+	it("refuses an unsupported language", async () => {
+		expect(await updateOrganizationDefaultNotificationLanguage("xx")).toMatchObject({
 			success: false,
 			code: "ValidationError",
 			error: "Unsupported language",
 		});
-		expect(memberFindFirstMock).not.toHaveBeenCalled();
-		expect(updateSetMock).not.toHaveBeenCalled();
-		expect(insertValuesMock).not.toHaveBeenCalled();
-		expect(onConflictDoUpdateMock).not.toHaveBeenCalled();
+		expect(mocks.insertValues).not.toHaveBeenCalled();
 	});
+});
 
-	it("requires admin or owner role to update organization default notification language", async () => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-regular",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "member",
+describe("organization deletion", () => {
+	it("schedules the session organization for deletion once its exact name is typed", async () => {
+		expect(await deleteOrganization({ confirmationName: "Organization One" })).toEqual({
+			success: true,
+			data: undefined,
 		});
-
-		const result = await updateOrganizationDefaultNotificationLanguage(
-			"org-1",
-			"de",
+		expect(mocks.updateSet).toHaveBeenCalledWith({
+			deletedAt: expect.any(Date),
+			deletedBy: "user-admin",
+		});
+		expect(mocks.sendDeletionNotifications).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				organizationName: "Organization One",
+				deletedByName: "user-admin",
+			}),
 		);
-
-		expect(result).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(updateSetMock).not.toHaveBeenCalled();
-		expect(insertValuesMock).not.toHaveBeenCalled();
-		expect(onConflictDoUpdateMock).not.toHaveBeenCalled();
 	});
 
-	it.each(["", " Europe/Berlin", "Europe/Berlin ", "+05:45", "Not/A_Zone"])(
-		"rejects invalid organization timezone %j before updating",
-		async (timezone) => {
-			memberFindFirstMock.mockResolvedValue({
-				id: "member-owner",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "owner",
-			});
-			const result = await updateOrganizationTimezone("org-1", timezone);
+	it("keeps the deletion when its notification emails fail", async () => {
+		mocks.sendDeletionNotifications.mockRejectedValue(new Error("smtp down"));
 
-			expect(result).toMatchObject({
-				success: false,
-				code: "ValidationError",
-				error: "Timezone must be a valid timezone",
-			});
-			expect(changeOrganizationTimezoneMock).not.toHaveBeenCalled();
-		},
-	);
+		expect(await deleteOrganization({ confirmationName: "Organization One" })).toMatchObject({
+			success: true,
+		});
+		expect(mocks.logger.warn).toHaveBeenCalled();
+	});
 
-	it.each(["UTC", "Europe/Berlin", "America/New_York"])(
-		"updates organization timezone %s for an owner",
-		async (timezone) => {
-			memberFindFirstMock.mockResolvedValue({
-				id: "member-owner",
-				userId: "user-admin",
-				organizationId: "org-1",
-				role: "owner",
-			});
-			const result = await updateOrganizationTimezone("org-1", timezone);
+	it.each([
+		["a mismatched name", "Organization Two", {}],
+		["an organization already scheduled", "Organization One", { deletedAt: new Date() }],
+	])("refuses %s", async (_case, confirmationName, organization) => {
+		mocks.db.query.organization.findFirst.mockResolvedValue({
+			id: "org-1",
+			name: "Organization One",
+			deletedAt: null,
+			...organization,
+		});
 
-			expect(result).toMatchObject({ success: true });
-			expect(changeOrganizationTimezoneMock).toHaveBeenCalledWith(
-				expect.objectContaining({ timezone }),
-			);
-		},
-	);
+		expect(await deleteOrganization({ confirmationName })).toMatchObject({
+			success: false,
+			code: "ValidationError",
+		});
+		expect(mocks.updateSet).not.toHaveBeenCalled();
+	});
+
+	it("recovers a scheduled deletion, and refuses one that is not scheduled", async () => {
+		expect(await recoverOrganization()).toMatchObject({
+			success: false,
+			error: "Organization is not scheduled for deletion",
+		});
+
+		mocks.db.query.organization.findFirst.mockResolvedValue({
+			id: "org-1",
+			name: "Organization One",
+			deletedAt: new Date(),
+		});
+		expect(await recoverOrganization()).toEqual({ success: true, data: undefined });
+		expect(mocks.updateSet).toHaveBeenCalledWith({ deletedAt: null, deletedBy: null });
+		expect(whereParams(mocks.db.query.organization.findFirst)).toEqual(["org-1"]);
+	});
 });

@@ -83,12 +83,12 @@ export function OrganizationTrackingCard({
 			});
 			if (!result.success) {
 				setError(
-					result.code === "stale_preview"
+					result.refusal === "stale_preview"
 						? t(
 								"organization.tracking.stale-preview",
 								"The reviewed inputs changed. Generate a new preview before saving.",
 							)
-						: result.code === "blocked"
+						: result.refusal === "blocked"
 							? t(
 									"organization.tracking.blocked-save",
 									"Reopen the affected closed months and generate a new preview.",

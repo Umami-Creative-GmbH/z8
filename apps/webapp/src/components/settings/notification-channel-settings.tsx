@@ -19,6 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TimeInput } from "@/components/ui/time-input";
+import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface NotificationChannelSettingsProps {
 	channelName: string;
@@ -26,7 +28,7 @@ interface NotificationChannelSettingsProps {
 	config: NotificationChannelConfig | null;
 	updateAction: (
 		settings: NotificationChannelSettingsFormValues,
-	) => Promise<{ success: true; data: undefined } | { success: false; error: string }>;
+	) => Promise<ServerActionResult<undefined>>;
 }
 
 const fallbackSettings: NotificationChannelSettingsFormValues = {
@@ -146,7 +148,15 @@ export function NotificationChannelSettings({
 				return;
 			}
 
-			toast.error(result.error);
+			toast.error(
+				actionErrorMessage(t, result, {}, (translate) =>
+					translate(
+						"settings.notifications.saveFailed",
+						"Failed to save {channelName} notification settings",
+						{ channelName },
+					),
+				),
+			);
 		},
 		onError: () => {
 			toast.error(

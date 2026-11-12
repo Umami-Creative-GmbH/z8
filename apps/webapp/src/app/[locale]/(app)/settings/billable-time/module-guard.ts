@@ -10,10 +10,14 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
  */
 
 export const billableTimeOff = () =>
-	new ValidationError({ message: "Billable Time is switched off", field: "billableTimeEnabled" });
+	new ValidationError({
+		message: "Billable Time is switched off",
+		field: "billableTimeEnabled",
+		refusal: "billable_time_off",
+	});
 
-/** Fails with `billableTimeOff` unless the module is on with a billable currency. */
-export function requireBillableTimeOn(organizationId: string, queryName: string) {
+/** The billable currency; fails with `billableTimeOff` unless the module is on with one. */
+export function billableTimeCurrency(organizationId: string, queryName: string) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const settings = yield* dbService.query(queryName, () =>

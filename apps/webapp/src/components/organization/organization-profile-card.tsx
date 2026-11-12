@@ -30,13 +30,12 @@ import {
 	type ProfileFieldErrors,
 	validateOrganizationProfile,
 } from "@/lib/organization/profile";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 
 export function OrganizationProfileCard({
-	organizationId,
 	profile,
 }: {
-	organizationId: string;
 	profile: OrganizationProfile;
 }) {
 	const { t } = useTranslate();
@@ -49,10 +48,10 @@ export function OrganizationProfileCard({
 	const form = useForm({
 		defaultValues: savedProfile,
 		onSubmit: async ({ value }) => {
-			const saveFailed = t(
+			const saveFailed = [
 				"organization.profile.saveFailed",
 				"Could not save the organization profile. Please try again.",
-			);
+			] as const;
 			const validation = validateOrganizationProfile(value);
 			if (!validation.ok) {
 				focusErrors.current = true;
@@ -61,25 +60,21 @@ export function OrganizationProfileCard({
 			}
 			try {
 				const result = await saveOrganizationProfile(
-					organizationId,
 					validation.profile,
 				);
 				if (!result.success) {
-					toast.error(saveFailed);
-				} else if (!result.data.ok) {
-					focusErrors.current = true;
-					setFieldErrors(result.data.fieldErrors);
+					toast.error(actionErrorMessage(t, result, {}, saveFailed));
 				} else {
 					setFieldErrors({});
-					setSavedProfile(result.data.profile);
-					form.reset(result.data.profile);
+					setSavedProfile(result.data);
+					form.reset(result.data);
 					toast.success(
 						t("organization.profile.saved", "Organization profile saved"),
 					);
 					router.refresh();
 				}
 			} catch {
-				toast.error(saveFailed);
+				toast.error(t(...saveFailed));
 			}
 		},
 	});

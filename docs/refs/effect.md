@@ -42,6 +42,64 @@ A module that `AppLayer` itself imports, such as the time-tracking calculations 
 - **Runner:** `runServerActionSafe(effect)` in `lib/effect/result.ts` is the only server-action runner. It runs the effect on the shared runtime and returns the shared `ServerActionResult<T>`.
 - **Types:** it accepts `Effect<T, AnyAppError, AppServices>`. `AppServices` is every `AppLayer` member, so a service from outside `AppLayer` fails to compile until its layer is provided (Runtime rule 3).
 - **Results:** a typed failure comes back with its `message` as `error` and its `_tag` as `code`. A defect that is an `Error` comes back with its `message` and code `UNKNOWN_ERROR`, and an interrupt-only failure with a generic message. Write typed-failure and thrown messages that are safe to show users.
+- **Settings actions:** declare them with `organizationAction`, below; it runs on `runServerActionSafe`.
+
+## Organization Actions
+
+`organizationAction(declaration, handler)` in `lib/organization-action/organization-action.ts` produces every settings server action ([ADR 0002](../adr/0002-settings-actions-authorize-by-settings-access-not-casl.md)). Export its result from the `"use server"` module:
+
+```ts
+export const updateTelegramSettings = organizationAction(
+	{ name: "telegram.updateSettings", requires: "orgAdmin", schema: telegramSettingsSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("telegram.updateSettings", () =>
+				dbService.db
+					.update(telegramBotConfig)
+					.set({ enableApprovals: input.enableApprovals })
+					.where(eq(telegramBotConfig.organizationId, organizationId)),
+			);
+		}),
+);
+// client: await updateTelegramSettings({ enableApprovals: true, … })
+```
+
+- **Declaration:** `name` is `<area>.<operation>` and names the OTel span and the refusal's resource. `requires` is the settings access level (see [RBAC](project-conventions.md#rbac)). `schema` is a zod schema, or `noInput` for an action called with no arguments. Optional `addsEmployees: (input) => employeeIds` names only the employees the save adds (`addedEmployeeIds(next, previous)`).
+- **Order:** session → the session's active organization behind the SSO/MFA gate → settings access → schema → current-roster check of `addsEmployees` → handler, all in one span. A refused caller never reaches validation or the handler.
+- **Handler:** gets `{ actor, organizationId, input }` and returns an `Effect`; it yields `DatabaseService` for the database. Load a row named by ID with `and(eq(t.id, input.id), eq(t.organizationId, organizationId))`, so another organization's row is not found. `actor` carries `userId`, `membershipRole`, `employee` (null for an org admin without one) and `settingsAccess`. `actor.managedScope()` loads, on first use, whom the actor manages: the whole organization (`organizationWide: true`) for an org admin and for a workforce admin, else a scoped manager's employees and teams. When the level depends on validated input, declare the lower level and `yield* actor.require("owner")` after reading `input`.
+- **Checks inside the handler:** work out whether the actor may act on this object with a shared loader (`organizationAbility` from `lib/authorization/organization-ability.ts` for a CASL grant, `actor.managedScope()` or a feature's scope predicate), then refuse with `refuseUnless(allowed, { userId, message, resource, action })` from `lib/organization-action/refuse-unless.ts`. Settings action files define no `require*`, `ensure*` or `assert*` functions; the coverage test fails on one. Name data checks `validate*`, `check*` or `load*`.
+- **Store work:** run Promise-style store code with `storeStep(name, (db) => run(db), { refusal?, failure? })` from `lib/organization-action/store-step.ts`. A tagged error the store throws keeps its type, a refusal of the `refusal` class becomes a `ValidationError` with its code (and its details as the result's `details`), and anything else a `DatabaseError` (worded by `failure`).
+- **Refusals:** every failure is a `ServerActionResult` with `code` set to the error's `_tag`:
+  - no session or a refused SSO/MFA gate: `AuthenticationError`;
+  - no active organization or too low a level: `AuthorizationError` ("You do not have access to this setting");
+  - schema: `ValidationError` with the first issue's message, its path as `field`;
+  - roster: `ValidationError` with `refusal: "former_employee"`.
+
+  Fail domain refusals with a tagged error carrying a stable `refusal` code (`new ValidationError({ message, refusal: "vehicle_used" })`) instead of returning `{ success: false }` or `{ ok: false, reason }` as data.
+- **Client messages:** a component words every failed result with `actionErrorMessage(t, result, overrides?, fallback?)` from `lib/organization-action/action-error-message.ts`; it never shows the server's `error` text. It looks up the feature's override for the result's `refusal`, then for its `code`, then the generic text for the refusal or code, then `fallback`. A feature keeps its own texts as an override map of `[key, default]` tuples (or `(t, failure) => string` when the text needs the failure's `details`), written `{ … } satisfies RefusalMessages<FeatureCode>`, e.g. `VEHICLE_REFUSALS` or `KIOSK_FOB_REFUSALS`. Branch on `result.refusal` only for flow (refresh after `fob_changed`), never for wording.
+- **Tests:** stub `AuthService` and `DatabaseService` with `organizationActionStubLayer` from `src/test/organization-action.ts` through `runtimeModuleOver`, instead of `vi.mock` of `@/lib/auth-helpers`, `@/lib/auth` or the auth service:
+
+  ```ts
+  import type { StubCaller } from "@/test/organization-action";
+
+  const mocks = vi.hoisted(() => ({ caller: null as StubCaller | null, update: vi.fn() }));
+  vi.mock("@/lib/effect/runtime", async () => {
+  	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+  	const { organizationActionStubLayer } = await import("@/test/organization-action");
+  	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db: { update: mocks.update } }));
+  });
+
+  it("refuses an org member", async () => {
+  	mocks.caller = { userId: "u1", activeOrganizationId: "org-1", membershipRole: "member", employee: { id: "e1", role: "employee", former: false } };
+  	expect(await updateTelegramSettings({ enableApprovals: true })).toMatchObject({ success: false, code: "AuthorizationError" });
+  });
+  ```
+
+  The stub answers the settings-access query from `caller`; every other `dbService.query` runs against `db`. Change `mocks.caller` per test: `null` is signed out, `membershipRole: null` a pending membership, `employee.former: true` a former employee, `organizationAccessRefused: true` a refused SSO/MFA gate. `settings/telegram/actions.test.ts` is a full example. The levels themselves are covered against PostgreSQL in `lib/organization-action/organization-action.integration.test.ts`.
+
+  PostgreSQL suites (`*.integration.test.ts`) are exempt from the no-auth-mock rule. They test the real `AuthService` against real membership and employee rows, so they stand in a Better Auth session by mocking `@/lib/auth` (`auth.api.getSession`) and the Next request scope; the stub layer would skip the very resolution they cover.
+- **Mocking `@/env`:** spread the real env (`{ env: { ...(await importOriginal()).env, X: "…" } }`). The module loads Better Auth through `AuthService`, which throws on a bare env object.
 
 ## Database Access
 

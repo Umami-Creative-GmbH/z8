@@ -104,9 +104,8 @@ describe("runtime demo work on PostgreSQL", () => {
 	const admin = integrationAdminPool();
 
 	function actAsAdmin() {
-		// Not the active organization: `canUseDemoData` then checks the admin membership.
 		harness.userId = ids.adminUser;
-		harness.organizationId = null;
+		harness.organizationId = ids.organization;
 	}
 
 	function actAs(userId: string) {
@@ -124,7 +123,6 @@ describe("runtime demo work on PostgreSQL", () => {
 
 	function stepInput(employeeIds: string[]) {
 		return {
-			organizationId: ids.organization,
 			dateRangeType: "last30" as const,
 			employeeIds,
 		};
@@ -959,7 +957,7 @@ describe("runtime demo work on PostgreSQL", () => {
 			await holder.query("begin");
 			await holder.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [ids.requester]);
 			actAsAdmin();
-			const clearing = clearTimeDataAction(ids.organization);
+			const clearing = clearTimeDataAction();
 			await vi.waitFor(
 				async () => {
 					const { rows } = await admin.query(
@@ -1021,7 +1019,7 @@ describe("runtime demo work on PostgreSQL", () => {
 			);
 
 			actAsAdmin();
-			await expect(clearTimeDataAction(ids.organization)).resolves.toMatchObject({
+			await expect(clearTimeDataAction()).resolves.toMatchObject({
 				success: true,
 			});
 
@@ -1067,7 +1065,7 @@ describe("runtime demo work on PostgreSQL", () => {
 			);
 
 			actAsAdmin();
-			const result = await deleteNonAdminDataAction(ids.organization);
+			const result = await deleteNonAdminDataAction();
 
 			expect(result).toMatchObject({
 				success: true,

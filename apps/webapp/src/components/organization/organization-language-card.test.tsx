@@ -88,33 +88,21 @@ describe("OrganizationLanguageCard", () => {
 	it("lets admins update the default notification language", async () => {
 		updateLanguageMock.mockResolvedValue({ success: true, data: undefined });
 
-		render(
-			<OrganizationLanguageCard
-				organizationId="org-1"
-				defaultLanguage="en"
-				currentMemberRole="admin"
-			/>,
-		);
+		render(<OrganizationLanguageCard defaultLanguage="en" settingsAccess="orgAdmin" />);
 
 		fireEvent.change(screen.getByLabelText("Default notification language"), {
 			target: { value: "de" },
 		});
 
 		await waitFor(() => {
-			expect(updateLanguageMock).toHaveBeenCalledWith("org-1", "de");
+			expect(updateLanguageMock).toHaveBeenCalledWith("de");
 		});
 		expect(toastSuccessMock).toHaveBeenCalledWith("Organization notification language updated");
 		expect(refreshMock).toHaveBeenCalledOnce();
 	});
 
 	it("disables the language control for members", () => {
-		render(
-			<OrganizationLanguageCard
-				organizationId="org-1"
-				defaultLanguage="en"
-				currentMemberRole="member"
-			/>,
-		);
+		render(<OrganizationLanguageCard defaultLanguage="en" settingsAccess="member" />);
 
 		expect(screen.getByLabelText("Default notification language")).toHaveProperty("disabled", true);
 		expect(
@@ -132,13 +120,7 @@ describe("OrganizationLanguageCard", () => {
 			}),
 		);
 
-		render(
-			<OrganizationLanguageCard
-				organizationId="org-1"
-				defaultLanguage="en"
-				currentMemberRole="admin"
-			/>,
-		);
+		render(<OrganizationLanguageCard defaultLanguage="en" settingsAccess="orgAdmin" />);
 
 		const languageSelect = screen.getByLabelText("Default notification language");
 
@@ -157,13 +139,7 @@ describe("OrganizationLanguageCard", () => {
 	});
 
 	it("does not update when the selected language is already current", () => {
-		render(
-			<OrganizationLanguageCard
-				organizationId="org-1"
-				defaultLanguage="en"
-				currentMemberRole="admin"
-			/>,
-		);
+		render(<OrganizationLanguageCard defaultLanguage="en" settingsAccess="orgAdmin" />);
 
 		fireEvent.change(screen.getByLabelText("Default notification language"), {
 			target: { value: "en" },
@@ -173,13 +149,7 @@ describe("OrganizationLanguageCard", () => {
 	});
 
 	it("keeps flag and language label grouped in each select option", () => {
-		render(
-			<OrganizationLanguageCard
-				organizationId="org-1"
-				defaultLanguage="en"
-				currentMemberRole="admin"
-			/>,
-		);
+		render(<OrganizationLanguageCard defaultLanguage="en" settingsAccess="orgAdmin" />);
 
 		for (const option of screen.getAllByRole("option")) {
 			expect(option.getAttribute("data-grouped-content")).toBe("true");
@@ -194,13 +164,7 @@ describe("OrganizationLanguageCard", () => {
 			}),
 		);
 
-		render(
-			<OrganizationLanguageCard
-				organizationId="org-1"
-				defaultLanguage="en"
-				currentMemberRole="admin"
-			/>,
-		);
+		render(<OrganizationLanguageCard defaultLanguage="en" settingsAccess="orgAdmin" />);
 
 		const languageSelect = screen.getByLabelText("Default notification language");
 

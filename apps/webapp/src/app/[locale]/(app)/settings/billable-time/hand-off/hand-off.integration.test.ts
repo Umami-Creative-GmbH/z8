@@ -1014,7 +1014,7 @@ describe("hand-off on PostgreSQL", () => {
 
 		// The project settings edit: never refused because its work is invoiced.
 		await unwrap(
-			projectSettings.updateProject(ids.website, { customerId: ids.beta }),
+			projectSettings.updateProject({ projectId: ids.website, customerId: ids.beta }),
 		);
 		expect(await fields()).toEqual({
 			[work.website]: ["customer"],
@@ -1023,7 +1023,7 @@ describe("hand-off on PostgreSQL", () => {
 
 		// Setting it back to the draft's customer keeps the mark.
 		await unwrap(
-			projectSettings.updateProject(ids.website, { customerId: ids.acme }),
+			projectSettings.updateProject({ projectId: ids.website, customerId: ids.acme }),
 		);
 		expect(await fields()).toEqual({
 			[work.website]: ["customer"],
@@ -1033,7 +1033,6 @@ describe("hand-off on PostgreSQL", () => {
 		// A customer created for a project moves the project to it.
 		await unwrap(
 			customerSettings.createCustomer({
-				organizationId: ids.organization,
 				name: "Gamma",
 				projectId: ids.app,
 			}),
@@ -1048,7 +1047,7 @@ describe("hand-off on PostgreSQL", () => {
 			"update invoiced_work set changed_fields = '{}', changed_after_invoicing_at = null where organization_id = $1",
 			[ids.organization],
 		);
-		await unwrap(customerSettings.deleteCustomer(ids.acme));
+		await unwrap(customerSettings.deleteCustomer({ customerId: ids.acme }));
 		expect(await fields()).toEqual({
 			[work.website]: null,
 			[work.app]: null,
@@ -1056,7 +1055,7 @@ describe("hand-off on PostgreSQL", () => {
 
 		// Removing the project's customer marks it the same way.
 		await unwrap(
-			projectSettings.updateProject(ids.website, { customerId: null }),
+			projectSettings.updateProject({ projectId: ids.website, customerId: null }),
 		);
 		expect(await fields()).toEqual({
 			[work.website]: ["customer"],

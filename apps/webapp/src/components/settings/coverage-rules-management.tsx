@@ -47,6 +47,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { CoverageRuleWithRelations } from "@/lib/effect/services/coverage.service";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import { CoverageRuleDialog } from "./coverage-rule-dialog";
 
@@ -94,7 +95,7 @@ export function CoverageRulesManagement({
 	const { data: rulesResult, isLoading } = useQuery({
 		queryKey: queryKeys.coverage.rules(organizationId),
 		queryFn: async () => {
-			const result = await getCoverageRules();
+			const result = await getCoverageRules({});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -122,7 +123,7 @@ export function CoverageRulesManagement({
 
 	// Delete mutation
 	const deleteRuleMutation = useMutation({
-		mutationFn: (ruleId: string) => deleteCoverageRule(ruleId),
+		mutationFn: (ruleId: string) => deleteCoverageRule({ ruleId }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(
@@ -133,8 +134,10 @@ export function CoverageRulesManagement({
 				});
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.coverageRules.deleteFailed", "Failed to delete"),
+					actionErrorMessage(t, result, {}, [
+						"settings.coverageRules.deleteFailed",
+						"Failed to delete",
+					]),
 				);
 			}
 			setDeleteRuleId(null);
@@ -161,11 +164,10 @@ export function CoverageRulesManagement({
 				});
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.coverageRules.settingsFailed",
-							"Failed to save settings",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.coverageRules.settingsFailed",
+						"Failed to save settings",
+					]),
 				);
 			}
 		},

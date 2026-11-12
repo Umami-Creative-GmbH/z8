@@ -13,7 +13,7 @@ describe("customer dialog helpers", () => {
 
 	it("builds a create payload with the selected scoped project id", () => {
 		expect(
-			buildCreateCustomerInput("org-1", {
+			buildCreateCustomerInput({
 				projectId: "project-1",
 				name: "Scoped Customer",
 				address: "",
@@ -24,7 +24,6 @@ describe("customer dialog helpers", () => {
 				website: "",
 			}),
 		).toEqual({
-			organizationId: "org-1",
 			projectId: "project-1",
 			name: "Scoped Customer",
 			address: undefined,

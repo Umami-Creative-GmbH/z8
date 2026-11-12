@@ -181,7 +181,6 @@ describe("ImportReviewRoute", () => {
 		});
 		expect(mockState.renderReviewPage.mock.lastCall?.[0]).toMatchObject({
 			batchId: "batch-1",
-			organizationId: "org-1",
 			summary: { total: 1 },
 			rows: [{ id: "row-1", billability: null }],
 			showBillability: false,

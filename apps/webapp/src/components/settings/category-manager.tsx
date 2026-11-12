@@ -14,8 +14,20 @@ import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/dat
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
+
+/** A delete refused because active holidays use the category. */
+const DELETE_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.holidays.categories.deleteInUse",
+		"This category is used by active holidays. Move or remove them first.",
+	],
+};
 
 interface HolidayCategory {
 	id: string;
@@ -53,7 +65,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 	} = useQuery({
 		queryKey: queryKeys.holidayCategories.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayCategories(organizationId);
+			const result = await getHolidayCategories();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to load categories");
 			}
@@ -72,8 +84,10 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 				});
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.holidays.categories.deleteFailed", "Failed to delete category"),
+					actionErrorMessage(t, result, DELETE_REFUSALS, [
+						"settings.holidays.categories.deleteFailed",
+						"Failed to delete category",
+					]),
 				);
 			}
 			setDeleteConfirmOpen(false);

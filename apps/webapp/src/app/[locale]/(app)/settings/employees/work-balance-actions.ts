@@ -1,14 +1,19 @@
 "use server";
 
+import { z } from "zod";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
-import { runRefusalAction } from "@/lib/effect/refusal-action";
-import type { DatabaseClient } from "@/lib/effect/services/database.service";
-import { isUuid } from "@/lib/validations/uuid";
 import {
+	type OrganizationActor,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { storeStep } from "@/lib/organization-action/store-step";
+import {
+	type BalanceAdjustmentCaller,
 	balanceAdjustmentAuditMetadata,
-	requireBalanceAdjustmentViewer,
-	requireBalanceAdjustmentWriter,
+	balanceAdjustmentViewerAccess,
+	balanceAdjustmentWriterAuthority,
 } from "@/lib/work-balance/adjustments/authorization";
 import { openingBalanceMinutes, payoutMinutes } from "@/lib/work-balance/adjustments/rules";
 import {
@@ -18,7 +23,6 @@ import {
 	setOpeningBalance,
 } from "@/lib/work-balance/adjustments/store";
 import {
-	type BalanceAdjustmentActionResult,
 	BalanceAdjustmentRefusal,
 	type BalanceAdjustmentView,
 } from "@/lib/work-balance/adjustments/types";
@@ -29,11 +33,11 @@ import { revalidateWorkBalancePaths } from "./work-balance-paths";
 /**
  * The Work balance section of an employee's settings page (#993): the current
  * work balance, the history of balance adjustments, and recording and
- * cancelling overtime payouts. Writes: `requireBalanceAdjustmentWriter`
- * (owners and admins; payroll grant holders for the employees their grant
- * covers, #995). The payroll area's Work balances page uses them too. The
- * section also serves the employee's own history and their managers' view of
- * it, read-only (#996): `requireBalanceAdjustmentViewer`.
+ * cancelling overtime payouts. Any org member reaches the actions (#1613);
+ * who may do what is the balance adjustment authority: writes for owners and
+ * admins, and payroll grant holders for the employees their grant covers
+ * (#995); reads also for the employee themself and their managers, read-only
+ * (#996). The payroll area's Work balances page uses them too.
  */
 
 export type EmployeeWorkBalanceSectionData = {
@@ -46,163 +50,193 @@ export type EmployeeWorkBalanceSectionData = {
 	canManage: boolean;
 };
 
-export type RecordOvertimePayoutInput = {
-	employeeId: string;
-	/** Local date in the employee's effective timezone (`YYYY-MM-DD`). */
-	day: string;
-	hours: number;
-	minutes: number;
-	reason: string;
-};
+const employeeId = z.uuid("Invalid selection.");
 
-export type SetOpeningBalanceInput = {
-	employeeId: string;
+const sectionSchema = z.strictObject({ employeeId });
+
+const recordOvertimePayoutSchema = z.strictObject({
+	employeeId,
 	/** Local date in the employee's effective timezone (`YYYY-MM-DD`). */
-	day: string;
+	day: z.string(),
+	hours: z.number(),
+	minutes: z.number(),
+	reason: z.string(),
+});
+
+const setOpeningBalanceSchema = z.strictObject({
+	employeeId,
+	/** Local date in the employee's effective timezone (`YYYY-MM-DD`). */
+	day: z.string(),
 	/** True for a negative opening balance. */
-	negative: boolean;
-	hours: number;
-	minutes: number;
-	reason: string;
-};
+	negative: z.boolean(),
+	hours: z.number(),
+	minutes: z.number(),
+	reason: z.string(),
+});
 
-export type CancelBalanceAdjustmentInput = {
-	employeeId: string;
-	adjustmentId: string;
-	reason: string;
-};
+const cancelBalanceAdjustmentSchema = z.strictObject({
+	employeeId,
+	adjustmentId: z.uuid("Invalid selection."),
+	reason: z.string(),
+});
 
-export async function getEmployeeWorkBalanceSectionAction(input: {
-	employeeId: string;
-}): Promise<BalanceAdjustmentActionResult<EmployeeWorkBalanceSectionData>> {
-	return runRefusalAction("balanceAdjustments.section", BalanceAdjustmentRefusal, async (db) => {
-		const { organizationId, canManage } = await requireBalanceAdjustmentViewer(db, {
-			employeeId: String(input?.employeeId ?? ""),
-		});
-		const employeeId = parseUuid(input?.employeeId);
-		const subject = await loadWorkBalanceEmployee({ employeeId, organizationId }, db);
-		if (!subject) throw new BalanceAdjustmentRefusal("employee_not_found", "Employee not found");
-		const [balance, adjustments] = await Promise.all([
-			getEmployeeWorkBalance({ employeeId, organizationId }, db),
-			listBalanceAdjustments(db, { organizationId, employeeId }),
-		]);
-		return {
-			balance,
-			adjustments,
-			today: plainDateAt(systemClock.nowInstant(), subject.timezone).toString(),
-			timezone: subject.timezone,
-			canManage,
-		};
-	});
+export type RecordOvertimePayoutInput = z.input<typeof recordOvertimePayoutSchema>;
+export type SetOpeningBalanceInput = z.input<typeof setOpeningBalanceSchema>;
+export type CancelBalanceAdjustmentInput = z.input<typeof cancelBalanceAdjustmentSchema>;
+
+function callerOf(actor: OrganizationActor, organizationId: string): BalanceAdjustmentCaller {
+	return {
+		organizationId,
+		userId: actor.userId,
+		isOrgAdmin: meetsSettingsAccess(actor.settingsAccess, "orgAdmin"),
+	};
 }
 
-export async function recordOvertimePayoutAction(
-	input: RecordOvertimePayoutInput,
-): Promise<BalanceAdjustmentActionResult<{ adjustmentId: string }>> {
-	return runRefusalAction(
-		"balanceAdjustments.recordPayout",
-		BalanceAdjustmentRefusal,
-		async (db) => {
-			const { organizationId, userId, authority } = await requireWriterFor(db, input?.employeeId);
-			const employeeId = parseUuid(input?.employeeId);
-			const amountMinutes = payoutMinutes({
-				hours: Number(input?.hours),
-				minutes: Number(input?.minutes),
-			});
-			if (amountMinutes === null) {
-				throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
-			}
-			const result = await withAuditTrail((audit) =>
-				recordOvertimePayout(db, audit, {
-					organizationId,
-					actorUserId: userId,
-					employeeId,
-					day: input.day,
-					amountMinutes,
-					reason: input.reason,
-					now: systemClock.nowInstant(),
-					auditMetadata: balanceAdjustmentAuditMetadata(authority),
-				}),
-			);
-			revalidateWorkBalancePaths([employeeId]);
-			return result;
-		},
-	);
-}
+export const getEmployeeWorkBalanceSectionAction = organizationAction(
+	{ name: "balanceAdjustments.section", requires: "member", schema: sectionSchema },
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"balanceAdjustments.section",
+			async (db): Promise<EmployeeWorkBalanceSectionData> => {
+				const { canManage } = await balanceAdjustmentViewerAccess(
+					db,
+					callerOf(actor, organizationId),
+					{ employeeId: input.employeeId },
+				);
+				const scope = { employeeId: input.employeeId, organizationId };
+				const subject = await loadWorkBalanceEmployee(scope, db);
+				if (!subject) {
+					throw new BalanceAdjustmentRefusal("employee_not_found", "Employee not found");
+				}
+				const [balance, adjustments] = await Promise.all([
+					getEmployeeWorkBalance(scope, db),
+					listBalanceAdjustments(db, scope),
+				]);
+				return {
+					balance,
+					adjustments,
+					today: plainDateAt(systemClock.nowInstant(), subject.timezone).toString(),
+					timezone: subject.timezone,
+					canManage,
+				};
+			},
+			{ refusal: BalanceAdjustmentRefusal },
+		),
+);
+
+export const recordOvertimePayoutAction = organizationAction(
+	{
+		name: "balanceAdjustments.recordPayout",
+		requires: "member",
+		schema: recordOvertimePayoutSchema,
+	},
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"balanceAdjustments.recordPayout",
+			async (db) => {
+				const authority = await balanceAdjustmentWriterAuthority(
+					db,
+					callerOf(actor, organizationId),
+					{ employeeId: input.employeeId },
+				);
+				const amountMinutes = payoutMinutes({ hours: input.hours, minutes: input.minutes });
+				if (amountMinutes === null) {
+					throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
+				}
+				const result = await withAuditTrail((audit) =>
+					recordOvertimePayout(db, audit, {
+						organizationId,
+						actorUserId: actor.userId,
+						employeeId: input.employeeId,
+						day: input.day,
+						amountMinutes,
+						reason: input.reason,
+						now: systemClock.nowInstant(),
+						auditMetadata: balanceAdjustmentAuditMetadata(authority),
+					}),
+				);
+				revalidateWorkBalancePaths([input.employeeId]);
+				return result;
+			},
+			{ refusal: BalanceAdjustmentRefusal },
+		),
+);
 
 /**
  * Sets the employee's opening balance (#997), cancelling the one in effect with
  * this one's reason. A refusal for payouts dated on or before its day lists them.
  */
-export async function setOpeningBalanceAction(
-	input: SetOpeningBalanceInput,
-): Promise<
-	BalanceAdjustmentActionResult<{ adjustmentId: string; cancelledAdjustmentId: string | null }>
-> {
-	return runRefusalAction(
-		"balanceAdjustments.setOpeningBalance",
-		BalanceAdjustmentRefusal,
-		async (db) => {
-			const { organizationId, userId, authority } = await requireWriterFor(db, input?.employeeId);
-			const employeeId = parseUuid(input?.employeeId);
-			const minutes = openingBalanceMinutes({
-				negative: input?.negative === true,
-				hours: Number(input?.hours),
-				minutes: Number(input?.minutes),
-			});
-			if (minutes === null) {
-				throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
-			}
-			const written = await withAuditTrail((audit) =>
-				setOpeningBalance(db, audit, {
-					organizationId,
-					actorUserId: userId,
-					employeeId,
-					day: input.day,
-					minutes,
-					reason: input.reason,
-					now: systemClock.nowInstant(),
-					auditMetadata: balanceAdjustmentAuditMetadata(authority),
-				}),
-			);
-			revalidateWorkBalancePaths([employeeId]);
-			return written;
-		},
-	);
-}
+export const setOpeningBalanceAction = organizationAction(
+	{
+		name: "balanceAdjustments.setOpeningBalance",
+		requires: "member",
+		schema: setOpeningBalanceSchema,
+	},
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"balanceAdjustments.setOpeningBalance",
+			async (db) => {
+				const authority = await balanceAdjustmentWriterAuthority(
+					db,
+					callerOf(actor, organizationId),
+					{ employeeId: input.employeeId },
+				);
+				const minutes = openingBalanceMinutes({
+					negative: input.negative,
+					hours: input.hours,
+					minutes: input.minutes,
+				});
+				if (minutes === null) {
+					throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
+				}
+				const written = await withAuditTrail((audit) =>
+					setOpeningBalance(db, audit, {
+						organizationId,
+						actorUserId: actor.userId,
+						employeeId: input.employeeId,
+						day: input.day,
+						minutes,
+						reason: input.reason,
+						now: systemClock.nowInstant(),
+						auditMetadata: balanceAdjustmentAuditMetadata(authority),
+					}),
+				);
+				revalidateWorkBalancePaths([input.employeeId]);
+				return written;
+			},
+			{ refusal: BalanceAdjustmentRefusal },
+		),
+);
 
-export async function cancelBalanceAdjustmentAction(
-	input: CancelBalanceAdjustmentInput,
-): Promise<BalanceAdjustmentActionResult<{ adjustmentId: string }>> {
-	return runRefusalAction("balanceAdjustments.cancel", BalanceAdjustmentRefusal, async (db) => {
-		const { organizationId, userId, authority } = await requireWriterFor(db, input?.employeeId);
-		const employeeId = parseUuid(input?.employeeId);
-		const adjustmentId = parseUuid(input?.adjustmentId);
-		const result = await withAuditTrail((audit) =>
-			cancelBalanceAdjustment(db, audit, {
-				organizationId,
-				actorUserId: userId,
-				employeeId,
-				adjustmentId,
-				reason: input.reason,
-				now: systemClock.nowInstant(),
-				auditMetadata: balanceAdjustmentAuditMetadata(authority),
-			}),
-		);
-		revalidateWorkBalancePaths([employeeId]);
-		return result;
-	});
-}
-
-/**
- * Authorizes the actor for the employee. An id that is not a UUID is checked
- * without a target, so only owners and admins learn that it is invalid.
- */
-function requireWriterFor(db: DatabaseClient, employeeId: unknown) {
-	return requireBalanceAdjustmentWriter(db, isUuid(employeeId) ? { employeeId } : undefined);
-}
-
-function parseUuid(value: unknown): string {
-	if (!isUuid(value)) throw new BalanceAdjustmentRefusal("invalid_input", "Invalid selection.");
-	return value;
-}
+export const cancelBalanceAdjustmentAction = organizationAction(
+	{
+		name: "balanceAdjustments.cancel",
+		requires: "member",
+		schema: cancelBalanceAdjustmentSchema,
+	},
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"balanceAdjustments.cancel",
+			async (db) => {
+				const authority = await balanceAdjustmentWriterAuthority(
+					db,
+					callerOf(actor, organizationId),
+					{ employeeId: input.employeeId },
+				);
+				const result = await withAuditTrail((audit) =>
+					cancelBalanceAdjustment(db, audit, {
+						organizationId,
+						actorUserId: actor.userId,
+						employeeId: input.employeeId,
+						adjustmentId: input.adjustmentId,
+						reason: input.reason,
+						now: systemClock.nowInstant(),
+						auditMetadata: balanceAdjustmentAuditMetadata(authority),
+					}),
+				);
+				revalidateWorkBalancePaths([input.employeeId]);
+				return result;
+			},
+			{ refusal: BalanceAdjustmentRefusal },
+		),
+);

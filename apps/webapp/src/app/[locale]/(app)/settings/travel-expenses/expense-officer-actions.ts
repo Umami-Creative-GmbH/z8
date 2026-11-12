@@ -1,15 +1,13 @@
 "use server";
 
 import { asc, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { Effect } from "effect";
+import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
-import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import type { SaveExpenseOfficerGrantInput } from "@/lib/travel-expenses/expense-officer-grant";
 import {
 	type ExpenseOfficerGrantRecord,
@@ -17,11 +15,13 @@ import {
 	revokeExpenseOfficerGrant,
 	saveExpenseOfficerGrant,
 } from "@/lib/travel-expenses/expense-officer-grant-store";
+import { revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
  * Expense officers (#747, ADR 0001): who handles approved expense reports
  * besides owners and admins, in which scope and with which capabilities.
- * Managed by organization administrators on the Access tab.
+ * Managed by org admins on the Access tab. The grant model still decides who
+ * acts as an expense officer; this module only decides who configures it.
  */
 
 export type { SaveExpenseOfficerGrantInput } from "@/lib/travel-expenses/expense-officer-grant";
@@ -47,103 +47,118 @@ export interface ExpenseOfficerAdminData {
 	grants: ExpenseOfficerGrantData[];
 }
 
-function failure(error: unknown, fallback: string): { success: false; error: string } {
-	// Validation and not-found messages are written for the administrator.
-	if (error instanceof ValidationError || error instanceof NotFoundError) {
-		return { success: false, error: error.message };
-	}
-	logger.error({ error }, fallback);
-	return { success: false, error: fallback };
-}
-
-export async function getExpenseOfficerAdminData(): Promise<
-	ServerActionResult<ExpenseOfficerAdminData>
-> {
-	try {
-		const access = await requireExpenseAdministrator();
-		if ("error" in access) return { success: false, error: access.error };
-		const [people, teams, grants] = await Promise.all([
-			db
-				.select({
-					id: employee.id,
-					employeeNumber: employee.employeeNumber,
-					// Current roster (#1438): a due departure counts the same as a deactivation.
-					isFormer: isFormerEmployee(employee),
-					formerSince: formerSinceDate(employee),
-					name: user.name,
-					email: user.email,
-				})
-				.from(employee)
-				.innerJoin(user, eq(user.id, employee.userId))
-				.where(eq(employee.organizationId, access.organizationId))
-				.orderBy(asc(user.name), asc(employee.employeeNumber), asc(employee.id)),
-			db
-				.select({ id: team.id, name: team.name })
-				.from(team)
-				.where(eq(team.organizationId, access.organizationId))
-				.orderBy(asc(team.name)),
-			listActiveExpenseOfficerGrants(db, { organizationId: access.organizationId }),
-		]);
-		const toOption = (row: (typeof people)[number]): ExpenseOfficerPersonOption => ({
-			id: row.id,
-			name: row.name?.trim() || row.employeeNumber || row.id,
-			email: row.email,
-		});
-		return {
-			success: true,
-			data: {
+export const getExpenseOfficerAdminData = organizationAction(
+	{ name: "travelExpenses.getExpenseOfficers", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const [people, teams, grants] = yield* storeStep(
+				"travelExpenses.getExpenseOfficers",
+				(database) =>
+					Promise.all([
+						database
+							.select({
+								id: employee.id,
+								employeeNumber: employee.employeeNumber,
+								// Current roster (#1438): a due departure counts the same as a deactivation.
+								isFormer: isFormerEmployee(employee),
+								formerSince: formerSinceDate(employee),
+								name: user.name,
+								email: user.email,
+							})
+							.from(employee)
+							.innerJoin(user, eq(user.id, employee.userId))
+							.where(eq(employee.organizationId, organizationId))
+							.orderBy(asc(user.name), asc(employee.employeeNumber), asc(employee.id)),
+						database
+							.select({ id: team.id, name: team.name })
+							.from(team)
+							.where(eq(team.organizationId, organizationId))
+							.orderBy(asc(team.name)),
+						listActiveExpenseOfficerGrants(database, { organizationId }),
+					]),
+				{ failure: "Failed to load the expense officers" },
+			);
+			const toOption = (row: (typeof people)[number]): ExpenseOfficerPersonOption => ({
+				id: row.id,
+				name: row.name?.trim() || row.employeeNumber || row.id,
+				email: row.email,
+			});
+			return {
 				employees: people.filter((row) => !row.isFormer).map(toOption),
 				departedEmployees: people
 					.filter((row) => row.isFormer)
 					.map((row) => ({ ...toOption(row), formerSince: row.formerSince })),
 				teams,
 				grants,
-			},
-		};
-	} catch (error) {
-		return failure(error, "Failed to load the expense officers");
-	}
-}
+			} satisfies ExpenseOfficerAdminData;
+		}),
+);
 
-export async function saveExpenseOfficerGrantAction(
-	input: SaveExpenseOfficerGrantInput,
-): Promise<ServerActionResult<{ grantId: string }>> {
-	try {
-		const access = await requireExpenseAdministrator();
-		if ("error" in access) return { success: false, error: access.error };
-		const { grantId } = await db.transaction((tx) =>
-			saveExpenseOfficerGrant(tx, {
-				organizationId: access.organizationId,
-				actorUserId: access.userId,
-				grant: input,
-			}),
-		);
-		revalidatePath("/settings/travel-expenses");
-		revalidatePath("/travel-expenses");
-		return { success: true, data: { grantId } };
-	} catch (error) {
-		return failure(error, "Failed to save the expense officer");
-	}
-}
+/**
+ * The grant's shape; the grant rules (`validateExpenseOfficerGrant`) check
+ * ownership and the scope with messages written for the administrator.
+ */
+const saveGrantSchema = z.object(
+	{
+		officerEmployeeId: z.string("Expense officer input is required"),
+		scope: z.enum(["all", "specific"], "Choose who the expense officer handles"),
+		teamIds: z.array(z.string(), "teamIds must be a list"),
+		employeeIds: z.array(z.string(), "employeeIds must be a list"),
+		canExport: z.boolean("canExport must be true or false"),
+		canRecordReimbursements: z.boolean("canRecordReimbursements must be true or false"),
+	},
+	"Expense officer input is required",
+) satisfies z.ZodType<SaveExpenseOfficerGrantInput>;
+
+export const saveExpenseOfficerGrantAction = organizationAction(
+	{
+		name: "travelExpenses.saveExpenseOfficer",
+		requires: "orgAdmin",
+		schema: saveGrantSchema,
+		// Departed employees may still be named in the scope; only the officer must be current.
+		addsEmployees: (input) => [input.officerEmployeeId],
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { grantId } = yield* storeStep(
+				"travelExpenses.saveExpenseOfficer",
+				(database) =>
+					database.transaction((tx) =>
+						saveExpenseOfficerGrant(tx, {
+							organizationId,
+							actorUserId: actor.userId,
+							grant: input,
+						}),
+					),
+				{ failure: "Failed to save the expense officer" },
+			);
+			yield* revalidateExpenseSettings("/travel-expenses");
+			return { grantId };
+		}),
+);
 
 /** Ends the grant's access at once: every finance surface reads the active grant per request. */
-export async function revokeExpenseOfficerGrantAction(input: {
-	grantId: string;
-}): Promise<ServerActionResult<{ grantId: string }>> {
-	try {
-		const access = await requireExpenseAdministrator();
-		if ("error" in access) return { success: false, error: access.error };
-		const { grantId } = await db.transaction((tx) =>
-			revokeExpenseOfficerGrant(tx, {
-				organizationId: access.organizationId,
-				actorUserId: access.userId,
-				grantId: input?.grantId,
-			}),
-		);
-		revalidatePath("/settings/travel-expenses");
-		revalidatePath("/travel-expenses");
-		return { success: true, data: { grantId } };
-	} catch (error) {
-		return failure(error, "Failed to revoke the expense officer");
-	}
-}
+export const revokeExpenseOfficerGrantAction = organizationAction(
+	{
+		name: "travelExpenses.revokeExpenseOfficer",
+		requires: "orgAdmin",
+		schema: z.strictObject({ grantId: z.string("Expense officer not found") }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { grantId } = yield* storeStep(
+				"travelExpenses.revokeExpenseOfficer",
+				(database) =>
+					database.transaction((tx) =>
+						revokeExpenseOfficerGrant(tx, {
+							organizationId,
+							actorUserId: actor.userId,
+							grantId: input.grantId,
+						}),
+					),
+				{ failure: "Failed to revoke the expense officer" },
+			);
+			yield* revalidateExpenseSettings("/travel-expenses");
+			return { grantId };
+		}),
+);

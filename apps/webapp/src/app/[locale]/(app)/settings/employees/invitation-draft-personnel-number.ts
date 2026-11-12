@@ -77,7 +77,7 @@ export async function findDraftPersonnelNumberHolder(
 }
 
 /** Refuses the draft save (throws `PersonnelNumberTaken`) when the number is held. */
-export async function assertDraftPersonnelNumberFree(
+export async function refuseTakenDraftPersonnelNumber(
 	reader: PersonnelNumberReader,
 	scope: Scope,
 ): Promise<void> {

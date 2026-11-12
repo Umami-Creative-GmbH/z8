@@ -306,9 +306,12 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		).toBe("Lifecycle");
 		expect(
 			(
-				await updateEmployeeAction(manager.employeeId, {
+				await updateEmployeeAction({
+					employeeId: manager.employeeId,
+					data: {
 					firstName: "Renamed",
 					lastName: "Manager",
+					},
 				})
 			).success,
 		).toBe(true);
@@ -317,7 +320,7 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 				?.user.name,
 		).toBe("Renamed Manager");
 		expect(
-			(await updateWorkPolicy(policyId, { name: "Renamed policy" })).success,
+			(await updateWorkPolicy({ policyId, data: { name: "Renamed policy" } })).success,
 		).toBe(true);
 		const policies = await parseSuperJsonResponse<
 			EmployeeReadSnapshot<"work-policies">
@@ -435,8 +438,11 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		state.organizationId = fixture.organizationId;
 		expect(
 			(
-				await updateEmployeeAction(manager.employeeId, {
+				await updateEmployeeAction({
+					employeeId: manager.employeeId,
+					data: {
 					firstName: "Organization A",
+					},
 				})
 			).success,
 		).toBe(true);

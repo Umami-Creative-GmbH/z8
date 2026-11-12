@@ -2,6 +2,7 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
+import { z } from "zod";
 import {
 	employee,
 	holiday,
@@ -11,22 +12,14 @@ import {
 	team,
 } from "@/db/schema";
 import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types";
-import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
-import {
-	type AppServices,
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
+import { ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import {
-	getEmployeeSettingsActorContext,
-	requireOrgAdminEmployeeSettingsAccess,
-} from "../employees/employee-action-utils";
-import {
 	filterAssignmentsForManagerHolidayScope,
-	getScopedHolidayAccessContext,
-	type ScopedHolidaySettingsActor,
+	type HolidayScope,
+	holidayScopeOf,
 } from "./holiday-scope";
 
 // Types for holiday list
@@ -105,48 +98,61 @@ export type HolidayCategoryAssignmentRecord = {
 
 type HolidayCategoryItem = typeof holidayCategory.$inferSelect;
 
-function runHolidayServerAction<T>(effect: Effect.Effect<T, AnyAppError, AppServices>) {
-	return runServerActionSafe(effect);
+const holidayListParamsSchema = z
+	.object({
+		categoryId: z.string().optional(),
+		search: z.string().optional(),
+		limit: z.number().int().positive().optional(),
+		offset: z.number().int().min(0).optional(),
+		sortBy: z.string().optional(),
+		sortOrder: z.enum(["asc", "desc"]).optional(),
+	})
+	.default({});
+
+const assignmentTargetSchema = {
+	assignmentType: z.enum(["organization", "team", "employee"]),
+	teamId: z.string().optional(),
+	employeeId: z.string().optional(),
+};
+
+const createHolidayCategoryAssignmentSchema = z.object({
+	categoryId: z.string().min(1),
+	...assignmentTargetSchema,
+});
+
+const createHolidayAssignmentSchema = z.object({
+	holidayId: z.string().min(1),
+	...assignmentTargetSchema,
+});
+
+const idSchema = z.string().min(1);
+
+function dbError(message: string, operation: string, table: string) {
+	return (cause: unknown) => new DatabaseError({ message, operation, table, cause });
 }
 
-function getVisibleScopedHolidayIds(
-	actor: ScopedHolidaySettingsActor,
-	organizationId: string,
-	manageableTeamIds: Set<string> | null,
-	managedEmployeeIds: Set<string> | null,
-	queryName: string,
-) {
+function visibleScopedHolidayIds(organizationId: string, scope: HolidayScope) {
 	return Effect.gen(function* () {
-		if (!manageableTeamIds || !managedEmployeeIds) {
+		if (!scope.manageableTeamIds || !scope.managedEmployeeIds) {
 			return null;
 		}
 
-		const assignmentRows = (yield* actor.dbService.query(queryName, async () => {
-			return await actor.dbService.db.query.holidayAssignment.findMany({
+		const dbService = yield* DatabaseService;
+		const assignmentRows = yield* dbService.query("holidays.scope.assignments", () =>
+			dbService.db.query.holidayAssignment.findMany({
 				where: and(
 					eq(holidayAssignment.organizationId, organizationId),
 					eq(holidayAssignment.isActive, true),
 				),
-				columns: {
-					id: true,
-					holidayId: true,
-					organizationId: true,
-					assignmentType: true,
-					teamId: true,
-					employeeId: true,
-					isActive: true,
-					createdAt: true,
-				},
-			});
-		})) as HolidayAssignmentRecord[];
+				columns: { holidayId: true, assignmentType: true, teamId: true, employeeId: true },
+			}),
+		);
 
 		return [
 			...new Set(
-				filterAssignmentsForManagerHolidayScope(
-					assignmentRows,
-					manageableTeamIds,
-					managedEmployeeIds,
-				).map((assignment) => assignment.holidayId),
+				filterAssignmentsForManagerHolidayScope(assignmentRows, scope).map(
+					(assignment) => assignment.holidayId,
+				),
 			),
 		];
 	});
@@ -173,788 +179,636 @@ function sortHolidayRows(
 }
 
 /**
- * Get all holidays for an organization using Effect pattern
- * Supports pagination, search, and filtering
+ * The active organization's holidays, paginated, searched and filtered. A
+ * scoped manager sees those assigned to the organization, their teams or reports.
  */
-export async function getHolidays(
-	organizationId: string,
-	params: HolidayListParams = {},
-): Promise<ServerActionResult<PaginatedResponse<HolidayWithCategory>>> {
-	const { search, categoryId, limit = 20, offset = 0, sortBy, sortOrder = "asc" } = params;
+export const getHolidays = organizationAction(
+	{ name: "holidays.list", requires: "scopedManager", schema: holidayListParamsSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { search, categoryId, limit = 20, offset = 0, sortBy, sortOrder = "asc" } = input;
+			const scope = yield* holidayScopeOf(actor, organizationId);
+			const visibleHolidayIds = yield* visibleScopedHolidayIds(organizationId, scope);
 
-	const effect = Effect.gen(function* () {
-		const { actor, managedEmployeeIds, manageableTeamIds } = yield* getScopedHolidayAccessContext(organizationId, "getHolidays:actor");
-		const visibleHolidayIds = yield* getVisibleScopedHolidayIds(
-			actor,
-			organizationId,
-			manageableTeamIds,
-			managedEmployeeIds,
-			"getHolidays:visibleAssignments",
-		);
+			if (visibleHolidayIds && visibleHolidayIds.length === 0) {
+				return {
+					data: [],
+					total: 0,
+					hasMore: false,
+				} satisfies PaginatedResponse<HolidayWithCategory>;
+			}
 
-		if (visibleHolidayIds && visibleHolidayIds.length === 0) {
-			return { data: [], total: 0, hasMore: false };
-		}
-
-		const holidays = (yield* actor.dbService.query("getHolidays", async () => {
-				const conditions = [eq(holiday.organizationId, organizationId), eq(holiday.isActive, true)];
-				if (visibleHolidayIds) {
-					conditions.push(inArray(holiday.id, visibleHolidayIds));
-				}
-
-				return await actor.dbService.db.query.holiday.findMany({
-					where: and(...conditions),
-					with: {
-						category: {
-							columns: {
-								id: true,
-								name: true,
-								type: true,
-								color: true,
-							},
-						},
-					},
-				});
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to fetch holidays",
-						operation: "select",
-						table: "holiday",
-						cause: error,
-					}),
-			))) as HolidayWithCategory[];
-
-		const searchQuery = search?.trim().toLowerCase() ?? "";
-		const filteredHolidays = sortHolidayRows(
-			holidays.filter((currentHoliday) => {
-				if (categoryId && currentHoliday.categoryId !== categoryId) {
-					return false;
-				}
-
-				if (!searchQuery) {
-					return true;
-				}
-
-				return (
-					currentHoliday.name.toLowerCase().includes(searchQuery) ||
-					(currentHoliday.description?.toLowerCase().includes(searchQuery) ?? false)
-				);
-			}),
-			sortBy,
-			sortOrder,
-		);
-
-		const totalResult = filteredHolidays.length;
-		const paginatedHolidays = filteredHolidays.slice(offset, offset + limit);
-
-		return {
-			data: paginatedHolidays,
-			total: totalResult,
-			hasMore: offset + paginatedHolidays.length < totalResult,
-		};
-	});
-
-	return runHolidayServerAction(effect);
-}
-
-/**
- * Get all holiday categories for an organization using Effect pattern
- */
-export async function getHolidayCategories(
-	organizationId: string,
-): Promise<ServerActionResult<HolidayCategoryItem[]>> {
-	const effect = Effect.gen(function* () {
-		const { actor, managedEmployeeIds, manageableTeamIds } = yield* getScopedHolidayAccessContext(organizationId, "getHolidayCategories:actor");
-		const visibleHolidayIds = yield* getVisibleScopedHolidayIds(
-			actor,
-			organizationId,
-			manageableTeamIds,
-			managedEmployeeIds,
-			"getHolidayCategories:visibleAssignments",
-		);
-
-		if (visibleHolidayIds && visibleHolidayIds.length === 0) {
-			return [] satisfies HolidayCategoryItem[];
-		}
-
-		const categories = (yield* actor.dbService.query("getHolidayCategories", async () => {
-				const conditions = [
-					eq(holidayCategory.organizationId, organizationId),
-					eq(holidayCategory.isActive, true),
-				];
-
-				if (visibleHolidayIds) {
-					const visibleHolidays = await actor.dbService.db.query.holiday.findMany({
-						where: and(
-							eq(holiday.organizationId, organizationId),
-							eq(holiday.isActive, true),
-							inArray(holiday.id, visibleHolidayIds),
-						),
-						columns: { categoryId: true },
-					});
-					const visibleCategoryIds = [...new Set(visibleHolidays.map((item) => item.categoryId))];
-
-					if (visibleCategoryIds.length === 0) {
-						return [] satisfies HolidayCategoryItem[];
+			const dbService = yield* DatabaseService;
+			const holidays = (yield* dbService
+				.query("getHolidays", () => {
+					const conditions = [
+						eq(holiday.organizationId, organizationId),
+						eq(holiday.isActive, true),
+					];
+					if (visibleHolidayIds) {
+						conditions.push(inArray(holiday.id, visibleHolidayIds));
 					}
 
-					conditions.push(inArray(holidayCategory.id, visibleCategoryIds));
-				}
+					return dbService.db.query.holiday.findMany({
+						where: and(...conditions),
+						with: {
+							category: {
+								columns: { id: true, name: true, type: true, color: true },
+							},
+						},
+					});
+				})
+				.pipe(
+					Effect.mapError(dbError("Failed to fetch holidays", "select", "holiday")),
+				)) as HolidayWithCategory[];
 
-				return await actor.dbService.db.query.holidayCategory.findMany({
-					where: and(...conditions),
-				});
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to fetch holiday categories",
-						operation: "select",
-						table: "holiday_category",
-						cause: error,
-					}),
-			))) as HolidayCategoryItem[];
+			const searchQuery = search?.trim().toLowerCase() ?? "";
+			const filteredHolidays = sortHolidayRows(
+				holidays.filter((currentHoliday) => {
+					if (categoryId && currentHoliday.categoryId !== categoryId) {
+						return false;
+					}
 
-		return categories;
-	});
+					if (!searchQuery) {
+						return true;
+					}
 
-	return runHolidayServerAction(effect);
-}
-
-/**
- * Delete a holiday using Effect pattern
- */
-export async function deleteHoliday(holidayId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteHoliday:actor" });
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Only org admins can delete holidays",
-			resource: "holiday",
-			action: "delete",
-		});
-
-		// Manual submissions read organization holidays under the configuration guard.
-		const deleted = yield* actor.dbService.query("deleteHoliday", () =>
-				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
-					tx
-						.delete(holiday)
-						.where(and(eq(holiday.id, holidayId), eq(holiday.organizationId, actor.organizationId)))
-						.returning({ id: holiday.id }),
-				),
-			).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to delete holiday",
-						operation: "delete",
-						table: "holiday",
-						cause: error,
-					}),
-			));
-
-		if (deleted.length === 0) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Holiday not found",
-					entityType: "holiday",
-					entityId: holidayId,
+					return (
+						currentHoliday.name.toLowerCase().includes(searchQuery) ||
+						(currentHoliday.description?.toLowerCase().includes(searchQuery) ?? false)
+					);
 				}),
+				sortBy,
+				sortOrder,
 			);
-		}
-	});
 
-	return runHolidayServerAction(effect);
-}
+			const totalResult = filteredHolidays.length;
+			const paginatedHolidays = filteredHolidays.slice(offset, offset + limit);
+
+			return {
+				data: paginatedHolidays,
+				total: totalResult,
+				hasMore: offset + paginatedHolidays.length < totalResult,
+			} satisfies PaginatedResponse<HolidayWithCategory>;
+		}),
+);
 
 /**
- * Bulk delete holidays using Effect pattern
+ * The active organization's holiday categories; a scoped manager sees the
+ * categories of the holidays they see.
  */
-export async function bulkDeleteHolidays(
-	holidayIds: string[],
-): Promise<ServerActionResult<{ deleted: number }>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "bulkDeleteHolidays:actor" });
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Only org admins can delete holidays",
-			resource: "holiday",
-			action: "bulk_delete",
-		});
+export const getHolidayCategories = organizationAction(
+	{ name: "holidays.listCategories", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const scope = yield* holidayScopeOf(actor, organizationId);
+			const visibleHolidayIds = yield* visibleScopedHolidayIds(organizationId, scope);
 
-		const result = yield* actor.dbService.query("bulkDeleteHolidays", async () => {
-				// Manual submissions read organization holidays under the configuration guard.
-				const deleteResult = await withOrganizationConfigurationMutation(
-					actor.dbService.db,
-					actor.organizationId,
-					(tx) =>
+			if (visibleHolidayIds && visibleHolidayIds.length === 0) {
+				return [] satisfies HolidayCategoryItem[];
+			}
+
+			const dbService = yield* DatabaseService;
+			return yield* dbService
+				.query("getHolidayCategories", async (): Promise<HolidayCategoryItem[]> => {
+					const conditions = [
+						eq(holidayCategory.organizationId, organizationId),
+						eq(holidayCategory.isActive, true),
+					];
+
+					if (visibleHolidayIds) {
+						const visibleHolidays = await dbService.db.query.holiday.findMany({
+							where: and(
+								eq(holiday.organizationId, organizationId),
+								eq(holiday.isActive, true),
+								inArray(holiday.id, visibleHolidayIds),
+							),
+							columns: { categoryId: true },
+						});
+						const visibleCategoryIds = [...new Set(visibleHolidays.map((item) => item.categoryId))];
+
+						if (visibleCategoryIds.length === 0) {
+							return [];
+						}
+
+						conditions.push(inArray(holidayCategory.id, visibleCategoryIds));
+					}
+
+					return await dbService.db.query.holidayCategory.findMany({
+						where: and(...conditions),
+					});
+				})
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to fetch holiday categories", "select", "holiday_category"),
+					),
+				);
+		}),
+);
+
+/**
+ * Delete a holiday
+ */
+export const deleteHoliday = organizationAction(
+	{ name: "holidays.delete", requires: "orgAdmin", schema: idSchema },
+	({ organizationId, input: holidayId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			// Manual submissions read organization holidays under the configuration guard.
+			const deleted = yield* dbService
+				.query("deleteHoliday", () =>
+					withOrganizationConfigurationMutation(dbService.db, organizationId, (tx) =>
 						tx
 							.delete(holiday)
-							.where(
-								and(
-									inArray(holiday.id, holidayIds),
-									eq(holiday.organizationId, actor.organizationId),
-								),
-							)
+							.where(and(eq(holiday.id, holidayId), eq(holiday.organizationId, organizationId)))
 							.returning({ id: holiday.id }),
-				);
+					),
+				)
+				.pipe(Effect.mapError(dbError("Failed to delete holiday", "delete", "holiday")));
 
-				return { deleted: deleteResult.length };
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to bulk delete holidays",
-						operation: "delete",
-						table: "holiday",
-						cause: error,
+			if (deleted.length === 0) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Holiday not found",
+						entityType: "holiday",
+						entityId: holidayId,
 					}),
-			));
-
-		return result;
-	});
-
-	return runHolidayServerAction(effect);
-}
+				);
+			}
+		}),
+);
 
 /**
- * Delete a category (soft delete, but check if any holidays use it first) using Effect pattern
+ * Bulk delete holidays
  */
-export async function deleteCategory(categoryId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteCategory:actor" });
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Only org admins can delete holiday categories",
-			resource: "holiday_category",
-			action: "delete",
-		});
+export const bulkDeleteHolidays = organizationAction(
+	{ name: "holidays.bulkDelete", requires: "orgAdmin", schema: z.array(z.string().min(1)) },
+	({ organizationId, input: holidayIds }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService
+				.query("bulkDeleteHolidays", async () => {
+					// Manual submissions read organization holidays under the configuration guard.
+					const deleteResult = await withOrganizationConfigurationMutation(
+						dbService.db,
+						organizationId,
+						(tx) =>
+							tx
+								.delete(holiday)
+								.where(
+									and(inArray(holiday.id, holidayIds), eq(holiday.organizationId, organizationId)),
+								)
+								.returning({ id: holiday.id }),
+					);
 
-		// Existence, the in-use check and the soft delete share one transaction under
-		// the configuration guard that manual submissions read blocking categories under.
-		const outcome = yield* actor.dbService.query("deleteCategory", () =>
-				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, async (tx) => {
-					const [category] = await tx
-						.select({ id: holidayCategory.id })
-						.from(holidayCategory)
-						.where(
-							and(
-								eq(holidayCategory.id, categoryId),
-								eq(holidayCategory.organizationId, actor.organizationId),
-							),
-						)
-						.limit(1);
-					if (!category) return "not_found" as const;
+					return { deleted: deleteResult.length };
+				})
+				.pipe(Effect.mapError(dbError("Failed to bulk delete holidays", "delete", "holiday")));
+		}),
+);
 
-					const [holidayUsingCategory] = await tx
-						.select({ id: holiday.id })
-						.from(holiday)
-						.where(
-							and(
-								eq(holiday.organizationId, actor.organizationId),
-								eq(holiday.categoryId, categoryId),
-								eq(holiday.isActive, true),
-							),
-						)
-						.limit(1);
-					if (holidayUsingCategory) return "in_use" as const;
+/**
+ * Delete a category (soft delete, refused while active holidays use it)
+ */
+export const deleteCategory = organizationAction(
+	{ name: "holidays.deleteCategory", requires: "orgAdmin", schema: idSchema },
+	({ organizationId, input: categoryId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			// Existence, the in-use check and the soft delete share one transaction under
+			// the configuration guard that manual submissions read blocking categories under.
+			const outcome = yield* dbService
+				.query("deleteCategory", () =>
+					withOrganizationConfigurationMutation(dbService.db, organizationId, async (tx) => {
+						const [category] = await tx
+							.select({ id: holidayCategory.id })
+							.from(holidayCategory)
+							.where(
+								and(
+									eq(holidayCategory.id, categoryId),
+									eq(holidayCategory.organizationId, organizationId),
+								),
+							)
+							.limit(1);
+						if (!category) return "not_found" as const;
 
-					await tx
-						.update(holidayCategory)
-						.set({ isActive: false })
-						.where(
-							and(
-								eq(holidayCategory.id, categoryId),
-								eq(holidayCategory.organizationId, actor.organizationId),
-							),
-						);
-					return "deleted" as const;
-				}),
-			).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to delete category",
-						operation: "update",
-						table: "holiday_category",
-						cause: error,
+						const [holidayUsingCategory] = await tx
+							.select({ id: holiday.id })
+							.from(holiday)
+							.where(
+								and(
+									eq(holiday.organizationId, organizationId),
+									eq(holiday.categoryId, categoryId),
+									eq(holiday.isActive, true),
+								),
+							)
+							.limit(1);
+						if (holidayUsingCategory) return "in_use" as const;
+
+						await tx
+							.update(holidayCategory)
+							.set({ isActive: false })
+							.where(
+								and(
+									eq(holidayCategory.id, categoryId),
+									eq(holidayCategory.organizationId, organizationId),
+								),
+							);
+						return "deleted" as const;
 					}),
-			));
+				)
+				.pipe(Effect.mapError(dbError("Failed to delete category", "update", "holiday_category")));
 
-		if (outcome === "not_found") {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Category not found",
-					entityType: "holiday_category",
-					entityId: categoryId,
-				}),
-			);
-		}
-		if (outcome === "in_use") {
-			yield* Effect.fail(
-				new ConflictError({
-					message: "Cannot delete category - it is being used by active holidays",
-					conflictType: "category_in_use",
-					details: { categoryId },
-				}),
-			);
-		}
-	});
-
-	return runHolidayServerAction(effect);
-}
+			if (outcome === "not_found") {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Category not found",
+						entityType: "holiday_category",
+						entityId: categoryId,
+					}),
+				);
+			}
+			if (outcome === "in_use") {
+				return yield* Effect.fail(
+					new ConflictError({
+						message: "Cannot delete category - it is being used by active holidays",
+						conflictType: "category_in_use",
+						details: { categoryId },
+					}),
+				);
+			}
+		}),
+);
 
 // ============================================
 // HOLIDAY ASSIGNMENTS (Custom holidays to org/team/employee)
 // ============================================
 
-/**
- * Get all holiday assignments for an organization
- */
-export async function getHolidayAssignments(
-	organizationId: string,
-): Promise<ServerActionResult<HolidayAssignmentRecord[]>> {
-	const effect = Effect.gen(function* () {
-		const { actor, managedEmployeeIds, manageableTeamIds } = yield* getScopedHolidayAccessContext(organizationId, "getHolidayAssignments:actor");
-
-		const assignments = yield* actor.dbService.query("getHolidayAssignments", async () => {
-				return await actor.dbService.db.query.holidayAssignment.findMany({
-					where: and(
-						eq(holidayAssignment.organizationId, organizationId),
-						eq(holidayAssignment.isActive, true),
-					),
-					with: {
-						holiday: {
-							columns: {
-								id: true,
-								name: true,
-								description: true,
-								startDate: true,
-								endDate: true,
-								recurrenceType: true,
-							},
-						},
-						team: { columns: { id: true, name: true } },
-						employee: {
-							columns: { id: true },
-							with: { user: { columns: { firstName: true, lastName: true } } },
-						},
-					},
-				});
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to fetch holiday assignments",
-						operation: "select",
-						table: "holiday_assignment",
-						cause: error,
-					}),
-			));
-
-		const assignmentsWithAuthNames = assignments.map((assignment) => ({
-			...assignment,
-			employee: assignment.employee
-				? {
-						id: assignment.employee.id,
-						firstName: assignment.employee.user?.firstName ?? null,
-						lastName: assignment.employee.user?.lastName ?? null,
-						user: assignment.employee.user,
-					}
-				: null,
-		})) satisfies HolidayAssignmentRecord[];
-
-		return filterAssignmentsForManagerHolidayScope(
-			assignmentsWithAuthNames,
-			manageableTeamIds,
-			managedEmployeeIds,
-		);
-	});
-
-	return runHolidayServerAction(effect);
+function withAuthNames<
+	T extends {
+		employee: {
+			id: string;
+			user: { firstName: string | null; lastName: string | null } | null;
+		} | null;
+	},
+>(assignment: T) {
+	return {
+		...assignment,
+		employee: assignment.employee
+			? {
+					id: assignment.employee.id,
+					firstName: assignment.employee.user?.firstName ?? null,
+					lastName: assignment.employee.user?.lastName ?? null,
+					user: assignment.employee.user,
+				}
+			: null,
+	};
 }
 
 /**
- * Get all holiday category assignments for an organization
+ * The active organization's holiday assignments
  */
-export async function getHolidayCategoryAssignments(
-	organizationId: string,
-): Promise<ServerActionResult<HolidayCategoryAssignmentRecord[]>> {
-	const effect = Effect.gen(function* () {
-		const { actor, managedEmployeeIds, manageableTeamIds } = yield* getScopedHolidayAccessContext(organizationId, "getHolidayCategoryAssignments:actor");
-
-		const assignments = yield* actor.dbService.query("getHolidayCategoryAssignments", async () => {
-				return await actor.dbService.db.query.holidayCategoryAssignment.findMany({
-					where: and(
-						eq(holidayCategoryAssignment.organizationId, organizationId),
-						eq(holidayCategoryAssignment.isActive, true),
-					),
-					with: {
-						category: { columns: { id: true, name: true, type: true, color: true } },
-						team: { columns: { id: true, name: true } },
-						employee: {
-							columns: { id: true },
-							with: { user: { columns: { firstName: true, lastName: true } } },
+export const getHolidayAssignments = organizationAction(
+	{ name: "holidays.listAssignments", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const scope = yield* holidayScopeOf(actor, organizationId);
+			const dbService = yield* DatabaseService;
+			const assignments = yield* dbService
+				.query("getHolidayAssignments", () =>
+					dbService.db.query.holidayAssignment.findMany({
+						where: and(
+							eq(holidayAssignment.organizationId, organizationId),
+							eq(holidayAssignment.isActive, true),
+						),
+						with: {
+							holiday: {
+								columns: {
+									id: true,
+									name: true,
+									description: true,
+									startDate: true,
+									endDate: true,
+									recurrenceType: true,
+								},
+							},
+							team: { columns: { id: true, name: true } },
+							employee: {
+								columns: { id: true },
+								with: { user: { columns: { firstName: true, lastName: true } } },
+							},
 						},
-					},
-				});
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to fetch holiday category assignments",
-						operation: "select",
-						table: "holiday_category_assignment",
-						cause: error,
 					}),
-			));
+				)
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to fetch holiday assignments", "select", "holiday_assignment"),
+					),
+				);
 
-		const assignmentsWithAuthNames = assignments.map((assignment) => ({
-			...assignment,
-			employee: assignment.employee
-				? {
-						id: assignment.employee.id,
-						firstName: assignment.employee.user?.firstName ?? null,
-						lastName: assignment.employee.user?.lastName ?? null,
-						user: assignment.employee.user,
-					}
-				: null,
-		})) satisfies HolidayCategoryAssignmentRecord[];
+			return filterAssignmentsForManagerHolidayScope(
+				assignments.map(withAuthNames) satisfies HolidayAssignmentRecord[],
+				scope,
+			);
+		}),
+);
 
-		return filterAssignmentsForManagerHolidayScope(
-			assignmentsWithAuthNames,
-			manageableTeamIds,
-			managedEmployeeIds,
-		);
-	});
+/**
+ * The active organization's holiday category assignments
+ */
+export const getHolidayCategoryAssignments = organizationAction(
+	{ name: "holidays.listCategoryAssignments", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const scope = yield* holidayScopeOf(actor, organizationId);
+			const dbService = yield* DatabaseService;
+			const assignments = yield* dbService
+				.query("getHolidayCategoryAssignments", () =>
+					dbService.db.query.holidayCategoryAssignment.findMany({
+						where: and(
+							eq(holidayCategoryAssignment.organizationId, organizationId),
+							eq(holidayCategoryAssignment.isActive, true),
+						),
+						with: {
+							category: { columns: { id: true, name: true, type: true, color: true } },
+							team: { columns: { id: true, name: true } },
+							employee: {
+								columns: { id: true },
+								with: { user: { columns: { firstName: true, lastName: true } } },
+							},
+						},
+					}),
+				)
+				.pipe(
+					Effect.mapError(
+						dbError(
+							"Failed to fetch holiday category assignments",
+							"select",
+							"holiday_category_assignment",
+						),
+					),
+				);
 
-	return runHolidayServerAction(effect);
+			return filterAssignmentsForManagerHolidayScope(
+				assignments.map(withAuthNames) satisfies HolidayCategoryAssignmentRecord[],
+				scope,
+			);
+		}),
+);
+
+function teamNotFound(teamId: string) {
+	return Effect.fail(
+		new NotFoundError({ message: "Team not found", entityType: "team", entityId: teamId }),
+	);
+}
+
+function employeeNotFound(employeeId: string) {
+	return Effect.fail(
+		new NotFoundError({
+			message: "Employee not found",
+			entityType: "employee",
+			entityId: employeeId,
+		}),
+	);
 }
 
 /**
  * Create a holiday category assignment
  */
-export async function createHolidayCategoryAssignment(data: {
-	categoryId: string;
-	assignmentType: "organization" | "team" | "employee";
-	teamId?: string;
-	employeeId?: string;
-}): Promise<ServerActionResult<typeof holidayCategoryAssignment.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "createHolidayCategoryAssignment:actor" });
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Only org admins can create holiday category assignments",
-			resource: "holiday_category_assignment",
-			action: "create",
-		});
-
-		const [existingCategory] = yield* actor.dbService.query("verifyHolidayCategory", async () => {
-			return await actor.dbService.db
-				.select()
-				.from(holidayCategory)
-				.where(
-					and(
-						eq(holidayCategory.id, data.categoryId),
-						eq(holidayCategory.organizationId, actor.organizationId),
-						eq(holidayCategory.isActive, true),
-					),
-				)
-				.limit(1);
-		});
-
-		if (!existingCategory) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Holiday category not found",
-					entityType: "holiday_category",
-					entityId: data.categoryId,
-				}),
+export const createHolidayCategoryAssignment = organizationAction(
+	{
+		name: "holidays.createCategoryAssignment",
+		requires: "orgAdmin",
+		schema: createHolidayCategoryAssignmentSchema,
+		addsEmployees: (input) => (input.assignmentType === "employee" ? [input.employeeId] : []),
+	},
+	({ actor, organizationId, input: data }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const [existingCategory] = yield* dbService.query("verifyHolidayCategory", () =>
+				dbService.db
+					.select({ id: holidayCategory.id })
+					.from(holidayCategory)
+					.where(
+						and(
+							eq(holidayCategory.id, data.categoryId),
+							eq(holidayCategory.organizationId, organizationId),
+							eq(holidayCategory.isActive, true),
+						),
+					)
+					.limit(1),
 			);
-		}
 
-		if (data.assignmentType === "team") {
-			const assignmentTeamId = data.teamId;
-			if (assignmentTeamId) {
-				const [existingTeam] = yield* actor.dbService.query("verifyHolidayCategoryAssignmentTeam", async () => {
-					return await actor.dbService.db
-						.select()
+			if (!existingCategory) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Holiday category not found",
+						entityType: "holiday_category",
+						entityId: data.categoryId,
+					}),
+				);
+			}
+
+			if (data.assignmentType === "team") {
+				const assignmentTeamId = data.teamId;
+				if (!assignmentTeamId) return yield* teamNotFound("");
+				const [existingTeam] = yield* dbService.query("verifyHolidayCategoryAssignmentTeam", () =>
+					dbService.db
+						.select({ id: team.id })
 						.from(team)
-						.where(
-							and(eq(team.id, assignmentTeamId), eq(team.organizationId, actor.organizationId)),
-						)
-						.limit(1);
-				});
-
-				if (!existingTeam) {
-					yield* Effect.fail(
-						new NotFoundError({
-							message: "Team not found",
-							entityType: "team",
-							entityId: assignmentTeamId,
-						}),
-					);
-				}
-			} else {
-				yield* Effect.fail(
-					new NotFoundError({
-						message: "Team not found",
-						entityType: "team",
-						entityId: "",
-					}),
+						.where(and(eq(team.id, assignmentTeamId), eq(team.organizationId, organizationId)))
+						.limit(1),
 				);
+				if (!existingTeam) return yield* teamNotFound(assignmentTeamId);
 			}
-		}
 
-		if (data.assignmentType === "employee") {
-			const assignmentEmployeeId = data.employeeId;
-			if (assignmentEmployeeId) {
-				const [existingEmployee] = yield* actor.dbService.query("verifyHolidayCategoryAssignmentEmployee", async () => {
-					return await actor.dbService.db
-						.select()
-						.from(employee)
-						.where(
-							and(
-								eq(employee.id, assignmentEmployeeId),
-								eq(employee.organizationId, actor.organizationId),
-							),
-						)
-						.limit(1);
-				});
-
-				if (!existingEmployee) {
-					yield* Effect.fail(
-						new NotFoundError({
-							message: "Employee not found",
-							entityType: "employee",
-							entityId: assignmentEmployeeId,
-						}),
-					);
-				}
-			} else {
-				yield* Effect.fail(
-					new NotFoundError({
-						message: "Employee not found",
-						entityType: "employee",
-						entityId: "",
-					}),
+			if (data.assignmentType === "employee") {
+				const assignmentEmployeeId = data.employeeId;
+				if (!assignmentEmployeeId) return yield* employeeNotFound("");
+				const [existingEmployee] = yield* dbService.query(
+					"verifyHolidayCategoryAssignmentEmployee",
+					() =>
+						dbService.db
+							.select({ id: employee.id })
+							.from(employee)
+							.where(
+								and(
+									eq(employee.id, assignmentEmployeeId),
+									eq(employee.organizationId, organizationId),
+								),
+							)
+							.limit(1),
 				);
+				if (!existingEmployee) return yield* employeeNotFound(assignmentEmployeeId);
 			}
-			// A former employee gets no new holiday category assignment (#1438).
-			yield* ensureOnCurrentRoster(actor.dbService, {
-				organizationId: actor.organizationId,
-				employeeIds: [assignmentEmployeeId],
-				field: "employeeId",
-			});
-		}
 
-		const newAssignment = yield* actor.dbService.query("createHolidayCategoryAssignment", async () => {
-				const [assignment] = await actor.dbService.db
-					.insert(holidayCategoryAssignment)
-					.values({
-						categoryId: data.categoryId,
-						organizationId: actor.organizationId,
-						assignmentType: data.assignmentType,
-						teamId: data.assignmentType === "team" ? (data.teamId ?? null) : null,
-						employeeId: data.assignmentType === "employee" ? (data.employeeId ?? null) : null,
-						createdBy: actor.session.user.id,
-					})
-					.returning();
+			return yield* dbService
+				.query("createHolidayCategoryAssignment", async () => {
+					const [assignment] = await dbService.db
+						.insert(holidayCategoryAssignment)
+						.values({
+							categoryId: data.categoryId,
+							organizationId,
+							assignmentType: data.assignmentType,
+							teamId: data.assignmentType === "team" ? (data.teamId ?? null) : null,
+							employeeId: data.assignmentType === "employee" ? (data.employeeId ?? null) : null,
+							createdBy: actor.userId,
+						})
+						.returning();
 
-				return assignment;
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to create holiday category assignment",
-						operation: "insert",
-						table: "holiday_category_assignment",
-						cause: error,
-					}),
-			));
-
-		return newAssignment;
-	});
-
-	return runHolidayServerAction(effect);
-}
+					return assignment;
+				})
+				.pipe(
+					Effect.mapError(
+						dbError(
+							"Failed to create holiday category assignment",
+							"insert",
+							"holiday_category_assignment",
+						),
+					),
+				);
+		}),
+);
 
 /**
  * Delete a holiday category assignment (soft delete)
  */
-export async function deleteHolidayCategoryAssignment(
-	assignmentId: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteHolidayCategoryAssignment:actor" });
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Only org admins can delete holiday category assignments",
-			resource: "holiday_category_assignment",
-			action: "delete",
-		});
-
-		const updatedAssignments = yield* actor.dbService.query("deleteHolidayCategoryAssignment", async () => {
-				return await actor.dbService.db
-					.update(holidayCategoryAssignment)
-					.set({ isActive: false })
-					.where(
-						and(
-							eq(holidayCategoryAssignment.id, assignmentId),
-							eq(holidayCategoryAssignment.organizationId, actor.organizationId),
+export const deleteHolidayCategoryAssignment = organizationAction(
+	{ name: "holidays.deleteCategoryAssignment", requires: "orgAdmin", schema: idSchema },
+	({ organizationId, input: assignmentId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const updatedAssignments = yield* dbService
+				.query("deleteHolidayCategoryAssignment", () =>
+					dbService.db
+						.update(holidayCategoryAssignment)
+						.set({ isActive: false })
+						.where(
+							and(
+								eq(holidayCategoryAssignment.id, assignmentId),
+								eq(holidayCategoryAssignment.organizationId, organizationId),
+							),
+						)
+						.returning({ id: holidayCategoryAssignment.id }),
+				)
+				.pipe(
+					Effect.mapError(
+						dbError(
+							"Failed to delete holiday category assignment",
+							"update",
+							"holiday_category_assignment",
 						),
-					)
-					.returning({ id: holidayCategoryAssignment.id });
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to delete holiday category assignment",
-						operation: "update",
-						table: "holiday_category_assignment",
-						cause: error,
+					),
+				);
+
+			if (updatedAssignments.length === 0) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Holiday category assignment not found",
+						entityType: "holiday_category_assignment",
+						entityId: assignmentId,
 					}),
-			));
-
-		if (updatedAssignments.length === 0) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Holiday category assignment not found",
-					entityType: "holiday_category_assignment",
-					entityId: assignmentId,
-				}),
-			);
-		}
-	});
-
-	return runHolidayServerAction(effect);
-}
+				);
+			}
+		}),
+);
 
 /**
  * Create a holiday assignment
  */
-export async function createHolidayAssignment(data: {
-	holidayId: string;
-	assignmentType: "organization" | "team" | "employee";
-	teamId?: string;
-	employeeId?: string;
-}): Promise<ServerActionResult<typeof holidayAssignment.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "createHolidayAssignment:actor" });
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Only org admins can create holiday assignments",
-			resource: "holiday_assignment",
-			action: "create",
-		});
-
-		const _existingHoliday = yield* actor.dbService.query("verifyHoliday", async () => {
-				const [h] = await actor.dbService.db
-					.select()
+export const createHolidayAssignment = organizationAction(
+	{
+		name: "holidays.createAssignment",
+		requires: "orgAdmin",
+		schema: createHolidayAssignmentSchema,
+		// Only an employee of this organization's current roster can be named (#1438).
+		addsEmployees: (input) => [input.employeeId],
+	},
+	({ actor, organizationId, input: data }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const [existingHoliday] = yield* dbService.query("verifyHoliday", () =>
+				dbService.db
+					.select({ id: holiday.id })
 					.from(holiday)
 					.where(
 						and(
 							eq(holiday.id, data.holidayId),
-							eq(holiday.organizationId, actor.organizationId),
+							eq(holiday.organizationId, organizationId),
 							eq(holiday.isActive, true),
 						),
 					)
-					.limit(1);
-
-				if (!h) {
-					throw new Error("Holiday not found");
-				}
-
-				return h;
-			}).pipe(Effect.mapError(
-				() =>
+					.limit(1),
+			);
+			if (!existingHoliday) {
+				return yield* Effect.fail(
 					new NotFoundError({
 						message: "Holiday not found",
 						entityType: "holiday",
 						entityId: data.holidayId,
 					}),
-			));
-		// Only an employee of this organization's current roster can be named (#1438).
-		if (data.assignmentType === "employee") {
-			yield* ensureOnCurrentRoster(actor.dbService, {
-				organizationId: actor.organizationId,
-				employeeIds: [data.employeeId],
-				field: "employeeId",
-			});
-		}
+				);
+			}
 
-		const newAssignment = yield* actor.dbService.query("createHolidayAssignment", async () => {
-				const [assignment] = await actor.dbService.db
-					.insert(holidayAssignment)
-					.values({
-						holidayId: data.holidayId,
-						organizationId: actor.organizationId,
-						assignmentType: data.assignmentType,
-						teamId: data.teamId || null,
-						employeeId: data.employeeId || null,
-						createdBy: actor.session.user.id,
-					})
-					.returning();
+			return yield* dbService
+				.query("createHolidayAssignment", async () => {
+					const [assignment] = await dbService.db
+						.insert(holidayAssignment)
+						.values({
+							holidayId: data.holidayId,
+							organizationId,
+							assignmentType: data.assignmentType,
+							teamId: data.teamId || null,
+							employeeId: data.employeeId || null,
+							createdBy: actor.userId,
+						})
+						.returning();
 
-				return assignment;
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to create holiday assignment",
-						operation: "insert",
-						table: "holiday_assignment",
-						cause: error,
-					}),
-			));
-
-		return newAssignment;
-	});
-
-	return runHolidayServerAction(effect);
-}
+					return assignment;
+				})
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to create holiday assignment", "insert", "holiday_assignment"),
+					),
+				);
+		}),
+);
 
 /**
  * Delete a holiday assignment (soft delete)
  */
-export async function deleteHolidayAssignment(
-	assignmentId: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteHolidayAssignment:actor" });
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Only org admins can delete holiday assignments",
-			resource: "holiday_assignment",
-			action: "delete",
-		});
+export const deleteHolidayAssignment = organizationAction(
+	{ name: "holidays.deleteAssignment", requires: "orgAdmin", schema: idSchema },
+	({ organizationId, input: assignmentId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const updated = yield* dbService
+				.query("deleteHolidayAssignment", () =>
+					dbService.db
+						.update(holidayAssignment)
+						.set({ isActive: false })
+						.where(
+							and(
+								eq(holidayAssignment.id, assignmentId),
+								eq(holidayAssignment.organizationId, organizationId),
+							),
+						)
+						.returning({ id: holidayAssignment.id }),
+				)
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to delete holiday assignment", "update", "holiday_assignment"),
+					),
+				);
 
-		const _existingAssignment = yield* actor.dbService.query("verifyAssignment", async () => {
-				const [a] = await actor.dbService.db
-					.select()
-					.from(holidayAssignment)
-					.where(
-						and(
-							eq(holidayAssignment.id, assignmentId),
-							eq(holidayAssignment.organizationId, actor.organizationId),
-						),
-					)
-					.limit(1);
-
-				if (!a) {
-					throw new Error("Assignment not found");
-				}
-
-				return a;
-			}).pipe(Effect.mapError(
-				() =>
+			if (updated.length === 0) {
+				return yield* Effect.fail(
 					new NotFoundError({
 						message: "Holiday assignment not found",
 						entityType: "holiday_assignment",
 						entityId: assignmentId,
 					}),
-			));
-
-		yield* actor.dbService.query("deleteHolidayAssignment", async () => {
-				await actor.dbService.db
-					.update(holidayAssignment)
-					.set({ isActive: false })
-					.where(eq(holidayAssignment.id, assignmentId));
-			}).pipe(Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to delete holiday assignment",
-						operation: "update",
-						table: "holiday_assignment",
-						cause: error,
-					}),
-			));
-	});
-
-	return runHolidayServerAction(effect);
-}
+				);
+			}
+		}),
+);

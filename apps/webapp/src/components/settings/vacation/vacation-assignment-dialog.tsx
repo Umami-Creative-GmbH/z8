@@ -42,6 +42,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import { useVacationPolicyHistoryContext } from "./use-vacation-policy-history-context";
 
@@ -202,7 +203,7 @@ export function VacationAssignmentDialog({
 		queryKey: queryKeys.vacationPolicies.list(organizationId),
 		enabled: open,
 		queryFn: async () => {
-			const result = await getVacationPolicies(organizationId);
+			const result = await getVacationPolicies();
 			if (!result.success) throw new Error(result.error);
 			return (result.data as PolicyOption[]).filter(
 				(policy) => policy.isActive,
@@ -213,7 +214,7 @@ export function VacationAssignmentDialog({
 		queryKey: queryKeys.teams.list(organizationId),
 		enabled: open && assignmentType === "team",
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) throw new Error(result.error);
 			return result.data as TeamOption[];
 		},
@@ -233,11 +234,10 @@ export function VacationAssignmentDialog({
 		onSuccess: (result) => {
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.vacation.assignments.createFailed",
-							"Failed to create policy assignment",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.vacation.assignments.createFailed",
+						"Failed to create policy assignment",
+					]),
 				);
 				return;
 			}

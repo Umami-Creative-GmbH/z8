@@ -13,6 +13,7 @@ import {
 } from "@/app/[locale]/(app)/settings/holidays/actions";
 import { createSelectionColumn, DataTableColumnHeader } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import {
 	HolidayCategoryCell,
@@ -46,7 +47,7 @@ export function useHolidayCategoryOptions(organizationId: string) {
 	const { data: categories = [] } = useQuery({
 		queryKey: queryKeys.holidayCategories.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayCategories(organizationId);
+			const result = await getHolidayCategories();
 			if (!result.success) throw new Error(result.error);
 			return result.data as HolidayCategoryOption[];
 		},
@@ -81,7 +82,10 @@ export function useHolidayDeletion() {
 				queryClient.invalidateQueries({ queryKey: queryKeys.holidays.all });
 			} else {
 				toast.error(
-					result.error || t("settings.holidays.deleteFailed", "Failed to delete holiday"),
+					actionErrorMessage(t, result, {}, [
+						"settings.holidays.deleteFailed",
+						"Failed to delete holiday",
+					]),
 				);
 			}
 			closeDeleteConfirm();
@@ -105,7 +109,10 @@ export function useHolidayDeletion() {
 				setRowSelection({});
 			} else {
 				toast.error(
-					result.error || t("settings.holidays.bulkDeleteFailed", "Failed to delete holidays"),
+					actionErrorMessage(t, result, {}, [
+						"settings.holidays.bulkDeleteFailed",
+						"Failed to delete holidays",
+					]),
 				);
 			}
 			setBulkDeleteConfirmOpen(false);

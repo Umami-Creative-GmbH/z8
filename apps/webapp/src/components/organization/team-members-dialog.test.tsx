@@ -156,8 +156,8 @@ describe("TeamMembersDialog driving licence warning (#1425)", () => {
 	it("removes at once when the change ends no driving authorization, confirming the empty preview", async () => {
 		renderDialog();
 		await clickRemove();
-		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId, confirmed));
-		expect(api.preview).toHaveBeenCalledWith(teamId, employeeId, "remove");
+		await waitFor(() => expect(api.remove).toHaveBeenCalledWith({ teamId, employeeId, ...confirmed }));
+		expect(api.preview).toHaveBeenCalledWith({ teamId, employeeId, change: "remove" });
 		expect(screen.queryByRole("alertdialog")).toBeNull();
 	});
 
@@ -180,7 +180,7 @@ describe("TeamMembersDialog driving licence warning (#1425)", () => {
 		await userEvent.click(
 			within(warning).getByRole("button", { name: "Continue and end authorizations" }),
 		);
-		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId, confirmed));
+		await waitFor(() => expect(api.remove).toHaveBeenCalledWith({ teamId, employeeId, ...confirmed }));
 	});
 
 	it("shows a team manager only that some driving authorizations end: no names or classes", async () => {
@@ -200,7 +200,7 @@ describe("TeamMembersDialog driving licence warning (#1425)", () => {
 		await userEvent.click(
 			within(warning).getByRole("button", { name: "Continue and end authorizations" }),
 		);
-		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId, confirmed));
+		await waitFor(() => expect(api.remove).toHaveBeenCalledWith({ teamId, employeeId, ...confirmed }));
 	});
 
 	it("removes at once when a generic preview shows nothing ends", async () => {
@@ -210,7 +210,7 @@ describe("TeamMembersDialog driving licence warning (#1425)", () => {
 		});
 		renderDialog();
 		await clickRemove();
-		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId, confirmed));
+		await waitFor(() => expect(api.remove).toHaveBeenCalledWith({ teamId, employeeId, ...confirmed }));
 		expect(screen.queryByRole("alertdialog")).toBeNull();
 	});
 

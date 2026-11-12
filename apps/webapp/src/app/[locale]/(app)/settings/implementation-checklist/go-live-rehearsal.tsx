@@ -23,9 +23,9 @@ import {
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatInstant, formatPlainDate } from "@/lib/datetime/temporal-format";
+import type { ServerActionResult } from "@/lib/effect/result";
 import type {
 	GoLiveRehearsal,
-	GoLiveRehearsalActionResult,
 	GoLiveRehearsalCandidate,
 	GoLiveRehearsalKind,
 	GoLiveRehearsalRoute,
@@ -49,7 +49,7 @@ const GoLiveRehearsalContext = createContext<GoLiveRehearsalControls | null>(nul
 
 type RehearsalState =
 	| { memberKey: string; result: null }
-	| { memberKey: string; result: GoLiveRehearsalActionResult };
+	| { memberKey: string; result: ServerActionResult<GoLiveRehearsal> };
 
 /**
  * Holds the go-live rehearsal (#1517): any part of the checklist can open it for a checked
@@ -102,7 +102,10 @@ export function GoLiveRehearsalProvider({
 						) : state.result.success ? (
 							<GoLiveRehearsalView rehearsal={state.result.data} />
 						) : (
-							<RehearsalFailure error={state.result.error} onRetry={() => open(state.memberKey)} />
+							<RehearsalFailure
+								notChecked={state.result.refusal === "member_not_checked"}
+								onRetry={() => open(state.memberKey)}
+							/>
 						)}
 					</div>
 				</SheetContent>
@@ -111,15 +114,10 @@ export function GoLiveRehearsalProvider({
 	);
 }
 
-function RehearsalFailure({
-	error,
-	onRetry,
-}: {
-	error: Extract<GoLiveRehearsalActionResult, { success: false }>["error"];
-	onRetry: () => void;
-}) {
+/** Why the rehearsal failed: the member is not checked, or a lookup failed (try again). */
+function RehearsalFailure({ notChecked, onRetry }: { notChecked: boolean; onRetry: () => void }) {
 	const { t } = useTranslate();
-	if (error === "member_not_checked") {
+	if (notChecked) {
 		return (
 			<p className="text-muted-foreground text-sm">
 				{t(

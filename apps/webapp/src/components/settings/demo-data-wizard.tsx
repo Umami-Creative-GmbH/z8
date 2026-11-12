@@ -48,6 +48,7 @@ import type {
 	DemoDataResult,
 } from "@/lib/demo/demo-data.service";
 import type { GenerateEmployeesResult } from "@/lib/demo/employee-generator";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 import {
@@ -82,7 +83,6 @@ import {
 import { runWithBusyState } from "./run-with-busy-state";
 
 interface DemoDataWizardProps {
-	organizationId: string;
 	employees: Array<{ id: string; name: string }>;
 }
 
@@ -183,7 +183,6 @@ function handleSelectableCardKeyDown(
 }
 
 function useDemoDataWizardController({
-	organizationId,
 	employees,
 }: DemoDataWizardProps) {
 	const { t } = useTranslate();
@@ -254,16 +253,6 @@ function useDemoDataWizardController({
 	};
 
 	const handleGenerate = async () => {
-		if (!organizationId) {
-			dispatchWizard({
-				type: "set-error",
-				error: t(
-					"settings.demo.errors.noOrganization",
-					"No organization selected",
-				),
-			});
-			return;
-		}
 
 		// Build steps based on selected options
 		const activeSteps: GenerationStep[] = [];
@@ -468,7 +457,6 @@ function useDemoDataWizardController({
 		dispatchWizard({ type: "start-generation", steps: activeSteps });
 
 		const input: StepGenerationInput = {
-			organizationId,
 			dateRangeType,
 			teamCount: includeTeams ? teamCount : undefined,
 			projectCount: includeProjects ? projectCount : undefined,
@@ -520,6 +508,8 @@ function useDemoDataWizardController({
 				success: boolean;
 				data?: unknown;
 				error?: string;
+				code?: string;
+				refusal?: string;
 			}>,
 			onSuccess: (data: unknown) => {
 				result: string;
@@ -530,7 +520,12 @@ function useDemoDataWizardController({
 			try {
 				const response = await action();
 				if (!response.success) {
-					updateStepStatus(stepId, "error", undefined, response.error);
+					updateStepStatus(
+						stepId,
+						"error",
+						undefined,
+						actionErrorMessage(t, response),
+					);
 					return false;
 				}
 				const { result, updates } = onSuccess(response.data);
@@ -874,21 +869,14 @@ function useDemoDataWizardController({
 	};
 
 	const handleClear = async () => {
-		if (!organizationId) {
-			dispatchWizard({
-				type: "set-error",
-				error: t(
-					"settings.demo.errors.noOrganization",
-					"No organization selected",
-				),
-			});
-			return;
-		}
 		await runWithBusyState(setIsClearing, async () => {
 			try {
-				const response = await clearTimeDataAction(organizationId);
+				const response = await clearTimeDataAction();
 				if (!response.success) {
-					dispatchWizard({ type: "set-error", error: response.error });
+					dispatchWizard({
+						type: "set-error",
+						error: actionErrorMessage(t, response),
+					});
 				} else {
 					setClearResult(response.data);
 				}
@@ -907,24 +895,17 @@ function useDemoDataWizardController({
 	};
 
 	const handleGenerateEmployees = async () => {
-		if (!organizationId) {
-			setEmployeeError(
-				t("settings.demo.errors.noOrganization", "No organization selected"),
-			);
-			return;
-		}
 		setEmployeeError(null);
 		setEmployeeResult(null);
 		await runWithBusyState(setIsGeneratingEmployees, async () => {
 			try {
 				const response = await generateDemoEmployeesAction({
-					organizationId,
 					count: employeeCount,
 					includeManagers: includeManagersForEmployees,
 				});
 
 				if (!response.success) {
-					setEmployeeError(response.error);
+					setEmployeeError(actionErrorMessage(t, response));
 				} else {
 					setEmployeeResult(response.data);
 					router.refresh();
@@ -938,21 +919,14 @@ function useDemoDataWizardController({
 	};
 
 	const handleDeleteNonAdmin = async () => {
-		if (!organizationId) {
-			dispatchWizard({
-				type: "set-error",
-				error: t(
-					"settings.demo.errors.noOrganization",
-					"No organization selected",
-				),
-			});
-			return;
-		}
 		await runWithBusyState(setIsDeletingNonAdmin, async () => {
 			try {
-				const response = await deleteNonAdminDataAction(organizationId);
+				const response = await deleteNonAdminDataAction();
 				if (!response.success) {
-					dispatchWizard({ type: "set-error", error: response.error });
+					dispatchWizard({
+						type: "set-error",
+						error: actionErrorMessage(t, response),
+					});
 				} else {
 					setDeleteNonAdminResult(response.data);
 					router.refresh();

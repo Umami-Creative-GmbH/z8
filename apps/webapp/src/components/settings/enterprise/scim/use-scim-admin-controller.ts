@@ -13,18 +13,16 @@ import {
 	revokeEnterpriseIdentityScimCredentialAction,
 	rotateEnterpriseIdentityScimCredentialAction,
 } from "@/app/[locale]/(app)/settings/enterprise/scim-actions";
-
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+import { type ActionData, actionData } from "../action-data";
 
-type Status = Awaited<ReturnType<typeof getEnterpriseIdentityScimStatusAction>>;
-type Events = Awaited<
-	ReturnType<typeof listEnterpriseIdentityScimEventsAction>
->;
+type Status = ActionData<typeof getEnterpriseIdentityScimStatusAction>;
+type Events = ActionData<typeof listEnterpriseIdentityScimEventsAction>;
 
 function loadScimConnection(connectionId: string) {
 	return Promise.all([
-		getEnterpriseIdentityScimStatusAction(connectionId),
-		listEnterpriseIdentityScimEventsAction(connectionId),
+		actionData(getEnterpriseIdentityScimStatusAction({ connectionId })),
+		actionData(listEnterpriseIdentityScimEventsAction({ connectionId })),
 	]);
 }
 
@@ -34,9 +32,7 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 	const [events, setEvents] = useState<Events>([]);
 	const [eventsError, setEventsError] = useState(false);
 	const [credential, setCredential] = useState<string | null>(null);
-	const [destructive, setDestructive] = useState<
-		"revoke" | "decommission" | null
-	>(null);
+	const [destructive, setDestructive] = useState<"revoke" | "decommission" | null>(null);
 	const [credentialId, setCredentialId] = useState<string | null>(null);
 	const [lifecycle, setLifecycle] = useState<
 		"creating" | "creation_failed" | "decommissioning" | "decommissioned" | null
@@ -48,9 +44,7 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 	const connectionId =
 		lifecycle === "decommissioned"
 			? null
-			: (status?.connection.connectionId ??
-				setup.scim.connection?.connectionId ??
-				null);
+			: (status?.connection.connectionId ?? setup.scim.connection?.connectionId ?? null);
 
 	useViewRefresh(async () => {
 		if (!connectionId) return;
@@ -89,20 +83,20 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 		if (!defaultRoleTemplateId) return;
 		setPendingAction("refresh");
 		startTransition(async () => {
-			await reconcileEnterpriseIdentityScimCreationAction({
-				autoActivateUsers: false,
-				deprovisionAction: "suspend",
-				defaultRoleTemplateId,
-			})
+			await actionData(
+				reconcileEnterpriseIdentityScimCreationAction({
+					autoActivateUsers: false,
+					deprovisionAction: "suspend",
+					defaultRoleTemplateId,
+				}),
+			)
 				.then((next) => {
 					setLifecycle(next.status === "active" ? null : next.status);
 					return "connection" in next && next.connection
-						? loadScimConnection(next.connection.connectionId).then(
-								([nextStatus, nextEvents]) => {
-									setStatus(nextStatus);
-									setEvents(nextEvents);
-								},
-							)
+						? loadScimConnection(next.connection.connectionId).then(([nextStatus, nextEvents]) => {
+								setStatus(nextStatus);
+								setEvents(nextEvents);
+							})
 						: undefined;
 				})
 				.then(
@@ -124,16 +118,16 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 		if (!defaultRoleTemplateId || lifecycle === "creating") return;
 		setPendingAction("create");
 		startTransition(async () => {
-			await createEnterpriseIdentityScimConnectionAction({
-				autoActivateUsers: false,
-				deprovisionAction: "suspend",
-				defaultRoleTemplateId,
-			})
+			await actionData(
+				createEnterpriseIdentityScimConnectionAction({
+					autoActivateUsers: false,
+					deprovisionAction: "suspend",
+					defaultRoleTemplateId,
+				}),
+			)
 				.then((result) => {
 					if ("status" in result)
-						setLifecycle(
-							result.status === "active" ? null : (result.status ?? null),
-						);
+						setLifecycle(result.status === "active" ? null : (result.status ?? null));
 					if ("token" in result) setCredential(result.token ?? null);
 					if (!("connection" in result) || !result.connection) return;
 					setLifecycle(null);
@@ -163,7 +157,7 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 		if (!connectionId) return;
 		setPendingAction("rotate");
 		startTransition(async () => {
-			await rotateEnterpriseIdentityScimCredentialAction(connectionId)
+			await actionData(rotateEnterpriseIdentityScimCredentialAction({ connectionId }))
 				.then((result) => {
 					setCredential(result.token ?? null);
 					return loadScimConnection(connectionId);
@@ -197,23 +191,23 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 		startTransition(async () => {
 			const operation =
 				currentAction === "revoke" && currentCredential
-					? revokeEnterpriseIdentityScimCredentialAction(
-							connectionId,
-							currentCredential,
+					? actionData(
+							revokeEnterpriseIdentityScimCredentialAction({
+								connectionId,
+								credentialId: currentCredential,
+							}),
 						).then(() => loadScimConnection(connectionId))
 					: currentAction === "decommission"
-						? decommissionEnterpriseIdentityScimConnectionAction(
-								connectionId,
-							).then((result) => {
-								setLifecycle(
-									result === "completed" ? "decommissioned" : "decommissioning",
-								);
-								if (result === "completed") {
-									setStatus(null);
-									return;
-								}
-								return loadScimConnection(connectionId);
-							})
+						? actionData(decommissionEnterpriseIdentityScimConnectionAction({ connectionId })).then(
+								(result) => {
+									setLifecycle(result === "completed" ? "decommissioned" : "decommissioning");
+									if (result === "completed") {
+										setStatus(null);
+										return;
+									}
+									return loadScimConnection(connectionId);
+								},
+							)
 						: loadScimConnection(connectionId);
 			await operation.then(
 				(result) => {

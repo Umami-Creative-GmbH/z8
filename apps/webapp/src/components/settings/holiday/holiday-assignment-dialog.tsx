@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface HolidayAssignmentDialogProps {
@@ -115,7 +116,7 @@ export function HolidayAssignmentDialog({
 	const { data: categories, isLoading: categoriesLoading } = useQuery({
 		queryKey: queryKeys.holidayCategories.list(organizationId, { limit: 500 }),
 		queryFn: async () => {
-			const result = await getHolidayCategories(organizationId);
+			const result = await getHolidayCategories();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch holiday categories");
 			}
@@ -128,7 +129,7 @@ export function HolidayAssignmentDialog({
 	const { data: teams, isLoading: teamsLoading } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -141,7 +142,7 @@ export function HolidayAssignmentDialog({
 	const { data: employees, isLoading: employeesLoading } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
 		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
+			const result = await getEmployeesForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch employees");
 			}
@@ -171,11 +172,10 @@ export function HolidayAssignmentDialog({
 				handleOpenChange(false);
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.holidays.assignments.categoryCreateFailed",
-							"Failed to create holiday category assignment",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.holidays.assignments.categoryCreateFailed",
+						"Failed to create holiday category assignment",
+					]),
 				);
 			}
 		},

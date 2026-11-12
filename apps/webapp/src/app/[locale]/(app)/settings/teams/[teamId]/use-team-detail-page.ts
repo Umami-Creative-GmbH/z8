@@ -104,7 +104,7 @@ export function useTeamDetailPage(teamId: string) {
 
 	const updateTeamMutation = useMutation({
 		mutationFn: async (values: TeamFormValues) => {
-			const result = await updateTeam(teamId, values);
+			const result = await updateTeam({ teamId, ...values });
 			if (!result.success) {
 				throw new Error(
 					result.error ||
@@ -134,7 +134,9 @@ export function useTeamDetailPage(teamId: string) {
 
 	const addMemberMutation = useMutation({
 		mutationFn: async ({ employeeId, previewToken }: ConfirmedChange) => {
-			const result = await addTeamMember(teamId, employeeId, {
+			const result = await addTeamMember({
+				teamId,
+				employeeId,
 				drivingLicencePreviewToken: previewToken,
 			});
 			if (!result.success) {
@@ -169,7 +171,9 @@ export function useTeamDetailPage(teamId: string) {
 
 	const removeMemberMutation = useMutation({
 		mutationFn: async ({ employeeId, previewToken }: ConfirmedChange) => {
-			const result = await removeTeamMember(teamId, employeeId, {
+			const result = await removeTeamMember({
+				teamId,
+				employeeId,
 				drivingLicencePreviewToken: previewToken,
 			});
 			if (!result.success) {
@@ -237,7 +241,8 @@ export function useTeamDetailPage(teamId: string) {
 
 	const deleteTeamMutation = useMutation({
 		mutationFn: async (previewToken: string) => {
-			const result = await deleteTeam(teamId, {
+			const result = await deleteTeam({
+				teamId,
 				drivingLicencePreviewToken: previewToken,
 			});
 			if (!result.success) {
@@ -280,7 +285,7 @@ export function useTeamDetailPage(teamId: string) {
 
 		const employeeId = uiState.selectedEmployee;
 		const previewToken = await confirmTeamChange(() =>
-			previewTeamMemberChangeDrivingImpact(teamId, employeeId, "add"),
+			previewTeamMemberChangeDrivingImpact({ teamId, employeeId, change: "add" }),
 		);
 		if (previewToken === null) return;
 		addMemberMutation.mutate({ employeeId, previewToken });
@@ -289,7 +294,7 @@ export function useTeamDetailPage(teamId: string) {
 	// A primary-team change can end driving authorizations: warn first (#1425).
 	async function handleRemoveMember(employeeId: string) {
 		const previewToken = await confirmTeamChange(() =>
-			previewTeamMemberChangeDrivingImpact(teamId, employeeId, "remove"),
+			previewTeamMemberChangeDrivingImpact({ teamId, employeeId, change: "remove" }),
 		);
 		if (previewToken === null) return;
 		removeMemberMutation.mutate({ employeeId, previewToken });

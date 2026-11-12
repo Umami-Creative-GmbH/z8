@@ -105,7 +105,7 @@ describe("ProjectTasksPanel", () => {
 		expect(within(design).getByText("Estimate: 12.5 h")).toBeTruthy();
 		expect(within(kickoff).getByText("Kickoff")).toBeTruthy();
 		expect(within(kickoff).getByText("Done")).toBeTruthy();
-		expect(actions.getProjectTasks).toHaveBeenCalledWith("project-1");
+		expect(actions.getProjectTasks).toHaveBeenCalledWith({ projectId: "project-1" });
 	});
 
 	it("adds a task with a description and an estimate", async () => {
@@ -143,7 +143,9 @@ describe("ProjectTasksPanel", () => {
 		const user = userEvent.setup();
 		actions.createProjectTask.mockResolvedValue({
 			success: false,
-			error: "A task with this name already exists in this project",
+			error: "server text",
+			code: "ValidationError",
+			refusal: "duplicate_name",
 		});
 		renderPanel();
 
@@ -153,7 +155,7 @@ describe("ProjectTasksPanel", () => {
 		await user.click(within(form).getByRole("button", { name: "Add task" }));
 
 		expect(toast.error).toHaveBeenCalledWith(
-			"A task with this name already exists in this project",
+			"A task with this name already exists in this project.",
 		);
 		expect((name as HTMLInputElement).value).toBe("Design");
 	});
@@ -171,7 +173,8 @@ describe("ProjectTasksPanel", () => {
 		await user.clear(estimate);
 		await user.click(within(form).getByRole("button", { name: "Save" }));
 
-		expect(actions.updateProjectTask).toHaveBeenCalledWith("task-open", {
+		expect(actions.updateProjectTask).toHaveBeenCalledWith({
+			taskId: "task-open",
 			name: "Visual design",
 			description: "Wireframes",
 			estimateHours: null,

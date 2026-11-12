@@ -7,6 +7,7 @@ import {
 	decideCsvWorkAction,
 	refreshCsvWorkAction,
 } from "@/app/[locale]/(app)/settings/import/csv-actions";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { CsvWorkMapping } from "./csv-work-mapping";
 import {
@@ -51,12 +52,10 @@ export interface CsvWorkReviewData {
 }
 
 export function CsvWorkReview({
-	organizationId,
 	batchId,
 	view,
 	paging,
 }: {
-	organizationId: string;
 	batchId: string;
 	view: CsvWorkReviewData;
 	paging?: ImportReviewPaging;
@@ -84,7 +83,6 @@ export function CsvWorkReview({
 				decision === "accepted" ? validSelected : selectedRows
 			).map((row) => row.id);
 			const result = await decideCsvWorkAction({
-				organizationId,
 				batchId,
 				rowIds,
 				decision,
@@ -92,17 +90,16 @@ export function CsvWorkReview({
 			if (result.success) {
 				setSelected([]);
 				router.refresh();
-			} else setError(result.error);
+			} else setError(actionErrorMessage(t, result));
 		});
 	}
 	function commit() {
 		startTransition(async () => {
 			setError(null);
 			const result = await commitCsvWorkAction({
-				organizationId,
 				batchId,
 			});
-			if (!result.success) setError(result.error);
+			if (!result.success) setError(actionErrorMessage(t, result));
 			else router.refresh();
 		});
 	}
@@ -110,13 +107,12 @@ export function CsvWorkReview({
 		startTransition(async () => {
 			setError(null);
 			const result = await refreshCsvWorkAction({
-				organizationId,
 				batchId,
 			});
 			if (result.success) {
 				setSelected([]);
 				router.refresh();
-			} else setError(result.error);
+			} else setError(actionErrorMessage(t, result));
 		});
 	}
 	const busy =
@@ -143,7 +139,6 @@ export function CsvWorkReview({
 				)}
 			</p>
 			<CsvWorkMapping
-				organizationId={organizationId}
 				batchId={batchId}
 				view={view}
 				disabled={!editable}

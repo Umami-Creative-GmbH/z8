@@ -33,6 +33,7 @@ import {
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
 import {
@@ -160,11 +161,10 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 			const result = await authorizeProjectAttributionExceptionAction(value);
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.travelExpenses.projectExceptions.saveFailed",
-							"The exception could not be recorded.",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.travelExpenses.projectExceptions.saveFailed",
+						"The exception could not be recorded.",
+					]),
 				);
 				return;
 			}

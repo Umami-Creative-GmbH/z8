@@ -1,23 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
+
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: { id: "emp-1", role: "admin", former: false },
+};
 
 const mockState = vi.hoisted(() => {
-	const session = {
-		user: {
-			id: "user-1",
-			email: "test@example.com",
-			name: "Test User",
-		},
-		session: {
-			id: "session-1",
-			userId: "user-1",
-			expiresAt: new Date("2099-01-01T00:00:00.000Z"),
-			token: "token",
-		},
-	};
-
 	return {
-		session,
-		isOrgAdminCasl: vi.fn(async () => true),
+		caller: null as StubCaller | null,
 		getPayrollExportConfig: vi.fn(async () => null),
 		getOrgSecret: vi.fn(async () => null),
 		storeOrgSecret: vi.fn(async () => undefined),
@@ -36,8 +29,8 @@ const mockState = vi.hoisted(() => {
 	};
 });
 
-vi.mock("@/db", () => ({
-	absenceCategory: {},
+vi.mock("@/db", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/db")>()),
 	db: {
 		query: {
 			payrollExportFormat: { findFirst: vi.fn() },
@@ -47,24 +40,12 @@ vi.mock("@/db", () => ({
 		update: vi.fn(),
 		delete: vi.fn(),
 	},
-	payrollExportConfig: {},
-	payrollExportFormat: {},
-	payrollWageTypeMapping: {},
-	workCategory: {},
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: {},
 }));
 
 // The identifier field store (#821) has its own PostgreSQL suite.
 vi.mock("@/lib/payroll-export/personnel-identifier-store", () => ({
 	listPayrollIdentifierFields: vi.fn(async () => []),
 	savePayrollExportConfig: vi.fn(),
-}));
-
-vi.mock("@/lib/auth-helpers", () => ({
-	isOrgAdminCasl: mockState.isOrgAdminCasl,
 }));
 
 vi.mock("@/lib/vault/secrets", () => ({
@@ -91,71 +72,10 @@ vi.mock("@/lib/payroll-export", () => ({
 	getProjectsForFilter: mockState.getProjectsForFilter,
 }));
 
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	const AuthService = Context.Service<{
-		readonly getSession: () => unknown;
-	}>("AuthService");
-
-	return {
-		AuthService,
-	};
-});
-
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.succeed(AuthService, {
-			getSession: () => Effect.succeed(mockState.session),
-		}),
-	);
-});
-
-vi.mock("@/lib/effect/result", async () => {
-	const { runtime } = await import("@/lib/effect/runtime");
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
-
-	const toServerActionResult = <_T>(exit: unknown) =>
-		Exit.match(exit as never, {
-			onFailure: (cause) => {
-				const defect = Result.getOrNull(Cause.findDefect(cause));
-				const failure = Option.getOrNull(Cause.findErrorOption(cause));
-				const error = defect ?? failure ?? cause;
-
-				if (error && typeof error === "object" && "_tag" in error) {
-					return {
-						success: false as const,
-						error: (error as { message: string }).message,
-						code: (error as { _tag: string })._tag,
-					};
-				}
-
-				if (error instanceof Error) {
-					return {
-						success: false as const,
-						error: error.message || "An unexpected error occurred",
-						code: "UNKNOWN_ERROR",
-					};
-				}
-
-				return {
-					success: false as const,
-					error: "An unexpected error occurred",
-					code: "UNKNOWN_ERROR",
-				};
-			},
-			onSuccess: (data) => ({ success: true as const, data }),
-		});
-
-	return {
-		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromiseExit<T>>[0]) => {
-			const exit = await runtime.runPromiseExit(effect);
-			return toServerActionResult(exit);
-		},
-		toServerActionResult,
-	};
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mockState.caller));
 });
 
 const {
@@ -171,7 +91,7 @@ const WORKDAY_FORMAT_ID = "workday_api";
 describe("payroll export workday actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.isOrgAdminCasl.mockResolvedValue(true);
+		mockState.caller = orgAdmin;
 		mockState.getPayrollExportConfig.mockResolvedValue(null);
 		mockState.getOrgSecret.mockResolvedValue(null);
 	});
@@ -185,21 +105,21 @@ describe("payroll export workday actions", () => {
 		expect(typeof testWorkdayConnectionAction).toBe("function");
 	});
 
-	it("returns authorization error when user lacks access", async () => {
-		mockState.isOrgAdminCasl.mockResolvedValue(false);
+	it("refuses an org member", async () => {
+		mockState.caller = {
+			...orgAdmin,
+			membershipRole: "member",
+			employee: { id: "emp-1", role: "employee", former: false },
+		};
 
-		const result = await getWorkdayConfigAction("org-1");
+		const result = await getWorkdayConfigAction();
 
-		expect(result).toEqual({
-			success: false,
-			error: "Insufficient permissions - admin role required",
-			code: "AuthorizationError",
-		});
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.getPayrollExportConfig).not.toHaveBeenCalled();
 	});
 
 	it("stores workday credentials and returns success", async () => {
 		const result = await saveWorkdayCredentialsAction({
-			organizationId: "org-1",
 			clientId: "  client-id  ",
 			clientSecret: "  client-secret  ",
 		});
@@ -244,7 +164,7 @@ describe("payroll export workday actions", () => {
 			return null;
 		});
 
-		const result = await getWorkdayConfigAction("org-1");
+		const result = await getWorkdayConfigAction();
 
 		expect(result.success).toBe(true);
 		if (result.success) {
@@ -254,12 +174,11 @@ describe("payroll export workday actions", () => {
 
 	it("rejects whitespace-only credentials before storing", async () => {
 		const result = await saveWorkdayCredentialsAction({
-			organizationId: "org-1",
 			clientId: "   ",
 			clientSecret: "client-secret",
 		});
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			success: false,
 			error: "Workday client ID cannot be empty",
 			code: "ValidationError",

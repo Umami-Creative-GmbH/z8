@@ -711,7 +711,7 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 		{
 			name: "createChangePolicy",
 			write: () =>
-				policyActions.createChangePolicy(ids.organization, {
+				policyActions.createChangePolicy({
 					name: "Created",
 					selfServiceDays: 0,
 					approvalDays: 7,
@@ -729,7 +729,11 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 					level: "organization",
 				});
 			},
-			write: () => policyActions.updateChangePolicy(ids.trustPolicy, { noApprovalRequired: false }),
+			write: () =>
+				policyActions.updateChangePolicy({
+					policyId: ids.trustPolicy,
+					data: { noApprovalRequired: false },
+				}),
 			before: { approval: false },
 			after: { approval: true },
 		},
@@ -753,7 +757,7 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 			name: "createChangePolicyAssignment",
 			setup: seedPolicies,
 			write: () =>
-				policyActions.createChangePolicyAssignment(ids.organization, {
+				policyActions.createChangePolicyAssignment({
 					policyId: ids.strictPolicy,
 					assignmentType: "organization",
 				}),
@@ -847,7 +851,7 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 					values: [ids.strictPolicy],
 				},
 				() =>
-					policyActions.createChangePolicyAssignment(ids.organization, {
+					policyActions.createChangePolicyAssignment({
 						policyId: ids.strictPolicy,
 						assignmentType: "employee",
 						employeeId: ids.employee,
@@ -899,7 +903,7 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 
 			const { written, submitted } = await submitBehindParkedWriter(
 				{ statement: "select id from team where id = $1 for update", values: [ids.team] },
-				() => teamActions.deleteTeam(ids.team),
+				() => teamActions.deleteTeam({ teamId: ids.team }),
 			);
 
 			expect(written).toMatchObject({ success: true });
@@ -921,7 +925,10 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 			try {
 				writer = track(
 					asOwner(() =>
-						policyActions.updateChangePolicy(ids.strictPolicy, { noApprovalRequired: true }),
+						policyActions.updateChangePolicy({
+							policyId: ids.strictPolicy,
+							data: { noApprovalRequired: true },
+						}),
 					),
 				);
 				await waitFor(
@@ -985,7 +992,10 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 			expectOutcome(committed, { approval: true });
 			await expect(
 				asOwner(() =>
-					policyActions.updateChangePolicy(ids.strictPolicy, { noApprovalRequired: true }),
+					policyActions.updateChangePolicy({
+						policyId: ids.strictPolicy,
+						data: { noApprovalRequired: true },
+					}),
 				),
 			).resolves.toMatchObject({ success: true });
 			const before = await workSnapshot();
@@ -1000,7 +1010,7 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 		it("applies an assignment effective from local midnight at exactly that instant", async () => {
 			await seedPolicies();
 			const created = await asOwner(() =>
-				policyActions.createChangePolicyAssignment(ids.organization, {
+				policyActions.createChangePolicyAssignment({
 					policyId: ids.strictPolicy,
 					assignmentType: "employee",
 					employeeId: ids.employee,
@@ -1023,7 +1033,7 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 		it("stops applying an assignment at its expiry instant", async () => {
 			await seedPolicies();
 			const created = await asOwner(() =>
-				policyActions.createChangePolicyAssignment(ids.organization, {
+				policyActions.createChangePolicyAssignment({
 					policyId: ids.strictPolicy,
 					assignmentType: "employee",
 					employeeId: ids.employee,
@@ -1055,7 +1065,7 @@ describe("holiday and change-policy configuration writers on PostgreSQL", () => 
 				},
 			]) {
 				await expect(
-					asOwner(() => policyActions.createChangePolicyAssignment(ids.organization, input)),
+					asOwner(() => policyActions.createChangePolicyAssignment(input)),
 				).resolves.toMatchObject({ success: false });
 			}
 

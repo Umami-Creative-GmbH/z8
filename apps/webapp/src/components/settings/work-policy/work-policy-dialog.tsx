@@ -10,8 +10,10 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
 	type BreakRuleInput,
+	type CreateWorkPolicyInput,
 	createWorkPolicy,
 	type ScheduleDayInput,
+	type UpdateWorkPolicyInput,
 	updateWorkPolicy,
 	type WorkPolicyWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
@@ -42,8 +44,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { BreakRuleEditor } from "../break-rule-editor";
+import { WORK_POLICY_REFUSALS } from "./work-policy-refusals";
 
 interface WorkPolicyDialogProps {
 	open: boolean;
@@ -269,8 +273,7 @@ function useWorkPolicyForm({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (data: Parameters<typeof createWorkPolicy>[1]) =>
-			createWorkPolicy(organizationId, data),
+		mutationFn: (data: CreateWorkPolicyInput) => createWorkPolicy(data),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.workPolicies.created", "Policy created"));
@@ -279,7 +282,12 @@ function useWorkPolicyForm({
 				});
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.workPolicies.createFailed", "Failed to create"));
+				toast.error(
+					actionErrorMessage(t, result, WORK_POLICY_REFUSALS, [
+						"settings.workPolicies.createFailed",
+						"Failed to create",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -289,11 +297,11 @@ function useWorkPolicyForm({
 
 	// Update mutation
 	const updateMutation = useMutation({
-		mutationFn: (data: Parameters<typeof updateWorkPolicy>[1]) => {
+		mutationFn: (data: UpdateWorkPolicyInput) => {
 			if (!editingPolicy) {
 				throw new Error("Cannot update policy without an editing target");
 			}
-			return updateWorkPolicy(editingPolicy.id, data);
+			return updateWorkPolicy({ policyId: editingPolicy.id, data });
 		},
 		onSuccess: (result) => {
 			if (result.success) {
@@ -310,7 +318,12 @@ function useWorkPolicyForm({
 				]);
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.workPolicies.updateFailed", "Failed to update"));
+				toast.error(
+					actionErrorMessage(t, result, WORK_POLICY_REFUSALS, [
+						"settings.workPolicies.updateFailed",
+						"Failed to update",
+					]),
+				);
 			}
 		},
 		onError: () => {

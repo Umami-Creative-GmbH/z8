@@ -58,6 +58,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 
 interface KeyInfo {
@@ -140,7 +141,7 @@ function KeyManagementForOrganization({
 		const organizationOperation = organizationOperationRef.current;
 		const keyOperation = ++rotateOperationRef.current;
 		setLoading(true);
-		const actionResult = await settle(rotateSigningKeyAction(organizationId));
+		const actionResult = await settle(rotateSigningKeyAction());
 		if (
 			organizationOperationRef.current !== organizationOperation ||
 			!organizationOperation.active ||
@@ -166,8 +167,10 @@ function KeyManagementForOrganization({
 			router.refresh();
 		} else {
 			toast.error(
-				result.error ||
-					t("settings.auditExport.keys.rotateError", "Key rotation failed"),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditExport.keys.rotateError",
+					"Key rotation failed",
+				]),
 			);
 		}
 	};
@@ -177,7 +180,7 @@ function KeyManagementForOrganization({
 		const keyOperation = ++historyOperationRef.current;
 		setHistoryLoading(true);
 		const actionResult = await settle(
-			getSigningKeyHistoryAction(organizationId),
+			getSigningKeyHistoryAction(),
 		);
 		if (
 			organizationOperationRef.current !== organizationOperation ||
@@ -198,11 +201,10 @@ function KeyManagementForOrganization({
 			setKeyHistory(result.data);
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.auditExport.keys.historyError",
-						"Failed to load key history",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditExport.keys.historyError",
+					"Failed to load key history",
+				]),
 			);
 		}
 	};
@@ -211,7 +213,7 @@ function KeyManagementForOrganization({
 		const organizationOperation = organizationOperationRef.current;
 		const keyOperation = ++publicKeyOperationRef.current;
 		setPublicKeyLoading(true);
-		const actionResult = await settle(exportPublicKeyAction(organizationId));
+		const actionResult = await settle(exportPublicKeyAction());
 		if (
 			organizationOperationRef.current !== organizationOperation ||
 			!organizationOperation.active ||
@@ -231,11 +233,10 @@ function KeyManagementForOrganization({
 			setPublicKey(result.data);
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.auditExport.keys.exportError",
-						"Failed to export public key",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditExport.keys.exportError",
+					"Failed to export public key",
+				]),
 			);
 		}
 	};

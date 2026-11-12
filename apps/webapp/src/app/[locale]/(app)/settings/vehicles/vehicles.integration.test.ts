@@ -128,16 +128,16 @@ describe("organization vehicles on PostgreSQL", () => {
 	/** Applies a change that must succeed, returning every vehicle of the org. */
 	async function apply(change: Change): Promise<Vehicle[]> {
 		const result = await changeVehicles(change);
-		if (!result.success) throw new Error(`action failed: ${result.error}`);
-		if (!result.data.ok)
-			throw new Error(`change refused: ${result.data.reason}`);
-		return result.data.vehicles;
+		if (!result.success)
+			throw new Error(`change refused: ${result.refusal ?? result.error}`);
+		return result.data;
 	}
 
 	async function refusal(change: Change) {
 		const result = await changeVehicles(change);
-		if (!result.success) throw new Error(`action failed: ${result.error}`);
-		return result.data.ok ? "accepted" : result.data.reason;
+		if (result.success) return "accepted";
+		if (!result.refusal) throw new Error(`action failed: ${result.error}`);
+		return result.refusal;
 	}
 
 	async function create(

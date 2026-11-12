@@ -212,7 +212,7 @@ describe("personnel number directory column", () => {
 		const column = createEmployeeColumns({
 			organizationId: "org-1",
 			currentUserId: "user-1",
-			currentMemberRole: "owner",
+			settingsAccess: "owner",
 			onOptimisticStatusChange: vi.fn(),
 			onRemoved: vi.fn(),
 		}).find(

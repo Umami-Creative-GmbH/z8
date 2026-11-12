@@ -211,7 +211,7 @@ describe("WorkPolicyPresetImport", () => {
 
 		await user.click(screen.getByRole("button", { name: "Archive preset" }));
 
-		expect(archiveWorkPolicyPreset).toHaveBeenCalledWith("org-1", "custom-1");
+		expect(archiveWorkPolicyPreset).toHaveBeenCalledWith("custom-1");
 	});
 });
 
@@ -247,9 +247,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 			screen.getByRole("button", { name: "Save custom preset" }),
 		);
 
-		expect(createWorkPolicyPreset).toHaveBeenCalledWith(
-			"org-1",
-			expect.objectContaining({ name: "Reviewed Custom Preset" }),
+		expect(createWorkPolicyPreset).toHaveBeenCalledWith(expect.objectContaining({ name: "Reviewed Custom Preset" }),
 		);
 		expect(onSuccess).toHaveBeenCalled();
 	});
@@ -263,12 +261,11 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		await user.type(screen.getByLabelText("Name"), "Reviewed Policy");
 		await user.click(screen.getByRole("button", { name: "Create policy" }));
 
-		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
-			"org-1",
-			"system-1",
-			expect.objectContaining({ name: "Reviewed Policy" }),
-			false,
-		);
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith({
+			presetId: "system-1",
+			input: expect.objectContaining({ name: "Reviewed Policy" }),
+			setAsDefault: false,
+		});
 	});
 
 	it("submits edited regulation limits from the review dialog", async () => {
@@ -284,18 +281,17 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		await user.type(screen.getByLabelText("Max uninterrupted hours"), "5.5");
 		await user.click(screen.getByRole("button", { name: "Create policy" }));
 
-		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
-			"org-1",
-			"system-1",
-			expect.objectContaining({
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith({
+			presetId: "system-1",
+			input: expect.objectContaining({
 				regulation: expect.objectContaining({
 					maxDailyMinutes: 540,
 					maxWeeklyMinutes: 2640,
 					maxUninterruptedMinutes: 330,
 				}),
 			}),
-			false,
-		);
+			setAsDefault: false,
+		});
 	});
 
 	it("submits edited break rule values from the review dialog", async () => {
@@ -309,10 +305,9 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		await user.type(screen.getByLabelText("Break required minutes"), "45");
 		await user.click(screen.getByRole("button", { name: "Create policy" }));
 
-		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
-			"org-1",
-			"system-1",
-			expect.objectContaining({
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith({
+			presetId: "system-1",
+			input: expect.objectContaining({
 				regulation: expect.objectContaining({
 					breakRules: [
 						expect.objectContaining({
@@ -322,8 +317,8 @@ describe("WorkPolicyPresetReviewDialog", () => {
 					],
 				}),
 			}),
-			false,
-		);
+			setAsDefault: false,
+		});
 	});
 
 	it("submits edited schedule defaults from the review dialog", async () => {
@@ -337,17 +332,16 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		await user.click(await screen.findByRole("option", { name: "All days" }));
 		await user.click(screen.getByRole("button", { name: "Create policy" }));
 
-		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
-			"org-1",
-			"system-1",
-			expect.objectContaining({
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith({
+			presetId: "system-1",
+			input: expect.objectContaining({
 				schedule: expect.objectContaining({
 					scheduleCycle: "monthly",
 					workingDaysPreset: "all_days",
 				}),
 			}),
-			false,
-		);
+			setAsDefault: false,
+		});
 	});
 
 	it("submits edited break option values from the review dialog", async () => {
@@ -363,10 +357,9 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		await user.type(screen.getByLabelText("Longest split minutes"), "20");
 		await user.click(screen.getByRole("button", { name: "Create policy" }));
 
-		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
-			"org-1",
-			"system-1",
-			expect.objectContaining({
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith({
+			presetId: "system-1",
+			input: expect.objectContaining({
 				regulation: expect.objectContaining({
 					breakRules: [
 						expect.objectContaining({
@@ -381,8 +374,8 @@ describe("WorkPolicyPresetReviewDialog", () => {
 					],
 				}),
 			}),
-			false,
-		);
+			setAsDefault: false,
+		});
 	});
 
 	it("shows duplicate-name server errors inline", async () => {
@@ -390,7 +383,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		vi.mocked(createWorkPolicyPreset).mockResolvedValue({
 			success: false,
 			error: "A preset with this name already exists",
-			code: "CONFLICT_ERROR",
+			code: "ConflictError",
 		} as Awaited<ReturnType<typeof createWorkPolicyPreset>>);
 
 		renderWithQueryClient(

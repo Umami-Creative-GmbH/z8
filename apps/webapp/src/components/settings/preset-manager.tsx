@@ -38,7 +38,19 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
+
+/** A delete refused because the preset is still assigned. */
+const DELETE_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.holidays.presets.deleteHasAssignments",
+		"This preset is still assigned. Remove its assignments first.",
+	],
+};
 
 interface PresetManagerProps {
 	organizationId: string;
@@ -76,7 +88,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 	const { data, isLoading, error } = useQuery({
 		queryKey: queryKeys.holidayPresets.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayPresets(organizationId);
+			const result = await getHolidayPresets();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch presets");
 			}
@@ -95,7 +107,10 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 				setSelectedPreset(null);
 			} else {
 				toast.error(
-					result.error || t("settings.holidays.presets.deleteFailed", "Failed to delete preset"),
+					actionErrorMessage(t, result, DELETE_REFUSALS, [
+						"settings.holidays.presets.deleteFailed",
+						"Failed to delete preset",
+					]),
 				);
 			}
 		},

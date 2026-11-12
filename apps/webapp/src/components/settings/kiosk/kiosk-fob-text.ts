@@ -1,3 +1,7 @@
+import type {
+	ActionMessage,
+	RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import type { KioskFobManagementErrorCode } from "@/lib/time-tracking/kiosk/fob-errors";
 import type { KioskFobViewState } from "@/lib/time-tracking/kiosk/fob-management";
 import { kioskDateLabel } from "./kiosk-date-labels";
@@ -27,26 +31,37 @@ export function kioskFobDetails(
 			);
 }
 
+const SIGN_IN: ActionMessage = ["settings.kioskFob.errors.signInRequired", "Sign in to continue."];
+const NOT_ALLOWED: ActionMessage = [
+	"settings.kioskFob.errors.notAllowed",
+	"You are not allowed to do this.",
+];
+const EMPLOYEE_NOT_FOUND: ActionMessage = [
+	"settings.kioskFob.errors.employeeNotFound",
+	"This employee was not found.",
+];
+
 /**
- * The translated message for a refused kiosk fob removal (#1508), or for the
- * employee's own fob status that could not be read.
+ * The kiosk fob texts (#1508) for `actionErrorMessage`: a refused removal, or
+ * the employee's own fob status that could not be read, and the module's
+ * sign-in, access and not-found failures worded for fobs.
  */
-export function kioskFobErrorMessage(t: Translate, code: KioskFobManagementErrorCode): string {
-	switch (code) {
-		case "sign_in_required":
-			return t("settings.kioskFob.errors.signInRequired", "Sign in to continue.");
-		case "not_allowed":
-			return t("settings.kioskFob.errors.notAllowed", "You are not allowed to do this.");
-		case "employee_not_found":
-			return t("settings.kioskFob.errors.employeeNotFound", "This employee was not found.");
-		case "no_fob":
-			return t("settings.kioskFob.errors.noFob", "There is no kiosk fob to remove.");
-		case "fob_changed":
-			return t(
-				"settings.kioskFob.errors.fobChanged",
-				"This kiosk fob changed in the meantime. Check its status and try again.",
-			);
-		default:
-			return t("settings.kioskFob.errors.failed", "Something went wrong. Please try again.");
-	}
-}
+export const KIOSK_FOB_REFUSALS = {
+	sign_in_required: SIGN_IN,
+	not_allowed: NOT_ALLOWED,
+	employee_not_found: EMPLOYEE_NOT_FOUND,
+	no_fob: ["settings.kioskFob.errors.noFob", "There is no kiosk fob to remove."],
+	fob_changed: [
+		"settings.kioskFob.errors.fobChanged",
+		"This kiosk fob changed in the meantime. Check its status and try again.",
+	],
+	AuthenticationError: SIGN_IN,
+	AuthorizationError: NOT_ALLOWED,
+	NotFoundError: EMPLOYEE_NOT_FOUND,
+} satisfies RefusalOverrides & Partial<Record<KioskFobManagementErrorCode, ActionMessage>>;
+
+/** Any other failed kiosk fob action. */
+export const KIOSK_FOB_FAILED: ActionMessage = [
+	"settings.kioskFob.errors.failed",
+	"Something went wrong. Please try again.",
+];

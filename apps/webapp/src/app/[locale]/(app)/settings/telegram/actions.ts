@@ -2,12 +2,14 @@
 
 import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { db } from "@/db";
+import { Effect } from "effect";
+import { z } from "zod";
 import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
 import { env } from "@/env";
-import { requireUser } from "@/lib/auth-helpers";
-import { runActiveOrganizationActionActorCheck } from "@/lib/auth/organization-action-authorization";
+import { ExternalServiceError, ValidationError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
 
@@ -47,96 +49,56 @@ export interface TelegramSettingsFormValues {
 	escalationTimeoutHours: number;
 }
 
-type ActionResult<T = void> = { success: true; data: T } | { success: false; error: string };
+const telegramSettingsSchema = z.object(
+	{
+		enableApprovals: z.boolean("Enable approvals must be a boolean"),
+		enableCommands: z.boolean("Enable commands must be a boolean"),
+		enableDailyDigest: z.boolean("Enable daily digest must be a boolean"),
+		enableEscalations: z.boolean("Enable escalations must be a boolean"),
+		digestTime: z
+			.string("Digest time must use HH:mm format")
+			.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Digest time must use HH:mm format"),
+		digestTimezone: z
+			.string("Digest timezone must be a valid timezone")
+			.refine(isValidIanaTimeZone, "Digest timezone must be a valid timezone"),
+		escalationTimeoutHours: z
+			.number("Escalation timeout must be at least 1 hour")
+			.int("Escalation timeout must be at least 1 hour")
+			.min(1, "Escalation timeout must be at least 1 hour"),
+	},
+	"Settings are required",
+) satisfies z.ZodType<TelegramSettingsFormValues>;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return value !== null && typeof value === "object";
+/** A failed call to Telegram or the secret store, with a message safe to show users. */
+function telegramFailure(operation: string, message: string) {
+	return (cause: unknown) =>
+		new ExternalServiceError({ message, service: "telegram", operation, cause });
 }
 
-function validateTelegramSettings(settings: unknown): string | null {
-	if (!isRecord(settings)) {
-		return "Settings are required";
-	}
-
-	const values = settings;
-
-	if (typeof values.enableApprovals !== "boolean") {
-		return "Enable approvals must be a boolean";
-	}
-
-	if (typeof values.enableCommands !== "boolean") {
-		return "Enable commands must be a boolean";
-	}
-
-	if (typeof values.enableDailyDigest !== "boolean") {
-		return "Enable daily digest must be a boolean";
-	}
-
-	if (typeof values.enableEscalations !== "boolean") {
-		return "Enable escalations must be a boolean";
-	}
-
-	if (
-		typeof values.digestTime !== "string" ||
-		!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(values.digestTime)
-	) {
-		return "Digest time must use HH:mm format";
-	}
-
-	if (typeof values.digestTimezone !== "string" || !isValidIanaTimeZone(values.digestTimezone)) {
-		return "Digest timezone must be a valid timezone";
-	}
-
-	if (
-		typeof values.escalationTimeoutHours !== "number" ||
-		!Number.isInteger(values.escalationTimeoutHours) ||
-		values.escalationTimeoutHours < 1
-	) {
-		return "Escalation timeout must be at least 1 hour";
-	}
-
-	return null;
+function telegram<T>(operation: string, message: string, run: () => Promise<T>) {
+	return Effect.tryPromise({ try: run, catch: telegramFailure(operation, message) });
 }
 
 // ============================================
-// HELPERS
+// BOT CONFIGURATION (org admins)
 // ============================================
 
-async function requireAdmin(organizationId: string) {
-	const authContext = await requireUser();
-	await runActiveOrganizationActionActorCheck({
-		userId: authContext.user.id,
-		organizationId,
-		requiredRole: "admin",
-		message: "Only active approved admins and owners can manage Telegram",
-		resource: "telegramIntegration",
-		action: "manage",
-	});
+export const getTelegramConfig = organizationAction(
+	{ name: "telegram.getConfig", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const config = yield* dbService.query("telegram.getConfig", () =>
+				dbService.db.query.telegramBotConfig.findFirst({
+					where: eq(telegramBotConfig.organizationId, organizationId),
+				}),
+			);
 
-	return authContext;
-}
+			if (!config || config.setupStatus === "disconnected") {
+				return null;
+			}
 
-// ============================================
-// GET CONFIG
-// ============================================
-
-export async function getTelegramConfig(
-	organizationId: string,
-): Promise<ActionResult<TelegramConfig | null>> {
-	try {
-		await requireAdmin(organizationId);
-
-		const config = await db.query.telegramBotConfig.findFirst({
-			where: eq(telegramBotConfig.organizationId, organizationId),
-		});
-
-		if (!config || config.setupStatus === "disconnected") {
-			return { success: true, data: null };
-		}
-
-		return {
-			success: true,
-			data: {
+			return {
 				botUsername: config.botUsername,
 				botDisplayName: config.botDisplayName,
 				setupStatus: config.setupStatus,
@@ -148,292 +110,226 @@ export async function getTelegramConfig(
 				digestTime: config.digestTime,
 				digestTimezone: config.digestTimezone,
 				escalationTimeoutHours: config.escalationTimeoutHours,
-			},
-		};
-	} catch {
-		return { success: false, error: "Failed to fetch Telegram configuration" };
-	}
-}
+			} satisfies TelegramConfig;
+		}),
+);
 
-// ============================================
-// SETUP BOT
-// ============================================
+export const setupTelegramBot = organizationAction(
+	{
+		name: "telegram.setupBot",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			botToken: z.string().trim().min(1, "Bot token is required"),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const { getMe, setWebhook } = yield* Effect.promise(() => import("@/lib/telegram"));
 
-export async function setupTelegramBot(
-	botToken: string,
-	organizationId: string,
-): Promise<ActionResult<{ botUsername: string | null; botDisplayName: string }>> {
-	try {
-		const authContext = await requireAdmin(organizationId);
+			// Verify the bot token with Telegram
+			const botInfo = yield* telegram("getMe", "Failed to set up Telegram bot", () =>
+				getMe(input.botToken),
+			);
+			if (!botInfo) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Invalid bot token. Please check your BotFather token.",
+						field: "botToken",
+					}),
+				);
+			}
 
-		const trimmedToken = botToken?.trim();
-		if (!trimmedToken) {
-			return { success: false, error: "Bot token is required" };
-		}
+			const webhookSecret = randomBytes(32).toString("hex");
+			yield* telegram("storeBotToken", "Failed to set up Telegram bot", () =>
+				storeOrgSecret(organizationId, "telegram/bot_token", input.botToken),
+			);
 
-		// Verify the bot token with Telegram
-		const { getMe, setWebhook } = await import("@/lib/telegram");
-
-		const botInfo = await getMe(trimmedToken);
-		if (!botInfo) {
-			return {
-				success: false,
-				error: "Invalid bot token. Please check your BotFather token.",
-			};
-		}
-
-		// Generate webhook secret
-		const webhookSecret = randomBytes(32).toString("hex");
-
-		// Store bot token in Vault
-		await storeOrgSecret(organizationId, "telegram/bot_token", trimmedToken);
-
-		// Check if config already exists
-		const existing = await db.query.telegramBotConfig.findFirst({
-			where: eq(telegramBotConfig.organizationId, organizationId),
-		});
-
-		if (existing) {
-			await db
-				.update(telegramBotConfig)
-				.set({
-					botToken: "vault:managed",
-					botUsername: botInfo.username || null,
-					botDisplayName: botInfo.first_name,
-					webhookSecret,
-					setupStatus: "active",
-					webhookRegistered: false,
-					configuredByUserId: authContext.user.id,
-					configuredAt: new Date(),
-				})
-				.where(eq(telegramBotConfig.id, existing.id));
-		} else {
-			await db.insert(telegramBotConfig).values({
-				organizationId,
+			const configured = {
 				botToken: "vault:managed",
 				botUsername: botInfo.username || null,
 				botDisplayName: botInfo.first_name,
 				webhookSecret,
 				setupStatus: "active",
-				configuredByUserId: authContext.user.id,
+				webhookRegistered: false,
+				configuredByUserId: actor.userId,
 				configuredAt: new Date(),
+			};
+			yield* dbService.query("telegram.saveBotConfig", async () => {
+				const existing = await dbService.db.query.telegramBotConfig.findFirst({
+					where: eq(telegramBotConfig.organizationId, organizationId),
+				});
+				if (existing) {
+					await dbService.db
+						.update(telegramBotConfig)
+						.set(configured)
+						.where(
+							and(
+								eq(telegramBotConfig.id, existing.id),
+								eq(telegramBotConfig.organizationId, organizationId),
+							),
+						);
+				} else {
+					await dbService.db.insert(telegramBotConfig).values({ organizationId, ...configured });
+				}
 			});
-		}
 
-		// Register webhook with Telegram
-		const appUrl = env.APP_URL || "https://z8-time.app";
-		const webhookUrl = `${appUrl}/api/telegram/webhook/${webhookSecret}`;
+			const appUrl = env.APP_URL || "https://z8-time.app";
+			const webhookUrl = `${appUrl}/api/telegram/webhook/${webhookSecret}`;
+			const webhookRegistered = yield* telegram("setWebhook", "Failed to set up Telegram bot", () =>
+				setWebhook(input.botToken, webhookUrl, webhookSecret),
+			);
 
-		const webhookRegistered = await setWebhook(trimmedToken, webhookUrl, webhookSecret);
-
-		if (webhookRegistered) {
-			await db
-				.update(telegramBotConfig)
-				.set({ webhookRegistered: true })
-				.where(eq(telegramBotConfig.organizationId, organizationId));
-		}
-
-		logger.info(
-			{ organizationId, botUsername: botInfo.username, webhookRegistered },
-			"Telegram bot configured via settings",
-		);
-
-		return {
-			success: true,
-			data: {
-				botUsername: botInfo.username || null,
-				botDisplayName: botInfo.first_name,
-			},
-		};
-	} catch (error) {
-		logger.error({ error }, "Telegram setup failed");
-		return { success: false, error: "Failed to set up Telegram bot" };
-	}
-}
-
-// ============================================
-// UPDATE SETTINGS
-// ============================================
-
-export async function updateTelegramSettings(
-	organizationId: string,
-	settings: TelegramSettingsFormValues,
-): Promise<ActionResult> {
-	try {
-		await requireAdmin(organizationId);
-		const validationError = validateTelegramSettings(settings);
-		if (validationError) {
-			return { success: false, error: validationError };
-		}
-
-		await db
-			.update(telegramBotConfig)
-			.set({
-				enableApprovals: settings.enableApprovals,
-				enableCommands: settings.enableCommands,
-				enableDailyDigest: settings.enableDailyDigest,
-				enableEscalations: settings.enableEscalations,
-				digestTime: settings.digestTime,
-				digestTimezone: settings.digestTimezone,
-				escalationTimeoutHours: settings.escalationTimeoutHours,
-			})
-			.where(eq(telegramBotConfig.organizationId, organizationId));
-
-		return { success: true, data: undefined };
-	} catch {
-		return { success: false, error: "Failed to update Telegram settings" };
-	}
-}
-
-// ============================================
-// DISCONNECT BOT
-// ============================================
-
-export async function disconnectTelegramBot(organizationId: string): Promise<ActionResult> {
-	try {
-		await requireAdmin(organizationId);
-
-		const config = await db.query.telegramBotConfig.findFirst({
-			where: eq(telegramBotConfig.organizationId, organizationId),
-		});
-
-		if (config) {
-			// Fetch bot token from Vault (fall back to DB for pre-migration configs)
-			const { deleteWebhook } = await import("@/lib/telegram");
-			const vaultToken = await getOrgSecret(config.organizationId, "telegram/bot_token");
-			const tokenForCleanup =
-				vaultToken || (config.botToken !== "vault:managed" ? config.botToken : null);
-
-			if (tokenForCleanup) {
-				await deleteWebhook(tokenForCleanup);
+			if (webhookRegistered) {
+				yield* dbService.query("telegram.markWebhookRegistered", () =>
+					dbService.db
+						.update(telegramBotConfig)
+						.set({ webhookRegistered: true })
+						.where(eq(telegramBotConfig.organizationId, organizationId)),
+				);
 			}
 
-			// Remove bot token from Vault
-			await deleteOrgSecret(organizationId, "telegram/bot_token");
+			logger.info(
+				{ organizationId, botUsername: botInfo.username, webhookRegistered },
+				"Telegram bot configured via settings",
+			);
 
-			// Mark as disconnected
-			await db
-				.update(telegramBotConfig)
-				.set({
-					setupStatus: "disconnected",
-					webhookRegistered: false,
-				})
-				.where(eq(telegramBotConfig.id, config.id));
-		}
+			return { botUsername: botInfo.username || null, botDisplayName: botInfo.first_name };
+		}),
+);
 
-		logger.info({ organizationId }, "Telegram bot disconnected via settings");
+export const updateTelegramSettings = organizationAction(
+	{ name: "telegram.updateSettings", requires: "orgAdmin", schema: telegramSettingsSchema },
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("telegram.updateSettings", () =>
+				dbService.db
+					.update(telegramBotConfig)
+					.set({
+						enableApprovals: input.enableApprovals,
+						enableCommands: input.enableCommands,
+						enableDailyDigest: input.enableDailyDigest,
+						enableEscalations: input.enableEscalations,
+						digestTime: input.digestTime,
+						digestTimezone: input.digestTimezone,
+						escalationTimeoutHours: input.escalationTimeoutHours,
+					})
+					.where(eq(telegramBotConfig.organizationId, organizationId)),
+			);
+		}),
+);
 
-		return { success: true, data: undefined };
-	} catch {
-		return { success: false, error: "Failed to disconnect Telegram bot" };
-	}
-}
+export const disconnectTelegramBot = organizationAction(
+	{ name: "telegram.disconnectBot", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const config = yield* dbService.query("telegram.getConfig", () =>
+				dbService.db.query.telegramBotConfig.findFirst({
+					where: eq(telegramBotConfig.organizationId, organizationId),
+				}),
+			);
+
+			if (config) {
+				const { deleteWebhook } = yield* Effect.promise(() => import("@/lib/telegram"));
+				// Fetch the bot token from Vault (fall back to DB for pre-migration configs)
+				const vaultToken = yield* telegram("getBotToken", "Failed to disconnect Telegram bot", () =>
+					getOrgSecret(organizationId, "telegram/bot_token"),
+				);
+				const tokenForCleanup =
+					vaultToken || (config.botToken !== "vault:managed" ? config.botToken : null);
+				if (tokenForCleanup) {
+					yield* telegram("deleteWebhook", "Failed to disconnect Telegram bot", () =>
+						deleteWebhook(tokenForCleanup),
+					);
+				}
+
+				yield* telegram("deleteBotToken", "Failed to disconnect Telegram bot", () =>
+					deleteOrgSecret(organizationId, "telegram/bot_token"),
+				);
+
+				yield* dbService.query("telegram.markDisconnected", () =>
+					dbService.db
+						.update(telegramBotConfig)
+						.set({ setupStatus: "disconnected", webhookRegistered: false })
+						.where(
+							and(
+								eq(telegramBotConfig.id, config.id),
+								eq(telegramBotConfig.organizationId, organizationId),
+							),
+						),
+				);
+			}
+
+			logger.info({ organizationId }, "Telegram bot disconnected via settings");
+		}),
+);
 
 // ============================================
-// USER LINKING
+// USER LINKING (the caller's own link, any org member)
 // ============================================
 
-/** True when the caller is `userId` and an org member of `organizationId`. */
-async function isOwnOrgMemberLink(userId: string, organizationId: string) {
-	const authContext = await requireUser();
-	if (authContext.user.id !== userId) {
-		return false;
-	}
+export const getUserTelegramLink = organizationAction(
+	{ name: "telegram.getUserLink", requires: "member", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const mapping = yield* dbService.query("telegram.getUserLink", () =>
+				dbService.db.query.telegramUserMapping.findFirst({
+					where: and(
+						eq(telegramUserMapping.userId, actor.userId),
+						eq(telegramUserMapping.organizationId, organizationId),
+						eq(telegramUserMapping.isActive, true),
+					),
+				}),
+			);
 
-	try {
-		await runActiveOrganizationActionActorCheck({
-			userId,
-			organizationId,
-			requiredRole: "member",
-			message: "Only org members can link Telegram",
-			resource: "telegramUserLink",
-			action: "manage",
-		});
-		return true;
-	} catch {
-		return false;
-	}
-}
+			if (!mapping) {
+				return null;
+			}
 
-export async function getUserTelegramLink(
-	userId: string,
-	organizationId: string,
-): Promise<ActionResult<TelegramUserLink | null>> {
-	try {
-		if (!(await isOwnOrgMemberLink(userId, organizationId))) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		const mapping = await db.query.telegramUserMapping.findFirst({
-			where: and(
-				eq(telegramUserMapping.userId, userId),
-				eq(telegramUserMapping.organizationId, organizationId),
-				eq(telegramUserMapping.isActive, true),
-			),
-		});
-
-		if (!mapping) {
-			return { success: true, data: null };
-		}
-
-		return {
-			success: true,
-			data: {
+			return {
 				telegramUsername: mapping.telegramUsername,
 				telegramDisplayName: mapping.telegramDisplayName,
 				isActive: mapping.isActive,
-			},
-		};
-	} catch {
-		return { success: false, error: "Failed to get Telegram link status" };
-	}
-}
+			} satisfies TelegramUserLink;
+		}),
+);
 
-export async function generateTelegramLinkCode(
-	userId: string,
-	organizationId: string,
-): Promise<ActionResult<{ code: string; expiresAt: string }>> {
-	try {
-		if (!(await isOwnOrgMemberLink(userId, organizationId))) {
-			return { success: false, error: "Unauthorized" };
-		}
+export const generateTelegramLinkCode = organizationAction(
+	{ name: "telegram.generateLinkCode", requires: "member", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const { generateLinkCode, isTelegramEnabledForOrganization } = yield* Effect.promise(
+				() => import("@/lib/telegram"),
+			);
 
-		const { generateLinkCode, isTelegramEnabledForOrganization } = await import("@/lib/telegram");
+			const enabled = yield* telegram("isEnabled", "Failed to generate link code", () =>
+				isTelegramEnabledForOrganization(organizationId),
+			);
+			if (!enabled) {
+				return yield* Effect.fail(
+					new ValidationError({ message: "Telegram is not configured for this organization" }),
+				);
+			}
 
-		const enabled = await isTelegramEnabledForOrganization(organizationId);
-		if (!enabled) {
-			return {
-				success: false,
-				error: "Telegram is not configured for this organization",
-			};
-		}
+			const { code, expiresAt } = yield* telegram(
+				"generateLinkCode",
+				"Failed to generate link code",
+				() => generateLinkCode(actor.userId, organizationId),
+			);
+			return { code, expiresAt: expiresAt.toISOString() };
+		}),
+);
 
-		const { code, expiresAt } = await generateLinkCode(userId, organizationId);
-
-		return {
-			success: true,
-			data: { code, expiresAt: expiresAt.toISOString() },
-		};
-	} catch {
-		return { success: false, error: "Failed to generate link code" };
-	}
-}
-
-export async function unlinkTelegramAccount(
-	userId: string,
-	organizationId: string,
-): Promise<ActionResult> {
-	try {
-		if (!(await isOwnOrgMemberLink(userId, organizationId))) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		const { unlinkTelegramUser } = await import("@/lib/telegram");
-
-		await unlinkTelegramUser(userId, organizationId);
-
-		return { success: true, data: undefined };
-	} catch {
-		return { success: false, error: "Failed to unlink Telegram account" };
-	}
-}
+export const unlinkTelegramAccount = organizationAction(
+	{ name: "telegram.unlinkAccount", requires: "member", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const { unlinkTelegramUser } = yield* Effect.promise(() => import("@/lib/telegram"));
+			yield* telegram("unlinkUser", "Failed to unlink Telegram account", () =>
+				unlinkTelegramUser(actor.userId, organizationId),
+			);
+		}),
+);

@@ -36,6 +36,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 import {
 	type AbsenceCategoryForSettings,
@@ -104,6 +108,17 @@ const absenceCategoryTypeOptions: Array<{
 	},
 ];
 
+/**
+ * A save refused for a category existing absences use. The blank name and rule
+ * combination conflicts are refused by the form itself before saving.
+ */
+const SAVE_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.absenceCategories.saveInUse",
+		"This category is used by existing absences. Create a new category for different rules, or deactivate this one.",
+	],
+};
+
 /** The form-side refusal of a rule combination the server refuses too (#1000). */
 function drawsOnWorkBalanceError(
 	drawsOnWorkBalance: boolean,
@@ -150,13 +165,8 @@ export function AbsenceCategoryForm({
 			try {
 				const payload = buildAbsenceCategoryPayload(value);
 				const result = existingCategory
-					? await updateAbsenceCategory(existingCategory.id, {
-							...payload,
-						})
-					: await createAbsenceCategory({
-							...payload,
-							organizationId,
-						});
+					? await updateAbsenceCategory({ categoryId: existingCategory.id, data: payload })
+					: await createAbsenceCategory(payload);
 
 				if (result.success) {
 					toast.success(
@@ -168,8 +178,10 @@ export function AbsenceCategoryForm({
 					onOpenChange(false);
 				} else {
 					toast.error(
-						result.error ||
-							t("settings.absenceCategories.saveFailed", "Could not save the absence category"),
+						actionErrorMessage(t, result, SAVE_REFUSALS, [
+							"settings.absenceCategories.saveFailed",
+							"Could not save the absence category",
+						]),
 					);
 				}
 			} catch (_error) {

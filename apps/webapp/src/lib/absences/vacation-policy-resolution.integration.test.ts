@@ -136,7 +136,7 @@ describe("one vacation policy per year for every balance reader", () => {
 			timezone: "UTC",
 		});
 		const managerView = await getManagerAbsenceEmployees({ year: 2026 });
-		const adminList = await getEmployeesWithAllowances(fixture.organizationId, 2026);
+		const adminList = await getEmployeesWithAllowances(2026);
 		if (!managerView.success) throw new Error(managerView.error);
 		if (!adminList.success) throw new Error(adminList.error);
 

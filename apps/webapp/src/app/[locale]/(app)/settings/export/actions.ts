@@ -1,25 +1,12 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { db, exportStorageConfig } from "@/db";
-import { employee } from "@/db/schema";
-import { isOrgAdminCasl } from "@/lib/auth-helpers";
-import {
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { z } from "zod";
+import { exportStorageConfig } from "@/db";
+import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import {
-	EXPORT_CATEGORIES,
-	type ExportCategory,
-} from "@/lib/export/data-fetchers";
+import { EXPORT_CATEGORIES, type ExportCategory } from "@/lib/export/types";
 import {
 	createExportRequest,
 	deleteExportRecord,
@@ -32,240 +19,91 @@ import {
 	type S3StorageConfig,
 	testS3Connection,
 } from "@/lib/storage/export-s3-client";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
-// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
-
 export interface StartExportInput {
-	organizationId: string;
 	categories: ExportCategory[];
 }
+
+const startExportSchema = z.strictObject({
+	// Unknown categories are dropped; at least one known category must remain.
+	categories: z
+		.array(z.string())
+		.transform((categories) =>
+			categories.filter((category): category is ExportCategory =>
+				EXPORT_CATEGORIES.includes(category as ExportCategory),
+			),
+		)
+		.refine(
+			(categories) => categories.length > 0,
+			"At least one valid export category must be selected",
+		),
+});
+
+const exportIdSchema = z.strictObject({
+	exportId: z.string().min(1, "Export is required"),
+});
 
 /**
  * Start a new export request
  */
-export async function startExportAction(
-	input: StartExportInput,
-): Promise<ServerActionResult<ExportRecord>> {
-	const effect = Effect.gen(function* () {
-		// Step 1: Get session via AuthService
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+export const startExportAction = organizationAction(
+	{ name: "dataExport.start", requires: "orgAdmin", schema: startExportSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			if (!actor.employee) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
+				);
+			}
+			const requestedById = actor.employee.id;
 
-		// Step 2: Get current employee
-		const dbService = yield* DatabaseService;
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				const emp = await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, input.organizationId),
-					),
-				});
-
-				if (!emp) {
-					throw new Error("Employee not found");
-				}
-
-				return emp;
-			})
-			.pipe(
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Employee profile not found",
-							entityType: "employee",
-						}),
-				),
+			return yield* Effect.promise(
+				(): Promise<ExportRecord> =>
+					createExportRequest({
+						organizationId,
+						requestedById,
+						categories: input.categories,
+					}),
 			);
-
-		// Step 3: Verify user is org admin
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(input.organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "data_export",
-					action: "create",
-				}),
-			);
-		}
-
-		// Step 4: Validate categories
-		const validCategories = input.categories.filter((cat) =>
-			EXPORT_CATEGORIES.includes(cat),
-		);
-
-		if (validCategories.length === 0) {
-			throw new Error("At least one valid export category must be selected");
-		}
-
-		// Step 5: Create export request
-		const exportRecord = yield* Effect.promise(() =>
-			createExportRequest({
-				organizationId: input.organizationId,
-				requestedById: currentEmployee.id,
-				categories: validCategories,
-			}),
-		);
-
-		return exportRecord;
-	});
-
-	return runServerActionSafe(effect);
-}
+		}),
+);
 
 /**
  * Get export history for the organization
  */
-export async function getExportHistoryAction(
-	organizationId: string,
-): Promise<ServerActionResult<ExportRecord[]>> {
-	const effect = Effect.gen(function* () {
-		// Step 1: Get session via AuthService
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		// Step 2: Verify user belongs to org
-		const dbService = yield* DatabaseService;
-		yield* dbService
-			.query("verifyOrgMembership", async () => {
-				const emp = await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, organizationId),
-					),
-				});
-
-				if (!emp) {
-					throw new Error("Not a member of this organization");
-				}
-
-				return emp;
-			})
-			.pipe(
-				Effect.mapError(
-					() =>
-						new AuthorizationError({
-							message: "Not authorized to access this organization",
-							userId: session.user.id,
-							resource: "data_export",
-							action: "read",
-						}),
-				),
-			);
-
-		// Step 3: Verify user is org admin
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "data_export",
-					action: "read",
-				}),
-			);
-		}
-
-		// Step 4: Get export history
-		const exports = yield* Effect.promise(() =>
-			getExportHistory(organizationId),
-		);
-
-		return exports;
-	});
-
-	return runServerActionSafe(effect);
-}
+export const getExportHistoryAction = organizationAction(
+	{ name: "dataExport.history", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) => Effect.promise(() => getExportHistory(organizationId)),
+);
 
 /**
  * Regenerate a presigned download URL for an export
  */
-export async function regenerateDownloadUrlAction(
-	exportId: string,
-	organizationId: string,
-): Promise<ServerActionResult<string>> {
-	const effect = Effect.gen(function* () {
-		// Step 1: Get session via AuthService
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "data_export",
-					action: "regenerate_url",
-				}),
-			);
-		}
-
-		// Step 3: Regenerate URL
-		const url = yield* Effect.promise(() =>
-			regeneratePresignedUrl(exportId, organizationId),
-		);
-
-		return url;
-	});
-
-	return runServerActionSafe(effect);
-}
+export const regenerateDownloadUrlAction = organizationAction(
+	{ name: "dataExport.regenerateDownloadUrl", requires: "orgAdmin", schema: exportIdSchema },
+	({ organizationId, input }) =>
+		Effect.promise(() => regeneratePresignedUrl(input.exportId, organizationId)),
+);
 
 /**
  * Delete an export record and its S3 object
  */
-export async function deleteExportAction(
-	exportId: string,
-	organizationId: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		// Step 1: Get session via AuthService
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "data_export",
-					action: "delete",
-				}),
-			);
-		}
-
-		// Step 3: Delete export
-		yield* Effect.promise(() => deleteExportRecord(exportId, organizationId));
-	});
-
-	return runServerActionSafe(effect);
-}
+export const deleteExportAction = organizationAction(
+	{ name: "dataExport.delete", requires: "orgAdmin", schema: exportIdSchema },
+	({ organizationId, input }) =>
+		Effect.promise(() => deleteExportRecord(input.exportId, organizationId)),
+);
 
 // ============================================================
 // S3 Storage Configuration Actions
 // ============================================================
 
 export interface StorageConfigInput {
-	organizationId: string;
 	bucket: string;
 	accessKeyId?: string;
 	secretAccessKey?: string;
@@ -284,306 +122,209 @@ export interface StorageConfigResult {
 	updatedAt: Date;
 }
 
+const storageConfigSchema = z.strictObject({
+	bucket: z.string(),
+	accessKeyId: z.string().optional(),
+	secretAccessKey: z.string().optional(),
+	region: z.string(),
+	endpoint: z.string().optional(),
+}) satisfies z.ZodType<StorageConfigInput>;
+
+const testStorageConnectionSchema = z.strictObject({
+	testConfig: storageConfigSchema.partial().optional(),
+});
+
+function maskedStorageConfig(config: typeof exportStorageConfig.$inferSelect): StorageConfigResult {
+	return {
+		id: config.id,
+		bucket: config.bucket,
+		region: config.region,
+		endpoint: config.endpoint,
+		isVerified: config.isVerified,
+		lastVerifiedAt: config.lastVerifiedAt,
+		createdAt: config.createdAt,
+		updatedAt: config.updatedAt,
+	};
+}
+
+function findStorageConfig(organizationId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		return yield* dbService.query("dataExport.findStorageConfig", () =>
+			dbService.db.query.exportStorageConfig.findFirst({
+				where: eq(exportStorageConfig.organizationId, organizationId),
+			}),
+		);
+	});
+}
+
 /**
  * Get S3 storage configuration for an organization (masks sensitive data)
  */
-export async function getStorageConfigAction(
-	organizationId: string,
-): Promise<ServerActionResult<StorageConfigResult | null>> {
-	const effect = Effect.gen(function* () {
-		// Step 1: Get session via AuthService
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "storage_config",
-					action: "read",
-				}),
-			);
-		}
-
-		// Step 3: Get storage config
-		const config = yield* Effect.promise(async () => {
-			const result = await db.query.exportStorageConfig.findFirst({
-				where: eq(exportStorageConfig.organizationId, organizationId),
-			});
-
-			if (!result) return null;
-
-			// Return masked config (no secrets)
-			return {
-				id: result.id,
-				bucket: result.bucket,
-				region: result.region,
-				endpoint: result.endpoint,
-				isVerified: result.isVerified,
-				lastVerifiedAt: result.lastVerifiedAt,
-				createdAt: result.createdAt,
-				updatedAt: result.updatedAt,
-			};
-		});
-
-		return config;
-	});
-
-	return runServerActionSafe(effect);
-}
+export const getStorageConfigAction = organizationAction(
+	{ name: "dataExport.getStorageConfig", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const config = yield* findStorageConfig(organizationId);
+			return config ? maskedStorageConfig(config) : null;
+		}),
+);
 
 /**
  * Save S3 storage configuration for an organization
  * Non-secret fields stored in database, secrets stored in Vault
  */
-export async function saveStorageConfigAction(
-	input: StorageConfigInput,
-): Promise<ServerActionResult<StorageConfigResult>> {
-	const effect = Effect.gen(function* () {
-		// Step 1: Get session via AuthService
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(input.organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "storage_config",
-					action: "create",
-				}),
-			);
-		}
-
-		const existing = yield* Effect.promise(() =>
-			db.query.exportStorageConfig.findFirst({
-				where: eq(exportStorageConfig.organizationId, input.organizationId),
-			}),
-		);
-		const hasAccessKey = Boolean(input.accessKeyId);
-		const hasSecretKey = Boolean(input.secretAccessKey);
-		if (hasAccessKey !== hasSecretKey || (!existing && !hasAccessKey)) {
-			yield* Effect.fail(
-				new ValidationError({
-					message:
-						"Both storage credentials are required when replacing credentials",
-				}),
-			);
-		}
-
-		// Step 3: Store only explicitly replaced secrets in Vault.
-		yield* Effect.promise(async () => {
-			if (input.accessKeyId && input.secretAccessKey) {
-				await Promise.all([
-					storeOrgSecret(
-						input.organizationId,
-						"storage/access_key_id",
-						input.accessKeyId,
-					),
-					storeOrgSecret(
-						input.organizationId,
-						"storage/secret_access_key",
-						input.secretAccessKey,
-					),
-				]);
+export const saveStorageConfigAction = organizationAction(
+	{ name: "dataExport.saveStorageConfig", requires: "orgAdmin", schema: storageConfigSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const existing = yield* findStorageConfig(organizationId);
+			const hasAccessKey = Boolean(input.accessKeyId);
+			const hasSecretKey = Boolean(input.secretAccessKey);
+			if (hasAccessKey !== hasSecretKey || (!existing && !hasAccessKey)) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Both storage credentials are required when replacing credentials",
+					}),
+				);
 			}
-		});
 
-		// Step 4: Save or update non-secret config in database
-		const config = yield* Effect.promise(async () => {
-			if (existing) {
-				// Update existing
-				const [updated] = await db
-					.update(exportStorageConfig)
-					.set({
-						bucket: input.bucket,
-						region: input.region,
-						endpoint: input.endpoint || null,
-						isVerified: false, // Reset verification on update
-						lastVerifiedAt: null,
-					})
-					.where(eq(exportStorageConfig.id, existing.id))
-					.returning();
+			// Store only explicitly replaced secrets in Vault.
+			const { accessKeyId, secretAccessKey } = input;
+			if (accessKeyId && secretAccessKey) {
+				yield* Effect.promise(() =>
+					Promise.all([
+						storeOrgSecret(organizationId, "storage/access_key_id", accessKeyId),
+						storeOrgSecret(organizationId, "storage/secret_access_key", secretAccessKey),
+					]),
+				);
+			}
 
-				return updated;
-			} else {
-				// Insert new
-				const [inserted] = await db
+			// Save or update the non-secret config in the database.
+			const config = yield* dbService.query("dataExport.saveStorageConfig", async () => {
+				if (existing) {
+					const [updated] = await dbService.db
+						.update(exportStorageConfig)
+						.set({
+							bucket: input.bucket,
+							region: input.region,
+							endpoint: input.endpoint || null,
+							isVerified: false, // Reset verification on update
+							lastVerifiedAt: null,
+						})
+						.where(eq(exportStorageConfig.id, existing.id))
+						.returning();
+					return updated;
+				}
+
+				const [inserted] = await dbService.db
 					.insert(exportStorageConfig)
 					.values({
-						organizationId: input.organizationId,
+						organizationId,
 						bucket: input.bucket,
 						region: input.region,
 						endpoint: input.endpoint || null,
-						createdBy: session.user.id,
+						createdBy: actor.userId,
 						updatedAt: new Date(),
 					})
 					.returning();
-
 				return inserted;
-			}
-		});
+			});
 
-		// Return masked config
-		return {
-			id: config.id,
-			bucket: config.bucket,
-			region: config.region,
-			endpoint: config.endpoint,
-			isVerified: config.isVerified,
-			lastVerifiedAt: config.lastVerifiedAt,
-			createdAt: config.createdAt,
-			updatedAt: config.updatedAt,
-		};
-	});
-
-	return runServerActionSafe(effect);
-}
+			return maskedStorageConfig(config);
+		}),
+);
 
 /**
  * Test S3 connection with stored or provided credentials
  * When testing with new credentials, they are passed directly.
  * When testing stored config, secrets are fetched from Vault.
  */
-export async function testStorageConnectionAction(
-	organizationId: string,
-	testConfig?: Partial<StorageConfigInput>,
-): Promise<ServerActionResult<{ success: boolean; message: string }>> {
-	const effect = Effect.gen(function* () {
-		// Step 1: Get session via AuthService
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "storage_config",
-					action: "test",
-				}),
-			);
-		}
-
-		// Step 3: Get full config (merge stored with test input)
-		const config = yield* Effect.promise(async (): Promise<S3StorageConfig> => {
+export const testStorageConnectionAction = organizationAction(
+	{
+		name: "dataExport.testStorageConnection",
+		requires: "orgAdmin",
+		schema: testStorageConnectionSchema,
+	},
+	({ organizationId, input: { testConfig } }) =>
+		Effect.gen(function* () {
+			let config: S3StorageConfig;
 			// If full test config provided (new credentials being tested), use it directly
 			if (
 				testConfig?.bucket &&
-				testConfig?.accessKeyId &&
-				testConfig?.secretAccessKey &&
-				testConfig?.region
+				testConfig.accessKeyId &&
+				testConfig.secretAccessKey &&
+				testConfig.region
 			) {
-				return {
+				config = {
 					bucket: testConfig.bucket,
 					accessKeyId: testConfig.accessKeyId,
 					secretAccessKey: testConfig.secretAccessKey,
 					region: testConfig.region,
 					endpoint: testConfig.endpoint || null,
 				};
+			} else {
+				// Otherwise get from database + Vault
+				const storedConfig = yield* Effect.promise(() => getStorageConfig(organizationId));
+				if (!storedConfig) {
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "No storage configuration found. Please save your configuration first.",
+							entityType: "export_storage_config",
+						}),
+					);
+				}
+
+				// Merge with any provided overrides (except secrets)
+				config = {
+					...storedConfig,
+					bucket: testConfig?.bucket || storedConfig.bucket,
+					region: testConfig?.region || storedConfig.region,
+					endpoint:
+						testConfig?.endpoint !== undefined
+							? testConfig.endpoint || null
+							: storedConfig.endpoint,
+				};
 			}
 
-			// Otherwise get from database + Vault
-			const storedConfig = await getStorageConfig(organizationId);
-			if (!storedConfig) {
-				throw new Error(
-					"No storage configuration found. Please save your configuration first.",
+			const result = yield* Effect.promise(() => testS3Connection(config));
+
+			// If successful, update verification status
+			if (result.success) {
+				const dbService = yield* DatabaseService;
+				yield* dbService.query("dataExport.markStorageVerified", () =>
+					dbService.db
+						.update(exportStorageConfig)
+						.set({ isVerified: true, lastVerifiedAt: new Date() })
+						.where(eq(exportStorageConfig.organizationId, organizationId)),
 				);
 			}
 
-			// Merge with any provided overrides (except secrets)
-			return {
-				...storedConfig,
-				bucket: testConfig?.bucket || storedConfig.bucket,
-				region: testConfig?.region || storedConfig.region,
-				endpoint:
-					testConfig?.endpoint !== undefined
-						? testConfig.endpoint || null
-						: storedConfig.endpoint,
-			};
-		});
-
-		// Step 4: Test connection
-		const result = yield* Effect.promise(() => testS3Connection(config));
-
-		// Step 5: If successful, update verification status
-		if (result.success) {
-			yield* Effect.promise(async () => {
-				await db
-					.update(exportStorageConfig)
-					.set({
-						isVerified: true,
-						lastVerifiedAt: new Date(),
-					})
-					.where(eq(exportStorageConfig.organizationId, organizationId));
-			});
-		}
-
-		return result;
-	});
-
-	return runServerActionSafe(effect);
-}
+			return result;
+		}),
+);
 
 /**
  * Delete S3 storage configuration for an organization
  * Removes both database config and Vault secrets
  */
-export async function deleteStorageConfigAction(
-	organizationId: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		// Step 1: Get session via AuthService
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "storage_config",
-					action: "delete",
-				}),
+export const deleteStorageConfigAction = organizationAction(
+	{ name: "dataExport.deleteStorageConfig", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			yield* Effect.promise(() =>
+				Promise.all([
+					deleteOrgSecret(organizationId, "storage/access_key_id"),
+					deleteOrgSecret(organizationId, "storage/secret_access_key"),
+				]),
 			);
-		}
 
-		// Step 3: Delete secrets from Vault
-		yield* Effect.promise(async () => {
-			await Promise.all([
-				deleteOrgSecret(organizationId, "storage/access_key_id"),
-				deleteOrgSecret(organizationId, "storage/secret_access_key"),
-			]);
-		});
-
-		// Step 4: Delete storage config from database
-		yield* Effect.promise(async () => {
-			await db
-				.delete(exportStorageConfig)
-				.where(eq(exportStorageConfig.organizationId, organizationId));
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("dataExport.deleteStorageConfig", () =>
+				dbService.db
+					.delete(exportStorageConfig)
+					.where(eq(exportStorageConfig.organizationId, organizationId)),
+			);
+		}),
+);

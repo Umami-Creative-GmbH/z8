@@ -260,7 +260,11 @@ describe("mileage with versioned organization allowance policies (#606)", () => 
 				},
 				"manager",
 			),
-		).toEqual({ success: false, error: "Unauthorized: Admin access required" });
+		).toEqual({
+			success: false,
+			code: "AuthorizationError",
+			error: "You do not have access to this setting",
+		});
 
 		const first = await activateOrganizationRate("2026-01-01", "0.30");
 		const second = await activateOrganizationRate("2026-07-01", "0.35");
@@ -310,6 +314,7 @@ describe("mileage with versioned organization allowance policies (#606)", () => 
 			await policyActions.withdrawMileagePolicyVersionAction({ versionId: foreign.data.versionId }),
 		).toEqual({
 			success: false,
+			code: "NotFoundError",
 			error: "Mileage policy version not found",
 		});
 

@@ -67,6 +67,7 @@ import {
 	calendarDateToBirthdayString,
 	formatBirthdayDate,
 } from "@/lib/datetime/birthday";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
 import { validateStructuredProfileNameField } from "@/lib/validations/profile";
@@ -196,8 +197,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				}
 
 				toast.error(
-					profileResult.error ||
-						t("settings.profile.updateFailed", "Failed to update profile"),
+					actionErrorMessage(t, profileResult, {}, [
+						"settings.profile.updateFailed",
+						"Failed to update profile",
+					]),
 				);
 			} catch {
 				toast.error(
@@ -246,8 +249,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				]);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.profile.avatarSaveFailed", "Failed to save avatar"),
+					actionErrorMessage(t, result, {}, [
+						"settings.profile.avatarSaveFailed",
+						"Failed to save avatar",
+					]),
 				);
 			}
 		},
@@ -353,8 +358,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				refresh(); // Refresh to update server components (sidebar)
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.profile.avatarRemoveFailed", "Failed to remove avatar"),
+					actionErrorMessage(t, result, {}, [
+						"settings.profile.avatarRemoveFailed",
+						"Failed to remove avatar",
+					]),
 				);
 			}
 		},

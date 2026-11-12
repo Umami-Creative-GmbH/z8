@@ -12,6 +12,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { EQUIPMENT_REFUSALS } from "@/components/settings/equipment/equipment-refusals";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -60,12 +61,10 @@ import type {
 	EquipmentChange,
 	EquipmentReadinessItemView,
 } from "@/lib/organization/equipment/contracts";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { EquipmentAnonymousReceipt } from "./equipment-anonymous-receipt";
-import {
-	type EquipmentTranslate,
-	handoverRefusalMessage,
-} from "./equipment-copy";
+import type { EquipmentTranslate } from "./equipment-copy";
 import { useCommandIdentity } from "./equipment-handovers";
 import {
 	hasPendingCustodyReceipt,
@@ -563,7 +562,9 @@ function ReadinessConfirmation({
 			if (!result.success) {
 				failed();
 			} else if (!result.data.ok) {
-				toast.error(handoverRefusalMessage(result.data.reason, t));
+				toast.error(
+					actionErrorMessage(t, { refusal: result.data.reason }, EQUIPMENT_REFUSALS),
+				);
 			} else {
 				toast.success(
 					t(

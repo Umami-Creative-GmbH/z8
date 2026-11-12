@@ -421,8 +421,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const submission = await pausedSubmission(command, ids.managerUser);
 
 			actAs(ids.ownerUser);
-			const revocation = assignManagersAction(ids.employee, {
-				managers: [{ managerId: ids.secondManager, isPrimary: true }],
+			const revocation = assignManagersAction({
+				employeeId: ids.employee,
+				data: { managers: [{ managerId: ids.secondManager, isPrimary: true }] },
 			});
 			// Sorted acquisition reaches the target's protection first.
 			await waitForWaiterOn(userGuard(ids.employeeUser));
@@ -445,8 +446,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 				[ids.managerLink],
 			);
 			actAs(ids.ownerUser);
-			const revocation = assignManagersAction(ids.employee, {
-				managers: [{ managerId: ids.secondManager, isPrimary: true }],
+			const revocation = assignManagersAction({
+				employeeId: ids.employee,
+				data: { managers: [{ managerId: ids.secondManager, isPrimary: true }] },
 			});
 			await waitForRowWaiter();
 
@@ -475,12 +477,13 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand({ date: "2026-09-02" });
 			const submission = await pausedSubmission(command, ids.ownerUser);
 			actAs(ids.ownerUser);
-			const grant = assignManagersAction(ids.employee, {
-				managers: [
+			const grant = assignManagersAction({
+				employeeId: ids.employee,
+				data: { managers: [
 					{ managerId: ids.manager, isPrimary: true },
 					{ managerId: ids.secondManager, isPrimary: false },
 					{ managerId: ids.outsider, isPrimary: false },
-				],
+				] },
 			});
 			// No row exists to lock yet: only the target's protection orders the insertion.
 			await waitForWaiterOn(userGuard(ids.employeeUser));
@@ -510,7 +513,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand({ targetEmployeeId: ids.peer });
 			const submission = await pausedSubmission(command, ids.ownerUser);
 			actAs(ids.ownerUser);
-			const joining = addTeamMember(ids.team, ids.peer);
+			const joining = addTeamMember({ teamId: ids.team, employeeId: ids.peer });
 			await waitForWaiterOn(userGuard(ids.peerUser));
 			await submission.release();
 			await expect(submission.pending).resolves.toMatchObject({
@@ -538,7 +541,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 				[ids.manager],
 			);
 			actAs(ids.ownerUser);
-			const demotion = updateEmployeeAction(ids.manager, { role: "employee" });
+			const demotion = updateEmployeeAction({ employeeId: ids.manager, data: { role: "employee" } });
 			await waitForRowWaiter();
 
 			const pending = submit(manualCommand(), ids.managerUser);
@@ -556,7 +559,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand();
 			const submission = await pausedSubmission(command, ids.ownerUser);
 			actAs(ids.ownerUser);
-			const promotion = updateEmployeeAction(ids.owner, { role: "manager" });
+			const promotion = updateEmployeeAction({ employeeId: ids.owner, data: { role: "manager" } });
 			await waitForWaiterOn(userGuard(ids.ownerUser));
 			await submission.release();
 
@@ -629,10 +632,13 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand();
 			const submission = await pausedSubmission(command, ids.managerUser);
 			actAs(ids.ownerUser);
-			const replacement = setRolePermissions(ids.customRole, [
-				{ action: "read", subject: "Report" },
-				{ action: "generate", subject: "Report" },
-			]);
+			const replacement = setRolePermissions({
+				roleId: ids.customRole,
+				permissions: [
+					{ action: "read", subject: "Report" },
+					{ action: "generate", subject: "Report" },
+				],
+			});
 			await waitForWaiterOn(organizationGuard);
 			await submission.release();
 			await expect(submission.pending).resolves.toMatchObject({
@@ -645,7 +651,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 				ids.managerUser,
 			);
 			actAs(ids.ownerUser);
-			const deletion = deleteCustomRole(ids.customRole);
+			const deletion = deleteCustomRole({ roleId: ids.customRole });
 			await waitForWaiterOn(organizationGuard);
 			await second.release();
 			await expect(second.pending).resolves.toMatchObject({ success: true });
@@ -656,7 +662,10 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand();
 			const submission = await pausedSubmission(command, ids.managerUser);
 			actAs(ids.ownerUser);
-			const assignment = assignRoleToEmployee(ids.manager, ids.customRole);
+			const assignment = assignRoleToEmployee({
+				employeeId: ids.manager,
+				roleId: ids.customRole,
+			});
 			await waitForWaiterOn(userGuard(ids.managerUser));
 			actAs(ids.ownerUser);
 			const grant = grantTeamPermissions({
@@ -678,7 +687,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand();
 			const submission = await pausedSubmission(command, ids.managerUser);
 			actAs(ids.ownerUser);
-			const deletion = deleteTeam(ids.emptyTeam);
+			const deletion = deleteTeam({ teamId: ids.emptyTeam });
 			await waitForWaiterOn(organizationGuard);
 			await submission.release();
 

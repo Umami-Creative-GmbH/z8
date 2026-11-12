@@ -3,7 +3,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { z } from "zod";
-import * as authSchema from "@/db/auth-schema";
 import {
 	calendarConnection,
 	employee,
@@ -17,15 +16,13 @@ import {
 } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { getSupportedProviders, isProviderSupported } from "@/lib/calendar-sync/providers";
-import { AuthorizationError, type DatabaseError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
-	isSettingsAccessMembershipRole,
-	resolveSettingsAccessTier,
-	type SettingsAccessTier,
-} from "@/lib/settings-access";
+	noInput,
+	type OrganizationActor,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 
 // ============================================
 // TYPES
@@ -87,7 +84,7 @@ export interface ManagerCalendarReadView {
 	relevantConnections: CalendarConnectionSummary[];
 }
 
-const calendarSettingsSchema = z.object({
+const calendarSettingsSchema = z.strictObject({
 	googleEnabled: z.boolean(),
 	microsoft365Enabled: z.boolean(),
 	icsFeedsEnabled: z.boolean(),
@@ -100,154 +97,53 @@ const calendarSettingsSchema = z.object({
 
 export type CalendarSettingsFormValues = z.infer<typeof calendarSettingsSchema>;
 
-type CalendarSettingsActor = {
-	session: { user: { id: string }; session: { activeOrganizationId: string | null } };
-	dbService: {
-		db: typeof import("@/db").db;
-		query: <T>(name: string, fn: () => Promise<T>) => Effect.Effect<T, DatabaseError, never>;
-	};
-	organizationId: string;
-	accessTier: SettingsAccessTier;
-	currentEmployee: typeof employee.$inferSelect | null;
-};
-
-function calendarAuthorizationError(
-	actor: { session: { user: { id: string } } },
-	options: {
-		message: string;
-		action: string;
-	},
-) {
-	return new AuthorizationError({
-		message: options.message,
-		userId: actor.session.user.id,
-		resource: "calendar_settings",
-		action: options.action,
-	});
-}
-
-function getCalendarSettingsActorContext(queryName = "getCalendarSettingsActor") {
+/**
+ * The employees whose calendar connections the actor sees: everyone (null) for an
+ * org admin; for a scoped manager, the employees of the teams whose settings they
+ * manage, of their locations and subareas, and of the projects they manage.
+ */
+function scopedCalendarEmployeeIds(actor: OrganizationActor, organizationId: string) {
 	return Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
-		const organizationId = session.session.activeOrganizationId;
-
-		if (!organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "No active organization",
-					userId: session.user.id,
-					resource: "calendar_settings",
-					action: "access",
-				}),
-			);
-		}
-
-		const [membershipRecord, employeeRecord] = yield* Effect.all([
-			dbService.query(`${queryName}:membership`, async () => {
-				return dbService.db.query.member.findFirst({
-					where: and(
-						eq(authSchema.member.userId, session.user.id),
-						eq(authSchema.member.organizationId, organizationId),
-					),
-					columns: { role: true },
-				});
-			}),
-			dbService.query(`${queryName}:employee`, async () => {
-				return dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
-					),
-				});
-			}),
-		]);
-
-		const accessTier = resolveSettingsAccessTier({
-			activeOrganizationId: organizationId,
-			membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
-				? membershipRecord.role
-				: null,
-			employeeRole: employeeRecord?.role ?? null,
-		});
-
-		if (accessTier === "member") {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "You do not have access to calendar settings",
-					userId: session.user.id,
-					resource: "calendar_settings",
-					action: "access",
-				}),
-			);
-		}
-
-		return {
-			session,
-			dbService,
-			organizationId,
-			accessTier,
-			currentEmployee: employeeRecord ?? null,
-		} satisfies CalendarSettingsActor;
-	});
-}
-
-function requireOrgAdminCalendarSettingsAccess(actor: CalendarSettingsActor, action: string) {
-	if (actor.accessTier === "orgAdmin") {
-		return Effect.void;
-	}
-
-	return Effect.fail(
-		calendarAuthorizationError(actor, {
-			message: `Only org admins can ${action} calendar settings`,
-			action,
-		}),
-	);
-}
-
-function getScopedCalendarEmployeeIds(actor: CalendarSettingsActor, queryName: string) {
-	return Effect.gen(function* () {
-		if (actor.accessTier === "orgAdmin") {
+		if (meetsSettingsAccess(actor.settingsAccess, "orgAdmin")) {
 			return null as Set<string> | null;
 		}
-
-		if (!actor.currentEmployee) {
+		if (!actor.employee) {
 			return new Set<string>();
 		}
 
-		const currentEmployee = actor.currentEmployee;
+		const managerId = actor.employee.id;
+		const dbService = yield* DatabaseService;
+		const { db } = dbService;
 
 		const [teamPermissionRows, managerLocationRows, managerSubareaRows, managedProjectRows] =
 			yield* Effect.all([
-				actor.dbService.query(`${queryName}:teamPermissions`, async () => {
-					return actor.dbService.db.query.teamPermissions.findMany({
+				dbService.query("calendar.scope.teamPermissions", () =>
+					db.query.teamPermissions.findMany({
 						where: and(
-							eq(teamPermissions.employeeId, currentEmployee.id),
-							eq(teamPermissions.organizationId, actor.organizationId),
+							eq(teamPermissions.employeeId, managerId),
+							eq(teamPermissions.organizationId, organizationId),
 						),
 						columns: { teamId: true, canManageTeamSettings: true },
-					});
-				}),
-				actor.dbService.query(`${queryName}:managerLocations`, async () => {
-					return actor.dbService.db.query.locationEmployee.findMany({
-						where: eq(locationEmployee.employeeId, currentEmployee.id),
+					}),
+				),
+				dbService.query("calendar.scope.managerLocations", () =>
+					db.query.locationEmployee.findMany({
+						where: eq(locationEmployee.employeeId, managerId),
 						columns: { locationId: true },
-					});
-				}),
-				actor.dbService.query(`${queryName}:managerSubareas`, async () => {
-					return actor.dbService.db.query.subareaEmployee.findMany({
-						where: eq(subareaEmployee.employeeId, currentEmployee.id),
+					}),
+				),
+				dbService.query("calendar.scope.managerSubareas", () =>
+					db.query.subareaEmployee.findMany({
+						where: eq(subareaEmployee.employeeId, managerId),
 						columns: { subareaId: true },
-					});
-				}),
-				actor.dbService.query(`${queryName}:managedProjects`, async () => {
-					return actor.dbService.db.query.projectManager.findMany({
-						where: eq(projectManager.employeeId, currentEmployee.id),
+					}),
+				),
+				dbService.query("calendar.scope.managedProjects", () =>
+					db.query.projectManager.findMany({
+						where: eq(projectManager.employeeId, managerId),
 						columns: { projectId: true },
-					});
-				}),
+					}),
+				),
 			]);
 
 		const manageableTeamIds = new Set(
@@ -263,30 +159,30 @@ function getScopedCalendarEmployeeIds(actor: CalendarSettingsActor, queryName: s
 			.filter((subareaId): subareaId is string => Boolean(subareaId));
 		const rawManagedProjectIds = managedProjectRows.map((assignment) => assignment.projectId);
 		const managedProjectIds = rawManagedProjectIds.length
-			? yield* actor.dbService.query(`${queryName}:scopedProjects`, async () => {
-					return actor.dbService.db.query.project.findMany({
+			? yield* dbService.query("calendar.scope.scopedProjects", () =>
+					db.query.project.findMany({
 						where: and(
-							eq(project.organizationId, actor.organizationId),
+							eq(project.organizationId, organizationId),
 							inArray(project.id, rawManagedProjectIds),
 						),
 						columns: { id: true },
-					});
-				})
+					}),
+				)
 			: [];
 
 		const projectAssignments = managedProjectIds.length
-			? yield* actor.dbService.query(`${queryName}:projectAssignments`, async () => {
-					return actor.dbService.db.query.projectAssignment.findMany({
+			? yield* dbService.query("calendar.scope.projectAssignments", () =>
+					db.query.projectAssignment.findMany({
 						where: and(
-							eq(projectAssignment.organizationId, actor.organizationId),
+							eq(projectAssignment.organizationId, organizationId),
 							inArray(
 								projectAssignment.projectId,
 								managedProjectIds.map((managedProject) => managedProject.id),
 							),
 						),
 						columns: { assignmentType: true, employeeId: true, teamId: true },
-					});
-				})
+					}),
+				)
 			: [];
 
 		const teamIdsToLoad = new Set<string>([
@@ -298,32 +194,32 @@ function getScopedCalendarEmployeeIds(actor: CalendarSettingsActor, queryName: s
 
 		const [teamEmployees, locationRows, subareaRows] = yield* Effect.all([
 			teamIdsToLoad.size
-				? actor.dbService.query(`${queryName}:teamEmployees`, async () => {
-						return actor.dbService.db.query.employee.findMany({
+				? dbService.query("calendar.scope.teamEmployees", () =>
+						db.query.employee.findMany({
 							where: and(
-								eq(employee.organizationId, actor.organizationId),
+								eq(employee.organizationId, organizationId),
 								eq(employee.isActive, true),
 								inArray(employee.teamId, [...teamIdsToLoad]),
 							),
 							columns: { id: true },
-						});
-					})
+						}),
+					)
 				: Effect.succeed([]),
 			manageableLocationIds.length
-				? actor.dbService.query(`${queryName}:locationEmployees`, async () => {
-						return actor.dbService.db.query.locationEmployee.findMany({
+				? dbService.query("calendar.scope.locationEmployees", () =>
+						db.query.locationEmployee.findMany({
 							where: inArray(locationEmployee.locationId, manageableLocationIds),
 							columns: { employeeId: true },
-						});
-					})
+						}),
+					)
 				: Effect.succeed([]),
 			manageableSubareaIds.length
-				? actor.dbService.query(`${queryName}:subareaEmployees`, async () => {
-						return actor.dbService.db.query.subareaEmployee.findMany({
+				? dbService.query("calendar.scope.subareaEmployees", () =>
+						db.query.subareaEmployee.findMany({
 							where: inArray(subareaEmployee.subareaId, manageableSubareaIds),
 							columns: { employeeId: true },
-						});
-					})
+						}),
+					)
 				: Effect.succeed([]),
 		]);
 
@@ -338,15 +234,16 @@ function getScopedCalendarEmployeeIds(actor: CalendarSettingsActor, queryName: s
 	});
 }
 
-function getRelevantCalendarConnections(actor: CalendarSettingsActor, queryName: string) {
+function relevantCalendarConnections(actor: OrganizationActor, organizationId: string) {
 	return Effect.gen(function* () {
-		const scopedEmployeeIds = yield* getScopedCalendarEmployeeIds(actor, `${queryName}:scope`);
+		const scopedEmployeeIds = yield* scopedCalendarEmployeeIds(actor, organizationId);
 		const providerLabels = new Map(
 			getSupportedProviders().map((provider) => [provider.provider, provider.displayName] as const),
 		);
-		const connections = yield* actor.dbService.query(`${queryName}:connections`, async () => {
-			return actor.dbService.db.query.calendarConnection.findMany({
-				where: eq(calendarConnection.organizationId, actor.organizationId),
+		const dbService = yield* DatabaseService;
+		const connections = yield* dbService.query("calendar.connections", () =>
+			dbService.db.query.calendarConnection.findMany({
+				where: eq(calendarConnection.organizationId, organizationId),
 				with: {
 					employee: {
 						columns: { id: true },
@@ -355,8 +252,8 @@ function getRelevantCalendarConnections(actor: CalendarSettingsActor, queryName:
 						},
 					},
 				},
-			});
-		});
+			}),
+		);
 
 		const typedConnections = connections as unknown as CalendarConnectionWithEmployee[];
 
@@ -381,7 +278,7 @@ function getRelevantCalendarConnections(actor: CalendarSettingsActor, queryName:
 								lastSyncError: connection.lastSyncError,
 								isActive: connection.isActive,
 								createdAt: connection.createdAt,
-							},
+							} satisfies CalendarConnectionSummary,
 						]
 					: [],
 			)
@@ -400,142 +297,91 @@ function getRelevantCalendarConnections(actor: CalendarSettingsActor, queryName:
 // GET SETTINGS
 // ============================================
 
-export async function getCalendarSettings(): Promise<ServerActionResult<CalendarSettings>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getCalendarSettingsActorContext("getCalendarSettings");
-		yield* requireOrgAdminCalendarSettingsAccess(actor, "read");
-		const [settings, relevantConnections] = yield* Effect.all([
-			actor.dbService.query("getCalendarSettings:settings", async () => {
-				return actor.dbService.db.query.organizationCalendarSettings.findFirst({
-					where: eq(organizationCalendarSettings.organizationId, actor.organizationId),
-				});
-			}),
-			getRelevantCalendarConnections(actor, "getCalendarSettings"),
-		]);
+export const getCalendarSettings = organizationAction(
+	{ name: "calendar.getSettings", requires: "orgAdmin", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const [settings, relevantConnections] = yield* Effect.all([
+				dbService.query("calendar.getSettings", () =>
+					dbService.db.query.organizationCalendarSettings.findFirst({
+						where: eq(organizationCalendarSettings.organizationId, organizationId),
+					}),
+				),
+				relevantCalendarConnections(actor, organizationId),
+			]);
 
-		return {
-			googleEnabled: settings?.googleEnabled ?? true,
-			microsoft365Enabled: settings?.microsoft365Enabled ?? true,
-			icsFeedsEnabled: settings?.icsFeedsEnabled ?? true,
-			teamIcsFeedsEnabled: settings?.teamIcsFeedsEnabled ?? true,
-			autoSyncOnApproval: settings?.autoSyncOnApproval ?? true,
-			conflictDetectionRequired: settings?.conflictDetectionRequired ?? false,
-			eventTitleTemplate: settings?.eventTitleTemplate ?? "Out of Office - {categoryName}",
-			eventDescriptionTemplate: settings?.eventDescriptionTemplate ?? null,
-			// Provider availability from env config
-			googleAvailable: isProviderSupported("google"),
-			microsoft365Available: isProviderSupported("microsoft365"),
-			relevantConnections,
-		};
-	});
+			return {
+				googleEnabled: settings?.googleEnabled ?? true,
+				microsoft365Enabled: settings?.microsoft365Enabled ?? true,
+				icsFeedsEnabled: settings?.icsFeedsEnabled ?? true,
+				teamIcsFeedsEnabled: settings?.teamIcsFeedsEnabled ?? true,
+				autoSyncOnApproval: settings?.autoSyncOnApproval ?? true,
+				conflictDetectionRequired: settings?.conflictDetectionRequired ?? false,
+				eventTitleTemplate: settings?.eventTitleTemplate ?? "Out of Office - {categoryName}",
+				eventDescriptionTemplate: settings?.eventDescriptionTemplate ?? null,
+				// Provider availability from env config
+				googleAvailable: isProviderSupported("google"),
+				microsoft365Available: isProviderSupported("microsoft365"),
+				relevantConnections,
+			} satisfies CalendarSettings;
+		}),
+);
 
-	return runServerActionSafe(effect);
-}
-
-export async function getManagerCalendarReadView(): Promise<
-	ServerActionResult<ManagerCalendarReadView>
-> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getCalendarSettingsActorContext("getManagerCalendarReadView");
-		const relevantConnections = yield* getRelevantCalendarConnections(
-			actor,
-			"getManagerCalendarReadView",
-		);
-
-		return {
-			relevantConnections,
-		};
-	});
-
-	return runServerActionSafe(effect);
-}
+/** The calendar connections of the employees a scoped manager manages. */
+export const getManagerCalendarReadView = organizationAction(
+	{ name: "calendar.getManagerReadView", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const relevantConnections = yield* relevantCalendarConnections(actor, organizationId);
+			return { relevantConnections } satisfies ManagerCalendarReadView;
+		}),
+);
 
 // ============================================
 // UPDATE SETTINGS
 // ============================================
 
-export async function updateCalendarSettings(
-	data: CalendarSettingsFormValues,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getCalendarSettingsActorContext("updateCalendarSettings");
-		yield* requireOrgAdminCalendarSettingsAccess(actor, "update");
-
-		// Validate input
-		const result = calendarSettingsSchema.safeParse(data);
-		if (!result.success) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: result.error.issues[0]?.message || "Invalid settings",
-					field: "settings",
-				}),
-			);
-		}
-
-		const validated = result.data;
-
-		// Upsert settings
-		yield* actor.dbService.query("upsertCalendarSettings", async () => {
-			await actor.dbService.db
-				.insert(organizationCalendarSettings)
-				.values({
-					organizationId: actor.organizationId,
-					googleEnabled: validated.googleEnabled,
-					microsoft365Enabled: validated.microsoft365Enabled,
-					icsFeedsEnabled: validated.icsFeedsEnabled,
-					teamIcsFeedsEnabled: validated.teamIcsFeedsEnabled,
-					autoSyncOnApproval: validated.autoSyncOnApproval,
-					conflictDetectionRequired: validated.conflictDetectionRequired,
-					eventTitleTemplate: validated.eventTitleTemplate,
-					eventDescriptionTemplate: validated.eventDescriptionTemplate,
-				})
-				.onConflictDoUpdate({
-					target: organizationCalendarSettings.organizationId,
-					set: {
-						googleEnabled: validated.googleEnabled,
-						microsoft365Enabled: validated.microsoft365Enabled,
-						icsFeedsEnabled: validated.icsFeedsEnabled,
-						teamIcsFeedsEnabled: validated.teamIcsFeedsEnabled,
-						autoSyncOnApproval: validated.autoSyncOnApproval,
-						conflictDetectionRequired: validated.conflictDetectionRequired,
-						eventTitleTemplate: validated.eventTitleTemplate,
-						eventDescriptionTemplate: validated.eventDescriptionTemplate,
-						updatedAt: new Date(),
-					},
-				});
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
+export const updateCalendarSettings = organizationAction(
+	{ name: "calendar.updateSettings", requires: "orgAdmin", schema: calendarSettingsSchema },
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const settings = {
+				googleEnabled: input.googleEnabled,
+				microsoft365Enabled: input.microsoft365Enabled,
+				icsFeedsEnabled: input.icsFeedsEnabled,
+				teamIcsFeedsEnabled: input.teamIcsFeedsEnabled,
+				autoSyncOnApproval: input.autoSyncOnApproval,
+				conflictDetectionRequired: input.conflictDetectionRequired,
+				eventTitleTemplate: input.eventTitleTemplate,
+				eventDescriptionTemplate: input.eventDescriptionTemplate,
+			};
+			yield* dbService.query("calendar.upsertSettings", async () => {
+				await dbService.db
+					.insert(organizationCalendarSettings)
+					.values({ organizationId, ...settings })
+					.onConflictDoUpdate({
+						target: organizationCalendarSettings.organizationId,
+						set: { ...settings, updatedAt: new Date() },
+					});
+			});
+		}),
+);
 
 // ============================================
 // GET PROVIDER STATUS
 // ============================================
 
-export async function getProviderStatus(): Promise<
-	ServerActionResult<
-		Array<{
-			provider: string;
-			displayName: string;
-			available: boolean;
-			enabled: boolean;
-		}>
-	>
-> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		yield* authService.getSession();
-
-		const providers = getSupportedProviders();
-
-		return providers.map((p) => ({
-			provider: p.provider,
-			displayName: p.displayName,
-			available: p.enabled,
-			enabled: p.enabled,
-		}));
-	});
-
-	return runServerActionSafe(effect);
-}
+export const getProviderStatus = organizationAction(
+	{ name: "calendar.getProviderStatus", requires: "member", schema: noInput },
+	() =>
+		Effect.sync(() =>
+			getSupportedProviders().map((p) => ({
+				provider: p.provider,
+				displayName: p.displayName,
+				available: p.enabled,
+				enabled: p.enabled,
+			})),
+		),
+);

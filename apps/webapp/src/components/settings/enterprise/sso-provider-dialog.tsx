@@ -1,5 +1,6 @@
 "use client";
 
+import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
@@ -133,13 +134,13 @@ function useSsoProviderForm({
 				: value.issuer.trim();
 			if (!issuer) return;
 			try {
-				const provider = await registerSSOProviderAction({
+				const provider = await actionData(registerSSOProviderAction({
 					providerId: isEntra ? generatedProviderId : value.providerId.trim(),
 					issuer,
 					domain: value.domain.trim().toLowerCase(),
 					clientId: value.clientId.trim(),
 					clientSecret: value.clientSecret.trim(),
-				});
+				}));
 				onProviderAdded(provider);
 				toast.success(
 					t(
@@ -151,12 +152,7 @@ function useSsoProviderForm({
 				onOpenChange(false);
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.sso.addError",
-								"Failed to add SSO provider",
-							),
+					enterpriseErrorMessage(t, error, ["settings.enterprise.sso.addError", "Failed to add SSO provider"]),
 				);
 			}
 		},

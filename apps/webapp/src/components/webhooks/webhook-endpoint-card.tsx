@@ -96,7 +96,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 	};
 
 	const handleToggleActive = async (checked: boolean) => {
-		const result = await updateWebhook(webhook.id, { isActive: checked });
+		const result = await updateWebhook({ webhookId: webhook.id, isActive: checked });
 		if (result.success) {
 			onUpdated(result.data.endpoint);
 			toast.success(
@@ -229,7 +229,6 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 			</Card>
 
 			<WebhookFormDialog
-				organizationId={webhook.organizationId}
 				webhook={webhook}
 				open={isEditDialogOpen}
 				onOpenChange={setIsEditDialogOpen}

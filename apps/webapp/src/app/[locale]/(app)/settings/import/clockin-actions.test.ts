@@ -1,72 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mockState = vi.hoisted(() => ({
-	requireUser: vi.fn(),
-	requireActiveActor: vi.fn(),
-	findFirst: vi.fn(),
+	caller: null as StubCaller | null,
 	clockinTestConnection: vi.fn(),
 	clockinGetEmployees: vi.fn(),
 	clockinSearchWorkdays: vi.fn(),
 	clockinSearchAbsences: vi.fn(),
-	selectWhere: vi.fn(),
 }));
 
-vi.mock("drizzle-orm", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("drizzle-orm")>();
-
-	return {
-		...actual,
-		and: vi.fn((...args: unknown[]) => ({ and: args })),
-		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	};
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mockState.caller));
 });
-
-vi.mock("@/lib/auth-helpers", () => ({
-	requireUser: mockState.requireUser,
-}));
-
-vi.mock("@/lib/auth/organization-action-authorization", () => ({
-	runActiveOrganizationActionActorCheck: mockState.requireActiveActor,
-}));
-
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			member: {
-				findFirst: mockState.findFirst,
-			},
-		},
-		select: vi.fn(() => ({
-			from: vi.fn(() => ({
-				innerJoin: vi.fn(() => ({
-					where: mockState.selectWhere,
-				})),
-			})),
-		})),
-	},
-}));
-
-vi.mock("@/db/auth-schema", () => ({
-	member: {
-		userId: "member.userId",
-		organizationId: "member.organizationId",
-	},
-	user: {
-		email: "user.email",
-		name: "user.name",
-		id: "user.id",
-	},
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: {
-		id: "employee.id",
-		userId: "employee.userId",
-		firstName: "employee.firstName",
-		lastName: "employee.lastName",
-		organizationId: "employee.organizationId",
-	},
-}));
 
 vi.mock("@/lib/clockin/client", () => ({
 	ClockinClient: class {
@@ -77,45 +24,51 @@ vi.mock("@/lib/clockin/client", () => ({
 	},
 }));
 
-const { fetchClockinEmployees, importClockinData, validateClockinCredentials } =
-	await import("./clockin-actions");
+const { fetchClockinEmployees, importClockinData, validateClockinCredentials } = await import(
+	"./clockin-actions"
+);
+
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org_123",
+	membershipRole: "admin",
+	employee: null,
+};
 
 describe("Clockin actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.requireUser.mockResolvedValue({
-			user: { id: "user-1" },
-			session: { activeOrganizationId: "org_123" },
-		});
-		mockState.findFirst.mockResolvedValue({ role: "admin" });
-		mockState.requireActiveActor.mockResolvedValue({});
+		mockState.caller = orgAdmin;
 		mockState.clockinTestConnection.mockResolvedValue({ success: true });
 		mockState.clockinGetEmployees.mockResolvedValue([]);
 		mockState.clockinSearchWorkdays.mockResolvedValue([]);
 		mockState.clockinSearchAbsences.mockResolvedValue([]);
-		mockState.selectWhere.mockResolvedValue([]);
 	});
 
-	it("returns unauthorized when the current user is not an admin", async () => {
-		mockState.requireActiveActor.mockRejectedValue(new Error("Unauthorized"));
+	it("refuses a caller who is not an org admin before contacting Clockin", async () => {
+		mockState.caller = { ...orgAdmin, membershipRole: "member" };
 
-		const result = await validateClockinCredentials("token", "org_123");
+		const result = await validateClockinCredentials({ token: "token" });
 
-		expect(result).toEqual({ success: false, error: "Unauthorized" });
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.clockinTestConnection).not.toHaveBeenCalled();
+	});
+
+	it("requires an API token", async () => {
+		await expect(validateClockinCredentials({ token: "  " })).resolves.toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "API token is required",
+		});
 		expect(mockState.clockinTestConnection).not.toHaveBeenCalled();
 	});
 
 	it("fetches provider employees for authorized admins", async () => {
 		mockState.clockinGetEmployees.mockResolvedValue([
-			{
-				id: 1,
-				first_name: "Ada",
-				last_name: "Lovelace",
-				email: "ada@example.com",
-			},
+			{ id: 1, first_name: "Ada", last_name: "Lovelace", email: "ada@example.com" },
 		]);
 
-		const result = await fetchClockinEmployees("token", "org_123");
+		const result = await fetchClockinEmployees({ token: "token" });
 
 		expect(result).toEqual({
 			success: true,
@@ -124,23 +77,9 @@ describe("Clockin actions", () => {
 	});
 
 	it("disables direct Clockin production imports", async () => {
-		const result = await importClockinData(
-			"token_1",
-			"org_123",
-			{
-				workdays: true,
-				absences: true,
-				schedules: false,
-				dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
-			},
-			[],
-		);
-
-		expect(result).toEqual({
+		await expect(importClockinData()).resolves.toMatchObject({
 			success: false,
-			error:
-				"Direct Clockin imports are disabled. Start an import review scan instead.",
+			error: "Direct Clockin imports are disabled. Start an import review scan instead.",
 		});
-		expect(mockState.requireUser).not.toHaveBeenCalled();
 	});
 });

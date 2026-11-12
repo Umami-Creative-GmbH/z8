@@ -9,7 +9,6 @@ import {
 } from "@/lib/billable-time/billable-rates";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { createRateActions } from "../rate-actions";
 
@@ -22,7 +21,7 @@ export interface BillableRateHistory {
 }
 
 const rateActions = createRateActions({
-	adminOnly: "Only owners and admins can see and change billable rates",
+	targetKey: "target",
 	queryPrefix: "billableTime.rates",
 	actions: { read: "readRates", set: "set", end: "end" },
 	parseTarget: (input: unknown) => {
@@ -46,46 +45,20 @@ const rateActions = createRateActions({
 			"billableTime.rates.history",
 			async (): Promise<BillableRateHistory> => ({
 				currency,
-				periods: await listBillableRateHistory(
-					service.db,
-					organizationId,
-					target,
-				),
+				periods: await listBillableRateHistory(service.db, organizationId, target),
 			}),
 		),
 	change: changeBillableRate,
 	logChange: (organizationId, target, changed) => {
-		logger.info(
-			{ organizationId, level: target.level, changed },
-			"Billable rate changed",
-		);
+		logger.info({ organizationId, level: target.level, changed }, "Billable rate changed");
 	},
 });
 
-/** One rate level and target in the active organization; owners and admins only. */
-export async function getBillableRateHistory(input: {
-	target: unknown;
-}): Promise<ServerActionResult<BillableRateHistory>> {
-	return rateActions.read(input.target);
-}
+/** One rate level and target in the active organization; org admins only. */
+export const getBillableRateHistory = rateActions.read;
 
 /** Sets a billable rate from a date, with backdating allowed. */
-export async function setBillableRate(input: {
-	target: unknown;
-	effectiveFrom: string;
-	rate: string;
-}): Promise<
-	ServerActionResult<{ changed: boolean; periods: BillableRatePeriodView[] }>
-> {
-	return rateActions.set(input.target, input);
-}
+export const setBillableRate = rateActions.set;
 
 /** Ends this level's rate from a date so the next less specific level applies. */
-export async function endBillableRate(input: {
-	target: unknown;
-	effectiveFrom: string;
-}): Promise<
-	ServerActionResult<{ changed: boolean; periods: BillableRatePeriodView[] }>
-> {
-	return rateActions.end(input.target, input);
-}
+export const endBillableRate = rateActions.end;

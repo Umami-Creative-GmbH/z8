@@ -26,10 +26,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { KioskPinActionResult } from "@/lib/time-tracking/kiosk/pin-errors";
+import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { KioskBadgeSection } from "./employee-kiosk-badge-section";
 import { KioskFobSection } from "./employee-kiosk-fob-section";
-import { kioskPinErrorMessage } from "./kiosk-pin-error-message";
+import { KIOSK_PIN_REFUSALS } from "./kiosk-pin-refusals";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -132,12 +133,12 @@ function KioskPinSection({
 	const [shownPin, setShownPin] = useState<string | null>(null);
 	const [confirmingReset, setConfirmingReset] = useState(false);
 
-	const handleResult = <T,>(result: KioskPinActionResult<T>, onSuccess: (data: T) => void) => {
+	const handleResult = <T,>(result: ServerActionResult<T>, onSuccess: (data: T) => void) => {
 		if (result.success) {
 			onSuccess(result.data);
 			void onChanged();
 		} else {
-			toast.error(kioskPinErrorMessage(t, result.code));
+			toast.error(actionErrorMessage(t, result, KIOSK_PIN_REFUSALS));
 		}
 	};
 
@@ -150,7 +151,7 @@ function KioskPinSection({
 			setConfirmingReset(false);
 			handleResult(result, (data) => setShownPin(data.pin));
 		},
-		onError: () => toast.error(kioskPinErrorMessage(t, "failed")),
+		onError: () => toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS)),
 	});
 	const unlockMutation = useMutation({
 		mutationFn: () => unlockEmployeeKioskPinAction(employeeId),
@@ -158,7 +159,7 @@ function KioskPinSection({
 			handleResult(result, () =>
 				toast.success(t("settings.employees.kioskPin.unlocked", "Kiosk PIN unlocked")),
 			),
-		onError: () => toast.error(kioskPinErrorMessage(t, "failed")),
+		onError: () => toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS)),
 	});
 	const busy = pinMutation.isPending || unlockMutation.isPending;
 
@@ -238,7 +239,7 @@ function AddEmailSection({
 }) {
 	const addMutation = useMutation({
 		mutationFn: (email: string) => addKioskOnlyEmployeeEmailAction({ employeeId, email }),
-		onError: () => toast.error(kioskPinErrorMessage(t, "failed")),
+		onError: () => toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS)),
 	});
 	const form = useForm({
 		defaultValues: { email: "" },
@@ -246,7 +247,7 @@ function AddEmailSection({
 			const result = await addMutation.mutateAsync(value.email).catch(() => null);
 			if (!result) return;
 			if (!result.success) {
-				toast.error(kioskPinErrorMessage(t, result.code));
+				toast.error(actionErrorMessage(t, result, KIOSK_PIN_REFUSALS));
 				return;
 			}
 			if (result.data.invitationSent) {

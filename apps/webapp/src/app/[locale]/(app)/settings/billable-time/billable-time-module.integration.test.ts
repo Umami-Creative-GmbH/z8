@@ -263,11 +263,7 @@ describe("Billable Time module switch on PostgreSQL", () => {
 
 		it("is not writable through the generic feature toggle, which cannot ask for a currency", async () => {
 			await expect(
-				toggleOrganizationFeature(
-					ids.organization,
-					"billableTimeEnabled",
-					true,
-				),
+				toggleOrganizationFeature({ feature: "billableTimeEnabled", enabled: true }),
 			).resolves.toMatchObject({ success: false });
 			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
 				enabled: false,
@@ -281,18 +277,14 @@ describe("Billable Time module switch on PostgreSQL", () => {
 			await switchBillableTime({ enabled: true, currency: "USD" });
 
 			await expect(
-				toggleOrganizationFeature(ids.organization, "projectsEnabled", false),
+				toggleOrganizationFeature({ feature: "projectsEnabled", enabled: false }),
 			).resolves.toMatchObject({ success: true });
 			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
 				enabled: false,
 				currency: "USD",
 			});
 
-			await toggleOrganizationFeature(
-				ids.organization,
-				"projectsEnabled",
-				true,
-			);
+			await toggleOrganizationFeature({ feature: "projectsEnabled", enabled: true });
 			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
 				enabled: false,
 				currency: "USD",

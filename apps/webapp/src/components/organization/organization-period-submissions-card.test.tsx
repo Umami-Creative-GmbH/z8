@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import userEvent from "@testing-library/user-event";
 import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { PeriodSubmissionSettings } from "@/lib/time-tracking/period-submissions/settings-policy";
 import { createTestTolgee } from "@/test/render-with-translations";
 
@@ -34,15 +35,11 @@ const OFF: PeriodSubmissionSettings = {
 
 function show(
 	settings: PeriodSubmissionSettings = OFF,
-	role: "owner" | "admin" | "member" = "admin",
+	access: SettingsAccess | null = "orgAdmin",
 ) {
 	return render(
 		<TolgeeProvider tolgee={createTestTolgee("en", {})}>
-			<OrganizationPeriodSubmissionsCard
-				organizationId="org-1"
-				settings={settings}
-				currentMemberRole={role}
-			/>
+			<OrganizationPeriodSubmissionsCard settings={settings} settingsAccess={access} />
 		</TolgeeProvider>,
 	);
 }
@@ -76,7 +73,6 @@ describe("OrganizationPeriodSubmissionsCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.save).toHaveBeenCalledWith({
-				organizationId: "org-1",
 				cadence: { kind: "weekly", weekStartDay: "monday" },
 				secondReminderDelayDays: 5,
 			}),

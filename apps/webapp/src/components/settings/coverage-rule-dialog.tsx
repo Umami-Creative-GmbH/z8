@@ -30,6 +30,7 @@ import {
 import { TimeInput } from "@/components/ui/time-input";
 import { useEditSession } from "@/hooks/use-edit-session";
 import type { CoverageRuleWithRelations } from "@/lib/effect/services/coverage.service";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { DayOfWeek } from "@/lib/validations/coverage";
 
 interface CoverageRuleDialogProps {
@@ -135,7 +136,14 @@ export function CoverageRuleDialog({
 			priority?: number;
 		}) => {
 			const result = await createCoverageRule(data);
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				throw new Error(
+					actionErrorMessage(t, result, {}, [
+						"settings.coverageRules.createFailed",
+						"Failed to create rule",
+					]),
+				);
+			}
 			return result.data;
 		},
 		onSuccess: () => {
@@ -166,8 +174,15 @@ export function CoverageRuleDialog({
 				priority?: number;
 			};
 		}) => {
-			const result = await updateCoverageRule(ruleId, data);
-			if (!result.success) throw new Error(result.error);
+			const result = await updateCoverageRule({ ruleId, data });
+			if (!result.success) {
+				throw new Error(
+					actionErrorMessage(t, result, {}, [
+						"settings.coverageRules.updateFailed",
+						"Failed to update rule",
+					]),
+				);
+			}
 			return result.data;
 		},
 		onSuccess: () => {

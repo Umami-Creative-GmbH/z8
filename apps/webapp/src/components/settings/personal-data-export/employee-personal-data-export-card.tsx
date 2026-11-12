@@ -16,6 +16,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
 import { queryKeys } from "@/lib/query";
 import {
@@ -76,25 +80,21 @@ function listLabels(t: Translate): PersonalDataExportListLabels {
 	};
 }
 
-function refusalMessage(t: Translate, refusal: string | undefined): string {
-	switch (refusal) {
-		case "in_progress":
-			return t(
-				"settings.employees.personalDataExport.refusalInProgress",
-				"An export of this employee's data is already being prepared.",
-			);
-		case "storage_unavailable":
-			return t(
-				"settings.employees.personalDataExport.refusalStorage",
-				"File storage is not set up for this organization yet.",
-			);
-		default:
-			return t(
-				"settings.employees.personalDataExport.requestFailed",
-				"The export could not be started. Please try again.",
-			);
-	}
-}
+const REQUEST_REFUSALS = {
+	in_progress: [
+		"settings.employees.personalDataExport.refusalInProgress",
+		"An export of this employee's data is already being prepared.",
+	],
+	storage_unavailable: [
+		"settings.employees.personalDataExport.refusalStorage",
+		"File storage is not set up for this organization yet.",
+	],
+} satisfies RefusalOverrides;
+
+const REQUEST_FAILED = [
+	"settings.employees.personalDataExport.requestFailed",
+	"The export could not be started. Please try again.",
+] as const;
 
 interface EmployeePersonalDataExportCardProps {
 	organizationId: string;
@@ -147,12 +147,12 @@ export function EmployeePersonalDataExportCard({
 					),
 				);
 			} else {
-				toast.error(refusalMessage(t, result.refusal));
+				toast.error(actionErrorMessage(t, result, REQUEST_REFUSALS, REQUEST_FAILED));
 			}
 			void queryClient.invalidateQueries({ queryKey });
 		},
 		onError: () => {
-			toast.error(refusalMessage(t, undefined));
+			toast.error(actionErrorMessage(t, null, {}, REQUEST_FAILED));
 		},
 	});
 

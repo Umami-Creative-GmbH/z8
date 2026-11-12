@@ -11,6 +11,7 @@ import {
 	updateShiftTemplate,
 } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 export type ShiftTemplateLocations = Array<{
@@ -63,7 +64,7 @@ export function useShiftTemplateManagementController({
 	const createMutation = useMutation({
 		mutationFn: async (values: ShiftTemplateValues) => {
 			const result = await createShiftTemplate(values);
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 		onSuccess: () => {
@@ -90,7 +91,7 @@ export function useShiftTemplateManagementController({
 			values: ShiftTemplateValues;
 		}) => {
 			const result = await updateShiftTemplate(id, values);
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 		onSuccess: () => {
@@ -112,7 +113,7 @@ export function useShiftTemplateManagementController({
 	const deleteMutation = useMutation({
 		mutationFn: async (id: string) => {
 			const result = await deleteShiftTemplate(id);
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 		},
 		onSuccess: () => {
 			toast.success(
@@ -133,7 +134,7 @@ export function useShiftTemplateManagementController({
 	const toggleActiveMutation = useMutation({
 		mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
 			const result = await updateShiftTemplate(id, { isActive });
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 		onSuccess: (_, variables) => {

@@ -273,7 +273,8 @@ describe("project tasks on PostgreSQL", () => {
 			expect(created.success).toBe(true);
 
 			const listed = await actAs(ids.ownerUser, () =>
-				tasks.getProjectTasks(ids.project),
+				tasks.getProjectTasks({
+			projectId: ids.project }),
 			);
 			expect(listed).toMatchObject({
 				success: true,
@@ -297,7 +298,8 @@ describe("project tasks on PostgreSQL", () => {
 			});
 
 			const updated = await actAs(ids.ownerUser, () =>
-				tasks.updateProjectTask(id, {
+				tasks.updateProjectTask({
+					taskId: id,
 					name: "Visual design",
 					description: "Mockups",
 					estimateHours: 6.255,
@@ -314,7 +316,7 @@ describe("project tasks on PostgreSQL", () => {
 			]);
 
 			const cleared = await actAs(ids.ownerUser, () =>
-				tasks.updateProjectTask(id, { description: "  ", estimateHours: null }),
+				tasks.updateProjectTask({ taskId: id, description: "  ", estimateHours: null }),
 			);
 			expect(cleared.success).toBe(true);
 			expect(await taskRows()).toMatchObject([
@@ -424,7 +426,7 @@ describe("project tasks on PostgreSQL", () => {
 				ids.unmanagedProject,
 			);
 			const renamed = await actAs(ids.ownerUser, () =>
-				tasks.updateProjectTask(id, { name: "Build" }),
+				tasks.updateProjectTask({ taskId: id, name: "Build" }),
 			);
 			expect(renamed.success).toBe(true);
 			expect(
@@ -442,16 +444,18 @@ describe("project tasks on PostgreSQL", () => {
 			);
 			const second = await createTask(ids.ownerUser, "Build");
 			const renamedOntoFirst = await actAs(ids.ownerUser, () =>
-				tasks.updateProjectTask(second, { name: "DESIGN" }),
+				tasks.updateProjectTask({ taskId: second, name: "DESIGN" }),
 			);
 
 			expect(duplicate).toMatchObject({
 				success: false,
 				error: expect.stringMatching(/already exists/i),
+				refusal: "duplicate_name",
 			});
 			expect(renamedOntoFirst).toMatchObject({
 				success: false,
 				error: expect.stringMatching(/already exists/i),
+				refusal: "duplicate_name",
 			});
 			expect((await taskRows()).map((row) => row.id).sort()).toEqual(
 				[first, second].sort(),
@@ -514,14 +518,15 @@ describe("project tasks on PostgreSQL", () => {
 			const id = await createTask(ids.projectManagerUser, "Design");
 			const results = [
 				await actAs(ids.projectManagerUser, () =>
-					tasks.updateProjectTask(id, { name: "Build", estimateHours: 3 }),
+					tasks.updateProjectTask({ taskId: id, name: "Build", estimateHours: 3 }),
 				),
 				await actAs(ids.projectManagerUser, () =>
 					tasks.markProjectTaskDone(id),
 				),
 				await actAs(ids.projectManagerUser, () => tasks.reopenProjectTask(id)),
 				await actAs(ids.projectManagerUser, () =>
-					tasks.getProjectTasks(ids.project),
+					tasks.getProjectTasks({
+				projectId: ids.project }),
 				),
 			];
 			expect(results.map((result) => result.success)).toEqual([
@@ -555,11 +560,12 @@ describe("project tasks on PostgreSQL", () => {
 						projectId: ids.unmanagedProject,
 						name: "Build",
 					}),
-					tasks.updateProjectTask(id, { name: "Renamed" }),
+					tasks.updateProjectTask({ taskId: id, name: "Renamed" }),
 					tasks.markProjectTaskDone(id),
 					tasks.reopenProjectTask(id),
 					tasks.deleteProjectTask(id),
-					tasks.getProjectTasks(ids.unmanagedProject),
+					tasks.getProjectTasks({
+				projectId: ids.unmanagedProject }),
 				]),
 			);
 
@@ -582,11 +588,12 @@ describe("project tasks on PostgreSQL", () => {
 			const id = await createTask(ids.employeeUser, "Design");
 			const results = [
 				await actAs(ids.employeeUser, () =>
-					tasks.updateProjectTask(id, { name: "Build" }),
+					tasks.updateProjectTask({ taskId: id, name: "Build" }),
 				),
 				await actAs(ids.employeeUser, () => tasks.markProjectTaskDone(id)),
 				await actAs(ids.employeeUser, () => tasks.reopenProjectTask(id)),
-				await actAs(ids.employeeUser, () => tasks.getProjectTasks(ids.project)),
+				await actAs(ids.employeeUser, () => tasks.getProjectTasks({
+				projectId: ids.project })),
 				await actAs(ids.employeeUser, () => tasks.deleteProjectTask(id)),
 			];
 
@@ -639,11 +646,12 @@ describe("project tasks on PostgreSQL", () => {
 				const results = await actAs(userId, () =>
 					Promise.all([
 						tasks.createProjectTask({ projectId: ids.project, name: "Build" }),
-						tasks.updateProjectTask(id, { name: "Renamed" }),
+						tasks.updateProjectTask({ taskId: id, name: "Renamed" }),
 						tasks.markProjectTaskDone(id),
 						tasks.reopenProjectTask(id),
 						tasks.deleteProjectTask(id),
-						tasks.getProjectTasks(ids.project),
+						tasks.getProjectTasks({
+					projectId: ids.project }),
 					]),
 				);
 				expect(results.map((result) => result.success)).toEqual([
@@ -654,13 +662,18 @@ describe("project tasks on PostgreSQL", () => {
 					false,
 					false,
 				]);
-				expect(
-					await actAs(userId, () => tasks.getProjectsWithManageableTasks()),
-				).toEqual({
-					success: true,
-					data: [],
-				});
 			}
+			expect(
+				await actAs(ids.plainUser, () =>
+					tasks.getProjectsWithManageableTasks(),
+				),
+			).toEqual({ success: true, data: [] });
+			// A former employee has no settings access at all (ADR 0002).
+			expect(
+				await actAs(ids.formerManagerUser, () =>
+					tasks.getProjectsWithManageableTasks(),
+				),
+			).toMatchObject({ success: false, code: "AuthorizationError" });
 			expect(await taskRows()).toMatchObject([
 				{ id, name: "Design", state: "open" },
 			]);
@@ -695,12 +708,13 @@ describe("project tasks on PostgreSQL", () => {
 		it("an org admin cannot read or change another organization's task", async () => {
 			const results = await actAs(ids.ownerUser, () =>
 				Promise.all([
-					tasks.getProjectTasks(ids.otherProject),
+					tasks.getProjectTasks({
+					projectId: ids.otherProject }),
 					tasks.createProjectTask({
 						projectId: ids.otherProject,
 						name: "Intrusion",
 					}),
-					tasks.updateProjectTask(ids.otherTask, { name: "Renamed" }),
+					tasks.updateProjectTask({ taskId: ids.otherTask, name: "Renamed" }),
 					tasks.markProjectTaskDone(ids.otherTask),
 					tasks.deleteProjectTask(ids.otherTask),
 				]),

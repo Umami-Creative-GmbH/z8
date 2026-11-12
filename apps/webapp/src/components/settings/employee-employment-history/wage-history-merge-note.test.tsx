@@ -100,12 +100,19 @@ describe("WageHistoryMergeNote (#1176)", () => {
 			success: true,
 			data: { mergedOn: "2026-10-14", adjustedCount: 1 },
 		});
-		mocks.dismissNote.mockResolvedValue({ success: false, error: "connection lost" });
+		mocks.dismissNote.mockResolvedValue({
+			success: false,
+			code: "DatabaseError",
+			error: "connection lost",
+		});
 
 		renderNote();
 		fireEvent.click(await screen.findByRole("button", { name: "Dismiss" }));
 
-		await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("connection lost"));
+		// The server's English text is never shown.
+		await waitFor(() =>
+			expect(mocks.toastError).toHaveBeenCalledWith("Something went wrong. Try again."),
+		);
 		expect(screen.getByText(/1 rate change was adjusted/)).toBeTruthy();
 	});
 });

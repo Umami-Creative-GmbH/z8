@@ -2,6 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { z } from "zod";
 import { project } from "@/db/schema";
 import {
 	type BulkBillabilityRequest,
@@ -10,16 +11,14 @@ import {
 } from "@/lib/billable-time/bulk-billability";
 import {
 	applyBulkBillability as applyBulkBillabilityChange,
-	type BulkBillabilityApplyOutcome,
 	planBulkBillability,
 } from "@/lib/billable-time/bulk-billability-work";
 import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { activeOrganizationActor } from "./action-actor";
+import { organizationAction } from "@/lib/organization-action/organization-action";
 import { billableTimeOff } from "./module-guard";
 
 export interface BulkBillabilityPreview {
@@ -28,19 +27,13 @@ export interface BulkBillabilityPreview {
 	fingerprint: string;
 }
 
-const ADMIN_ONLY = "Only owners and admins can mark a project's work billable or non-billable";
-
 /**
- * The checked request of the active organization's admin or owner: Billable
- * Time on, and the project the organization's with an active customer.
+ * The checked request: Billable Time on, and the project the organization's
+ * with an active customer. `parseBulkBillabilityRequest` reads the request, so
+ * its refusals keep their wording.
  */
-function authorizedRequest(input: unknown, action: string) {
+function checkedRequest(organizationId: string, input: unknown) {
 	return Effect.gen(function* () {
-		const actor = yield* activeOrganizationActor({
-			requiredRole: "admin",
-			message: ADMIN_ONLY,
-			action,
-		});
 		const parsed = parseBulkBillabilityRequest(input);
 		if (!parsed.ok) {
 			return yield* Effect.fail(
@@ -50,7 +43,7 @@ function authorizedRequest(input: unknown, action: string) {
 		const request: BulkBillabilityRequest = parsed.request;
 		const dbService = yield* DatabaseService;
 		const settings = yield* dbService.query("billableTime.bulk.settings", () =>
-			getBillableTimeSettings(actor.organizationId, dbService.db),
+			getBillableTimeSettings(organizationId, dbService.db),
 		);
 		if (!settings.enabled) {
 			return yield* Effect.fail(billableTimeOff());
@@ -59,9 +52,7 @@ function authorizedRequest(input: unknown, action: string) {
 			dbService.db
 				.select({ customerId: activeProjectCustomerIdSql() })
 				.from(project)
-				.where(
-					and(eq(project.id, request.projectId), eq(project.organizationId, actor.organizationId)),
-				)
+				.where(and(eq(project.id, request.projectId), eq(project.organizationId, organizationId)))
 				.limit(1),
 		);
 		if (!target) {
@@ -83,70 +74,73 @@ function authorizedRequest(input: unknown, action: string) {
 				}),
 			);
 		}
-		return { actor, request, dbService };
+		return { request, dbService };
 	});
 }
+
+const requestShape = {
+	projectId: z.string().max(255),
+	fromDay: z.string().max(32),
+	toDay: z.string().max(32),
+	billable: z.boolean(),
+};
 
 /**
  * Previews marking a project's completed work in a date range (employee-local
  * day of each work period's start) billable or non-billable: how many work
  * periods and hours change, are already in that state, or are skipped and why.
- * Owners and admins of the active organization only.
+ * Org admins of the active organization only.
  */
-export async function previewBulkBillability(input: {
-	projectId: string;
-	fromDay: string;
-	toDay: string;
-	billable: boolean;
-}): Promise<ServerActionResult<BulkBillabilityPreview>> {
-	const effect = Effect.gen(function* () {
-		const { actor, request, dbService } = yield* authorizedRequest(input, "previewBulkBillability");
-		const plan = yield* dbService.query("billableTime.bulk.preview", () =>
-			planBulkBillability(dbService.db, actor.organizationId, request),
-		);
-		return { summary: plan.summary, fingerprint: plan.fingerprint };
-	});
-	return runServerActionSafe(effect);
-}
+export const previewBulkBillability = organizationAction(
+	{ name: "billableTime.bulk.preview", requires: "orgAdmin", schema: z.strictObject(requestShape) },
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const { request, dbService } = yield* checkedRequest(organizationId, input);
+			const plan = yield* dbService.query("billableTime.bulk.preview", () =>
+				planBulkBillability(dbService.db, organizationId, request),
+			);
+			return {
+				summary: plan.summary,
+				fingerprint: plan.fingerprint,
+			} satisfies BulkBillabilityPreview;
+		}),
+);
 
 /**
  * Applies a preview. When the work no longer matches it, nothing changes and
  * the result carries a fresh preview (`status: "stale"`). Each change is an
  * ordinary attribution amendment; re-running the same apply changes nothing more.
  */
-export async function applyBulkBillability(input: {
-	projectId: string;
-	fromDay: string;
-	toDay: string;
-	billable: boolean;
-	fingerprint: string;
-}): Promise<ServerActionResult<BulkBillabilityApplyOutcome>> {
-	const effect = Effect.gen(function* () {
-		const { actor, request, dbService } = yield* authorizedRequest(input, "applyBulkBillability");
-		if (typeof input.fingerprint !== "string" || !/^[0-9a-f]{64}$/.test(input.fingerprint)) {
-			return yield* Effect.fail(
-				new ValidationError({ message: "Preview the change first", field: "fingerprint" }),
-			);
-		}
-		const billing = yield* Effect.promise(() => requireBillingForMutation(actor.organizationId));
-		if (!isBillingMutationAllowed(billing)) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "billing_required",
-					userId: actor.userId,
-					resource: "billableTime",
-					action: "applyBulkBillability",
+export const applyBulkBillability = organizationAction(
+	{
+		name: "billableTime.bulk.apply",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			...requestShape,
+			fingerprint: z.string().regex(/^[0-9a-f]{64}$/, { error: "Preview the change first" }),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { request, dbService } = yield* checkedRequest(organizationId, input);
+			const billing = yield* Effect.promise(() => requireBillingForMutation(organizationId));
+			if (!isBillingMutationAllowed(billing)) {
+				return yield* Effect.fail(
+					new AuthorizationError({
+						message: "billing_required",
+						userId: actor.userId,
+						resource: "billableTime",
+						action: "applyBulkBillability",
+					}),
+				);
+			}
+			return yield* dbService.query("billableTime.bulk.apply", () =>
+				applyBulkBillabilityChange(dbService.db, {
+					organizationId,
+					actorUserId: actor.userId,
+					request,
+					fingerprint: input.fingerprint,
 				}),
 			);
-		}
-		return yield* dbService.query("billableTime.bulk.apply", () =>
-			applyBulkBillabilityChange(dbService.db, {
-				organizationId: actor.organizationId,
-				actorUserId: actor.userId,
-				request,
-				fingerprint: input.fingerprint,
-			}),
-		);
-	});
-	return runServerActionSafe(effect);
-}
+		}),
+);

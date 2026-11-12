@@ -163,7 +163,7 @@ function renderActions(
 			organizationId="org-1"
 			target={activeTarget}
 			currentUserId="owner-user"
-			currentMemberRole="owner"
+			settingsAccess="owner"
 			onOptimisticStatusChange={onOptimisticStatusChangeMock}
 			onRemoved={onRemovedMock}
 			// The confirmed status flow remains the path while the gate is closed.
@@ -233,7 +233,7 @@ describe("EmployeeLifecycleActions capabilities", () => {
 		"member,owner",
 	])("does not let an admin change status for target owner role %s", (targetRole) => {
 		const { container } = renderActions({
-			currentMemberRole: "admin",
+			settingsAccess: "orgAdmin",
 			target: {
 				...activeTarget,
 				membership: { ...approvedMembership, role: targetRole },
@@ -262,10 +262,10 @@ describe("EmployeeLifecycleActions capabilities", () => {
 
 	it.each([
 		["owner", true],
-		["admin", false],
-	] as const)("lets an inactive approved employee be reactivated by an %s with owner-only removal", async (currentMemberRole, canRemove) => {
+		["orgAdmin", false],
+	] as const)("lets an inactive approved employee be reactivated with %s settings access, removal owner-only", async (settingsAccess, canRemove) => {
 		renderActions({
-			currentMemberRole,
+			settingsAccess,
 			target: { ...activeTarget, isActive: false },
 		});
 
@@ -289,7 +289,9 @@ describe("EmployeeLifecycleActions capabilities", () => {
 
 	it.each([
 		["the current user", { currentUserId: activeTarget.userId }],
-		["a member actor", { currentMemberRole: "member" }],
+		["a member actor", { settingsAccess: "member" }],
+		["a scoped manager actor", { settingsAccess: "scopedManager" }],
+		["an actor without settings access", { settingsAccess: null }],
 	] as const)("shows no controls for %s", (_label, overrides) => {
 		const { container } = renderActions(overrides);
 
@@ -297,10 +299,10 @@ describe("EmployeeLifecycleActions capabilities", () => {
 	});
 
 	it.each([
-		["member,owner", true],
-		["member,admin", false],
-	] as const)("honors compound role %s as tokenized capabilities", async (role, canRemove) => {
-		renderActions({ currentMemberRole: role });
+		["owner", true],
+		["orgAdmin", false],
+	] as const)("gives %s settings access its lifecycle capabilities", async (settingsAccess, canRemove) => {
+		renderActions({ settingsAccess });
 
 		const menu = await openActions();
 
@@ -876,7 +878,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 					organizationId="org-1"
 					target={replacementTarget}
 					currentUserId="owner-user"
-					currentMemberRole="owner"
+					settingsAccess="owner"
 					onOptimisticStatusChange={onOptimisticStatusChangeMock}
 					onRemoved={onRemovedMock}
 				/>
@@ -925,7 +927,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 						displayName: "Taylor Reed",
 					}}
 					currentUserId="owner-user"
-					currentMemberRole="owner"
+					settingsAccess="owner"
 					onOptimisticStatusChange={onOptimisticStatusChangeMock}
 					onRemoved={onRemovedMock}
 				/>
@@ -969,7 +971,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 						isActive: false,
 					}}
 					currentUserId="owner-user"
-					currentMemberRole="owner"
+					settingsAccess="owner"
 					onOptimisticStatusChange={onOptimisticStatusChangeMock}
 					onRemoved={onRemovedMock}
 				/>

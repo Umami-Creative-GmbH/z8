@@ -381,7 +381,7 @@ describe("kiosk enrolment on PostgreSQL", () => {
 		actAs(ids.adminUser);
 		expect(await admin.issueKioskPairingCodeAction({ kioskId: created.kioskId })).toMatchObject({
 			success: false,
-			code: "kiosk_revoked",
+			refusal: "kiosk_revoked",
 		});
 	});
 
@@ -416,7 +416,7 @@ describe("kiosk enrolment on PostgreSQL", () => {
 
 	it("never creates a kiosk on, or moves one to, another organization's location", async () => {
 		const foreign = await createKiosk({ locationId: ids.foreignLocation });
-		expect(foreign).toMatchObject({ success: false, code: "location_not_found" });
+		expect(foreign).toMatchObject({ success: false, refusal: "location_not_found" });
 
 		const created = await createdKiosk();
 		actAs(ids.adminUser);
@@ -424,7 +424,7 @@ describe("kiosk enrolment on PostgreSQL", () => {
 			kioskId: created.kioskId,
 			locationId: ids.foreignLocation,
 		});
-		expect(moved).toMatchObject({ success: false, code: "location_not_found" });
+		expect(moved).toMatchObject({ success: false, refusal: "location_not_found" });
 		expect((await adminKiosks())[0]).toMatchObject({ locationId: ids.store });
 	});
 
@@ -434,7 +434,7 @@ describe("kiosk enrolment on PostgreSQL", () => {
 		actAs(ids.foreignUser, ids.otherOrganization);
 		const result = await admin.revokeKioskAction({ kioskId: created.kioskId });
 
-		expect(result).toMatchObject({ success: false, code: "kiosk_not_found" });
+		expect(result).toMatchObject({ success: false, refusal: "kiosk_not_found" });
 		expect((await adminKiosks())[0]).toMatchObject({ status: "awaiting_pairing" });
 	});
 
@@ -466,15 +466,15 @@ describe("kiosk enrolment on PostgreSQL", () => {
 	it("refuses an unknown zone and an empty name", async () => {
 		expect(await createKiosk({ timezone: "Mars/Olympus" })).toMatchObject({
 			success: false,
-			code: "invalid_timezone",
+			refusal: "invalid_timezone",
 		});
 		expect(await createKiosk({ timezone: "+02:00" })).toMatchObject({
 			success: false,
-			code: "invalid_timezone",
+			refusal: "invalid_timezone",
 		});
 		expect(await createKiosk({ name: "   " })).toMatchObject({
 			success: false,
-			code: "invalid_name",
+			refusal: "invalid_name",
 		});
 	});
 
@@ -485,13 +485,16 @@ describe("kiosk enrolment on PostgreSQL", () => {
 			actAs(userId);
 			expect(await admin.getKioskAdminDataAction()).toMatchObject({
 				success: false,
-				code: "admin_only",
+				code: "AuthorizationError",
 			});
-			expect(await createKiosk({}, userId)).toMatchObject({ success: false, code: "admin_only" });
+			expect(await createKiosk({}, userId)).toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
 			actAs(userId);
 			expect(await admin.revokeKioskAction({ kioskId: created.kioskId })).toMatchObject({
 				success: false,
-				code: "admin_only",
+				code: "AuthorizationError",
 			});
 		}
 	});
@@ -562,7 +565,7 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				offlineModeEnabled: true,
 			});
 
-			expect(refused).toMatchObject({ success: false, code: "offline_needs_adoption" });
+			expect(refused).toMatchObject({ success: false, refusal: "offline_needs_adoption" });
 			expect((await adminKiosks())[0]).toMatchObject({ offlineModeEnabled: false });
 			expect(await sessionKiosk(token)).toMatchObject({ offlineMode: false });
 		});
@@ -577,7 +580,7 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				offlineModeEnabled: "yes" as unknown as boolean,
 			});
 
-			expect(refused).toMatchObject({ success: false, code: "invalid_selection" });
+			expect(refused).toMatchObject({ success: false, code: "ValidationError" });
 			expect((await adminKiosks())[0]).toMatchObject({ offlineModeEnabled: false });
 		});
 
@@ -589,12 +592,12 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				actAs(userId);
 				expect(
 					await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: true }),
-				).toMatchObject({ success: false, code: "admin_only" });
+				).toMatchObject({ success: false, code: "AuthorizationError" });
 			}
 			actAs(ids.foreignUser, ids.otherOrganization);
 			expect(
 				await admin.updateKioskAction({ kioskId: created.kioskId, offlineModeEnabled: true }),
-			).toMatchObject({ success: false, code: "kiosk_not_found" });
+			).toMatchObject({ success: false, refusal: "kiosk_not_found" });
 			expect((await adminKiosks())[0]).toMatchObject({ offlineModeEnabled: false });
 		});
 
@@ -697,19 +700,19 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				actAs(userId);
 				expect(
 					await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: true }),
-				).toMatchObject({ success: false, code: "admin_only" });
+				).toMatchObject({ success: false, code: "AuthorizationError" });
 			}
 			actAs(ids.foreignUser, ids.otherOrganization);
 			expect(
 				await admin.updateKioskAction({ kioskId: created.kioskId, badgeScannerEnabled: true }),
-			).toMatchObject({ success: false, code: "kiosk_not_found" });
+			).toMatchObject({ success: false, refusal: "kiosk_not_found" });
 			actAs(ids.adminUser);
 			expect(
 				await admin.updateKioskAction({
 					kioskId: created.kioskId,
 					badgeScannerEnabled: "yes" as unknown as boolean,
 				}),
-			).toMatchObject({ success: false, code: "invalid_selection" });
+			).toMatchObject({ success: false, code: "ValidationError" });
 			expect((await adminKiosks())[0]).toMatchObject({ badgeScannerEnabled: false });
 		});
 	});
@@ -798,19 +801,19 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				actAs(userId);
 				expect(
 					await admin.updateKioskAction({ kioskId: created.kioskId, badgeCameraEnabled: true }),
-				).toMatchObject({ success: false, code: "admin_only" });
+				).toMatchObject({ success: false, code: "AuthorizationError" });
 			}
 			actAs(ids.foreignUser, ids.otherOrganization);
 			expect(
 				await admin.updateKioskAction({ kioskId: created.kioskId, badgeCameraEnabled: true }),
-			).toMatchObject({ success: false, code: "kiosk_not_found" });
+			).toMatchObject({ success: false, refusal: "kiosk_not_found" });
 			actAs(ids.adminUser);
 			expect(
 				await admin.updateKioskAction({
 					kioskId: created.kioskId,
 					badgeCameraEnabled: "yes" as unknown as boolean,
 				}),
-			).toMatchObject({ success: false, code: "invalid_selection" });
+			).toMatchObject({ success: false, code: "ValidationError" });
 			expect((await adminKiosks())[0]).toMatchObject({ badgeCameraEnabled: false });
 		});
 	});
@@ -833,19 +836,19 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				actAs(userId);
 				expect(
 					await admin.updateKioskAction({ kioskId: created.kioskId, nfcFobReaderEnabled: true }),
-				).toMatchObject({ success: false, code: "admin_only" });
+				).toMatchObject({ success: false, code: "AuthorizationError" });
 			}
 			actAs(ids.foreignUser, ids.otherOrganization);
 			expect(
 				await admin.updateKioskAction({ kioskId: created.kioskId, nfcFobReaderEnabled: true }),
-			).toMatchObject({ success: false, code: "kiosk_not_found" });
+			).toMatchObject({ success: false, refusal: "kiosk_not_found" });
 			actAs(ids.adminUser);
 			expect(
 				await admin.updateKioskAction({
 					kioskId: created.kioskId,
 					nfcFobReaderEnabled: "yes" as unknown as boolean,
 				}),
-			).toMatchObject({ success: false, code: "invalid_selection" });
+			).toMatchObject({ success: false, code: "ValidationError" });
 			expect(await reader()).toEqual([false, false]);
 
 			for (const userId of [ids.ownerUser, ids.adminUser]) {

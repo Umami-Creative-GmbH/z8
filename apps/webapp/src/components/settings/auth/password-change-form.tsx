@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { runWithBusyState } from "../run-with-busy-state";
 
 export function PasswordChangeForm() {
@@ -99,8 +100,10 @@ export function PasswordChangeForm() {
 						});
 					}
 					toast.error(
-						result.error ||
-							t("profile.password-change-failed", "Failed to change password"),
+						actionErrorMessage(t, result, {}, [
+							"profile.password-change-failed",
+							"Failed to change password",
+						]),
 					);
 				}
 			} catch {

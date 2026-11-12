@@ -37,6 +37,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { PersonnelNumberType } from "@/lib/payroll-export/personnel-identifier";
 import type { SageLohnConfig } from "@/lib/payroll-export/types";
 import {
@@ -46,7 +47,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface SageConfigFormProps {
-	organizationId: string;
 	initialConfig?: SageConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the personnel number (#821). */
@@ -60,7 +60,6 @@ const DEFAULT_CONFIG: SageLohnConfig = {
 };
 
 export function SageConfigForm({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -74,7 +73,6 @@ export function SageConfigForm({
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await saveSageConfigAction({
-					organizationId,
 					config: value,
 				});
 
@@ -90,7 +88,7 @@ export function SageConfigForm({
 							"Failed to save configuration",
 						),
 						{
-							description: result.error,
+							description: actionErrorMessage(t, result),
 						},
 					);
 				}

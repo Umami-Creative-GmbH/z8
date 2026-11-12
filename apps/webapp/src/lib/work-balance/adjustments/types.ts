@@ -5,6 +5,7 @@
  * server-only imports.
  */
 
+import type { ServerActionResult } from "@/lib/effect/result";
 import type {
 	OpeningBalanceCsvColumn,
 	OpeningBalanceCsvFileErrorCode,
@@ -101,14 +102,36 @@ export class BalanceAdjustmentRefusal extends Error {
 	}
 }
 
-/** A balance adjustment server action's result; a failure always carries a stable code. */
-export type BalanceAdjustmentActionResult<T> =
-	| { success: true; data: T }
-	| ({
-			success: false;
-			error: string;
-			code: BalanceAdjustmentErrorCode;
-	  } & BalanceAdjustmentRefusalDetails);
+/**
+ * A balance adjustment server action's result: an `organizationAction`'s
+ * (#1613). A refusal arrives as `refusal` with its `details`; read it with
+ * `balanceAdjustmentFailureOf`.
+ */
+export type BalanceAdjustmentActionResult<T> = ServerActionResult<T>;
+
+/**
+ * The stable code and details of a failed balance adjustment action, for the
+ * client to translate: the refusal's own code, `not_permitted` for a caller
+ * without settings access, `invalid_input` for input the schema refused,
+ * `month_closed` for a closed month, else `failed`.
+ */
+export function balanceAdjustmentFailureOf(
+	result: Extract<ServerActionResult<unknown>, { success: false }>,
+): { code: BalanceAdjustmentErrorCode; details: BalanceAdjustmentRefusalDetails } {
+	const details = (result.details ?? {}) as BalanceAdjustmentRefusalDetails;
+	if (result.refusal) return { code: result.refusal as BalanceAdjustmentErrorCode, details };
+	switch (result.code) {
+		case "AuthorizationError":
+		case "AuthenticationError":
+			return { code: "not_permitted", details };
+		case "ValidationError":
+			return { code: "invalid_input", details };
+		case "MonthClosedError":
+			return { code: "month_closed", details: { ...details, closedMonth: result.closedMonth } };
+		default:
+			return { code: "failed", details };
+	}
+}
 
 /** Why one row of a bulk opening balance upload cannot be written (#999). */
 export type OpeningBalanceUploadRowErrorCode =

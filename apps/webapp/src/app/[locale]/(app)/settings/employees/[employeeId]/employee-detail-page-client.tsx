@@ -32,7 +32,10 @@ import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import type { EmployeeReadSnapshot } from "@/lib/organization/employee-read-types";
 import type { EquipmentView } from "@/lib/organization/equipment/contracts";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
@@ -54,11 +57,12 @@ import { useEmployeeDetailForm } from "./use-employee-detail-form";
 function EmployeeDetailLifecycleActions({
 	employee,
 	currentUserId,
-	currentMemberRole,
+	settingsAccess,
 }: {
 	employee: EmployeeDetail;
 	currentUserId: string;
-	currentMemberRole: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -113,7 +117,7 @@ function EmployeeDetailLifecycleActions({
 					membership: employee.membership,
 				}}
 				currentUserId={currentUserId}
-				currentMemberRole={currentMemberRole}
+				settingsAccess={settingsAccess}
 				onOptimisticStatusChange={(targetEmployeeId, isActive) =>
 					updateLifecycleDetail(targetEmployeeId, {
 						isActive,
@@ -135,7 +139,7 @@ export function EmployeeDetailPageClient({
 	params,
 	accessTier,
 	currentUserId,
-	currentMemberRole,
+	settingsAccess,
 	organizationId,
 	initialSnapshot,
 	highlightedReviewId = null,
@@ -145,7 +149,8 @@ export function EmployeeDetailPageClient({
 	params: Promise<{ employeeId: string }>;
 	accessTier: SettingsAccessTier;
 	currentUserId: string;
-	currentMemberRole: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	organizationId?: string;
 	initialSnapshot?: EmployeeReadSnapshot<"detail">;
 	highlightedReviewId?: string | null;
@@ -203,7 +208,7 @@ export function EmployeeDetailPageClient({
 			data={employeeData}
 			accessTier={accessTier}
 			currentUserId={currentUserId}
-			currentMemberRole={currentMemberRole}
+			settingsAccess={settingsAccess}
 			organizationId={organizationId}
 			highlightedReviewId={highlightedReviewId}
 			equipment={equipment}
@@ -230,7 +235,7 @@ export function EmployeeDetailPageClient({
 					<EmployeeDetailLifecycleActions
 						employee={employee}
 						currentUserId={currentUserId}
-						currentMemberRole={currentMemberRole}
+						settingsAccess={settingsAccess}
 					/>
 				}
 			/>
@@ -322,7 +327,7 @@ function EmployeeDetailOverview({
 	data,
 	accessTier,
 	currentUserId,
-	currentMemberRole,
+	settingsAccess,
 	organizationId,
 	highlightedReviewId,
 	equipment,
@@ -333,7 +338,8 @@ function EmployeeDetailOverview({
 	data: ReturnType<typeof useEmployee>;
 	accessTier: SettingsAccessTier;
 	currentUserId: string;
-	currentMemberRole: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	organizationId?: string;
 	highlightedReviewId: string | null;
 	equipment: EquipmentView | null;
@@ -360,7 +366,7 @@ function EmployeeDetailOverview({
 			<EmployeeInvitationActions
 				employee={employee}
 				accessTier={accessTier}
-				currentMemberRole={currentMemberRole}
+				settingsAccess={settingsAccess}
 			/>
 			{equipment && canShowRealEmployeeSections ? (
 				<EmployeeEquipment
@@ -743,16 +749,15 @@ function EmployeeRateSections({
 function EmployeeInvitationActions({
 	employee,
 	accessTier,
-	currentMemberRole,
+	settingsAccess,
 }: {
 	employee: NonNullable<ReturnType<typeof useEmployee>["employee"]>;
 	accessTier: SettingsAccessTier;
-	currentMemberRole: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }) {
 	const canManageDraftActions =
-		accessTier === "orgAdmin" &&
-		(hasOrganizationRole(currentMemberRole, "owner") ||
-			hasOrganizationRole(currentMemberRole, "admin"));
+		accessTier === "orgAdmin" && meetsSettingsAccess(settingsAccess, "orgAdmin");
 	if (employee.kind !== "invitationDraft" || !canManageDraftActions)
 		return null;
 	return (

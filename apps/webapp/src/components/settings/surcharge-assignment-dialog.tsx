@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { surchargeModelsQuery } from "@/lib/query/surcharge-models";
 
@@ -59,7 +60,7 @@ export function SurchargeAssignmentDialog({
 	// Fetch teams (only for team assignments)
 	const teamsQuery = useQuery({
 		queryKey: ["teams-for-assignment", organizationId],
-		queryFn: () => getTeamsForAssignment(organizationId),
+		queryFn: () => getTeamsForAssignment(),
 		enabled: open && assignmentType === "team",
 	});
 
@@ -106,7 +107,7 @@ export function SurchargeAssignmentDialog({
 			effectiveFrom: Date | null;
 			effectiveUntil: Date | null;
 			isActive: boolean;
-		}) => createSurchargeAssignment(organizationId, data),
+		}) => createSurchargeAssignment(data),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -116,7 +117,10 @@ export function SurchargeAssignmentDialog({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error || t("settings.surcharges.assignmentFailed", "Failed to create assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.surcharges.assignmentFailed",
+						"Failed to create assignment",
+					]),
 				);
 			}
 		},

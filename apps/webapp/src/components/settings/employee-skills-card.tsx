@@ -51,6 +51,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import {
 	SkillChangeRefusedError,
@@ -136,8 +137,15 @@ export function EmployeeSkillsCard({
 	// Remove skill mutation
 	const removeMutation = useMutation({
 		mutationFn: async ({ skillId }: { skillId: string }) => {
-			const result = await removeSkillFromEmployee(employeeId, skillId);
-			if (!result.success) throw new Error(result.error);
+			const result = await removeSkillFromEmployee({ employeeId, skillId });
+			if (!result.success) {
+				throw new Error(
+					actionErrorMessage(t, result, {}, [
+						"settings.skills.removeError",
+						"Failed to remove skill",
+					]),
+				);
+			}
 		},
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillRemoved", "Skill removed"));
@@ -524,7 +532,14 @@ function AssignSkillDialog({
 				expiresAt: data.expiresAt || null,
 				notes: data.notes || undefined,
 			});
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				throw new Error(
+					actionErrorMessage(t, result, {}, [
+						"settings.skills.assignError",
+						"Failed to assign skill",
+					]),
+				);
+			}
 			return result.data;
 		},
 		onSuccess: () => {

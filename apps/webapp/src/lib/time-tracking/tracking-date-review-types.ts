@@ -1,5 +1,4 @@
 import type { VacationBalanceConfiguration } from "@/lib/absences/types";
-import type { RefusalActionResult } from "@/lib/effect/refusal-action";
 import type { WorkBalanceSnapshot } from "@/lib/work-balance/service";
 
 export type TrackingDateRefusalCode =
@@ -56,7 +55,3 @@ export interface TrackingDateImpact {
 	employees: TrackingEmployeeImpact[];
 	blockers: TrackingDateBlocker[];
 }
-export type TrackingDateActionResult<T> = RefusalActionResult<
-	T,
-	TrackingDateRefusalCode
->;

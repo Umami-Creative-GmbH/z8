@@ -104,12 +104,10 @@ describe("SurchargeReports", () => {
 		await waitFor(() => {
 			expect(screen.getByText("1 calculation")).toBeTruthy();
 		});
-		const [organizationId, startDate, endDate, employeeId] =
-			getSurchargeCalculationsForPeriodMock.mock.calls[0] ?? [];
-		expect(organizationId).toBe("org-1");
-		expect(startDate).toBeInstanceOf(Date);
-		expect(endDate).toBeInstanceOf(Date);
-		expect(employeeId).toBeUndefined();
+		const [input] = getSurchargeCalculationsForPeriodMock.mock.calls[0] ?? [];
+		expect(input.startDate).toBeInstanceOf(Date);
+		expect(input.endDate).toBeInstanceOf(Date);
+		expect(input.employeeId).toBeUndefined();
 
 		expect(screen.getByText("8h 0m")).toBeTruthy();
 		expect(screen.getByText("2h 0m")).toBeTruthy();

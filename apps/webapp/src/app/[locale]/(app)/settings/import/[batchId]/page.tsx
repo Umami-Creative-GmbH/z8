@@ -82,7 +82,6 @@ async function ImportReviewRouteContent({
 			<div className="p-6">
 				<div className="mx-auto max-w-6xl">
 					<CsvWorkReview
-						organizationId={organizationId}
 						batchId={batch.id}
 						view={{ ...view, rows }}
 						paging={paging}
@@ -142,7 +141,6 @@ async function ImportReviewRouteContent({
 					<HistoricalVacationImportReview batchId={batch.id} />
 				) : null}
 				<ImportReviewPage
-					organizationId={organizationId}
 					batchId={batch.id}
 					summary={summary}
 					paging={paging}

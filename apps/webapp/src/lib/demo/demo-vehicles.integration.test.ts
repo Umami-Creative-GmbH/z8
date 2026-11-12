@@ -31,8 +31,7 @@ vi.mock("@/lib/auth", () => ({
 							session: {
 								id: `session-${harness.userId}`,
 								userId: harness.userId,
-								// Not the active organization: `canUseDemoData` checks the admin membership.
-								activeOrganizationId: null,
+								activeOrganizationId: "t1118-demo-org",
 							},
 						}
 					: null,
@@ -136,7 +135,6 @@ describe("demo vehicles on PostgreSQL", () => {
 
 	it("creates a few vehicles with the demo locations, with drivers of the organization", async () => {
 		const result = await generateLocationsStepAction({
-			organizationId: ids.organization,
 			dateRangeType: "last30",
 			locationCount: 1,
 			subareasPerLocation: 1,
@@ -173,7 +171,6 @@ describe("demo vehicles on PostgreSQL", () => {
 
 	it("removes the demo vehicles on a demo reset and keeps the organization's own", async () => {
 		await generateLocationsStepAction({
-			organizationId: ids.organization,
 			dateRangeType: "last30",
 			locationCount: 1,
 			subareasPerLocation: 1,
@@ -183,7 +180,7 @@ describe("demo vehicles on PostgreSQL", () => {
 			[ids.organization],
 		);
 
-		const result = await clearTimeDataAction(ids.organization);
+		const result = await clearTimeDataAction();
 
 		expect(result).toMatchObject({ success: true, data: { vehiclesDeleted: 3 } });
 		expect((await vehicles()).map((v) => v.name)).toEqual(["Own van"]);

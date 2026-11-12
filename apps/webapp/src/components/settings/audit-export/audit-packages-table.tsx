@@ -49,6 +49,7 @@ import {
 	formatDateTime,
 	formatTimeOnly,
 } from "@/lib/datetime/format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
@@ -61,12 +62,10 @@ function formatFileSize(bytes: number): string {
 }
 
 interface AuditPackagesTableProps {
-	organizationId: string;
 	packages: AuditPackageInfo[];
 }
 
 export function AuditPackagesTable({
-	organizationId,
 	packages,
 }: AuditPackagesTableProps) {
 	const { t } = useTranslate();
@@ -82,16 +81,15 @@ export function AuditPackagesTable({
 	const handleVerify = async (packageId: string) => {
 		setVerifying(packageId);
 		try {
-			const result = await verifyAuditPackageAction(packageId, organizationId);
+			const result = await verifyAuditPackageAction({ packageId });
 			if (result.success) {
 				setVerificationResult({ packageId, result: result.data });
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.auditExport.packages.verifyError",
-							"Verification failed",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.auditExport.packages.verifyError",
+						"Verification failed",
+					]),
 				);
 			}
 		} catch (error) {

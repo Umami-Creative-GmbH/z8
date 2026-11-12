@@ -531,7 +531,7 @@ describe("payroll run notifications for expense officers (#855)", () => {
 		expect(await readyRecipients(removed)).toEqual(["t855-allOfficer"]);
 
 		signIn("finance");
-		const result = await discardPayrollRunAction(ORG, jobId);
+		const result = await discardPayrollRunAction({ jobId: jobId });
 		expect(result).toEqual({
 			success: true,
 			data: { status: "discarded", reportIds: [discarded] },

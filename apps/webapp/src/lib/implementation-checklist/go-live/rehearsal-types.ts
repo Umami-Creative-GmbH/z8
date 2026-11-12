@@ -130,8 +130,3 @@ export interface GoLiveRehearsal {
 export type GoLiveRehearsalResult =
 	| { ok: true; rehearsal: GoLiveRehearsal }
 	| { ok: false; refusal: GoLiveRehearsalRefusal };
-
-/** What the rehearsal server action answers. `unavailable`: a lookup failed; try again. */
-export type GoLiveRehearsalActionResult =
-	| { success: true; data: GoLiveRehearsal }
-	| { success: false; error: GoLiveRehearsalRefusal | "unavailable" };

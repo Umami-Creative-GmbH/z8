@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 type AssignmentType = "organization" | "team" | "employee";
@@ -79,7 +80,7 @@ function useWorkCategoryAssignments(organizationId: string) {
 	return useQuery({
 		queryKey: queryKeys.workCategorySetAssignments.list(organizationId),
 		queryFn: async () => {
-			const result = await getWorkCategorySetAssignments(organizationId);
+			const result = await getWorkCategorySetAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
@@ -106,8 +107,10 @@ function useWorkCategoryAssignmentDeletion(organizationId: string) {
 				setSelectedAssignment(null);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.assignmentDeleteFailed", "Failed to remove assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workCategories.assignmentDeleteFailed",
+						"Failed to remove assignment",
+					]),
 				);
 			}
 		},

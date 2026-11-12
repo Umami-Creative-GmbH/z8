@@ -55,8 +55,10 @@ describe("actual joining date review", () => {
 		});
 		mocks.commit.mockResolvedValue({
 			success: false,
-			code: "stale_preview",
-			error: "The reviewed employment or configuration changed. Generate a new preview.",
+			code: "ValidationError",
+			refusal: "stale_preview",
+			// The server's English text is never shown; the refusal's own copy is.
+			error: "Server wording that is not shown",
 		});
 		render(
 			<EmploymentDateCorrectionCard

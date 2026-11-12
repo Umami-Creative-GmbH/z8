@@ -128,8 +128,12 @@ function assertScimCredentialTokenFlow(
 			const value = unwrap(path);
 			if (!value?.isCallExpression()) return false;
 			const name = callName(value.node);
-			const enclosingFunction = value.findParent((candidate: any) =>
-				candidate.isFunctionDeclaration?.(),
+			// A function declaration, or `const x = organizationAction(…)` (#1592).
+			const enclosingFunction = value.findParent(
+				(candidate: any) =>
+					candidate.isFunctionDeclaration?.() ||
+					(candidate.isVariableDeclarator?.() &&
+						candidate.node.init?.callee?.name === "organizationAction"),
 			);
 			const functionName = enclosingFunction?.node.id?.name;
 			return sourceName === "controlPlane"

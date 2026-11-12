@@ -17,7 +17,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { EmploymentDateCorrectionImpact } from "@/lib/employee-lifecycle/employment-date-correction-types";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { Link } from "@/navigation";
+
+/** A refused correction the user can act on; any other refusal gets the generic text. */
+const CORRECTION_REFUSALS = {
+	stale_preview: [
+		"settings.employmentCorrection.stalePreview",
+		"The reviewed employment or configuration changed. Generate a new preview.",
+	],
+} satisfies RefusalOverrides;
+
 export function EmploymentDateCorrectionCard({
 	employeeId,
 	employmentStartDate,
@@ -47,8 +60,13 @@ export function EmploymentDateCorrectionCard({
 				});
 				if (result.success) setReview(result.data);
 				else {
-					setError(result.error);
-					setActivationNeeded(result.code === "blocked");
+					setError(
+						actionErrorMessage(t, result, CORRECTION_REFUSALS, [
+							"settings.employmentCorrection.previewFailed",
+							"Could not prepare this correction. Try again.",
+						]),
+					);
+					setActivationNeeded(result.refusal === "blocked");
 				}
 			} catch {
 				setError(
@@ -103,7 +121,12 @@ export function EmploymentDateCorrectionCard({
 						);
 					});
 			} else {
-				setError(result.error);
+				setError(
+					actionErrorMessage(t, result, CORRECTION_REFUSALS, [
+						"settings.employmentCorrection.saveFailed",
+						"Could not save this correction. Generate a new preview and try again.",
+					]),
+				);
 				setReview(null);
 			}
 		} catch {

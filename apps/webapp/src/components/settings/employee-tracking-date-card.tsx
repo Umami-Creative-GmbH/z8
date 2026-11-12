@@ -19,6 +19,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import type { EmployeeTrackingDateSettings } from "@/lib/time-tracking/employee-tracking-date";
 import type { TrackingDateImpact } from "@/lib/time-tracking/tracking-date-review-types";
 import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
@@ -33,6 +37,14 @@ async function withBusyState(setBusy: (busy: boolean) => void, action: () => Pro
 }
 
 const queryKey = (employeeId: string) => ["employee-tracking-date", employeeId];
+
+/** A refused change the user can act on; any other refusal gets the generic text. */
+const TRACKING_DATE_REFUSALS = {
+	stale_preview: [
+		"settings.employees.tracking.stale-preview",
+		"The reviewed inputs changed. Generate a new preview before saving.",
+	],
+} satisfies RefusalOverrides;
 export function EmployeeTrackingDateCard({ employeeId }: { employeeId: string }) {
 	const { t } = useTranslate();
 	const query = useQuery({
@@ -175,7 +187,13 @@ function EmployeeTrackingDateForm({
 						trackingStartDate: date,
 					});
 					if (result.success) setReview({ impact: result.data, date });
-					else setError(result.error);
+					else
+						setError(
+							actionErrorMessage(t, result, TRACKING_DATE_REFUSALS, [
+								"settings.employees.tracking.preview-failed",
+								"Could not generate the preview. Try again.",
+							]),
+						);
 				} catch {
 					setError(
 						t(
@@ -203,7 +221,12 @@ function EmployeeTrackingDateForm({
 					reason,
 				});
 				if (!result.success) {
-					setError(result.error);
+					setError(
+						actionErrorMessage(t, result, TRACKING_DATE_REFUSALS, [
+							"settings.employees.tracking.save-failed",
+							"Could not save the reviewed change. Generate a new preview and try again.",
+						]),
+					);
 					setReview(null);
 					return;
 				}

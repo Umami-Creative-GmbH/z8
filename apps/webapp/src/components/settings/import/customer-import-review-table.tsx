@@ -32,6 +32,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { StagedCustomer } from "@/lib/import-review/staged-customer";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { currentCustomerDecision, customerDecisionOptions } from "./customer-import-decisions";
 
@@ -105,7 +106,6 @@ const statusLabels: Record<ImportReviewRowStatus, { key: string; fallback: strin
 };
 
 interface CustomerImportReviewTableProps {
-	organizationId: string;
 	batchId: string;
 	/** The contacts of the current page. */
 	rows: CustomerImportReviewRow[];
@@ -116,7 +116,6 @@ interface CustomerImportReviewTableProps {
 }
 
 export function CustomerImportReviewTable({
-	organizationId,
 	batchId,
 	rows,
 	linkTargets,
@@ -137,7 +136,6 @@ export function CustomerImportReviewTable({
 	) {
 		startTransition(async () => {
 			const result = await applyImportDecisionAction({
-				organizationId,
 				batchId,
 				rowIds,
 				decision,
@@ -145,8 +143,10 @@ export function CustomerImportReviewTable({
 			});
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t("settings.import.review.customers.decisionFailed", "The decision could not be saved"),
+					actionErrorMessage(t, result, {}, [
+						"settings.import.review.customers.decisionFailed",
+						"The decision could not be saved",
+					]),
 				);
 				return;
 			}

@@ -42,11 +42,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { formatDateTime } from "@/lib/datetime/format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { SecretStoreStatus } from "@/lib/vault";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 interface EmailConfigFormProps {
-	organizationId: string;
 	initialConfig: EmailConfigOutput | null;
 	secretStoreStatus: SecretStoreStatus;
 }
@@ -169,7 +169,6 @@ function SecretStoreStatusAlert({
 }
 
 function useEmailConfigController({
-	organizationId,
 	initialConfig,
 	secretStoreStatus,
 }: EmailConfigFormProps) {
@@ -199,15 +198,14 @@ function useEmailConfigController({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
-				const result = await saveEmailConfig(organizationId, value);
+				const result = await saveEmailConfig(value);
 				if (result.success) {
 					toast.success(
 						t("settings.enterprise.email.saved", "Email configuration saved"),
 					);
 				} else {
 					toast.error(
-						result.error ||
-							t("settings.enterprise.email.saveFailed", "Failed to save"),
+						actionErrorMessage(t, result, {}, ["settings.enterprise.email.saveFailed", "Failed to save"]),
 					);
 				}
 			});
@@ -226,7 +224,7 @@ function useEmailConfigController({
 		}
 
 		setIsTesting(true);
-		const result = await testEmailConfig(organizationId, testEmail).then(
+		const result = await testEmailConfig({ testEmail }).then(
 			(response) => response,
 			() => null,
 		);
@@ -244,11 +242,7 @@ function useEmailConfigController({
 			);
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.enterprise.email.testFailed",
-						"Failed to send test email",
-					),
+				actionErrorMessage(t, result, {}, ["settings.enterprise.email.testFailed", "Failed to send test email"]),
 			);
 		}
 
@@ -268,15 +262,14 @@ function useEmailConfigController({
 		}
 
 		startTransition(async () => {
-			const result = await deleteEmailConfig(organizationId);
+			const result = await deleteEmailConfig();
 			if (result.success) {
 				toast.success(
 					t("settings.enterprise.email.deleted", "Email configuration deleted"),
 				);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.enterprise.email.deleteFailed", "Failed to delete"),
+					actionErrorMessage(t, result, {}, ["settings.enterprise.email.deleteFailed", "Failed to delete"]),
 				);
 			}
 		});
