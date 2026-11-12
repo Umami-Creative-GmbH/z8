@@ -16,7 +16,7 @@ async function EmailConfigContent() {
 	const secretStoreStatusPromise = authContextPromise.then(
 		({ organizationId }) => getSecretStoreConnectionStatus(organizationId),
 	);
-	const [{ organizationId }, t, emailConfig, secretStoreStatus, templates] =
+	const [{ organizationId }, t, emailConfig, secretStoreStatus, templatesResult] =
 		await Promise.all([
 			authContextPromise,
 			getTranslate(),
@@ -24,6 +24,10 @@ async function EmailConfigContent() {
 			secretStoreStatusPromise,
 			authContextPromise.then(() => listEmailTemplates()),
 		]);
+	if (!templatesResult.success) {
+		throw new Error(templatesResult.error);
+	}
+	const templates = templatesResult.data;
 
 	return (
 		<SettingsTabbedPage

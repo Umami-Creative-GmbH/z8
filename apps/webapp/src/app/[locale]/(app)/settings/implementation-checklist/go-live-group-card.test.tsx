@@ -148,6 +148,30 @@ describe("GoLiveGroupCard", () => {
 		);
 	});
 
+	it("translates the store's refusal, and shows a generic message for any other failure", async () => {
+		actions.lift.mockResolvedValueOnce({
+			success: false,
+			error: "This exclusion has already ended.",
+			code: "ValidationError",
+			refusal: "exclusion_not_found",
+		});
+		actions.lift.mockResolvedValueOnce({
+			success: false,
+			error: "You do not have access to this setting",
+			code: "AuthorizationError",
+		});
+		render(<GoLiveGroupCard group={settings} memberCount={7} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Lift exclusion for Dana Director" }));
+		await waitFor(() =>
+			expect(actions.toastError).toHaveBeenCalledWith("This exclusion has already ended."),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Lift exclusion for Dana Director" }));
+		await waitFor(() =>
+			expect(actions.toastError).toHaveBeenLastCalledWith("Failed to update the go-live group."),
+		);
+	});
+
 	it("says when the group settings couldn't be loaded", () => {
 		render(<GoLiveGroupCard group={null} memberCount={null} />);
 

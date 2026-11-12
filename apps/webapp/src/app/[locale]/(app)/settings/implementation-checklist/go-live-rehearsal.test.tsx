@@ -184,7 +184,11 @@ describe("go-live rehearsal", () => {
 	});
 
 	it("opens from a checked member in a failure list", async () => {
-		rehearse.mockResolvedValue({ success: false, error: "unavailable" });
+		rehearse.mockResolvedValue({
+			success: false,
+			error: "Database query failed: goLiveRehearsal.rehearse",
+			code: "DatabaseError",
+		});
 		render(
 			<GoLiveRehearsalProvider candidates={candidates}>
 				<GoLiveFailureGroupView
@@ -204,6 +208,32 @@ describe("go-live rehearsal", () => {
 		expect(await screen.findByText("The rehearsal could not be completed.")).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
 		expect(rehearse).toHaveBeenCalledTimes(2);
+	});
+
+	it("says a member who is no longer checked has nothing to rehearse", async () => {
+		rehearse.mockResolvedValue({
+			success: false,
+			error: "This person isn't in the go-live group.",
+			code: "ValidationError",
+			refusal: "member_not_checked",
+		});
+		render(
+			<GoLiveRehearsalProvider candidates={candidates}>
+				<GoLiveFailureGroupView
+					group={{
+						cause: "work-policy:no-team",
+						reason: { key: "reason", fallback: "No organization work policy" },
+						members: [{ member: sam }],
+						fix: null,
+					}}
+				/>
+			</GoLiveRehearsalProvider>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Rehearse go-live for Sam Subject" }));
+
+		expect(await screen.findByText(/isn't in the go-live group any more/)).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
 	});
 
 	it("offers no rehearsal outside the checklist's provider or for someone not checked", () => {

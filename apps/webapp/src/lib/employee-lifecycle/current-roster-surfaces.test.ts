@@ -225,7 +225,7 @@ const ROSTER_SURFACES: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
-		functions: ["getPersonnelFileOfficerAdminData"],
+		functions: ["loadOfficerAdminData"],
 		note: "personnel file officer picker",
 	},
 	{
@@ -245,12 +245,12 @@ const ROSTER_SURFACES: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/position-capture/actions.ts",
-		functions: ["getPositionCaptureAdminDataAction"],
+		functions: ["loadPositionCaptureAdminData"],
 		note: "position capture assignment picker",
 	},
 	{
 		file: "app/[locale]/(app)/settings/vehicle-use/actions.ts",
-		functions: ["getVehicleUseAdminDataAction"],
+		functions: ["loadVehicleUseAdminData"],
 		note: "vehicle use assignment picker",
 	},
 	{

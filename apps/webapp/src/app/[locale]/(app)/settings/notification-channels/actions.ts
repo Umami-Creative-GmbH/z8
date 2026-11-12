@@ -1,10 +1,12 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { z } from "zod";
 import { discordBotConfig, slackWorkspaceConfig, teamsTenantConfig } from "@/db/schema";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 
 export interface NotificationChannelSettingsFormValues {
@@ -29,82 +31,32 @@ export interface NotificationChannelConfig {
 	escalationTimeoutHours: number;
 }
 
-type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
-
-function validateSettings(settings: unknown): ActionResult<NotificationChannelSettingsFormValues> {
-	if (!settings || typeof settings !== "object") {
-		return { success: false, error: "Settings are required" };
-	}
-
-	const values = settings as Record<string, unknown>;
-
-	if (typeof values.enableApprovals !== "boolean") {
-		return { success: false, error: "Enable approvals must be a boolean" };
-	}
-
-	if (typeof values.enableCommands !== "boolean") {
-		return { success: false, error: "Enable commands must be a boolean" };
-	}
-
-	if (typeof values.enableDailyDigest !== "boolean") {
-		return { success: false, error: "Enable daily digest must be a boolean" };
-	}
-
-	if (typeof values.enableEscalations !== "boolean") {
-		return { success: false, error: "Enable escalations must be a boolean" };
-	}
-
-	if (typeof values.digestTime !== "string") {
-		return { success: false, error: "Digest time must use HH:mm format" };
-	}
-
-	if (typeof values.digestTimezone !== "string") {
-		return { success: false, error: "Digest timezone is required" };
-	}
-
-	if (typeof values.escalationTimeoutHours !== "number") {
-		return { success: false, error: "Escalation timeout must be at least 1 hour" };
-	}
-
-	const parsedSettings: NotificationChannelSettingsFormValues = {
-		enableApprovals: values.enableApprovals,
-		enableCommands: values.enableCommands,
-		enableDailyDigest: values.enableDailyDigest,
-		enableEscalations: values.enableEscalations,
-		digestTime: values.digestTime,
-		digestTimezone: values.digestTimezone,
-		escalationTimeoutHours: values.escalationTimeoutHours,
-	};
-
-	if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(parsedSettings.digestTime)) {
-		return { success: false, error: "Digest time must use HH:mm format" };
-	}
-
-	if (!parsedSettings.digestTimezone.trim()) {
-		return { success: false, error: "Digest timezone is required" };
-	}
-
-	if (!isValidIanaTimeZone(parsedSettings.digestTimezone)) {
-		return { success: false, error: "Digest timezone must be a valid timezone" };
-	}
-
-	if (
-		!Number.isInteger(parsedSettings.escalationTimeoutHours) ||
-		parsedSettings.escalationTimeoutHours < 1
-	) {
-		return { success: false, error: "Escalation timeout must be at least 1 hour" };
-	}
-
-	return { success: true, data: parsedSettings };
-}
+const notificationChannelSettingsSchema = z.object(
+	{
+		enableApprovals: z.boolean("Enable approvals must be a boolean"),
+		enableCommands: z.boolean("Enable commands must be a boolean"),
+		enableDailyDigest: z.boolean("Enable daily digest must be a boolean"),
+		enableEscalations: z.boolean("Enable escalations must be a boolean"),
+		digestTime: z
+			.string("Digest time must use HH:mm format")
+			.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Digest time must use HH:mm format"),
+		digestTimezone: z
+			.string("Digest timezone is required")
+			.trim()
+			.min(1, "Digest timezone is required")
+			.refine(isValidIanaTimeZone, "Digest timezone must be a valid timezone"),
+		escalationTimeoutHours: z
+			.number("Escalation timeout must be at least 1 hour")
+			.int("Escalation timeout must be at least 1 hour")
+			.min(1, "Escalation timeout must be at least 1 hour"),
+	},
+	"Settings are required",
+) satisfies z.ZodType<NotificationChannelSettingsFormValues>;
 
 function mapConfig(
 	config:
 		| (NotificationChannelSettingsFormValues & {
 				setupStatus: string;
-				slackTeamName?: string | null;
-				applicationId?: string | null;
-				tenantName?: string | null;
 		  })
 		| undefined,
 	displayName: string | null | undefined,
@@ -126,95 +78,107 @@ function mapConfig(
 	};
 }
 
-export async function getSlackNotificationChannelConfig(): Promise<
-	ActionResult<NotificationChannelConfig | null>
-> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const config = await db.query.slackWorkspaceConfig.findFirst({
-		where: eq(slackWorkspaceConfig.organizationId, organizationId),
-	});
+export const getSlackNotificationChannelConfig = organizationAction(
+	{ name: "notificationChannels.getSlackConfig", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const config = yield* dbService.query("notificationChannels.getSlackConfig", () =>
+				dbService.db.query.slackWorkspaceConfig.findFirst({
+					where: eq(slackWorkspaceConfig.organizationId, organizationId),
+				}),
+			);
+			return mapConfig(config, config?.slackTeamName);
+		}),
+);
 
-	return { success: true, data: mapConfig(config, config?.slackTeamName) };
-}
+export const getDiscordNotificationChannelConfig = organizationAction(
+	{ name: "notificationChannels.getDiscordConfig", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const config = yield* dbService.query("notificationChannels.getDiscordConfig", () =>
+				dbService.db.query.discordBotConfig.findFirst({
+					where: eq(discordBotConfig.organizationId, organizationId),
+				}),
+			);
+			return mapConfig(config, config?.applicationId);
+		}),
+);
 
-export async function getDiscordNotificationChannelConfig(): Promise<
-	ActionResult<NotificationChannelConfig | null>
-> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const config = await db.query.discordBotConfig.findFirst({
-		where: eq(discordBotConfig.organizationId, organizationId),
-	});
+export const getTeamsNotificationChannelConfig = organizationAction(
+	{ name: "notificationChannels.getTeamsConfig", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const config = yield* dbService.query("notificationChannels.getTeamsConfig", () =>
+				dbService.db.query.teamsTenantConfig.findFirst({
+					where: eq(teamsTenantConfig.organizationId, organizationId),
+				}),
+			);
+			return mapConfig(config, config?.tenantName);
+		}),
+);
 
-	return { success: true, data: mapConfig(config, config?.applicationId) };
-}
+export const updateSlackNotificationChannelSettings = organizationAction(
+	{
+		name: "notificationChannels.updateSlackSettings",
+		requires: "orgAdmin",
+		schema: notificationChannelSettingsSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("notificationChannels.updateSlackSettings", () =>
+				dbService.db
+					.update(slackWorkspaceConfig)
+					.set(input)
+					.where(eq(slackWorkspaceConfig.organizationId, organizationId)),
+			);
+			revalidatePath("/settings/slack");
+			revalidatePath("/settings/notification-channels");
+			return undefined;
+		}),
+);
 
-export async function getTeamsNotificationChannelConfig(): Promise<
-	ActionResult<NotificationChannelConfig | null>
-> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const config = await db.query.teamsTenantConfig.findFirst({
-		where: eq(teamsTenantConfig.organizationId, organizationId),
-	});
+export const updateDiscordNotificationChannelSettings = organizationAction(
+	{
+		name: "notificationChannels.updateDiscordSettings",
+		requires: "orgAdmin",
+		schema: notificationChannelSettingsSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("notificationChannels.updateDiscordSettings", () =>
+				dbService.db
+					.update(discordBotConfig)
+					.set(input)
+					.where(eq(discordBotConfig.organizationId, organizationId)),
+			);
+			revalidatePath("/settings/discord");
+			revalidatePath("/settings/notification-channels");
+			return undefined;
+		}),
+);
 
-	return { success: true, data: mapConfig(config, config?.tenantName) };
-}
-
-export async function updateSlackNotificationChannelSettings(
-	settings: NotificationChannelSettingsFormValues,
-): Promise<ActionResult<undefined>> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const validation = validateSettings(settings);
-
-	if (!validation.success) {
-		return validation;
-	}
-
-	await db
-		.update(slackWorkspaceConfig)
-		.set(validation.data)
-		.where(eq(slackWorkspaceConfig.organizationId, organizationId));
-	revalidatePath("/settings/slack");
-	revalidatePath("/settings/notification-channels");
-
-	return { success: true, data: undefined };
-}
-
-export async function updateDiscordNotificationChannelSettings(
-	settings: NotificationChannelSettingsFormValues,
-): Promise<ActionResult<undefined>> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const validation = validateSettings(settings);
-
-	if (!validation.success) {
-		return validation;
-	}
-
-	await db
-		.update(discordBotConfig)
-		.set(validation.data)
-		.where(eq(discordBotConfig.organizationId, organizationId));
-	revalidatePath("/settings/discord");
-	revalidatePath("/settings/notification-channels");
-
-	return { success: true, data: undefined };
-}
-
-export async function updateTeamsNotificationChannelSettings(
-	settings: NotificationChannelSettingsFormValues,
-): Promise<ActionResult<undefined>> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const validation = validateSettings(settings);
-
-	if (!validation.success) {
-		return validation;
-	}
-
-	await db
-		.update(teamsTenantConfig)
-		.set(validation.data)
-		.where(eq(teamsTenantConfig.organizationId, organizationId));
-	revalidatePath("/settings/teams-notifications");
-	revalidatePath("/settings/notification-channels");
-
-	return { success: true, data: undefined };
-}
+export const updateTeamsNotificationChannelSettings = organizationAction(
+	{
+		name: "notificationChannels.updateTeamsSettings",
+		requires: "orgAdmin",
+		schema: notificationChannelSettingsSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("notificationChannels.updateTeamsSettings", () =>
+				dbService.db
+					.update(teamsTenantConfig)
+					.set(input)
+					.where(eq(teamsTenantConfig.organizationId, organizationId)),
+			);
+			revalidatePath("/settings/teams-notifications");
+			revalidatePath("/settings/notification-channels");
+			return undefined;
+		}),
+);

@@ -196,7 +196,7 @@ beforeEach(() => {
 	});
 	mocks.email.mockResolvedValue(null);
 	mocks.secretStatus.mockResolvedValue({ connected: false });
-	mocks.templates.mockResolvedValue([{ key: "invite", override: null }]);
+	mocks.templates.mockResolvedValue({ success: true, data: [{ key: "invite", override: null }] });
 	mocks.keys.mockResolvedValue({ success: true, data: [{ id: "key-1" }] });
 	mocks.webhooks.mockResolvedValue([{ id: "webhook-1" }]);
 	mocks.auditConfig.mockResolvedValue({

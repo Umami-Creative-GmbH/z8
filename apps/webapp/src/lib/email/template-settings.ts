@@ -14,11 +14,6 @@ export interface SaveEmailTemplateInput {
 	isEnabled?: boolean;
 }
 
-export interface EmailTemplateActionResult {
-	success: boolean;
-	errors?: string[];
-}
-
 export interface EmailTemplateValidationResult {
 	success: boolean;
 	errors: string[];
