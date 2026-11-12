@@ -25,6 +25,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 	const { organizationActionStubLayer } = await import("@/test/organization-action");
 	const { ORGANIZATION_ABILITY_QUERY } = await import("@/lib/authorization/organization-ability");
 	const { defineAbilityFor } = await import("@/lib/authorization/ability");
+	const { DatabaseError } = await import("@/lib/effect/errors");
 	return runtimeModuleOver(
 		organizationActionStubLayer(() => mocks.caller, {
 			query: (name, fn) => {
@@ -34,7 +35,15 @@ vi.mock("@/lib/effect/runtime", async () => {
 				if (name === "employeeLifecycle.findNotOnCurrentRoster") {
 					return Effect.succeed([]) as never;
 				}
-				return Effect.promise(fn);
+				return Effect.tryPromise({
+					try: fn,
+					catch: (cause) =>
+						new DatabaseError({
+							message: `Database query failed: ${name}`,
+							operation: name,
+							cause,
+						}),
+				});
 			},
 		}),
 	);

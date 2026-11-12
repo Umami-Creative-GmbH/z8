@@ -31,22 +31,24 @@ export const saveDeputyDecisionsEnabledAction = organizationAction(
 				"You do not have permission to manage approval settings.",
 			);
 			const dbService = yield* DatabaseService;
-			const result = yield* Effect.tryPromise({
-				try: () =>
+			const result = yield* dbService
+				.query("approvalSettings.saveDeputyDecisionsEnabled", () =>
 					saveDeputyDecisionsEnabled(dbService.db, {
 						organizationId,
 						enabled: input.enabled,
 						actorUserId: actor.userId,
 					}),
-				catch: (error) => {
-					logger.error({ error }, "Failed to save the deputy decisions setting");
-					return new DatabaseError({
-						message: "Failed to save the setting",
-						operation: "approvalSettings.saveDeputyDecisionsEnabled",
-						cause: error,
-					});
-				},
-			});
+				)
+				.pipe(
+					Effect.mapError((error) => {
+						logger.error({ error: error.cause }, "Failed to save the deputy decisions setting");
+						return new DatabaseError({
+							message: "Failed to save the setting",
+							operation: "approvalSettings.saveDeputyDecisionsEnabled",
+							cause: error.cause,
+						});
+					}),
+				);
 			revalidatePath(APPROVAL_ESCALATION_PATH);
 			return { deputyDecisionsEnabled: result.deputyDecisionsEnabled };
 		}),

@@ -44,9 +44,17 @@ function failedWith(message: string) {
 export const getApprovalTriageSettingsAction = organizationAction(
 	{ name: "approvalTriageSettings.get", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		Effect.tryPromise({
-			try: () => getEffectiveApprovalTriagePolicy({ organizationId }),
-			catch: failedWith("Unable to load approval triage settings. Please try again."),
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService
+				.query("approvalTriageSettings.get", () =>
+					getEffectiveApprovalTriagePolicy({ organizationId }),
+				)
+				.pipe(
+					Effect.mapError((error) =>
+						failedWith("Unable to load approval triage settings. Please try again.")(error.cause),
+					),
+				);
 		}),
 );
 
@@ -55,16 +63,20 @@ export const saveApprovalTriageSettingsAction = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			const data = yield* Effect.tryPromise({
-				try: () =>
+			const data = yield* dbService
+				.query("approvalTriageSettings.save", () =>
 					saveApprovalTriageSettings(dbService.db, {
 						organizationId,
 						actorUserId: actor.userId,
 						staleAfterHours: input.staleAfterHours,
 						smallCorrectionMinutes: input.smallCorrectionMinutes,
 					}),
-				catch: failedWith("Unable to save approval triage settings. Please try again."),
-			});
+				)
+				.pipe(
+					Effect.mapError((error) =>
+						failedWith("Unable to save approval triage settings. Please try again.")(error.cause),
+					),
+				);
 			revalidatePath("/[locale]/(app)/settings/approval-policies", "page");
 			revalidatePath("/[locale]/(app)/approvals", "page");
 			revalidatePath("/[locale]/(app)/approvals/inbox", "page");

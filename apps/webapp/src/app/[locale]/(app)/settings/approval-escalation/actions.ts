@@ -34,6 +34,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import {
 	noInput,
@@ -54,16 +55,18 @@ function attempt<T>(
 	userMessage: string,
 	run: () => Promise<T>,
 ) {
-	return Effect.tryPromise({
-		try: run,
-		catch: (error) => {
-			logger.error({ error, organizationId }, logMessage);
-			return new DatabaseError({
-				message: userMessage,
-				operation: "approvalEscalation",
-				cause: error,
-			});
-		},
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		return yield* dbService.query("approvalEscalation", run).pipe(
+			Effect.mapError((error) => {
+				logger.error({ error: error.cause, organizationId }, logMessage);
+				return new DatabaseError({
+					message: userMessage,
+					operation: "approvalEscalation",
+					cause: error.cause,
+				});
+			}),
+		);
 	});
 }
 
