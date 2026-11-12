@@ -1,10 +1,6 @@
 import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import {
-	getEmployeeContext,
-	getEmployeeSettingsActorContext,
-} from "@/app/[locale]/(app)/settings/employees/employee-action-utils";
-import { getProjectSettingsActorContext } from "@/app/[locale]/(app)/settings/projects/project-scope";
+import { getEmployeeSettingsActorContext } from "@/app/[locale]/(app)/settings/employees/employee-action-utils";
 import { AuthServiceLive } from "@/lib/effect/services/auth.service";
 import {
 	DatabaseService,
@@ -57,7 +53,7 @@ vi.mock("@/db", () => ({
 import { db } from "@/db";
 
 describe("nonactive organization settings authorization", () => {
-	it.each([getEmployeeContext, getEmployeeSettingsActorContext])(
+	it.each([getEmployeeSettingsActorContext])(
 		"blocks the real actor helper before DB reads, but permits an open organization",
 		async (getActor) => {
 			mocks.query.mockClear();
@@ -83,28 +79,4 @@ describe("nonactive organization settings authorization", () => {
 			await expect(run("open")).resolves.toBeDefined();
 		},
 	);
-
-	it("blocks the real project actor helper before DB reads, but permits an open organization", async () => {
-		mocks.query.mockClear();
-		const database = Layer.succeed(DatabaseService, {
-			db,
-			query: (name, execute) => {
-				mocks.query(name);
-				return makeDatabaseService(db).query(name, execute);
-			},
-		});
-		const run = (organizationId: string) =>
-			Effect.runPromise(
-				getProjectSettingsActorContext({ organizationId }).pipe(
-					Effect.provide(AuthServiceLive),
-					Effect.provide(database),
-				),
-			);
-		await expect(run("locked")).rejects.toThrow("Not authenticated");
-		expect(mocks.query).toHaveBeenCalledTimes(1);
-		expect(mocks.query).toHaveBeenCalledWith(
-			"organizationAuthentication.session",
-		);
-		await expect(run("open")).resolves.toBeDefined();
-	});
 });

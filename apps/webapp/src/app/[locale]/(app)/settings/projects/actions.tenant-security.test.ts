@@ -6,10 +6,6 @@ const projectsSource = readFileSync(
 	fileURLToPath(new URL("./actions.ts", import.meta.url)),
 	"utf8",
 );
-const projectScopeSource = readFileSync(
-	fileURLToPath(new URL("./project-scope.ts", import.meta.url)),
-	"utf8",
-);
 const entryHelpersSource = readFileSync(
 	fileURLToPath(new URL("../../time-tracking/actions/entry-helpers.ts", import.meta.url)),
 	"utf8",
@@ -104,9 +100,6 @@ describe("project relationship tenant security", () => {
 		const assignedProjectsBody = functionBody(entryHelpersSource, "getAssignedProjectsWithHours");
 		expect(assignedProjectsBody).toContain(
 			"listEligibleProjects({ employeeId, teamId, organizationId })",
-		);
-		expect(projectScopeSource).toContain(
-			"const authorizedEmployeeRecord = membershipRecord ? employeeRecord : null",
 		);
 	});
 
