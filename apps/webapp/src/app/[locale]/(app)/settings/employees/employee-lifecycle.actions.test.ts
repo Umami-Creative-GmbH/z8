@@ -2,10 +2,11 @@ import { readFileSync } from "node:fs";
 import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { auth } from "@/lib/auth";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { DatabaseError } from "@/lib/effect/errors";
 import { DeactivationRequestConflictError } from "@/lib/employee-lifecycle/receipts";
@@ -93,16 +94,9 @@ vi.mock("@/lib/authorization/authorization-mutation", () => ({
 // The coordinated auth transaction (#314) is covered by auth-mutation-coordination
 // tests and the PostgreSQL suite; here it records that removal ran inside it.
 const coordination = vi.hoisted(() => ({ inside: false, removalsInside: 0 }));
-vi.mock("@/lib/auth", () => ({
-	auth: {
-		api: {
-			removeMember: (input: unknown) => {
-				if (coordination.inside) coordination.removalsInside += 1;
-				return mocks.authRemoveMember(input);
-			},
-		},
-	},
-	runAuthMutation: async (mutation: () => Promise<unknown>) => {
+vi.mock("@/lib/auth/auth-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/auth/auth-transaction")>()),
+	runCoordinatedAuthMutation: async (_context: unknown, mutation: () => Promise<unknown>) => {
 		coordination.inside = true;
 		try {
 			return await mutation();
@@ -158,6 +152,18 @@ import {
 	reactivateEmployeeAction,
 	removeEmployeeAccessAction,
 } from "./employee-lifecycle.actions";
+
+// The Better Auth call itself is the real `auth.api.removeMember`, replaced per test.
+beforeEach(() => {
+	vi.spyOn(auth.api, "removeMember").mockImplementation(((input: unknown) => {
+		if (coordination.inside) coordination.removalsInside += 1;
+		return mocks.authRemoveMember(input);
+	}) as never);
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 const actorUserId = "actor-user";
 // The stubbed session's email for the actor.
