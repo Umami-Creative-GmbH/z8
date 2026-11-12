@@ -23,7 +23,8 @@ export function refusalStep<Code extends string, T, Details extends object>(
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const outcome = yield* dbService.query(name, () =>
-			step(dbService.db).then(
+			// Async, so a refusal thrown before `step`'s first await is caught too.
+			(async () => step(dbService.db))().then(
 				(data): Outcome<T, Code, Details> => ({ refusal: null, data }),
 				(error: unknown): Outcome<T, Code, Details> => {
 					if (error instanceof refusal) return { refusal: error, data: null };
