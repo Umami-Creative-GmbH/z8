@@ -100,7 +100,14 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 const { getCustomFieldSection, getOwnCustomFieldValues } = await import(
 	"./value-actions"
 );
-const { updateEmployee, listEmployees } = await import("../employees/actions");
+const employeeActions = await import("../employees/actions");
+const { listEmployees } = employeeActions;
+/** The employee detail save, by employee, form values and custom field values. */
+const updateEmployee = (
+	employeeId: string,
+	data: Record<string, unknown>,
+	customFieldValues?: Record<string, unknown>,
+) => employeeActions.updateEmployee({ employeeId, data, customFieldValues });
 const { archiveProject, createProject, updateProject, getProjects } =
 	await import("../projects/actions");
 const { createProjectFromTemplate } = await import(

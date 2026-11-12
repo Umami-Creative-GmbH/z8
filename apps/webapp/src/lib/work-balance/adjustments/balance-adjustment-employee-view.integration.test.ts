@@ -359,7 +359,7 @@ describe("balance adjustments seen by employees and managers (#996)", () => {
 
 		expect(
 			await actions.getEmployeeWorkBalanceSectionAction({ employeeId: colleague.employeeId }),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, refusal: "not_permitted" });
 	});
 
 	it("shows managers the history of employees they manage, and of no one else", async () => {
@@ -376,7 +376,7 @@ describe("balance adjustments seen by employees and managers (#996)", () => {
 		expect(seen).not.toContain(someoneElses);
 		expect(
 			await actions.getEmployeeWorkBalanceSectionAction({ employeeId: colleague.employeeId }),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, refusal: "not_permitted" });
 
 		// Seeing is not recording.
 		expect(
@@ -387,7 +387,7 @@ describe("balance adjustments seen by employees and managers (#996)", () => {
 				minutes: 0,
 				reason: "Manager",
 			}),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, refusal: "not_permitted" });
 
 		actAs(admin.userId);
 		expect(

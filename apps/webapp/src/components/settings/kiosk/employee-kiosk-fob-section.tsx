@@ -102,7 +102,7 @@ export function KioskFobSection({
 
 			{active && (
 				<KioskFobRemoveControls
-					remove={() => removeEmployeeKioskFobAction(employeeId, active.fobId)}
+					remove={() => removeEmployeeKioskFobAction({ employeeId, expectedFobId: active.fobId })}
 					confirmText={t(
 						"settings.employees.kioskFob.confirmRemoveText",
 						"The fob stops working at kiosks at once and can be registered again. The employee's kiosk PIN and kiosk badge keep working.",

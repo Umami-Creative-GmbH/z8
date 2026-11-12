@@ -352,15 +352,15 @@ describe("opening balances on PostgreSQL", () => {
 	it("refuses a day after today in the employee's timezone", async () => {
 		expect(await setOpeningBalance({ day: today.add({ days: 1 }).toString() })).toMatchObject({
 			success: false,
-			code: "future_day",
+			refusal: "future_day",
 		});
 		expect(await setOpeningBalance({ reason: " " })).toMatchObject({
 			success: false,
-			code: "reason_required",
+			refusal: "reason_required",
 		});
 		expect(await setOpeningBalance({ minutes: 60 })).toMatchObject({
 			success: false,
-			code: "invalid_input",
+			refusal: "invalid_input",
 		});
 		// Today is allowed; the balance is then the opening balance alone.
 		expect(await setOpeningBalance({ day: today.toString(), hours: 3 })).toMatchObject({
@@ -384,7 +384,7 @@ describe("opening balances on PostgreSQL", () => {
 		for (const day of ["2025-10-31", "2025-06-30"]) {
 			expect(await payout(day)).toMatchObject({
 				success: false,
-				code: "before_opening_balance",
+				refusal: "before_opening_balance",
 			});
 		}
 		// The day after counts against the opening balance: 14h + 0h on 1 November.
@@ -408,12 +408,13 @@ describe("opening balances on PostgreSQL", () => {
 		expect(await setOpeningBalance({ day: "2025-11-01", hours: 5 })).toEqual({
 			success: false,
 			error: expect.any(String),
-			code: "conflicting_payouts",
-			conflictingPayouts: [firstPayout],
+			code: "ValidationError",
+			refusal: "conflicting_payouts",
+			details: { conflictingPayouts: [firstPayout] },
 		});
 		expect(await setOpeningBalance({ day: "2025-11-20", hours: 5 })).toMatchObject({
-			code: "conflicting_payouts",
-			conflictingPayouts: [firstPayout, secondPayout],
+			refusal: "conflicting_payouts",
+			details: { conflictingPayouts: [firstPayout, secondPayout] },
 		});
 		expect(await balanceMinutes()).toBe(840 + sinceOpeningDay - 120);
 
@@ -435,7 +436,7 @@ describe("opening balances on PostgreSQL", () => {
 		for (const userId of [manager.userId, member.userId]) {
 			expect(await setOpeningBalance({}, userId)).toMatchObject({
 				success: false,
-				code: "not_permitted",
+				refusal: "not_permitted",
 			});
 		}
 
@@ -454,7 +455,7 @@ describe("opening balances on PostgreSQL", () => {
 				minutes: 0,
 				reason: "Foreign",
 			}),
-		).toMatchObject({ success: false, code: "employee_not_found" });
+		).toMatchObject({ success: false, refusal: "employee_not_found" });
 		expect(await balanceMinutes()).toBe(fullBalance);
 	});
 

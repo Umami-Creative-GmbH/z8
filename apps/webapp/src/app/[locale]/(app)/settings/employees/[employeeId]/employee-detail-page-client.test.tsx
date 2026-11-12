@@ -399,7 +399,7 @@ describe("employee detail Team field (#1575)", () => {
 					expect.objectContaining({ teamId: "team-2", drivingLicencePreviewToken: token }),
 				),
 			);
-			expect(teamApi.preview).toHaveBeenCalledWith("employee-2", "team-2");
+			expect(teamApi.preview).toHaveBeenCalledWith({ employeeId: "employee-2", teamId: "team-2" });
 		} finally {
 			formSection.real = false;
 		}

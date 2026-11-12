@@ -220,7 +220,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				employeeId: fixture.employeeId,
 				trackingStartDate: "2026-05-17",
 			}),
-		).toMatchObject({ success: false, code: "invalid_input" });
+		).toMatchObject({ success: false, refusal: "invalid_input" });
 		expect(await saveDate()).toMatchObject({ success: true });
 		const removal = await previewDate(null);
 		expect(removal.employees[0]).toMatchObject({
@@ -245,7 +245,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 					employeeId: fixture.employeeId,
 					trackingStartDate: date,
 				}),
-			).toMatchObject({ success: false, code: "invalid_input" });
+			).toMatchObject({ success: false, refusal: "invalid_input" });
 		expect(
 			await actions.commitEmployeeTrackingDateAction({
 				employeeId: fixture.employeeId,
@@ -253,7 +253,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				fingerprint: "",
 				reason: "No review",
 			}),
-		).toMatchObject({ success: false, code: "invalid_input" });
+		).toMatchObject({ success: false, refusal: "invalid_input" });
 		await fixture.pool.query(
 			`update organization_tracking_settings set activated_at=null where organization_id=$1`,
 			[fixture.organizationId],
@@ -263,7 +263,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				employeeId: fixture.employeeId,
 				trackingStartDate: "2026-05-21",
 			}),
-		).toMatchObject({ success: false, code: "invalid_input" });
+		).toMatchObject({ success: false, refusal: "invalid_input" });
 	});
 
 	it("preserves the saved exception during organization edits and blocks dates that invalidate it", async () => {
@@ -337,7 +337,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				fingerprint: preview.fingerprint,
 				reason: "Later group",
 			}),
-		).toMatchObject({ success: false, code: "blocked" });
+		).toMatchObject({ success: false, refusal: "blocked" });
 		expect(await actions.getEmployeeTrackingDateAction(fixture.employeeId)).toMatchObject({
 			success: true,
 			data: { employeeTrackingStartDate: null },
@@ -418,7 +418,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				fingerprint: preview.fingerprint,
 				reason: "Different proposal",
 			}),
-		).toMatchObject({ success: false, code: "stale_preview" });
+		).toMatchObject({ success: false, refusal: "stale_preview" });
 		expect(await saveDate("2026-05-22")).toMatchObject({ success: true });
 		expect(
 			await actions.commitEmployeeTrackingDateAction({
@@ -427,7 +427,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				fingerprint: preview.fingerprint,
 				reason: "Stale review",
 			}),
-		).toMatchObject({ success: false, code: "stale_preview" });
+		).toMatchObject({ success: false, refusal: "stale_preview" });
 	});
 	it("scopes manager reads and refuses manager writes, foreign targets and revoked administrators", async () => {
 		const manager = await fixture.seedEmployee();
@@ -448,7 +448,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				employeeId: fixture.employeeId,
 				trackingStartDate: "2026-05-21",
 			}),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 		const unrelated = await fixture.seedEmployee();
 		expect(await actions.getEmployeeTrackingDateAction(unrelated.employeeId)).toMatchObject({
 			success: false,
@@ -465,7 +465,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				employeeId: foreign.employeeId,
 				trackingStartDate: "2026-05-21",
 			}),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, refusal: "not_permitted" });
 		const admin = await fixture.seedEmployee({ role: "admin" });
 		harness.userId = admin.userId;
 		const preview = await previewDate();
@@ -477,6 +477,6 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 				fingerprint: preview.fingerprint,
 				reason: "Revoked authority",
 			}),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 });

@@ -306,9 +306,12 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		).toBe("Lifecycle");
 		expect(
 			(
-				await updateEmployeeAction(manager.employeeId, {
+				await updateEmployeeAction({
+					employeeId: manager.employeeId,
+					data: {
 					firstName: "Renamed",
 					lastName: "Manager",
+					},
 				})
 			).success,
 		).toBe(true);
@@ -435,8 +438,11 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		state.organizationId = fixture.organizationId;
 		expect(
 			(
-				await updateEmployeeAction(manager.employeeId, {
+				await updateEmployeeAction({
+					employeeId: manager.employeeId,
+					data: {
 					firstName: "Organization A",
+					},
 				})
 			).success,
 		).toBe(true);

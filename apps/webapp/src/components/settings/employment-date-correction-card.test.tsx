@@ -55,7 +55,8 @@ describe("actual joining date review", () => {
 		});
 		mocks.commit.mockResolvedValue({
 			success: false,
-			code: "stale_preview",
+			code: "ValidationError",
+			refusal: "stale_preview",
 			error: "The reviewed employment or configuration changed. Generate a new preview.",
 		});
 		render(

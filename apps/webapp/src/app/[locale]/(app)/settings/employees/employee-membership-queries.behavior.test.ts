@@ -5,31 +5,38 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft } from "@/db/schema";
 import { DatabaseError } from "@/lib/effect/errors";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
 	ensureEmployeeProfiles: vi.fn(),
-	ensureTargetAccess: vi.fn(() => Effect.void),
-	getActor: vi.fn(),
+	caller: null as StubCaller | null,
+	dbService: null as null | ReturnType<typeof createDb>["dbService"],
 }));
 
 vi.mock("@/lib/auth/organization-member-provisioning", () => ({
 	ensureEmployeeProfilesForOrganizationMembers: mocks.ensureEmployeeProfiles,
 }));
 
-vi.mock("@/lib/effect/runtime", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/effect/runtime")>();
-	const { Layer } = await import("effect");
-	return { ...actual, AppLayer: Layer.empty };
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect } = await import("effect");
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db: new Proxy({}, { get: (_target, key) => Reflect.get(mocks.dbService?.db ?? {}, key) }),
+			query: (name, fn) =>
+				name === "organizationAction.managedScope"
+					? (Effect.succeed([[{ id: "employee-1" }], []]) as never)
+					: (mocks.dbService?.query(name, fn) as never),
+		}),
+	);
 });
-
-vi.mock("./employee-action-utils", () => ({
-	ensureSettingsActorCanAccessEmployeeTarget: mocks.ensureTargetAccess,
-	getEmployeeSettingsActorContext: mocks.getActor,
-}));
 
 import {
 	getEmployeeAction,
+	getEmployeesByIdsAction,
 	listEmployeesAction,
+	listEmployeesForSelectAction,
 } from "./employee-queries.actions";
 
 type EmployeeModel = {
@@ -120,12 +127,8 @@ function createDb(employees: EmployeeModel[], memberships: MemberModel[]) {
 			leftJoinLateral(query: { getSQL(): unknown }) {
 				const rendered = new PgDialect().sqlToQuery(query.getSQL() as never);
 				lateralQueries.push(rendered);
-				const isOrganizationScoped = rendered.sql.includes(
-					'"member"."organization_id" = $',
-				);
-				const isUserScoped = rendered.sql.includes(
-					'"member"."user_id" = "employee"."user_id"',
-				);
+				const isOrganizationScoped = rendered.sql.includes('"member"."organization_id" = $');
+				const isUserScoped = rendered.sql.includes('"member"."user_id" = "employee"."user_id"');
 				const approvedOnly = rendered.params.includes("approved");
 				const deterministic =
 					rendered.sql.includes('"member"."created_at" desc') &&
@@ -138,14 +141,12 @@ function createDb(employees: EmployeeModel[], memberships: MemberModel[]) {
 							.filter(
 								(membership) =>
 									(!isUserScoped || membership.userId === candidate.userId) &&
-									(!isOrganizationScoped ||
-										membership.organizationId === "org-1") &&
+									(!isOrganizationScoped || membership.organizationId === "org-1") &&
 									(!approvedOnly || membership.status === "approved"),
 							)
 							.toSorted((a, b) =>
 								deterministic
-									? b.createdAt.getTime() - a.createdAt.getTime() ||
-										b.id.localeCompare(a.id)
+									? b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id)
 									: 0,
 							);
 						return [`${candidate.organizationId}:${candidate.id}`, matches[0]];
@@ -206,8 +207,7 @@ function createDb(employees: EmployeeModel[], memberships: MemberModel[]) {
 		};
 		chain = new Proxy(Promise.resolve(undefined), {
 			get(_target, property) {
-				if (property === "then")
-					return Promise.resolve(rows).then.bind(Promise.resolve(rows));
+				if (property === "then") return Promise.resolve(rows).then.bind(Promise.resolve(rows));
 				return methods[property as keyof typeof methods];
 			},
 		});
@@ -239,8 +239,7 @@ function createDb(employees: EmployeeModel[], memberships: MemberModel[]) {
 			query: vi.fn((name: string, run: () => Promise<unknown>) =>
 				Effect.tryPromise({
 					try: run,
-					catch: (cause) =>
-						new DatabaseError({ message: name, operation: name, cause }),
+					catch: (cause) => new DatabaseError({ message: name, operation: name, cause }),
 				}),
 			),
 		},
@@ -252,17 +251,22 @@ function createDb(employees: EmployeeModel[], memberships: MemberModel[]) {
 
 function setActor(
 	dbService: ReturnType<typeof createDb>["dbService"],
-	accessTier: "orgAdmin" | "manager" = "orgAdmin",
+	accessTier: "orgAdmin" | "manager" | "member" = "orgAdmin",
 ) {
-	mocks.getActor.mockReturnValue(
-		Effect.succeed({
-			accessTier,
-			organizationId: "org-1",
-			currentEmployee: null,
-			session: { user: { id: "admin-1", email: "admin@example.com" } },
-			dbService,
-		}),
-	);
+	mocks.dbService = dbService;
+	mocks.caller = {
+		userId: "admin-1",
+		activeOrganizationId: "org-1",
+		membershipRole: accessTier === "orgAdmin" ? "admin" : "member",
+		employee:
+			accessTier === "orgAdmin"
+				? null
+				: {
+						id: "caller-employee",
+						role: accessTier === "manager" ? "manager" : "employee",
+						former: false,
+					},
+	};
 }
 
 describe("employee membership queries", () => {
@@ -308,7 +312,7 @@ describe("employee membership queries", () => {
 		]);
 		setActor(fake.dbService);
 
-		const result = await listEmployeesAction();
+		const result = await listEmployeesAction({});
 
 		expect(result).toMatchObject({
 			success: true,
@@ -359,10 +363,7 @@ describe("employee membership queries", () => {
 
 	it("returns drafts with null membership", async () => {
 		const source = await import("node:fs").then(({ readFileSync }) =>
-			readFileSync(
-				new URL("./employee-queries.actions.ts", import.meta.url),
-				"utf8",
-			),
+			readFileSync(new URL("./employee-queries.actions.ts", import.meta.url), "utf8"),
 		);
 		expect(source).toContain("membership: null");
 	});
@@ -402,14 +403,9 @@ describe("employee membership queries", () => {
 			success: true,
 			data: { userId: "user-1", membership: { id: "member-1" } },
 		});
-		for (const predicate of [
-			...fake.employeePredicates,
-			...fake.detailPredicates,
-		]) {
+		for (const predicate of [...fake.employeePredicates, ...fake.detailPredicates]) {
 			const query = new PgDialect().sqlToQuery(predicate as never);
-			expect(query.params).toEqual(
-				expect.arrayContaining(["employee-1", "org-1"]),
-			);
+			expect(query.params).toEqual(expect.arrayContaining(["employee-1", "org-1"]));
 		}
 	});
 
@@ -440,25 +436,74 @@ describe("employee membership queries", () => {
 	it.each([
 		{ accessTier: "orgAdmin" as const, birthday: new Date("1990-05-01T00:00:00.000Z") },
 		{ accessTier: "manager" as const, birthday: null },
-	])("lists the birthday $birthday for the $accessTier (#1579)", async ({ accessTier, birthday }) => {
+	])(
+		"lists the birthday $birthday for the $accessTier (#1579)",
+		async ({ accessTier, birthday }) => {
+			const fake = createDb(
+				[
+					{
+						id: "employee-1",
+						organizationId: "org-1",
+						userId: "user-1",
+						isActive: true,
+						birthday: new Date("1990-05-01T00:00:00.000Z"),
+					},
+				],
+				[],
+			);
+			setActor(fake.dbService, accessTier);
+
+			const result = await listEmployeesAction({});
+
+			expect(result.success && result.data.employees.map((row) => row.birthday)).toEqual([
+				birthday,
+			]);
+		},
+	);
+
+	it("refuses an org member, one level below scoped manager, every query", async () => {
 		const fake = createDb(
-			[
-				{
-					id: "employee-1",
-					organizationId: "org-1",
-					userId: "user-1",
-					isActive: true,
-					birthday: new Date("1990-05-01T00:00:00.000Z"),
-				},
-			],
+			[{ id: "employee-1", organizationId: "org-1", userId: "user-1", isActive: true }],
 			[],
 		);
-		setActor(fake.dbService, accessTier);
+		setActor(fake.dbService, "member");
 
-		const result = await listEmployeesAction();
+		for (const result of [
+			await listEmployeesAction({}),
+			await getEmployeeAction("employee-1"),
+			await listEmployeesForSelectAction({}),
+			await getEmployeesByIdsAction(["employee-1"]),
+		]) {
+			expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		}
+		expect(fake.dbService.query).not.toHaveBeenCalled();
+	});
 
-		expect(result.success && result.data.employees.map((row) => row.birthday)).toEqual([
-			birthday,
-		]);
+	it("lists only the scoped manager's managed employees", async () => {
+		const fake = createDb(
+			[{ id: "employee-1", organizationId: "org-1", userId: "user-1", isActive: true }],
+			[],
+		);
+		setActor(fake.dbService, "manager");
+
+		await listEmployeesAction({});
+
+		const scoped = fake.employeePredicates.map(
+			(predicate) => new PgDialect().sqlToQuery(predicate as never).params,
+		);
+		expect(scoped.at(-1)).toEqual(expect.arrayContaining(["org-1", "employee-1"]));
+	});
+
+	it("refuses a scoped manager an employee they do not manage", async () => {
+		const fake = createDb(
+			[{ id: "employee-2", organizationId: "org-1", userId: "user-2", isActive: true }],
+			[],
+		);
+		setActor(fake.dbService, "manager");
+
+		await expect(getEmployeeAction("employee-2")).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
 	});
 });

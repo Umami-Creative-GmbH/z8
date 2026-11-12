@@ -26,8 +26,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { ServerActionResult } from "@/lib/effect/result";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import type { KioskPinActionResult } from "@/lib/time-tracking/kiosk/pin-errors";
 import { KioskBadgeSection } from "./employee-kiosk-badge-section";
 import { KioskFobSection } from "./employee-kiosk-fob-section";
 import { KIOSK_PIN_REFUSALS } from "./kiosk-pin-refusals";
@@ -133,7 +133,7 @@ function KioskPinSection({
 	const [shownPin, setShownPin] = useState<string | null>(null);
 	const [confirmingReset, setConfirmingReset] = useState(false);
 
-	const handleResult = <T,>(result: KioskPinActionResult<T>, onSuccess: (data: T) => void) => {
+	const handleResult = <T,>(result: ServerActionResult<T>, onSuccess: (data: T) => void) => {
 		if (result.success) {
 			onSuccess(result.data);
 			void onChanged();

@@ -85,7 +85,7 @@ export function useEmployeeDetailForm({
 			let drivingLicencePreviewToken: string | undefined;
 			if ("teamId" in payload) {
 				const previewToken = await confirmTeamChange(() =>
-					previewEmployeeTeamChange(employeeId, payload.teamId ?? null),
+					previewEmployeeTeamChange({ employeeId, teamId: payload.teamId ?? null }),
 				);
 				if (previewToken === null) return;
 				drivingLicencePreviewToken = previewToken;

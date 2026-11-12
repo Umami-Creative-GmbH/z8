@@ -19,9 +19,11 @@ import {
 	revokeEmployeeKioskBadgeAction,
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
 import { Button } from "@/components/ui/button";
-import type { KioskBadgeActionResult } from "@/lib/time-tracking/kiosk/badge-errors";
+import type { ServerActionResult } from "@/lib/effect/result";
+import type { KioskBadgeErrorCode } from "@/lib/time-tracking/kiosk/badge-errors";
 import { kioskBadgeErrorMessage } from "./kiosk-badge-error-message";
 import { kioskDateLabel, kioskDayLabel } from "./kiosk-date-labels";
+import { kioskRefusalCode } from "./kiosk-refusal-code";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -101,11 +103,12 @@ export function KioskBadgeSection({
 		return () => URL.revokeObjectURL(issued.url);
 	}, [issued]);
 
-	const refused = <T,>(result: KioskBadgeActionResult<T>) => {
+	const refused = <T,>(result: ServerActionResult<T>) => {
 		if (result.success) return false;
-		toast.error(kioskBadgeErrorMessage(t, result.code));
+		const code = kioskRefusalCode<KioskBadgeErrorCode>(result);
+		toast.error(kioskBadgeErrorMessage(t, code));
 		// Someone else changed the badge: show what is true now.
-		if (result.code === "badge_changed") void onChanged();
+		if (code === "badge_changed") void onChanged();
 		return true;
 	};
 	const failed = () => toast.error(kioskBadgeErrorMessage(t, "failed"));
@@ -116,7 +119,7 @@ export function KioskBadgeSection({
 		mutationFn: (kind: "issue" | "replace") =>
 			kind === "issue"
 				? issueEmployeeKioskBadgeAction(employeeId)
-				: replaceEmployeeKioskBadgeAction(employeeId, shownBadgeId),
+				: replaceEmployeeKioskBadgeAction({ employeeId, expectedBadgeId: shownBadgeId }),
 		onSuccess: (result) => {
 			setConfirming(null);
 			if (refused(result) || !result.success) return;
@@ -134,7 +137,7 @@ export function KioskBadgeSection({
 		forgetIssued();
 	}
 	const revokeMutation = useMutation({
-		mutationFn: () => revokeEmployeeKioskBadgeAction(employeeId, shownBadgeId),
+		mutationFn: () => revokeEmployeeKioskBadgeAction({ employeeId, expectedBadgeId: shownBadgeId }),
 		onSuccess: (result) => {
 			setConfirming(null);
 			if (refused(result)) return;

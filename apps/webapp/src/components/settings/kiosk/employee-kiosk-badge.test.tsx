@@ -124,7 +124,10 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Replace the badge" }));
 
 		expect(await screen.findByRole("link", { name: "Download PDF" })).toBeTruthy();
-		expect(actions.replaceEmployeeKioskBadgeAction).toHaveBeenCalledWith(employeeId, badgeId);
+		expect(actions.replaceEmployeeKioskBadgeAction).toHaveBeenCalledWith({
+			employeeId,
+			expectedBadgeId: badgeId,
+		});
 	});
 
 	it("revokes a badge after confirmation and keeps the PIN", async () => {
@@ -144,7 +147,10 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Revoke the badge" }));
 
 		await waitFor(() =>
-			expect(actions.revokeEmployeeKioskBadgeAction).toHaveBeenCalledWith(employeeId, badgeId),
+			expect(actions.revokeEmployeeKioskBadgeAction).toHaveBeenCalledWith({
+				employeeId,
+				expectedBadgeId: badgeId,
+			}),
 		);
 		await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith("Kiosk badge revoked"));
 		expect(screen.queryByRole("link", { name: "Download PDF" })).toBeNull();

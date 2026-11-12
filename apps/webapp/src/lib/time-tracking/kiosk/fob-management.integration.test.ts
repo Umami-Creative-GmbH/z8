@@ -64,9 +64,11 @@ vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
 
-const { getEmployeeKioskStateAction, removeEmployeeKioskFobAction } = await import(
-	"@/app/[locale]/(app)/settings/employees/kiosk-actions"
-);
+const kioskActions = await import("@/app/[locale]/(app)/settings/employees/kiosk-actions");
+const { getEmployeeKioskStateAction } = kioskActions;
+const removeEmployeeKioskFobAction = (employeeId: string, expectedFobId: string) =>
+	kioskActions.removeEmployeeKioskFobAction({ employeeId, expectedFobId });
+const { kioskRefusalCode } = await import("@/components/settings/kiosk/kiosk-refusal-code");
 const { getOwnKioskFobStatusAction, removeOwnKioskFobAction } = await import(
 	"@/app/[locale]/(app)/settings/security/kiosk-fob-actions"
 );
@@ -118,8 +120,13 @@ function signIn(userId: string, organizationId: string = org) {
 	session.current = { userId, organizationId };
 }
 
-/** The result's stable code: an `organizationAction` store refusal comes as `refusal`. */
+/** The result's stable code: a store refusal comes as `refusal`, settings access as the kiosk codes. */
 function codeOf(result: { success: boolean; code?: string; refusal?: string }) {
+	return result.success ? "success" : kioskRefusalCode(result);
+}
+
+/** The security page's own-fob actions: a store refusal as `refusal`, else the error tag. */
+function ownCodeOf(result: { success: boolean; code?: string; refusal?: string }) {
 	return result.success ? "success" : (result.refusal ?? result.code);
 }
 
@@ -493,8 +500,8 @@ describe("kiosk fob management on PostgreSQL", () => {
 			const coworkers = await register(ids.coworker, OTHER_SERIAL);
 
 			signIn(ids.workerUser);
-			expect(codeOf(await removeOwnKioskFobAction(coworkers.fobId))).toBe("fob_changed");
-			expect(codeOf(await removeOwnKioskFobAction(""))).toBe("fob_changed");
+			expect(ownCodeOf(await removeOwnKioskFobAction(coworkers.fobId))).toBe("fob_changed");
+			expect(ownCodeOf(await removeOwnKioskFobAction(""))).toBe("fob_changed");
 			expect(await fobHolder(OTHER_SERIAL)).toBe(ids.coworker);
 
 			expect(await removeOwnKioskFobAction(own.fobId)).toEqual({
@@ -503,8 +510,8 @@ describe("kiosk fob management on PostgreSQL", () => {
 			});
 			expect(await fobHolder()).toBeNull();
 			expect(await fobHolder(OTHER_SERIAL)).toBe(ids.coworker);
-			expect(codeOf(await removeOwnKioskFobAction(own.fobId))).toBe("fob_changed");
-			expect(codeOf(await removeOwnKioskFobAction(UNSEEN_FOB))).toBe("no_fob");
+			expect(ownCodeOf(await removeOwnKioskFobAction(own.fobId))).toBe("fob_changed");
+			expect(ownCodeOf(await removeOwnKioskFobAction(UNSEEN_FOB))).toBe("no_fob");
 
 			const stored = await pool.query(
 				"select ended_reason, ended_by_user_id from employee_kiosk_fob where id = $1",
@@ -529,16 +536,16 @@ describe("kiosk fob management on PostgreSQL", () => {
 
 			// The foreign owner signed into our organization has no membership here.
 			signIn(ids.foreignUser, org);
-			expect(codeOf(await getOwnKioskFobStatusAction())).toBe("AuthorizationError");
-			expect(codeOf(await removeOwnKioskFobAction(foreign.fobId))).toBe("AuthorizationError");
+			expect(ownCodeOf(await getOwnKioskFobStatusAction())).toBe("AuthorizationError");
+			expect(ownCodeOf(await removeOwnKioskFobAction(foreign.fobId))).toBe("AuthorizationError");
 			expect(await fobHolder(SERIAL, ids.otherOrganization)).toBe(ids.foreign);
 			expect(await fobHolder()).toBe(ids.worker);
 
 			await pool.query("update employee set is_active = false where id = $1", [ids.worker]);
 			signIn(ids.workerUser);
-			expect(codeOf(await getOwnKioskFobStatusAction())).toBe("AuthorizationError");
+			expect(ownCodeOf(await getOwnKioskFobStatusAction())).toBe("AuthorizationError");
 			session.current = null;
-			expect(codeOf(await removeOwnKioskFobAction(UNSEEN_FOB))).toBe("AuthenticationError");
+			expect(ownCodeOf(await removeOwnKioskFobAction(UNSEEN_FOB))).toBe("AuthenticationError");
 		});
 
 		it("says whether any kiosk of the organization reads fobs", async () => {

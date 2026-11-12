@@ -209,7 +209,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	const createEmploymentHistoryMutation = useMutation({
 		mutationFn: async (data: UpsertEmploymentHistory) =>
-			isDraft ? draftActionResult : createEmployeeEmploymentHistoryAction(employeeId, data),
+			isDraft ? draftActionResult : createEmployeeEmploymentHistoryAction({ employeeId, data }),
 		onSuccess: (result) => {
 			if (result.success) {
 				return invalidateDetail();
@@ -219,7 +219,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	const confirmEmploymentHistoryMutation = useMutation({
 		mutationFn: async (historyId: string) =>
-			isDraft ? draftActionResult : confirmEmployeeEmploymentHistoryAction(employeeId, historyId),
+			isDraft ? draftActionResult : confirmEmployeeEmploymentHistoryAction({ employeeId, historyId }),
 		onSuccess: (result) => {
 			if (result.success) {
 				return invalidateDetail();
@@ -229,7 +229,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	const cancelEmploymentHistoryMutation = useMutation({
 		mutationFn: async (historyId: string) =>
-			isDraft ? draftActionResult : cancelEmployeeEmploymentHistoryAction(employeeId, historyId),
+			isDraft ? draftActionResult : cancelEmployeeEmploymentHistoryAction({ employeeId, historyId }),
 		onSuccess: (result) => {
 			if (result.success) {
 				return invalidateDetail();
@@ -249,7 +249,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	const changeWageMutation = useMutation({
 		mutationFn: async (data: ChangeHourlyWage) =>
-			isDraft ? draftActionResult : changeEmployeeWageAction(employeeId, data),
+			isDraft ? draftActionResult : changeEmployeeWageAction({ employeeId, data }),
 		onSuccess: (result) => {
 			if (result.success) {
 				return invalidateDetail();
@@ -275,17 +275,16 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 
 			return employee?.kind === "invitationDraft"
-				? updateEmployeeInvitationDraft(employeeId, {
-						...data,
-						contractType,
-						hourlyRate,
+				? updateEmployeeInvitationDraft({
+						draftEmployeeId: employeeId,
+						data: { ...data, contractType, hourlyRate },
 					})
-				: updateEmployee(
+				: updateEmployee({
 						employeeId,
 						data,
 						customFieldValues,
-						drivingLicencePreviewToken ? { drivingLicencePreviewToken } : undefined,
-					);
+						...(drivingLicencePreviewToken ? { drivingLicencePreviewToken } : {}),
+					});
 		},
 		onSuccess: (result) => {
 			if (result.success) {

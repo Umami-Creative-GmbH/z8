@@ -6,8 +6,13 @@ import type { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import type { KioskFobActionResult } from "@/lib/time-tracking/kiosk/fob-errors";
+import type { ServerActionResult } from "@/lib/effect/result";
+import type {
+	KioskFobActionResult,
+	KioskFobManagementErrorCode,
+} from "@/lib/time-tracking/kiosk/fob-errors";
 import { kioskFobErrorMessage } from "./kiosk-fob-text";
+import { kioskRefusalCode } from "./kiosk-refusal-code";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -25,7 +30,10 @@ export function KioskFobRemoveControls({
 	onRefresh,
 	t,
 }: {
-	remove: () => Promise<KioskFobActionResult<{ removed: true }>>;
+	/** The employee page's `organizationAction`, or the security page's refusal action. */
+	remove: () => Promise<
+		ServerActionResult<{ removed: true }> | KioskFobActionResult<{ removed: true }>
+	>;
 	confirmText: string;
 	onRefresh: () => unknown;
 	t: Translate;
@@ -36,9 +44,10 @@ export function KioskFobRemoveControls({
 		onSuccess: (result) => {
 			setConfirming(false);
 			if (!result.success) {
-				toast.error(kioskFobErrorMessage(t, result.code));
+				const code = kioskRefusalCode<KioskFobManagementErrorCode>(result);
+				toast.error(kioskFobErrorMessage(t, code));
 				// Someone else changed the fob: show what is true now.
-				if (result.code === "fob_changed") void onRefresh();
+				if (code === "fob_changed") void onRefresh();
 				return;
 			}
 			toast.success(t("settings.kioskFob.removed", "Kiosk fob removed"));

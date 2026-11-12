@@ -19,7 +19,6 @@ const NOT_YET_MIGRATED = [
 	"billable-time",
 	"change-policies",
 	"custom-fields",
-	"employees",
 	"enterprise",
 	"holidays",
 	"vacation",

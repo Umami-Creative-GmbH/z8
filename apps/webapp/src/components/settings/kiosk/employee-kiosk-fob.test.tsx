@@ -111,7 +111,10 @@ describe("Kiosk fob on the employee page (#1508)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Remove the fob" }));
 
 		await waitFor(() =>
-			expect(actions.removeEmployeeKioskFobAction).toHaveBeenCalledWith(employeeId, fobId),
+			expect(actions.removeEmployeeKioskFobAction).toHaveBeenCalledWith({
+				employeeId,
+				expectedFobId: fobId,
+			}),
 		);
 		await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith("Kiosk fob removed"));
 		await waitFor(() => expect(actions.getEmployeeKioskStateAction).toHaveBeenCalledTimes(2));

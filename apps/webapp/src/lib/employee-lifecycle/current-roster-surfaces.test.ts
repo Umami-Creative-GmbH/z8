@@ -301,7 +301,7 @@ const HISTORY_VIEWS: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/employees/employee-queries.actions.ts",
-		functions: ["getEmployeesByIdsAction", "loadEmployeePage"],
+		functions: ["loadEmployeesByIds", "loadEmployeePage"],
 		note: "already-selected employees resolve, and the directory filters by the status asked for",
 	},
 ];
@@ -359,7 +359,7 @@ const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
 	},
 	{
 		file: "app/[locale]/(app)/settings/employees/selectable-employees.ts",
-		functions: ["loadSelectableEmployeePage"],
+		functions: ["selectableEmployeePage"],
 		note: "filters through employeeStatusCondition, current roster by default",
 	},
 	{

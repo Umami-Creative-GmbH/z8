@@ -444,7 +444,7 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 			]) {
 				expect(await action({ csv: file })).toMatchObject({
 					success: false,
-					code: "not_permitted",
+					refusal: "not_permitted",
 				});
 			}
 		}
