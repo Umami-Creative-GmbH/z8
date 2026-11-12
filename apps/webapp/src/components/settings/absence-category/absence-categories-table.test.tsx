@@ -142,7 +142,7 @@ describe("AbsenceCategoriesTable", () => {
 		fireEvent.click(await screen.findByText("Deactivate"));
 
 		await waitFor(() => expect(mocks.setAbsenceCategoryActive).toHaveBeenCalled());
-		expect(mocks.setAbsenceCategoryActive).toHaveBeenCalledWith("cat_1", false);
+		expect(mocks.setAbsenceCategoryActive).toHaveBeenCalledWith({ categoryId: "cat_1", isActive: false });
 		expect(mocks.updateAbsenceCategory).not.toHaveBeenCalled();
 		expect(mocks.toastSuccess).toHaveBeenCalledWith("Absence category deactivated");
 	});

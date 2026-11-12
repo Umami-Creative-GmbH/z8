@@ -242,7 +242,7 @@ function findOrganizationSetAssignment(organizationId: string, assignmentId: str
 	});
 }
 
-function ensureOrganizationCategoryIds(organizationId: string, categoryIds: string[]) {
+function refuseForeignCategoryIds(organizationId: string, categoryIds: string[]) {
 	return Effect.gen(function* () {
 		if (categoryIds.length === 0) {
 			return;
@@ -907,7 +907,7 @@ export const createWorkCategorySet = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const categoryIds = input.categoryIds ?? [];
-			yield* ensureOrganizationCategoryIds(organizationId, categoryIds);
+			yield* refuseForeignCategoryIds(organizationId, categoryIds);
 			const dbService = yield* DatabaseService;
 
 			// Check for existing set with same name
@@ -1139,7 +1139,7 @@ export const reorderSetCategories = organizationAction(
 			if (!scopedSet) {
 				return yield* notFound("work_category_set", setId, "Work category set not found");
 			}
-			yield* ensureOrganizationCategoryIds(organizationId, categoryIds);
+			yield* refuseForeignCategoryIds(organizationId, categoryIds);
 
 			const dbService = yield* DatabaseService;
 			yield* dbService.query("workCategorySet.reorderCategories", async () => {

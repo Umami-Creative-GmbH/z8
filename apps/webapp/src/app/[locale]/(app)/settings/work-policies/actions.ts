@@ -744,7 +744,7 @@ export const deleteWorkPolicy = organizationAction(
  * Fails unless the actor may set the policy of this employee: an org admin may
  * set anyone's, a scoped manager only their reports'.
  */
-function ensureManagesEmployee(actor: OrganizationActor, employeeId: string, action: string) {
+function refuseUnlessManaged(actor: OrganizationActor, employeeId: string, action: string) {
 	return Effect.gen(function* () {
 		const scope = yield* actor.managedScope();
 		if (scope.organizationWide || scope.employeeIds.has(employeeId)) return;
@@ -853,7 +853,7 @@ export const createWorkPolicyAssignment = organizationAction(
 
 			if (data.employeeId) {
 				yield* findEmployeeInOrganization(data.employeeId, organizationId);
-				yield* ensureManagesEmployee(actor, data.employeeId, "create");
+				yield* refuseUnlessManaged(actor, data.employeeId, "create");
 			}
 
 			const dbService = yield* DatabaseService;
@@ -935,7 +935,7 @@ export const deleteWorkPolicyAssignment = organizationAction(
 				yield* actor.require("orgAdmin");
 			}
 			if (assignment.employeeId) {
-				yield* ensureManagesEmployee(actor, assignment.employeeId, "delete");
+				yield* refuseUnlessManaged(actor, assignment.employeeId, "delete");
 			}
 
 			yield* dbService.query("deleteWorkPolicyAssignment", async () => {
@@ -1088,7 +1088,7 @@ function presetInputToInsertValues(organizationId: string, input: ParsedWorkPoli
 }
 
 /** Fails when the organization already has a preset of this name, archived ones included. */
-function ensurePresetNameIsFree(organizationId: string, name: string, presetId?: string) {
+function refuseDuplicatePresetName(organizationId: string, name: string, presetId?: string) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const duplicate = yield* dbService.query("checkDuplicatePreset", () =>
@@ -1278,7 +1278,7 @@ export const createWorkPolicyPreset = organizationAction(
 	{ name: "workPolicies.createPreset", requires: "orgAdmin", schema: workPolicyPresetInputSchema },
 	({ organizationId, input }) =>
 		Effect.gen(function* () {
-			yield* ensurePresetNameIsFree(organizationId, input.name);
+			yield* refuseDuplicatePresetName(organizationId, input.name);
 
 			const dbService = yield* DatabaseService;
 			const [createdPreset] = yield* dbService.query("createWorkPolicyPreset", () =>
@@ -1311,7 +1311,7 @@ export const updateWorkPolicyPreset = organizationAction(
 				return yield* presetNotFound(presetId);
 			}
 
-			yield* ensurePresetNameIsFree(organizationId, input.name, presetId);
+			yield* refuseDuplicatePresetName(organizationId, input.name, presetId);
 
 			yield* dbService.query("updateWorkPolicyPreset", async () => {
 				await dbService.db
@@ -1392,7 +1392,7 @@ export const copySystemWorkPolicyPreset = organizationAction(
 				return yield* presetNotFound(presetId);
 			}
 
-			yield* ensurePresetNameIsFree(organizationId, input.name);
+			yield* refuseDuplicatePresetName(organizationId, input.name);
 
 			const [createdPreset] = yield* dbService.query("copySystemWorkPolicyPreset", () =>
 				dbService.db

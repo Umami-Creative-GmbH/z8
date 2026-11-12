@@ -10,7 +10,7 @@ export function useVacationPolicyHistoryContext(
 	return useQuery({
 		queryKey: ["vacation-policy-history-context", organizationId],
 		queryFn: async () => {
-			const result = await getVacationPolicyHistoryContext(organizationId);
+			const result = await getVacationPolicyHistoryContext();
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

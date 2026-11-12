@@ -28,9 +28,9 @@ describe("EmployeeAllowancesContent timezone ownership", () => {
 		expect(source).not.toContain("new Date().getFullYear()");
 	});
 
-	it("keeps the allowance query scoped to the authorized organization and computed year", () => {
+	it("loads the allowances of the session organization for the computed year", () => {
 		expect(source).toContain(
-			"getEmployeesWithAllowances(organizationId, currentYear)",
+			"getEmployeesWithAllowances(currentYear)",
 		);
 	});
 });

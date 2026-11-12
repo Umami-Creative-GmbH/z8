@@ -4,7 +4,9 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
 import { Temporal } from "temporal-polyfill";
+import { z } from "zod";
 import type { db } from "@/db";
+import { user } from "@/db/auth-schema";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -19,10 +21,7 @@ import {
 import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
-import type {
-	VacationBalance,
-	VacationBalanceConfiguration,
-} from "@/lib/absences/types";
+import type { VacationBalance, VacationBalanceConfiguration } from "@/lib/absences/types";
 import {
 	loadManualVacationAdjustments,
 	loadVacationAdjustmentSums,
@@ -39,28 +38,12 @@ import {
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { calendarYearAt, systemClock } from "@/lib/datetime/temporal-core";
-import {
-	AuthorizationError,
-	ConflictError,
-	DatabaseError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
+import { ConflictError, DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import {
-	ensureSettingsActorCanAccessEmployeeTarget,
-	getEmployeeSettingsActorContext,
-	getManagedEmployeeIdsForSettingsActor,
-	getTargetEmployee,
-	requireOrgAdminEmployeeSettingsAccess,
-	requireSettingsActorEmployeeRecord,
-} from "../employees/employee-action-utils";
+import { findManagedEmployee } from "./managed-employee";
 
 export type AbsenceCategoryType =
 	| "home_office"
@@ -73,22 +56,82 @@ export type AbsenceCategoryType =
 	| "custom"
 	| "time_off_in_lieu";
 
-type AbsenceCategoryWriteData = {
-	type: AbsenceCategoryType;
-	name: string;
-	description?: string | null;
+const absenceCategoryTypeSchema = z.enum([
+	"home_office",
+	"sick",
+	"vacation",
+	"personal",
+	"unpaid",
+	"parental",
+	"bereavement",
+	"custom",
+	"time_off_in_lieu",
+]);
+
+const translationMapSchema = z.record(z.string(), z.string()).nullish();
+
+const absenceCategoryWriteSchema = z.object({
+	type: absenceCategoryTypeSchema,
+	name: z.string(),
+	description: z.string().nullish(),
+	nameTranslations: translationMapSchema,
+	descriptionTranslations: translationMapSchema,
+	requiresWorkTime: z.boolean(),
+	requiresApproval: z.boolean(),
+	countsAgainstVacation: z.boolean(),
+	/** Time off in lieu (#1000); false when omitted. */
+	drawsOnWorkBalance: z.boolean().optional(),
+	/** Absences of this category must name a deputy (#1011); off when left out. */
+	deputyRequired: z.boolean().optional(),
+	color: z.string().nullish(),
+	isActive: z.boolean().optional(),
+});
+
+type AbsenceCategoryWriteData = z.output<typeof absenceCategoryWriteSchema> & {
 	nameTranslations?: LocaleTranslationMap | null;
 	descriptionTranslations?: LocaleTranslationMap | null;
-	requiresWorkTime: boolean;
-	requiresApproval: boolean;
-	countsAgainstVacation: boolean;
-	/** Time off in lieu (#1000); false when omitted. */
-	drawsOnWorkBalance?: boolean;
-	/** Absences of this category must name a deputy (#1011); off when left out. */
-	deputyRequired?: boolean;
-	color?: string | null;
-	isActive?: boolean;
 };
+
+export type AbsenceCategoryInput = z.input<typeof absenceCategoryWriteSchema>;
+
+const policyFieldsSchema = {
+	name: z.string(),
+	validUntil: z.string().nullish(), // YYYY-MM-DD or null for ongoing
+	isCompanyDefault: z.boolean().optional(),
+	defaultAnnualDays: z.string(),
+	accrualType: z.enum(["annual", "monthly", "biweekly"]),
+	accrualStartMonth: z.number().int().optional(),
+	allowCarryover: z.boolean(),
+	maxCarryoverDays: z.string().optional(),
+	carryoverExpiryMonths: z.number().int().nullish(),
+	/** Prorate in start and exit year (#1109). */
+	prorateInStartAndExitYear: z.boolean().optional(),
+	/** Floor of the prorated allowance (#1109). */
+	statutoryMinimumDays: z.string().optional(),
+};
+
+const createVacationPolicySchema = z.object({
+	...policyFieldsSchema,
+	startDate: z.string(), // YYYY-MM-DD
+});
+
+const updateVacationPolicySchema = z.object({
+	policyId: z.string().min(1),
+	data: z.object({
+		...policyFieldsSchema,
+		startDate: z.string().optional(), // YYYY-MM-DD
+	}),
+});
+
+export type CreateVacationPolicyInput = z.input<typeof createVacationPolicySchema>;
+export type UpdateVacationPolicyInput = z.input<typeof updateVacationPolicySchema>["data"];
+
+const employeeYearSchema = z.object({
+	employeeId: z.string().min(1),
+	year: z.number().int(),
+});
+
+const idSchema = z.string().min(1);
 
 function normalizeOptionalText(value: string | null | undefined) {
 	const trimmed = value?.trim();
@@ -105,13 +148,10 @@ function normalizeTranslationMap(value: unknown) {
 	}
 
 	const entries = Object.entries(value).flatMap(([locale, translation]) => {
-		if (typeof locale !== "string" || typeof translation !== "string")
-			return [];
+		if (typeof locale !== "string" || typeof translation !== "string") return [];
 		const trimmedLocale = locale.trim();
 		const trimmedTranslation = translation.trim();
-		return trimmedLocale &&
-			trimmedTranslation &&
-			!isUnsafeTranslationKey(trimmedLocale)
+		return trimmedLocale && trimmedTranslation && !isUnsafeTranslationKey(trimmedLocale)
 			? [[trimmedLocale, trimmedTranslation] as const]
 			: [];
 	});
@@ -126,16 +166,13 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 		name,
 		description: normalizeOptionalText(data.description),
 		nameTranslations: normalizeTranslationMap(data.nameTranslations),
-		descriptionTranslations: normalizeTranslationMap(
-			data.descriptionTranslations,
-		),
+		descriptionTranslations: normalizeTranslationMap(data.descriptionTranslations),
 		drawsOnWorkBalance: data.drawsOnWorkBalance ?? false,
 		color: normalizeOptionalText(data.color),
 		// Sick leave never requires a deputy (#1011).
 		...(data.deputyRequired !== undefined || data.type === "sick"
 			? {
-					deputyRequired:
-						canRequireDeputy(data.type) && data.deputyRequired === true,
+					deputyRequired: canRequireDeputy(data.type) && data.deputyRequired === true,
 				}
 			: {}),
 	};
@@ -144,18 +181,11 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 const STATUTORY_MINIMUM_DAYS_MESSAGES = {
 	not_a_number: "The statutory minimum must be a number",
 	negative: "The statutory minimum cannot be negative",
-	above_annual_days:
-		"The statutory minimum cannot exceed the policy's annual days",
+	above_annual_days: "The statutory minimum cannot exceed the policy's annual days",
 } as const;
 
-function rejectInvalidStatutoryMinimumDays(
-	statutoryMinimumDays: string,
-	defaultAnnualDays: string,
-) {
-	const problem = checkStatutoryMinimumDays(
-		statutoryMinimumDays,
-		defaultAnnualDays,
-	);
+function rejectInvalidStatutoryMinimumDays(statutoryMinimumDays: string, defaultAnnualDays: string) {
+	const problem = checkStatutoryMinimumDays(statutoryMinimumDays, defaultAnnualDays);
 	if (!problem) return Effect.void;
 	return Effect.fail(
 		new ValidationError({
@@ -188,6 +218,18 @@ function rejectConflictingAbsenceCategoryRules(
 			details: { conflict },
 		}),
 	);
+}
+
+/** The category with its name and rules checked, ready to save. */
+function normalizedAbsenceCategory(data: AbsenceCategoryWriteData) {
+	return Effect.gen(function* () {
+		const normalized = normalizeAbsenceCategoryData(data);
+		if (!normalized.name) {
+			return yield* rejectBlankAbsenceCategoryName();
+		}
+		yield* rejectConflictingAbsenceCategoryRules(normalized);
+		return normalized;
+	});
 }
 
 type AbsenceCategoryReferenceQueryable =
@@ -236,345 +278,239 @@ function hasOperationalAbsenceCategoryChanges(
 	);
 }
 
-/**
- * Get a vacation policy by ID using Effect pattern
- */
-export async function getVacationPolicy(
-	policyId: string,
-): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getVacationPolicy:actor",
-		});
+function dbError(message: string, operation: string, table: string) {
+	return (cause: unknown) => new DatabaseError({ message, operation, table, cause });
+}
+
+function absenceCategoryNotFound(categoryId: string) {
+	return Effect.fail(
+		new NotFoundError({
+			message: "Absence category not found",
+			entityType: "absence_category",
+			entityId: categoryId,
+		}),
+	);
+}
+
+function policyNotFound(policyId: string) {
+	return Effect.fail(
+		new NotFoundError({ message: "Policy not found", entityType: "vacation_policy", entityId: policyId }),
+	);
+}
+
+function findPolicy(policyId: string, organizationId: string) {
+	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
-
-		const policy = yield* dbService.query("getVacationPolicy", async () => {
-			return await dbService.db.query.vacationAllowance.findFirst({
-				where: eq(vacationAllowance.id, policyId),
-				with: {
-					creator: true,
-				},
-			});
-		});
-
-		if (!policy) {
-			return null;
-		}
-
-		if (actor.organizationId !== policy.organizationId) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: actor.session.user.id,
-					resource: "vacation_policy",
-					action: "read",
-				}),
-			);
-		}
-
-		return policy;
+		return yield* dbService.query("getPolicy", () =>
+			dbService.db.query.vacationAllowance.findFirst({
+				where: and(
+					eq(vacationAllowance.id, policyId),
+					eq(vacationAllowance.organizationId, organizationId),
+				),
+			}),
+		);
 	});
-
-	return runServerActionSafe(effect);
 }
 
 /**
- * Get the current company default policy for an organization
+ * A vacation policy of the active organization; another organization's is not found (null).
  */
-export async function getCompanyDefaultVacationPolicy(
-	organizationId: string,
-): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getCompanyDefaultVacationPolicy:actor",
-		});
-
-		if (actor.organizationId !== organizationId) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: actor.session.user.id,
-					resource: "vacation_policy",
-					action: "read",
+export const getVacationPolicy = organizationAction(
+	{ name: "vacation.getPolicy", requires: "scopedManager", schema: idSchema },
+	({ organizationId, input: policyId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const policy = yield* dbService.query("getVacationPolicy", () =>
+				dbService.db.query.vacationAllowance.findFirst({
+					where: and(
+						eq(vacationAllowance.id, policyId),
+						eq(vacationAllowance.organizationId, organizationId),
+					),
+					with: { creator: true },
 				}),
 			);
-		}
+			return policy ?? null;
+		}),
+);
 
-		// Step 3: Get current company default policy
-		const dbService = yield* DatabaseService;
-
-		const policy = yield* dbService.query(
-			"getCompanyDefaultPolicy",
-			async () => {
-				// Get the active company default where startDate <= today and (validUntil is null or >= today)
-				return await dbService.db.query.vacationAllowance.findFirst({
+/**
+ * The active organization's current company default policy
+ */
+export const getCompanyDefaultVacationPolicy = organizationAction(
+	{ name: "vacation.companyDefaultPolicy", requires: "scopedManager", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const policy = yield* dbService.query("getCompanyDefaultPolicy", () =>
+				dbService.db.query.vacationAllowance.findFirst({
 					where: and(
 						eq(vacationAllowance.organizationId, organizationId),
 						eq(vacationAllowance.isCompanyDefault, true),
 						eq(vacationAllowance.isActive, true),
 					),
-					with: {
-						creator: true,
-					},
+					with: { creator: true },
 					orderBy: desc(vacationAllowance.startDate),
-				});
-			},
-		);
-
-		return policy || null;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Create vacation policy for an organization using Effect pattern
- */
-export async function createVacationPolicy(data: {
-	organizationId: string;
-	name: string;
-	startDate: string; // YYYY-MM-DD
-	validUntil?: string | null; // YYYY-MM-DD or null for ongoing
-	isCompanyDefault?: boolean;
-	defaultAnnualDays: string;
-	accrualType: "annual" | "monthly" | "biweekly";
-	accrualStartMonth?: number;
-	allowCarryover: boolean;
-	maxCarryoverDays?: string;
-	carryoverExpiryMonths?: number;
-	/** Prorate in start and exit year (#1109); on when omitted. */
-	prorateInStartAndExitYear?: boolean;
-	/** Floor of the prorated allowance (#1109); min(20, defaultAnnualDays) when omitted. */
-	statutoryMinimumDays?: string;
-}): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId: data.organizationId,
-			queryName: "createVacationPolicy:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "vacation_policy",
-			action: "create",
-		});
-
-		const statutoryMinimumDays =
-			data.statutoryMinimumDays ??
-			defaultStatutoryMinimumDays(data.defaultAnnualDays);
-		yield* rejectInvalidStatutoryMinimumDays(
-			statutoryMinimumDays,
-			data.defaultAnnualDays,
-		);
-
-		const dbService = yield* DatabaseService;
-
-		// Step 5: Create vacation policy
-		const [policy] = yield* dbService
-			.query("createVacationPolicy", async () => {
-				return await dbService.db.transaction(async (tx) => {
-					await acquireExclusiveOrganizationConfigurationGuard(
-						tx,
-						data.organizationId,
-					);
-					if (data.isCompanyDefault) {
-						const currentDefault = await tx.query.vacationAllowance.findFirst({
-							where: and(
-								eq(vacationAllowance.organizationId, data.organizationId),
-								eq(vacationAllowance.isCompanyDefault, true),
-								eq(vacationAllowance.isActive, true),
-							),
-						});
-						if (currentDefault && !currentDefault.validUntil) {
-							const validUntil = Temporal.PlainDate.from(data.startDate)
-								.subtract({ days: 1 })
-								.toString();
-							await tx
-								.update(vacationAllowance)
-								.set({ validUntil, isCompanyDefault: false })
-								.where(
-									and(
-										eq(vacationAllowance.id, currentDefault.id),
-										eq(vacationAllowance.organizationId, data.organizationId),
-									),
-								);
-						}
-					}
-					return await tx
-						.insert(vacationAllowance)
-						.values({
-							organizationId: data.organizationId,
-							name: data.name,
-							startDate: data.startDate,
-							validUntil: data.validUntil || null,
-							isCompanyDefault: data.isCompanyDefault || false,
-							isActive: true,
-							defaultAnnualDays: data.defaultAnnualDays,
-							accrualType: data.accrualType,
-							accrualStartMonth: data.accrualStartMonth,
-							allowCarryover: data.allowCarryover,
-							maxCarryoverDays: data.maxCarryoverDays,
-							carryoverExpiryMonths: data.carryoverExpiryMonths,
-							prorateInStartAndExitYear: data.prorateInStartAndExitYear ?? true,
-							statutoryMinimumDays,
-							createdBy: actor.session.user.id,
-						})
-						.returning();
-				});
-			})
-			.pipe(Effect.mapError(vacationPolicyWriteFailure));
-
-		revalidateTag(CACHE_TAGS.VACATION_POLICY(data.organizationId), "max");
-
-		return policy;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Update vacation policy using Effect pattern
- */
-export async function updateVacationPolicy(
-	policyId: string,
-	data: {
-		name: string;
-		startDate?: string; // YYYY-MM-DD
-		validUntil?: string | null;
-		isCompanyDefault?: boolean;
-		defaultAnnualDays: string;
-		accrualType: "annual" | "monthly" | "biweekly";
-		accrualStartMonth?: number;
-		allowCarryover: boolean;
-		maxCarryoverDays?: string;
-		carryoverExpiryMonths?: number;
-		/** Prorate in start and exit year (#1109); unchanged when omitted. */
-		prorateInStartAndExitYear?: boolean;
-		/** Floor of the prorated allowance (#1109); unchanged when omitted. */
-		statutoryMinimumDays?: string;
-	},
-): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "updateVacationPolicy:actor",
-		});
-		const dbService = yield* DatabaseService;
-
-		// Step 3: Get the policy in the actor's organization to check permissions
-		const policy = yield* dbService.query("getPolicy", async () => {
-			return await dbService.db.query.vacationAllowance.findFirst({
-				where: and(
-					eq(vacationAllowance.id, policyId),
-					eq(vacationAllowance.organizationId, actor.organizationId),
-				),
-			});
-		});
-
-		if (!policy) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Policy not found",
-					entityType: "vacation_policy",
-					entityId: policyId,
 				}),
 			);
-		}
+			return policy || null;
+		}),
+);
 
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "vacation_policy",
-			action: "update",
-		});
+/**
+ * Create a vacation policy in the active organization
+ */
+export const createVacationPolicy = organizationAction(
+	{ name: "vacation.createPolicy", requires: "orgAdmin", schema: createVacationPolicySchema },
+	({ actor, organizationId, input: data }) =>
+		Effect.gen(function* () {
+			const statutoryMinimumDays =
+				data.statutoryMinimumDays ?? defaultStatutoryMinimumDays(data.defaultAnnualDays);
+			yield* rejectInvalidStatutoryMinimumDays(statutoryMinimumDays, data.defaultAnnualDays);
 
-		// The stored statutory minimum must still fit when only the annual days change.
-		yield* rejectInvalidStatutoryMinimumDays(
-			data.statutoryMinimumDays ?? policy.statutoryMinimumDays,
-			data.defaultAnnualDays,
-		);
-
-		// Step 6: Update vacation policy
-		const [updated] = yield* dbService
-			.query("updateVacationPolicy", async () => {
-				return await dbService.db.transaction(async (tx) => {
-					await acquireExclusiveOrganizationConfigurationGuard(
-						tx,
-						policy.organizationId,
-					);
-					const timezone = await loadOrganizationTimezone(
-						tx,
-						policy.organizationId,
-					);
-					const today = Temporal.Now.plainDateISO(timezone).toString();
-					const effectiveStart = data.startDate ?? policy.startDate;
-					const effectiveDate = effectiveStart > today ? effectiveStart : today;
-					await tx.execute(
-						sql`select set_config('z8.vacation_effective_date',${effectiveDate},true)`,
-					);
-					if (data.isCompanyDefault && !policy.isCompanyDefault) {
-						await tx
-							.update(vacationAllowance)
-							.set({ isCompanyDefault: false })
-							.where(
-								and(
-									eq(vacationAllowance.organizationId, policy.organizationId),
+			const dbService = yield* DatabaseService;
+			const [policy] = yield* dbService
+				.query("createVacationPolicy", () =>
+					dbService.db.transaction(async (tx) => {
+						await acquireExclusiveOrganizationConfigurationGuard(tx, organizationId);
+						if (data.isCompanyDefault) {
+							const currentDefault = await tx.query.vacationAllowance.findFirst({
+								where: and(
+									eq(vacationAllowance.organizationId, organizationId),
 									eq(vacationAllowance.isCompanyDefault, true),
 									eq(vacationAllowance.isActive, true),
 								),
-							);
-					}
-					return await tx
-						.update(vacationAllowance)
-						.set({
-							name: data.name,
-							startDate: data.startDate,
-							validUntil: data.validUntil,
-							isCompanyDefault: data.isCompanyDefault,
-							defaultAnnualDays: data.defaultAnnualDays,
-							accrualType: data.accrualType,
-							accrualStartMonth: data.accrualStartMonth,
-							allowCarryover: data.allowCarryover,
-							maxCarryoverDays: data.maxCarryoverDays,
-							carryoverExpiryMonths: data.carryoverExpiryMonths,
-							prorateInStartAndExitYear: data.prorateInStartAndExitYear,
-							statutoryMinimumDays: data.statutoryMinimumDays,
-						})
-						.where(
-							and(
-								eq(vacationAllowance.id, policyId),
-								eq(vacationAllowance.organizationId, policy.organizationId),
-							),
-						)
-						.returning();
-				});
-			})
-			.pipe(Effect.mapError(vacationPolicyWriteFailure));
+							});
+							if (currentDefault && !currentDefault.validUntil) {
+								const validUntil = Temporal.PlainDate.from(data.startDate)
+									.subtract({ days: 1 })
+									.toString();
+								await tx
+									.update(vacationAllowance)
+									.set({ validUntil, isCompanyDefault: false })
+									.where(
+										and(
+											eq(vacationAllowance.id, currentDefault.id),
+											eq(vacationAllowance.organizationId, organizationId),
+										),
+									);
+							}
+						}
+						return await tx
+							.insert(vacationAllowance)
+							.values({
+								organizationId,
+								name: data.name,
+								startDate: data.startDate,
+								validUntil: data.validUntil || null,
+								isCompanyDefault: data.isCompanyDefault || false,
+								isActive: true,
+								defaultAnnualDays: data.defaultAnnualDays,
+								accrualType: data.accrualType,
+								accrualStartMonth: data.accrualStartMonth,
+								allowCarryover: data.allowCarryover,
+								maxCarryoverDays: data.maxCarryoverDays,
+								carryoverExpiryMonths: data.carryoverExpiryMonths,
+								prorateInStartAndExitYear: data.prorateInStartAndExitYear ?? true,
+								statutoryMinimumDays,
+								createdBy: actor.userId,
+							})
+							.returning();
+					}),
+				)
+				.pipe(Effect.mapError(vacationPolicyWriteFailure));
 
-		revalidateTag(CACHE_TAGS.VACATION_POLICY(policy.organizationId), "max");
+			revalidateTag(CACHE_TAGS.VACATION_POLICY(organizationId), "max");
 
-		return updated;
-	});
-
-	return runServerActionSafe(effect);
-}
+			return policy;
+		}),
+);
 
 /**
- * Get all employees with their vacation allowances using Effect pattern
+ * Update a vacation policy of the active organization
  */
-export async function getEmployeesWithAllowances(
-	organizationId: string,
-	year: number,
-): Promise<ServerActionResult<any[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getEmployeesWithAllowances:actor",
-		});
-		const dbService = yield* DatabaseService;
-		const managedEmployeeIds =
-			yield* getManagedEmployeeIdsForSettingsActor(actor);
-		const employees = yield* dbService.query(
-			"getEmployeesWithAllowances",
-			async () => {
+export const updateVacationPolicy = organizationAction(
+	{ name: "vacation.updatePolicy", requires: "orgAdmin", schema: updateVacationPolicySchema },
+	({ organizationId, input: { policyId, data } }) =>
+		Effect.gen(function* () {
+			const policy = yield* findPolicy(policyId, organizationId);
+			if (!policy) {
+				return yield* policyNotFound(policyId);
+			}
+
+			// The stored statutory minimum must still fit when only the annual days change.
+			yield* rejectInvalidStatutoryMinimumDays(
+				data.statutoryMinimumDays ?? policy.statutoryMinimumDays,
+				data.defaultAnnualDays,
+			);
+
+			const dbService = yield* DatabaseService;
+			const [updated] = yield* dbService
+				.query("updateVacationPolicy", () =>
+					dbService.db.transaction(async (tx) => {
+						await acquireExclusiveOrganizationConfigurationGuard(tx, organizationId);
+						const timezone = await loadOrganizationTimezone(tx, organizationId);
+						const today = Temporal.Now.plainDateISO(timezone).toString();
+						const effectiveStart = data.startDate ?? policy.startDate;
+						const effectiveDate = effectiveStart > today ? effectiveStart : today;
+						await tx.execute(
+							sql`select set_config('z8.vacation_effective_date',${effectiveDate},true)`,
+						);
+						if (data.isCompanyDefault && !policy.isCompanyDefault) {
+							await tx
+								.update(vacationAllowance)
+								.set({ isCompanyDefault: false })
+								.where(
+									and(
+										eq(vacationAllowance.organizationId, organizationId),
+										eq(vacationAllowance.isCompanyDefault, true),
+										eq(vacationAllowance.isActive, true),
+									),
+								);
+						}
+						return await tx
+							.update(vacationAllowance)
+							.set({
+								name: data.name,
+								startDate: data.startDate,
+								validUntil: data.validUntil,
+								isCompanyDefault: data.isCompanyDefault,
+								defaultAnnualDays: data.defaultAnnualDays,
+								accrualType: data.accrualType,
+								accrualStartMonth: data.accrualStartMonth,
+								allowCarryover: data.allowCarryover,
+								maxCarryoverDays: data.maxCarryoverDays,
+								carryoverExpiryMonths: data.carryoverExpiryMonths,
+								prorateInStartAndExitYear: data.prorateInStartAndExitYear,
+								statutoryMinimumDays: data.statutoryMinimumDays,
+							})
+							.where(
+								and(
+									eq(vacationAllowance.id, policyId),
+									eq(vacationAllowance.organizationId, organizationId),
+								),
+							)
+							.returning();
+					}),
+				)
+				.pipe(Effect.mapError(vacationPolicyWriteFailure));
+
+			revalidateTag(CACHE_TAGS.VACATION_POLICY(organizationId), "max");
+
+			return updated;
+		}),
+);
+
+/**
+ * The active organization's employees with their vacation allowances and
+ * balances for a year; a scoped manager sees their reports.
+ */
+export const getEmployeesWithAllowances = organizationAction(
+	{ name: "vacation.employeesWithAllowances", requires: "scopedManager", schema: z.number().int() },
+	({ actor, organizationId, input: year }) =>
+		Effect.gen(function* () {
+			const scope = yield* actor.managedScope();
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("getEmployeesWithAllowances", async () => {
 				const records = await dbService.db.query.employee.findMany({
 					where: eq(employee.organizationId, organizationId),
 					with: {
@@ -585,66 +521,48 @@ export async function getEmployeesWithAllowances(
 						},
 					},
 				});
-				const visible = managedEmployeeIds
-					? records.filter((employeeRecord) =>
-							managedEmployeeIds.has(employeeRecord.id),
-						)
-					: records;
+				const visible = scope.organizationWide
+					? records
+					: records.filter((employeeRecord) => scope.employeeIds.has(employeeRecord.id));
 				// The same server-side balance as the employee's Absences page (#1111).
-				const { balances, adjustments, configurations, policies } =
-					await loadVacationBalances(dbService.db, {
+				const { balances, adjustments, configurations, policies } = await loadVacationBalances(
+					dbService.db,
+					{
 						organizationId,
 						employeeIds: visible.map((employeeRecord) => employeeRecord.id),
 						year,
-						timezone: await loadOrganizationTimezone(
-							dbService.db,
-							organizationId,
-						),
-					});
+						timezone: await loadOrganizationTimezone(dbService.db, organizationId),
+					},
+				);
 				return visible.map((employeeRecord) => {
 					const policy = policies.get(employeeRecord.id);
 					return {
 						...employeeRecord,
 						vacationBalance: balances.get(employeeRecord.id) ?? null,
-						vacationConfiguration:
-							configurations.get(employeeRecord.id) ?? null,
+						vacationConfiguration: configurations.get(employeeRecord.id) ?? null,
 						vacationPolicy: policy
-							? {
-									name: policy.name,
-									defaultAnnualDays: policy.defaultAnnualDays,
-								}
+							? { name: policy.name, defaultAnnualDays: policy.defaultAnnualDays }
 							: null,
 						// The balance's manual and accrual adjustments for the year (#1105, #1106).
 						vacationAdjustments: adjustments.get(employeeRecord.id) ?? null,
 					};
 				});
-			},
-		);
-
-		return employees;
-	});
-
-	return runServerActionSafe(effect);
-}
+			});
+		}),
+);
 
 /**
- * Get employee vacation allowance for a specific year using Effect pattern
+ * An employee's vacation allowance for a year
  */
-export async function getEmployeeAllowance(
-	employeeId: string,
-	year: number,
-): Promise<ServerActionResult<any | null>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getEmployeeAllowance:actor",
-		});
-		const dbService = yield* DatabaseService;
-
-		// Step 3: Get employee
-		const emp = yield* dbService
-			.query("getEmployee", async () => {
-				const e = await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
+export const getEmployeeAllowance = organizationAction(
+	{ name: "vacation.employeeAllowance", requires: "scopedManager", schema: employeeYearSchema },
+	({ actor, organizationId, input: { employeeId, year } }) =>
+		Effect.gen(function* () {
+			yield* findManagedEmployee(actor, organizationId, employeeId, "employee_allowance", "read");
+			const dbService = yield* DatabaseService;
+			const emp = yield* dbService.query("getEmployee", () =>
+				dbService.db.query.employee.findFirst({
+					where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 					with: {
 						user: true,
 						team: true,
@@ -652,424 +570,219 @@ export async function getEmployeeAllowance(
 							where: eq(employeeVacationAllowance.year, year),
 						},
 					},
-				});
-
-				if (!e) {
-					throw new Error("Employee not found");
-				}
-
-				return e;
-			})
-			.pipe(
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Employee not found",
-							entityType: "employee",
-							entityId: employeeId,
-						}),
-				),
+				}),
 			);
-
-		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
-			message: "Insufficient permissions",
-			resource: "employee_allowance",
-			action: "read",
-		});
-
-		return emp;
-	});
-
-	return runServerActionSafe(effect);
-}
+			if (!emp) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: employeeId,
+					}),
+				);
+			}
+			return emp;
+		}),
+);
 
 /**
- * Update employee vacation allowance using Effect pattern
+ * Update an employee's vacation allowance for a year
  */
-export async function updateEmployeeAllowance(
-	employeeId: string,
-	year: number,
-	data: {
-		customAnnualDays?: string;
-		customCarryoverDays?: string;
+export const updateEmployeeAllowance = organizationAction(
+	{
+		name: "vacation.updateEmployeeAllowance",
+		requires: "scopedManager",
+		schema: employeeYearSchema.extend({
+			data: z.object({
+				customAnnualDays: z.string().optional(),
+				customCarryoverDays: z.string().optional(),
+			}),
+		}),
 	},
-): Promise<ServerActionResult<typeof employeeVacationAllowance.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "updateEmployeeAllowance:actor",
-		});
-		const dbService = yield* DatabaseService;
+	({ actor, organizationId, input: { employeeId, year, data } }) =>
+		Effect.gen(function* () {
+			yield* findManagedEmployee(actor, organizationId, employeeId, "employee_allowance", "update");
+			const dbService = yield* DatabaseService;
 
-		const emp = yield* getTargetEmployee(
-			employeeId,
-			"updateEmployeeAllowance:getTargetEmployee",
-		);
-		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
-			message: "Insufficient permissions",
-			resource: "employee_allowance",
-			action: "update",
-		});
-
-		// Step 6: Check if allowance exists
-		const existing = yield* dbService.query(
-			"checkExistingAllowance",
-			async () => {
-				return await dbService.db.query.employeeVacationAllowance.findFirst({
+			const existing = yield* dbService.query("checkExistingAllowance", () =>
+				dbService.db.query.employeeVacationAllowance.findFirst({
 					where: and(
 						eq(employeeVacationAllowance.employeeId, employeeId),
 						eq(employeeVacationAllowance.year, year),
 					),
-				});
-			},
-		);
+				}),
+			);
 
-		// Step 7: Update or create allowance
-		const allowance = yield* dbService
-			.query("upsertEmployeeAllowance", async () => {
-				if (existing) {
-					// Update existing
-					const [updated] = await dbService.db
-						.update(employeeVacationAllowance)
-						.set({
+			return yield* dbService
+				.query("upsertEmployeeAllowance", async () => {
+					if (existing) {
+						const [updated] = await dbService.db
+							.update(employeeVacationAllowance)
+							.set({
+								customAnnualDays: data.customAnnualDays,
+								customCarryoverDays: data.customCarryoverDays,
+							})
+							.where(eq(employeeVacationAllowance.id, existing.id))
+							.returning();
+						return updated;
+					}
+
+					const [created] = await dbService.db
+						.insert(employeeVacationAllowance)
+						.values({
+							employeeId,
+							year,
 							customAnnualDays: data.customAnnualDays,
 							customCarryoverDays: data.customCarryoverDays,
 						})
-						.where(eq(employeeVacationAllowance.id, existing.id))
 						.returning();
-					return updated;
-				}
-
-				// Create new
-				const [created] = await dbService.db
-					.insert(employeeVacationAllowance)
-					.values({
-						employeeId,
-						year,
-						customAnnualDays: data.customAnnualDays,
-						customCarryoverDays: data.customCarryoverDays,
-					})
-					.returning();
-				return created;
-			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to update employee allowance",
-							operation: existing ? "update" : "insert",
-							table: "employee_vacation_allowance",
-							cause: error,
-						}),
-				),
-			);
-
-		return allowance;
-	});
-
-	return runServerActionSafe(effect);
-}
+					return created;
+				})
+				.pipe(
+					Effect.mapError(
+						dbError(
+							"Failed to update employee allowance",
+							existing ? "update" : "insert",
+							"employee_vacation_allowance",
+						),
+					),
+				);
+		}),
+);
 
 /**
- * Create a vacation adjustment for an employee
+ * Record a manual vacation adjustment for an employee; it names the acting
+ * employee, so the actor needs an employee record.
  */
-export async function createVacationAdjustmentAction(
-	employeeId: string,
-	year: number,
-	data: {
-		days: string;
-		reason: string;
+export const createVacationAdjustmentAction = organizationAction(
+	{
+		name: "vacation.createAdjustment",
+		requires: "scopedManager",
+		schema: employeeYearSchema.extend({
+			data: z.object({ days: z.string().min(1), reason: z.string() }),
+		}),
 	},
-): Promise<ServerActionResult<typeof vacationAdjustment.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "createVacationAdjustmentAction:actor",
-		});
-		const dbService = yield* DatabaseService;
+	({ actor, organizationId, input: { employeeId, year, data } }) =>
+		Effect.gen(function* () {
+			const adjustedBy = actor.employee?.id;
+			if (!adjustedBy) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee profile not found for vacation adjustment",
+						entityType: "employee",
+						entityId: actor.userId,
+					}),
+				);
+			}
+			yield* findManagedEmployee(actor, organizationId, employeeId, "vacation_adjustment", "create");
+			const dbService = yield* DatabaseService;
 
-		const emp = yield* getTargetEmployee(
-			employeeId,
-			"createVacationAdjustmentAction:getTargetEmployee",
-		);
-		const actorEmployee = yield* requireSettingsActorEmployeeRecord(actor, {
-			message: "Employee profile not found for vacation adjustment",
-			resource: "employee",
-			action: "create",
-		});
-		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
-			message: "Insufficient permissions",
-			resource: "vacation_adjustment",
-			action: "create",
-		});
+			const adjustment = yield* dbService
+				.query("createVacationAdjustment", async () => {
+					const [created] = await dbService.db
+						.insert(vacationAdjustment)
+						.values({
+							employeeId,
+							year,
+							days: data.days,
+							reason: data.reason,
+							kind: "manual",
+							adjustedBy,
+						})
+						.returning();
+					return created;
+				})
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to create vacation adjustment", "insert", "vacation_adjustment"),
+					),
+				);
 
-		// Step 6: Create the adjustment event
-		const adjustment = yield* dbService
-			.query("createVacationAdjustment", async () => {
-				const [created] = await dbService.db
-					.insert(vacationAdjustment)
-					.values({
-						employeeId,
+			const [actorUser] = yield* dbService.query("vacation.adjustmentActorEmail", () =>
+				dbService.db
+					.select({ email: user.email })
+					.from(user)
+					.where(eq(user.id, actor.userId))
+					.limit(1),
+			);
+			yield* Effect.promise(() =>
+				logAudit({
+					action: AuditAction.VACATION_ALLOWANCE_UPDATED,
+					actorId: actor.userId,
+					actorEmail: actorUser?.email,
+					targetId: employeeId,
+					targetType: "vacation",
+					organizationId,
+					employeeId,
+					timestamp: new Date(),
+					changes: { adjustmentDays: data.days },
+					metadata: {
 						year,
-						days: data.days,
 						reason: data.reason,
-						kind: "manual",
-						adjustedBy: actorEmployee.id,
-					})
-					.returning();
-				return created;
-			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to create vacation adjustment",
-							operation: "insert",
-							table: "vacation_adjustment",
-							cause: error,
-						}),
-				),
+						employeeId,
+						adjustmentId: adjustment.id,
+					},
+				}),
 			);
 
-		// Step 7: Log to central audit log
-		yield* Effect.promise(async () => {
-			await logAudit({
-				action: AuditAction.VACATION_ALLOWANCE_UPDATED,
-				actorId: actor.session.user.id,
-				actorEmail: actor.session.user.email,
-				targetId: employeeId,
-				targetType: "vacation",
-				organizationId: emp.organizationId,
-				employeeId: employeeId,
-				timestamp: new Date(),
-				changes: {
-					adjustmentDays: data.days,
-				},
-				metadata: {
-					year,
-					reason: data.reason,
-					employeeId: emp.id,
-					adjustmentId: adjustment.id,
-				},
-			});
-		});
-
-		return adjustment;
-	});
-
-	return runServerActionSafe(effect);
-}
+			return adjustment;
+		}),
+);
 
 /**
- * Get all vacation policies for an organization, ordered by startDate descending
+ * The active organization's vacation policies, newest start first
  */
-export async function getVacationPolicies(
-	organizationId: string,
-): Promise<ServerActionResult<(typeof vacationAllowance.$inferSelect)[]>> {
-	const effect = Effect.gen(function* () {
-		yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getVacationPolicies:actor",
-		});
-		const dbService = yield* DatabaseService;
-		const policies = yield* dbService.query("getVacationPolicies", async () => {
-			return await dbService.db.query.vacationAllowance.findMany({
-				where: and(
-					eq(vacationAllowance.organizationId, organizationId),
-					eq(vacationAllowance.isActive, true),
-				),
-				with: {
-					creator: true,
-				},
-				orderBy: (table, { desc: descOrder, asc }) => [
-					descOrder(table.startDate),
-					asc(table.name),
-				],
-			});
-		});
-
-		return policies;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function getAbsenceCategoriesForSettings(
-	organizationId: string,
-): Promise<ServerActionResult<(typeof absenceCategory.$inferSelect)[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getAbsenceCategoriesForSettings:actor",
-		});
-
-		if (actor.organizationId !== organizationId) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: actor.session.user.id,
-					resource: "absence_category",
-					action: "read",
+export const getVacationPolicies = organizationAction(
+	{ name: "vacation.listPolicies", requires: "scopedManager", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("getVacationPolicies", () =>
+				dbService.db.query.vacationAllowance.findMany({
+					where: and(
+						eq(vacationAllowance.organizationId, organizationId),
+						eq(vacationAllowance.isActive, true),
+					),
+					with: { creator: true },
+					orderBy: (table, { desc: descOrder, asc }) => [descOrder(table.startDate), asc(table.name)],
 				}),
 			);
-		}
+		}),
+);
 
-		const dbService = yield* DatabaseService;
-		return yield* dbService
-			.query("getAbsenceCategoriesForSettings", async () => {
-				return await dbService.db.query.absenceCategory.findMany({
-					where: eq(absenceCategory.organizationId, organizationId),
-					orderBy: (table, { desc: descOrder, asc }) => [
-						descOrder(table.isActive),
-						asc(table.name),
-						asc(table.createdAt),
-					],
-				});
-			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to fetch absence categories",
-							operation: "select",
-							table: "absence_category",
-							cause: error,
-						}),
-				),
-			);
-	});
+export const getAbsenceCategoriesForSettings = organizationAction(
+	{ name: "vacation.listAbsenceCategories", requires: "scopedManager", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService
+				.query("getAbsenceCategoriesForSettings", () =>
+					dbService.db.query.absenceCategory.findMany({
+						where: eq(absenceCategory.organizationId, organizationId),
+						orderBy: (table, { desc: descOrder, asc }) => [
+							descOrder(table.isActive),
+							asc(table.name),
+							asc(table.createdAt),
+						],
+					}),
+				)
+				.pipe(Effect.mapError(dbError("Failed to fetch absence categories", "select", "absence_category")));
+		}),
+);
 
-	return runServerActionSafe(effect);
-}
+export const createAbsenceCategory = organizationAction(
+	{ name: "vacation.createAbsenceCategory", requires: "orgAdmin", schema: absenceCategoryWriteSchema },
+	({ organizationId, input: data }) =>
+		Effect.gen(function* () {
+			const normalized = yield* normalizedAbsenceCategory(data);
 
-export async function createAbsenceCategory(
-	data: AbsenceCategoryWriteData & { organizationId: string },
-): Promise<ServerActionResult<typeof absenceCategory.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "createAbsenceCategory:actor",
-		});
-
-		if (actor.organizationId !== data.organizationId) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: actor.session.user.id,
-					resource: "absence_category",
-					action: "create",
-				}),
-			);
-		}
-
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "absence_category",
-			action: "create",
-		});
-
-		const normalized = normalizeAbsenceCategoryData(data);
-		if (!normalized.name) {
-			yield* rejectBlankAbsenceCategoryName();
-		}
-		yield* rejectConflictingAbsenceCategoryRules(normalized);
-
-		const dbService = yield* DatabaseService;
-		const [created] = yield* dbService
-			.query("createAbsenceCategory", async () => {
-				return await dbService.db
-					.insert(absenceCategory)
-					.values({
-						organizationId: data.organizationId,
-						type: normalized.type,
-						name: normalized.name,
-						description: normalized.description,
-						nameTranslations: normalized.nameTranslations,
-						descriptionTranslations: normalized.descriptionTranslations,
-						requiresWorkTime: normalized.requiresWorkTime,
-						requiresApproval: normalized.requiresApproval,
-						countsAgainstVacation: normalized.countsAgainstVacation,
-						drawsOnWorkBalance: normalized.drawsOnWorkBalance,
-						deputyRequired: normalized.deputyRequired ?? false,
-						color: normalized.color,
-						isActive: data.isActive ?? true,
-					})
-					.returning();
-			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to create absence category",
-							operation: "insert",
-							table: "absence_category",
-							cause: error,
-						}),
-				),
-			);
-
-		return created;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function updateAbsenceCategory(
-	categoryId: string,
-	data: AbsenceCategoryWriteData & { isActive: boolean },
-): Promise<ServerActionResult<typeof absenceCategory.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "updateAbsenceCategory:actor",
-		});
-		const dbService = yield* DatabaseService;
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "absence_category",
-			action: "update",
-		});
-
-		const normalized = normalizeAbsenceCategoryData(data);
-		if (!normalized.name) {
-			yield* rejectBlankAbsenceCategoryName();
-		}
-		yield* rejectConflictingAbsenceCategoryRules(normalized);
-
-		const updateResult = yield* dbService
-			.query("updateAbsenceCategory", async () => {
-				return await dbService.db.transaction(async (tx) => {
-					await acquireExclusiveOrganizationConfigurationGuard(
-						tx,
-						actor.organizationId,
-					);
-					const [category] = await tx
-						.select()
-						.from(absenceCategory)
-						.where(
-							and(
-								eq(absenceCategory.id, categoryId),
-								eq(absenceCategory.organizationId, actor.organizationId),
-							),
-						)
-						.for("update");
-
-					if (!category) {
-						return { type: "not_found" as const };
-					}
-
-					const hasAbsenceReferences =
-						await hasAbsenceCategoryAbsenceReferences(
-							tx,
-							category.id,
-							actor.organizationId,
-						);
-
-					if (
-						hasAbsenceReferences &&
-						hasOperationalAbsenceCategoryChanges(category, normalized)
-					) {
-						return { type: "conflict" as const };
-					}
-
-					const [updated] = await tx
-						.update(absenceCategory)
-						.set({
+			const dbService = yield* DatabaseService;
+			const [created] = yield* dbService
+				.query("createAbsenceCategory", () =>
+					dbService.db
+						.insert(absenceCategory)
+						.values({
+							organizationId,
 							type: normalized.type,
 							name: normalized.name,
 							description: normalized.description,
@@ -1079,428 +792,341 @@ export async function updateAbsenceCategory(
 							requiresApproval: normalized.requiresApproval,
 							countsAgainstVacation: normalized.countsAgainstVacation,
 							drawsOnWorkBalance: normalized.drawsOnWorkBalance,
-							// Changing it never affects existing absences until their deputy changes.
-							deputyRequired:
-								normalized.deputyRequired ?? category.deputyRequired,
+							deputyRequired: normalized.deputyRequired ?? false,
 							color: normalized.color,
-							isActive: data.isActive,
+							isActive: data.isActive ?? true,
 						})
-						.where(
-							and(
-								eq(absenceCategory.id, categoryId),
-								eq(absenceCategory.organizationId, actor.organizationId),
-							),
-						)
-						.returning();
+						.returning(),
+				)
+				.pipe(Effect.mapError(dbError("Failed to create absence category", "insert", "absence_category")));
 
-					if (!updated) {
-						return { type: "not_found" as const };
-					}
+			return created;
+		}),
+);
 
-					return { type: "updated" as const, category: updated };
-				});
-			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to update absence category",
-							operation: "update",
-							table: "absence_category",
-							cause: error,
-						}),
-				),
-			);
+export const updateAbsenceCategory = organizationAction(
+	{
+		name: "vacation.updateAbsenceCategory",
+		requires: "orgAdmin",
+		schema: z.object({
+			categoryId: z.string().min(1),
+			data: absenceCategoryWriteSchema.extend({ isActive: z.boolean() }),
+		}),
+	},
+	({ organizationId, input: { categoryId, data } }) =>
+		Effect.gen(function* () {
+			const normalized = yield* normalizedAbsenceCategory(data);
 
-		if (updateResult.type === "not_found") {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Absence category not found",
-					entityType: "absence_category",
-					entityId: categoryId,
-				}),
-			);
-		}
+			const dbService = yield* DatabaseService;
+			const updateResult = yield* dbService
+				.query("updateAbsenceCategory", () =>
+					dbService.db.transaction(async (tx) => {
+						await acquireExclusiveOrganizationConfigurationGuard(tx, organizationId);
+						const [category] = await tx
+							.select()
+							.from(absenceCategory)
+							.where(
+								and(
+									eq(absenceCategory.id, categoryId),
+									eq(absenceCategory.organizationId, organizationId),
+								),
+							)
+							.for("update");
 
-		if (updateResult.type === "conflict") {
-			return yield* Effect.fail(
-				new ConflictError({
-					message:
-						"This category is used by existing absences. Create a new category for different rules, or deactivate this one.",
-					conflictType: "absence_category_in_use",
-					details: { categoryId },
-				}),
-			);
-		}
+						if (!category) {
+							return { type: "not_found" as const };
+						}
 
-		return updateResult.category;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function setAbsenceCategoryActive(
-	categoryId: string,
-	isActive: boolean,
-): Promise<ServerActionResult<typeof absenceCategory.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "setAbsenceCategoryActive:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "absence_category",
-			action: "update",
-		});
-
-		const dbService = yield* DatabaseService;
-		const category = yield* dbService.query("getAbsenceCategory", async () => {
-			return await dbService.db.query.absenceCategory.findFirst({
-				where: and(
-					eq(absenceCategory.id, categoryId),
-					eq(absenceCategory.organizationId, actor.organizationId),
-				),
-			});
-		});
-		if (!category) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Absence category not found",
-					entityType: "absence_category",
-					entityId: categoryId,
-				}),
-			);
-		}
-
-		const [updated] = yield* dbService
-			.query("setAbsenceCategoryActive", async () => {
-				return await dbService.db
-					.update(absenceCategory)
-					.set({ isActive })
-					.where(
-						and(
-							eq(absenceCategory.id, categoryId),
-							eq(absenceCategory.organizationId, actor.organizationId),
-						),
-					)
-					.returning();
-			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to update absence category status",
-							operation: "update",
-							table: "absence_category",
-							cause: error,
-						}),
-				),
-			);
-
-		if (!updated) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Absence category not found",
-					entityType: "absence_category",
-					entityId: categoryId,
-				}),
-			);
-		}
-
-		return updated;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function deleteAbsenceCategory(
-	categoryId: string,
-): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "deleteAbsenceCategory:actor",
-		});
-		const dbService = yield* DatabaseService;
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "absence_category",
-			action: "delete",
-		});
-
-		const deleteResult = yield* dbService
-			.query("deleteAbsenceCategory", async () => {
-				return await dbService.db.transaction(async (tx) => {
-					const [category] = await tx
-						.select({ id: absenceCategory.id })
-						.from(absenceCategory)
-						.where(
-							and(
-								eq(absenceCategory.id, categoryId),
-								eq(absenceCategory.organizationId, actor.organizationId),
-							),
-						)
-						.for("update");
-
-					if (!category) {
-						return { type: "not_found" as const };
-					}
-
-					const hasAbsenceReferences =
-						await hasAbsenceCategoryAbsenceReferences(
+						const hasAbsenceReferences = await hasAbsenceCategoryAbsenceReferences(
 							tx,
 							category.id,
-							actor.organizationId,
+							organizationId,
 						);
 
-					if (hasAbsenceReferences) {
-						return {
-							type: "conflict" as const,
-							message:
-								"Deactivate this category instead because it is used by existing absences.",
-						};
-					}
+						if (hasAbsenceReferences && hasOperationalAbsenceCategoryChanges(category, normalized)) {
+							return { type: "conflict" as const };
+						}
 
-					const [referencedApprovalPolicyCondition] = await tx
-						.select({ id: approvalPolicyCondition.id })
-						.from(approvalPolicyCondition)
-						.where(
-							and(
-								eq(approvalPolicyCondition.absenceCategoryId, category.id),
-								eq(
-									approvalPolicyCondition.organizationId,
-									actor.organizationId,
+						const [updated] = await tx
+							.update(absenceCategory)
+							.set({
+								type: normalized.type,
+								name: normalized.name,
+								description: normalized.description,
+								nameTranslations: normalized.nameTranslations,
+								descriptionTranslations: normalized.descriptionTranslations,
+								requiresWorkTime: normalized.requiresWorkTime,
+								requiresApproval: normalized.requiresApproval,
+								countsAgainstVacation: normalized.countsAgainstVacation,
+								drawsOnWorkBalance: normalized.drawsOnWorkBalance,
+								// Changing it never affects existing absences until their deputy changes.
+								deputyRequired: normalized.deputyRequired ?? category.deputyRequired,
+								color: normalized.color,
+								isActive: data.isActive,
+							})
+							.where(
+								and(
+									eq(absenceCategory.id, categoryId),
+									eq(absenceCategory.organizationId, organizationId),
 								),
-							),
-						)
-						.limit(1);
+							)
+							.returning();
 
-					if (referencedApprovalPolicyCondition) {
-						return {
-							type: "conflict" as const,
-							message:
-								"Deactivate this category or remove dependent approval policies before deleting it.",
-						};
-					}
+						if (!updated) {
+							return { type: "not_found" as const };
+						}
 
-					const [referencedPayrollWageTypeMapping] = await tx
-						.select({ id: payrollWageTypeMapping.id })
-						.from(payrollWageTypeMapping)
-						.where(
-							and(
-								eq(payrollWageTypeMapping.absenceCategoryId, category.id),
-								eq(payrollWageTypeMapping.organizationId, actor.organizationId),
-							),
-						)
-						.limit(1);
+						return { type: "updated" as const, category: updated };
+					}),
+				)
+				.pipe(Effect.mapError(dbError("Failed to update absence category", "update", "absence_category")));
 
-					if (referencedPayrollWageTypeMapping) {
-						return {
-							type: "conflict" as const,
-							message:
-								"Deactivate this category or remove dependent payroll wage type mappings before deleting it.",
-						};
-					}
+			if (updateResult.type === "not_found") {
+				return yield* absenceCategoryNotFound(categoryId);
+			}
 
-					await tx
-						.delete(absenceCategory)
-						.where(
-							and(
-								eq(absenceCategory.id, categoryId),
-								eq(absenceCategory.organizationId, actor.organizationId),
-							),
-						);
-
-					return { type: "deleted" as const };
-				});
-			})
-			.pipe(
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to delete absence category",
-							operation: "delete",
-							table: "absence_category",
-							cause: error,
-						}),
-				),
-			);
-
-		if (deleteResult.type === "not_found") {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Absence category not found",
-					entityType: "absence_category",
-					entityId: categoryId,
-				}),
-			);
-		}
-
-		if (deleteResult.type === "conflict") {
-			yield* Effect.fail(
-				new ConflictError({
-					message: deleteResult.message,
-					conflictType: "absence_category_in_use",
-					details: { categoryId },
-				}),
-			);
-		}
-
-		return { id: categoryId };
-	});
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * @deprecated No longer needed - policies are now date-based, not year-based
- * Get available years for vacation policies in an organization
- */
-export async function getVacationPolicyYears(
-	_organizationId: string,
-): Promise<ServerActionResult<number[]>> {
-	// Return empty array - this function is deprecated
-	return { success: true, data: [] };
-}
-
-/**
- * Delete a vacation policy using Effect pattern (soft delete - sets isActive=false)
- */
-export async function deleteVacationPolicy(
-	policyId: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "deleteVacationPolicy:actor",
-		});
-		const dbService = yield* DatabaseService;
-
-		// Step 3: Get the policy in the actor's organization to check permissions
-		const policy = yield* dbService.query("getPolicy", async () => {
-			return await dbService.db.query.vacationAllowance.findFirst({
-				where: and(
-					eq(vacationAllowance.id, policyId),
-					eq(vacationAllowance.organizationId, actor.organizationId),
-				),
-			});
-		});
-
-		if (!policy) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Policy not found",
-					entityType: "vacation_policy",
-					entityId: policyId,
-				}),
-			);
-		}
-
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "vacation_policy",
-			action: "delete",
-		});
-
-		// Step 5: Prevent deleting the only active company default
-		if (policy.isCompanyDefault) {
-			// Check if there's another active company default
-			const otherDefaults = yield* dbService.query(
-				"checkOtherDefaults",
-				async () => {
-					return await dbService.db.query.vacationAllowance.findMany({
-						where: and(
-							eq(vacationAllowance.organizationId, policy.organizationId),
-							eq(vacationAllowance.isCompanyDefault, true),
-							eq(vacationAllowance.isActive, true),
-						),
-					});
-				},
-			);
-
-			if (otherDefaults.length <= 1) {
-				yield* Effect.fail(
+			if (updateResult.type === "conflict") {
+				return yield* Effect.fail(
 					new ConflictError({
 						message:
-							"Cannot delete the only company default policy. Set another policy as default first.",
-						conflictType: "last_company_default",
-						details: { policyId },
+							"This category is used by existing absences. Create a new category for different rules, or deactivate this one.",
+						conflictType: "absence_category_in_use",
+						details: { categoryId },
 					}),
 				);
 			}
-		}
 
-		// Step 6: Soft delete the policy (set isActive=false)
-		yield* dbService
-			.query("deleteVacationPolicy", async () => {
-				await dbService.db
-					.update(vacationAllowance)
-					.set({ isActive: false })
-					.where(
-						and(
-							eq(vacationAllowance.id, policyId),
-							eq(vacationAllowance.organizationId, policy.organizationId),
+			return updateResult.category;
+		}),
+);
+
+export const setAbsenceCategoryActive = organizationAction(
+	{
+		name: "vacation.setAbsenceCategoryActive",
+		requires: "orgAdmin",
+		schema: z.strictObject({ categoryId: z.string().min(1), isActive: z.boolean() }),
+	},
+	({ organizationId, input: { categoryId, isActive } }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const [updated] = yield* dbService
+				.query("setAbsenceCategoryActive", () =>
+					dbService.db
+						.update(absenceCategory)
+						.set({ isActive })
+						.where(
+							and(
+								eq(absenceCategory.id, categoryId),
+								eq(absenceCategory.organizationId, organizationId),
+							),
+						)
+						.returning(),
+				)
+				.pipe(
+					Effect.mapError(
+						dbError("Failed to update absence category status", "update", "absence_category"),
+					),
+				);
+
+			if (!updated) {
+				return yield* absenceCategoryNotFound(categoryId);
+			}
+
+			return updated;
+		}),
+);
+
+export const deleteAbsenceCategory = organizationAction(
+	{ name: "vacation.deleteAbsenceCategory", requires: "orgAdmin", schema: idSchema },
+	({ organizationId, input: categoryId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const deleteResult = yield* dbService
+				.query("deleteAbsenceCategory", () =>
+					dbService.db.transaction(async (tx) => {
+						const [category] = await tx
+							.select({ id: absenceCategory.id })
+							.from(absenceCategory)
+							.where(
+								and(
+									eq(absenceCategory.id, categoryId),
+									eq(absenceCategory.organizationId, organizationId),
+								),
+							)
+							.for("update");
+
+						if (!category) {
+							return { type: "not_found" as const };
+						}
+
+						if (await hasAbsenceCategoryAbsenceReferences(tx, category.id, organizationId)) {
+							return {
+								type: "conflict" as const,
+								message:
+									"Deactivate this category instead because it is used by existing absences.",
+							};
+						}
+
+						const [referencedApprovalPolicyCondition] = await tx
+							.select({ id: approvalPolicyCondition.id })
+							.from(approvalPolicyCondition)
+							.where(
+								and(
+									eq(approvalPolicyCondition.absenceCategoryId, category.id),
+									eq(approvalPolicyCondition.organizationId, organizationId),
+								),
+							)
+							.limit(1);
+
+						if (referencedApprovalPolicyCondition) {
+							return {
+								type: "conflict" as const,
+								message:
+									"Deactivate this category or remove dependent approval policies before deleting it.",
+							};
+						}
+
+						const [referencedPayrollWageTypeMapping] = await tx
+							.select({ id: payrollWageTypeMapping.id })
+							.from(payrollWageTypeMapping)
+							.where(
+								and(
+									eq(payrollWageTypeMapping.absenceCategoryId, category.id),
+									eq(payrollWageTypeMapping.organizationId, organizationId),
+								),
+							)
+							.limit(1);
+
+						if (referencedPayrollWageTypeMapping) {
+							return {
+								type: "conflict" as const,
+								message:
+									"Deactivate this category or remove dependent payroll wage type mappings before deleting it.",
+							};
+						}
+
+						await tx
+							.delete(absenceCategory)
+							.where(
+								and(
+									eq(absenceCategory.id, categoryId),
+									eq(absenceCategory.organizationId, organizationId),
+								),
+							);
+
+						return { type: "deleted" as const };
+					}),
+				)
+				.pipe(Effect.mapError(dbError("Failed to delete absence category", "delete", "absence_category")));
+
+			if (deleteResult.type === "not_found") {
+				return yield* absenceCategoryNotFound(categoryId);
+			}
+
+			if (deleteResult.type === "conflict") {
+				return yield* Effect.fail(
+					new ConflictError({
+						message: deleteResult.message,
+						conflictType: "absence_category_in_use",
+						details: { categoryId },
+					}),
+				);
+			}
+
+			return { id: categoryId };
+		}),
+);
+
+/**
+ * Deactivate a vacation policy of the active organization
+ */
+export const deleteVacationPolicy = organizationAction(
+	{ name: "vacation.deletePolicy", requires: "orgAdmin", schema: idSchema },
+	({ organizationId, input: policyId }) =>
+		Effect.gen(function* () {
+			const policy = yield* findPolicy(policyId, organizationId);
+			if (!policy) {
+				return yield* policyNotFound(policyId);
+			}
+
+			const dbService = yield* DatabaseService;
+			// Prevent deleting the only active company default
+			if (policy.isCompanyDefault) {
+				const otherDefaults = yield* dbService.query("checkOtherDefaults", () =>
+					dbService.db.query.vacationAllowance.findMany({
+						where: and(
+							eq(vacationAllowance.organizationId, organizationId),
+							eq(vacationAllowance.isCompanyDefault, true),
+							eq(vacationAllowance.isActive, true),
 						),
+					}),
+				);
+
+				if (otherDefaults.length <= 1) {
+					return yield* Effect.fail(
+						new ConflictError({
+							message:
+								"Cannot delete the only company default policy. Set another policy as default first.",
+							conflictType: "last_company_default",
+							details: { policyId },
+						}),
 					);
-			})
-			.pipe(Effect.mapError(vacationPolicyWriteFailure));
+				}
+			}
 
-		revalidateTag(CACHE_TAGS.VACATION_POLICY(policy.organizationId), "max");
-	});
+			yield* dbService
+				.query("deleteVacationPolicy", async () => {
+					await dbService.db
+						.update(vacationAllowance)
+						.set({ isActive: false })
+						.where(
+							and(
+								eq(vacationAllowance.id, policyId),
+								eq(vacationAllowance.organizationId, organizationId),
+							),
+						);
+				})
+				.pipe(Effect.mapError(vacationPolicyWriteFailure));
 
-	return runServerActionSafe(effect);
-}
+			revalidateTag(CACHE_TAGS.VACATION_POLICY(organizationId), "max");
+		}),
+);
 
 export type EmployeeAdjustmentSummary = VacationAdjustmentSums & {
 	/** Manual adjustments only, newest first; accrual rows are summed in `accrual` (#1106). */
-	manualAdjustments: Array<
-		Omit<ManualVacationAdjustment, "createdAt"> & { createdAt: string }
-	>;
+	manualAdjustments: Array<Omit<ManualVacationAdjustment, "createdAt"> & { createdAt: string }>;
 };
 
 /**
  * An employee's vacation adjustments for a year: the manual and accrual sums every balance
  * reader adds (#1105, #1106) and the history of manual adjustments.
  */
-export async function getEmployeeAdjustmentSummary(
-	employeeId: string,
-	year: number,
-): Promise<ServerActionResult<EmployeeAdjustmentSummary>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getEmployeeAdjustmentSummary:actor",
-		});
-		const dbService = yield* DatabaseService;
+export const getEmployeeAdjustmentSummary = organizationAction(
+	{ name: "vacation.employeeAdjustmentSummary", requires: "scopedManager", schema: employeeYearSchema },
+	({ actor, organizationId, input: { employeeId, year } }) =>
+		Effect.gen(function* () {
+			yield* findManagedEmployee(actor, organizationId, employeeId, "vacation_adjustment", "read");
+			const dbService = yield* DatabaseService;
 
-		const emp = yield* getTargetEmployee(
-			employeeId,
-			"getEmployeeAdjustmentSummary:getTargetEmployee",
-		);
-		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
-			message: "Insufficient permissions",
-			resource: "vacation_adjustment",
-			action: "read",
-		});
-
-		const scope = { organizationId: emp.organizationId, employeeId, year };
-		return yield* dbService.query("getEmployeeAdjustmentSummary", async () => {
-			const [sums, manualAdjustments] = await Promise.all([
-				loadVacationAdjustmentSums(dbService.db, {
-					...scope,
-					employeeIds: [employeeId],
-				}),
-				loadManualVacationAdjustments(dbService.db, scope),
-			]);
-			return {
-				...(sums.get(employeeId) ?? { manual: 0, accrual: 0 }),
-				manualAdjustments: manualAdjustments.map((adjustment) => ({
-					...adjustment,
-					createdAt: adjustment.createdAt.toISOString(),
-				})),
-			};
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
+			const scope = { organizationId, employeeId, year };
+			return yield* dbService.query(
+				"getEmployeeAdjustmentSummary",
+				async (): Promise<EmployeeAdjustmentSummary> => {
+					const [sums, manualAdjustments] = await Promise.all([
+						loadVacationAdjustmentSums(dbService.db, { ...scope, employeeIds: [employeeId] }),
+						loadManualVacationAdjustments(dbService.db, scope),
+					]);
+					return {
+						...(sums.get(employeeId) ?? { manual: 0, accrual: 0 }),
+						manualAdjustments: manualAdjustments.map((adjustment) => ({
+							...adjustment,
+							createdAt: adjustment.createdAt.toISOString(),
+						})),
+					};
+				},
+			);
+		}),
+);
 
 export type EmployeeVacationBalanceView = {
 	/** Organization calendar zone for reviewing the stored carryover expiry. */
@@ -1521,53 +1147,36 @@ export type EmployeeVacationBalanceView = {
  * allowance's explanation and overdrawn vacation. Admins see any employee of the organization,
  * managers only the employees they manage.
  */
-export async function getEmployeeVacationBalance(
-	employeeId: string,
-): Promise<ServerActionResult<EmployeeVacationBalanceView>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getEmployeeVacationBalance:actor",
-		});
-		const dbService = yield* DatabaseService;
+export const getEmployeeVacationBalance = organizationAction(
+	{ name: "vacation.employeeBalance", requires: "scopedManager", schema: idSchema },
+	({ actor, organizationId, input: employeeId }) =>
+		Effect.gen(function* () {
+			yield* findManagedEmployee(actor, organizationId, employeeId, "employee_allowance", "read");
+			const dbService = yield* DatabaseService;
 
-		const emp = yield* getTargetEmployee(
-			employeeId,
-			"getEmployeeVacationBalance:getTargetEmployee",
-		);
-		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
-			message: "Insufficient permissions",
-			resource: "employee_allowance",
-			action: "read",
-		});
-
-		return yield* dbService.query("getEmployeeVacationBalance", async () => {
-			const timezone = await loadOrganizationTimezone(
-				dbService.db,
-				emp.organizationId,
-			);
-			const year = calendarYearAt(systemClock.nowInstant(), timezone);
-			const { policies, balances, configurations } = await loadVacationBalances(
-				dbService.db,
-				{
-					organizationId: emp.organizationId,
-					employeeIds: [employeeId],
-					year,
-					timezone,
+			return yield* dbService.query(
+				"getEmployeeVacationBalance",
+				async (): Promise<EmployeeVacationBalanceView> => {
+					const timezone = await loadOrganizationTimezone(dbService.db, organizationId);
+					const year = calendarYearAt(systemClock.nowInstant(), timezone);
+					const { policies, balances, configurations } = await loadVacationBalances(dbService.db, {
+						organizationId,
+						employeeIds: [employeeId],
+						year,
+						timezone,
+					});
+					const policy = policies.get(employeeId);
+					return {
+						timezone,
+						year,
+						balance: balances.get(employeeId) ?? null,
+						configuration: configurations.get(employeeId) ?? null,
+						policy: policy
+							? { name: policy.name, defaultAnnualDays: policy.defaultAnnualDays }
+							: null,
+						accrualPolicy: policy ? isAccrualPolicy(policy) : false,
+					};
 				},
 			);
-			const policy = policies.get(employeeId);
-			return {
-				timezone,
-				year,
-				balance: balances.get(employeeId) ?? null,
-				configuration: configurations.get(employeeId) ?? null,
-				policy: policy
-					? { name: policy.name, defaultAnnualDays: policy.defaultAnnualDays }
-					: null,
-				accrualPolicy: policy ? isAccrualPolicy(policy) : false,
-			};
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
+		}),
+);

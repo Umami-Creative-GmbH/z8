@@ -143,7 +143,7 @@ function findPreset(presetId: string, organizationId: string) {
 	});
 }
 
-function ensureOrganizationCategory(categoryId: string | undefined, organizationId: string) {
+function refuseForeignCategory(categoryId: string | undefined, organizationId: string) {
 	return Effect.gen(function* () {
 		if (!categoryId) return;
 		const dbService = yield* DatabaseService;
@@ -168,7 +168,7 @@ function ensureOrganizationCategory(categoryId: string | undefined, organization
 	});
 }
 
-function ensureNoPresetAtLocation(conditions: SQL[], year: number | null | undefined) {
+function refuseDuplicatePresetLocation(conditions: SQL[], year: number | null | undefined) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const [existing] = yield* dbService.query("holidayPresets.checkLocation", () =>
@@ -368,7 +368,7 @@ export const createHolidayPreset = organizationAction(
 	{ name: "holidayPresets.create", requires: "orgAdmin", schema: presetDetailsSchema },
 	({ actor, organizationId, input: data }) =>
 		Effect.gen(function* () {
-			yield* ensureNoPresetAtLocation(
+			yield* refuseDuplicatePresetLocation(
 				buildPresetLocationConflictConditions(organizationId, data),
 				data.year,
 			);
@@ -409,7 +409,7 @@ export const updateHolidayPreset = organizationAction(
 	({ actor, organizationId, input: { presetId, data } }) =>
 		Effect.gen(function* () {
 			yield* findPreset(presetId, organizationId);
-			yield* ensureNoPresetAtLocation(
+			yield* refuseDuplicatePresetLocation(
 				buildPresetLocationConflictConditions(organizationId, data, { excludePresetId: presetId }),
 				data.year,
 			);
@@ -495,7 +495,7 @@ export const addHolidayToPreset = organizationAction(
 	({ organizationId, input: { presetId, data } }) =>
 		Effect.gen(function* () {
 			yield* findPreset(presetId, organizationId);
-			yield* ensureOrganizationCategory(data.categoryId, organizationId);
+			yield* refuseForeignCategory(data.categoryId, organizationId);
 
 			const dbService = yield* DatabaseService;
 			return yield* dbService
@@ -534,7 +534,7 @@ export const bulkAddHolidaysToPreset = organizationAction(
 	({ organizationId, input: { presetId, holidays, categoryId } }) =>
 		Effect.gen(function* () {
 			yield* findPreset(presetId, organizationId);
-			yield* ensureOrganizationCategory(categoryId, organizationId);
+			yield* refuseForeignCategory(categoryId, organizationId);
 
 			const dbService = yield* DatabaseService;
 			return yield* dbService

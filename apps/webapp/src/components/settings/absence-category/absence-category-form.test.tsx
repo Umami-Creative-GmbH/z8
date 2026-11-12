@@ -319,10 +319,7 @@ describe("absence category form helpers", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: /save|update/i }));
 		await vi.waitFor(() =>
-			expect(updateAbsenceCategory).toHaveBeenCalledWith(
-				"category_sick",
-				expect.objectContaining({ deputyRequired: false }),
-			),
+			expect(updateAbsenceCategory).toHaveBeenCalledWith({ categoryId: "category_sick", data: expect.objectContaining({ deputyRequired: false }) }),
 		);
 	});
 });

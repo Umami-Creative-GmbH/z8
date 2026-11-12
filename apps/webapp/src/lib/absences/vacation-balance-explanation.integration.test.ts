@@ -183,7 +183,7 @@ describe("prorated allowance explanation and overdrawn vacation (#1111)", () => 
 	});
 
 	it("lists every employee's balance on the admin allowance list", async () => {
-		const result = await getEmployeesWithAllowances(fixture.organizationId, 2026);
+		const result = await getEmployeesWithAllowances(2026);
 		if (!result.success) throw new Error(result.error);
 		const row = result.data.find((employee) => employee.id === joinerId);
 

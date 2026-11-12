@@ -56,7 +56,6 @@ const NOT_YET_MIGRATED = [
 	"surcharges",
 	"teams",
 	"travel-expenses",
-	"vacation",
 	"vehicle-use",
 	"vehicles",
 	"webhooks",

@@ -44,9 +44,9 @@ async function EmployeeAllowancesContent() {
 		prorationNotice,
 		workingWeekNotice,
 	] = await Promise.all([
-		getEmployeesWithAllowances(organizationId, currentYear),
-		getCompanyDefaultVacationPolicy(organizationId),
-		getVacationPolicyAssignments(organizationId),
+		getEmployeesWithAllowances(currentYear),
+		getCompanyDefaultVacationPolicy(),
+		getVacationPolicyAssignments(),
 		loadProrationNoticeForPage(db, { organizationId }),
 		loadWorkingWeekNoticeForPage(db, { organizationId }),
 	]);

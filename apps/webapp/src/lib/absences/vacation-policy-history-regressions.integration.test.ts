@@ -93,7 +93,7 @@ describe("vacation policy history compatibility", () => {
 			Temporal.PlainDate.from("2027-06-30"),
 		);
 		expect(
-			await updateVacationPolicy(policy.id, {
+			await updateVacationPolicy({ policyId: policy.id, data: {
 				name: policy.name,
 				startDate: policy.startDate,
 				validUntil: "2027-12-31",
@@ -101,7 +101,7 @@ describe("vacation policy history compatibility", () => {
 				defaultAnnualDays: "25",
 				accrualType: "annual",
 				allowCarryover: false,
-			}),
+			} }),
 		).toMatchObject({ success: true });
 		expect(
 			await loadEmployeeVacationPolicy(fixture.db, {
@@ -150,7 +150,7 @@ describe("vacation policy history compatibility", () => {
 			Temporal.PlainDate.from("2027-07-01"),
 		);
 		expect(
-			await updateVacationPolicy(policy.id, {
+			await updateVacationPolicy({ policyId: policy.id, data: {
 				name: policy.name,
 				startDate: policy.startDate,
 				validUntil: "2027-12-31",
@@ -158,7 +158,7 @@ describe("vacation policy history compatibility", () => {
 				defaultAnnualDays: "24",
 				accrualType: "annual",
 				allowCarryover: false,
-			}),
+			} }),
 		).toMatchObject({ success: true });
 		for (const [date, days] of [
 			["2027-06-30", "30"],
@@ -567,12 +567,12 @@ describe("vacation policy history compatibility", () => {
 			})
 			.returning();
 		expect(
-			await deleteVacationPolicyAssignment(assignment.id, "2027-07-01"),
+			await deleteVacationPolicyAssignment({ assignmentId: assignment.id, effectiveOn: "2027-07-01" }),
 		).toMatchObject({
 			success: true,
 		});
 		expect(
-			await deleteVacationPolicyAssignment(assignment.id, "2027-08-01"),
+			await deleteVacationPolicyAssignment({ assignmentId: assignment.id, effectiveOn: "2027-08-01" }),
 		).toMatchObject({
 			success: true,
 		});

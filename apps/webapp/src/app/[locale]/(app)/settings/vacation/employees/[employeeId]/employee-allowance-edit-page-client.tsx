@@ -134,10 +134,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 								: value.policyId || "";
 
 						if (currentPolicyId !== newPolicyId) {
-							const assignmentResult = await setEmployeePolicyAssignment(
-								employeeId,
-								newPolicyId || null,
-							);
+							const assignmentResult = await setEmployeePolicyAssignment({ employeeId, policyId: newPolicyId || null });
 							if (!assignmentResult.success) {
 								toast.error(
 									assignmentResult.error ||
@@ -151,14 +148,10 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 						}
 
 						if (value.customAnnualDays || value.customCarryoverDays) {
-							const result = await updateEmployeeAllowance(
-								employeeId,
-								currentYear,
-								{
+							const result = await updateEmployeeAllowance({ employeeId, year: currentYear, data: {
 									customAnnualDays: value.customAnnualDays || undefined,
 									customCarryoverDays: value.customCarryoverDays || undefined,
-								},
-							);
+								} });
 							if (!result.success) {
 								toast.error(
 									result.error ||
@@ -172,14 +165,10 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 						}
 
 						if (value.adjustmentDays && value.adjustmentReason) {
-							const adjustmentResult = await createVacationAdjustmentAction(
-								employeeId,
-								currentYear,
-								{
+							const adjustmentResult = await createVacationAdjustmentAction({ employeeId, year: currentYear, data: {
 									days: value.adjustmentDays,
 									reason: value.adjustmentReason,
-								},
-							);
+								} });
 							if (!adjustmentResult.success) {
 								toast.error(
 									adjustmentResult.error ||
@@ -239,10 +228,10 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				assignmentResult,
 				adjustmentSummaryResult,
 			] = await Promise.all([
-				getEmployeeAllowance(employeeId, year),
-				getAssignmentPolicies(current.organizationId),
+				getEmployeeAllowance({ employeeId, year }),
+				getAssignmentPolicies(),
 				getEmployeePolicyAssignment(employeeId),
-				getEmployeeAdjustmentSummary(employeeId, year),
+				getEmployeeAdjustmentSummary({ employeeId, year }),
 			]);
 			if (generation !== loadGeneration.current) return;
 

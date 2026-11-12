@@ -61,7 +61,6 @@ export function HistoricalVacationUsageCard({
 		enabled: Number.isInteger(year) && year >= 1900 && year <= 9998,
 		queryFn: async () => {
 			const result = await previewPreviouslyTakenVacation({
-				organizationId,
 				employeeId,
 				year,
 				days: 0,
@@ -91,7 +90,6 @@ export function HistoricalVacationUsageCard({
 			setReview(null);
 			try {
 				const result = await previewPreviouslyTakenVacation({
-					organizationId,
 					employeeId,
 					year: Number(value.year),
 					days: Number(value.days),
@@ -141,7 +139,6 @@ export function HistoricalVacationUsageCard({
 		setMessage("");
 		try {
 			const result = await commitPreviouslyTakenVacation({
-				organizationId,
 				employeeId,
 				year: review.year,
 				days: review.days,

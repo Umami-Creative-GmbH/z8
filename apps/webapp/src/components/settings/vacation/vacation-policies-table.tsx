@@ -114,7 +114,7 @@ export function VacationPoliciesTable({
 	} = useQuery({
 		queryKey: queryKeys.vacationPolicies.list(organizationId),
 		queryFn: async () => {
-			const result = await getVacationPolicies(organizationId);
+			const result = await getVacationPolicies();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
