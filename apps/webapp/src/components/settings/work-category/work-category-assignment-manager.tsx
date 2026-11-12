@@ -79,7 +79,7 @@ function useWorkCategoryAssignments(organizationId: string) {
 	return useQuery({
 		queryKey: queryKeys.workCategorySetAssignments.list(organizationId),
 		queryFn: async () => {
-			const result = await getWorkCategorySetAssignments(organizationId);
+			const result = await getWorkCategorySetAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}

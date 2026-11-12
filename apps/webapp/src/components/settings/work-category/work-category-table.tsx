@@ -58,7 +58,7 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 	} = useQuery({
 		queryKey: queryKeys.workCategories.orgList(organizationId),
 		queryFn: async () => {
-			const result = await getOrganizationCategories(organizationId);
+			const result = await getOrganizationCategories();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch categories");
 			}

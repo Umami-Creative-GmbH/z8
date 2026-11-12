@@ -436,7 +436,7 @@ export function ChangePolicyAssignmentManager({
 	} = useQuery({
 		queryKey: queryKeys.changePolicies.assignments(organizationId),
 		queryFn: async () => {
-			const result = await getChangePolicyAssignments(organizationId);
+			const result = await getChangePolicyAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}

@@ -23,7 +23,6 @@ const NOT_YET_MIGRATED = [
 	"avv",
 	"billable-time",
 	"calendar",
-	"change-policies",
 	"closed-months",
 	"compliance",
 	"coverage-rules",
@@ -63,7 +62,6 @@ const NOT_YET_MIGRATED = [
 	"vehicles",
 	"webhooks",
 	"wellness",
-	"work-categories",
 	"work-policies",
 ];
 

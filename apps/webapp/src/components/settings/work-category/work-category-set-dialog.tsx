@@ -95,7 +95,7 @@ export function WorkCategorySetDialog({
 	const { data: orgCategoriesResult, isLoading: isLoadingOrgCategories } = useQuery({
 		queryKey: queryKeys.workCategories.orgList(organizationId),
 		queryFn: async () => {
-			const result = await getOrganizationCategories(organizationId);
+			const result = await getOrganizationCategories();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch categories");
 			}
@@ -153,7 +153,6 @@ export function WorkCategorySetDialog({
 	const createSetMutation = useMutation({
 		mutationFn: (data: { name: string; description: string | null; categoryIds: string[] }) =>
 			createWorkCategorySet({
-				organizationId,
 				name: data.name,
 				description: data.description,
 				categoryIds: data.categoryIds,
@@ -195,7 +194,7 @@ export function WorkCategorySetDialog({
 				}
 
 				// Also update the categories in the set
-				const updateResult = await updateSetCategories(categorySet.id, selectedCategoryIds);
+				const updateResult = await updateSetCategories({ setId: categorySet.id, categoryIds: selectedCategoryIds });
 				if (updateResult.success) {
 					toast.success(t("settings.workCategories.setUpdated", "Category set updated"));
 					queryClient.invalidateQueries({

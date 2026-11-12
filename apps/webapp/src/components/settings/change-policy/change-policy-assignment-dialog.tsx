@@ -106,7 +106,7 @@ export function ChangePolicyAssignmentDialog({
 	const { data: policies, isLoading: policiesLoading } = useQuery({
 		queryKey: queryKeys.changePolicies.list(organizationId),
 		queryFn: async () => {
-			const result = await getChangePolicies(organizationId);
+			const result = await getChangePolicies();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -119,7 +119,7 @@ export function ChangePolicyAssignmentDialog({
 	const { data: teams, isLoading: teamsLoading } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -132,7 +132,7 @@ export function ChangePolicyAssignmentDialog({
 	const { data: employees, isLoading: employeesLoading } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
 		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
+			const result = await getEmployeesForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch employees");
 			}
@@ -160,7 +160,7 @@ export function ChangePolicyAssignmentDialog({
 
 	const createMutation = useMutation({
 		mutationFn: (input: CreateAssignmentInput) =>
-			createChangePolicyAssignment(organizationId, input),
+			createChangePolicyAssignment(input),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({

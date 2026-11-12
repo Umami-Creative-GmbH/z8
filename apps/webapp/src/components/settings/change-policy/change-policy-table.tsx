@@ -70,7 +70,7 @@ export function ChangePolicyTable({
 	} = useQuery({
 		queryKey: queryKeys.changePolicies.list(organizationId),
 		queryFn: async () => {
-			const result = await getChangePolicies(organizationId);
+			const result = await getChangePolicies();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}

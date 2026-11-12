@@ -66,7 +66,7 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 	} = useQuery({
 		queryKey: queryKeys.workCategorySets.list(organizationId),
 		queryFn: async () => {
-			const result = await getWorkCategorySets(organizationId);
+			const result = await getWorkCategorySets();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch category sets");
 			}

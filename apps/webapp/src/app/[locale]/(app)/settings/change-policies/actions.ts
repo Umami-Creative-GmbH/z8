@@ -2,19 +2,20 @@
 
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
+import { z } from "zod";
 import { changePolicy, changePolicyAssignment, employee, team, teamPermissions } from "@/db/schema";
-import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	findEmployeesNotOnCurrentRoster,
 	formerEmployeeRefusal,
 } from "@/lib/employee-lifecycle/current-roster-guard";
-import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import {
-	getEmployeeSettingsActorContext,
-	getManagedEmployeeIdsForSettingsActor,
-	requireOrgAdminEmployeeSettingsAccess,
-} from "../employees/employee-action-utils";
+	noInput,
+	type OrganizationActor,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 
 // ============================================
 // TYPES
@@ -39,50 +40,61 @@ export type ChangePolicyAssignmentWithDetails = typeof changePolicyAssignment.$i
 	} | null;
 };
 
-export interface CreateChangePolicyInput {
-	name: string;
-	description?: string;
-	selfServiceDays: number;
-	approvalDays: number;
-	noApprovalRequired?: boolean;
-	notifyAllManagers?: boolean;
-}
+const dayCount = (message: string) => z.number().int().min(0, message);
 
-export interface UpdateChangePolicyInput {
-	name?: string;
-	description?: string;
-	selfServiceDays?: number;
-	approvalDays?: number;
-	noApprovalRequired?: boolean;
-	notifyAllManagers?: boolean;
-	isActive?: boolean;
-}
+const createChangePolicySchema = z.strictObject({
+	name: z.string().trim().min(1, "Policy name is required"),
+	description: z.string().optional(),
+	selfServiceDays: dayCount("Self-service days cannot be negative"),
+	approvalDays: dayCount("Approval days cannot be negative"),
+	noApprovalRequired: z.boolean().optional(),
+	notifyAllManagers: z.boolean().optional(),
+});
 
-export interface CreateAssignmentInput {
-	policyId: string;
-	assignmentType: "organization" | "team" | "employee";
-	teamId?: string;
-	employeeId?: string;
-	effectiveFrom?: Date;
-	effectiveUntil?: Date;
-}
+const updateChangePolicySchema = z.strictObject({
+	policyId: z.string().min(1),
+	data: z.strictObject({
+		name: z.string().trim().min(1, "Policy name cannot be empty").optional(),
+		description: z.string().optional(),
+		selfServiceDays: dayCount("Self-service days cannot be negative").optional(),
+		approvalDays: dayCount("Approval days cannot be negative").optional(),
+		noApprovalRequired: z.boolean().optional(),
+		notifyAllManagers: z.boolean().optional(),
+		isActive: z.boolean().optional(),
+	}),
+});
 
-type DatabaseClient = typeof import("@/db").db;
+const createAssignmentSchema = z
+	.strictObject({
+		policyId: z.string().min(1),
+		assignmentType: z.enum(["organization", "team", "employee"]),
+		teamId: z.string().optional(),
+		employeeId: z.string().optional(),
+		effectiveFrom: z.date().optional(),
+		effectiveUntil: z.date().optional(),
+	})
+	.superRefine((input, context) => {
+		if (input.assignmentType === "team" && !input.teamId) {
+			context.addIssue({
+				code: "custom",
+				message: "Team ID is required for team assignments",
+				path: ["teamId"],
+			});
+		}
+		if (input.assignmentType === "employee" && !input.employeeId) {
+			context.addIssue({
+				code: "custom",
+				message: "Employee ID is required for employee assignments",
+				path: ["employeeId"],
+			});
+		}
+	});
 
-type ChangePolicyScopedActor = {
-	accessTier: "manager" | "orgAdmin";
-	organizationId: string;
-	session: { user: { id: string } };
-	currentEmployee: {
-		id: string;
-		organizationId: string;
-		role: "admin" | "manager" | "employee";
-	} | null;
-	dbService: {
-		db: DatabaseClient;
-		query: <T>(key: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
-	};
-};
+export type CreateChangePolicyInput = z.input<typeof createChangePolicySchema>;
+export type UpdateChangePolicyInput = z.input<typeof updateChangePolicySchema>["data"];
+export type CreateAssignmentInput = z.input<typeof createAssignmentSchema>;
+
+const idSchema = z.string().min(1);
 
 type ChangePolicyScopeAssignment = {
 	policyId: string;
@@ -91,132 +103,74 @@ type ChangePolicyScopeAssignment = {
 	employeeId: string | null;
 };
 
-type TeamPermissionRow = {
-	teamId: string | null;
-	canManageTeamSettings: boolean;
+/** Whom a scoped manager sees change policies for; null fields for an org admin. */
+type ChangePolicyScope = {
+	managedEmployeeIds: ReadonlySet<string> | null;
+	/** Teams whose settings the manager may manage. */
+	manageableTeamIds: ReadonlySet<string> | null;
 };
 
-type ManagedScopeEmployee = {
-	id: string;
-	teamId: string | null;
-};
-
-type ScopedChangePolicyAccessContext = {
-	actor: ChangePolicyScopedActor;
-	managedEmployeeIds: Set<string> | null;
-	manageableTeamIds: Set<string> | null;
-};
-
-function _filterAssignmentsForManagerChangePolicyScope<T extends ChangePolicyScopeAssignment>(
-	assignments: T[],
-	manageableTeamIds: Set<string> | null,
-	managedEmployeeIds: Set<string> | null,
-) {
-	if (!manageableTeamIds || !managedEmployeeIds) {
-		return assignments;
-	}
-
-	return assignments.filter((assignment) => {
-		if (assignment.assignmentType === "organization") {
-			return false;
-		}
-
-		if (assignment.assignmentType === "team") {
-			return assignment.teamId ? manageableTeamIds.has(assignment.teamId) : false;
-		}
-
-		return assignment.employeeId ? managedEmployeeIds.has(assignment.employeeId) : false;
-	});
-}
-
-function getScopedChangePolicyAccessContext(organizationId: string, queryName: string) {
+function changePolicyScopeOf(actor: OrganizationActor, organizationId: string) {
 	return Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({ organizationId, queryName })) as ChangePolicyScopedActor;
-
-		if (actor.accessTier === "orgAdmin") {
-			return {
-				actor,
-				managedEmployeeIds: null,
-				manageableTeamIds: null,
-			} satisfies ScopedChangePolicyAccessContext;
+		const scope = yield* actor.managedScope();
+		if (scope.organizationWide) {
+			return { managedEmployeeIds: null, manageableTeamIds: null } satisfies ChangePolicyScope;
 		}
-
-		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
-		const teamPermissionRows = actor.currentEmployee
-			? ((yield* actor.dbService.query(`${queryName}:teamPermissions`, async () => {
-					return await actor.dbService.db.query.teamPermissions.findMany({
+		const dbService = yield* DatabaseService;
+		const managerId = actor.employee?.id;
+		const teamPermissionRows = managerId
+			? yield* dbService.query("changePolicies.scope.teamPermissions", () =>
+					dbService.db.query.teamPermissions.findMany({
 						where: and(
-							eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
+							eq(teamPermissions.employeeId, managerId),
 							eq(teamPermissions.organizationId, organizationId),
 						),
 						columns: { teamId: true, canManageTeamSettings: true },
-					});
-				})) as TeamPermissionRow[])
+					}),
+				)
 			: [];
-
-		const manageableTeamIds = new Set(
-			teamPermissionRows.flatMap((permission) =>
-				permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
-			),
-		);
-
 		return {
-			actor,
-			managedEmployeeIds,
-			manageableTeamIds,
-		} satisfies ScopedChangePolicyAccessContext;
+			managedEmployeeIds: scope.employeeIds,
+			manageableTeamIds: new Set(
+				teamPermissionRows.flatMap((permission) =>
+					permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
+				),
+			),
+		} satisfies ChangePolicyScope;
 	});
 }
 
-function getVisibleScopedChangePolicyIds(
-	actor: ChangePolicyScopedActor,
-	organizationId: string,
-	manageableTeamIds: Set<string> | null,
-	managedEmployeeIds: Set<string> | null,
-	queryName: string,
-) {
+function visibleScopedChangePolicyIds(organizationId: string, scope: ChangePolicyScope) {
 	return Effect.gen(function* () {
-		if (!manageableTeamIds || !managedEmployeeIds) {
+		if (!scope.manageableTeamIds || !scope.managedEmployeeIds) {
 			return null;
 		}
-
-		const assignmentRows = (yield* actor.dbService.query(queryName, async () => {
-			return await actor.dbService.db.query.changePolicyAssignment.findMany({
+		const dbService = yield* DatabaseService;
+		const assignmentRows = yield* dbService.query("changePolicies.scope.assignments", () =>
+			dbService.db.query.changePolicyAssignment.findMany({
 				where: and(
 					eq(changePolicyAssignment.organizationId, organizationId),
 					eq(changePolicyAssignment.isActive, true),
 				),
-				columns: {
-					policyId: true,
-					assignmentType: true,
-					teamId: true,
-					employeeId: true,
-				},
-			});
-		})) as ChangePolicyScopeAssignment[];
-
-		const visibleAssignments = yield* getVisibleChangePolicyAssignmentsForManagerScope(
-			actor,
+				columns: { policyId: true, assignmentType: true, teamId: true, employeeId: true },
+			}),
+		);
+		const visibleAssignments = yield* assignmentsInManagerScope(
 			organizationId,
 			assignmentRows,
-			manageableTeamIds,
-			managedEmployeeIds,
-			`${queryName}:managedEmployees`,
+			scope,
 		);
-
 		return [...new Set(visibleAssignments.map((assignment) => assignment.policyId))];
 	});
 }
 
-function getVisibleChangePolicyAssignmentsForManagerScope<T extends ChangePolicyScopeAssignment>(
-	actor: ChangePolicyScopedActor,
+function assignmentsInManagerScope<T extends ChangePolicyScopeAssignment>(
 	organizationId: string,
 	assignments: T[],
-	manageableTeamIds: Set<string> | null,
-	managedEmployeeIds: Set<string> | null,
-	queryName: string,
+	scope: ChangePolicyScope,
 ) {
 	return Effect.gen(function* () {
+		const { manageableTeamIds, managedEmployeeIds } = scope;
 		if (!manageableTeamIds || !managedEmployeeIds) {
 			return assignments;
 		}
@@ -233,17 +187,18 @@ function getVisibleChangePolicyAssignmentsForManagerScope<T extends ChangePolicy
 					: [],
 			),
 		);
+		const dbService = yield* DatabaseService;
 		const managedEmployees = managedEmployeeIds.size
-			? ((yield* actor.dbService.query(queryName, async () => {
-					return await actor.dbService.db.query.employee.findMany({
+			? yield* dbService.query("changePolicies.scope.managedEmployees", () =>
+					dbService.db.query.employee.findMany({
 						where: and(
 							eq(employee.organizationId, organizationId),
 							eq(employee.isActive, true),
 							inArray(employee.id, [...managedEmployeeIds]),
 						),
 						columns: { id: true, teamId: true },
-					});
-				})) as ManagedScopeEmployee[])
+					}),
+				)
 			: [];
 		const managedEmployeeTeamIds = new Set(
 			managedEmployees
@@ -295,31 +250,14 @@ function sortAssignmentsByPriority(assignments: ChangePolicyAssignmentWithDetail
 	});
 }
 
-function requireOrgAdminForChangePolicyMutation(
-	actor: ChangePolicyScopedActor,
-	resource: string,
-	action: string,
-	message: string,
-) {
-	return requireOrgAdminEmployeeSettingsAccess(actor, {
-		message,
-		resource,
-		action,
-	});
-}
-
-function getPolicyForActiveOrganization(
-	policyId: string,
-	actor: ChangePolicyScopedActor,
-	queryName: string,
-) {
-	return actor.dbService.query(queryName, async () => {
-		return await actor.dbService.db.query.changePolicy.findFirst({
-			where: and(
-				eq(changePolicy.id, policyId),
-				eq(changePolicy.organizationId, actor.organizationId),
-			),
-		});
+function findPolicy(policyId: string, organizationId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		return yield* dbService.query("changePolicies.findPolicy", () =>
+			dbService.db.query.changePolicy.findFirst({
+				where: and(eq(changePolicy.id, policyId), eq(changePolicy.organizationId, organizationId)),
+			}),
+		);
 	});
 }
 
@@ -327,549 +265,357 @@ function getPolicyForActiveOrganization(
 // GET POLICIES
 // ============================================
 
-export async function getChangePolicies(
-	organizationId: string,
-): Promise<ServerActionResult<ChangePolicyRecord[]>> {
-	const effect = Effect.gen(function* () {
-		const { actor, managedEmployeeIds, manageableTeamIds } = yield* getScopedChangePolicyAccessContext(organizationId, "getChangePolicies:actor");
-		const visiblePolicyIds = yield* getVisibleScopedChangePolicyIds(
-			actor,
-			organizationId,
-			manageableTeamIds,
-			managedEmployeeIds,
-			"getChangePolicies:visibleAssignments",
-		);
+export const getChangePolicies = organizationAction(
+	{ name: "changePolicies.list", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const scope = yield* changePolicyScopeOf(actor, organizationId);
+			const visiblePolicyIds = yield* visibleScopedChangePolicyIds(organizationId, scope);
 
-		if (visiblePolicyIds && visiblePolicyIds.length === 0) {
-			return [] satisfies ChangePolicyRecord[];
-		}
-
-		const policies = yield* actor.dbService.query("getChangePolicies", async () => {
-			const conditions = [
-				eq(changePolicy.organizationId, organizationId),
-				eq(changePolicy.isActive, true),
-			];
-
-			if (visiblePolicyIds) {
-				conditions.push(inArray(changePolicy.id, visiblePolicyIds));
+			if (visiblePolicyIds && visiblePolicyIds.length === 0) {
+				return [] satisfies ChangePolicyRecord[];
 			}
 
-			return await actor.dbService.db.query.changePolicy.findMany({
-				where: and(...conditions),
-				orderBy: [desc(changePolicy.createdAt)],
+			const dbService = yield* DatabaseService;
+			const policies: ChangePolicyRecord[] = yield* dbService.query("getChangePolicies", () => {
+				const conditions = [
+					eq(changePolicy.organizationId, organizationId),
+					eq(changePolicy.isActive, true),
+				];
+
+				if (visiblePolicyIds) {
+					conditions.push(inArray(changePolicy.id, visiblePolicyIds));
+				}
+
+				return dbService.db.query.changePolicy.findMany({
+					where: and(...conditions),
+					orderBy: [desc(changePolicy.createdAt)],
+				});
 			});
-		});
 
-		if (!visiblePolicyIds) {
-			return policies;
-		}
+			if (!visiblePolicyIds) {
+				return policies;
+			}
 
-		const visiblePolicyIdSet = new Set(visiblePolicyIds);
-		return policies.filter((policy) => visiblePolicyIdSet.has(policy.id));
-	});
+			const visiblePolicyIdSet = new Set(visiblePolicyIds);
+			return policies.filter((policy) => visiblePolicyIdSet.has(policy.id));
+		}),
+);
 
-	return runServerActionSafe(effect);
-}
-
-export async function getChangePolicy(
-	policyId: string,
-): Promise<ServerActionResult<ChangePolicyRecord | null>> {
-	const effect = Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({ queryName: "getChangePolicy:actor" })) as ChangePolicyScopedActor;
-
-		if (actor.accessTier === "manager") {
-			const { managedEmployeeIds, manageableTeamIds } = yield* getScopedChangePolicyAccessContext(actor.organizationId, "getChangePolicy:scope");
-			const visiblePolicyIds = yield* getVisibleScopedChangePolicyIds(
-				actor,
-				actor.organizationId,
-				manageableTeamIds,
-				managedEmployeeIds,
-				"getChangePolicy:visibleAssignments",
-			);
+export const getChangePolicy = organizationAction(
+	{ name: "changePolicies.get", requires: "scopedManager", schema: idSchema },
+	({ actor, organizationId, input: policyId }) =>
+		Effect.gen(function* () {
+			const scope = yield* changePolicyScopeOf(actor, organizationId);
+			const visiblePolicyIds = yield* visibleScopedChangePolicyIds(organizationId, scope);
 
 			if (visiblePolicyIds && !visiblePolicyIds.includes(policyId)) {
 				return null;
 			}
-		}
 
-		const policy = yield* getPolicyForActiveOrganization(policyId, actor, "getChangePolicy");
-
-		return policy ?? null;
-	});
-
-	return runServerActionSafe(effect);
-}
+			const policy = yield* findPolicy(policyId, organizationId);
+			return policy ?? null;
+		}),
+);
 
 // ============================================
 // CREATE POLICY
 // ============================================
 
-export async function createChangePolicy(
-	organizationId: string,
-	data: CreateChangePolicyInput,
-): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({ organizationId, queryName: "createChangePolicy:actor" })) as ChangePolicyScopedActor;
-		yield* requireOrgAdminForChangePolicyMutation(
-			actor,
-			"change_policy",
-			"create",
-			"Only org admins can create change policies",
-		);
-
-		if (!data.name || data.name.trim().length === 0) {
-			yield* Effect.fail(
-				new ValidationError({
-					message: "Policy name is required",
-					field: "name",
-				}),
+export const createChangePolicy = organizationAction(
+	{ name: "changePolicies.create", requires: "orgAdmin", schema: createChangePolicySchema },
+	({ actor, organizationId, input: data }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const [policy] = yield* dbService.query("createChangePolicy", () =>
+				withOrganizationConfigurationMutation(dbService.db, organizationId, (tx) =>
+					tx
+						.insert(changePolicy)
+						.values({
+							organizationId,
+							name: data.name,
+							description: data.description?.trim(),
+							selfServiceDays: data.selfServiceDays,
+							approvalDays: data.approvalDays,
+							noApprovalRequired: data.noApprovalRequired ?? false,
+							notifyAllManagers: data.notifyAllManagers ?? false,
+							createdBy: actor.userId,
+							updatedAt: new Date(),
+						})
+						.returning(),
+				),
 			);
-		}
 
-		if (data.selfServiceDays < 0) {
-			yield* Effect.fail(
-				new ValidationError({
-					message: "Self-service days cannot be negative",
-					field: "selfServiceDays",
-				}),
-			);
-		}
-
-		if (data.approvalDays < 0) {
-			yield* Effect.fail(
-				new ValidationError({
-					message: "Approval days cannot be negative",
-					field: "approvalDays",
-				}),
-			);
-		}
-
-		const [policy] = yield* actor.dbService.query("createChangePolicy", () =>
-			withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
-				tx
-					.insert(changePolicy)
-					.values({
-						organizationId: actor.organizationId,
-						name: data.name.trim(),
-						description: data.description?.trim(),
-						selfServiceDays: data.selfServiceDays,
-						approvalDays: data.approvalDays,
-						noApprovalRequired: data.noApprovalRequired ?? false,
-						notifyAllManagers: data.notifyAllManagers ?? false,
-						createdBy: actor.session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning(),
-			),
-		);
-
-		return { id: policy.id };
-	});
-
-	return runServerActionSafe(effect);
-}
+			return { id: policy.id };
+		}),
+);
 
 // ============================================
 // UPDATE POLICY
 // ============================================
 
-export async function updateChangePolicy(
-	policyId: string,
-	data: UpdateChangePolicyInput,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({ queryName: "updateChangePolicy:actor" })) as ChangePolicyScopedActor;
-		yield* requireOrgAdminForChangePolicyMutation(
-			actor,
-			"change_policy",
-			"update",
-			"Only org admins can update change policies",
-		);
+export const updateChangePolicy = organizationAction(
+	{ name: "changePolicies.update", requires: "orgAdmin", schema: updateChangePolicySchema },
+	({ actor, organizationId, input: { policyId, data } }) =>
+		Effect.gen(function* () {
+			const existingPolicy = yield* findPolicy(policyId, organizationId);
+			if (!existingPolicy) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Change policy not found",
+						entityType: "change_policy",
+						entityId: policyId,
+					}),
+				);
+			}
 
-		const existingPolicy = yield* getPolicyForActiveOrganization(policyId, actor, "verifyPolicy").pipe(Effect.flatMap((value) =>
-				value
-					? Effect.succeed(value)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Change policy not found",
-								entityType: "change_policy",
-								entityId: policyId,
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("updateChangePolicy", () =>
+				withOrganizationConfigurationMutation(dbService.db, organizationId, (tx) =>
+					tx
+						.update(changePolicy)
+						.set({
+							...(data.name !== undefined && { name: data.name }),
+							...(data.description !== undefined && { description: data.description?.trim() }),
+							...(data.selfServiceDays !== undefined && { selfServiceDays: data.selfServiceDays }),
+							...(data.approvalDays !== undefined && { approvalDays: data.approvalDays }),
+							...(data.noApprovalRequired !== undefined && {
+								noApprovalRequired: data.noApprovalRequired,
 							}),
+							...(data.notifyAllManagers !== undefined && {
+								notifyAllManagers: data.notifyAllManagers,
+							}),
+							...(data.isActive !== undefined && { isActive: data.isActive }),
+							updatedBy: actor.userId,
+						})
+						.where(
+							and(
+								eq(changePolicy.id, existingPolicy.id),
+								eq(changePolicy.organizationId, organizationId),
+							),
 						),
-			));
-
-		if (data.name !== undefined && data.name.trim().length === 0) {
-			yield* Effect.fail(
-				new ValidationError({
-					message: "Policy name cannot be empty",
-					field: "name",
-				}),
+				),
 			);
-		}
-
-		if (data.selfServiceDays !== undefined && data.selfServiceDays < 0) {
-			yield* Effect.fail(
-				new ValidationError({
-					message: "Self-service days cannot be negative",
-					field: "selfServiceDays",
-				}),
-			);
-		}
-
-		if (data.approvalDays !== undefined && data.approvalDays < 0) {
-			yield* Effect.fail(
-				new ValidationError({
-					message: "Approval days cannot be negative",
-					field: "approvalDays",
-				}),
-			);
-		}
-
-		yield* actor.dbService.query("updateChangePolicy", () =>
-			withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
-				tx
-					.update(changePolicy)
-					.set({
-						...(data.name !== undefined && { name: data.name.trim() }),
-						...(data.description !== undefined && { description: data.description?.trim() }),
-						...(data.selfServiceDays !== undefined && { selfServiceDays: data.selfServiceDays }),
-						...(data.approvalDays !== undefined && { approvalDays: data.approvalDays }),
-						...(data.noApprovalRequired !== undefined && {
-							noApprovalRequired: data.noApprovalRequired,
-						}),
-						...(data.notifyAllManagers !== undefined && {
-							notifyAllManagers: data.notifyAllManagers,
-						}),
-						...(data.isActive !== undefined && { isActive: data.isActive }),
-						updatedBy: actor.session.user.id,
-					})
-					.where(
-						and(
-							eq(changePolicy.id, existingPolicy.id),
-							eq(changePolicy.organizationId, actor.organizationId),
-						),
-					),
-			),
-		);
-	});
-
-	return runServerActionSafe(effect);
-}
+		}),
+);
 
 // ============================================
 // DELETE POLICY
 // ============================================
 
-export async function deleteChangePolicy(policyId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({ queryName: "deleteChangePolicy:actor" })) as ChangePolicyScopedActor;
-		yield* requireOrgAdminForChangePolicyMutation(
-			actor,
-			"change_policy",
-			"delete",
-			"Only org admins can delete change policies",
-		);
-
-		yield* actor.dbService.query("deleteChangePolicy", () =>
-			withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
-				tx
-					.update(changePolicy)
-					.set({ isActive: false, updatedBy: actor.session.user.id })
-					.where(
-						and(
-							eq(changePolicy.id, policyId),
-							eq(changePolicy.organizationId, actor.organizationId),
+export const deleteChangePolicy = organizationAction(
+	{ name: "changePolicies.delete", requires: "orgAdmin", schema: idSchema },
+	({ actor, organizationId, input: policyId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("deleteChangePolicy", () =>
+				withOrganizationConfigurationMutation(dbService.db, organizationId, (tx) =>
+					tx
+						.update(changePolicy)
+						.set({ isActive: false, updatedBy: actor.userId })
+						.where(
+							and(eq(changePolicy.id, policyId), eq(changePolicy.organizationId, organizationId)),
 						),
-					),
-			),
-		);
-	});
-
-	return runServerActionSafe(effect);
-}
+				),
+			);
+		}),
+);
 
 // ============================================
 // ASSIGNMENTS
 // ============================================
 
-export async function getChangePolicyAssignments(
-	organizationId: string,
-): Promise<ServerActionResult<ChangePolicyAssignmentWithDetails[]>> {
-	const effect = Effect.gen(function* () {
-		const { actor, managedEmployeeIds, manageableTeamIds } = yield* getScopedChangePolicyAccessContext(organizationId, "getChangePolicyAssignments:actor");
-		const assignments = (yield* actor.dbService.query("getChangePolicyAssignments", async () => {
-			return await actor.dbService.db.query.changePolicyAssignment.findMany({
-				where: and(
-					eq(changePolicyAssignment.organizationId, organizationId),
-					eq(changePolicyAssignment.isActive, true),
-				),
-				with: {
-					policy: {
-						columns: {
-							id: true,
-							name: true,
-							selfServiceDays: true,
-							approvalDays: true,
-							noApprovalRequired: true,
+export const getChangePolicyAssignments = organizationAction(
+	{ name: "changePolicies.listAssignments", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const scope = yield* changePolicyScopeOf(actor, organizationId);
+			const dbService = yield* DatabaseService;
+			const assignments = yield* dbService.query("getChangePolicyAssignments", () =>
+				dbService.db.query.changePolicyAssignment.findMany({
+					where: and(
+						eq(changePolicyAssignment.organizationId, organizationId),
+						eq(changePolicyAssignment.isActive, true),
+					),
+					with: {
+						policy: {
+							columns: {
+								id: true,
+								name: true,
+								selfServiceDays: true,
+								approvalDays: true,
+								noApprovalRequired: true,
+							},
+						},
+						team: {
+							columns: { id: true, name: true },
+						},
+						employee: {
+							columns: { id: true },
+							with: { user: { columns: { firstName: true, lastName: true } } },
 						},
 					},
-					team: {
-						columns: { id: true, name: true },
-					},
-					employee: {
-						columns: { id: true },
-						with: { user: { columns: { firstName: true, lastName: true } } },
-					},
-				},
-				orderBy: [desc(changePolicyAssignment.priority), desc(changePolicyAssignment.createdAt)],
-			});
-		})) as Array<
-			Omit<ChangePolicyAssignmentWithDetails, "employee"> & {
-				employee:
-					| ({ id: string } & {
-							user: { firstName: string | null; lastName: string | null } | null;
-					  })
-					| null;
-			}
-		>;
-		const assignmentsWithAuthNames = assignments.map((assignment) => ({
-			...assignment,
-			employee: assignment.employee
-				? {
-						id: assignment.employee.id,
-						firstName: assignment.employee.user?.firstName ?? null,
-						lastName: assignment.employee.user?.lastName ?? null,
-						user: assignment.employee.user,
-					}
-				: null,
-		})) satisfies ChangePolicyAssignmentWithDetails[];
-		const visibleAssignments = yield* getVisibleChangePolicyAssignmentsForManagerScope(
-			actor,
-			organizationId,
-			assignmentsWithAuthNames,
-			manageableTeamIds,
-			managedEmployeeIds,
-			"getChangePolicyAssignments:managedEmployees",
-		);
-
-		return sortAssignmentsByPriority(visibleAssignments as ChangePolicyAssignmentWithDetails[]);
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function createChangePolicyAssignment(
-	organizationId: string,
-	data: CreateAssignmentInput,
-): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "createChangePolicyAssignment:actor",
-		})) as ChangePolicyScopedActor;
-		yield* requireOrgAdminForChangePolicyMutation(
-			actor,
-			"change_policy_assignment",
-			"create",
-			"Only org admins can create change policy assignments",
-		);
-
-		if (data.assignmentType === "team" && !data.teamId) {
-			yield* Effect.fail(
-				new ValidationError({
-					message: "Team ID is required for team assignments",
-					field: "teamId",
+					orderBy: [desc(changePolicyAssignment.priority), desc(changePolicyAssignment.createdAt)],
 				}),
 			);
-		}
-
-		if (data.assignmentType === "employee" && !data.employeeId) {
-			yield* Effect.fail(
-				new ValidationError({
-					message: "Employee ID is required for employee assignments",
-					field: "employeeId",
-				}),
+			const assignmentsWithAuthNames = assignments.map((assignment) => ({
+				...assignment,
+				employee: assignment.employee
+					? {
+							id: assignment.employee.id,
+							firstName: assignment.employee.user?.firstName ?? null,
+							lastName: assignment.employee.user?.lastName ?? null,
+							user: assignment.employee.user,
+						}
+					: null,
+			})) satisfies ChangePolicyAssignmentWithDetails[];
+			const visibleAssignments = yield* assignmentsInManagerScope(
+				organizationId,
+				assignmentsWithAuthNames,
+				scope,
 			);
-		}
 
-		const priority =
-			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
+			return sortAssignmentsByPriority(visibleAssignments);
+		}),
+);
 
-		// The policy and its target must be this organization's; manual submissions
-		// read effective assignments under the configuration guard.
-		const created = yield* actor.dbService.query("createChangePolicyAssignment", () =>
-			withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, async (tx) => {
-				const [policy] = await tx
-					.select({ id: changePolicy.id })
-					.from(changePolicy)
-					.where(
-						and(
-							eq(changePolicy.id, data.policyId),
-							eq(changePolicy.organizationId, actor.organizationId),
-						),
-					)
-					.limit(1);
-				if (!policy) return { invalid: "policyId" as const };
-				if (data.teamId) {
-					const [assignedTeam] = await tx
-						.select({ id: team.id })
-						.from(team)
-						.where(and(eq(team.id, data.teamId), eq(team.organizationId, actor.organizationId)))
-						.limit(1);
-					if (!assignedTeam) return { invalid: "teamId" as const };
-				}
-				if (data.employeeId) {
-					const [assignedEmployee] = await tx
-						.select({ id: employee.id })
-						.from(employee)
+export const createChangePolicyAssignment = organizationAction(
+	{
+		name: "changePolicies.createAssignment",
+		requires: "orgAdmin",
+		schema: createAssignmentSchema,
+		addsEmployees: (input) => [input.employeeId],
+	},
+	({ actor, organizationId, input: data }) =>
+		Effect.gen(function* () {
+			const priority =
+				data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
+			const dbService = yield* DatabaseService;
+
+			// The policy and its target must be this organization's; manual submissions
+			// read effective assignments under the configuration guard.
+			const created = yield* dbService.query("createChangePolicyAssignment", () =>
+				withOrganizationConfigurationMutation(dbService.db, organizationId, async (tx) => {
+					const [policy] = await tx
+						.select({ id: changePolicy.id })
+						.from(changePolicy)
 						.where(
-							and(
-								eq(employee.id, data.employeeId),
-								eq(employee.organizationId, actor.organizationId),
-							),
+							and(eq(changePolicy.id, data.policyId), eq(changePolicy.organizationId, organizationId)),
 						)
 						.limit(1);
-					if (!assignedEmployee) return { invalid: "employeeId" as const };
-					// A former employee gets no new change policy assignment (#1438).
-					const former = await findEmployeesNotOnCurrentRoster(tx, {
-						organizationId: actor.organizationId,
-						employeeIds: [data.employeeId],
-					});
-					if (former.length > 0) return { former };
-				}
+					if (!policy) return { invalid: "policyId" as const };
+					if (data.teamId) {
+						const [assignedTeam] = await tx
+							.select({ id: team.id })
+							.from(team)
+							.where(and(eq(team.id, data.teamId), eq(team.organizationId, organizationId)))
+							.limit(1);
+						if (!assignedTeam) return { invalid: "teamId" as const };
+					}
+					if (data.employeeId) {
+						// A former employee gets no new change policy assignment (#1438), also
+						// when they leave between the roster check and this write.
+						const former = await findEmployeesNotOnCurrentRoster(tx, {
+							organizationId,
+							employeeIds: [data.employeeId],
+						});
+						if (former.length > 0) return { former };
+					}
 
-				const [assignment] = await tx
-					.insert(changePolicyAssignment)
-					.values({
-						policyId: data.policyId,
-						organizationId: actor.organizationId,
-						assignmentType: data.assignmentType,
-						teamId: data.teamId ?? null,
-						employeeId: data.employeeId ?? null,
-						priority,
-						effectiveFrom: data.effectiveFrom,
-						effectiveUntil: data.effectiveUntil,
-						isActive: true,
-						createdBy: actor.session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning({ id: changePolicyAssignment.id });
-				return { id: assignment.id };
-			}),
-		);
-
-		if ("invalid" in created) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: "The policy and the assignment target must belong to this organization",
-					field: created.invalid,
+					const [assignment] = await tx
+						.insert(changePolicyAssignment)
+						.values({
+							policyId: data.policyId,
+							organizationId,
+							assignmentType: data.assignmentType,
+							teamId: data.teamId ?? null,
+							employeeId: data.employeeId ?? null,
+							priority,
+							effectiveFrom: data.effectiveFrom,
+							effectiveUntil: data.effectiveUntil,
+							isActive: true,
+							createdBy: actor.userId,
+							updatedAt: new Date(),
+						})
+						.returning({ id: changePolicyAssignment.id });
+					return { id: assignment.id };
 				}),
 			);
-		}
-		if ("former" in created) {
-			return yield* Effect.fail(formerEmployeeRefusal({ field: "employeeId" }, created.former ?? []));
-		}
 
-		return { id: created.id };
-	});
+			if ("invalid" in created) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "The policy and the assignment target must belong to this organization",
+						field: created.invalid,
+					}),
+				);
+			}
+			if ("former" in created) {
+				return yield* Effect.fail(formerEmployeeRefusal({ field: "employeeId" }, created.former ?? []));
+			}
 
-	return runServerActionSafe(effect);
-}
+			return { id: created.id };
+		}),
+);
 
-export async function deleteChangePolicyAssignment(
-	assignmentId: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({ queryName: "deleteChangePolicyAssignment:actor" })) as ChangePolicyScopedActor;
-		yield* requireOrgAdminForChangePolicyMutation(
-			actor,
-			"change_policy_assignment",
-			"delete",
-			"Only org admins can delete change policy assignments",
-		);
-
-		yield* actor.dbService.query("deleteChangePolicyAssignment", () =>
-			withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
-				tx
-					.update(changePolicyAssignment)
-					.set({ isActive: false })
-					.where(
-						and(
-							eq(changePolicyAssignment.id, assignmentId),
-							eq(changePolicyAssignment.organizationId, actor.organizationId),
+export const deleteChangePolicyAssignment = organizationAction(
+	{ name: "changePolicies.deleteAssignment", requires: "orgAdmin", schema: idSchema },
+	({ organizationId, input: assignmentId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("deleteChangePolicyAssignment", () =>
+				withOrganizationConfigurationMutation(dbService.db, organizationId, (tx) =>
+					tx
+						.update(changePolicyAssignment)
+						.set({ isActive: false })
+						.where(
+							and(
+								eq(changePolicyAssignment.id, assignmentId),
+								eq(changePolicyAssignment.organizationId, organizationId),
+							),
 						),
-					),
-			),
-		);
-	});
-
-	return runServerActionSafe(effect);
-}
+				),
+			);
+		}),
+);
 
 // ============================================
 // HELPER QUERIES
 // ============================================
 
-export async function getTeamsForAssignment(
-	organizationId: string,
-): Promise<ServerActionResult<{ id: string; name: string }[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({ organizationId, queryName: "getTeamsForAssignment:actor" })) as ChangePolicyScopedActor;
-		yield* requireOrgAdminForChangePolicyMutation(
-			actor,
-			"change_policy_assignment",
-			"read_assignment_teams",
-			"Only org admins can load change policy team assignments",
-		);
+export const getTeamsForAssignment = organizationAction(
+	{ name: "changePolicies.assignmentTeams", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("getTeamsForAssignment", () =>
+				dbService.db.query.team.findMany({
+					where: eq(team.organizationId, organizationId),
+					columns: { id: true, name: true },
+					orderBy: [team.name],
+				}),
+			);
+		}),
+);
 
-		const teams = yield* actor.dbService.query("getTeamsForAssignment", async () => {
-			return await actor.dbService.db.query.team.findMany({
-				where: eq(team.organizationId, organizationId),
-				columns: { id: true, name: true },
-				orderBy: [team.name],
+export const getEmployeesForAssignment = organizationAction(
+	{ name: "changePolicies.assignmentEmployees", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("getEmployeesForAssignment", async () => {
+				const rows = await dbService.db.query.employee.findMany({
+					where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+					columns: { id: true },
+					with: { user: { columns: { firstName: true, lastName: true } } },
+					orderBy: (employeeRecord, { asc }) => [asc(employeeRecord.id)],
+				});
+
+				return rows.map((employeeRecord) => ({
+					id: employeeRecord.id,
+					firstName: employeeRecord.user?.firstName ?? null,
+					lastName: employeeRecord.user?.lastName ?? null,
+				}));
 			});
-		});
-
-		return teams;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function getEmployeesForAssignment(
-	organizationId: string,
-): Promise<
-	ServerActionResult<{ id: string; firstName: string | null; lastName: string | null }[]>
-> {
-	const effect = Effect.gen(function* () {
-		const actor = (yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getEmployeesForAssignment:actor",
-		})) as ChangePolicyScopedActor;
-		yield* requireOrgAdminForChangePolicyMutation(
-			actor,
-			"change_policy_assignment",
-			"read_assignment_employees",
-			"Only org admins can load change policy employee assignments",
-		);
-
-		const employees = yield* actor.dbService.query("getEmployeesForAssignment", async () => {
-			const rows = await actor.dbService.db.query.employee.findMany({
-				where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-				columns: { id: true },
-				with: { user: { columns: { firstName: true, lastName: true } } },
-				orderBy: (employeeRecord, { asc }) => [asc(employeeRecord.id)],
-			});
-
-			return rows.map((employeeRecord) => ({
-				id: employeeRecord.id,
-				firstName: employeeRecord.user?.firstName ?? null,
-				lastName: employeeRecord.user?.lastName ?? null,
-			}));
-		});
-
-		return employees;
-	});
-
-	return runServerActionSafe(effect);
-}
+		}),
+);
