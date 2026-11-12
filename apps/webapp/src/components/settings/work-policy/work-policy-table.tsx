@@ -56,7 +56,7 @@ export function WorkPolicyTable({
 	} = useQuery({
 		queryKey: queryKeys.workPolicies.list(organizationId),
 		queryFn: async () => {
-			const result = await getWorkPolicies(organizationId);
+			const result = await getWorkPolicies();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}

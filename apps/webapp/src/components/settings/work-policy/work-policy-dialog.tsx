@@ -10,8 +10,10 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
 	type BreakRuleInput,
+	type CreateWorkPolicyInput,
 	createWorkPolicy,
 	type ScheduleDayInput,
+	type UpdateWorkPolicyInput,
 	updateWorkPolicy,
 	type WorkPolicyWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
@@ -269,8 +271,8 @@ function useWorkPolicyForm({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (data: Parameters<typeof createWorkPolicy>[1]) =>
-			createWorkPolicy(organizationId, data),
+		mutationFn: (data: CreateWorkPolicyInput) =>
+			createWorkPolicy(data),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.workPolicies.created", "Policy created"));
@@ -289,11 +291,11 @@ function useWorkPolicyForm({
 
 	// Update mutation
 	const updateMutation = useMutation({
-		mutationFn: (data: Parameters<typeof updateWorkPolicy>[1]) => {
+		mutationFn: (data: UpdateWorkPolicyInput) => {
 			if (!editingPolicy) {
 				throw new Error("Cannot update policy without an editing target");
 			}
-			return updateWorkPolicy(editingPolicy.id, data);
+			return updateWorkPolicy({ policyId: editingPolicy.id, data });
 		},
 		onSuccess: (result) => {
 			if (result.success) {

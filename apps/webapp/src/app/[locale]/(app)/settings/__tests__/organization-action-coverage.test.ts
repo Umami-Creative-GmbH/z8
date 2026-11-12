@@ -62,7 +62,6 @@ const NOT_YET_MIGRATED = [
 	"vehicles",
 	"webhooks",
 	"wellness",
-	"work-policies",
 ];
 
 /**

@@ -317,7 +317,7 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 				?.user.name,
 		).toBe("Renamed Manager");
 		expect(
-			(await updateWorkPolicy(policyId, { name: "Renamed policy" })).success,
+			(await updateWorkPolicy({ policyId, data: { name: "Renamed policy" } })).success,
 		).toBe(true);
 		const policies = await parseSuperJsonResponse<
 			EmployeeReadSnapshot<"work-policies">

@@ -1,7 +1,8 @@
 "use server";
 
-import { gt, and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
+import { z } from "zod";
 import {
 	employee,
 	team,
@@ -17,7 +18,6 @@ import {
 	workPolicyViolation,
 } from "@/db/schema";
 import type { TimeRegulationBreakRulesPreset } from "@/db/schema/types";
-import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	AuthorizationError,
@@ -25,26 +25,14 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
+import {
+	noInput,
+	type OrganizationActor,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
 import { hasValidLatestClockIns, latestClockInForDay } from "@/lib/scheduling/latest-clock-in";
 import { markOrganizationWorkBalancesDirty } from "@/lib/work-balance/service";
-import {
-	ensureSettingsActorCanAccessEmployeeTarget,
-	filterItemsToManagedEmployees,
-	getEmployeeSettingsActorContext,
-	getManageableTeamIdsForSettingsActor,
-	getManagedEmployeeIdsForSettingsActor,
-	getOrganizationTeam,
-	getTargetEmployee,
-	requireOrgAdminEmployeeSettingsAccess,
-	requireSettingsActorEmployeeAssignmentAccess,
-	requireSettingsActorEmployeeRecord,
-	validateAssignmentTargetFields,
-} from "../employees/employee-action-utils";
-import { canAccessWorkPolicyComplianceActions, policyBelongsToOrganization } from "./policy-scope";
 
 // ============================================
 // TYPES
@@ -111,177 +99,238 @@ export type WorkPolicyViolationWithDetails = typeof workPolicyViolation.$inferSe
 	policy: { id: string; name: string } | null;
 };
 
-// Form input types
-export interface BreakOptionInput {
-	splitCount: number | null;
-	minimumSplitMinutes: number | null;
-	minimumLongestSplitMinutes: number | null;
-}
+// ============================================
+// INPUT SCHEMAS
+// ============================================
 
-export interface BreakRuleInput {
-	workingMinutesThreshold: number;
-	requiredBreakMinutes: number;
-	options: BreakOptionInput[];
-}
+const breakOptionSchema = z.object({
+	splitCount: z.number().nullable(),
+	minimumSplitMinutes: z.number().nullable(),
+	minimumLongestSplitMinutes: z.number().nullable(),
+});
 
-export interface ScheduleDayInput {
-	dayOfWeek: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
-	hoursPerDay: string;
-	isWorkDay: boolean;
-	cycleWeek?: number;
+const breakRuleSchema = z.object({
+	workingMinutesThreshold: z.number(),
+	requiredBreakMinutes: z.number(),
+	options: z.array(breakOptionSchema),
+});
+
+const dayOfWeekSchema = z.enum([
+	"monday",
+	"tuesday",
+	"wednesday",
+	"thursday",
+	"friday",
+	"saturday",
+	"sunday",
+]);
+
+const scheduleDaySchema = z.object({
+	dayOfWeek: dayOfWeekSchema,
+	hoursPerDay: z.string(),
+	isWorkDay: z.boolean(),
+	cycleWeek: z.number().int().optional(),
 	/** Latest clock-in (`HH:mm`, local wall-clock) on a work day; null or absent means none. */
-	latestClockIn?: string | null;
-}
+	latestClockIn: z.string().nullish(),
+});
 
-export interface CreateWorkPolicyInput {
-	name: string;
-	description?: string;
-	scheduleEnabled: boolean;
-	regulationEnabled: boolean;
-	presenceEnabled: boolean;
+const scheduleCycleSchema = z.enum(["daily", "weekly", "biweekly", "monthly", "yearly"]);
+const workingDaysPresetSchema = z.enum(["weekdays", "weekends", "all_days", "custom"]);
+
+const workPolicyFieldsSchema = z.object({
+	name: z.string().trim().min(1, "Policy name is required"),
+	description: z.string().optional(),
+	scheduleEnabled: z.boolean(),
+	regulationEnabled: z.boolean(),
+	presenceEnabled: z.boolean(),
 
 	// Presence fields (used when presenceEnabled = true)
-	presence?: {
-		presenceMode: "minimum_count" | "fixed_days";
-		requiredOnsiteDays?: number;
-		requiredOnsiteFixedDays?: string[];
-		locationId?: string;
-		evaluationPeriod?: "weekly" | "biweekly" | "monthly";
-		enforcement?: "block" | "warn" | "none";
-	};
+	presence: z
+		.object({
+			presenceMode: z.enum(["minimum_count", "fixed_days"]),
+			requiredOnsiteDays: z.number().int().optional(),
+			requiredOnsiteFixedDays: z.array(z.string()).optional(),
+			locationId: z.string().optional(),
+			evaluationPeriod: z.enum(["weekly", "biweekly", "monthly"]).optional(),
+			enforcement: z.enum(["block", "warn", "none"]).optional(),
+		})
+		.optional(),
 
 	// Schedule fields (used when scheduleEnabled = true)
-	schedule?: {
-		scheduleCycle: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
-		scheduleType: "simple" | "detailed";
-		workingDaysPreset: "weekdays" | "weekends" | "all_days" | "custom";
-		hoursPerCycle?: string;
-		homeOfficeDaysPerCycle?: number;
-		days?: ScheduleDayInput[];
-	};
+	schedule: z
+		.object({
+			scheduleCycle: scheduleCycleSchema,
+			scheduleType: z.enum(["simple", "detailed"]),
+			workingDaysPreset: workingDaysPresetSchema,
+			hoursPerCycle: z.string().optional(),
+			homeOfficeDaysPerCycle: z.number().int().optional(),
+			days: z.array(scheduleDaySchema).optional(),
+		})
+		.optional(),
 
 	// Regulation fields (used when regulationEnabled = true)
-	regulation?: {
-		maxDailyMinutes?: number;
-		maxWeeklyMinutes?: number;
-		maxUninterruptedMinutes?: number;
-		breakRules: BreakRuleInput[];
-	};
-}
+	regulation: z
+		.object({
+			maxDailyMinutes: z.number().optional(),
+			maxWeeklyMinutes: z.number().optional(),
+			maxUninterruptedMinutes: z.number().optional(),
+			breakRules: z.array(breakRuleSchema),
+		})
+		.optional(),
+});
 
+const updateWorkPolicySchema = z.object({
+	policyId: z.string().min(1),
+	data: workPolicyFieldsSchema.partial(),
+});
+
+const workPolicyPresetInputSchema = z.object({
+	name: z.string().trim().min(1, "Preset name is required"),
+	description: z.string().optional(),
+	countryCode: z.string().nullish(),
+	scheduleEnabled: z.boolean(),
+	regulationEnabled: z.boolean(),
+	schedule: z
+		.object({
+			scheduleCycle: scheduleCycleSchema.optional(),
+			workingDaysPreset: workingDaysPresetSchema.optional(),
+			hoursPerCycle: z.string().optional(),
+		})
+		.optional(),
+	regulation: z
+		.object({
+			maxDailyMinutes: z.number().optional(),
+			maxWeeklyMinutes: z.number().optional(),
+			maxUninterruptedMinutes: z.number().optional(),
+			breakRules: z.array(breakRuleSchema, "Preset break rules are malformed").optional(),
+		})
+		.optional(),
+});
+
+const presetWithInputSchema = z.object({
+	presetId: z.string().min(1),
+	input: workPolicyPresetInputSchema,
+});
+
+const createWorkPolicyAssignmentSchema = z
+	.object({
+		policyId: z.string().min(1),
+		assignmentType: z.enum(["organization", "team", "employee"]),
+		teamId: z.string().optional(),
+		employeeId: z.string().optional(),
+	})
+	.superRefine((input, context) => {
+		const issue = (message: string, field: "teamId" | "employeeId") =>
+			context.addIssue({ code: "custom", message, path: [field] });
+		if (input.assignmentType === "organization") {
+			if (input.teamId || input.employeeId) {
+				issue(
+					"Organization assignments cannot target teams or employees",
+					input.teamId ? "teamId" : "employeeId",
+				);
+			}
+		} else if (input.assignmentType === "team") {
+			if (!input.teamId) issue("Team assignments require a teamId", "teamId");
+			else if (input.employeeId) issue("Team assignments cannot target an employee", "employeeId");
+		} else if (!input.employeeId) {
+			issue("Employee assignments require an employeeId", "employeeId");
+		} else if (input.teamId) {
+			issue("Employee assignments cannot target a team", "teamId");
+		}
+	});
+
+const idSchema = z.string().min(1);
+
+// Form input types
+export type BreakOptionInput = z.input<typeof breakOptionSchema>;
+export type BreakRuleInput = z.input<typeof breakRuleSchema>;
+export type ScheduleDayInput = z.input<typeof scheduleDaySchema>;
+export type CreateWorkPolicyInput = z.input<typeof workPolicyFieldsSchema>;
 export type UpdateWorkPolicyInput = Partial<CreateWorkPolicyInput>;
-
-export interface WorkPolicyPresetInput {
-	name: string;
-	description?: string;
-	countryCode?: string | null;
-	scheduleEnabled: boolean;
-	regulationEnabled: boolean;
-	schedule?: {
-		scheduleCycle?: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
-		workingDaysPreset?: "weekdays" | "weekends" | "all_days" | "custom";
-		hoursPerCycle?: string;
-	};
-	regulation?: {
-		maxDailyMinutes?: number;
-		maxWeeklyMinutes?: number;
-		maxUninterruptedMinutes?: number;
-		breakRules?: BreakRuleInput[];
-	};
-}
+export type WorkPolicyPresetInput = z.input<typeof workPolicyPresetInputSchema>;
+type ParsedWorkPolicy = z.output<typeof workPolicyFieldsSchema>;
+type ParsedWorkPolicyPreset = z.output<typeof workPolicyPresetInputSchema>;
 
 export type WorkPolicyPresetWithSource = typeof workPolicyPreset.$inferSelect & {
 	source: "system" | "custom";
 	sourceLabel: "System" | "Custom";
 };
 
-// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
+const policyDetails = {
+	schedule: {
+		with: { days: true as const },
+	},
+	regulation: {
+		with: {
+			breakRules: {
+				orderBy: [workPolicyBreakRule.sortOrder],
+				with: {
+					options: {
+						orderBy: [workPolicyBreakOption.sortOrder],
+					},
+				},
+			},
+		},
+	},
+	presence: true as const,
+};
+
+function policyNotFound(policyId?: string, message = "Policy not found") {
+	return Effect.fail(new NotFoundError({ message, entityType: "work_policy", entityId: policyId }));
+}
+
+function presetNotFound(presetId: string) {
+	return Effect.fail(
+		new NotFoundError({
+			message: "Preset not found",
+			entityType: "work_policy_preset",
+			entityId: presetId,
+		}),
+	);
+}
+
+function markWorkBalancesDirty(organizationId: string) {
+	return Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId }));
+}
+
+function findPolicyWithDetails(policyId: string, organizationId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const policy = yield* dbService.query("workPolicies.findWithDetails", () =>
+			dbService.db.query.workPolicy.findFirst({
+				where: and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)),
+				with: policyDetails,
+			}),
+		);
+		return (policy ?? null) as WorkPolicyWithDetails | null;
+	});
+}
 
 // ============================================
 // GET POLICIES
 // ============================================
 
-export async function getWorkPolicies(
-	organizationId: string,
-): Promise<ServerActionResult<WorkPolicyWithDetails[]>> {
-	const effect = Effect.gen(function* () {
-		yield* getEmployeeSettingsActorContext({ organizationId, queryName: "getWorkPolicies:actor" });
+export const getWorkPolicies = organizationAction(
+	{ name: "workPolicies.list", requires: "scopedManager", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const policies = yield* dbService.query("getWorkPolicies", () =>
+				dbService.db.query.workPolicy.findMany({
+					where: and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isActive, true)),
+					with: policyDetails,
+					orderBy: (p, { asc }) => [asc(p.name)],
+				}),
+			);
 
-		const dbService = yield* DatabaseService;
-		const policies = yield* dbService.query("getWorkPolicies", async () => {
-			return await dbService.db.query.workPolicy.findMany({
-				where: and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isActive, true)),
-				with: {
-					schedule: {
-						with: { days: true },
-					},
-					regulation: {
-						with: {
-							breakRules: {
-								orderBy: [workPolicyBreakRule.sortOrder],
-								with: {
-									options: {
-										orderBy: [workPolicyBreakOption.sortOrder],
-									},
-								},
-							},
-						},
-					},
-					presence: true,
-				},
-				orderBy: (p, { asc }) => [asc(p.name)],
-			});
-		});
+			return policies as WorkPolicyWithDetails[];
+		}),
+);
 
-		return policies as WorkPolicyWithDetails[];
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function getWorkPolicy(
-	policyId: string,
-): Promise<ServerActionResult<WorkPolicyWithDetails | null>> {
-	const effect = Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const policy = yield* dbService.query("getWorkPolicy", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: eq(workPolicy.id, policyId),
-				with: {
-					schedule: {
-						with: { days: true },
-					},
-					regulation: {
-						with: {
-							breakRules: {
-								orderBy: [workPolicyBreakRule.sortOrder],
-								with: {
-									options: {
-										orderBy: [workPolicyBreakOption.sortOrder],
-									},
-								},
-							},
-						},
-					},
-					presence: true,
-				},
-			});
-		});
-
-		if (!policy) {
-			return null;
-		}
-
-		yield* getEmployeeSettingsActorContext({
-			organizationId: policy.organizationId,
-			queryName: "getWorkPolicy:actor",
-		});
-
-		return policy as WorkPolicyWithDetails;
-	});
-
-	return runServerActionSafe(effect);
-}
+export const getWorkPolicy = organizationAction(
+	{ name: "workPolicies.get", requires: "scopedManager", schema: idSchema },
+	({ organizationId, input: policyId }) => findPolicyWithDetails(policyId, organizationId),
+);
 
 /** Fails unless every work day's latest clock-in is blank or a `HH:mm` time. */
 function validateLatestClockIns(days: ScheduleDayInput[] | undefined) {
@@ -295,34 +344,127 @@ function validateLatestClockIns(days: ScheduleDayInput[] | undefined) {
 		: Effect.void;
 }
 
-// ============================================
-// CREATE POLICY
-// ============================================
+type ScheduleFields = NonNullable<ParsedWorkPolicy["schedule"]>;
+type RegulationFields = NonNullable<ParsedWorkPolicy["regulation"]>;
+type PresenceFields = NonNullable<ParsedWorkPolicy["presence"]>;
 
-export async function createWorkPolicy(
-	organizationId: string,
-	data: CreateWorkPolicyInput,
-): Promise<ServerActionResult<WorkPolicyWithDetails>> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+function insertSchedule(policyId: string, schedule: ScheduleFields) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const [created] = yield* dbService.query("createSchedule", () =>
+			dbService.db
+				.insert(workPolicySchedule)
+				.values({
+					policyId,
+					scheduleCycle: schedule.scheduleCycle,
+					scheduleType: schedule.scheduleType,
+					workingDaysPreset:
+						schedule.scheduleType === "detailed" ? "custom" : schedule.workingDaysPreset,
+					hoursPerCycle: schedule.scheduleType === "simple" ? schedule.hoursPerCycle : null,
+					homeOfficeDaysPerCycle: schedule.homeOfficeDaysPerCycle ?? 0,
+					updatedAt: currentTimestamp(),
+				})
+				.returning(),
+		);
 
-		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: session.user.id,
-					resource: "work_policy",
-					action: "create",
-				}),
-			);
+		// Create day entries for detailed schedules
+		const days = schedule.days;
+		if (schedule.scheduleType === "detailed" && days) {
+			yield* dbService.query("createScheduleDays", async () => {
+				await dbService.db.insert(workPolicyScheduleDay).values(
+					days.map((day) => ({
+						scheduleId: created.id,
+						dayOfWeek: day.dayOfWeek,
+						hoursPerDay: day.hoursPerDay,
+						isWorkDay: day.isWorkDay,
+						cycleWeek: day.cycleWeek ?? 1,
+						latestClockIn: latestClockInForDay(day),
+					})),
+				);
+			});
 		}
+	});
+}
 
+function insertRegulation(policyId: string, regulation: RegulationFields) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const [created] = yield* dbService.query("createRegulation", () =>
+			dbService.db
+				.insert(workPolicyRegulation)
+				.values({
+					policyId,
+					maxDailyMinutes: regulation.maxDailyMinutes,
+					maxWeeklyMinutes: regulation.maxWeeklyMinutes,
+					maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
+					updatedAt: currentTimestamp(),
+				})
+				.returning(),
+		);
+
+		// Create break rules with options
+		for (const [ruleIndex, rule] of regulation.breakRules.entries()) {
+			const [breakRule] = yield* dbService.query("createBreakRule", () =>
+				dbService.db
+					.insert(workPolicyBreakRule)
+					.values({
+						regulationId: created.id,
+						workingMinutesThreshold: rule.workingMinutesThreshold,
+						requiredBreakMinutes: rule.requiredBreakMinutes,
+						sortOrder: ruleIndex,
+						updatedAt: currentTimestamp(),
+					})
+					.returning(),
+			);
+
+			for (const [optIndex, option] of rule.options.entries()) {
+				yield* dbService.query("createBreakOption", async () => {
+					await dbService.db.insert(workPolicyBreakOption).values({
+						breakRuleId: breakRule.id,
+						splitCount: option.splitCount,
+						minimumSplitMinutes: option.minimumSplitMinutes,
+						minimumLongestSplitMinutes: option.minimumLongestSplitMinutes,
+						sortOrder: optIndex,
+					});
+				});
+			}
+		}
+	});
+}
+
+function insertPresence(policyId: string, presence: PresenceFields) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		yield* dbService.query("createPresence", async () => {
+			await dbService.db.insert(workPolicyPresence).values({
+				policyId,
+				presenceMode: presence.presenceMode,
+				requiredOnsiteDays: presence.requiredOnsiteDays ?? null,
+				requiredOnsiteFixedDays: presence.requiredOnsiteFixedDays
+					? JSON.stringify(presence.requiredOnsiteFixedDays)
+					: null,
+				locationId: presence.locationId || null,
+				evaluationPeriod: presence.evaluationPeriod ?? "weekly",
+				enforcement: presence.enforcement ?? "warn",
+				updatedAt: currentTimestamp(),
+			});
+		});
+	});
+}
+
+function fetchSavedPolicy(policyId: string, organizationId: string, message: string) {
+	return Effect.gen(function* () {
+		const policy = yield* findPolicyWithDetails(policyId, organizationId);
+		return policy ?? (yield* policyNotFound(undefined, message));
+	});
+}
+
+/** Creates a policy in the organization; shared by the policy and preset actions. */
+function createPolicyIn(organizationId: string, userId: string, data: ParsedWorkPolicy) {
+	return Effect.gen(function* () {
 		// Validate at least one feature is enabled
 		if (!data.scheduleEnabled && !data.regulationEnabled && !data.presenceEnabled) {
-			yield* Effect.fail(
+			return yield* Effect.fail(
 				new ValidationError({
 					message: "At least one feature (schedule, regulation, or presence) must be enabled",
 					field: "scheduleEnabled",
@@ -333,19 +475,18 @@ export async function createWorkPolicy(
 
 		const dbService = yield* DatabaseService;
 
-		// Check for duplicate name
-		const existingPolicy = yield* dbService.query("checkDuplicateName", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
+		const existingPolicy = yield* dbService.query("checkDuplicateName", () =>
+			dbService.db.query.workPolicy.findFirst({
 				where: and(
 					eq(workPolicy.organizationId, organizationId),
 					eq(workPolicy.name, data.name),
 					eq(workPolicy.isActive, true),
 				),
-			});
-		});
+			}),
+		);
 
 		if (existingPolicy) {
-			yield* Effect.fail(
+			return yield* Effect.fail(
 				new ConflictError({
 					message: "A policy with this name already exists",
 					conflictType: "duplicate_name",
@@ -354,9 +495,8 @@ export async function createWorkPolicy(
 			);
 		}
 
-		// Create main policy
-		const [newPolicy] = yield* dbService.query("createPolicy", async () => {
-			return await dbService.db
+		const [newPolicy] = yield* dbService.query("createPolicy", () =>
+			dbService.db
 				.insert(workPolicy)
 				.values({
 					organizationId,
@@ -365,720 +505,454 @@ export async function createWorkPolicy(
 					scheduleEnabled: data.scheduleEnabled,
 					regulationEnabled: data.regulationEnabled,
 					presenceEnabled: data.presenceEnabled ?? false,
-					createdBy: session.user.id,
+					createdBy: userId,
 					updatedAt: currentTimestamp(),
 				})
-				.returning();
-		});
+				.returning(),
+		);
 
-		// Create schedule if enabled
 		if (data.scheduleEnabled && data.schedule) {
-			const [schedule] = yield* dbService.query("createSchedule", async () => {
-				return await dbService.db
-					.insert(workPolicySchedule)
-					.values({
-						policyId: newPolicy.id,
-						scheduleCycle: data.schedule!.scheduleCycle,
-						scheduleType: data.schedule!.scheduleType,
-						workingDaysPreset:
-							data.schedule!.scheduleType === "detailed"
-								? "custom"
-								: data.schedule!.workingDaysPreset,
-						hoursPerCycle:
-							data.schedule!.scheduleType === "simple" ? data.schedule!.hoursPerCycle : null,
-						homeOfficeDaysPerCycle: data.schedule!.homeOfficeDaysPerCycle ?? 0,
-						updatedAt: currentTimestamp(),
-					})
-					.returning();
-			});
-
-			// Create day entries for detailed schedules
-			if (data.schedule.scheduleType === "detailed" && data.schedule.days) {
-				yield* dbService.query("createScheduleDays", async () => {
-					await dbService.db.insert(workPolicyScheduleDay).values(
-						data.schedule!.days!.map((day) => ({
-							scheduleId: schedule.id,
-							dayOfWeek: day.dayOfWeek,
-							hoursPerDay: day.hoursPerDay,
-							isWorkDay: day.isWorkDay,
-							cycleWeek: day.cycleWeek ?? 1,
-							latestClockIn: latestClockInForDay(day),
-						})),
-					);
-				});
-			}
+			yield* insertSchedule(newPolicy.id, data.schedule);
 		}
-
-		// Create regulation if enabled
 		if (data.regulationEnabled && data.regulation) {
-			const [regulation] = yield* dbService.query("createRegulation", async () => {
-				return await dbService.db
-					.insert(workPolicyRegulation)
-					.values({
-						policyId: newPolicy.id,
-						maxDailyMinutes: data.regulation!.maxDailyMinutes,
-						maxWeeklyMinutes: data.regulation!.maxWeeklyMinutes,
-						maxUninterruptedMinutes: data.regulation!.maxUninterruptedMinutes,
-						updatedAt: currentTimestamp(),
-					})
-					.returning();
-			});
-
-			// Create break rules with options
-			for (const [ruleIndex, rule] of data.regulation.breakRules.entries()) {
-				const [breakRule] = yield* dbService.query("createBreakRule", async () => {
-					return await dbService.db
-						.insert(workPolicyBreakRule)
-						.values({
-							regulationId: regulation.id,
-							workingMinutesThreshold: rule.workingMinutesThreshold,
-							requiredBreakMinutes: rule.requiredBreakMinutes,
-							sortOrder: ruleIndex,
-							updatedAt: currentTimestamp(),
-						})
-						.returning();
-				});
-
-				for (const [optIndex, option] of rule.options.entries()) {
-					yield* dbService.query("createBreakOption", async () => {
-						await dbService.db.insert(workPolicyBreakOption).values({
-							breakRuleId: breakRule.id,
-							splitCount: option.splitCount,
-							minimumSplitMinutes: option.minimumSplitMinutes,
-							minimumLongestSplitMinutes: option.minimumLongestSplitMinutes,
-							sortOrder: optIndex,
-						});
-					});
-				}
-			}
+			yield* insertRegulation(newPolicy.id, data.regulation);
 		}
-
-		// Create presence config if enabled
 		if (data.presenceEnabled && data.presence) {
-			yield* dbService.query("createPresence", async () => {
-				await dbService.db.insert(workPolicyPresence).values({
-					policyId: newPolicy.id,
-					presenceMode: data.presence!.presenceMode,
-					requiredOnsiteDays: data.presence!.requiredOnsiteDays ?? null,
-					requiredOnsiteFixedDays: data.presence!.requiredOnsiteFixedDays
-						? JSON.stringify(data.presence!.requiredOnsiteFixedDays)
-						: null,
-					locationId: data.presence!.locationId || null,
-					evaluationPeriod: data.presence!.evaluationPeriod ?? "weekly",
-					enforcement: data.presence!.enforcement ?? "warn",
-					updatedAt: currentTimestamp(),
-				});
-			});
+			yield* insertPresence(newPolicy.id, data.presence);
 		}
 
-		// Fetch complete policy
-		const completePolicy = yield* dbService.query("fetchComplete", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: eq(workPolicy.id, newPolicy.id),
-				with: {
-					schedule: {
-						with: { days: true },
-					},
-					regulation: {
-						with: {
-							breakRules: {
-								with: { options: true },
-							},
-						},
-					},
-					presence: true,
-				},
-			});
+		const completePolicy = yield* fetchSavedPolicy(
+			newPolicy.id,
+			organizationId,
+			"Failed to fetch created policy",
+		);
+
+		yield* markWorkBalancesDirty(organizationId);
+
+		return completePolicy;
+	});
+}
+
+/** Makes a policy of the organization its default; shared by the policy and preset actions. */
+function setDefaultPolicyIn(organizationId: string, userId: string, policyId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const policy = yield* dbService.query("getPolicy", () =>
+			dbService.db.query.workPolicy.findFirst({
+				where: and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)),
+			}),
+		);
+
+		if (!policy) {
+			return yield* policyNotFound(policyId);
+		}
+
+		yield* dbService.query("unsetDefault", async () => {
+			await dbService.db
+				.update(workPolicy)
+				.set({
+					isDefault: false,
+					updatedBy: userId,
+					updatedAt: currentTimestamp(),
+				})
+				.where(and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isDefault, true)));
 		});
 
-		if (!completePolicy) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Failed to fetch created policy",
-					entityType: "work_policy",
-				}),
-			);
-		}
+		yield* dbService.query("setDefault", async () => {
+			await dbService.db
+				.update(workPolicy)
+				.set({
+					isDefault: true,
+					updatedBy: userId,
+					updatedAt: currentTimestamp(),
+				})
+				.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
+		});
 
-		yield* Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId }));
-
-		return completePolicy as WorkPolicyWithDetails;
+		yield* markWorkBalancesDirty(organizationId);
 	});
-
-	return runServerActionSafe(effect);
 }
+
+// ============================================
+// CREATE POLICY
+// ============================================
+
+export const createWorkPolicy = organizationAction(
+	{ name: "workPolicies.create", requires: "orgAdmin", schema: workPolicyFieldsSchema },
+	({ actor, organizationId, input }) => createPolicyIn(organizationId, actor.userId, input),
+);
 
 // ============================================
 // UPDATE POLICY
 // ============================================
 
-export async function updateWorkPolicy(
-	policyId: string,
-	data: UpdateWorkPolicyInput,
-): Promise<ServerActionResult<WorkPolicyWithDetails>> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+export const updateWorkPolicy = organizationAction(
+	{ name: "workPolicies.update", requires: "orgAdmin", schema: updateWorkPolicySchema },
+	({ actor, organizationId, input: { policyId, data } }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 
-		const dbService = yield* DatabaseService;
-
-		// Get existing policy
-		const existingPolicy = yield* dbService.query("getExisting", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: eq(workPolicy.id, policyId),
-				with: {
-					schedule: true,
-					regulation: true,
-					presence: true,
-				},
-			});
-		});
-
-		if (!existingPolicy) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Policy not found",
-					entityType: "work_policy",
-					entityId: policyId,
+			const existingPolicy = yield* dbService.query("getExisting", () =>
+				dbService.db.query.workPolicy.findFirst({
+					where: and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)),
+					with: {
+						schedule: true,
+						regulation: true,
+						presence: true,
+					},
 				}),
 			);
-		}
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(existingPolicy!.organizationId),
-		);
 
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: session.user.id,
-					resource: "work_policy",
-					action: "update",
-				}),
-			);
-		}
-		yield* validateLatestClockIns(data.schedule?.days);
+			if (!existingPolicy) {
+				return yield* policyNotFound(policyId);
+			}
+			yield* validateLatestClockIns(data.schedule?.days);
 
-		// Check for duplicate name if name is being changed
-		if (data.name && data.name !== existingPolicy!.name) {
-			const duplicatePolicy = yield* dbService.query("checkDuplicate", async () => {
-				return await dbService.db.query.workPolicy.findFirst({
-					where: and(
-						eq(workPolicy.organizationId, existingPolicy!.organizationId),
-						eq(workPolicy.name, data.name!),
-						eq(workPolicy.isActive, true),
-					),
-				});
-			});
-
-			if (duplicatePolicy && duplicatePolicy.id !== policyId) {
-				yield* Effect.fail(
-					new ConflictError({
-						message: "A policy with this name already exists",
-						conflictType: "duplicate_name",
-						details: { entityType: "work_policy", field: "name" },
+			// Check for duplicate name if name is being changed
+			const name = data.name;
+			if (name && name !== existingPolicy.name) {
+				const duplicatePolicy = yield* dbService.query("checkDuplicate", () =>
+					dbService.db.query.workPolicy.findFirst({
+						where: and(
+							eq(workPolicy.organizationId, organizationId),
+							eq(workPolicy.name, name),
+							eq(workPolicy.isActive, true),
+						),
 					}),
 				);
-			}
-		}
 
-		// Update main policy
-		const shouldDirtyWorkBalances =
-			data.scheduleEnabled !== undefined || data.schedule !== undefined;
-
-		yield* dbService.query("updatePolicy", async () => {
-			await dbService.db
-				.update(workPolicy)
-				.set({
-					name: data.name ?? existingPolicy!.name,
-					description: data.description ?? existingPolicy!.description,
-					scheduleEnabled: data.scheduleEnabled ?? existingPolicy!.scheduleEnabled,
-					regulationEnabled: data.regulationEnabled ?? existingPolicy!.regulationEnabled,
-					presenceEnabled: data.presenceEnabled ?? existingPolicy!.presenceEnabled,
-					updatedBy: session.user.id,
-					updatedAt: currentTimestamp(),
-				})
-				.where(eq(workPolicy.id, policyId));
-		});
-
-		// Update schedule if provided
-		if (data.schedule) {
-			// Delete existing schedule (cascade deletes days)
-			if (existingPolicy!.schedule) {
-				yield* dbService.query("deleteOldSchedule", async () => {
-					await dbService.db
-						.delete(workPolicySchedule)
-						.where(eq(workPolicySchedule.policyId, policyId));
-				});
-			}
-
-			// Create new schedule
-			const [schedule] = yield* dbService.query("createSchedule", async () => {
-				return await dbService.db
-					.insert(workPolicySchedule)
-					.values({
-						policyId,
-						scheduleCycle: data.schedule!.scheduleCycle,
-						scheduleType: data.schedule!.scheduleType,
-						workingDaysPreset:
-							data.schedule!.scheduleType === "detailed"
-								? "custom"
-								: data.schedule!.workingDaysPreset,
-						hoursPerCycle:
-							data.schedule!.scheduleType === "simple" ? data.schedule!.hoursPerCycle : null,
-						homeOfficeDaysPerCycle: data.schedule!.homeOfficeDaysPerCycle ?? 0,
-						updatedAt: currentTimestamp(),
-					})
-					.returning();
-			});
-
-			if (data.schedule.scheduleType === "detailed" && data.schedule.days) {
-				yield* dbService.query("createScheduleDays", async () => {
-					await dbService.db.insert(workPolicyScheduleDay).values(
-						data.schedule!.days!.map((day) => ({
-							scheduleId: schedule.id,
-							dayOfWeek: day.dayOfWeek,
-							hoursPerDay: day.hoursPerDay,
-							isWorkDay: day.isWorkDay,
-							cycleWeek: day.cycleWeek ?? 1,
-							latestClockIn: latestClockInForDay(day),
-						})),
+				if (duplicatePolicy && duplicatePolicy.id !== policyId) {
+					return yield* Effect.fail(
+						new ConflictError({
+							message: "A policy with this name already exists",
+							conflictType: "duplicate_name",
+							details: { entityType: "work_policy", field: "name" },
+						}),
 					);
-				});
-			}
-		}
-
-		// Update regulation if provided
-		if (data.regulation) {
-			// Delete existing regulation (cascade deletes break rules and options)
-			if (existingPolicy!.regulation) {
-				yield* dbService.query("deleteOldRegulation", async () => {
-					await dbService.db
-						.delete(workPolicyRegulation)
-						.where(eq(workPolicyRegulation.policyId, policyId));
-				});
-			}
-
-			// Create new regulation
-			const [regulation] = yield* dbService.query("createRegulation", async () => {
-				return await dbService.db
-					.insert(workPolicyRegulation)
-					.values({
-						policyId,
-						maxDailyMinutes: data.regulation!.maxDailyMinutes,
-						maxWeeklyMinutes: data.regulation!.maxWeeklyMinutes,
-						maxUninterruptedMinutes: data.regulation!.maxUninterruptedMinutes,
-						updatedAt: currentTimestamp(),
-					})
-					.returning();
-			});
-
-			for (const [ruleIndex, rule] of data.regulation.breakRules.entries()) {
-				const [breakRule] = yield* dbService.query("createBreakRule", async () => {
-					return await dbService.db
-						.insert(workPolicyBreakRule)
-						.values({
-							regulationId: regulation.id,
-							workingMinutesThreshold: rule.workingMinutesThreshold,
-							requiredBreakMinutes: rule.requiredBreakMinutes,
-							sortOrder: ruleIndex,
-							updatedAt: currentTimestamp(),
-						})
-						.returning();
-				});
-
-				for (const [optIndex, option] of rule.options.entries()) {
-					yield* dbService.query("createBreakOption", async () => {
-						await dbService.db.insert(workPolicyBreakOption).values({
-							breakRuleId: breakRule.id,
-							splitCount: option.splitCount,
-							minimumSplitMinutes: option.minimumSplitMinutes,
-							minimumLongestSplitMinutes: option.minimumLongestSplitMinutes,
-							sortOrder: optIndex,
-						});
-					});
 				}
 			}
-		}
 
-		// Update presence if provided
-		if (data.presence !== undefined) {
-			// Delete existing presence config
-			yield* dbService.query("deleteOldPresence", async () => {
+			const shouldDirtyWorkBalances =
+				data.scheduleEnabled !== undefined || data.schedule !== undefined;
+
+			yield* dbService.query("updatePolicy", async () => {
 				await dbService.db
-					.delete(workPolicyPresence)
-					.where(eq(workPolicyPresence.policyId, policyId));
-			});
-
-			// Create new presence config if enabled
-			if ((data.presenceEnabled ?? existingPolicy!.presenceEnabled) && data.presence) {
-				yield* dbService.query("createPresence", async () => {
-					await dbService.db.insert(workPolicyPresence).values({
-						policyId,
-						presenceMode: data.presence!.presenceMode,
-						requiredOnsiteDays: data.presence!.requiredOnsiteDays ?? null,
-						requiredOnsiteFixedDays: data.presence!.requiredOnsiteFixedDays
-							? JSON.stringify(data.presence!.requiredOnsiteFixedDays)
-							: null,
-						locationId: data.presence!.locationId || null,
-						evaluationPeriod: data.presence!.evaluationPeriod ?? "weekly",
-						enforcement: data.presence!.enforcement ?? "warn",
+					.update(workPolicy)
+					.set({
+						name: data.name ?? existingPolicy.name,
+						description: data.description ?? existingPolicy.description,
+						scheduleEnabled: data.scheduleEnabled ?? existingPolicy.scheduleEnabled,
+						regulationEnabled: data.regulationEnabled ?? existingPolicy.regulationEnabled,
+						presenceEnabled: data.presenceEnabled ?? existingPolicy.presenceEnabled,
+						updatedBy: actor.userId,
 						updatedAt: currentTimestamp(),
-					});
-				});
-			}
-		}
-
-		// Fetch updated policy
-		const updatedPolicy = yield* dbService.query("fetchUpdated", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: eq(workPolicy.id, policyId),
-				with: {
-					schedule: {
-						with: { days: true },
-					},
-					regulation: {
-						with: {
-							breakRules: {
-								with: { options: true },
-							},
-						},
-					},
-					presence: true,
-				},
+					})
+					.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
 			});
-		});
 
-		if (!updatedPolicy) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Failed to fetch updated policy",
-					entityType: "work_policy",
-				}),
+			if (data.schedule) {
+				// Delete existing schedule (cascade deletes days)
+				if (existingPolicy.schedule) {
+					yield* dbService.query("deleteOldSchedule", async () => {
+						await dbService.db
+							.delete(workPolicySchedule)
+							.where(eq(workPolicySchedule.policyId, policyId));
+					});
+				}
+				yield* insertSchedule(policyId, data.schedule);
+			}
+
+			if (data.regulation) {
+				// Delete existing regulation (cascade deletes break rules and options)
+				if (existingPolicy.regulation) {
+					yield* dbService.query("deleteOldRegulation", async () => {
+						await dbService.db
+							.delete(workPolicyRegulation)
+							.where(eq(workPolicyRegulation.policyId, policyId));
+					});
+				}
+				yield* insertRegulation(policyId, data.regulation);
+			}
+
+			if (data.presence !== undefined) {
+				yield* dbService.query("deleteOldPresence", async () => {
+					await dbService.db
+						.delete(workPolicyPresence)
+						.where(eq(workPolicyPresence.policyId, policyId));
+				});
+
+				if ((data.presenceEnabled ?? existingPolicy.presenceEnabled) && data.presence) {
+					yield* insertPresence(policyId, data.presence);
+				}
+			}
+
+			const updatedPolicy = yield* fetchSavedPolicy(
+				policyId,
+				organizationId,
+				"Failed to fetch updated policy",
 			);
-		}
 
-		if (shouldDirtyWorkBalances) {
-			yield* Effect.promise(() =>
-				markOrganizationWorkBalancesDirty({ organizationId: existingPolicy!.organizationId }),
-			);
-		}
+			if (shouldDirtyWorkBalances) {
+				yield* markWorkBalancesDirty(organizationId);
+			}
 
-		return updatedPolicy as WorkPolicyWithDetails;
-	});
-
-	return runServerActionSafe(effect);
-}
+			return updatedPolicy;
+		}),
+);
 
 // ============================================
 // DELETE POLICY
 // ============================================
 
-export async function deleteWorkPolicy(policyId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+export const deleteWorkPolicy = organizationAction(
+	{ name: "workPolicies.delete", requires: "orgAdmin", schema: idSchema },
+	({ actor, organizationId, input: policyId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 
-		const dbService = yield* DatabaseService;
+			const existingPolicy = yield* dbService.query("getExisting", () =>
+				dbService.db.query.workPolicy.findFirst({
+					where: and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)),
+				}),
+			);
 
-		const existingPolicy = yield* dbService.query("getExisting", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: eq(workPolicy.id, policyId),
+			if (!existingPolicy) {
+				return yield* policyNotFound(policyId);
+			}
+
+			yield* dbService.query("softDelete", async () => {
+				await dbService.db
+					.update(workPolicy)
+					.set({
+						isActive: false,
+						isDefault: false,
+						updatedBy: actor.userId,
+						updatedAt: currentTimestamp(),
+					})
+					.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
 			});
-		});
 
-		if (!existingPolicy) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Policy not found",
-					entityType: "work_policy",
-					entityId: policyId,
-				}),
-			);
-		}
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(existingPolicy!.organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: session.user.id,
-					resource: "work_policy",
-					action: "delete",
-				}),
-			);
-		}
-
-		// Soft delete
-		yield* dbService.query("softDelete", async () => {
-			await dbService.db
-				.update(workPolicy)
-				.set({
-					isActive: false,
-					isDefault: false,
-					updatedBy: session.user.id,
-					updatedAt: currentTimestamp(),
-				})
-				.where(eq(workPolicy.id, policyId));
-		});
-
-		yield* Effect.promise(() =>
-			markOrganizationWorkBalancesDirty({ organizationId: existingPolicy!.organizationId }),
-		);
-
-		return undefined;
-	});
-
-	return runServerActionSafe(effect);
-}
+			yield* markWorkBalancesDirty(organizationId);
+		}),
+);
 
 // ============================================
 // ASSIGNMENTS
 // ============================================
 
-export async function getWorkPolicyAssignments(
-	organizationId: string,
-): Promise<ServerActionResult<WorkPolicyAssignmentWithDetails[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getWorkPolicyAssignments:actor",
-		});
-		const dbService = yield* DatabaseService;
-		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
-		const assignments = yield* dbService.query("getWorkPolicyAssignments", async () => {
-			return await dbService.db.query.workPolicyAssignment.findMany({
-				where: and(
-					eq(workPolicyAssignment.organizationId, organizationId),
-					eq(workPolicyAssignment.isActive, true),
-				),
-				with: {
-					policy: {
-						columns: { id: true, name: true },
-					},
-					team: {
-						columns: { id: true, name: true },
-					},
-					employee: {
-						columns: { id: true },
-						with: { user: { columns: { firstName: true, lastName: true } } },
-					},
-				},
-				orderBy: [desc(workPolicyAssignment.createdAt)],
-			});
-		});
-
-		const typedAssignments = assignments.map((assignment) => ({
-			...assignment,
-			employee: assignment.employee
-				? {
-						id: assignment.employee.id,
-						firstName: assignment.employee.user?.firstName ?? null,
-						lastName: assignment.employee.user?.lastName ?? null,
-						user: assignment.employee.user,
-					}
-				: null,
-		})) satisfies WorkPolicyAssignmentWithDetails[];
-
-		if (!managedEmployeeIds) {
-			return typedAssignments;
-		}
-
-		return filterItemsToManagedEmployees(
-			typedAssignments.filter((assignment) => assignment.assignmentType === "employee"),
-			managedEmployeeIds,
-		) as WorkPolicyAssignmentWithDetails[];
+/**
+ * Fails unless the actor may set the policy of this employee: an org admin may
+ * set anyone's, a scoped manager only their reports'.
+ */
+function ensureManagesEmployee(actor: OrganizationActor, employeeId: string, action: string) {
+	return Effect.gen(function* () {
+		const scope = yield* actor.managedScope();
+		if (scope.organizationWide || scope.employeeIds.has(employeeId)) return;
+		return yield* Effect.fail(
+			new AuthorizationError({
+				message: "Insufficient permissions",
+				userId: actor.userId,
+				resource: "work_policy_assignment",
+				action,
+			}),
+		);
 	});
-
-	return runServerActionSafe(effect);
 }
 
-export async function createWorkPolicyAssignment(
-	organizationId: string,
-	data: {
-		policyId: string;
-		assignmentType: "organization" | "team" | "employee";
-		teamId?: string;
-		employeeId?: string;
-	},
-): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "createWorkPolicyAssignment:actor",
-		});
-		yield* requireSettingsActorEmployeeAssignmentAccess(actor, data.assignmentType, {
-			message: "Insufficient permissions",
-			resource: "work_policy_assignment",
-			action: "create",
-		});
-		yield* validateAssignmentTargetFields(data.assignmentType, data);
-
-		if (data.assignmentType !== "employee") {
-			yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Insufficient permissions",
-				resource: "work_policy_assignment",
-				action: "create",
-			});
-		}
-
-		if (data.employeeId) {
-			const targetEmployee = yield* getTargetEmployee(
-				data.employeeId,
-				"createWorkPolicyAssignment:getTargetEmployee",
-			);
-			yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-				message: "Insufficient permissions",
-				resource: "work_policy_assignment",
-				action: "create",
-			});
-		}
-
-		if (data.assignmentType === "team" && data.teamId) {
-			yield* getOrganizationTeam(
-				data.teamId,
-				actor.organizationId,
-				"createWorkPolicyAssignment:getOrganizationTeam",
-			);
-		}
-
+function findEmployeeInOrganization(employeeId: string, organizationId: string) {
+	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
-		// A former employee gets no new policy assignment (#1438).
-		yield* ensureOnCurrentRoster(dbService, {
-			organizationId: actor.organizationId,
-			employeeIds: [data.employeeId],
-			field: "employeeId",
-		});
-		const policy = yield* dbService
-			.query("getAssignmentPolicy", async () => {
-				return await dbService.db.query.workPolicy.findFirst({
-					where: eq(workPolicy.id, data.policyId),
-					columns: { id: true, organizationId: true },
-				});
-			})
-			.pipe(
-				Effect.flatMap((value) =>
-					value
-						? Effect.succeed(value)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Policy not found",
-									entityType: "work_policy",
-									entityId: data.policyId,
-								}),
-							),
-				),
-			);
-
-		if (!policyBelongsToOrganization(policy.organizationId, actor.organizationId)) {
+		const [row] = yield* dbService.query("workPolicies.findEmployee", () =>
+			dbService.db
+				.select({ id: employee.id })
+				.from(employee)
+				.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
+				.limit(1),
+		);
+		if (!row) {
 			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: actor.session.user.id,
-					resource: "work_policy_assignment",
-					action: "create",
+				new NotFoundError({
+					message: "Employee not found",
+					entityType: "employee",
+					entityId: employeeId,
 				}),
 			);
 		}
-
-		const priority =
-			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
-
-		const [assignment] = yield* dbService.query("createWorkPolicyAssignment", async () => {
-			return await dbService.db
-				.insert(workPolicyAssignment)
-				.values({
-					policyId: data.policyId,
-					organizationId: organizationId,
-					assignmentType: data.assignmentType,
-					teamId: data.teamId ?? null,
-					employeeId: data.employeeId ?? null,
-					priority,
-					isActive: true,
-					createdBy: actor.session.user.id,
-					updatedAt: currentTimestamp(),
-				})
-				.returning();
-		});
-
-		yield* Effect.promise(() =>
-			markOrganizationWorkBalancesDirty({ organizationId: actor.organizationId }),
-		);
-
-		return { id: assignment.id };
 	});
-
-	return runServerActionSafe(effect);
 }
 
-export async function deleteWorkPolicyAssignment(
-	assignmentId: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "deleteWorkPolicyAssignment:actor",
-		});
-
-		const dbService = yield* DatabaseService;
-		const assignment = yield* dbService
-			.query("getExistingAssignment", async () => {
-				return await dbService.db.query.workPolicyAssignment.findFirst({
-					where: eq(workPolicyAssignment.id, assignmentId),
-				});
-			})
-			.pipe(
-				Effect.flatMap((value) =>
-					value
-						? Effect.succeed(value)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Work policy assignment not found",
-									entityType: "work_policy_assignment",
-									entityId: assignmentId,
-								}),
-							),
-				),
-			);
-
-		yield* requireSettingsActorEmployeeAssignmentAccess(actor, assignment.assignmentType, {
-			message: "Insufficient permissions",
-			resource: "work_policy_assignment",
-			action: "delete",
-		});
-
-		if (assignment.employeeId) {
-			const targetEmployee = yield* getTargetEmployee(
-				assignment.employeeId,
-				"deleteWorkPolicyAssignment:getTargetEmployee",
-			);
-			yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-				message: "Insufficient permissions",
-				resource: "work_policy_assignment",
-				action: "delete",
-			});
-		}
-
-		yield* dbService.query("deleteWorkPolicyAssignment", async () => {
-			await dbService.db
-				.update(workPolicyAssignment)
-				.set({ isActive: false })
-				.where(
-					and(
-						eq(workPolicyAssignment.id, assignmentId),
-						eq(workPolicyAssignment.organizationId, actor.organizationId),
+export const getWorkPolicyAssignments = organizationAction(
+	{ name: "workPolicies.listAssignments", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const scope = yield* actor.managedScope();
+			const dbService = yield* DatabaseService;
+			const assignments = yield* dbService.query("getWorkPolicyAssignments", () =>
+				dbService.db.query.workPolicyAssignment.findMany({
+					where: and(
+						eq(workPolicyAssignment.organizationId, organizationId),
+						eq(workPolicyAssignment.isActive, true),
 					),
+					with: {
+						policy: {
+							columns: { id: true, name: true },
+						},
+						team: {
+							columns: { id: true, name: true },
+						},
+						employee: {
+							columns: { id: true },
+							with: { user: { columns: { firstName: true, lastName: true } } },
+						},
+					},
+					orderBy: [desc(workPolicyAssignment.createdAt)],
+				}),
+			);
+
+			const typedAssignments = assignments.map((assignment) => ({
+				...assignment,
+				employee: assignment.employee
+					? {
+							id: assignment.employee.id,
+							firstName: assignment.employee.user?.firstName ?? null,
+							lastName: assignment.employee.user?.lastName ?? null,
+							user: assignment.employee.user,
+						}
+					: null,
+			})) satisfies WorkPolicyAssignmentWithDetails[];
+
+			if (scope.organizationWide) {
+				return typedAssignments;
+			}
+
+			return typedAssignments.filter(
+				(assignment) =>
+					assignment.assignmentType === "employee" &&
+					assignment.employeeId !== null &&
+					scope.employeeIds.has(assignment.employeeId),
+			);
+		}),
+);
+
+/**
+ * A scoped manager may assign a policy to their own reports; organization and
+ * team assignments need an org admin.
+ */
+export const createWorkPolicyAssignment = organizationAction(
+	{
+		name: "workPolicies.createAssignment",
+		requires: "scopedManager",
+		schema: createWorkPolicyAssignmentSchema,
+		addsEmployees: (input) => [input.employeeId],
+	},
+	({ actor, organizationId, input: data }) =>
+		Effect.gen(function* () {
+			if (data.assignmentType !== "employee") {
+				yield* actor.require("orgAdmin");
+			}
+
+			if (data.employeeId) {
+				yield* findEmployeeInOrganization(data.employeeId, organizationId);
+				yield* ensureManagesEmployee(actor, data.employeeId, "create");
+			}
+
+			const dbService = yield* DatabaseService;
+			const teamId = data.teamId;
+			if (data.assignmentType === "team" && teamId) {
+				const assignedTeam = yield* dbService.query("workPolicies.findTeam", () =>
+					dbService.db.query.team.findFirst({
+						where: and(eq(team.id, teamId), eq(team.organizationId, organizationId)),
+						columns: { id: true },
+					}),
 				);
-		});
+				if (!assignedTeam) {
+					return yield* Effect.fail(
+						new NotFoundError({ message: "Team not found", entityType: "team", entityId: teamId }),
+					);
+				}
+			}
 
-		yield* Effect.promise(() =>
-			markOrganizationWorkBalancesDirty({ organizationId: assignment.organizationId }),
-		);
-	});
+			const policy = yield* dbService.query("getAssignmentPolicy", () =>
+				dbService.db.query.workPolicy.findFirst({
+					where: and(eq(workPolicy.id, data.policyId), eq(workPolicy.organizationId, organizationId)),
+					columns: { id: true },
+				}),
+			);
+			if (!policy) {
+				return yield* policyNotFound(data.policyId);
+			}
 
-	return runServerActionSafe(effect);
-}
+			const priority =
+				data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
+
+			const [assignment] = yield* dbService.query("createWorkPolicyAssignment", () =>
+				dbService.db
+					.insert(workPolicyAssignment)
+					.values({
+						policyId: data.policyId,
+						organizationId,
+						assignmentType: data.assignmentType,
+						teamId: data.teamId ?? null,
+						employeeId: data.employeeId ?? null,
+						priority,
+						isActive: true,
+						createdBy: actor.userId,
+						updatedAt: currentTimestamp(),
+					})
+					.returning(),
+			);
+
+			yield* markWorkBalancesDirty(organizationId);
+
+			return { id: assignment.id };
+		}),
+);
+
+export const deleteWorkPolicyAssignment = organizationAction(
+	{ name: "workPolicies.deleteAssignment", requires: "scopedManager", schema: idSchema },
+	({ actor, organizationId, input: assignmentId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const assignment = yield* dbService.query("getExistingAssignment", () =>
+				dbService.db.query.workPolicyAssignment.findFirst({
+					where: and(
+						eq(workPolicyAssignment.id, assignmentId),
+						eq(workPolicyAssignment.organizationId, organizationId),
+					),
+				}),
+			);
+			if (!assignment) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Work policy assignment not found",
+						entityType: "work_policy_assignment",
+						entityId: assignmentId,
+					}),
+				);
+			}
+
+			if (assignment.assignmentType !== "employee") {
+				yield* actor.require("orgAdmin");
+			}
+			if (assignment.employeeId) {
+				yield* ensureManagesEmployee(actor, assignment.employeeId, "delete");
+			}
+
+			yield* dbService.query("deleteWorkPolicyAssignment", async () => {
+				await dbService.db
+					.update(workPolicyAssignment)
+					.set({ isActive: false })
+					.where(
+						and(
+							eq(workPolicyAssignment.id, assignmentId),
+							eq(workPolicyAssignment.organizationId, organizationId),
+						),
+					);
+			});
+
+			yield* markWorkBalancesDirty(organizationId);
+		}),
+);
 
 // ============================================
 // PRESETS
@@ -1088,36 +962,11 @@ function normalizePresetName(name: string) {
 	return name.trim();
 }
 
-function isNumberOrNull(value: unknown): value is number | null {
-	return typeof value === "number" || value === null;
-}
-
-function isBreakOptionInput(value: unknown): value is BreakOptionInput {
-	if (!value || typeof value !== "object") return false;
-
-	const option = value as Partial<BreakOptionInput>;
-	return (
-		isNumberOrNull(option.splitCount) &&
-		isNumberOrNull(option.minimumSplitMinutes) &&
-		isNumberOrNull(option.minimumLongestSplitMinutes)
-	);
-}
-
-function isBreakRuleInput(value: unknown): value is BreakRuleInput {
-	if (!value || typeof value !== "object") return false;
-
-	const rule = value as Partial<BreakRuleInput>;
-	return (
-		typeof rule.workingMinutesThreshold === "number" &&
-		typeof rule.requiredBreakMinutes === "number" &&
-		Array.isArray(rule.options) &&
-		rule.options.every(isBreakOptionInput)
-	);
-}
-
 function validationError(message: string, field: string) {
 	return new ValidationError({ message, field });
 }
+
+const persistedBreakRulesSchema = z.object({ rules: z.array(breakRuleSchema) });
 
 function parsePresetBreakRulesStrict(value: unknown): BreakRuleInput[] {
 	if (!value) return [];
@@ -1129,47 +978,32 @@ function parsePresetBreakRulesStrict(value: unknown): BreakRuleInput[] {
 		throw validationError("Preset break rules are malformed", "breakRulesJson");
 	}
 
-	if (!parsed || typeof parsed !== "object") {
+	const result = persistedBreakRulesSchema.safeParse(parsed);
+	if (!result.success) {
 		throw validationError("Preset break rules are malformed", "breakRulesJson");
 	}
 
-	const rules = (parsed as { rules?: unknown }).rules;
-	if (!Array.isArray(rules) || !rules.every(isBreakRuleInput)) {
-		throw validationError("Preset break rules are malformed", "breakRulesJson");
-	}
-
-	return rules;
-}
-
-function validatePresetBreakRules(input: WorkPolicyPresetInput) {
-	const rules = input.regulation?.breakRules;
-	if (rules === undefined && !input.regulationEnabled) return Effect.void;
-
-	if (rules !== undefined && (!Array.isArray(rules) || !rules.every(isBreakRuleInput))) {
-		return Effect.fail(
-			validationError("Preset break rules are malformed", "regulation.breakRules"),
-		);
-	}
-
-	return Effect.void;
+	return result.data.rules;
 }
 
 function validatePersistedPresetBreakRules(value: unknown) {
-	try {
-		parsePresetBreakRulesStrict(value);
-		return Effect.void;
-	} catch (error) {
-		if (error instanceof ValidationError) return Effect.fail(error);
-		return Effect.fail(validationError("Preset break rules are malformed", "breakRulesJson"));
-	}
+	return Effect.try({
+		try: () => {
+			parsePresetBreakRulesStrict(value);
+		},
+		catch: (error) =>
+			error instanceof ValidationError
+				? error
+				: validationError("Preset break rules are malformed", "breakRulesJson"),
+	});
 }
 
-function stringifyPresetBreakRules(input: WorkPolicyPresetInput) {
+function stringifyPresetBreakRules(input: ParsedWorkPolicyPreset) {
 	const rules = input.regulationEnabled ? (input.regulation?.breakRules ?? []) : [];
 	return JSON.stringify({ rules }) as unknown as TimeRegulationBreakRulesPreset;
 }
 
-function presetInputToPolicyInput(input: WorkPolicyPresetInput): CreateWorkPolicyInput {
+function presetInputToPolicyInput(input: ParsedWorkPolicyPreset): ParsedWorkPolicy {
 	return {
 		name: normalizePresetName(input.name),
 		description: input.description?.trim() || undefined,
@@ -1196,7 +1030,7 @@ function presetInputToPolicyInput(input: WorkPolicyPresetInput): CreateWorkPolic
 	};
 }
 
-function presetToInput(preset: typeof workPolicyPreset.$inferSelect): WorkPolicyPresetInput {
+function presetToInput(preset: typeof workPolicyPreset.$inferSelect): ParsedWorkPolicyPreset {
 	const breakRules = parsePresetBreakRulesStrict(preset.breakRulesJson);
 
 	return {
@@ -1226,7 +1060,7 @@ function presetToInput(preset: typeof workPolicyPreset.$inferSelect): WorkPolicy
 	};
 }
 
-function presetInputToBaseValues(input: WorkPolicyPresetInput) {
+function presetInputToBaseValues(input: ParsedWorkPolicyPreset) {
 	return {
 		name: normalizePresetName(input.name),
 		description: input.description?.trim() || null,
@@ -1245,7 +1079,7 @@ function presetInputToBaseValues(input: WorkPolicyPresetInput) {
 	};
 }
 
-function presetInputToInsertValues(organizationId: string, input: WorkPolicyPresetInput) {
+function presetInputToInsertValues(organizationId: string, input: ParsedWorkPolicyPreset) {
 	return {
 		organizationId,
 		...presetInputToBaseValues(input),
@@ -1253,344 +1087,18 @@ function presetInputToInsertValues(organizationId: string, input: WorkPolicyPres
 	};
 }
 
-function presetInputToUpdateValues(input: WorkPolicyPresetInput) {
-	return presetInputToBaseValues(input);
-}
-
-function validatePresetName(input: WorkPolicyPresetInput) {
-	if (!normalizePresetName(input.name)) {
-		return Effect.fail(
-			new ValidationError({
-				message: "Preset name is required",
-				field: "name",
+/** Fails when the organization already has a preset of this name, archived ones included. */
+function ensurePresetNameIsFree(organizationId: string, name: string, presetId?: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const duplicate = yield* dbService.query("checkDuplicatePreset", () =>
+			dbService.db.query.workPolicyPreset.findFirst({
+				where: and(
+					eq(workPolicyPreset.organizationId, organizationId),
+					eq(workPolicyPreset.name, normalizePresetName(name)),
+				),
 			}),
 		);
-	}
-	return validatePresetBreakRules(input);
-}
-
-export async function getWorkPolicyPresets(
-	organizationId?: string,
-): Promise<ServerActionResult<WorkPolicyPresetWithSource[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getWorkPolicyPresets:actor",
-		});
-		const activeOrganizationId = organizationId ?? actor.organizationId;
-
-		const dbService = yield* DatabaseService;
-		const presets = yield* dbService.query("getWorkPolicyPresets", async () => {
-			return await dbService.db.query.workPolicyPreset.findMany({
-				where: and(
-					eq(workPolicyPreset.isActive, true),
-					or(
-						isNull(workPolicyPreset.organizationId),
-						eq(workPolicyPreset.organizationId, activeOrganizationId),
-					),
-				),
-				orderBy: [workPolicyPreset.name],
-			});
-		});
-
-		return presets.map((preset) => ({
-			...preset,
-			source: preset.organizationId ? "custom" : "system",
-			sourceLabel: preset.organizationId ? "Custom" : "System",
-		})) satisfies WorkPolicyPresetWithSource[];
-	});
-
-	return runServerActionSafe(effect);
-}
-
-// ============================================
-// VIOLATIONS
-// ============================================
-
-export async function getWorkPolicyViolations(
-	organizationId: string,
-	startDate: Date,
-	endDate: Date,
-): Promise<ServerActionResult<WorkPolicyViolationWithDetails[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getWorkPolicyViolations:actor",
-		});
-
-		if (!canAccessWorkPolicyComplianceActions(actor.accessTier)) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: actor.session.user.id,
-					resource: "work_policy_violation",
-					action: "read",
-				}),
-			);
-		}
-
-		const dbService = yield* DatabaseService;
-		const violations = yield* dbService.query("getWorkPolicyViolations", async () => {
-			return await dbService.db.query.workPolicyViolation.findMany({
-				where: and(
-					eq(workPolicyViolation.organizationId, organizationId),
-					gte(workPolicyViolation.violationDate, startDate),
-					lte(workPolicyViolation.violationDate, endDate),
-				),
-				with: {
-					employee: {
-						columns: { id: true },
-						with: {
-							user: { columns: { firstName: true, lastName: true, name: true, email: true } },
-						},
-					},
-					policy: {
-						columns: { id: true, name: true },
-					},
-				},
-				orderBy: [desc(workPolicyViolation.violationDate)],
-			});
-		});
-
-		return violations.map((violation) => ({
-			...violation,
-			employee: violation.employee
-				? {
-						id: violation.employee.id,
-						firstName: violation.employee.user?.firstName ?? null,
-						lastName: violation.employee.user?.lastName ?? null,
-						user: violation.employee.user,
-					}
-				: null,
-		})) satisfies WorkPolicyViolationWithDetails[];
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function acknowledgeWorkPolicyViolation(
-	violationId: string,
-	note?: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "acknowledgeWorkPolicyViolation:actor",
-		});
-
-		if (!canAccessWorkPolicyComplianceActions(actor.accessTier)) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: actor.session.user.id,
-					resource: "work_policy_violation",
-					action: "update",
-				}),
-			);
-		}
-
-		const dbService = yield* DatabaseService;
-		const employeeRecord = yield* requireSettingsActorEmployeeRecord(actor, {
-			message: "Employee profile not found",
-			resource: "employee",
-			action: "update",
-		});
-
-		yield* dbService.query("acknowledgeViolation", async () => {
-			await dbService.db
-				.update(workPolicyViolation)
-				.set({
-					acknowledgedBy: employeeRecord.id,
-					acknowledgedAt: new Date(),
-					acknowledgedNote: note,
-				})
-				.where(
-					and(
-						eq(workPolicyViolation.id, violationId),
-						eq(workPolicyViolation.organizationId, employeeRecord.organizationId),
-					),
-				);
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
-
-// ============================================
-// SET DEFAULT
-// ============================================
-
-export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		const dbService = yield* DatabaseService;
-
-		const policy = yield* dbService.query("getPolicy", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: eq(workPolicy.id, policyId),
-			});
-		});
-
-		if (!policy) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Policy not found",
-					entityType: "work_policy",
-					entityId: policyId,
-				}),
-			);
-		}
-
-		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(policy!.organizationId));
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: session.user.id,
-					resource: "work_policy",
-					action: "update",
-				}),
-			);
-		}
-
-		// Unset current default
-		yield* dbService.query("unsetDefault", async () => {
-			await dbService.db
-				.update(workPolicy)
-				.set({
-					isDefault: false,
-					updatedBy: session.user.id,
-					updatedAt: currentTimestamp(),
-				})
-				.where(
-					and(
-						eq(workPolicy.organizationId, policy!.organizationId),
-						eq(workPolicy.isDefault, true),
-					),
-				);
-		});
-
-		// Set new default
-		yield* dbService.query("setDefault", async () => {
-			await dbService.db
-				.update(workPolicy)
-				.set({
-					isDefault: true,
-					updatedBy: session.user.id,
-					updatedAt: currentTimestamp(),
-				})
-				.where(eq(workPolicy.id, policyId));
-		});
-
-		yield* Effect.promise(() =>
-			markOrganizationWorkBalancesDirty({ organizationId: policy!.organizationId }),
-		);
-
-		return undefined;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function createWorkPolicyPreset(
-	organizationId: string,
-	input: WorkPolicyPresetInput,
-): Promise<ServerActionResult<typeof workPolicyPreset.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "createWorkPolicyPreset:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "work_policy_preset",
-			action: "create",
-		});
-		yield* validatePresetName(input);
-
-		const dbService = yield* DatabaseService;
-		const name = normalizePresetName(input.name);
-		const duplicate = yield* dbService.query("checkDuplicatePreset", async () => {
-			return await dbService.db.query.workPolicyPreset.findFirst({
-				where: and(
-					eq(workPolicyPreset.organizationId, organizationId),
-					eq(workPolicyPreset.name, name),
-				),
-			});
-		});
-
-		if (duplicate) {
-			return yield* Effect.fail(
-				new ConflictError({
-					message: "A preset with this name already exists",
-					conflictType: "duplicate_name",
-					details: { entityType: "work_policy_preset", field: "name" },
-				}),
-			);
-		}
-
-		const [createdPreset] = yield* dbService.query("createWorkPolicyPreset", async () => {
-			return await dbService.db
-				.insert(workPolicyPreset)
-				.values(presetInputToInsertValues(organizationId, input))
-				.returning();
-		});
-
-		return createdPreset;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function updateWorkPolicyPreset(
-	organizationId: string,
-	presetId: string,
-	input: WorkPolicyPresetInput,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "updateWorkPolicyPreset:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "work_policy_preset",
-			action: "update",
-		});
-		yield* validatePresetName(input);
-
-		const dbService = yield* DatabaseService;
-		const preset = yield* dbService.query("getWorkPolicyPreset", async () => {
-			return await dbService.db.query.workPolicyPreset.findFirst({
-				where: and(
-					eq(workPolicyPreset.id, presetId),
-					eq(workPolicyPreset.organizationId, organizationId),
-					eq(workPolicyPreset.isActive, true),
-				),
-			});
-		});
-
-		if (!preset || preset.organizationId !== organizationId) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Preset not found",
-					entityType: "work_policy_preset",
-					entityId: presetId,
-				}),
-			);
-		}
-
-		const name = normalizePresetName(input.name);
-		const duplicate = yield* dbService.query("checkDuplicatePreset", async () => {
-			return await dbService.db.query.workPolicyPreset.findFirst({
-				where: and(
-					eq(workPolicyPreset.organizationId, organizationId),
-					eq(workPolicyPreset.name, name),
-				),
-			});
-		});
 
 		if (duplicate && duplicate.id !== presetId) {
 			return yield* Effect.fail(
@@ -1601,313 +1109,349 @@ export async function updateWorkPolicyPreset(
 				}),
 			);
 		}
+	});
+}
 
-		yield* dbService.query("updateWorkPolicyPreset", async () => {
-			await dbService.db
-				.update(workPolicyPreset)
-				.set(presetInputToUpdateValues(input))
-				.where(
-					and(
+/** An active preset the organization may use: a system preset or its own. */
+function findUsablePreset(presetId: string, organizationId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const preset = yield* dbService.query("getVisibleWorkPolicyPreset", () =>
+			dbService.db.query.workPolicyPreset.findFirst({
+				where: and(
+					eq(workPolicyPreset.id, presetId),
+					eq(workPolicyPreset.isActive, true),
+					or(
+						isNull(workPolicyPreset.organizationId),
+						eq(workPolicyPreset.organizationId, organizationId),
+					),
+				),
+			}),
+		);
+		if (!preset?.isActive || (preset.organizationId && preset.organizationId !== organizationId)) {
+			return yield* presetNotFound(presetId);
+		}
+		return preset;
+	});
+}
+
+function createPolicyFromPresetIn(
+	organizationId: string,
+	userId: string,
+	input: ParsedWorkPolicyPreset,
+	setAsDefault: boolean,
+) {
+	return Effect.gen(function* () {
+		const policy = yield* createPolicyIn(organizationId, userId, presetInputToPolicyInput(input));
+		if (setAsDefault) {
+			yield* setDefaultPolicyIn(organizationId, userId, policy.id);
+		}
+		return policy;
+	});
+}
+
+export const getWorkPolicyPresets = organizationAction(
+	{ name: "workPolicies.listPresets", requires: "scopedManager", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const presets = yield* dbService.query("getWorkPolicyPresets", () =>
+				dbService.db.query.workPolicyPreset.findMany({
+					where: and(
+						eq(workPolicyPreset.isActive, true),
+						or(
+							isNull(workPolicyPreset.organizationId),
+							eq(workPolicyPreset.organizationId, organizationId),
+						),
+					),
+					orderBy: [workPolicyPreset.name],
+				}),
+			);
+
+			return presets.map((preset) => ({
+				...preset,
+				source: preset.organizationId ? "custom" : "system",
+				sourceLabel: preset.organizationId ? "Custom" : "System",
+			})) satisfies WorkPolicyPresetWithSource[];
+		}),
+);
+
+// ============================================
+// VIOLATIONS
+// ============================================
+
+export const getWorkPolicyViolations = organizationAction(
+	{
+		name: "workPolicies.listViolations",
+		requires: "orgAdmin",
+		schema: z.strictObject({ startDate: z.date(), endDate: z.date() }),
+	},
+	({ organizationId, input: { startDate, endDate } }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const violations = yield* dbService.query("getWorkPolicyViolations", () =>
+				dbService.db.query.workPolicyViolation.findMany({
+					where: and(
+						eq(workPolicyViolation.organizationId, organizationId),
+						gte(workPolicyViolation.violationDate, startDate),
+						lte(workPolicyViolation.violationDate, endDate),
+					),
+					with: {
+						employee: {
+							columns: { id: true },
+							with: {
+								user: { columns: { firstName: true, lastName: true, name: true, email: true } },
+							},
+						},
+						policy: {
+							columns: { id: true, name: true },
+						},
+					},
+					orderBy: [desc(workPolicyViolation.violationDate)],
+				}),
+			);
+
+			return violations.map((violation) => ({
+				...violation,
+				employee: violation.employee
+					? {
+							id: violation.employee.id,
+							firstName: violation.employee.user?.firstName ?? null,
+							lastName: violation.employee.user?.lastName ?? null,
+							user: violation.employee.user,
+						}
+					: null,
+			})) satisfies WorkPolicyViolationWithDetails[];
+		}),
+);
+
+export const acknowledgeWorkPolicyViolation = organizationAction(
+	{
+		name: "workPolicies.acknowledgeViolation",
+		requires: "orgAdmin",
+		schema: z.strictObject({ violationId: z.string().min(1), note: z.string().optional() }),
+	},
+	({ actor, organizationId, input: { violationId, note } }) =>
+		Effect.gen(function* () {
+			// The acknowledgement names the employee who acknowledged it.
+			const acknowledgedBy = actor.employee?.id;
+			if (!acknowledgedBy) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+						entityId: actor.userId,
+					}),
+				);
+			}
+
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("acknowledgeViolation", async () => {
+				await dbService.db
+					.update(workPolicyViolation)
+					.set({
+						acknowledgedBy,
+						acknowledgedAt: new Date(),
+						acknowledgedNote: note,
+					})
+					.where(
+						and(
+							eq(workPolicyViolation.id, violationId),
+							eq(workPolicyViolation.organizationId, organizationId),
+						),
+					);
+			});
+		}),
+);
+
+// ============================================
+// SET DEFAULT
+// ============================================
+
+export const setDefaultWorkPolicy = organizationAction(
+	{ name: "workPolicies.setDefault", requires: "orgAdmin", schema: idSchema },
+	({ actor, organizationId, input: policyId }) =>
+		setDefaultPolicyIn(organizationId, actor.userId, policyId),
+);
+
+export const createWorkPolicyPreset = organizationAction(
+	{ name: "workPolicies.createPreset", requires: "orgAdmin", schema: workPolicyPresetInputSchema },
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* ensurePresetNameIsFree(organizationId, input.name);
+
+			const dbService = yield* DatabaseService;
+			const [createdPreset] = yield* dbService.query("createWorkPolicyPreset", () =>
+				dbService.db
+					.insert(workPolicyPreset)
+					.values(presetInputToInsertValues(organizationId, input))
+					.returning(),
+			);
+
+			return createdPreset;
+		}),
+);
+
+export const updateWorkPolicyPreset = organizationAction(
+	{ name: "workPolicies.updatePreset", requires: "orgAdmin", schema: presetWithInputSchema },
+	({ organizationId, input: { presetId, input } }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const preset = yield* dbService.query("getWorkPolicyPreset", () =>
+				dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
 						eq(workPolicyPreset.id, presetId),
 						eq(workPolicyPreset.organizationId, organizationId),
 						eq(workPolicyPreset.isActive, true),
 					),
-				);
-		});
-	});
+				}),
+			);
 
-	return runServerActionSafe(effect);
-}
+			if (!preset || preset.organizationId !== organizationId) {
+				return yield* presetNotFound(presetId);
+			}
 
-export async function archiveWorkPolicyPreset(
-	organizationId: string,
-	presetId: string,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "archiveWorkPolicyPreset:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "work_policy_preset",
-			action: "delete",
-		});
+			yield* ensurePresetNameIsFree(organizationId, input.name, presetId);
 
-		const dbService = yield* DatabaseService;
-		const preset = yield* dbService.query("getWorkPolicyPreset", async () => {
-			return await dbService.db.query.workPolicyPreset.findFirst({
-				where: and(
-					eq(workPolicyPreset.id, presetId),
-					eq(workPolicyPreset.organizationId, organizationId),
-				),
+			yield* dbService.query("updateWorkPolicyPreset", async () => {
+				await dbService.db
+					.update(workPolicyPreset)
+					.set(presetInputToBaseValues(input))
+					.where(
+						and(
+							eq(workPolicyPreset.id, presetId),
+							eq(workPolicyPreset.organizationId, organizationId),
+							eq(workPolicyPreset.isActive, true),
+						),
+					);
 			});
-		});
+		}),
+);
 
-		if (!preset) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Preset not found",
-					entityType: "work_policy_preset",
-					entityId: presetId,
-				}),
-			);
-		}
-
-		if (preset.organizationId === null) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: "System presets cannot be archived",
-					field: "presetId",
-				}),
-			);
-		}
-
-		if (preset.organizationId !== organizationId) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Preset not found",
-					entityType: "work_policy_preset",
-					entityId: presetId,
-				}),
-			);
-		}
-
-		yield* dbService.query("archiveWorkPolicyPreset", async () => {
-			await dbService.db
-				.update(workPolicyPreset)
-				.set({ isActive: false })
-				.where(
-					and(
+export const archiveWorkPolicyPreset = organizationAction(
+	{ name: "workPolicies.archivePreset", requires: "orgAdmin", schema: idSchema },
+	({ organizationId, input: presetId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const preset = yield* dbService.query("getWorkPolicyPreset", () =>
+				dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
 						eq(workPolicyPreset.id, presetId),
 						eq(workPolicyPreset.organizationId, organizationId),
 					),
-				);
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function copySystemWorkPolicyPreset(
-	organizationId: string,
-	presetId: string,
-	input: WorkPolicyPresetInput,
-): Promise<ServerActionResult<typeof workPolicyPreset.$inferSelect>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "copySystemWorkPolicyPreset:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "work_policy_preset",
-			action: "create",
-		});
-		yield* validatePresetName(input);
-
-		const dbService = yield* DatabaseService;
-		const sourcePreset = yield* dbService.query("getSystemWorkPolicyPreset", async () => {
-			return await dbService.db.query.workPolicyPreset.findFirst({
-				where: and(
-					eq(workPolicyPreset.id, presetId),
-					isNull(workPolicyPreset.organizationId),
-					eq(workPolicyPreset.isActive, true),
-				),
-			});
-		});
-
-		if (!sourcePreset || sourcePreset.organizationId !== null || !sourcePreset.isActive) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Preset not found",
-					entityType: "work_policy_preset",
-					entityId: presetId,
 				}),
 			);
-		}
 
-		const name = normalizePresetName(input.name);
-		const duplicate = yield* dbService.query("checkDuplicatePreset", async () => {
-			return await dbService.db.query.workPolicyPreset.findFirst({
-				where: and(
-					eq(workPolicyPreset.organizationId, organizationId),
-					eq(workPolicyPreset.name, name),
-				),
-			});
-		});
+			if (!preset) {
+				return yield* presetNotFound(presetId);
+			}
 
-		if (duplicate) {
-			return yield* Effect.fail(
-				new ConflictError({
-					message: "A preset with this name already exists",
-					conflictType: "duplicate_name",
-					details: { entityType: "work_policy_preset", field: "name" },
-				}),
-			);
-		}
-
-		const [createdPreset] = yield* dbService.query("copySystemWorkPolicyPreset", async () => {
-			return await dbService.db
-				.insert(workPolicyPreset)
-				.values(presetInputToInsertValues(organizationId, input))
-				.returning();
-		});
-
-		return createdPreset;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-export async function createWorkPolicyFromPreset(
-	organizationId: string,
-	presetId: string,
-	input: WorkPolicyPresetInput,
-	setAsDefault: boolean = false,
-): Promise<ServerActionResult<WorkPolicyWithDetails>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "createWorkPolicyFromPreset:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "work_policy",
-			action: "create",
-		});
-
-		const dbService = yield* DatabaseService;
-		const preset = yield* dbService.query("getVisibleWorkPolicyPreset", async () => {
-			return await dbService.db.query.workPolicyPreset.findFirst({
-				where: and(
-					eq(workPolicyPreset.id, presetId),
-					eq(workPolicyPreset.isActive, true),
-					or(
-						isNull(workPolicyPreset.organizationId),
-						eq(workPolicyPreset.organizationId, organizationId),
-					),
-				),
-			});
-		});
-
-		if (!preset?.isActive || (preset.organizationId && preset.organizationId !== organizationId)) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Preset not found",
-					entityType: "work_policy_preset",
-					entityId: presetId,
-				}),
-			);
-		}
-		yield* validatePersistedPresetBreakRules(preset.breakRulesJson);
-		yield* validatePresetName(input);
-
-		const createResult = yield* Effect.promise(() =>
-			createWorkPolicy(organizationId, presetInputToPolicyInput(input)),
-		);
-		if (!createResult.success) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: createResult.error ?? "Failed to create policy from preset",
-					field: "preset",
-				}),
-			);
-		}
-
-		if (setAsDefault) {
-			const setDefaultResult = yield* Effect.promise(() =>
-				setDefaultWorkPolicy(createResult.data.id),
-			);
-			if (!setDefaultResult.success) {
+			if (preset.organizationId === null) {
 				return yield* Effect.fail(
 					new ValidationError({
-						message: setDefaultResult.error ?? "Failed to set policy as default",
-						field: "setAsDefault",
+						message: "System presets cannot be archived",
+						field: "presetId",
 					}),
 				);
 			}
-		}
 
-		return createResult.data;
-	});
+			if (preset.organizationId !== organizationId) {
+				return yield* presetNotFound(presetId);
+			}
 
-	return runServerActionSafe(effect);
-}
-
-// Temporary compatibility wrapper for the existing preset import UI.
-export async function importWorkPolicyPreset(
-	organizationId: string,
-	presetId: string,
-	setAsDefault: boolean = false,
-): Promise<ServerActionResult<WorkPolicyWithDetails>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "importWorkPolicyPreset:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Insufficient permissions",
-			resource: "work_policy",
-			action: "create",
-		});
-
-		const dbService = yield* DatabaseService;
-		const preset = yield* dbService.query("getPreset", async () => {
-			return await dbService.db.query.workPolicyPreset.findFirst({
-				where: and(
-					eq(workPolicyPreset.id, presetId),
-					eq(workPolicyPreset.isActive, true),
-					or(
-						isNull(workPolicyPreset.organizationId),
-						eq(workPolicyPreset.organizationId, organizationId),
-					),
-				),
+			yield* dbService.query("archiveWorkPolicyPreset", async () => {
+				await dbService.db
+					.update(workPolicyPreset)
+					.set({ isActive: false })
+					.where(
+						and(
+							eq(workPolicyPreset.id, presetId),
+							eq(workPolicyPreset.organizationId, organizationId),
+						),
+					);
 			});
-		});
+		}),
+);
 
-		if (!preset) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Preset not found",
-					entityType: "work_policy_preset",
-					entityId: presetId,
+export const copySystemWorkPolicyPreset = organizationAction(
+	{ name: "workPolicies.copySystemPreset", requires: "orgAdmin", schema: presetWithInputSchema },
+	({ organizationId, input: { presetId, input } }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const sourcePreset = yield* dbService.query("getSystemWorkPolicyPreset", () =>
+				dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						isNull(workPolicyPreset.organizationId),
+						eq(workPolicyPreset.isActive, true),
+					),
 				}),
 			);
-		}
 
-		let presetInput: WorkPolicyPresetInput;
-		try {
-			presetInput = presetToInput(preset);
-		} catch (error) {
-			return yield* Effect.fail(
-				error instanceof ValidationError
-					? error
-					: validationError("Preset break rules are malformed", "breakRulesJson"),
+			if (!sourcePreset || sourcePreset.organizationId !== null || !sourcePreset.isActive) {
+				return yield* presetNotFound(presetId);
+			}
+
+			yield* ensurePresetNameIsFree(organizationId, input.name);
+
+			const [createdPreset] = yield* dbService.query("copySystemWorkPolicyPreset", () =>
+				dbService.db
+					.insert(workPolicyPreset)
+					.values(presetInputToInsertValues(organizationId, input))
+					.returning(),
 			);
-		}
 
-		const result = yield* Effect.promise(() =>
-			createWorkPolicyFromPreset(organizationId, presetId, presetInput, setAsDefault),
-		);
-		if (!result.success) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: result.error ?? "Failed to import preset",
-					field: "preset",
-				}),
+			return createdPreset;
+		}),
+);
+
+export const createWorkPolicyFromPreset = organizationAction(
+	{
+		name: "workPolicies.createFromPreset",
+		requires: "orgAdmin",
+		schema: presetWithInputSchema.extend({ setAsDefault: z.boolean().optional() }),
+	},
+	({ actor, organizationId, input: { presetId, input, setAsDefault } }) =>
+		Effect.gen(function* () {
+			const preset = yield* findUsablePreset(presetId, organizationId);
+			yield* validatePersistedPresetBreakRules(preset.breakRulesJson);
+			return yield* createPolicyFromPresetIn(
+				organizationId,
+				actor.userId,
+				input,
+				setAsDefault ?? false,
 			);
-		}
+		}),
+);
 
-		return result.data;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-// ============================================
-// DUPLICATE POLICY
-// ============================================
+/** Creates a policy from a preset as it is stored, for the preset import UI. */
+export const importWorkPolicyPreset = organizationAction(
+	{
+		name: "workPolicies.importPreset",
+		requires: "orgAdmin",
+		schema: z.strictObject({ presetId: z.string().min(1), setAsDefault: z.boolean().optional() }),
+	},
+	({ actor, organizationId, input: { presetId, setAsDefault } }) =>
+		Effect.gen(function* () {
+			const preset = yield* findUsablePreset(presetId, organizationId);
+			const presetInput = yield* Effect.try({
+				try: () => presetToInput(preset),
+				catch: (error) =>
+					error instanceof ValidationError
+						? error
+						: validationError("Preset break rules are malformed", "breakRulesJson"),
+			});
+			if (!normalizePresetName(presetInput.name)) {
+				return yield* Effect.fail(validationError("Preset name is required", "name"));
+			}
+			return yield* createPolicyFromPresetIn(
+				organizationId,
+				actor.userId,
+				presetInput,
+				setAsDefault ?? false,
+			);
+		}),
+);
 
 // ============================================
 // EMPLOYEE POLICY DETAILS
@@ -1930,516 +1474,343 @@ export interface EmployeeScheduleDetails {
 	days?: ScheduleDayDetail[];
 }
 
-export async function getEmployeeEffectiveScheduleDetails(
-	employeeId: string,
-): Promise<ServerActionResult<EmployeeScheduleDetails | null>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getEmployeeEffectiveScheduleDetails:actor",
-		});
-		const dbService = yield* DatabaseService;
-		const targetEmployee = yield* getTargetEmployee(
-			employeeId,
-			"getEmployeeEffectiveScheduleDetails:getTargetEmployee",
-			actor.organizationId,
-		);
-		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-			message: "Insufficient permissions",
-			resource: "employee_schedule_details",
-			action: "read",
-		});
-
-		// Get employee with organization
-		const emp = yield* dbService.query("getEmployee", async () => {
-			return await dbService.db.query.employee.findFirst({
-				where: and(eq(employee.id, employeeId), eq(employee.organizationId, actor.organizationId)),
-				with: { team: true },
-			});
-		});
-
-		if (!emp) {
-			return null;
-		}
-
-		const now = new Date();
-
-		// Check employee-level assignment first
-		const employeeAssignment = yield* dbService.query("getEmployeePolicyAssignment", async () => {
-			return await dbService.db.query.workPolicyAssignment.findFirst({
-				where: and(
-					eq(workPolicyAssignment.organizationId, actor.organizationId),
-					eq(workPolicyAssignment.employeeId, employeeId),
-					eq(workPolicyAssignment.assignmentType, "employee"),
-					eq(workPolicyAssignment.isActive, true),
-					or(
-						isNull(workPolicyAssignment.effectiveFrom),
-						lte(workPolicyAssignment.effectiveFrom, now),
-					),
-					or(
-						isNull(workPolicyAssignment.effectiveUntil),
-						gt(workPolicyAssignment.effectiveUntil, now),
-					),
-				),
-				orderBy: (assignment, { desc }) => [
-					sql`${assignment.effectiveFrom} DESC NULLS LAST`,
-					desc(assignment.createdAt),
-				],
-				with: {
-					policy: {
-						with: {
-							schedule: {
-								with: {
-									days: true,
-								},
-							},
-						},
-					},
-				},
-			});
-		});
-		const typedEmployeeAssignment =
-			employeeAssignment as unknown as EffectiveWorkPolicyAssignment | null;
-
-		if (
-			typedEmployeeAssignment?.policy?.isActive &&
-			typedEmployeeAssignment.policy.scheduleEnabled
-		) {
-			const schedule = typedEmployeeAssignment.policy.schedule;
-			return {
-				policyName: typedEmployeeAssignment.policy.name,
-				assignedVia: "Individual",
-				scheduleCycle: schedule?.scheduleCycle,
-				scheduleType: schedule?.scheduleType,
-				hoursPerCycle: schedule?.hoursPerCycle ?? undefined,
-				homeOfficeDaysPerCycle: schedule?.homeOfficeDaysPerCycle ?? undefined,
-				days: schedule?.days?.map((d) => ({
-					dayOfWeek: d.dayOfWeek,
-					hoursPerDay: d.hoursPerDay,
-					isWorkDay: d.isWorkDay,
-					cycleWeek: d.cycleWeek,
-				})),
-			};
-		}
-
-		// Check team-level assignment
-		if (emp.teamId) {
-			const teamAssignment = yield* dbService.query("getTeamPolicyAssignment", async () => {
-				return await dbService.db.query.workPolicyAssignment.findFirst({
-					where: and(
-						eq(workPolicyAssignment.organizationId, actor.organizationId),
-						eq(workPolicyAssignment.teamId, emp.teamId!),
-						eq(workPolicyAssignment.assignmentType, "team"),
-						eq(workPolicyAssignment.isActive, true),
-						or(
-							isNull(workPolicyAssignment.effectiveFrom),
-							lte(workPolicyAssignment.effectiveFrom, now),
-						),
-						or(
-							isNull(workPolicyAssignment.effectiveUntil),
-							gt(workPolicyAssignment.effectiveUntil, now),
-						),
-					),
-					orderBy: (assignment, { desc }) => [
-						sql`${assignment.effectiveFrom} DESC NULLS LAST`,
-						desc(assignment.createdAt),
-					],
-					with: {
-						policy: {
-							with: {
-								schedule: {
-									with: {
-										days: true,
-									},
-								},
-							},
-						},
-						team: true,
-					},
-				});
-			});
-			const typedTeamAssignment = teamAssignment as unknown as EffectiveWorkPolicyAssignment | null;
-
-			if (typedTeamAssignment?.policy?.isActive && typedTeamAssignment.policy.scheduleEnabled) {
-				const schedule = typedTeamAssignment.policy.schedule;
-				return {
-					policyName: typedTeamAssignment.policy.name,
-					assignedVia: typedTeamAssignment.team?.name ?? "Team",
-					scheduleCycle: schedule?.scheduleCycle,
-					scheduleType: schedule?.scheduleType,
-					hoursPerCycle: schedule?.hoursPerCycle ?? undefined,
-					homeOfficeDaysPerCycle: schedule?.homeOfficeDaysPerCycle ?? undefined,
-					days: schedule?.days?.map((d) => ({
-						dayOfWeek: d.dayOfWeek,
-						hoursPerDay: d.hoursPerDay,
-						isWorkDay: d.isWorkDay,
-						cycleWeek: d.cycleWeek,
-					})),
-				};
-			}
-		}
-
-		// Check organization-level assignment
-		const orgAssignment = yield* dbService.query("getOrgPolicyAssignment", async () => {
-			return await dbService.db.query.workPolicyAssignment.findFirst({
-				where: and(
-					eq(workPolicyAssignment.organizationId, actor.organizationId),
-					eq(workPolicyAssignment.assignmentType, "organization"),
-					eq(workPolicyAssignment.isActive, true),
-					or(
-						isNull(workPolicyAssignment.effectiveFrom),
-						lte(workPolicyAssignment.effectiveFrom, now),
-					),
-					or(
-						isNull(workPolicyAssignment.effectiveUntil),
-						gt(workPolicyAssignment.effectiveUntil, now),
-					),
-				),
-				orderBy: (assignment, { desc }) => [
-					sql`${assignment.effectiveFrom} DESC NULLS LAST`,
-					desc(assignment.createdAt),
-				],
-				with: {
-					policy: {
-						with: {
-							schedule: {
-								with: {
-									days: true,
-								},
-							},
-						},
-					},
-				},
-			});
-		});
-		const typedOrgAssignment = orgAssignment as unknown as EffectiveWorkPolicyAssignment | null;
-
-		if (typedOrgAssignment?.policy?.isActive && typedOrgAssignment.policy.scheduleEnabled) {
-			const schedule = typedOrgAssignment.policy.schedule;
-			return {
-				policyName: typedOrgAssignment.policy.name,
-				assignedVia: "Organization Default",
-				scheduleCycle: schedule?.scheduleCycle,
-				scheduleType: schedule?.scheduleType,
-				hoursPerCycle: schedule?.hoursPerCycle ?? undefined,
-				homeOfficeDaysPerCycle: schedule?.homeOfficeDaysPerCycle ?? undefined,
-				days: schedule?.days?.map((d) => ({
-					dayOfWeek: d.dayOfWeek,
-					hoursPerDay: d.hoursPerDay,
-					isWorkDay: d.isWorkDay,
-					cycleWeek: d.cycleWeek,
-				})),
-			};
-		}
-
-		return null;
-	});
-
-	return runServerActionSafe(effect);
+function scheduleDetailsOf(
+	policy: NonNullable<EffectiveWorkPolicyAssignment["policy"]>,
+	assignedVia: string,
+): EmployeeScheduleDetails {
+	const schedule = policy.schedule;
+	return {
+		policyName: policy.name,
+		assignedVia,
+		scheduleCycle: schedule?.scheduleCycle,
+		scheduleType: schedule?.scheduleType,
+		hoursPerCycle: schedule?.hoursPerCycle ?? undefined,
+		homeOfficeDaysPerCycle: schedule?.homeOfficeDaysPerCycle ?? undefined,
+		days: schedule?.days?.map((d) => ({
+			dayOfWeek: d.dayOfWeek,
+			hoursPerDay: d.hoursPerDay,
+			isWorkDay: d.isWorkDay,
+			cycleWeek: d.cycleWeek,
+		})),
+	};
 }
+
+export const getEmployeeEffectiveScheduleDetails = organizationAction(
+	{ name: "workPolicies.employeeScheduleDetails", requires: "scopedManager", schema: idSchema },
+	({ actor, organizationId, input: employeeId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const emp = yield* dbService.query("getEmployee", () =>
+				dbService.db.query.employee.findFirst({
+					where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+					with: { team: true },
+				}),
+			);
+
+			if (!emp) {
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: employeeId,
+					}),
+				);
+			}
+
+			const scope = yield* actor.managedScope();
+			if (!scope.organizationWide && !scope.employeeIds.has(employeeId)) {
+				return yield* Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.userId,
+						resource: "employee_schedule_details",
+						action: "read",
+					}),
+				);
+			}
+
+			const now = new Date();
+			const effectiveNow = [
+				eq(workPolicyAssignment.organizationId, organizationId),
+				eq(workPolicyAssignment.isActive, true),
+				or(isNull(workPolicyAssignment.effectiveFrom), lte(workPolicyAssignment.effectiveFrom, now)),
+				or(isNull(workPolicyAssignment.effectiveUntil), gt(workPolicyAssignment.effectiveUntil, now)),
+			];
+			const latestFirst = (
+				assignment: typeof workPolicyAssignment._.columns,
+				operators: { desc: typeof desc },
+			) => [sql`${assignment.effectiveFrom} DESC NULLS LAST`, operators.desc(assignment.createdAt)];
+			const withSchedule = {
+				policy: {
+					with: {
+						schedule: {
+							with: { days: true },
+						},
+					},
+				},
+			} as const;
+
+			// Check employee-level assignment first
+			const employeeAssignment = (yield* dbService.query("getEmployeePolicyAssignment", () =>
+				dbService.db.query.workPolicyAssignment.findFirst({
+					where: and(
+						...effectiveNow,
+						eq(workPolicyAssignment.employeeId, employeeId),
+						eq(workPolicyAssignment.assignmentType, "employee"),
+					),
+					orderBy: latestFirst,
+					with: withSchedule,
+				}),
+			)) as unknown as EffectiveWorkPolicyAssignment | undefined;
+
+			if (employeeAssignment?.policy?.isActive && employeeAssignment.policy.scheduleEnabled) {
+				return scheduleDetailsOf(employeeAssignment.policy, "Individual");
+			}
+
+			// Check team-level assignment
+			const teamId = emp.teamId;
+			if (teamId) {
+				const teamAssignment = (yield* dbService.query("getTeamPolicyAssignment", () =>
+					dbService.db.query.workPolicyAssignment.findFirst({
+						where: and(
+							...effectiveNow,
+							eq(workPolicyAssignment.teamId, teamId),
+							eq(workPolicyAssignment.assignmentType, "team"),
+						),
+						orderBy: latestFirst,
+						with: { ...withSchedule, team: true },
+					}),
+				)) as unknown as EffectiveWorkPolicyAssignment | undefined;
+
+				if (teamAssignment?.policy?.isActive && teamAssignment.policy.scheduleEnabled) {
+					return scheduleDetailsOf(teamAssignment.policy, teamAssignment.team?.name ?? "Team");
+				}
+			}
+
+			// Check organization-level assignment
+			const orgAssignment = (yield* dbService.query("getOrgPolicyAssignment", () =>
+				dbService.db.query.workPolicyAssignment.findFirst({
+					where: and(...effectiveNow, eq(workPolicyAssignment.assignmentType, "organization")),
+					orderBy: latestFirst,
+					with: withSchedule,
+				}),
+			)) as unknown as EffectiveWorkPolicyAssignment | undefined;
+
+			if (orgAssignment?.policy?.isActive && orgAssignment.policy.scheduleEnabled) {
+				return scheduleDetailsOf(orgAssignment.policy, "Organization Default");
+			}
+
+			return null;
+		}),
+);
 
 // ============================================
 // HELPER ACTIONS FOR ASSIGNMENT DIALOG
 // ============================================
 
-export async function getTeamsForAssignment(
-	organizationId: string,
-): Promise<ServerActionResult<{ id: string; name: string }[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getTeamsForAssignment:actor",
-		});
-		const dbService = yield* DatabaseService;
-		const manageableTeamIds = yield* getManageableTeamIdsForSettingsActor(actor);
-		const teams = yield* dbService.query("getTeamsForAssignment", async () => {
-			return await dbService.db.query.team.findMany({
-				where: eq(team.organizationId, organizationId),
-				columns: { id: true, name: true },
-				orderBy: (t, { asc }) => [asc(t.name)],
-			});
-		});
+export const getTeamsForAssignment = organizationAction(
+	{ name: "workPolicies.assignmentTeams", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const scope = yield* actor.managedScope();
+			const dbService = yield* DatabaseService;
+			const teams = yield* dbService.query("getTeamsForAssignment", () =>
+				dbService.db.query.team.findMany({
+					where: eq(team.organizationId, organizationId),
+					columns: { id: true, name: true },
+					orderBy: (t, { asc }) => [asc(t.name)],
+				}),
+			);
 
-		if (!manageableTeamIds) {
-			return teams;
-		}
+			return scope.organizationWide
+				? teams
+				: teams.filter((teamRecord) => scope.teamIds.has(teamRecord.id));
+		}),
+);
 
-		return teams.filter((teamRecord) => manageableTeamIds.has(teamRecord.id));
-	});
+export const getEmployeesForAssignment = organizationAction(
+	{ name: "workPolicies.assignmentEmployees", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const scope = yield* actor.managedScope();
+			const dbService = yield* DatabaseService;
+			const employees = yield* dbService.query("getEmployeesForAssignment", async () => {
+				const rows = await dbService.db.query.employee.findMany({
+					where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+					columns: { id: true, employeeNumber: true },
+					with: { user: { columns: { firstName: true, lastName: true } } },
+					orderBy: (employeeRecord, { asc }) => [asc(employeeRecord.id)],
+				});
 
-	return runServerActionSafe(effect);
-}
-
-export async function getEmployeesForAssignment(organizationId: string): Promise<
-	ServerActionResult<
-		{
-			id: string;
-			firstName: string | null;
-			lastName: string | null;
-			employeeNumber: string | null;
-		}[]
-	>
-> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			organizationId,
-			queryName: "getEmployeesForAssignment:actor",
-		});
-		const dbService = yield* DatabaseService;
-		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
-		const employees = yield* dbService.query("getEmployeesForAssignment", async () => {
-			const rows = await dbService.db.query.employee.findMany({
-				where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-				columns: { id: true, employeeNumber: true },
-				with: { user: { columns: { firstName: true, lastName: true } } },
-				orderBy: (employeeRecord, { asc }) => [asc(employeeRecord.id)],
+				return rows.map((employeeRecord) => ({
+					id: employeeRecord.id,
+					firstName: employeeRecord.user?.firstName ?? null,
+					lastName: employeeRecord.user?.lastName ?? null,
+					employeeNumber: employeeRecord.employeeNumber,
+				}));
 			});
 
-			return rows.map((employeeRecord) => ({
-				id: employeeRecord.id,
-				firstName: employeeRecord.user?.firstName ?? null,
-				lastName: employeeRecord.user?.lastName ?? null,
-				employeeNumber: employeeRecord.employeeNumber,
-			}));
-		});
-
-		if (!managedEmployeeIds) {
-			return employees;
-		}
-
-		return employees.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id));
-	});
-
-	return runServerActionSafe(effect);
-}
+			return scope.organizationWide
+				? employees
+				: employees.filter((employeeRecord) => scope.employeeIds.has(employeeRecord.id));
+		}),
+);
 
 // ============================================
 // DUPLICATE POLICY
 // ============================================
 
-export async function duplicateWorkPolicy(
-	policyId: string,
-): Promise<ServerActionResult<WorkPolicyWithDetails>> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		const dbService = yield* DatabaseService;
-
-		const existingPolicy = yield* dbService.query("getExisting", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: eq(workPolicy.id, policyId),
-				with: {
-					schedule: {
-						with: { days: true },
-					},
-					regulation: {
-						with: {
-							breakRules: {
-								with: { options: true },
-							},
-						},
-					},
-					presence: true,
-				},
-			});
-		});
-
-		if (!existingPolicy) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Policy not found",
-					entityType: "work_policy",
-					entityId: policyId,
-				}),
-			);
-		}
-		const existingPolicyWithDetails = existingPolicy as WorkPolicyWithDetails;
-
-		const hasPermission = yield* Effect.promise(() =>
-			isOrgAdminCasl(existingPolicy!.organizationId),
-		);
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions",
-					userId: session.user.id,
-					resource: "work_policy",
-					action: "create",
-				}),
-			);
-		}
-
-		// Generate unique name
-		let newName = `${existingPolicy!.name} (Copy)`;
-		let copyNumber = 1;
-
-		let nameExists = true;
-		while (nameExists) {
-			const duplicate = yield* dbService.query("checkDuplicate", async () => {
-				return await dbService.db.query.workPolicy.findFirst({
-					where: and(
-						eq(workPolicy.organizationId, existingPolicy!.organizationId),
-						eq(workPolicy.name, newName),
-						eq(workPolicy.isActive, true),
-					),
-				});
-			});
-
-			if (duplicate) {
-				copyNumber++;
-				newName = `${existingPolicy!.name} (Copy ${copyNumber})`;
-			} else {
-				nameExists = false;
+export const duplicateWorkPolicy = organizationAction(
+	{ name: "workPolicies.duplicate", requires: "orgAdmin", schema: idSchema },
+	({ actor, organizationId, input: policyId }) =>
+		Effect.gen(function* () {
+			const existingPolicy = yield* findPolicyWithDetails(policyId, organizationId);
+			if (!existingPolicy) {
+				return yield* policyNotFound(policyId);
 			}
-		}
 
-		// Create new policy
-		const [newPolicy] = yield* dbService.query("createDuplicate", async () => {
-			return await dbService.db
-				.insert(workPolicy)
-				.values({
-					organizationId: existingPolicy!.organizationId,
-					name: newName,
-					description: existingPolicy!.description,
-					scheduleEnabled: existingPolicy!.scheduleEnabled,
-					regulationEnabled: existingPolicy!.regulationEnabled,
-					presenceEnabled: existingPolicy!.presenceEnabled,
-					isDefault: false,
-					createdBy: session.user.id,
-					updatedAt: currentTimestamp(),
-				})
-				.returning();
-		});
+			const dbService = yield* DatabaseService;
 
-		// Duplicate schedule if exists
-		if (existingPolicyWithDetails.schedule) {
-			const scheduleSource = existingPolicyWithDetails.schedule;
-			const [schedule] = yield* dbService.query("duplicateSchedule", async () => {
-				return await dbService.db
-					.insert(workPolicySchedule)
+			// Generate unique name
+			let newName = `${existingPolicy.name} (Copy)`;
+			let copyNumber = 1;
+
+			let nameExists = true;
+			while (nameExists) {
+				const candidate = newName;
+				const duplicate = yield* dbService.query("checkDuplicate", () =>
+					dbService.db.query.workPolicy.findFirst({
+						where: and(
+							eq(workPolicy.organizationId, organizationId),
+							eq(workPolicy.name, candidate),
+							eq(workPolicy.isActive, true),
+						),
+					}),
+				);
+
+				if (duplicate) {
+					copyNumber++;
+					newName = `${existingPolicy.name} (Copy ${copyNumber})`;
+				} else {
+					nameExists = false;
+				}
+			}
+
+			const [newPolicy] = yield* dbService.query("createDuplicate", () =>
+				dbService.db
+					.insert(workPolicy)
 					.values({
-						policyId: newPolicy.id,
-						scheduleCycle: scheduleSource.scheduleCycle,
-						scheduleType: scheduleSource.scheduleType,
-						workingDaysPreset: scheduleSource.workingDaysPreset,
-						hoursPerCycle: scheduleSource.hoursPerCycle,
-						homeOfficeDaysPerCycle: scheduleSource.homeOfficeDaysPerCycle,
+						organizationId,
+						name: newName,
+						description: existingPolicy.description,
+						scheduleEnabled: existingPolicy.scheduleEnabled,
+						regulationEnabled: existingPolicy.regulationEnabled,
+						presenceEnabled: existingPolicy.presenceEnabled,
+						isDefault: false,
+						createdBy: actor.userId,
 						updatedAt: currentTimestamp(),
 					})
-					.returning();
-			});
+					.returning(),
+			);
 
-			if (scheduleSource.days.length > 0) {
-				yield* dbService.query("duplicateScheduleDays", async () => {
-					await dbService.db.insert(workPolicyScheduleDay).values(
-						scheduleSource.days.map((day) => ({
-							scheduleId: schedule.id,
-							dayOfWeek: day.dayOfWeek,
-							hoursPerDay: day.hoursPerDay,
-							isWorkDay: day.isWorkDay,
-							cycleWeek: day.cycleWeek,
-							latestClockIn: day.latestClockIn,
-						})),
-					);
-				});
-			}
-		}
-
-		// Duplicate regulation if exists
-		if (existingPolicyWithDetails.regulation) {
-			const regulationSource = existingPolicyWithDetails.regulation;
-			const [regulation] = yield* dbService.query("duplicateRegulation", async () => {
-				return await dbService.db
-					.insert(workPolicyRegulation)
-					.values({
-						policyId: newPolicy.id,
-						maxDailyMinutes: regulationSource.maxDailyMinutes,
-						maxWeeklyMinutes: regulationSource.maxWeeklyMinutes,
-						maxUninterruptedMinutes: regulationSource.maxUninterruptedMinutes,
-						updatedAt: currentTimestamp(),
-					})
-					.returning();
-			});
-
-			for (const rule of regulationSource.breakRules) {
-				const [breakRule] = yield* dbService.query("duplicateBreakRule", async () => {
-					return await dbService.db
-						.insert(workPolicyBreakRule)
+			if (existingPolicy.schedule) {
+				const scheduleSource = existingPolicy.schedule;
+				const [schedule] = yield* dbService.query("duplicateSchedule", () =>
+					dbService.db
+						.insert(workPolicySchedule)
 						.values({
-							regulationId: regulation.id,
-							workingMinutesThreshold: rule.workingMinutesThreshold,
-							requiredBreakMinutes: rule.requiredBreakMinutes,
-							sortOrder: rule.sortOrder,
+							policyId: newPolicy.id,
+							scheduleCycle: scheduleSource.scheduleCycle,
+							scheduleType: scheduleSource.scheduleType,
+							workingDaysPreset: scheduleSource.workingDaysPreset,
+							hoursPerCycle: scheduleSource.hoursPerCycle,
+							homeOfficeDaysPerCycle: scheduleSource.homeOfficeDaysPerCycle,
 							updatedAt: currentTimestamp(),
 						})
-						.returning();
-				});
+						.returning(),
+				);
 
-				if (rule.options.length > 0) {
-					yield* dbService.query("duplicateBreakOptions", async () => {
-						await dbService.db.insert(workPolicyBreakOption).values(
-							rule.options.map((opt) => ({
-								breakRuleId: breakRule.id,
-								splitCount: opt.splitCount,
-								minimumSplitMinutes: opt.minimumSplitMinutes,
-								minimumLongestSplitMinutes: opt.minimumLongestSplitMinutes,
-								sortOrder: opt.sortOrder,
+				if (scheduleSource.days.length > 0) {
+					yield* dbService.query("duplicateScheduleDays", async () => {
+						await dbService.db.insert(workPolicyScheduleDay).values(
+							scheduleSource.days.map((day) => ({
+								scheduleId: schedule.id,
+								dayOfWeek: day.dayOfWeek,
+								hoursPerDay: day.hoursPerDay,
+								isWorkDay: day.isWorkDay,
+								cycleWeek: day.cycleWeek,
+								latestClockIn: day.latestClockIn,
 							})),
 						);
 					});
 				}
 			}
-		}
 
-		// Duplicate presence if exists
-		if (existingPolicyWithDetails.presence) {
-			const presenceSource = existingPolicyWithDetails.presence;
-			yield* dbService.query("duplicatePresence", async () => {
-				await dbService.db.insert(workPolicyPresence).values({
-					policyId: newPolicy.id,
-					presenceMode: presenceSource.presenceMode,
-					requiredOnsiteDays: presenceSource.requiredOnsiteDays,
-					requiredOnsiteFixedDays: presenceSource.requiredOnsiteFixedDays,
-					locationId: presenceSource.locationId,
-					evaluationPeriod: presenceSource.evaluationPeriod,
-					enforcement: presenceSource.enforcement,
-					updatedAt: currentTimestamp(),
+			if (existingPolicy.regulation) {
+				const regulationSource = existingPolicy.regulation;
+				const [regulation] = yield* dbService.query("duplicateRegulation", () =>
+					dbService.db
+						.insert(workPolicyRegulation)
+						.values({
+							policyId: newPolicy.id,
+							maxDailyMinutes: regulationSource.maxDailyMinutes,
+							maxWeeklyMinutes: regulationSource.maxWeeklyMinutes,
+							maxUninterruptedMinutes: regulationSource.maxUninterruptedMinutes,
+							updatedAt: currentTimestamp(),
+						})
+						.returning(),
+				);
+
+				for (const rule of regulationSource.breakRules) {
+					const [breakRule] = yield* dbService.query("duplicateBreakRule", () =>
+						dbService.db
+							.insert(workPolicyBreakRule)
+							.values({
+								regulationId: regulation.id,
+								workingMinutesThreshold: rule.workingMinutesThreshold,
+								requiredBreakMinutes: rule.requiredBreakMinutes,
+								sortOrder: rule.sortOrder,
+								updatedAt: currentTimestamp(),
+							})
+							.returning(),
+					);
+
+					if (rule.options.length > 0) {
+						yield* dbService.query("duplicateBreakOptions", async () => {
+							await dbService.db.insert(workPolicyBreakOption).values(
+								rule.options.map((opt) => ({
+									breakRuleId: breakRule.id,
+									splitCount: opt.splitCount,
+									minimumSplitMinutes: opt.minimumSplitMinutes,
+									minimumLongestSplitMinutes: opt.minimumLongestSplitMinutes,
+									sortOrder: opt.sortOrder,
+								})),
+							);
+						});
+					}
+				}
+			}
+
+			if (existingPolicy.presence) {
+				const presenceSource = existingPolicy.presence;
+				yield* dbService.query("duplicatePresence", async () => {
+					await dbService.db.insert(workPolicyPresence).values({
+						policyId: newPolicy.id,
+						presenceMode: presenceSource.presenceMode,
+						requiredOnsiteDays: presenceSource.requiredOnsiteDays,
+						requiredOnsiteFixedDays: presenceSource.requiredOnsiteFixedDays,
+						locationId: presenceSource.locationId,
+						evaluationPeriod: presenceSource.evaluationPeriod,
+						enforcement: presenceSource.enforcement,
+						updatedAt: currentTimestamp(),
+					});
 				});
-			});
-		}
+			}
 
-		// Fetch complete policy
-		const completePolicy = yield* dbService.query("fetchComplete", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: eq(workPolicy.id, newPolicy.id),
-				with: {
-					schedule: {
-						with: { days: true },
-					},
-					regulation: {
-						with: {
-							breakRules: {
-								with: { options: true },
-							},
-						},
-					},
-					presence: true,
-				},
-			});
-		});
-
-		if (!completePolicy) {
-			yield* Effect.fail(
-				new NotFoundError({
-					message: "Failed to fetch duplicated policy",
-					entityType: "work_policy",
-				}),
+			return yield* fetchSavedPolicy(
+				newPolicy.id,
+				organizationId,
+				"Failed to fetch duplicated policy",
 			);
-		}
-
-		return completePolicy as WorkPolicyWithDetails;
-	});
-
-	return runServerActionSafe(effect);
-}
+		}),
+);
