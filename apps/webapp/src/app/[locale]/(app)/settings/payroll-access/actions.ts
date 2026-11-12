@@ -3,6 +3,7 @@
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import {
 	employee,
@@ -11,7 +12,6 @@ import {
 	payrollAccessTeam,
 	team,
 } from "@/db/schema";
-import { z } from "zod";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	formerSinceDate,
@@ -62,12 +62,15 @@ export interface PayrollAccessAdminData {
 const savePayrollAccessSchema = z.strictObject({
 	payrollEmployeeId: z.guid("Payroll access IDs must be valid"),
 	scope: z.enum(["all", "specific"], "Payroll access scope must be all or specific"),
-	teamIds: z.array(z.string("Team IDs must be strings"), "Team IDs must be a list"),
-	employeeIds: z.array(z.string("Employee IDs must be strings"), "Employee IDs must be a list"),
+	teamIds: z.array(z.string({ error: "Team IDs must be strings" }), "Team IDs must be a list"),
+	employeeIds: z.array(
+		z.string({ error: "Employee IDs must be strings" }),
+		"Employee IDs must be a list",
+	),
 });
 
 const revokePayrollAccessSchema = z.strictObject({
-	grantId: z.string("Payroll access grant is required"),
+	grantId: z.string({ error: "Payroll access grant is required" }),
 });
 
 export const getPayrollAccessAdminDataAction = organizationAction(

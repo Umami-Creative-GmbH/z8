@@ -22,7 +22,7 @@ import { revalidateWorkBalancePaths } from "./work-balance-paths";
  */
 
 const openingBalanceUploadSchema = z.strictObject({
-	csv: z.string("The file could not be read"),
+	csv: z.string({ error: "The file could not be read" }),
 });
 
 export type OpeningBalanceUploadInput = z.input<typeof openingBalanceUploadSchema>;

@@ -9,7 +9,7 @@ import { organizationAction } from "@/lib/organization-action/organization-actio
 import { storeStep } from "@/lib/organization-action/store-step";
 import { TrackingDateRefusal } from "@/lib/time-tracking/tracking-date-review-types";
 
-const csv = z.string("Choose a readable CSV file.");
+const csv = z.string({ error: "Choose a readable CSV file." });
 
 export const previewEmploymentDateUploadAction = organizationAction(
 	{

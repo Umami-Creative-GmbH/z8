@@ -19,7 +19,7 @@ export const saveEmployeeSickNoteUploadAction = organizationAction(
 	{
 		name: "vacation.saveEmployeeSickNoteUpload",
 		requires: "orgAdmin",
-		schema: z.strictObject({ enabled: z.boolean("Invalid setting") }),
+		schema: z.strictObject({ enabled: z.boolean({ error: "Invalid setting" }) }),
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {

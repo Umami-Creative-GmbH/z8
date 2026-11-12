@@ -113,24 +113,24 @@ const SETTINGS_PATH = "/settings/kiosks";
  * like another organization's, as not found (`notFound`). The store checks
  * names and zones itself.
  */
-const kioskIdSchema = z.strictObject({ kioskId: z.string("Kiosk not found.") });
+const kioskIdSchema = z.strictObject({ kioskId: z.string({ error: "Kiosk not found." }) });
 
 const createKioskSchema = z.strictObject({
-	name: z.string("Enter a name."),
-	locationId: z.string("Choose a location."),
-	timezone: z.string("Choose a time zone."),
+	name: z.string({ error: "Enter a name." }),
+	locationId: z.string({ error: "Choose a location." }),
+	timezone: z.string({ error: "Choose a time zone." }),
 }) satisfies z.ZodType<CreateKioskInput>;
 
 const updateKioskSchema = z.strictObject({
-	kioskId: z.string("Kiosk not found."),
-	name: z.string("Enter a name.").optional(),
-	locationId: z.string("Choose a location.").optional(),
-	timezone: z.string("Choose a time zone.").optional(),
-	boardEnabled: z.boolean("The board switch must be on or off.").optional(),
-	offlineModeEnabled: z.boolean("Offline mode must be on or off.").optional(),
-	badgeScannerEnabled: z.boolean("Scanner input must be on or off.").optional(),
-	badgeCameraEnabled: z.boolean("Camera input must be on or off.").optional(),
-	nfcFobReaderEnabled: z.boolean("The NFC fob reader must be on or off.").optional(),
+	kioskId: z.string({ error: "Kiosk not found." }),
+	name: z.string({ error: "Enter a name." }).optional(),
+	locationId: z.string({ error: "Choose a location." }).optional(),
+	timezone: z.string({ error: "Choose a time zone." }).optional(),
+	boardEnabled: z.boolean({ error: "The board switch must be on or off." }).optional(),
+	offlineModeEnabled: z.boolean({ error: "Offline mode must be on or off." }).optional(),
+	badgeScannerEnabled: z.boolean({ error: "Scanner input must be on or off." }).optional(),
+	badgeCameraEnabled: z.boolean({ error: "Camera input must be on or off." }).optional(),
+	nfcFobReaderEnabled: z.boolean({ error: "The NFC fob reader must be on or off." }).optional(),
 }) satisfies z.ZodType<UpdateKioskInput>;
 
 export const getKioskAdminDataAction = organizationAction(

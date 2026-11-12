@@ -22,7 +22,7 @@ export const rehearseGoLiveMemberAction = organizationAction(
 	{
 		name: "goLiveRehearsal.rehearse",
 		requires: "orgAdmin",
-		schema: z.string("Unknown member").max(MEMBER_KEY_MAX_LENGTH, "Unknown member"),
+		schema: z.string({ error: "Unknown member" }).max(MEMBER_KEY_MAX_LENGTH, "Unknown member"),
 	},
 	({ organizationId, input: memberKey }) =>
 		Effect.gen(function* () {

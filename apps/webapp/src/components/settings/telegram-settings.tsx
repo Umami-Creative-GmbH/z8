@@ -301,7 +301,6 @@ function FeatureSettingsCard({
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [loading, setLoading] = useState(false);
 
 	const form = useForm({
 		defaultValues: {
@@ -314,10 +313,7 @@ function FeatureSettingsCard({
 			escalationTimeoutHours: config.escalationTimeoutHours,
 		},
 		onSubmit: async ({ value }) => {
-			setLoading(true);
 			const result = await updateTelegramSettings(value);
-			setLoading(false);
-
 			if (result.success) {
 				toast.success(t("settings.telegram.saved", "Telegram settings saved"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.telegram.config(organizationId) });
@@ -328,6 +324,8 @@ function FeatureSettingsCard({
 	});
 
 	const isDirty = useStore(form.store, (state) => state.isDirty);
+	// The form clears `isSubmitting` when `onSubmit` settles, a thrown action included.
+	const loading = useStore(form.store, (state) => state.isSubmitting);
 
 	return (
 		<Card>

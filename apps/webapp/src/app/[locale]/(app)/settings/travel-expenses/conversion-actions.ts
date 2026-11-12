@@ -104,7 +104,10 @@ const itemInput = z.object(
 	{
 		reportId: z.uuid("Invalid expense"),
 		itemId: z.uuid("Invalid expense"),
-		expectedVersion: z.number("Invalid expense").int("Invalid expense").positive("Invalid expense"),
+		expectedVersion: z
+			.number({ error: "Invalid expense" })
+			.int("Invalid expense")
+			.positive("Invalid expense"),
 	},
 	"Invalid expense",
 );
@@ -112,12 +115,12 @@ const itemInput = z.object(
 const rateInput = itemInput.extend({
 	rate: z.object(
 		{
-			base: z.string("Invalid conversion rate").max(3, "Invalid conversion rate"),
-			quote: z.string("Invalid conversion rate").max(3, "Invalid conversion rate"),
-			rate: z.string("Invalid conversion rate").max(40, "Invalid conversion rate"),
-			rateDate: z.string("Invalid conversion rate").max(10, "Invalid conversion rate"),
-			reason: z.string("Invalid conversion rate").max(2000, "Invalid conversion rate"),
-			evidence: z.string("Invalid conversion rate").max(4000, "Invalid conversion rate"),
+			base: z.string({ error: "Invalid conversion rate" }).max(3, "Invalid conversion rate"),
+			quote: z.string({ error: "Invalid conversion rate" }).max(3, "Invalid conversion rate"),
+			rate: z.string({ error: "Invalid conversion rate" }).max(40, "Invalid conversion rate"),
+			rateDate: z.string({ error: "Invalid conversion rate" }).max(10, "Invalid conversion rate"),
+			reason: z.string({ error: "Invalid conversion rate" }).max(2000, "Invalid conversion rate"),
+			evidence: z.string({ error: "Invalid conversion rate" }).max(4000, "Invalid conversion rate"),
 		},
 		"Invalid conversion rate",
 	),

@@ -33,20 +33,20 @@ export interface NotificationChannelConfig {
 
 const notificationChannelSettingsSchema = z.object(
 	{
-		enableApprovals: z.boolean("Enable approvals must be a boolean"),
-		enableCommands: z.boolean("Enable commands must be a boolean"),
-		enableDailyDigest: z.boolean("Enable daily digest must be a boolean"),
-		enableEscalations: z.boolean("Enable escalations must be a boolean"),
+		enableApprovals: z.boolean({ error: "Enable approvals must be a boolean" }),
+		enableCommands: z.boolean({ error: "Enable commands must be a boolean" }),
+		enableDailyDigest: z.boolean({ error: "Enable daily digest must be a boolean" }),
+		enableEscalations: z.boolean({ error: "Enable escalations must be a boolean" }),
 		digestTime: z
-			.string("Digest time must use HH:mm format")
+			.string({ error: "Digest time must use HH:mm format" })
 			.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Digest time must use HH:mm format"),
 		digestTimezone: z
-			.string("Digest timezone is required")
+			.string({ error: "Digest timezone is required" })
 			.trim()
 			.min(1, "Digest timezone is required")
 			.refine(isValidIanaTimeZone, "Digest timezone must be a valid timezone"),
 		escalationTimeoutHours: z
-			.number("Escalation timeout must be at least 1 hour")
+			.number({ error: "Escalation timeout must be at least 1 hour" })
 			.int("Escalation timeout must be at least 1 hour")
 			.min(1, "Escalation timeout must be at least 1 hour"),
 	},

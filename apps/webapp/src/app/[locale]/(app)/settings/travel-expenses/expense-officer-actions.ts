@@ -100,12 +100,12 @@ export const getExpenseOfficerAdminData = organizationAction(
  */
 const saveGrantSchema = z.object(
 	{
-		officerEmployeeId: z.string("Expense officer input is required"),
+		officerEmployeeId: z.string({ error: "Expense officer input is required" }),
 		scope: z.enum(["all", "specific"], "Choose who the expense officer handles"),
 		teamIds: z.array(z.string(), "teamIds must be a list"),
 		employeeIds: z.array(z.string(), "employeeIds must be a list"),
-		canExport: z.boolean("canExport must be true or false"),
-		canRecordReimbursements: z.boolean("canRecordReimbursements must be true or false"),
+		canExport: z.boolean({ error: "canExport must be true or false" }),
+		canRecordReimbursements: z.boolean({ error: "canRecordReimbursements must be true or false" }),
 	},
 	"Expense officer input is required",
 ) satisfies z.ZodType<SaveExpenseOfficerGrantInput>;
@@ -142,7 +142,7 @@ export const revokeExpenseOfficerGrantAction = organizationAction(
 	{
 		name: "travelExpenses.revokeExpenseOfficer",
 		requires: "orgAdmin",
-		schema: z.strictObject({ grantId: z.string("Expense officer not found") }),
+		schema: z.strictObject({ grantId: z.string({ error: "Expense officer not found" }) }),
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
