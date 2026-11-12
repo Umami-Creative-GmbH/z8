@@ -54,6 +54,10 @@ import {
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
 import { InviteCodeDialog } from "./invite-code-dialog";
 import { InviteCodeQRDialog } from "./invite-code-qr-dialog";
@@ -61,7 +65,8 @@ import { InviteCodeQRDialog } from "./invite-code-qr-dialog";
 interface InviteCodeManagementProps {
 	organizationId: string;
 	organizationToday: string;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 const statusColors = {
@@ -453,7 +458,7 @@ function InviteCodeDialogStack({
 export function InviteCodeManagement({
 	organizationId,
 	organizationToday,
-	currentMemberRole,
+	settingsAccess,
 }: InviteCodeManagementProps) {
 	const { t } = useTranslate();
 	const displayContext = useDisplayContext();
@@ -468,7 +473,7 @@ export function InviteCodeManagement({
 	const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
 	const canManage =
-		currentMemberRole === "admin" || currentMemberRole === "owner";
+		meetsSettingsAccess(settingsAccess, "orgAdmin");
 
 	// Fetch invite codes
 	const { data: inviteCodesResult, isLoading } = useQuery({

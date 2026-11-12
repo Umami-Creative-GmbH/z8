@@ -3,82 +3,52 @@
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { userSettings } from "@/db/schema";
-import { ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import {
 	type WaterReminderSettings,
-	type WaterReminderSettingsFormValues,
 	waterReminderSettingsSchema,
 } from "@/lib/validations/wellness";
 import { getPresetInterval, type WaterReminderPreset } from "@/lib/wellness/water-presets";
 
-/**
- * Get water reminder settings for settings page
- */
-export async function getWellnessSettings(): Promise<ServerActionResult<WaterReminderSettings>> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
-
-		const settings = yield* dbService.query("getWaterReminderSettings", async () => {
-			return dbService.db.query.userSettings.findFirst({
-				where: eq(userSettings.userId, session.user.id),
-			});
-		});
-
-		return {
-			enabled: settings?.waterReminderEnabled ?? false,
-			preset: (settings?.waterReminderPreset ?? "moderate") as WaterReminderPreset,
-			intervalMinutes: settings?.waterReminderIntervalMinutes ?? 45,
-			dailyGoal: settings?.waterReminderDailyGoal ?? 8,
-		};
-	});
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Update water reminder settings
- */
-export async function updateWellnessSettings(
-	data: WaterReminderSettingsFormValues,
-): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
-
-		// Validate input
-		const result = waterReminderSettingsSchema.safeParse(data);
-		if (!result.success) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: result.error.issues[0]?.message || "Invalid settings",
-					field: "settings",
+/** The signed-in user's water reminder settings, for the settings page. */
+export const getWellnessSettings = organizationAction(
+	{ name: "wellness.getSettings", requires: "member", schema: noInput },
+	({ actor }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const settings = yield* dbService.query("getWaterReminderSettings", () =>
+				dbService.db.query.userSettings.findFirst({
+					where: eq(userSettings.userId, actor.userId),
 				}),
 			);
-		}
 
-		const { enabled, preset, intervalMinutes, dailyGoal } = result.data;
+			return {
+				enabled: settings?.waterReminderEnabled ?? false,
+				preset: (settings?.waterReminderPreset ?? "moderate") as WaterReminderPreset,
+				intervalMinutes: settings?.waterReminderIntervalMinutes ?? 45,
+				dailyGoal: settings?.waterReminderDailyGoal ?? 8,
+			} satisfies WaterReminderSettings;
+		}),
+);
 
-		// If preset is not custom, use preset interval
-		const actualInterval =
-			preset === "custom" ? intervalMinutes : getPresetInterval(preset as WaterReminderPreset);
+/** Updates the signed-in user's water reminder settings; a preset sets its own interval. */
+export const updateWellnessSettings = organizationAction(
+	{ name: "wellness.updateSettings", requires: "member", schema: waterReminderSettingsSchema },
+	({ actor, input }) =>
+		Effect.gen(function* () {
+			const { enabled, preset, intervalMinutes, dailyGoal } = input;
+			const actualInterval = preset === "custom" ? intervalMinutes : getPresetInterval(preset);
 
-		// Upsert userSettings with water reminder settings
-		yield* dbService.query("updateWaterReminderSettings", () =>
-			writeUserSettings(dbService.db, session.user.id, {
-				waterReminderEnabled: enabled,
-				waterReminderPreset: preset,
-				waterReminderIntervalMinutes: actualInterval,
-				waterReminderDailyGoal: dailyGoal,
-			}),
-		);
-	});
-
-	return runServerActionSafe(effect);
-}
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("updateWaterReminderSettings", () =>
+				writeUserSettings(dbService.db, actor.userId, {
+					waterReminderEnabled: enabled,
+					waterReminderPreset: preset,
+					waterReminderIntervalMinutes: actualInterval,
+					waterReminderDailyGoal: dailyGoal,
+				}),
+			);
+		}),
+);
