@@ -31,8 +31,8 @@ import { normalizeStableData } from "../workflow/stable-data";
 import { ApprovalWorkflowStartError, planApprovalWorkflowStart } from "../workflow/start-workflow";
 import {
 	absenceCategoryVariants,
-	absenceFallsBackToDefaultApprover,
 	absenceNeedsApproval,
+	absenceRouteFallback,
 	expenseAmountVariants,
 	expenseSelfApprovalRule,
 	isOwnerOrAdminSelfRecording,
@@ -506,12 +506,21 @@ export async function routeApprovalRequesters(
 				legacyContext("absence_entry", requester, { absenceCategoryId }),
 				defaultApproverId,
 			);
-			if (decision.kind === "failure" && absenceFallsBackToDefaultApprover(decision)) {
+			const fallback =
+				decision.kind === "failure"
+					? absenceRouteFallback({
+							failure: decision,
+							requesterEmployeeId: requester.id,
+							defaultApproverId,
+						})
+					: null;
+			if (fallback) {
 				variants.push({
 					variant,
-					outcome: defaultApproverId
-						? legacyDefaultOutcome(requester.id, defaultApproverId)
-						: { kind: "unroutable", reason: { code: "no_default_approver" } },
+					outcome:
+						fallback.kind === "default_approver"
+							? legacyOutcome({ ...fallback, kind: "default" }, defaultApproverId)
+							: { kind: "unroutable", reason: { code: "no_default_approver" } },
 				});
 				continue;
 			}
@@ -782,23 +791,6 @@ function legacyOutcome(
 				notes: [],
 			};
 	}
-}
-
-/** The legacy default-approver route: one stage, the requester's default approver. */
-function legacyDefaultOutcome(
-	requesterId: string,
-	approverEmployeeId: string,
-): Extract<ApprovalRouteOutcome, { kind: "routed" }> {
-	const self = approverEmployeeId === requesterId;
-	return {
-		kind: "routed",
-		path: "legacy",
-		policy: null,
-		defaultApproverEmployeeId: approverEmployeeId,
-		stages: [defaultStage(approverEmployeeId, self)],
-		autoCompleted: self,
-		notes: [],
-	};
 }
 
 function defaultStage(approverEmployeeId: string, self: boolean): ApprovalRouteStage {

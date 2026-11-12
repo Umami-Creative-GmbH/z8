@@ -53,6 +53,7 @@ import {
 	type LegacyObservedMirror,
 } from "@/lib/approvals/evidence/legacy-absence";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import { absenceCategoryNeedsApproval } from "@/lib/approvals/route-preview/rules";
 import {
 	type AbsenceApprovalWorkflowResult,
 	type ApprovedAbsenceResult,
@@ -1187,18 +1188,20 @@ function requestAbsenceWithResolverEffect(
 					);
 				}
 
-				const defaultApproverId = category.requiresApproval
+				// The rule the approval route preview applies too.
+				const needsApproval = absenceCategoryNeedsApproval(category);
+				const defaultApproverId = needsApproval
 					? yield* getAbsenceDefaultApproverId(dbService, currentEmployee)
 					: null;
 				span.setAttribute("absence.category_name", category.name);
-				span.setAttribute("absence.requires_approval", category.requiresApproval);
+				span.setAttribute("absence.requires_approval", needsApproval);
 
 				logger.info(
 					{
 						categoryId: requestData.categoryId,
 						categoryName: category.name,
 						absenceDays,
-						requiresApproval: category.requiresApproval,
+						requiresApproval: needsApproval,
 					},
 					"Absence request validated",
 				);
@@ -1216,8 +1219,8 @@ function requestAbsenceWithResolverEffect(
 						now: approvalLifecycle ? approvalLifecycle.nowInstant() : systemClock.nowInstant(),
 						hasDefaultApprover: Boolean(defaultApproverId),
 					},
-					hasManagerApprovalWorkflow: category.requiresApproval,
-					approvalWorkflow: category.requiresApproval
+					hasManagerApprovalWorkflow: needsApproval,
+					approvalWorkflow: needsApproval
 						? {
 								categoryId: requestData.categoryId,
 								approverId: defaultApproverId,
@@ -1240,7 +1243,7 @@ function requestAbsenceWithResolverEffect(
 				if (autoCompletion) {
 					yield* Effect.promise(() => runAutoCompletedAbsenceMaintenance(autoCompletion));
 					span.setAttribute("absence.auto_approved", true);
-				} else if (category.requiresApproval) {
+				} else if (needsApproval) {
 					if (defaultApproverId && newAbsence.approvalWorkflowResult?.kind !== "canonical") {
 						span.setAttribute("absence.has_approval_request", true);
 						span.setAttribute("absence.approver_id", defaultApproverId);
@@ -1270,7 +1273,7 @@ function requestAbsenceWithResolverEffect(
 							workflowId: newAbsence.approvalWorkflowResult.workflowId,
 						});
 					}
-				} else if (!category.requiresApproval) {
+				} else if (!needsApproval) {
 					yield* updateAutoApprovedAbsence(dbService, newAbsence.id, "autoApproveAbsence");
 					yield* Effect.promise(() =>
 						markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
@@ -1316,7 +1319,7 @@ function requestAbsenceWithResolverEffect(
 										},
 									]
 								: []),
-							...(autoCompletion || !category.requiresApproval
+							...(autoCompletion || !needsApproval
 								? [{ kind: "approved" as const, absenceId: newAbsence.id }]
 								: []),
 						],

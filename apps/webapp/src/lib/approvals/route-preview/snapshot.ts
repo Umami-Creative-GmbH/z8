@@ -33,6 +33,7 @@ import {
 	ApprovalWorkflowStartError,
 	loadApprovalWorkflowStartPolicies,
 } from "../workflow/start-workflow";
+import { absenceCategoryNeedsApproval } from "./rules";
 import { APPROVAL_ROUTE_KINDS, type ApprovalRouteKind } from "./types";
 
 /** The kinds with a legacy path: their approval authority decides how they route. */
@@ -116,7 +117,7 @@ export async function loadApprovalRouteSnapshot(
 		legacyPolicyRecords,
 		groupMembers,
 		changePolicyRows,
-		requiringCategories,
+		activeCategories,
 		expenseSettings,
 		memberRoles,
 		collectsPeriods,
@@ -220,13 +221,12 @@ export async function loadApprovalRouteSnapshot(
 				.orderBy(asc(changePolicyAssignment.createdAt), asc(changePolicyAssignment.id)),
 		() =>
 			reader
-				.select({ id: absenceCategory.id })
+				.select({ id: absenceCategory.id, requiresApproval: absenceCategory.requiresApproval })
 				.from(absenceCategory)
 				.where(
 					and(
 						eq(absenceCategory.organizationId, organizationId),
 						eq(absenceCategory.isActive, true),
-						eq(absenceCategory.requiresApproval, true),
 					),
 				)
 				.orderBy(asc(absenceCategory.id)),
@@ -325,7 +325,7 @@ export async function loadApprovalRouteSnapshot(
 			effectiveFrom: row.effectiveFrom ? instantFromDate(row.effectiveFrom) : null,
 			effectiveUntil: row.effectiveUntil ? instantFromDate(row.effectiveUntil) : null,
 		})),
-		approvalCategoryIds: requiringCategories.map((row) => row.id),
+		approvalCategoryIds: activeCategories.filter(absenceCategoryNeedsApproval).map((row) => row.id),
 		expenseApproverEmployeeId: expenseSettings[0]?.expenseApproverEmployeeId ?? null,
 		memberRoles: new Map(memberRoles.map((row) => [row.userId, row.role])),
 		roster,
