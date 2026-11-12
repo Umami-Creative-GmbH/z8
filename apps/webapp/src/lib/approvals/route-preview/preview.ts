@@ -15,6 +15,18 @@ import {
 } from "../policies/manager-eligibility";
 import type { ApprovalPolicyDraft, ApprovalPolicyEvaluationContext } from "../policies/types";
 import {
+	absenceCategoryVariants,
+	absenceNeedsApproval,
+	absenceRouteFallback,
+	expenseAmountVariants,
+	expenseSelfApprovalRule,
+	isOwnerOrAdminSelfRecording,
+	manualWorkChangePolicyRule,
+	manualWorkExemption,
+	timeCorrectionDirectChange,
+	timeCorrectionRoutingTeam,
+} from "../route-rules";
+import {
 	ApprovalStageActivationError,
 	type ApprovalStageReviewerDirectory,
 } from "../routing/approver-resolver";
@@ -27,22 +39,10 @@ import {
 	loadApprovalStageDirectory,
 } from "../routing/stage-activation-resolver";
 import type { ApprovalRoutingContext } from "../routing/types";
-import type { ApprovalWorkflowSnapshot, JsonObject } from "../workflow/ports";
+import { shiftRequestDeciders } from "../shift-request-deciders";
+import type { ApprovalDbService, ApprovalWorkflowSnapshot, JsonObject } from "../workflow/ports";
 import { normalizeStableData } from "../workflow/stable-data";
 import { ApprovalWorkflowStartError, planApprovalWorkflowStart } from "../workflow/start-workflow";
-import {
-	absenceCategoryVariants,
-	absenceNeedsApproval,
-	absenceRouteFallback,
-	expenseAmountVariants,
-	expenseSelfApprovalRule,
-	isOwnerOrAdminSelfRecording,
-	manualWorkChangePolicyRule,
-	manualWorkExemption,
-	shiftRequestDeciders,
-	timeCorrectionDirectChange,
-	timeCorrectionRoutingTeam,
-} from "./rules";
 import {
 	type ApprovalRouteCanonicalKind,
 	type ApprovalRouteSnapshot,
@@ -121,6 +121,28 @@ const CANONICAL_SOURCE_TYPE: Record<ApprovalRouteCanonicalKind, string> = {
 	manual_time_submission: "time_entry",
 	period_submission: PERIOD_SUBMISSION_SOURCE_TYPE,
 };
+
+/**
+ * The database planning is handed. Planning reads nothing itself: the policies and every
+ * directory come from the snapshot, so any read is a bug and fails with this message.
+ */
+const SNAPSHOT_ONLY_DB_SERVICE: ApprovalDbService = {
+	db: new Proxy({} as ApprovalDbService["db"], {
+		get(_target, property) {
+			throw new Error(
+				`Approval route preview planning reads only its snapshot, yet read db.${String(property)}`,
+			);
+		},
+	}),
+};
+
+/** The routing facts a kind leaves unset unless it varies them. */
+const NO_ROUTING_FACTS = {
+	locationId: null,
+	absenceCategoryId: null,
+	travelExpenseAmount: null,
+	overtimeRisk: null,
+} as const satisfies Partial<LegacyContext> & Partial<ApprovalRoutingContext>;
 
 /** A requester as routing sees them. A prospective requester gets a stand-in employee id. */
 type Requester = {
@@ -223,8 +245,6 @@ export async function routeApprovalRequesters(
 			return directory;
 		},
 	});
-	// Planning reads nothing itself: the policies and every directory come from the snapshot.
-	const dbService = { db: null as never };
 
 	const activeLegacyPolicies = snapshot.legacyPolicies.filter((policy) => policy.isActive);
 	const absenceVariants = absenceCategoryVariants(
@@ -275,7 +295,7 @@ export async function routeApprovalRequesters(
 		}
 		try {
 			const planned = await planApprovalWorkflowStart({
-				context: { dbService, activationResolver },
+				context: { dbService: SNAPSHOT_ONLY_DB_SERVICE, activationResolver },
 				organizationId,
 				workflowType: kind,
 				sourceIdentity: {
@@ -319,7 +339,7 @@ export async function routeApprovalRequesters(
 			}
 			if (error.code === "INVALID_POLICY") return invalid;
 			if (error.code === "NO_DEFAULT_APPROVER") {
-				return { kind: "unroutable", reason: { code: "no_default_approver" } };
+				return noDefaultApprover();
 			}
 			if (error.code === "ACTIVATION_FAILED" || error.code === "ACTIVATION_LIMIT") {
 				if (matched) {
@@ -355,7 +375,7 @@ export async function routeApprovalRequesters(
 	): Promise<StageResolution> {
 		try {
 			const resolved = await activationResolver.resolve({
-				dbService,
+				dbService: SNAPSHOT_ONLY_DB_SERVICE,
 				organizationId,
 				workflow,
 				stage: { ...stage, resolverSnapshot },
@@ -454,10 +474,7 @@ export async function routeApprovalRequesters(
 		return {
 			approvalType,
 			teamId: requester.teamId,
-			locationId: null,
-			absenceCategoryId: null,
-			travelExpenseAmount: null,
-			overtimeRisk: null,
+			...NO_ROUTING_FACTS,
 			entityType: approvalType,
 			...overrides,
 		};
@@ -474,10 +491,7 @@ export async function routeApprovalRequesters(
 			source: { type: CANONICAL_SOURCE_TYPE[kind], id: PREVIEW_SOURCE_ID },
 			requesterEmployeeId: requester.id,
 			teamIds: requester.teamId ? [requester.teamId] : [],
-			locationId: null,
-			absenceCategoryId: null,
-			travelExpenseAmount: null,
-			overtimeRisk: null,
+			...NO_ROUTING_FACTS,
 			employeeGroupIds: [],
 			...overrides,
 		};
@@ -523,7 +537,7 @@ export async function routeApprovalRequesters(
 					outcome:
 						fallback.kind === "default_approver"
 							? legacyOutcome({ ...fallback, kind: "default" }, defaultApproverId)
-							: { kind: "unroutable", reason: { code: "no_default_approver" } },
+							: noDefaultApprover(),
 				});
 				continue;
 			}
@@ -581,10 +595,9 @@ export async function routeApprovalRequesters(
 	 */
 	function recorderOf(requester: Requester) {
 		const row = employeesById.get(requester.id);
-		const current = row !== undefined && activeStageIds.has(requester.id);
+		const current = row !== undefined && activeStageIds.has(requester.id) ? row : null;
 		const memberRole =
 			current && requester.userId !== null ? snapshot.memberRoles.get(requester.userId) : undefined;
-		const employeeRole = row?.role as "admin" | "manager" | "employee";
 		return defineAbilityFor({
 			userId: requester.userId ?? requester.id,
 			isPlatformAdmin: false,
@@ -592,12 +605,13 @@ export async function routeApprovalRequesters(
 			orgMembership: memberRole
 				? {
 						organizationId,
+						// Better Auth stores the role as text; read as `loadOrganizationPrincipalForIdentity` reads it.
 						role: memberRole as "owner" | "admin" | "member",
 						status: "active",
 					}
 				: null,
 			employee: current
-				? { id: requester.id, organizationId, role: employeeRole, teamId: requester.teamId }
+				? { id: requester.id, organizationId, role: current.role, teamId: requester.teamId }
 				: null,
 			permissions: { orgWide: null, byTeamId: new Map() },
 			managedEmployeeIds: [],
@@ -606,7 +620,7 @@ export async function routeApprovalRequesters(
 						{
 							roleId: "approval-route-preview",
 							roleName: "approval-route-preview",
-							baseTier: employeeRole,
+							baseTier: current.role,
 							permissions: [...(snapshot.customRolePermissions.get(requester.id) ?? [])],
 						},
 					]
@@ -791,6 +805,10 @@ function combine(variants: VariantOutcome[], notes: ApprovalRouteNote[] = []): A
 	};
 }
 
+function noDefaultApprover(): ApprovalRouteOutcome {
+	return { kind: "unroutable", reason: { code: "no_default_approver" } };
+}
+
 /** A legacy decision as a route outcome. */
 function legacyOutcome(
 	decision: LegacyRouteDecision,
@@ -801,7 +819,7 @@ function legacyOutcome(
 			case "invalid_policies":
 				return { kind: "unroutable", reason: { code: "invalid_policies" } };
 			case "no_default_approver":
-				return { kind: "unroutable", reason: { code: "no_default_approver" } };
+				return noDefaultApprover();
 			case "stage_unresolvable":
 			case "policy_has_no_stages":
 				return {

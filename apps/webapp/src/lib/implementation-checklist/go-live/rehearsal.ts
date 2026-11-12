@@ -4,7 +4,10 @@ import { readOnlyTransaction } from "@/db/read-only-transaction";
 import { absenceCategory, employee } from "@/db/schema";
 import { scheduledWeekdays, type WeekdayName } from "@/lib/absences/working-days";
 import type {
+	ApprovalDirectChange,
+	ApprovalRouteKind,
 	ApprovalRouteOutcome,
+	ApprovalRouteUnroutableReason,
 	ApprovalRouteVariant,
 } from "@/lib/approvals/route-preview/types";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
@@ -12,11 +15,8 @@ import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.serv
 import { loadEffectiveWorkPolicies } from "@/lib/work-policy/effective-work-policies";
 import {
 	APPROVER_KIND_LABEL,
-	type ApproverDirectChange,
-	type ApproverGoLiveKind,
 	type ApproverKindResolution,
 	type ApproverSkipReason,
-	type ApproverUnroutableCause,
 	type ApproverVariantResult,
 	approverFixLink,
 	previewGoLiveApprovers,
@@ -184,7 +184,7 @@ type TraceContext = {
 };
 
 function kindTrace(
-	kind: ApproverGoLiveKind,
+	kind: ApprovalRouteKind,
 	resolution: ApproverKindResolution,
 	context: TraceContext,
 ): GoLiveRehearsalKind {
@@ -305,7 +305,7 @@ function routeTrace(
 	};
 }
 
-function employeeIdsIn(resolutions: ReadonlyMap<ApproverGoLiveKind, ApproverKindResolution>) {
+function employeeIdsIn(resolutions: ReadonlyMap<ApprovalRouteKind, ApproverKindResolution>) {
 	const ids = new Set<string>();
 	for (const resolution of resolutions.values()) {
 		for (const { result } of resolution.variants) {
@@ -319,7 +319,7 @@ function employeeIdsIn(resolutions: ReadonlyMap<ApproverGoLiveKind, ApproverKind
 	return [...ids];
 }
 
-function categoryIdsIn(resolutions: ReadonlyMap<ApproverGoLiveKind, ApproverKindResolution>) {
+function categoryIdsIn(resolutions: ReadonlyMap<ApprovalRouteKind, ApproverKindResolution>) {
 	return [
 		...new Set(
 			[...resolutions.values()].flatMap((resolution) =>
@@ -409,7 +409,7 @@ function skipReason(reason: ApproverSkipReason): GoLiveMessage {
 }
 
 /** Why they correct their own entries directly; deletions and date changes still need approval. */
-function directChangeNote(reason: ApproverDirectChange): GoLiveMessage {
+function directChangeNote(reason: ApprovalDirectChange): GoLiveMessage {
 	switch (reason) {
 		case "change_policy_no_policy":
 			return {
@@ -434,7 +434,7 @@ function directChangeNote(reason: ApproverDirectChange): GoLiveMessage {
 
 /** Why a request of the kind wouldn't get an approver, for this one member. */
 function unroutableReason(
-	cause: ApproverUnroutableCause,
+	cause: ApprovalRouteUnroutableReason,
 	teamId: string | null,
 	group: GoLiveGroup,
 ): GoLiveMessage {

@@ -111,7 +111,7 @@ import {
 } from "../policies/chain-service";
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
-import { absenceRouteFallback } from "../route-preview/rules";
+import { absenceRouteFallback } from "../route-rules";
 import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import type { ApprovalWorkflowRepository } from "../workflow/repository";

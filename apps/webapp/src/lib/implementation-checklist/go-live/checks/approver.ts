@@ -4,6 +4,7 @@ import {
 	type ApprovalDirectChange,
 	type ApprovalRoute,
 	type ApprovalRouteKind,
+	type ApprovalRouteNote,
 	type ApprovalRouteOutcome,
 	type ApprovalRoutePreview,
 	type ApprovalRouteRequester,
@@ -28,10 +29,6 @@ export const APPROVAL_POLICIES_HREF = "/settings/approval-policies";
 export const EMPLOYEES_HREF = "/settings/employees";
 export const TRAVEL_EXPENSES_HREF = "/settings/travel-expenses";
 
-export type ApproverGoLiveKind = ApprovalRouteKind;
-export type ApproverUnroutableCause = ApprovalRouteUnroutableReason;
-export type ApproverDirectChange = ApprovalDirectChange;
-
 /**
  * A pass the go-live check notes: the request path writes no request, or the route needs nobody
  * but the requester (they approve it at once, or decide it themselves).
@@ -47,7 +44,7 @@ type RoutedOutcome = Extract<ApprovalRouteOutcome, { kind: "routed" }>;
 export type ApproverVariantResult =
 	| { status: "routed"; route: RoutedOutcome }
 	| { status: "skipped"; reason: ApproverSkipReason; route: RoutedOutcome }
-	| { status: "unroutable"; cause: ApproverUnroutableCause };
+	| { status: "unroutable"; cause: ApprovalRouteUnroutableReason };
 
 /**
  * One kind for one member, as go-live shows it. Unroutable when any variant is; skipped when the
@@ -57,10 +54,10 @@ export type ApproverVariantResult =
 export type ApproverKindResolution = (
 	| { status: "routed" }
 	| { status: "skipped"; reason: ApproverSkipReason }
-	| { status: "unroutable"; cause: ApproverUnroutableCause }
+	| { status: "unroutable"; cause: ApprovalRouteUnroutableReason }
 ) & {
 	variants: Array<{ variant: ApprovalRouteVariant; result: ApproverVariantResult }>;
-	directChange?: ApproverDirectChange;
+	directChange?: ApprovalDirectChange;
 };
 
 /** The approval route requester a go-live group member is previewed as. */
@@ -84,7 +81,7 @@ export async function previewGoLiveApprovers(
 	},
 ): Promise<{
 	offKinds: ApprovalRoutePreview["offKinds"];
-	resolve(member: GoLiveMember): Map<ApproverGoLiveKind, ApproverKindResolution>;
+	resolve(member: GoLiveMember): Map<ApprovalRouteKind, ApproverKindResolution>;
 }> {
 	const preview = await previewApprovalRoutes(reader, {
 		organizationId: input.organizationId,
@@ -130,7 +127,8 @@ export function approverKindResolution(route: ApprovalRoute): ApproverKindResolu
 
 function variantResult(outcome: ApprovalRouteOutcome): ApproverVariantResult {
 	if (outcome.kind === "unroutable") return { status: "unroutable", cause: outcome.reason };
-	const noted = (code: string) => outcome.notes.some((note) => note.code === code);
+	const noted = (code: ApprovalRouteNote["code"]) =>
+		outcome.notes.some((note) => note.code === code);
 	if (noted("requester_only_decider")) {
 		return { status: "skipped", reason: "requester_only_decider", route: outcome };
 	}
@@ -145,7 +143,7 @@ function variantResult(outcome: ApprovalRouteOutcome): ApproverVariantResult {
 }
 
 /** The ICU `select` value each kind's messages name it by. */
-export const APPROVER_KIND_LABEL: Record<ApproverGoLiveKind, string> = {
+export const APPROVER_KIND_LABEL: Record<ApprovalRouteKind, string> = {
 	absence: "absence",
 	time_correction: "timeCorrection",
 	manual_time_submission: "workPeriod",
@@ -176,9 +174,9 @@ export const approverGoLiveCheck: GoLiveCheck = {
 			const failures = new Map<string, FailureBucket>();
 			const skips = new Map<
 				string,
-				{ kind: ApproverGoLiveKind; reason: ApproverSkipReason; count: number }
+				{ kind: ApprovalRouteKind; reason: ApproverSkipReason; count: number }
 			>();
-			const directChanges = new Map<ApproverDirectChange, number>();
+			const directChanges = new Map<ApprovalDirectChange, number>();
 			for (const member of group.members) {
 				const resolutions = routing.resolve(member);
 				for (const [kind, resolution] of resolutions) {
@@ -224,8 +222,8 @@ export const approverGoLiveCheck: GoLiveCheck = {
 };
 
 type FailureBucket = {
-	kind: ApproverGoLiveKind;
-	cause: ApproverUnroutableCause;
+	kind: ApprovalRouteKind;
+	cause: ApprovalRouteUnroutableReason;
 	teamId: string | null;
 	members: GoLiveMember[];
 };
@@ -234,7 +232,11 @@ function memberTeamId(member: GoLiveMember) {
 	return member.kind === "employee" ? member.primaryTeamId : member.teamId;
 }
 
-function bucketKey(kind: ApproverGoLiveKind, cause: ApproverUnroutableCause, member: GoLiveMember) {
+function bucketKey(
+	kind: ApprovalRouteKind,
+	cause: ApprovalRouteUnroutableReason,
+	member: GoLiveMember,
+) {
 	switch (cause.code) {
 		case "no_default_approver": {
 			const teamId = memberTeamId(member);
@@ -336,7 +338,7 @@ function failureGroup(
  * (the approval mode) or the viewer may not open the page. The go-live rehearsal offers the same.
  */
 export function approverFixLink(
-	cause: ApproverUnroutableCause,
+	cause: ApprovalRouteUnroutableReason,
 	teamId: string | null,
 	fixLink: GoLiveFixLinkResolver,
 ): GoLiveFixLink | null {
@@ -375,7 +377,7 @@ export function approverFixLink(
 	}
 }
 
-function offKindNote(kind: ApproverGoLiveKind): GoLiveMessage {
+function offKindNote(kind: ApprovalRouteKind): GoLiveMessage {
 	return kind === "period_submission"
 		? {
 				key: "settings.implementationChecklist.goLive.approver.periodSubmissionsOff",
@@ -388,7 +390,7 @@ function offKindNote(kind: ApproverGoLiveKind): GoLiveMessage {
 }
 
 function skipNote(
-	kind: ApproverGoLiveKind,
+	kind: ApprovalRouteKind,
 	reason: ApproverSkipReason,
 	count: number,
 ): GoLiveMessage {
@@ -445,7 +447,7 @@ function skipNote(
 }
 
 /** Time corrections members make directly: a note only, as deletions still go to an approver. */
-function directChangeNote(reason: ApproverDirectChange, count: number): GoLiveMessage {
+function directChangeNote(reason: ApprovalDirectChange, count: number): GoLiveMessage {
 	const params = { count };
 	switch (reason) {
 		case "change_policy_no_policy":

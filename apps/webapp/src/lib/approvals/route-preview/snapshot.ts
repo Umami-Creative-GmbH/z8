@@ -19,6 +19,7 @@ import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import type { ChangePolicyCandidate } from "@/lib/time-tracking/change-policy/resolution";
+import type { ChangePolicyWindowTerms } from "@/lib/time-tracking/change-policy/verdict";
 import { loadCollectsPeriodSubmissions } from "@/lib/time-tracking/period-submissions/settings";
 import { readApprovalAuthoritySnapshots, readApprovalWriteGateOpenSnapshot } from "../authority";
 import { type DbPolicyRecord, policyFromDbRecord } from "../policies/chain-service";
@@ -29,37 +30,40 @@ import type {
 	EligibleTeamMembership,
 } from "../policies/manager-eligibility";
 import type { ApprovalPolicyDraft } from "../policies/types";
+import { absenceCategoryNeedsApproval } from "../route-rules";
 import type { ApprovalStageReviewerDirectory } from "../routing/approver-resolver";
 import { loadApprovalStageDirectory } from "../routing/stage-activation-resolver";
 import {
 	ApprovalWorkflowStartError,
 	loadApprovalWorkflowStartPolicies,
 } from "../workflow/start-workflow";
-import { absenceCategoryNeedsApproval } from "./rules";
 import { APPROVAL_ROUTE_KINDS, type ApprovalRouteKind } from "./types";
 
 /** The kinds with a legacy path: their approval authority decides how they route. */
-export type ApprovalRouteAuthorityKind =
-	| "absence"
-	| "time_correction"
-	| "manual_time_submission"
-	| "travel_expense";
+const AUTHORITY_KINDS = [
+	"absence",
+	"time_correction",
+	"manual_time_submission",
+	"travel_expense",
+] as const satisfies readonly ApprovalRouteKind[];
+export type ApprovalRouteAuthorityKind = (typeof AUTHORITY_KINDS)[number];
 
-/** The kinds a canonical workflow start can route. */
-export type ApprovalRouteCanonicalKind =
-	| "absence"
-	| "time_correction"
-	| "manual_time_submission"
-	| "period_submission";
+/**
+ * The kinds a canonical workflow start can route. Period submissions are canonical-only; the
+ * others route canonically under canonical authority.
+ */
+const CANONICAL_KINDS = [
+	"absence",
+	"time_correction",
+	"manual_time_submission",
+	"period_submission",
+] as const satisfies readonly ApprovalRouteKind[];
+export type ApprovalRouteCanonicalKind = (typeof CANONICAL_KINDS)[number];
 
 /** A permission a custom role grants, as the permission system reads it. */
 export type ApprovalRoutePermission = { action: Action; subject: Subject };
 
-export type ApprovalRouteChangePolicy = ChangePolicyCandidate & {
-	selfServiceDays: number;
-	approvalDays: number;
-	noApprovalRequired: boolean;
-};
+export type ApprovalRouteChangePolicy = ChangePolicyCandidate & ChangePolicyWindowTerms;
 
 /**
  * Everything an approval route preview reads for one organization at one instant, read once.
@@ -132,13 +136,7 @@ export async function loadApprovalRouteSnapshot(
 		roster,
 		periodSubmissionWriteGateOpen,
 	] = await inOrder([
-		() =>
-			readApprovalAuthoritySnapshots(reader as never, organizationId, [
-				"absence",
-				"time_correction",
-				"manual_time_submission",
-				"travel_expense",
-			] as const),
+		() => readApprovalAuthoritySnapshots(reader, organizationId, AUTHORITY_KINDS),
 		() => loadApprovalStageDirectory(reader, { organizationId, namedApproverId: null, at }),
 		// Legacy routing reads the stored activity flag, as `getPrimaryEligibleManagerIdForRequester` does.
 		() =>
@@ -249,7 +247,7 @@ export async function loadApprovalRouteSnapshot(
 				.from(member)
 				.where(and(eq(member.organizationId, organizationId), eq(member.status, "approved"))),
 		() =>
-			loadCollectsPeriodSubmissions(reader as never, organizationId, {
+			loadCollectsPeriodSubmissions(reader, organizationId, {
 				clock: { nowInstant: () => at },
 			}),
 		() =>
@@ -264,7 +262,7 @@ export async function loadApprovalRouteSnapshot(
 				.from(employee)
 				.where(onCurrentRoster(organizationId, employee, at)),
 		() =>
-			readApprovalWriteGateOpenSnapshot(reader as never, {
+			readApprovalWriteGateOpenSnapshot(reader, {
 				organizationId,
 				workflowType: "period_submission",
 			}),
@@ -287,33 +285,28 @@ export async function loadApprovalRouteSnapshot(
 			),
 		)
 		.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id));
-	const customRolePermissions = new Map<string, ApprovalRoutePermission[]>();
-	for (const grant of customRoleGrants) {
-		customRolePermissions.set(grant.employeeId, [
-			...(customRolePermissions.get(grant.employeeId) ?? []),
-			{ action: grant.action as Action, subject: grant.subject as Subject },
-		]);
-	}
+	const customRolePermissions = groupByEmployee(
+		customRoleGrants,
+		(grant): ApprovalRoutePermission => ({
+			action: grant.action as Action,
+			subject: grant.subject as Subject,
+		}),
+	);
 
 	const offKinds: ApprovalRouteKind[] = [];
 	if (!collectsPeriods) offKinds.push("period_submission");
 	if (!organizationRow[0]?.shiftsEnabled) offKinds.push("shift_request");
 	const kinds = APPROVAL_ROUTE_KINDS.filter((kind) => !offKinds.includes(kind));
 
-	const authorityOf = (kind: ApprovalRouteAuthorityKind) =>
-		authority.get(kind)?.authority === "canonical" ? "canonical" : "legacy";
-	const authorities: ApprovalRouteSnapshot["authority"] = {
-		absence: authorityOf("absence"),
-		time_correction: authorityOf("time_correction"),
-		manual_time_submission: authorityOf("manual_time_submission"),
-		travel_expense: authorityOf("travel_expense"),
-	};
-	const canonicalKinds: ApprovalRouteCanonicalKind[] = [
-		...(["absence", "time_correction", "manual_time_submission"] as const).filter(
-			(kind) => authorities[kind] === "canonical",
-		),
-		...(kinds.includes("period_submission") ? (["period_submission"] as const) : []),
-	];
+	const authorities = Object.fromEntries(
+		AUTHORITY_KINDS.map((kind) => [
+			kind,
+			authority.get(kind)?.authority === "canonical" ? "canonical" : "legacy",
+		]),
+	) as ApprovalRouteSnapshot["authority"];
+	const canonicalKinds = CANONICAL_KINDS.filter((kind) =>
+		kind === "period_submission" ? kinds.includes(kind) : authorities[kind] === "canonical",
+	);
 	const canonicalPolicies: ApprovalRouteSnapshot["canonicalPolicies"] = {};
 	for (const kind of canonicalKinds) {
 		try {
@@ -329,13 +322,7 @@ export async function loadApprovalRouteSnapshot(
 		}
 	}
 
-	const employeeGroupIds = new Map<string, string[]>();
-	for (const row of groupMembers) {
-		employeeGroupIds.set(row.employeeId, [
-			...(employeeGroupIds.get(row.employeeId) ?? []),
-			row.groupId,
-		]);
-	}
+	const employeeGroupIds = groupByEmployee(groupMembers, (row) => row.groupId);
 
 	return {
 		organizationId,
@@ -363,6 +350,20 @@ export async function loadApprovalRouteSnapshot(
 		customRolePermissions,
 		roster,
 	};
+}
+
+/** Each employee's values, in row order. */
+function groupByEmployee<Row extends { employeeId: string }, Value>(
+	rows: readonly Row[],
+	toValue: (row: Row) => Value,
+): Map<string, Value[]> {
+	const grouped = new Map<string, Value[]>();
+	for (const row of rows) {
+		const values = grouped.get(row.employeeId);
+		if (values) values.push(toValue(row));
+		else grouped.set(row.employeeId, [toValue(row)]);
+	}
+	return grouped;
 }
 
 /** Runs reads one after another: a transaction's connection runs one query at a time. */

@@ -939,6 +939,7 @@ export function resolvePolicyAndCreateApproval(
 		);
 		if (handled) return yield* handled;
 		if (decision.kind === "failure") {
+			// Unhandled invalid policies threw above; this narrows the error to a ValidationError.
 			if (decision.reason === "invalid_policies") throw decision.error;
 			return yield* Effect.fail(decision.error);
 		}

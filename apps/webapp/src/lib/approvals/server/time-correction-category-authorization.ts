@@ -8,7 +8,7 @@ import {
 	workCategorySetAssignment,
 	workCategorySetCategory,
 } from "@/db/schema";
-import { timeCorrectionRoutingTeam } from "@/lib/approvals/route-preview/rules";
+import { timeCorrectionRoutingTeam } from "@/lib/approvals/route-rules";
 import { compareInstants, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import { instantFromTimeCorrectionBoundary } from "@/lib/time-tracking/time-correction-temporal";

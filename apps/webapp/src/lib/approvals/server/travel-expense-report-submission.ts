@@ -62,7 +62,7 @@ import {
 	APPROVAL_AMOUNT_THRESHOLD_CURRENCY,
 	type ApprovalPolicyEvaluationContext,
 } from "../policies/types";
-import { expenseSelfApprovalRule } from "../route-preview/rules";
+import { expenseSelfApprovalRule } from "../route-rules";
 import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
 import type { ApprovalDbService } from "./types";
 

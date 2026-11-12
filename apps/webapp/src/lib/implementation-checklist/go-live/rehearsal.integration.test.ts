@@ -6,6 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { readOnlyTransaction } from "@/db/read-only-transaction";
+import type { ApprovalRouteKind } from "@/lib/approvals/route-preview/types";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
@@ -14,7 +15,6 @@ import {
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import {
 	APPROVER_KIND_LABEL,
-	type ApproverGoLiveKind,
 	type ApproverKindResolution,
 	previewGoLiveApprovers,
 } from "./checks/approver";
@@ -478,7 +478,7 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 				asOf: AS_OF,
 				members,
 			});
-			const byMember = new Map<string, Map<ApproverGoLiveKind, ApproverKindResolution>>();
+			const byMember = new Map<string, Map<ApprovalRouteKind, ApproverKindResolution>>();
 			for (const member of members) {
 				byMember.set(goLiveMemberKey(member), routing.resolve(member));
 			}

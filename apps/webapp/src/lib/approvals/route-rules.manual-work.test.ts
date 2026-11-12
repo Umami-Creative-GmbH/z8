@@ -5,7 +5,7 @@ import {
 	isOwnerOrAdminSelfRecording,
 	manualWorkChangePolicyRule,
 	manualWorkExemption,
-} from "./rules";
+} from "./route-rules";
 
 const ORG = "org_manual_rules";
 

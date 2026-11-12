@@ -53,7 +53,7 @@ import {
 	type LegacyObservedMirror,
 } from "@/lib/approvals/evidence/legacy-absence";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
-import { absenceCategoryNeedsApproval } from "@/lib/approvals/route-preview/rules";
+import { absenceCategoryNeedsApproval } from "@/lib/approvals/route-rules";
 import {
 	type AbsenceApprovalWorkflowResult,
 	type ApprovedAbsenceResult,

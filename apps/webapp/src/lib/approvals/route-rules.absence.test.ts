@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { ValidationError } from "@/lib/effect/errors";
-import type { LegacyRouteFailure } from "../policies/legacy-route-decision";
-import type { ApprovalPolicyDraft, ApprovalPolicyStageDraft } from "../policies/types";
-import { ApprovalRoutingPolicyValidationError } from "../routing/policy-matcher";
-import { absenceCategoryNeedsApproval, absenceRouteFallback } from "./rules";
+import type { LegacyRouteFailure } from "./policies/legacy-route-decision";
+import type { ApprovalPolicyDraft, ApprovalPolicyStageDraft } from "./policies/types";
+import { ApprovalRoutingPolicyValidationError } from "./routing/policy-matcher";
+import { absenceCategoryNeedsApproval, absenceRouteFallback } from "./route-rules";
 
 const policy = { id: "policy-1", name: "Policy", stages: [] } as unknown as ApprovalPolicyDraft;
 const stage = { id: "stage-1" } as unknown as ApprovalPolicyStageDraft;

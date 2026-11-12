@@ -1,28 +1,55 @@
 import type { AppAbility } from "@/lib/authorization";
 import {
 	type ChangePolicyExemption,
+	type ChangePolicyOutcome,
+	type ChangePolicyWindowTerms,
 	decideChangePolicyOutcome,
 } from "@/lib/time-tracking/change-policy/verdict";
-import type { LegacyRouteFailure } from "../policies/legacy-route-decision";
+import type { LegacyRouteFailure } from "./policies/legacy-route-decision";
 import {
 	classifyLegacyStage,
 	type LegacyStageDisposition,
-} from "../policies/requester-auto-approval";
-import type { ApprovalPolicyDraft } from "../policies/types";
-import type { ApprovalDirectChange, ApprovalRouteNote, ApprovalRouteSkipReason } from "./types";
+} from "./policies/requester-auto-approval";
+import type { ApprovalPolicyDraft } from "./policies/types";
+import type {
+	ApprovalDirectChange,
+	ApprovalRouteNote,
+	ApprovalRouteSkipReason,
+} from "./route-preview/types";
 
 /**
- * The built-in approval rules of each kind, as pure functions over loaded facts. The approval
- * route preview applies them; each kind's submit path adopts the same function (#1601-#1604), so
- * the two can't drift.
+ * The built-in approval route rules of each kind, as pure functions over loaded facts. Each
+ * kind's submit path applies them, and so does the approval route preview (#1601-#1604), so the
+ * two can't drift. The shift request deciders live in `./shift-request-deciders`.
  */
 
-/** The change-policy fields the built-in rules read. */
-export type ChangePolicyTerms = {
-	noApprovalRequired: boolean;
-	selfServiceDays: number;
-	approvalDays: number;
-};
+/**
+ * The window rule asked about an entry just beyond the self-service days: direct only without a
+ * policy or in trust mode, forbidden when the policy has no approval days.
+ */
+function beyondSelfServiceOutcome(policy: ChangePolicyWindowTerms | null): ChangePolicyOutcome {
+	return decideChangePolicyOutcome({
+		exemption: null,
+		policy,
+		daysBack: (policy?.selfServiceDays ?? 0) + 1,
+	});
+}
+
+type ChangePolicySkip = Extract<ApprovalRouteSkipReason, `change_policy_${string}`>;
+
+/** Why an entry beyond the self-service days is still direct: no policy, or trust mode. */
+function changePolicySkipOf(
+	reason: Extract<ChangePolicyOutcome, { type: "direct" }>["reason"],
+): ChangePolicySkip {
+	switch (reason) {
+		case "no_policy":
+			return "change_policy_no_policy";
+		case "trust_mode":
+			return "change_policy_trust_mode";
+		default:
+			throw new Error(`An entry beyond the self-service days is never direct: ${reason}`);
+	}
+}
 
 // --- Absence ---------------------------------------------------------------------------------
 
@@ -127,25 +154,10 @@ export function manualWorkExemption(input: {
  * goes to approval (`manualApprovalIntentOf`), so a policy with no approval days routes too.
  */
 export function manualWorkChangePolicyRule(
-	policy: ChangePolicyTerms | null,
-):
-	| { skip: Extract<ApprovalRouteSkipReason, `change_policy_${string}`> }
-	| { skip: null; notes: ApprovalRouteNote[] } {
-	const outcome = decideChangePolicyOutcome({
-		exemption: null,
-		policy,
-		daysBack: (policy?.selfServiceDays ?? 0) + 1,
-	});
-	if (outcome.type === "direct") {
-		switch (outcome.reason) {
-			case "no_policy":
-				return { skip: "change_policy_no_policy" };
-			case "trust_mode":
-				return { skip: "change_policy_trust_mode" };
-			default:
-				throw new Error(`An entry beyond the self-service days is never direct: ${outcome.reason}`);
-		}
-	}
+	policy: ChangePolicyWindowTerms | null,
+): { skip: ChangePolicySkip } | { skip: null; notes: ApprovalRouteNote[] } {
+	const outcome = beyondSelfServiceOutcome(policy);
+	if (outcome.type === "direct") return { skip: changePolicySkipOf(outcome.reason) };
 	const selfServiceDays = policy?.selfServiceDays ?? 0;
 	return {
 		skip: null,
@@ -160,12 +172,18 @@ export function manualWorkChangePolicyRule(
  * do. Only a note: deletion requests and date-changing edits always go to approval (U1).
  */
 export function timeCorrectionDirectChange(
-	policy: ChangePolicyTerms | null,
+	policy: ChangePolicyWindowTerms | null,
 ): ApprovalDirectChange | null {
-	if (!policy) return "change_policy_no_policy";
-	if (policy.noApprovalRequired) return "change_policy_trust_mode";
-	if (policy.approvalDays === 0) return "change_policy_within_self_service";
-	return null;
+	const outcome = beyondSelfServiceOutcome(policy);
+	switch (outcome.type) {
+		case "direct":
+			return changePolicySkipOf(outcome.reason);
+		// No approval days: an edit is either within the self-service days or not allowed at all.
+		case "forbidden":
+			return "change_policy_within_self_service";
+		case "approval_required":
+			return null;
+	}
 }
 
 /**
@@ -235,8 +253,3 @@ export function expenseAmountVariants(policies: readonly ApprovalPolicyDraft[]):
 	if (highest !== undefined) amounts.push(highest + 1);
 	return [...new Set(amounts)];
 }
-
-// --- Shift request ---------------------------------------------------------------------------
-
-/** Shared with the shift request decision check (#1604). */
-export { shiftRequestDeciders } from "../shift-request-deciders";
