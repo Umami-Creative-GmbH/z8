@@ -122,7 +122,7 @@ function renderEmployeeDirectory() {
 				accessTier="member"
 				organizationId="org-1"
 				currentUserId="user-1"
-				currentMemberRole="member"
+				settingsAccess="member"
 			/>
 		</QueryClientProvider>,
 	);
@@ -164,9 +164,16 @@ describe("EmployeesPageClient people-management tabs", () => {
 		expect(source).not.toContain("href='/settings/organization'");
 	});
 
-	it("passes actor identity and role to the employee directory", () => {
+	it("gates the people tabs on the viewer's settings access", () => {
+		expect(source).toContain(
+			'meetsSettingsAccess(props.settingsAccess, "orgAdmin") && people',
+		);
+		expect(source).not.toContain('props.accessTier === "orgAdmin"');
+	});
+
+	it("passes actor identity and settings access to the employee directory", () => {
 		expect(source).toContain("currentUserId={props.currentUserId}");
-		expect(source).toContain("currentMemberRole={props.currentMemberRole}");
+		expect(source).toContain("settingsAccess={props.settingsAccess}");
 	});
 
 	it("updates exact cached rows without deleting historical employees", () => {

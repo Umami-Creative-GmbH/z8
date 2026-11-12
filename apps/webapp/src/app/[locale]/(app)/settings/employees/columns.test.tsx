@@ -7,7 +7,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeWithRelations } from "./actions";
-import { createEmployeeColumns } from "./columns";
+import { type CreateEmployeeColumnsOptions, createEmployeeColumns } from "./columns";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
 import type { EmployeeTableFeatures } from "./employee-table-features";
 
@@ -75,10 +75,10 @@ vi.mock("./actions", async (importOriginal) => ({
 	removeEmployeeAccess: vi.fn(),
 }));
 
-const defaultColumnOptions = {
+const defaultColumnOptions: CreateEmployeeColumnsOptions = {
 	organizationId: "org_1",
 	currentUserId: "owner-user",
-	currentMemberRole: "owner",
+	settingsAccess: "owner",
 	onOptimisticStatusChange: vi.fn(),
 	onRemoved: vi.fn(),
 };
@@ -343,7 +343,7 @@ describe("employee directory columns", () => {
 	});
 
 	it("renders no lifecycle controls for a manager actor", () => {
-		renderActionsCell(createEmployee(), { currentMemberRole: "member" });
+		renderActionsCell(createEmployee(), { settingsAccess: "scopedManager" });
 
 		expect(
 			screen.queryByRole("button", { name: /Employee actions for/ }),
@@ -363,7 +363,7 @@ describe("employee directory columns", () => {
 					status: "approved",
 				},
 			}),
-			{ currentMemberRole: "admin" },
+			{ settingsAccess: "orgAdmin" },
 		);
 
 		expect(

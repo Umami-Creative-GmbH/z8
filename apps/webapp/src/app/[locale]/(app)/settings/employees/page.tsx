@@ -9,14 +9,15 @@ import { employee, team } from "@/db/schema";
 import { getCurrentSettingsAccess, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
-import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
-import { getCurrentApprovedMembership } from "./current-approved-membership";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { EmployeesPageClient } from "./employees-page-client";
 
 async function loadPeopleManagementData(input: {
 	organizationId: string;
 	currentUserId: string;
-	currentMemberRole: string;
 	settingsAccess: SettingsAccess | null;
 }) {
 	const [organization, members, invitations] = await Promise.all([
@@ -95,7 +96,6 @@ async function loadPeopleManagementData(input: {
 				? (targetTeamsById.get(invitation.targetTeamId) ?? null)
 				: null,
 		})) as unknown as InvitationWithInviter[],
-		currentMemberRole: input.currentMemberRole as "owner" | "admin" | "member",
 		currentUserId: input.currentUserId,
 		settingsAccess: input.settingsAccess,
 	};
@@ -115,32 +115,29 @@ export default async function EmployeesPage() {
 		return redirectWithLocale("/settings");
 	}
 	const currentUserId = settingsRouteContext.authContext.user.id;
-	const currentMember = await getCurrentApprovedMembership({
-		userId: currentUserId,
-		organizationId,
-	});
+	// Controls and people tabs follow the shared settings access resolver (ADR 0002, #1623).
+	const caller = await getCurrentSettingsAccess();
+	const settingsAccess =
+		caller?.organizationId === organizationId ? caller.settingsAccess : null;
 
-	if (!currentMember) {
+	if (!settingsAccess) {
 		return redirectWithLocale("/settings");
 	}
 
-	const people =
-		settingsRouteContext.accessTier === "orgAdmin"
-			? await loadPeopleManagementData({
-					organizationId,
-					currentUserId,
-					currentMemberRole: currentMember.role,
-					// People controls follow the shared settings access resolver (ADR 0002, #1623).
-					settingsAccess: (await getCurrentSettingsAccess())?.settingsAccess ?? null,
-				})
-			: undefined;
+	const people = meetsSettingsAccess(settingsAccess, "orgAdmin")
+		? await loadPeopleManagementData({
+				organizationId,
+				currentUserId,
+				settingsAccess,
+			})
+		: undefined;
 
 	return (
 		<EmployeesPageClient
 			accessTier={settingsRouteContext.accessTier}
 			organizationId={organizationId}
 			currentUserId={currentUserId}
-			currentMemberRole={currentMember.role}
+			settingsAccess={settingsAccess}
 			people={people}
 		/>
 	);

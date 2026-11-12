@@ -209,7 +209,7 @@ function renderMembersTable(
 			members={[member as never]}
 			invitations={invitations as never[]}
 			defaultTab={defaultTab}
-			currentMemberRole="admin"
+			settingsAccess="orgAdmin"
 			currentUserId="user-1"
 		/>,
 	);
@@ -250,7 +250,7 @@ describe("MembersTable invitation target teams", () => {
 				organizationId="org-1"
 				members={[member as never]}
 				invitations={[]}
-				currentMemberRole="owner"
+				settingsAccess="owner"
 				currentUserId="owner-user"
 			/>,
 		);
@@ -296,7 +296,7 @@ describe("MembersTable invitation target teams", () => {
 						} as never,
 					]}
 					invitations={[]}
-					currentMemberRole="owner"
+					settingsAccess="owner"
 					currentUserId="owner-user"
 				/>,
 			);
@@ -326,7 +326,7 @@ describe("MembersTable invitation target teams", () => {
 				organizationId="org-1"
 				members={[member as never]}
 				invitations={[]}
-				currentMemberRole="owner"
+				settingsAccess="owner"
 				currentUserId="owner-user"
 			/>,
 		);
@@ -393,7 +393,7 @@ describe("MembersTable invitation target teams", () => {
 				organizationId="org-1"
 				members={[member as never, secondMember as never]}
 				invitations={[]}
-				currentMemberRole="admin"
+				settingsAccess="orgAdmin"
 				currentUserId="admin-user"
 			/>,
 		);
@@ -440,7 +440,7 @@ describe("MembersTable invitation target teams", () => {
 				organizationId="org-1"
 				members={[member as never]}
 				invitations={[]}
-				currentMemberRole="owner"
+				settingsAccess="owner"
 				currentUserId="owner-user"
 			/>,
 		);
@@ -473,7 +473,7 @@ describe("MembersTable invitation target teams", () => {
 				organizationId="org-1"
 				members={[member as never]}
 				invitations={[]}
-				currentMemberRole="owner"
+				settingsAccess="owner"
 				currentUserId="owner-user"
 			/>,
 		);
@@ -498,18 +498,18 @@ describe("MembersTable invitation target teams", () => {
 	});
 
 	it.each([
-		["admin", true, false],
+		["orgAdmin", true, false],
 		["owner", true, true],
-		["member,admin", true, false],
-		["member,owner", true, true],
+		["scopedManager", false, false],
 		["member", false, false],
-	] as const)("passes tokenized %s capabilities through shared controls", async (currentMemberRole, canChangeStatus, canRemove) => {
+		[null, false, false],
+	] as const)("passes %s settings access capabilities through shared controls", async (settingsAccess, canChangeStatus, canRemove) => {
 		renderWithQueryClient(
 			<MembersTable
 				organizationId="org-1"
 				members={[member as never]}
 				invitations={[]}
-				currentMemberRole={currentMemberRole}
+				settingsAccess={settingsAccess}
 				currentUserId="actor-user"
 			/>,
 		);
@@ -548,7 +548,7 @@ describe("MembersTable invitation target teams", () => {
 					} as never,
 				]}
 				invitations={[]}
-				currentMemberRole="owner"
+				settingsAccess="owner"
 				currentUserId="owner-user"
 			/>,
 		);
@@ -576,7 +576,7 @@ describe("MembersTable invitation target teams", () => {
 					organizationId="org-1"
 					members={[member as never]}
 					invitations={[]}
-					currentMemberRole="owner"
+					settingsAccess="owner"
 					currentUserId="owner-user"
 				/>,
 			);
@@ -606,7 +606,7 @@ describe("MembersTable invitation target teams", () => {
 		expect(file).toContain("role: row.original.member.role");
 		expect(file).toContain("status: row.original.member.status");
 		expect(file).toContain("currentUserId={currentUserId}");
-		expect(file).toContain("currentMemberRole={currentMemberRole}");
+		expect(file).toContain("settingsAccess={settingsAccess}");
 		expect(file).not.toContain("Remove from Organization");
 		expect(file).not.toContain('"Activate"');
 	});
@@ -873,7 +873,7 @@ describe("MembersTable invitation target teams", () => {
 					members={[member as never]}
 					invitations={[invitation as never]}
 					defaultTab="invitations"
-					currentMemberRole="admin"
+					settingsAccess="orgAdmin"
 					currentUserId="user-1"
 				/>
 			</QueryClientProvider>,
@@ -927,7 +927,7 @@ describe("MembersTable invitation target teams", () => {
 					organizationId="org-1"
 					members={[member as never]}
 					invitations={[]}
-					currentMemberRole="admin"
+					settingsAccess="orgAdmin"
 					currentUserId="admin-user"
 				/>
 			</QueryClientProvider>,
@@ -944,7 +944,7 @@ describe("MembersTable invitation target teams", () => {
 						} as never,
 					]}
 					invitations={[]}
-					currentMemberRole="admin"
+					settingsAccess="orgAdmin"
 					currentUserId="admin-user"
 				/>
 			</QueryClientProvider>,

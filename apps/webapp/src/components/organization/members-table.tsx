@@ -41,8 +41,11 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/user-avatar";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useRouter } from "@/navigation";
 import { EditInvitationTargetTeamDialog } from "./edit-invitation-target-team-dialog";
@@ -57,7 +60,8 @@ interface MembersTableProps {
 	members: MemberWithUserAndEmployee[];
 	invitations: InvitationWithInviter[];
 	defaultTab?: "members" | "invitations";
-	currentMemberRole: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	currentUserId: string;
 	onRefresh?: () => void;
 	isRefreshing?: boolean;
@@ -83,7 +87,7 @@ function useMembersTableController({
 	members: initialMembers,
 	invitations: initialInvitations,
 	defaultTab = "members",
-	currentMemberRole,
+	settingsAccess,
 	currentUserId,
 	onRefresh,
 	isRefreshing,
@@ -159,10 +163,10 @@ function useMembersTableController({
 		{ polling: false },
 	);
 
-	const isOwner = hasOrganizationRole(currentMemberRole, "owner");
-	const isAdmin = hasOrganizationRole(currentMemberRole, "admin");
-	const canManageMembers = isOwner; // Only owners can remove members and change roles
-	const canInvite = isOwner || isAdmin;
+	// The viewer's capabilities follow settings access (ADR 0002).
+	// Only owners can remove members and change roles.
+	const canManageMembers = meetsSettingsAccess(settingsAccess, "owner");
+	const canInvite = meetsSettingsAccess(settingsAccess, "orgAdmin");
 
 	// Update role mutation
 	const updateRoleMutation = useMutation({
@@ -682,7 +686,7 @@ function useMembersTableController({
 								},
 							}}
 							currentUserId={currentUserId}
-							currentMemberRole={currentMemberRole}
+							settingsAccess={settingsAccess}
 							onOptimisticStatusChange={updateLocalEmployeeStatus}
 							onRemoved={removeLocalMembershipRow}
 							trigger={

@@ -48,7 +48,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -66,7 +69,6 @@ export interface EmployeesPagePeopleProps {
 	organizationToday: string;
 	members: MemberWithUserAndEmployee[];
 	invitations: InvitationWithInviter[];
-	currentMemberRole: "owner" | "admin" | "member";
 	currentUserId: string;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
@@ -76,7 +78,8 @@ export function EmployeesPageClient(props: {
 	accessTier: SettingsAccessTier;
 	organizationId: string;
 	currentUserId: string;
-	currentMemberRole: string;
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	people?: EmployeesPagePeopleProps;
 }) {
 	const { t } = useTranslate();
@@ -85,7 +88,8 @@ export function EmployeesPageClient(props: {
 	const [isRefreshingPeople, startPeopleRefresh] = useTransition();
 
 	const people = props.people;
-	const shouldShowPeopleTabs = props.accessTier === "orgAdmin" && people;
+	const shouldShowPeopleTabs =
+		meetsSettingsAccess(props.settingsAccess, "orgAdmin") && people;
 
 	if (!shouldShowPeopleTabs) {
 		return (
@@ -94,7 +98,7 @@ export function EmployeesPageClient(props: {
 					accessTier={props.accessTier}
 					organizationId={props.organizationId}
 					currentUserId={props.currentUserId}
-					currentMemberRole={props.currentMemberRole}
+					settingsAccess={props.settingsAccess}
 					showHeader
 				/>
 			</div>
@@ -150,7 +154,7 @@ export function EmployeesPageClient(props: {
 						accessTier={props.accessTier}
 						organizationId={props.organizationId}
 						currentUserId={props.currentUserId}
-						currentMemberRole={props.currentMemberRole}
+						settingsAccess={props.settingsAccess}
 						showHeader={false}
 					/>
 				</TabsContent>
@@ -160,7 +164,7 @@ export function EmployeesPageClient(props: {
 						organizationId={props.organizationId}
 						members={people.members}
 						invitations={[]}
-						currentMemberRole={people.currentMemberRole}
+						settingsAccess={people.settingsAccess}
 						currentUserId={people.currentUserId}
 						onRefresh={handlePeopleRefresh}
 						isRefreshing={isRefreshingPeople}
@@ -191,7 +195,7 @@ export function EmployeesPageClient(props: {
 						members={[]}
 						invitations={people.invitations}
 						defaultTab="invitations"
-						currentMemberRole={people.currentMemberRole}
+						settingsAccess={people.settingsAccess}
 						currentUserId={people.currentUserId}
 						onRefresh={handlePeopleRefresh}
 						isRefreshing={isRefreshingPeople}
@@ -322,7 +326,7 @@ function EmployeeDirectoryTab(props: {
 	accessTier: SettingsAccessTier;
 	organizationId: string;
 	currentUserId: string;
-	currentMemberRole: string;
+	settingsAccess: SettingsAccess | null;
 	showHeader: boolean;
 }) {
 	const { t } = useTranslate();
@@ -384,7 +388,7 @@ function EmployeeDirectoryTab(props: {
 	const columns = createEmployeeColumns({
 		organizationId: props.organizationId,
 		currentUserId: props.currentUserId,
-		currentMemberRole: props.currentMemberRole,
+		settingsAccess: props.settingsAccess,
 		// Deactivating makes a former employee at once; reactivating brings them back (#1438).
 		onOptimisticStatusChange: (employeeId, isActive) =>
 			updateCachedEmployee(employeeId, { isActive, isFormer: !isActive }),

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
-	getCurrentApprovedMembership: vi.fn(),
+	getCurrentSettingsAccess: vi.fn(),
 	getCurrentSettingsRouteContext: vi.fn(),
 	redirect: vi.fn((path: string) => {
 		throw new Error(`redirect:${path}`);
@@ -12,10 +12,8 @@ vi.mock("next/navigation", () => ({ redirect: mockState.redirect }));
 vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/auth-helpers", () => ({
+	getCurrentSettingsAccess: mockState.getCurrentSettingsAccess,
 	getCurrentSettingsRouteContext: mockState.getCurrentSettingsRouteContext,
-}));
-vi.mock("./current-approved-membership", () => ({
-	getCurrentApprovedMembership: mockState.getCurrentApprovedMembership,
 }));
 vi.mock("./employees-page-client", () => ({
 	EmployeesPageClient: "EmployeesPageClient",
@@ -23,7 +21,7 @@ vi.mock("./employees-page-client", () => ({
 
 const { default: EmployeesPage } = await import("./page");
 
-describe("EmployeesPage actor membership", () => {
+describe("EmployeesPage viewer settings access", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
@@ -35,23 +33,36 @@ describe("EmployeesPage actor membership", () => {
 		});
 	});
 
-	it("passes the approved membership role to directory controls", async () => {
-		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "admin" });
+	it("passes the viewer's settings access to directory controls", async () => {
+		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: "scopedManager",
+		});
 
 		const page = await EmployeesPage();
 
-		expect(mockState.getCurrentApprovedMembership).toHaveBeenCalledWith({
-			userId: "user-1",
-			organizationId: "org-1",
-		});
+		expect(mockState.getCurrentSettingsAccess).toHaveBeenCalledTimes(1);
 		expect(page.props).toMatchObject({
 			currentUserId: "user-1",
-			currentMemberRole: "admin",
+			settingsAccess: "scopedManager",
+			people: undefined,
 		});
 	});
 
-	it("denies directory access when no approved membership exists", async () => {
-		mockState.getCurrentApprovedMembership.mockResolvedValue(null);
+	it("denies directory access when the viewer has no settings access", async () => {
+		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: null,
+		});
+
+		await expect(EmployeesPage()).rejects.toThrow("redirect:/en/settings");
+	});
+
+	it("denies directory access when settings access belongs to another organization", async () => {
+		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			organizationId: "org-2",
+			settingsAccess: "owner",
+		});
 
 		await expect(EmployeesPage()).rejects.toThrow("redirect:/en/settings");
 	});
