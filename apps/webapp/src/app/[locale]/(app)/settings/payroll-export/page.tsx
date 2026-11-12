@@ -47,14 +47,14 @@ async function PayrollExportContent() {
 		historyResult,
 		identifierFieldsResult,
 	] = await Promise.all([
-		getDatevConfigAction(organizationId),
-		getLexwareConfigAction(organizationId),
-		getSageConfigAction(organizationId),
-		getPersonioConfigAction(organizationId),
-		getSuccessFactorsConfigAction(organizationId),
-		getWorkdayConfigAction(organizationId),
-		getExportHistoryAction(organizationId),
-		getPayrollIdentifierFieldsAction(organizationId),
+		getDatevConfigAction(),
+		getLexwareConfigAction(),
+		getSageConfigAction(),
+		getPersonioConfigAction(),
+		getSuccessFactorsConfigAction(),
+		getWorkdayConfigAction(),
+		getExportHistoryAction(),
+		getPayrollIdentifierFieldsAction(),
 	]);
 
 	const datevConfig = datevConfigResult.success ? datevConfigResult.data : null;
@@ -188,7 +188,6 @@ async function PayrollExportContent() {
 
 				<TabsContent value="datev" className="mt-4">
 					<DatevConfigForm
-						organizationId={organizationId}
 						initialConfig={datevConfig}
 						identifierFields={identifierFields}
 					/>
@@ -196,7 +195,6 @@ async function PayrollExportContent() {
 
 				<TabsContent value="lexware" className="mt-4">
 					<LexwareConfigForm
-						organizationId={organizationId}
 						initialConfig={lexwareConfig}
 						identifierFields={identifierFields}
 					/>
@@ -204,7 +202,6 @@ async function PayrollExportContent() {
 
 				<TabsContent value="sage" className="mt-4">
 					<SageConfigForm
-						organizationId={organizationId}
 						initialConfig={sageConfig}
 						identifierFields={identifierFields}
 					/>
@@ -212,7 +209,6 @@ async function PayrollExportContent() {
 
 				<TabsContent value="personio" className="mt-4">
 					<PersonioConfigForm
-						organizationId={organizationId}
 						initialConfig={personioConfig}
 						identifierFields={identifierFields}
 					/>
@@ -220,7 +216,6 @@ async function PayrollExportContent() {
 
 				<TabsContent value="successfactors" className="mt-4">
 					<SuccessFactorsConfigForm
-						organizationId={organizationId}
 						initialConfig={successFactorsConfig}
 						identifierFields={identifierFields}
 					/>
@@ -228,7 +223,6 @@ async function PayrollExportContent() {
 
 				<TabsContent value="workday" className="mt-4">
 					<WorkdayConfigForm
-						organizationId={organizationId}
 						initialConfig={workdayConfig}
 						identifierFields={identifierFields}
 					/>
@@ -236,14 +230,13 @@ async function PayrollExportContent() {
 
 				<TabsContent value="mappings" className="mt-4 space-y-6">
 					<WageTypeMappings
-						organizationId={organizationId}
 						hasMappingFormat={hasMappingFormat}
 					/>
 					<ExpenseWageTypeMappings />
 				</TabsContent>
 
 				<TabsContent value="history" className="mt-4">
-					<ExportHistory organizationId={organizationId} exports={exports} />
+					<ExportHistory exports={exports} />
 				</TabsContent>
 			</Tabs>
 		</div>

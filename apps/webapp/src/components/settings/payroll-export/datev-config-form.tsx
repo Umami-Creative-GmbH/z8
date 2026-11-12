@@ -48,7 +48,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface DatevConfigFormProps {
-	organizationId: string;
 	initialConfig?: DatevConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the personnel number (#821). */
@@ -66,7 +65,6 @@ const beraternummerSchema = z
 	.regex(/^\d{1,7}$/, "Must be 1-7 digits");
 
 export function DatevConfigForm({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -84,7 +82,6 @@ export function DatevConfigForm({
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await saveDatevConfigAction({
-					organizationId,
 					config: value,
 				});
 

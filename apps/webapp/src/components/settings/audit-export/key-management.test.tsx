@@ -159,7 +159,7 @@ describe("KeyManagement", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Export Public Key" }));
 		await waitFor(() =>
-			expect(exportPublicKeyActionMock).toHaveBeenCalledWith("org-1"),
+			expect(exportPublicKeyActionMock).toHaveBeenCalledWith(),
 		);
 		const publicKeyTextarea = await screen.findByRole("textbox");
 		expect(publicKeyTextarea).toHaveProperty("value", publicKey.publicKeyPem);
@@ -231,7 +231,7 @@ describe("KeyManagement", () => {
 
 		resolveOrgOne?.({ success: true, data: publicKey });
 		await waitFor(() =>
-			expect(exportPublicKeyActionMock).toHaveBeenCalledWith("org-2"),
+			expect(exportPublicKeyActionMock).toHaveBeenCalledWith(),
 		);
 		expect(screen.queryByDisplayValue(publicKey.publicKeyPem)).toBeNull();
 	});

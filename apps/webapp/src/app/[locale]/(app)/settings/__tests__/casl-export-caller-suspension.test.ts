@@ -1,35 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mockState = vi.hoisted(() => ({
-	isOrgAdminCasl: vi.fn(async () => false),
+	caller: null as StubCaller | null,
 	findScheduledExports: vi.fn(),
 	getAuditConfig: vi.fn(),
 }));
 
-vi.mock("@/lib/auth-helpers", () => ({
-	isOrgAdminCasl: mockState.isOrgAdminCasl,
-}));
-
-vi.mock("@/db", () => ({
-	auditExportPackage: {},
-	db: {
-		query: {
-			scheduledExport: { findMany: mockState.findScheduledExports },
-		},
-	},
-	payrollExportConfig: {},
-	scheduledExport: {},
-	scheduledExportExecution: {},
-}));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mockState.caller, {
+			db: { query: { scheduledExport: { findMany: mockState.findScheduledExports } } },
+		}),
+	);
+});
 
 vi.mock("@/lib/audit-export", () => ({
 	configurationService: { getConfig: mockState.getAuditConfig },
 	verificationService: {},
-}));
-
-vi.mock("@/lib/audit-logger", () => ({
-	AuditAction: {},
-	logAudit: vi.fn(),
 }));
 
 vi.mock("@/lib/audit-pack/application/audit-pack-service", () => ({
@@ -48,72 +38,45 @@ vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	return {
-		AuthService: Context.Service<{ readonly getSession: () => unknown }>(
-			"AuthService",
-		),
-	};
-});
-
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.succeed(AuthService, {
-			getSession: () => Effect.succeed({ user: { id: "user-1" }, session: {} }),
-		}),
-	);
-});
-
-vi.mock("@/lib/effect/result", async () => {
-	const { runtime } = await import("@/lib/effect/runtime");
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
-	return {
-		runServerActionSafe: async <T>(
-			effect: Parameters<typeof Effect.runPromiseExit<T>>[0],
-		) => {
-			const exit = await runtime.runPromiseExit(effect);
-			return Exit.match(exit as never, {
-				onFailure: (cause) => {
-					const error =
-						Result.getOrNull(Cause.findDefect(cause)) ??
-						Option.getOrNull(Cause.findErrorOption(cause));
-					return {
-						success: false as const,
-						error: (error as { message: string }).message,
-						code: (error as { _tag: string })._tag,
-					};
-				},
-				onSuccess: (data) => ({ success: true as const, data }),
-			});
-		},
-	};
-});
-
-const { getScheduledExportsAction } = await import(
-	"../scheduled-exports/actions"
-);
+const { getScheduledExportsAction } = await import("../scheduled-exports/actions");
 const { getAuditConfigAction } = await import("../audit-export/actions");
 
-describe("CASL export callers", () => {
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: { id: "employee-1", role: "admin", former: false },
+};
+
+describe("export settings callers", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.isOrgAdminCasl.mockResolvedValue(false);
 	});
 
 	it.each([
-		["scheduled export", () => getScheduledExportsAction("org-1")],
-		["audit export", () => getAuditConfigAction("org-1")],
-	] as const)("denies the %s caller before reading organization data", async (_case, action) => {
-		await expect(action()).resolves.toEqual({
-			success: false,
-			error: "Insufficient permissions - admin role required",
-			code: "AuthorizationError",
-		});
-		expect(mockState.isOrgAdminCasl).toHaveBeenCalledWith("org-1");
-		expect(mockState.findScheduledExports).not.toHaveBeenCalled();
-		expect(mockState.getAuditConfig).not.toHaveBeenCalled();
-	});
+		["scheduled export", () => getScheduledExportsAction()],
+		["audit export", () => getAuditConfigAction()],
+	] as const)(
+		"denies the %s to a caller without org-admin settings access before reading organization data",
+		async (_case, action) => {
+			for (const caller of [
+				{
+					...orgAdmin,
+					membershipRole: "member",
+					employee: { ...orgAdmin.employee!, role: "manager" as const },
+				},
+				{ ...orgAdmin, membershipRole: null },
+				{ ...orgAdmin, employee: { ...orgAdmin.employee!, former: true } },
+			]) {
+				mockState.caller = caller;
+
+				await expect(action()).resolves.toMatchObject({
+					success: false,
+					code: "AuthorizationError",
+				});
+			}
+			expect(mockState.findScheduledExports).not.toHaveBeenCalled();
+			expect(mockState.getAuditConfig).not.toHaveBeenCalled();
+		},
+	);
 });

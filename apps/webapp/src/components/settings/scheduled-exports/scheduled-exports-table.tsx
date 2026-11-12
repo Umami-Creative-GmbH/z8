@@ -137,7 +137,7 @@ export function ScheduledExportsTable({
 	} = useSWR(
 		["scheduled-exports", organizationId],
 		async () => {
-			const result = await getScheduledExportsAction(organizationId);
+			const result = await getScheduledExportsAction();
 			if (result.success) {
 				return result.data;
 			}
@@ -158,8 +158,8 @@ export function ScheduledExportsTable({
 	// Load filter options and payroll configs when dialog opens
 	const loadDialogData = async () => {
 		const [filterResult, configResult] = await Promise.all([
-			getFilterOptionsAction(organizationId),
-			getPayrollConfigsAction(organizationId),
+			getFilterOptionsAction(),
+			getPayrollConfigsAction(),
 		]);
 
 		if (filterResult.success) {
@@ -172,7 +172,7 @@ export function ScheduledExportsTable({
 
 	// Load schedule for editing
 	const loadScheduleForEdit = async (scheduleId: string) => {
-		const result = await getScheduledExportAction(organizationId, scheduleId);
+		const result = await getScheduledExportAction({ scheduleId });
 		if (result.success && result.data) {
 			const schedule = result.data;
 			setEditInitialValues({
@@ -223,11 +223,7 @@ export function ScheduledExportsTable({
 		try {
 			await mutate(
 				async () => {
-					const result = await toggleScheduledExportAction(
-						organizationId,
-						scheduleId,
-						isActive,
-					);
+					const result = await toggleScheduledExportAction({ scheduleId, isActive });
 					if (result.success) {
 						return optimisticData;
 					}
@@ -264,10 +260,7 @@ export function ScheduledExportsTable({
 
 		await mutate(
 			async () => {
-				const result = await deleteScheduledExportAction(
-					organizationId,
-					scheduleId,
-				);
+				const result = await deleteScheduledExportAction({ scheduleId });
 				if (result.success) {
 					return optimisticData;
 				}
@@ -829,7 +822,6 @@ function ScheduledExportDialogs({
 			<ScheduledExportDialog
 				open={isCreateDialogOpen}
 				onOpenChange={onCreateOpenChange}
-				organizationId={organizationId}
 				editScheduleId={editScheduleId ?? undefined}
 				initialValues={editInitialValues ?? undefined}
 				payrollConfigs={payrollConfigs}
@@ -849,7 +841,6 @@ function ScheduledExportDialogs({
 				<RunNowDialog
 					open={Boolean(runNowSchedule)}
 					onOpenChange={(open: boolean) => !open && onCloseRunNow()}
-					organizationId={organizationId}
 					scheduleId={runNowSchedule.id}
 					scheduleName={runNowSchedule.name}
 					dateRangeStrategy={runNowSchedule.dateRangeStrategy}

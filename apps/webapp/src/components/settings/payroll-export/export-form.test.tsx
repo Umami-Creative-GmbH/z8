@@ -335,7 +335,6 @@ describe("ExportForm", () => {
 
 		expect(startExportActionMock).toHaveBeenCalledWith(
 			expect.objectContaining({
-				organizationId: "org_123",
 				formatId: "workday_api",
 			}),
 		);
@@ -525,7 +524,6 @@ describe("ExportForm", () => {
 		await waitFor(() => {
 			expect(startExportActionMock).toHaveBeenCalledWith(
 				expect.objectContaining({
-					organizationId: "org_123",
 					formatId: "workday_api",
 				}),
 			);
@@ -579,7 +577,6 @@ describe("ExportForm", () => {
 		await waitFor(() => {
 			expect(startExportActionMock).toHaveBeenCalledWith(
 				expect.objectContaining({
-					organizationId: "org_123",
 					formatId: "successfactors_csv",
 				}),
 			);

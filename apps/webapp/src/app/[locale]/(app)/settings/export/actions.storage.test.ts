@@ -1,72 +1,74 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
-const state = vi.hoisted(() => ({
+const mocks = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
+	createExportRequest: vi.fn(),
+	deleteExportRecord: vi.fn(),
 	deleteOrgSecret: vi.fn(),
 	findFirst: vi.fn(),
-	isOrgAdminCasl: vi.fn(async () => true),
+	getExportHistory: vi.fn(),
+	getStorageConfig: vi.fn(),
+	regeneratePresignedUrl: vi.fn(),
 	returning: vi.fn(),
 	set: vi.fn(),
 	storeOrgSecret: vi.fn(),
+	testS3Connection: vi.fn(),
+	update: vi.fn(),
 	where: vi.fn(),
 }));
 
-vi.mock("drizzle-orm", async (importActual) => ({
-	...(await importActual<typeof import("drizzle-orm")>()),
-	eq: vi.fn((column, value) => ({ column, value })),
-}));
-vi.mock("@/db", () => ({
-	db: {
-		query: { exportStorageConfig: { findFirst: state.findFirst } },
-		update: vi.fn(() => ({ set: state.set })),
-		insert: vi.fn(),
-		delete: vi.fn(),
-	},
-	exportStorageConfig: {
-		id: "exportStorageConfig.id",
-		organizationId: "exportStorageConfig.organizationId",
-	},
-}));
-vi.mock("@/db/schema", () => ({ employee: {} }));
-vi.mock("@/lib/auth-helpers", () => ({ isOrgAdminCasl: state.isOrgAdminCasl }));
-vi.mock("@/lib/vault", () => ({
-	deleteOrgSecret: state.deleteOrgSecret,
-	storeOrgSecret: state.storeOrgSecret,
-}));
-vi.mock("@/lib/export/data-fetchers", () => ({ EXPORT_CATEGORIES: [] }));
-vi.mock("@/lib/export/export-service", () => ({}));
-vi.mock("@/lib/storage/export-s3-client", () => ({}));
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
-	return { DatabaseService: Context.Service("DatabaseService") };
-});
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	return { AuthService: Context.Service("AuthService") };
-});
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.succeed(AuthService, {
-			getSession: () => Effect.succeed({ user: { id: "user-1" } }),
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db: {
+				query: { exportStorageConfig: { findFirst: mocks.findFirst } },
+				update: mocks.update,
+				insert: vi.fn(),
+				delete: vi.fn(() => ({ where: vi.fn() })),
+			},
 		}),
 	);
 });
-vi.mock("@/lib/effect/result", async () => {
-	const { runtime } = await import("@/lib/effect/runtime");
-	const { Effect, Exit } = await import("effect");
-	return {
-		runServerActionSafe: async (
-			effect: Parameters<typeof Effect.runPromiseExit>[0],
-		) =>
-			Exit.match(await runtime.runPromiseExit(effect), {
-				onFailure: () => ({ success: false as const, error: "failed" }),
-				onSuccess: (data) => ({ success: true as const, data }),
-			}),
-	};
-});
+vi.mock("@/lib/vault", () => ({
+	deleteOrgSecret: mocks.deleteOrgSecret,
+	storeOrgSecret: mocks.storeOrgSecret,
+}));
+vi.mock("@/lib/export/export-service", () => ({
+	createExportRequest: mocks.createExportRequest,
+	deleteExportRecord: mocks.deleteExportRecord,
+	getExportHistory: mocks.getExportHistory,
+	regeneratePresignedUrl: mocks.regeneratePresignedUrl,
+}));
+vi.mock("@/lib/storage/export-s3-client", () => ({
+	getStorageConfig: mocks.getStorageConfig,
+	testS3Connection: mocks.testS3Connection,
+}));
 
-const { saveStorageConfigAction } = await import("./actions");
+const {
+	deleteExportAction,
+	deleteStorageConfigAction,
+	getExportHistoryAction,
+	getStorageConfigAction,
+	regenerateDownloadUrlAction,
+	saveStorageConfigAction,
+	startExportAction,
+	testStorageConnectionAction,
+} = await import("./actions");
+
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: { id: "employee-1", role: "admin", former: false },
+};
+const scopedManager: StubCaller = {
+	...orgAdmin,
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "manager", former: false },
+};
 
 const existing = {
 	id: "storage-1",
@@ -80,24 +82,98 @@ const existing = {
 	updatedAt: new Date("2026-01-01T00:00:00Z"),
 };
 
-describe("saveStorageConfigAction Vault boundary", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		state.findFirst.mockResolvedValue(existing);
-		state.set.mockReturnValue({ where: state.where });
-		state.where.mockReturnValue({ returning: state.returning });
-		state.returning.mockResolvedValue([{ ...existing, bucket: "new-bucket" }]);
+beforeEach(() => {
+	vi.clearAllMocks();
+	mocks.caller = orgAdmin;
+	mocks.findFirst.mockResolvedValue(existing);
+	mocks.update.mockReturnValue({ set: mocks.set });
+	mocks.set.mockReturnValue({ where: mocks.where });
+	mocks.where.mockReturnValue({ returning: mocks.returning });
+	mocks.returning.mockResolvedValue([{ ...existing, bucket: "new-bucket" }]);
+	mocks.createExportRequest.mockResolvedValue({ id: "export-1" });
+});
+
+describe("data export settings actions", () => {
+	it.each([
+		["startExportAction", () => startExportAction({ categories: ["employees"] })],
+		["getExportHistoryAction", () => getExportHistoryAction()],
+		["regenerateDownloadUrlAction", () => regenerateDownloadUrlAction({ exportId: "export-1" })],
+		["deleteExportAction", () => deleteExportAction({ exportId: "export-1" })],
+		["getStorageConfigAction", () => getStorageConfigAction()],
+		[
+			"saveStorageConfigAction",
+			() => saveStorageConfigAction({ bucket: "b", region: "eu-central-1" }),
+		],
+		["testStorageConnectionAction", () => testStorageConnectionAction({})],
+		["deleteStorageConfigAction", () => deleteStorageConfigAction()],
+	])("%s refuses a scoped manager", async (_name, run) => {
+		mocks.caller = scopedManager;
+
+		const result = await run();
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mocks.findFirst).not.toHaveBeenCalled();
+		expect(mocks.createExportRequest).not.toHaveBeenCalled();
+		expect(mocks.deleteExportRecord).not.toHaveBeenCalled();
+		expect(mocks.deleteOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.testS3Connection).not.toHaveBeenCalled();
 	});
 
 	it("preserves existing Vault secrets when credentials are omitted", async () => {
 		const result = await saveStorageConfigAction({
-			organizationId: "org-1",
 			bucket: "new-bucket",
 			region: "eu-central-1",
 		});
 
 		expect(result.success).toBe(true);
-		expect(state.storeOrgSecret).not.toHaveBeenCalled();
-		expect(state.deleteOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.deleteOrgSecret).not.toHaveBeenCalled();
+	});
+
+	it("stores replaced credentials under the session's organization", async () => {
+		await saveStorageConfigAction({
+			bucket: "new-bucket",
+			region: "eu-central-1",
+			accessKeyId: "key",
+			secretAccessKey: "secret",
+		});
+
+		expect(mocks.storeOrgSecret).toHaveBeenCalledWith("org-1", "storage/access_key_id", "key");
+		expect(mocks.storeOrgSecret).toHaveBeenCalledWith(
+			"org-1",
+			"storage/secret_access_key",
+			"secret",
+		);
+	});
+
+	it("starts an export of the known categories for the caller's employee record", async () => {
+		const result = await startExportAction({ categories: ["employees", "unknown"] });
+
+		expect(result).toEqual({ success: true, data: { id: "export-1" } });
+		expect(mocks.createExportRequest).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			requestedById: "employee-1",
+			categories: ["employees"],
+		});
+	});
+
+	it("refuses an export with no known category", async () => {
+		const result = await startExportAction({ categories: ["unknown"] });
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "At least one valid export category must be selected",
+		});
+		expect(mocks.createExportRequest).not.toHaveBeenCalled();
+	});
+
+	it("regenerates a download URL only within the session's organization", async () => {
+		mocks.regeneratePresignedUrl.mockResolvedValue("https://example.test/export");
+
+		await regenerateDownloadUrlAction({ exportId: "export-1" });
+
+		expect(mocks.regeneratePresignedUrl).toHaveBeenCalledWith("export-1", "org-1");
 	});
 });

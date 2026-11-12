@@ -66,7 +66,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface PersonioConfigFormProps {
-	organizationId: string;
 	initialConfig?: PersonioConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the match key (#821). */
@@ -83,7 +82,6 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 type RunTransition = (task: () => Promise<void>) => void;
 
 export function PersonioConfigForm({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -109,7 +107,6 @@ export function PersonioConfigForm({
 		}
 		run(async () => {
 			const result = await savePersonioCredentialsAction({
-				organizationId,
 				clientId,
 				clientSecret,
 			});
@@ -137,7 +134,7 @@ export function PersonioConfigForm({
 	};
 	const deleteCredentials = () =>
 		run(async () => {
-			const result = await deletePersonioCredentialsAction(organizationId);
+			const result = await deletePersonioCredentialsAction();
 			if (result.success) {
 				toast.success(
 					t(
@@ -181,7 +178,6 @@ export function PersonioConfigForm({
 			/>
 			<PersonioSettingsCard
 				t={t}
-				organizationId={organizationId}
 				initialConfig={initialConfig}
 				isPending={isPending}
 				run={run}
@@ -464,7 +460,6 @@ function DeleteCredentialsButton({
 
 function PersonioSettingsCard({
 	t,
-	organizationId,
 	initialConfig,
 	isPending,
 	run,
@@ -472,7 +467,6 @@ function PersonioSettingsCard({
 	identifierFields,
 }: {
 	t: Translate;
-	organizationId: string;
 	initialConfig?: PersonioConfigResult | null;
 	isPending: boolean;
 	run: RunTransition;
@@ -486,7 +480,6 @@ function PersonioSettingsCard({
 		onSubmit: async ({ value }) =>
 			run(async () => {
 				const result = await savePersonioConfigAction({
-					organizationId,
 					config: value,
 				});
 				if (result.success) {
@@ -513,7 +506,7 @@ function PersonioSettingsCard({
 	);
 	const testConnection = async () => {
 		setIsTesting(true);
-		const result = await testPersonioConnectionAction(organizationId).catch(
+		const result = await testPersonioConnectionAction().catch(
 			() => null,
 		);
 		if (result?.success && result.data.success)

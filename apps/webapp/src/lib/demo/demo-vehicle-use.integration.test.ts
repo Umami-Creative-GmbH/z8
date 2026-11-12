@@ -34,8 +34,7 @@ vi.mock("@/lib/auth", () => ({
 							session: {
 								id: `session-${harness.userId}`,
 								userId: harness.userId,
-								// Not the active organization: `canUseDemoData` checks the admin membership.
-								activeOrganizationId: null,
+								activeOrganizationId: "t1132-demo-org",
 							},
 						}
 					: null,
@@ -91,7 +90,6 @@ describe("demo vehicle use on PostgreSQL", () => {
 	const admin = integrationAdminPool();
 
 	const stepInput = {
-		organizationId: ids.organization,
 		dateRangeType: "last30" as const,
 		employeeIds: [ids.driver, ids.office],
 		locationCount: 1,
@@ -310,7 +308,7 @@ describe("demo vehicle use on PostgreSQL", () => {
 	it("a demo reset removes the demo vehicle use with the demo work, vehicles and team", async () => {
 		await generateDemo();
 
-		expect(await clearTimeDataAction(ids.organization)).toMatchObject({
+		expect(await clearTimeDataAction()).toMatchObject({
 			success: true,
 			data: { vehiclesDeleted: 3, teamsDeleted: 1 },
 		});

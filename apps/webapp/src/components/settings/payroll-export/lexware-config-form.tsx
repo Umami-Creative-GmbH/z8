@@ -46,7 +46,6 @@ import {
 } from "./payroll-identifier-options";
 
 interface LexwareConfigFormProps {
-	organizationId: string;
 	initialConfig?: LexwareConfigResult | null;
 	onConfigSaved?: () => void;
 	/** Employee custom fields that can be the personnel number (#821). */
@@ -61,7 +60,6 @@ const DEFAULT_CONFIG: LexwareLohnConfig = {
 };
 
 export function LexwareConfigForm({
-	organizationId,
 	initialConfig,
 	onConfigSaved,
 	identifierFields = [],
@@ -75,7 +73,6 @@ export function LexwareConfigForm({
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await saveLexwareConfigAction({
-					organizationId,
 					config: value,
 				});
 

@@ -98,7 +98,6 @@ describe("DemoDataWizard", () => {
 					{ id: "emp_1", name: "Ada Lovelace" },
 					{ id: "emp_2", name: "Grace Hopper" },
 				]}
-				organizationId="org_1"
 			/>,
 		);
 
@@ -112,7 +111,6 @@ describe("DemoDataWizard", () => {
 					{ id: "emp_1", name: "Ada Lovelace" },
 					{ id: "emp_2", name: "Grace Hopper" },
 				]}
-				organizationId="org_1"
 			/>,
 		);
 
@@ -130,7 +128,6 @@ describe("DemoDataWizard", () => {
 					{ id: "emp_1", name: "Ada Lovelace" },
 					{ id: "emp_2", name: "Grace Hopper" },
 				]}
-				organizationId="org_1"
 			/>,
 		);
 
@@ -145,7 +142,6 @@ describe("DemoDataWizard", () => {
 				expect.objectContaining({
 					includePendingAbsenceApprovals: true,
 					includePendingTimeCorrectionApprovals: true,
-					organizationId: "org_1",
 				}),
 			);
 		});
@@ -155,7 +151,6 @@ describe("DemoDataWizard", () => {
 			expect.objectContaining({
 				includePendingAbsenceApprovals: true,
 				includePendingTimeCorrectionApprovals: true,
-				organizationId: "org_1",
 			}),
 		);
 	});
@@ -165,7 +160,7 @@ describe("DemoDataWizard", () => {
 		actionMocks.generateDemoEmployeesAction.mockRejectedValue(
 			new Error("Network failed"),
 		);
-		render(<DemoDataWizard employees={[]} organizationId="org_1" />);
+		render(<DemoDataWizard employees={[]} />);
 
 		await user.click(
 			screen.getByRole("button", { name: "Generate 5 Employees" }),
@@ -186,7 +181,7 @@ describe("DemoDataWizard", () => {
 		actionMocks.clearTimeDataAction.mockRejectedValue(
 			new Error("Network failed"),
 		);
-		render(<DemoDataWizard employees={[]} organizationId="org_1" />);
+		render(<DemoDataWizard employees={[]} />);
 
 		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
 		await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
@@ -207,7 +202,7 @@ describe("DemoDataWizard", () => {
 		actionMocks.deleteNonAdminDataAction.mockRejectedValue(
 			new Error("Network failed"),
 		);
-		render(<DemoDataWizard employees={[]} organizationId="org_1" />);
+		render(<DemoDataWizard employees={[]} />);
 
 		await user.click(
 			screen.getByRole("button", { name: "Delete Non-Admin Employees" }),

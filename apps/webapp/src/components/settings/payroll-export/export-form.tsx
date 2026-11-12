@@ -74,7 +74,7 @@ export function ExportForm({
 	const { data: filterOptions } = useQuery({
 		queryKey: ["payroll-export-filter-options", organizationId],
 		queryFn: async () => {
-			const result = await getFilterOptionsAction(organizationId);
+			const result = await getFilterOptionsAction();
 			return result.success ? result.data : null;
 		},
 	});
@@ -131,7 +131,6 @@ export function ExportForm({
 				: { start: customStartDate, end: customEndDate };
 		startTransition(async () => {
 			const result = await startExportAction({
-				organizationId,
 				formatId: selectedFormatId,
 				startDate: dateRange.start,
 				endDate: dateRange.end,

@@ -1,26 +1,17 @@
 "use server";
 
-import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { db } from "@/db";
-import type {
-	ComplianceAlert,
-	ComplianceStatus,
-	OvertimeStats,
-	RestPeriodCheckResult,
-} from "@/db/schema";
+import { z } from "zod";
 import { complianceException, employee, userSettings } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { requireAbility, requireAuth } from "@/lib/auth-helpers";
 import { asAppSubject } from "@/lib/authorization";
-import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { organizationAbility } from "@/lib/authorization/organization-ability";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import {
 	ComplianceGuardrailService,
 	ComplianceGuardrailServiceLive,
-	type ExceptionWithDetails,
 } from "@/lib/effect/services/compliance-guardrail.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -29,6 +20,11 @@ import {
 	onComplianceExceptionRejected,
 	onComplianceExceptionRequested,
 } from "@/lib/notifications/compliance-triggers";
+import {
+	noInput,
+	type OrganizationActor,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
 
 const logger = createLogger("ComplianceActions");
 
@@ -45,139 +41,114 @@ type ComplianceExceptionWithEmployee = typeof complianceException.$inferSelect &
 	employee: EmployeeWithUser;
 };
 
+const employeeProfileNotFound = () =>
+	new NotFoundError({ message: "Employee profile not found", entityType: "employee" });
+
 // =============================================================================
-// Helper: Get current employee
+// Helper: the actor's employee record
 // =============================================================================
-
-async function getCurrentEmployeeWithTimezone() {
-	const authContext = await requireAuth();
-	if (!authContext.employee) {
-		throw new NotFoundError({
-			message: "Employee profile not found",
-			entityType: "employee",
-		});
-	}
-
-	const [emp, settings] = await Promise.all([
-		db.query.employee.findFirst({
-			where: and(
-				eq(employee.id, authContext.employee.id),
-				eq(employee.organizationId, authContext.employee.organizationId),
-				eq(employee.isActive, true),
-			),
-			with: { user: true },
-		}),
-		db.query.userSettings.findFirst({
-			where: eq(userSettings.userId, authContext.user.id),
-			columns: { timezone: true },
-		}),
-	]);
-	if (!emp) {
-		throw new NotFoundError({
-			message: "Employee profile not found",
-			entityType: "employee",
-		});
-	}
-
-	return {
-		employee: emp as EmployeeWithUser,
-		timezone: settings?.timezone || "UTC",
-		userId: authContext.user.id,
-	};
-}
 
 /**
- * The current employee as an effect. Its NotFoundError and the auth helpers' errors stay
- * typed. ComplianceGuardrailServiceLive is provided per run on top of the shared
- * runtime, which supplies its WorkPolicyService and DatabaseService.
+ * The actor's employee record with its user and timezone. The module already put
+ * the actor on the active organization's current roster; an org admin without an
+ * employee record has no compliance data of their own.
  */
-const currentEmployeeWithTimezone = Effect.tryPromise({
-	try: () => getCurrentEmployeeWithTimezone(),
-	catch: (error) => error as AnyAppError,
-});
-
-function typeEmployeeWithUser<T>(employeeRecord: T) {
-	return employeeRecord as T & EmployeeWithUser;
+function actorEmployee(actor: OrganizationActor, organizationId: string) {
+	return Effect.gen(function* () {
+		if (!actor.employee) return yield* Effect.fail(employeeProfileNotFound());
+		const employeeId = actor.employee.id;
+		const dbService = yield* DatabaseService;
+		const [record, settings] = yield* dbService.query("compliance.actorEmployee", () =>
+			Promise.all([
+				dbService.db.query.employee.findFirst({
+					where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+					with: { user: true },
+				}),
+				dbService.db.query.userSettings.findFirst({
+					where: eq(userSettings.userId, actor.userId),
+					columns: { timezone: true },
+				}),
+			]),
+		);
+		if (!record) return yield* Effect.fail(employeeProfileNotFound());
+		return {
+			employee: record as EmployeeWithUser,
+			timezone: settings?.timezone || "UTC",
+		};
+	});
 }
 
-function typeComplianceExceptionWithEmployee(exception: unknown) {
-	return exception as ComplianceExceptionWithEmployee | undefined;
-}
+function authorizeComplianceExceptionDecision(
+	actor: OrganizationActor,
+	organizationId: string,
+	input: { exceptionId: string; action: "approve" | "reject" },
+) {
+	return Effect.gen(function* () {
+		const refuse = (message: string) =>
+			Effect.fail(
+				new AuthorizationError({
+					message,
+					userId: actor.userId,
+					action: input.action,
+					resource: "ComplianceException",
+				}),
+			);
+		if (!actor.employee) return yield* refuse("Active organization employee required");
+		const approverId = actor.employee.id;
 
-async function authorizeComplianceExceptionDecision(input: {
-	exceptionId: string;
-	action: "approve" | "reject";
-}) {
-	const [authContext, ability] = await Promise.all([requireAuth(), requireAbility()]);
-	const organizationId = authContext.session.activeOrganizationId;
-	if (!organizationId || !authContext.employee) {
-		throw new AuthorizationError({
-			message: "Active organization employee required",
-			userId: authContext.user.id,
-			action: input.action,
-			resource: "ComplianceException",
-		});
-	}
+		const dbService = yield* DatabaseService;
+		const [approverRecord, exceptionRecord] = yield* dbService.query(
+			"compliance.decisionRecords",
+			() =>
+				Promise.all([
+					dbService.db.query.employee.findFirst({
+						where: and(eq(employee.id, approverId), eq(employee.organizationId, organizationId)),
+						with: { user: true },
+					}),
+					dbService.db.query.complianceException.findFirst({
+						where: and(
+							eq(complianceException.id, input.exceptionId),
+							eq(complianceException.organizationId, organizationId),
+							eq(complianceException.status, "pending"),
+						),
+						with: { employee: { with: { user: true } } },
+					}),
+				]),
+		);
 
-	const [approverRecord, exceptionRecord] = await Promise.all([
-		db.query.employee.findFirst({
-			where: and(
-				eq(employee.id, authContext.employee.id),
-				eq(employee.userId, authContext.user.id),
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
-			),
-			with: { user: true },
-		}),
-		db.query.complianceException.findFirst({
-			where: and(
-				eq(complianceException.id, input.exceptionId),
-				eq(complianceException.organizationId, organizationId),
-				eq(complianceException.status, "pending"),
-			),
-			with: { employee: { with: { user: true } } },
-		}),
-	]);
+		const approver = approverRecord as EmployeeWithUser | undefined;
+		const exception = exceptionRecord as ComplianceExceptionWithEmployee | undefined;
+		if (!approver || !exception) {
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Exception not found or already processed",
+					entityType: "complianceException",
+					entityId: input.exceptionId,
+				}),
+			);
+		}
 
-	const approver = approverRecord ? typeEmployeeWithUser(approverRecord) : null;
-	const exception = typeComplianceExceptionWithEmployee(exceptionRecord);
-	if (!approver || !exception) {
-		throw new NotFoundError({
-			message: "Exception not found or already processed",
-			entityType: "complianceException",
-			entityId: input.exceptionId,
-		});
-	}
+		if (exception.employeeId === approver.id) {
+			return yield* refuse("You cannot process your own compliance exception");
+		}
 
-	if (exception.employeeId === approver.id) {
-		throw new AuthorizationError({
-			message: "You cannot process your own compliance exception",
-			userId: authContext.user.id,
-			action: input.action,
-			resource: "ComplianceException",
-		});
-	}
+		const ability = yield* organizationAbility({ userId: actor.userId, organizationId });
+		if (
+			!ability.can(
+				input.action,
+				asAppSubject("Approval", {
+					organizationId,
+					requestedBy: exception.employeeId,
+					approverId: approver.id,
+					status: "pending",
+				}),
+			)
+		) {
+			return yield* refuse(`Not authorized to ${input.action} this compliance exception`);
+		}
 
-	if (
-		!ability.can(
-			input.action,
-			asAppSubject("Approval", {
-				organizationId,
-				requestedBy: exception.employeeId,
-				approverId: approver.id,
-				status: "pending",
-			}),
-		)
-	) {
-		throw new AuthorizationError({
-			message: `Not authorized to ${input.action} this compliance exception`,
-			userId: authContext.user.id,
-			action: input.action,
-			resource: "ComplianceException",
-		});
-	}
-
-	return { approver, exception, organizationId };
+		return { approver, exception };
+	});
 }
 
 // =============================================================================
@@ -187,66 +158,43 @@ async function authorizeComplianceExceptionDecision(input: {
 /**
  * Check if the current employee can clock in (rest period validation)
  */
-export async function checkRestPeriod(): Promise<ServerActionResult<RestPeriodCheckResult>> {
-	const tracer = trace.getTracer("compliance");
-
-	const effect = tracer.startActiveSpan("checkRestPeriod", (span) => {
-		return Effect.gen(function* () {
-			const { employee: emp, timezone } = yield* currentEmployeeWithTimezone;
-
-			span.setAttribute("employee.id", emp.id);
-
+export const checkRestPeriod = organizationAction(
+	{ name: "compliance.checkRestPeriod", requires: "member", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const { employee: emp, timezone } = yield* actorEmployee(actor, organizationId);
 			const complianceService = yield* ComplianceGuardrailService;
-			const result = yield* complianceService.checkRestPeriod({
-				employeeId: emp.id,
-				timezone,
-			});
-
-			span.setStatus({ code: SpanStatusCode.OK });
-			return result;
+			return yield* complianceService.checkRestPeriod({ employeeId: emp.id, timezone });
 		}).pipe(
-			Effect.catch((error) =>
-				Effect.gen(function* () {
-					span.recordException(error as Error);
-					span.setStatus({
-						code: SpanStatusCode.ERROR,
-						message: String(error),
-					});
-					logger.error({ error }, "Failed to check rest period");
-					return yield* Effect.fail(error as AnyAppError);
-				}),
+			Effect.tapError((error) =>
+				Effect.sync(() => logger.error({ error }, "Failed to check rest period")),
 			),
-			Effect.onExit(() => Effect.sync(() => span.end())),
 			Effect.provide(ComplianceGuardrailServiceLive),
-		);
-	});
-
-	return runServerActionSafe(effect);
-}
+		),
+);
 
 // =============================================================================
 // PROACTIVE ALERTS
 // =============================================================================
 
+const sessionMinutesSchema = z.strictObject({ currentSessionMinutes: z.number().min(0) });
+
 /**
  * Get proactive compliance alerts for an ongoing work session
  */
-export async function getProactiveAlerts(
-	currentSessionMinutes: number,
-): Promise<ServerActionResult<ComplianceAlert[]>> {
-	const effect = Effect.gen(function* () {
-		const { employee: emp, timezone } = yield* currentEmployeeWithTimezone;
-
-		const complianceService = yield* ComplianceGuardrailService;
-		return yield* complianceService.getProactiveAlerts({
-			employeeId: emp.id,
-			currentSessionMinutes,
-			timezone,
-		});
-	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
-
-	return runServerActionSafe(effect);
-}
+export const getProactiveAlerts = organizationAction(
+	{ name: "compliance.getProactiveAlerts", requires: "member", schema: sessionMinutesSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { employee: emp, timezone } = yield* actorEmployee(actor, organizationId);
+			const complianceService = yield* ComplianceGuardrailService;
+			return yield* complianceService.getProactiveAlerts({
+				employeeId: emp.id,
+				currentSessionMinutes: input.currentSessionMinutes,
+				timezone,
+			});
+		}).pipe(Effect.provide(ComplianceGuardrailServiceLive)),
+);
 
 // =============================================================================
 // COMPLIANCE STATUS
@@ -255,22 +203,19 @@ export async function getProactiveAlerts(
 /**
  * Get full compliance status including stats and alerts
  */
-export async function getComplianceStatus(
-	currentSessionMinutes: number,
-): Promise<ServerActionResult<ComplianceStatus>> {
-	const effect = Effect.gen(function* () {
-		const { employee: emp, timezone } = yield* currentEmployeeWithTimezone;
-
-		const complianceService = yield* ComplianceGuardrailService;
-		return yield* complianceService.getComplianceStatus({
-			employeeId: emp.id,
-			currentSessionMinutes,
-			timezone,
-		});
-	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
-
-	return runServerActionSafe(effect);
-}
+export const getComplianceStatus = organizationAction(
+	{ name: "compliance.getStatus", requires: "member", schema: sessionMinutesSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { employee: emp, timezone } = yield* actorEmployee(actor, organizationId);
+			const complianceService = yield* ComplianceGuardrailService;
+			return yield* complianceService.getComplianceStatus({
+				employeeId: emp.id,
+				currentSessionMinutes: input.currentSessionMinutes,
+				timezone,
+			});
+		}).pipe(Effect.provide(ComplianceGuardrailServiceLive)),
+);
 
 // =============================================================================
 // OVERTIME STATS
@@ -279,344 +224,265 @@ export async function getComplianceStatus(
 /**
  * Get overtime statistics for the current employee
  */
-export async function getOvertimeStats(): Promise<ServerActionResult<OvertimeStats>> {
-	const effect = Effect.gen(function* () {
-		const { employee: emp, timezone } = yield* currentEmployeeWithTimezone;
-
-		const complianceService = yield* ComplianceGuardrailService;
-		return yield* complianceService.getOvertimeStats({
-			employeeId: emp.id,
-			timezone,
-		});
-	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
-
-	return runServerActionSafe(effect);
-}
+export const getOvertimeStats = organizationAction(
+	{ name: "compliance.getOvertimeStats", requires: "member", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const { employee: emp, timezone } = yield* actorEmployee(actor, organizationId);
+			const complianceService = yield* ComplianceGuardrailService;
+			return yield* complianceService.getOvertimeStats({ employeeId: emp.id, timezone });
+		}).pipe(Effect.provide(ComplianceGuardrailServiceLive)),
+);
 
 // =============================================================================
 // EXCEPTION REQUESTS
 // =============================================================================
 
+const exceptionTypeSchema = z.enum([
+	"rest_period",
+	"overtime_daily",
+	"overtime_weekly",
+	"overtime_monthly",
+]);
+
 /**
  * Request a compliance exception (pre-approval)
  */
-export async function requestComplianceException(input: {
-	exceptionType: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly";
-	reason: string;
-	plannedDurationMinutes?: number;
-}): Promise<ServerActionResult<{ exceptionId: string }>> {
-	const tracer = trace.getTracer("compliance");
-
-	const effect = tracer.startActiveSpan(
-		"requestComplianceException",
-		{
-			attributes: {
-				"exception.type": input.exceptionType,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const { employee: emp, userId } = yield* currentEmployeeWithTimezone;
-
-				span.setAttribute("employee.id", emp.id);
-				span.setAttribute("organization.id", emp.organizationId);
-
-				const dbService = yield* DatabaseService;
-				const complianceService = yield* ComplianceGuardrailService;
-				const exceptionId = yield* complianceService.requestException({
-					employeeId: emp.id,
-					organizationId: emp.organizationId,
-					exceptionType: input.exceptionType,
-					reason: input.reason,
-					plannedDurationMinutes: input.plannedDurationMinutes,
-					createdBy: userId,
-				});
-				const managerId = yield* dbService.query(
-					"getComplianceExceptionPrimaryManager",
-					async () => {
-						return await getPrimaryEligibleManagerIdForRequester({
-							db: dbService.db,
-							requesterEmployeeId: emp.id,
-							organizationId: emp.organizationId,
-						});
-					},
-				);
-
-				// Trigger notification to manager (fire-and-forget)
-				void onComplianceExceptionRequested({
-					exceptionId,
-					employeeId: emp.id,
-					employeeName: buildAuthUserDisplayName(emp.user),
-					organizationId: emp.organizationId,
-					exceptionType: input.exceptionType,
-					reason: input.reason,
-					managerId: managerId ?? undefined,
-				});
-
-				logger.info(
-					{
-						exceptionId,
-						employeeId: emp.id,
-						exceptionType: input.exceptionType,
-					},
-					"Compliance exception requested",
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return { exceptionId };
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, input }, "Failed to request compliance exception");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(ComplianceGuardrailServiceLive),
+export const requestComplianceException = organizationAction(
+	{
+		name: "compliance.requestException",
+		requires: "member",
+		schema: z.strictObject({
+			exceptionType: exceptionTypeSchema,
+			reason: z.string(),
+			plannedDurationMinutes: z.number().optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { employee: emp } = yield* actorEmployee(actor, organizationId);
+			const dbService = yield* DatabaseService;
+			const complianceService = yield* ComplianceGuardrailService;
+			const exceptionId = yield* complianceService.requestException({
+				employeeId: emp.id,
+				organizationId,
+				exceptionType: input.exceptionType,
+				reason: input.reason,
+				plannedDurationMinutes: input.plannedDurationMinutes,
+				createdBy: actor.userId,
+			});
+			const managerId = yield* dbService.query("getComplianceExceptionPrimaryManager", () =>
+				getPrimaryEligibleManagerIdForRequester({
+					db: dbService.db,
+					requesterEmployeeId: emp.id,
+					organizationId,
+				}),
 			);
-		},
-	);
 
-	return runServerActionSafe(effect);
-}
+			// Trigger notification to manager (fire-and-forget)
+			void onComplianceExceptionRequested({
+				exceptionId,
+				employeeId: emp.id,
+				employeeName: buildAuthUserDisplayName(emp.user),
+				organizationId,
+				exceptionType: input.exceptionType,
+				reason: input.reason,
+				managerId: managerId ?? undefined,
+			});
+
+			logger.info(
+				{ exceptionId, employeeId: emp.id, exceptionType: input.exceptionType },
+				"Compliance exception requested",
+			);
+			return { exceptionId };
+		}).pipe(
+			Effect.tapError((error) =>
+				Effect.sync(() => logger.error({ error, input }, "Failed to request compliance exception")),
+			),
+			Effect.provide(ComplianceGuardrailServiceLive),
+		),
+);
 
 /**
  * Check if the current employee has a valid exception
  */
-export async function hasValidException(
-	exceptionType: string,
-): Promise<ServerActionResult<{ hasException: boolean; exceptionId?: string }>> {
-	const effect = Effect.gen(function* () {
-		const { employee: emp } = yield* currentEmployeeWithTimezone;
-
-		const complianceService = yield* ComplianceGuardrailService;
-		return yield* complianceService.hasValidException({
-			employeeId: emp.id,
-			exceptionType,
-		});
-	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
-
-	return runServerActionSafe(effect);
-}
+export const hasValidException = organizationAction(
+	{
+		name: "compliance.hasValidException",
+		requires: "member",
+		schema: z.strictObject({ exceptionType: z.string() }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { employee: emp } = yield* actorEmployee(actor, organizationId);
+			const complianceService = yield* ComplianceGuardrailService;
+			return yield* complianceService.hasValidException({
+				employeeId: emp.id,
+				exceptionType: input.exceptionType,
+			});
+		}).pipe(Effect.provide(ComplianceGuardrailServiceLive)),
+);
 
 /**
  * Get the current employee's exceptions
  */
-export async function getMyExceptions(
-	includeExpired = false,
-): Promise<ServerActionResult<ExceptionWithDetails[]>> {
-	const effect = Effect.gen(function* () {
-		const { employee: emp } = yield* currentEmployeeWithTimezone;
-
-		const complianceService = yield* ComplianceGuardrailService;
-		return yield* complianceService.getMyExceptions({
-			employeeId: emp.id,
-			includeExpired,
-		});
-	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
-
-	return runServerActionSafe(effect);
-}
+export const getMyExceptions = organizationAction(
+	{
+		name: "compliance.getMyExceptions",
+		requires: "member",
+		schema: z.strictObject({ includeExpired: z.boolean().default(false) }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { employee: emp } = yield* actorEmployee(actor, organizationId);
+			const complianceService = yield* ComplianceGuardrailService;
+			return yield* complianceService.getMyExceptions({
+				employeeId: emp.id,
+				includeExpired: input.includeExpired,
+			});
+		}).pipe(Effect.provide(ComplianceGuardrailServiceLive)),
+);
 
 // =============================================================================
 // MANAGER ACTIONS
 // =============================================================================
 
 /**
- * Get pending exception requests for the current manager's team
+ * Get pending exception requests: every one for a compliance manager, else those of
+ * the employees a manager manages.
  */
-export async function getPendingExceptions(): Promise<ServerActionResult<ExceptionWithDetails[]>> {
-	const effect = Effect.gen(function* () {
-		const { employee: emp } = yield* currentEmployeeWithTimezone;
-		const ability = yield* Effect.tryPromise({
-			try: async () => await requireAbility(),
-			catch: () =>
-				new AuthorizationError({
-					message: "Unable to verify compliance exception permission",
-					action: "read",
-					resource: "ComplianceException",
-				}),
-		});
-		const canManageAll = ability.can("manage", "Compliance");
-		if (!canManageAll && emp.role !== "manager") {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Not authorized to view pending compliance exceptions",
-					action: "read",
-					resource: "ComplianceException",
-				}),
-			);
-		}
+export const getPendingExceptions = organizationAction(
+	{ name: "compliance.getPendingExceptions", requires: "member", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const { employee: emp } = yield* actorEmployee(actor, organizationId);
+			const ability = yield* organizationAbility({ userId: actor.userId, organizationId });
+			const canManageAll = ability.can("manage", "Compliance");
+			if (!canManageAll && emp.role !== "manager") {
+				return yield* Effect.fail(
+					new AuthorizationError({
+						message: "Not authorized to view pending compliance exceptions",
+						userId: actor.userId,
+						action: "read",
+						resource: "ComplianceException",
+					}),
+				);
+			}
 
-		const complianceService = yield* ComplianceGuardrailService;
-		return yield* complianceService.getPendingExceptions({
-			organizationId: emp.organizationId,
-			managerId: canManageAll ? undefined : emp.id,
-		});
-	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
+			const complianceService = yield* ComplianceGuardrailService;
+			return yield* complianceService.getPendingExceptions({
+				organizationId,
+				managerId: canManageAll ? undefined : emp.id,
+			});
+		}).pipe(Effect.provide(ComplianceGuardrailServiceLive)),
+);
 
-	return runServerActionSafe(effect);
-}
+const exceptionIdSchema = z.string().min(1, "Exception is required");
 
 /**
  * Approve a compliance exception
  */
-export async function approveComplianceException(
-	exceptionId: string,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("compliance");
-
-	const effect = tracer.startActiveSpan(
-		"approveComplianceException",
-		{
-			attributes: {
-				"exception.id": exceptionId,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const { approver, exception, organizationId } = yield* Effect.tryPromise({
-					try: async () =>
-						await authorizeComplianceExceptionDecision({
-							exceptionId,
-							action: "approve",
-						}),
-					catch: (error) => error as AnyAppError,
-				});
-
-				span.setAttribute("approver.id", approver.id);
-
-				const complianceService = yield* ComplianceGuardrailService;
-				yield* complianceService.approveException({
-					exceptionId,
-					approverId: approver.id,
-					organizationId,
-				});
-
-				// Trigger notification (fire-and-forget)
-				void onComplianceExceptionApproved({
-					exceptionId,
-					employeeUserId: exception.employee.userId,
-					employeeName: buildAuthUserDisplayName(exception.employee.user),
-					organizationId: exception.organizationId,
-					exceptionType: exception.exceptionType,
-					approverName: buildAuthUserDisplayName(approver.user),
-					validUntil: exception.validUntil,
-				});
-
-				logger.info(
-					{
-						exceptionId,
-						approverId: approver.id,
-					},
-					"Compliance exception approved",
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, exceptionId }, "Failed to approve compliance exception");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(ComplianceGuardrailServiceLive),
+export const approveComplianceException = organizationAction(
+	{
+		name: "compliance.approveException",
+		requires: "member",
+		schema: z.strictObject({ exceptionId: exceptionIdSchema }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { approver, exception } = yield* authorizeComplianceExceptionDecision(
+				actor,
+				organizationId,
+				{ exceptionId: input.exceptionId, action: "approve" },
 			);
-		},
-	);
 
-	return runServerActionSafe(effect);
-}
+			const complianceService = yield* ComplianceGuardrailService;
+			yield* complianceService.approveException({
+				exceptionId: input.exceptionId,
+				approverId: approver.id,
+				organizationId,
+			});
+
+			// Trigger notification (fire-and-forget)
+			void onComplianceExceptionApproved({
+				exceptionId: input.exceptionId,
+				employeeUserId: exception.employee.userId,
+				employeeName: buildAuthUserDisplayName(exception.employee.user),
+				organizationId: exception.organizationId,
+				exceptionType: exception.exceptionType,
+				approverName: buildAuthUserDisplayName(approver.user),
+				validUntil: exception.validUntil,
+			});
+
+			logger.info(
+				{ exceptionId: input.exceptionId, approverId: approver.id },
+				"Compliance exception approved",
+			);
+		}).pipe(
+			Effect.tapError((error) =>
+				Effect.sync(() =>
+					logger.error(
+						{ error, exceptionId: input.exceptionId },
+						"Failed to approve compliance exception",
+					),
+				),
+			),
+			Effect.provide(ComplianceGuardrailServiceLive),
+		),
+);
 
 /**
  * Reject a compliance exception
  */
-export async function rejectComplianceException(
-	exceptionId: string,
-	reason?: string,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("compliance");
-
-	const effect = tracer.startActiveSpan(
-		"rejectComplianceException",
-		{
-			attributes: {
-				"exception.id": exceptionId,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const { approver, exception, organizationId } = yield* Effect.tryPromise({
-					try: async () =>
-						await authorizeComplianceExceptionDecision({
-							exceptionId,
-							action: "reject",
-						}),
-					catch: (error) => error as AnyAppError,
-				});
-
-				span.setAttribute("approver.id", approver.id);
-
-				const complianceService = yield* ComplianceGuardrailService;
-				yield* complianceService.rejectException({
-					exceptionId,
-					approverId: approver.id,
-					organizationId,
-					reason,
-				});
-
-				// Trigger notification (fire-and-forget)
-				void onComplianceExceptionRejected({
-					exceptionId,
-					employeeUserId: exception.employee.userId,
-					employeeName: buildAuthUserDisplayName(exception.employee.user),
-					organizationId: exception.organizationId,
-					exceptionType: exception.exceptionType,
-					approverName: buildAuthUserDisplayName(approver.user),
-					reason,
-				});
-
-				logger.info(
-					{
-						exceptionId,
-						approverId: approver.id,
-						reason,
-					},
-					"Compliance exception rejected",
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, exceptionId, reason }, "Failed to reject compliance exception");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(ComplianceGuardrailServiceLive),
+export const rejectComplianceException = organizationAction(
+	{
+		name: "compliance.rejectException",
+		requires: "member",
+		schema: z.strictObject({ exceptionId: exceptionIdSchema, reason: z.string().optional() }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const { approver, exception } = yield* authorizeComplianceExceptionDecision(
+				actor,
+				organizationId,
+				{ exceptionId: input.exceptionId, action: "reject" },
 			);
-		},
-	);
 
-	return runServerActionSafe(effect);
-}
+			const complianceService = yield* ComplianceGuardrailService;
+			yield* complianceService.rejectException({
+				exceptionId: input.exceptionId,
+				approverId: approver.id,
+				organizationId,
+				reason: input.reason,
+			});
+
+			// Trigger notification (fire-and-forget)
+			void onComplianceExceptionRejected({
+				exceptionId: input.exceptionId,
+				employeeUserId: exception.employee.userId,
+				employeeName: buildAuthUserDisplayName(exception.employee.user),
+				organizationId: exception.organizationId,
+				exceptionType: exception.exceptionType,
+				approverName: buildAuthUserDisplayName(approver.user),
+				reason: input.reason,
+			});
+
+			logger.info(
+				{ exceptionId: input.exceptionId, approverId: approver.id, reason: input.reason },
+				"Compliance exception rejected",
+			);
+		}).pipe(
+			Effect.tapError((error) =>
+				Effect.sync(() =>
+					logger.error(
+						{ error, exceptionId: input.exceptionId, reason: input.reason },
+						"Failed to reject compliance exception",
+					),
+				),
+			),
+			Effect.provide(ComplianceGuardrailServiceLive),
+		),
+);
 
 // =============================================================================
 // ADMIN ACTIONS
@@ -625,32 +491,11 @@ export async function rejectComplianceException(
 /**
  * Expire old pre-approval exceptions (for cron jobs or admin use)
  */
-export async function expireOldExceptions(): Promise<ServerActionResult<{ expiredCount: number }>> {
-	const effect = Effect.gen(function* () {
-		const { employee: emp } = yield* currentEmployeeWithTimezone;
-		const organizationId = emp.organizationId;
-		const ability = yield* Effect.tryPromise({
-			try: async () => await requireAbility(),
-			catch: () =>
-				new AuthorizationError({
-					message: "Unable to verify compliance administration permission",
-					action: "manage",
-					resource: "Compliance",
-				}),
-		});
-		if (!ability.can("manage", "Compliance")) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Not authorized to expire compliance exceptions",
-					action: "manage",
-					resource: "Compliance",
-				}),
-			);
-		}
-
-		const complianceService = yield* ComplianceGuardrailService;
-		return yield* complianceService.expireOldExceptions(organizationId);
-	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
-
-	return runServerActionSafe(effect);
-}
+export const expireOldExceptions = organizationAction(
+	{ name: "compliance.expireOldExceptions", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const complianceService = yield* ComplianceGuardrailService;
+			return yield* complianceService.expireOldExceptions(organizationId);
+		}).pipe(Effect.provide(ComplianceGuardrailServiceLive)),
+);

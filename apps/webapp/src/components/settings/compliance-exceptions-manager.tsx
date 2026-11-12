@@ -83,7 +83,7 @@ export function ComplianceExceptionsManager({
 	// Mutation for approving exceptions
 	const approveMutation = useMutation({
 		mutationFn: async (exceptionId: string) => {
-			const result = await approveComplianceException(exceptionId);
+			const result = await approveComplianceException({ exceptionId });
 			if (!result.success) {
 				return Promise.reject(result.error || "Failed to approve exception");
 			}
@@ -110,7 +110,7 @@ export function ComplianceExceptionsManager({
 	// Mutation for rejecting exceptions
 	const rejectMutation = useMutation({
 		mutationFn: async ({ exceptionId, reason }: { exceptionId: string; reason?: string }) => {
-			const result = await rejectComplianceException(exceptionId, reason);
+			const result = await rejectComplianceException({ exceptionId, reason });
 			if (!result.success) {
 				return Promise.reject(result.error || "Failed to reject exception");
 			}

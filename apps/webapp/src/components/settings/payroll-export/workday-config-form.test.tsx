@@ -63,7 +63,6 @@ describe("WorkdayConfigForm", () => {
 
 		render(
 			<WorkdayConfigForm
-				organizationId="org_123"
 				initialConfig={{
 					id: "cfg_123",
 					formatId: "workday_api",
@@ -99,7 +98,6 @@ describe("WorkdayConfigForm", () => {
 		});
 
 		expect(testWorkdayConnectionActionMock).toHaveBeenCalledWith({
-			organizationId: "org_123",
 			config: {
 				instanceUrl: "https://wd5-impl-services1.workday.com",
 				tenantId: "tenant_name",
@@ -112,7 +110,7 @@ describe("WorkdayConfigForm", () => {
 	});
 
 	it("keeps credential payloads organization-scoped", async () => {
-		render(<WorkdayConfigForm organizationId="org_123" initialConfig={null} />);
+		render(<WorkdayConfigForm initialConfig={null} />);
 
 		fireEvent.change(screen.getByLabelText("Client ID"), {
 			target: { value: "client-1" },
@@ -124,7 +122,6 @@ describe("WorkdayConfigForm", () => {
 
 		await waitFor(() => {
 			expect(saveWorkdayCredentialsActionMock).toHaveBeenCalledWith({
-				organizationId: "org_123",
 				clientId: "client-1",
 				clientSecret: "secret-1",
 			});

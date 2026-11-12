@@ -82,7 +82,6 @@ import {
 import { runWithBusyState } from "./run-with-busy-state";
 
 interface DemoDataWizardProps {
-	organizationId: string;
 	employees: Array<{ id: string; name: string }>;
 }
 
@@ -183,7 +182,6 @@ function handleSelectableCardKeyDown(
 }
 
 function useDemoDataWizardController({
-	organizationId,
 	employees,
 }: DemoDataWizardProps) {
 	const { t } = useTranslate();
@@ -254,16 +252,6 @@ function useDemoDataWizardController({
 	};
 
 	const handleGenerate = async () => {
-		if (!organizationId) {
-			dispatchWizard({
-				type: "set-error",
-				error: t(
-					"settings.demo.errors.noOrganization",
-					"No organization selected",
-				),
-			});
-			return;
-		}
 
 		// Build steps based on selected options
 		const activeSteps: GenerationStep[] = [];
@@ -468,7 +456,6 @@ function useDemoDataWizardController({
 		dispatchWizard({ type: "start-generation", steps: activeSteps });
 
 		const input: StepGenerationInput = {
-			organizationId,
 			dateRangeType,
 			teamCount: includeTeams ? teamCount : undefined,
 			projectCount: includeProjects ? projectCount : undefined,
@@ -874,19 +861,9 @@ function useDemoDataWizardController({
 	};
 
 	const handleClear = async () => {
-		if (!organizationId) {
-			dispatchWizard({
-				type: "set-error",
-				error: t(
-					"settings.demo.errors.noOrganization",
-					"No organization selected",
-				),
-			});
-			return;
-		}
 		await runWithBusyState(setIsClearing, async () => {
 			try {
-				const response = await clearTimeDataAction(organizationId);
+				const response = await clearTimeDataAction();
 				if (!response.success) {
 					dispatchWizard({ type: "set-error", error: response.error });
 				} else {
@@ -907,18 +884,11 @@ function useDemoDataWizardController({
 	};
 
 	const handleGenerateEmployees = async () => {
-		if (!organizationId) {
-			setEmployeeError(
-				t("settings.demo.errors.noOrganization", "No organization selected"),
-			);
-			return;
-		}
 		setEmployeeError(null);
 		setEmployeeResult(null);
 		await runWithBusyState(setIsGeneratingEmployees, async () => {
 			try {
 				const response = await generateDemoEmployeesAction({
-					organizationId,
 					count: employeeCount,
 					includeManagers: includeManagersForEmployees,
 				});
@@ -938,19 +908,9 @@ function useDemoDataWizardController({
 	};
 
 	const handleDeleteNonAdmin = async () => {
-		if (!organizationId) {
-			dispatchWizard({
-				type: "set-error",
-				error: t(
-					"settings.demo.errors.noOrganization",
-					"No organization selected",
-				),
-			});
-			return;
-		}
 		await runWithBusyState(setIsDeletingNonAdmin, async () => {
 			try {
-				const response = await deleteNonAdminDataAction(organizationId);
+				const response = await deleteNonAdminDataAction();
 				if (!response.success) {
 					dispatchWizard({ type: "set-error", error: response.error });
 				} else {

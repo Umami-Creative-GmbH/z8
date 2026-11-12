@@ -525,7 +525,7 @@ describe("confirming a payroll run as paid (#853)", () => {
 		]);
 		// A confirmed run is final: it can no longer be discarded as a whole.
 		signIn("finance");
-		expect(await discardPayrollRunAction(ORG, run.jobId)).toEqual({
+		expect(await discardPayrollRunAction({ jobId: run.jobId })).toEqual({
 			success: true,
 			data: { status: "confirmed" },
 		});

@@ -1,33 +1,61 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { PrincipalContext } from "@/lib/authorization/types";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
-	authContext: null as null | { user: { id: string }; session: { activeOrganizationId: string } },
-	canManageApprovals: true,
+	caller: null as StubCaller | null,
+	principal: null as PrincipalContext | null,
 	saveDeputyDecisionsEnabled: vi.fn(),
 	revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/db", () => ({ db: { marker: "db" } }));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect } = await import("effect");
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { APPROVAL_MANAGEMENT_PRINCIPAL_QUERY } = await import("./approval-management");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db: { marker: "db" },
+			query: (name, fn) =>
+				name === APPROVAL_MANAGEMENT_PRINCIPAL_QUERY
+					? (Effect.succeed(mocks.principal) as never)
+					: Effect.promise(fn),
+		}),
+	);
+});
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
-vi.mock("@/lib/auth-helpers", () => ({
-	getAuthContext: async () => mocks.authContext,
-	getAbility: async () => ({
-		cannot: (action: string, subject: string) =>
-			!(mocks.canManageApprovals && action === "manage" && subject === "Approval"),
-	}),
-}));
 vi.mock("@/lib/approvals/approval-settings", () => ({
 	saveDeputyDecisionsEnabled: mocks.saveDeputyDecisionsEnabled,
 }));
 
 const { saveDeputyDecisionsEnabledAction } = await import("./deputy-decisions-actions");
 
+const workforceAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "admin", former: false },
+};
+
+function principal(employeeRole: "admin" | "manager" | "employee"): PrincipalContext {
+	return {
+		userId: "user-1",
+		isPlatformAdmin: false,
+		activeOrganizationId: "org-1",
+		orgMembership: { organizationId: "org-1", role: "member" },
+		employee: { id: "employee-1", organizationId: "org-1", role: employeeRole, teamId: null },
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles: [],
+	} as PrincipalContext;
+}
+
 describe("saveDeputyDecisionsEnabledAction", () => {
 	beforeEach(() => {
-		mocks.authContext = { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } };
-		mocks.canManageApprovals = true;
-		mocks.saveDeputyDecisionsEnabled.mockReset();
-		mocks.revalidatePath.mockReset();
+		vi.clearAllMocks();
+		mocks.caller = workforceAdmin;
+		mocks.principal = principal("admin");
 	});
 
 	it("saves the switch for the active organization as the signed-in user", async () => {
@@ -47,13 +75,31 @@ describe("saveDeputyDecisionsEnabledAction", () => {
 		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/approval-policies");
 	});
 
-	it("refuses users who cannot manage approvals, and signed-out users", async () => {
-		mocks.canManageApprovals = false;
+	it("refuses an org member who cannot manage approvals", async () => {
+		mocks.caller = {
+			...workforceAdmin,
+			employee: { id: "employee-1", role: "employee", former: false },
+		};
+		mocks.principal = principal("employee");
+
 		expect(await saveDeputyDecisionsEnabledAction({ enabled: false })).toMatchObject({
 			success: false,
+			code: "AuthorizationError",
+			error: "You do not have permission to manage approval settings.",
 		});
-		mocks.canManageApprovals = true;
-		mocks.authContext = null;
+		expect(mocks.saveDeputyDecisionsEnabled).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["a pending membership", { ...workforceAdmin, membershipRole: null }],
+		[
+			"a former employee",
+			{ ...workforceAdmin, employee: { id: "employee-1", role: "admin" as const, former: true } },
+		],
+		["a signed-out caller", null],
+	])("refuses %s", async (_case, caller) => {
+		mocks.caller = caller;
+
 		expect(await saveDeputyDecisionsEnabledAction({ enabled: false })).toMatchObject({
 			success: false,
 		});
@@ -61,8 +107,10 @@ describe("saveDeputyDecisionsEnabledAction", () => {
 	});
 
 	it("refuses a value that is not a boolean", async () => {
-		expect(await saveDeputyDecisionsEnabledAction({ enabled: "false" })).toMatchObject({
+		expect(await saveDeputyDecisionsEnabledAction({ enabled: "false" } as never)).toMatchObject({
 			success: false,
+			code: "ValidationError",
+			error: "Invalid setting",
 		});
 		expect(mocks.saveDeputyDecisionsEnabled).not.toHaveBeenCalled();
 	});

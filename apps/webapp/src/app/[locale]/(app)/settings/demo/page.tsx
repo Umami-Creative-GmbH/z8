@@ -4,10 +4,8 @@ import { DemoDataWizard } from "@/components/settings/demo-data-wizard";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import {
-	assertDemoDataEnabledForOrganization,
-	getOrganizationEmployees,
-} from "./actions";
+import { getOrganizationEmployees } from "./actions";
+import { isDemoDataEnabledForOrganization } from "./demo-data-enabled";
 
 async function DemoSettingsContent() {
 	const [t, { organizationId }] = await Promise.all([
@@ -15,8 +13,8 @@ async function DemoSettingsContent() {
 		requireOrgAdminSettingsAccess(),
 	]);
 	const [demoDataEnabled, employeesResult] = await Promise.all([
-		assertDemoDataEnabledForOrganization(organizationId),
-		getOrganizationEmployees(organizationId),
+		isDemoDataEnabledForOrganization(organizationId),
+		getOrganizationEmployees(),
 	]);
 
 	if (!demoDataEnabled) {
@@ -41,7 +39,6 @@ async function DemoSettingsContent() {
 
 			<DemoDataWizard
 				key={organizationId}
-				organizationId={organizationId}
 				employees={employees}
 			/>
 		</div>

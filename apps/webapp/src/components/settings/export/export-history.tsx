@@ -48,10 +48,9 @@ import { EXPORT_CATEGORY_COPY } from "./export-category-copy";
 
 interface ExportHistoryProps {
 	exports: ExportRecord[];
-	organizationId: string;
 }
 
-export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
+export function ExportHistory({ exports }: ExportHistoryProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const timezone = useOrganizationTimezone();
@@ -60,7 +59,7 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 
 	const handleDownload = async (exportId: string) => {
 		setLoadingAction(`download-${exportId}`);
-		const result = await regenerateDownloadUrlAction(exportId, organizationId).catch(
+		const result = await regenerateDownloadUrlAction({ exportId }).catch(
 			(error: unknown) => {
 				toast.error(
 					t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"),
@@ -93,7 +92,7 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 
 	const handleDelete = async (exportId: string) => {
 		setLoadingAction(`delete-${exportId}`);
-		const result = await deleteExportAction(exportId, organizationId).catch((error: unknown) => {
+		const result = await deleteExportAction({ exportId }).catch((error: unknown) => {
 			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
 			console.error("Delete error:", error);
 			return null;
