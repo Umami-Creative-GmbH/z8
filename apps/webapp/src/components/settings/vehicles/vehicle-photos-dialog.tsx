@@ -15,7 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import type { VehiclePhotoView } from "@/lib/organization/vehicles/vehicle-photo-types";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
+import {
+	type ActionFailure,
+	actionErrorMessage,
+} from "@/lib/organization-action/action-error-message";
 import { VehiclePhotoBrowser } from "./vehicle-photo-browser";
+import { LOAD_FAILED, VEHICLE_PHOTO_LOAD_REFUSALS } from "./vehicle-photo-refusals";
 import {
 	useVehiclePhotoUploadQueue,
 	VehiclePhotoUploadQueue,
@@ -59,11 +64,12 @@ function VehiclePhotoGallery({
 	const changes = useRef(0);
 	const [archived, setArchived] = useState(vehicle.archived);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	/** Why the gallery could not be loaded; worded when shown. */
+	const [error, setError] = useState<ActionFailure | null>(null);
 	const uploadQueue = useVehiclePhotoUploadQueue({
 		vehicleId: vehicle.id,
 		photos,
-		disabled: loading || error === "load",
+		disabled: loading || error !== null,
 		onArchived: () => setArchived(true),
 		onSaved: (photo) => {
 			changes.current += 1;
@@ -91,9 +97,10 @@ function VehiclePhotoGallery({
 				if (result.success) {
 					if (changes.current === version) setPhotos(result.data.photos);
 					setArchived(result.data.archived);
-				} else setError("load");
+				} else setError(result);
 			} catch {
-				if (!cancelled) setError("load");
+				// No result to word: an unknown failure, worded as `LOAD_FAILED`.
+				if (!cancelled) setError({});
 			}
 		}
 		void load().finally(() => {
@@ -126,12 +133,7 @@ function VehiclePhotoGallery({
 			) : null}
 			{error ? (
 				<p role="alert" className="text-destructive text-sm">
-					{error === "load"
-						? t(
-								"settings.vehicles.photos.loadFailed",
-								"The photos could not be loaded. Close the dialog and try again.",
-							)
-						: error}
+					{actionErrorMessage(t, error, VEHICLE_PHOTO_LOAD_REFUSALS, LOAD_FAILED)}
 				</p>
 			) : null}
 			{!loading && !error && photos.length === 0 ? (

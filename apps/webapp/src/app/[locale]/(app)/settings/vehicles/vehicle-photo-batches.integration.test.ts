@@ -78,7 +78,7 @@ let vehicleId: string;
 const origin = "https://z8.example.test";
 async function start(id = vehicleId) {
 	const result = await initiateVehiclePhotoUpload({ vehicleId: id });
-	if (!result.success || !result.data.ok)
+	if (!result.success)
 		throw new Error(JSON.stringify(result));
 	return result.data.uploadId;
 }
@@ -171,7 +171,7 @@ describe("vehicle photo batch reconciliation", () => {
 		const recovered = await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id });
 		expect(recovered).toMatchObject({
 			success: true,
-			data: { ok: true, photo: { id } },
+			data: { photo: { id } },
 		});
 		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toEqual(recovered);
 		expect((await gallery()).photos).toHaveLength(1);
@@ -201,7 +201,7 @@ describe("vehicle photo batch reconciliation", () => {
 		]);
 		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: first })).toMatchObject({
 			success: true,
-			data: { ok: true, photo: null },
+			data: { photo: null },
 		});
 		expect((await upload(first, bytes)).status).toBe(200);
 		expect((await gallery()).photos.map((photo) => photo.id)).toEqual([
@@ -229,8 +229,10 @@ describe("vehicle photo batch reconciliation", () => {
 				"12710000-0000-4000-8000-000000000006",
 			] }),
 		).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "photo_limit", remaining: 1 },
+			success: false,
+			code: "ValidationError",
+			refusal: "photo_limit",
+			details: { remaining: 1 },
 		});
 		expect(
 			(
@@ -269,8 +271,9 @@ describe("vehicle photo batch reconciliation", () => {
 		expect((await upload(id, await image())).status).toBe(200);
 		harness.userId = "batch-admin";
 		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "upload_not_found" },
+			success: false,
+			code: "ValidationError",
+			refusal: "upload_not_found",
 		});
 		harness.userId = "batch-member";
 		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toMatchObject({
@@ -282,15 +285,17 @@ describe("vehicle photo batch reconciliation", () => {
 			"insert into member(id,organization_id,user_id,role,status,created_at) values('batch-other-owner','batch-other','batch-owner','owner','approved',now())",
 		);
 		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: id })).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "upload_not_found" },
+			success: false,
+			code: "ValidationError",
+			refusal: "upload_not_found",
 		});
 		harness.organizationId = "batch-org";
 		expect(
 			await reconcileVehiclePhotoUpload({ vehicleId: "00000000-0000-4000-8000-000000000001", uploadId: id }),
 		).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "upload_not_found" },
+			success: false,
+			code: "ValidationError",
+			refusal: "upload_not_found",
 		});
 		await admin.query(
 			"update member set role='owner' where organization_id='batch-org' and user_id='batch-admin'",
@@ -308,16 +313,16 @@ describe("vehicle photo batch reconciliation", () => {
 		expect((await upload(saved, await image())).status).toBe(200);
 		await changeVehicles({ kind: "archive", vehicleId });
 		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: pending })).toMatchObject(
-			{ success: true, data: { ok: false, reason: "vehicle_archived" } },
+			{ success: false, code: "ValidationError", refusal: "vehicle_archived" },
 		);
 		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: saved })).toMatchObject({
 			success: true,
-			data: { ok: true, photo: { id: saved } },
+			data: { photo: { id: saved } },
 		});
 		await changeVehicles({ kind: "restore", vehicleId });
 		await changeVehicles({ kind: "delete", vehicleId });
 		expect(await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: pending })).toMatchObject(
-			{ success: true, data: { ok: false, reason: "vehicle_not_found" } },
+			{ success: false, code: "ValidationError", refusal: "vehicle_not_found" },
 		);
 	});
 	it("cleans failed and abandoned batch entries durably while keeping completed photos accessible", async () => {
@@ -339,8 +344,9 @@ describe("vehicle photo batch reconciliation", () => {
 		expect(
 			await reconcileVehiclePhotoUpload({ vehicleId: vehicleId, uploadId: abandoned }),
 		).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "upload_expired" },
+			success: false,
+			code: "ValidationError",
+			refusal: "upload_expired",
 		});
 		expect((await read(rejected)).status).toBe(404);
 		expect((await read(abandoned)).status).toBe(404);
@@ -361,10 +367,10 @@ describe("vehicle photo batch reconciliation", () => {
 			"12710000-0000-4000-8000-000000000002",
 		];
 		expect(await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: ids })).toMatchObject(
-			{ success: true, data: { ok: true, uploadIds: ids } },
+			{ success: true, data: { uploadIds: ids } },
 		);
 		expect(await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: ids })).toMatchObject(
-			{ success: true, data: { ok: true, uploadIds: ids } },
+			{ success: true, data: { uploadIds: ids } },
 		);
 		expect((await upload(ids[1], await image())).status).toBe(200);
 		expect((await upload(ids[0], await image())).status).toBe(200);
@@ -384,14 +390,14 @@ describe("vehicle photo batch reconciliation", () => {
 		expect(
 			await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: [existing] }),
 		).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "forbidden" },
+			success: false,
+			code: "NotFoundError",
 		});
 		expect(
 			await initiateVehiclePhotoBatchUpload({ vehicleId: vehicleId, uploadIds: [existing, fresh] }),
 		).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "forbidden" },
+			success: false,
+			code: "NotFoundError",
 		});
 		harness.userId = "batch-owner";
 		harness.organizationId = "batch-other";
@@ -412,8 +418,8 @@ describe("vehicle photo batch reconciliation", () => {
 				existing,
 			] }),
 		).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "forbidden" },
+			success: false,
+			code: "NotFoundError",
 		});
 		expect(
 			(

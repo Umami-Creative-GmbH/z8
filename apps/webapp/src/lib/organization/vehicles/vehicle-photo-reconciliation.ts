@@ -7,9 +7,9 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import type {
+import {
 	VehiclePhotoRefusal,
-	VehiclePhotoView,
+	type VehiclePhotoView,
 } from "./vehicle-photo-types";
 import {
 	findPhoto,
@@ -18,18 +18,19 @@ import {
 	photoView,
 } from "./vehicle-photos";
 
-export type ReconcilePhotoResult =
-	| { ok: true; photo: VehiclePhotoView | null }
-	| { ok: false; reason: VehiclePhotoRefusal };
-/** Check a stable identity before retrying a possibly completed binary request. */
+/**
+ * Check a stable identity before retrying a possibly completed binary request:
+ * the saved photo, or null when the upload may be retried. A lost, expired or
+ * blocked upload throws a `VehiclePhotoRefusal`.
+ */
 export async function reconcilePhotoUpload(
 	database: typeof db,
 	actor: PhotoActor,
 	vehicleId: string,
 	uploadId: string,
-): Promise<ReconcilePhotoResult> {
+): Promise<{ photo: VehiclePhotoView | null }> {
 	const intent = await ownedPhotoUpload(database, actor, vehicleId, uploadId);
-	if (!intent) return { ok: false, reason: "upload_not_found" };
+	if (!intent) throw new VehiclePhotoRefusal("upload_not_found");
 	const [vehicle] = await database
 		.select({ archivedAt: organizationVehicle.archivedAt })
 		.from(organizationVehicle)
@@ -39,9 +40,9 @@ export async function reconcilePhotoUpload(
 				eq(organizationVehicle.id, vehicleId),
 			),
 		);
-	if (!vehicle) return { ok: false, reason: "vehicle_not_found" };
+	if (!vehicle) throw new VehiclePhotoRefusal("vehicle_not_found");
 	const saved = await findPhoto(database, actor, vehicleId, uploadId);
-	if (saved) return { ok: true, photo: photoView(saved) };
+	if (saved) return { photo: photoView(saved) };
 	if (
 		intent.status !== "pending" ||
 		compareInstants(
@@ -49,7 +50,7 @@ export async function reconcilePhotoUpload(
 			systemClock.nowInstant(),
 		) <= 0
 	)
-		return { ok: false, reason: "upload_expired" };
-	if (vehicle.archivedAt) return { ok: false, reason: "vehicle_archived" };
-	return { ok: true, photo: null };
+		throw new VehiclePhotoRefusal("upload_expired");
+	if (vehicle.archivedAt) throw new VehiclePhotoRefusal("vehicle_archived");
+	return { photo: null };
 }

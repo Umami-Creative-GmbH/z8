@@ -124,7 +124,7 @@ let vehicleId: string;
 const origin = "https://z8.example.test";
 async function start(id = vehicleId) {
 	const result = await initiateVehiclePhotoUpload({ vehicleId: id });
-	if (!result.success || !result.data.ok)
+	if (!result.success)
 		throw new Error(JSON.stringify(result));
 	return result.data.uploadId;
 }
@@ -399,8 +399,9 @@ it("serializes simultaneous finalizations at twenty and repeated finalization do
 	if (!accepted) throw new Error("Missing accepted photo");
 	expect((await upload(accepted.id, Buffer.alloc(0))).status).toBe(200);
 	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "photo_limit" },
+		success: false,
+		code: "ValidationError",
+		refusal: "photo_limit",
 	});
 	expect(
 		(
@@ -453,8 +454,9 @@ it("permits organization admin access but denies other-organization and mismatch
 	);
 	expect((await read(id)).status).toBe(404);
 	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "vehicle_not_found" },
+		success: false,
+		code: "ValidationError",
+		refusal: "vehicle_not_found",
 	});
 	expect(await listVehiclePhotos({ vehicleId: vehicleId })).toMatchObject({ success: false });
 });
@@ -485,8 +487,9 @@ it("keeps archived photos viewable, refuses attachment, and allows fresh uploads
 	expect((await gallery()).archived).toBe(true);
 	expect((await read(saved)).status).toBe(200);
 	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "vehicle_archived" },
+		success: false,
+		code: "ValidationError",
+		refusal: "vehicle_archived",
 	});
 	expect((await upload(pending, await image())).status).toBe(409);
 	expect((await gallery()).photos).toHaveLength(1);

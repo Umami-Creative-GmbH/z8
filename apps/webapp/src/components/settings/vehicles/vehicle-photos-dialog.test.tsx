@@ -79,7 +79,7 @@ describe("vehicle photo settings", () => {
 		});
 		initiateUpload.mockResolvedValue({
 			success: true,
-			data: { ok: true, uploadIds: ["upload-1"] },
+			data: { uploadIds: ["upload-1"] },
 		});
 	});
 	afterEach(() => {

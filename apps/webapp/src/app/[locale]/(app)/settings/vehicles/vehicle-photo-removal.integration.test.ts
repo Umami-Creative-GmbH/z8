@@ -74,7 +74,7 @@ let vehicleId: string;
 const origin = "https://z8.example.test";
 async function start(id = vehicleId) {
 	const result = await initiateVehiclePhotoUpload({ vehicleId: id });
-	if (!result.success || !result.data.ok)
+	if (!result.success)
 		throw new Error(JSON.stringify(result));
 	return result.data.uploadId;
 }
@@ -165,7 +165,7 @@ it("removes a photo immediately, releases capacity and durably retries physical 
 	expect((await upload(id, await image())).status).toBe(200);
 	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
-		data: { ok: true, removed: true },
+		data: { removed: true },
 	});
 	expect((await gallery()).photos).toEqual([]);
 	expect((await read(id)).status).toBe(404);
@@ -229,23 +229,25 @@ it("denies other organizations and mismatched vehicle identities, while allowing
 	const otherVehicle = other.data.find((v) => v.id !== vehicleId);
 	if (!otherVehicle) throw new Error("Missing other vehicle");
 	expect(await removeVehiclePhoto({ vehicleId: otherVehicle.id, photoId: id })).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "photo_not_found" },
+		success: false,
+		code: "ValidationError",
+		refusal: "photo_not_found",
 	});
 	await admin.query(
 		"insert into member(id,organization_id,user_id,role,status,created_at) values('removal-other-membership','removal-photo-other','removal-photo-owner','owner','approved',now())",
 	);
 	harness.organizationId = "removal-photo-other";
 	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "vehicle_not_found" },
+		success: false,
+		code: "ValidationError",
+		refusal: "vehicle_not_found",
 	});
 	harness.organizationId = "removal-photo-org";
 	harness.userId = "removal-photo-admin";
 	expect((await read(id)).status).toBe(200);
 	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
-		data: { ok: true, removed: true },
+		data: { removed: true },
 	});
 });
 it("rechecks archival on stale removal and allows removal after restoration", async () => {
@@ -253,15 +255,16 @@ it("rechecks archival on stale removal and allows removal after restoration", as
 	expect((await upload(id, await image())).status).toBe(200);
 	await changeVehicles({ kind: "archive", vehicleId });
 	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "vehicle_archived" },
+		success: false,
+		code: "ValidationError",
+		refusal: "vehicle_archived",
 	});
 	expect((await gallery()).archived).toBe(true);
 	expect((await read(id)).status).toBe(200);
 	await changeVehicles({ kind: "restore", vehicleId });
 	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
-		data: { ok: true },
+		data: { removed: true },
 	});
 	expect((await read(id)).status).toBe(404);
 });
@@ -275,8 +278,8 @@ it("serializes repeated concurrent removal without duplicate audit and never rea
 	]);
 	expect(results).toEqual(
 		expect.arrayContaining([
-			{ success: true, data: { ok: true, removed: true } },
-			{ success: true, data: { ok: true, removed: false } },
+			{ success: true, data: { removed: true } },
+			{ success: true, data: { removed: false } },
 		]),
 	);
 	expect((await upload(id, bytes)).status).toBe(409);
@@ -298,12 +301,13 @@ it("releases one of twenty slots and preserves the surviving upload order", asyn
 		expect((await upload(id, bytes)).status).toBe(200);
 	}
 	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "photo_limit" },
+		success: false,
+		code: "ValidationError",
+		refusal: "photo_limit",
 	});
 	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: ids[4] })).toMatchObject({
 		success: true,
-		data: { ok: true },
+		data: { removed: true },
 	});
 	const replacement = await start();
 	expect((await upload(replacement, bytes)).status).toBe(200);
@@ -329,7 +333,7 @@ it("serializes a removal with an attaching upload and keeps the remaining photo 
 	const removal = removeVehiclePhoto({ vehicleId: vehicleId, photoId: id });
 	release();
 	expect((await attaching).status).toBe(200);
-	expect(await removal).toMatchObject({ success: true, data: { ok: true } });
+	expect(await removal).toMatchObject({ success: true, data: { removed: true } });
 	await runVehiclePhotoCleanupJob();
 	expect((await read(id)).status).toBe(404);
 	expect((await read(fresh)).status).toBe(200);
@@ -364,7 +368,7 @@ it("rolls back both removal and cleanup intent when the successful-change audit 
 	}
 	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
-		data: { ok: true },
+		data: { removed: true },
 	});
 });
 it("keeps whole-vehicle deletion coherent when an individual removal runs concurrently", async () => {
