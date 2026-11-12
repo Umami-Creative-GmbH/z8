@@ -87,15 +87,15 @@ describe("organization profile actions", () => {
 	it("saves a valid profile for the session's organization", async () => {
 		expect(await saveOrganizationProfile({ ...completeProfile, country: "de" })).toEqual({
 			success: true,
-			data: { ok: true, profile: completeProfile },
+			data: completeProfile,
 		});
 		expect(mocks.values).toHaveBeenCalledWith({ ...completeProfile, organizationId: "org-1" });
 	});
 
-	it("returns field errors as data without saving", async () => {
-		expect(await saveOrganizationProfile({ vatId: "not a vat id" })).toEqual({
-			success: true,
-			data: { ok: false, fieldErrors: { vatId: "invalidVatId" } },
+	it("refuses an invalid profile with a ValidationError without saving", async () => {
+		expect(await saveOrganizationProfile({ vatId: "not a vat id" })).toMatchObject({
+			success: false,
+			code: "ValidationError",
 		});
 		expect(mocks.values).not.toHaveBeenCalled();
 	});

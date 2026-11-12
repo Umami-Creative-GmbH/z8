@@ -38,7 +38,7 @@ beforeEach(() => {
 it("warns before leaving with unsaved edits and adopts the successfully saved profile as its baseline", async () => {
 	save.mockImplementation(async (profile) => ({
 		success: true,
-		data: { ok: true, profile },
+		data: profile,
 	}));
 	const { unmount } = render(
 		<OrganizationProfileCard
@@ -73,7 +73,7 @@ it("warns before leaving with unsaved edits and adopts the successfully saved pr
 it("lets an admin edit the registered address and save a partial profile with visible feedback", async () => {
 	save.mockImplementation(async (profile) => ({
 		success: true,
-		data: { ok: true, profile },
+		data: profile,
 	}));
 	render(
 		<OrganizationProfileCard
@@ -118,7 +118,7 @@ it("lets an admin edit the registered address and save a partial profile with vi
 it("shows accessible field errors, focuses the invalid field and allows correction", async () => {
 	save.mockImplementation(async (profile) => ({
 		success: true,
-		data: { ok: true, profile },
+		data: profile,
 	}));
 	render(
 		<OrganizationProfileCard
@@ -140,10 +140,11 @@ it("shows accessible field errors, focuses the invalid field and allows correcti
 	expect(screen.queryByRole("alert")).toBeNull();
 });
 
-it("presents field errors returned by the server and keeps the entered values", async () => {
+it("translates a profile the server refuses and keeps the entered values", async () => {
 	save.mockResolvedValue({
-		success: true,
-		data: { ok: false, fieldErrors: { vatId: "invalidVatId" } },
+		success: false,
+		code: "ValidationError",
+		error: "invalidVatId",
 	});
 	render(
 		<OrganizationProfileCard
@@ -151,8 +152,8 @@ it("presents field errors returned by the server and keeps the entered values", 
 		/>,
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
-	expect((await screen.findByRole("alert")).textContent).toContain(
-		"two-letter country prefix",
+	await waitFor(() =>
+		expect(toastError).toHaveBeenCalledWith("Check your input and try again."),
 	);
 	expect(screen.getByLabelText("VAT ID (optional)")).toHaveProperty(
 		"value",
@@ -161,9 +162,12 @@ it("presents field errors returned by the server and keeps the entered values", 
 	expect(refresh).not.toHaveBeenCalled();
 });
 
-it.each(["denied", "network"])(
+it.each([
+	["denied", "You do not have access to this setting."],
+	["network", "Could not save"],
+])(
 	"shows save failure feedback for a %s failure without losing edits",
-	async (failure) => {
+	async (failure, message) => {
 		if (failure === "network")
 			save.mockRejectedValue(new Error("Request failed"));
 		else
@@ -183,7 +187,7 @@ it.each(["denied", "network"])(
 		fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
 		await waitFor(() =>
 			expect(toastError).toHaveBeenCalledWith(
-				expect.stringContaining("Could not save"),
+				expect.stringContaining(message),
 			),
 		);
 		expect(screen.getByLabelText("City")).toHaveProperty("value", "Berlin");
@@ -232,7 +236,7 @@ it("loads saved details, prevents duplicate submissions while saving and lets th
 	await act(async () => {
 		finish({
 			success: true,
-			data: { ok: true, profile: EMPTY_ORGANIZATION_PROFILE },
+			data: EMPTY_ORGANIZATION_PROFILE,
 		});
 	});
 	await waitFor(() => expect(toastSuccess).toHaveBeenCalledOnce());

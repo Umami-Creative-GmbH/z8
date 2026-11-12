@@ -48,7 +48,8 @@ const textField = (max: number) =>
 		// biome-ignore lint/suspicious/noControlCharactersInRegex: Reject controls before PostgreSQL and single-line address rendering.
 		.regex(/^[^\u0000-\u001f\u007f]*$/, "invalidText");
 
-const profileSchema = z.object({
+/** A saved profile: every field optional, trimmed, codes upper-cased. Issue messages are ProfileFieldErrors. */
+export const organizationProfileSchema = z.object({
 	legalCompanyName: textField(300).default(""),
 	addressLine1: textField(300).default(""),
 	addressLine2: textField(300).default(""),
@@ -73,7 +74,7 @@ const profileSchema = z.object({
 
 /** The same optional-field contract is used by the form and authenticated action. */
 export function validateOrganizationProfile(input: unknown): ProfileSaveResult {
-	const parsed = profileSchema.safeParse(input);
+	const parsed = organizationProfileSchema.safeParse(input);
 	if (parsed.success) return { ok: true, profile: parsed.data };
 	const fieldErrors: ProfileFieldErrors = {};
 	for (const issue of parsed.error.issues) {

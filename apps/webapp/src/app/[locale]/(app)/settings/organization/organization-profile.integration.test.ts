@@ -234,10 +234,7 @@ it("validates supplied profile values at the authenticated boundary without repl
 				...emptyProfile,
 				[field]: value,
 			}),
-		).toMatchObject({
-			success: true,
-			data: { ok: false, fieldErrors: { [field]: expect.any(String) } },
-		});
+		).toMatchObject({ success: false, code: "ValidationError", error: expect.any(String) });
 	}
 	expect(await getOrganizationProfile()).toMatchObject({
 		success: true,
@@ -250,15 +247,12 @@ it("accepts omitted VAT and address values when saving a partial or empty profil
 		await saveOrganizationProfile({
 			legalCompanyName: "Legal entity",
 		}),
-	).toMatchObject({ success: true, data: { ok: true } });
+	).toMatchObject({ success: true });
 	expect(await getOrganizationProfile()).toEqual({
 		success: true,
 		data: { ...emptyProfile, legalCompanyName: "Legal entity" },
 	});
-	expect(await saveOrganizationProfile({})).toMatchObject({
-		success: true,
-		data: { ok: true },
-	});
+	expect(await saveOrganizationProfile({})).toMatchObject({ success: true });
 	expect(await getOrganizationProfile()).toEqual({
 		success: true,
 		data: emptyProfile,
@@ -284,14 +278,14 @@ it("lets an admin save all fields, reload them, then clear the entire profile", 
 			country: "de",
 			vatId: "de123456789",
 		}),
-	).toEqual({ success: true, data: { ok: true, profile } });
+	).toEqual({ success: true, data: profile });
 	expect(await getOrganizationProfile()).toEqual({
 		success: true,
 		data: profile,
 	});
 	expect(
 		await saveOrganizationProfile(emptyProfile),
-	).toMatchObject({ success: true, data: { ok: true } });
+	).toMatchObject({ success: true });
 	expect(await getOrganizationProfile()).toEqual({
 		success: true,
 		data: emptyProfile,
@@ -401,10 +395,7 @@ it("preserves display name, operational geography and Stripe billing data when s
 		},
 		emptyProfile,
 	]) {
-		expect(await saveOrganizationProfile(profile)).toMatchObject({
-			success: true,
-			data: { ok: true },
-		});
+		expect(await saveOrganizationProfile(profile)).toMatchObject({ success: true });
 		expect(await unrelated()).toEqual(before);
 	}
 });
@@ -416,7 +407,7 @@ it("keeps unrelated display-name edits owner-only when an admin can edit the leg
 			...emptyProfile,
 			legalCompanyName: "Legal entity",
 		}),
-	).toMatchObject({ success: true, data: { ok: true } });
+	).toMatchObject({ success: true });
 	const { updateOrganizationDetails } = await import("./actions");
 	expect(
 		await updateOrganizationDetails({ name: "Renamed" }),
