@@ -627,7 +627,7 @@ describe("reminder lead time setting", () => {
 
 	it("refuses a lead time outside 1 to 365 days", async () => {
 		session.userId = userOf("owner");
-		expect(await savePersonnelFileExpiryLeadDaysAction({ leadDays: 0 })).toEqual({
+		expect(await savePersonnelFileExpiryLeadDaysAction({ leadDays: 0 })).toMatchObject({
 			success: false,
 			error: "Enter a lead time between 1 and 365 days.",
 		});

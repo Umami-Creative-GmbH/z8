@@ -14,6 +14,10 @@ import { Switch } from "@/components/ui/switch";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
+import {
 	CLOCKING_REMINDER_ROLES,
 	type ClockingReminderRole,
 	type ClockingReminderSettings,
@@ -25,7 +29,8 @@ import { useRouter } from "@/navigation";
 interface OrganizationClockingRemindersCardProps {
 	organizationId: string;
 	settings: ClockingReminderSettings;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 /** Whole minutes from `min` to the maximum, or `null`. */
@@ -40,14 +45,14 @@ const leadFromField = (value: string) => minutesFromField(value, MIN_BREAK_DUE_L
 export function OrganizationClockingRemindersCard({
 	organizationId,
 	settings,
-	currentMemberRole,
+	settingsAccess,
 }: OrganizationClockingRemindersCardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const helpId = useId();
 	const errorId = useId();
 	const submitting = useRef(false);
-	const canEdit = currentMemberRole === "owner" || currentMemberRole === "admin";
+	const canEdit = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const invalidGrace = t(
 		"organization.clockingReminders.invalidMinutes",
 		"Enter whole minutes from 0 to 1440.",

@@ -10,8 +10,9 @@ import type {
 	EquipmentSetupChange,
 	EquipmentSetupView,
 } from "@/lib/organization/equipment/contracts";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { EquipmentArchiveTarget } from "./equipment-archive-dialog";
-import { equipmentRefusalMessage } from "./equipment-feedback";
+import { EQUIPMENT_SETUP_REFUSALS } from "./equipment-refusals";
 
 function successMessage(
 	kind: EquipmentSetupChange["kind"],
@@ -80,7 +81,7 @@ export function useEquipmentSetup(initialData: EquipmentSetupView) {
 		}
 		if (!result.data.ok) {
 			setPending(false);
-			toast.error(equipmentRefusalMessage(result.data.reason, t));
+			toast.error(actionErrorMessage(t, { refusal: result.data.reason }, EQUIPMENT_SETUP_REFUSALS));
 			return false;
 		}
 		const refreshed = await reload();

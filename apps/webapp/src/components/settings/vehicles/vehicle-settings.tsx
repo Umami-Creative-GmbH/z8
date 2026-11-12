@@ -33,9 +33,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { VehicleChangeInput } from "@/lib/organization/vehicles/vehicle-rules";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { VehicleDialog } from "./vehicle-dialog";
 import { VehiclePhotosDialog } from "./vehicle-photos-dialog";
-import { vehicleRefusalMessage } from "./vehicle-refusal-message";
+import { VEHICLE_REFUSALS } from "./vehicle-refusals";
 
 interface VehicleSettingsProps {
 	initialData: VehicleSettingsData;
@@ -72,7 +73,7 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 			toast.success(t("settings.vehicles.saved", "Vehicle saved"));
 			return true;
 		}
-		if (refusal !== "failed") toast.error(vehicleRefusalMessage(t, refusal));
+		if (refusal !== "failed") toast.error(actionErrorMessage(t, { refusal }, VEHICLE_REFUSALS));
 		return false;
 	}
 
@@ -96,7 +97,7 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 						: t("settings.vehicles.deleted", "Vehicle deleted"),
 				);
 			} else if (refusal !== "failed") {
-				toast.error(vehicleRefusalMessage(t, refusal));
+				toast.error(actionErrorMessage(t, { refusal }, VEHICLE_REFUSALS));
 			}
 			setDeletion(null);
 		};

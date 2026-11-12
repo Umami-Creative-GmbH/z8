@@ -24,16 +24,12 @@ import {
 import {
 	chooseGoLiveGroupTeamsAction,
 	createGoLiveExclusionAction,
-	type GoLiveGroupActionResult,
 	liftGoLiveExclusionAction,
 } from "./go-live-group-actions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-function refusalMessage(
-	t: Translate,
-	result: Extract<GoLiveGroupActionResult, { success: false }>,
-) {
+function refusalMessage(t: Translate, result: { refusal?: string }) {
 	const messages: Record<GoLiveGroupRefusal, string> = {
 		team_not_found: t(
 			"settings.implementationChecklist.goLive.group.errors.teamNotFound",
@@ -60,8 +56,8 @@ function refusalMessage(
 			"This exclusion has already ended.",
 		),
 	};
-	return result.refusal
-		? messages[result.refusal]
+	return result.refusal && result.refusal in messages
+		? messages[result.refusal as GoLiveGroupRefusal]
 		: t(
 				"settings.implementationChecklist.goLive.group.errors.updateFailed",
 				"Failed to update the go-live group.",

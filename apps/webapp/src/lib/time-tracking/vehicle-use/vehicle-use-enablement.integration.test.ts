@@ -262,17 +262,17 @@ describe("vehicle use enablement on PostgreSQL", () => {
 			actAs(userId);
 			expect(await admin.saveVehicleUseSettingsAction({ enabled: true })).toMatchObject({
 				success: false,
-				code: "admin_only",
+				code: "AuthorizationError",
 			});
 			expect(
 				await admin.setVehicleUseAssignmentAction({
 					target: { type: "organization" },
 					mode: "asked",
 				}),
-			).toMatchObject({ success: false, code: "admin_only" });
+			).toMatchObject({ success: false, code: "AuthorizationError" });
 			expect(await admin.getVehicleUseAdminDataAction()).toMatchObject({
 				success: false,
-				code: "admin_only",
+				code: "AuthorizationError",
 			});
 		}
 
@@ -297,19 +297,19 @@ describe("vehicle use enablement on PostgreSQL", () => {
 				target: { type: "team", teamId: ids.foreignTeam },
 				mode: "expected",
 			}),
-		).toMatchObject({ success: false, code: "team_not_found" });
+		).toMatchObject({ success: false, refusal: "team_not_found" });
 		expect(
 			await admin.setVehicleUseAssignmentAction({
 				target: { type: "employee", employeeId: ids.foreign },
 				mode: "expected",
 			}),
-		).toMatchObject({ success: false, code: "employee_not_found" });
+		).toMatchObject({ success: false, refusal: "employee_not_found" });
 		expect(
 			await admin.setVehicleUseAssignmentAction({
 				target: { type: "organization" },
 				mode: "sometimes" as never,
 			}),
-		).toMatchObject({ success: false, code: "invalid_mode" });
+		).toMatchObject({ success: false, code: "ValidationError" });
 
 		const ownAssignment = await assign({ type: "organization" }, "expected");
 		// The other organization's owner neither sees nor removes it, and its employees stay off.
@@ -321,7 +321,7 @@ describe("vehicle use enablement on PostgreSQL", () => {
 		});
 		expect(
 			await admin.removeVehicleUseAssignmentAction({ assignmentId: ownAssignment }),
-		).toMatchObject({ success: false, code: "assignment_not_found" });
+		).toMatchObject({ success: false, refusal: "assignment_not_found" });
 		expect(await resolve(ids.foreign, ids.otherOrganization)).toBe("off");
 		// An employee of another organization resolves to off here, too.
 		expect(await resolve(ids.foreign)).toBe("off");
@@ -343,7 +343,7 @@ describe("vehicle use enablement on PostgreSQL", () => {
 				target: { type: "employee", employeeId: ids.office },
 				mode: "expected",
 			}),
-		).toMatchObject({ success: false, code: "former_employee" });
+		).toMatchObject({ success: false, refusal: "former_employee" });
 		await assign({ type: "employee", employeeId: ids.driver }, "off");
 
 		// Offered: the current roster, and the former employee whose row still names them.

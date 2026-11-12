@@ -5,13 +5,15 @@ import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
 import type { OrganizationProfile } from "@/lib/organization/profile";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { OrganizationTab } from "./organization-tab";
 
 interface OrganizationsPageClientProps {
 	organizationProfile: OrganizationProfile;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	defaultNotificationLanguage: string;
 	billableCurrency: BillableCurrency | null;
 	drivingLicence: DrivingLicenceFeatureState;
@@ -22,7 +24,7 @@ export function OrganizationsPageClient({
 	organizationProfile,
 	organization,
 	memberCount,
-	currentMemberRole,
+	settingsAccess,
 	defaultNotificationLanguage,
 	billableCurrency,
 	drivingLicence,
@@ -47,7 +49,7 @@ export function OrganizationsPageClient({
 					organizationProfile={organizationProfile}
 					organization={organization}
 					memberCount={memberCount}
-					currentMemberRole={currentMemberRole}
+					settingsAccess={settingsAccess}
 					defaultNotificationLanguage={defaultNotificationLanguage}
 					billableCurrency={billableCurrency}
 					drivingLicence={drivingLicence}

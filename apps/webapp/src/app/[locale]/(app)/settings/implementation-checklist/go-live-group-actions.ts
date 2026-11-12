@@ -1,8 +1,10 @@
 "use server";
 
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { z } from "zod";
+import { DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
 import { IMPLEMENTATION_CHECKLIST_PATH } from "@/lib/implementation-checklist/definition";
 import {
 	chooseGoLiveGroupTeams,
@@ -11,13 +13,7 @@ import {
 	type GoLiveGroupRefusal,
 	liftGoLiveExclusion,
 } from "@/lib/implementation-checklist/go-live/group-settings";
-import { createLogger } from "@/lib/logger";
-
-const logger = createLogger("GoLiveGroupActions");
-
-export type GoLiveGroupActionResult =
-	| { success: true }
-	| { success: false; error: string; refusal?: GoLiveGroupRefusal };
+import { organizationAction } from "@/lib/organization-action/organization-action";
 
 const REFUSAL_MESSAGES: Record<GoLiveGroupRefusal, string> = {
 	team_not_found: "One of the chosen teams no longer exists.",
@@ -28,67 +24,79 @@ const REFUSAL_MESSAGES: Record<GoLiveGroupRefusal, string> = {
 	exclusion_not_found: "This exclusion has already ended.",
 };
 
+const UPDATE_FAILED = "Failed to update the go-live group.";
+
 /**
  * Runs one go-live group command for the caller's active organization, as the
- * caller. Org admins only: anyone else is redirected before anything runs.
+ * caller. A refusal fails as a `ValidationError` whose `refusal` the client
+ * translates; a failed write keeps its cause out of the message.
  */
-async function runGoLiveGroupCommand(
-	command: (scope: {
-		organizationId: string;
-		actorUserId: string;
-	}) => Promise<GoLiveGroupCommandResult>,
-): Promise<GoLiveGroupActionResult> {
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
-	let result: GoLiveGroupCommandResult;
-	try {
-		result = await command({ organizationId, actorUserId: authContext.user.id });
-	} catch (error) {
-		logger.error({ organizationId, error }, "Go-live group command failed");
-		return { success: false, error: "Failed to update the go-live group." };
-	}
-	if (!result.ok) return refused(result.refusal);
-	revalidatePath(IMPLEMENTATION_CHECKLIST_PATH);
-	return { success: true };
-}
-
-function refused(refusal: GoLiveGroupRefusal): GoLiveGroupActionResult {
-	return { success: false, refusal, error: REFUSAL_MESSAGES[refusal] };
+function runGoLiveGroupCommand(
+	name: string,
+	command: (db: DatabaseClient) => Promise<GoLiveGroupCommandResult>,
+) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const result = yield* dbService
+			.query(name, () => command(dbService.db))
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({ message: UPDATE_FAILED, operation: name, cause: error.cause }),
+				),
+			);
+		if (!result.ok) {
+			return yield* Effect.fail(
+				new ValidationError({ message: REFUSAL_MESSAGES[result.refusal], refusal: result.refusal }),
+			);
+		}
+		revalidatePath(IMPLEMENTATION_CHECKLIST_PATH);
+	});
 }
 
 /** Narrows the go-live group to the chosen teams, or to the whole roster with none. */
-export async function chooseGoLiveGroupTeamsAction(
-	teamIds: string[],
-): Promise<GoLiveGroupActionResult> {
-	return runGoLiveGroupCommand(async (scope) => {
-		if (!Array.isArray(teamIds) || !teamIds.every((id) => typeof id === "string")) {
-			return { ok: false, refusal: "team_not_found" };
-		}
-		return chooseGoLiveGroupTeams(db, { ...scope, teamIds });
-	});
-}
+export const chooseGoLiveGroupTeamsAction = organizationAction(
+	{
+		name: "goLiveGroup.chooseTeams",
+		requires: "orgAdmin",
+		schema: z.array(z.string(REFUSAL_MESSAGES.team_not_found), REFUSAL_MESSAGES.team_not_found),
+	},
+	({ actor, organizationId, input: teamIds }) =>
+		runGoLiveGroupCommand("goLiveGroup.chooseTeams", (db) =>
+			chooseGoLiveGroupTeams(db, { organizationId, actorUserId: actor.userId, teamIds }),
+		),
+);
 
 /** Leaves one employee out of the go-live group, for a required reason. */
-export async function createGoLiveExclusionAction(input: {
-	employeeId: string;
-	reason: string;
-}): Promise<GoLiveGroupActionResult> {
-	return runGoLiveGroupCommand(async (scope) => {
-		if (typeof input?.employeeId !== "string") return { ok: false, refusal: "employee_not_found" };
-		if (typeof input.reason !== "string") return { ok: false, refusal: "reason_required" };
-		return createGoLiveExclusion(db, {
-			...scope,
-			employeeId: input.employeeId,
-			reason: input.reason,
-		});
-	});
-}
+export const createGoLiveExclusionAction = organizationAction(
+	{
+		name: "goLiveGroup.createExclusion",
+		requires: "orgAdmin",
+		schema: z.object({
+			employeeId: z.string(REFUSAL_MESSAGES.employee_not_found),
+			reason: z.string(REFUSAL_MESSAGES.reason_required),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		runGoLiveGroupCommand("goLiveGroup.createExclusion", (db) =>
+			createGoLiveExclusion(db, {
+				organizationId,
+				actorUserId: actor.userId,
+				employeeId: input.employeeId,
+				reason: input.reason,
+			}),
+		),
+);
 
 /** Lifts a go-live exclusion, bringing the employee back into the checks. */
-export async function liftGoLiveExclusionAction(
-	exclusionId: string,
-): Promise<GoLiveGroupActionResult> {
-	return runGoLiveGroupCommand(async (scope) => {
-		if (typeof exclusionId !== "string") return { ok: false, refusal: "exclusion_not_found" };
-		return liftGoLiveExclusion(db, { ...scope, exclusionId });
-	});
-}
+export const liftGoLiveExclusionAction = organizationAction(
+	{
+		name: "goLiveGroup.liftExclusion",
+		requires: "orgAdmin",
+		schema: z.string(REFUSAL_MESSAGES.exclusion_not_found),
+	},
+	({ actor, organizationId, input: exclusionId }) =>
+		runGoLiveGroupCommand("goLiveGroup.liftExclusion", (db) =>
+			liftGoLiveExclusion(db, { organizationId, actorUserId: actor.userId, exclusionId }),
+		),
+);

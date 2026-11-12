@@ -11,6 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { parseAutoClockOutDuration } from "@/lib/time-tracking/automatic-clock-out/policy";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 import { useRouter } from "@/navigation";
@@ -18,7 +22,8 @@ import { useRouter } from "@/navigation";
 interface OrganizationAutoClockOutCardProps {
 	organizationId: string;
 	settings: AutoClockOutSettings;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 function durationFromFields(hours: string, minutes: string) {
@@ -29,14 +34,14 @@ function durationFromFields(hours: string, minutes: string) {
 export function OrganizationAutoClockOutCard({
 	organizationId,
 	settings,
-	currentMemberRole,
+	settingsAccess,
 }: OrganizationAutoClockOutCardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const helpId = useId();
 	const errorId = useId();
 	const submitting = useRef(false);
-	const canEdit = currentMemberRole === "owner" || currentMemberRole === "admin";
+	const canEdit = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const invalidDuration = t(
 		"organization.autoClockOut.invalidDuration",
 		"Enter a valid duration: whole hours and 0–59 minutes, totaling at least one minute.",
