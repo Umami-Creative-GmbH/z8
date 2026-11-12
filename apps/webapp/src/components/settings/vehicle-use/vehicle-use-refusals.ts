@@ -2,7 +2,7 @@ import type { RefusalMessages } from "@/lib/organization-action/action-error-mes
 import type { VehicleUseErrorCode } from "@/lib/time-tracking/vehicle-use/errors";
 
 /** Vehicle use enablement's own texts for `actionErrorMessage`. */
-export const VEHICLE_USE_REFUSALS = {
+const OWN_REFUSALS = {
 	admin_only: [
 		"settings.vehicleUse.error.adminOnly",
 		"Only organization owners and admins can manage vehicle use.",
@@ -31,3 +31,9 @@ export const VEHICLE_USE_REFUSALS = {
 	invalid_mode: ["settings.vehicleUse.error.invalidMode", "Choose a mode for the assignment."],
 	failed: ["settings.vehicleUse.error.failed", "Something went wrong. Try again."],
 } satisfies RefusalMessages<VehicleUseErrorCode>;
+
+/** A refused settings access is the feature's own admin-only refusal (#1618). */
+export const VEHICLE_USE_REFUSALS = {
+	...OWN_REFUSALS,
+	AuthorizationError: OWN_REFUSALS.admin_only,
+};

@@ -5,7 +5,7 @@ import type { KioskSettingsErrorCode } from "@/lib/time-tracking/kiosk/kiosk-set
  * Kiosk settings' own texts for `actionErrorMessage`. A `failed` refusal has
  * none: callers pass their own "could not …" fallback.
  */
-export const KIOSK_SETTINGS_REFUSALS = {
+const OWN_REFUSALS = {
 	admin_only: [
 		"settings.kiosks.errors.adminOnly",
 		"Only organization owners and admins can manage kiosks.",
@@ -24,3 +24,9 @@ export const KIOSK_SETTINGS_REFUSALS = {
 	],
 	invalid_selection: ["settings.kiosks.errors.invalidSelection", "Check your input and try again."],
 } satisfies RefusalMessages<Exclude<KioskSettingsErrorCode, "failed">>;
+
+/** A refused settings access is the feature's own admin-only refusal (#1618). */
+export const KIOSK_SETTINGS_REFUSALS = {
+	...OWN_REFUSALS,
+	AuthorizationError: OWN_REFUSALS.admin_only,
+};
