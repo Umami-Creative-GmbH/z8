@@ -53,3 +53,29 @@ export function requireUuid(
 export type PositionCaptureActionResult<T> =
 	| { success: true; data: T }
 	| { success: false; error: string; code: PositionCaptureErrorCode };
+
+const POSITION_CAPTURE_ERROR_CODES: Record<PositionCaptureErrorCode, true> = {
+	sign_in_required: true,
+	employee_profile_required: true,
+	admin_only: true,
+	invalid_work_period: true,
+	work_period_not_found: true,
+	positions_forbidden: true,
+	invalid_notice: true,
+	notice_changed: true,
+	purpose_required: true,
+	purpose_too_long: true,
+	retention_out_of_range: true,
+	invalid_target: true,
+	invalid_selection: true,
+	team_not_found: true,
+	employee_not_found: true,
+	former_employee: true,
+	assignment_not_found: true,
+	failed: true,
+};
+
+/** Whether a settings action's `refusal` is a position capture code (`refusalCodeOf`). */
+export function isPositionCaptureErrorCode(value: string): value is PositionCaptureErrorCode {
+	return Object.hasOwn(POSITION_CAPTURE_ERROR_CODES, value);
+}

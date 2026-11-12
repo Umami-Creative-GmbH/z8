@@ -39,6 +39,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { kioskSettingsRefusalCode } from "@/lib/time-tracking/kiosk/kiosk-settings-errors";
 import { kioskSettingsErrorMessage } from "./kiosk-format";
 
 const NAME_MAX_LENGTH = 100;
@@ -119,7 +120,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 					});
 					if (!result.success) {
 						toast.error(
-							kioskSettingsErrorMessage(t, result.code) ??
+							kioskSettingsErrorMessage(t, kioskSettingsRefusalCode(result)) ??
 								t("settings.kiosks.createFailed", "The kiosk could not be created"),
 						);
 						return;
@@ -141,7 +142,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						kioskSettingsErrorMessage(t, result.code) ??
+						kioskSettingsErrorMessage(t, kioskSettingsRefusalCode(result)) ??
 							t("settings.kiosks.saveFailed", "The kiosk could not be saved"),
 					);
 					return;

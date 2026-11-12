@@ -16,7 +16,6 @@ import {
 } from "@/db/schema";
 import { env } from "@/env";
 import { organizationSettingsForDisplay } from "@/lib/auth/organization-display";
-import type { AuthContext } from "@/lib/auth-helpers";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { loadManualConfirmations } from "@/lib/implementation-checklist/confirmation/load";
 import {
@@ -79,19 +78,12 @@ export interface ImplementationChecklistViewModel {
 	};
 }
 
-type ImplementationChecklistActionFailure = { success: false; error: string };
-type ImplementationChecklistMutationSuccess = { success: true };
-type ImplementationChecklistQuerySuccess<T> = { success: true; data: T };
-
-export type ImplementationChecklistActionResult<T = void> = [T] extends [undefined]
-	? ImplementationChecklistMutationSuccess | ImplementationChecklistActionFailure
-	: ImplementationChecklistQuerySuccess<T> | ImplementationChecklistActionFailure;
-
 type Detector = () => Promise<boolean>;
 
+/** An org admin the caller has already authorized, and their active organization. */
 export interface ImplementationChecklistLoaderContext {
-	authContext: AuthContext;
 	organizationId: string;
+	userId: string;
 }
 
 async function detectorComplete(detector: Detector): Promise<boolean> {
@@ -219,17 +211,15 @@ async function detectCompleteIds(
 }
 
 export async function loadImplementationChecklistForContext({
-	authContext,
 	organizationId,
-}: ImplementationChecklistLoaderContext): Promise<
-	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
-> {
+	userId,
+}: ImplementationChecklistLoaderContext): Promise<ImplementationChecklistViewModel> {
 	const [
 		detectedCompleteIds,
 		{ manualCompleteIds, manualConfirmations },
 		{ goLive, firstWorkflows },
 	] = await Promise.all([
-		detectCompleteIds(organizationId, authContext.user.id),
+		detectCompleteIds(organizationId, userId),
 		loadManualConfirmations(db, organizationId),
 		runGoLive(organizationId).then(async (goLive) => ({
 			goLive,
@@ -245,17 +235,14 @@ export async function loadImplementationChecklistForContext({
 	});
 
 	return {
-		success: true,
-		data: {
-			items,
-			...summarizeImplementationChecklist(items),
-			goLive: {
-				readiness: resolveGoLiveReadiness(goLive.run.results, goLive.run.memberCount),
-				checkedAt: goLive.checkedAt,
-				memberCount: goLive.run.memberCount,
-				group: goLive.group,
-				rehearsalCandidates: goLiveRehearsalCandidates(goLive.run.group?.members ?? []),
-			},
+		items,
+		...summarizeImplementationChecklist(items),
+		goLive: {
+			readiness: resolveGoLiveReadiness(goLive.run.results, goLive.run.memberCount),
+			checkedAt: goLive.checkedAt,
+			memberCount: goLive.run.memberCount,
+			group: goLive.group,
+			rehearsalCandidates: goLiveRehearsalCandidates(goLive.run.group?.members ?? []),
 		},
 	};
 }

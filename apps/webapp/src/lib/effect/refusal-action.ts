@@ -1,5 +1,7 @@
 import "server-only";
 
+import { Effect } from "effect";
+import { type DatabaseError, ValidationError } from "./errors";
 import { runServerActionSafe } from "./result";
 import { type DatabaseClient, DatabaseService } from "./services/database.service";
 
@@ -72,4 +74,30 @@ export async function runRefusalAction<
 		} as RefusalActionResult<T, Code, Details>;
 	}
 	return { success: true, data: outcome.data };
+}
+
+/**
+ * Promise-style store work inside an `organizationAction` handler (#1592): runs
+ * `work` with the client of the runtime's `DatabaseService`. A refusal of the
+ * given class thrown by it (after any transaction it ran in has rolled back)
+ * fails as a `ValidationError` whose `refusal` is the stable code, which the
+ * client translates (`refusalCodeOf`); its details are not carried. Any other
+ * failure stays a `DatabaseError`.
+ */
+export function refusalWork<Code extends string, T>(
+	name: string,
+	refusal: abstract new (...args: never[]) => ActionRefusal<Code>,
+	work: (db: DatabaseClient) => Promise<T>,
+): Effect.Effect<T, ValidationError | DatabaseError, DatabaseService> {
+	return DatabaseService.use((dbService) =>
+		dbService.query(name, () => work(dbService.db)).pipe(
+			Effect.catch((error) =>
+				Effect.fail(
+					error.cause instanceof refusal
+						? new ValidationError({ message: error.cause.message, refusal: error.cause.code })
+						: error,
+				),
+			),
+		),
+	);
 }

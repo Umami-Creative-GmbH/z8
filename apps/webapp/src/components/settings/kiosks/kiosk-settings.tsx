@@ -26,6 +26,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { kioskSettingsRefusalCode } from "@/lib/time-tracking/kiosk/kiosk-settings-errors";
 import { type KioskConfirmation, KioskConfirmationDialog } from "./kiosk-confirmation-dialog";
 import { KioskFormDialog } from "./kiosk-form-dialog";
 import { formatKioskInstant, kioskSettingsErrorMessage } from "./kiosk-format";
@@ -58,7 +59,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 				const result = await issueKioskPairingCodeAction({ kioskId: kiosk.id });
 				if (!result.success) {
 					toast.error(
-						kioskSettingsErrorMessage(t, result.code) ??
+						kioskSettingsErrorMessage(t, kioskSettingsRefusalCode(result)) ??
 							t("settings.kiosks.pairFailed", "A new pairing code could not be issued"),
 					);
 					return;
@@ -68,7 +69,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 				const result = await revokeKioskAction({ kioskId: kiosk.id });
 				if (!result.success) {
 					toast.error(
-						kioskSettingsErrorMessage(t, result.code) ??
+						kioskSettingsErrorMessage(t, kioskSettingsRefusalCode(result)) ??
 							t("settings.kiosks.revokeFailed", "The kiosk could not be revoked"),
 					);
 					return;

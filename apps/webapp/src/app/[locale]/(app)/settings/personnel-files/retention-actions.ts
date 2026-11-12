@@ -1,16 +1,13 @@
 "use server";
 
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
-import { requirePersonnelFileAdministrator } from "@/lib/personnel-file/administrator";
+import { z } from "zod";
+import { ValidationError } from "@/lib/effect/errors";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { personnelFileStoreWork, whilePersonnelFilesOn } from "@/lib/personnel-file/administration";
 import { DOCUMENT_CATEGORIES, type DocumentCategory } from "@/lib/personnel-file/document.types";
-import {
-	loadRetentionPeriods,
-	type RetentionPeriodsInput,
-	saveRetentionPeriods,
-} from "@/lib/personnel-file/retention-store";
+import { loadRetentionPeriods, saveRetentionPeriods } from "@/lib/personnel-file/retention-store";
 import {
 	type RetentionSuggestion,
 	SUGGESTED_RETENTION_PERIODS,
@@ -28,55 +25,71 @@ export interface PersonnelFileRetentionSettings {
 	suggestions: Record<DocumentCategory, Pick<RetentionSuggestion, "years">>;
 }
 
-export async function getPersonnelFileRetentionSettingsAction(): Promise<
-	ServerActionResult<PersonnelFileRetentionSettings>
-> {
-	try {
-		const access = await requirePersonnelFileAdministrator();
-		if ("error" in access) return { success: false, error: access.error };
-		const stored = await loadRetentionPeriods(db, access.organizationId);
-		const periods = {} as Record<DocumentCategory, number | null>;
-		const suggestions = {} as Record<DocumentCategory, Pick<RetentionSuggestion, "years">>;
-		for (const category of DOCUMENT_CATEGORIES) {
-			periods[category] = stored[category] ?? null;
-			suggestions[category] = { years: SUGGESTED_RETENTION_PERIODS[category].years };
-		}
-		return { success: true, data: { periods, suggestions } };
-	} catch (error) {
-		logger.error({ error }, "Failed to load the retention periods");
-		return { success: false, error: "Failed to load the retention periods" };
-	}
-}
+const OFF_MESSAGE = "Only owners and admins can manage personnel file officers";
+const INVALID_PERIOD_MESSAGE =
+	"Enter a retention period in whole years between 1 and 100, or leave it empty.";
 
-export async function savePersonnelFileRetentionSettingsAction(input: {
-	periods: RetentionPeriodsInput;
-}): Promise<ServerActionResult<{ changed: DocumentCategory[] }>> {
-	try {
-		const access = await requirePersonnelFileAdministrator();
-		if ("error" in access) return { success: false, error: access.error };
-		const periods: RetentionPeriodsInput = {};
-		for (const category of DOCUMENT_CATEGORIES) {
-			const value = input?.periods?.[category];
-			if (value === undefined) continue;
-			periods[category] = value === null ? null : (value as number);
-		}
-		const result = await saveRetentionPeriods(db, {
-			organizationId: access.organizationId,
-			actorUserId: access.userId,
-			periods,
-		});
-		if (result.kind === "invalid") {
-			return {
-				success: false,
-				error: "Enter a retention period in whole years between 1 and 100, or leave it empty.",
-				code: `invalid_${result.category}`,
-			};
-		}
-		revalidatePath("/settings/personnel-files");
-		revalidatePath("/personnel-files");
-		return { success: true, data: { changed: result.changed } };
-	} catch (error) {
-		logger.error({ error }, "Failed to save the retention periods");
-		return { success: false, error: "Failed to save the retention periods" };
-	}
-}
+/** Periods by category: a number of years, null for none, or absent to leave it. */
+const retentionSettingsSchema = z.strictObject({
+	periods: z.partialRecord(
+		z.enum(DOCUMENT_CATEGORIES),
+		z.number(INVALID_PERIOD_MESSAGE).nullable(),
+		"Choose a retention period per document category.",
+	),
+});
+
+export const getPersonnelFileRetentionSettingsAction = organizationAction(
+	{ name: "personnelFile.retentionSettings", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		whilePersonnelFilesOn(
+			organizationId,
+			OFF_MESSAGE,
+			personnelFileStoreWork(
+				"personnelFile.retentionSettings",
+				async (db): Promise<PersonnelFileRetentionSettings> => {
+					const stored = await loadRetentionPeriods(db, organizationId);
+					const periods = {} as Record<DocumentCategory, number | null>;
+					const suggestions = {} as Record<DocumentCategory, Pick<RetentionSuggestion, "years">>;
+					for (const category of DOCUMENT_CATEGORIES) {
+						periods[category] = stored[category] ?? null;
+						suggestions[category] = { years: SUGGESTED_RETENTION_PERIODS[category].years };
+					}
+					return { periods, suggestions };
+				},
+			),
+		),
+);
+
+export const savePersonnelFileRetentionSettingsAction = organizationAction(
+	{
+		name: "personnelFile.saveRetentionSettings",
+		requires: "orgAdmin",
+		schema: retentionSettingsSchema,
+	},
+	({ actor, organizationId, input }) =>
+		whilePersonnelFilesOn(
+			organizationId,
+			OFF_MESSAGE,
+			Effect.gen(function* () {
+				const result = yield* personnelFileStoreWork("personnelFile.saveRetentionSettings", (db) =>
+					saveRetentionPeriods(db, {
+						organizationId,
+						actorUserId: actor.userId,
+						periods: input.periods,
+					}),
+				);
+				if (result.kind === "invalid") {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: INVALID_PERIOD_MESSAGE,
+							field: `periods.${result.category}`,
+							refusal: `invalid_${result.category}`,
+						}),
+					);
+				}
+				revalidatePath("/settings/personnel-files");
+				revalidatePath("/personnel-files");
+				return { changed: result.changed };
+			}),
+		),
+);

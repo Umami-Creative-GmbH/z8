@@ -1,29 +1,44 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
-	requireAccess: vi.fn(),
+	caller: null as StubCaller | null,
 	loadGoLiveViewer: vi.fn(),
 	rehearse: vi.fn(),
 }));
 
-vi.mock("@/db", () => ({ db: { marker: "db" } }));
-vi.mock("@/lib/auth-helpers", () => ({ requireOrgAdminSettingsAccess: mocks.requireAccess }));
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, { db: { marker: "db" } }),
+	);
+});
 vi.mock("./queries", () => ({ loadGoLiveViewer: mocks.loadGoLiveViewer }));
 vi.mock("@/lib/implementation-checklist/go-live/rehearsal", () => ({
 	rehearseGoLiveMember: mocks.rehearse,
 }));
 
-import { rehearseGoLiveMemberAction } from "./go-live-rehearsal-actions";
+const { rehearseGoLiveMemberAction } = await import("./go-live-rehearsal-actions");
 
 const viewer = { asOf: { timezone: "Europe/Berlin" }, fixLink: () => null };
+
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "owner",
+	employee: null,
+};
+const scopedManager: StubCaller = {
+	...orgAdmin,
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "manager", former: false },
+};
 
 describe("rehearseGoLiveMemberAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.requireAccess.mockResolvedValue({
-			authContext: { user: { id: "user-1" } },
-			organizationId: "org-1",
-		});
+		mocks.caller = orgAdmin;
 		mocks.loadGoLiveViewer.mockResolvedValue(viewer);
 	});
 
@@ -46,26 +61,29 @@ describe("rehearseGoLiveMemberAction", () => {
 		);
 	});
 
-	it("never rehearses for someone who is not an org admin", async () => {
-		mocks.requireAccess.mockRejectedValue(new Error("NEXT_REDIRECT"));
+	it("refuses a scoped manager, one level below org admin, without rehearsing", async () => {
+		mocks.caller = scopedManager;
 
-		await expect(rehearseGoLiveMemberAction("employee:e-1")).rejects.toThrow("NEXT_REDIRECT");
+		await expect(rehearseGoLiveMemberAction("employee:e-1")).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
 		expect(mocks.rehearse).not.toHaveBeenCalled();
 	});
 
 	it("refuses a member who isn't checked", async () => {
 		mocks.rehearse.mockResolvedValue({ ok: false, refusal: "member_not_checked" });
 
-		await expect(rehearseGoLiveMemberAction("employee:elsewhere")).resolves.toEqual({
+		await expect(rehearseGoLiveMemberAction("employee:elsewhere")).resolves.toMatchObject({
 			success: false,
-			error: "member_not_checked",
+			refusal: "member_not_checked",
 		});
 	});
 
 	it.each([42, null, "x".repeat(201)])("refuses a malformed member key %#", async (memberKey) => {
-		await expect(rehearseGoLiveMemberAction(memberKey as string)).resolves.toEqual({
+		await expect(rehearseGoLiveMemberAction(memberKey as string)).resolves.toMatchObject({
 			success: false,
-			error: "member_not_checked",
+			code: "ValidationError",
 		});
 		expect(mocks.rehearse).not.toHaveBeenCalled();
 	});
@@ -73,9 +91,10 @@ describe("rehearseGoLiveMemberAction", () => {
 	it("is unavailable, never a partial trace, when a lookup fails", async () => {
 		mocks.rehearse.mockRejectedValue(new Error("connection terminated"));
 
-		await expect(rehearseGoLiveMemberAction("employee:e-1")).resolves.toEqual({
-			success: false,
-			error: "unavailable",
-		});
+		const result = await rehearseGoLiveMemberAction("employee:e-1");
+
+		expect(result).toMatchObject({ success: false });
+		expect(result).not.toHaveProperty("data");
+		expect(result).not.toHaveProperty("refusal");
 	});
 });

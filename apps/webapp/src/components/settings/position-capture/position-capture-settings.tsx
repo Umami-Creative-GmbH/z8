@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { refusalCodeOf } from "@/lib/effect/refusal-code";
+import { isPositionCaptureErrorCode } from "@/lib/time-tracking/position-capture/errors";
 import {
 	POSITION_PURPOSE_MAX_LENGTH,
 	POSITION_RETENTION_MAX_DAYS,
@@ -92,7 +94,7 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						positionCaptureErrorMessage(t, result.code) ??
+						positionCaptureErrorMessage(t, refusalCodeOf(result, isPositionCaptureErrorCode, "admin_only")) ??
 							t(
 								"settings.positionCapture.saveFailed",
 								"Position capture settings were not saved",
@@ -335,7 +337,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						positionCaptureErrorMessage(t, result.code) ??
+						positionCaptureErrorMessage(t, refusalCodeOf(result, isPositionCaptureErrorCode, "admin_only")) ??
 							t(
 								"settings.positionCapture.assignmentFailed",
 								"The assignment was not saved",
@@ -355,7 +357,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						positionCaptureErrorMessage(t, result.code) ??
+						positionCaptureErrorMessage(t, refusalCodeOf(result, isPositionCaptureErrorCode, "admin_only")) ??
 							t(
 								"settings.positionCapture.assignmentRemoveFailed",
 								"The assignment was not removed",

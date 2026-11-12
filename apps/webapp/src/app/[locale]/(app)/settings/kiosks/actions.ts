@@ -1,21 +1,21 @@
 "use server";
 
 import { and, asc, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { location } from "@/db/schema";
 import { withAuditTrail } from "@/lib/audit-trail";
-import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
-import { runRefusalAction } from "@/lib/effect/refusal-action";
+import { ValidationError } from "@/lib/effect/errors";
+import { refusalWork } from "@/lib/effect/refusal-action";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import type { KioskTimeSource } from "@/lib/time-tracking/clocking/types";
 import type {
 	KioskFrozenAction,
 	KioskFrozenRefusalReason,
 } from "@/lib/time-tracking/kiosk/frozen-command";
 import { listKioskFrozenRefusals } from "@/lib/time-tracking/kiosk/frozen-refusal-store";
-import {
-	type KioskSettingsActionResult,
-	KioskSettingsRefusal,
-} from "@/lib/time-tracking/kiosk/kiosk-settings-errors";
+import { KioskSettingsRefusal } from "@/lib/time-tracking/kiosk/kiosk-settings-errors";
 import {
 	createKiosk,
 	issueKioskPairingCode,
@@ -108,178 +108,187 @@ export type UpdateKioskInput = {
 
 const SETTINGS_PATH = "/settings/kiosks";
 
-export async function getKioskAdminDataAction(): Promise<
-	KioskSettingsActionResult<KioskAdminData>
-> {
-	return runRefusalAction("kiosk.adminData", KioskSettingsRefusal, async (db) => {
-		const { organizationId } = await requireKioskAdmin();
-		const [kiosks, locations, organizationTimezone, admission, refusals] = await Promise.all([
-			listKiosks(db, organizationId),
-			db
-				.select({ id: location.id, name: location.name })
-				.from(location)
-				.where(and(eq(location.organizationId, organizationId), eq(location.isActive, true)))
-				.orderBy(asc(location.name)),
-			loadOrganizationTimezone(db, organizationId),
-			readAppendAdmission(db, organizationId),
-			listKioskFrozenRefusals(db, { organizationId }),
-		]);
-		return {
-			kiosks: kiosks.map((row) => ({
-				id: row.id,
-				name: row.name,
-				locationId: row.locationId,
-				locationName: row.locationName,
-				timezone: row.timezone,
-				boardEnabled: row.boardEnabled,
-				offlineModeEnabled: row.offlineModeEnabled,
-				badgeScannerEnabled: row.badgeScannerEnabled,
-				badgeCameraEnabled: row.badgeCameraEnabled,
-				nfcFobReaderEnabled: row.nfcFobReaderEnabled,
-				status: row.status,
-				pairingCodeExpiresAt: row.pairingCodeExpiresAt?.toISOString() ?? null,
-				pairedAt: row.pairedAt?.toISOString() ?? null,
-				lastSeenAt: row.lastSeenAt?.toISOString() ?? null,
-				revokedAt: row.revokedAt?.toISOString() ?? null,
-			})),
-			locations,
-			organizationTimezone,
-			organizationAdopted: admission === "append",
-			refusals: refusals.map((row) => ({
-				...row,
-				claimedAt: row.claimedAt.toISOString(),
-				refusedAt: row.refusedAt.toISOString(),
-			})),
-		};
-	});
-}
+/**
+ * Kiosk and location IDs are plain strings here: a malformed one is refused
+ * like another organization's, as not found (`notFound`). The store checks
+ * names and zones itself.
+ */
+const kioskIdSchema = z.strictObject({ kioskId: z.string("Kiosk not found.") });
 
-export async function createKioskAction(
-	input: CreateKioskInput,
-): Promise<KioskSettingsActionResult<IssuedPairingCodeData>> {
-	return runRefusalAction("kiosk.create", KioskSettingsRefusal, async (db) => {
-		const { organizationId, userId } = await requireKioskAdmin();
-		const locationId = parseUuid(input?.locationId, "location_not_found");
-		const created = await withAuditTrail((audit) =>
-			db.transaction((tx) =>
-				createKiosk(tx, audit, {
-					organizationId,
-					actorUserId: userId,
-					name: input?.name,
-					locationId,
-					timezone: input?.timezone,
-				}),
-			),
-		);
-		revalidatePath(SETTINGS_PATH);
-		return {
-			kioskId: created.kioskId,
-			pairingCode: created.pairingCode,
-			expiresAt: created.expiresAt.toISOString(),
-		};
-	});
-}
+const createKioskSchema = z.strictObject({
+	name: z.string("Enter a name."),
+	locationId: z.string("Choose a location."),
+	timezone: z.string("Choose a time zone."),
+}) satisfies z.ZodType<CreateKioskInput>;
 
-export async function updateKioskAction(
-	input: UpdateKioskInput,
-): Promise<KioskSettingsActionResult<{ kioskId: string }>> {
-	return runRefusalAction("kiosk.update", KioskSettingsRefusal, async (db) => {
-		const { organizationId, userId } = await requireKioskAdmin();
-		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
-		const locationId =
-			input?.locationId === undefined
-				? undefined
-				: parseUuid(input.locationId, "location_not_found");
-		if (input?.boardEnabled !== undefined && typeof input.boardEnabled !== "boolean") {
-			throw new KioskSettingsRefusal("invalid_selection", "The board switch must be on or off.");
-		}
-		if (input?.offlineModeEnabled !== undefined && typeof input.offlineModeEnabled !== "boolean") {
-			throw new KioskSettingsRefusal("invalid_selection", "Offline mode must be on or off.");
-		}
-		if (
-			input?.badgeScannerEnabled !== undefined &&
-			typeof input.badgeScannerEnabled !== "boolean"
-		) {
-			throw new KioskSettingsRefusal("invalid_selection", "Scanner input must be on or off.");
-		}
-		if (input?.badgeCameraEnabled !== undefined && typeof input.badgeCameraEnabled !== "boolean") {
-			throw new KioskSettingsRefusal("invalid_selection", "Camera input must be on or off.");
-		}
-		if (
-			input?.nfcFobReaderEnabled !== undefined &&
-			typeof input.nfcFobReaderEnabled !== "boolean"
-		) {
-			throw new KioskSettingsRefusal("invalid_selection", "The NFC fob reader must be on or off.");
-		}
-		await withAuditTrail((audit) =>
-			db.transaction((tx) =>
-				updateKiosk(tx, audit, {
-					organizationId,
-					actorUserId: userId,
-					kioskId,
-					change: {
-						name: input.name,
-						locationId,
-						timezone: input.timezone,
-						boardEnabled: input.boardEnabled,
-						offlineModeEnabled: input.offlineModeEnabled,
-						badgeScannerEnabled: input.badgeScannerEnabled,
-						badgeCameraEnabled: input.badgeCameraEnabled,
-						nfcFobReaderEnabled: input.nfcFobReaderEnabled,
-					},
-				}),
-			),
-		);
-		revalidatePath(SETTINGS_PATH);
-		return { kioskId };
-	});
-}
+const updateKioskSchema = z.strictObject({
+	kioskId: z.string("Kiosk not found."),
+	name: z.string("Enter a name.").optional(),
+	locationId: z.string("Choose a location.").optional(),
+	timezone: z.string("Choose a time zone.").optional(),
+	boardEnabled: z.boolean("The board switch must be on or off.").optional(),
+	offlineModeEnabled: z.boolean("Offline mode must be on or off.").optional(),
+	badgeScannerEnabled: z.boolean("Scanner input must be on or off.").optional(),
+	badgeCameraEnabled: z.boolean("Camera input must be on or off.").optional(),
+	nfcFobReaderEnabled: z.boolean("The NFC fob reader must be on or off.").optional(),
+}) satisfies z.ZodType<UpdateKioskInput>;
+
+export const getKioskAdminDataAction = organizationAction(
+	{ name: "kiosk.adminData", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		refusalWork("kiosk.adminData", KioskSettingsRefusal, async (db): Promise<KioskAdminData> => {
+			const [kiosks, locations, organizationTimezone, admission, refusals] = await Promise.all([
+				listKiosks(db, organizationId),
+				db
+					.select({ id: location.id, name: location.name })
+					.from(location)
+					.where(and(eq(location.organizationId, organizationId), eq(location.isActive, true)))
+					.orderBy(asc(location.name)),
+				loadOrganizationTimezone(db, organizationId),
+				readAppendAdmission(db, organizationId),
+				listKioskFrozenRefusals(db, { organizationId }),
+			]);
+			return {
+				kiosks: kiosks.map((row) => ({
+					id: row.id,
+					name: row.name,
+					locationId: row.locationId,
+					locationName: row.locationName,
+					timezone: row.timezone,
+					boardEnabled: row.boardEnabled,
+					offlineModeEnabled: row.offlineModeEnabled,
+					badgeScannerEnabled: row.badgeScannerEnabled,
+					badgeCameraEnabled: row.badgeCameraEnabled,
+					nfcFobReaderEnabled: row.nfcFobReaderEnabled,
+					status: row.status,
+					pairingCodeExpiresAt: row.pairingCodeExpiresAt?.toISOString() ?? null,
+					pairedAt: row.pairedAt?.toISOString() ?? null,
+					lastSeenAt: row.lastSeenAt?.toISOString() ?? null,
+					revokedAt: row.revokedAt?.toISOString() ?? null,
+				})),
+				locations,
+				organizationTimezone,
+				organizationAdopted: admission === "append",
+				refusals: refusals.map((row) => ({
+					...row,
+					claimedAt: row.claimedAt.toISOString(),
+					refusedAt: row.refusedAt.toISOString(),
+				})),
+			};
+		}),
+);
+
+export const createKioskAction = organizationAction(
+	{ name: "kiosk.create", requires: "orgAdmin", schema: createKioskSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const locationId = yield* notFound(input.locationId, "location_not_found");
+			const created = yield* refusalWork("kiosk.create", KioskSettingsRefusal, (db) =>
+				withAuditTrail((audit) =>
+					db.transaction((tx) =>
+						createKiosk(tx, audit, {
+							organizationId,
+							actorUserId: actor.userId,
+							name: input.name,
+							locationId,
+							timezone: input.timezone,
+						}),
+					),
+				),
+			);
+			revalidatePath(SETTINGS_PATH);
+			return {
+				kioskId: created.kioskId,
+				pairingCode: created.pairingCode,
+				expiresAt: created.expiresAt.toISOString(),
+			} satisfies IssuedPairingCodeData;
+		}),
+);
+
+export const updateKioskAction = organizationAction(
+	{ name: "kiosk.update", requires: "orgAdmin", schema: updateKioskSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const kioskId = yield* notFound(input.kioskId, "kiosk_not_found");
+			const locationId =
+				input.locationId === undefined
+					? undefined
+					: yield* notFound(input.locationId, "location_not_found");
+			yield* refusalWork("kiosk.update", KioskSettingsRefusal, (db) =>
+				withAuditTrail((audit) =>
+					db.transaction((tx) =>
+						updateKiosk(tx, audit, {
+							organizationId,
+							actorUserId: actor.userId,
+							kioskId,
+							change: {
+								name: input.name,
+								locationId,
+								timezone: input.timezone,
+								boardEnabled: input.boardEnabled,
+								offlineModeEnabled: input.offlineModeEnabled,
+								badgeScannerEnabled: input.badgeScannerEnabled,
+								badgeCameraEnabled: input.badgeCameraEnabled,
+								nfcFobReaderEnabled: input.nfcFobReaderEnabled,
+							},
+						}),
+					),
+				),
+			);
+			revalidatePath(SETTINGS_PATH);
+			return { kioskId };
+		}),
+);
 
 /** Issues a new pairing code; a paired kiosk's token is rotated away at once. */
-export async function issueKioskPairingCodeAction(input: {
-	kioskId: string;
-}): Promise<KioskSettingsActionResult<IssuedPairingCodeData>> {
-	return runRefusalAction("kiosk.issuePairingCode", KioskSettingsRefusal, async (db) => {
-		const { organizationId, userId } = await requireKioskAdmin();
-		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
-		const issued = await withAuditTrail((audit) =>
-			db.transaction((tx) =>
-				issueKioskPairingCode(tx, audit, { organizationId, actorUserId: userId, kioskId }),
-			),
-		);
-		revalidatePath(SETTINGS_PATH);
-		return { kioskId, pairingCode: issued.pairingCode, expiresAt: issued.expiresAt.toISOString() };
-	});
-}
+export const issueKioskPairingCodeAction = organizationAction(
+	{ name: "kiosk.issuePairingCode", requires: "orgAdmin", schema: kioskIdSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const kioskId = yield* notFound(input.kioskId, "kiosk_not_found");
+			const issued = yield* refusalWork("kiosk.issuePairingCode", KioskSettingsRefusal, (db) =>
+				withAuditTrail((audit) =>
+					db.transaction((tx) =>
+						issueKioskPairingCode(tx, audit, {
+							organizationId,
+							actorUserId: actor.userId,
+							kioskId,
+						}),
+					),
+				),
+			);
+			revalidatePath(SETTINGS_PATH);
+			return {
+				kioskId,
+				pairingCode: issued.pairingCode,
+				expiresAt: issued.expiresAt.toISOString(),
+			} satisfies IssuedPairingCodeData;
+		}),
+);
 
-export async function revokeKioskAction(input: {
-	kioskId: string;
-}): Promise<KioskSettingsActionResult<{ kioskId: string }>> {
-	return runRefusalAction("kiosk.revoke", KioskSettingsRefusal, async (db) => {
-		const { organizationId, userId } = await requireKioskAdmin();
-		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
-		await withAuditTrail((audit) =>
-			db.transaction((tx) =>
-				revokeKiosk(tx, audit, { organizationId, actorUserId: userId, kioskId }),
-			),
-		);
-		revalidatePath(SETTINGS_PATH);
-		return { kioskId };
-	});
-}
+export const revokeKioskAction = organizationAction(
+	{ name: "kiosk.revoke", requires: "orgAdmin", schema: kioskIdSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const kioskId = yield* notFound(input.kioskId, "kiosk_not_found");
+			yield* refusalWork("kiosk.revoke", KioskSettingsRefusal, (db) =>
+				withAuditTrail((audit) =>
+					db.transaction((tx) =>
+						revokeKiosk(tx, audit, { organizationId, actorUserId: actor.userId, kioskId }),
+					),
+				),
+			);
+			revalidatePath(SETTINGS_PATH);
+			return { kioskId };
+		}),
+);
 
-/** Organization owners and admins of the active organization only. */
-function requireKioskAdmin() {
-	return requireOrganizationAdmin(
-		() =>
-			new KioskSettingsRefusal(
-				"admin_only",
-				"Only organization owners and admins can manage kiosks.",
-			),
-	);
-}
-
-function parseUuid(value: unknown, code: "kiosk_not_found" | "location_not_found"): string {
-	if (!isUuid(value)) throw new KioskSettingsRefusal(code, "Not found in this organization.");
-	return value;
+/** A malformed ID names no row of the organization: refused as not found. */
+function notFound(
+	value: string,
+	refusal: "kiosk_not_found" | "location_not_found",
+): Effect.Effect<string, ValidationError> {
+	return isUuid(value)
+		? Effect.succeed(value)
+		: Effect.fail(new ValidationError({ message: "Not found in this organization.", refusal }));
 }

@@ -23,7 +23,8 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import type { VehicleUseErrorCode } from "@/lib/time-tracking/vehicle-use/errors";
+import { refusalCodeOf } from "@/lib/effect/refusal-code";
+import { isVehicleUseErrorCode, type VehicleUseErrorCode } from "@/lib/time-tracking/vehicle-use/errors";
 import type { VehicleUseMode } from "@/lib/time-tracking/vehicle-use/policy";
 
 interface VehicleUseSettingsProps {
@@ -108,7 +109,7 @@ export function VehicleUseSwitch({ initialEnabled }: { initialEnabled: boolean }
 			const result = await saveVehicleUseSettingsAction({ enabled: next });
 			if (!result.success) {
 				setEnabled(!next);
-				toast.error(vehicleUseErrorMessage(t, result.code));
+				toast.error(vehicleUseErrorMessage(t, refusalCodeOf(result, isVehicleUseErrorCode, "admin_only")));
 				return;
 			}
 			toast.success(
@@ -196,7 +197,7 @@ export function VehicleUseAssignments({ data }: VehicleUseSettingsProps) {
 			onSave={async (target, mode) => {
 				const result = await setVehicleUseAssignmentAction({ target, mode });
 				if (!result.success) {
-					toast.error(vehicleUseErrorMessage(t, result.code));
+					toast.error(vehicleUseErrorMessage(t, refusalCodeOf(result, isVehicleUseErrorCode, "admin_only")));
 					return false;
 				}
 				toast.success(
@@ -208,7 +209,7 @@ export function VehicleUseAssignments({ data }: VehicleUseSettingsProps) {
 			onRemove={async (assignmentId) => {
 				const result = await removeVehicleUseAssignmentAction({ assignmentId });
 				if (!result.success) {
-					toast.error(vehicleUseErrorMessage(t, result.code));
+					toast.error(vehicleUseErrorMessage(t, refusalCodeOf(result, isVehicleUseErrorCode, "admin_only")));
 					return false;
 				}
 				toast.success(

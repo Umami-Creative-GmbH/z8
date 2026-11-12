@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
 	revalidatePath: vi.fn(),
-	requireAccess: vi.fn(),
 	findFirst: {
 		holiday: vi.fn(),
 		holidayAssignment: vi.fn(),
@@ -42,7 +43,19 @@ vi.mock("next/cache", () => ({
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/env", () => ({ env: { BILLING_ENABLED: "false" } }));
+vi.mock("@/env", async (importOriginal) => ({
+	env: { ...(await importOriginal<typeof import("@/env")>()).env, BILLING_ENABLED: "false" },
+}));
+
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { db } = await import("@/db");
+	// The real query mapping, so a rejected write is a `DatabaseError` as in production.
+	const { makeDatabaseService } = await import("@/lib/effect/services/database.service");
+	const { query } = makeDatabaseService(db);
+	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db, query }));
+});
 
 vi.mock("@/lib/implementation-checklist/go-live/run", () => ({
 	goLiveAsOf: (instant: unknown, timezone: string) => ({ instant, timezone, today: null }),
@@ -70,7 +83,8 @@ vi.mock("@/lib/implementation-checklist/go-live/first-workflows-evidence", () =>
 	loadFirstWorkflowEvidence: mocks.loadFirstWorkflowEvidence,
 }));
 
-vi.mock("drizzle-orm", () => ({
+vi.mock("drizzle-orm", async (importOriginal) => ({
+	...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: vi.fn((...conditions: unknown[]) => ({ and: conditions })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	ne: vi.fn((left: unknown, right: unknown) => ({ ne: [left, right] })),
@@ -99,7 +113,8 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-vi.mock("@/db/schema", () => ({
+vi.mock("@/db/schema", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/db/schema")>()),
 	discordBotConfig: {
 		organizationId: "discord.organizationId",
 		setupStatus: "discord.setupStatus",
@@ -146,16 +161,24 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-vi.mock("@/lib/auth-helpers", () => ({
-	requireOrgAdminSettingsAccess: mocks.requireAccess,
-}));
-
-import {
+const {
 	getImplementationChecklist,
 	markImplementationChecklistItemComplete,
 	markImplementationChecklistItemIncomplete,
-} from "./actions";
-import { loadImplementationChecklistForContext } from "./queries";
+} = await import("./actions");
+const { loadImplementationChecklistForContext } = await import("./queries");
+
+const orgAdmin: StubCaller = {
+	userId: "user-admin",
+	activeOrganizationId: "org-active",
+	membershipRole: "admin",
+	employee: { id: "employee-admin", role: "admin", former: false },
+};
+const scopedManager: StubCaller = {
+	...orgAdmin,
+	membershipRole: "member",
+	employee: { id: "employee-admin", role: "manager", former: false },
+};
 
 const checklistPath = "/settings/implementation-checklist";
 
@@ -187,11 +210,7 @@ const goLiveGroup = {
 describe("implementation checklist actions", () => {
 	beforeEach(() => {
 		mocks.revalidatePath.mockReset();
-		mocks.requireAccess.mockReset();
-		mocks.requireAccess.mockResolvedValue({
-			authContext: { user: { id: "user-admin" } },
-			organizationId: "org-active",
-		});
+		mocks.caller = orgAdmin;
 
 		for (const findFirst of Object.values(mocks.findFirst)) {
 			findFirst.mockReset();
@@ -278,25 +297,14 @@ describe("implementation checklist actions", () => {
 	it("loads statuses from an existing org-admin context without resolving access again", async () => {
 		mocks.findFirst.employee.mockResolvedValue({ id: "employee-1" });
 
+		mocks.caller = null;
+
 		const result = await loadImplementationChecklistForContext({
-			authContext: {
-				user: {
-					id: "user-from-page",
-					email: "admin@example.com",
-					name: "Admin User",
-					canCreateOrganizations: true,
-				},
-				session: { activeOrganizationId: "org-from-page" },
-				employee: null,
-			},
+			userId: "user-from-page",
 			organizationId: "org-from-page",
 		});
 
-		expect(result.success).toBe(true);
-		if (!result.success) {
-			throw new Error(result.error);
-		}
-		expect(mocks.requireAccess).not.toHaveBeenCalled();
+		expect(result.items.length).toBeGreaterThan(0);
 		expect(mocks.findFirst.employee).toHaveBeenCalledWith(
 			expect.objectContaining({
 				where: expect.objectContaining({
@@ -475,10 +483,13 @@ describe("implementation checklist actions", () => {
 		expect(result.data.goLive.readiness).toEqual({ status: "ready", warnings: [] });
 	});
 
-	it("never runs go-live checks for a viewer without org-admin settings access", async () => {
-		mocks.requireAccess.mockRejectedValue(new Error("NEXT_REDIRECT"));
+	it("refuses a scoped manager, one level below org admin, before any go-live check runs", async () => {
+		mocks.caller = scopedManager;
 
-		await expect(getImplementationChecklist()).rejects.toThrow("NEXT_REDIRECT");
+		await expect(getImplementationChecklist()).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
 		expect(mocks.runGoLiveChecks).not.toHaveBeenCalled();
 		expect(mocks.findFirst.organization).not.toHaveBeenCalled();
 		expect(mocks.loadFirstWorkflowEvidence).not.toHaveBeenCalled();
@@ -536,20 +547,37 @@ describe("implementation checklist actions", () => {
 		});
 	});
 
-	it("requires access before rejecting invalid or non-manual item ids for manual mutations", async () => {
-		expect(await markImplementationChecklistItemComplete("not-a-real-item")).toEqual({
+	it("refuses a scoped manager, one level below org admin, before confirming or unconfirming", async () => {
+		mocks.caller = scopedManager;
+
+		expect(await markImplementationChecklistItemComplete("approval-rules")).toMatchObject({
 			success: false,
+			code: "AuthorizationError",
+		});
+		expect(await markImplementationChecklistItemIncomplete("approval-rules")).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(mocks.confirm).not.toHaveBeenCalled();
+		expect(mocks.unconfirm).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid or non-manual item ids for manual mutations", async () => {
+		expect(await markImplementationChecklistItemComplete("not-a-real-item")).toMatchObject({
+			success: false,
+			code: "ValidationError",
 			error: "Unknown implementation checklist item",
 		});
-		expect(await markImplementationChecklistItemComplete("holidays")).toEqual({
+		expect(await markImplementationChecklistItemComplete("holidays")).toMatchObject({
 			success: false,
+			code: "ValidationError",
 			error: "Implementation checklist item cannot be manually completed",
 		});
-		expect(await markImplementationChecklistItemIncomplete("employee-import")).toEqual({
+		expect(await markImplementationChecklistItemIncomplete("employee-import")).toMatchObject({
 			success: false,
+			code: "ValidationError",
 			error: "Implementation checklist item cannot be manually completed",
 		});
-		expect(mocks.requireAccess).toHaveBeenCalledTimes(3);
 		expect(mocks.confirm).not.toHaveBeenCalled();
 		expect(mocks.unconfirm).not.toHaveBeenCalled();
 	});
@@ -557,7 +585,7 @@ describe("implementation checklist actions", () => {
 	it("marks a manual item complete with active organization and completing user", async () => {
 		const result = await markImplementationChecklistItemComplete("approval-rules");
 
-		expect(result).toEqual({ success: true });
+		expect(result).toEqual({ success: true, data: undefined });
 		expect(mocks.confirm).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-active",
 			itemId: "approval-rules",
@@ -624,7 +652,7 @@ describe("implementation checklist actions", () => {
 
 		const result = await markImplementationChecklistItemComplete("approval-rules");
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			success: false,
 			error: "Failed to update checklist item.",
 		});
@@ -634,7 +662,7 @@ describe("implementation checklist actions", () => {
 	it("marks a manual item incomplete for the active organization only", async () => {
 		const result = await markImplementationChecklistItemIncomplete("payroll-readiness");
 
-		expect(result).toEqual({ success: true });
+		expect(result).toEqual({ success: true, data: undefined });
 		expect(mocks.unconfirm).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-active",
 			itemId: "payroll-readiness",
@@ -648,7 +676,7 @@ describe("implementation checklist actions", () => {
 
 		const result = await markImplementationChecklistItemIncomplete("payroll-readiness");
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			success: false,
 			error: "Failed to update checklist item.",
 		});

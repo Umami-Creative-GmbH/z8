@@ -32,3 +32,20 @@ export class VehicleUseRefusal extends Error {
 export type VehicleUseActionResult<T> =
 	| { success: true; data: T }
 	| { success: false; error: string; code: VehicleUseErrorCode };
+
+const VEHICLE_USE_ERROR_CODES: Record<VehicleUseErrorCode, true> = {
+	admin_only: true,
+	invalid_target: true,
+	invalid_selection: true,
+	invalid_mode: true,
+	team_not_found: true,
+	employee_not_found: true,
+	former_employee: true,
+	assignment_not_found: true,
+	failed: true,
+};
+
+/** Whether a settings action's `refusal` is a vehicle use code (`refusalCodeOf`). */
+export function isVehicleUseErrorCode(value: string): value is VehicleUseErrorCode {
+	return Object.hasOwn(VEHICLE_USE_ERROR_CODES, value);
+}

@@ -158,7 +158,8 @@ describe("PositionCaptureSettings", () => {
 		saveMock.mockResolvedValue({
 			success: false,
 			error: "diagnostic text from the server",
-			code: "retention_out_of_range",
+			code: "ValidationError",
+			refusal: "retention_out_of_range",
 		});
 		render(
 			<PositionCaptureSettings

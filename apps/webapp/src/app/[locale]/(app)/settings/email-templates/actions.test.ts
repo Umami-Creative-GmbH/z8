@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
 	conditions: [] as unknown[],
 	deleteWhere: undefined as unknown,
 	insertValues: undefined as unknown,
 	revalidatePath: vi.fn(),
-	requireAccess: vi.fn(),
 	sendEmail: vi.fn(),
+	findMany: vi.fn(),
+	userFindFirst: vi.fn(),
 	templates: [] as Array<Record<string, unknown>>,
 }));
 
@@ -14,7 +17,8 @@ vi.mock("next/cache", () => ({
 	revalidatePath: mocks.revalidatePath,
 }));
 
-vi.mock("drizzle-orm", () => ({
+vi.mock("drizzle-orm", async (importOriginal) => ({
+	...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: vi.fn((...conditions: unknown[]) => {
 		mocks.conditions.push(...conditions);
 		return { and: conditions };
@@ -22,45 +26,39 @@ vi.mock("drizzle-orm", () => ({
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 }));
 
-vi.mock("@/db", () => ({
-	db: {
-		delete: vi.fn(() => ({
-			where: vi.fn(async (where: unknown) => {
-				mocks.deleteWhere = where;
-			}),
-		})),
-		insert: vi.fn(() => ({
-			values: vi.fn((values: unknown) => {
-				mocks.insertValues = values;
-				return {
-					onConflictDoUpdate: vi.fn(async () => undefined),
-				};
-			}),
-		})),
-		query: {
-			organizationEmailTemplate: {
-				findMany: vi.fn(async () => mocks.templates),
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db: {
+				delete: vi.fn(() => ({
+					where: vi.fn(async (where: unknown) => {
+						mocks.deleteWhere = where;
+					}),
+				})),
+				insert: vi.fn(() => ({
+					values: vi.fn((values: unknown) => {
+						mocks.insertValues = values;
+						return {
+							onConflictDoUpdate: vi.fn(async () => undefined),
+						};
+					}),
+				})),
+				query: {
+					organizationEmailTemplate: { findMany: mocks.findMany },
+					user: { findFirst: mocks.userFindFirst },
+				},
 			},
-		},
-	},
-}));
-
-vi.mock("@/db/schema", () => ({
-	organizationEmailTemplate: {
-		isEnabled: "isEnabled",
-		organizationId: "organizationId",
-		templateKey: "templateKey",
-	},
-}));
-
-vi.mock("@/lib/auth-helpers", () => ({
-	requireOrgAdminSettingsAccess: mocks.requireAccess,
-}));
+		}),
+	);
+});
 
 vi.mock("@/lib/email/email-service", () => ({
 	sendEmail: mocks.sendEmail,
 }));
 
+import { organizationEmailTemplate } from "@/db/schema";
 import { validateEmailTemplateInput } from "@/lib/email/template-settings";
 import {
 	listEmailTemplates,
@@ -69,17 +67,46 @@ import {
 	sendEmailTemplateTest,
 } from "./actions";
 
+const orgAdmin: StubCaller = {
+	userId: "user_1",
+	activeOrganizationId: "org_1",
+	membershipRole: "admin",
+	employee: null,
+};
+
+/** A scoped manager: one level below the org admin these actions require. */
+const scopedManager: StubCaller = {
+	userId: "user_2",
+	activeOrganizationId: "org_1",
+	membershipRole: "member",
+	employee: { id: "employee_2", role: "manager", former: false },
+};
+
+const validDraft = {
+	templateKey: "password-reset" as const,
+	subject: "Reset {{userName}}",
+	html: "<p>{{resetUrl}}</p>",
+	editorDocument: { root: { type: "email" } },
+};
+
+/** The listed templates of a successful `listEmailTemplates` call. */
+async function listed() {
+	const result = await listEmailTemplates();
+	if (!result.success) throw new Error(result.error);
+	return result.data;
+}
+
 describe("email template settings actions", () => {
 	beforeEach(() => {
 		mocks.conditions = [];
 		mocks.deleteWhere = undefined;
 		mocks.insertValues = undefined;
+		mocks.caller = orgAdmin;
 		mocks.revalidatePath.mockReset();
-		mocks.requireAccess.mockReset();
-		mocks.requireAccess.mockResolvedValue({
-			authContext: { user: { id: "user_1", email: "admin@example.com" } },
-			organizationId: "org_1",
-		});
+		mocks.findMany.mockReset();
+		mocks.findMany.mockImplementation(async () => mocks.templates);
+		mocks.userFindFirst.mockReset();
+		mocks.userFindFirst.mockResolvedValue({ email: "admin@example.com" });
 		mocks.sendEmail.mockReset();
 		mocks.sendEmail.mockResolvedValue({ success: true });
 		mocks.templates = [];
@@ -157,11 +184,12 @@ describe("email template settings actions", () => {
 	});
 
 	it("lists registry entries with system-prefilled drafts when no override exists", async () => {
-		const templates = await listEmailTemplates();
+		const templates = await listed();
 		const passwordReset = templates.find((entry) => entry.key === "password-reset");
 
-		expect(mocks.requireAccess).toHaveBeenCalledTimes(1);
-		expect(mocks.conditions).toContainEqual({ eq: ["organizationId", "org_1"] });
+		expect(mocks.conditions).toContainEqual({
+			eq: [organizationEmailTemplate.organizationId, "org_1"],
+		});
 		expect(passwordReset?.override).toBeNull();
 		expect(passwordReset?.starterDraftPlainText).toContain("Reset your password");
 		expect(passwordReset?.starterDraftPlainText).toContain("{{userName}}");
@@ -173,7 +201,7 @@ describe("email template settings actions", () => {
 	});
 
 	it("lists rendered system drafts with non-string preview values restored to tokens", async () => {
-		const templates = await listEmailTemplates();
+		const templates = await listed();
 		const exportReady = templates.find((entry) => entry.key === "export-ready");
 
 		expect(exportReady?.starterDraftHtml).toContain("Your data export is ready");
@@ -185,7 +213,7 @@ describe("email template settings actions", () => {
 	});
 
 	it("states how long the export file stays available instead of a link lifetime", async () => {
-		const templates = await listEmailTemplates();
+		const templates = await listed();
 		const exportReady = templates.find((entry) => entry.key === "export-ready");
 		const plainText = exportReady?.starterDraftPlainText ?? "";
 
@@ -196,7 +224,7 @@ describe("email template settings actions", () => {
 	});
 
 	it("restores numeric preview values without corrupting unrelated HTML", async () => {
-		const templates = await listEmailTemplates();
+		const templates = await listed();
 		const absenceSubmitted = templates.find((entry) => entry.key === "absence-request-submitted");
 
 		expect(absenceSubmitted?.starterDraftHtml).toMatch(/{{days}}(?:<!-- -->)? business days/);
@@ -210,7 +238,7 @@ describe("email template settings actions", () => {
 	it("lists registry entries with organization overrides when they exist", async () => {
 		mocks.templates = [{ templateKey: "password-reset", subject: "Override", isEnabled: true }];
 
-		const templates = await listEmailTemplates();
+		const templates = await listed();
 
 		expect(templates.find((entry) => entry.key === "password-reset")?.override).toEqual({
 			templateKey: "password-reset",
@@ -230,7 +258,7 @@ describe("email template settings actions", () => {
 			},
 		];
 
-		const templates = await listEmailTemplates();
+		const templates = await listed();
 		const passwordReset = templates.find((entry) => entry.key === "password-reset");
 
 		expect(passwordReset?.override).toBeNull();
@@ -247,7 +275,7 @@ describe("email template settings actions", () => {
 			editorDocument: { root: { type: "email" } },
 		});
 
-		expect(result).toEqual({ success: true });
+		expect(result).toEqual({ success: true, data: undefined });
 		expect(mocks.insertValues).toMatchObject({
 			organizationId: "org_1",
 			templateKey: "password-reset",
@@ -262,10 +290,13 @@ describe("email template settings actions", () => {
 	it("deletes only the active organization template when resetting", async () => {
 		const result = await resetEmailTemplate("password-reset");
 
-		expect(result).toEqual({ success: true });
-		expect(mocks.requireAccess).toHaveBeenCalledTimes(1);
-		expect(mocks.conditions).toContainEqual({ eq: ["organizationId", "org_1"] });
-		expect(mocks.conditions).toContainEqual({ eq: ["templateKey", "password-reset"] });
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mocks.conditions).toContainEqual({
+			eq: [organizationEmailTemplate.organizationId, "org_1"],
+		});
+		expect(mocks.conditions).toContainEqual({
+			eq: [organizationEmailTemplate.templateKey, "password-reset"],
+		});
 		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/email-templates");
 	});
 
@@ -279,7 +310,7 @@ describe("email template settings actions", () => {
 			isEnabled: true,
 		});
 
-		expect(result).toEqual({ success: true });
+		expect(result).toEqual({ success: true, data: undefined });
 		expect(mocks.insertValues).toBeUndefined();
 		expect(mocks.sendEmail).toHaveBeenCalledWith({
 			to: "admin@example.com",
@@ -298,7 +329,7 @@ describe("email template settings actions", () => {
 			isEnabled: true,
 		});
 
-		expect(result).toEqual({ success: true });
+		expect(result).toEqual({ success: true, data: undefined });
 		expect(mocks.sendEmail).toHaveBeenCalledWith({
 			to: "admin@example.com",
 			organizationId: "org_1",
@@ -318,7 +349,52 @@ describe("email template settings actions", () => {
 			isEnabled: true,
 		});
 
-		expect(result).toEqual({ success: false, errors: ["Failed to send test email"] });
+		expect(result).toMatchObject({ success: false, error: "Failed to send test email" });
 		expect(JSON.stringify(result)).not.toContain("SMTP password rejected");
+	});
+	it.each([
+		["listEmailTemplates", () => listEmailTemplates()],
+		["saveEmailTemplate", () => saveEmailTemplate(validDraft)],
+		["resetEmailTemplate", () => resetEmailTemplate("password-reset")],
+		["sendEmailTemplateTest", () => sendEmailTemplateTest(validDraft)],
+	] as const)("refuses a scoped manager (%s) without a redirect", async (_name, call) => {
+		mocks.caller = scopedManager;
+
+		const result = await call();
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mocks.findMany).not.toHaveBeenCalled();
+		expect(mocks.insertValues).toBeUndefined();
+		expect(mocks.deleteWhere).toBeUndefined();
+		expect(mocks.sendEmail).not.toHaveBeenCalled();
+	});
+
+	it("refuses a draft with an unknown variable before saving", async () => {
+		const result = await saveEmailTemplate({ ...validDraft, subject: "Reset {{secret}}" });
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Unknown variable: secret",
+		});
+		expect(mocks.insertValues).toBeUndefined();
+	});
+
+	it("refuses a draft whose body is empty once sanitized", async () => {
+		const result = await saveEmailTemplate({ ...validDraft, html: "<script>alert(1)</script>" });
+
+		expect(result).toMatchObject({ success: false, error: "HTML body is required" });
+		expect(mocks.insertValues).toBeUndefined();
+	});
+
+	it("refuses to reset an unknown template", async () => {
+		const result = await resetEmailTemplate("not-a-template" as never);
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Unknown email template",
+		});
+		expect(mocks.deleteWhere).toBeUndefined();
 	});
 });

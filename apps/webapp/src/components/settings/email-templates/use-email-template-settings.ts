@@ -170,7 +170,7 @@ export function useEmailTemplateSettings(
 				return;
 			}
 			toast.error(
-				result.errors?.join("\n") ??
+				result.error ||
 					t(
 						"settings.emailTemplates.saveFailed",
 						"Failed to save email template",
@@ -197,7 +197,7 @@ export function useEmailTemplateSettings(
 				return;
 			}
 			toast.error(
-				result.errors?.join("\n") ??
+				result.error ||
 					t("settings.emailTemplates.testFailed", "Failed to send test email"),
 			);
 		});
@@ -233,7 +233,7 @@ export function useEmailTemplateSettings(
 				return;
 			}
 			toast.error(
-				result.errors?.join("\n") ??
+				result.error ||
 					t(
 						"settings.emailTemplates.resetFailed",
 						"Failed to reset email template",
