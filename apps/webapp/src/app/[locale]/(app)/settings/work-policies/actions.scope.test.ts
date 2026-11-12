@@ -1,478 +1,227 @@
+import { desc, type SQL, sql } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { workPolicyAssignment } from "@/db/schema";
+import type { StubCaller } from "@/test/organization-action";
 
-const mockState = vi.hoisted(() => ({
-	actor: {
-		accessTier: "manager" as const,
-		organizationId: "org-1",
-		session: {
-			user: {
-				id: "user-1",
-				email: "manager@example.com",
-			},
-		},
-		currentEmployee: {
-			id: "manager-employee-1",
-			organizationId: "org-1",
-			role: "manager" as const,
-		},
-	},
-	session: {
-		user: {
-			id: "user-1",
-			email: "manager@example.com",
-		},
-		session: {
-			activeOrganizationId: "org-1",
-		},
-	},
-	targetEmployee: {
-		id: "employee-1",
-		organizationId: "org-1",
-		role: "employee" as const,
-	},
-	managedEmployeeIds: new Set<string>(["employee-1"]),
-	isOrgAdmin: false,
-	workPolicies: [{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true }],
-	workPolicyQueue: [] as Array<any>,
-	workPolicyPresets: [] as Array<any>,
-	workPolicyPresetQueue: [] as Array<any>,
-	workPolicyPresetFindFirstArgs: [] as Array<any>,
-	assignmentQueue: [] as Array<any>,
-	employeeQueue: [] as Array<any>,
-	teamQueue: [] as Array<any>,
-	assignmentFindFirstArgs: [] as Array<any>,
-	violationRows: [{ id: "violation-1", organizationId: "org-1" }],
-	insertQueue: [] as Array<any>,
-	insertValues: [] as Array<any>,
-	selectQueue: [] as Array<any>,
-	selectWhereArgs: [] as Array<any>,
-	updateQueue: [] as Array<any>,
-	updateSets: [] as Array<any>,
-	updateWhereArgs: [] as Array<any>,
-	markOrganizationWorkBalancesDirty: vi.fn().mockResolvedValue(undefined),
+// biome-ignore lint/suspicious/noExplicitAny: loose row stand-ins for a mocked database
+type Row = any;
+
+const state = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
+	managedEmployeeIds: new Set<string>(),
+	workPolicies: [] as Row[],
+	workPolicyQueue: [] as Row[],
+	workPolicyPresets: [] as Row[],
+	workPolicyPresetQueue: [] as Row[],
+	workPolicyPresetFindFirstArgs: [] as Row[],
+	assignmentQueue: [] as Row[],
+	employeeQueue: [] as Row[],
+	teamQueue: [] as Row[],
+	assignmentFindFirstArgs: [] as Row[],
+	violationRows: [] as Row[],
+	insertQueue: [] as Row[],
+	insertValues: [] as Row[],
+	selectQueue: [] as Row[],
+	updateSets: [] as Row[],
+	updateWhereArgs: [] as Row[],
+	markOrganizationWorkBalancesDirty: vi.fn(),
 	formerEmployeeIds: new Set<string>(),
 }));
 
 vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
 	(
 		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
-	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+	).currentRosterGuardModule(() => state.formerEmployeeIds),
 );
 
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	desc: vi.fn((value: unknown) => value),
-	gt: vi.fn((left: unknown, right: unknown) => ({ gt: [left, right] })),
-	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
-	isNull: vi.fn((value: unknown) => ({ isNull: value })),
-	lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
-	or: vi.fn((...args: unknown[]) => ({ or: args })),
-	sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
-		sql: Array.from(strings),
-		values,
-	})),
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: { id: "id", userId: "userId", isActive: "isActive", organizationId: "organizationId" },
-	team: { id: "id", organizationId: "organizationId", name: "name" },
-	workPolicy: { id: "id", organizationId: "organizationId", isActive: "isActive", name: "name" },
-	workPolicyAssignment: {
-		id: "id",
-		organizationId: "organizationId",
-		employeeId: "employeeId",
-		assignmentType: "assignmentType",
-		isActive: "isActive",
-		effectiveFrom: "effectiveFrom",
-		effectiveUntil: "effectiveUntil",
-		createdAt: "createdAt",
-		teamId: "teamId",
-	},
-	workPolicyBreakOption: { sortOrder: "sortOrder" },
-	workPolicyBreakRule: { sortOrder: "sortOrder" },
-	workPolicyPresence: {},
-	workPolicyPreset: {
-		id: "id",
-		organizationId: "organizationId",
-		isActive: "isActive",
-		name: "name",
-		description: "description",
-		countryCode: "countryCode",
-		scheduleCycle: "scheduleCycle",
-		workingDaysPreset: "workingDaysPreset",
-		hoursPerCycle: "hoursPerCycle",
-		maxDailyMinutes: "maxDailyMinutes",
-		maxWeeklyMinutes: "maxWeeklyMinutes",
-		maxUninterruptedMinutes: "maxUninterruptedMinutes",
-		breakRulesJson: "breakRulesJson",
-	},
-	workPolicyRegulation: {},
-	workPolicySchedule: {},
-	workPolicyScheduleDay: {},
-	workPolicyViolation: {
-		id: "id",
-		organizationId: "organizationId",
-		violationDate: "violationDate",
-	},
-}));
-
-vi.mock("@/db", () => ({
-	db: {},
-}));
-
-vi.mock("@/lib/auth-helpers", () => ({
-	isOrgAdminCasl: vi.fn(async () => mockState.isOrgAdmin),
-}));
-
 vi.mock("@/lib/work-balance/service", () => ({
-	markOrganizationWorkBalancesDirty: mockState.markOrganizationWorkBalancesDirty,
+	markOrganizationWorkBalancesDirty: state.markOrganizationWorkBalancesDirty,
 }));
 
 vi.mock("@/lib/datetime/drizzle-adapter", () => ({
 	currentTimestamp: () => new Date("2026-01-01T00:00:00.000Z"),
 }));
 
-vi.mock("../employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect");
-	const { AuthorizationError, NotFoundError, ValidationError } = await import(
-		"@/lib/effect/errors"
-	);
-
-	return {
-		getEmployeeSettingsActorContext: vi.fn(() => Effect.succeed(mockState.actor)),
-		getManagedEmployeeIdsForSettingsActor: vi.fn(() =>
-			Effect.succeed(mockState.managedEmployeeIds),
-		),
-		validateAssignmentTargetFields: vi.fn(
-			(assignmentType: string, input: { teamId?: string; employeeId?: string }) => {
-				const hasTeamId = Boolean(input.teamId);
-				const hasEmployeeId = Boolean(input.employeeId);
-				if (assignmentType === "organization") {
-					return hasTeamId || hasEmployeeId
-						? Effect.fail(
-								new ValidationError({
-									message: "Organization assignments cannot target teams or employees",
-									field: hasTeamId ? "teamId" : "employeeId",
-								}),
-							)
-						: Effect.void;
-				}
-				if (assignmentType === "team") {
-					if (!hasTeamId) {
-						return Effect.fail(
-							new ValidationError({
-								message: "Team assignments require a teamId",
-								field: "teamId",
-							}),
-						);
-					}
-					return hasEmployeeId
-						? Effect.fail(
-								new ValidationError({
-									message: "Team assignments cannot target an employee",
-									field: "employeeId",
-								}),
-							)
-						: Effect.void;
-				}
-				if (!hasEmployeeId) {
-					return Effect.fail(
-						new ValidationError({
-							message: "Employee assignments require an employeeId",
-							field: "employeeId",
-						}),
-					);
-				}
-				return hasTeamId
-					? Effect.fail(
-							new ValidationError({
-								message: "Employee assignments cannot target a team",
-								field: "teamId",
-							}),
-						)
-					: Effect.void;
-			},
-		),
-		getOrganizationTeam: vi.fn((_teamId: string, _organizationId: string) =>
-			mockState.teamQueue[0]
-				? Effect.succeed(mockState.teamQueue.shift())
-				: Effect.fail(
-						new NotFoundError({
-							message: "Team not found",
-							entityType: "team",
-							entityId: "team-outside-org",
-						}),
-					),
-		),
-		getTargetEmployee: vi.fn(() => Effect.succeed(mockState.targetEmployee)),
-		requireSettingsActorEmployeeRecord: vi.fn((actor: typeof mockState.actor) =>
-			actor.currentEmployee
-				? Effect.succeed(actor.currentEmployee)
-				: Effect.fail(
-						new NotFoundError({
-							message: "Employee profile not found",
-							entityType: "employee",
-							entityId: actor.session.user.id,
-						}),
-					),
-		),
-		filterItemsToManagedEmployees: vi.fn((items: any[], managedIds: Set<string> | null) =>
-			managedIds
-				? items.filter((item) => managedIds.has(item.employeeId ?? item.employee?.id))
-				: items,
-		),
-		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: typeof mockState.actor, options: any) =>
-			actor.accessTier === "orgAdmin"
-				? Effect.void
-				: Effect.fail(
-						new AuthorizationError({
-							message: options.message,
-							userId: actor.session.user.id,
-							resource: options.resource,
-							action: options.action,
-						}),
-					),
-		),
-		ensureSettingsActorCanAccessEmployeeTarget: vi.fn(
-			(actor: typeof mockState.actor, target: any, options: any) =>
-				actor.organizationId === target.organizationId &&
-				(actor.accessTier === "orgAdmin" || mockState.managedEmployeeIds.has(target.id))
-					? Effect.void
-					: Effect.fail(
-							new AuthorizationError({
-								message: options.message,
-								userId: actor.session.user.id,
-								resource: options.resource,
-								action: options.action,
-							}),
-						),
-		),
-		requireSettingsActorEmployeeAssignmentAccess: vi.fn(
-			(actor: typeof mockState.actor, assignmentType: string, options: any) =>
-				actor.accessTier === "orgAdmin" || assignmentType === "employee"
-					? Effect.void
-					: Effect.fail(
-							new AuthorizationError({
-								message: options.message,
-								userId: actor.session.user.id,
-								resource: options.resource,
-								action: options.action,
-							}),
-						),
-		),
-	};
-});
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	const AuthService = Context.Service<any>("AuthService");
-	return { AuthService };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
-	const DatabaseService = Context.Service<any>("DatabaseService");
-	return { DatabaseService };
-});
+const db = {
+	query: {
+		workPolicy: {
+			findMany: vi.fn(async () => state.workPolicies),
+			findFirst: vi.fn(async () => state.workPolicyQueue.shift() ?? null),
+		},
+		workPolicyViolation: { findMany: vi.fn(async () => state.violationRows) },
+		workPolicyPreset: {
+			findFirst: vi.fn(async (input: Row) => {
+				state.workPolicyPresetFindFirstArgs.push(input);
+				return state.workPolicyPresetQueue.shift() ?? null;
+			}),
+			findMany: vi.fn(async () => state.workPolicyPresets),
+		},
+		team: {
+			findMany: vi.fn(async () => []),
+			findFirst: vi.fn(async () => state.teamQueue.shift() ?? null),
+		},
+		workPolicyAssignment: {
+			findMany: vi.fn(async () => []),
+			findFirst: vi.fn(async (input: Row) => {
+				state.assignmentFindFirstArgs.push(input);
+				return state.assignmentQueue.shift() ?? null;
+			}),
+		},
+		employee: { findFirst: vi.fn(async () => state.employeeQueue.shift() ?? null) },
+	},
+	select: vi.fn(() => ({
+		from: vi.fn(() => ({
+			where: vi.fn(() => ({ limit: vi.fn(async () => state.selectQueue.shift() ?? []) })),
+		})),
+	})),
+	insert: vi.fn(() => ({
+		values: vi.fn((input: unknown) => {
+			state.insertValues.push(input);
+			return { returning: vi.fn(async () => state.insertQueue.shift() ?? []) };
+		}),
+	})),
+	update: vi.fn(() => ({
+		set: vi.fn((input: unknown) => {
+			state.updateSets.push(input);
+			return {
+				where: vi.fn(async (input: unknown) => {
+					state.updateWhereArgs.push(input);
+				}),
+			};
+		}),
+	})),
+	delete: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
+};
 
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
-
-	const authLayer = Layer.succeed(AuthService, {
-		getSession: () => Effect.succeed(mockState.session),
-	});
-
-	const db = {
-		query: {
-			workPolicy: {
-				findMany: vi.fn(async () => mockState.workPolicies),
-				findFirst: vi.fn(async () => mockState.workPolicyQueue.shift() ?? null),
-			},
-			workPolicyViolation: {
-				findMany: vi.fn(async () => mockState.violationRows),
-			},
-			workPolicyPreset: {
-				findFirst: vi.fn(async (input) => {
-					mockState.workPolicyPresetFindFirstArgs.push(input);
-					return mockState.workPolicyPresetQueue.shift() ?? null;
-				}),
-				findMany: vi.fn(async () => mockState.workPolicyPresets),
-			},
-			team: {
-				findMany: vi.fn(async () => []),
-				findFirst: vi.fn(async () => mockState.teamQueue.shift() ?? null),
-			},
-			workPolicyAssignment: {
-				findMany: vi.fn(async () => []),
-				findFirst: vi.fn(async (input) => {
-					mockState.assignmentFindFirstArgs.push(input);
-					return mockState.assignmentQueue.shift() ?? null;
-				}),
-			},
-			employee: {
-				findFirst: vi.fn(async () => mockState.employeeQueue.shift() ?? null),
-			},
-		},
-		select: vi.fn(() => ({
-			from: vi.fn(() => ({
-				where: vi.fn((input: unknown) => {
-					mockState.selectWhereArgs.push(input);
-					return {
-						limit: vi.fn(async () => mockState.selectQueue.shift() ?? []),
-					};
-				}),
-			})),
-		})),
-		insert: vi.fn(() => ({
-			values: vi.fn((input: unknown) => {
-				mockState.insertValues.push(input);
-				return {
-					returning: vi.fn(async () => mockState.insertQueue.shift() ?? []),
-				};
-			}),
-		})),
-		update: vi.fn(() => ({
-			set: vi.fn((input: unknown) => {
-				mockState.updateSets.push(input);
-				return {
-					where: vi.fn(async (input: unknown) => {
-						mockState.updateWhereArgs.push(input);
-						return mockState.updateQueue.shift() ?? undefined;
-					}),
-				};
-			}),
-		})),
-		delete: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
-	};
-
-	const databaseLayer = Layer.succeed(DatabaseService, {
-		db,
-		query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-	});
-
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.mergeAll(authLayer, databaseLayer),
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => state.caller, {
+			db,
+			query: (name, fn) =>
+				name === "organizationAction.managedScope"
+					? (Effect.succeed([[...state.managedEmployeeIds].map((id) => ({ id })), []]) as never)
+					: Effect.promise(fn),
+		}),
 	);
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { runtime } = await import("@/lib/effect/runtime");
-	const { Cause, Exit, Option, Result } = await import("effect");
+const actions = await import("./actions");
 
-	return {
-		runServerActionSafe: async <T>(effect: any) => {
-			const exit = await runtime.runPromiseExit(effect);
-			return Exit.match(exit, {
-				onSuccess: (data) => ({ success: true as const, data: data as T }),
-				onFailure: (cause) => {
-					const defect = Result.getOrNull(Cause.findDefect(cause));
-					const failure = Option.getOrNull(Cause.findErrorOption(cause));
-					const error = defect ?? failure ?? cause;
+const dialect = new PgDialect();
+function rendered(where: SQL) {
+	return dialect.sqlToQuery(where);
+}
 
-					if (error && typeof error === "object" && "_tag" in error) {
-						return {
-							success: false as const,
-							error: (error as { message: string }).message,
-							code: (error as { _tag: string })._tag,
-						};
-					}
+const scopedManager: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "manager-employee-1", role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	...scopedManager,
+	employee: { id: "manager-employee-1", role: "employee", former: false },
+};
+const orgAdmin: StubCaller = {
+	...scopedManager,
+	membershipRole: "admin",
+	employee: { id: "actor-employee-1", role: "admin", former: false },
+};
 
-					return { success: false as const, error: "Unknown error", code: "UNKNOWN_ERROR" };
-				},
-			});
-		},
-	};
-});
+const presetInput = {
+	name: "Warehouse",
+	description: "Warehouse hours",
+	scheduleEnabled: true,
+	regulationEnabled: false,
+	schedule: {
+		scheduleCycle: "weekly" as const,
+		workingDaysPreset: "weekdays" as const,
+		hoursPerCycle: "40",
+	},
+};
 
-const {
-	acknowledgeWorkPolicyViolation,
-	createWorkPolicy,
-	createWorkPolicyAssignment,
-	deleteWorkPolicy,
-	deleteWorkPolicyAssignment,
-	getEmployeeEffectiveScheduleDetails,
-	getWorkPolicies,
-	getWorkPolicyViolations,
-	importWorkPolicyPreset,
-	setDefaultWorkPolicy,
-	archiveWorkPolicyPreset,
-	copySystemWorkPolicyPreset,
-	createWorkPolicyFromPreset,
-	createWorkPolicyPreset,
-	getWorkPolicyPresets,
-	updateWorkPolicyPreset,
-	updateWorkPolicy,
-} = await import("./actions");
+const policyInput = {
+	name: "Night Shift",
+	description: "Overnight coverage",
+	scheduleEnabled: true,
+	regulationEnabled: false,
+	presenceEnabled: false,
+	schedule: {
+		scheduleCycle: "weekly" as const,
+		scheduleType: "simple" as const,
+		workingDaysPreset: "weekdays" as const,
+		hoursPerCycle: "40",
+	},
+};
+
+const period = {
+	startDate: new Date("2026-01-01T00:00:00.000Z"),
+	endDate: new Date("2026-01-31T00:00:00.000Z"),
+};
 
 describe("work policy settings scope actions", () => {
 	beforeEach(() => {
-		mockState.actor.accessTier = "manager";
-		mockState.actor.currentEmployee = {
-			id: "manager-employee-1",
-			organizationId: "org-1",
-			role: "manager",
-		};
-		mockState.managedEmployeeIds = new Set(["employee-1"]);
-		mockState.isOrgAdmin = false;
-		mockState.targetEmployee = {
-			id: "employee-1",
-			organizationId: "org-1",
-			role: "employee",
-		};
-		mockState.workPolicies = [
+		vi.clearAllMocks();
+		state.caller = scopedManager;
+		state.managedEmployeeIds = new Set(["employee-1"]);
+		state.workPolicies = [
 			{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true },
 		];
-		mockState.workPolicyQueue = [];
-		mockState.workPolicyPresets = [];
-		mockState.workPolicyPresetQueue = [];
-		mockState.workPolicyPresetFindFirstArgs = [];
-		mockState.assignmentQueue = [];
-		mockState.employeeQueue = [];
-		mockState.teamQueue = [];
-		mockState.assignmentFindFirstArgs = [];
-		mockState.insertQueue = [];
-		mockState.insertValues = [];
-		mockState.selectQueue = [];
-		mockState.selectWhereArgs = [];
-		mockState.updateQueue = [];
-		mockState.updateSets = [];
-		mockState.updateWhereArgs = [];
-		mockState.markOrganizationWorkBalancesDirty.mockClear();
-		mockState.markOrganizationWorkBalancesDirty.mockResolvedValue(undefined);
-		mockState.formerEmployeeIds = new Set();
+		state.workPolicyQueue = [];
+		state.workPolicyPresets = [];
+		state.workPolicyPresetQueue = [];
+		state.workPolicyPresetFindFirstArgs = [];
+		state.assignmentQueue = [];
+		state.employeeQueue = [];
+		state.teamQueue = [];
+		state.assignmentFindFirstArgs = [];
+		state.violationRows = [{ id: "violation-1", organizationId: "org-1" }];
+		state.insertQueue = [];
+		state.insertValues = [];
+		state.selectQueue = [];
+		state.updateSets = [];
+		state.updateWhereArgs = [];
+		state.markOrganizationWorkBalancesDirty.mockResolvedValue(undefined);
+		state.formerEmployeeIds = new Set();
 	});
 
 	it("refuses assigning a work policy to a former employee (#1438)", async () => {
-		mockState.formerEmployeeIds = new Set(["employee-1"]);
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
-		mockState.insertQueue = [[{ id: "assignment-1" }]];
+		state.formerEmployeeIds = new Set(["employee-1"]);
+		state.selectQueue = [[{ id: "employee-1" }]];
+		state.workPolicyQueue = [{ id: "policy-1" }];
+		state.insertQueue = [[{ id: "assignment-1" }]];
 
-		const result = await createWorkPolicyAssignment("org-1", {
+		const result = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
 			assignmentType: "employee",
 			employeeId: "employee-1",
 		});
 
-		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mockState.insertValues).toHaveLength(0);
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "former_employee",
+		});
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("lets managers read work policy definitions", async () => {
-		const result = await getWorkPolicies("org-1");
+		const result = await actions.getWorkPolicies();
 
-		expect(result).toEqual({ success: true, data: mockState.workPolicies });
+		expect(result).toEqual({ success: true, data: state.workPolicies });
 	});
 
 	it("returns active system and organization work policy presets with source labels", async () => {
-		mockState.workPolicyPresets = [
+		state.workPolicyPresets = [
 			{ id: "system-preset", organizationId: null, name: "EU Standard", isActive: true },
 			{ id: "custom-preset", organizationId: "org-1", name: "Warehouse", isActive: true },
 		];
 
-		const result = await getWorkPolicyPresets("org-1");
+		const result = await actions.getWorkPolicyPresets();
 
 		expect(result).toEqual({
 			success: true,
@@ -498,321 +247,230 @@ describe("work policy settings scope actions", () => {
 	});
 
 	it("rejects non-admin custom work policy preset creation", async () => {
-		const result = await createWorkPolicyPreset("org-1", {
-			name: "Warehouse",
-			description: "Warehouse hours",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
-		});
+		const result = await actions.createWorkPolicyPreset(presetInput);
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
-		expect(mockState.insertValues).toHaveLength(0);
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("rejects archiving system work policy presets", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "system-preset", organizationId: null, name: "EU Standard", isActive: true },
 		];
 
-		const result = await archiveWorkPolicyPreset("org-1", "system-preset");
+		const result = await actions.archiveWorkPolicyPreset("system-preset");
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mockState.updateSets).toHaveLength(0);
+		expect(state.updateSets).toHaveLength(0);
 	});
 
 	it("rejects archiving and updating other-organization work policy presets", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "other-preset", organizationId: "org-2", name: "Other", isActive: true },
 			{ id: "other-preset", organizationId: "org-2", name: "Other", isActive: true },
 		];
 
-		const archiveResult = await archiveWorkPolicyPreset("org-1", "other-preset");
-		const updateResult = await updateWorkPolicyPreset("org-1", "other-preset", {
-			name: "Updated Other",
-			description: "Still outside org",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
+		const archiveResult = await actions.archiveWorkPolicyPreset("other-preset");
+		const updateResult = await actions.updateWorkPolicyPreset({
+			presetId: "other-preset",
+			input: { ...presetInput, name: "Updated Other" },
 		});
 
 		expect(archiveResult).toMatchObject({ success: false, code: "NotFoundError" });
 		expect(updateResult).toMatchObject({ success: false, code: "NotFoundError" });
-		expect(mockState.updateSets).toHaveLength(0);
+		expect(state.updateSets).toHaveLength(0);
 	});
 
 	it("returns a conflict for duplicate active organization work policy preset names", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "existing-preset", organizationId: "org-1", name: "Warehouse", isActive: true },
 		];
 
-		const result = await createWorkPolicyPreset("org-1", {
-			name: " Warehouse ",
-			description: "Duplicate",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
-		});
+		const result = await actions.createWorkPolicyPreset({ ...presetInput, name: " Warehouse " });
 
 		expect(result).toMatchObject({ success: false, code: "ConflictError" });
-		expect(mockState.insertValues).toHaveLength(0);
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("checks duplicate organization preset names against inactive archived presets when creating", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "archived-preset", organizationId: "org-1", name: "Warehouse", isActive: false },
 		];
 
-		const result = await createWorkPolicyPreset("org-1", {
-			name: "Warehouse",
-			description: "Duplicate archived name",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
-		});
+		const result = await actions.createWorkPolicyPreset(presetInput);
 
 		expect(result).toMatchObject({ success: false, code: "ConflictError" });
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).not.toContain(
-			"isActive",
-		);
-		expect(mockState.insertValues).toHaveLength(0);
+		expect(rendered(state.workPolicyPresetFindFirstArgs[0].where).sql).not.toContain("is_active");
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("checks duplicate organization preset names against inactive archived presets when copying system presets", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "system-preset", organizationId: null, name: "System Source", isActive: true },
 			{ id: "archived-preset", organizationId: "org-1", name: "Warehouse", isActive: false },
 		];
 
-		const result = await copySystemWorkPolicyPreset("org-1", "system-preset", {
-			name: "Warehouse",
-			description: "Duplicate archived name",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
+		const result = await actions.copySystemWorkPolicyPreset({
+			presetId: "system-preset",
+			input: presetInput,
 		});
 
 		expect(result).toMatchObject({ success: false, code: "ConflictError" });
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isActive");
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isNull");
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).not.toContain(
-			"isActive",
-		);
-		expect(mockState.insertValues).toHaveLength(0);
+		const sourceLookup = rendered(state.workPolicyPresetFindFirstArgs[0].where).sql;
+		expect(sourceLookup).toContain("is_active");
+		expect(sourceLookup).toContain("is null");
+		expect(rendered(state.workPolicyPresetFindFirstArgs[1].where).sql).not.toContain("is_active");
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("checks duplicate organization preset names against inactive archived presets when updating", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "custom-preset", organizationId: "org-1", name: "Current", isActive: true },
 			{ id: "archived-preset", organizationId: "org-1", name: "Warehouse", isActive: false },
 		];
 
-		const result = await updateWorkPolicyPreset("org-1", "custom-preset", {
-			name: "Warehouse",
-			description: "Duplicate archived name",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
+		const result = await actions.updateWorkPolicyPreset({
+			presetId: "custom-preset",
+			input: presetInput,
 		});
 
 		expect(result).toMatchObject({ success: false, code: "ConflictError" });
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("org-1");
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).not.toContain(
-			"isActive",
-		);
-		expect(mockState.updateSets).toHaveLength(0);
+		expect(rendered(state.workPolicyPresetFindFirstArgs[0].where).params).toContain("org-1");
+		expect(rendered(state.workPolicyPresetFindFirstArgs[1].where).sql).not.toContain("is_active");
+		expect(state.updateSets).toHaveLength(0);
 	});
 
 	it("scopes custom preset update and archive lookups to the current organization", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [null, null];
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [null, null];
 
-		await updateWorkPolicyPreset("org-1", "missing-preset", {
-			name: "Warehouse",
-			description: "Missing",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
-		});
-		await archiveWorkPolicyPreset("org-1", "missing-preset");
+		await actions.updateWorkPolicyPreset({ presetId: "missing-preset", input: presetInput });
+		await actions.archiveWorkPolicyPreset("missing-preset");
 
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("org-1");
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain(
-			"missing-preset",
-		);
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).toContain("org-1");
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).toContain(
-			"missing-preset",
-		);
+		for (const lookup of state.workPolicyPresetFindFirstArgs) {
+			expect(rendered(lookup.where).params).toEqual(
+				expect.arrayContaining(["org-1", "missing-preset"]),
+			);
+		}
+		expect(state.workPolicyPresetFindFirstArgs).toHaveLength(2);
 	});
 
 	it("rejects archived custom preset updates without reactivating them", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [null];
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [null];
 
-		const result = await updateWorkPolicyPreset("org-1", "archived-preset", {
-			name: "Reactivated Warehouse",
-			description: "Should not reactivate archived presets",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
+		const result = await actions.updateWorkPolicyPreset({
+			presetId: "archived-preset",
+			input: { ...presetInput, name: "Reactivated Warehouse" },
 		});
 
 		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isActive");
-		expect(mockState.updateSets).toHaveLength(0);
+		expect(rendered(state.workPolicyPresetFindFirstArgs[0].where).sql).toContain("is_active");
+		expect(state.updateSets).toHaveLength(0);
 	});
 
 	it("scopes compatibility import preset lookup to active visible presets", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [null];
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [null];
 
-		const result = await importWorkPolicyPreset("org-1", "missing-preset");
+		const result = await actions.importWorkPolicyPreset({ presetId: "missing-preset" });
 
 		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain(
-			"missing-preset",
-		);
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isActive");
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isNull");
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("org-1");
+		const lookup = rendered(state.workPolicyPresetFindFirstArgs[0].where);
+		expect(lookup.params).toEqual(expect.arrayContaining(["missing-preset", "org-1"]));
+		expect(lookup.sql).toContain("is_active");
+		expect(lookup.sql).toContain("is null");
 	});
 
 	it("creates a real work policy from reviewed preset input and marks balances dirty", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.isOrgAdmin = true;
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "system-preset", organizationId: null, name: "Source", isActive: true },
 		];
-		mockState.workPolicyQueue = [
-			null,
-			{
-				id: "policy-from-preset",
-				organizationId: "org-1",
-				name: "Reviewed Policy",
-				schedule: null,
-				regulation: null,
-				presence: null,
-			},
-		];
-		mockState.insertQueue = [
+		const created = {
+			id: "policy-from-preset",
+			organizationId: "org-1",
+			name: "Reviewed Policy",
+			schedule: null,
+			regulation: null,
+			presence: null,
+		};
+		state.workPolicyQueue = [null, created];
+		state.insertQueue = [
 			[{ id: "policy-from-preset" }],
 			[{ id: "regulation-1" }],
 			[{ id: "break-rule-1" }],
 		];
 
-		const result = await createWorkPolicyFromPreset("org-1", "system-preset", {
-			name: " Reviewed Policy ",
-			description: " Reviewed description ",
-			scheduleEnabled: false,
-			regulationEnabled: true,
-			regulation: {
-				maxDailyMinutes: 480,
-				maxWeeklyMinutes: 2400,
-				breakRules: [
-					{
-						workingMinutesThreshold: 360,
-						requiredBreakMinutes: 30,
-						options: [],
-					},
-				],
+		const result = await actions.createWorkPolicyFromPreset({
+			presetId: "system-preset",
+			input: {
+				name: " Reviewed Policy ",
+				description: " Reviewed description ",
+				scheduleEnabled: false,
+				regulationEnabled: true,
+				regulation: {
+					maxDailyMinutes: 480,
+					maxWeeklyMinutes: 2400,
+					breakRules: [{ workingMinutesThreshold: 360, requiredBreakMinutes: 30, options: [] }],
+				},
 			},
 		});
 
-		expect(result).toEqual({
-			success: true,
-			data: {
-				id: "policy-from-preset",
-				organizationId: "org-1",
-				name: "Reviewed Policy",
-				schedule: null,
-				regulation: null,
-				presence: null,
-			},
-		});
-		expect(mockState.insertValues[0]).toMatchObject({
+		expect(result).toEqual({ success: true, data: created });
+		expect(state.insertValues[0]).toMatchObject({
 			organizationId: "org-1",
 			name: "Reviewed Policy",
 			description: "Reviewed description",
 		});
-		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
 	});
 
 	it("rejects malformed reviewed preset break option data", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.isOrgAdmin = true;
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "system-preset", organizationId: null, name: "Source", isActive: true },
 		];
 
-		const result = await createWorkPolicyFromPreset("org-1", "system-preset", {
-			name: "Reviewed Policy",
-			scheduleEnabled: false,
-			regulationEnabled: true,
-			regulation: {
-				breakRules: [
-					{
-						workingMinutesThreshold: 360,
-						requiredBreakMinutes: 30,
-						options: [
-							{
-								splitCount: "one" as never,
-								minimumSplitMinutes: null,
-								minimumLongestSplitMinutes: null,
-							},
-						],
-					},
-				],
+		const result = await actions.createWorkPolicyFromPreset({
+			presetId: "system-preset",
+			input: {
+				name: "Reviewed Policy",
+				scheduleEnabled: false,
+				regulationEnabled: true,
+				regulation: {
+					breakRules: [
+						{
+							workingMinutesThreshold: 360,
+							requiredBreakMinutes: 30,
+							options: [
+								{
+									splitCount: "one" as never,
+									minimumSplitMinutes: null,
+									minimumLongestSplitMinutes: null,
+								},
+							],
+						},
+					],
+				},
 			},
 		});
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mockState.insertValues).toHaveLength(0);
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("rejects malformed persisted preset break rules during compatibility import", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{
 				id: "system-preset",
 				organizationId: null,
@@ -822,15 +480,15 @@ describe("work policy settings scope actions", () => {
 			},
 		];
 
-		const result = await importWorkPolicyPreset("org-1", "system-preset");
+		const result = await actions.importWorkPolicyPreset({ presetId: "system-preset" });
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mockState.insertValues).toHaveLength(0);
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("rejects malformed persisted preset break option data when using a preset", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{
 				id: "system-preset",
 				organizationId: null,
@@ -848,36 +506,29 @@ describe("work policy settings scope actions", () => {
 			},
 		];
 
-		const result = await importWorkPolicyPreset("org-1", "system-preset");
+		const result = await actions.importWorkPolicyPreset({ presetId: "system-preset" });
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mockState.insertValues).toHaveLength(0);
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("copies system presets using reviewed input into organization-owned presets", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyPresetQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyPresetQueue = [
 			{ id: "system-preset", organizationId: null, name: "System Source", isActive: true },
 			null,
 		];
-		mockState.insertQueue = [
-			[{ id: "custom-preset", organizationId: "org-1", name: "Reviewed Copy" }],
-		];
+		state.insertQueue = [[{ id: "custom-preset", organizationId: "org-1", name: "Reviewed Copy" }]];
 
-		const result = await copySystemWorkPolicyPreset("org-1", "system-preset", {
-			name: " Reviewed Copy ",
-			description: " Reviewed custom preset ",
-			scheduleEnabled: true,
-			regulationEnabled: true,
-			schedule: {
-				scheduleCycle: "weekly",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "38",
-			},
-			regulation: {
-				maxDailyMinutes: 480,
-				maxUninterruptedMinutes: 360,
-				breakRules: [],
+		const result = await actions.copySystemWorkPolicyPreset({
+			presetId: "system-preset",
+			input: {
+				name: " Reviewed Copy ",
+				description: " Reviewed custom preset ",
+				scheduleEnabled: true,
+				regulationEnabled: true,
+				schedule: { scheduleCycle: "weekly", workingDaysPreset: "weekdays", hoursPerCycle: "38" },
+				regulation: { maxDailyMinutes: 480, maxUninterruptedMinutes: 360, breakRules: [] },
 			},
 		});
 
@@ -885,7 +536,7 @@ describe("work policy settings scope actions", () => {
 			success: true,
 			data: { id: "custom-preset", organizationId: "org-1", name: "Reviewed Copy" },
 		});
-		expect(mockState.insertValues[0]).toMatchObject({
+		expect(state.insertValues[0]).toMatchObject({
 			organizationId: "org-1",
 			name: "Reviewed Copy",
 			description: "Reviewed custom preset",
@@ -895,70 +546,45 @@ describe("work policy settings scope actions", () => {
 			maxDailyMinutes: 480,
 			maxUninterruptedMinutes: 360,
 		});
-		expect(mockState.insertValues[0]).not.toMatchObject({ name: "System Source" });
-		expect(mockState.markOrganizationWorkBalancesDirty).not.toHaveBeenCalled();
-	});
-
-	it("preserves authorization errors through the preset import compatibility wrapper", async () => {
-		mockState.workPolicyPresetQueue = [
-			{ id: "system-preset", organizationId: null, name: "System Source", isActive: true },
-		];
-
-		const result = await importWorkPolicyPreset("org-1", "system-preset");
-
-		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
-		expect(mockState.insertValues).toHaveLength(0);
+		expect(state.markOrganizationWorkBalancesDirty).not.toHaveBeenCalled();
 	});
 
 	it("rejects managers when mutating work policy definitions", async () => {
-		const result = await createWorkPolicy("org-1", {
-			name: "Night Shift",
-			description: "Overnight coverage",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			presenceEnabled: false,
-			schedule: {
-				scheduleCycle: "weekly",
-				scheduleType: "simple",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
-			},
-		});
+		const result = await actions.createWorkPolicy(policyInput);
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 
-	it("lets managers assign work policies to managed members", async () => {
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
-		mockState.insertQueue = [[{ id: "assignment-1" }]];
+	it("lets managers assign work policies to managed members and marks balances dirty", async () => {
+		state.selectQueue = [[{ id: "employee-1" }]];
+		state.workPolicyQueue = [{ id: "policy-1" }];
+		state.insertQueue = [[{ id: "assignment-1" }]];
 
-		const result = await createWorkPolicyAssignment("org-1", {
+		const result = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
 			assignmentType: "employee",
 			employeeId: "employee-1",
 		});
 
 		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
-	});
-
-	it("marks organization work balances dirty after creating a work policy assignment", async () => {
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
-		mockState.insertQueue = [[{ id: "assignment-1" }]];
-
-		const result = await createWorkPolicyAssignment("org-1", {
-			policyId: "policy-1",
-			assignmentType: "employee",
-			employeeId: "employee-1",
-		});
-
-		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
-		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+		expect(state.insertValues[0]).toMatchObject({ organizationId: "org-1", createdBy: "user-1" });
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
 	});
 
+	it("refuses a manager an organization-wide assignment", async () => {
+		const result = await actions.createWorkPolicyAssignment({
+			policyId: "policy-1",
+			assignmentType: "organization",
+		});
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(state.insertValues).toHaveLength(0);
+	});
+
 	it("marks organization work balances dirty after deleting a work policy assignment", async () => {
-		mockState.assignmentQueue = [
+		state.assignmentQueue = [
 			{
 				id: "assignment-1",
 				organizationId: "org-1",
@@ -967,17 +593,17 @@ describe("work policy settings scope actions", () => {
 			},
 		];
 
-		const result = await deleteWorkPolicyAssignment("assignment-1");
+		const result = await actions.deleteWorkPolicyAssignment("assignment-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
 	});
 
 	it("marks organization work balances dirty after schedule-affecting work policy updates", async () => {
-		mockState.isOrgAdmin = true;
-		mockState.workPolicyQueue = [
+		state.caller = orgAdmin;
+		state.workPolicyQueue = [
 			{
 				id: "policy-1",
 				organizationId: "org-1",
@@ -993,10 +619,13 @@ describe("work policy settings scope actions", () => {
 			{ id: "policy-1", organizationId: "org-1", name: "Standard", schedule: null },
 		];
 
-		const result = await updateWorkPolicy("policy-1", { scheduleEnabled: false });
+		const result = await actions.updateWorkPolicy({
+			policyId: "policy-1",
+			data: { scheduleEnabled: false },
+		});
 
 		expect(result).toMatchObject({ success: true });
-		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
 	});
@@ -1020,24 +649,27 @@ describe("work policy settings scope actions", () => {
 			latestClockIn: string | null,
 		) => ({ dayOfWeek, hoursPerDay: isWorkDay ? "8" : "0", isWorkDay, latestClockIn });
 		const saveDays = (days: ReturnType<typeof day>[]) =>
-			updateWorkPolicy("policy-1", {
-				schedule: {
-					scheduleCycle: "weekly",
-					scheduleType: "detailed",
-					workingDaysPreset: "custom",
-					days,
+			actions.updateWorkPolicy({
+				policyId: "policy-1",
+				data: {
+					schedule: {
+						scheduleCycle: "weekly",
+						scheduleType: "detailed",
+						workingDaysPreset: "custom",
+						days,
+					},
 				},
 			});
 		const storedDays = () =>
-			mockState.insertValues.find(Array.isArray) as Array<{
+			state.insertValues.find(Array.isArray) as Array<{
 				dayOfWeek: string;
 				latestClockIn: string | null;
 			}>;
 
 		beforeEach(() => {
-			mockState.isOrgAdmin = true;
-			mockState.workPolicyQueue = [existing, { ...existing, schedule: null }];
-			mockState.insertQueue = [[{ id: "schedule-1" }]];
+			state.caller = orgAdmin;
+			state.workPolicyQueue = [existing, { ...existing, schedule: null }];
+			state.insertQueue = [[{ id: "schedule-1" }]];
 		});
 
 		it("stores a latest clock-in on work days and clears it on others", async () => {
@@ -1050,64 +682,76 @@ describe("work policy settings scope actions", () => {
 			expect(result).toMatchObject({ success: true });
 			expect(
 				Object.fromEntries(storedDays().map((row) => [row.dayOfWeek, row.latestClockIn])),
-			).toEqual({ monday: "09:00", tuesday: null, saturday: null });
+			).toEqual({
+				monday: "09:00",
+				tuesday: null,
+				saturday: null,
+			});
 		});
 
 		it("rejects a latest clock-in that is not a HH:mm time", async () => {
 			const result = await saveDays([day("monday", true, "9am")]);
 
 			expect(result).toMatchObject({ success: false, code: "ValidationError" });
-			expect(mockState.insertValues).toHaveLength(0);
+			expect(state.insertValues).toHaveLength(0);
 		});
 	});
 
 	it("marks organization work balances dirty after deleting a work policy", async () => {
-		mockState.isOrgAdmin = true;
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		state.caller = orgAdmin;
+		state.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
 
-		const result = await deleteWorkPolicy("policy-1");
+		const result = await actions.deleteWorkPolicy("policy-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
 	});
 
 	it("marks organization work balances dirty after changing the default work policy", async () => {
-		mockState.isOrgAdmin = true;
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		state.caller = orgAdmin;
+		state.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
 
-		const result = await setDefaultWorkPolicy("policy-1");
+		const result = await actions.setDefaultWorkPolicy("policy-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
 	});
 
-	it("rejects manager work policy assignment for unmanaged members", async () => {
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
-		mockState.targetEmployee = {
-			id: "employee-2",
-			organizationId: "org-1",
-			role: "employee",
-		};
+	it("reads another organization's policy as not found", async () => {
+		state.caller = orgAdmin;
+		state.workPolicyQueue = [null];
 
-		const result = await createWorkPolicyAssignment("org-1", {
+		await expect(actions.deleteWorkPolicy("policy-elsewhere")).resolves.toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
+		expect(state.updateSets).toHaveLength(0);
+	});
+
+	it("rejects manager work policy assignment for unmanaged members", async () => {
+		state.selectQueue = [[{ id: "employee-2" }]];
+		state.workPolicyQueue = [{ id: "policy-1" }];
+
+		const result = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
 			assignmentType: "employee",
 			employeeId: "employee-2",
 		});
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(state.insertValues).toHaveLength(0);
 	});
 
 	it("rejects work policy team assignments outside the actor organization", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
-		mockState.teamQueue = [null];
+		state.caller = orgAdmin;
+		state.workPolicyQueue = [{ id: "policy-1" }];
+		state.teamQueue = [null];
 
-		const result = await createWorkPolicyAssignment("org-1", {
+		const result = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
 			assignmentType: "team",
 			teamId: "team-outside-org",
@@ -1117,22 +761,17 @@ describe("work policy settings scope actions", () => {
 	});
 
 	it("rejects malformed work policy assignment payloads when required target ids are missing or conflicting", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyQueue = [
-			{ id: "policy-1", organizationId: "org-1" },
-			{ id: "policy-1", organizationId: "org-1" },
-			{ id: "policy-1", organizationId: "org-1" },
-		];
+		state.caller = orgAdmin;
 
-		const missingTeamId = await createWorkPolicyAssignment("org-1", {
+		const missingTeamId = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
 			assignmentType: "team",
 		});
-		const missingEmployeeId = await createWorkPolicyAssignment("org-1", {
+		const missingEmployeeId = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
 			assignmentType: "employee",
 		});
-		const conflictingIds = await createWorkPolicyAssignment("org-1", {
+		const conflictingIds = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
 			assignmentType: "employee",
 			employeeId: "employee-1",
@@ -1145,77 +784,143 @@ describe("work policy settings scope actions", () => {
 	});
 
 	it("looks up effective assignments using date predicates and null effective dates as fallback", async () => {
-		mockState.employeeQueue = [
-			{
-				id: "employee-1",
-				organizationId: "org-1",
-				teamId: "team-1",
-				team: null,
-			},
+		state.employeeQueue = [
+			{ id: "employee-1", organizationId: "org-1", teamId: "team-1", team: null },
 		];
 
-		const result = await getEmployeeEffectiveScheduleDetails("employee-1");
+		const result = await actions.getEmployeeEffectiveScheduleDetails("employee-1");
 
 		expect(result).toEqual({ success: true, data: null });
-		expect(mockState.assignmentFindFirstArgs).toHaveLength(3);
-		for (const assignmentLookup of mockState.assignmentFindFirstArgs) {
-			expect(JSON.stringify(assignmentLookup.where)).toContain("effectiveFrom");
-			expect(JSON.stringify(assignmentLookup.where)).toContain("effectiveUntil");
-			expect(assignmentLookup.orderBy).toBeDefined();
-			expect(
-				assignmentLookup.orderBy(
-					{ effectiveFrom: "effectiveFrom", createdAt: "createdAt" },
-					{ desc: (value: unknown) => `desc:${String(value)}` },
-				),
-			).toEqual([{ sql: ["", " DESC NULLS LAST"], values: ["effectiveFrom"] }, "desc:createdAt"]);
+		expect(state.assignmentFindFirstArgs).toHaveLength(3);
+		for (const assignmentLookup of state.assignmentFindFirstArgs) {
+			const where = rendered(assignmentLookup.where).sql;
+			expect(where).toContain("effective_from");
+			expect(where).toContain("effective_until");
+			const orderBy = rendered(
+				sql.join(assignmentLookup.orderBy(workPolicyAssignment, { desc }), sql`, `),
+			).sql;
+			expect(orderBy).toContain("DESC NULLS LAST");
 		}
 	});
 
-	it("rejects effective schedule lookups for employees outside the actor organization", async () => {
-		mockState.targetEmployee = {
-			id: "employee-outside-org",
-			organizationId: "org-2",
-			role: "employee",
-		};
-		mockState.managedEmployeeIds = new Set(["employee-outside-org"]);
-		mockState.employeeQueue = [
-			{
-				id: "employee-outside-org",
-				organizationId: "org-2",
-				teamId: "team-2",
-				team: null,
-			},
-		];
+	it("reads an employee outside the active organization as not found", async () => {
+		state.managedEmployeeIds = new Set(["employee-outside-org"]);
+		state.employeeQueue = [null];
 
-		const result = await getEmployeeEffectiveScheduleDetails("employee-outside-org");
+		const result = await actions.getEmployeeEffectiveScheduleDetails("employee-outside-org");
+
+		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(state.assignmentFindFirstArgs).toHaveLength(0);
+	});
+
+	it("refuses a manager the schedule of an employee they do not manage", async () => {
+		state.employeeQueue = [{ id: "employee-2", organizationId: "org-1", teamId: null, team: null }];
+
+		const result = await actions.getEmployeeEffectiveScheduleDetails("employee-2");
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
-		expect(mockState.assignmentFindFirstArgs).toHaveLength(0);
+		expect(state.assignmentFindFirstArgs).toHaveLength(0);
 	});
 
 	it("rejects managers from hidden compliance actions", async () => {
-		const result = await getWorkPolicyViolations(
-			"org-1",
-			new Date("2026-01-01T00:00:00.000Z"),
-			new Date("2026-01-31T00:00:00.000Z"),
-		);
+		const result = await actions.getWorkPolicyViolations(period);
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 
 	it("acknowledges violations with the actor employee scoped to the active organization", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.actor.currentEmployee = {
-			id: "actor-employee-1",
-			organizationId: "org-1",
-			role: "admin",
-		};
+		state.caller = orgAdmin;
 
-		const result = await acknowledgeWorkPolicyViolation("violation-1", "Reviewed");
+		const result = await actions.acknowledgeWorkPolicyViolation({
+			violationId: "violation-1",
+			note: "Reviewed",
+		});
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(mockState.updateWhereArgs).toHaveLength(1);
-		expect(JSON.stringify(mockState.updateWhereArgs[0])).toContain("org-1");
-		expect(JSON.stringify(mockState.updateWhereArgs[0])).toContain("violation-1");
+		expect(state.updateSets[0]).toMatchObject({ acknowledgedBy: "actor-employee-1" });
+		expect(rendered(state.updateWhereArgs[0]).params).toEqual(
+			expect.arrayContaining(["org-1", "violation-1"]),
+		);
+	});
+
+	it("needs an employee record to acknowledge a violation", async () => {
+		state.caller = { ...orgAdmin, membershipRole: "owner", employee: null };
+
+		const result = await actions.acknowledgeWorkPolicyViolation({ violationId: "violation-1" });
+
+		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(state.updateSets).toHaveLength(0);
+	});
+});
+
+describe("work policy settings access", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		state.insertValues = [];
+		state.updateSets = [];
+	});
+
+	it.each([
+		["getWorkPolicies", () => actions.getWorkPolicies()],
+		["getWorkPolicy", () => actions.getWorkPolicy("policy-1")],
+		["getWorkPolicyAssignments", () => actions.getWorkPolicyAssignments()],
+		[
+			"createWorkPolicyAssignment",
+			() =>
+				actions.createWorkPolicyAssignment({
+					policyId: "policy-1",
+					assignmentType: "employee",
+					employeeId: "employee-1",
+				}),
+		],
+		["deleteWorkPolicyAssignment", () => actions.deleteWorkPolicyAssignment("assignment-1")],
+		["getWorkPolicyPresets", () => actions.getWorkPolicyPresets()],
+		[
+			"getEmployeeEffectiveScheduleDetails",
+			() => actions.getEmployeeEffectiveScheduleDetails("employee-1"),
+		],
+		["getTeamsForAssignment", () => actions.getTeamsForAssignment()],
+		["getEmployeesForAssignment", () => actions.getEmployeesForAssignment()],
+	])("refuses %s to an org member", async (_name, call) => {
+		state.caller = orgMember;
+
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+	});
+
+	it.each([
+		["createWorkPolicy", () => actions.createWorkPolicy(policyInput)],
+		[
+			"updateWorkPolicy",
+			() => actions.updateWorkPolicy({ policyId: "policy-1", data: { name: "X" } }),
+		],
+		["deleteWorkPolicy", () => actions.deleteWorkPolicy("policy-1")],
+		["setDefaultWorkPolicy", () => actions.setDefaultWorkPolicy("policy-1")],
+		["duplicateWorkPolicy", () => actions.duplicateWorkPolicy("policy-1")],
+		["getWorkPolicyViolations", () => actions.getWorkPolicyViolations(period)],
+		[
+			"acknowledgeWorkPolicyViolation",
+			() => actions.acknowledgeWorkPolicyViolation({ violationId: "violation-1" }),
+		],
+		["createWorkPolicyPreset", () => actions.createWorkPolicyPreset(presetInput)],
+		[
+			"updateWorkPolicyPreset",
+			() => actions.updateWorkPolicyPreset({ presetId: "preset-1", input: presetInput }),
+		],
+		["archiveWorkPolicyPreset", () => actions.archiveWorkPolicyPreset("preset-1")],
+		[
+			"copySystemWorkPolicyPreset",
+			() => actions.copySystemWorkPolicyPreset({ presetId: "preset-1", input: presetInput }),
+		],
+		[
+			"createWorkPolicyFromPreset",
+			() => actions.createWorkPolicyFromPreset({ presetId: "preset-1", input: presetInput }),
+		],
+		["importWorkPolicyPreset", () => actions.importWorkPolicyPreset({ presetId: "preset-1" })],
+	])("refuses %s to a scoped manager", async (_name, call) => {
+		state.caller = scopedManager;
+
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(state.insertValues).toHaveLength(0);
+		expect(state.updateSets).toHaveLength(0);
 	});
 });

@@ -111,7 +111,7 @@ function useAbsenceCategoryMutations(queryKey: QueryKey, onDeleted: () => void) 
 
 	const toggleActiveMutation = useMutation({
 		mutationFn: (category: AbsenceCategoryForSettings) =>
-			setAbsenceCategoryActive(category.id, !category.isActive),
+			setAbsenceCategoryActive({ categoryId: category.id, isActive: !category.isActive }),
 		onSuccess: (result, category) => {
 			if (result.success) {
 				toast.success(
@@ -179,7 +179,7 @@ export function AbsenceCategoriesTable({
 	} = useQuery({
 		queryKey,
 		queryFn: async () => {
-			const result = await getAbsenceCategoriesForSettings(organizationId);
+			const result = await getAbsenceCategoriesForSettings();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch absence categories");
 			}

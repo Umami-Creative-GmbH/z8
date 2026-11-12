@@ -202,7 +202,7 @@ export function VacationAssignmentDialog({
 		queryKey: queryKeys.vacationPolicies.list(organizationId),
 		enabled: open,
 		queryFn: async () => {
-			const result = await getVacationPolicies(organizationId);
+			const result = await getVacationPolicies();
 			if (!result.success) throw new Error(result.error);
 			return (result.data as PolicyOption[]).filter(
 				(policy) => policy.isActive,
@@ -213,7 +213,7 @@ export function VacationAssignmentDialog({
 		queryKey: queryKeys.teams.list(organizationId),
 		enabled: open && assignmentType === "team",
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) throw new Error(result.error);
 			return result.data as TeamOption[];
 		},

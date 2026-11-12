@@ -101,10 +101,7 @@ describe("VacationPolicyForm", () => {
 		await user.click(screen.getByRole("button", { name: "Update Policy" }));
 
 		await waitFor(() =>
-			expect(updateVacationPolicy).toHaveBeenCalledWith(
-				"policy_1",
-				expect.objectContaining({ startDate: "2027-01-05", validUntil: undefined }),
-			),
+			expect(updateVacationPolicy).toHaveBeenCalledWith({ policyId: "policy_1", data: expect.objectContaining({ startDate: "2027-01-05", validUntil: undefined }) }),
 		);
 	});
 
@@ -159,10 +156,7 @@ describe("VacationPolicyForm", () => {
 			await user.click(screen.getByRole("button", { name: "Update Policy" }));
 
 			await waitFor(() =>
-				expect(updateVacationPolicy).toHaveBeenCalledWith(
-					"policy_1",
-					expect.objectContaining({ prorateInStartAndExitYear: false, statutoryMinimumDays: "24" }),
-				),
+				expect(updateVacationPolicy).toHaveBeenCalledWith({ policyId: "policy_1", data: expect.objectContaining({ prorateInStartAndExitYear: false, statutoryMinimumDays: "24" }) }),
 			);
 		});
 

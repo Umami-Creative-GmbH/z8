@@ -64,7 +64,7 @@ function useHolidayAssignmentData(organizationId: string) {
 	const presetQuery = useQuery({
 		queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
 		queryFn: async () => {
-			const result = await getPresetAssignments(organizationId);
+			const result = await getPresetAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
@@ -75,7 +75,7 @@ function useHolidayAssignmentData(organizationId: string) {
 	const holidayQuery = useQuery({
 		queryKey: queryKeys.holidayAssignments.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayAssignments(organizationId);
+			const result = await getHolidayAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch holiday assignments");
 			}
@@ -86,7 +86,7 @@ function useHolidayAssignmentData(organizationId: string) {
 	const categoryQuery = useQuery({
 		queryKey: queryKeys.holidayCategoryAssignments.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayCategoryAssignments(organizationId);
+			const result = await getHolidayCategoryAssignments();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch holiday category assignments");
 			}

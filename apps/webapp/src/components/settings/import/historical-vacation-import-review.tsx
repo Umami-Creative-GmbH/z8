@@ -22,7 +22,7 @@ import type {
 	ReconciliationSource,
 } from "@/lib/absences/vacation-reconciliation-types";
 
-type Context = Awaited<ReturnType<typeof getHistoricalImportReviewContext>>;
+type Context = Extract<Awaited<ReturnType<typeof getHistoricalImportReviewContext>>, { success: true }>["data"];
 function ImportMappingForm({
 	batchId,
 	context,
@@ -254,7 +254,11 @@ export function HistoricalVacationImportReview({
 	const { t } = useTranslate();
 	const context = useQuery({
 		queryKey: ["historical-import-review", batchId],
-		queryFn: () => getHistoricalImportReviewContext(batchId),
+		queryFn: async () => {
+			const result = await getHistoricalImportReviewContext(batchId);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
 	});
 	if (context.error)
 		return (

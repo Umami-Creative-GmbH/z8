@@ -209,7 +209,7 @@ export function WorkPolicyPresetImport({
 	} = useQuery({
 		queryKey: presetsQueryKey,
 		queryFn: async () => {
-			const result = await getWorkPolicyPresets(organizationId);
+			const result = await getWorkPolicyPresets();
 			if (!result.success) {
 				throw new Error(
 					result.error ||
@@ -227,7 +227,7 @@ export function WorkPolicyPresetImport({
 
 	const archiveMutation = useMutation({
 		mutationFn: (presetId: string) =>
-			archiveWorkPolicyPreset(organizationId, presetId),
+			archiveWorkPolicyPreset(presetId),
 		onSuccess: (result) => {
 			if (!result.success) {
 				toast.error(

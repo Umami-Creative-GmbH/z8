@@ -150,13 +150,8 @@ export function AbsenceCategoryForm({
 			try {
 				const payload = buildAbsenceCategoryPayload(value);
 				const result = existingCategory
-					? await updateAbsenceCategory(existingCategory.id, {
-							...payload,
-						})
-					: await createAbsenceCategory({
-							...payload,
-							organizationId,
-						});
+					? await updateAbsenceCategory({ categoryId: existingCategory.id, data: payload })
+					: await createAbsenceCategory(payload);
 
 				if (result.success) {
 					toast.success(

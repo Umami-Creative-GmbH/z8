@@ -166,7 +166,7 @@ describe("work policy assignment teams on PostgreSQL", () => {
 	])("refuses the teams for %s", async (_case, userId) => {
 		harness.userId = userId();
 
-		const result = await getTeamsForAssignment(fixture.organizationId);
+		const result = await getTeamsForAssignment();
 
 		expect(result).toMatchObject({
 			success: false,
@@ -180,7 +180,7 @@ describe("work policy assignment teams on PostgreSQL", () => {
 	])("gives %s every team", async (_case, userId) => {
 		harness.userId = userId();
 
-		const result = await getTeamsForAssignment(fixture.organizationId);
+		const result = await getTeamsForAssignment();
 
 		expect(result).toEqual({
 			success: true,
@@ -194,7 +194,7 @@ describe("work policy assignment teams on PostgreSQL", () => {
 	it("gives a scoped manager only the teams the team settings let them manage", async () => {
 		harness.userId = manager.userId;
 
-		const result = await getTeamsForAssignment(fixture.organizationId);
+		const result = await getTeamsForAssignment();
 
 		expect(result).toEqual({
 			success: true,

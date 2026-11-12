@@ -138,22 +138,24 @@ export function VacationPolicyForm({
 			await runWithBusyState(setLoading, async () => {
 				try {
 					const result = existingPolicy
-						? await updateVacationPolicy(existingPolicy.id, {
-								name: value.name,
-								startDate: value.startDate,
-								validUntil: value.validUntil ?? undefined,
-								isCompanyDefault: value.isCompanyDefault,
-								defaultAnnualDays: value.defaultAnnualDays,
-								accrualType: value.accrualType,
-								accrualStartMonth: value.accrualStartMonth,
-								allowCarryover: value.allowCarryover,
-								maxCarryoverDays: value.maxCarryoverDays || undefined,
-								carryoverExpiryMonths: value.carryoverExpiryMonths,
-								prorateInStartAndExitYear: value.prorateInStartAndExitYear,
-								statutoryMinimumDays: value.statutoryMinimumDays,
+						? await updateVacationPolicy({
+								policyId: existingPolicy.id,
+								data: {
+									name: value.name,
+									startDate: value.startDate,
+									validUntil: value.validUntil ?? undefined,
+									isCompanyDefault: value.isCompanyDefault,
+									defaultAnnualDays: value.defaultAnnualDays,
+									accrualType: value.accrualType,
+									accrualStartMonth: value.accrualStartMonth,
+									allowCarryover: value.allowCarryover,
+									maxCarryoverDays: value.maxCarryoverDays || undefined,
+									carryoverExpiryMonths: value.carryoverExpiryMonths,
+									prorateInStartAndExitYear: value.prorateInStartAndExitYear,
+									statutoryMinimumDays: value.statutoryMinimumDays,
+								},
 							})
 						: await createVacationPolicy({
-								organizationId,
 								startDate: value.startDate,
 								validUntil: value.validUntil ?? undefined,
 								isCompanyDefault: value.isCompanyDefault,

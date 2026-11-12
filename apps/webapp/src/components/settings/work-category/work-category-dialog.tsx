@@ -117,7 +117,6 @@ function WorkCategoryDialogContent({
 				});
 			} else {
 				createMutation.mutate({
-					organizationId,
 					name: value.name,
 					description: value.description || null,
 					factor: value.factor,
@@ -130,7 +129,6 @@ function WorkCategoryDialogContent({
 	// Create mutation
 	const createMutation = useMutation({
 		mutationFn: (data: {
-			organizationId: string;
 			name: string;
 			description: string | null;
 			factor: string;

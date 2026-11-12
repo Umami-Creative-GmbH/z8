@@ -50,7 +50,7 @@ export function WorkPolicyAssignmentManager({
 	} = useQuery({
 		queryKey: queryKeys.workPolicies.assignments(organizationId),
 		queryFn: async () => {
-			const result = await getWorkPolicyAssignments(organizationId);
+			const result = await getWorkPolicyAssignments();
 			if (!result.success) {
 				return Promise.reject(result.error || "Failed to fetch assignments");
 			}

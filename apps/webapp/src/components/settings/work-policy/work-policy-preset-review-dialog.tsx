@@ -229,7 +229,7 @@ function WorkPolicyPresetReviewDialogContent({
 				try {
 					const result = await (async () => {
 						if (mode === "createCustom") {
-							return createWorkPolicyPreset(organizationId, reviewedValue);
+							return createWorkPolicyPreset(reviewedValue);
 						}
 
 						if (!preset) {
@@ -243,27 +243,14 @@ function WorkPolicyPresetReviewDialogContent({
 						}
 
 						if (mode === "editCustom") {
-							return updateWorkPolicyPreset(
-								organizationId,
-								preset.id,
-								reviewedValue,
-							);
+							return updateWorkPolicyPreset({ presetId: preset.id, input: reviewedValue });
 						}
 
 						if (mode === "copySystem") {
-							return copySystemWorkPolicyPreset(
-								organizationId,
-								preset.id,
-								reviewedValue,
-							);
+							return copySystemWorkPolicyPreset({ presetId: preset.id, input: reviewedValue });
 						}
 
-						return createWorkPolicyFromPreset(
-							organizationId,
-							preset.id,
-							reviewedValue,
-							setAsDefault,
-						);
+						return createWorkPolicyFromPreset({ presetId: preset.id, input: reviewedValue, setAsDefault });
 					})();
 
 					if (result.success) {

@@ -15,13 +15,7 @@ const settingsDir = join(import.meta.dirname, "..");
  * Settings folders not yet moved onto `organizationAction`. A folder slice of
  * #1592 removes its entries; the lock-in ticket empties this list.
  */
-const NOT_YET_MIGRATED = [
-	"change-policies",
-	"holidays",
-	"vacation",
-	"work-categories",
-	"work-policies",
-];
+const NOT_YET_MIGRATED: string[] = [];
 
 /**
  * Account actions belong to no organization, so settings access does not

@@ -429,15 +429,11 @@ describe("org-admin settings route access", () => {
 		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
 			true,
 		);
-		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(
-			true,
-		);
-		expect(
-			actionsSource.includes("requireOrgAdminEmployeeSettingsAccess("),
-		).toBe(true);
-		expect(actionsSource.includes('employeeRecord.role !== "admin"')).toBe(
-			false,
-		);
+		expect(actionsSource.includes('requires: "scopedManager"')).toBe(true);
+		expect(actionsSource.includes('requires: "orgAdmin"')).toBe(true);
+		expect(actionsSource.includes("actor.managedScope()")).toBe(true);
+		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(false);
+		expect(actionsSource.includes('employeeRecord.role !== "admin"')).toBe(false);
 	});
 
 	it("lets employee and skill settings pages use scoped settings access instead of the org-admin helper", () => {
@@ -559,46 +555,24 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "work-policies/actions.ts"), "utf8"),
 		);
 
-		expect(
-			vacationActionsSource.includes("getEmployeeSettingsActorContext("),
-		).toBe(true);
-		expect(
-			vacationActionsSource.includes(
-				"ensureSettingsActorCanAccessEmployeeTarget(",
-			),
-		).toBe(true);
-		expect(
-			vacationAssignmentActionsSource.includes(
-				"getEmployeeSettingsActorContext(",
-			),
-		).toBe(true);
-		expect(
-			vacationAssignmentActionsSource.includes(
-				"ensureSettingsActorCanAccessEmployeeTarget(",
-			),
-		).toBe(true);
-		expect(
-			workPolicyActionsSource.includes("getEmployeeSettingsActorContext("),
-		).toBe(true);
-		expect(
-			workPolicyActionsSource.includes(
-				"ensureSettingsActorCanAccessEmployeeTarget(",
-			),
-		).toBe(true);
-		expect(
-			workPolicyActionsSource.includes("policyBelongsToOrganization("),
-		).toBe(true);
-		expect(
-			workPolicyActionsSource.includes("canAccessWorkPolicyComplianceActions("),
-		).toBe(true);
-		expect(
-			vacationAssignmentActionsSource.includes(
-				'employeeRecord.role !== "admin"',
-			),
-		).toBe(false);
-		expect(
-			workPolicyActionsSource.includes('employeeRecord.role !== "admin"'),
-		).toBe(false);
+		for (const source of [
+			vacationActionsSource,
+			vacationAssignmentActionsSource,
+			workPolicyActionsSource,
+		]) {
+			expect(source.includes('requires: "scopedManager"')).toBe(true);
+			expect(source.includes("getEmployeeSettingsActorContext(")).toBe(false);
+			expect(source.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(false);
+			expect(source.includes('employeeRecord.role !== "admin"')).toBe(false);
+		}
+		// A scoped manager reaches only the employees in their managed scope.
+		expect(vacationActionsSource.includes("findManagedEmployee(")).toBe(true);
+		expect(vacationAssignmentActionsSource.includes("findManagedEmployee(")).toBe(true);
+		expect(workPolicyActionsSource.includes("refuseUnlessManaged(")).toBe(true);
+		// Policy compliance stays org-admin only.
+		expect(workPolicyActionsSource).toMatch(
+			/name: "workPolicies\.listViolations",\s*requires: "orgAdmin"/,
+		);
 	});
 
 	it("uses scoped holiday access helpers for reads while keeping mutations org-admin only", () => {
@@ -609,38 +583,14 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "holidays/preset-actions.ts"), "utf8"),
 		);
 
-		expect(
-			holidayActionsSource.includes("getEmployeeSettingsActorContext("),
-		).toBe(true);
-		expect(
-			holidayActionsSource.includes("getScopedHolidayAccessContext("),
-		).toBe(true);
-		expect(
-			holidayActionsSource.includes("filterAssignmentsForManagerHolidayScope("),
-		).toBe(true);
-		expect(
-			holidayActionsSource.includes("requireOrgAdminEmployeeSettingsAccess("),
-		).toBe(true);
-		expect(holidayActionsSource.includes("manageableTeamIds")).toBe(true);
-		expect(
-			holidayActionsSource.includes('employeeRecord.role !== "admin"'),
-		).toBe(false);
-		expect(
-			presetActionsSource.includes("getEmployeeSettingsActorContext("),
-		).toBe(true);
-		expect(presetActionsSource.includes("getScopedHolidayAccessContext(")).toBe(
-			true,
-		);
-		expect(
-			presetActionsSource.includes("filterAssignmentsForManagerHolidayScope("),
-		).toBe(true);
-		expect(
-			presetActionsSource.includes("requireOrgAdminEmployeeSettingsAccess("),
-		).toBe(true);
-		expect(presetActionsSource.includes("manageableTeamIds")).toBe(true);
-		expect(
-			presetActionsSource.includes('employeeRecord.role !== "admin"'),
-		).toBe(false);
+		for (const source of [holidayActionsSource, presetActionsSource]) {
+			expect(source.includes('requires: "scopedManager"')).toBe(true);
+			expect(source.includes('requires: "orgAdmin"')).toBe(true);
+			expect(source.includes("holidayScopeOf(")).toBe(true);
+			expect(source.includes("filterAssignmentsForManagerHolidayScope(")).toBe(true);
+			expect(source.includes("getEmployeeSettingsActorContext(")).toBe(false);
+			expect(source.includes('employeeRecord.role !== "admin"')).toBe(false);
+		}
 	});
 
 	it("lets the change-policies route use scoped settings access and manager-aware actions", () => {
@@ -659,18 +609,11 @@ describe("org-admin settings route access", () => {
 				'redirectWithLocale("/settings/work-policies?tab=changes")',
 			),
 		).toBe(true);
-		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(
-			true,
-		);
-		expect(
-			actionsSource.includes("requireOrgAdminEmployeeSettingsAccess("),
-		).toBe(true);
-		expect(
-			actionsSource.includes("getManagedEmployeeIdsForSettingsActor("),
-		).toBe(true);
-		expect(actionsSource.includes('employeeRecord.role !== "admin"')).toBe(
-			false,
-		);
+		expect(actionsSource.includes('requires: "scopedManager"')).toBe(true);
+		expect(actionsSource.includes('requires: "orgAdmin"')).toBe(true);
+		expect(actionsSource.includes("actor.managedScope()")).toBe(true);
+		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(false);
+		expect(actionsSource.includes('employeeRecord.role !== "admin"')).toBe(false);
 	});
 
 	it("uses shared scoped access helpers for project and customer actions", () => {

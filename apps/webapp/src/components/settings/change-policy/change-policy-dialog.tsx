@@ -321,7 +321,7 @@ export function ChangePolicyDialog({
 	});
 
 	const createMutation = useMutation({
-		mutationFn: (data: CreateChangePolicyInput) => createChangePolicy(organizationId, data),
+		mutationFn: (data: CreateChangePolicyInput) => createChangePolicy(data),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -343,7 +343,7 @@ export function ChangePolicyDialog({
 
 	const updateMutation = useMutation({
 		mutationFn: ({ id, data }: { id: string; data: CreateChangePolicyInput }) =>
-			updateChangePolicy(id, data),
+			updateChangePolicy({ policyId: id, data }),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({

@@ -527,9 +527,9 @@ describe("reviewed previously taken vacation", () => {
 		);
 		expect(
 			(
-				await updateEmployeeAllowance(employeeId, 2026, {
+				await updateEmployeeAllowance({ employeeId: employeeId, year: 2026, data: {
 					customAnnualDays: "35",
-				})
+				} })
 			).success,
 		).toBe(true);
 		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
@@ -695,13 +695,13 @@ describe("reviewed previously taken vacation", () => {
 		);
 		expect(
 			(
-				await updateAbsenceCategory(otherCategory, {
+				await updateAbsenceCategory({ categoryId: otherCategory, data: {
 					type: "vacation",
 					name: "Historical custom leave",
 					countsAgainstVacation: true,
 					requiresApproval: false,
 					isActive: true,
-				})
+				} })
 			).success,
 		).toBe(false);
 		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({

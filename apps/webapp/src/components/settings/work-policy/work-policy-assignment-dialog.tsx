@@ -96,7 +96,7 @@ export function WorkPolicyAssignmentDialog({
 	const { data: policies, isLoading: loadingPolicies } = useQuery({
 		queryKey: queryKeys.workPolicies.list(organizationId),
 		queryFn: async () => {
-			const result = await getWorkPolicies(organizationId);
+			const result = await getWorkPolicies();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -110,7 +110,7 @@ export function WorkPolicyAssignmentDialog({
 	const { data: teams, isLoading: loadingTeams } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -123,7 +123,7 @@ export function WorkPolicyAssignmentDialog({
 	// Create assignment mutation
 	const createMutation = useMutation({
 		mutationFn: (data: typeof form.state.values) =>
-			createWorkPolicyAssignment(organizationId, {
+			createWorkPolicyAssignment({
 				policyId: data.policyId,
 				assignmentType: data.assignmentType,
 				teamId: assignmentType === "team" ? (data.teamId ?? undefined) : undefined,

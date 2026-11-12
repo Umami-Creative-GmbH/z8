@@ -53,7 +53,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 	} = useQuery({
 		queryKey: queryKeys.holidayCategories.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayCategories(organizationId);
+			const result = await getHolidayCategories();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to load categories");
 			}

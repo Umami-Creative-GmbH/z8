@@ -504,7 +504,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				[ids.categorySet, ids.category],
 			],
 			mutate: () =>
-				asOwner(() => categories.updateSetCategories(ids.categorySet, [])),
+				asOwner(() => categories.updateSetCategories({ setId: ids.categorySet, categoryIds: [] })),
 		},
 		{
 			name: "a category added to the set contents",
@@ -523,7 +523,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			],
 			mutate: () =>
 				asOwner(() =>
-					categories.updateSetCategories(ids.categorySet, [ids.category]),
+					categories.updateSetCategories({ setId: ids.categorySet, categoryIds: [ids.category] }),
 				),
 		},
 		{
@@ -577,7 +577,6 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				asOwner(() =>
 					categories.createSetAssignment({
 						setId: ids.categorySet,
-						organizationId: ids.organization,
 						assignmentType: "employee",
 						employeeId: ids.employee,
 					}),
@@ -687,7 +686,6 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				asOwner(() =>
 					categories.createSetAssignment({
 						setId: ids.categorySet,
-						organizationId: ids.organization,
 						assignmentType: "employee",
 						...input,
 					}),
@@ -955,7 +953,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				asOwner(() => projects.removeProjectAssignment({ assignmentId: ids.projectAssignment })),
 			).resolves.toMatchObject({ success: true });
 			await expect(
-				asOwner(() => categories.updateSetCategories(ids.categorySet, [])),
+				asOwner(() => categories.updateSetCategories({ setId: ids.categorySet, categoryIds: [] })),
 			).resolves.toMatchObject({ success: true });
 
 			await expect(submit(legacy)).resolves.toEqual(committed);

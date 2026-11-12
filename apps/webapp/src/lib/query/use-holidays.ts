@@ -46,7 +46,7 @@ export function useHolidays({ organizationId, initialPageSize = 20 }: UseHoliday
 	const holidaysQuery = useQuery({
 		queryKey: queryKeys.holidays.list(organizationId, params),
 		queryFn: async (): Promise<PaginatedResponse<HolidayWithCategory>> => {
-			const result = await getHolidays(organizationId, params);
+			const result = await getHolidays(params);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
