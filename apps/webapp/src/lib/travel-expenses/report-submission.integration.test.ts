@@ -126,7 +126,9 @@ const { submitTravelExpenseReport } = await import(
 	"@/lib/approvals/server/travel-expense-report-submission"
 );
 const { db } = await import("@/db");
-const { parseInstant } = await import("@/lib/datetime/temporal-core");
+const { parseInstant, systemClock } = await import("@/lib/datetime/temporal-core");
+const { readOnlyTransaction } = await import("@/db/read-only-transaction");
+const { previewApprovalRoutes } = await import("@/lib/approvals/route-preview/preview");
 const { listFinanceQueue } = await import("@/lib/travel-expenses/finance-queue-store");
 const { createTravelExpenseExportBatch } = await import("@/lib/travel-expenses/export-store");
 const { buildTravelExpenseExportFiles } = await import("@/lib/travel-expenses/export-csv");
@@ -1279,5 +1281,111 @@ describe("report submission through approval authority (#602)", () => {
 		signIn("manager");
 		expect((await decide("approve", requestId)).status).toBe(409);
 		expect((await reportState(reportId)).status).toBe("submitted");
+	});
+});
+
+/**
+ * #1603 parity: the approval route preview and the submit path apply the same owner-alone
+ * self-approval rule. Each case previews first, then submits for real.
+ */
+describe("expense report route parity with the approval route preview (#1603)", () => {
+	beforeEach(async () => {
+		await seed();
+		harness.tus.clear();
+		harness.objects.clear();
+		harness.notifications = [];
+	});
+	afterAll(cleanup);
+
+	async function preview() {
+		const found = await readOnlyTransaction(db as never, (reader) =>
+			previewApprovalRoutes(reader, {
+				organizationId: "t602-org",
+				at: systemClock.nowInstant(),
+				requesters: [{ kind: "employee", employeeId: ids.requester }],
+			}),
+		);
+		const route = found.routes.get(`employee:${ids.requester}`)?.get("travel_expense");
+		if (!route) throw new Error("travel_expense not previewed");
+		return route;
+	}
+
+	const approversOf = (route: Awaited<ReturnType<typeof preview>>) =>
+		route.variants.flatMap(({ outcome }) =>
+			outcome.kind === "routed" ? outcome.stages.flatMap((stage) => stage.approverEmployeeIds) : [],
+		);
+
+	async function policyNaming(...approvers: string[]) {
+		await admin.query(
+			`insert into approval_policy (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, 't602-org', 'T1603 policy', true, 1, 't602-manager', now())`,
+			[ids.policy],
+		);
+		for (const [index, approver] of approvers.entries()) {
+			await admin.query(
+				`insert into approval_policy_stage (id, organization_id, policy_id, step_order, label, approver_type,
+				   approver_employee_id, fallback_behavior, updated_at)
+				 values ($1, 't602-org', $2, $3, 'Stage', 'specific_employee', $4, 'fail', now())`,
+				[[ids.firstStage, ids.secondStage][index], ids.policy, index + 1, approver],
+			);
+		}
+	}
+
+	it("lets the owner alone approve their own report", async () => {
+		await makeRequesterSoleOwner();
+
+		const route = await preview();
+		expect(route).toMatchObject({ kind: "routed", autoCompleted: true });
+		expect(route.variants[0]?.outcome).toMatchObject({ notes: [{ code: "owner_self_approval" }] });
+		expect(await submit(await completeTrip())).toEqual({
+			success: true,
+			data: { status: "self_approved" },
+		});
+	});
+
+	it("routes an owner's report to another reviewer once there is one", async () => {
+		await makeRequesterSoleOwner();
+		await admin.query(
+			"insert into travel_expense_settings (organization_id, expense_approver_employee_id) values ('t602-org', $1)",
+			[ids.finance],
+		);
+
+		const route = await preview();
+		expect(route).toMatchObject({ kind: "routed", autoCompleted: false });
+		expect(approversOf(route)).toEqual([ids.finance]);
+		const reportId = await completeTrip();
+		expect(await submit(reportId)).toEqual({ success: true, data: { status: "submitted" } });
+		expect((await reportState(reportId)).requests).toEqual([
+			expect.objectContaining({ status: "pending", approver_id: ids.finance }),
+		]);
+	});
+
+	it("refuses a route with a stage resolving to the owner while someone else decides too", async () => {
+		await makeRequesterSoleOwner();
+		await policyNaming(ids.requester, ids.manager);
+
+		expect(await preview()).toMatchObject({
+			kind: "unroutable",
+			reason: { code: "self_approval_route" },
+		});
+		const reportId = await completeTrip();
+		expect(await submit(reportId)).toEqual({
+			success: true,
+			data: { status: "self_approval_route" },
+		});
+		expect(await reportState(reportId)).toMatchObject({ status: "draft", requests: [] });
+	});
+
+	it("refuses a report nobody can review", async () => {
+		await linkManager(null);
+
+		expect(await preview()).toMatchObject({
+			kind: "unroutable",
+			reason: { code: "no_default_approver" },
+		});
+		expect(await submit(await completeTrip())).toEqual({
+			success: true,
+			data: { status: "no_reviewer", reason: "no_eligible_reviewer", canAssignApprover: false },
+		});
 	});
 });
