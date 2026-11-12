@@ -931,23 +931,20 @@ describe("deactivation acceptance (#1440)", () => {
 	it("refuses without a replacement, with an ineligible one and with a former one, changing nothing", async () => {
 		const before = await managerLinks();
 
-		for (const replacementManagers of [
-			{},
-			{ [seeded.orphan.employeeId]: seeded.plainEmployee.employeeId },
-			{ [seeded.orphan.employeeId]: seeded.formerAdmin.employeeId },
+		for (const [replacementManagers, refusal] of [
+			[{}, "replacement_required"],
+			[{ [seeded.orphan.employeeId]: seeded.plainEmployee.employeeId }, "replacement_required"],
+			// The organization action's roster check refuses a former one first (#1613).
+			[{ [seeded.orphan.employeeId]: seeded.formerAdmin.employeeId }, "former_employee"],
 			// The report itself can't be their own manager.
-			{ [seeded.orphan.employeeId]: seeded.orphan.employeeId },
-		]) {
+			[{ [seeded.orphan.employeeId]: seeded.orphan.employeeId }, "replacement_required"],
+		] as const) {
 			const result = await deactivateEmployeeAction({
 				employeeId: seeded.person.employeeId,
 				requestId: randomUUID(),
 				replacementManagers,
 			});
-			expect(result).toMatchObject({
-				success: false,
-				code: "ValidationError",
-				refusal: "replacement_required",
-			});
+			expect(result).toMatchObject({ success: false, code: "ValidationError", refusal });
 		}
 
 		expect(await personState()).toMatchObject({ is_active: true, deactivated_at: null });

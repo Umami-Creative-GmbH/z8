@@ -179,7 +179,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 		});
 		expect(await commit(review)).toMatchObject({
 			success: false,
-			code: "stale_preview",
+			refusal: "stale_preview",
 		});
 		const fresh = await preview();
 		expect(
@@ -343,7 +343,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 		);
 		expect(await commit(review)).toMatchObject({
 			success: false,
-			code: "stale_preview",
+			refusal: "stale_preview",
 		});
 		expect(await commit(await preview())).toMatchObject({ success: true });
 		const result = await loadVacationBalances(fixture.db, {
@@ -424,7 +424,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 		);
 		expect(await commit(review)).toMatchObject({
 			success: false,
-			code: "blocked",
+			refusal: "blocked",
 		});
 		expect((await preview()).previousEmploymentStartDate).toBe("2026-05-21");
 	});
@@ -531,8 +531,9 @@ describe("reviewed actual employment corrections through public admin actions", 
 			"@/app/[locale]/(app)/settings/employees/employee-mutations.actions"
 		);
 		expect(
-			await ordinary.updateEmployeeAction(employeeId, {
-				startDate: new Date("2024-01-01T00:00:00Z"),
+			await ordinary.updateEmployeeAction({
+				employeeId,
+				data: { startDate: new Date("2024-01-01T00:00:00Z") },
 			}),
 		).toMatchObject({ success: false });
 		expect(await vacation()).toMatchObject({ allowanceDays: 20 });
@@ -556,7 +557,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 		});
 		expect(await commit(review)).toMatchObject({
 			success: false,
-			code: "blocked",
+			refusal: "blocked",
 		});
 		expect(await vacation()).toMatchObject({ allowanceDays: 20 });
 		expect(
@@ -737,7 +738,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 		);
 		expect(await commit(review)).toMatchObject({
 			success: false,
-			code: "stale_preview",
+			refusal: "stale_preview",
 		});
 		expect(await vacation()).toMatchObject({ allowanceDays: 20 });
 		const foreign = await fixture.seedEmployee({
@@ -748,7 +749,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 				employeeId: foreign.employeeId,
 				employmentStartDate: "2024-01-01",
 			}),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, refusal: "not_permitted" });
 		await fixture.seedEmployee({ role: "owner" });
 		const current = await preview();
 		await fixture.pool.query(
@@ -757,7 +758,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 		);
 		expect(await commit(current)).toMatchObject({
 			success: false,
-			code: "not_permitted",
+			code: "AuthorizationError",
 		});
 		await fixture.pool.query(
 			"update member set role='owner' where user_id=$1 and organization_id=$2",
@@ -772,7 +773,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 				employeeId,
 				employmentStartDate: "2024-01-01",
 			}),
-		).toMatchObject({ success: false, code: "blocked" });
+		).toMatchObject({ success: false, refusal: "blocked" });
 		expect(await vacation()).toMatchObject({ allowanceDays: 20 });
 	});
 	it("preserves valid exceptions and flags an employment start that would silently move one", async () => {
@@ -792,7 +793,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 		});
 		expect(await commit(conflict)).toMatchObject({
 			success: false,
-			code: "blocked",
+			refusal: "blocked",
 		});
 	});
 
@@ -986,7 +987,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 		]);
 		expect(await commit(review)).toMatchObject({
 			success: false,
-			code: "blocked",
+			refusal: "blocked",
 		});
 	});
 });

@@ -1,12 +1,11 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
 	descCalls: [] as Array<{ columnName: string; tableName: string | undefined }>,
-	distinctOnCalls: [] as Array<
-		Array<{ columnName: string; tableName: string | undefined }>
-	>,
+	distinctOnCalls: [] as Array<Array<{ columnName: string; tableName: string | undefined }>>,
 	eqCalls: [] as Array<{
 		columnName: string;
 		tableName: string | undefined;
@@ -21,13 +20,13 @@ const mocks = vi.hoisted(() => ({
 		columnName: string;
 		tableName: string | undefined;
 	}>,
-	getEmployeeSettingsActorContext: vi.fn(),
-	getManagedEmployeeIdsForSettingsActor: vi.fn(),
+	caller: null as StubCaller | null,
+	dbService: null as null | ReturnType<typeof createDbService>,
+	managedEmployeeIds: [] as string[],
 }));
 
 vi.mock("drizzle-orm", async () => {
-	const actual =
-		await vi.importActual<typeof import("drizzle-orm")>("drizzle-orm");
+	const actual = await vi.importActual<typeof import("drizzle-orm")>("drizzle-orm");
 
 	return {
 		...actual,
@@ -42,25 +41,20 @@ vi.mock("drizzle-orm", async () => {
 			});
 			return actual.desc(column);
 		}),
-		eq: vi.fn(
-			(
-				left: Parameters<typeof actual.eq>[0],
-				right: Parameters<typeof actual.eq>[1],
-			) => {
-				const column = left as {
-					name?: string;
-					table?: { [key: symbol]: string };
-				};
+		eq: vi.fn((left: Parameters<typeof actual.eq>[0], right: Parameters<typeof actual.eq>[1]) => {
+			const column = left as {
+				name?: string;
+				table?: { [key: symbol]: string };
+			};
 
-				mocks.eqCalls.push({
-					columnName: column.name ?? "",
-					tableName: column.table?.[Symbol.for("drizzle:Name")],
-					value: right,
-				});
+			mocks.eqCalls.push({
+				columnName: column.name ?? "",
+				tableName: column.table?.[Symbol.for("drizzle:Name")],
+				value: right,
+			});
 
-				return actual.eq(left, right);
-			},
-		),
+			return actual.eq(left, right);
+		}),
 		inArray: vi.fn(
 			(
 				left: Parameters<typeof actual.inArray>[0],
@@ -81,46 +75,19 @@ vi.mock("drizzle-orm", async () => {
 	};
 });
 
-vi.mock("./employee-action-utils", () => ({
-	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
-	getManagedEmployeeIdsForSettingsActor:
-		mocks.getManagedEmployeeIdsForSettingsActor,
-}));
-
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Layer } = await import("effect");
-
-	return { AppLayer: Layer.empty };
-});
-
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
-
-	return {
-		runServerActionSafe: async <T>(
-			effect: Parameters<typeof Effect.runPromiseExit<T>>[0],
-		) => {
-			const exit = await Effect.runPromiseExit(effect);
-
-			return Exit.match(exit, {
-				onFailure: (cause) => {
-					const defect = Result.getOrNull(Cause.findDefect(cause));
-					const failure = Option.getOrNull(Cause.findErrorOption(cause));
-					const error = defect ?? failure ?? cause;
-
-					return {
-						success: false as const,
-						error:
-							error instanceof Error
-								? error.message
-								: "An unexpected error occurred",
-						code: "UNKNOWN_ERROR",
-					};
-				},
-				onSuccess: (data) => ({ success: true as const, data }),
-			});
-		},
-	};
+	const { Effect } = await import("effect");
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db: new Proxy({}, { get: (_target, key) => Reflect.get(mocks.dbService?.db ?? {}, key) }),
+			query: (name, fn) =>
+				name === "organizationAction.managedScope"
+					? (Effect.succeed([mocks.managedEmployeeIds.map((id) => ({ id })), []]) as never)
+					: (mocks.dbService?.query(name, fn) as never),
+		}),
+	);
 });
 
 import { getEmployeeClockStatuses } from "./employee-clock-status.actions";
@@ -141,18 +108,13 @@ function createDbService({
 	const createActivityQuery = () => ({
 		from: vi.fn(() => ({
 			where: vi.fn(() => ({
-				orderBy: vi.fn(
-					(firstColumn: {
-						name?: string;
-						table?: { [key: symbol]: string };
-					}) => {
-						mocks.orderByFirstColumnCalls.push({
-							columnName: firstColumn.name ?? "",
-							tableName: firstColumn.table?.[Symbol.for("drizzle:Name")],
-						});
-						return Promise.resolve([]);
-					},
-				),
+				orderBy: vi.fn((firstColumn: { name?: string; table?: { [key: symbol]: string } }) => {
+					mocks.orderByFirstColumnCalls.push({
+						columnName: firstColumn.name ?? "",
+						tableName: firstColumn.table?.[Symbol.for("drizzle:Name")],
+					});
+					return Promise.resolve([]);
+				}),
 			})),
 		})),
 	});
@@ -178,9 +140,7 @@ function createDbService({
 		query,
 		db: {
 			selectDistinctOn: vi.fn(
-				(
-					columns: Array<{ name?: string; table?: { [key: symbol]: string } }>,
-				) => {
+				(columns: Array<{ name?: string; table?: { [key: symbol]: string } }>) => {
 					mocks.distinctOnCalls.push(
 						columns.map((column) => ({
 							columnName: column.name ?? "",
@@ -203,6 +163,35 @@ function createDbService({
 	};
 }
 
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: { id: "admin-1", role: "admin", former: false },
+};
+const scopedManager: StubCaller = {
+	userId: "manager-user",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "manager-1", role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	userId: "member-user",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "member-1", role: "employee", former: false },
+};
+
+function useCaller(
+	caller: StubCaller,
+	dbService: ReturnType<typeof createDbService>,
+	managedEmployeeIds: string[] = [],
+) {
+	mocks.caller = caller;
+	mocks.dbService = dbService;
+	mocks.managedEmployeeIds = managedEmployeeIds;
+}
+
 describe("getEmployeeClockStatuses", () => {
 	beforeEach(() => {
 		mocks.descCalls.length = 0;
@@ -211,6 +200,21 @@ describe("getEmployeeClockStatuses", () => {
 		mocks.inArrayCalls.length = 0;
 		mocks.orderByFirstColumnCalls.length = 0;
 		vi.clearAllMocks();
+		mocks.caller = null;
+	});
+
+	it("refuses an org member, one level below scoped manager", async () => {
+		const dbService = createDbService({
+			activeRows: [{ employeeId: "emp-1" }],
+			organizationEmployeeRows: [{ id: "emp-1" }],
+		});
+		useCaller(orgMember, dbService);
+
+		await expect(getEmployeeClockStatuses(["emp-1"])).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(dbService.query).not.toHaveBeenCalled();
 	});
 
 	it("returns clocked-in only for requested employees with active work periods", async () => {
@@ -230,18 +234,7 @@ describe("getEmployeeClockStatuses", () => {
 			],
 			organizationEmployeeRows: [{ id: "emp-1" }, { id: "emp-2" }],
 		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				dbService,
-				organizationId: "org-1",
-				accessTier: "orgAdmin",
-				currentEmployee: { id: "admin-1", role: "admin" },
-				session: { user: { id: "user-1" } },
-			}),
-		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
-			Effect.succeed(null),
-		);
+		useCaller(orgAdmin, dbService);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-2"]);
 
@@ -273,16 +266,7 @@ describe("getEmployeeClockStatuses", () => {
 			] as never,
 			organizationEmployeeRows: [{ id: "emp-1" }, { id: "emp-2" }],
 		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				dbService,
-				organizationId: "org-1",
-				accessTier: "orgAdmin",
-				currentEmployee: { id: "admin-1", role: "admin" },
-				session: { user: { id: "user-1" } },
-			}),
-		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(null));
+		useCaller(orgAdmin, dbService);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-2"]);
 
@@ -309,18 +293,7 @@ describe("getEmployeeClockStatuses", () => {
 			activeRows: [{ employeeId: "emp-1" }, { employeeId: "emp-2" }],
 			organizationEmployeeRows: [{ id: "emp-1" }, { id: "emp-2" }],
 		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				dbService,
-				organizationId: "org-1",
-				accessTier: "manager",
-				currentEmployee: { id: "manager-1", role: "manager" },
-				session: { user: { id: "manager-user" } },
-			}),
-		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
-			Effect.succeed(new Set(["emp-1"])),
-		);
+		useCaller(scopedManager, dbService, ["emp-1"]);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-2"]);
 
@@ -340,18 +313,7 @@ describe("getEmployeeClockStatuses", () => {
 			activeRows: [],
 			organizationEmployeeRows: [{ id: "emp-1" }],
 		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				dbService,
-				organizationId: "org-1",
-				accessTier: "orgAdmin",
-				currentEmployee: { id: "admin-1", role: "admin" },
-				session: { user: { id: "user-1" } },
-			}),
-		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
-			Effect.succeed(null),
-		);
+		useCaller(orgAdmin, dbService);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-1", ""]);
 
@@ -378,18 +340,7 @@ describe("getEmployeeClockStatuses", () => {
 			],
 			organizationEmployeeRows: [{ id: "emp-1" }],
 		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				dbService,
-				organizationId: "org-1",
-				accessTier: "orgAdmin",
-				currentEmployee: { id: "admin-1", role: "admin" },
-				session: { user: { id: "user-1" } },
-			}),
-		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
-			Effect.succeed(null),
-		);
+		useCaller(orgAdmin, dbService);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-outside-org"]);
 
@@ -413,18 +364,7 @@ describe("getEmployeeClockStatuses", () => {
 			activeRows: [],
 			organizationEmployeeRows: [{ id: "emp-1" }, { id: "emp-2" }],
 		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				dbService,
-				organizationId: "org-1",
-				accessTier: "manager",
-				currentEmployee: { id: "manager-1", role: "manager" },
-				session: { user: { id: "manager-user" } },
-			}),
-		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
-			Effect.succeed(new Set(["emp-1"])),
-		);
+		useCaller(scopedManager, dbService, ["emp-1"]);
 
 		await getEmployeeClockStatuses(["emp-1", "emp-2"]);
 
@@ -469,18 +409,7 @@ describe("getEmployeeClockStatuses", () => {
 			activeRows: [],
 			organizationEmployeeRows: [],
 		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				dbService,
-				organizationId: "org-1",
-				accessTier: "orgAdmin",
-				currentEmployee: { id: "admin-1", role: "admin" },
-				session: { user: { id: "user-1" } },
-			}),
-		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
-			Effect.succeed(null),
-		);
+		useCaller(orgAdmin, dbService);
 
 		const result = await getEmployeeClockStatuses(["inaccessible-emp"]);
 
@@ -496,18 +425,7 @@ describe("getEmployeeClockStatuses", () => {
 			activeRows: [],
 			organizationEmployeeRows: [{ id: "emp-1" }],
 		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				dbService,
-				organizationId: "org-1",
-				accessTier: "orgAdmin",
-				currentEmployee: { id: "admin-1", role: "admin" },
-				session: { user: { id: "user-1" } },
-			}),
-		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
-			Effect.succeed(null),
-		);
+		useCaller(orgAdmin, dbService);
 
 		await getEmployeeClockStatuses(["emp-1", "inactive-emp"]);
 

@@ -1,104 +1,79 @@
 "use server";
-import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee } from "@/db/schema";
-import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
+import { z } from "zod";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { runRefusalAction } from "@/lib/effect/refusal-action";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { NotFoundError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { refusalStep } from "@/lib/organization-action/action-refusal";
+import { organizationAction } from "@/lib/organization-action/organization-action";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import {
 	commitEmployeeTrackingDate,
 	loadEmployeeTrackingDateSettings,
 	previewEmployeeTrackingDate,
-	type EmployeeTrackingDateSettings,
-	type EmployeeTrackingProposal,
 } from "@/lib/time-tracking/employee-tracking-date";
-import {
-	TrackingDateRefusal,
-	type TrackingDateActionResult,
-	type TrackingDateImpact,
-} from "@/lib/time-tracking/tracking-date-review-types";
-import {
-	ensureSettingsActorCanAccessEmployeeTarget,
-	getEmployeeSettingsActorContext,
-} from "./employee-action-utils";
 import { refreshTrackingDateResults } from "@/lib/time-tracking/tracking-date-refresh";
-const denied = () =>
-	new TrackingDateRefusal(
-		"not_permitted",
-		"Only an organization admin can change employee tracking dates.",
-	);
-export async function getEmployeeTrackingDateAction(
-	employeeId: string,
-): Promise<ServerActionResult<EmployeeTrackingDateSettings & { canManage: boolean }>> {
-	return runServerActionSafe(
+import { TrackingDateRefusal } from "@/lib/time-tracking/tracking-date-review-types";
+import { loadManagedEmployee } from "./managed-employee";
+
+const proposalSchema = z.strictObject({
+	employeeId: z.uuid("Invalid employee"),
+	trackingStartDate: z.string().nullable(),
+});
+
+/** The employee's tracking dates, for whoever manages them; `canManage` for org admins. */
+export const getEmployeeTrackingDateAction = organizationAction(
+	{
+		name: "employeeTrackingDates.read",
+		requires: "scopedManager",
+		schema: z.uuid("Invalid employee"),
+	},
+	(context) =>
 		Effect.gen(function* () {
-			const actor = yield* getEmployeeSettingsActorContext({
-				queryName: "employeeTrackingDates.read",
+			const { actor, organizationId, input: employeeId } = context;
+			yield* loadManagedEmployee(context, employeeId, {
+				queryName: "employeeTrackingDates.target",
 			});
-			const target = yield* actor.dbService.query("employeeTrackingDates.target", () =>
-				actor.dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.id, employeeId),
-						eq(employee.organizationId, actor.organizationId),
-					),
-				}),
+			const dbService = yield* DatabaseService;
+			const settings = yield* dbService.query("employeeTrackingDates.settings", () =>
+				loadEmployeeTrackingDateSettings(dbService.db, { organizationId, employeeId }),
 			);
-			if (!target)
-				return yield* Effect.fail(
-					new NotFoundError({
-						message: "Employee not found",
-						entityType: "employee",
-						entityId: employeeId,
-					}),
-				);
-			yield* ensureSettingsActorCanAccessEmployeeTarget(actor, target, {
-				message: "You do not have access to this employee",
-				resource: "employee",
-				action: "read",
-			});
-			const settings = yield* actor.dbService.query("employeeTrackingDates.settings", () =>
-				loadEmployeeTrackingDateSettings(actor.dbService.db, {
-					organizationId: actor.organizationId,
-					employeeId,
-				}),
-			);
-			return { ...settings, canManage: actor.accessTier === "orgAdmin" };
+			return {
+				...settings,
+				canManage: meetsSettingsAccess(actor.settingsAccess, "orgAdmin"),
+			};
 		}),
-	);
-}
-export async function previewEmployeeTrackingDateAction(
-	input: EmployeeTrackingProposal,
-): Promise<TrackingDateActionResult<TrackingDateImpact>> {
-	return runRefusalAction(
-		"employeeTrackingDates.preview",
-		TrackingDateRefusal,
-		async (database) => {
-			const actor = await requireOrganizationAdmin(denied);
-			return previewEmployeeTrackingDate(database, {
+);
+
+export const previewEmployeeTrackingDateAction = organizationAction(
+	{ name: "employeeTrackingDates.preview", requires: "orgAdmin", schema: proposalSchema },
+	({ actor, organizationId, input }) =>
+		refusalStep("employeeTrackingDates.preview", TrackingDateRefusal, (database) =>
+			previewEmployeeTrackingDate(database, {
 				...input,
-				organizationId: actor.organizationId,
+				organizationId,
+				actorUserId: actor.userId,
+				now: systemClock.nowInstant(),
+			}),
+		),
+);
+
+export const commitEmployeeTrackingDateAction = organizationAction(
+	{
+		name: "employeeTrackingDates.commit",
+		requires: "orgAdmin",
+		schema: proposalSchema.extend({ fingerprint: z.string(), reason: z.string() }),
+	},
+	({ actor, organizationId, input }) =>
+		refusalStep("employeeTrackingDates.commit", TrackingDateRefusal, async (database) => {
+			const impact = await commitEmployeeTrackingDate(database, {
+				...input,
+				organizationId,
 				actorUserId: actor.userId,
 				now: systemClock.nowInstant(),
 			});
-		},
-	);
-}
-export async function commitEmployeeTrackingDateAction(
-	input: EmployeeTrackingProposal & { fingerprint: string; reason: string },
-): Promise<TrackingDateActionResult<{ status: "committed"; refreshPending: boolean }>> {
-	return runRefusalAction("employeeTrackingDates.commit", TrackingDateRefusal, async (database) => {
-		const actor = await requireOrganizationAdmin(denied);
-		const impact = await commitEmployeeTrackingDate(database, {
-			...input,
-			organizationId: actor.organizationId,
-			actorUserId: actor.userId,
-			now: systemClock.nowInstant(),
-		});
-		return {
-			status: "committed",
-			refreshPending: await refreshTrackingDateResults(actor.organizationId, impact),
-		};
-	});
-}
+			return {
+				status: "committed" as const,
+				refreshPending: await refreshTrackingDateResults(organizationId, impact),
+			};
+		}),
+);

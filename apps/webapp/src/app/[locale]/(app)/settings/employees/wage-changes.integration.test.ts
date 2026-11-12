@@ -72,10 +72,17 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-const { changeEmployeeWageAction, cancelEmployeeEmploymentHistoryAction } = await import(
-	"./employment-history-actions"
-);
-const { updateEmployeeAction } = await import("./employee-mutations.actions");
+const historyActions = await import("./employment-history-actions");
+const changeEmployeeWageAction = (
+	employeeId: string,
+	data: Parameters<typeof historyActions.changeEmployeeWageAction>[0]["data"],
+) => historyActions.changeEmployeeWageAction({ employeeId, data });
+const cancelEmployeeEmploymentHistoryAction = (employeeId: string, historyId: string) =>
+	historyActions.cancelEmployeeEmploymentHistoryAction({ employeeId, historyId });
+const employeeMutations = await import("./employee-mutations.actions");
+/** The detail save, by employee and form values. */
+const updateEmployeeAction = (employeeId: string, data: Record<string, unknown>) =>
+	employeeMutations.updateEmployeeAction({ employeeId, data });
 const { getEmployeeAction, listEmployeesAction } = await import("./employee-queries.actions");
 
 describe("wage changes on PostgreSQL", () => {
@@ -267,7 +274,7 @@ describe("wage changes on PostgreSQL", () => {
 			position: "Lead",
 			contractType: "fixed",
 			hourlyRate: "99",
-		} as Parameters<typeof updateEmployeeAction>[1]);
+		});
 
 		expect(result).toMatchObject({ success: true });
 		expect(await employeeContractFields()).toEqual({
@@ -372,7 +379,7 @@ describe("wage changes on PostgreSQL", () => {
 			position: "Lead",
 			contractType: "fixed",
 			hourlyRate: "99",
-		} as Parameters<typeof updateEmployeeAction>[1]);
+		});
 
 		expect(result).toMatchObject({ success: true });
 		expect(await employeeContractFields()).toEqual({

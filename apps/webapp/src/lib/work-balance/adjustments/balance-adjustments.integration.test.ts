@@ -248,34 +248,34 @@ describe("overtime payouts on PostgreSQL", () => {
 	it("refuses a payout over the balance, of zero, dated after today or without a reason", async () => {
 		expect(await recordPayout({ hours: 20 })).toMatchObject({
 			success: false,
-			code: "exceeds_balance",
+			refusal: "exceeds_balance",
 		});
 		// The balance at the end of the work day is 12h; the day before it is nothing.
 		expect(
 			await recordPayout({ day: workDay.subtract({ days: 1 }).toString(), hours: 1 }),
-		).toMatchObject({ success: false, code: "exceeds_balance" });
+		).toMatchObject({ success: false, refusal: "exceeds_balance" });
 		expect(await recordPayout({ hours: 0, minutes: 0 })).toMatchObject({
 			success: false,
-			code: "amount_not_positive",
+			refusal: "amount_not_positive",
 		});
 		expect(await recordPayout({ day: today.add({ days: 1 }).toString() })).toMatchObject({
 			success: false,
-			code: "future_day",
+			refusal: "future_day",
 		});
 		expect(await recordPayout({ reason: "   " })).toMatchObject({
 			success: false,
-			code: "reason_required",
+			refusal: "reason_required",
 		});
 		expect(await recordPayout({ day: "not-a-day" })).toMatchObject({
 			success: false,
-			code: "invalid_input",
+			refusal: "invalid_input",
 		});
 
 		// A second payout counts the first: 12h - 5h leaves 7h.
 		expect(await recordPayout({ hours: 5 })).toMatchObject({ success: true });
 		expect(await recordPayout({ hours: 7, minutes: 1 })).toMatchObject({
 			success: false,
-			code: "exceeds_balance",
+			refusal: "exceeds_balance",
 		});
 		expect(await recordPayout({ hours: 7 })).toMatchObject({ success: true });
 		expect(await balanceMinutes()).toBe(0);
@@ -288,7 +288,7 @@ describe("overtime payouts on PostgreSQL", () => {
 		// 5h fits the 12h of the work day itself, but would take the later payout's day to -3h.
 		expect(await recordPayout({ day: workDay.toString(), hours: 5 })).toMatchObject({
 			success: false,
-			code: "exceeds_later_balance",
+			refusal: "exceeds_later_balance",
 		});
 		expect(await recordPayout({ day: workDay.toString(), hours: 2 })).toMatchObject({
 			success: true,
@@ -319,7 +319,7 @@ describe("overtime payouts on PostgreSQL", () => {
 		actAs(owner.userId);
 		expect(
 			await actions.cancelBalanceAdjustmentAction({ employeeId, adjustmentId, reason: "" }),
-		).toMatchObject({ success: false, code: "reason_required" });
+		).toMatchObject({ success: false, refusal: "reason_required" });
 		expect(
 			await actions.cancelBalanceAdjustmentAction({
 				employeeId,
@@ -345,7 +345,7 @@ describe("overtime payouts on PostgreSQL", () => {
 				adjustmentId,
 				reason: "Again",
 			}),
-		).toMatchObject({ success: false, code: "already_cancelled" });
+		).toMatchObject({ success: false, refusal: "already_cancelled" });
 		expect(await auditActions(adjustmentId)).toEqual([
 			{ action: "balance_adjustment.recorded", performed_by: admin.userId },
 			{ action: "balance_adjustment.cancelled", performed_by: owner.userId },
@@ -359,12 +359,12 @@ describe("overtime payouts on PostgreSQL", () => {
 		for (const userId of [manager.userId, member.userId]) {
 			expect(await recordPayout({ hours: 1 }, userId)).toMatchObject({
 				success: false,
-				code: "not_permitted",
+				refusal: "not_permitted",
 			});
 			actAs(userId);
 			expect(
 				await actions.cancelBalanceAdjustmentAction({ employeeId, adjustmentId, reason: "No" }),
-			).toMatchObject({ success: false, code: "not_permitted" });
+			).toMatchObject({ success: false, refusal: "not_permitted" });
 		}
 		// The direct manager sees the history read-only (#996); an unrelated member does not.
 		actAs(manager.userId);
@@ -375,7 +375,7 @@ describe("overtime payouts on PostgreSQL", () => {
 		actAs(member.userId);
 		expect(await actions.getEmployeeWorkBalanceSectionAction({ employeeId })).toMatchObject({
 			success: false,
-			code: "not_permitted",
+			refusal: "not_permitted",
 		});
 		expect(await balanceMinutes()).toBe(660);
 	});
@@ -393,10 +393,10 @@ describe("overtime payouts on PostgreSQL", () => {
 				minutes: 0,
 				reason: "Foreign",
 			}),
-		).toMatchObject({ success: false, code: "employee_not_found" });
+		).toMatchObject({ success: false, refusal: "employee_not_found" });
 		expect(await actions.getEmployeeWorkBalanceSectionAction({ employeeId })).toMatchObject({
 			success: false,
-			code: "employee_not_found",
+			refusal: "employee_not_found",
 		});
 		expect(
 			await actions.cancelBalanceAdjustmentAction({
@@ -404,7 +404,7 @@ describe("overtime payouts on PostgreSQL", () => {
 				adjustmentId,
 				reason: "Foreign",
 			}),
-		).toMatchObject({ success: false, code: "adjustment_not_found" });
+		).toMatchObject({ success: false, refusal: "adjustment_not_found" });
 
 		// The database refuses an adjustment for another organization's employee.
 		await expect(
@@ -471,7 +471,7 @@ describe("overtime payouts on PostgreSQL", () => {
 			});
 		expect(await payout(localToday.add({ days: 1 }).toString())).toMatchObject({
 			success: false,
-			code: "future_day",
+			refusal: "future_day",
 		});
 		// Today in Kiritimati is accepted even when it is still yesterday in UTC.
 		expect(await payout(localToday.toString(), 10)).toMatchObject({ success: true });
@@ -501,7 +501,7 @@ describe("overtime payouts on PostgreSQL", () => {
 		});
 
 		const earlier = await payout(workDay.add({ days: 1 }).toString(), 0);
-		expect(earlier).toMatchObject({ success: false, code: "amount_not_positive" });
+		expect(earlier).toMatchObject({ success: false, refusal: "amount_not_positive" });
 		const cancelled = section.success ? section.data.adjustments[0]?.id : undefined;
 		expect(
 			await actions.cancelBalanceAdjustmentAction({

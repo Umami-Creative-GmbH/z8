@@ -39,7 +39,7 @@ describe("employee query name source", () => {
 	it("includes invitation draft rows for org admins", () => {
 		expect(source).toContain("employeeInvitationDraft");
 		expect(source).toContain('kind: "invitationDraft"');
-		expect(source).toContain('actor.accessTier === "orgAdmin"');
+		expect(source).toContain("viewer.isOrgAdmin");
 		expect(source).toContain("decodeEmployeeInvitationDraftId(employeeId)");
 	});
 
@@ -57,14 +57,14 @@ describe("employee query name source", () => {
 
 	it("uses the shared pending-future eligibility predicate for draft list and detail queries", () => {
 		expect(source).toContain("buildEligibleInvitationDraftPredicate");
-		expect(source).toContain("buildInvitationDraftFilters(actor.organizationId, now, filterParams)");
+		expect(source).toContain("buildInvitationDraftFilters(organizationId, now, filterParams)");
 		expect(source).toContain("draftId,");
 		expect(source.match(/buildEligibleInvitationDraftPredicate\(\{/g)).toHaveLength(2);
 		expect(source.match(/dateFromInstant\(systemClock\.nowInstant\(\)\)/g)).toHaveLength(2);
 	});
 
 	it("keeps managers on the real-employee-only path", () => {
-		expect(source).toContain('const includeInvitationDrafts = actor.accessTier === "orgAdmin"');
+		expect(source).toContain("const includeInvitationDrafts = viewer.isOrgAdmin");
 		expect(source).toContain("if (!includeInvitationDrafts)");
 	});
 
@@ -83,15 +83,16 @@ describe("employee query name source", () => {
 	});
 
 	it("organization-scopes the final invitation draft detail predicate", () => {
-		expect(source).toContain("organizationId: actor.organizationId");
-		expect(source).toContain("draftId,");
+		expect(source).toMatch(
+			/buildEligibleInvitationDraftPredicate\(\{\s*organizationId,\s*now,\s*draftId,/,
+		);
 	});
 
 	it("selects one deterministic approved membership without filtering out employees", () => {
 		expect(source).toContain("leftJoinLateral");
 		expect(source).toContain('eq(member.status, "approved")');
 		expect(source).toContain("eq(member.userId, employee.userId)");
-		expect(source).toContain("eq(member.organizationId, actor.organizationId)");
+		expect(source).toContain("eq(member.organizationId, organizationId)");
 		expect(source).toContain("desc(member.createdAt)");
 		expect(source).toContain("desc(member.id)");
 		expect(source).toContain(".limit(1)");
@@ -104,7 +105,7 @@ describe("employee query name source", () => {
 
 	it("organization-scopes the final real employee detail lookup", () => {
 		expect(source).toContain(
-			"where: and(eq(employee.id, employeeId), eq(employee.organizationId, actor.organizationId))",
+			"where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId))",
 		);
 	});
 });

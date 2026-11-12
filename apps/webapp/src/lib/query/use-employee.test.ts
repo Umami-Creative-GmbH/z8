@@ -218,7 +218,7 @@ describe("useEmployee contracts", () => {
 			await result.current.changeWage(change);
 		});
 
-		expect(changeWageMock).toHaveBeenCalledWith(employeeId, change);
+		expect(changeWageMock).toHaveBeenCalledWith({ employeeId, data: change });
 		expectEmploymentHistoryInvalidated(invalidateQueriesSpy);
 	});
 
@@ -242,10 +242,10 @@ describe("useEmployee contracts", () => {
 			});
 		});
 
-		expect(createEmploymentHistoryMock).toHaveBeenCalledWith(
+		expect(createEmploymentHistoryMock).toHaveBeenCalledWith({
 			employeeId,
-			expect.any(Object),
-		);
+			data: expect.any(Object),
+		});
 		expectEmploymentHistoryInvalidated(invalidateQueriesSpy);
 	});
 
@@ -262,10 +262,10 @@ describe("useEmployee contracts", () => {
 			await result.current.confirmEmploymentHistory("history-1");
 		});
 
-		expect(confirmEmploymentHistoryMock).toHaveBeenCalledWith(
+		expect(confirmEmploymentHistoryMock).toHaveBeenCalledWith({
 			employeeId,
-			"history-1",
-		);
+			historyId: "history-1",
+		});
 		expectEmploymentHistoryInvalidated(invalidateQueriesSpy);
 	});
 
@@ -279,10 +279,10 @@ describe("useEmployee contracts", () => {
 			await result.current.cancelEmploymentHistory("history-1");
 		});
 
-		expect(cancelEmploymentHistoryMock).toHaveBeenCalledWith(
+		expect(cancelEmploymentHistoryMock).toHaveBeenCalledWith({
 			employeeId,
-			"history-1",
-		);
+			historyId: "history-1",
+		});
 		expectEmploymentHistoryInvalidated(invalidateQueriesSpy);
 	});
 

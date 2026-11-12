@@ -26,10 +26,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { KioskPinActionResult } from "@/lib/time-tracking/kiosk/pin-errors";
+import type { ServerActionResult } from "@/lib/effect/result";
+import type { KioskPinErrorCode } from "@/lib/time-tracking/kiosk/pin-errors";
 import { KioskBadgeSection } from "./employee-kiosk-badge-section";
 import { KioskFobSection } from "./employee-kiosk-fob-section";
 import { kioskPinErrorMessage } from "./kiosk-pin-error-message";
+import { kioskRefusalCode } from "./kiosk-refusal-code";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -132,12 +134,12 @@ function KioskPinSection({
 	const [shownPin, setShownPin] = useState<string | null>(null);
 	const [confirmingReset, setConfirmingReset] = useState(false);
 
-	const handleResult = <T,>(result: KioskPinActionResult<T>, onSuccess: (data: T) => void) => {
+	const handleResult = <T,>(result: ServerActionResult<T>, onSuccess: (data: T) => void) => {
 		if (result.success) {
 			onSuccess(result.data);
 			void onChanged();
 		} else {
-			toast.error(kioskPinErrorMessage(t, result.code));
+			toast.error(kioskPinErrorMessage(t, kioskRefusalCode<KioskPinErrorCode>(result)));
 		}
 	};
 
@@ -246,7 +248,7 @@ function AddEmailSection({
 			const result = await addMutation.mutateAsync(value.email).catch(() => null);
 			if (!result) return;
 			if (!result.success) {
-				toast.error(kioskPinErrorMessage(t, result.code));
+				toast.error(kioskPinErrorMessage(t, kioskRefusalCode<KioskPinErrorCode>(result)));
 				return;
 			}
 			if (result.data.invitationSent) {

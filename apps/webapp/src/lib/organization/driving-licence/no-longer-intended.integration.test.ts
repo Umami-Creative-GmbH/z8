@@ -522,12 +522,16 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		await assign({ type: "team", teamId: drivers }, "required");
 		await check(alex);
 		const preview = impact(
-			await owner(() => previewEmployeeTeamChangeDrivingImpact(alex.employeeId, office)),
+			await owner(() =>
+				previewEmployeeTeamChangeDrivingImpact({ employeeId: alex.employeeId, teamId: office }),
+			),
 		);
 		expect(preview).toEqual(full([ending(alex)]));
 		expect(
 			await owner(() =>
-				updateEmployeeAction(alex.employeeId, { teamId: office }, undefined, {
+				updateEmployeeAction({
+					employeeId: alex.employeeId,
+					data: { teamId: office },
 					drivingLicencePreviewToken: preview.previewToken,
 				}),
 			),
@@ -557,7 +561,9 @@ describe("primary-team changes end the authorizations of employees who stop bein
 			refusal: "stale_preview",
 		});
 		expect(
-			await owner(() => updateEmployeeAction(alex.employeeId, { teamId: office })),
+			await owner(() =>
+				updateEmployeeAction({ employeeId: alex.employeeId, data: { teamId: office } }),
+			),
 		).toMatchObject({ success: false, refusal: "stale_preview" });
 		const vans = await seedTeam("Vans");
 		await assign({ type: "team", teamId: vans }, "required");

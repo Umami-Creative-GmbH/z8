@@ -113,7 +113,7 @@ export function ManagerAssignment({
 			isPrimary: managerId === primaryManager,
 		}));
 
-		const result = await assignManagers(employeeId, { managers }).catch(() => null);
+		const result = await assignManagers({ employeeId, data: { managers } }).catch(() => null);
 
 		if (!result) {
 			toast.error(t("settings.managerAssignment.unexpectedError", "An unexpected error occurred"));

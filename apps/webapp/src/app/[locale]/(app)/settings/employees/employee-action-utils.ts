@@ -1,9 +1,3 @@
-import {
-	type Attributes,
-	type Span,
-	SpanStatusCode,
-	trace,
-} from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
@@ -13,15 +7,10 @@ import { employee, team, teamPermissions } from "@/db/schema";
 import type { TeamPermissions } from "@/lib/authorization";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
-	type AnyAppError,
 	AuthorizationError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
@@ -788,43 +777,4 @@ export function parseHourlyRate(value?: string | null) {
 
 export function revalidateEmployeesCache(organizationId: string) {
 	revalidateTag(CACHE_TAGS.EMPLOYEES(organizationId), "max");
-}
-
-export function runTracedEmployeeAction<T>(options: {
-	name: string;
-	attributes?: Attributes;
-	logError: (error: unknown) => void;
-	execute: (span: Span) => Effect.Effect<T, AnyAppError, any>;
-}): Promise<ServerActionResult<T>> {
-	const tracer = trace.getTracer("employees");
-	const runWithSpan = (span: Span) =>
-		options.execute(span).pipe(
-			Effect.tap(() =>
-				Effect.sync(() => {
-					span.setStatus({ code: SpanStatusCode.OK });
-				}),
-			),
-			Effect.catch((error) =>
-				Effect.gen(function* () {
-					span.recordException(error as Error);
-					span.setStatus({
-						code: SpanStatusCode.ERROR,
-						message: String(error),
-					});
-					options.logError(error);
-					return yield* Effect.fail(error as AnyAppError);
-				}),
-			),
-			Effect.onExit(() => Effect.sync(() => span.end())),
-		);
-
-	const effect = options.attributes
-		? tracer.startActiveSpan(
-				options.name,
-				{ attributes: options.attributes },
-				runWithSpan,
-			)
-		: tracer.startActiveSpan(options.name, runWithSpan);
-
-	return runServerActionSafe(effect);
 }

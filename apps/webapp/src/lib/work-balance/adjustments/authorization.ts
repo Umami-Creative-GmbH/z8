@@ -42,17 +42,33 @@ export async function requireBalanceAdjustmentWriter(
 	target?: { employeeId: string },
 ): Promise<BalanceAdjustmentWriter> {
 	const actor = await requireOrganizationActor(notPermitted);
-	const authority = await findWriterAuthority(database, actor, target);
+	const caller = { ...actor, isOrgAdmin: await canManageCurrentOrganizationSettings() };
+	return { ...actor, authority: await balanceAdjustmentWriterAuthority(database, caller, target) };
+}
+
+/**
+ * A caller an `organizationAction` already resolved (ADR 0002): the session's
+ * organization and user, and whether they are an org admin there.
+ */
+export type BalanceAdjustmentCaller = OrganizationActor & { isOrgAdmin: boolean };
+
+/** `requireBalanceAdjustmentWriter` for a resolved caller; throws `not_permitted`. */
+export async function balanceAdjustmentWriterAuthority(
+	database: AuthorizationClient,
+	caller: BalanceAdjustmentCaller,
+	target?: { employeeId: string },
+): Promise<BalanceAdjustmentAuthority> {
+	const authority = await findWriterAuthority(database, caller, target);
 	if (!authority) throw notPermitted();
-	return { ...actor, authority };
+	return authority;
 }
 
 async function findWriterAuthority(
 	database: AuthorizationClient,
-	actor: OrganizationActor,
+	actor: BalanceAdjustmentCaller,
 	target: { employeeId: string } | undefined,
 ): Promise<BalanceAdjustmentAuthority | null> {
-	if (await canManageCurrentOrganizationSettings()) return { via: "organization_admin" };
+	if (actor.isOrgAdmin) return { via: "organization_admin" };
 	if (!target) return null;
 	const grant = await findBalanceAdjustmentGrant(database, {
 		organizationId: actor.organizationId,
@@ -72,15 +88,22 @@ export async function requireOpeningBalanceUploader(
 	database: AuthorizationClient,
 ): Promise<BalanceAdjustmentWriter> {
 	const actor = await requireOrganizationActor(notPermitted);
-	if (await canManageCurrentOrganizationSettings()) {
-		return { ...actor, authority: { via: "organization_admin" } };
-	}
+	const caller = { ...actor, isOrgAdmin: await canManageCurrentOrganizationSettings() };
+	return { ...actor, authority: await openingBalanceUploaderAuthority(database, caller) };
+}
+
+/** `requireOpeningBalanceUploader` for a resolved caller; throws `not_permitted`. */
+export async function openingBalanceUploaderAuthority(
+	database: AuthorizationClient,
+	caller: BalanceAdjustmentCaller,
+): Promise<BalanceAdjustmentAuthority> {
+	if (caller.isOrgAdmin) return { via: "organization_admin" };
 	const grant = await findActiveBalanceAdjustmentGrant(database, {
-		organizationId: actor.organizationId,
-		actorUserId: actor.userId,
+		organizationId: caller.organizationId,
+		actorUserId: caller.userId,
 	});
 	if (!grant) throw notPermitted();
-	return { ...actor, authority: { via: "payroll_access_grant", grantId: grant.grantId } };
+	return { via: "payroll_access_grant", grantId: grant.grantId };
 }
 
 /**
@@ -145,8 +168,18 @@ export async function requireBalanceAdjustmentViewer(
 	input: { employeeId: string },
 ): Promise<BalanceAdjustmentViewer> {
 	const actor = await requireOrganizationActor(notPermittedToView);
+	const caller = { ...actor, isOrgAdmin: await canManageCurrentOrganizationSettings() };
+	return { ...actor, ...(await balanceAdjustmentViewerAccess(database, caller, input)) };
+}
+
+/** `requireBalanceAdjustmentViewer` for a resolved caller; throws `not_permitted`. */
+export async function balanceAdjustmentViewerAccess(
+	database: AuthorizationClient,
+	actor: BalanceAdjustmentCaller,
+	input: { employeeId: string },
+): Promise<{ canManage: boolean }> {
 	const target = isUuid(input.employeeId) ? { employeeId: input.employeeId } : undefined;
-	if (await findWriterAuthority(database, actor, target)) return { ...actor, canManage: true };
+	if (await findWriterAuthority(database, actor, target)) return { canManage: true };
 	if (!target) throw notPermittedToView();
 
 	const related = await database.execute(sql`
@@ -172,5 +205,5 @@ export async function requireBalanceAdjustmentViewer(
 		LIMIT 1
 	`);
 	if (related.rows.length === 0) throw notPermittedToView();
-	return { ...actor, canManage: false };
+	return { canManage: false };
 }

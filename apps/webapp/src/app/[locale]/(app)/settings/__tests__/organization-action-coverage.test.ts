@@ -31,7 +31,6 @@ const NOT_YET_MIGRATED = [
 	"customers",
 	"demo",
 	"email-templates",
-	"employees",
 	"enterprise",
 	"export",
 	"holidays",

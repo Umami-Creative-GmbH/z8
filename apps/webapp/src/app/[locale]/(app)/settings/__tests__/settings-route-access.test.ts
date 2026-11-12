@@ -502,11 +502,7 @@ describe("org-admin settings route access", () => {
 		expect(
 			employeeMutationsSource.includes("requireAdmin(currentEmployee"),
 		).toBe(false);
-		expect(
-			employeeMutationsSource.includes(
-				"ensureSettingsActorCanAccessEmployeeTarget(",
-			),
-		).toBe(true);
+		expect(employeeMutationsSource.includes("loadManagedEmployee(")).toBe(true);
 		expect(
 			skillsActionsSource.includes('currentEmployee.role !== "admin"'),
 		).toBe(false);

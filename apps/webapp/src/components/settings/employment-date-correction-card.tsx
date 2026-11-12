@@ -48,7 +48,7 @@ export function EmploymentDateCorrectionCard({
 				if (result.success) setReview(result.data);
 				else {
 					setError(result.error);
-					setActivationNeeded(result.code === "blocked");
+					setActivationNeeded(result.refusal === "blocked");
 				}
 			} catch {
 				setError(

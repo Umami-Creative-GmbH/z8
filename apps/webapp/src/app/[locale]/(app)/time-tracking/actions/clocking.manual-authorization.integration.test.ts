@@ -421,8 +421,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const submission = await pausedSubmission(command, ids.managerUser);
 
 			actAs(ids.ownerUser);
-			const revocation = assignManagersAction(ids.employee, {
-				managers: [{ managerId: ids.secondManager, isPrimary: true }],
+			const revocation = assignManagersAction({
+				employeeId: ids.employee,
+				data: { managers: [{ managerId: ids.secondManager, isPrimary: true }] },
 			});
 			// Sorted acquisition reaches the target's protection first.
 			await waitForWaiterOn(userGuard(ids.employeeUser));
@@ -445,8 +446,9 @@ describe("organization authorization mutations on PostgreSQL", () => {
 				[ids.managerLink],
 			);
 			actAs(ids.ownerUser);
-			const revocation = assignManagersAction(ids.employee, {
-				managers: [{ managerId: ids.secondManager, isPrimary: true }],
+			const revocation = assignManagersAction({
+				employeeId: ids.employee,
+				data: { managers: [{ managerId: ids.secondManager, isPrimary: true }] },
 			});
 			await waitForRowWaiter();
 
@@ -475,12 +477,13 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand({ date: "2026-09-02" });
 			const submission = await pausedSubmission(command, ids.ownerUser);
 			actAs(ids.ownerUser);
-			const grant = assignManagersAction(ids.employee, {
-				managers: [
+			const grant = assignManagersAction({
+				employeeId: ids.employee,
+				data: { managers: [
 					{ managerId: ids.manager, isPrimary: true },
 					{ managerId: ids.secondManager, isPrimary: false },
 					{ managerId: ids.outsider, isPrimary: false },
-				],
+				] },
 			});
 			// No row exists to lock yet: only the target's protection orders the insertion.
 			await waitForWaiterOn(userGuard(ids.employeeUser));
@@ -538,7 +541,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 				[ids.manager],
 			);
 			actAs(ids.ownerUser);
-			const demotion = updateEmployeeAction(ids.manager, { role: "employee" });
+			const demotion = updateEmployeeAction({ employeeId: ids.manager, data: { role: "employee" } });
 			await waitForRowWaiter();
 
 			const pending = submit(manualCommand(), ids.managerUser);
@@ -556,7 +559,7 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand();
 			const submission = await pausedSubmission(command, ids.ownerUser);
 			actAs(ids.ownerUser);
-			const promotion = updateEmployeeAction(ids.owner, { role: "manager" });
+			const promotion = updateEmployeeAction({ employeeId: ids.owner, data: { role: "manager" } });
 			await waitForWaiterOn(userGuard(ids.ownerUser));
 			await submission.release();
 

@@ -2,7 +2,6 @@
 
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import type { ZodType } from "zod";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	type AnyAppError,
@@ -11,7 +10,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	AssignDepartureReplacementError,
 	type AssignDepartureReplacementErrorCode,
@@ -25,14 +24,16 @@ import {
 } from "@/lib/employee-lifecycle";
 import { offboardingWorkBalance } from "@/lib/employee-lifecycle/final-payout";
 import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
-import type { ExecuteDepartureResult, LifecycleActor } from "@/lib/employee-lifecycle/types";
+import type { LifecycleActor } from "@/lib/employee-lifecycle/types";
 import type {
-	EmployeeDeparturePreview,
 	EmployeeOffboardingState,
-	EmployeeOffboardingView,
 	OffboardingWorkBalance,
 } from "@/lib/employee-lifecycle/view-types";
 import { createLogger } from "@/lib/logger";
+import {
+	type OrganizationActionContext,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
 import {
 	assignDepartureReplacementSchema,
 	cancelDepartureSchema,
@@ -47,17 +48,9 @@ import {
 import { mayWriteBalanceAdjustments } from "@/lib/work-balance/adjustments/authorization";
 import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import { getEmployeeWorkBalance, loadWorkBalanceEmployee } from "@/lib/work-balance/service";
-import {
-	getEmployeeSettingsActorContext,
-	requireOrgAdminEmployeeSettingsAccess,
-	revalidateEmployeesCache,
-	runTracedEmployeeAction,
-	validateInput,
-} from "./employee-action-utils";
+import { revalidateEmployeesCache } from "./employee-action-utils";
 
 const logger = createLogger("EmployeeOffboardingActions");
-
-type DepartureCommands = ReturnType<typeof getDepartureCommands>;
 
 const commandMessages: Record<DepartureCommandErrorCode, string> = {
 	actor_not_authorized: "Only organization owners and admins can manage employee departures.",
@@ -116,104 +109,93 @@ function toAppError(failure: DatabaseError, actor: LifecycleActor, action: strin
 	return new ValidationError({ message, field: error.code });
 }
 
+const lifecycleActorOf = (context: OrganizationActionContext<unknown>): LifecycleActor => ({
+	userId: context.actor.userId,
+	organizationId: context.organizationId,
+});
+
 /**
- * Shared adapter: the release gate is checked before anything else, then the
- * actor's org-admin settings access, then payload validation. Authority over
- * the target is re-checked by the command under the lifecycle locks.
+ * Runs a departure command for an org admin: the release gate, then the
+ * command, whose authority over the target is re-checked under the lifecycle
+ * locks.
  */
-function runDepartureCommand<TInput, TResult>(options: {
-	name: string;
-	input: unknown;
-	schema: ZodType<TInput>;
-	run: (commands: DepartureCommands, actor: LifecycleActor, input: TInput) => Promise<TResult>;
-}): Promise<ServerActionResult<TResult>> {
-	return runTracedEmployeeAction({
-		name: options.name,
-		logError: (error) => {
-			logger.error({ error }, `Failed to ${options.name}`);
-		},
-		execute: () =>
-			Effect.gen(function* () {
-				if (!EMPLOYEE_OFFBOARDING_RELEASE_READY) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: "Employee offboarding is not available yet.",
-							field: "employeeId",
-						}),
-					);
-				}
-
-				const actorContext = yield* getEmployeeSettingsActorContext({
-					queryName: `${options.name}:actor`,
-				});
-				yield* requireOrgAdminEmployeeSettingsAccess(actorContext, {
-					message: commandMessages.actor_not_authorized,
-					resource: "employee",
-					action: options.name,
-				});
-				const input = yield* validateInput(options.schema, options.input);
-				const actor = {
-					userId: actorContext.session.user.id,
-					organizationId: actorContext.organizationId,
-				};
-
-				const result = yield* actorContext.dbService
-					.query(`employeeOffboarding.${options.name}`, () =>
-						options.run(getDepartureCommands(), actor, input),
-					)
-					.pipe(Effect.mapError((error) => toAppError(error, actor, options.name)));
-				revalidateEmployeesCache(actor.organizationId);
-				revalidatePath("/equipment", "layout");
-				revalidatePath("/my-equipment");
-				revalidatePath("/settings/equipment");
-				return result;
-			}),
+function runDepartureCommand<TResult>(
+	name: string,
+	context: OrganizationActionContext<unknown>,
+	run: (actor: LifecycleActor) => Promise<TResult>,
+) {
+	return Effect.gen(function* () {
+		if (!EMPLOYEE_OFFBOARDING_RELEASE_READY) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Employee offboarding is not available yet.",
+					field: "employeeId",
+				}),
+			);
+		}
+		const actor = lifecycleActorOf(context);
+		const dbService = yield* DatabaseService;
+		const result = yield* dbService
+			.query(`employeeOffboarding.${name}`, () => run(actor))
+			.pipe(Effect.mapError((error) => toAppError(error, actor, name)));
+		revalidateEmployeesCache(actor.organizationId);
+		revalidatePath("/equipment", "layout");
+		revalidatePath("/my-equipment");
+		revalidatePath("/settings/equipment");
+		return result;
 	});
 }
 
-export async function scheduleEmployeeDepartureAction(
-	input: unknown,
-): Promise<ServerActionResult<{ departureId: string; revision: number }>> {
-	return runDepartureCommand({
-		name: "scheduleEmployeeDeparture",
-		input,
+export const scheduleEmployeeDepartureAction = organizationAction(
+	{
+		name: "employeeOffboarding.scheduleDeparture",
+		requires: "orgAdmin",
 		schema: scheduleDepartureSchema,
-		run: (commands, actor, data) => commands.scheduleDeparture(actor, data),
-	});
-}
+		addsEmployees: (input) => [input.replacementEmployeeId],
+	},
+	(context) =>
+		runDepartureCommand("scheduleEmployeeDeparture", context, (actor) =>
+			getDepartureCommands().scheduleDeparture(actor, context.input),
+		),
+);
 
-export async function cancelEmployeeDepartureAction(
-	input: unknown,
-): Promise<ServerActionResult<void>> {
-	return runDepartureCommand({
-		name: "cancelEmployeeDeparture",
-		input,
+export const cancelEmployeeDepartureAction = organizationAction(
+	{
+		name: "employeeOffboarding.cancelDeparture",
+		requires: "orgAdmin",
 		schema: cancelDepartureSchema,
-		run: (commands, actor, data) => commands.cancelDeparture(actor, data),
-	});
-}
+	},
+	(context) =>
+		runDepartureCommand("cancelEmployeeDeparture", context, (actor) =>
+			getDepartureCommands().cancelDeparture(actor, context.input),
+		),
+);
 
-export async function offboardEmployeeNowAction(
-	input: unknown,
-): Promise<ServerActionResult<ExecuteDepartureResult>> {
-	return runDepartureCommand({
-		name: "offboardEmployeeNow",
-		input,
+export const offboardEmployeeNowAction = organizationAction(
+	{
+		name: "employeeOffboarding.offboardNow",
+		requires: "orgAdmin",
 		schema: offboardNowSchema,
-		run: (commands, actor, data) => commands.offboardNow(actor, data),
-	});
-}
+		addsEmployees: (input) => [input.replacementEmployeeId],
+	},
+	(context) =>
+		runDepartureCommand("offboardEmployeeNow", context, (actor) =>
+			getDepartureCommands().offboardNow(actor, context.input),
+		),
+);
 
-export async function rehireEmployeeAction(
-	input: unknown,
-): Promise<ServerActionResult<{ employmentPeriodId: string }>> {
-	return runDepartureCommand({
-		name: "rehireEmployee",
-		input,
+export const rehireEmployeeAction = organizationAction(
+	{
+		name: "employeeOffboarding.rehire",
+		requires: "orgAdmin",
 		schema: rehireEmployeeSchema,
-		run: (commands, actor, data) => commands.rehireEmployee(actor, data),
-	});
-}
+		addsEmployees: (input) => [input.primaryManagerId],
+	},
+	(context) =>
+		runDepartureCommand("rehireEmployee", context, (actor) =>
+			getDepartureCommands().rehireEmployee(actor, context.input),
+		),
+);
 
 const followUpMessages = {
 	actor_not_authorized: "Only organization owners and admins can resolve offboarding follow-up.",
@@ -265,38 +247,19 @@ function toFollowUpError(
  * Follow-up of existing departures stays resolvable regardless of the release
  * gate. Authority is re-checked by each command inside its transaction.
  */
-function runFollowUpCommand<TInput, TResult>(options: {
-	name: string;
-	input: unknown;
-	schema: ZodType<TInput>;
-	run: (actor: LifecycleActor, input: TInput) => Promise<TResult>;
-}): Promise<ServerActionResult<TResult>> {
-	return runTracedEmployeeAction({
-		name: options.name,
-		logError: (error) => {
-			logger.error({ error }, `Failed to ${options.name}`);
-		},
-		execute: () =>
-			Effect.gen(function* () {
-				const actorContext = yield* getEmployeeSettingsActorContext({
-					queryName: `${options.name}:actor`,
-				});
-				yield* requireOrgAdminEmployeeSettingsAccess(actorContext, {
-					message: followUpMessages.actor_not_authorized,
-					resource: "employee",
-					action: options.name,
-				});
-				const input = yield* validateInput(options.schema, options.input);
-				const actor = {
-					userId: actorContext.session.user.id,
-					organizationId: actorContext.organizationId,
-				};
-				const result = yield* actorContext.dbService
-					.query(`employeeOffboarding.${options.name}`, () => options.run(actor, input))
-					.pipe(Effect.mapError((error) => toFollowUpError(error, actor, options.name)));
-				revalidateEmployeesCache(actor.organizationId);
-				return result;
-			}),
+function runFollowUpCommand<TResult>(
+	name: string,
+	context: OrganizationActionContext<unknown>,
+	run: (actor: LifecycleActor) => Promise<TResult>,
+) {
+	return Effect.gen(function* () {
+		const actor = lifecycleActorOf(context);
+		const dbService = yield* DatabaseService;
+		const result = yield* dbService
+			.query(`employeeOffboarding.${name}`, () => run(actor))
+			.pipe(Effect.mapError((error) => toFollowUpError(error, actor, name)));
+		revalidateEmployeesCache(actor.organizationId);
+		return result;
 	});
 }
 
@@ -304,76 +267,70 @@ function runFollowUpCommand<TInput, TResult>(options: {
  * The lifecycle view for the employee detail page. Managers of the employee
  * get a read-only view; commands are only offered once the release gate opens.
  */
-export async function getEmployeeOffboardingViewAction(
-	input: unknown,
-): Promise<ServerActionResult<EmployeeOffboardingView>> {
-	return runTracedEmployeeAction({
-		name: "getEmployeeOffboardingView",
-		logError: (error) => {
-			logger.error({ error }, "Failed to load employee offboarding view");
-		},
-		execute: () =>
-			Effect.gen(function* () {
-				const actorContext = yield* getEmployeeSettingsActorContext({
-					queryName: "getEmployeeOffboardingView:actor",
-				});
-				const { employeeId } = yield* validateInput(employeeOffboardingViewSchema, input);
-				const result = yield* actorContext.dbService.query("employeeOffboarding.view", () =>
-					getOffboardingQueries().view({
-						organizationId: actorContext.organizationId,
-						employeeId,
-						actorUserId: actorContext.session.user.id,
+export const getEmployeeOffboardingViewAction = organizationAction(
+	{
+		name: "employeeOffboarding.view",
+		requires: "scopedManager",
+		schema: employeeOffboardingViewSchema,
+	},
+	({ actor, organizationId, input: { employeeId } }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const result = yield* dbService.query("employeeOffboarding.view", () =>
+				getOffboardingQueries().view({
+					organizationId,
+					employeeId,
+					actorUserId: actor.userId,
+				}),
+			);
+			if (result.kind === "not_found") {
+				return yield* Effect.fail(
+					new NotFoundError({ message: "Employee not found.", entityType: "employee" }),
+				);
+			}
+			if (result.kind === "forbidden") {
+				return yield* Effect.fail(
+					new AuthorizationError({
+						message: "You cannot view this employee's offboarding.",
+						userId: actor.userId,
+						resource: "employee",
+						action: "getEmployeeOffboardingView",
 					}),
 				);
-				if (result.kind === "not_found") {
-					return yield* Effect.fail(
-						new NotFoundError({ message: "Employee not found.", entityType: "employee" }),
-					);
-				}
-				if (result.kind === "forbidden") {
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "You cannot view this employee's offboarding.",
-							userId: actorContext.session.user.id,
-							resource: "employee",
-							action: "getEmployeeOffboardingView",
+			}
+			if (EMPLOYEE_OFFBOARDING_RELEASE_READY) {
+				// Information only: a balance that fails to load never hides the departure.
+				const workBalance = yield* dbService
+					.query("employeeOffboarding.workBalance", () =>
+						loadOffboardingWorkBalance(dbService.db, {
+							organizationId,
+							employeeId,
+							state: result.view.state,
 						}),
-					);
-				}
-				if (EMPLOYEE_OFFBOARDING_RELEASE_READY) {
-					// Information only: a balance that fails to load never hides the departure.
-					const workBalance = yield* actorContext.dbService
-						.query("employeeOffboarding.workBalance", () =>
-							loadOffboardingWorkBalance(actorContext.dbService.db, {
-								organizationId: actorContext.organizationId,
-								employeeId,
-								state: result.view.state,
+					)
+					.pipe(
+						Effect.catch((error) =>
+							Effect.sync(() => {
+								logger.error({ error }, "Failed to load the offboarding work balance");
+								return null;
 							}),
-						)
-						.pipe(
-							Effect.catch((error) =>
-								Effect.sync(() => {
-									logger.error({ error }, "Failed to load the offboarding work balance");
-									return null;
-								}),
-							),
-						);
-					return { ...result.view, workBalance };
-				}
-				return {
-					...result.view,
-					workBalance: null,
-					capabilities: {
-						...result.view.capabilities,
-						schedule: false,
-						cancel: false,
-						offboardNow: false,
-						rehire: false,
-					},
-				};
-			}),
-	});
-}
+						),
+					);
+				return { ...result.view, workBalance };
+			}
+			return {
+				...result.view,
+				workBalance: null,
+				capabilities: {
+					...result.view.capabilities,
+					schedule: false,
+					cancel: false,
+					offboardNow: false,
+					rehire: false,
+				},
+			};
+		}),
+);
 
 /**
  * The departing employee's work balance for the review (#1002): the same
@@ -405,14 +362,15 @@ async function loadOffboardingWorkBalance(
 }
 
 /** Advisory, side-effect free; the command recomputes the cutoff on submit. */
-export async function previewEmployeeDepartureAction(
-	input: unknown,
-): Promise<ServerActionResult<EmployeeDeparturePreview>> {
-	return runDepartureCommand({
-		name: "previewEmployeeDeparture",
-		input,
+export const previewEmployeeDepartureAction = organizationAction(
+	{
+		name: "employeeOffboarding.previewDeparture",
+		requires: "orgAdmin",
 		schema: previewDepartureSchema,
-		run: async (_commands, actor, data) => {
+	},
+	(context) =>
+		runDepartureCommand("previewEmployeeDeparture", context, async (actor) => {
+			const data = context.input;
 			const result = await getOffboardingQueries().preview({
 				organizationId: actor.organizationId,
 				employeeId: data.employeeId,
@@ -425,37 +383,42 @@ export async function previewEmployeeDepartureAction(
 			throw new DepartureCommandError(
 				result.kind === "not_found" ? "employee_not_found" : "actor_not_authorized",
 			);
-		},
-	});
-}
+		}),
+);
 
-export async function resolveDepartureReviewAction(
-	input: unknown,
-): Promise<ServerActionResult<void>> {
-	return runFollowUpCommand({
-		name: "resolveDepartureReview",
-		input,
+export const resolveDepartureReviewAction = organizationAction(
+	{
+		name: "employeeOffboarding.resolveReview",
+		requires: "orgAdmin",
 		schema: resolveDepartureReviewSchema,
-		run: (actor, data) => getOffboardingFollowUp().resolveReview(actor, data),
-	});
-}
+	},
+	(context) =>
+		runFollowUpCommand("resolveDepartureReview", context, (actor) =>
+			getOffboardingFollowUp().resolveReview(actor, context.input),
+		),
+);
 
-export async function retryDepartureTaskAction(input: unknown): Promise<ServerActionResult<void>> {
-	return runFollowUpCommand({
-		name: "retryDepartureTask",
-		input,
+export const retryDepartureTaskAction = organizationAction(
+	{
+		name: "employeeOffboarding.retryTask",
+		requires: "orgAdmin",
 		schema: retryDepartureTaskSchema,
-		run: (actor, data) => getOffboardingFollowUp().retryTask(actor, data),
-	});
-}
+	},
+	(context) =>
+		runFollowUpCommand("retryDepartureTask", context, (actor) =>
+			getOffboardingFollowUp().retryTask(actor, context.input),
+		),
+);
 
-export async function assignDepartureReplacementAction(
-	input: unknown,
-): Promise<ServerActionResult<void>> {
-	return runFollowUpCommand({
-		name: "assignDepartureReplacement",
-		input,
+export const assignDepartureReplacementAction = organizationAction(
+	{
+		name: "employeeOffboarding.assignReplacement",
+		requires: "orgAdmin",
 		schema: assignDepartureReplacementSchema,
-		run: (actor, data) => getOffboardingFollowUp().assignReplacement(actor, data),
-	});
-}
+		addsEmployees: (input) => [input.replacementEmployeeId],
+	},
+	(context) =>
+		runFollowUpCommand("assignDepartureReplacement", context, (actor) =>
+			getOffboardingFollowUp().assignReplacement(actor, context.input),
+		),
+);

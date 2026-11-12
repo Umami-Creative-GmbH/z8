@@ -25,6 +25,28 @@ vi.mock("@/lib/auth/current-organization-actor", () => ({
 		return session.current;
 	},
 }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
+// The employee page's kiosk actions are organization actions: the session comes from Better Auth.
+vi.mock("@/lib/auth", () => ({
+	auth: {
+		api: {
+			getSession: async () =>
+				session.current
+					? {
+							user: { id: session.current.userId, role: "user" },
+							session: {
+								id: `session-${session.current.userId}`,
+								userId: session.current.userId,
+								activeOrganizationId: session.current.organizationId,
+							},
+						}
+					: null,
+		},
+	},
+}));
 vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
@@ -32,9 +54,11 @@ vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
 
-const { getEmployeeKioskStateAction, removeEmployeeKioskFobAction } = await import(
-	"@/app/[locale]/(app)/settings/employees/kiosk-actions"
-);
+const kioskActions = await import("@/app/[locale]/(app)/settings/employees/kiosk-actions");
+const { getEmployeeKioskStateAction } = kioskActions;
+const removeEmployeeKioskFobAction = (employeeId: string, expectedFobId: string) =>
+	kioskActions.removeEmployeeKioskFobAction({ employeeId, expectedFobId });
+const { kioskRefusalCode } = await import("@/components/settings/kiosk/kiosk-refusal-code");
 const { getOwnKioskFobStatusAction, removeOwnKioskFobAction } = await import(
 	"@/app/[locale]/(app)/settings/security/kiosk-fob-actions"
 );
@@ -86,8 +110,8 @@ function signIn(userId: string, organizationId: string = org) {
 	session.current = { userId, organizationId };
 }
 
-function codeOf(result: { success: boolean; code?: string }) {
-	return result.success ? "success" : result.code;
+function codeOf(result: { success: boolean; code?: string; refusal?: string }) {
+	return result.success ? "success" : kioskRefusalCode(result);
 }
 
 async function register(
