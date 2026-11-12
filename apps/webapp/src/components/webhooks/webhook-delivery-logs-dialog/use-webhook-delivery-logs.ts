@@ -53,7 +53,8 @@ export function useWebhookDeliveryLogs(webhookId: string, open: boolean) {
 
 				setRequestError(null);
 				setIsLoading(true);
-				return getWebhookDeliveryLogs(webhookId, {
+				return getWebhookDeliveryLogs({
+					webhookId,
 					limit: WEBHOOK_DELIVERY_LOGS_PAGE_SIZE,
 					offset,
 				}).catch(() => null);

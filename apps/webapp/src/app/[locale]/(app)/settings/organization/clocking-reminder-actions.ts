@@ -2,91 +2,70 @@
 
 import { Effect } from "effect";
 import { z } from "zod";
-import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
-import { getRequestSession } from "@/lib/auth/request-session";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { organizationAction } from "@/lib/organization-action/organization-action";
 import { saveClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings";
 import {
 	CLOCKING_REMINDER_ROLES,
 	type ClockingReminderGrace,
 	type ClockingReminderLead,
 	type ClockingReminderRole,
-	type ClockingReminderSettings,
 	MAX_CLOCKING_REMINDER_MINUTES,
 	MIN_BREAK_DUE_LEAD_MINUTES,
 } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 
-const grace = z.object({
-	enabled: z.boolean(),
-	graceMinutes: z.number().int().min(0).max(MAX_CLOCKING_REMINDER_MINUTES),
+const invalidSettings = "Enter valid clocking reminder settings";
+
+const grace = z.strictObject({
+	enabled: z.boolean({ error: invalidSettings }),
+	graceMinutes: z
+		.number({ error: invalidSettings })
+		.int({ error: invalidSettings })
+		.min(0, { error: invalidSettings })
+		.max(MAX_CLOCKING_REMINDER_MINUTES, { error: invalidSettings }),
 });
-const lead = z.object({
-	enabled: z.boolean(),
-	leadMinutes: z.number().int().min(MIN_BREAK_DUE_LEAD_MINUTES).max(MAX_CLOCKING_REMINDER_MINUTES),
+const lead = z.strictObject({
+	enabled: z.boolean({ error: invalidSettings }),
+	leadMinutes: z
+		.number({ error: invalidSettings })
+		.int({ error: invalidSettings })
+		.min(MIN_BREAK_DUE_LEAD_MINUTES, { error: invalidSettings })
+		.max(MAX_CLOCKING_REMINDER_MINUTES, { error: invalidSettings }),
 });
-const settingsSchema = z.object({
-	organizationId: z.string().min(1),
-	missedClockIn: grace,
-	forgottenClockOut: grace,
-	breakDue: lead,
-	roles: z
-		.array(z.enum(CLOCKING_REMINDER_ROLES))
-		.min(1)
-		.refine((roles) => new Set(roles).size === roles.length),
-});
+const settingsSchema = z.strictObject(
+	{
+		missedClockIn: grace,
+		forgottenClockOut: grace,
+		breakDue: lead,
+		roles: z
+			.array(z.enum(CLOCKING_REMINDER_ROLES, { error: invalidSettings }), {
+				error: invalidSettings,
+			})
+			.min(1, { error: invalidSettings })
+			.refine((roles) => new Set(roles).size === roles.length, { error: invalidSettings }),
+	},
+	{ error: invalidSettings },
+);
 
 export interface UpdateClockingReminderSettingsInput {
-	organizationId: string;
 	missedClockIn: ClockingReminderGrace;
 	forgottenClockOut: ClockingReminderGrace;
 	breakDue: ClockingReminderLead;
 	roles: ClockingReminderRole[];
 }
 
-export async function updateClockingReminderSettings(
-	input: UpdateClockingReminderSettingsInput,
-): Promise<ServerActionResult<ClockingReminderSettings>> {
-	return runServerActionSafe(
+/** Saves the organization's clocking reminder settings. Org admins only. */
+export const updateClockingReminderSettings = organizationAction(
+	{ name: "clockingReminders.saveSettings", requires: "orgAdmin", schema: settingsSchema },
+	({ organizationId, input }) =>
 		Effect.gen(function* () {
-			const parsed = settingsSchema.safeParse(input);
-			if (!parsed.success) {
-				return yield* Effect.fail(
-					new ValidationError({ message: "Enter valid clocking reminder settings" }),
-				);
-			}
-			const session = yield* Effect.tryPromise({
-				try: getRequestSession,
-				catch: () => new AuthenticationError({ message: "Authentication required" }),
-			});
-			if (!session) {
-				return yield* Effect.fail(new AuthenticationError({ message: "Authentication required" }));
-			}
-			if (session.session.activeOrganizationId !== parsed.data.organizationId) {
-				return yield* Effect.fail(
-					new AuthorizationError({
-						message: "Select the organization before changing its settings",
-					}),
-				);
-			}
-			yield* requireActiveOrganizationActionActor({
-				userId: session.user.id,
-				organizationId: parsed.data.organizationId,
-				requiredRole: "admin",
-				message:
-					"Only approved organization admins and owners can change clocking reminder settings",
-				resource: "organization",
-				action: "update",
-			});
 			const dbService = yield* DatabaseService;
 			return yield* dbService.query("clockingReminders.saveSettings", () =>
-				saveClockingReminderSettings(parsed.data, {
-					database: dbService.db,
-					clock: systemClock,
-				}),
+				saveClockingReminderSettings(
+					{ ...input, organizationId },
+					{ database: dbService.db, clock: systemClock },
+				),
 			);
 		}),
-	);
-}
+);

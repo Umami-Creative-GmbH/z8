@@ -26,7 +26,6 @@ function renderCard(input: {
 }) {
 	return render(
 		<OrganizationFeaturesCard
-			organizationId="org-1"
 			shiftsEnabled={false}
 			projectsEnabled={false}
 			surchargesEnabled={false}
@@ -54,7 +53,7 @@ describe("OrganizationFeaturesCard personnel files toggle (#865)", () => {
 		fireEvent.click(screen.getByRole("switch", { name: "Toggle personnel files" }));
 
 		await waitFor(() =>
-			expect(mocks.toggle).toHaveBeenCalledWith("org-1", "personnelFilesEnabled", true),
+			expect(mocks.toggle).toHaveBeenCalledWith({ feature: "personnelFilesEnabled", enabled: true }),
 		);
 	});
 
@@ -72,7 +71,7 @@ describe("OrganizationFeaturesCard personnel files toggle (#865)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Turn off" }));
 
 		await waitFor(() =>
-			expect(mocks.toggle).toHaveBeenCalledWith("org-1", "personnelFilesEnabled", false),
+			expect(mocks.toggle).toHaveBeenCalledWith({ feature: "personnelFilesEnabled", enabled: false }),
 		);
 	});
 
@@ -112,7 +111,7 @@ describe("OrganizationFeaturesCard equipment toggle (#1572)", () => {
 		fireEvent.click(screen.getByRole("switch", { name: "Toggle equipment" }));
 
 		await waitFor(() =>
-			expect(mocks.toggle).toHaveBeenCalledWith("org-1", "equipmentEnabled", true),
+			expect(mocks.toggle).toHaveBeenCalledWith({ feature: "equipmentEnabled", enabled: true }),
 		);
 	});
 
@@ -130,7 +129,7 @@ describe("OrganizationFeaturesCard equipment toggle (#1572)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Turn off" }));
 
 		await waitFor(() =>
-			expect(mocks.toggle).toHaveBeenCalledWith("org-1", "equipmentEnabled", false),
+			expect(mocks.toggle).toHaveBeenCalledWith({ feature: "equipmentEnabled", enabled: false }),
 		);
 	});
 

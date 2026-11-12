@@ -68,7 +68,6 @@ async function ClockingSettingsContent() {
 					),
 					panel: (
 						<OrganizationAutoClockOutCard
-							organizationId={organizationId}
 							settings={autoClockOutSettings}
 							settingsAccess={settingsAccess}
 						/>
@@ -86,7 +85,6 @@ async function ClockingSettingsContent() {
 					),
 					panel: (
 						<OrganizationClockingRemindersCard
-							organizationId={organizationId}
 							settings={clockingReminderSettings}
 							settingsAccess={settingsAccess}
 						/>
@@ -104,7 +102,6 @@ async function ClockingSettingsContent() {
 					),
 					panel: (
 						<OrganizationPeriodSubmissionsCard
-							organizationId={organizationId}
 							settings={periodSubmissionSettings}
 							settingsAccess={settingsAccess}
 						/>

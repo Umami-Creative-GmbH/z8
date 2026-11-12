@@ -58,13 +58,7 @@ vi.mock("@/components/settings/timezone-picker", () => ({
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
 
 function renderCard() {
-	render(
-		<OrganizationTimezoneCard
-			organizationId="org-1"
-			timezone="Europe/Berlin"
-			settingsAccess="owner"
-		/>,
-	);
+	render(<OrganizationTimezoneCard timezone="Europe/Berlin" settingsAccess="owner" />);
 	fireEvent.change(screen.getByLabelText("Organization timezone"), {
 		target: { value: "America/New_York" },
 	});
@@ -86,7 +80,7 @@ describe("OrganizationTimezoneCard", () => {
 					"Work balances are being recalculated for the new timezone and stay hidden until they are ready.",
 			});
 		});
-		expect(updateTimezoneMock).toHaveBeenCalledWith("org-1", "America/New_York");
+		expect(updateTimezoneMock).toHaveBeenCalledWith("America/New_York");
 		expect(toastErrorMock).not.toHaveBeenCalled();
 		expect(refreshMock).toHaveBeenCalledOnce();
 	});

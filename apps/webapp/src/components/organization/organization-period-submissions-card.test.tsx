@@ -39,11 +39,7 @@ function show(
 ) {
 	return render(
 		<TolgeeProvider tolgee={createTestTolgee("en", {})}>
-			<OrganizationPeriodSubmissionsCard
-				organizationId="org-1"
-				settings={settings}
-				settingsAccess={access}
-			/>
+			<OrganizationPeriodSubmissionsCard settings={settings} settingsAccess={access} />
 		</TolgeeProvider>,
 	);
 }
@@ -77,7 +73,6 @@ describe("OrganizationPeriodSubmissionsCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.save).toHaveBeenCalledWith({
-				organizationId: "org-1",
 				cadence: { kind: "weekly", weekStartDay: "monday" },
 				secondReminderDelayDays: 5,
 			}),

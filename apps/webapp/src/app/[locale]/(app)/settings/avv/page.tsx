@@ -28,12 +28,12 @@ async function AvvPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	const [{ organizationId }, t] = await Promise.all([
+	const [, t] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
 	]);
 
-	const result = await getOrganizationProfile(organizationId);
+	const result = await getOrganizationProfile();
 	if (!result.success) {
 		return redirectWithLocale("/settings");
 	}
@@ -140,7 +140,6 @@ async function AvvPageContent() {
 
 					<div className="border-t pt-6">
 						<AvvDownloadButton
-							organizationId={organizationId}
 							missingFields={missingFields}
 						/>
 					</div>

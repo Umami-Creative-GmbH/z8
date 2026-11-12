@@ -20,7 +20,6 @@ const NOT_YET_MIGRATED = [
 	"approval-policies",
 	"audit-export",
 	"audit-log",
-	"avv",
 	"billable-time",
 	"calendar",
 	"change-policies",
@@ -35,7 +34,6 @@ const NOT_YET_MIGRATED = [
 	"export",
 	"holidays",
 	"locations",
-	"organization",
 	"payroll-access",
 	"payroll-export",
 	"permissions",
@@ -48,7 +46,6 @@ const NOT_YET_MIGRATED = [
 	"teams",
 	"vacation",
 	"vehicles",
-	"webhooks",
 	"work-categories",
 	"work-policies",
 ];

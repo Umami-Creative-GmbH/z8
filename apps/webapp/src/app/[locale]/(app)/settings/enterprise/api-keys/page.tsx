@@ -51,7 +51,6 @@ async function DeveloperSettingsContent() {
 					),
 					panel: (
 						<WebhooksPageClient
-							organizationId={organizationId}
 							webhooks={webhooks}
 						/>
 					),

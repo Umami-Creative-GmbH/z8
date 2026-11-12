@@ -6,84 +6,6 @@ const appDir = join(import.meta.dirname, "../../app");
 
 const actionCases = [
 	[
-		"invite code create",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"createInviteCode",
-		"inviteCodeService.create(",
-	],
-	[
-		"invite code update",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"updateInviteCode",
-		"inviteCodeService.update(",
-	],
-	[
-		"invite code delete",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"deleteInviteCode",
-		"inviteCodeService.delete(",
-	],
-	[
-		"invite code list",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"listInviteCodes",
-		"inviteCodeService.list(",
-	],
-	[
-		"invite code stats",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"getInviteCodeStats",
-		"inviteCodeService.getUsageStats(",
-	],
-	[
-		"invite code QR",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"generateInviteQRCode",
-		".generateInviteQR(",
-	],
-	[
-		"invite base URL",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"getInviteBaseUrl",
-		"getOrganizationBaseUrl(",
-	],
-	[
-		"pending member list",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"listPendingMembers",
-		"pendingMemberService.listPending(",
-	],
-	[
-		"pending member count",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"getPendingMemberCount",
-		"pendingMemberService.countPending(",
-	],
-	[
-		"pending member approve",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"approvePendingMember",
-		"pendingMemberService.approve(",
-	],
-	[
-		"pending member reject",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"rejectPendingMember",
-		"pendingMemberService.reject(",
-	],
-	[
-		"pending member bulk approve",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"bulkApprovePendingMembers",
-		"pendingMemberService.bulkApprove(",
-	],
-	[
-		"pending member bulk reject",
-		"[locale]/(app)/settings/organization/invite-code-actions.ts",
-		"bulkRejectPendingMembers",
-		"pendingMemberService.bulkReject(",
-	],
-	[
 		"API key create",
 		"[locale]/(app)/settings/enterprise/api-keys/actions.ts",
 		"createApiKey",
@@ -103,48 +25,6 @@ const actionCases = [
 		"deleteApiKey",
 		"revokeOrganizationApiKey(",
 		"verifyApiKeyPermission(",
-	],
-	[
-		"webhook create",
-		"[locale]/(app)/settings/webhooks/actions.ts",
-		"createWebhook",
-		"createWebhookEndpoint(",
-	],
-	[
-		"webhook update",
-		"[locale]/(app)/settings/webhooks/actions.ts",
-		"updateWebhook",
-		"updateWebhookEndpoint(",
-	],
-	[
-		"webhook delete",
-		"[locale]/(app)/settings/webhooks/actions.ts",
-		"deleteWebhook",
-		"deleteWebhookEndpoint(",
-	],
-	[
-		"webhook secret",
-		"[locale]/(app)/settings/webhooks/actions.ts",
-		"regenerateSecret",
-		"regenerateWebhookSecret(",
-	],
-	[
-		"webhook test",
-		"[locale]/(app)/settings/webhooks/actions.ts",
-		"testWebhook",
-		"createDeliveryRecord(",
-	],
-	[
-		"webhook list",
-		"[locale]/(app)/settings/webhooks/actions.ts",
-		"getWebhooks",
-		"getWebhookEndpointsByOrganization(",
-	],
-	[
-		"webhook delivery logs",
-		"[locale]/(app)/settings/webhooks/actions.ts",
-		"getWebhookDeliveryLogs",
-		"getDeliveryLogs(",
 	],
 ] as const;
 
@@ -167,34 +47,6 @@ describe("explicit-organization privileged server actions", () => {
 
 		expect(guard, `${action} guard`).toBeGreaterThanOrEqual(0);
 		expect(mutation, `${action} side effect`).toBeGreaterThan(guard);
-	});
-
-	it.each([
-		[
-			"updateInviteCode",
-			/inviteCodeService\.update\(\s*inviteCodeId,\s*organizationId,/,
-		],
-		[
-			"deleteInviteCode",
-			/inviteCodeService\.delete\(\s*inviteCodeId,\s*organizationId,\s*session\.user\.id/,
-		],
-		[
-			"getInviteCodeStats",
-			/inviteCodeService\.getUsageStats\(\s*inviteCodeId,\s*organizationId/,
-		],
-		[
-			"generateInviteQRCode",
-			/inviteCodeService\.getById\(\s*inviteCodeId,\s*organizationId/,
-		],
-	] as const)("passes organization scope through %s", (action, scopedCall) => {
-		const source = readTestText(
-			join(
-				appDir,
-				"[locale]/(app)/settings/organization/invite-code-actions.ts",
-			),
-			"utf8",
-		);
-		expect(actionSection(source, action)).toMatch(scopedCall);
 	});
 });
 

@@ -260,7 +260,8 @@ describe("MembersTable invitation target teams", () => {
 		fireEvent.click(within(row).getByRole("combobox"));
 		fireEvent.click(await screen.findByRole("option", { name: "Admin" }));
 		await waitFor(() =>
-			expect(updateMemberRoleMock).toHaveBeenCalledWith("org-1", "member-1", {
+			expect(updateMemberRoleMock).toHaveBeenCalledWith({
+			memberId: "member-1",
 				role: "admin",
 			}),
 		);
@@ -663,7 +664,7 @@ describe("MembersTable invitation target teams", () => {
 	it("uses the atomic resend action without canceling or sending a new invitation directly", async () => {
 		const file = componentSource();
 
-		expect(file).toContain("resendInvitation(organizationId, invitation.id)");
+		expect(file).toContain("resendInvitation(invitation.id)");
 		expect(file).not.toContain("await cancelInvitation(invitation.id)");
 		expect(file).not.toContain("return sendInvitation({");
 
@@ -674,10 +675,7 @@ describe("MembersTable invitation target teams", () => {
 		fireEvent.click(await screen.findByText("Resend"));
 
 		await waitFor(() => {
-			expect(resendInvitationMock).toHaveBeenCalledWith(
-				"org-1",
-				"invitation-1",
-			);
+			expect(resendInvitationMock).toHaveBeenCalledWith("invitation-1");
 		});
 		expect(cancelInvitationMock).not.toHaveBeenCalled();
 		expect(sendInvitationMock).not.toHaveBeenCalled();

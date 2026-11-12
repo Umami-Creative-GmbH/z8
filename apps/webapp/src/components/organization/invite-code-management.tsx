@@ -411,7 +411,6 @@ function InviteCodeDialogStack({
 			/>
 			<InviteCodeQRDialog
 				inviteCode={qrDialogCode}
-				organizationId={organizationId}
 				inviteBaseUrl={inviteBaseUrl}
 				open={!!qrDialogCode}
 				onOpenChange={(open) => !open && onCloseQr()}
@@ -478,14 +477,14 @@ export function InviteCodeManagement({
 	// Fetch invite codes
 	const { data: inviteCodesResult, isLoading } = useQuery({
 		queryKey: queryKeys.inviteCodes.list(organizationId),
-		queryFn: () => listInviteCodes(organizationId),
+		queryFn: () => listInviteCodes(),
 	});
 
 	const inviteCodes = inviteCodesResult?.success ? inviteCodesResult.data : [];
 
 	const { data: inviteBaseUrlResult } = useQuery({
 		queryKey: ["invite-base-url", organizationId],
-		queryFn: () => getInviteBaseUrl(organizationId),
+		queryFn: () => getInviteBaseUrl(),
 		enabled: canManage,
 	});
 
@@ -502,7 +501,7 @@ export function InviteCodeManagement({
 	// Delete mutation
 	const deleteMutation = useMutation({
 		mutationFn: async (inviteCodeId: string) => {
-			const result = await deleteInviteCode(inviteCodeId, organizationId);
+			const result = await deleteInviteCode(inviteCodeId);
 			if (!result.success) throw new Error(result.error || "Failed to delete");
 		},
 		onSuccess: () => {

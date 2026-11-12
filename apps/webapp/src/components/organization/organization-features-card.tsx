@@ -56,7 +56,6 @@ import {
 } from "./organization-feature-state";
 
 interface OrganizationFeaturesCardProps {
-	organizationId: string;
 	shiftsEnabled: boolean;
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
@@ -104,7 +103,6 @@ export function OrganizationFeaturesCard({
 }
 
 function useOrganizationFeatures({
-	organizationId,
 	settingsAccess,
 	billableCurrency,
 	initialFeatures,
@@ -155,7 +153,7 @@ function useOrganizationFeatures({
 				: { [feature]: enabled },
 		);
 
-		const result = await toggleOrganizationFeature(organizationId, feature, enabled);
+		const result = await toggleOrganizationFeature({ feature, enabled });
 
 		if (result.success) {
 			toast.success(
@@ -237,7 +235,6 @@ function useOrganizationFeatures({
 }
 
 function OrganizationFeaturesCardContent({
-	organizationId,
 	settingsAccess,
 	billableCurrency,
 	drivingLicence,
@@ -265,7 +262,6 @@ function OrganizationFeaturesCardContent({
 		confirmEquipmentOff,
 		setConfirmEquipmentOff,
 	} = useOrganizationFeatures({
-		organizationId,
 		settingsAccess,
 		billableCurrency,
 		initialFeatures,

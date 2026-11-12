@@ -38,7 +38,6 @@ function show(access: SettingsAccess | null = "orgAdmin", minutes = 720, locale 
 	return render(
 		<TolgeeProvider tolgee={createTestTolgee(locale, translations)}>
 			<OrganizationAutoClockOutCard
-				organizationId="org-1"
 				settings={{
 					autoClockOutEnabled: true,
 					maxUninterruptedMinutes: minutes,
@@ -75,7 +74,6 @@ describe("OrganizationAutoClockOutCard", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 			await waitFor(() =>
 				expect(mocks.save).toHaveBeenCalledWith({
-					organizationId: "org-1",
 					autoClockOutEnabled: false,
 					maxUninterruptedMinutes: 485,
 				}),
@@ -91,7 +89,6 @@ describe("OrganizationAutoClockOutCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.save).toHaveBeenCalledWith({
-				organizationId: "org-1",
 				autoClockOutEnabled: false,
 				maxUninterruptedMinutes: 540,
 			}),
@@ -115,7 +112,6 @@ describe("OrganizationAutoClockOutCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.save).toHaveBeenCalledWith({
-				organizationId: "org-1",
 				autoClockOutEnabled: false,
 				maxUninterruptedMinutes: 485,
 			}),

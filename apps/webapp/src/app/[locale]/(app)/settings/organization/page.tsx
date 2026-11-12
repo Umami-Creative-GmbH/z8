@@ -45,7 +45,7 @@ async function OrganizationsPageContent() {
 		}),
 		getBillableTimeSettings(organizationId, db),
 		readDrivingLicenceFeatureState(organizationId),
-		getOrganizationProfile(organizationId),
+		getOrganizationProfile(),
 		// The page guard above already limits this page to owners and admins.
 		countOutstandingEquipmentReturns(db, organizationId),
 	]);

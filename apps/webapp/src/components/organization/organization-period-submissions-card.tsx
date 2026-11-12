@@ -41,7 +41,6 @@ import {
 import { useRouter } from "@/navigation";
 
 interface OrganizationPeriodSubmissionsCardProps {
-	organizationId: string;
 	settings: PeriodSubmissionSettings;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
@@ -62,7 +61,6 @@ function cadenceFromFields(kind: SubmissionCadenceKind, weekStartDay: Submission
 }
 
 export function OrganizationPeriodSubmissionsCard({
-	organizationId,
 	settings,
 	settingsAccess,
 }: OrganizationPeriodSubmissionsCardProps) {
@@ -104,7 +102,6 @@ export function OrganizationPeriodSubmissionsCard({
 			submitting.current = true;
 			try {
 				const result = await updatePeriodSubmissionSettings({
-					organizationId,
 					cadence: cadenceFromFields(value.cadence, value.weekStartDay),
 					secondReminderDelayDays:
 						delayFromField(value.secondReminderDelay) ?? MIN_SECOND_REMINDER_DELAY_DAYS,

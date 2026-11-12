@@ -1,6 +1,5 @@
 "use client";
 
-
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
@@ -18,14 +17,12 @@ import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface OrganizationTimezoneCardProps {
-	organizationId: string;
 	timezone: string;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 }
 
 export function OrganizationTimezoneCard({
-	organizationId,
 	timezone: initialTimezone,
 	settingsAccess,
 }: OrganizationTimezoneCardProps) {
@@ -46,7 +43,7 @@ export function OrganizationTimezoneCard({
 		setTimezone(newTimezone);
 		setOrgSettings({ timezone: newTimezone });
 
-		const result = await updateOrganizationTimezone(organizationId, newTimezone);
+		const result = await updateOrganizationTimezone(newTimezone);
 
 		if (result.success) {
 			// The save is committed; balances follow once they are rebuilt.

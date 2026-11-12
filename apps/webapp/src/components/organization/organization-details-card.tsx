@@ -90,7 +90,7 @@ export function OrganizationDetailsCard({
 
 	const handleRemoveLogo = async () => {
 		setIsRemovingLogo(true);
-		const result = await removeOrganizationLogo(organization.id);
+		const result = await removeOrganizationLogo();
 		setIsRemovingLogo(false);
 
 		if (!result.success) {

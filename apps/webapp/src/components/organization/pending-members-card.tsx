@@ -410,7 +410,7 @@ export function PendingMembersCard({
 	// Fetch pending members
 	const { data: pendingMembersResult, isLoading } = useQuery({
 		queryKey: queryKeys.pendingMembers.list(organizationId),
-		queryFn: () => listPendingMembers(organizationId),
+		queryFn: () => listPendingMembers(),
 		enabled: canManage,
 	});
 
@@ -438,7 +438,6 @@ export function PendingMembersCard({
 		}) => {
 			const result = await approvePendingMember({
 				memberId,
-				organizationId,
 				assignedTeamId: teamId,
 			});
 			if (!result.success) throw new Error(result.error || "Failed to approve");
@@ -463,7 +462,6 @@ export function PendingMembersCard({
 		mutationFn: async (memberId: string) => {
 			const result = await rejectPendingMember({
 				memberId,
-				organizationId,
 			});
 			if (!result.success) throw new Error(result.error || "Failed to reject");
 		},
@@ -493,7 +491,6 @@ export function PendingMembersCard({
 				requests.map(async ({ memberId, teamId }) => {
 					const result = await approvePendingMember({
 						memberId,
-						organizationId,
 						assignedTeamId: teamId,
 					});
 
@@ -528,7 +525,7 @@ export function PendingMembersCard({
 	const bulkRejectMutation = useMutation({
 		mutationFn: async () => {
 			const memberIds = Array.from(selectedMembers);
-			const result = await bulkRejectPendingMembers(memberIds, organizationId);
+			const result = await bulkRejectPendingMembers({ memberIds });
 			if (!result.success) throw new Error(result.error || "Failed to reject");
 			return result.data;
 		},

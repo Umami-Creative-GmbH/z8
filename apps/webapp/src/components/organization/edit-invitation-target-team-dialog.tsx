@@ -74,7 +74,6 @@ export function EditInvitationTargetTeamDialog({
 
 			return updateInvitationTargetTeam({
 				invitationId: invitation.id,
-				organizationId,
 				targetTeamId,
 			});
 		},

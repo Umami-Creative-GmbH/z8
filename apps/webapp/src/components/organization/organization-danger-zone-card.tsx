@@ -63,7 +63,7 @@ export function OrganizationDangerZoneCard({
 		if (!isConfirmationValid) return;
 
 		startTransition(async () => {
-			const result = await deleteOrganization(organization.id, confirmationName);
+			const result = await deleteOrganization({ confirmationName });
 
 			if (result.success) {
 				toast.success(
@@ -85,7 +85,7 @@ export function OrganizationDangerZoneCard({
 
 	const handleRecover = () => {
 		startTransition(async () => {
-			const result = await recoverOrganization(organization.id);
+			const result = await recoverOrganization();
 
 			if (result.success) {
 				toast.success(t("organization.recover.success", "Organization recovered successfully"));
