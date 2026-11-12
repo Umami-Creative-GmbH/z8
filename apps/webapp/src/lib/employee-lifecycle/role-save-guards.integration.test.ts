@@ -286,7 +286,7 @@ describe("role saves refuse former employees", () => {
 				[fixture.organizationId, `Policy ${randomUUID()}`, fixture.ownerUserId],
 			);
 			const assign = (employeeId: string) =>
-				changePolicies.createChangePolicyAssignment(fixture.organizationId, {
+				changePolicies.createChangePolicyAssignment({
 					policyId,
 					assignmentType: "employee",
 					employeeId,
@@ -308,7 +308,6 @@ describe("role saves refuse former employees", () => {
 			);
 			const assign = (employeeId: string) =>
 				workCategories.createSetAssignment({
-					organizationId: fixture.organizationId,
 					setId,
 					assignmentType: "employee",
 					employeeId,

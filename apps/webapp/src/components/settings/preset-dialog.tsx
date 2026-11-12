@@ -166,7 +166,7 @@ function usePresetDialogController({
 			year: number | null;
 			color: string;
 			isActive: boolean;
-		}) => updateHolidayPreset(presetId!, values),
+		}) => updateHolidayPreset({ presetId: presetId!, data: values }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(

@@ -213,7 +213,7 @@ export function VacationAssignmentDialog({
 		queryKey: queryKeys.teams.list(organizationId),
 		enabled: open && assignmentType === "team",
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) throw new Error(result.error);
 			return result.data as TeamOption[];
 		},

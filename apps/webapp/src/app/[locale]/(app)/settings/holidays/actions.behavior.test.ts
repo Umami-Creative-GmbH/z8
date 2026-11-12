@@ -1,576 +1,112 @@
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
+import type { holidayTestDatabase } from "./holiday-database.test.mock";
 
-const mockState = vi.hoisted(() => ({
-	actor: {
-		accessTier: "manager" as const,
+function assignment(
+	id: string,
+	assignmentType: "organization" | "team" | "employee",
+	target: { teamId?: string; employeeId?: string } = {},
+) {
+	return {
+		id,
+		holidayId: `holiday-${id}`,
+		categoryId: `category-${id}`,
 		organizationId: "org-1",
-		dbService: null as any,
-		session: {
-			user: {
-				id: "user-1",
-				email: "manager@example.com",
-			},
-		},
-		currentEmployee: {
-			id: "manager-employee-1",
-			organizationId: "org-1",
-			role: "manager" as const,
-		},
-	},
-	managedEmployeeIds: new Set<string>(["employee-managed"]),
-	teamPermissionsRows: [{ teamId: "team-managed", canManageTeamSettings: true }],
-	holidayAssignments: [
-		{
-			id: "assignment-org",
-			holidayId: "holiday-org",
-			organizationId: "org-1",
-			assignmentType: "organization",
-			teamId: null,
-			employeeId: null,
-			isActive: true,
-			createdAt: new Date("2026-01-01T00:00:00.000Z"),
-			holiday: {
-				id: "holiday-org",
-				name: "Company Day",
-				description: null,
-				startDate: new Date("2026-05-01T00:00:00.000Z"),
-				endDate: new Date("2026-05-01T00:00:00.000Z"),
-				recurrenceType: "none",
-			},
-			team: null,
-			employee: null,
-		},
-		{
-			id: "assignment-team",
-			holidayId: "holiday-team",
-			organizationId: "org-1",
-			assignmentType: "team",
-			teamId: "team-managed",
-			employeeId: null,
-			isActive: true,
-			createdAt: new Date("2026-01-02T00:00:00.000Z"),
-			holiday: {
-				id: "holiday-team",
-				name: "Team Day",
-				description: null,
-				startDate: new Date("2026-06-01T00:00:00.000Z"),
-				endDate: new Date("2026-06-01T00:00:00.000Z"),
-				recurrenceType: "none",
-			},
-			team: { id: "team-managed", name: "Managed Team" },
-			employee: null,
-		},
-		{
-			id: "assignment-employee",
-			holidayId: "holiday-employee",
-			organizationId: "org-1",
-			assignmentType: "employee",
-			teamId: null,
-			employeeId: "employee-managed",
-			isActive: true,
-			createdAt: new Date("2026-01-03T00:00:00.000Z"),
-			holiday: {
-				id: "holiday-employee",
-				name: "Employee Day",
-				description: null,
-				startDate: new Date("2026-07-01T00:00:00.000Z"),
-				endDate: new Date("2026-07-01T00:00:00.000Z"),
-				recurrenceType: "none",
-			},
-			team: null,
-			employee: { id: "employee-managed", firstName: "Mina", lastName: "Miller" },
-		},
-		{
-			id: "assignment-other-team",
-			holidayId: "holiday-other-team",
-			organizationId: "org-1",
-			assignmentType: "team",
-			teamId: "team-other",
-			employeeId: null,
-			isActive: true,
-			createdAt: new Date("2026-01-04T00:00:00.000Z"),
-			holiday: {
-				id: "holiday-other-team",
-				name: "Other Team Day",
-				description: null,
-				startDate: new Date("2026-08-01T00:00:00.000Z"),
-				endDate: new Date("2026-08-01T00:00:00.000Z"),
-				recurrenceType: "none",
-			},
-			team: { id: "team-other", name: "Other Team" },
-			employee: null,
-		},
-	],
-	holidayCategoryAssignments: [
-		{
-			id: "category-assignment-org",
-			categoryId: "category-org",
-			organizationId: "org-1",
-			assignmentType: "organization",
-			teamId: null,
-			employeeId: null,
-			isActive: true,
-			createdAt: new Date("2026-01-01T00:00:00.000Z"),
-			category: { id: "category-org", name: "Org Category", type: "custom", color: "#123456" },
-			team: null,
-			employee: null,
-		},
-		{
-			id: "category-assignment-team",
-			categoryId: "category-team",
-			organizationId: "org-1",
-			assignmentType: "team",
-			teamId: "team-managed",
-			employeeId: null,
-			isActive: true,
-			createdAt: new Date("2026-01-02T00:00:00.000Z"),
-			category: { id: "category-team", name: "Team Category", type: "custom", color: "#654321" },
-			team: { id: "team-managed", name: "Managed Team" },
-			employee: null,
-		},
-		{
-			id: "category-assignment-employee",
-			categoryId: "category-employee",
-			organizationId: "org-1",
-			assignmentType: "employee",
-			teamId: null,
-			employeeId: "employee-managed",
-			isActive: true,
-			createdAt: new Date("2026-01-03T00:00:00.000Z"),
-			category: { id: "category-employee", name: "Employee Category", type: "custom", color: null },
-			team: null,
-			employee: {
-				id: "employee-managed",
-				user: { firstName: "Mina", lastName: "Miller" },
-			},
-		},
-		{
-			id: "category-assignment-other-team",
-			categoryId: "category-other-team",
-			organizationId: "org-1",
-			assignmentType: "team",
-			teamId: "team-other",
-			employeeId: null,
-			isActive: true,
-			createdAt: new Date("2026-01-04T00:00:00.000Z"),
-			category: {
-				id: "category-other-team",
-				name: "Other Team Category",
-				type: "custom",
-				color: null,
-			},
-			team: { id: "team-other", name: "Other Team" },
-			employee: null,
-		},
-		{
-			id: "category-assignment-other-org",
-			categoryId: "category-other-org",
-			organizationId: "org-2",
-			assignmentType: "organization",
-			teamId: null,
-			employeeId: null,
-			isActive: true,
-			createdAt: new Date("2026-01-05T00:00:00.000Z"),
-			category: {
-				id: "category-other-org",
-				name: "Other Org Category",
-				type: "custom",
-				color: null,
-			},
-			team: null,
-			employee: null,
-		},
-	],
-	countResult: 4,
-	holidayRows: [{ id: "holiday-org", organizationId: "org-1" }],
-	holidayCategoryRows: [{ id: "category-org", organizationId: "org-1", isActive: true }],
-	teamRows: [{ id: "team-managed", organizationId: "org-1" }],
-	employeeRows: [{ id: "employee-managed", organizationId: "org-1" }],
-	deleteCalls: [] as Array<any>,
-	guardCalls: [] as Array<unknown>,
-	insertCalls: [] as Array<any>,
-	updateCalls: [] as Array<any>,
-	updateReturnRows: [{ id: "category-assignment-org" }],
-}));
-
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	asc: vi.fn((value: unknown) => value),
-	count: vi.fn(() => "count"),
-	desc: vi.fn((value: unknown) => value),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	ilike: vi.fn((left: unknown, right: unknown) => ({ ilike: [left, right] })),
-	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
-	or: vi.fn((...args: unknown[]) => ({ or: args })),
-	sql: vi.fn((strings: TemplateStringsArray) => strings.join("")),
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: { __name: "employee", id: "id", organizationId: "organizationId" },
-	holiday: {
-		__name: "holiday",
-		id: "id",
-		organizationId: "organizationId",
-		isActive: "isActive",
-		categoryId: "categoryId",
-		name: "name",
-		description: "description",
-		startDate: "startDate",
-	},
-	holidayAssignment: {
-		id: "id",
-		holidayId: "holidayId",
-		organizationId: "organizationId",
-		assignmentType: "assignmentType",
-		teamId: "teamId",
-		employeeId: "employeeId",
-		isActive: "isActive",
-		createdAt: "createdAt",
-	},
-	holidayCategory: {
-		__name: "holidayCategory",
-		id: "id",
-		organizationId: "organizationId",
-		isActive: "isActive",
-		name: "name",
-	},
-	holidayCategoryAssignment: {
-		__name: "holidayCategoryAssignment",
-		id: "id",
-		categoryId: "categoryId",
-		organizationId: "organizationId",
-		assignmentType: "assignmentType",
-		teamId: "teamId",
-		employeeId: "employeeId",
-		isActive: "isActive",
-		createdAt: "createdAt",
-	},
-	team: { __name: "team", id: "id", name: "name", organizationId: "organizationId" },
-	teamPermissions: {
-		employeeId: "employeeId",
-		organizationId: "organizationId",
-		teamId: "teamId",
-		canManageTeamSettings: "canManageTeamSettings",
-	},
-}));
-
-vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect");
-	const { AuthorizationError } = await import("@/lib/effect/errors");
-
-	return {
-		getEmployeeSettingsActorContext: vi.fn(() =>
-			Effect.succeed({
-				...mockState.actor,
-				dbService: {
-					db: {
-						query: {
-							teamPermissions: {
-								findMany: vi.fn(async () => mockState.teamPermissionsRows),
-							},
-							holidayAssignment: {
-								findMany: vi.fn(async () => mockState.holidayAssignments),
-							},
-							holidayCategoryAssignment: {
-								findMany: vi.fn(async () =>
-									mockState.holidayCategoryAssignments.filter(
-										(assignment) => assignment.organizationId === mockState.actor.organizationId,
-									),
-								),
-							},
-						},
-						select: vi.fn(() => ({
-							from: vi.fn((table: any) => ({
-								where: vi.fn(() => ({
-									limit: vi.fn(async () => {
-										if (table.__name === "holidayCategory") return mockState.holidayCategoryRows;
-										if (table.__name === "team") return mockState.teamRows;
-										if (table.__name === "employee") return mockState.employeeRows;
-										return mockState.holidayRows;
-									}),
-								})),
-							})),
-						})),
-						insert: vi.fn((table: any) => ({
-							values: vi.fn((value: unknown) => {
-								mockState.insertCalls.push({ table: table.__name, value });
-								return {
-									returning: vi.fn(async () => [
-										{ id: "new-category-assignment", ...(value as object) },
-									]),
-								};
-							}),
-						})),
-						execute: vi.fn(async (statement: unknown) => {
-							mockState.guardCalls.push(statement);
-							return [];
-						}),
-						transaction(callback: (tx: unknown) => unknown) {
-							return callback(this);
-						},
-						delete: vi.fn((table: unknown) => ({
-							where: vi.fn((condition: unknown) => {
-								mockState.deleteCalls.push({ table, condition });
-								return {
-									returning: vi.fn(async () => [{ id: "holiday-org" }, { id: "holiday-team" }]),
-								};
-							}),
-						})),
-						update: vi.fn((table: any) => ({
-							set: vi.fn((value: unknown) => ({
-								where: vi.fn((condition: unknown) => {
-									mockState.updateCalls.push({ table: table.__name, value, condition });
-									return {
-										returning: vi.fn(async () => mockState.updateReturnRows),
-									};
-								}),
-							})),
-						})),
-					},
-					query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-				},
-			}),
-		),
-		getManagedEmployeeIdsForSettingsActor: vi.fn(() =>
-			Effect.succeed(mockState.managedEmployeeIds),
-		),
-		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: typeof mockState.actor, options: any) =>
-			actor.accessTier === "orgAdmin"
-				? Effect.void
-				: Effect.fail(
-						new AuthorizationError({
-							message: options.message,
-							userId: actor.session.user.id,
-							resource: options.resource,
-							action: options.action,
-						}),
-					),
-		),
+		assignmentType,
+		teamId: target.teamId ?? null,
+		employeeId: target.employeeId ?? null,
+		isActive: true,
+		createdAt: new Date("2026-01-01T00:00:00.000Z"),
+		team: target.teamId ? { id: target.teamId, name: target.teamId } : null,
+		employee: target.employeeId
+			? { id: target.employeeId, user: { firstName: "Mina", lastName: "Miller" } }
+			: null,
 	};
-});
+}
 
-vi.mock("./holiday-scope", async () => {
-	const { Effect } = await import("effect");
+const harness = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
+	managedEmployeeIds: new Set<string>(),
+	settingsTeamIds: [] as string[],
+	assignments: [] as unknown[],
+	formerEmployeeIds: new Set<string>(),
+	database: null as unknown as ReturnType<typeof holidayTestDatabase>,
+}));
 
-	return {
-		getScopedHolidayAccessContext: vi.fn(() =>
-			Effect.succeed({
-				actor: {
-					...mockState.actor,
-					dbService: {
-						db: {
-							query: {
-								teamPermissions: {
-									findMany: vi.fn(async () => mockState.teamPermissionsRows),
-								},
-								holidayAssignment: {
-									findMany: vi.fn(async () => mockState.holidayAssignments),
-								},
-								holidayCategoryAssignment: {
-									findMany: vi.fn(async () =>
-										mockState.holidayCategoryAssignments.filter(
-											(assignment) => assignment.organizationId === mockState.actor.organizationId,
-										),
-									),
-								},
-							},
-						},
-						query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-					},
-				},
-				managedEmployeeIds:
-					mockState.actor.accessTier === "orgAdmin" ? null : mockState.managedEmployeeIds,
-				manageableTeamIds:
-					mockState.actor.accessTier === "orgAdmin"
-						? null
-						: new Set(
-								mockState.teamPermissionsRows
-									.filter((row) => row.canManageTeamSettings && row.teamId)
-									.map((row) => row.teamId as string),
-							),
-			}),
-		),
-		filterAssignmentsForManagerHolidayScope: vi.fn(
-			(
-				assignments,
-				manageableTeamIds: Set<string> | null,
-				managedEmployeeIds: Set<string> | null,
-			) => {
-				if (!manageableTeamIds || !managedEmployeeIds) {
-					return assignments;
-				}
-
-				return assignments.filter((assignment: any) => {
-					if (assignment.assignmentType === "organization") return true;
-					if (assignment.assignmentType === "team") {
-						return assignment.teamId ? manageableTeamIds.has(assignment.teamId) : false;
-					}
-					return assignment.employeeId ? managedEmployeeIds.has(assignment.employeeId) : false;
-				});
-			},
-		),
-	};
-});
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	const AuthService = Context.Service<any>("AuthService");
-	return { AuthService };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
-	const DatabaseService = Context.Service<any>("DatabaseService");
-	return { DatabaseService };
-});
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => harness.formerEmployeeIds),
+);
 
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
-
-	const db = {
-		query: {
-			teamPermissions: {
-				findMany: vi.fn(async () => mockState.teamPermissionsRows),
-			},
-			holidayAssignment: {
-				findMany: vi.fn(async () => mockState.holidayAssignments),
-			},
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { holidayTestDatabase } = await import("./holiday-database.test.mock");
+	harness.database = holidayTestDatabase({
+		teamPermissions: {
+			findMany: vi.fn(async () =>
+				harness.settingsTeamIds.map((teamId) => ({ teamId, canManageTeamSettings: true })),
+			),
 		},
-		select: vi.fn(() => ({
-			from: vi.fn(() => ({
-				where: vi.fn(() => [{ count: mockState.countResult }]),
-				innerJoin: vi.fn(() => ({
-					where: vi.fn(() => ({
-						orderBy: vi.fn(() => ({
-							limit: vi.fn(() => ({
-								offset: vi.fn(async () => []),
-							})),
-						})),
-					})),
-				})),
-			})),
-		})),
-		update: vi.fn(() => ({
-			set: vi.fn((value: unknown) => ({
-				where: vi.fn(async () => {
-					mockState.updateCalls.push(value);
-				}),
-			})),
-		})),
-	};
-
-	return {
-		AppLayer: Layer.mergeAll(
-			Layer.succeed(AuthService, {
-				getSession: () =>
-					Effect.succeed({
-						user: mockState.actor.session.user,
-						session: { activeOrganizationId: mockState.actor.organizationId },
-					}),
-			}),
-			Layer.succeed(DatabaseService, {
-				db,
-				query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-			}),
-		),
-	};
+		holidayAssignment: { findMany: vi.fn(async () => harness.assignments) },
+		holidayCategoryAssignment: { findMany: vi.fn(async () => harness.assignments) },
+	});
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => harness.caller, {
+			db: harness.database.db,
+			query: (name, fn) =>
+				name === "organizationAction.managedScope"
+					? (Effect.succeed([[...harness.managedEmployeeIds].map((id) => ({ id })), []]) as never)
+					: Effect.promise(fn),
+		}),
+	);
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
+const actions = await import("./actions");
 
-	return {
-		runServerActionSafe: async <T>(effect: any) => {
-			const exit = await Effect.runPromiseExit(effect);
-			return Exit.match(exit, {
-				onSuccess: (data) => ({ success: true as const, data: data as T }),
-				onFailure: (cause) => {
-					const defect = Result.getOrNull(Cause.findDefect(cause));
-					const failure = Option.getOrNull(Cause.findErrorOption(cause));
-					const error = defect ?? failure ?? cause;
+const scopedManager: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "manager-employee-1", role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	...scopedManager,
+	employee: { id: "manager-employee-1", role: "employee", former: false },
+};
+const orgAdmin: StubCaller = { ...scopedManager, membershipRole: "admin", employee: null };
 
-					if (error && typeof error === "object" && "message" in error) {
-						return {
-							success: false as const,
-							error: (error as { message: string }).message,
-							code: (error as { _tag?: string })._tag,
-						};
-					}
-
-					return { success: false as const, error: "Unknown error", code: "UNKNOWN_ERROR" };
-				},
-			});
-		},
-	};
+beforeEach(() => {
+	harness.database.reset();
+	harness.caller = scopedManager;
+	harness.managedEmployeeIds = new Set(["employee-managed"]);
+	harness.settingsTeamIds = ["team-managed"];
+	harness.formerEmployeeIds = new Set();
+	harness.assignments = [
+		assignment("org", "organization"),
+		assignment("team", "team", { teamId: "team-managed" }),
+		assignment("employee", "employee", { employeeId: "employee-managed" }),
+		assignment("other-team", "team", { teamId: "team-other" }),
+	];
 });
 
-const {
-	bulkDeleteHolidays,
-	createHolidayCategoryAssignment,
-	deleteHoliday,
-	deleteHolidayCategoryAssignment,
-	getHolidayAssignments,
-	getHolidayCategoryAssignments,
-} = await import("./actions");
+function ids(result: { success: boolean; data?: unknown }) {
+	expect(result.success).toBe(true);
+	return (result.data as { id: string }[]).map((row) => row.id);
+}
 
 describe("holiday settings scope behavior", () => {
-	beforeEach(() => {
-		mockState.actor = {
-			accessTier: "manager",
-			organizationId: "org-1",
-			dbService: null,
-			session: {
-				user: {
-					id: "user-1",
-					email: "manager@example.com",
-				},
-			},
-			currentEmployee: {
-				id: "manager-employee-1",
-				organizationId: "org-1",
-				role: "manager",
-			},
-		};
-		mockState.managedEmployeeIds = new Set(["employee-managed"]);
-		mockState.teamPermissionsRows = [{ teamId: "team-managed", canManageTeamSettings: true }];
-		mockState.holidayRows = [{ id: "holiday-org", organizationId: "org-1" }];
-		mockState.holidayCategoryRows = [
-			{ id: "category-org", organizationId: "org-1", isActive: true },
-		];
-		mockState.teamRows = [{ id: "team-managed", organizationId: "org-1" }];
-		mockState.employeeRows = [{ id: "employee-managed", organizationId: "org-1" }];
-		mockState.deleteCalls = [];
-		mockState.guardCalls = [];
-		mockState.insertCalls = [];
-		mockState.updateCalls = [];
-		mockState.updateReturnRows = [{ id: "category-assignment-org" }];
-	});
-
 	it("lets managers read only organization, managed-team, and managed-employee holiday assignments", async () => {
-		const result = await getHolidayAssignments("org-1");
-
-		expect(result.success).toBe(true);
-		if (result.success) {
-			expect(result.data.map((assignment) => assignment.id)).toEqual([
-				"assignment-org",
-				"assignment-team",
-				"assignment-employee",
-			]);
-		}
+		expect(ids(await actions.getHolidayAssignments())).toEqual(["org", "team", "employee"]);
 	});
 
 	it("lets managers read only organization, managed-team, and managed-employee holiday category assignments", async () => {
-		const result = await getHolidayCategoryAssignments("org-1");
+		const result = await actions.getHolidayCategoryAssignments();
 
-		expect(result.success).toBe(true);
+		expect(ids(result)).toEqual(["org", "team", "employee"]);
 		if (result.success) {
-			expect(result.data.map((assignment) => assignment.id)).toEqual([
-				"category-assignment-org",
-				"category-assignment-team",
-				"category-assignment-employee",
-			]);
 			expect(result.data[2]?.employee).toMatchObject({
 				id: "employee-managed",
 				firstName: "Mina",
@@ -579,10 +115,17 @@ describe("holiday settings scope behavior", () => {
 		}
 	});
 
-	it("creates organization-scoped holiday category assignments for org admins", async () => {
-		mockState.actor.accessTier = "orgAdmin";
+	it("shows an org admin every holiday assignment", async () => {
+		harness.caller = orgAdmin;
 
-		const result = await createHolidayCategoryAssignment({
+		expect(ids(await actions.getHolidayAssignments())).toEqual(["org", "team", "employee", "other-team"]);
+	});
+
+	it("creates holiday category assignments in the active organization for org admins", async () => {
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[{ id: "category-org" }], [{ id: "team-managed" }]];
+
+		const result = await actions.createHolidayCategoryAssignment({
 			categoryId: "category-org",
 			assignmentType: "team",
 			teamId: "team-managed",
@@ -590,138 +133,164 @@ describe("holiday settings scope behavior", () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(mockState.insertCalls).toEqual([
+		expect(harness.database.state.inserts).toEqual([
 			{
-				table: "holidayCategoryAssignment",
-				value: {
-					categoryId: "category-org",
-					organizationId: "org-1",
-					assignmentType: "team",
-					teamId: "team-managed",
-					employeeId: null,
-					createdBy: "user-1",
-				},
+				categoryId: "category-org",
+				organizationId: "org-1",
+				assignmentType: "team",
+				teamId: "team-managed",
+				employeeId: null,
+				createdBy: "user-1",
 			},
 		]);
 	});
 
 	it("rejects cross-org and inactive holiday category IDs before insert", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.holidayCategoryRows = [];
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[]];
 
-		const result = await createHolidayCategoryAssignment({
+		const result = await actions.createHolidayCategoryAssignment({
 			categoryId: "category-other-org",
 			assignmentType: "organization",
 		});
 
-		expect(result.success).toBe(false);
-		expect(result.code).toBe("NotFoundError");
-		expect(result.error).toBe("Holiday category not found");
-		expect(mockState.insertCalls).toEqual([]);
+		expect(result).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+			error: "Holiday category not found",
+		});
+		expect(harness.database.state.inserts).toEqual([]);
 	});
 
 	it("rejects cross-org team and employee IDs before insert", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-		mockState.teamRows = [];
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[{ id: "category-org" }], []];
 
-		const teamResult = await createHolidayCategoryAssignment({
+		const teamResult = await actions.createHolidayCategoryAssignment({
 			categoryId: "category-org",
 			assignmentType: "team",
 			teamId: "team-other-org",
 		});
 
-		expect(teamResult.success).toBe(false);
-		expect(teamResult.code).toBe("NotFoundError");
-		expect(teamResult.error).toBe("Team not found");
-		expect(mockState.insertCalls).toEqual([]);
+		expect(teamResult).toMatchObject({ success: false, code: "NotFoundError", error: "Team not found" });
 
-		mockState.teamRows = [{ id: "team-managed", organizationId: "org-1" }];
-		mockState.employeeRows = [];
+		harness.database.state.selects = [[{ id: "category-org" }], []];
 
-		const employeeResult = await createHolidayCategoryAssignment({
+		const employeeResult = await actions.createHolidayCategoryAssignment({
 			categoryId: "category-org",
 			assignmentType: "employee",
 			employeeId: "employee-other-org",
 		});
 
-		expect(employeeResult.success).toBe(false);
-		expect(employeeResult.code).toBe("NotFoundError");
-		expect(employeeResult.error).toBe("Employee not found");
-		expect(mockState.insertCalls).toEqual([]);
+		expect(employeeResult).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+			error: "Employee not found",
+		});
+		expect(harness.database.state.inserts).toEqual([]);
+	});
+
+	it("refuses to assign a holiday or a category to a former employee", async () => {
+		harness.caller = orgAdmin;
+		harness.formerEmployeeIds = new Set(["employee-former"]);
+
+		const holidayResult = await actions.createHolidayAssignment({
+			holidayId: "holiday-1",
+			assignmentType: "employee",
+			employeeId: "employee-former",
+		});
+		const categoryResult = await actions.createHolidayCategoryAssignment({
+			categoryId: "category-1",
+			assignmentType: "employee",
+			employeeId: "employee-former",
+		});
+
+		expect(holidayResult).toMatchObject({ success: false, refusal: "former_employee" });
+		expect(categoryResult).toMatchObject({ success: false, refusal: "former_employee" });
+		expect(harness.database.state.inserts).toEqual([]);
 	});
 
 	it("soft deletes holiday category assignments only in the admin organization", async () => {
-		mockState.actor.accessTier = "orgAdmin";
+		harness.caller = orgAdmin;
+		harness.database.state.updateReturn = [{ id: "category-assignment-org" }];
 
-		const result = await deleteHolidayCategoryAssignment("category-assignment-org");
+		const result = await actions.deleteHolidayCategoryAssignment("category-assignment-org");
 
 		expect(result.success).toBe(true);
-		expect(mockState.updateCalls).toEqual([
-			expect.objectContaining({
-				table: "holidayCategoryAssignment",
-				value: { isActive: false },
-				condition: expect.objectContaining({ and: expect.any(Array) }),
-			}),
-		]);
+		expect(harness.database.state.updates).toEqual([{ isActive: false }]);
 
-		mockState.updateCalls = [];
-		mockState.updateReturnRows = [];
+		harness.database.state.updateReturn = [];
 
-		const missingResult = await deleteHolidayCategoryAssignment("category-assignment-other-org");
+		const missingResult = await actions.deleteHolidayCategoryAssignment("category-assignment-other-org");
 
-		expect(missingResult.success).toBe(false);
-		expect(missingResult.code).toBe("NotFoundError");
-		expect(missingResult.error).toBe("Holiday category assignment not found");
-	});
-
-	it("rejects manager holiday category assignment mutations", async () => {
-		const createResult = await createHolidayCategoryAssignment({
-			categoryId: "category-org",
-			assignmentType: "organization",
+		expect(missingResult).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+			error: "Holiday category assignment not found",
 		});
-		const deleteResult = await deleteHolidayCategoryAssignment("category-assignment-org");
-
-		expect(createResult.success).toBe(false);
-		expect(createResult.code).toBe("AuthorizationError");
-		expect(createResult.error).toBe("Only org admins can create holiday category assignments");
-		expect(deleteResult.success).toBe(false);
-		expect(deleteResult.code).toBe("AuthorizationError");
-		expect(deleteResult.error).toBe("Only org admins can delete holiday category assignments");
-		expect(mockState.insertCalls).toEqual([]);
-		expect(mockState.updateCalls).toEqual([]);
 	});
 
-	it("rejects direct manager holiday deletions", async () => {
-		const result = await deleteHoliday("holiday-org");
+	it("hard deletes holidays for org admins under the configuration guard", async () => {
+		harness.caller = orgAdmin;
+		harness.database.state.deleteReturn = [{ id: "holiday-org" }];
 
-		expect(result.success).toBe(false);
-		expect(result.code).toBe("AuthorizationError");
-		expect(result.error).toBe("Only org admins can delete holidays");
-		expect(mockState.updateCalls).toEqual([]);
-	});
-
-	it("hard deletes holidays for org admins", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-
-		const result = await deleteHoliday("holiday-org");
+		const result = await actions.deleteHoliday("holiday-org");
 
 		expect(result.success).toBe(true);
-		expect(mockState.guardCalls).toHaveLength(1);
-		expect(mockState.deleteCalls).toHaveLength(1);
-		expect(mockState.updateCalls).toEqual([]);
+		expect(harness.database.state.guardCalls).toBe(1);
+		expect(harness.database.state.deletes).toBe(1);
+		expect(harness.database.state.updates).toEqual([]);
 	});
 
 	it("hard deletes multiple holidays for org admins", async () => {
-		mockState.actor.accessTier = "orgAdmin";
+		harness.caller = orgAdmin;
+		harness.database.state.deleteReturn = [{ id: "holiday-org" }, { id: "holiday-team" }];
 
-		const result = await bulkDeleteHolidays(["holiday-org", "holiday-team"]);
+		const result = await actions.bulkDeleteHolidays(["holiday-org", "holiday-team"]);
 
-		expect(result.success).toBe(true);
-		if (result.success) {
-			expect(result.data.deleted).toBe(2);
-		}
-		expect(mockState.guardCalls).toHaveLength(1);
-		expect(mockState.deleteCalls).toHaveLength(1);
-		expect(mockState.updateCalls).toEqual([]);
+		expect(result).toEqual({ success: true, data: { deleted: 2 } });
+		expect(harness.database.state.guardCalls).toBe(1);
+		expect(harness.database.state.deletes).toBe(1);
+	});
+});
+
+describe("holiday settings access", () => {
+	it.each([
+		["getHolidays", () => actions.getHolidays({})],
+		["getHolidayCategories", () => actions.getHolidayCategories()],
+		["getHolidayAssignments", () => actions.getHolidayAssignments()],
+		["getHolidayCategoryAssignments", () => actions.getHolidayCategoryAssignments()],
+	])("refuses %s to an org member", async (_name, call) => {
+		harness.caller = orgMember;
+
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+	});
+
+	it.each([
+		["deleteHoliday", () => actions.deleteHoliday("holiday-org")],
+		["bulkDeleteHolidays", () => actions.bulkDeleteHolidays(["holiday-org"])],
+		["deleteCategory", () => actions.deleteCategory("category-org")],
+		[
+			"createHolidayCategoryAssignment",
+			() =>
+				actions.createHolidayCategoryAssignment({
+					categoryId: "category-org",
+					assignmentType: "organization",
+				}),
+		],
+		[
+			"deleteHolidayCategoryAssignment",
+			() => actions.deleteHolidayCategoryAssignment("category-assignment-org"),
+		],
+		[
+			"createHolidayAssignment",
+			() => actions.createHolidayAssignment({ holidayId: "holiday-org", assignmentType: "organization" }),
+		],
+		["deleteHolidayAssignment", () => actions.deleteHolidayAssignment("assignment-org")],
+	])("refuses %s to a scoped manager", async (_name, call) => {
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(harness.database.state.inserts).toEqual([]);
+		expect(harness.database.state.updates).toEqual([]);
+		expect(harness.database.state.deletes).toBe(0);
 	});
 });

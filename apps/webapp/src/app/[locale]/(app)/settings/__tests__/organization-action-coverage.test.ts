@@ -33,7 +33,6 @@ const NOT_YET_MIGRATED = [
 	"employees",
 	"enterprise",
 	"export",
-	"holidays",
 	"implementation-checklist",
 	"kiosks",
 	"locations",

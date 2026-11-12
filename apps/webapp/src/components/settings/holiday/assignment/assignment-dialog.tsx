@@ -154,7 +154,7 @@ export function AssignmentDialog({
 	const { data: presets, isLoading: presetsLoading } = useQuery({
 		queryKey: queryKeys.holidayPresets.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayPresets(organizationId);
+			const result = await getHolidayPresets();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch presets");
 			}
@@ -167,7 +167,7 @@ export function AssignmentDialog({
 	const { data: teams, isLoading: teamsLoading } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -185,7 +185,7 @@ export function AssignmentDialog({
 			effectiveFrom: string;
 			effectiveUntil: string;
 		}) =>
-			createPresetAssignment(organizationId, {
+			createPresetAssignment({
 				presetId: values.presetId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,

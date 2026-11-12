@@ -76,7 +76,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 	const { data, isLoading, error } = useQuery({
 		queryKey: queryKeys.holidayPresets.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayPresets(organizationId);
+			const result = await getHolidayPresets();
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch presets");
 			}

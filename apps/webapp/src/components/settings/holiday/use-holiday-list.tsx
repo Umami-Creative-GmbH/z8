@@ -46,7 +46,7 @@ export function useHolidayCategoryOptions(organizationId: string) {
 	const { data: categories = [] } = useQuery({
 		queryKey: queryKeys.holidayCategories.list(organizationId),
 		queryFn: async () => {
-			const result = await getHolidayCategories(organizationId);
+			const result = await getHolidayCategories();
 			if (!result.success) throw new Error(result.error);
 			return result.data as HolidayCategoryOption[];
 		},

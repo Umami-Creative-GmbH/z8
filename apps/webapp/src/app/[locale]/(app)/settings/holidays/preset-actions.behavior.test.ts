@@ -1,544 +1,184 @@
+import { and, type SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
+import type { holidayTestDatabase } from "./holiday-database.test.mock";
 
-const mockState = vi.hoisted(() => ({
-	actor: {
-		accessTier: "manager" as "manager" | "orgAdmin",
-		organizationId: "org-1",
-		session: {
-			user: {
-				id: "user-1",
-				email: "user@example.com",
-			},
-		},
-		currentEmployee: {
-			id: "manager-1",
-			organizationId: "org-1",
-			role: "manager" as const,
-		},
-	},
-	managedEmployeeIds: new Set<string>(["employee-managed"]),
-	teamPermissionsRows: [{ teamId: "team-managed", canManageTeamSettings: true }],
-	presetAssignments: [
-		{
-			id: "preset-org",
-			presetId: "preset-1",
-			assignmentType: "organization",
-			teamId: null,
-			employeeId: null,
-			priority: 0,
-			effectiveFrom: null,
-			effectiveUntil: null,
-			isActive: true,
-			createdAt: new Date("2026-01-01T00:00:00.000Z"),
-			preset: {
-				id: "preset-1",
-				name: "Org preset",
-				year: 2026,
-				color: null,
-				countryCode: "DE",
-				stateCode: null,
-			},
-			team: null,
-			employee: null,
-		},
-		{
-			id: "preset-team",
-			presetId: "preset-2",
-			assignmentType: "team",
-			teamId: "team-managed",
-			employeeId: null,
-			priority: 1,
-			effectiveFrom: null,
-			effectiveUntil: null,
-			isActive: true,
-			createdAt: new Date("2026-01-02T00:00:00.000Z"),
-			preset: {
-				id: "preset-2",
-				name: "Team preset",
-				year: 2026,
-				color: null,
-				countryCode: "DE",
-				stateCode: null,
-			},
-			team: { id: "team-managed", name: "Managed Team" },
-			employee: null,
-		},
-		{
-			id: "preset-employee",
-			presetId: "preset-3",
-			assignmentType: "employee",
-			teamId: null,
-			employeeId: "employee-managed",
-			priority: 2,
-			effectiveFrom: null,
-			effectiveUntil: null,
-			isActive: true,
-			createdAt: new Date("2026-01-03T00:00:00.000Z"),
-			preset: {
-				id: "preset-3",
-				name: "Employee preset",
-				year: 2026,
-				color: null,
-				countryCode: "DE",
-				stateCode: null,
-			},
-			team: null,
-			employee: { id: "employee-managed", firstName: "Mina", lastName: "Miller" },
-		},
-		{
-			id: "preset-other-team",
-			presetId: "preset-4",
-			assignmentType: "team",
-			teamId: "team-other",
-			employeeId: null,
-			priority: 1,
-			effectiveFrom: null,
-			effectiveUntil: null,
-			isActive: true,
-			createdAt: new Date("2026-01-04T00:00:00.000Z"),
-			preset: {
-				id: "preset-4",
-				name: "Other preset",
-				year: 2026,
-				color: null,
-				countryCode: "DE",
-				stateCode: null,
-			},
-			team: { id: "team-other", name: "Other Team" },
-			employee: null,
-		},
-	],
-	insertedPreset: {
-		id: "preset-new",
-		organizationId: "org-1",
-		name: "Bavaria",
-		description: null,
-		countryCode: "DE",
-		stateCode: "BY",
-		regionCode: null,
-		year: null,
-		color: null,
+const PRESET_ID = "00000000-0000-4000-8000-000000000001";
+const EMPLOYEE_ID = "00000000-0000-4000-8000-000000000002";
+const TEAM_ID = "00000000-0000-4000-8000-000000000003";
+const OTHER_CATEGORY_ID = "00000000-0000-4000-8000-000000000004";
+
+function presetAssignment(
+	id: string,
+	assignmentType: "organization" | "team" | "employee",
+	target: { teamId?: string; employeeId?: string } = {},
+) {
+	return {
+		id,
+		presetId: `preset-${id}`,
+		assignmentType,
+		teamId: target.teamId ?? null,
+		employeeId: target.employeeId ?? null,
+		priority: 0,
+		effectiveFrom: null,
+		effectiveUntil: null,
 		isActive: true,
-		createdBy: "user-1",
-	},
-	presetDetail: {
-		preset: {
-			id: "preset-existing",
-			organizationId: "org-1",
-			name: "Existing preset",
-			description: null,
-			countryCode: "DE",
-			stateCode: null,
-			regionCode: null,
-			year: null,
-			color: null,
-			isActive: true,
-		},
-		holidays: [],
-	},
-	insertCalls: [] as Array<any>,
-	updateCalls: [] as Array<any>,
-	deleteConditions: [] as Array<any>,
-	actorContextCalls: [] as Array<any>,
-	selectCalls: [] as Array<any>,
+		createdAt: new Date("2026-01-01T00:00:00.000Z"),
+		preset: { id: `preset-${id}`, name: id, year: 2026, color: null, countryCode: "DE", stateCode: null },
+		team: null,
+		employee: null,
+	};
+}
+
+const presetAssignments = [
+	presetAssignment("preset-org", "organization"),
+	presetAssignment("preset-team", "team", { teamId: "team-managed" }),
+	presetAssignment("preset-employee", "employee", { employeeId: "employee-managed" }),
+	presetAssignment("preset-other-team", "team", { teamId: "team-other" }),
+];
+
+const existingPreset = {
+	id: PRESET_ID,
+	organizationId: "org-1",
+	name: "Existing preset",
+	description: null,
+	countryCode: "DE",
+	stateCode: null,
+	regionCode: null,
+	year: null,
+	color: null,
+	isActive: true,
+};
+
+const harness = vi.hoisted(() => ({
+	caller: null as StubCaller | null,
+	managedEmployeeIds: new Set<string>(),
+	settingsTeamIds: [] as string[],
 	formerEmployeeIds: new Set<string>(),
+	database: null as unknown as ReturnType<typeof holidayTestDatabase>,
 }));
 
 vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
 	(
 		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
-	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+	).currentRosterGuardModule(() => harness.formerEmployeeIds),
 );
 
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	isNull: vi.fn((value: unknown) => ({ isNull: value })),
-	ne: vi.fn((left: unknown, right: unknown) => ({ ne: [left, right] })),
-	relations: vi.fn(() => ({})),
-	sql: vi.fn((strings: TemplateStringsArray) => strings.join("")),
-}));
-
-vi.mock("@/db/schema", () => ({
-	employee: {
-		id: "id",
-		userId: "userId",
-		isActive: "isActive",
-		organizationId: "organizationId",
-		firstName: "firstName",
-		lastName: "lastName",
-		position: "position",
-	},
-	holidayCategory: { id: "id", organizationId: "organizationId", name: "name", color: "color" },
-	holidayPreset: {
-		id: "id",
-		organizationId: "organizationId",
-		countryCode: "countryCode",
-		stateCode: "stateCode",
-		regionCode: "regionCode",
-		year: "year",
-		name: "name",
-		color: "color",
-		createdAt: "createdAt",
-	},
-	holidayPresetAssignment: {
-		id: "id",
-		presetId: "presetId",
-		organizationId: "organizationId",
-		assignmentType: "assignmentType",
-		teamId: "teamId",
-		employeeId: "employeeId",
-		priority: "priority",
-		effectiveFrom: "effectiveFrom",
-		effectiveUntil: "effectiveUntil",
-		isActive: "isActive",
-		createdAt: "createdAt",
-	},
-	holidayPresetHoliday: { presetId: "presetId" },
-	team: { id: "id", name: "name", organizationId: "organizationId" },
-	teamPermissions: {
-		employeeId: "employeeId",
-		organizationId: "organizationId",
-		teamId: "teamId",
-		canManageTeamSettings: "canManageTeamSettings",
-	},
-}));
-
-vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect");
-	const { AuthorizationError } = await import("@/lib/effect/errors");
-
-	return {
-		getEmployeeSettingsActorContext: vi.fn((options?: any) => {
-			mockState.actorContextCalls.push(options);
-			return Effect.succeed({
-				...mockState.actor,
-				dbService: {
-					db: {
-						query: {
-							teamPermissions: { findMany: vi.fn(async () => mockState.teamPermissionsRows) },
-							holidayPresetAssignment: { findMany: vi.fn(async () => mockState.presetAssignments) },
-						},
-						select: vi.fn((selection?: unknown) => {
-							mockState.selectCalls.push(selection);
-							if ((selection as { count?: unknown } | undefined)?.count) {
-								return {
-									from: vi.fn(() => ({ where: vi.fn(async () => [{ count: 0 }]) })),
-								};
-							}
-							return {
-								from: vi.fn((table: any) => ({
-									where: vi.fn((condition: any) => ({
-										limit: vi.fn(async () => {
-											const serialized = JSON.stringify(condition);
-											if (serialized.includes("countryCode")) {
-												return [];
-											}
-											if (serialized.includes("category-other")) {
-												return [];
-											}
-											if (
-												serialized.includes("preset-existing") ||
-												table?.organizationId === "organizationId"
-											) {
-												return [mockState.presetDetail.preset];
-											}
-											return [];
-										}),
-									})),
-									leftJoin: vi.fn(() => ({
-										where: vi.fn(() => ({
-											orderBy: vi.fn(async () => mockState.presetDetail.holidays),
-										})),
-									})),
-									orderBy: vi.fn(async () => {
-										if (table?.presetId === "presetId") {
-											return mockState.presetDetail.holidays;
-										}
-										return [];
-									}),
-									innerJoin: vi.fn(() => ({
-										where: vi.fn(() => ({ limit: vi.fn(async () => [{ id: "owned-row" }]) })),
-										leftJoin: vi.fn(() => ({
-											leftJoin: vi.fn(() => ({
-												leftJoin: vi.fn(() => ({
-													where: vi.fn((condition: any) => ({
-														orderBy: vi.fn(async () => {
-															const serialized = JSON.stringify(condition);
-															if (serialized.includes("preset-existing")) {
-																return [];
-															}
-															return mockState.presetAssignments;
-														}),
-													})),
-												})),
-											})),
-										})),
-									})),
-								})),
-							};
-						}),
-						leftJoin: vi.fn(() => ({
-							where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
-						})),
-						insert: vi.fn(() => ({
-							values: vi.fn((value: unknown) => ({
-								returning: vi.fn(async () => {
-									mockState.insertCalls.push(value);
-									return [mockState.insertedPreset];
-								}),
-							})),
-						})),
-						update: vi.fn(() => ({
-							set: vi.fn((value: unknown) => ({
-								where: vi.fn((condition: unknown) => {
-									mockState.updateCalls.push({ value, condition });
-									return { returning: vi.fn(async () => [mockState.insertedPreset]) };
-								}),
-							})),
-						})),
-						delete: vi.fn(() => ({
-							where: vi.fn((condition: unknown) => {
-								mockState.deleteConditions.push(condition);
-								return { returning: vi.fn(async () => [{ id: "preset-existing" }]) };
-							}),
-						})),
-					},
-					query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-				},
-			});
-		}),
-		getManagedEmployeeIdsForSettingsActor: vi.fn(() =>
-			Effect.succeed(mockState.managedEmployeeIds),
-		),
-		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: any, options: any) =>
-			actor.accessTier === "orgAdmin"
-				? Effect.void
-				: Effect.fail(
-						new AuthorizationError({
-							message: options.message,
-							userId: actor.session.user.id,
-							resource: options.resource,
-							action: options.action,
-						}),
-					),
-		),
-	};
-});
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
-	const AuthService = Context.Service<any>("AuthService");
-	return { AuthService };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
-	const DatabaseService = Context.Service<any>("DatabaseService");
-	return { DatabaseService };
-});
-
 vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
-
-	const db = {
-		query: {
-			teamPermissions: { findMany: vi.fn(async () => mockState.teamPermissionsRows) },
-			holidayPresetAssignment: { findMany: vi.fn(async () => mockState.presetAssignments) },
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { holidayTestDatabase } = await import("./holiday-database.test.mock");
+	harness.database = holidayTestDatabase({
+		teamPermissions: {
+			findMany: vi.fn(async () =>
+				harness.settingsTeamIds.map((teamId) => ({ teamId, canManageTeamSettings: true })),
+			),
 		},
-		select: vi.fn((selection?: unknown) => {
-			mockState.selectCalls.push(selection);
-			if ((selection as { count?: unknown } | undefined)?.count) {
-				return {
-					from: vi.fn(() => ({ where: vi.fn(async () => [{ count: 0 }]) })),
-				};
-			}
-			return {
-				from: vi.fn((table: any) => ({
-					where: vi.fn((condition: any) => ({
-						limit: vi.fn(async () => {
-							const serialized = JSON.stringify(condition);
-							if (serialized.includes("countryCode")) {
-								return [];
-							}
-							if (
-								serialized.includes("preset-existing") ||
-								table?.organizationId === "organizationId"
-							) {
-								return [mockState.presetDetail.preset];
-							}
-							return [];
-						}),
-					})),
-					leftJoin: vi.fn(() => ({
-						where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
-					})),
-					orderBy: vi.fn(async () => {
-						if (table?.presetId === "presetId") {
-							return mockState.presetDetail.holidays;
-						}
-						return [];
-					}),
-					innerJoin: vi.fn(() => ({
-						leftJoin: vi.fn(() => ({
-							leftJoin: vi.fn(() => ({
-								leftJoin: vi.fn(() => ({
-									where: vi.fn((condition: any) => ({
-										orderBy: vi.fn(async () => {
-											const serialized = JSON.stringify(condition);
-											if (serialized.includes("preset-existing")) {
-												return [];
-											}
-											return mockState.presetAssignments;
-										}),
-									})),
-								})),
-							})),
-						})),
-					})),
-				})),
-				leftJoin: vi.fn(() => ({
-					where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
-				})),
-			};
+	});
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => harness.caller, {
+			db: harness.database.db,
+			query: (name, fn) =>
+				name === "organizationAction.managedScope"
+					? (Effect.succeed([[...harness.managedEmployeeIds].map((id) => ({ id })), []]) as never)
+					: Effect.promise(fn),
 		}),
-		insert: vi.fn(() => ({
-			values: vi.fn((value: unknown) => ({
-				returning: vi.fn(async () => {
-					mockState.insertCalls.push(value);
-					return [mockState.insertedPreset];
-				}),
-			})),
-		})),
-		update: vi.fn(() => ({
-			set: vi.fn((value: unknown) => ({
-				where: vi.fn((condition: unknown) => {
-					mockState.updateCalls.push({ value, condition });
-					return { returning: vi.fn(async () => [mockState.insertedPreset]) };
-				}),
-			})),
-		})),
-		delete: vi.fn(() => ({
-			where: vi.fn((condition: unknown) => {
-				mockState.deleteConditions.push(condition);
-				return { returning: vi.fn(async () => [{ id: "preset-existing" }]) };
-			}),
-		})),
-	};
-
-	return {
-		AppLayer: Layer.mergeAll(
-			Layer.succeed(AuthService, {
-				getSession: () =>
-					Effect.succeed({
-						user: mockState.actor.session.user,
-						session: { activeOrganizationId: mockState.actor.organizationId },
-					}),
-			}),
-			Layer.succeed(DatabaseService, {
-				db,
-				query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-			}),
-		),
-	};
-});
-
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
-
-	return {
-		runServerActionSafe: async <T>(effect: any) => {
-			const exit = await Effect.runPromiseExit(effect);
-			return Exit.match(exit, {
-				onSuccess: (data) => ({ success: true as const, data: data as T }),
-				onFailure: (cause) => {
-					const defect = Result.getOrNull(Cause.findDefect(cause));
-					const failure = Option.getOrNull(Cause.findErrorOption(cause));
-					const error = defect ?? failure ?? cause;
-					if (error && typeof error === "object" && "message" in error) {
-						return {
-							success: false as const,
-							error: (error as { message: string }).message,
-							code: (error as { _tag?: string })._tag,
-						};
-					}
-					return { success: false as const, error: "Unknown error", code: "UNKNOWN_ERROR" };
-				},
-			});
-		},
-	};
+	);
 });
 
 const { assignmentRangesOverlap, buildPresetLocationConflictConditions } = await import(
 	"./preset-scheduling"
 );
-const {
-	createHolidayPreset,
-	createPresetAssignment,
-	addHolidayToPreset,
-	bulkAddHolidaysToPreset,
-	deleteHolidayPreset,
-	deleteHolidayFromPreset,
-	deletePresetAssignment,
-	getEmployeesForAssignment,
-	getHolidayPreset,
-	getHolidayPresets,
-	getPresetAssignments,
-	getTeamsForAssignment,
-	updateHolidayPreset,
-} = await import("./preset-actions");
+const actions = await import("./preset-actions");
+
+const dialect = new PgDialect();
+function rendered(condition: SQL | undefined) {
+	if (!condition) throw new Error("no condition");
+	return dialect.sqlToQuery(condition);
+}
+
+const scopedManager: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "manager-1", role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	...scopedManager,
+	employee: { id: "manager-1", role: "employee", former: false },
+};
+const orgAdmin: StubCaller = {
+	...scopedManager,
+	membershipRole: "admin",
+	employee: { id: "admin-1", role: "admin", former: false },
+};
+const ownerWithoutEmployee: StubCaller = { ...scopedManager, membershipRole: "owner", employee: null };
+
+const presetDetails = {
+	name: "Bavaria",
+	description: "",
+	countryCode: "DE",
+	stateCode: "BY",
+	regionCode: "",
+	color: "",
+	isActive: true,
+};
+
+const presetHoliday = {
+	name: "Holiday",
+	description: "",
+	month: 1,
+	day: 1,
+	durationDays: 1,
+	holidayType: "public" as const,
+	isFloating: false,
+	floatingRule: null,
+	isActive: true,
+};
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	harness.database.reset();
+	harness.caller = scopedManager;
+	harness.managedEmployeeIds = new Set(["employee-managed"]);
+	harness.settingsTeamIds = ["team-managed"];
+	harness.formerEmployeeIds = new Set();
+});
 
 describe("holiday preset settings scope behavior", () => {
-	beforeEach(() => {
-		mockState.actor = {
-			accessTier: "manager",
-			organizationId: "org-1",
-			session: { user: { id: "user-1", email: "user@example.com" } },
-			currentEmployee: { id: "manager-1", organizationId: "org-1", role: "manager" },
-		};
-		mockState.managedEmployeeIds = new Set(["employee-managed"]);
-		mockState.teamPermissionsRows = [{ teamId: "team-managed", canManageTeamSettings: true }];
-		mockState.insertCalls = [];
-		mockState.updateCalls = [];
-		mockState.deleteConditions = [];
-		mockState.actorContextCalls = [];
-		mockState.selectCalls = [];
-		mockState.formerEmployeeIds = new Set();
-	});
-
 	it("refuses a holiday preset assignment for a former employee and checks current ones (#1438)", async () => {
-		mockState.actor.accessTier = "orgAdmin";
+		harness.caller = orgAdmin;
 		const assign = () =>
-			createPresetAssignment("org-1", {
-				presetId: "preset-existing",
+			actions.createPresetAssignment({
+				presetId: PRESET_ID,
 				assignmentType: "employee",
-				teamId: null,
-				employeeId: "employee-managed",
-				effectiveFrom: null,
-				effectiveUntil: null,
+				employeeId: EMPLOYEE_ID,
 				isActive: true,
 			});
-		const { ensureOnCurrentRoster } = await import(
-			"@/lib/employee-lifecycle/current-roster-guard"
-		);
+		const { ensureOnCurrentRoster } = await import("@/lib/employee-lifecycle/current-roster-guard");
 
-		mockState.formerEmployeeIds = new Set(["employee-managed"]);
-		expect(await assign()).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mockState.insertCalls).toHaveLength(0);
+		harness.formerEmployeeIds = new Set([EMPLOYEE_ID]);
+		expect(await assign()).toMatchObject({ success: false, refusal: "former_employee" });
+		expect(harness.database.state.inserts).toHaveLength(0);
 
-		mockState.formerEmployeeIds = new Set();
-		const current = await assign();
-		expect(current).not.toMatchObject({ code: "ValidationError" });
+		harness.formerEmployeeIds = new Set();
+		harness.database.state.selects = [[existingPreset], [{ id: EMPLOYEE_ID }], []];
+		expect(await assign()).toMatchObject({ success: true });
 		expect(ensureOnCurrentRoster).toHaveBeenLastCalledWith(
 			expect.anything(),
-			expect.objectContaining({ organizationId: "org-1", employeeIds: ["employee-managed"] }),
+			expect.objectContaining({ organizationId: "org-1", employeeIds: [EMPLOYEE_ID] }),
 		);
+		expect(harness.database.state.inserts).toEqual([
+			expect.objectContaining({ organizationId: "org-1", employeeId: EMPLOYEE_ID, priority: 2 }),
+		]);
 	});
 
 	it("lets managers read only organization, managed-team, and managed-employee preset assignments", async () => {
-		const result = await getPresetAssignments("org-1");
+		harness.database.state.selects = [presetAssignments];
+
+		const result = await actions.getPresetAssignments();
 
 		expect(result.success).toBe(true);
 		if (result.success) {
@@ -549,177 +189,204 @@ describe("holiday preset settings scope behavior", () => {
 			]);
 			expect(result.data[0]?.preset.year).toBe(2026);
 		}
-		expect(mockState.selectCalls).toContainEqual(
-			expect.objectContaining({
-				preset: expect.objectContaining({ year: "year" }),
-			}),
-		);
 	});
 
-	it("lets owners create holiday presets with org-admin parity even without an admin employee row", async () => {
-		mockState.actor = {
-			accessTier: "orgAdmin",
-			organizationId: "org-1",
-			session: { user: { id: "user-1", email: "owner@example.com" } },
-			currentEmployee: null,
-		};
+	it("lets owners create holiday presets with org-admin parity even without an employee row", async () => {
+		harness.caller = ownerWithoutEmployee;
+		harness.database.state.selects = [[]];
 
-		const result = await createHolidayPreset("org-1", {
-			name: "Bavaria",
-			description: "",
-			countryCode: "DE",
-			stateCode: "BY",
-			regionCode: "",
-			color: "",
-			isActive: true,
-		});
+		const result = await actions.createHolidayPreset(presetDetails);
 
 		expect(result.success).toBe(true);
-		expect(mockState.insertCalls).toHaveLength(1);
+		expect(harness.database.state.inserts).toEqual([
+			expect.objectContaining({
+				organizationId: "org-1",
+				name: "Bavaria",
+				countryCode: "DE",
+				stateCode: "BY",
+				regionCode: null,
+				color: null,
+				createdBy: "user-1",
+			}),
+		]);
+	});
+
+	it("refuses a preset at a location that already has one", async () => {
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[{ id: "preset-elsewhere" }]];
+
+		const result = await actions.createHolidayPreset(presetDetails);
+
+		expect(result).toMatchObject({ success: false, code: "ConflictError" });
+		expect(harness.database.state.inserts).toHaveLength(0);
 	});
 
 	it("rejects managers reading holiday presets outside their holiday assignment scope", async () => {
-		const result = await getHolidayPreset("preset-existing");
+		harness.database.state.selects = [
+			[existingPreset],
+			[presetAssignment("preset-other-team", "team", { teamId: "team-other" })],
+		];
 
-		expect(result.success).toBe(false);
-		expect(result.error).toBe("Preset not found");
+		const result = await actions.getHolidayPreset(PRESET_ID);
+
+		expect(result).toMatchObject({ success: false, error: "Preset not found" });
 	});
 
 	it("lets owners read holiday presets with org-admin parity even without an employee row", async () => {
-		mockState.actor = {
-			accessTier: "orgAdmin",
-			organizationId: "org-1",
-			session: { user: { id: "user-1", email: "owner@example.com" } },
-			currentEmployee: null,
-		};
+		harness.caller = ownerWithoutEmployee;
+		harness.database.state.selects = [[existingPreset], []];
 
-		const result = await getHolidayPreset("preset-existing");
+		const result = await actions.getHolidayPreset(PRESET_ID);
 
-		expect(result.success).toBe(true);
-		if (result.success) {
-			expect(result.data.preset.id).toBe("preset-existing");
-		}
+		expect(result).toEqual({ success: true, data: { preset: existingPreset, holidays: [] } });
 	});
 
-	it("uses actor organization context for preset and assignment helper reads", async () => {
-		await getHolidayPresets("org-1");
-		await getTeamsForAssignment("org-1");
-		await getEmployeesForAssignment("org-1");
+	it("reads another organization's preset as not found", async () => {
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[]];
 
-		expect(mockState.actorContextCalls).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({ organizationId: "org-1", queryName: "getHolidayPresets:actor" }),
-				expect.objectContaining({
-					organizationId: "org-1",
-					queryName: "getTeamsForAssignment:actor",
-				}),
-				expect.objectContaining({
-					organizationId: "org-1",
-					queryName: "getEmployeesForAssignment:actor",
-				}),
-			]),
+		await expect(actions.getHolidayPreset(PRESET_ID)).resolves.toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
+	});
+
+	it("persists the preset year when updating preset details", async () => {
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[existingPreset], []];
+
+		const result = await actions.updateHolidayPreset({
+			presetId: PRESET_ID,
+			data: { ...presetDetails, name: "Existing preset", stateCode: "", year: 2027 },
+		});
+
+		expect(result.success).toBe(true);
+		expect(harness.database.state.updates[0]).toEqual(expect.objectContaining({ year: 2027 }));
+	});
+
+	it("deletes preset assignments only in the active organization", async () => {
+		harness.caller = orgAdmin;
+		harness.database.state.updateReturn = [{ id: "assignment-1" }];
+
+		const result = await actions.deletePresetAssignment("assignment-1");
+
+		expect(result.success).toBe(true);
+		expect(rendered(harness.database.state.updateConditions[0] as SQL).params).toEqual(
+			expect.arrayContaining(["assignment-1", "org-1"]),
 		);
-	});
-
-	it("persists the existing preset year when updating preset details", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-
-		const result = await updateHolidayPreset("preset-existing", {
-			name: "Existing preset",
-			description: "",
-			countryCode: "DE",
-			stateCode: "",
-			regionCode: "",
-			year: 2027,
-			color: "",
-			isActive: true,
-		});
-
-		expect(result.success).toBe(true);
-		expect(mockState.updateCalls[0]?.value).toEqual(expect.objectContaining({ year: 2027 }));
-	});
-
-	it("verifies preset assignments and deletes against the actor organization", async () => {
-		mockState.actor.accessTier = "orgAdmin";
-
-		await createPresetAssignment("org-1", {
-			presetId: "preset-existing",
-			assignmentType: "team",
-			teamId: "team-managed",
-			employeeId: null,
-			effectiveFrom: null,
-			effectiveUntil: null,
-			isActive: true,
-		});
-		await deletePresetAssignment("assignment-1");
-
-		expect(JSON.stringify(mockState.updateCalls.at(-1)?.condition)).toContain("org-1");
 	});
 
 	it("verifies preset holiday ownership before deleting", async () => {
-		mockState.actor.accessTier = "orgAdmin";
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[]];
 
-		await deleteHolidayFromPreset("holiday-1");
+		await expect(actions.deleteHolidayFromPreset("holiday-1")).resolves.toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
+		expect(harness.database.state.deletes).toBe(0);
 
-		expect(mockState.deleteConditions).toHaveLength(1);
-		expect(mockState.selectCalls.length).toBeGreaterThan(0);
+		harness.database.state.selects = [[{ id: "holiday-1" }]];
+
+		await expect(actions.deleteHolidayFromPreset("holiday-1")).resolves.toMatchObject({
+			success: true,
+		});
+		expect(harness.database.state.deletes).toBe(1);
 	});
 
 	it("hard deletes holiday presets instead of only marking them inactive", async () => {
-		mockState.actor.accessTier = "orgAdmin";
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[existingPreset]];
+		harness.database.state.deleteReturn = [{ id: PRESET_ID }];
 
-		const result = await deleteHolidayPreset("preset-existing");
+		const result = await actions.deleteHolidayPreset(PRESET_ID);
 
 		expect(result.success).toBe(true);
-		expect(mockState.deleteConditions).toHaveLength(1);
-		expect(mockState.updateCalls).toHaveLength(0);
+		expect(harness.database.state.deletes).toBe(1);
+		expect(harness.database.state.updates).toHaveLength(0);
 	});
 
 	it("rejects adding preset holidays with a category from another organization", async () => {
-		mockState.actor.accessTier = "orgAdmin";
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[existingPreset], []];
 
-		const result = await addHolidayToPreset("preset-existing", {
-			name: "Holiday",
-			description: "",
-			month: 1,
-			day: 1,
-			durationDays: 1,
-			holidayType: "public",
-			isFloating: false,
-			floatingRule: null,
-			categoryId: "category-other",
-			isActive: true,
+		const result = await actions.addHolidayToPreset({
+			presetId: PRESET_ID,
+			data: { ...presetHoliday, categoryId: OTHER_CATEGORY_ID },
 		});
 
-		expect(result.success).toBe(false);
-		expect(result.error).toBe("Holiday category not found");
-		expect(mockState.insertCalls).toHaveLength(0);
+		expect(result).toMatchObject({ success: false, error: "Holiday category not found" });
+		expect(harness.database.state.inserts).toHaveLength(0);
 	});
 
 	it("rejects bulk adding preset holidays with a category from another organization", async () => {
-		mockState.actor.accessTier = "orgAdmin";
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[existingPreset], []];
 
-		const result = await bulkAddHolidaysToPreset(
-			"preset-existing",
-			[
-				{
-					name: "Holiday",
-					description: "",
-					month: 1,
-					day: 1,
-					durationDays: 1,
-					holidayType: "public",
-					isFloating: false,
-					floatingRule: null,
-					isActive: true,
-				},
-			],
-			"category-other",
-		);
+		const result = await actions.bulkAddHolidaysToPreset({
+			presetId: PRESET_ID,
+			holidays: [presetHoliday],
+			categoryId: OTHER_CATEGORY_ID,
+		});
 
-		expect(result.success).toBe(false);
-		expect(result.error).toBe("Holiday category not found");
-		expect(mockState.insertCalls).toHaveLength(0);
+		expect(result).toMatchObject({ success: false, error: "Holiday category not found" });
+		expect(harness.database.state.inserts).toHaveLength(0);
+	});
+
+	it("bulk adds preset holidays", async () => {
+		harness.caller = orgAdmin;
+		harness.database.state.selects = [[existingPreset]];
+
+		const result = await actions.bulkAddHolidaysToPreset({
+			presetId: PRESET_ID,
+			holidays: [presetHoliday, { ...presetHoliday, name: "Second", day: 2 }],
+		});
+
+		expect(result).toEqual({ success: true, data: { added: 2 } });
+	});
+});
+
+describe("holiday preset settings access", () => {
+	it.each([
+		["getHolidayPresets", () => actions.getHolidayPresets()],
+		["getHolidayPreset", () => actions.getHolidayPreset(PRESET_ID)],
+		["getPresetAssignments", () => actions.getPresetAssignments()],
+		["getTeamsForAssignment", () => actions.getTeamsForAssignment()],
+		["getEmployeesForAssignment", () => actions.getEmployeesForAssignment()],
+	])("refuses %s to an org member", async (_name, call) => {
+		harness.caller = orgMember;
+
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+	});
+
+	it.each([
+		["createHolidayPreset", () => actions.createHolidayPreset(presetDetails)],
+		[
+			"updateHolidayPreset",
+			() => actions.updateHolidayPreset({ presetId: PRESET_ID, data: presetDetails }),
+		],
+		["deleteHolidayPreset", () => actions.deleteHolidayPreset(PRESET_ID)],
+		["addHolidayToPreset", () => actions.addHolidayToPreset({ presetId: PRESET_ID, data: presetHoliday })],
+		[
+			"bulkAddHolidaysToPreset",
+			() => actions.bulkAddHolidaysToPreset({ presetId: PRESET_ID, holidays: [presetHoliday] }),
+		],
+		["deleteHolidayFromPreset", () => actions.deleteHolidayFromPreset("holiday-1")],
+		[
+			"createPresetAssignment",
+			() =>
+				actions.createPresetAssignment({
+					presetId: PRESET_ID,
+					assignmentType: "team",
+					teamId: TEAM_ID,
+				}),
+		],
+		["deletePresetAssignment", () => actions.deletePresetAssignment("assignment-1")],
+	])("refuses %s to a scoped manager", async (_name, call) => {
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(harness.database.state.inserts).toEqual([]);
+		expect(harness.database.state.updates).toEqual([]);
+		expect(harness.database.state.deletes).toBe(0);
 	});
 });
 
@@ -766,21 +433,20 @@ describe("holiday preset scheduling behavior", () => {
 		});
 
 		expect(conditions).toHaveLength(5);
-		expect(conditions).toContainEqual({ eq: ["year", 2027] });
+		const query = rendered(and(...conditions));
+		expect(query.sql).toContain('"year" = $');
+		expect(query.params).toContain(2027);
 	});
 
 	it("excludes the current preset from update location conflict checks", () => {
 		const conditions = buildPresetLocationConflictConditions(
 			"org-1",
-			{
-				countryCode: "DE",
-				stateCode: "BY",
-				regionCode: undefined,
-				year: 2027,
-			},
+			{ countryCode: "DE", stateCode: "BY", regionCode: undefined, year: 2027 },
 			{ excludePresetId: "preset-current" },
 		);
 
-		expect(conditions).toContainEqual({ ne: ["id", "preset-current"] });
+		const query = rendered(and(...conditions));
+		expect(query.sql).toContain('"id" <> $');
+		expect(query.params).toContain("preset-current");
 	});
 });

@@ -355,9 +355,9 @@ export function useHolidayImportController({
 				),
 			},
 			actions: {
-				createPreset: createHolidayPreset,
-				addHolidays: bulkAddHolidaysToPreset,
-				createAssignment: createPresetAssignment,
+				createPreset: (_organizationId, preset) => createHolidayPreset(preset),
+				addHolidays: (presetId, holidays) => bulkAddHolidaysToPreset({ presetId, holidays }),
+				createAssignment: (_organizationId, assignment) => createPresetAssignment(assignment),
 			},
 			toast,
 			onSuccess,
