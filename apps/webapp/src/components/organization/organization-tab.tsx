@@ -1,10 +1,13 @@
 "use client";
 
 import type * as authSchema from "@/db/auth-schema";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
 import type { OrganizationProfile } from "@/lib/organization/profile";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
@@ -16,7 +19,8 @@ interface OrganizationTabProps {
 	organizationProfile: OrganizationProfile;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 	defaultNotificationLanguage: string;
 	billableCurrency: BillableCurrency | null;
 	drivingLicence: DrivingLicenceFeatureState;
@@ -27,7 +31,7 @@ export function OrganizationTab({
 	organizationProfile,
 	organization,
 	memberCount,
-	currentMemberRole,
+	settingsAccess,
 	defaultNotificationLanguage,
 	billableCurrency,
 	drivingLicence,
@@ -39,11 +43,10 @@ export function OrganizationTab({
 			<OrganizationDetailsCard
 				organization={organization}
 				memberCount={memberCount}
-				currentMemberRole={currentMemberRole}
+				settingsAccess={settingsAccess}
 			/>
 
-			{(hasOrganizationRole(currentMemberRole, "owner") ||
-				hasOrganizationRole(currentMemberRole, "admin")) && (
+			{meetsSettingsAccess(settingsAccess, "orgAdmin") && (
 				<OrganizationProfileCard key={organization.id} profile={organizationProfile} />
 			)}
 
@@ -61,26 +64,23 @@ export function OrganizationTab({
 				equipmentOutstandingReturns={equipmentOutstandingReturns}
 				drivingLicence={drivingLicence}
 				organizationTimezone={organization.timezone ?? "UTC"}
-				currentMemberRole={currentMemberRole}
+				settingsAccess={settingsAccess}
 			/>
 
 			{/* Organization Timezone Card */}
 			<OrganizationTimezoneCard
 				timezone={organization.timezone ?? "UTC"}
-				currentMemberRole={currentMemberRole}
+				settingsAccess={settingsAccess}
 			/>
 
 			{/* Organization Language Card */}
 			<OrganizationLanguageCard
 				defaultLanguage={defaultNotificationLanguage}
-				currentMemberRole={currentMemberRole}
+				settingsAccess={settingsAccess}
 			/>
 
 			{/* Danger Zone Card */}
-			<OrganizationDangerZoneCard
-				organization={organization}
-				currentMemberRole={currentMemberRole}
-			/>
+			<OrganizationDangerZoneCard organization={organization} settingsAccess={settingsAccess} />
 		</div>
 	);
 }

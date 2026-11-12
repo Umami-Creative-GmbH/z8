@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { refusalCodeOf } from "@/lib/effect/refusal-code";
 import { isValidKioskPin, KIOSK_PIN_MAX_LENGTH } from "@/lib/time-tracking/kiosk/pin";
+import type { KioskPinErrorCode } from "@/lib/time-tracking/kiosk/pin-errors";
 import { kioskPinErrorMessage } from "./kiosk-pin-error-message";
 
 const OWN_PIN_STATUS_KEY = ["kiosk", "own-pin-status"] as const;
@@ -48,7 +50,15 @@ export function OwnKioskPinCard() {
 			const result = await saveMutation.mutateAsync(value.pin).catch(() => null);
 			if (!result) return;
 			if (!result.success) {
-				toast.error(kioskPinErrorMessage(t, result.code));
+				toast.error(
+					kioskPinErrorMessage(
+						t,
+						refusalCodeOf<KioskPinErrorCode>(result, {
+							signedOut: "sign_in_required",
+							noAccess: "not_allowed",
+						}),
+					),
+				);
 				return;
 			}
 			toast.success(t("settings.security.kioskPin.saved", "Kiosk PIN saved"));

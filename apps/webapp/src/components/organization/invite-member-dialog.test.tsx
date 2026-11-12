@@ -101,7 +101,7 @@ describe("InviteMemberDialog target team form", () => {
 				<InviteMemberDialog
 					organizationId="org-1"
 					organizationName="Test Organization"
-					currentMemberRole="admin"
+					settingsAccess="orgAdmin"
 					open
 					onOpenChange={onOpenChange}
 				/>

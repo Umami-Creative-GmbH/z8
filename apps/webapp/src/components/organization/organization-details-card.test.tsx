@@ -64,7 +64,7 @@ describe("OrganizationDetailsCard", () => {
 			<OrganizationDetailsCard
 				organization={organization as never}
 				memberCount={3}
-				currentMemberRole="owner"
+				settingsAccess="owner"
 			/>,
 		);
 

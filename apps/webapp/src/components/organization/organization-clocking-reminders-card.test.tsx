@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import { createTestTolgee } from "@/test/render-with-translations";
 
@@ -23,12 +24,12 @@ vi.mock("@/app/[locale]/(app)/settings/organization/clocking-reminder-actions", 
 
 import { OrganizationClockingRemindersCard } from "./organization-clocking-reminders-card";
 
-function show(role: "owner" | "admin" | "member" = "admin") {
+function show(access: SettingsAccess | null = "orgAdmin") {
 	return render(
 		<TolgeeProvider tolgee={createTestTolgee("en", {})}>
 			<OrganizationClockingRemindersCard
 				settings={DEFAULT_CLOCKING_REMINDER_SETTINGS}
-				currentMemberRole={role}
+				settingsAccess={access}
 			/>
 		</TolgeeProvider>,
 	);

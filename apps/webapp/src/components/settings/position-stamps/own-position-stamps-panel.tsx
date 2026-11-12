@@ -29,8 +29,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { refusalCodeOf } from "@/lib/effect/refusal-code";
+import type { PositionCaptureErrorCode } from "@/lib/time-tracking/position-capture/errors";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+
+function positionRefusalCode(failure: { code?: string; refusal?: string }) {
+	return refusalCodeOf<PositionCaptureErrorCode>(failure, {
+		signedOut: "sign_in_required",
+		noAccess: "employee_profile_required",
+	});
+}
 
 /** What the employee decided about the position notice, in one sentence. */
 function consentStatusText(
@@ -95,7 +104,7 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 				router.refresh();
 			} else {
 				toast.error(
-					positionCaptureErrorMessage(t, result.code) ??
+					positionCaptureErrorMessage(t, positionRefusalCode(result)) ??
 						t("settings.positionStamps.agreeFailed", "Your consent could not be saved"),
 				);
 			}
@@ -119,7 +128,7 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 				router.refresh();
 			} else {
 				toast.error(
-					positionCaptureErrorMessage(t, result.code) ??
+					positionCaptureErrorMessage(t, positionRefusalCode(result)) ??
 						t("settings.positionStamps.withdrawFailed", "Your consent could not be withdrawn"),
 				);
 			}

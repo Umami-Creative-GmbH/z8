@@ -9,17 +9,22 @@ import { TimezonePicker } from "@/components/settings/timezone-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useServerDataState } from "@/hooks/use-server-data-state";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface OrganizationTimezoneCardProps {
 	timezone: string;
-	currentMemberRole: "owner" | "admin" | "member";
+	/** The viewer's settings access, worked out on the server (ADR 0002). */
+	settingsAccess: SettingsAccess | null;
 }
 
 export function OrganizationTimezoneCard({
 	timezone: initialTimezone,
-	currentMemberRole,
+	settingsAccess,
 }: OrganizationTimezoneCardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -27,7 +32,7 @@ export function OrganizationTimezoneCard({
 	const [timezone, setTimezone] = useServerDataState(initialTimezone);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
-	const canEdit = currentMemberRole === "owner";
+	const canEdit = meetsSettingsAccess(settingsAccess, "owner");
 
 	const handleTimezoneChange = async (newTimezone: string) => {
 		if (!canEdit) return;

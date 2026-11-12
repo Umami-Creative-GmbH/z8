@@ -58,7 +58,7 @@ vi.mock("@/components/settings/timezone-picker", () => ({
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
 
 function renderCard() {
-	render(<OrganizationTimezoneCard timezone="Europe/Berlin" currentMemberRole="owner" />);
+	render(<OrganizationTimezoneCard timezone="Europe/Berlin" settingsAccess="owner" />);
 	fireEvent.change(screen.getByLabelText("Organization timezone"), {
 		target: { value: "America/New_York" },
 	});

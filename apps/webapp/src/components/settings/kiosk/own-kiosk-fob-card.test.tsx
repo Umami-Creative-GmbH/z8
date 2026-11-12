@@ -67,11 +67,23 @@ describe("OwnKioskFobCard (#1508)", () => {
 		expect(container.textContent).toBe("");
 	});
 
+	it("renders nothing for someone without settings access in the organization", async () => {
+		actions.getOwnKioskFobStatusAction.mockResolvedValue({
+			success: false,
+			error: "You do not have access to this setting",
+			code: "AuthorizationError",
+		});
+		const { container } = renderCard();
+
+		await waitFor(() => expect(actions.getOwnKioskFobStatusAction).toHaveBeenCalled());
+		expect(container.textContent).toBe("");
+	});
+
 	it("says when the fob could not be read, and reads it again on request", async () => {
 		actions.getOwnKioskFobStatusAction.mockResolvedValueOnce({
 			success: false,
 			error: "boom",
-			code: "failed",
+			code: "DatabaseError",
 		});
 		actions.getOwnKioskFobStatusAction.mockResolvedValueOnce({ success: true, data: ownFob });
 		renderCard();
@@ -128,7 +140,8 @@ describe("OwnKioskFobCard (#1508)", () => {
 		actions.removeOwnKioskFobAction.mockResolvedValue({
 			success: false,
 			error: "none",
-			code: "no_fob",
+			code: "ValidationError",
+			refusal: "no_fob",
 		});
 		renderCard();
 

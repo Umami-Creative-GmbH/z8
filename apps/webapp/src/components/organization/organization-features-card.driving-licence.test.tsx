@@ -4,6 +4,7 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { render } from "@/test/render-with-translations";
 
 const mocks = vi.hoisted(() => ({
@@ -41,7 +42,7 @@ const active: DrivingLicenceFeatureState = {
 
 function renderCard(input: {
 	drivingLicence: DrivingLicenceFeatureState;
-	role?: "owner" | "admin" | "member";
+	access?: SettingsAccess | null;
 }) {
 	return render(
 		<OrganizationFeaturesCard
@@ -56,7 +57,7 @@ function renderCard(input: {
 			equipmentEnabled={false}
 			organizationTimezone="Europe/Berlin"
 			drivingLicence={input.drivingLicence}
-			currentMemberRole={input.role ?? "admin"}
+			settingsAccess={input.access === undefined ? "orgAdmin" : input.access}
 		/>,
 	);
 }
@@ -80,7 +81,7 @@ describe("OrganizationFeaturesCard driving licence control (#1421)", () => {
 	afterEach(cleanup);
 
 	it("shows the saved on/off value and lets owners and admins, not members, switch it", () => {
-		renderCard({ drivingLicence: active, role: "admin" });
+		renderCard({ drivingLicence: active, access: "orgAdmin" });
 		expect(drivingSwitch().getAttribute("aria-checked")).toBe("true");
 		expect(drivingSwitch().hasAttribute("disabled")).toBe(false);
 		expect(
@@ -90,12 +91,12 @@ describe("OrganizationFeaturesCard driving licence control (#1421)", () => {
 		).toBeTruthy();
 		cleanup();
 
-		renderCard({ drivingLicence: neverActivated, role: "owner" });
+		renderCard({ drivingLicence: neverActivated, access: "owner" });
 		expect(drivingSwitch().getAttribute("aria-checked")).toBe("false");
 		expect(drivingSwitch().hasAttribute("disabled")).toBe(false);
 		cleanup();
 
-		renderCard({ drivingLicence: active, role: "member" });
+		renderCard({ drivingLicence: active, access: "member" });
 		expect(drivingSwitch().hasAttribute("disabled")).toBe(true);
 		fireEvent.click(drivingSwitch());
 		expect(screen.queryByRole("alertdialog")).toBeNull();
