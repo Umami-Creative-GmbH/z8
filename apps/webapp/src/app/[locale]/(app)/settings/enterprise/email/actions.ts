@@ -1,16 +1,19 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { z } from "zod";
 import {
 	type EmailSmtpIpMode,
 	type EmailTransportType,
 	organizationEmailConfig,
 } from "@/db/schema";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { ExternalServiceError, ValidationError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { sendTestEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import {
 	deleteOrgSecret,
 	getSecretStoreStatus,
@@ -21,16 +24,13 @@ import {
 
 const logger = createLogger("EmailConfigActions");
 
-function isAllowedSmtpIpMode(mode: EmailSmtpIpMode): boolean {
-	return mode === "auto" || mode === "ipv4" || mode === "ipv6";
-}
-
-async function requireMatchingOrganizationAccess(organizationId: string): Promise<string> {
-	const access = await requireOrgAdminSettingsAccess();
-	if (access.organizationId !== organizationId) {
-		throw new Error("Organization access mismatch");
-	}
-	return access.organizationId;
+/** A call to the organization secret store, refused with a user-safe message. */
+function secretStore<T>(operation: string, message: string, run: () => Promise<T>) {
+	return Effect.tryPromise({
+		try: run,
+		catch: (cause) =>
+			new ExternalServiceError({ message, service: "secretStore", operation, cause }),
+	});
 }
 
 /**
@@ -82,218 +82,222 @@ export interface EmailConfigOutput {
 	updatedAt: Date;
 }
 
-/**
- * Get email configuration for an organization (without secrets)
- */
-export async function getEmailConfig(organizationId: string): Promise<EmailConfigOutput | null> {
-	const authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
-	try {
-		const config = await db.query.organizationEmailConfig.findFirst({
-			where: eq(organizationEmailConfig.organizationId, authorizedOrganizationId),
-		});
-
-		if (!config) {
-			return null;
-		}
-
-		// Check if secrets exist in Vault (without retrieving them)
-		const hasResendApiKey = await hasOrgSecret(authorizedOrganizationId, "email/resend_api_key");
-		const hasSmtpPassword = await hasOrgSecret(authorizedOrganizationId, "email/smtp_password");
-
-		return {
-			id: config.id,
-			organizationId: config.organizationId,
-			transportType: config.transportType,
-			fromEmail: config.fromEmail,
-			fromName: config.fromName,
-			isActive: config.isActive,
-			smtpHost: config.smtpHost,
-			smtpPort: config.smtpPort,
-			smtpSecure: config.smtpSecure,
-			smtpRequireTls: config.smtpRequireTls,
-			smtpIpMode: config.transportType === "smtp" ? (config.smtpIpMode ?? "auto") : null,
-			smtpUsername: config.smtpUsername,
-			lastTestAt: config.lastTestAt,
-			lastTestSuccess: config.lastTestSuccess,
-			lastTestError: config.lastTestError,
-			hasResendApiKey,
-			hasSmtpPassword,
-			createdAt: config.createdAt,
-			updatedAt: config.updatedAt,
-		};
-	} catch (error) {
-		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to get email config");
-		throw new Error("Failed to get email configuration");
-	}
-}
+const emailConfigSchema = z.object({
+	transportType: z.enum(["resend", "smtp"]),
+	fromEmail: z.string().max(320),
+	fromName: z.string().max(255).optional(),
+	isActive: z.boolean(),
+	resendApiKey: z.string().max(1024).optional(),
+	smtpHost: z.string().max(255).optional(),
+	smtpPort: z.number().int().min(1).max(65_535).optional(),
+	smtpSecure: z.boolean().optional(),
+	smtpRequireTls: z.boolean().optional(),
+	smtpIpMode: z.enum(["auto", "ipv4", "ipv6"], { error: "Invalid SMTP IP mode" }).optional(),
+	smtpUsername: z.string().max(255).optional(),
+	smtpPassword: z.string().max(1024).optional(),
+}) satisfies z.ZodType<EmailConfigInput>;
 
 /**
- * Save email configuration for an organization
- * Non-secret fields go to DB, secrets go to Vault
+ * The email configuration of the active organization (without secrets), or
+ * null. Org admins only.
  */
-export async function saveEmailConfig(
-	organizationId: string,
-	config: EmailConfigInput,
-): Promise<{ success: boolean; error?: string }> {
-	let authorizedOrganizationId: string | undefined;
-	try {
-		authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
+export const getEmailConfig = organizationAction(
+	{ name: "emailConfig.get", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const config = yield* dbService.query("emailConfig.get", () =>
+				dbService.db.query.organizationEmailConfig.findFirst({
+					where: eq(organizationEmailConfig.organizationId, organizationId),
+				}),
+			);
+			if (!config) return null;
 
-		// Validate required fields based on transport type
-		if (config.transportType === "smtp") {
-			if (!config.smtpHost || !config.smtpPort || !config.smtpUsername) {
-				return { success: false, error: "SMTP host, port, and username are required" };
+			// Check if secrets exist in the secret store (without retrieving them)
+			const [hasResendApiKey, hasSmtpPassword] = yield* secretStore(
+				"hasSecret",
+				"Failed to get email configuration",
+				() =>
+					Promise.all([
+						hasOrgSecret(organizationId, "email/resend_api_key"),
+						hasOrgSecret(organizationId, "email/smtp_password"),
+					]),
+			);
+
+			return {
+				id: config.id,
+				organizationId: config.organizationId,
+				transportType: config.transportType,
+				fromEmail: config.fromEmail,
+				fromName: config.fromName,
+				isActive: config.isActive,
+				smtpHost: config.smtpHost,
+				smtpPort: config.smtpPort,
+				smtpSecure: config.smtpSecure,
+				smtpRequireTls: config.smtpRequireTls,
+				smtpIpMode: config.transportType === "smtp" ? (config.smtpIpMode ?? "auto") : null,
+				smtpUsername: config.smtpUsername,
+				lastTestAt: config.lastTestAt,
+				lastTestSuccess: config.lastTestSuccess,
+				lastTestError: config.lastTestError,
+				hasResendApiKey,
+				hasSmtpPassword,
+				createdAt: config.createdAt,
+				updatedAt: config.updatedAt,
+			} satisfies EmailConfigOutput;
+		}),
+);
+
+/**
+ * Saves the email configuration of the active organization: non-secret fields
+ * go to the database, secrets to the secret store. Org admins only.
+ */
+export const saveEmailConfig = organizationAction(
+	{ name: "emailConfig.save", requires: "orgAdmin", schema: emailConfigSchema },
+	({ organizationId, input: config }) =>
+		Effect.gen(function* () {
+			if (
+				config.transportType === "smtp" &&
+				(!config.smtpHost || !config.smtpPort || !config.smtpUsername)
+			) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "SMTP host, port, and username are required",
+						field: "smtpHost",
+					}),
+				);
 			}
-			if (config.smtpIpMode !== undefined && !isAllowedSmtpIpMode(config.smtpIpMode)) {
-				return { success: false, error: "Invalid SMTP IP mode" };
-			}
-		}
 
-		// Check for existing config
-		const existing = await db.query.organizationEmailConfig.findFirst({
-			where: eq(organizationEmailConfig.organizationId, authorizedOrganizationId),
-		});
+			const smtp = config.transportType === "smtp";
+			const dbValues = {
+				organizationId,
+				transportType: config.transportType,
+				fromEmail: config.fromEmail,
+				fromName: config.fromName ?? null,
+				isActive: config.isActive,
+				smtpHost: smtp ? (config.smtpHost ?? null) : null,
+				smtpPort: smtp ? (config.smtpPort ?? null) : null,
+				smtpSecure: smtp ? (config.smtpSecure ?? true) : null,
+				smtpRequireTls: smtp ? (config.smtpRequireTls ?? true) : null,
+				smtpIpMode: smtp ? (config.smtpIpMode ?? "auto") : null,
+				smtpUsername: smtp ? (config.smtpUsername ?? null) : null,
+			};
 
-		// Prepare DB values (no secrets)
-		const dbValues = {
-			organizationId: authorizedOrganizationId,
-			transportType: config.transportType,
-			fromEmail: config.fromEmail,
-			fromName: config.fromName ?? null,
-			isActive: config.isActive,
-			smtpHost: config.transportType === "smtp" ? (config.smtpHost ?? null) : null,
-			smtpPort: config.transportType === "smtp" ? (config.smtpPort ?? null) : null,
-			smtpSecure: config.transportType === "smtp" ? (config.smtpSecure ?? true) : null,
-			smtpRequireTls: config.transportType === "smtp" ? (config.smtpRequireTls ?? true) : null,
-			smtpIpMode: config.transportType === "smtp" ? (config.smtpIpMode ?? "auto") : null,
-			smtpUsername: config.transportType === "smtp" ? (config.smtpUsername ?? null) : null,
-		};
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("emailConfig.save", async () => {
+				const existing = await dbService.db.query.organizationEmailConfig.findFirst({
+					where: eq(organizationEmailConfig.organizationId, organizationId),
+				});
+				if (existing) {
+					await dbService.db
+						.update(organizationEmailConfig)
+						.set(dbValues)
+						.where(eq(organizationEmailConfig.organizationId, organizationId));
+				} else {
+					await dbService.db.insert(organizationEmailConfig).values(dbValues);
+				}
+			});
 
-		// Save to database
-		if (existing) {
-			await db
-				.update(organizationEmailConfig)
-				.set(dbValues)
-				.where(eq(organizationEmailConfig.organizationId, authorizedOrganizationId));
-		} else {
-			await db.insert(organizationEmailConfig).values(dbValues);
-		}
+			yield* secretStore("storeSecret", "Failed to save email configuration", async () => {
+				if (config.transportType === "resend" && config.resendApiKey) {
+					await storeOrgSecret(organizationId, "email/resend_api_key", config.resendApiKey);
+					// Clean up SMTP password if switching from SMTP
+					await deleteOrgSecret(organizationId, "email/smtp_password");
+				} else if (config.transportType === "smtp" && config.smtpPassword) {
+					await storeOrgSecret(organizationId, "email/smtp_password", config.smtpPassword);
+					// Clean up Resend API key if switching from Resend
+					await deleteOrgSecret(organizationId, "email/resend_api_key");
+				}
+			});
 
-		// Store secrets in Vault
-		if (config.transportType === "resend" && config.resendApiKey) {
-			await storeOrgSecret(authorizedOrganizationId, "email/resend_api_key", config.resendApiKey);
-			// Clean up SMTP password if switching from SMTP
-			await deleteOrgSecret(authorizedOrganizationId, "email/smtp_password");
-		} else if (config.transportType === "smtp" && config.smtpPassword) {
-			await storeOrgSecret(authorizedOrganizationId, "email/smtp_password", config.smtpPassword);
-			// Clean up Resend API key if switching from Resend
-			await deleteOrgSecret(authorizedOrganizationId, "email/resend_api_key");
-		}
-
-		logger.info(
-			{ organizationId: authorizedOrganizationId, transportType: config.transportType },
-			"Email config saved",
-		);
-		revalidatePath("/settings/enterprise");
-		return { success: true };
-	} catch (error) {
-		logger.error(
-			{ error, organizationId: authorizedOrganizationId },
-			"Failed to save email config",
-		);
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : "Failed to save email configuration",
-		};
-	}
-}
+			logger.info({ organizationId, transportType: config.transportType }, "Email config saved");
+			revalidatePath("/settings/enterprise");
+		}),
+);
 
 /**
- * Send a test email to verify the configuration
+ * Sends a test email through the active organization's configuration and
+ * records the outcome. A refused send comes back with the provider's answer,
+ * which the org admin needs to fix their own configuration. Org admins only.
  */
-export async function testEmailConfig(
-	organizationId: string,
-	testEmail: string,
-): Promise<{ success: boolean; error?: string }> {
-	let authorizedOrganizationId: string | undefined;
-	try {
-		authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
+export const testEmailConfig = organizationAction(
+	{
+		name: "emailConfig.test",
+		requires: "orgAdmin",
+		schema: z.strictObject({ testEmail: z.email({ error: "Enter a valid email address" }) }),
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const result = yield* Effect.tryPromise({
+				try: () => sendTestEmail(input.testEmail, organizationId),
+				catch: (cause) =>
+					new ExternalServiceError({
+						message: "Failed to send test email",
+						service: "email",
+						operation: "sendTest",
+						cause,
+					}),
+			});
 
-		// Send test email using org-specific transport
-		const result = await sendTestEmail(testEmail, authorizedOrganizationId);
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("emailConfig.recordTest", () =>
+				dbService.db
+					.update(organizationEmailConfig)
+					.set({
+						lastTestAt: new Date(),
+						lastTestSuccess: result.success,
+						lastTestError: result.error ?? null,
+					})
+					.where(eq(organizationEmailConfig.organizationId, organizationId)),
+			);
 
-		// Update test status in DB
-		await db
-			.update(organizationEmailConfig)
-			.set({
-				lastTestAt: new Date(),
-				lastTestSuccess: result.success,
-				lastTestError: result.error ?? null,
-			})
-			.where(eq(organizationEmailConfig.organizationId, authorizedOrganizationId));
+			if (!result.success) {
+				logger.warn({ organizationId, error: result.error }, "Test email failed");
+				return yield* Effect.fail(
+					new ExternalServiceError({
+						message: result.error ?? "Failed to send test email",
+						service: "email",
+						operation: "sendTest",
+					}),
+				);
+			}
 
-		if (result.success) {
 			logger.info(
-				{ organizationId: authorizedOrganizationId, testEmail: `${testEmail.slice(0, 3)}***` },
+				{ organizationId, testEmail: `${input.testEmail.slice(0, 3)}***` },
 				"Test email sent",
 			);
-			return { success: true };
-		}
+		}),
+);
 
-		logger.warn(
-			{ organizationId: authorizedOrganizationId, error: result.error },
-			"Test email failed",
-		);
-		return { success: false, error: result.error };
-	} catch (error) {
-		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to send test email");
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : "Failed to send test email",
-		};
-	}
-}
+/** Deletes the active organization's email configuration and its secrets. Org admins only. */
+export const deleteEmailConfig = organizationAction(
+	{ name: "emailConfig.delete", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("emailConfig.delete", () =>
+				dbService.db
+					.delete(organizationEmailConfig)
+					.where(eq(organizationEmailConfig.organizationId, organizationId)),
+			);
 
-/**
- * Delete email configuration for an organization
- */
-export async function deleteEmailConfig(
-	organizationId: string,
-): Promise<{ success: boolean; error?: string }> {
-	let authorizedOrganizationId: string | undefined;
-	try {
-		authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
+			yield* secretStore("deleteSecret", "Failed to delete email configuration", async () => {
+				await deleteOrgSecret(organizationId, "email/resend_api_key");
+				await deleteOrgSecret(organizationId, "email/smtp_password");
+			});
 
-		// Delete from database
-		await db
-			.delete(organizationEmailConfig)
-			.where(eq(organizationEmailConfig.organizationId, authorizedOrganizationId));
+			logger.info({ organizationId }, "Email config deleted");
+			revalidatePath("/settings/enterprise");
+		}),
+);
 
-		// Delete secrets from Vault
-		await deleteOrgSecret(authorizedOrganizationId, "email/resend_api_key");
-		await deleteOrgSecret(authorizedOrganizationId, "email/smtp_password");
-
-		logger.info({ organizationId: authorizedOrganizationId }, "Email config deleted");
-		revalidatePath("/settings/enterprise");
-		return { success: true };
-	} catch (error) {
-		logger.error(
-			{ error, organizationId: authorizedOrganizationId },
-			"Failed to delete email config",
-		);
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : "Failed to delete email configuration",
-		};
-	}
-}
-
-/**
- * Get configured secret store status for UI display.
- */
-export async function getSecretStoreConnectionStatus(
-	organizationId: string,
-): Promise<SecretStoreStatus> {
-	const authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
-	return getSecretStoreStatus(authorizedOrganizationId);
-}
+/** The configured secret store's status for the active organization's settings page. Org admins only. */
+export const getSecretStoreConnectionStatus = organizationAction(
+	{ name: "emailConfig.secretStoreStatus", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		secretStore(
+			"status",
+			"Unable to reach the secret store",
+			(): Promise<SecretStoreStatus> => getSecretStoreStatus(organizationId),
+		),
+);

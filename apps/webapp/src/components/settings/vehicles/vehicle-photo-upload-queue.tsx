@@ -155,10 +155,7 @@ export function useVehiclePhotoUploadQueue({
 	async function resume(entry: UploadEntry) {
 		if (!entry.uploadId) return;
 		try {
-			const result = await reconcileVehiclePhotoUpload(
-				vehicleId,
-				entry.uploadId,
-			);
+			const result = await reconcileVehiclePhotoUpload({ vehicleId, uploadId: entry.uploadId });
 			if (!result.success || !result.data.ok) {
 				const reason =
 					result.success && !result.data.ok
@@ -199,10 +196,10 @@ export function useVehiclePhotoUploadQueue({
 		reconcile = false,
 	) {
 		try {
-			const result = await initiateVehiclePhotoBatchUpload(
+			const result = await initiateVehiclePhotoBatchUpload({
 				vehicleId,
-				batch.map((entry) => entry.id),
-			);
+				uploadIds: batch.map((entry) => entry.id),
+			});
 			if (!result.success || !result.data.ok) {
 				const reason =
 					result.success && !result.data.ok

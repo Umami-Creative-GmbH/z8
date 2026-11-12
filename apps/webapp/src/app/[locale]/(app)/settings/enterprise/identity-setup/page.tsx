@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { OrganizationMfaPolicyPanel } from "@/components/organization-mfa/settings";
+import { actionData } from "@/components/settings/enterprise/action-data";
 import { IdentitySetupWizard } from "@/components/settings/enterprise/identity-setup-wizard";
 import { SocialOAuthManagement } from "@/components/settings/enterprise/social-oauth-management";
 import { SSOProviderManagement } from "@/components/settings/enterprise/sso-provider-management";
@@ -21,19 +22,17 @@ async function IdentitySettingsContent() {
 	const [{ organizationId }, t, setup] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
-		getEnterpriseIdentitySetupAction(),
+		actionData(getEnterpriseIdentitySetupAction()),
 	]);
 
-	const [providers, socialOAuthConfigs, organizationRecord] = await Promise.all(
-		[
-			listSSOProvidersAction(),
-			listSocialOAuthConfigsAction(),
-			db.query.organization.findFirst({
-				where: eq(organization.id, organizationId),
-				columns: { id: true, slug: true },
-			}),
-		],
-	);
+	const [providers, socialOAuthConfigs, organizationRecord] = await Promise.all([
+		actionData(listSSOProvidersAction()),
+		actionData(listSocialOAuthConfigsAction()),
+		db.query.organization.findFirst({
+			where: eq(organization.id, organizationId),
+			columns: { id: true, slug: true },
+		}),
+	]);
 	const [callbackBaseUrl] = getOrganizationPlatformOrigins({
 		id: organizationId,
 		slug: organizationRecord?.slug ?? organizationId,
@@ -55,10 +54,7 @@ async function IdentitySettingsContent() {
 				},
 				{
 					value: "setup",
-					label: t(
-						"settings.enterprise.domains.guidedSetup.title",
-						"Guided setup",
-					),
+					label: t("settings.enterprise.domains.guidedSetup.title", "Guided setup"),
 					description: t(
 						"settings.enterpriseIdentitySetup.description",
 						"Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization.",
@@ -79,10 +75,7 @@ async function IdentitySettingsContent() {
 						"Manage single sign-on providers for your organization",
 					),
 					panel: (
-						<SSOProviderManagement
-							initialProviders={providers}
-							callbackBaseUrl={callbackBaseUrl}
-						/>
+						<SSOProviderManagement initialProviders={providers} callbackBaseUrl={callbackBaseUrl} />
 					),
 				},
 				{

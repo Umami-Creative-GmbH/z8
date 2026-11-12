@@ -8,6 +8,7 @@ import {
 	deleteSocialOAuthConfigAction,
 	type SocialOAuthConfigResponse,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
+import { actionData } from "@/components/settings/enterprise/action-data";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -93,7 +94,7 @@ export function SocialOAuthManagement({
 		if (!deleteDialog.config) return;
 		const configToDelete = deleteDialog.config;
 
-		await deleteSocialOAuthConfigAction(configToDelete.id)
+		await actionData(deleteSocialOAuthConfigAction({ configId: configToDelete.id }))
 			.then(() => {
 				setConfigs((prev) => prev.filter((c) => c.id !== configToDelete.id));
 				toast.success(

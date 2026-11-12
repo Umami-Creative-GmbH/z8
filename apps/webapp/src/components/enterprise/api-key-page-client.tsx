@@ -143,7 +143,7 @@ function useApiKeyPageViewModel({
 	// Query for API keys
 	const { data: apiKeysResult, isLoading } = useQuery({
 		queryKey: ["apiKeys", organizationId],
-		queryFn: () => listApiKeys(organizationId),
+		queryFn: () => listApiKeys(),
 		initialData: { success: true, data: initialApiKeys },
 	});
 
@@ -154,7 +154,7 @@ function useApiKeyPageViewModel({
 	// Delete mutation
 	const deleteMutation = useMutation({
 		mutationFn: async (keyId: string) => {
-			const result = await deleteApiKey(organizationId, keyId);
+			const result = await deleteApiKey({ keyId });
 			if (!result.success) throw new Error(result.error || "Failed to delete");
 		},
 		onSuccess: () => {

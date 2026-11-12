@@ -3,12 +3,9 @@
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
-import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
-import { AuthorizationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	formerSinceDate,
@@ -21,10 +18,8 @@ import {
 	changeOrganizationVehicles,
 	listOrganizationVehicles,
 	type OrganizationVehicleView,
-	type VehicleChangeOutcome,
 } from "@/lib/organization/vehicles/vehicles";
-
-const ADMIN_ONLY = "Only owners and admins can manage vehicles";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 
 export interface VehicleDriverOption {
 	id: string;
@@ -47,49 +42,22 @@ export interface VehicleSettingsData {
 	teams: Array<{ id: string; name: string }>;
 }
 
-/** The session's active organization, with the actor an owner or admin of it. */
-const vehiclesActor = (action: string) =>
-	Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Select an organization first",
-					userId: session.user.id,
-					resource: "vehicle",
-					action,
-				}),
-			);
-		}
-		yield* requireActiveOrganizationActionActor({
-			userId: session.user.id,
-			organizationId,
-			requiredRole: "admin",
-			message: ADMIN_ONLY,
-			resource: "vehicle",
-			action,
-		});
-		return { organizationId, userId: session.user.id };
-	});
-
 /**
  * The vehicles of the active organization, active and archived, with the
  * employees and teams that can be assigned drivers. Org admins only.
  */
-export async function getVehicleSettings(): Promise<ServerActionResult<VehicleSettingsData>> {
-	return runServerActionSafe(
+export const getVehicleSettings = organizationAction(
+	{ name: "vehicles.settings", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
 		Effect.gen(function* () {
-			const actor = yield* vehiclesActor("read");
 			const dbService = yield* DatabaseService;
-			return yield* dbService.query("vehicles.settings", async () => {
+			return yield* dbService.query("vehicles.settings", async (): Promise<VehicleSettingsData> => {
 				const [vehicles, teams] = await Promise.all([
-					listOrganizationVehicles(dbService.db, actor.organizationId),
+					listOrganizationVehicles(dbService.db, organizationId),
 					dbService.db
 						.select({ id: team.id, name: team.name })
 						.from(team)
-						.where(eq(team.organizationId, actor.organizationId))
+						.where(eq(team.organizationId, organizationId))
 						.orderBy(asc(team.name), asc(team.id)),
 				]);
 				// The current roster (#1438), plus former employees a vehicle still has
@@ -112,10 +80,10 @@ export async function getVehicleSettings(): Promise<ServerActionResult<VehicleSe
 					.innerJoin(user, eq(user.id, employee.userId))
 					.where(
 						and(
-							eq(employee.organizationId, actor.organizationId),
+							eq(employee.organizationId, organizationId),
 							assignedIds.length > 0
-								? or(onCurrentRoster(actor.organizationId), inArray(employee.id, assignedIds))
-								: onCurrentRoster(actor.organizationId),
+								? or(onCurrentRoster(organizationId), inArray(employee.id, assignedIds))
+								: onCurrentRoster(organizationId),
 						),
 					)
 					.orderBy(asc(user.name), asc(employee.id));
@@ -133,30 +101,37 @@ export async function getVehicleSettings(): Promise<ServerActionResult<VehicleSe
 				};
 			});
 		}),
-	);
-}
+);
+
+/**
+ * A vehicle change as the client sends it. `parseVehicleChange` reads it inside
+ * `changeOrganizationVehicles`, so a malformed change keeps coming back as the
+ * `{ ok: false, reason }` refusal the form maps; newly assigned former drivers
+ * are refused there too (`former_driver`), while kept ones stay.
+ */
+const vehicleChangeSchema = z.custom<VehicleChangeInput>(
+	(value) => typeof value === "object" && value !== null,
+	{ error: "Choose a valid vehicle change" },
+);
 
 /**
  * Applies one change to the vehicles of the active organization. Org admins
  * only. A refused change comes back as `{ ok: false, reason }`; an accepted one
  * returns every vehicle of the organization.
  */
-export async function changeVehicles(
-	change: VehicleChangeInput,
-): Promise<ServerActionResult<VehicleChangeOutcome>> {
-	return runServerActionSafe(
+export const changeVehicles = organizationAction(
+	{ name: "vehicles.change", requires: "orgAdmin", schema: vehicleChangeSchema },
+	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const actor = yield* vehiclesActor("change");
 			const dbService = yield* DatabaseService;
 			const outcome = yield* dbService.query("vehicles.change", () =>
 				changeOrganizationVehicles(dbService.db, {
-					organizationId: actor.organizationId,
+					organizationId,
 					actorUserId: actor.userId,
-					change,
+					change: input,
 				}),
 			);
 			if (outcome.ok) revalidatePath("/settings/vehicles");
 			return outcome;
 		}),
-	);
-}
+);

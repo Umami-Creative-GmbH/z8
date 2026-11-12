@@ -26,6 +26,10 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
+// The actions are mocked as plain values; the result unwrap is identity here.
+vi.mock("@/components/settings/enterprise/action-data", () => ({
+	actionData: <T,>(result: Promise<T>) => result,
+}));
 vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	deleteDomainAction: deleteDomainActionMock,
 	deleteSSOProviderAction: deleteSSOProviderActionMock,
@@ -128,7 +132,9 @@ describe("enterprise management deletion", () => {
 		).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
-		await waitFor(() => expect(deleteDomainActionMock).toHaveBeenCalledWith("domain_123"));
+		await waitFor(() =>
+			expect(deleteDomainActionMock).toHaveBeenCalledWith({ domainId: "domain_123" }),
+		);
 		await waitFor(() => expect(screen.queryByText("login.acme.test")).toBeNull());
 	});
 
@@ -150,7 +156,9 @@ describe("enterprise management deletion", () => {
 		).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
-		await waitFor(() => expect(deleteSSOProviderActionMock).toHaveBeenCalledWith("provider_123"));
+		await waitFor(() =>
+			expect(deleteSSOProviderActionMock).toHaveBeenCalledWith({ providerId: "provider_123" }),
+		);
 		await waitFor(() => expect(screen.queryByText("acme.test")).toBeNull());
 	});
 });

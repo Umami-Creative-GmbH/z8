@@ -123,7 +123,7 @@ const admin = integrationAdminPool();
 let vehicleId: string;
 const origin = "https://z8.example.test";
 async function start(id = vehicleId) {
-	const result = await initiateVehiclePhotoUpload(id);
+	const result = await initiateVehiclePhotoUpload({ vehicleId: id });
 	if (!result.success || !result.data.ok)
 		throw new Error(JSON.stringify(result));
 	return result.data.uploadId;
@@ -149,7 +149,7 @@ async function read(id: string, vehicle = vehicleId) {
 	});
 }
 async function gallery() {
-	const result = await listVehiclePhotos(vehicleId);
+	const result = await listVehiclePhotos({ vehicleId: vehicleId });
 	if (!result.success) throw new Error(result.error);
 	return result.data;
 }
@@ -398,7 +398,7 @@ it("serializes simultaneous finalizations at twenty and repeated finalization do
 	const accepted = rows.find((p) => p.id === a || p.id === b);
 	if (!accepted) throw new Error("Missing accepted photo");
 	expect((await upload(accepted.id, Buffer.alloc(0))).status).toBe(200);
-	expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
+	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
 		success: true,
 		data: { ok: false, reason: "photo_limit" },
 	});
@@ -418,10 +418,10 @@ it.each(["photo-member", "photo-manager", "photo-employee-admin", ""])(
 		expect((await upload(id, await image())).status).toBe(200);
 		const pending = await start();
 		harness.userId = userId;
-		expect(await listVehiclePhotos(vehicleId)).toMatchObject({
+		expect(await listVehiclePhotos({ vehicleId: vehicleId })).toMatchObject({
 			success: false,
 		});
-		expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
+		expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
 			success: false,
 		});
 		expect((await read(id)).status).toBe(userId ? 403 : 401);
@@ -452,11 +452,11 @@ it("permits organization admin access but denies other-organization and mismatch
 		"insert into member(id,organization_id,user_id,role,status,created_at) values('photo-other-membership','photo-other','photo-owner','owner','approved',now())",
 	);
 	expect((await read(id)).status).toBe(404);
-	expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
+	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
 		success: true,
 		data: { ok: false, reason: "vehicle_not_found" },
 	});
-	expect(await listVehiclePhotos(vehicleId)).toMatchObject({ success: false });
+	expect(await listVehiclePhotos({ vehicleId: vehicleId })).toMatchObject({ success: false });
 });
 it("refuses cross-origin binary uploads", async () => {
 	const id = await start();
@@ -484,7 +484,7 @@ it("keeps archived photos viewable, refuses attachment, and allows fresh uploads
 	await changeVehicles({ kind: "archive", vehicleId });
 	expect((await gallery()).archived).toBe(true);
 	expect((await read(saved)).status).toBe(200);
-	expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
+	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
 		success: true,
 		data: { ok: false, reason: "vehicle_archived" },
 	});

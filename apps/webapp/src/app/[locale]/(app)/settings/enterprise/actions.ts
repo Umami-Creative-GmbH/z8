@@ -3,8 +3,7 @@
 import { and, eq, isNull, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import { db } from "@/db";
+import { z } from "zod";
 import {
 	enterpriseIdentitySetup,
 	organizationDomain,
@@ -13,12 +12,6 @@ import {
 	type SocialOAuthProviderConfig,
 } from "@/db/schema";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
-import { auth } from "@/lib/auth";
-import {
-	canManageCurrentOrganizationSettings,
-	requireUser,
-} from "@/lib/auth-helpers";
-import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
 import {
 	deleteCustomDomain,
 	getOrganizationBranding,
@@ -29,6 +22,7 @@ import {
 	updateOrganizationBranding,
 	verifyDomainOwnership,
 } from "@/lib/domain";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { selectVerifiedEnterpriseIdentityDomain } from "@/lib/enterprise-identity/enforcement";
 import type {
 	EnterpriseIdentityProtocol,
@@ -43,6 +37,14 @@ import {
 	validateEnterpriseIdentityProviderInput,
 } from "@/lib/enterprise-identity/setup-state";
 import {
+	deleteSsoProvider,
+	listSsoProviders,
+	registerSsoProvider,
+	requestSsoDomainVerification,
+	verifySsoDomain,
+} from "@/lib/enterprise-identity/sso-provider-api";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import {
 	checkSocialOAuthConfiguration,
 	createSocialOAuthConfig,
 	deleteSocialOAuthConfig,
@@ -51,25 +53,11 @@ import {
 	updateSocialOAuthConfig,
 } from "@/lib/social-oauth";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
+import { enterpriseWork, notFound, refuse, withDatabase } from "./enterprise-work";
 import {
 	type EnterpriseIdentitySetupRecord,
 	getOrCreateEnterpriseIdentitySetupRecord,
 } from "./identity-setup-record";
-
-export async function requireEnterpriseOrgAdmin() {
-	const authContext = await requireUser();
-	const organizationId = authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	if (!(await canManageCurrentOrganizationSettings())) {
-		throw new Error("Unauthorized");
-	}
-
-	return { authContext, organizationId };
-}
 
 const IDENTITY_SETUP_PATH = "/settings/enterprise/identity-setup";
 
@@ -141,9 +129,7 @@ function toIsoFromDate(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
 
 	const dateTime =
-		value instanceof Date
-			? DateTime.fromJSDate(value, { zone: "utc" })
-			: DateTime.fromISO(value);
+		value instanceof Date ? DateTime.fromJSDate(value, { zone: "utc" }) : DateTime.fromISO(value);
 
 	return dateTime.isValid ? dateTime.toUTC().toISO() : null;
 }
@@ -183,12 +169,13 @@ function normalizeEnterpriseIdentitySetupRecord(
 }
 
 async function getSetupResponse(
+	database: DatabaseClient,
 	organizationId: string,
 	userId: string,
 ): Promise<EnterpriseIdentitySetupResponse> {
 	const [setupRecord, templates] = await Promise.all([
 		getOrCreateEnterpriseIdentitySetupRecord(organizationId, userId),
-		db
+		database
 			.select({
 				id: roleTemplate.id,
 				organizationId: roleTemplate.organizationId,
@@ -201,10 +188,7 @@ async function getSetupResponse(
 			.where(
 				and(
 					eq(roleTemplate.isActive, true),
-					or(
-						eq(roleTemplate.organizationId, organizationId),
-						eq(roleTemplate.isGlobal, true),
-					),
+					or(eq(roleTemplate.organizationId, organizationId), eq(roleTemplate.isGlobal, true)),
 				),
 			),
 	]);
@@ -218,12 +202,12 @@ async function getSetupResponse(
 	};
 }
 
-async function getOrganizationSSOProviders(
-	organizationId: string,
-): Promise<SSOProviderResponse[]> {
-	const rawResult = await (auth.api as any).listSSOProviders({
-		headers: await headers(),
-	});
+async function getOrganizationSSOProviders(organizationId: string): Promise<SSOProviderResponse[]> {
+	const rawResult = (await listSsoProviders()) as
+		| RawSSOProvider[]
+		| { providers?: RawSSOProvider[] }
+		| null
+		| undefined;
 
 	const providers: RawSSOProvider[] = Array.isArray(rawResult)
 		? rawResult
@@ -232,10 +216,17 @@ async function getOrganizationSSOProviders(
 			: [];
 
 	return providers.flatMap((provider) =>
-		provider.organizationId === organizationId
-			? [normalizeSSOProvider(provider)]
-			: [],
+		provider.organizationId === organizationId ? [normalizeSSOProvider(provider)] : [],
 	);
+}
+
+/** An SSO provider of the organization by ID or provider ID; another organization's is not found. */
+async function getOrganizationSSOProvider(organizationId: string, providerId: string) {
+	const provider = (await getOrganizationSSOProviders(organizationId)).find(
+		(entry) => entry.id === providerId || entry.providerId === providerId,
+	);
+	if (!provider) notFound("SSO provider not found in organization", "ssoProvider", providerId);
+	return provider;
 }
 
 async function findEnterpriseIdentitySSOProvider(
@@ -255,18 +246,16 @@ async function findEnterpriseIdentitySSOProvider(
 }
 
 async function syncEnterpriseIdentityDomainVerification(
+	database: DatabaseClient,
 	organizationId: string,
 	setupRecord: EnterpriseIdentitySetupRecord,
 	userId: string,
 ) {
-	const provider = await findEnterpriseIdentitySSOProvider(
-		organizationId,
-		setupRecord,
-	);
+	const provider = await findEnterpriseIdentitySSOProvider(organizationId, setupRecord);
 	const domainVerified = provider?.domainVerified === true;
 
 	if (domainVerified && !setupRecord.domainVerified) {
-		return updateEnterpriseIdentitySetupRecord(organizationId, {
+		return updateEnterpriseIdentitySetupRecord(database, organizationId, {
 			domainVerified,
 			updatedBy: userId,
 		});
@@ -275,22 +264,20 @@ async function syncEnterpriseIdentityDomainVerification(
 	return setupRecord;
 }
 
-async function assertRoleTemplateAllowed(
+async function allowedRoleTemplateId(
+	database: DatabaseClient,
 	organizationId: string,
 	defaultRoleTemplateId: string | null | undefined,
 ) {
 	if (!defaultRoleTemplateId) return null;
 
-	const template = await db.query.roleTemplate.findFirst({
+	const template = await database.query.roleTemplate.findFirst({
 		where: and(
 			eq(roleTemplate.id, defaultRoleTemplateId),
 			eq(roleTemplate.isActive, true),
 			or(
 				eq(roleTemplate.organizationId, organizationId),
-				and(
-					eq(roleTemplate.isGlobal, true),
-					isNull(roleTemplate.organizationId),
-				),
+				and(eq(roleTemplate.isGlobal, true), isNull(roleTemplate.organizationId)),
 			),
 		),
 	});
@@ -302,18 +289,17 @@ async function assertRoleTemplateAllowed(
 			(template.organizationId === null && template.isGlobal === true)
 		)
 	) {
-		throw new Error(
-			"Default role template is not available for this organization",
-		);
+		refuse("Default role template is not available for this organization");
 	}
 	return defaultRoleTemplateId;
 }
 
 async function updateEnterpriseIdentitySetupRecord(
+	database: DatabaseClient,
 	organizationId: string,
 	values: Partial<typeof enterpriseIdentitySetup.$inferInsert>,
 ): Promise<EnterpriseIdentitySetupRecord> {
-	const [updated] = await db
+	const [updated] = await database
 		.update(enterpriseIdentitySetup)
 		.set(values)
 		.where(eq(enterpriseIdentitySetup.organizationId, organizationId))
@@ -323,327 +309,395 @@ async function updateEnterpriseIdentitySetupRecord(
 	return updated;
 }
 
-async function requireOrganizationDomain(
+/** A domain of the organization; another organization's domain is not found. */
+async function organizationDomainById(
+	database: DatabaseClient,
 	domainId: string,
 	organizationId: string,
 ) {
-	const domain = await db.query.organizationDomain.findFirst({
+	const domain = await database.query.organizationDomain.findFirst({
 		where: and(
 			eq(organizationDomain.id, domainId),
 			eq(organizationDomain.organizationId, organizationId),
 		),
 	});
 
-	if (!domain) throw new Error("Domain not found in active organization");
+	if (!domain) notFound("Domain not found in active organization", "organizationDomain", domainId);
 	return domain;
 }
 
 // ============ Enterprise Identity Setup Actions ============
 
-export async function getEnterpriseIdentitySetupAction(): Promise<EnterpriseIdentitySetupResponse> {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	return getSetupResponse(organizationId, authContext.user.id);
-}
+const providerFields = {
+	providerId: z.string().max(255),
+	domain: z.string().max(255),
+};
 
-export async function updateEnterpriseIdentityProviderAction(
-	input: EnterpriseIdentityProviderInput,
-) {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+/** Trims the provider and domain and checks them before any side effect. */
+function providerAndDomain(input: { providerId: string; domain: string }) {
 	const providerId = input.providerId.trim();
 	const domain = input.domain.trim().toLowerCase();
-
-	if (!providerId || !domain)
-		throw new Error("Provider ID and domain are required");
-	const validationError = validateEnterpriseIdentityProviderInput({
-		providerId,
-		domain,
-	});
-	if (validationError) throw new Error(validationError);
-
-	await getOrCreateEnterpriseIdentitySetupRecord(
-		organizationId,
-		authContext.user.id,
-	);
-
-	await updateEnterpriseIdentitySetupRecord(organizationId, {
-		preset: input.preset,
-		protocol: input.protocol,
-		providerId,
-		currentStep: input.currentStep ?? "sso",
-		domain,
-		domainVerified: false,
-		updatedBy: authContext.user.id,
-	});
-
-	revalidatePath(IDENTITY_SETUP_PATH);
-	return getSetupResponse(organizationId, authContext.user.id);
+	const validationError = validateEnterpriseIdentityProviderInput({ providerId, domain });
+	if (validationError) refuse(validationError);
+	return { providerId, domain };
 }
 
-export async function registerEnterpriseIdentitySSOProviderAction(
-	input: EnterpriseIdentitySSOInput,
-) {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	const providerId = input.providerId.trim();
-	const issuer = input.issuer.trim();
-	const domain = input.domain.trim().toLowerCase();
+export const getEnterpriseIdentitySetupAction = organizationAction(
+	{ name: "enterpriseIdentity.getSetup", requires: "orgAdmin", schema: noInput },
+	({ actor, organizationId }) =>
+		withDatabase("Unable to load the enterprise identity setup", (database) =>
+			getSetupResponse(database, organizationId, actor.userId),
+		),
+);
 
-	if (!providerId || !issuer || !domain)
-		throw new Error("Provider ID, issuer, and domain are required");
-	const validationError = validateEnterpriseIdentityProviderInput({
-		providerId,
-		domain,
-	});
-	if (validationError) throw new Error(validationError);
+export const updateEnterpriseIdentityProviderAction = organizationAction(
+	{
+		name: "enterpriseIdentity.updateProvider",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			preset: z.enum(["okta", "microsoft-entra", "google-workspace", "generic"]),
+			protocol: z.enum(["oidc", "saml"]),
+			...providerFields,
+			currentStep: z
+				.enum(["provider", "domain", "sso", "ssoTest", "scim", "accessPolicy", "review"])
+				.optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		withDatabase("Unable to save the identity provider", async (database) => {
+			if (!input.providerId.trim() || !input.domain.trim()) {
+				refuse("Provider ID and domain are required");
+			}
+			const { providerId, domain } = providerAndDomain(input);
 
-	await getOrCreateEnterpriseIdentitySetupRecord(
-		organizationId,
-		authContext.user.id,
-	);
-
-	const secretPath = `sso/${providerId}/client_secret`;
-
-	try {
-		if (input.protocol === "oidc") {
-			const clientId = input.clientId.trim();
-			const clientSecret = input.clientSecret.trim();
-
-			if (!clientId || !clientSecret)
-				throw new Error("OIDC client ID and secret are required");
-
-			await storeOrgSecret(organizationId, secretPath, clientSecret);
-			await (auth.api as any).registerSSOProvider({
-				body: {
-					providerId,
-					issuer,
-					domain,
-					organizationId,
-					oidcConfig: {
-						clientId,
-						clientSecret,
-						scopes: input.scopes ?? ["openid", "email", "profile"],
-					},
-				},
-				headers: await headers(),
+			await getOrCreateEnterpriseIdentitySetupRecord(organizationId, actor.userId);
+			await updateEnterpriseIdentitySetupRecord(database, organizationId, {
+				preset: input.preset,
+				protocol: input.protocol,
+				providerId,
+				currentStep: input.currentStep ?? "sso",
+				domain,
+				domainVerified: false,
+				updatedBy: actor.userId,
 			});
-		} else {
-			const metadata = input.metadata.trim();
 
-			if (!metadata) throw new Error("SAML metadata is required");
+			revalidatePath(IDENTITY_SETUP_PATH);
+			return getSetupResponse(database, organizationId, actor.userId);
+		}),
+);
 
-			await (auth.api as any).registerSSOProvider({
-				body: {
-					providerId,
-					issuer,
-					domain,
-					organizationId,
-					samlConfig: { idpMetadata: { metadata } },
-				},
-				headers: await headers(),
+const ssoRegistrationSchema = z.discriminatedUnion("protocol", [
+	z.strictObject({
+		protocol: z.literal("oidc"),
+		...providerFields,
+		issuer: z.string().max(2048),
+		clientId: z.string().max(1024),
+		clientSecret: z.string().max(4096),
+		scopes: z.array(z.string().max(255)).max(50).optional(),
+	}),
+	z.strictObject({
+		protocol: z.literal("saml"),
+		...providerFields,
+		issuer: z.string().max(2048),
+		metadata: z.string().max(1_000_000),
+	}),
+]);
+
+export const registerEnterpriseIdentitySSOProviderAction = organizationAction(
+	{
+		name: "enterpriseIdentity.registerSsoProvider",
+		requires: "orgAdmin",
+		schema: ssoRegistrationSchema,
+	},
+	({ actor, organizationId, input }) =>
+		withDatabase("Unable to register the SSO provider", async (database) => {
+			const issuer = input.issuer.trim();
+			if (!input.providerId.trim() || !issuer || !input.domain.trim()) {
+				refuse("Provider ID, issuer, and domain are required");
+			}
+			const { providerId, domain } = providerAndDomain(input);
+
+			await getOrCreateEnterpriseIdentitySetupRecord(organizationId, actor.userId);
+
+			const secretPath = `sso/${providerId}/client_secret`;
+
+			if (input.protocol === "oidc") {
+				const clientId = input.clientId.trim();
+				const clientSecret = input.clientSecret.trim();
+				if (!clientId || !clientSecret) refuse("OIDC client ID and secret are required");
+
+				try {
+					await storeOrgSecret(organizationId, secretPath, clientSecret);
+					await registerSsoProvider({
+						providerId,
+						issuer,
+						domain,
+						organizationId,
+						oidcConfig: {
+							clientId,
+							clientSecret,
+							scopes: input.scopes ?? ["openid", "email", "profile"],
+						},
+					});
+				} catch (error) {
+					await deleteOrgSecret(organizationId, secretPath).catch(() => undefined);
+					refuse(mapBetterAuthIdentityError(error));
+				}
+			} else {
+				const metadata = input.metadata.trim();
+				if (!metadata) refuse("SAML metadata is required");
+
+				try {
+					await registerSsoProvider({
+						providerId,
+						issuer,
+						domain,
+						organizationId,
+						samlConfig: { idpMetadata: { metadata } },
+					});
+				} catch (error) {
+					refuse(mapBetterAuthIdentityError(error));
+				}
+			}
+
+			await updateEnterpriseIdentitySetupRecord(database, organizationId, {
+				protocol: input.protocol,
+				providerId,
+				domain,
+				currentStep: "ssoTest",
+				updatedBy: actor.userId,
 			});
-		}
-	} catch (error) {
-		if (input.protocol === "oidc") {
-			await deleteOrgSecret(organizationId, secretPath).catch(() => undefined);
-		}
-		throw new Error(mapBetterAuthIdentityError(error));
-	}
 
-	await updateEnterpriseIdentitySetupRecord(organizationId, {
-		protocol: input.protocol,
-		providerId,
-		domain,
-		currentStep: "ssoTest",
-		updatedBy: authContext.user.id,
-	});
+			revalidatePath(IDENTITY_SETUP_PATH);
+			return getSetupResponse(database, organizationId, actor.userId);
+		}),
+);
 
-	revalidatePath(IDENTITY_SETUP_PATH);
-	return getSetupResponse(organizationId, authContext.user.id);
-}
+export const recordEnterpriseIdentitySsoTestAction = organizationAction(
+	{
+		name: "enterpriseIdentity.recordSsoTest",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			providerId: z.string().max(255),
+			testEmail: z.string().max(320),
+			status: z.enum(["passed", "failed"]),
+			error: z.string().max(2000).nullable().optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		withDatabase("Unable to record the SSO test", async (database) => {
+			const providerId = input.providerId.trim();
+			const testEmail = input.testEmail.trim().toLowerCase();
+			if (!providerId || !testEmail) refuse("Provider ID and test email are required");
 
-export async function recordEnterpriseIdentitySsoTestAction(
-	input: EnterpriseIdentitySsoTestInput,
-) {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	await getOrCreateEnterpriseIdentitySetupRecord(
-		organizationId,
-		authContext.user.id,
-	);
-	const now = DateTime.utc().toISO();
-	const providerId = input.providerId.trim();
-	const testEmail = input.testEmail.trim().toLowerCase();
+			await getOrCreateEnterpriseIdentitySetupRecord(organizationId, actor.userId);
+			const now = DateTime.utc().toISO();
 
-	if (!providerId || !testEmail)
-		throw new Error("Provider ID and test email are required");
+			await updateEnterpriseIdentitySetupRecord(database, organizationId, {
+				currentStep: input.status === "passed" ? "scim" : "ssoTest",
+				ssoTest: {
+					status: input.status,
+					testEmail,
+					providerId,
+					checkedAt: now,
+					error: input.status === "failed" ? (input.error ?? "SSO test failed") : null,
+				},
+				updatedBy: actor.userId,
+			});
 
-	await updateEnterpriseIdentitySetupRecord(organizationId, {
-		currentStep: input.status === "passed" ? "scim" : "ssoTest",
-		ssoTest: {
-			status: input.status,
-			testEmail,
-			providerId,
-			checkedAt: now,
-			error:
-				input.status === "failed" ? (input.error ?? "SSO test failed") : null,
-		},
-		updatedBy: authContext.user.id,
-	});
+			revalidatePath(IDENTITY_SETUP_PATH);
+			return getSetupResponse(database, organizationId, actor.userId);
+		}),
+);
 
-	revalidatePath(IDENTITY_SETUP_PATH);
-	return getSetupResponse(organizationId, authContext.user.id);
-}
-
-export async function refreshEnterpriseIdentityDomainStatusAction() {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
-		organizationId,
-		authContext.user.id,
-	);
-	const provider = await findEnterpriseIdentitySSOProvider(
-		organizationId,
-		setupRecord,
-	);
-	const domainVerified = provider?.domainVerified === true;
-
-	if (domainVerified !== setupRecord.domainVerified) {
-		await updateEnterpriseIdentitySetupRecord(organizationId, {
-			domainVerified,
-			updatedBy: authContext.user.id,
-		});
-	}
-
-	revalidatePath(IDENTITY_SETUP_PATH);
-	return getSetupResponse(organizationId, authContext.user.id);
-}
-
-export async function updateEnterpriseIdentityAccessPolicyAction(
-	input: EnterpriseIdentityAccessPolicyInput,
-) {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	await getOrCreateEnterpriseIdentitySetupRecord(
-		organizationId,
-		authContext.user.id,
-	);
-	const defaultRoleTemplateId = await assertRoleTemplateAllowed(
-		organizationId,
-		input.defaultRoleTemplateId,
-	);
-
-	await updateEnterpriseIdentitySetupRecord(organizationId, {
-		currentStep: "review",
-		enforcement: {
-			ssoRequired: input.ssoRequired,
-			domainRestrictionEnabled: input.domainRestrictionEnabled,
-			inviteRestrictionEnabled: input.inviteRestrictionEnabled,
-		},
-		defaultRoleTemplateId,
-		updatedBy: authContext.user.id,
-	});
-
-	revalidatePath(IDENTITY_SETUP_PATH);
-	return getSetupResponse(organizationId, authContext.user.id);
-}
-
-export async function activateEnterpriseIdentitySetupAction() {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	let setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
-		organizationId,
-		authContext.user.id,
-	);
-	setupRecord = await syncEnterpriseIdentityDomainVerification(
-		organizationId,
-		setupRecord,
-		authContext.user.id,
-	);
-	const state = normalizeEnterpriseIdentitySetupRecord(setupRecord);
-	const readiness = getEnterpriseIdentityReadiness(state);
-
-	if (!readiness.canActivate) {
-		throw new Error(
-			`Enterprise identity setup is missing: ${readiness.missing.join(", ")}`,
-		);
-	}
-
-	if (setupRecord.enforcement.ssoRequired && setupRecord.providerId) {
-		const domains = await listOrganizationDomains(organizationId);
-		const domainRecord = selectVerifiedEnterpriseIdentityDomain(
-			domains,
-			setupRecord.domain,
-		);
-
-		if (!domainRecord) {
-			throw new Error(
-				"Require SSO needs a verified organization domain matching the enterprise identity domain before activation.",
+export const refreshEnterpriseIdentityDomainStatusAction = organizationAction(
+	{ name: "enterpriseIdentity.refreshDomainStatus", requires: "orgAdmin", schema: noInput },
+	({ actor, organizationId }) =>
+		withDatabase("Unable to refresh the domain status", async (database) => {
+			const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
+				organizationId,
+				actor.userId,
 			);
-		}
+			const provider = await findEnterpriseIdentitySSOProvider(organizationId, setupRecord);
+			const domainVerified = provider?.domainVerified === true;
 
-		await updateDomainAuthConfig(domainRecord.id, {
-			...domainRecord.authConfig,
-			ssoEnabled: true,
-			ssoProviderId: setupRecord.providerId,
-		});
-	}
+			if (domainVerified !== setupRecord.domainVerified) {
+				await updateEnterpriseIdentitySetupRecord(database, organizationId, {
+					domainVerified,
+					updatedBy: actor.userId,
+				});
+			}
 
-	const activatedAt = DateTime.utc();
-	await updateEnterpriseIdentitySetupRecord(organizationId, {
-		activated: true,
-		activatedAt: activatedAt.toJSDate(),
-		updatedBy: authContext.user.id,
-	});
+			revalidatePath(IDENTITY_SETUP_PATH);
+			return getSetupResponse(database, organizationId, actor.userId);
+		}),
+);
 
-	revalidatePath(IDENTITY_SETUP_PATH);
-	return getSetupResponse(organizationId, authContext.user.id);
-}
+export const updateEnterpriseIdentityAccessPolicyAction = organizationAction(
+	{
+		name: "enterpriseIdentity.updateAccessPolicy",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			ssoRequired: z.boolean(),
+			domainRestrictionEnabled: z.boolean(),
+			inviteRestrictionEnabled: z.boolean(),
+			defaultRoleTemplateId: z.string().max(255).nullable().optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		withDatabase("Unable to save the access policy", async (database) => {
+			await getOrCreateEnterpriseIdentitySetupRecord(organizationId, actor.userId);
+			const defaultRoleTemplateId = await allowedRoleTemplateId(
+				database,
+				organizationId,
+				input.defaultRoleTemplateId,
+			);
+
+			await updateEnterpriseIdentitySetupRecord(database, organizationId, {
+				currentStep: "review",
+				enforcement: {
+					ssoRequired: input.ssoRequired,
+					domainRestrictionEnabled: input.domainRestrictionEnabled,
+					inviteRestrictionEnabled: input.inviteRestrictionEnabled,
+				},
+				defaultRoleTemplateId,
+				updatedBy: actor.userId,
+			});
+
+			revalidatePath(IDENTITY_SETUP_PATH);
+			return getSetupResponse(database, organizationId, actor.userId);
+		}),
+);
+
+export const activateEnterpriseIdentitySetupAction = organizationAction(
+	{ name: "enterpriseIdentity.activate", requires: "orgAdmin", schema: noInput },
+	({ actor, organizationId }) =>
+		withDatabase("Unable to activate enterprise identity", async (database) => {
+			let setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
+				organizationId,
+				actor.userId,
+			);
+			setupRecord = await syncEnterpriseIdentityDomainVerification(
+				database,
+				organizationId,
+				setupRecord,
+				actor.userId,
+			);
+			const state = normalizeEnterpriseIdentitySetupRecord(setupRecord);
+			const readiness = getEnterpriseIdentityReadiness(state);
+
+			if (!readiness.canActivate) {
+				refuse(`Enterprise identity setup is missing: ${readiness.missing.join(", ")}`);
+			}
+
+			if (setupRecord.enforcement.ssoRequired && setupRecord.providerId) {
+				const domains = await listOrganizationDomains(organizationId);
+				const domainRecord = selectVerifiedEnterpriseIdentityDomain(domains, setupRecord.domain);
+
+				if (!domainRecord) {
+					refuse(
+						"Require SSO needs a verified organization domain matching the enterprise identity domain before activation.",
+					);
+				}
+
+				await updateDomainAuthConfig(domainRecord.id, {
+					...domainRecord.authConfig,
+					ssoEnabled: true,
+					ssoProviderId: setupRecord.providerId,
+				});
+			}
+
+			const activatedAt = DateTime.utc();
+			await updateEnterpriseIdentitySetupRecord(database, organizationId, {
+				activated: true,
+				activatedAt: activatedAt.toJSDate(),
+				updatedBy: actor.userId,
+			});
+
+			revalidatePath(IDENTITY_SETUP_PATH);
+			return getSetupResponse(database, organizationId, actor.userId);
+		}),
+);
 
 // ============ Domain Actions ============
 
-export async function listDomainsAction() {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	return listOrganizationDomains(organizationId);
-}
+const domainIdSchema = z.strictObject({ domainId: z.string().max(255) });
 
-export async function addDomainAction(domain: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	const result = await registerCustomDomain(organizationId, domain);
-	revalidatePath("/settings/enterprise/domains");
-	return result;
-}
+export const listDomainsAction = organizationAction(
+	{ name: "enterpriseDomains.list", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		enterpriseWork("Unable to load the domains", () => listOrganizationDomains(organizationId)),
+);
 
-export async function verifyDomainAction(domainId: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	await requireOrganizationDomain(domainId, organizationId);
+export const addDomainAction = organizationAction(
+	{
+		name: "enterpriseDomains.add",
+		requires: "orgAdmin",
+		schema: z.strictObject({ domain: z.string().max(255) }),
+	},
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to add the domain", async () => {
+			const result = await registerCustomDomain(organizationId, input.domain);
+			revalidatePath("/settings/enterprise/domains");
+			return result;
+		}),
+);
 
-	const result = await verifyDomainOwnership(domainId);
-	revalidatePath("/settings/enterprise/domains");
-	return result;
-}
+export const verifyDomainAction = organizationAction(
+	{ name: "enterpriseDomains.verify", requires: "orgAdmin", schema: domainIdSchema },
+	({ organizationId, input }) =>
+		withDatabase("Unable to verify the domain", async (database) => {
+			await organizationDomainById(database, input.domainId, organizationId);
+			const result = await verifyDomainOwnership(input.domainId);
+			revalidatePath("/settings/enterprise/domains");
+			return result;
+		}),
+);
 
-export async function regenerateVerificationTokenAction(domainId: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	await requireOrganizationDomain(domainId, organizationId);
+export const regenerateVerificationTokenAction = organizationAction(
+	{ name: "enterpriseDomains.regenerateToken", requires: "orgAdmin", schema: domainIdSchema },
+	({ organizationId, input }) =>
+		withDatabase("Unable to create a verification token", async (database) => {
+			await organizationDomainById(database, input.domainId, organizationId);
+			const token = await requestNewVerificationToken(input.domainId);
+			revalidatePath("/settings/enterprise/domains");
+			return token;
+		}),
+);
 
-	const token = await requestNewVerificationToken(domainId);
-	revalidatePath("/settings/enterprise/domains");
-	return token;
-}
+const authConfigSchema = z.strictObject({
+	emailPasswordEnabled: z.boolean(),
+	socialProvidersEnabled: z.array(z.string().max(50)).max(20),
+	ssoEnabled: z.boolean(),
+	ssoProviderId: z.string().max(255).optional(),
+	passkeyEnabled: z.boolean(),
+	turnstileSiteKey: z.string().max(255).optional(),
+	cookieConsentScript: z.string().max(100_000).optional(),
+});
 
-export async function updateDomainAuthConfigAction(
-	domainId: string,
-	config: AuthConfig,
-) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	await requireOrganizationDomain(domainId, organizationId);
+export const updateDomainAuthConfigAction = organizationAction(
+	{
+		name: "enterpriseDomains.updateAuthConfig",
+		requires: "orgAdmin",
+		schema: z.strictObject({ domainId: z.string().max(255), config: authConfigSchema }),
+	},
+	({ organizationId, input }) =>
+		withDatabase("Unable to save the sign-in settings", async (database) => {
+			await organizationDomainById(database, input.domainId, organizationId);
+			await updateDomainAuthConfig(input.domainId, input.config);
+			revalidatePath("/settings/enterprise/domains");
+		}),
+);
 
-	await updateDomainAuthConfig(domainId, config);
-	revalidatePath("/settings/enterprise/domains");
-}
-
-export async function deleteDomainAction(domainId: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	await requireOrganizationDomain(domainId, organizationId);
-
-	await deleteCustomDomain(domainId);
-	revalidatePath("/settings/enterprise/domains");
-}
+export const deleteDomainAction = organizationAction(
+	{ name: "enterpriseDomains.delete", requires: "orgAdmin", schema: domainIdSchema },
+	({ organizationId, input }) =>
+		withDatabase("Unable to delete the domain", async (database) => {
+			await organizationDomainById(database, input.domainId, organizationId);
+			await deleteCustomDomain(input.domainId);
+			revalidatePath("/settings/enterprise/domains");
+		}),
+);
 
 // ============ SSO Provider Actions ============
 
@@ -696,17 +750,19 @@ function normalizeSSOProvider(provider: RawSSOProvider): SSOProviderResponse {
 		domainVerificationToken: provider.domainVerificationToken ?? null,
 		organizationId: provider.organizationId ?? null,
 		userId: provider.userId ?? null,
-		createdAt:
-			createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : null,
+		createdAt: createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : null,
 		hasOidcConfig: !!provider.oidcConfig,
 		hasSamlConfig: !!provider.samlConfig,
 	};
 }
 
-export async function listSSOProvidersAction(): Promise<SSOProviderResponse[]> {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	return getOrganizationSSOProviders(organizationId);
-}
+export const listSSOProvidersAction = organizationAction(
+	{ name: "enterpriseSso.list", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		enterpriseWork("Unable to load the SSO providers", () =>
+			getOrganizationSSOProviders(organizationId),
+		),
+);
 
 export interface OIDCProviderInput {
 	issuer: string;
@@ -716,149 +772,144 @@ export interface OIDCProviderInput {
 	providerId: string;
 }
 
-export async function registerSSOProviderAction(data: OIDCProviderInput) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	const providerId = data.providerId.trim();
-	const issuer = data.issuer.trim();
-	const domain = data.domain.trim().toLowerCase();
-	const clientId = data.clientId.trim();
-	const clientSecret = data.clientSecret.trim();
+export const registerSSOProviderAction = organizationAction(
+	{
+		name: "enterpriseSso.register",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			...providerFields,
+			issuer: z.string().max(2048),
+			clientId: z.string().max(1024),
+			clientSecret: z.string().max(4096),
+		}),
+	},
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to register the SSO provider", async () => {
+			const providerId = input.providerId.trim();
+			const issuer = input.issuer.trim();
+			const domain = input.domain.trim().toLowerCase();
+			const clientId = input.clientId.trim();
+			const clientSecret = input.clientSecret.trim();
 
-	if (!providerId || !issuer || !domain || !clientId || !clientSecret) {
-		throw new Error(
-			"Provider ID, issuer, domain, client ID, and client secret are required",
-		);
-	}
+			if (!providerId || !issuer || !domain || !clientId || !clientSecret) {
+				refuse("Provider ID, issuer, domain, client ID, and client secret are required");
+			}
 
-	// Store clientSecret in Vault for secure storage
-	await storeOrgSecret(
-		organizationId,
-		`sso/${providerId}/client_secret`,
-		clientSecret,
-	);
+			// Store clientSecret in Vault for secure storage
+			await storeOrgSecret(organizationId, `sso/${providerId}/client_secret`, clientSecret);
 
-	let rawProvider: RawSSOProvider;
-	try {
-		rawProvider = (await (auth.api as any).registerSSOProvider({
-			body: {
-				providerId,
-				issuer,
-				domain,
-				organizationId,
-				oidcConfig: {
-					clientId,
-					clientSecret,
-				},
-			},
-			headers: await headers(),
-		})) as RawSSOProvider;
-	} catch (error) {
-		await deleteOrgSecret(
-			organizationId,
-			`sso/${providerId}/client_secret`,
-		).catch(() => undefined);
-		throw error;
-	}
+			let rawProvider: RawSSOProvider;
+			try {
+				rawProvider = (await registerSsoProvider({
+					providerId,
+					issuer,
+					domain,
+					organizationId,
+					oidcConfig: { clientId, clientSecret },
+				})) as RawSSOProvider;
+			} catch (error) {
+				await deleteOrgSecret(organizationId, `sso/${providerId}/client_secret`).catch(
+					() => undefined,
+				);
+				throw error;
+			}
 
-	revalidatePath("/settings/enterprise/sso");
-	revalidatePath(IDENTITY_SETUP_PATH);
+			revalidatePath("/settings/enterprise/sso");
+			revalidatePath(IDENTITY_SETUP_PATH);
 
-	return normalizeSSOProvider(rawProvider);
-}
+			return normalizeSSOProvider(rawProvider);
+		}),
+);
 
-export async function deleteSSOProviderAction(providerId: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	const providers = await getOrganizationSSOProviders(organizationId);
-	const provider = providers.find(
-		(entry) => entry.id === providerId || entry.providerId === providerId,
-	);
+const providerIdSchema = z.strictObject({ providerId: z.string().max(255) });
 
-	if (!provider || provider.organizationId !== organizationId) {
-		throw new Error("SSO provider not found in organization");
-	}
+export const deleteSSOProviderAction = organizationAction(
+	{ name: "enterpriseSso.delete", requires: "orgAdmin", schema: providerIdSchema },
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to delete the SSO provider", async () => {
+			const provider = await getOrganizationSSOProvider(organizationId, input.providerId);
 
-	await (auth.api as any).deleteSSOProvider({
-		body: { providerId: provider.providerId },
-		headers: await headers(),
-	});
+			await deleteSsoProvider(provider.providerId);
 
-	// Clean up the clientSecret from Vault
-	// Path: secret/data/organizations/{orgId}/sso/{providerId}/client_secret
-	await deleteOrgSecret(
-		organizationId,
-		`sso/${provider.providerId}/client_secret`,
-	);
+			// Clean up the clientSecret from Vault
+			// Path: secret/data/organizations/{orgId}/sso/{providerId}/client_secret
+			await deleteOrgSecret(organizationId, `sso/${provider.providerId}/client_secret`);
 
-	revalidatePath("/settings/enterprise/sso");
-	revalidatePath(IDENTITY_SETUP_PATH);
-}
+			revalidatePath("/settings/enterprise/sso");
+			revalidatePath(IDENTITY_SETUP_PATH);
+		}),
+);
 
-export async function requestSSODomainVerificationAction(providerId: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
+export const requestSSODomainVerificationAction = organizationAction(
+	{
+		name: "enterpriseSso.requestDomainVerification",
+		requires: "orgAdmin",
+		schema: providerIdSchema,
+	},
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to request domain verification", async () => {
+			const provider = await getOrganizationSSOProvider(organizationId, input.providerId);
 
-	const provider = (await listSSOProvidersAction()).find(
-		(entry) => entry.id === providerId || entry.providerId === providerId,
-	);
+			const result = await requestSsoDomainVerification(provider.providerId);
 
-	if (!provider || provider.organizationId !== organizationId) {
-		throw new Error("SSO provider not found in organization");
-	}
+			revalidatePath("/settings/enterprise/domains");
+			revalidatePath("/settings/enterprise/sso");
+			revalidatePath(IDENTITY_SETUP_PATH);
 
-	const result = await (auth.api as any).requestDomainVerification({
-		body: { providerId: provider.providerId },
-		headers: await headers(),
-	});
+			return {
+				domainVerificationToken:
+					typeof result?.domainVerificationToken === "string"
+						? result.domainVerificationToken
+						: null,
+			};
+		}),
+);
 
-	revalidatePath("/settings/enterprise/domains");
-	revalidatePath("/settings/enterprise/sso");
-	revalidatePath(IDENTITY_SETUP_PATH);
+export const verifySSODomainAction = organizationAction(
+	{ name: "enterpriseSso.verifyDomain", requires: "orgAdmin", schema: providerIdSchema },
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to verify the domain", async () => {
+			const provider = await getOrganizationSSOProvider(organizationId, input.providerId);
 
-	return {
-		domainVerificationToken:
-			typeof result?.domainVerificationToken === "string"
-				? result.domainVerificationToken
-				: null,
-	};
-}
+			await verifySsoDomain(provider.providerId);
 
-export async function verifySSODomainAction(providerId: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
+			revalidatePath("/settings/enterprise/domains");
+			revalidatePath("/settings/enterprise/sso");
+			revalidatePath(IDENTITY_SETUP_PATH);
 
-	const provider = (await listSSOProvidersAction()).find(
-		(entry) => entry.id === providerId || entry.providerId === providerId,
-	);
-
-	if (!provider || provider.organizationId !== organizationId) {
-		throw new Error("SSO provider not found in organization");
-	}
-
-	await (auth.api as any).verifyDomain({
-		body: { providerId: provider.providerId },
-		headers: await headers(),
-	});
-
-	revalidatePath("/settings/enterprise/domains");
-	revalidatePath("/settings/enterprise/sso");
-	revalidatePath(IDENTITY_SETUP_PATH);
-
-	return { verified: true };
-}
+			return { verified: true };
+		}),
+);
 
 // ============ Branding Actions ============
 
-export async function getBrandingAction() {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	return getOrganizationBranding(organizationId);
-}
+export const getBrandingAction = organizationAction(
+	{ name: "enterpriseBranding.get", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		enterpriseWork("Unable to load the branding", () => getOrganizationBranding(organizationId)),
+);
 
-export async function updateBrandingAction(
-	branding: Partial<OrganizationBranding>,
-) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	await updateOrganizationBranding(organizationId, branding);
-	revalidatePath("/settings/enterprise/branding");
-	revalidatePath("/settings/enterprise/domains");
-}
+const brandingText = z.string().max(2048).nullable().optional();
+
+export const updateBrandingAction = organizationAction(
+	{
+		name: "enterpriseBranding.update",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			logoUrl: brandingText,
+			backgroundImageUrl: brandingText,
+			appName: z.string().max(255).nullable().optional(),
+			primaryColor: z.string().max(64).nullable().optional(),
+			accentColor: z.string().max(64).nullable().optional(),
+		}),
+	},
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to save the branding", async () => {
+			await updateOrganizationBranding(organizationId, input);
+			revalidatePath("/settings/enterprise/branding");
+			revalidatePath("/settings/enterprise/domains");
+		}),
+);
 
 // ============ Social OAuth Actions ============
 
@@ -879,14 +930,21 @@ export interface SocialOAuthConfigResponse {
 	updatedAt: Date;
 }
 
-export async function listSocialOAuthConfigsAction(): Promise<
-	SocialOAuthConfigResponse[]
-> {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	const configs = await listOrgSocialOAuthConfigs(organizationId);
-
+function toSocialOAuthConfigResponse(config: {
+	id: string;
+	organizationId: string;
+	provider: SocialOAuthProvider;
+	clientId: string;
+	providerConfig: SocialOAuthProviderConfig | null;
+	isActive: boolean;
+	lastTestAt: Date | null;
+	lastTestSuccess: boolean | null;
+	lastTestError: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+}): SocialOAuthConfigResponse {
 	// Return configs without exposing secrets
-	return configs.map((config) => ({
+	return {
 		id: config.id,
 		organizationId: config.organizationId,
 		provider: config.provider,
@@ -898,8 +956,16 @@ export async function listSocialOAuthConfigsAction(): Promise<
 		lastTestError: config.lastTestError,
 		createdAt: config.createdAt,
 		updatedAt: config.updatedAt,
-	}));
+	};
 }
+
+export const listSocialOAuthConfigsAction = organizationAction(
+	{ name: "enterpriseSocialOAuth.list", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		enterpriseWork("Unable to load the social sign-in providers", async () =>
+			(await listOrgSocialOAuthConfigs(organizationId)).map(toSocialOAuthConfigResponse),
+		),
+);
 
 export interface AddSocialOAuthInput {
 	provider: SocialOAuthProvider;
@@ -908,34 +974,37 @@ export interface AddSocialOAuthInput {
 	providerConfig?: SocialOAuthProviderConfig;
 }
 
-export async function addSocialOAuthConfigAction(data: AddSocialOAuthInput) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
+const providerConfigSchema = z.strictObject({
+	apple: z.strictObject({ teamId: z.string().max(255), keyId: z.string().max(255) }).optional(),
+});
 
-	const config = await createSocialOAuthConfig({
-		organizationId,
-		provider: data.provider,
-		clientId: data.clientId,
-		clientSecret: data.clientSecret,
-		providerConfig: data.providerConfig,
-	});
+export const addSocialOAuthConfigAction = organizationAction(
+	{
+		name: "enterpriseSocialOAuth.add",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			provider: z.enum(["google", "github", "linkedin", "apple"]),
+			clientId: z.string().max(1024),
+			clientSecret: z.string().max(10_000),
+			providerConfig: providerConfigSchema.optional(),
+		}),
+	},
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to add the social sign-in provider", async () => {
+			const config = await createSocialOAuthConfig({
+				organizationId,
+				provider: input.provider,
+				clientId: input.clientId,
+				clientSecret: input.clientSecret,
+				providerConfig: input.providerConfig,
+			});
 
-	revalidatePath("/settings/enterprise/social-oauth");
-	revalidatePath(IDENTITY_SETUP_PATH);
+			revalidatePath("/settings/enterprise/social-oauth");
+			revalidatePath(IDENTITY_SETUP_PATH);
 
-	return {
-		id: config.id,
-		organizationId: config.organizationId,
-		provider: config.provider,
-		clientId: config.clientId,
-		hasProviderConfig: !!config.providerConfig,
-		isActive: config.isActive,
-		lastTestAt: config.lastTestAt,
-		lastTestSuccess: config.lastTestSuccess,
-		lastTestError: config.lastTestError,
-		createdAt: config.createdAt,
-		updatedAt: config.updatedAt,
-	};
-}
+			return toSocialOAuthConfigResponse(config);
+		}),
+);
 
 export interface UpdateSocialOAuthInput {
 	clientId?: string;
@@ -944,55 +1013,62 @@ export interface UpdateSocialOAuthInput {
 	isActive?: boolean;
 }
 
-export async function updateSocialOAuthConfigAction(
-	configId: string,
-	data: UpdateSocialOAuthInput,
-) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
+const configIdSchema = z.strictObject({ configId: z.string().max(255) });
 
-	const config = await updateSocialOAuthConfig(configId, organizationId, {
-		clientId: data.clientId,
-		clientSecret: data.clientSecret,
-		providerConfig: data.providerConfig,
-		isActive: data.isActive,
-	});
+export const updateSocialOAuthConfigAction = organizationAction(
+	{
+		name: "enterpriseSocialOAuth.update",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			configId: z.string().max(255),
+			clientId: z.string().max(1024).optional(),
+			clientSecret: z.string().max(10_000).optional(),
+			providerConfig: providerConfigSchema.optional(),
+			isActive: z.boolean().optional(),
+		}),
+	},
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to save the social sign-in provider", async () => {
+			const config = await updateSocialOAuthConfig(input.configId, organizationId, {
+				clientId: input.clientId,
+				clientSecret: input.clientSecret,
+				providerConfig: input.providerConfig,
+				isActive: input.isActive,
+			});
 
-	revalidatePath("/settings/enterprise/social-oauth");
-	revalidatePath(IDENTITY_SETUP_PATH);
+			revalidatePath("/settings/enterprise/social-oauth");
+			revalidatePath(IDENTITY_SETUP_PATH);
 
-	return {
-		id: config.id,
-		organizationId: config.organizationId,
-		provider: config.provider,
-		clientId: config.clientId,
-		hasProviderConfig: !!config.providerConfig,
-		isActive: config.isActive,
-		lastTestAt: config.lastTestAt,
-		lastTestSuccess: config.lastTestSuccess,
-		lastTestError: config.lastTestError,
-		createdAt: config.createdAt,
-		updatedAt: config.updatedAt,
-	};
-}
+			return toSocialOAuthConfigResponse(config);
+		}),
+);
 
-export async function deleteSocialOAuthConfigAction(configId: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	await deleteSocialOAuthConfig(configId, organizationId);
-	revalidatePath("/settings/enterprise/social-oauth");
-	revalidatePath(IDENTITY_SETUP_PATH);
-}
+export const deleteSocialOAuthConfigAction = organizationAction(
+	{ name: "enterpriseSocialOAuth.delete", requires: "orgAdmin", schema: configIdSchema },
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to delete the social sign-in provider", async () => {
+			await deleteSocialOAuthConfig(input.configId, organizationId);
+			revalidatePath("/settings/enterprise/social-oauth");
+			revalidatePath(IDENTITY_SETUP_PATH);
+		}),
+);
 
-export async function checkSocialOAuthConfigurationAction(configId: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	return checkSocialOAuthConfiguration(configId, organizationId);
-}
+export const checkSocialOAuthConfigurationAction = organizationAction(
+	{ name: "enterpriseSocialOAuth.check", requires: "orgAdmin", schema: configIdSchema },
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to check the social sign-in provider", () =>
+			checkSocialOAuthConfiguration(input.configId, organizationId),
+		),
+);
 
-export async function getConfiguredSocialProvidersAction(): Promise<
-	Record<SocialOAuthProvider, boolean>
-> {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	return getConfiguredProviders(organizationId);
-}
+export const getConfiguredSocialProvidersAction = organizationAction(
+	{ name: "enterpriseSocialOAuth.configured", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		enterpriseWork(
+			"Unable to load the social sign-in providers",
+			(): Promise<Record<SocialOAuthProvider, boolean>> => getConfiguredProviders(organizationId),
+		),
+);
 
 // ============ Turnstile Actions ============
 
@@ -1000,8 +1076,15 @@ export async function getConfiguredSocialProvidersAction(): Promise<
  * Store Turnstile secret key in Vault for the organization
  * Vault path: secret/organizations/{orgId}/turnstile/secret_key
  */
-export async function storeTurnstileSecretAction(secretKey: string) {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	await storeOrgSecret(organizationId, "turnstile/secret_key", secretKey);
-	revalidatePath("/settings/enterprise/domains");
-}
+export const storeTurnstileSecretAction = organizationAction(
+	{
+		name: "enterpriseTurnstile.storeSecret",
+		requires: "orgAdmin",
+		schema: z.strictObject({ secretKey: z.string().min(1).max(1024) }),
+	},
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to store the Turnstile secret", async () => {
+			await storeOrgSecret(organizationId, "turnstile/secret_key", input.secretKey);
+			revalidatePath("/settings/enterprise/domains");
+		}),
+);

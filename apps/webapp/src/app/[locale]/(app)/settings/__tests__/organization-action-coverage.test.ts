@@ -16,13 +16,9 @@ const settingsDir = join(import.meta.dirname, "..");
  * #1592 removes its entries; the lock-in ticket empties this list.
  */
 const NOT_YET_MIGRATED = [
-	"billable-time",
 	"change-policies",
-	"custom-fields",
-	"enterprise",
 	"holidays",
 	"vacation",
-	"vehicles",
 	"work-categories",
 	"work-policies",
 ];

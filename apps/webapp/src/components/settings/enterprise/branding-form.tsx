@@ -1,5 +1,6 @@
 "use client";
 
+import { actionData } from "@/components/settings/enterprise/action-data";
 import { IconLoader2, IconUpload, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
@@ -32,7 +33,7 @@ function useBrandingFormController({ initialBranding, organizationId }: Branding
 		defaultValues: initialBranding,
 		onSubmit: async ({ value }) => {
 			try {
-				await updateBrandingAction(value);
+				await actionData(updateBrandingAction(value));
 				if (form.store.state.values === value) form.reset(value, { keepDefaultValues: true });
 				toast.success(t("settings.branding.saveSuccess", "Branding settings saved"));
 			} catch {

@@ -207,7 +207,8 @@ function ApiKeyEditDialogForm({
 	const validationMessages = getValidationMessages(t);
 	const updateMutation = useMutation({
 		mutationFn: async ({ keyId, value }: ApiKeyEditMutationVariables) => {
-			const result = await updateApiKey(organizationId, keyId, {
+			const result = await updateApiKey({
+				keyId,
 				name: value.name.trim(),
 				enabled: value.enabled,
 				scopes: value.scopes,

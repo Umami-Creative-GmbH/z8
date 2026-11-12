@@ -194,8 +194,8 @@ beforeEach(() => {
 		authContext: { user: { id: "user-1" } },
 		settingsAccess: "orgAdmin",
 	});
-	mocks.email.mockResolvedValue(null);
-	mocks.secretStatus.mockResolvedValue({ connected: false });
+	mocks.email.mockResolvedValue({ success: true, data: null });
+	mocks.secretStatus.mockResolvedValue({ success: true, data: { connected: false } });
 	mocks.templates.mockResolvedValue({ success: true, data: [{ key: "invite", override: null }] });
 	mocks.keys.mockResolvedValue({ success: true, data: [{ id: "key-1" }] });
 	mocks.webhooks.mockResolvedValue([{ id: "webhook-1" }]);
@@ -204,11 +204,11 @@ beforeEach(() => {
 		data: { signingKeyFingerprint: "fingerprint", signingKeyVersion: 2 },
 	});
 	mocks.packages.mockResolvedValue({ success: true, data: [] });
-	mocks.identity.mockResolvedValue({ step: "provider" });
-	mocks.providers.mockResolvedValue([]);
-	mocks.domains.mockResolvedValue([]);
-	mocks.branding.mockResolvedValue({ appName: "Z8" });
-	mocks.social.mockResolvedValue([]);
+	mocks.identity.mockResolvedValue({ success: true, data: { step: "provider" } });
+	mocks.providers.mockResolvedValue({ success: true, data: [] });
+	mocks.domains.mockResolvedValue({ success: true, data: [] });
+	mocks.branding.mockResolvedValue({ success: true, data: { appName: "Z8" } });
+	mocks.social.mockResolvedValue({ success: true, data: [] });
 	for (const loader of [mocks.slack, mocks.teams, mocks.discord])
 		loader.mockResolvedValue({ success: true, data: null });
 	mocks.organization.mockResolvedValue({
@@ -253,8 +253,8 @@ describe("merged organization settings", () => {
 		const page = await content(EmailPage);
 		expect(page.key).toBe("org-1");
 		expect(tabs(page)).toEqual(["delivery", "templates"]);
-		expect(mocks.email).toHaveBeenCalledWith("org-1");
-		expect(mocks.secretStatus).toHaveBeenCalledWith("org-1");
+		expect(mocks.email).toHaveBeenCalledWith();
+		expect(mocks.secretStatus).toHaveBeenCalledWith();
 		expect(page.props.tabs[1].panel.props.templates).toEqual([
 			{ definition: { key: "invite" }, override: null },
 		]);
@@ -262,7 +262,7 @@ describe("merged organization settings", () => {
 	it("combines API keys and webhooks with their original organization and user props", async () => {
 		const page = await content(DeveloperPage);
 		expect(tabs(page)).toEqual(["keys", "webhooks"]);
-		expect(mocks.keys).toHaveBeenCalledWith("org-1");
+		expect(mocks.keys).toHaveBeenCalledWith();
 		expect(mocks.webhooks).toHaveBeenCalledWith("org-1");
 		expect(page.props.tabs[0].panel.props).toMatchObject({
 			organizationId: "org-1",

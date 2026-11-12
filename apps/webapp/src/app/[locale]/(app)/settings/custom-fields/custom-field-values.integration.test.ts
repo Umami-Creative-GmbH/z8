@@ -961,7 +961,8 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				await actAs(ids.managerUser, () =>
 					failure(section("project", ids.otherProject)),
 				),
-			).toMatchObject({ code: "AuthorizationError" });
+				// Another organization's project is not found (ADR 0002).
+			).toMatchObject({ code: "NotFoundError" });
 
 			const customer = await actAs(ids.managerUser, () =>
 				ok(section("customer", ids.customer)),

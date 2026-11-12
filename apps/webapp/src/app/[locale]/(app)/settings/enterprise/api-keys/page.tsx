@@ -16,7 +16,7 @@ async function DeveloperSettingsContent() {
 
 	// Fetch API keys for the organization
 	const [apiKeysResult, webhooks] = await Promise.all([
-		listApiKeys(organizationId),
+		listApiKeys(),
 		getWebhookEndpointsByOrganization(organizationId),
 	]);
 	const apiKeys = apiKeysResult.success ? apiKeysResult.data : [];
@@ -49,11 +49,7 @@ async function DeveloperSettingsContent() {
 						"settings.webhooks.description",
 						"Configure webhook endpoints to receive real-time event notifications",
 					),
-					panel: (
-						<WebhooksPageClient
-							webhooks={webhooks}
-						/>
-					),
+					panel: <WebhooksPageClient webhooks={webhooks} />,
 				},
 			]}
 		/>

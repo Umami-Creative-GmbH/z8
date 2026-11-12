@@ -4,52 +4,6 @@ import { readTestText } from "@/test/read-test-text";
 
 const appDir = join(import.meta.dirname, "../../app");
 
-const actionCases = [
-	[
-		"API key create",
-		"[locale]/(app)/settings/enterprise/api-keys/actions.ts",
-		"createApiKey",
-		"createOrganizationApiKey(",
-		"verifyApiKeyPermission(",
-	],
-	[
-		"API key update",
-		"[locale]/(app)/settings/enterprise/api-keys/actions.ts",
-		"updateApiKey",
-		"updateOrganizationApiKey(",
-		"verifyApiKeyPermission(",
-	],
-	[
-		"API key delete",
-		"[locale]/(app)/settings/enterprise/api-keys/actions.ts",
-		"deleteApiKey",
-		"revokeOrganizationApiKey(",
-		"verifyApiKeyPermission(",
-	],
-] as const;
-
-function actionSection(source: string, action: string) {
-	const start = source.indexOf(`export async function ${action}`);
-	const next = source.indexOf("export async function ", start + 1);
-	return source.slice(start, next === -1 ? undefined : next);
-}
-
-describe("explicit-organization privileged server actions", () => {
-	it.each(
-		actionCases,
-	)("guards %s before its first side effect", (_name, path, action, sideEffect, guardCall = "requireActiveOrganizationActionActor") => {
-		const section = actionSection(
-			readTestText(join(appDir, path), "utf8"),
-			action,
-		);
-		const guard = section.indexOf(guardCall);
-		const mutation = section.indexOf(sideEffect);
-
-		expect(guard, `${action} guard`).toBeGreaterThanOrEqual(0);
-		expect(mutation, `${action} side effect`).toBeGreaterThan(guard);
-	});
-});
-
 const routeCases = [
 	["Slack disconnect", "api/slack/setup/route.ts", "deleteOrgSecret("],
 	[

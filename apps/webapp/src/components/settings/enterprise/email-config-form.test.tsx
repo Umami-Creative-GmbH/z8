@@ -38,13 +38,7 @@ beforeAll(() => {
 });
 
 function renderForm(secretStoreStatus: SecretStoreStatus) {
-	return render(
-		<EmailConfigForm
-			organizationId="org_123"
-			initialConfig={null}
-			secretStoreStatus={secretStoreStatus}
-		/>,
-	);
+	return render(<EmailConfigForm initialConfig={null} secretStoreStatus={secretStoreStatus} />);
 }
 
 describe("EmailConfigForm", () => {

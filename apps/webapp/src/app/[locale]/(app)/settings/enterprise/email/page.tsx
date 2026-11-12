@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { EmailTemplateSettingsClient } from "@/components/settings/email-templates/email-template-settings-client";
+import { actionData } from "@/components/settings/enterprise/action-data";
 import { EmailConfigForm } from "@/components/settings/enterprise/email-config-form";
 import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,11 +11,10 @@ import { getEmailConfig, getSecretStoreConnectionStatus } from "./actions";
 
 async function EmailConfigContent() {
 	const authContextPromise = requireOrgAdminSettingsAccess();
-	const emailConfigPromise = authContextPromise.then(({ organizationId }) =>
-		getEmailConfig(organizationId),
-	);
-	const secretStoreStatusPromise = authContextPromise.then(
-		({ organizationId }) => getSecretStoreConnectionStatus(organizationId),
+	// The page guard redirects first; the actions then run for the same org admin.
+	const emailConfigPromise = authContextPromise.then(() => actionData(getEmailConfig()));
+	const secretStoreStatusPromise = authContextPromise.then(() =>
+		actionData(getSecretStoreConnectionStatus()),
 	);
 	const [{ organizationId }, t, emailConfig, secretStoreStatus, templatesResult] =
 		await Promise.all([
@@ -43,11 +43,7 @@ async function EmailConfigContent() {
 						"Configure a custom email provider for your organization. All organization emails will use this configuration instead of the system default.",
 					),
 					panel: (
-						<EmailConfigForm
-							organizationId={organizationId}
-							initialConfig={emailConfig}
-							secretStoreStatus={secretStoreStatus}
-						/>
+						<EmailConfigForm initialConfig={emailConfig} secretStoreStatus={secretStoreStatus} />
 					),
 				},
 				{

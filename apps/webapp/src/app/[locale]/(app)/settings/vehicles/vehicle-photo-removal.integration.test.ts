@@ -73,7 +73,7 @@ const admin = integrationAdminPool();
 let vehicleId: string;
 const origin = "https://z8.example.test";
 async function start(id = vehicleId) {
-	const result = await initiateVehiclePhotoUpload(id);
+	const result = await initiateVehiclePhotoUpload({ vehicleId: id });
 	if (!result.success || !result.data.ok)
 		throw new Error(JSON.stringify(result));
 	return result.data.uploadId;
@@ -99,7 +99,7 @@ async function read(id: string, vehicle = vehicleId) {
 	});
 }
 async function gallery() {
-	const result = await listVehiclePhotos(vehicleId);
+	const result = await listVehiclePhotos({ vehicleId: vehicleId });
 	if (!result.success) throw new Error(result.error);
 	return result.data;
 }
@@ -163,7 +163,7 @@ afterAll(cleanup);
 it("removes a photo immediately, releases capacity and durably retries physical deletion", async () => {
 	const id = await start();
 	expect((await upload(id, await image())).status).toBe(200);
-	expect(await removeVehiclePhoto(vehicleId, id)).toMatchObject({
+	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
 		data: { ok: true, removed: true },
 	});
@@ -200,7 +200,7 @@ it.each([
 		const id = await start();
 		expect((await upload(id, await image())).status).toBe(200);
 		harness.userId = userId;
-		expect(await removeVehiclePhoto(vehicleId, id)).toMatchObject({
+		expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 			success: false,
 		});
 		harness.userId = "removal-photo-owner";
@@ -228,7 +228,7 @@ it("denies other organizations and mismatched vehicle identities, while allowing
 	if (!other.success || !other.data.ok) throw new Error("create failed");
 	const otherVehicle = other.data.vehicles.find((v) => v.id !== vehicleId);
 	if (!otherVehicle) throw new Error("Missing other vehicle");
-	expect(await removeVehiclePhoto(otherVehicle.id, id)).toMatchObject({
+	expect(await removeVehiclePhoto({ vehicleId: otherVehicle.id, photoId: id })).toMatchObject({
 		success: true,
 		data: { ok: false, reason: "photo_not_found" },
 	});
@@ -236,14 +236,14 @@ it("denies other organizations and mismatched vehicle identities, while allowing
 		"insert into member(id,organization_id,user_id,role,status,created_at) values('removal-other-membership','removal-photo-other','removal-photo-owner','owner','approved',now())",
 	);
 	harness.organizationId = "removal-photo-other";
-	expect(await removeVehiclePhoto(vehicleId, id)).toMatchObject({
+	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
 		data: { ok: false, reason: "vehicle_not_found" },
 	});
 	harness.organizationId = "removal-photo-org";
 	harness.userId = "removal-photo-admin";
 	expect((await read(id)).status).toBe(200);
-	expect(await removeVehiclePhoto(vehicleId, id)).toMatchObject({
+	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
 		data: { ok: true, removed: true },
 	});
@@ -252,14 +252,14 @@ it("rechecks archival on stale removal and allows removal after restoration", as
 	const id = await start();
 	expect((await upload(id, await image())).status).toBe(200);
 	await changeVehicles({ kind: "archive", vehicleId });
-	expect(await removeVehiclePhoto(vehicleId, id)).toMatchObject({
+	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
 		data: { ok: false, reason: "vehicle_archived" },
 	});
 	expect((await gallery()).archived).toBe(true);
 	expect((await read(id)).status).toBe(200);
 	await changeVehicles({ kind: "restore", vehicleId });
-	expect(await removeVehiclePhoto(vehicleId, id)).toMatchObject({
+	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
 		data: { ok: true },
 	});
@@ -270,8 +270,8 @@ it("serializes repeated concurrent removal without duplicate audit and never rea
 	const bytes = await image();
 	expect((await upload(id, bytes)).status).toBe(200);
 	const results = await Promise.all([
-		removeVehiclePhoto(vehicleId, id),
-		removeVehiclePhoto(vehicleId, id),
+		removeVehiclePhoto({ vehicleId: vehicleId, photoId: id }),
+		removeVehiclePhoto({ vehicleId: vehicleId, photoId: id }),
 	]);
 	expect(results).toEqual(
 		expect.arrayContaining([
@@ -297,11 +297,11 @@ it("releases one of twenty slots and preserves the surviving upload order", asyn
 		ids.push(id);
 		expect((await upload(id, bytes)).status).toBe(200);
 	}
-	expect(await initiateVehiclePhotoUpload(vehicleId)).toMatchObject({
+	expect(await initiateVehiclePhotoUpload({ vehicleId: vehicleId })).toMatchObject({
 		success: true,
 		data: { ok: false, reason: "photo_limit" },
 	});
-	expect(await removeVehiclePhoto(vehicleId, ids[4])).toMatchObject({
+	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: ids[4] })).toMatchObject({
 		success: true,
 		data: { ok: true },
 	});
@@ -326,7 +326,7 @@ it("serializes a removal with an attaching upload and keeps the remaining photo 
 	};
 	const attaching = upload(fresh, await image());
 	await writing;
-	const removal = removeVehiclePhoto(vehicleId, id);
+	const removal = removeVehiclePhoto({ vehicleId: vehicleId, photoId: id });
 	release();
 	expect((await attaching).status).toBe(200);
 	expect(await removal).toMatchObject({ success: true, data: { ok: true } });
@@ -342,7 +342,7 @@ it("rolls back both removal and cleanup intent when the successful-change audit 
 		"create function t1272_reject_removal_audit() returns trigger language plpgsql as $$ begin if NEW.organization_id='removal-photo-org' and NEW.action='vehicle.photo_removed' then raise exception 'test audit unavailable'; end if; return NEW; end $$; create trigger t1272_reject_removal_audit before insert on audit_log for each row execute function t1272_reject_removal_audit()",
 	);
 	try {
-		expect(await removeVehiclePhoto(vehicleId, id)).toMatchObject({
+		expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 			success: false,
 		});
 		expect((await gallery()).photos.map((p) => p.id)).toEqual([id]);
@@ -362,7 +362,7 @@ it("rolls back both removal and cleanup intent when the successful-change audit 
 			"drop trigger t1272_reject_removal_audit on audit_log; drop function t1272_reject_removal_audit()",
 		);
 	}
-	expect(await removeVehiclePhoto(vehicleId, id)).toMatchObject({
+	expect(await removeVehiclePhoto({ vehicleId: vehicleId, photoId: id })).toMatchObject({
 		success: true,
 		data: { ok: true },
 	});
@@ -371,7 +371,7 @@ it("keeps whole-vehicle deletion coherent when an individual removal runs concur
 	const id = await start();
 	expect((await upload(id, await image())).status).toBe(200);
 	const [removal, deletion] = await Promise.all([
-		removeVehiclePhoto(vehicleId, id),
+		removeVehiclePhoto({ vehicleId: vehicleId, photoId: id }),
 		changeVehicles({ kind: "delete", vehicleId }),
 	]);
 	expect(deletion).toMatchObject({ success: true, data: { ok: true } });

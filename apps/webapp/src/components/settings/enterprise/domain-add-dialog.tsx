@@ -1,5 +1,6 @@
 "use client";
 
+import { actionData } from "@/components/settings/enterprise/action-data";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
@@ -66,7 +67,7 @@ export function DomainAddDialog({
 
 			await runWithBusyState(setIsSubmitting, async () => {
 				try {
-					const result = await addDomainAction(value.domain);
+					const result = await actionData(addDomainAction({ domain: value.domain }));
 					const now = DateTime.now();
 
 					onDomainAdded({

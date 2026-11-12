@@ -46,7 +46,6 @@ import type { SecretStoreStatus } from "@/lib/vault";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 interface EmailConfigFormProps {
-	organizationId: string;
 	initialConfig: EmailConfigOutput | null;
 	secretStoreStatus: SecretStoreStatus;
 }
@@ -169,7 +168,6 @@ function SecretStoreStatusAlert({
 }
 
 function useEmailConfigController({
-	organizationId,
 	initialConfig,
 	secretStoreStatus,
 }: EmailConfigFormProps) {
@@ -199,7 +197,7 @@ function useEmailConfigController({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
-				const result = await saveEmailConfig(organizationId, value);
+				const result = await saveEmailConfig(value);
 				if (result.success) {
 					toast.success(
 						t("settings.enterprise.email.saved", "Email configuration saved"),
@@ -226,7 +224,7 @@ function useEmailConfigController({
 		}
 
 		setIsTesting(true);
-		const result = await testEmailConfig(organizationId, testEmail).then(
+		const result = await testEmailConfig({ testEmail }).then(
 			(response) => response,
 			() => null,
 		);
@@ -268,7 +266,7 @@ function useEmailConfigController({
 		}
 
 		startTransition(async () => {
-			const result = await deleteEmailConfig(organizationId);
+			const result = await deleteEmailConfig();
 			if (result.success) {
 				toast.success(
 					t("settings.enterprise.email.deleted", "Email configuration deleted"),

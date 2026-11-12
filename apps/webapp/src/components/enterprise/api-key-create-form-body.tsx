@@ -126,7 +126,7 @@ function useApiKeyCreateController({
 			});
 		},
 		mutationFn: async (value: ApiKeyCreateFormValues) => {
-			const result = await createApiKey(organizationId, {
+			const result = await createApiKey({
 				name: value.name.trim(),
 				expiresInDays:
 					value.expiresIn === "never" ? null : parseInt(value.expiresIn, 10),
