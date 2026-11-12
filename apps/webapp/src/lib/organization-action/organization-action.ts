@@ -45,8 +45,8 @@ export interface OrganizationActor {
 	require(level: SettingsAccess): Effect.Effect<void, AuthorizationError>;
 	/**
 	 * Whom the actor manages, loaded on first use: the whole organization for an
-	 * org admin, else the employees they manage and the teams whose members or
-	 * settings they may manage (none for an org member).
+	 * org admin or a workforce admin, else the employees they manage and the teams
+	 * whose members or settings they may manage (none for an org member).
 	 */
 	managedScope(): Effect.Effect<ManagedScope, DatabaseError, DatabaseService>;
 }
@@ -172,7 +172,7 @@ function authorizeAndRun<Schema extends InputSchema, T>(
 			loadManagedScope({
 				organizationId: caller.organizationId,
 				settingsAccess,
-				employeeId: caller.employee?.id ?? null,
+				employee: caller.employee,
 			}),
 		);
 		const actor: OrganizationActor = {

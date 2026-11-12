@@ -42,7 +42,13 @@ Name every suite that needs a real database `*.integration.test.ts`. Vitest's `i
 
 ## RBAC
 
-Z8 uses [CASL](https://casl.js.org/) for role-based access control. Prefer existing authorization helpers and ability checks over ad-hoc role checks.
+Settings server actions authorize by **settings access**, not CASL ([ADR 0002](../adr/0002-settings-actions-authorize-by-settings-access-not-casl.md)). Declare each one with `organizationAction` from `lib/organization-action/organization-action.ts` and its `requires` level: `"member"`, `"scopedManager"`, `"orgAdmin"` or `"owner"`. A higher level also qualifies. The organization is the session's active organization, passed to the handler as `organizationId`; an action takes no `organizationId` from the client. The levels are defined in the Organization glossary (`apps/webapp/src/lib/organization/CONTEXT.md`, "Organization access") and resolved in `lib/organization-action/settings-access.ts`, which the page guard `requireOrgAdminSettingsAccess` shares. The [Effect reference](effect.md#organization-actions) shows a declaration and its test.
+
+The older `SettingsAccessTier` (`member | manager | orgAdmin`) in `lib/settings-access.ts` still backs `getCurrentSettingsAccessTier` and the sidebar. Keep it apart from the four levels above.
+
+Settings folders still being migrated are listed in `NOT_YET_MIGRATED` in `settings/__tests__/organization-action-coverage.test.ts`. That test fails on any export of a settings `"use server"` module that `organizationAction` did not produce; a migrated folder leaves the list.
+
+[CASL](https://casl.js.org/) decides object-level checks inside handlers, such as whether this manager may edit this employee, and authorization outside settings. Use the existing ability checks there instead of ad-hoc role checks.
 
 ## Icons
 
