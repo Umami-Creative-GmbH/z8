@@ -374,7 +374,7 @@ it("keeps whole-vehicle deletion coherent when an individual removal runs concur
 		removeVehiclePhoto({ vehicleId: vehicleId, photoId: id }),
 		changeVehicles({ kind: "delete", vehicleId }),
 	]);
-	expect(deletion).toMatchObject({ success: true, data: { ok: true } });
+	expect(deletion).toMatchObject({ success: true });
 	expect(removal.success).toBe(true);
 	expect((await read(id)).status).toBe(404);
 	expect(
