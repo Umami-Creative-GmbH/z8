@@ -33,10 +33,8 @@ import {
 import { useRouter } from "@/navigation";
 
 export function OrganizationProfileCard({
-	organizationId,
 	profile,
 }: {
-	organizationId: string;
 	profile: OrganizationProfile;
 }) {
 	const { t } = useTranslate();
@@ -61,7 +59,6 @@ export function OrganizationProfileCard({
 			}
 			try {
 				const result = await saveOrganizationProfile(
-					organizationId,
 					validation.profile,
 				);
 				if (!result.success) {

@@ -23,7 +23,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface InviteCodeQRDialogProps {
 	inviteCode: InviteCodeWithRelations | null;
-	organizationId: string;
 	inviteBaseUrl: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -31,7 +30,6 @@ interface InviteCodeQRDialogProps {
 
 export function InviteCodeQRDialog({
 	inviteCode,
-	organizationId,
 	inviteBaseUrl,
 	open,
 	onOpenChange,
@@ -45,7 +43,7 @@ export function InviteCodeQRDialog({
 	const generateMutation = useMutation({
 		mutationFn: async (fmt: "png" | "svg") => {
 			if (!inviteCode) throw new Error("No invite code");
-			const result = await generateInviteQRCode(inviteCode.id, organizationId, fmt);
+			const result = await generateInviteQRCode({ inviteCodeId: inviteCode.id, format: fmt });
 			if (!result.success) throw new Error(result.error || "Failed to generate QR code");
 			return result.data;
 		},

@@ -1,7 +1,5 @@
 "use client";
 
-import { useServerDataState } from "@/hooks/use-server-data-state";
-
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { type ComponentType, type SVGProps, useState, useTransition } from "react";
@@ -16,18 +14,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { useRouter } from "@/navigation";
 import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 interface OrganizationLanguageCardProps {
-	organizationId: string;
 	defaultLanguage: string;
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
 export function OrganizationLanguageCard({
-	organizationId,
 	defaultLanguage: initialDefaultLanguage,
 	currentMemberRole,
 }: OrganizationLanguageCardProps) {
@@ -47,10 +44,7 @@ export function OrganizationLanguageCard({
 		setIsSaving(true);
 
 		try {
-			const result = await updateOrganizationDefaultNotificationLanguage(
-				organizationId,
-				newDefaultLanguage,
-			);
+			const result = await updateOrganizationDefaultNotificationLanguage(newDefaultLanguage);
 
 			if (result.success) {
 				toast.success(

@@ -36,13 +36,12 @@ beforeEach(() => {
 });
 
 it("warns before leaving with unsaved edits and adopts the successfully saved profile as its baseline", async () => {
-	save.mockImplementation(async (_id, profile) => ({
+	save.mockImplementation(async (profile) => ({
 		success: true,
 		data: { ok: true, profile },
 	}));
 	const { unmount } = render(
 		<OrganizationProfileCard
-			organizationId="org-1"
 			profile={EMPTY_ORGANIZATION_PROFILE}
 		/>,
 	);
@@ -72,13 +71,12 @@ it("warns before leaving with unsaved edits and adopts the successfully saved pr
 });
 
 it("lets an admin edit the registered address and save a partial profile with visible feedback", async () => {
-	save.mockImplementation(async (_id, profile) => ({
+	save.mockImplementation(async (profile) => ({
 		success: true,
 		data: { ok: true, profile },
 	}));
 	render(
 		<OrganizationProfileCard
-			organizationId="org-1"
 			profile={EMPTY_ORGANIZATION_PROFILE}
 		/>,
 	);
@@ -108,7 +106,7 @@ it("lets an admin edit the registered address and save a partial profile with vi
 		expect(toastSuccess).toHaveBeenCalledWith("Organization profile saved"),
 	);
 	expect(screen.queryByRole("status")).toBeNull();
-	expect(save).toHaveBeenCalledWith("org-1", {
+	expect(save).toHaveBeenCalledWith({
 		...EMPTY_ORGANIZATION_PROFILE,
 		legalCompanyName: "Umami Creative GmbH",
 		addressLine2: "Floor 2",
@@ -118,13 +116,12 @@ it("lets an admin edit the registered address and save a partial profile with vi
 });
 
 it("shows accessible field errors, focuses the invalid field and allows correction", async () => {
-	save.mockImplementation(async (_id, profile) => ({
+	save.mockImplementation(async (profile) => ({
 		success: true,
 		data: { ok: true, profile },
 	}));
 	render(
 		<OrganizationProfileCard
-			organizationId="org-1"
 			profile={EMPTY_ORGANIZATION_PROFILE}
 		/>,
 	);
@@ -150,7 +147,6 @@ it("presents field errors returned by the server and keeps the entered values", 
 	});
 	render(
 		<OrganizationProfileCard
-			organizationId="org-1"
 			profile={{ ...EMPTY_ORGANIZATION_PROFILE, vatId: "DE123456789" }}
 		/>,
 	);
@@ -178,7 +174,6 @@ it.each(["denied", "network"])(
 			});
 		render(
 			<OrganizationProfileCard
-				organizationId="org-1"
 				profile={EMPTY_ORGANIZATION_PROFILE}
 			/>,
 		);
@@ -208,7 +203,6 @@ it("loads saved details, prevents duplicate submissions while saving and lets th
 	);
 	render(
 		<OrganizationProfileCard
-			organizationId="org-1"
 			profile={{
 				...EMPTY_ORGANIZATION_PROFILE,
 				legalCompanyName: "Legal entity",
@@ -246,5 +240,5 @@ it("loads saved details, prevents duplicate submissions while saving and lets th
 		"value",
 		"",
 	);
-	expect(save).toHaveBeenCalledWith("org-1", EMPTY_ORGANIZATION_PROFILE);
+	expect(save).toHaveBeenCalledWith(EMPTY_ORGANIZATION_PROFILE);
 });

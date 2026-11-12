@@ -1,7 +1,5 @@
 "use client";
 
-import { useServerDataState } from "@/hooks/use-server-data-state";
-
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
@@ -10,17 +8,16 @@ import { updateOrganizationTimezone } from "@/app/[locale]/(app)/settings/organi
 import { TimezonePicker } from "@/components/settings/timezone-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useServerDataState } from "@/hooks/use-server-data-state";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface OrganizationTimezoneCardProps {
-	organizationId: string;
 	timezone: string;
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
 export function OrganizationTimezoneCard({
-	organizationId,
 	timezone: initialTimezone,
 	currentMemberRole,
 }: OrganizationTimezoneCardProps) {
@@ -41,7 +38,7 @@ export function OrganizationTimezoneCard({
 		setTimezone(newTimezone);
 		setOrgSettings({ timezone: newTimezone });
 
-		const result = await updateOrganizationTimezone(organizationId, newTimezone);
+		const result = await updateOrganizationTimezone(newTimezone);
 
 		if (result.success) {
 			// The save is committed; balances follow once they are rebuilt.

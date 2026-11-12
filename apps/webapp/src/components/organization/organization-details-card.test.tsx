@@ -79,7 +79,7 @@ describe("OrganizationDetailsCard", () => {
 		fireEvent.click(removeButton);
 
 		await waitFor(() => {
-			expect(removeOrganizationLogoMock).toHaveBeenCalledWith("org-1");
+			expect(removeOrganizationLogoMock).toHaveBeenCalledWith();
 		});
 		await waitFor(() => {
 			expect(screen.queryByRole("img", { name: "Acme" })).toBeNull();

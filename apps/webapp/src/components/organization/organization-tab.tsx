@@ -44,16 +44,11 @@ export function OrganizationTab({
 
 			{(hasOrganizationRole(currentMemberRole, "owner") ||
 				hasOrganizationRole(currentMemberRole, "admin")) && (
-				<OrganizationProfileCard
-					key={organization.id}
-					organizationId={organization.id}
-					profile={organizationProfile}
-				/>
+				<OrganizationProfileCard key={organization.id} profile={organizationProfile} />
 			)}
 
 			{/* Organization Features Card */}
 			<OrganizationFeaturesCard
-				organizationId={organization.id}
 				shiftsEnabled={organization.shiftsEnabled ?? false}
 				projectsEnabled={organization.projectsEnabled ?? false}
 				surchargesEnabled={organization.surchargesEnabled ?? false}
@@ -71,14 +66,12 @@ export function OrganizationTab({
 
 			{/* Organization Timezone Card */}
 			<OrganizationTimezoneCard
-				organizationId={organization.id}
 				timezone={organization.timezone ?? "UTC"}
 				currentMemberRole={currentMemberRole}
 			/>
 
 			{/* Organization Language Card */}
 			<OrganizationLanguageCard
-				organizationId={organization.id}
 				defaultLanguage={defaultNotificationLanguage}
 				currentMemberRole={currentMemberRole}
 			/>

@@ -16,7 +16,6 @@ import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-o
 import { useRouter } from "@/navigation";
 
 interface OrganizationAutoClockOutCardProps {
-	organizationId: string;
 	settings: AutoClockOutSettings;
 	currentMemberRole: "owner" | "admin" | "member";
 }
@@ -27,7 +26,6 @@ function durationFromFields(hours: string, minutes: string) {
 }
 
 export function OrganizationAutoClockOutCard({
-	organizationId,
 	settings,
 	currentMemberRole,
 }: OrganizationAutoClockOutCardProps) {
@@ -61,7 +59,6 @@ export function OrganizationAutoClockOutCard({
 			submitting.current = true;
 			try {
 				const result = await updateAutoClockOutSettings({
-					organizationId,
 					autoClockOutEnabled: value.autoClockOutEnabled,
 					maxUninterruptedMinutes: durationFromFields(value.hours, value.minutes),
 				});

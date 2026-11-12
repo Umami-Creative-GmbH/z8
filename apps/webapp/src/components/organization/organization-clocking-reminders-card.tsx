@@ -23,7 +23,6 @@ import {
 import { useRouter } from "@/navigation";
 
 interface OrganizationClockingRemindersCardProps {
-	organizationId: string;
 	settings: ClockingReminderSettings;
 	currentMemberRole: "owner" | "admin" | "member";
 }
@@ -38,7 +37,6 @@ function minutesFromField(value: string, min = 0): number | null {
 const leadFromField = (value: string) => minutesFromField(value, MIN_BREAK_DUE_LEAD_MINUTES);
 
 export function OrganizationClockingRemindersCard({
-	organizationId,
 	settings,
 	currentMemberRole,
 }: OrganizationClockingRemindersCardProps) {
@@ -81,7 +79,6 @@ export function OrganizationClockingRemindersCard({
 			submitting.current = true;
 			try {
 				const result = await updateClockingReminderSettings({
-					organizationId,
 					missedClockIn: {
 						enabled: value.missedClockInEnabled,
 						graceMinutes: minutesFromField(value.missedClockInGrace) ?? 0,

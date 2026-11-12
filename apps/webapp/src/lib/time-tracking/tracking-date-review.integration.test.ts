@@ -216,7 +216,7 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 		await fixture.pool.query(`update employee set start_date='2026-01-02T00:00:00Z' where id=$1`, [
 			employeeId,
 		]);
-		expect(await commitPreview(preview)).toMatchObject({ success: false, code: "stale_preview" });
+		expect(await commitPreview(preview)).toMatchObject({ success: false, refusal: "stale_preview" });
 		expect(await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId)).toEqual({
 			active: false,
 			trackingStartDate: null,
@@ -226,7 +226,7 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 	it("refuses changed work evidence and keeps history and legacy calculation intact", async () => {
 		const preview = await previewDate();
 		await seedWork("2026-05-20T20:00:00Z", "2026-05-20T21:00:00Z", 60);
-		expect(await commitPreview(preview)).toMatchObject({ success: false, code: "stale_preview" });
+		expect(await commitPreview(preview)).toMatchObject({ success: false, refusal: "stale_preview" });
 		expect(await currentBalance()).toBe(-1200);
 		expect(
 			await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId),
@@ -269,7 +269,7 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 			negative: false,
 			reason: "Prior system",
 		});
-		expect(await commitPreview(preview)).toMatchObject({ success: false, code: "stale_preview" });
+		expect(await commitPreview(preview)).toMatchObject({ success: false, refusal: "stale_preview" });
 		expect(await currentBalance()).toBe(60);
 		expect(
 			await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId),
@@ -288,7 +288,7 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 		expect(month.before.actualMinutes - month.after.actualMinutes).toBe(180);
 		expect(month.before.requiredMinutes - month.after.requiredMinutes).toBe(180);
 		expect(preview.blockers).toContainEqual({ employeeId, kind: "month_closed", month: "2026-05" });
-		expect(await commitPreview(preview)).toMatchObject({ success: false, code: "blocked" });
+		expect(await commitPreview(preview)).toMatchObject({ success: false, refusal: "blocked" });
 		expect(
 			await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId),
 		).toMatchObject({ active: true, trackingStartDate: "2026-05-01" });
@@ -324,22 +324,22 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 				fingerprint: "",
 				reason: "No preview",
 			}),
-		).toMatchObject({ success: false, code: "invalid_input" });
+		).toMatchObject({ success: false, refusal: "invalid_input" });
 		harness.userId = (await fixture.seedEmployee({ role: "member" })).userId;
 		expect(
 			await actions.previewOrganizationTrackingDateAction({ trackingStartDate: "2026-05-21" }),
-		).toMatchObject({ success: false, code: "not_permitted" });
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 		const admin = await fixture.seedEmployee({ role: "admin" });
 		harness.userId = admin.userId;
 		const preview = await previewDate();
 		await fixture.pool.query(`update member set role='member' where id=$1`, [admin.memberId]);
-		expect(await commitPreview(preview)).toMatchObject({ success: false, code: "not_permitted" });
+		expect(await commitPreview(preview)).toMatchObject({ success: false, code: "AuthorizationError" });
 		harness.userId = fixture.ownerUserId;
 		const ownerPreview = await previewDate();
 		harness.organizationId = await fixture.createOrganization();
 		expect(await commitPreview(ownerPreview)).toMatchObject({
 			success: false,
-			code: "not_permitted",
+			code: "AuthorizationError",
 		});
 		expect(
 			await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId),
@@ -376,7 +376,7 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 		const results = await Promise.all([commitPreview(preview), commitPreview(preview)]);
 		expect(results.filter((result) => result.success)).toHaveLength(1);
 		expect(results.filter((result) => !result.success)).toMatchObject([
-			{ success: false, code: "stale_preview" },
+			{ success: false, refusal: "stale_preview" },
 		]);
 		expect(await currentBalance()).toBe(-60);
 	});

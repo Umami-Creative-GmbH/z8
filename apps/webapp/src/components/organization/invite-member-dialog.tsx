@@ -70,7 +70,6 @@ export function InviteMemberDialog({
 
 	const inviteMutation = useMutation({
 		mutationFn: (data: {
-			organizationId: string;
 			email: string;
 			role: "owner" | "admin" | "member";
 			canCreateOrganizations: boolean;
@@ -143,7 +142,6 @@ export function InviteMemberDialog({
 
 			const result = await inviteMutation
 				.mutateAsync({
-					organizationId,
 					email: value.email,
 					role: value.role,
 					canCreateOrganizations: value.canCreateOrganizations,

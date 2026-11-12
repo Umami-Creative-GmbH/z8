@@ -27,7 +27,6 @@ function show(role: "owner" | "admin" | "member" = "admin") {
 	return render(
 		<TolgeeProvider tolgee={createTestTolgee("en", {})}>
 			<OrganizationClockingRemindersCard
-				organizationId="org-1"
 				settings={DEFAULT_CLOCKING_REMINDER_SETTINGS}
 				currentMemberRole={role}
 			/>
@@ -74,7 +73,6 @@ describe("OrganizationClockingRemindersCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.save).toHaveBeenCalledWith({
-				organizationId: "org-1",
 				missedClockIn: { enabled: true, graceMinutes: 10 },
 				forgottenClockOut: { enabled: false, graceMinutes: 30 },
 				breakDue: { enabled: true, leadMinutes: 20 },

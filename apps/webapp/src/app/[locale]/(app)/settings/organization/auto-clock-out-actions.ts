@@ -1,75 +1,34 @@
 "use server";
 
-import { Effect, Exit } from "effect";
+import { Effect } from "effect";
 import { z } from "zod";
-import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
-import { getRequestSession } from "@/lib/auth/request-session";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { typedFailureOfCause } from "@/lib/effect/cause-failure";
-import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { runtime } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { organizationAction } from "@/lib/organization-action/organization-action";
 import { saveAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
-import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 
-const settingsSchema = z.object({
-	organizationId: z.string().min(1),
-	autoClockOutEnabled: z.boolean(),
-	maxUninterruptedMinutes: z.number().int().min(1).max(2_147_483_647),
+const invalidDuration = "Enter a valid automatic clock-out duration";
+
+const settingsSchema = z.strictObject({
+	autoClockOutEnabled: z.boolean({ error: invalidDuration }),
+	maxUninterruptedMinutes: z
+		.number({ error: invalidDuration })
+		.int({ error: invalidDuration })
+		.min(1, { error: invalidDuration })
+		.max(2_147_483_647, { error: invalidDuration }),
 });
 
-export async function updateAutoClockOutSettings(input: {
-	organizationId: string;
-	autoClockOutEnabled: boolean;
-	maxUninterruptedMinutes: number;
-}): Promise<ServerActionResult<AutoClockOutSettings>> {
-	const effect = Effect.gen(function* () {
-		const parsed = settingsSchema.safeParse(input);
-		if (!parsed.success) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: "Enter a valid automatic clock-out duration",
-				}),
+/** Saves the organization's automatic clock-out settings. Org admins only. */
+export const updateAutoClockOutSettings = organizationAction(
+	{ name: "autoClockOut.saveSettings", requires: "orgAdmin", schema: settingsSchema },
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("autoClockOut.saveSettings", () =>
+				saveAutoClockOutSettings(
+					{ ...input, organizationId },
+					{ database: dbService.db, clock: systemClock },
+				),
 			);
-		}
-		const session = yield* Effect.tryPromise({
-			try: getRequestSession,
-			catch: () => new AuthenticationError({ message: "Authentication required" }),
-		});
-		if (!session) {
-			return yield* Effect.fail(new AuthenticationError({ message: "Authentication required" }));
-		}
-		if (session.session.activeOrganizationId !== parsed.data.organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Select the organization before changing its settings",
-				}),
-			);
-		}
-		yield* requireActiveOrganizationActionActor({
-			userId: session.user.id,
-			organizationId: parsed.data.organizationId,
-			requiredRole: "admin",
-			message:
-				"Only approved organization admins and owners can change automatic clock-out settings",
-			resource: "organization",
-			action: "update",
-		});
-		const dbService = yield* DatabaseService;
-		return yield* dbService.query("autoClockOut.saveSettings", () =>
-			saveAutoClockOutSettings(parsed.data, {
-				database: dbService.db,
-				clock: systemClock,
-			}),
-		);
-	});
-	const exit = await runtime.runPromiseExit(effect);
-	if (Exit.isSuccess(exit)) return { success: true, data: exit.value };
-	const failure = typedFailureOfCause(exit.cause);
-	return {
-		success: false,
-		error: failure?.message ?? "Failed to update automatic clock-out settings",
-		code: failure?._tag,
-	};
-}
+		}),
+);

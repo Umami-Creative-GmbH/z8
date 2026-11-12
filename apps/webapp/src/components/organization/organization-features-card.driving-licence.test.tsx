@@ -45,7 +45,6 @@ function renderCard(input: {
 }) {
 	return render(
 		<OrganizationFeaturesCard
-			organizationId="org-1"
 			shiftsEnabled={false}
 			projectsEnabled={false}
 			surchargesEnabled={false}

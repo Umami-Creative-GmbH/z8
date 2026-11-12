@@ -317,7 +317,6 @@ describe("merged organization settings", () => {
 			expect.objectContaining({ clock: expect.anything() }),
 		);
 		expect(page.props.tabs[1].panel.props).toMatchObject({
-			organizationId: "org-1",
 			currentMemberRole: "admin",
 		});
 	});

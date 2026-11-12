@@ -84,7 +84,6 @@ async function ClockingSettingsContent() {
 					),
 					panel: (
 						<OrganizationAutoClockOutCard
-							organizationId={organizationId}
 							settings={autoClockOutSettings}
 							currentMemberRole={currentMemberRole}
 						/>
@@ -102,7 +101,6 @@ async function ClockingSettingsContent() {
 					),
 					panel: (
 						<OrganizationClockingRemindersCard
-							organizationId={organizationId}
 							settings={clockingReminderSettings}
 							currentMemberRole={currentMemberRole}
 						/>
@@ -120,7 +118,6 @@ async function ClockingSettingsContent() {
 					),
 					panel: (
 						<OrganizationPeriodSubmissionsCard
-							organizationId={organizationId}
 							settings={periodSubmissionSettings}
 							currentMemberRole={currentMemberRole}
 						/>
