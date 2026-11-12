@@ -42,6 +42,59 @@ A module that `AppLayer` itself imports, such as the time-tracking calculations 
 - **Runner:** `runServerActionSafe(effect)` in `lib/effect/result.ts` is the only server-action runner. It runs the effect on the shared runtime and returns the shared `ServerActionResult<T>`.
 - **Types:** it accepts `Effect<T, AnyAppError, AppServices>`. `AppServices` is every `AppLayer` member, so a service from outside `AppLayer` fails to compile until its layer is provided (Runtime rule 3).
 - **Results:** a typed failure comes back with its `message` as `error` and its `_tag` as `code`. A defect that is an `Error` comes back with its `message` and code `UNKNOWN_ERROR`, and an interrupt-only failure with a generic message. Write typed-failure and thrown messages that are safe to show users.
+- **Settings actions:** declare them with `organizationAction`, below; it runs on `runServerActionSafe`.
+
+## Organization Actions
+
+`organizationAction(declaration, handler)` in `lib/organization-action/organization-action.ts` produces every settings server action ([ADR 0002](../adr/0002-settings-actions-authorize-by-settings-access-not-casl.md)). Export its result from the `"use server"` module:
+
+```ts
+export const updateTelegramSettings = organizationAction(
+	{ name: "telegram.updateSettings", requires: "orgAdmin", schema: telegramSettingsSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("telegram.updateSettings", () =>
+				dbService.db
+					.update(telegramBotConfig)
+					.set({ enableApprovals: input.enableApprovals })
+					.where(eq(telegramBotConfig.organizationId, organizationId)),
+			);
+		}),
+);
+// client: await updateTelegramSettings({ enableApprovals: true, … })
+```
+
+- **Declaration:** `name` is `<area>.<operation>` and names the OTel span and the refusal's resource. `requires` is the settings access level (see [RBAC](project-conventions.md#rbac)). `schema` is a zod schema, or `noInput` for an action called with no arguments. Optional `addsEmployees: (input) => employeeIds` names only the employees the save adds (`addedEmployeeIds(next, previous)`).
+- **Order:** session → the session's active organization behind the SSO/MFA gate → settings access → schema → current-roster check of `addsEmployees` → handler, all in one span. A refused caller never reaches validation or the handler.
+- **Handler:** gets `{ actor, organizationId, input }` and returns an `Effect`; it yields `DatabaseService` for the database. Load a row named by ID with `and(eq(t.id, input.id), eq(t.organizationId, organizationId))`, so another organization's row is not found. `actor` carries `userId`, `membershipRole`, `employee` (null for an org admin without one) and `settingsAccess`. `actor.managedScope()` loads the employees and teams a scoped manager manages, on first use. When the level depends on validated input, declare the lower level and `yield* actor.require("owner")` after reading `input`.
+- **Refusals:** every failure is a `ServerActionResult` with `code` set to the error's `_tag`:
+  - no session or a refused SSO/MFA gate: `AuthenticationError`;
+  - no active organization or too low a level: `AuthorizationError` ("You do not have access to this setting");
+  - schema: `ValidationError` with the first issue's message, its path as `field`;
+  - roster: `ValidationError` with `refusal: "former_employee"`.
+
+  Fail domain refusals with a tagged error instead of returning `{ success: false }`. Clients map these results per feature for now; one shared client mapper is planned (#1592).
+- **Tests:** stub `AuthService` and `DatabaseService` with `organizationActionStubLayer` from `src/test/organization-action.ts` through `runtimeModuleOver`, instead of `vi.mock` of `@/lib/auth-helpers`, `@/lib/auth` or the auth service:
+
+  ```ts
+  import type { StubCaller } from "@/test/organization-action";
+
+  const mocks = vi.hoisted(() => ({ caller: null as StubCaller | null, update: vi.fn() }));
+  vi.mock("@/lib/effect/runtime", async () => {
+  	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+  	const { organizationActionStubLayer } = await import("@/test/organization-action");
+  	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db: { update: mocks.update } }));
+  });
+
+  it("refuses an org member", async () => {
+  	mocks.caller = { userId: "u1", activeOrganizationId: "org-1", membershipRole: "member", employee: { id: "e1", role: "employee", former: false } };
+  	expect(await updateTelegramSettings({ enableApprovals: true })).toMatchObject({ success: false, code: "AuthorizationError" });
+  });
+  ```
+
+  The stub answers the settings-access query from `caller`; every other `dbService.query` runs against `db`. Change `mocks.caller` per test: `null` is signed out, `membershipRole: null` a pending membership, `employee.former: true` a former employee, `organizationAccessRefused: true` a refused SSO/MFA gate. `settings/telegram/actions.test.ts` is a full example. The levels themselves are covered against PostgreSQL in `lib/organization-action/organization-action.integration.test.ts`.
+- **Mocking `@/env`:** spread the real env (`{ env: { ...(await importOriginal()).env, X: "…" } }`). The module loads Better Auth through `AuthService`, which throws on a bare env object.
 
 ## Database Access
 
