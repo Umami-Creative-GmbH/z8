@@ -5,11 +5,13 @@ import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import type { BillableRatePeriodView } from "@/lib/billable-time/rate-target";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	type RateChangeResult,
 	RateHistoryCard,
 	type RateHistoryCardProps,
 } from "./rate-history-card";
+import { RATE_REFUSALS } from "./rate-refusals";
 
 interface RateSeriesHistory {
 	currency: string;
@@ -55,7 +57,11 @@ export function RateSeries<History extends RateSeriesHistory>({
 		queryKey,
 		queryFn: async (): Promise<History> => {
 			const result = await loadHistory();
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				throw new Error(
+					actionErrorMessage(t, result, RATE_REFUSALS, () => messages.loadError),
+				);
+			}
 			return result.data;
 		},
 	});
@@ -73,8 +79,9 @@ export function RateSeries<History extends RateSeriesHistory>({
 			return message;
 		}
 		if (!result.success) {
-			toast.error(result.error);
-			return result.error;
+			const message = actionErrorMessage(t, result, RATE_REFUSALS);
+			toast.error(message);
+			return message;
 		}
 		queryClient.setQueryData<History>(queryKey, (previous) =>
 			previous ? { ...previous, periods: result.data.periods } : previous,

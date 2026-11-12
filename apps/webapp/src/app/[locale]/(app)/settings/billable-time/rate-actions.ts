@@ -66,9 +66,14 @@ export function createRateActions<TargetKey extends string, Target, History>(
 				return new ValidationError({
 					message: "Enter a positive hourly rate with at most two decimals",
 					field: "rate",
+					refusal: reason,
 				});
 			case "invalid_date":
-				return new ValidationError({ message: "Enter a valid date", field: "effectiveFrom" });
+				return new ValidationError({
+					message: "Enter a valid date",
+					field: "effectiveFrom",
+					refusal: reason,
+				});
 		}
 	};
 
