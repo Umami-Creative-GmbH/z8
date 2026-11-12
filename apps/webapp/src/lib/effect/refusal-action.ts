@@ -11,16 +11,3 @@ export type ActionRefusal<
 	readonly code: Code;
 	readonly details?: Details;
 };
-
-/**
- * The legacy result shape of a refusal-coded action: a failure always carries a
- * stable code, `failed` for anything unexpected, and a refusal's details next
- * to it. Shared components still accept it (`kioskRefusalCode` adapts results).
- */
-export type RefusalActionResult<
-	T,
-	Code extends string,
-	Details extends object = Record<never, never>,
-> =
-	| { success: true; data: T }
-	| ({ success: false; error: string; code: Code | "failed" } & Partial<Details>);

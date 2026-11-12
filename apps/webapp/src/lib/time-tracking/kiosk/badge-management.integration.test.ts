@@ -59,7 +59,7 @@ const replaceEmployeeKioskBadgeAction = (employeeId: string, expectedBadgeId: st
 	kioskActions.replaceEmployeeKioskBadgeAction({ employeeId, expectedBadgeId });
 const revokeEmployeeKioskBadgeAction = (employeeId: string, expectedBadgeId: string) =>
 	kioskActions.revokeEmployeeKioskBadgeAction({ employeeId, expectedBadgeId });
-const { kioskRefusalCode } = await import("@/components/settings/kiosk/kiosk-refusal-code");
+const { kioskRefusalCode } = await import("@/test/kiosk-refusal-code");
 const { resolveActiveKioskBadge } = await import("./badge-store");
 const { issueKioskPin, verifyEmployeeKioskPin } = await import("./pin-store");
 

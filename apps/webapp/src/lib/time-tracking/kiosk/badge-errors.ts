@@ -27,8 +27,3 @@ export class KioskBadgeRefusal extends Error {
 		this.code = code;
 	}
 }
-
-/** A kiosk badge server action's result; a failure always carries a stable code. */
-export type KioskBadgeActionResult<T> =
-	| { success: true; data: T }
-	| { success: false; error: string; code: KioskBadgeErrorCode };

@@ -125,7 +125,9 @@ describe("Kiosk fob on the employee page (#1508)", () => {
 		actions.removeEmployeeKioskFobAction.mockResolvedValue({
 			success: false,
 			error: "changed",
-			code: "fob_changed",
+			code: "ValidationError",
+
+			refusal: "fob_changed",
 		});
 		renderCard();
 

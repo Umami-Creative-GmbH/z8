@@ -8,10 +8,10 @@ const APP_ERROR_CODES: Record<string, SharedKioskCode> = {
 };
 
 /**
- * The kiosk refusal code of a failed kiosk action (#1613): the store's code an
- * `organizationAction` returns as `refusal`, the settings-access refusal mapped
- * onto the kiosk codes, or (for actions still on `runRefusalAction`) the code
- * itself. Anything else is `failed`.
+ * The kiosk code a failed kiosk action stands for, for suites that compare
+ * codes: the store's `refusal`, the module's sign-in, access and not-found
+ * failures mapped onto the kiosk codes, else `failed`. Clients word failures
+ * with `actionErrorMessage` and the kiosk override maps instead.
  */
 export function kioskRefusalCode<Code extends string>(result: {
 	code?: string;

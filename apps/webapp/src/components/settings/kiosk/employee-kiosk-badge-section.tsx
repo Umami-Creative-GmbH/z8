@@ -20,10 +20,9 @@ import {
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
 import { Button } from "@/components/ui/button";
 import type { ServerActionResult } from "@/lib/effect/result";
-import type { KioskBadgeErrorCode } from "@/lib/time-tracking/kiosk/badge-errors";
-import { kioskBadgeErrorMessage } from "./kiosk-badge-error-message";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import { KIOSK_BADGE_FAILED, KIOSK_BADGE_REFUSALS } from "./kiosk-badge-error-message";
 import { kioskDateLabel, kioskDayLabel } from "./kiosk-date-labels";
-import { kioskRefusalCode } from "./kiosk-refusal-code";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -105,13 +104,12 @@ export function KioskBadgeSection({
 
 	const refused = <T,>(result: ServerActionResult<T>) => {
 		if (result.success) return false;
-		const code = kioskRefusalCode<KioskBadgeErrorCode>(result);
-		toast.error(kioskBadgeErrorMessage(t, code));
+		toast.error(actionErrorMessage(t, result, KIOSK_BADGE_REFUSALS, KIOSK_BADGE_FAILED));
 		// Someone else changed the badge: show what is true now.
-		if (code === "badge_changed") void onChanged();
+		if (result.refusal === "badge_changed") void onChanged();
 		return true;
 	};
-	const failed = () => toast.error(kioskBadgeErrorMessage(t, "failed"));
+	const failed = () => toast.error(actionErrorMessage(t, null, {}, KIOSK_BADGE_FAILED));
 
 	// Replace and revoke name the badge this card shows, so a change made meanwhile is refused.
 	const shownBadgeId = badge.activeBadgeId ?? "";

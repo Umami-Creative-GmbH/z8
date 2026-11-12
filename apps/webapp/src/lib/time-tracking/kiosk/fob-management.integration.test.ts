@@ -68,7 +68,7 @@ const kioskActions = await import("@/app/[locale]/(app)/settings/employees/kiosk
 const { getEmployeeKioskStateAction } = kioskActions;
 const removeEmployeeKioskFobAction = (employeeId: string, expectedFobId: string) =>
 	kioskActions.removeEmployeeKioskFobAction({ employeeId, expectedFobId });
-const { kioskRefusalCode } = await import("@/components/settings/kiosk/kiosk-refusal-code");
+const { kioskRefusalCode } = await import("@/test/kiosk-refusal-code");
 const { getOwnKioskFobStatusAction, removeOwnKioskFobAction } = await import(
 	"@/app/[locale]/(app)/settings/security/kiosk-fob-actions"
 );

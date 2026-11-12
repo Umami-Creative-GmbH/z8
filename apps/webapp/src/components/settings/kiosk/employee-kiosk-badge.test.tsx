@@ -241,7 +241,9 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 		actions.revokeEmployeeKioskBadgeAction.mockResolvedValue({
 			success: false,
 			error: "changed",
-			code: "badge_changed",
+			code: "ValidationError",
+
+			refusal: "badge_changed",
 		});
 		renderCard();
 
@@ -272,7 +274,9 @@ describe("Kiosk badge on the employee page (#1364)", () => {
 		actions.issueEmployeeKioskBadgeAction.mockResolvedValue({
 			success: false,
 			error: "inactive",
-			code: "employee_inactive",
+			code: "ValidationError",
+
+			refusal: "employee_inactive",
 		});
 		renderCard();
 

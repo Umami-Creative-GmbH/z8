@@ -7,12 +7,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { ServerActionResult } from "@/lib/effect/result";
-import type {
-	KioskFobActionResult,
-	KioskFobManagementErrorCode,
-} from "@/lib/time-tracking/kiosk/fob-errors";
-import { kioskFobErrorMessage } from "./kiosk-fob-text";
-import { kioskRefusalCode } from "./kiosk-refusal-code";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import { KIOSK_FOB_FAILED, KIOSK_FOB_REFUSALS } from "./kiosk-fob-text";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -30,10 +26,8 @@ export function KioskFobRemoveControls({
 	onRefresh,
 	t,
 }: {
-	/** The employee page's `organizationAction`, or the security page's refusal action. */
-	remove: () => Promise<
-		ServerActionResult<{ removed: true }> | KioskFobActionResult<{ removed: true }>
-	>;
+	/** The employee page's or the security page's removal action. */
+	remove: () => Promise<ServerActionResult<{ removed: true }>>;
 	confirmText: string;
 	onRefresh: () => unknown;
 	t: Translate;
@@ -44,16 +38,15 @@ export function KioskFobRemoveControls({
 		onSuccess: (result) => {
 			setConfirming(false);
 			if (!result.success) {
-				const code = kioskRefusalCode<KioskFobManagementErrorCode>(result);
-				toast.error(kioskFobErrorMessage(t, code));
+				toast.error(actionErrorMessage(t, result, KIOSK_FOB_REFUSALS, KIOSK_FOB_FAILED));
 				// Someone else changed the fob: show what is true now.
-				if (code === "fob_changed") void onRefresh();
+				if (result.refusal === "fob_changed") void onRefresh();
 				return;
 			}
 			toast.success(t("settings.kioskFob.removed", "Kiosk fob removed"));
 			void onRefresh();
 		},
-		onError: () => toast.error(kioskFobErrorMessage(t, "failed")),
+		onError: () => toast.error(actionErrorMessage(t, null, {}, KIOSK_FOB_FAILED)),
 	});
 	const busy = removeMutation.isPending;
 

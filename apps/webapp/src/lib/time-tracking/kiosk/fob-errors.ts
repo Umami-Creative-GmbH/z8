@@ -1,5 +1,3 @@
-import type { RefusalActionResult } from "@/lib/effect/refusal-action";
-
 /**
  * Why a kiosk fob registration did nothing (#1505, decision O2). Client-safe.
  * The kiosk PIN's own refusals (`wrong_pin`, `pin_locked`, `no_pin`,
@@ -54,6 +52,3 @@ export class KioskFobManagementRefusal extends Error {
 		this.name = "KioskFobManagementRefusal";
 	}
 }
-
-/** A fob management server action's result; a failure always carries a stable code. */
-export type KioskFobActionResult<T> = RefusalActionResult<T, KioskFobManagementErrorCode>;

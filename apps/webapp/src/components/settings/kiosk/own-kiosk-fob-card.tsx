@@ -9,30 +9,20 @@ import {
 } from "@/app/[locale]/(app)/settings/security/kiosk-fob-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { refusalCodeOf } from "@/lib/effect/refusal-code";
 import {
-	type KioskFobActionResult,
-	type KioskFobManagementErrorCode,
-	KioskFobManagementRefusal,
-} from "@/lib/time-tracking/kiosk/fob-errors";
+	type ActionFailure,
+	actionErrorMessage,
+} from "@/lib/organization-action/action-error-message";
 import { KioskFobRemoveControls } from "./kiosk-fob-remove-controls";
-import { kioskFobDetails, kioskFobErrorMessage } from "./kiosk-fob-text";
+import { KIOSK_FOB_FAILED, KIOSK_FOB_REFUSALS, kioskFobDetails } from "./kiosk-fob-text";
 
 const OWN_FOB_STATUS_KEY = ["kiosk", "own-fob-status"] as const;
 
-function fobRefusalCode(failure: { code?: string; refusal?: string }) {
-	return refusalCodeOf<KioskFobManagementErrorCode>(failure, {
-		signedOut: "sign_in_required",
-		noAccess: "not_allowed",
-	});
-}
-
-/** Removes the fob, with the result in the shape the shared remove controls read. */
-async function removeOwnFob(fobId: string): Promise<KioskFobActionResult<{ removed: true }>> {
-	const result = await removeOwnKioskFobAction(fobId);
-	return result.success
-		? result
-		: { success: false, error: result.error, code: fobRefusalCode(result) };
+/** The failed status read, carried through the query's error. */
+class FobStatusFailure extends Error {
+	constructor(readonly failure: ActionFailure & { error: string }) {
+		super(failure.error);
+	}
 }
 
 /**
@@ -53,7 +43,7 @@ export function OwnKioskFobCard() {
 			if (result.success) return result.data;
 			// Without settings access here (no approved membership, a former employee) there is no own fob.
 			if (result.code === "AuthorizationError") return null;
-			throw new KioskFobManagementRefusal(fobRefusalCode(result), result.error);
+			throw new FobStatusFailure(result);
 		},
 	});
 	const status = statusQuery.data;
@@ -81,11 +71,11 @@ export function OwnKioskFobCard() {
 				{failed || !status ? (
 					<div className="flex flex-col items-start gap-3">
 						<p className="text-sm" role="alert">
-							{kioskFobErrorMessage(
+							{actionErrorMessage(
 								t,
-								statusQuery.error instanceof KioskFobManagementRefusal
-									? statusQuery.error.code
-									: "failed",
+								statusQuery.error instanceof FobStatusFailure ? statusQuery.error.failure : null,
+								KIOSK_FOB_REFUSALS,
+								KIOSK_FOB_FAILED,
 							)}
 						</p>
 						<Button variant="outline" onClick={() => void statusQuery.refetch()}>
@@ -105,7 +95,7 @@ export function OwnKioskFobCard() {
 						</p>
 						{fob && (
 							<KioskFobRemoveControls
-								remove={() => removeOwnFob(fob.fobId)}
+								remove={() => removeOwnKioskFobAction(fob.fobId)}
 								confirmText={t(
 									"settings.security.kioskFob.confirmRemoveText",
 									"If you lost it, remove it: it stops working at kiosks at once. Your kiosk PIN keeps working.",
