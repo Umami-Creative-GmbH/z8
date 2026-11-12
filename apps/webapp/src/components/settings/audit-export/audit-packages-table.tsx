@@ -49,6 +49,7 @@ import {
 	formatDateTime,
 	formatTimeOnly,
 } from "@/lib/datetime/format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
@@ -85,11 +86,10 @@ export function AuditPackagesTable({
 				setVerificationResult({ packageId, result: result.data });
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.auditExport.packages.verifyError",
-							"Verification failed",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.auditExport.packages.verifyError",
+						"Verification failed",
+					]),
 				);
 			}
 		} catch (error) {

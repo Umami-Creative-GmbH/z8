@@ -59,6 +59,7 @@ import {
 	type DisplayContext,
 	formatInstant,
 } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useJobStatus } from "@/lib/queue/use-job-status";
 
 interface AuditPackGeneratorCardProps {
@@ -193,11 +194,10 @@ function AuditPackGeneratorCardForOrganization({
 			setRequests(result.data);
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.auditExport.auditPack.requestsError",
-						"Failed to load audit pack requests",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditExport.auditPack.requestsError",
+					"Failed to load audit pack requests",
+				]),
 			);
 		}
 	};
@@ -269,11 +269,10 @@ function AuditPackGeneratorCardForOrganization({
 			const result = actionResult.value;
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.auditExport.auditPack.createError",
-							"Failed to create audit pack",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.auditExport.auditPack.createError",
+						"Failed to create audit pack",
+					]),
 				);
 				return;
 			}
@@ -339,11 +338,10 @@ function AuditPackGeneratorCardForOrganization({
 		const result = actionResult.value;
 		if (!result.success) {
 			toast.error(
-				result.error ||
-					t(
-						"settings.auditExport.auditPack.downloadError",
-						"Failed to start download",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditExport.auditPack.downloadError",
+					"Failed to start download",
+				]),
 			);
 			return;
 		}

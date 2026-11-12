@@ -209,7 +209,11 @@ describe("ClockodoImportWizard", () => {
 			data: [{ id: "emp_1", userId: "user_1", name: "Ada Lovelace", email: "ada@example.com" }],
 		});
 		mocks.saveUserMappings.mockResolvedValue({ success: true, data: undefined });
-		mocks.startImportReviewScan.mockResolvedValue({ success: false, error: "Scan failed" });
+		mocks.startImportReviewScan.mockResolvedValue({
+			success: false,
+			error: "Scan failed",
+			code: "UNKNOWN_ERROR",
+		});
 
 		renderWizard();
 
@@ -225,7 +229,7 @@ describe("ClockodoImportWizard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Start Review Scan" }));
 
 		await waitFor(() => {
-			expect(mocks.toastError).toHaveBeenCalledWith("Scan failed");
+			expect(mocks.toastError).toHaveBeenCalledWith("Import review scan failed");
 		});
 		expect(await screen.findByText("Select Data for Review")).toBeTruthy();
 		expect(mocks.importClockodoData).not.toHaveBeenCalled();

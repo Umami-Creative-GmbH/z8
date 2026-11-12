@@ -47,7 +47,14 @@ export type EmploymentHistoryEntry = {
 	confirmedAt?: Date | string | null;
 };
 
-export type MutationResult<T = unknown> = { success: boolean; data?: T; error?: string };
+/** A server action result; a failure is worded by `actionErrorMessage` from its `code` or `refusal`. */
+export type MutationResult<T = unknown> = {
+	success: boolean;
+	data?: T;
+	error?: string;
+	code?: string;
+	refusal?: string;
+};
 
 export type EmployeeEmploymentHistoryCardProps = {
 	history: EmploymentHistoryEntry[];

@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
@@ -37,7 +38,7 @@ export function WageHistoryMergeNote({ employeeId }: { employeeId: string }) {
 		mutationFn: () => dismissWageHistoryMergeNoteAction(employeeId),
 		onSuccess: (result) => {
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				return;
 			}
 			queryClient.setQueryData(queryKey, null);

@@ -35,7 +35,19 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
+
+/** An assignment refused because one already covers the target in the range. */
+const ASSIGNMENT_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.holidays.assignments.overlap",
+		"An assignment already exists for this target in the selected date range.",
+	],
+};
 
 interface AssignmentDialogProps {
 	open: boolean;
@@ -204,8 +216,10 @@ export function AssignmentDialog({
 				handleOpenChange(false);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.holidays.assignments.createFailed", "Failed to create assignment"),
+					actionErrorMessage(t, result, ASSIGNMENT_REFUSALS, [
+						"settings.holidays.assignments.createFailed",
+						"Failed to create assignment",
+					]),
 				);
 			}
 		},

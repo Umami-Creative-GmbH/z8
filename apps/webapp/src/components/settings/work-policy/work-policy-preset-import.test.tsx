@@ -383,7 +383,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		vi.mocked(createWorkPolicyPreset).mockResolvedValue({
 			success: false,
 			error: "A preset with this name already exists",
-			code: "CONFLICT_ERROR",
+			code: "ConflictError",
 		} as Awaited<ReturnType<typeof createWorkPolicyPreset>>);
 
 		renderWithQueryClient(

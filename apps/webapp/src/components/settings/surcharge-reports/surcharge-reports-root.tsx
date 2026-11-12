@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { SurchargeCalculationWithDetails } from "@/lib/surcharges/validation";
 import { SURCHARGE_REPORT_ROW_LIMIT } from "./constants";
 import { getDefaultFilters, parseFilterDate } from "./helpers";
@@ -144,10 +145,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			startDate: startDate.toJSDate(),
 			endDate: endDate.toJSDate(),
 			employeeId,
-		}).catch(() => ({
-			success: false as const,
-			error: "Failed to load surcharge calculations.",
-		}));
+		}).catch(() => ({ success: false as const, code: null }));
 		const isLatestRequest = requestId === latestRequestId.current;
 
 		if (!isLatestRequest) {
@@ -161,12 +159,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			dispatch({
 				type: "requestFailed",
 				retainRows: loadedRowsOrganizationIdRef.current === organizationId,
-				message:
-					result.error ||
-					t(
-						"settings.surcharges.reports.errors.loadFailed",
-						"Failed to load surcharge calculations.",
-					),
+				message: actionErrorMessage(t, result, {}, [
+					"settings.surcharges.reports.errors.loadFailed",
+					"Failed to load surcharge calculations.",
+				]),
 			});
 		}
 	};

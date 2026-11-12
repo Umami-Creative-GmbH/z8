@@ -33,8 +33,20 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditSession } from "@/hooks/use-edit-session";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { formatFactorAsMultiplier } from "@/lib/work-category/work-category.service";
+
+/** A set refused because its name is taken. */
+const SET_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.workCategories.setNameTaken",
+		"A category set with this name already exists.",
+	],
+};
 
 interface WorkCategorySetDialogProps {
 	open: boolean;
@@ -166,8 +178,10 @@ export function WorkCategorySetDialog({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.setCreateFailed", "Failed to create category set"),
+					actionErrorMessage(t, result, SET_REFUSALS, [
+						"settings.workCategories.setCreateFailed",
+						"Failed to create category set",
+					]),
 				);
 			}
 		},
@@ -206,14 +220,18 @@ export function WorkCategorySetDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						updateResult.error ||
-							t("settings.workCategories.setUpdateFailed", "Failed to update categories"),
+						actionErrorMessage(t, updateResult, {}, [
+							"settings.workCategories.setUpdateFailed",
+							"Failed to update categories",
+						]),
 					);
 				}
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.setUpdateFailed", "Failed to update category set"),
+					actionErrorMessage(t, result, SET_REFUSALS, [
+						"settings.workCategories.setUpdateFailed",
+						"Failed to update category set",
+					]),
 				);
 			}
 		},

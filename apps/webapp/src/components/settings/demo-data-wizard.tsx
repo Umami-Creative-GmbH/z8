@@ -48,6 +48,7 @@ import type {
 	DemoDataResult,
 } from "@/lib/demo/demo-data.service";
 import type { GenerateEmployeesResult } from "@/lib/demo/employee-generator";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 import {
@@ -507,6 +508,8 @@ function useDemoDataWizardController({
 				success: boolean;
 				data?: unknown;
 				error?: string;
+				code?: string;
+				refusal?: string;
 			}>,
 			onSuccess: (data: unknown) => {
 				result: string;
@@ -517,7 +520,12 @@ function useDemoDataWizardController({
 			try {
 				const response = await action();
 				if (!response.success) {
-					updateStepStatus(stepId, "error", undefined, response.error);
+					updateStepStatus(
+						stepId,
+						"error",
+						undefined,
+						actionErrorMessage(t, response),
+					);
 					return false;
 				}
 				const { result, updates } = onSuccess(response.data);
@@ -865,7 +873,10 @@ function useDemoDataWizardController({
 			try {
 				const response = await clearTimeDataAction();
 				if (!response.success) {
-					dispatchWizard({ type: "set-error", error: response.error });
+					dispatchWizard({
+						type: "set-error",
+						error: actionErrorMessage(t, response),
+					});
 				} else {
 					setClearResult(response.data);
 				}
@@ -894,7 +905,7 @@ function useDemoDataWizardController({
 				});
 
 				if (!response.success) {
-					setEmployeeError(response.error);
+					setEmployeeError(actionErrorMessage(t, response));
 				} else {
 					setEmployeeResult(response.data);
 					router.refresh();
@@ -912,7 +923,10 @@ function useDemoDataWizardController({
 			try {
 				const response = await deleteNonAdminDataAction();
 				if (!response.success) {
-					dispatchWizard({ type: "set-error", error: response.error });
+					dispatchWizard({
+						type: "set-error",
+						error: actionErrorMessage(t, response),
+					});
 				} else {
 					setDeleteNonAdminResult(response.data);
 					router.refresh();

@@ -10,6 +10,7 @@ import {
 	getWorkPolicyViolations,
 	type WorkPolicyViolationWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { AcknowledgementPanel } from "./work-policy-compliance/acknowledgement-panel";
 import {
@@ -83,8 +84,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 				resetAcknowledgement();
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workPolicies.acknowledgeFailed", "Failed to acknowledge violation"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.acknowledgeFailed",
+						"Failed to acknowledge violation",
+					]),
 				);
 			}
 		},

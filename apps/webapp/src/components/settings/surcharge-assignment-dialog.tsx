@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { surchargeModelsQuery } from "@/lib/query/surcharge-models";
 
@@ -116,7 +117,10 @@ export function SurchargeAssignmentDialog({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error || t("settings.surcharges.assignmentFailed", "Failed to create assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.surcharges.assignmentFailed",
+						"Failed to create assignment",
+					]),
 				);
 			}
 		},

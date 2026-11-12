@@ -44,6 +44,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { SuccessFactorsConfig } from "@/lib/payroll-export/types";
 import {
 	customFieldIdentifierItems,
@@ -103,7 +104,7 @@ function SuccessFactorsSettingsView({
 							"settings.payrollExport.successfactors.saveError",
 							"Failed to save configuration",
 						),
-						{ description: result.error },
+						{ description: actionErrorMessage(t, result) },
 					);
 			}),
 	});
@@ -127,7 +128,11 @@ function SuccessFactorsSettingsView({
 				),
 			);
 		else {
-			const description = result?.success ? result.data?.error : result?.error;
+			const description = result?.success
+				? result.data?.error
+				: result
+					? actionErrorMessage(t, result)
+					: undefined;
 			toast.error(
 				t(
 					"settings.payrollExport.successfactors.connectionFailed",

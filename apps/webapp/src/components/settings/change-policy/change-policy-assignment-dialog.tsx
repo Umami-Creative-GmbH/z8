@@ -30,6 +30,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyAssignmentDialogProps {
@@ -173,7 +174,10 @@ export function ChangePolicyAssignmentDialog({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error || t("settings.changePolicies.assignmentFailed", "Failed to assign policy"),
+					actionErrorMessage(t, result, {}, [
+						"settings.changePolicies.assignmentFailed",
+						"Failed to assign policy",
+					]),
 				);
 			}
 		},

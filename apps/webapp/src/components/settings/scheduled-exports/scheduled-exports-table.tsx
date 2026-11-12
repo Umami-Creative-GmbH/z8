@@ -66,6 +66,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import { SCHEDULED_EXPORT_REFUSALS } from "./scheduled-export-refusals";
 
 // Dynamic imports for heavy dialog components (bundle-dynamic-imports)
 const ScheduledExportDialog = dynamic(
@@ -142,11 +144,10 @@ export function ScheduledExportsTable({
 				return result.data;
 			}
 			throw new Error(
-				result.error ||
-					t(
-						"settings.scheduledExports.error.loadFailed",
-						"Failed to load scheduled exports",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.scheduledExports.error.loadFailed",
+					"Failed to load scheduled exports",
+				]),
 			);
 		},
 		{
@@ -229,8 +230,10 @@ export function ScheduledExportsTable({
 					}
 					// Resuming is refused while the owner is no longer an org admin (#988).
 					throw new Error(
-						result.error ||
-							t("settings.scheduledExports.error.toggleFailed", "Toggle failed"),
+						actionErrorMessage(t, result, SCHEDULED_EXPORT_REFUSALS, [
+							"settings.scheduledExports.error.toggleFailed",
+							"Toggle failed",
+						]),
 					);
 				},
 				{

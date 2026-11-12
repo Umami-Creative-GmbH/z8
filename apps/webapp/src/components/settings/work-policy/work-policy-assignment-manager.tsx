@@ -22,6 +22,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { getWorkPolicyAssignmentSectionVisibility } from "../policy-assignment-surface";
 import { WorkPolicyAssignmentSections } from "./work-policy-assignment-sections";
@@ -73,8 +74,10 @@ export function WorkPolicyAssignmentManager({
 				selectedAssignmentRef.current = null;
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workPolicies.assignmentDeleteFailed", "Failed to remove assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.assignmentDeleteFailed",
+						"Failed to remove assignment",
+					]),
 				);
 			}
 		},

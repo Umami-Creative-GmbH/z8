@@ -16,6 +16,7 @@ import type {
 	ClockinImportSelections,
 	ClockinImportUserMapping,
 } from "@/lib/clockin/import-types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 export type ClockinWizardStep =
 	| "connect"
@@ -63,7 +64,7 @@ export function useClockinImportController() {
 		try {
 			const result = await validateClockinCredentials({ token });
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				setBusyAction(null);
 				return;
 			}
@@ -84,12 +85,12 @@ export function useClockinImportController() {
 				fetchZ8Employees(),
 			]);
 			if (!clockinResult.success) {
-				toast.error(clockinResult.error);
+				toast.error(actionErrorMessage(t, clockinResult));
 				setBusyAction(null);
 				return;
 			}
 			if (!z8Result.success) {
-				toast.error(z8Result.error);
+				toast.error(actionErrorMessage(t, z8Result));
 				setBusyAction(null);
 				return;
 			}
@@ -149,7 +150,7 @@ export function useClockinImportController() {
 				entityTypes,
 			});
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				setStep("selection");
 				setBusyAction(null);
 				return;

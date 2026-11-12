@@ -58,6 +58,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { PersonioConfig } from "@/lib/payroll-export";
 import {
 	customFieldIdentifierItems,
@@ -116,7 +117,7 @@ export function PersonioConfigForm({
 						"settings.payrollExport.personio.credentialsError",
 						"Failed to save credentials",
 					),
-					{ description: result.error },
+					{ description: actionErrorMessage(t, result) },
 				);
 				return;
 			}
@@ -150,7 +151,7 @@ export function PersonioConfigForm({
 						"settings.payrollExport.personio.credentialsDeleteError",
 						"Failed to delete credentials",
 					),
-					{ description: result.error },
+					{ description: actionErrorMessage(t, result) },
 				);
 			}
 		});
@@ -496,7 +497,7 @@ function PersonioSettingsCard({
 							"settings.payrollExport.personio.saveError",
 							"Failed to save configuration",
 						),
-						{ description: result.error },
+						{ description: actionErrorMessage(t, result) },
 					);
 			}),
 	});
@@ -526,7 +527,7 @@ function PersonioSettingsCard({
 					description: result
 						? result.success
 							? result.data.error
-							: result.error
+							: actionErrorMessage(t, result)
 						: undefined,
 				},
 			);

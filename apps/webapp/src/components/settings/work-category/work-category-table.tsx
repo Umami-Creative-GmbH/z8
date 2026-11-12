@@ -22,6 +22,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { formatFactorAsMultiplier } from "@/lib/work-category/work-category.service";
 import { WorkCategoryDialog } from "./work-category-dialog";
@@ -81,8 +82,10 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 				});
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.categoryDeleteFailed", "Failed to delete category"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workCategories.categoryDeleteFailed",
+						"Failed to delete category",
+					]),
 				);
 			}
 		},

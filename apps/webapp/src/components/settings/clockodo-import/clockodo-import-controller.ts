@@ -29,6 +29,7 @@ import type {
 	UserMappingType,
 } from "@/lib/clockodo/types";
 import type { ImportEntityType } from "@/lib/import-review/types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 export type ClockodoWizardStep =
 	| "credentials"
@@ -206,7 +207,13 @@ export function useClockodoImportController() {
 			return { credResult, countsResult };
 		},
 		onSuccess: ({ credResult, countsResult }) => {
-			if (!credResult.success) return toast.error(credResult.error);
+			if (!credResult.success)
+				return toast.error(
+					actionErrorMessage(t, credResult, {}, [
+						"settings.clockodoImport.errors.connectionFailed",
+						"Failed to connect to Clockodo",
+					]),
+				);
 			queryClient.invalidateQueries();
 			setPreview(credResult.data);
 			if (countsResult.success) setExistingCounts(countsResult.data);
@@ -228,11 +235,21 @@ export function useClockodoImportController() {
 		},
 		onSuccess: ({ usersResult, employeesResult }) => {
 			if (!usersResult.success) {
-				toast.error(usersResult.error);
+				toast.error(
+					actionErrorMessage(t, usersResult, {}, [
+						"settings.clockodoImport.errors.fetchUsersFailed",
+						"Failed to fetch user data",
+					]),
+				);
 				return;
 			}
 			if (!employeesResult.success) {
-				toast.error(employeesResult.error);
+				toast.error(
+					actionErrorMessage(t, employeesResult, {}, [
+						"settings.clockodoImport.errors.fetchUsersFailed",
+						"Failed to fetch user data",
+					]),
+				);
 				return;
 			}
 			queryClient.invalidateQueries();
@@ -251,7 +268,13 @@ export function useClockodoImportController() {
 	const fetchProjectsMutation = useMutation({
 		mutationFn: () => fetchProjectMappingData({ email, apiKey }),
 		onSuccess: (result) => {
-			if (!result.success) return toast.error(result.error);
+			if (!result.success)
+				return toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.clockodoImport.errors.fetchProjectsFailed",
+						"Failed to fetch project data",
+					]),
+				);
 			setZ8Projects(result.data.z8Projects);
 			setProjectMappings(
 				buildProjectMappings(
@@ -272,7 +295,13 @@ export function useClockodoImportController() {
 	const saveMappingsMutation = useMutation({
 		mutationFn: () => saveUserMappings({ mappings: userMappings }),
 		onSuccess: (result) => {
-			if (!result.success) return toast.error(result.error);
+			if (!result.success)
+				return toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.clockodoImport.errors.saveMappingsFailed",
+						"Failed to save user mappings",
+					]),
+				);
 			queryClient.invalidateQueries();
 			fetchProjectsMutation.mutate();
 		},
@@ -285,7 +314,13 @@ export function useClockodoImportController() {
 	const saveProjectMappingsMutation = useMutation({
 		mutationFn: () => saveProjectMappings({ mappings: projectMappings }),
 		onSuccess: (result) => {
-			if (!result.success) return toast.error(result.error);
+			if (!result.success)
+				return toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.clockodoImport.errors.saveProjectMappingsFailed",
+						"Failed to save project mappings",
+					]),
+				);
 			queryClient.invalidateQueries();
 			setStep("selection");
 		},
@@ -313,7 +348,12 @@ export function useClockodoImportController() {
 			}),
 		onSuccess: (result) => {
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.clockodoImport.errors.importFailed",
+						"Import review scan failed",
+					]),
+				);
 				setStep("selection");
 				return;
 			}

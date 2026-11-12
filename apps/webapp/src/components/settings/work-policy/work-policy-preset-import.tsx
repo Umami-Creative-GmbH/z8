@@ -46,6 +46,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { WorkPolicyPresetReviewDialog } from "./work-policy-preset-review-dialog";
 import {
@@ -212,11 +213,10 @@ export function WorkPolicyPresetImport({
 			const result = await getWorkPolicyPresets();
 			if (!result.success) {
 				throw new Error(
-					result.error ||
-						t(
-							"settings.workPolicies.presets.failedToFetchPresets",
-							"Failed to fetch presets",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.presets.failedToFetchPresets",
+						"Failed to fetch presets",
+					]),
 				);
 			}
 			return result.data;
@@ -231,11 +231,10 @@ export function WorkPolicyPresetImport({
 		onSuccess: (result) => {
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.workPolicies.archivePresetError",
-							"Failed to archive preset",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.archivePresetError",
+						"Failed to archive preset",
+					]),
 				);
 				return;
 			}

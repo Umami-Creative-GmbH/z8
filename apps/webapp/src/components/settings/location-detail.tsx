@@ -40,6 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { Link, useRouter } from "@/navigation";
 import { LocationAssignedEmployeesCard } from "./assigned-locations/location-assigned-employees-card";
@@ -106,7 +107,10 @@ export function LocationDetail({
 			router.push("/settings/locations");
 		} else {
 			toast.error(
-				result.error || t("settings.locations.deleteFailed", "Failed to delete location"),
+				actionErrorMessage(t, result, {}, [
+					"settings.locations.deleteFailed",
+					"Failed to delete location",
+				]),
 			);
 		}
 		setDeleteLocationOpen(false);
@@ -121,7 +125,10 @@ export function LocationDetail({
 			});
 		} else {
 			toast.error(
-				result.error || t("settings.locations.employeeRemoveFailed", "Failed to remove employee"),
+				actionErrorMessage(t, result, {}, [
+					"settings.locations.employeeRemoveFailed",
+					"Failed to remove employee",
+				]),
 			);
 		}
 	};
@@ -136,7 +143,10 @@ export function LocationDetail({
 			});
 		} else {
 			toast.error(
-				result.error || t("settings.locations.subareaDeleteFailed", "Failed to delete subarea"),
+				actionErrorMessage(t, result, {}, [
+					"settings.locations.subareaDeleteFailed",
+					"Failed to delete subarea",
+				]),
 			);
 		}
 		setDeleteSubareaId(null);
@@ -151,7 +161,10 @@ export function LocationDetail({
 			});
 		} else {
 			toast.error(
-				result.error || t("settings.locations.employeeRemoveFailed", "Failed to remove employee"),
+				actionErrorMessage(t, result, {}, [
+					"settings.locations.employeeRemoveFailed",
+					"Failed to remove employee",
+				]),
 			);
 		}
 	};

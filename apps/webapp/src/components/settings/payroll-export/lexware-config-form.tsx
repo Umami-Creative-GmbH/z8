@@ -37,6 +37,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { PersonnelNumberType } from "@/lib/payroll-export/personnel-identifier";
 import type { LexwareLohnConfig } from "@/lib/payroll-export/types";
 import {
@@ -91,7 +92,7 @@ export function LexwareConfigForm({
 							"Failed to save configuration",
 						),
 						{
-							description: result.error,
+							description: actionErrorMessage(t, result),
 						},
 					);
 				}

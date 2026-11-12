@@ -42,6 +42,7 @@ import {
 import { formatDateOnly, formatTimeOnly } from "@/lib/datetime/format";
 import type { ExportCategory } from "@/lib/export/types";
 import { type ExportRecord, formatFileSize } from "@/lib/export/utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import { EXPORT_CATEGORY_COPY } from "./export-category-copy";
@@ -83,7 +84,10 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 			toast.success(t("settings.dataExport.history.downloadSuccess", "Download started"));
 		} else {
 			toast.error(
-				result.error || t("settings.dataExport.history.downloadError", "Failed to download"),
+				actionErrorMessage(t, result, {}, [
+					"settings.dataExport.history.downloadError",
+					"Failed to download",
+				]),
 			);
 		}
 
@@ -108,7 +112,10 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 			router.refresh();
 		} else {
 			toast.error(
-				result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"),
+				actionErrorMessage(t, result, {}, [
+					"settings.dataExport.history.deleteError",
+					"Failed to delete export",
+				]),
 			);
 		}
 

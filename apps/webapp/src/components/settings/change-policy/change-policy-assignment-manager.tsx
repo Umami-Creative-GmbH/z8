@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyAssignmentManagerProps {
@@ -457,8 +458,10 @@ export function ChangePolicyAssignmentManager({
 				setSelectedAssignment(null);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.changePolicies.assignmentDeleteFailed", "Failed to remove assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.changePolicies.assignmentDeleteFailed",
+						"Failed to remove assignment",
+					]),
 				);
 			}
 		},

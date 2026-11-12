@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { runWithBusyState } from "./run-with-busy-state";
 
 const READ_ONLY_CALENDAR_SETTINGS_DEFAULTS: CalendarSettingsFormValues = {
@@ -80,11 +81,10 @@ function useCalendarSettingsForm(manageableSettings: CalendarSettings | null) {
 						);
 					} else {
 						toast.error(
-							result.error ||
-								t(
-									"settings.calendar.saveError",
-									"Failed to save calendar settings",
-								),
+							actionErrorMessage(t, result, {}, [
+								"settings.calendar.saveError",
+								"Failed to save calendar settings",
+							]),
 						);
 					}
 				} catch {

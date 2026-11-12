@@ -30,6 +30,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { ProjectTemplateSummary } from "@/lib/projects/project-template-model";
 import { queryKeys } from "@/lib/query";
 import { InlineDeleteConfirm } from "./inline-delete-confirm";
@@ -141,10 +142,11 @@ function TemplateRowActions({
 			return;
 		}
 		toast.error(
-			result?.error ||
-				t("settings.projects.templates.deleteFailed", "Failed to delete {name}", {
+			actionErrorMessage(t, result, {}, (translate) =>
+				translate("settings.projects.templates.deleteFailed", "Failed to delete {name}", {
 					name: template.name,
 				}),
+			),
 		);
 	}
 

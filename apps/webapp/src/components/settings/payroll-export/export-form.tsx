@@ -41,6 +41,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	type PayrollExportFormatId,
 	payrollExportFormatIds,
@@ -142,7 +143,7 @@ export function ExportForm({
 			});
 			if (!result.success) {
 				toast.error(t("settings.payrollExport.export.error", "Export failed"), {
-					description: result.error,
+					description: actionErrorMessage(t, result),
 				});
 				return;
 			}

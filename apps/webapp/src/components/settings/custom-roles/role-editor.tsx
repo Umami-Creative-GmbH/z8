@@ -31,6 +31,7 @@ import {
 } from "@/lib/authorization/permission-registry";
 import type { PrincipalContext } from "@/lib/authorization/types";
 import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 // ============================================
 // INHERITED PERMISSIONS HELPER
@@ -150,8 +151,10 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 			}).catch(() => null);
 			if (!updateResult?.success) {
 				toast.error(
-					updateResult?.error ??
-						t("settings.roles.editor.errors.updateFailed", "Failed to update role"),
+					actionErrorMessage(t, updateResult, {}, [
+						"settings.roles.editor.errors.updateFailed",
+						"Failed to update role",
+					]),
 				);
 				setIsSaving(false);
 				return;
@@ -165,8 +168,10 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 			}).catch(() => null);
 			if (!createResult?.success) {
 				toast.error(
-					createResult?.error ??
-						t("settings.roles.editor.errors.createFailed", "Failed to create role"),
+					actionErrorMessage(t, createResult, {}, [
+						"settings.roles.editor.errors.createFailed",
+						"Failed to create role",
+					]),
 				);
 				setIsSaving(false);
 				return;
@@ -190,8 +195,10 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 		}).catch(() => null);
 		if (!permResult?.success) {
 			toast.error(
-				permResult?.error ??
-					t("settings.roles.editor.errors.permissionsFailed", "Failed to save role permissions"),
+				actionErrorMessage(t, permResult, {}, [
+					"settings.roles.editor.errors.permissionsFailed",
+					"Failed to save role permissions",
+				]),
 			);
 			setIsSaving(false);
 			return;

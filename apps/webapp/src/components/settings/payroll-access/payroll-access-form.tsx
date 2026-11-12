@@ -34,6 +34,7 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface PayrollAccessFormProps {
 	employees: PayrollAccessEmployeeOption[];
@@ -82,8 +83,10 @@ export function PayrollAccessForm({
 					setEditingGrantId(null);
 				} else {
 					toast.error(
-						result.error ||
-							t("settings.payrollAccess.saveFailed", "Failed to save payroll officer settings"),
+						actionErrorMessage(t, result, {}, [
+							"settings.payrollAccess.saveFailed",
+							"Failed to save payroll officer settings",
+						]),
 					);
 				}
 			} catch (error) {
@@ -149,8 +152,10 @@ export function PayrollAccessForm({
 				setRevokingGrant(null);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.payrollAccess.revokeFailed", "Failed to revoke payroll officer access"),
+					actionErrorMessage(t, result, {}, [
+						"settings.payrollAccess.revokeFailed",
+						"Failed to revoke payroll officer access",
+					]),
 				);
 			}
 		} finally {

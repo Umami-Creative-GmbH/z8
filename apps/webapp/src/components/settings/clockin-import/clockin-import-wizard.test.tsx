@@ -163,7 +163,11 @@ describe("ClockinImportWizard", () => {
 			success: true,
 			data: [{ id: "emp_1", userId: "user_1", name: "Ada Lovelace", email: "ada@example.com" }],
 		});
-		mocks.startImportReviewScan.mockResolvedValue({ success: false, error: "Scan failed" });
+		mocks.startImportReviewScan.mockResolvedValue({
+			success: false,
+			error: "Scan failed",
+			code: "ValidationError",
+		});
 
 		render(<ClockinImportWizard />);
 
@@ -178,7 +182,7 @@ describe("ClockinImportWizard", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Start Review Scan" }));
 
 		await waitFor(() => {
-			expect(mocks.toastError).toHaveBeenCalledWith("Scan failed");
+			expect(mocks.toastError).toHaveBeenCalledWith("Check your input and try again.");
 		});
 		expect(await screen.findByText("Import Scope")).toBeTruthy();
 		expect(mocks.importClockinData).not.toHaveBeenCalled();

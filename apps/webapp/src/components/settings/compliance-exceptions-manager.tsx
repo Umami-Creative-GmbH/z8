@@ -23,6 +23,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatDistance } from "@/lib/datetime/format";
 import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -74,7 +75,7 @@ export function ComplianceExceptionsManager({
 		queryFn: async () => {
 			const result = await getPendingExceptions();
 			if (!result.success) {
-				return Promise.reject(result.error || "Failed to load exceptions");
+				return Promise.reject(new Error(actionErrorMessage(t, result)));
 			}
 			return result.data;
 		},
@@ -85,7 +86,7 @@ export function ComplianceExceptionsManager({
 		mutationFn: async (exceptionId: string) => {
 			const result = await approveComplianceException({ exceptionId });
 			if (!result.success) {
-				return Promise.reject(result.error || "Failed to approve exception");
+				return Promise.reject(new Error(actionErrorMessage(t, result)));
 			}
 		},
 		onSuccess: () => {
@@ -112,7 +113,7 @@ export function ComplianceExceptionsManager({
 		mutationFn: async ({ exceptionId, reason }: { exceptionId: string; reason?: string }) => {
 			const result = await rejectComplianceException({ exceptionId, reason });
 			if (!result.success) {
-				return Promise.reject(result.error || "Failed to reject exception");
+				return Promise.reject(new Error(actionErrorMessage(t, result)));
 			}
 		},
 		onSuccess: () => {

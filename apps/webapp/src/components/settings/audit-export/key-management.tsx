@@ -58,6 +58,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 
 interface KeyInfo {
@@ -166,8 +167,10 @@ function KeyManagementForOrganization({
 			router.refresh();
 		} else {
 			toast.error(
-				result.error ||
-					t("settings.auditExport.keys.rotateError", "Key rotation failed"),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditExport.keys.rotateError",
+					"Key rotation failed",
+				]),
 			);
 		}
 	};
@@ -198,11 +201,10 @@ function KeyManagementForOrganization({
 			setKeyHistory(result.data);
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.auditExport.keys.historyError",
-						"Failed to load key history",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditExport.keys.historyError",
+					"Failed to load key history",
+				]),
 			);
 		}
 	};
@@ -231,11 +233,10 @@ function KeyManagementForOrganization({
 			setPublicKey(result.data);
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.auditExport.keys.exportError",
-						"Failed to export public key",
-					),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditExport.keys.exportError",
+					"Failed to export public key",
+				]),
 			);
 		}
 	};

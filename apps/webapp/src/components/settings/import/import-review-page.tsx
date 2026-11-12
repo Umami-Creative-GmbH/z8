@@ -17,6 +17,7 @@ import {
 } from "@/components/settings/import/import-review-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 export interface ImportReviewSummary {
 	totalRows: number;
@@ -96,7 +97,10 @@ export function ImportReviewPage({
 			}
 
 			toast.error(
-				result.error ?? t("settings.import.review.commitFailed", "Failed to start import commit"),
+				actionErrorMessage(t, result, {}, [
+					"settings.import.review.commitFailed",
+					"Failed to start import commit",
+				]),
 			);
 		});
 	}

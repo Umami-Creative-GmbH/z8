@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { TimezonePicker } from "./timezone-picker";
 
 interface TimezoneSettingsProps {
@@ -41,7 +42,12 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 		if (result.success) {
 			toast.success(t("settings.timezone.updateSuccess", "Timezone updated successfully"));
 		} else {
-			toast.error(result.error || t("settings.timezone.updateFailed", "Failed to update timezone"));
+			toast.error(
+				actionErrorMessage(t, result, {}, [
+					"settings.timezone.updateFailed",
+					"Failed to update timezone",
+				]),
+			);
 		}
 
 		setIsLoading(false);

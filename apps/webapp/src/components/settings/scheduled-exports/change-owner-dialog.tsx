@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface ChangeOwnerDialogProps {
 	open: boolean;
@@ -52,7 +53,7 @@ export function ChangeOwnerDialog({
 		async () => {
 			const result = await getScheduleOwnerCandidatesAction();
 			if (result.success) return result.data;
-			throw new Error(result.error);
+			throw new Error(actionErrorMessage(t, result));
 		},
 		{ revalidateOnFocus: false },
 	);
@@ -67,7 +68,7 @@ export function ChangeOwnerDialog({
 			if (!result?.success) {
 				toast.error(
 					t("settings.scheduledExports.owner.changeFailed", "Couldn't change the owner"),
-					{ description: result?.error },
+					{ description: result ? actionErrorMessage(t, result) : undefined },
 				);
 				return;
 			}

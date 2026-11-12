@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface LocationDialogProps {
 	location: LocationListItem | null;
@@ -79,7 +80,10 @@ export function LocationDialog({ location, open, onOpenChange, onSuccess }: Loca
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error || t("settings.locations.updateFailed", "Failed to update location"),
+						actionErrorMessage(t, result, {}, [
+							"settings.locations.updateFailed",
+							"Failed to update location",
+						]),
 					);
 				}
 			} else {
@@ -99,7 +103,10 @@ export function LocationDialog({ location, open, onOpenChange, onSuccess }: Loca
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error || t("settings.locations.createFailed", "Failed to create location"),
+						actionErrorMessage(t, result, {}, [
+							"settings.locations.createFailed",
+							"Failed to create location",
+						]),
 					);
 				}
 			}

@@ -28,6 +28,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface SubareaEmployeeDialogProps {
@@ -100,8 +101,10 @@ function SubareaEmployeeDialogContent({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result?.error ||
-						t("settings.locations.employeeAssignFailed", "Failed to assign employee"),
+					actionErrorMessage(t, result, {}, [
+						"settings.locations.employeeAssignFailed",
+						"Failed to assign employee",
+					]),
 				);
 			}
 

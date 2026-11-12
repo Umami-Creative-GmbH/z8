@@ -15,6 +15,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { CSV_WORK_MAX_BYTES, csvWorkTemplate } from "@/lib/import-review/csv-work-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 
 export function CsvWorkUpload() {
@@ -28,7 +29,7 @@ export function CsvWorkUpload() {
 			setError(null);
 			const result = await uploadCsvWorkAction(value);
 			if (result.success) router.push(`/settings/import/${result.data.batchId}`);
-			else setError(result.error);
+			else setError(actionErrorMessage(t, result));
 		},
 	});
 	return (

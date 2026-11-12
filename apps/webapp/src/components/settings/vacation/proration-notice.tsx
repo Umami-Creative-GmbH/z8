@@ -30,6 +30,7 @@ import {
 	PRORATION_NOTICE_YEAR,
 	type ProrationNoticeRow,
 } from "@/lib/absences/proration-notice";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { Link } from "@/navigation";
 
 /**
@@ -47,7 +48,7 @@ export function ProrationNotice({ rows }: { rows: ProrationNoticeRow[] }) {
 		startTransition(async () => {
 			const result = await dismissProrationNoticeAction();
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				return;
 			}
 			setDismissed(true);

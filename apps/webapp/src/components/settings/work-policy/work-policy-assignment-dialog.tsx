@@ -36,6 +36,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface WorkPolicyAssignmentDialogProps {
@@ -139,7 +140,10 @@ export function WorkPolicyAssignmentDialog({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error || t("settings.workPolicies.assignmentFailed", "Failed to assign policy"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.assignmentFailed",
+						"Failed to assign policy",
+					]),
 				);
 			}
 		},

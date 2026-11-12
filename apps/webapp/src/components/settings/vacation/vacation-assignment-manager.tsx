@@ -43,6 +43,7 @@ import {
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import { AssignmentManagerSkeleton } from "../assignment-manager-skeleton";
 import { getVacationAssignmentSectionVisibility } from "../policy-assignment-surface";
@@ -294,8 +295,10 @@ function useEndVacationAssignment(organizationId: string, today: string | undefi
 				setSelectedAssignment(null);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.vacation.history.endFailed", "Failed to end policy assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.vacation.history.endFailed",
+						"Failed to end policy assignment",
+					]),
 				);
 			}
 		},

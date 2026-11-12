@@ -37,6 +37,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 
@@ -108,8 +109,11 @@ function MemberSection({
 			return;
 		}
 		toast.error(
-			result?.error ||
-				t("settings.projects.members.removeFailed", "Failed to remove {name}", { name: row.name }),
+			actionErrorMessage(t, result, {}, (translate) =>
+				translate("settings.projects.members.removeFailed", "Failed to remove {name}", {
+					name: row.name,
+				}),
+			),
 		);
 	}
 
@@ -181,6 +185,7 @@ function AddMemberForm({
 	failureMessage: string;
 	onChanged: () => void;
 }) {
+	const { t } = useTranslate();
 	const form = useForm({
 		defaultValues: { targetId: "" },
 		onSubmit: async ({ value, formApi }) => {
@@ -192,7 +197,7 @@ function AddMemberForm({
 				onChanged();
 				return;
 			}
-			toast.error(result?.error || failureMessage);
+			toast.error(actionErrorMessage(t, result, {}, () => failureMessage));
 		},
 	});
 

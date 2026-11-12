@@ -14,6 +14,11 @@ import {
 	createHolidayPreset,
 	createPresetAssignment,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+import {
+	type ActionFailure,
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { buildPresetHolidayImportValue, isHolidayType } from "../holiday-import-utils";
 import {
 	createRequestVersionGuard,
@@ -32,8 +37,16 @@ import {
 	setHolidayImportState,
 } from "./holiday-import-state";
 
+/** A preset refused because one already exists for the location (and year). */
+const PRESET_IMPORT_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.holidays.import.presetExists",
+		"A preset for this location already exists.",
+	],
+};
+
 type ImportValue = NonNullable<ReturnType<typeof buildPresetHolidayImportValue>>;
-type OperationResult = { success: boolean; error?: string };
+type OperationResult = ActionFailure & { success: boolean };
 type PresetInput = {
 	name: string;
 	description: string;
@@ -130,12 +143,19 @@ export async function runHolidayImport({
 	preset: PresetInput;
 	holidays: ImportValue[];
 	setAsOrgDefault: boolean;
-	messages: { assignmentWarning: string; success: string };
+	messages: {
+		assignmentWarning: string;
+		success: string;
+		/** Words a refused preset creation; the server's English text is never shown. */
+		presetFailed: (failure: ActionFailure | null) => string;
+		/** Words a refused holiday import into the new preset. */
+		holidaysFailed: (failure: ActionFailure) => string;
+	};
 	actions: {
 		createPreset: (
 			organizationId: string,
 			preset: PresetInput,
-		) => Promise<{ success: boolean; error?: string; data?: { id: string } }>;
+		) => Promise<OperationResult & { data?: { id: string } }>;
 		addHolidays: (presetId: string, holidays: ImportValue[]) => Promise<OperationResult>;
 		createAssignment: (
 			organizationId: string,
@@ -155,7 +175,7 @@ export async function runHolidayImport({
 		return null;
 	});
 	if (!presetResult?.success || !presetResult.data) {
-		notifications.error(presetResult?.error || "Failed to create preset");
+		notifications.error(messages.presetFailed(presetResult));
 		return { success: false };
 	}
 
@@ -177,13 +197,13 @@ export async function runHolidayImport({
 		return null;
 	});
 	if (!results) {
-		notifications.error("Failed to create preset");
+		notifications.error(messages.presetFailed(null));
 		return { success: false };
 	}
 
 	const bulkResult = holidays.length > 0 ? results[0] : undefined;
 	if (bulkResult && !bulkResult.success) {
-		notifications.error(bulkResult.error || "Failed to add holidays to preset");
+		notifications.error(messages.holidaysFailed(bulkResult));
 		return { success: false };
 	}
 	const assignmentResult = setAsOrgDefault ? results[holidays.length > 0 ? 1 : 0] : undefined;
@@ -353,6 +373,16 @@ export function useHolidayImportController({
 					'Created preset "{name}" with {count} holidays',
 					{ name: state.presetName, count: holidays.length },
 				),
+				presetFailed: (failure) =>
+					actionErrorMessage(t, failure, PRESET_IMPORT_REFUSALS, [
+						"settings.holidays.import.presetFailed",
+						"Failed to create preset",
+					]),
+				holidaysFailed: (failure) =>
+					actionErrorMessage(t, failure, {}, [
+						"settings.holidays.import.holidaysFailed",
+						"Failed to add holidays to preset",
+					]),
 			},
 			actions: {
 				createPreset: (_organizationId, preset) => createHolidayPreset(preset),

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { type ChangeHourlyWage, hourlyWageSchema } from "@/lib/validations/employment-history";
 import type { MutationResult } from "./types";
 
@@ -76,8 +77,10 @@ export function ChangeWageForm({
 				return;
 			}
 			toast.error(
-				result.error ||
-					t("settings.employmentHistory.changeWage.error", "Failed to change the wage"),
+				actionErrorMessage(t, result, {}, [
+					"settings.employmentHistory.changeWage.error",
+					"Failed to change the wage",
+				]),
 			);
 		},
 	});

@@ -58,6 +58,7 @@ import {
 	type DisplayContext,
 	formatInstant,
 } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { AuditLogResult } from "@/lib/query/audit.queries";
 
 const ENTITY_TYPES = [
@@ -302,8 +303,10 @@ function AuditLogViewerForOrganization({
 		logsResult?.success && logsResult.data ? logsResult.data.total : 0;
 	const loadError =
 		logsResult && !logsResult.success
-			? logsResult.error ||
-				t("settings.auditLog.fetchFailed", "Failed to fetch audit logs")
+			? actionErrorMessage(t, logsResult, {}, [
+					"settings.auditLog.fetchFailed",
+					"Failed to fetch audit logs",
+				])
 			: null;
 
 	const handleExport = async () => {
@@ -357,8 +360,10 @@ function AuditLogViewerForOrganization({
 			);
 		} else {
 			toast.error(
-				result.error ||
-					t("settings.auditLog.exportFailed", `Failed to export audit logs`),
+				actionErrorMessage(t, result, {}, [
+					"settings.auditLog.exportFailed",
+					"Failed to export audit logs",
+				]),
 			);
 		}
 

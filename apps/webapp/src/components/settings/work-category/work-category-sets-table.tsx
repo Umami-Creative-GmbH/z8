@@ -31,6 +31,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { WorkCategorySetDialog } from "./work-category-set-dialog";
 
@@ -87,8 +88,10 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 				setSelectedSet(null);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.setDeleteFailed", "Failed to delete category set"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workCategories.setDeleteFailed",
+						"Failed to delete category set",
+					]),
 				);
 			}
 		},

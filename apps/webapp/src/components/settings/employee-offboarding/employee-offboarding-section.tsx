@@ -26,12 +26,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { departureCutoffDate } from "@/lib/employee-lifecycle/cutoff-display";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useEmployeeOffboarding, useRequestIdentity } from "@/lib/query/use-employee-offboarding";
 import { RecordOvertimePayoutDialog } from "../work-balance/record-overtime-payout-dialog";
 import { useRecordOvertimePayout } from "../work-balance/use-employee-work-balance";
 import { DepartureCard } from "./departure-card";
 import { DepartureForm } from "./departure-form";
 import { FollowUpList } from "./follow-up-list";
+import { OFFBOARDING_REFUSALS } from "./offboarding-refusals";
 import { RehireForm, type RehireOption } from "./rehire-form";
 
 type Panel = { kind: "departure"; mode: "scheduled" | "immediate" } | { kind: "rehire" } | null;
@@ -109,7 +111,7 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 			cancelIdentity.complete();
 			toast.success(t("settings.employees.offboarding.canceled", "Departure canceled"));
 		} else {
-			toast.error(result.error);
+			toast.error(actionErrorMessage(t, result, OFFBOARDING_REFUSALS));
 		}
 	}
 

@@ -44,8 +44,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { BreakRuleEditor } from "../break-rule-editor";
+import { WORK_POLICY_REFUSALS } from "./work-policy-refusals";
 
 interface WorkPolicyDialogProps {
 	open: boolean;
@@ -280,7 +282,12 @@ function useWorkPolicyForm({
 				});
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.workPolicies.createFailed", "Failed to create"));
+				toast.error(
+					actionErrorMessage(t, result, WORK_POLICY_REFUSALS, [
+						"settings.workPolicies.createFailed",
+						"Failed to create",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -311,7 +318,12 @@ function useWorkPolicyForm({
 				]);
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.workPolicies.updateFailed", "Failed to update"));
+				toast.error(
+					actionErrorMessage(t, result, WORK_POLICY_REFUSALS, [
+						"settings.workPolicies.updateFailed",
+						"Failed to update",
+					]),
+				);
 			}
 		},
 		onError: () => {

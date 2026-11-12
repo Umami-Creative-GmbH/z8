@@ -42,6 +42,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import { useVacationPolicyHistoryContext } from "./use-vacation-policy-history-context";
 
@@ -233,11 +234,10 @@ export function VacationAssignmentDialog({
 		onSuccess: (result) => {
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.vacation.assignments.createFailed",
-							"Failed to create policy assignment",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.vacation.assignments.createFailed",
+						"Failed to create policy assignment",
+					]),
 				);
 				return;
 			}

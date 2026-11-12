@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import {
 	EmployeeLevelCard,
@@ -122,6 +123,7 @@ function useRemoveAssignmentMutation({
 	successMessage: () => string;
 	failureMessage: () => string;
 }) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -132,7 +134,7 @@ function useRemoveAssignmentMutation({
 				queryClient.invalidateQueries({ queryKey });
 				onRemoved();
 			} else {
-				toast.error(result.error || failureMessage());
+				toast.error(actionErrorMessage(t, result, {}, () => failureMessage()));
 			}
 		},
 		onError: () => {

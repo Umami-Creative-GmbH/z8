@@ -43,6 +43,7 @@ import { Label } from "@/components/ui/label";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface StorageSettingsFormProps {
 	initialConfig?: StorageConfigResult | null;
@@ -113,8 +114,10 @@ function useStorageSettingsForm({ initialConfig, onConfigChange }: StorageSettin
 				} else {
 					toast.error(t("settings.dataExport.storage.saveError", "Failed to save configuration"), {
 						description:
-							result.error ??
-							t("settings.dataExport.storage.unexpectedError", "An unexpected error occurred"),
+							actionErrorMessage(t, result, {}, [
+								"settings.dataExport.storage.unexpectedError",
+								"An unexpected error occurred",
+							]),
 					});
 				}
 			});
@@ -217,7 +220,10 @@ function useStorageSettingsForm({ initialConfig, onConfigChange }: StorageSettin
 				setTestResult({
 					success: false,
 					message:
-						result.error ?? t("settings.dataExport.storage.testFailed", "Connection test failed"),
+						actionErrorMessage(t, result, {}, [
+							"settings.dataExport.storage.testFailed",
+							"Connection test failed",
+						]),
 				});
 			}
 
@@ -251,8 +257,10 @@ function useStorageSettingsForm({ initialConfig, onConfigChange }: StorageSettin
 					t("settings.dataExport.storage.deleteError", "Failed to delete configuration"),
 					{
 						description:
-							result.error ??
-							t("settings.dataExport.storage.unexpectedError", "An unexpected error occurred"),
+							actionErrorMessage(t, result, {}, [
+								"settings.dataExport.storage.unexpectedError",
+								"An unexpected error occurred",
+							]),
 					},
 				);
 			}

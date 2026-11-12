@@ -43,6 +43,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { RoleEditor } from "./role-editor";
 
 const TIER_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
@@ -77,7 +78,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 		queryKey: ["custom-roles", organizationId],
 		queryFn: async () => {
 			const result = await listCustomRoles();
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 	});
@@ -85,7 +86,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 	const deleteMutation = useMutation({
 		mutationFn: async (roleId: string) => {
 			const result = await deleteCustomRole({ roleId });
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 		},
 		onSuccess: () => {
 			toast.success(t("settings.roles.toast.deleted", "Role deleted"));

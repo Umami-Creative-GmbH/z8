@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { ChangeWageForm } from "./employee-employment-history/change-wage-form";
 import { EmploymentHistoryForm } from "./employee-employment-history/form";
 import {
@@ -80,8 +81,10 @@ export function EmployeeEmploymentHistoryCard({
 				return;
 			}
 			toast.error(
-				result.error ||
-					t("settings.employmentHistory.addError", "Failed to add employment history change"),
+				actionErrorMessage(t, result, {}, [
+					"settings.employmentHistory.addError",
+					"Failed to add employment history change",
+				]),
 			);
 		},
 	});
@@ -94,8 +97,10 @@ export function EmployeeEmploymentHistoryCard({
 			return;
 		}
 		toast.error(
-			result?.error ||
-				t("settings.employmentHistory.confirmError", "Failed to confirm employment history change"),
+			actionErrorMessage(t, result, {}, [
+				"settings.employmentHistory.confirmError",
+				"Failed to confirm employment history change",
+			]),
 		);
 	};
 	const handleCancel = async (historyId: string) => {
@@ -116,8 +121,10 @@ export function EmployeeEmploymentHistoryCard({
 			return;
 		}
 		toast.error(
-			result?.error ||
-				t("settings.employmentHistory.cancelError", "Failed to cancel employment history change"),
+			actionErrorMessage(t, result, {}, [
+				"settings.employmentHistory.cancelError",
+				"Failed to cancel employment history change",
+			]),
 		);
 	};
 	return (

@@ -215,6 +215,7 @@ describe("ProjectMembersPanel", () => {
 		const user = userEvent.setup();
 		actions.addProjectAssignment.mockResolvedValue({
 			success: false,
+			code: "NotFoundError",
 			error: "Employee not found in this organization",
 		});
 		const { onChanged } = renderPanel();
@@ -232,7 +233,8 @@ describe("ProjectMembersPanel", () => {
 			type: "employee",
 			targetId: "emp-2",
 		});
-		expect(toast.error).toHaveBeenCalledWith("Employee not found in this organization");
+		// The server's English text is never shown; the form's own failure text is.
+		expect(toast.error).toHaveBeenCalledWith("Failed to assign employee");
 		expect(onChanged).not.toHaveBeenCalled();
 	});
 

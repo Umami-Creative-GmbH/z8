@@ -29,6 +29,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { positiveHoursText } from "@/lib/projects/project-task-model";
 import {
 	type ManagerOrAssignmentAvailability,
@@ -233,10 +234,14 @@ function useProjectTemplateForm({
 				return;
 			}
 			toast.error(
-				result?.error ||
-					(template
-						? t("settings.projects.templates.updateFailed", "Failed to update template")
-						: t("settings.projects.templates.createFailed", "Failed to create template")),
+				actionErrorMessage(
+					t,
+					result,
+					{},
+					template
+						? ["settings.projects.templates.updateFailed", "Failed to update template"]
+						: ["settings.projects.templates.createFailed", "Failed to create template"],
+				),
 			);
 		},
 	});

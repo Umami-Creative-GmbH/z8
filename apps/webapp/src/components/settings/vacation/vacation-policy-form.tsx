@@ -41,6 +41,7 @@ import {
 	isAccrualPolicy,
 } from "@/lib/absences/vacation-policy-settings";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { runWithBusyState } from "../run-with-busy-state";
 
@@ -179,7 +180,12 @@ export function VacationPolicyForm({
 						onOpenChange(false);
 						router.refresh();
 					} else {
-						toast.error(result.error || t("settings.vacation.saveFailed", "Failed to save policy"));
+						toast.error(
+							actionErrorMessage(t, result, {}, [
+								"settings.vacation.saveFailed",
+								"Failed to save policy",
+							]),
+						);
 					}
 				} catch (_error) {
 					toast.error(t("common.unexpectedError", "An unexpected error occurred"));

@@ -235,10 +235,10 @@ describe("EmailTemplateSettingsClient", () => {
 		expect(payload).not.toHaveProperty("isEnabled");
 	});
 
-	it("shows the action's message when a test send is refused", async () => {
+	it("shows the translated refusal when a test send is refused", async () => {
 		sendEmailTemplateTestMock.mockResolvedValue({
 			success: false,
-			error: "You do not have access to this setting",
+			error: "Server-side refusal text",
 			code: "AuthorizationError",
 		});
 		render(<EmailTemplateSettingsClient templates={templates} />);
@@ -246,7 +246,7 @@ describe("EmailTemplateSettingsClient", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Send test" }));
 
 		await waitFor(() => {
-			expect(toastErrorMock).toHaveBeenCalledWith("You do not have access to this setting");
+			expect(toastErrorMock).toHaveBeenCalledWith("You do not have access to this setting.");
 		});
 	});
 

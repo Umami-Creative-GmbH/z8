@@ -50,6 +50,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { WorkdayConfig } from "@/lib/payroll-export";
 import {
 	customFieldIdentifierItems,
@@ -109,7 +110,7 @@ export function WorkdayConfigForm({
 						"settings.payrollExport.workday.credentialsSaveError",
 						"Failed to save credentials",
 					),
-					{ description: result.error },
+					{ description: actionErrorMessage(t, result) },
 				);
 				return;
 			}
@@ -143,7 +144,7 @@ export function WorkdayConfigForm({
 						"settings.payrollExport.workday.credentialsDeleteError",
 						"Failed to delete credentials",
 					),
-					{ description: result.error },
+					{ description: actionErrorMessage(t, result) },
 				);
 		});
 	const cancelCredentials = () => {
@@ -445,7 +446,7 @@ function WorkdaySettingsCard({
 							"settings.payrollExport.workday.saveError",
 							"Failed to save configuration",
 						),
-						{ description: result.error },
+						{ description: actionErrorMessage(t, result) },
 					);
 			}),
 	});
@@ -475,7 +476,7 @@ function WorkdaySettingsCard({
 					description: result
 						? result.success
 							? result.data.error
-							: result.error
+							: actionErrorMessage(t, result)
 						: undefined,
 				},
 			);

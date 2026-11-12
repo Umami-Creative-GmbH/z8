@@ -38,6 +38,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface ExecutionHistoryDialogProps {
 	open: boolean;
@@ -106,11 +107,10 @@ export function ExecutionHistoryDialog({
 				setExecutions(result.data);
 			} else {
 				setError(
-					result.error ||
-						t(
-							"settings.scheduledExports.history.loadError",
-							"Failed to load execution history",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.scheduledExports.history.loadError",
+						"Failed to load execution history",
+					]),
 				);
 			}
 

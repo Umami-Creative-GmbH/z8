@@ -15,6 +15,11 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+	type ActionFailure,
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
+import {
 	EscalationAttentionCard,
 	type EscalationTransferRequest,
 } from "./escalation-attention-section";
@@ -26,6 +31,17 @@ import {
 	type EscalationPolicyFormValues,
 	EscalationRevisionsCard,
 } from "./escalation-policy-section";
+
+const ESCALATION_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.approvalEscalation.toast.conflict",
+		"This changed meanwhile. Reload to see the current state.",
+	],
+	NotFoundError: [
+		"settings.approvalEscalation.toast.notFound",
+		"This item no longer exists. Reload to see the current state.",
+	],
+};
 
 const approvalEscalationQueryKey = (organizationId: string) =>
 	["approval-escalation", organizationId] as const;
@@ -50,6 +66,12 @@ export function ApprovalEscalationManagement({
 			"settings.approvalEscalation.toast.requestFailed",
 			"The request failed. Try again.",
 		);
+	/** A refused or failed request; the server's English text is never shown. */
+	const failureMessage = (failure: ActionFailure | null) =>
+		actionErrorMessage(t, failure, ESCALATION_REFUSALS, [
+			"settings.approvalEscalation.toast.requestFailed",
+			"The request failed. Try again.",
+		]);
 	const overview = data?.success ? data.data : null;
 
 	const policyMutation = useMutation({
@@ -60,7 +82,7 @@ export function ApprovalEscalationManagement({
 		mutationFn: reviewApprovalEscalationPolicyConflicts,
 		onSuccess: async (result) => {
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(failureMessage(result));
 				return;
 			}
 			toast.success(
@@ -85,7 +107,7 @@ export function ApprovalEscalationManagement({
 		mutationFn: recheckApprovalEscalationAttention,
 		onSuccess: async (result) => {
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(failureMessage(result));
 				return;
 			}
 			toast.success(
@@ -111,9 +133,9 @@ export function ApprovalEscalationManagement({
 				responseWindowHours: values.responseWindowHours,
 				reason: values.reason,
 			})
-			.catch(() => ({ success: false as const, error: requestFailed() }));
-		if (!result.success) {
-			toast.error(result.error);
+			.catch(() => null);
+		if (!result?.success) {
+			toast.error(failureMessage(result));
 			return false;
 		}
 		toast.success(
@@ -135,9 +157,9 @@ export function ApprovalEscalationManagement({
 	): Promise<boolean> {
 		const result = await transferMutation
 			.mutateAsync(request)
-			.catch(() => ({ success: false as const, error: requestFailed() }));
-		if (!result.success) {
-			toast.error(result.error);
+			.catch(() => null);
+		if (!result?.success) {
+			toast.error(failureMessage(result));
 			return false;
 		}
 		toast.success(
@@ -153,7 +175,7 @@ export function ApprovalEscalationManagement({
 		mutationFn: retryApprovalEscalationDelivery,
 		onSuccess: async (result) => {
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(failureMessage(result));
 			} else {
 				toast.success(
 					t(
@@ -173,9 +195,9 @@ export function ApprovalEscalationManagement({
 	): Promise<boolean> {
 		const result = await disposeMutation
 			.mutateAsync({ attentionId, note })
-			.catch(() => ({ success: false as const, error: requestFailed() }));
-		if (!result.success) {
-			toast.error(result.error);
+			.catch(() => null);
+		if (!result?.success) {
+			toast.error(failureMessage(result));
 			return false;
 		}
 		toast.success(

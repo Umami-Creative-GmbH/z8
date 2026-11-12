@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TimeInput } from "@/components/ui/time-input";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 interface TelegramSettingsProps {
@@ -143,7 +144,12 @@ function BotConnectionCard({
 				setBotToken("");
 				queryClient.invalidateQueries({ queryKey: queryKeys.telegram.config(organizationId) });
 			} else {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.telegram.connectError",
+						"Failed to connect Telegram bot",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -158,7 +164,12 @@ function BotConnectionCard({
 				toast.success(t("settings.telegram.disconnected", "Telegram bot disconnected"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.telegram.config(organizationId) });
 			} else {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.telegram.disconnectError",
+						"Failed to disconnect Telegram bot",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -311,7 +322,7 @@ function FeatureSettingsCard({
 				toast.success(t("settings.telegram.saved", "Telegram settings saved"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.telegram.config(organizationId) });
 			} else {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 			}
 		},
 	});
@@ -566,7 +577,12 @@ function AccountLinkingCard({
 				});
 				setLinkCode(result.data);
 			} else {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.telegram.linkError",
+						"Failed to generate link code",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -584,7 +600,12 @@ function AccountLinkingCard({
 					queryKey: queryKeys.telegram.link(userId, organizationId),
 				});
 			} else {
-				toast.error(result.error);
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.telegram.unlinkError",
+						"Failed to unlink Telegram account",
+					]),
+				);
 			}
 		},
 		onError: () => {

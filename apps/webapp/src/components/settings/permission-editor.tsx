@@ -25,6 +25,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface PermissionEditorProps {
 	employeeId: string;
@@ -131,8 +132,10 @@ export function PermissionEditor({
 			onSuccess?.();
 		} else {
 			toast.error(
-				result.error ||
-					t("settings.permissions.updateError", "Failed to update permissions"),
+				actionErrorMessage(t, result, {}, [
+					"settings.permissions.updateError",
+					"Failed to update permissions",
+				]),
 			);
 		}
 
@@ -166,8 +169,10 @@ export function PermissionEditor({
 			onSuccess?.();
 		} else {
 			toast.error(
-				result.error ||
-					t("settings.permissions.revokeError", "Failed to revoke permissions"),
+				actionErrorMessage(t, result, {}, [
+					"settings.permissions.revokeError",
+					"Failed to revoke permissions",
+				]),
 			);
 		}
 

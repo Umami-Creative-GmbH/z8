@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface HolidayAssignmentDialogProps {
@@ -171,11 +172,10 @@ export function HolidayAssignmentDialog({
 				handleOpenChange(false);
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.holidays.assignments.categoryCreateFailed",
-							"Failed to create holiday category assignment",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.holidays.assignments.categoryCreateFailed",
+						"Failed to create holiday category assignment",
+					]),
 				);
 			}
 		},

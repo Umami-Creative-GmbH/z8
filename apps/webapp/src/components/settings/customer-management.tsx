@@ -42,6 +42,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
@@ -133,7 +134,10 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 			queryClient.invalidateQueries({ queryKey: queryKeys.customers.list(organizationId) });
 		} else {
 			toast.error(
-				result.error || t("settings.customers.deleteFailed", "Failed to delete customer"),
+				actionErrorMessage(t, result, {}, [
+					"settings.customers.deleteFailed",
+					"Failed to delete customer",
+				]),
 			);
 		}
 

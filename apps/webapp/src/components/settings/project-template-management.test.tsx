@@ -320,6 +320,7 @@ describe("ProjectTemplateManagement", () => {
 		const user = userEvent.setup();
 		templateActions.createProjectTemplate.mockResolvedValue({
 			success: false,
+			code: "ValidationError",
 			error: "A project template with this name already exists",
 		});
 		renderManagement();
@@ -329,7 +330,7 @@ describe("ProjectTemplateManagement", () => {
 		await user.type(within(form).getByLabelText(/^Name/), "Website relaunch");
 		await user.click(within(form).getByRole("button", { name: "Create template" }));
 
-		expect(toast.error).toHaveBeenCalledWith("A project template with this name already exists");
+		expect(toast.error).toHaveBeenCalledWith("Check your input and try again.");
 	});
 
 	it("deletes a template only after confirmation", async () => {

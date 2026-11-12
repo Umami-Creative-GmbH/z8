@@ -24,6 +24,7 @@ import {
 	WORKING_WEEK_NOTICE_YEAR,
 	type WorkingWeekNoticeRow,
 } from "@/lib/absences/working-week-notice";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { Link } from "@/navigation";
 
 /**
@@ -42,7 +43,7 @@ export function WorkingWeekNotice({ rows }: { rows: WorkingWeekNoticeRow[] }) {
 		startTransition(async () => {
 			const result = await dismissWorkingWeekNoticeAction();
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				return;
 			}
 			setDismissed(true);

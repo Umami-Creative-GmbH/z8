@@ -7,6 +7,7 @@ import {
 	decideCsvWorkAction,
 	refreshCsvWorkAction,
 } from "@/app/[locale]/(app)/settings/import/csv-actions";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { CsvWorkMapping } from "./csv-work-mapping";
 import {
@@ -89,7 +90,7 @@ export function CsvWorkReview({
 			if (result.success) {
 				setSelected([]);
 				router.refresh();
-			} else setError(result.error);
+			} else setError(actionErrorMessage(t, result));
 		});
 	}
 	function commit() {
@@ -98,7 +99,7 @@ export function CsvWorkReview({
 			const result = await commitCsvWorkAction({
 				batchId,
 			});
-			if (!result.success) setError(result.error);
+			if (!result.success) setError(actionErrorMessage(t, result));
 			else router.refresh();
 		});
 	}
@@ -111,7 +112,7 @@ export function CsvWorkReview({
 			if (result.success) {
 				setSelected([]);
 				router.refresh();
-			} else setError(result.error);
+			} else setError(actionErrorMessage(t, result));
 		});
 	}
 	const busy =

@@ -26,6 +26,7 @@ import {
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import { useRouter } from "@/navigation";
 
@@ -70,7 +71,7 @@ export function ReopenMonthPanel({
 							: { kind: "team", teamId: value.scope },
 			});
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(actionErrorMessage(t, result));
 				return;
 			}
 			switch (result.data.kind) {

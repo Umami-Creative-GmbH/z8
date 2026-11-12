@@ -79,6 +79,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { WageTypeMapping } from "@/lib/payroll-export/types";
 
 interface WageTypeMappingsProps {
@@ -272,7 +273,7 @@ export function WageTypeMappings({
 						"settings.payrollExport.mappings.saveError",
 						"Failed to save mapping",
 					),
-					{ description: result.error },
+					{ description: actionErrorMessage(t, result) },
 				);
 		});
 	};
@@ -290,7 +291,7 @@ export function WageTypeMappings({
 						"settings.payrollExport.mappings.deleteError",
 						"Failed to delete mapping",
 					),
-					{ description: result.error },
+					{ description: actionErrorMessage(t, result) },
 				);
 		});
 

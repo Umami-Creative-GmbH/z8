@@ -39,6 +39,10 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { VacationPolicyForm } from "./vacation-policy-form";
 
@@ -61,6 +65,14 @@ interface VacationPolicy {
 		name: string;
 	} | null;
 }
+
+/** A delete refused because the policy is the only company default. */
+const DELETE_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"vacation.policies.deleteLastDefault",
+		"This is the only company default policy. Set another policy as default first.",
+	],
+};
 
 interface VacationPoliciesTableProps {
 	organizationId: string;
@@ -134,7 +146,12 @@ export function VacationPoliciesTable({
 				setDeleteDialogOpen(false);
 				setPolicyToDelete(null);
 			} else {
-				toast.error(result.error || t("vacation.policies.deleteFailed", "Failed to delete policy"));
+				toast.error(
+					actionErrorMessage(t, result, DELETE_REFUSALS, [
+						"vacation.policies.deleteFailed",
+						"Failed to delete policy",
+					]),
+				);
 			}
 		},
 		onError: () => {

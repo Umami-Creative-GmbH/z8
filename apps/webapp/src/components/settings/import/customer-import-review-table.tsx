@@ -32,6 +32,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { StagedCustomer } from "@/lib/import-review/staged-customer";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { currentCustomerDecision, customerDecisionOptions } from "./customer-import-decisions";
 
@@ -142,8 +143,10 @@ export function CustomerImportReviewTable({
 			});
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t("settings.import.review.customers.decisionFailed", "The decision could not be saved"),
+					actionErrorMessage(t, result, {}, [
+						"settings.import.review.customers.decisionFailed",
+						"The decision could not be saved",
+					]),
 				);
 				return;
 			}

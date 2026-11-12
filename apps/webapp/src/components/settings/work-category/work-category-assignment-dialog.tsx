@@ -30,6 +30,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface WorkCategoryAssignmentDialogProps {
@@ -144,8 +145,10 @@ export function WorkCategoryAssignmentDialog({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.assignmentCreateFailed", "Failed to create assignment"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workCategories.assignmentCreateFailed",
+						"Failed to create assignment",
+					]),
 				);
 			}
 		},

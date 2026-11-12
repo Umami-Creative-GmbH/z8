@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface SubareaDialogProps {
 	locationId: string;
@@ -71,8 +72,10 @@ export function SubareaDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error ||
-							t("settings.locations.subareaUpdateFailed", "Failed to update subarea"),
+						actionErrorMessage(t, result, {}, [
+							"settings.locations.subareaUpdateFailed",
+							"Failed to update subarea",
+						]),
 					);
 				}
 			} else {
@@ -89,8 +92,10 @@ export function SubareaDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error ||
-							t("settings.locations.subareaCreateFailed", "Failed to create subarea"),
+						actionErrorMessage(t, result, {}, [
+							"settings.locations.subareaCreateFailed",
+							"Failed to create subarea",
+						]),
 					);
 				}
 			}

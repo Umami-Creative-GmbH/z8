@@ -26,6 +26,7 @@ import {
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 const NONE = "none";
@@ -42,8 +43,10 @@ function ApproverForm({ settings }: { settings: TravelExpenseApproverSettings })
 			});
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t("settings.travelExpenses.approver.saveFailed", "Failed to save the expense approver"),
+					actionErrorMessage(t, result, {}, [
+						"settings.travelExpenses.approver.saveFailed",
+						"Failed to save the expense approver",
+					]),
 				);
 				return;
 			}

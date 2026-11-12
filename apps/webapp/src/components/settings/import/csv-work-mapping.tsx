@@ -10,6 +10,7 @@ import {
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { CsvWorkReviewData } from "./csv-work-review";
 
 interface MappingValues {
@@ -50,7 +51,7 @@ export function CsvWorkMapping({
 			if (result.success) {
 				form.reset();
 				onSuccess();
-			} else onError(result.error);
+			} else onError(actionErrorMessage(t, result));
 		},
 	});
 	return (

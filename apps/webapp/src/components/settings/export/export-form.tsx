@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { EXPORT_CATEGORIES, type ExportCategory } from "@/lib/export/types";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import { EXPORT_CATEGORY_COPY } from "./export-category-copy";
@@ -69,7 +70,10 @@ export function ExportForm() {
 				router.refresh();
 			} else {
 				toast.error(
-					result.error || t("settings.dataExport.form.submitError", "Failed to start export"),
+					actionErrorMessage(t, result, {}, [
+						"settings.dataExport.form.submitError",
+						"Failed to start export",
+					]),
 				);
 			}
 		}, () => setIsSubmitting(false));

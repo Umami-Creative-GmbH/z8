@@ -32,6 +32,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import { queryKeys } from "@/lib/query";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -165,10 +166,17 @@ export function CustomerDialog({
 				customFields.handleSaved();
 			} else {
 				toast.error(
-					result?.error ||
-						(isEditing
-							? t("settings.customers.updateFailed", "Failed to update customer")
-							: t("settings.customers.createFailed", "Failed to create customer")),
+					actionErrorMessage(
+						t,
+						result,
+						{},
+						isEditing
+							? ["settings.customers.updateFailed", "Failed to update customer"]
+							: [
+									"settings.customers.createFailed",
+									"Failed to create customer",
+								],
+					),
 				);
 			}
 		},
@@ -364,7 +372,10 @@ export function CustomerDialog({
 							</form.Field>
 						</div>
 
-						<CustomFieldDraftsSection drafts={customFields} disabled={isSubmitting} />
+						<CustomFieldDraftsSection
+							drafts={customFields}
+							disabled={isSubmitting}
+						/>
 					</ActionPanelBody>
 
 					<CustomerDialogFooter

@@ -39,6 +39,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyTableProps {
@@ -94,7 +95,12 @@ export function ChangePolicyTable({
 				setDeleteDialogOpen(false);
 				policyToDeleteRef.current = null;
 			} else {
-				toast.error(result.error || t("settings.changePolicies.deleteFailed", "Failed to delete"));
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.changePolicies.deleteFailed",
+						"Failed to delete",
+					]),
+				);
 			}
 		},
 		onError: () => {

@@ -26,6 +26,7 @@ import type {
 	ScheduledExportFilters,
 	ScheduledExportReportConfig,
 } from "@/db/schema/scheduled-export";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type {
 	DateRangeStrategy,
 	DeliveryMethod,
@@ -179,7 +180,7 @@ export function ScheduledExportDialog({
 							? t("settings.scheduledExports.toast.updateError", "Failed to update schedule")
 							: t("settings.scheduledExports.toast.createError", "Failed to create schedule"),
 						{
-							description: result.error,
+							description: actionErrorMessage(t, result),
 						},
 					);
 				}

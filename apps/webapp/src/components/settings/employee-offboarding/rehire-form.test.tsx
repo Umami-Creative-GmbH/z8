@@ -132,10 +132,11 @@ describe("RehireForm", () => {
 		});
 	});
 
-	it("keeps entries after a server refusal and focuses its guidance", async () => {
+	it("keeps entries after a server refusal and focuses its message", async () => {
 		const user = userEvent.setup();
 		const rehire = vi.fn().mockResolvedValue({
 			success: false,
+			code: "ValidationError",
 			error:
 				"This person is no longer an approved organization member. Re-invite them before rehiring.",
 		});
@@ -146,7 +147,8 @@ describe("RehireForm", () => {
 		await user.click(screen.getByRole("button", { name: "Confirm rehire" }));
 
 		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain("Re-invite");
+		// The server's English text is never shown; the refusal is worded on the client.
+		expect(alert.textContent).toBe("Check your input and try again.");
 		await waitFor(() => expect(document.activeElement).toBe(alert));
 		expect((screen.getByRole("textbox", { name: "Note" }) as HTMLTextAreaElement).value).toBe(
 			"Returning in spring",

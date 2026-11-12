@@ -23,7 +23,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	actionErrorMessage,
+	type RefusalOverrides,
+} from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
+
+/** A category refused because its name is taken. */
+const CATEGORY_REFUSALS: RefusalOverrides = {
+	ConflictError: [
+		"settings.workCategories.categoryNameTaken",
+		"A category with this name already exists.",
+	],
+};
 
 interface WorkCategoryDialogProps {
 	open: boolean;
@@ -143,8 +155,10 @@ function WorkCategoryDialogContent({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.categoryCreateFailed", "Failed to create category"),
+					actionErrorMessage(t, result, CATEGORY_REFUSALS, [
+						"settings.workCategories.categoryCreateFailed",
+						"Failed to create category",
+					]),
 				);
 			}
 		},
@@ -171,8 +185,10 @@ function WorkCategoryDialogContent({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workCategories.categoryUpdateFailed", "Failed to update category"),
+					actionErrorMessage(t, result, CATEGORY_REFUSALS, [
+						"settings.workCategories.categoryUpdateFailed",
+						"Failed to update category",
+					]),
 				);
 			}
 		},

@@ -325,6 +325,7 @@ describe("ProjectDialog, starting from a template", () => {
 		const user = userEvent.setup();
 		fromTemplateActions.createProjectFromTemplate.mockResolvedValue({
 			success: false,
+			code: "ValidationError",
 			error: "A project with this name already exists",
 		});
 		const { onSuccess } = renderDialog();
@@ -335,7 +336,7 @@ describe("ProjectDialog, starting from a template", () => {
 		await user.type(screen.getByLabelText(/^Name/), "Acme relaunch");
 		await user.click(screen.getByRole("button", { name: "Create Project" }));
 
-		expect(toast.error).toHaveBeenCalledWith("A project with this name already exists");
+		expect(toast.error).toHaveBeenCalledWith("Check your input and try again.");
 		expect(onSuccess).not.toHaveBeenCalled();
 	});
 

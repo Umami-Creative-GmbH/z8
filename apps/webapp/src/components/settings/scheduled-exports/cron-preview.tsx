@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { previewNextExecutionsAction } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { ScheduleType } from "@/lib/scheduled-exports/domain/types";
 
 interface CronPreviewProps {
@@ -50,8 +51,10 @@ export function CronPreview({ scheduleType, cronExpression, timezone }: CronPrev
 				setNextRuns(result.data);
 			} else {
 				setError(
-					result.error ||
-						t("settings.scheduledExports.cronPreview.error", "Failed to calculate next runs"),
+					actionErrorMessage(t, result, {}, [
+						"settings.scheduledExports.cronPreview.error",
+						"Failed to calculate next runs",
+					]),
 				);
 				setNextRuns([]);
 			}

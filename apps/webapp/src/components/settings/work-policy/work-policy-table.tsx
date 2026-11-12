@@ -24,7 +24,9 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
+import { WORK_POLICY_REFUSALS } from "./work-policy-refusals";
 import { getWorkPolicyTableColumns } from "./work-policy-table-columns";
 
 interface WorkPolicyTableProps {
@@ -77,7 +79,12 @@ export function WorkPolicyTable({
 				setDeleteDialogOpen(false);
 				setPolicyToDelete(null);
 			} else {
-				toast.error(result.error || t("settings.workPolicies.deleteFailed", "Failed to delete"));
+				toast.error(
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.deleteFailed",
+						"Failed to delete",
+					]),
+				);
 			}
 		},
 		onError: () => {
@@ -96,7 +103,10 @@ export function WorkPolicyTable({
 				});
 			} else {
 				toast.error(
-					result.error || t("settings.workPolicies.duplicateFailed", "Failed to duplicate"),
+					actionErrorMessage(t, result, WORK_POLICY_REFUSALS, [
+						"settings.workPolicies.duplicateFailed",
+						"Failed to duplicate",
+					]),
 				);
 			}
 		},
@@ -116,7 +126,10 @@ export function WorkPolicyTable({
 				});
 			} else {
 				toast.error(
-					result.error || t("settings.workPolicies.setDefaultFailed", "Failed to set default"),
+					actionErrorMessage(t, result, {}, [
+						"settings.workPolicies.setDefaultFailed",
+						"Failed to set default",
+					]),
 				);
 			}
 		},

@@ -26,6 +26,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { ApprovalPolicyDialog } from "./approval-policy-dialog";
 import type { buildApprovalPolicyPayload } from "./approval-policy-dialog-utils";
 import { ApprovalPolicyPreview } from "./approval-policy-preview";
@@ -71,11 +72,10 @@ export function ApprovalPolicyManagement({
 		onSuccess: async (result) => {
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.approvalPolicies.toast.saveFailed",
-							"Approval policy could not be saved.",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.approvalPolicies.toast.saveFailed",
+						"Approval policy could not be saved.",
+					]),
 				);
 				return;
 			}

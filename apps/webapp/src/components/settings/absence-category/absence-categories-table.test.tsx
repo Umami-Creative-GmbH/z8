@@ -205,6 +205,7 @@ describe("AbsenceCategoriesTable", () => {
 		mocks.deleteAbsenceCategory.mockResolvedValue({
 			success: false,
 			error: "Deactivate this category instead because it is used by existing absences.",
+			code: "ConflictError",
 		});
 
 		renderTable(true);
@@ -215,7 +216,7 @@ describe("AbsenceCategoriesTable", () => {
 
 		await waitFor(() => expect(mocks.deleteAbsenceCategory).toHaveBeenCalledWith("cat_1"));
 		expect(mocks.toastError).toHaveBeenCalledWith(
-			"Deactivate this category instead because it is used by existing absences.",
+			"This category is still in use. Deactivate it instead, or remove what depends on it first.",
 		);
 	});
 });

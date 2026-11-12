@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEditSession } from "@/hooks/use-edit-session";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 function formatDate(month: number, day: number, locale: string) {
@@ -182,11 +183,10 @@ function usePresetDialogController({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.holidays.presets.updateFailed",
-							"Failed to update preset",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.holidays.presets.updateFailed",
+						"Failed to update preset",
+					]),
 				);
 			}
 		},
@@ -210,11 +210,10 @@ function usePresetDialogController({
 				});
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.holidays.presets.holidayDeleteFailed",
-							"Failed to remove holiday",
-						),
+					actionErrorMessage(t, result, {}, [
+						"settings.holidays.presets.holidayDeleteFailed",
+						"Failed to remove holiday",
+					]),
 				);
 			}
 		},

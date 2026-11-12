@@ -57,6 +57,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SkillWithRelations } from "@/lib/effect/services/skill.service";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";
@@ -134,7 +135,13 @@ export function SkillCatalogManagement({
 	const deleteMutation = useMutation({
 		mutationFn: async (skillId: string) => {
 			const result = await deleteSkill(skillId);
-			if (!result.success) throw new Error(result.error);
+			if (!result.success)
+				throw new Error(
+					actionErrorMessage(t, result, {}, [
+						"settings.skills.deleteError",
+						"Failed to delete skill",
+					]),
+				);
 		},
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillDeleted", "Skill deleted"));
@@ -408,7 +415,13 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 				customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
 				requiresExpiry: data.requiresExpiry,
 			});
-			if (!result.success) throw new Error(result.error);
+			if (!result.success)
+				throw new Error(
+					actionErrorMessage(t, result, {}, [
+						"settings.skills.createError",
+						"Failed to create skill",
+					]),
+				);
 			return result.data;
 		},
 		onSuccess: () => {
@@ -435,7 +448,13 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 					requiresExpiry: data.requiresExpiry,
 				},
 			});
-			if (!result.success) throw new Error(result.error);
+			if (!result.success)
+				throw new Error(
+					actionErrorMessage(t, result, {}, [
+						"settings.skills.updateError",
+						"Failed to update skill",
+					]),
+				);
 			return result.data;
 		},
 		onSuccess: () => {

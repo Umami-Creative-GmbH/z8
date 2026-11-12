@@ -32,6 +32,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyDialogProps {
@@ -332,7 +333,10 @@ export function ChangePolicyDialog({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error || t("settings.changePolicies.createFailed", "Failed to create policy"),
+					actionErrorMessage(t, result, {}, [
+						"settings.changePolicies.createFailed",
+						"Failed to create policy",
+					]),
 				);
 			}
 		},
@@ -353,7 +357,10 @@ export function ChangePolicyDialog({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error || t("settings.changePolicies.updateFailed", "Failed to update policy"),
+					actionErrorMessage(t, result, {}, [
+						"settings.changePolicies.updateFailed",
+						"Failed to update policy",
+					]),
 				);
 			}
 		},
