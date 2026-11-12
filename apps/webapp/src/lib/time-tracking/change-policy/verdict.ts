@@ -33,14 +33,22 @@ export type ChangePolicyVerdict = {
 	/** Calendar days from the work's local end date to today's, in the zone the verdict used. */
 	daysBack: number;
 	policy: AppliedChangePolicy | null;
-} & (
+} & ChangePolicyOutcome;
+
+/** What the window rule decides, without the policy and age it decided on. */
+export type ChangePolicyOutcome =
 	| {
 			type: "direct";
 			reason: ChangePolicyExemption | "no_policy" | "trust_mode" | "within_self_service";
 	  }
 	| { type: "approval_required"; reason: "within_approval_window" }
-	| { type: "forbidden"; reason: "beyond_approval_window" }
-);
+	| { type: "forbidden"; reason: "beyond_approval_window" };
+
+/** The terms of a change policy the window rule reads. */
+export type ChangePolicyWindowTerms = Pick<
+	AppliedChangePolicy,
+	"selfServiceDays" | "approvalDays" | "noApprovalRequired"
+>;
 
 /** A verdict as an editing surface shows it. */
 export type EditCapability =
@@ -87,17 +95,24 @@ export function decideChangePolicyVerdict(input: {
 	policy: AppliedChangePolicy | null;
 	daysBack: number;
 }): ChangePolicyVerdict {
+	return { ...decideChangePolicyOutcome(input), daysBack: input.daysBack, policy: input.policy };
+}
+
+/** {@link decideChangePolicyVerdict} over the policy's terms alone. */
+export function decideChangePolicyOutcome(input: {
+	exemption: ChangePolicyExemption | null;
+	policy: ChangePolicyWindowTerms | null;
+	daysBack: number;
+}): ChangePolicyOutcome {
 	const { exemption, policy, daysBack } = input;
-	if (exemption) return { type: "direct", reason: exemption, daysBack, policy };
-	if (!policy) return { type: "direct", reason: "no_policy", daysBack, policy };
-	if (policy.noApprovalRequired) return { type: "direct", reason: "trust_mode", daysBack, policy };
-	if (daysBack <= policy.selfServiceDays) {
-		return { type: "direct", reason: "within_self_service", daysBack, policy };
-	}
+	if (exemption) return { type: "direct", reason: exemption };
+	if (!policy) return { type: "direct", reason: "no_policy" };
+	if (policy.noApprovalRequired) return { type: "direct", reason: "trust_mode" };
+	if (daysBack <= policy.selfServiceDays) return { type: "direct", reason: "within_self_service" };
 	if (daysBack <= policy.selfServiceDays + policy.approvalDays) {
-		return { type: "approval_required", reason: "within_approval_window", daysBack, policy };
+		return { type: "approval_required", reason: "within_approval_window" };
 	}
-	return { type: "forbidden", reason: "beyond_approval_window", daysBack, policy };
+	return { type: "forbidden", reason: "beyond_approval_window" };
 }
 
 /**

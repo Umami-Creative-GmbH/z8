@@ -1,5 +1,9 @@
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import type { AppAbility } from "@/lib/authorization";
 import { MANAGER_ROLES } from "@/lib/effect/services/shift-request.service";
+import {
+	type ChangePolicyExemption,
+	decideChangePolicyOutcome,
+} from "@/lib/time-tracking/change-policy/verdict";
 import type { LegacyRouteFailure } from "../policies/legacy-route-decision";
 import type { ApprovalPolicyDraft } from "../policies/types";
 import type { ApprovalDirectChange, ApprovalRouteNote, ApprovalRouteSkipReason } from "./types";
@@ -58,29 +62,57 @@ export function absenceCategoryVariants(
 
 // --- Manual work -----------------------------------------------------------------------------
 
-/** Owners and admins record their own manual work directly, without approval. */
-export function isOwnerOrAdminSelfRecording(organizationRole: string | null | undefined): boolean {
-	return (
-		hasOrganizationRole(organizationRole, "owner") || hasOrganizationRole(organizationRole, "admin")
-	);
+/**
+ * Owners and admins record their own manual work directly, without approval. The permission
+ * system decides who they are: whoever may manage the organization's settings, as
+ * `isOrgAdminCasl` asks it for the session's organization.
+ */
+export function isOwnerOrAdminSelfRecording(recorder: Pick<AppAbility, "can">): boolean {
+	return recorder.can("manage", "OrgSettings");
 }
 
 /**
- * Whether manual work needs approval under the change policy in effect. Without an entry (the
- * preview) a policy that requires approval is routed, with a note when entries within its
- * self-service days skip approval.
+ * Why no change policy applies to a manual entry: it is made on the owner's behalf, or by an
+ * owner or admin to their own work ({@link isOwnerOrAdminSelfRecording}).
+ */
+export function manualWorkExemption(input: {
+	isOwnEntry: boolean;
+	ownerOrAdminSelf: boolean;
+}): ChangePolicyExemption | null {
+	if (!input.isOwnEntry) return "on_behalf";
+	return input.ownerOrAdminSelf ? "owner_admin_self" : null;
+}
+
+/**
+ * Whether manual work needs approval under the change policy in effect, decided by the window rule
+ * submitting applies (`decideChangePolicyOutcome`). The preview has no entry, so it asks about one
+ * just beyond the self-service days: a policy that requires approval is routed, with a note when
+ * entries within its self-service days skip it.
  */
 export function manualWorkChangePolicyRule(
 	policy: ChangePolicyTerms | null,
-): { skip: ApprovalRouteSkipReason } | { skip: null; notes: ApprovalRouteNote[] } {
-	if (!policy) return { skip: "change_policy_no_policy" };
-	if (policy.noApprovalRequired) return { skip: "change_policy_trust_mode" };
+):
+	| { skip: Extract<ApprovalRouteSkipReason, `change_policy_${string}`> }
+	| { skip: null; notes: ApprovalRouteNote[] } {
+	const outcome = decideChangePolicyOutcome({
+		exemption: null,
+		policy,
+		daysBack: (policy?.selfServiceDays ?? 0) + 1,
+	});
+	if (outcome.type === "direct") {
+		switch (outcome.reason) {
+			case "no_policy":
+				return { skip: "change_policy_no_policy" };
+			case "trust_mode":
+				return { skip: "change_policy_trust_mode" };
+			default:
+				throw new Error(`An entry beyond the self-service days is never direct: ${outcome.reason}`);
+		}
+	}
+	const selfServiceDays = policy?.selfServiceDays ?? 0;
 	return {
 		skip: null,
-		notes:
-			policy.selfServiceDays > 0
-				? [{ code: "within_self_service_skips", selfServiceDays: policy.selfServiceDays }]
-				: [],
+		notes: selfServiceDays > 0 ? [{ code: "within_self_service_skips", selfServiceDays }] : [],
 	};
 }
 

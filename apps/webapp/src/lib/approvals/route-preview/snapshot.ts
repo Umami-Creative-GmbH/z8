@@ -13,6 +13,8 @@ import {
 	teamMembership,
 	travelExpenseSettings,
 } from "@/db/schema";
+import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
+import type { Action, Subject } from "@/lib/authorization/types";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
@@ -48,6 +50,9 @@ export type ApprovalRouteCanonicalKind =
 	| "time_correction"
 	| "manual_time_submission"
 	| "period_submission";
+
+/** A permission a custom role grants, as the permission system reads it. */
+export type ApprovalRoutePermission = { action: Action; subject: Subject };
 
 export type ApprovalRouteChangePolicy = ChangePolicyCandidate & {
 	selfServiceDays: number;
@@ -90,6 +95,8 @@ export interface ApprovalRouteSnapshot {
 	expenseApproverEmployeeId: string | null;
 	/** Approved members' organization roles, by user id. */
 	memberRoles: ReadonlyMap<string, string>;
+	/** What the employee's active custom roles of the organization grant, by employee id. */
+	customRolePermissions: ReadonlyMap<string, readonly ApprovalRoutePermission[]>;
 	/** Employees on the current roster at `at`, with their employee role. */
 	roster: Array<{ id: string; role: string }>;
 }
@@ -263,6 +270,31 @@ export async function loadApprovalRouteSnapshot(
 			}),
 	]);
 
+	// Custom role grants, read as the permission system loads them for one employee.
+	const customRoleGrants = await reader
+		.select({
+			employeeId: employeeCustomRole.employeeId,
+			action: customRolePermission.action,
+			subject: customRolePermission.subject,
+		})
+		.from(employeeCustomRole)
+		.innerJoin(
+			customRole,
+			and(
+				eq(customRole.id, employeeCustomRole.customRoleId),
+				eq(customRole.organizationId, organizationId),
+				eq(customRole.isActive, true),
+			),
+		)
+		.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id));
+	const customRolePermissions = new Map<string, ApprovalRoutePermission[]>();
+	for (const grant of customRoleGrants) {
+		customRolePermissions.set(grant.employeeId, [
+			...(customRolePermissions.get(grant.employeeId) ?? []),
+			{ action: grant.action as Action, subject: grant.subject as Subject },
+		]);
+	}
+
 	const offKinds: ApprovalRouteKind[] = [];
 	if (!collectsPeriods) offKinds.push("period_submission");
 	if (!organizationRow[0]?.shiftsEnabled) offKinds.push("shift_request");
@@ -328,6 +360,7 @@ export async function loadApprovalRouteSnapshot(
 		approvalCategoryIds: requiringCategories.map((row) => row.id),
 		expenseApproverEmployeeId: expenseSettings[0]?.expenseApproverEmployeeId ?? null,
 		memberRoles: new Map(memberRoles.map((row) => [row.userId, row.role])),
+		customRolePermissions,
 		roster,
 	};
 }

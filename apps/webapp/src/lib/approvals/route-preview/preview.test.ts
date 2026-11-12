@@ -4,7 +4,11 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalPolicyDraft, ApprovalPolicyStageDraft } from "../policies/types";
 import type { ApprovalStageReviewerDirectory } from "../routing/approver-resolver";
 import { type ApprovalRouteDependencies, routeApprovalRequesters } from "./preview";
-import type { ApprovalRouteChangePolicy, ApprovalRouteSnapshot } from "./snapshot";
+import type {
+	ApprovalRouteChangePolicy,
+	ApprovalRoutePermission,
+	ApprovalRouteSnapshot,
+} from "./snapshot";
 import {
 	APPROVAL_ROUTE_KINDS,
 	type ApprovalRouteKind,
@@ -47,6 +51,7 @@ function organization() {
 		approvalCategoryIds: [],
 		expenseApproverEmployeeId: null,
 		memberRoles: new Map(),
+		customRolePermissions: new Map(),
 		roster: [],
 	};
 	let priority = 0;
@@ -79,6 +84,13 @@ function organization() {
 				input.memberRole ?? "member",
 			);
 			return person;
+		},
+		/** Permissions an active custom role of the organization grants the employee. */
+		grantCustomPermissions(employeeId: string, permissions: ApprovalRoutePermission[]) {
+			(snapshot.customRolePermissions as Map<string, ApprovalRoutePermission[]>).set(
+				employeeId,
+				permissions,
+			);
 		},
 		team(primaryManagerId: string | null = null) {
 			const team = { id: randomUUID(), organizationId: ORG, primaryManagerId };
@@ -460,6 +472,36 @@ describe("approval route preview: manual work", () => {
 				reason: "owner_admin_self",
 			});
 		}
+	});
+
+	it("asks the permission system, not the member role, who records their own work directly", async () => {
+		const org = organization();
+		org.changePolicy({ type: "organization" });
+		const manager = org.person({ role: "manager" });
+		const settingsManager = org.person();
+		org.grantCustomPermissions(settingsManager.id, [{ action: "manage", subject: "OrgSettings" }]);
+		const employeeAdmin = org.person({ role: "admin" });
+		for (const person of [settingsManager, employeeAdmin]) org.managedBy(person.id, manager.id);
+
+		expect(
+			await route(org.snapshot, employee(settingsManager), "manual_time_submission"),
+		).toMatchObject({ kind: "skipped", reason: "owner_admin_self" });
+		expect(
+			await route(org.snapshot, employee(employeeAdmin), "manual_time_submission"),
+		).toMatchObject({ kind: "routed" });
+	});
+
+	it("does not exempt an owner who has left by the instant", async () => {
+		const org = organization();
+		org.changePolicy({ type: "organization" });
+		const manager = org.person({ role: "manager" });
+		const owner = org.person({ memberRole: "owner" });
+		org.managedBy(owner.id, manager.id);
+		org.departed(owner.id);
+
+		expect(await route(org.snapshot, employee(owner), "manual_time_submission")).not.toMatchObject({
+			kind: "skipped",
+		});
 	});
 
 	it("is skipped without a change policy, or in trust mode", async () => {
