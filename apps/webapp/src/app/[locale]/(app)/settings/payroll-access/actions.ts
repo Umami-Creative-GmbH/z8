@@ -12,19 +12,14 @@ import {
 	team,
 } from "@/db/schema";
 import { z } from "zod";
-import {
-	AuthorizationError,
-	DatabaseError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	formerSinceDate,
 	isFormerEmployee,
 	onCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { revokePayrollAccessGrant, savePayrollAccessGrant } from "@/lib/payroll-access/grant-store";
 
 export type { SavePayrollAccessInput } from "@/lib/payroll-access/grant-scope";
@@ -78,9 +73,7 @@ const revokePayrollAccessSchema = z.strictObject({
 export const getPayrollAccessAdminDataAction = organizationAction(
 	{ name: "payrollAccess.getAdminData", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		payrollAccessQuery("payrollAccess.getAdminData", (db) =>
-			loadPayrollAccessAdminData(db, organizationId),
-		),
+		storeStep("payrollAccess.getAdminData", (db) => loadPayrollAccessAdminData(db, organizationId)),
 );
 
 async function loadPayrollAccessAdminData(
@@ -197,7 +190,7 @@ export const savePayrollAccessAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const { grantId } = yield* payrollAccessQuery("payrollAccess.save", (db) =>
+			const { grantId } = yield* storeStep("payrollAccess.save", (db) =>
 				db.transaction((tx) =>
 					savePayrollAccessGrant(tx, {
 						organizationId,
@@ -218,7 +211,7 @@ export const revokePayrollAccessGrantAction = organizationAction(
 	{ name: "payrollAccess.revoke", requires: "orgAdmin", schema: revokePayrollAccessSchema },
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const { grantId } = yield* payrollAccessQuery("payrollAccess.revoke", (db) =>
+			const { grantId } = yield* storeStep("payrollAccess.revoke", (db) =>
 				db.transaction((tx) =>
 					revokePayrollAccessGrant(tx, {
 						organizationId,
@@ -234,21 +227,3 @@ export const revokePayrollAccessGrantAction = organizationAction(
 			return { grantId };
 		}),
 );
-
-/** Runs `work` on the runtime's database; a typed failure it throws keeps its type. */
-function payrollAccessQuery<T>(name: string, work: (db: DatabaseClient) => Promise<T>) {
-	return DatabaseService.use((dbService) => dbService.query(name, () => work(dbService.db))).pipe(
-		Effect.mapError((error) => (isAppError(error.cause) ? error.cause : error)),
-	);
-}
-
-function isAppError(
-	error: unknown,
-): error is AuthorizationError | DatabaseError | NotFoundError | ValidationError {
-	return (
-		error instanceof AuthorizationError ||
-		error instanceof DatabaseError ||
-		error instanceof NotFoundError ||
-		error instanceof ValidationError
-	);
-}

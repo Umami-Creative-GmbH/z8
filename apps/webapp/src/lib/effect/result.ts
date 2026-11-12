@@ -17,7 +17,7 @@ export type ServerActionResult<T> =
 			closedMonth?: string;
 		/** A machine-readable refusal a form maps to its own copy, e.g. a deputy refusal (#1011). */
 		refusal?: string;
-			/** What a refusal carries beside its code, e.g. the conflicting payouts (`refusalStep`). */
+			/** What a refusal carries beside its code, e.g. the conflicting payouts (`storeStep`). */
 			details?: Record<string, unknown>;
 	  };
 

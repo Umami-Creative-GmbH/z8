@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { isPayrollRunPreviewOpen } from "@/lib/travel-expenses/payroll-run-preview";
 import {
 	countUnconfirmedPayrollRuns,
@@ -15,7 +16,7 @@ import {
 	REIMBURSEMENT_CHANNELS,
 	type ReimbursementChannel,
 } from "@/lib/travel-expenses/reimbursement-channel.types";
-import { expenseStore, revalidateExpenseSettings } from "./expense-settings-effects";
+import { revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
  * The organization's reimbursement channel (#849). Only organization
@@ -48,10 +49,10 @@ async function readSetting(
 export const getReimbursementChannelSetting = organizationAction(
 	{ name: "travelExpenses.getReimbursementChannel", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		expenseStore(
+		storeStep(
 			"travelExpenses.getReimbursementChannel",
-			"Failed to load the reimbursement channel",
 			(database) => readSetting(database, organizationId),
+			{ failure: "Failed to load the reimbursement channel" },
 		),
 );
 
@@ -66,14 +67,14 @@ export const saveReimbursementChannelSetting = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const failure = "Failed to save the reimbursement channel";
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.saveReimbursementChannel",
-				failure,
 				(database) =>
 					saveReimbursementChannel(
 						{ organizationId, actorUserId: actor.userId, channel: input.channel },
 						{ database },
 					),
+				{ failure: failure },
 			);
 			if (result.kind === "invalid") {
 				return yield* Effect.fail(
@@ -89,8 +90,10 @@ export const saveReimbursementChannelSetting = organizationAction(
 				);
 			}
 			if (result.kind === "saved") yield* revalidateExpenseSettings();
-			return yield* expenseStore("travelExpenses.readReimbursementChannel", failure, (database) =>
-				readSetting(database, organizationId, result.channel),
+			return yield* storeStep(
+				"travelExpenses.readReimbursementChannel",
+				(database) => readSetting(database, organizationId, result.channel),
+				{ failure: failure },
 			);
 		}),
 );

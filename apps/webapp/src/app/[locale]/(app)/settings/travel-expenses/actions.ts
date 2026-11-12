@@ -4,7 +4,7 @@ import { desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { travelExpensePolicy } from "@/db/schema";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
-import { expenseStore } from "./expense-settings-effects";
+import { storeStep } from "@/lib/organization-action/store-step";
 
 /**
  * Legacy travel expense policies (read-only since #606). Their rates were
@@ -38,14 +38,14 @@ export const getTravelExpensePolicies = organizationAction(
 	{ name: "travelExpenses.getLegacyPolicies", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
 		Effect.gen(function* () {
-			const policies = yield* expenseStore(
+			const policies = yield* storeStep(
 				"travelExpenses.getLegacyPolicies",
-				"Failed to fetch travel expense policies",
 				(database) =>
 					database.query.travelExpensePolicy.findMany({
 						where: eq(travelExpensePolicy.organizationId, organizationId),
 						orderBy: [desc(travelExpensePolicy.effectiveFrom)],
 					}),
+				{ failure: "Failed to fetch travel expense policies" },
 			);
 			return policies.map(
 				(policy): LegacyTravelExpensePolicyView => ({

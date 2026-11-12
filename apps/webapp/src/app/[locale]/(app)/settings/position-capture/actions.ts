@@ -7,7 +7,6 @@ import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import { employee, positionCaptureAssignment, team } from "@/db/schema";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
-import { queryOrRefuse } from "@/lib/effect/refusal-query";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	formerSinceDate,
@@ -16,6 +15,7 @@ import {
 } from "@/lib/employee-lifecycle/current-roster";
 import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	assignmentIdSchema,
 	assignmentTargetSchema,
@@ -90,18 +90,15 @@ const setAssignmentSchema = z.strictObject({
 
 const removeAssignmentSchema = z.strictObject({ assignmentId: assignmentIdSchema });
 
-/** Store work for position capture; a `PositionCaptureRefusal` comes back as the result's `refusal`. */
-function positionCaptureWork<T>(name: string, work: (db: DatabaseClient) => Promise<T>) {
-	return queryOrRefuse(name, PositionCaptureRefusal, work);
-}
-
 const revalidateSettings = Effect.sync(() => revalidatePath(SETTINGS_PATH));
 
 export const getPositionCaptureAdminDataAction = organizationAction(
 	{ name: "positionCapture.adminData", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		positionCaptureWork("positionCapture.adminData", (db) =>
-			loadPositionCaptureAdminData(db, organizationId),
+		storeStep(
+			"positionCapture.adminData",
+			(db) => loadPositionCaptureAdminData(db, organizationId),
+			{ refusal: PositionCaptureRefusal },
 		),
 );
 
@@ -183,16 +180,20 @@ async function loadPositionCaptureAdminData(
 export const savePositionCaptureSettingsAction = organizationAction(
 	{ name: "positionCapture.saveSettings", requires: "orgAdmin", schema: saveSettingsSchema },
 	({ actor, organizationId, input }) =>
-		positionCaptureWork("positionCapture.saveSettings", async (db) => {
-			const { publishedNotice } = await db.transaction((tx) =>
-				savePositionCaptureSettings(tx, {
-					organizationId,
-					actorUserId: actor.userId,
-					settings: input,
-				}),
-			);
-			return { publishedNoticeVersion: publishedNotice?.version ?? null };
-		}).pipe(
+		storeStep(
+			"positionCapture.saveSettings",
+			async (db) => {
+				const { publishedNotice } = await db.transaction((tx) =>
+					savePositionCaptureSettings(tx, {
+						organizationId,
+						actorUserId: actor.userId,
+						settings: input,
+					}),
+				);
+				return { publishedNoticeVersion: publishedNotice?.version ?? null };
+			},
+			{ refusal: PositionCaptureRefusal },
+		).pipe(
 			Effect.tap(() =>
 				Effect.sync(() => {
 					revalidatePath(SETTINGS_PATH);
@@ -211,15 +212,18 @@ export const setPositionCaptureAssignmentAction = organizationAction(
 		// still work, so the store refuses only a new one (`former_employee`, #1438).
 	},
 	({ actor, organizationId, input }) =>
-		positionCaptureWork("positionCapture.setAssignment", (db) =>
-			db.transaction((tx) =>
-				setPositionCaptureAssignment(tx, {
-					organizationId,
-					actorUserId: actor.userId,
-					target: input.target,
-					captureEnabled: input.captureEnabled,
-				}),
-			),
+		storeStep(
+			"positionCapture.setAssignment",
+			(db) =>
+				db.transaction((tx) =>
+					setPositionCaptureAssignment(tx, {
+						organizationId,
+						actorUserId: actor.userId,
+						target: input.target,
+						captureEnabled: input.captureEnabled,
+					}),
+				),
+			{ refusal: PositionCaptureRefusal },
 		).pipe(Effect.tap(() => revalidateSettings)),
 );
 
@@ -230,14 +234,18 @@ export const removePositionCaptureAssignmentAction = organizationAction(
 		schema: removeAssignmentSchema,
 	},
 	({ actor, organizationId, input }) =>
-		positionCaptureWork("positionCapture.removeAssignment", async (db) => {
-			await db.transaction((tx) =>
-				removePositionCaptureAssignment(tx, {
-					organizationId,
-					actorUserId: actor.userId,
-					assignmentId: input.assignmentId,
-				}),
-			);
-			return { assignmentId: input.assignmentId };
-		}).pipe(Effect.tap(() => revalidateSettings)),
+		storeStep(
+			"positionCapture.removeAssignment",
+			async (db) => {
+				await db.transaction((tx) =>
+					removePositionCaptureAssignment(tx, {
+						organizationId,
+						actorUserId: actor.userId,
+						assignmentId: input.assignmentId,
+					}),
+				);
+				return { assignmentId: input.assignmentId };
+			},
+			{ refusal: PositionCaptureRefusal },
+		).pipe(Effect.tap(() => revalidateSettings)),
 );

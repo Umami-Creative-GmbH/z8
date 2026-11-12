@@ -8,6 +8,7 @@ import { employee, project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import type { ProjectAttributionExceptionError } from "@/lib/travel-expenses/project-attribution-exception";
 import {
 	authorizeProjectAttributionException,
@@ -17,7 +18,6 @@ import {
 import {
 	auditLater,
 	expenseAdministrator,
-	expenseStore,
 	revalidateExpenseSettings,
 } from "./expense-settings-effects";
 
@@ -41,9 +41,8 @@ export const getProjectAttributionExceptionSettings = organizationAction(
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			const [exceptions, employees, projects] = yield* expenseStore(
+			const [exceptions, employees, projects] = yield* storeStep(
 				"travelExpenses.getProjectExceptions",
-				"Failed to load project attribution exceptions",
 				(database) =>
 					Promise.all([
 						listProjectAttributionExceptions(database, organizationId),
@@ -59,6 +58,7 @@ export const getProjectAttributionExceptionSettings = organizationAction(
 							.where(eq(project.organizationId, organizationId))
 							.orderBy(asc(project.name)),
 					]),
+				{ failure: "Failed to load project attribution exceptions" },
 			);
 			return {
 				exceptions,
@@ -90,10 +90,10 @@ export const authorizeProjectAttributionExceptionAction = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.authorizeProjectException",
-				"Failed to authorize the exception",
 				(database) => authorizeProjectAttributionException(database, admin, input),
+				{ failure: "Failed to authorize the exception" },
 			);
 			switch (result.kind) {
 				case "invalid":

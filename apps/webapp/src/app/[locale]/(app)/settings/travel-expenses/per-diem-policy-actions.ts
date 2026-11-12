@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { NotFoundError } from "@/lib/effect/errors";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { activeVersionTimeline, type TimelineEntry } from "@/lib/travel-expenses/allowance-policy";
 import {
 	type PerDiemPolicyInputErrors,
@@ -23,7 +24,7 @@ import {
 	STATUTORY_PER_DIEM_DEFAULTS,
 	type StatutoryPerDiemDefault,
 } from "@/lib/travel-expenses/statutory-per-diem-defaults";
-import { auditLater, expenseStore, revalidateExpenseSettings } from "./expense-settings-effects";
+import { auditLater, revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
  * Dated per diem policy of the organization (#609), managed by org admins.
@@ -43,11 +44,11 @@ export const getPerDiemPolicySettings = organizationAction(
 	{ name: "travelExpenses.getPerDiemPolicy", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
 		Effect.gen(function* () {
-			const versions = yield* expenseStore(
+			const versions = yield* storeStep(
 				"travelExpenses.getPerDiemPolicy",
-				"Failed to load the per diem policy",
 				(database) =>
 					loadPerDiemPolicyVersions(database, organizationId, { includeWithdrawn: true }),
+				{ failure: "Failed to load the per diem policy" },
 			);
 			return {
 				timeline: activeVersionTimeline(versions),
@@ -101,15 +102,15 @@ export const activatePerDiemPolicyVersionAction = organizationAction(
 			if (!parsed.ok) {
 				return { status: "invalid", errors: parsed.errors } satisfies ActivatePerDiemPolicyOutcome;
 			}
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.activatePerDiemPolicy",
-				"Failed to save the per diem policy",
 				(database) =>
 					activatePerDiemPolicyVersion(
 						database,
 						{ organizationId, userId: actor.userId },
 						parsed.input,
 					),
+				{ failure: "Failed to save the per diem policy" },
 			);
 			if (result.kind !== "activated") {
 				return (
@@ -155,15 +156,15 @@ export const withdrawPerDiemPolicyVersionAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.withdrawPerDiemPolicy",
-				"Failed to withdraw the per diem policy version",
 				(database) =>
 					withdrawPerDiemPolicyVersion(
 						database,
 						{ organizationId, userId: actor.userId },
 						{ versionId: input.versionId },
 					),
+				{ failure: "Failed to withdraw the per diem policy version" },
 			);
 			if (result.kind === "not_found") {
 				return yield* Effect.fail(

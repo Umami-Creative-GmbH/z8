@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import { employee, team, vehicleUseAssignment } from "@/db/schema";
-import { queryOrRefuse } from "@/lib/effect/refusal-query";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	formerSinceDate,
@@ -15,6 +14,7 @@ import {
 } from "@/lib/employee-lifecycle/current-roster";
 import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	assignmentIdSchema,
 	assignmentTargetSchema,
@@ -63,17 +63,14 @@ const setAssignmentSchema = z.strictObject({
 
 const removeAssignmentSchema = z.strictObject({ assignmentId: assignmentIdSchema });
 
-/** Store work for vehicle use; a `VehicleUseRefusal` comes back as the result's `refusal`. */
-function vehicleUseWork<T>(name: string, work: (db: DatabaseClient) => Promise<T>) {
-	return queryOrRefuse(name, VehicleUseRefusal, work);
-}
-
 const revalidateSettings = Effect.sync(() => revalidatePath(SETTINGS_PATH));
 
 export const getVehicleUseAdminDataAction = organizationAction(
 	{ name: "vehicleUse.adminData", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		vehicleUseWork("vehicleUse.adminData", (db) => loadVehicleUseAdminData(db, organizationId)),
+		storeStep("vehicleUse.adminData", (db) => loadVehicleUseAdminData(db, organizationId), {
+			refusal: VehicleUseRefusal,
+		}),
 );
 
 /** The settings page's data; only the session organization's rows. */
@@ -139,14 +136,17 @@ async function loadVehicleUseAdminData(
 export const saveVehicleUseSettingsAction = organizationAction(
 	{ name: "vehicleUse.saveSettings", requires: "orgAdmin", schema: saveSettingsSchema },
 	({ actor, organizationId, input }) =>
-		vehicleUseWork("vehicleUse.saveSettings", (db) =>
-			db.transaction((tx) =>
-				saveVehicleUseSettings(tx, {
-					organizationId,
-					actorUserId: actor.userId,
-					settings: { enabled: input.enabled },
-				}),
-			),
+		storeStep(
+			"vehicleUse.saveSettings",
+			(db) =>
+				db.transaction((tx) =>
+					saveVehicleUseSettings(tx, {
+						organizationId,
+						actorUserId: actor.userId,
+						settings: { enabled: input.enabled },
+					}),
+				),
+			{ refusal: VehicleUseRefusal },
 		).pipe(Effect.tap(() => revalidateSettings)),
 );
 
@@ -159,29 +159,36 @@ export const setVehicleUseAssignmentAction = organizationAction(
 		// still work, so the store refuses only a new one (`former_employee`, #1438).
 	},
 	({ actor, organizationId, input }) =>
-		vehicleUseWork("vehicleUse.setAssignment", (db) =>
-			db.transaction((tx) =>
-				setVehicleUseAssignment(tx, {
-					organizationId,
-					actorUserId: actor.userId,
-					target: input.target,
-					mode: input.mode,
-				}),
-			),
+		storeStep(
+			"vehicleUse.setAssignment",
+			(db) =>
+				db.transaction((tx) =>
+					setVehicleUseAssignment(tx, {
+						organizationId,
+						actorUserId: actor.userId,
+						target: input.target,
+						mode: input.mode,
+					}),
+				),
+			{ refusal: VehicleUseRefusal },
 		).pipe(Effect.tap(() => revalidateSettings)),
 );
 
 export const removeVehicleUseAssignmentAction = organizationAction(
 	{ name: "vehicleUse.removeAssignment", requires: "orgAdmin", schema: removeAssignmentSchema },
 	({ actor, organizationId, input }) =>
-		vehicleUseWork("vehicleUse.removeAssignment", async (db) => {
-			await db.transaction((tx) =>
-				removeVehicleUseAssignment(tx, {
-					organizationId,
-					actorUserId: actor.userId,
-					assignmentId: input.assignmentId,
-				}),
-			);
-			return { assignmentId: input.assignmentId };
-		}).pipe(Effect.tap(() => revalidateSettings)),
+		storeStep(
+			"vehicleUse.removeAssignment",
+			async (db) => {
+				await db.transaction((tx) =>
+					removeVehicleUseAssignment(tx, {
+						organizationId,
+						actorUserId: actor.userId,
+						assignmentId: input.assignmentId,
+					}),
+				);
+				return { assignmentId: input.assignmentId };
+			},
+			{ refusal: VehicleUseRefusal },
+		).pipe(Effect.tap(() => revalidateSettings)),
 );

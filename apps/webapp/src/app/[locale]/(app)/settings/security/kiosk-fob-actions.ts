@@ -1,8 +1,8 @@
 "use server";
 
 import { z } from "zod";
-import { queryOrRefuse } from "@/lib/effect/refusal-query";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { KioskFobManagementRefusal } from "@/lib/time-tracking/kiosk/fob-errors";
 import {
 	type KioskFobViewState,
@@ -25,9 +25,8 @@ export type OwnKioskFobState = {
 export const getOwnKioskFobStatusAction = organizationAction(
 	{ name: "kiosk.ownFobStatus", requires: "member", schema: noInput },
 	({ actor, organizationId }) =>
-		queryOrRefuse(
+		storeStep(
 			"kiosk.ownFobStatus",
-			KioskFobManagementRefusal,
 			async (db): Promise<OwnKioskFobState | null> => {
 				const [status, timezone] = await Promise.all([
 					readOwnKioskFobStatus(db, { organizationId, userId: actor.userId }),
@@ -40,6 +39,7 @@ export const getOwnKioskFobStatusAction = organizationAction(
 					timezone,
 				};
 			},
+			{ refusal: KioskFobManagementRefusal },
 		),
 );
 
@@ -51,8 +51,12 @@ export const getOwnKioskFobStatusAction = organizationAction(
 export const removeOwnKioskFobAction = organizationAction(
 	{ name: "kiosk.removeOwnFob", requires: "member", schema: z.string() },
 	({ actor, organizationId, input: expectedFobId }) =>
-		queryOrRefuse("kiosk.removeOwnFob", KioskFobManagementRefusal, async (db) => {
-			await removeOwnKioskFob(db, { organizationId, userId: actor.userId, expectedFobId });
-			return { removed: true as const };
-		}),
+		storeStep(
+			"kiosk.removeOwnFob",
+			async (db) => {
+				await removeOwnKioskFob(db, { organizationId, userId: actor.userId, expectedFobId });
+				return { removed: true as const };
+			},
+			{ refusal: KioskFobManagementRefusal },
+		),
 );

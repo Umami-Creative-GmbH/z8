@@ -8,7 +8,8 @@ import { employee, travelExpenseSettings } from "@/db/schema";
 import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
-import { expenseStore, revalidateExpenseSettings } from "./expense-settings-effects";
+import { storeStep } from "@/lib/organization-action/store-step";
+import { revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
  * The organization expense approver (#602): the last reviewer fallback, after
@@ -46,9 +47,8 @@ export const getTravelExpenseApproverSettings = organizationAction(
 	{ name: "travelExpenses.getApprover", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
 		Effect.gen(function* () {
-			const [settings, candidates] = yield* expenseStore(
+			const [settings, candidates] = yield* storeStep(
 				"travelExpenses.getApprover",
-				"Failed to load the expense approver",
 				(database) =>
 					Promise.all([
 						database
@@ -60,6 +60,7 @@ export const getTravelExpenseApproverSettings = organizationAction(
 							.limit(1),
 						loadApproverCandidates(database, organizationId),
 					]),
+				{ failure: "Failed to load the expense approver" },
 			);
 			return {
 				expenseApproverEmployeeId: settings[0]?.expenseApproverEmployeeId ?? null,
@@ -84,10 +85,10 @@ export const saveTravelExpenseApprover = organizationAction(
 			const failure = "Failed to save the expense approver";
 			const approverId = input.expenseApproverEmployeeId;
 			if (approverId !== null) {
-				const candidates = yield* expenseStore(
+				const candidates = yield* storeStep(
 					"travelExpenses.loadApproverCandidates",
-					failure,
 					(database) => loadApproverCandidates(database, organizationId),
+					{ failure: failure },
 				);
 				// Never another organization's employee, nor one who cannot open the inbox.
 				if (!candidates.some((candidate) => candidate.id === approverId)) {
@@ -97,19 +98,26 @@ export const saveTravelExpenseApprover = organizationAction(
 				}
 			}
 			const now = new Date();
-			yield* expenseStore("travelExpenses.saveApprover", failure, (database) =>
-				database
-					.insert(travelExpenseSettings)
-					.values({
-						organizationId,
-						expenseApproverEmployeeId: approverId,
-						updatedAt: now,
-						updatedBy: actor.userId,
-					})
-					.onConflictDoUpdate({
-						target: travelExpenseSettings.organizationId,
-						set: { expenseApproverEmployeeId: approverId, updatedAt: now, updatedBy: actor.userId },
-					}),
+			yield* storeStep(
+				"travelExpenses.saveApprover",
+				(database) =>
+					database
+						.insert(travelExpenseSettings)
+						.values({
+							organizationId,
+							expenseApproverEmployeeId: approverId,
+							updatedAt: now,
+							updatedBy: actor.userId,
+						})
+						.onConflictDoUpdate({
+							target: travelExpenseSettings.organizationId,
+							set: {
+								expenseApproverEmployeeId: approverId,
+								updatedAt: now,
+								updatedBy: actor.userId,
+							},
+						}),
+				{ failure: failure },
 			);
 			yield* revalidateExpenseSettings();
 			return { expenseApproverEmployeeId: approverId };

@@ -3,9 +3,9 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { refusalStep } from "@/lib/organization-action/action-refusal";
 import { organizationAction } from "@/lib/organization-action/organization-action";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	commitEmployeeTrackingDate,
 	loadEmployeeTrackingDateSettings,
@@ -47,13 +47,16 @@ export const getEmployeeTrackingDateAction = organizationAction(
 export const previewEmployeeTrackingDateAction = organizationAction(
 	{ name: "employeeTrackingDates.preview", requires: "orgAdmin", schema: proposalSchema },
 	({ actor, organizationId, input }) =>
-		refusalStep("employeeTrackingDates.preview", TrackingDateRefusal, (database) =>
-			previewEmployeeTrackingDate(database, {
-				...input,
-				organizationId,
-				actorUserId: actor.userId,
-				now: systemClock.nowInstant(),
-			}),
+		storeStep(
+			"employeeTrackingDates.preview",
+			(database) =>
+				previewEmployeeTrackingDate(database, {
+					...input,
+					organizationId,
+					actorUserId: actor.userId,
+					now: systemClock.nowInstant(),
+				}),
+			{ refusal: TrackingDateRefusal },
 		),
 );
 
@@ -64,16 +67,20 @@ export const commitEmployeeTrackingDateAction = organizationAction(
 		schema: proposalSchema.extend({ fingerprint: z.string(), reason: z.string() }),
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("employeeTrackingDates.commit", TrackingDateRefusal, async (database) => {
-			const impact = await commitEmployeeTrackingDate(database, {
-				...input,
-				organizationId,
-				actorUserId: actor.userId,
-				now: systemClock.nowInstant(),
-			});
-			return {
-				status: "committed" as const,
-				refreshPending: await refreshTrackingDateResults(organizationId, impact),
-			};
-		}),
+		storeStep(
+			"employeeTrackingDates.commit",
+			async (database) => {
+				const impact = await commitEmployeeTrackingDate(database, {
+					...input,
+					organizationId,
+					actorUserId: actor.userId,
+					now: systemClock.nowInstant(),
+				});
+				return {
+					status: "committed" as const,
+					refreshPending: await refreshTrackingDateResults(organizationId, impact),
+				};
+			},
+			{ refusal: TrackingDateRefusal },
+		),
 );

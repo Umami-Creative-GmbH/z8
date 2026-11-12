@@ -3,12 +3,12 @@
 import { z } from "zod";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
-import { refusalStep } from "@/lib/organization-action/action-refusal";
 import {
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	type BalanceAdjustmentCaller,
 	balanceAdjustmentAuditMetadata,
@@ -95,9 +95,8 @@ function callerOf(actor: OrganizationActor, organizationId: string): BalanceAdju
 export const getEmployeeWorkBalanceSectionAction = organizationAction(
 	{ name: "balanceAdjustments.section", requires: "member", schema: sectionSchema },
 	({ actor, organizationId, input }) =>
-		refusalStep(
+		storeStep(
 			"balanceAdjustments.section",
-			BalanceAdjustmentRefusal,
 			async (db): Promise<EmployeeWorkBalanceSectionData> => {
 				const { canManage } = await balanceAdjustmentViewerAccess(
 					db,
@@ -121,6 +120,7 @@ export const getEmployeeWorkBalanceSectionAction = organizationAction(
 					canManage,
 				};
 			},
+			{ refusal: BalanceAdjustmentRefusal },
 		),
 );
 
@@ -131,31 +131,35 @@ export const recordOvertimePayoutAction = organizationAction(
 		schema: recordOvertimePayoutSchema,
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("balanceAdjustments.recordPayout", BalanceAdjustmentRefusal, async (db) => {
-			const authority = await balanceAdjustmentWriterAuthority(
-				db,
-				callerOf(actor, organizationId),
-				{ employeeId: input.employeeId },
-			);
-			const amountMinutes = payoutMinutes({ hours: input.hours, minutes: input.minutes });
-			if (amountMinutes === null) {
-				throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
-			}
-			const result = await withAuditTrail((audit) =>
-				recordOvertimePayout(db, audit, {
-					organizationId,
-					actorUserId: actor.userId,
-					employeeId: input.employeeId,
-					day: input.day,
-					amountMinutes,
-					reason: input.reason,
-					now: systemClock.nowInstant(),
-					auditMetadata: balanceAdjustmentAuditMetadata(authority),
-				}),
-			);
-			revalidateWorkBalancePaths([input.employeeId]);
-			return result;
-		}),
+		storeStep(
+			"balanceAdjustments.recordPayout",
+			async (db) => {
+				const authority = await balanceAdjustmentWriterAuthority(
+					db,
+					callerOf(actor, organizationId),
+					{ employeeId: input.employeeId },
+				);
+				const amountMinutes = payoutMinutes({ hours: input.hours, minutes: input.minutes });
+				if (amountMinutes === null) {
+					throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
+				}
+				const result = await withAuditTrail((audit) =>
+					recordOvertimePayout(db, audit, {
+						organizationId,
+						actorUserId: actor.userId,
+						employeeId: input.employeeId,
+						day: input.day,
+						amountMinutes,
+						reason: input.reason,
+						now: systemClock.nowInstant(),
+						auditMetadata: balanceAdjustmentAuditMetadata(authority),
+					}),
+				);
+				revalidateWorkBalancePaths([input.employeeId]);
+				return result;
+			},
+			{ refusal: BalanceAdjustmentRefusal },
+		),
 );
 
 /**
@@ -169,35 +173,39 @@ export const setOpeningBalanceAction = organizationAction(
 		schema: setOpeningBalanceSchema,
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("balanceAdjustments.setOpeningBalance", BalanceAdjustmentRefusal, async (db) => {
-			const authority = await balanceAdjustmentWriterAuthority(
-				db,
-				callerOf(actor, organizationId),
-				{ employeeId: input.employeeId },
-			);
-			const minutes = openingBalanceMinutes({
-				negative: input.negative,
-				hours: input.hours,
-				minutes: input.minutes,
-			});
-			if (minutes === null) {
-				throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
-			}
-			const written = await withAuditTrail((audit) =>
-				setOpeningBalance(db, audit, {
-					organizationId,
-					actorUserId: actor.userId,
-					employeeId: input.employeeId,
-					day: input.day,
-					minutes,
-					reason: input.reason,
-					now: systemClock.nowInstant(),
-					auditMetadata: balanceAdjustmentAuditMetadata(authority),
-				}),
-			);
-			revalidateWorkBalancePaths([input.employeeId]);
-			return written;
-		}),
+		storeStep(
+			"balanceAdjustments.setOpeningBalance",
+			async (db) => {
+				const authority = await balanceAdjustmentWriterAuthority(
+					db,
+					callerOf(actor, organizationId),
+					{ employeeId: input.employeeId },
+				);
+				const minutes = openingBalanceMinutes({
+					negative: input.negative,
+					hours: input.hours,
+					minutes: input.minutes,
+				});
+				if (minutes === null) {
+					throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
+				}
+				const written = await withAuditTrail((audit) =>
+					setOpeningBalance(db, audit, {
+						organizationId,
+						actorUserId: actor.userId,
+						employeeId: input.employeeId,
+						day: input.day,
+						minutes,
+						reason: input.reason,
+						now: systemClock.nowInstant(),
+						auditMetadata: balanceAdjustmentAuditMetadata(authority),
+					}),
+				);
+				revalidateWorkBalancePaths([input.employeeId]);
+				return written;
+			},
+			{ refusal: BalanceAdjustmentRefusal },
+		),
 );
 
 export const cancelBalanceAdjustmentAction = organizationAction(
@@ -207,24 +215,28 @@ export const cancelBalanceAdjustmentAction = organizationAction(
 		schema: cancelBalanceAdjustmentSchema,
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("balanceAdjustments.cancel", BalanceAdjustmentRefusal, async (db) => {
-			const authority = await balanceAdjustmentWriterAuthority(
-				db,
-				callerOf(actor, organizationId),
-				{ employeeId: input.employeeId },
-			);
-			const result = await withAuditTrail((audit) =>
-				cancelBalanceAdjustment(db, audit, {
-					organizationId,
-					actorUserId: actor.userId,
-					employeeId: input.employeeId,
-					adjustmentId: input.adjustmentId,
-					reason: input.reason,
-					now: systemClock.nowInstant(),
-					auditMetadata: balanceAdjustmentAuditMetadata(authority),
-				}),
-			);
-			revalidateWorkBalancePaths([input.employeeId]);
-			return result;
-		}),
+		storeStep(
+			"balanceAdjustments.cancel",
+			async (db) => {
+				const authority = await balanceAdjustmentWriterAuthority(
+					db,
+					callerOf(actor, organizationId),
+					{ employeeId: input.employeeId },
+				);
+				const result = await withAuditTrail((audit) =>
+					cancelBalanceAdjustment(db, audit, {
+						organizationId,
+						actorUserId: actor.userId,
+						employeeId: input.employeeId,
+						adjustmentId: input.adjustmentId,
+						reason: input.reason,
+						now: systemClock.nowInstant(),
+						auditMetadata: balanceAdjustmentAuditMetadata(authority),
+					}),
+				);
+				revalidateWorkBalancePaths([input.employeeId]);
+				return result;
+			},
+			{ refusal: BalanceAdjustmentRefusal },
+		),
 );

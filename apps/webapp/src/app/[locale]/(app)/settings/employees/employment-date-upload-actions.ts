@@ -5,8 +5,8 @@ import {
 	commitEmploymentDateUpload,
 	previewEmploymentDateUpload,
 } from "@/lib/employee-lifecycle/employment-date-upload";
-import { refusalStep } from "@/lib/organization-action/action-refusal";
 import { organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { TrackingDateRefusal } from "@/lib/time-tracking/tracking-date-review-types";
 
 const csv = z.string("Choose a readable CSV file.");
@@ -18,13 +18,16 @@ export const previewEmploymentDateUploadAction = organizationAction(
 		schema: z.strictObject({ csv }),
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("employmentDateUpload.preview", TrackingDateRefusal, (database) =>
-			previewEmploymentDateUpload(database, {
-				organizationId,
-				actorUserId: actor.userId,
-				now: systemClock.nowInstant(),
-				csv: input.csv,
-			}),
+		storeStep(
+			"employmentDateUpload.preview",
+			(database) =>
+				previewEmploymentDateUpload(database, {
+					organizationId,
+					actorUserId: actor.userId,
+					now: systemClock.nowInstant(),
+					csv: input.csv,
+				}),
+			{ refusal: TrackingDateRefusal },
 		),
 );
 
@@ -35,13 +38,16 @@ export const commitEmploymentDateUploadAction = organizationAction(
 		schema: z.strictObject({ csv, fingerprint: z.string() }),
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("employmentDateUpload.commit", TrackingDateRefusal, (database) =>
-			commitEmploymentDateUpload(database, {
-				organizationId,
-				actorUserId: actor.userId,
-				now: systemClock.nowInstant(),
-				csv: input.csv,
-				fingerprint: input.fingerprint,
-			}),
+		storeStep(
+			"employmentDateUpload.commit",
+			(database) =>
+				commitEmploymentDateUpload(database, {
+					organizationId,
+					actorUserId: actor.userId,
+					now: systemClock.nowInstant(),
+					csv: input.csv,
+					fingerprint: input.fingerprint,
+				}),
+			{ refusal: TrackingDateRefusal },
 		),
 );

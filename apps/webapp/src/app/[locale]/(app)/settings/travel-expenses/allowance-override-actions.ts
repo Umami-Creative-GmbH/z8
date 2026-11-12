@@ -4,6 +4,7 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	type AllowanceExceptionItem,
 	authorizeAllowanceOverride,
@@ -13,7 +14,6 @@ import {
 import {
 	auditLater,
 	expenseAdministrator,
-	expenseStore,
 	revalidateExpenseSettings,
 } from "./expense-settings-effects";
 
@@ -29,11 +29,11 @@ export const getAllowanceExceptionItems = organizationAction(
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			return yield* expenseStore(
+			return yield* storeStep(
 				"travelExpenses.listAllowanceExceptions",
-				"Failed to load exceptional allowances",
 				(database): Promise<AllowanceExceptionItem[]> =>
 					listAllowanceExceptionItems(database, admin),
+				{ failure: "Failed to load exceptional allowances" },
 			);
 		}),
 );
@@ -67,14 +67,14 @@ export const authorizeAllowanceOverrideAction = organizationAction(
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
 			const { amount, reason, evidence, calculationBasis, ...target } = input;
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.authorizeAllowanceOverride",
-				"Failed to save the allowance override",
 				(database) =>
 					authorizeAllowanceOverride(database, admin, {
 						...target,
 						draft: { amount, reason, evidence, calculationBasis },
 					}),
+				{ failure: "Failed to save the allowance override" },
 			);
 			if (result.kind === "authorized") {
 				yield* auditLater(
@@ -112,10 +112,10 @@ export const revokeAllowanceOverrideAction = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.revokeAllowanceOverride",
-				"Failed to revoke the allowance override",
 				(database) => revokeAllowanceOverride(database, admin, input),
+				{ failure: "Failed to revoke the allowance override" },
 			);
 			if (result.kind === "revoked") {
 				yield* auditLater(

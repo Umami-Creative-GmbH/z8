@@ -19,12 +19,13 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	noInput,
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import type {
 	SurchargeAssignmentWithDetails,
 	SurchargeCalculationWithDetails,
@@ -73,19 +74,11 @@ const EMPTY_SCOPE: SurchargeScope = {
 	managedProjectIds: new Set(),
 };
 
-/** Runs `work` against the database inside a named, traced query. */
-function withDb<T>(name: string, work: (db: DatabaseClient) => Promise<T>) {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		return yield* dbService.query(name, () => work(dbService.db));
-	});
-}
-
 function surchargeScopeOf(actor: OrganizationActor, organizationId: string) {
 	if (actor.settingsAccess !== "scopedManager") return Effect.succeed(null);
 	const managerId = actor.employee?.id;
 	if (!managerId) return Effect.succeed(EMPTY_SCOPE);
-	return withDb("surcharges.managerScope", (db) =>
+	return storeStep("surcharges.managerScope", (db) =>
 		loadSurchargeScope(db, organizationId, managerId),
 	);
 }
@@ -345,7 +338,7 @@ const modelNotFound = (modelId: string) =>
 	});
 
 function loadModel(organizationId: string, modelId: string) {
-	return withDb("surcharges.getModel", (db) =>
+	return storeStep("surcharges.getModel", (db) =>
 		db.query.surchargeModel.findFirst({
 			where: and(eq(surchargeModel.id, modelId), eq(surchargeModel.organizationId, organizationId)),
 			with: { rules: true },
@@ -358,7 +351,7 @@ function loadModel(organizationId: string, modelId: string) {
 }
 
 function loadRule(organizationId: string, ruleId: string) {
-	return withDb("surcharges.getRule", async (db) => {
+	return storeStep("surcharges.getRule", async (db) => {
 		const rule = await db.query.surchargeRule.findFirst({ where: eq(surchargeRule.id, ruleId) });
 		if (!rule) return null;
 		const model = await db.query.surchargeModel.findFirst({
@@ -385,7 +378,7 @@ function loadRule(organizationId: string, ruleId: string) {
 }
 
 function loadAssignment(organizationId: string, assignmentId: string) {
-	return withDb("surcharges.getAssignment", (db) =>
+	return storeStep("surcharges.getAssignment", (db) =>
 		db.query.surchargeModelAssignment.findFirst({
 			where: and(
 				eq(surchargeModelAssignment.id, assignmentId),
@@ -420,7 +413,7 @@ export const getSurchargeModels = organizationAction(
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			const scope = yield* surchargeScopeOf(actor, organizationId);
-			return yield* withDb("surcharges.listModels", async (db) => {
+			return yield* storeStep("surcharges.listModels", async (db) => {
 				const models = (await db.query.surchargeModel.findMany({
 					where: eq(surchargeModel.organizationId, organizationId),
 					with: { rules: true },
@@ -441,7 +434,7 @@ export const getSurchargeModel = organizationAction(
 			const model = yield* loadModel(organizationId, modelId);
 			const scope = yield* surchargeScopeOf(actor, organizationId);
 			if (scope) {
-				const visibleModelIds = yield* withDb("surcharges.visibleModels", (db) =>
+				const visibleModelIds = yield* storeStep("surcharges.visibleModels", (db) =>
 					visibleModelIdsForScope(db, organizationId, scope),
 				);
 				if (!visibleModelIds.has(model.id)) {
@@ -484,7 +477,7 @@ export const createSurchargeModel = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const { rules, ...modelData } = input;
-			const newModel = yield* withDb("surcharges.createModel", async (db) => {
+			const newModel = yield* storeStep("surcharges.createModel", async (db) => {
 				const [created] = await db
 					.insert(surchargeModel)
 					.values({
@@ -527,7 +520,7 @@ export const updateSurchargeModel = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			yield* loadModel(organizationId, input.modelId);
-			yield* withDb("surcharges.updateModel", (db) =>
+			yield* storeStep("surcharges.updateModel", (db) =>
 				db
 					.update(surchargeModel)
 					.set({ ...input.data, updatedBy: actor.userId, updatedAt: new Date() })
@@ -548,7 +541,7 @@ export const deleteSurchargeModel = organizationAction(
 	({ actor, organizationId, input: modelId }) =>
 		Effect.gen(function* () {
 			yield* loadModel(organizationId, modelId);
-			yield* withDb("surcharges.deleteModel", async (db) => {
+			yield* storeStep("surcharges.deleteModel", async (db) => {
 				await db
 					.update(surchargeModel)
 					.set({ isActive: false, updatedBy: actor.userId, updatedAt: new Date() })
@@ -590,7 +583,7 @@ export const addSurchargeRule = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			yield* loadModel(organizationId, input.modelId);
-			const newRule = yield* withDb("surcharges.addRule", async (db) => {
+			const newRule = yield* storeStep("surcharges.addRule", async (db) => {
 				const [created] = await db
 					.insert(surchargeRule)
 					.values({
@@ -666,7 +659,7 @@ export const updateSurchargeRule = organizationAction(
 			}
 
 			if (Object.keys(updateData).length > 0) {
-				yield* withDb("surcharges.updateRule", async (db) => {
+				yield* storeStep("surcharges.updateRule", async (db) => {
 					await db.update(surchargeRule).set(updateData).where(eq(surchargeRule.id, input.ruleId));
 					await touchModel(db, existingRule.modelId, actor.userId);
 				});
@@ -681,7 +674,7 @@ export const deleteSurchargeRule = organizationAction(
 	({ actor, organizationId, input: ruleId }) =>
 		Effect.gen(function* () {
 			const existingRule = yield* loadRule(organizationId, ruleId);
-			yield* withDb("surcharges.deleteRule", async (db) => {
+			yield* storeStep("surcharges.deleteRule", async (db) => {
 				await db.delete(surchargeRule).where(eq(surchargeRule.id, ruleId));
 				await touchModel(db, existingRule.modelId, actor.userId);
 			});
@@ -699,7 +692,7 @@ export const getSurchargeAssignments = organizationAction(
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			const scope = yield* surchargeScopeOf(actor, organizationId);
-			const assignments = yield* withDb("surcharges.listAssignments", (db) =>
+			const assignments = yield* storeStep("surcharges.listAssignments", (db) =>
 				loadAssignmentsWithNames(db, organizationId, false),
 			);
 			return scope ? filterAssignmentsForManagerScope(assignments, scope) : assignments;
@@ -731,7 +724,7 @@ export const createSurchargeAssignment = organizationAction(
 			} = input;
 			const priority = assignmentType === "employee" ? 2 : assignmentType === "team" ? 1 : 0;
 
-			const created = yield* withDb("surcharges.createAssignment", async (db) => {
+			const created = yield* storeStep("surcharges.createAssignment", async (db) => {
 				try {
 					const [row] = await db
 						.insert(surchargeModelAssignment)
@@ -788,7 +781,7 @@ export const deleteSurchargeAssignment = organizationAction(
 	({ organizationId, input: assignmentId }) =>
 		Effect.gen(function* () {
 			yield* loadAssignment(organizationId, assignmentId);
-			yield* withDb("surcharges.deleteAssignment", (db) =>
+			yield* storeStep("surcharges.deleteAssignment", (db) =>
 				db
 					.update(surchargeModelAssignment)
 					.set({ isActive: false, updatedAt: new Date() })
@@ -858,7 +851,7 @@ export const getSurchargeCalculationsForPeriod = organizationAction(
 				conditions.push(eq(surchargeCalculation.employeeId, input.employeeId));
 			}
 
-			return yield* withDb("surcharges.calculationsForPeriod", async (db) => {
+			return yield* storeStep("surcharges.calculationsForPeriod", async (db) => {
 				const fetchCalculationBatch = async (offset?: number) => {
 					const calculations = await db.query.surchargeCalculation.findMany({
 						where: and(...conditions),
@@ -954,7 +947,7 @@ export const getSurchargeCalculationsForPeriod = organizationAction(
 export const getTeamsForAssignment = organizationAction(
 	{ name: "surcharges.teamsForAssignment", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		withDb("surcharges.teamsForAssignment", (db) =>
+		storeStep("surcharges.teamsForAssignment", (db) =>
 			db.query.team.findMany({
 				where: eq(team.organizationId, organizationId),
 				columns: { id: true, name: true },
@@ -967,7 +960,7 @@ export const getTeamsForAssignment = organizationAction(
 export const getEmployeesForAssignment = organizationAction(
 	{ name: "surcharges.employeesForAssignment", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		withDb("surcharges.employeesForAssignment", (db) =>
+		storeStep("surcharges.employeesForAssignment", (db) =>
 			db
 				.select({
 					id: employee.id,

@@ -2,9 +2,9 @@
 
 import { z } from "zod";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { refusalStep } from "@/lib/organization-action/action-refusal";
 import { organizationAction } from "@/lib/organization-action/organization-action";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { openingBalanceUploaderAuthority } from "@/lib/work-balance/adjustments/authorization";
 import {
 	commitOpeningBalanceUpload,
@@ -34,9 +34,8 @@ export const previewOpeningBalanceUploadAction = organizationAction(
 		schema: openingBalanceUploadSchema,
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep(
+		storeStep(
 			"balanceAdjustments.previewOpeningBalanceUpload",
-			BalanceAdjustmentRefusal,
 			async (db) => {
 				const authority = await openingBalanceUploaderAuthority(db, {
 					organizationId,
@@ -51,6 +50,7 @@ export const previewOpeningBalanceUploadAction = organizationAction(
 					now: systemClock.nowInstant(),
 				});
 			},
+			{ refusal: BalanceAdjustmentRefusal },
 		),
 );
 
@@ -61,9 +61,8 @@ export const commitOpeningBalanceUploadAction = organizationAction(
 		schema: openingBalanceUploadSchema,
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep(
+		storeStep(
 			"balanceAdjustments.commitOpeningBalanceUpload",
-			BalanceAdjustmentRefusal,
 			async (db) => {
 				const authority = await openingBalanceUploaderAuthority(db, {
 					organizationId,
@@ -84,5 +83,6 @@ export const commitOpeningBalanceUploadAction = organizationAction(
 				}
 				return outcome;
 			},
+			{ refusal: BalanceAdjustmentRefusal },
 		),
 );

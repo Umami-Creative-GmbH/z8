@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { NotFoundError } from "@/lib/effect/errors";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { activeVersionTimeline, type TimelineEntry } from "@/lib/travel-expenses/allowance-policy";
 import {
 	activateMileagePolicyVersion,
@@ -21,7 +22,7 @@ import {
 	STATUTORY_MILEAGE_DEFAULTS,
 	type StatutoryMileageDefault,
 } from "@/lib/travel-expenses/statutory-allowance-defaults";
-import { auditLater, expenseStore, revalidateExpenseSettings } from "./expense-settings-effects";
+import { auditLater, revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
  * Dated mileage policy of the organization (#606), managed by org admins.
@@ -41,11 +42,11 @@ export const getMileagePolicySettings = organizationAction(
 	{ name: "travelExpenses.getMileagePolicy", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
 		Effect.gen(function* () {
-			const versions = yield* expenseStore(
+			const versions = yield* storeStep(
 				"travelExpenses.getMileagePolicy",
-				"Failed to load the mileage policy",
 				(database) =>
 					loadMileagePolicyVersions(database, organizationId, { includeWithdrawn: true }),
+				{ failure: "Failed to load the mileage policy" },
 			);
 			return {
 				timeline: activeVersionTimeline(versions),
@@ -91,15 +92,15 @@ export const activateMileagePolicyVersionAction = organizationAction(
 			if (!parsed.ok) {
 				return { status: "invalid", errors: parsed.errors } satisfies ActivateMileagePolicyOutcome;
 			}
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.activateMileagePolicy",
-				"Failed to save the mileage policy",
 				(database) =>
 					activateMileagePolicyVersion(
 						database,
 						{ organizationId, userId: actor.userId },
 						parsed.input,
 					),
+				{ failure: "Failed to save the mileage policy" },
 			);
 			if (result.kind !== "activated") {
 				return (
@@ -145,15 +146,15 @@ export const withdrawMileagePolicyVersionAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.withdrawMileagePolicy",
-				"Failed to withdraw the mileage policy version",
 				(database) =>
 					withdrawMileagePolicyVersion(
 						database,
 						{ organizationId, userId: actor.userId },
 						{ versionId: input.versionId },
 					),
+				{ failure: "Failed to withdraw the mileage policy version" },
 			);
 			if (result.kind === "not_found") {
 				return yield* Effect.fail(

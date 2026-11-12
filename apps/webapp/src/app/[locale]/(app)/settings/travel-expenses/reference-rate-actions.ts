@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	CURRENT_REFERENCE_RATE_ACKNOWLEDGEMENT,
 	REFERENCE_RATE_PROVIDERS,
@@ -22,7 +23,6 @@ import {
 import {
 	auditLater,
 	expenseAdministrator,
-	expenseStore,
 	revalidateExpenseSettings,
 } from "./expense-settings-effects";
 
@@ -44,14 +44,14 @@ export const getReferenceRateSettings = organizationAction(
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			yield* expenseAdministrator(actor, organizationId);
-			const [policy, provider] = yield* expenseStore(
+			const [policy, provider] = yield* storeStep(
 				"travelExpenses.getReferenceRateSettings",
-				"Failed to load the reference rate settings",
 				(database) =>
 					Promise.all([
 						loadReferenceRatePolicy(database, organizationId),
 						loadReferenceRateProviderStatus(database),
 					]),
+				{ failure: "Failed to load the reference rate settings" },
 			);
 			return { policy, provider } satisfies ReferenceRateSettings;
 		}),
@@ -78,9 +78,8 @@ export const approveReferenceRateSource = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			const policy = yield* expenseStore(
+			const policy = yield* storeStep(
 				"travelExpenses.approveReferenceRateSource",
-				"Failed to approve the reference rate source",
 				(database) =>
 					approveReferenceRatePolicy(database, {
 						organizationId,
@@ -88,6 +87,7 @@ export const approveReferenceRateSource = organizationAction(
 						provider: input.provider,
 						acknowledgement: CURRENT_REFERENCE_RATE_ACKNOWLEDGEMENT[input.provider],
 					}),
+				{ failure: "Failed to approve the reference rate source" },
 			);
 			if (!policy) {
 				return yield* Effect.fail(
@@ -121,10 +121,10 @@ export const revokeReferenceRateSource = organizationAction(
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			const revoked = yield* expenseStore(
+			const revoked = yield* storeStep(
 				"travelExpenses.revokeReferenceRateSource",
-				"Failed to revoke the reference rate source",
 				(database) => revokeReferenceRatePolicy(database, organizationId),
+				{ failure: "Failed to revoke the reference rate source" },
 			);
 			if (revoked) {
 				yield* auditLater(

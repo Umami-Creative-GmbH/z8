@@ -7,8 +7,8 @@ import {
 	previewEmploymentDateCorrection,
 } from "@/lib/employee-lifecycle/employment-date-correction";
 import { refreshEmploymentDateResults } from "@/lib/employee-lifecycle/employment-date-refresh";
-import { refusalStep } from "@/lib/organization-action/action-refusal";
 import { organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { TrackingDateRefusal } from "@/lib/time-tracking/tracking-date-review-types";
 
 const correctionSchema = z.strictObject({
@@ -19,13 +19,16 @@ const correctionSchema = z.strictObject({
 export const previewEmploymentDateCorrectionAction = organizationAction(
 	{ name: "employmentDates.preview", requires: "orgAdmin", schema: correctionSchema },
 	({ actor, organizationId, input }) =>
-		refusalStep("employmentDates.preview", TrackingDateRefusal, (database) =>
-			previewEmploymentDateCorrection(database, {
-				...input,
-				organizationId,
-				actorUserId: actor.userId,
-				now: systemClock.nowInstant(),
-			}),
+		storeStep(
+			"employmentDates.preview",
+			(database) =>
+				previewEmploymentDateCorrection(database, {
+					...input,
+					organizationId,
+					actorUserId: actor.userId,
+					now: systemClock.nowInstant(),
+				}),
+			{ refusal: TrackingDateRefusal },
 		),
 );
 
@@ -36,14 +39,18 @@ export const commitEmploymentDateCorrectionAction = organizationAction(
 		schema: correctionSchema.extend({ fingerprint: z.string(), reason: z.string() }),
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("employmentDates.commit", TrackingDateRefusal, async (database) => {
-			const impact = await commitEmploymentDateCorrection(database, {
-				...input,
-				organizationId,
-				actorUserId: actor.userId,
-				now: systemClock.nowInstant(),
-			});
-			const refreshPending = await refreshEmploymentDateResults(organizationId, impact);
-			return { status: "committed" as const, refreshPending };
-		}),
+		storeStep(
+			"employmentDates.commit",
+			async (database) => {
+				const impact = await commitEmploymentDateCorrection(database, {
+					...input,
+					organizationId,
+					actorUserId: actor.userId,
+					now: systemClock.nowInstant(),
+				});
+				const refreshPending = await refreshEmploymentDateResults(organizationId, impact);
+				return { status: "committed" as const, refreshPending };
+			},
+			{ refusal: TrackingDateRefusal },
+		),
 );

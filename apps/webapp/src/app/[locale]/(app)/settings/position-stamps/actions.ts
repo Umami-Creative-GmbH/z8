@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { instantToCanonicalString, systemClock } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
-import { queryOrRefuse } from "@/lib/effect/refusal-query";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	noInput,
 	type OrganizationActionContext,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { listPositionStampAccessLog } from "@/lib/time-tracking/position-capture/access-log";
 import { PositionCaptureRefusal, requireUuid } from "@/lib/time-tracking/position-capture/errors";
 import type { PositionConsentDecision } from "@/lib/time-tracking/position-capture/policy";
@@ -74,15 +74,19 @@ function forOwnEmployee<T>(
 	{ actor, organizationId }: OrganizationActionContext<unknown>,
 	run: (db: DatabaseClient, subject: OwnSubject) => Promise<T>,
 ) {
-	return queryOrRefuse(name, PositionCaptureRefusal, (db) => {
-		if (!actor.employee) {
-			throw new PositionCaptureRefusal(
-				"employee_profile_required",
-				"An employee profile in this organization is required.",
-			);
-		}
-		return run(db, { organizationId, employeeId: actor.employee.id });
-	});
+	return storeStep(
+		name,
+		(db) => {
+			if (!actor.employee) {
+				throw new PositionCaptureRefusal(
+					"employee_profile_required",
+					"An employee profile in this organization is required.",
+				);
+			}
+			return run(db, { organizationId, employeeId: actor.employee.id });
+		},
+		{ refusal: PositionCaptureRefusal },
+	);
 }
 
 export const getOwnPositionCaptureAction = organizationAction(

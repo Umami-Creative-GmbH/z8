@@ -7,6 +7,7 @@ import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import type { SaveExpenseOfficerGrantInput } from "@/lib/travel-expenses/expense-officer-grant";
 import {
 	type ExpenseOfficerGrantRecord,
@@ -14,7 +15,7 @@ import {
 	revokeExpenseOfficerGrant,
 	saveExpenseOfficerGrant,
 } from "@/lib/travel-expenses/expense-officer-grant-store";
-import { expenseStore, revalidateExpenseSettings } from "./expense-settings-effects";
+import { revalidateExpenseSettings } from "./expense-settings-effects";
 
 /**
  * Expense officers (#747, ADR 0001): who handles approved expense reports
@@ -50,9 +51,8 @@ export const getExpenseOfficerAdminData = organizationAction(
 	{ name: "travelExpenses.getExpenseOfficers", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
 		Effect.gen(function* () {
-			const [people, teams, grants] = yield* expenseStore(
+			const [people, teams, grants] = yield* storeStep(
 				"travelExpenses.getExpenseOfficers",
-				"Failed to load the expense officers",
 				(database) =>
 					Promise.all([
 						database
@@ -76,6 +76,7 @@ export const getExpenseOfficerAdminData = organizationAction(
 							.orderBy(asc(team.name)),
 						listActiveExpenseOfficerGrants(database, { organizationId }),
 					]),
+				{ failure: "Failed to load the expense officers" },
 			);
 			const toOption = (row: (typeof people)[number]): ExpenseOfficerPersonOption => ({
 				id: row.id,
@@ -119,9 +120,8 @@ export const saveExpenseOfficerGrantAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const { grantId } = yield* expenseStore(
+			const { grantId } = yield* storeStep(
 				"travelExpenses.saveExpenseOfficer",
-				"Failed to save the expense officer",
 				(database) =>
 					database.transaction((tx) =>
 						saveExpenseOfficerGrant(tx, {
@@ -130,6 +130,7 @@ export const saveExpenseOfficerGrantAction = organizationAction(
 							grant: input,
 						}),
 					),
+				{ failure: "Failed to save the expense officer" },
 			);
 			yield* revalidateExpenseSettings("/travel-expenses");
 			return { grantId };
@@ -145,9 +146,8 @@ export const revokeExpenseOfficerGrantAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const { grantId } = yield* expenseStore(
+			const { grantId } = yield* storeStep(
 				"travelExpenses.revokeExpenseOfficer",
-				"Failed to revoke the expense officer",
 				(database) =>
 					database.transaction((tx) =>
 						revokeExpenseOfficerGrant(tx, {
@@ -156,6 +156,7 @@ export const revokeExpenseOfficerGrantAction = organizationAction(
 							grantId: input.grantId,
 						}),
 					),
+				{ failure: "Failed to revoke the expense officer" },
 			);
 			yield* revalidateExpenseSettings("/travel-expenses");
 			return { grantId };

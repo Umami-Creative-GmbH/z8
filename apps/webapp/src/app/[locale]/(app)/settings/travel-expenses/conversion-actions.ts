@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { ValidationError } from "@/lib/effect/errors";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { loadOrganizationReimbursementCurrency } from "@/lib/travel-expenses/conversion-read";
 import {
 	type AuthorizeRateResult,
@@ -18,7 +19,6 @@ import {
 import {
 	auditLater,
 	expenseAdministrator,
-	expenseStore,
 	revalidateExpenseSettings,
 } from "./expense-settings-effects";
 
@@ -34,10 +34,10 @@ export const getReimbursementCurrencySetting = organizationAction(
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			yield* expenseAdministrator(actor, organizationId);
-			const currency = yield* expenseStore(
+			const currency = yield* storeStep(
 				"travelExpenses.getReimbursementCurrency",
-				"Failed to load the reimbursement currency",
 				(database) => loadOrganizationReimbursementCurrency(database, organizationId),
+				{ failure: "Failed to load the reimbursement currency" },
 			);
 			return { currency };
 		}),
@@ -54,15 +54,15 @@ export const saveReimbursementCurrencySetting = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.saveReimbursementCurrency",
-				"Failed to save the reimbursement currency",
 				(database) =>
 					saveOrganizationReimbursementCurrency(database, {
 						organizationId,
 						userId: actor.userId,
 						currency: input.currency,
 					}),
+				{ failure: "Failed to save the reimbursement currency" },
 			);
 			if (result.kind !== "saved") {
 				return yield* Effect.fail(
@@ -92,10 +92,10 @@ export const getForeignDraftExpenses = organizationAction(
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			yield* expenseAdministrator(actor, organizationId);
-			return yield* expenseStore(
+			return yield* storeStep(
 				"travelExpenses.listForeignDraftExpenses",
-				"Failed to load foreign-currency expenses",
 				(database): Promise<ForeignDraftItem[]> => listForeignDraftItems(database, organizationId),
+				{ failure: "Failed to load foreign-currency expenses" },
 			);
 		}),
 );
@@ -128,11 +128,11 @@ export const authorizeManualConversionRateAction = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.authorizeManualConversionRate",
-				"Failed to save the conversion rate",
 				(database): Promise<AuthorizeRateResult> =>
 					authorizeManualConversionRate(database, admin, input),
+				{ failure: "Failed to save the conversion rate" },
 			);
 			if (result.kind === "saved") {
 				yield* auditLater(
@@ -160,10 +160,10 @@ export const clearItemConversionAction = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const admin = yield* expenseAdministrator(actor, organizationId);
-			const result = yield* expenseStore(
+			const result = yield* storeStep(
 				"travelExpenses.clearItemConversion",
-				"Failed to remove the conversion",
 				(database) => clearItemConversion(database, admin, input),
+				{ failure: "Failed to remove the conversion" },
 			);
 			if (result.kind === "removed") {
 				yield* auditLater(

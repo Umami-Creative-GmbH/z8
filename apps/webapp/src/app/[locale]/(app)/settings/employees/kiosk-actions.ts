@@ -9,9 +9,9 @@ import { employee, location } from "@/db/schema";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { refusalStep } from "@/lib/organization-action/action-refusal";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { KioskBadgeRefusal } from "@/lib/time-tracking/kiosk/badge-errors";
 import { renderKioskBadgePdf } from "@/lib/time-tracking/kiosk/badge-pdf";
 import {
@@ -127,58 +127,62 @@ const employeeBadgeSchema = z.strictObject({
 export const getEmployeeKioskStateAction = organizationAction(
 	{ name: "kiosk.employeeState", requires: "member", schema: employeeIdSchema },
 	({ actor, organizationId, input: id }) =>
-		refusalStep("kiosk.employeeState", KioskPinRefusal, async (db) => {
-			const [target] = isUuid(id)
-				? await db
-						.select({ email: user.email })
-						.from(employee)
-						.innerJoin(user, eq(user.id, employee.userId))
-						.where(and(eq(employee.id, id), eq(employee.organizationId, organizationId)))
-						.limit(1)
-				: [];
-			if (!target) return null;
-			const input = { organizationId, actorUserId: actor.userId, employeeId: id };
-			const canManagePin = await canManageEmployeeKioskPin(db, input);
-			const isAdmin = meetsSettingsAccess(actor.settingsAccess, "orgAdmin");
-			const kioskOnly = isReservedEmail(target.email);
-			if (!canManagePin && !(kioskOnly && isAdmin)) return null;
-			const [status, badge, fob, timezone] = canManagePin
-				? await Promise.all([
-						readKioskPinStatus(db, input),
-						readKioskBadgeStatus(db, input),
-						readKioskFobStatus(db, input),
-						loadOrganizationTimezone(db, organizationId),
-					])
-				: [{ hasPin: false, lockedUntil: null }, null, null, "UTC"];
-			return {
-				canManagePin,
-				hasPin: status.hasPin,
-				lockedUntil: status.lockedUntil ? instantToCanonicalString(status.lockedUntil) : null,
-				kioskOnly,
-				canAddEmail: kioskOnly && isAdmin,
-				badge: badge && {
-					activeBadgeId: badge.active?.badgeId ?? null,
-					activeIssuedAt: badge.active ? instantToCanonicalString(badge.active.issuedAt) : null,
-					lastRevokedAt: badge.lastRevoked
-						? instantToCanonicalString(badge.lastRevoked.revokedAt)
-						: null,
-					lastRevokedReason: badge.lastRevoked?.reason ?? null,
-					departureLastWorkingDay: badge.lastRevoked?.lastWorkingDay?.toString() ?? null,
-					timezone,
-					canIssue: badge.canIssue,
-				},
-				fob: fob && {
-					active: fob.active && kioskFobViewState(fob.active),
-					lastEnded: fob.lastEnded && {
-						at: instantToCanonicalString(fob.lastEnded.endedAt),
-						reason: fob.lastEnded.reason,
-						departureLastWorkingDay: fob.lastEnded.lastWorkingDay?.toString() ?? null,
+		storeStep(
+			"kiosk.employeeState",
+			async (db) => {
+				const [target] = isUuid(id)
+					? await db
+							.select({ email: user.email })
+							.from(employee)
+							.innerJoin(user, eq(user.id, employee.userId))
+							.where(and(eq(employee.id, id), eq(employee.organizationId, organizationId)))
+							.limit(1)
+					: [];
+				if (!target) return null;
+				const input = { organizationId, actorUserId: actor.userId, employeeId: id };
+				const canManagePin = await canManageEmployeeKioskPin(db, input);
+				const isAdmin = meetsSettingsAccess(actor.settingsAccess, "orgAdmin");
+				const kioskOnly = isReservedEmail(target.email);
+				if (!canManagePin && !(kioskOnly && isAdmin)) return null;
+				const [status, badge, fob, timezone] = canManagePin
+					? await Promise.all([
+							readKioskPinStatus(db, input),
+							readKioskBadgeStatus(db, input),
+							readKioskFobStatus(db, input),
+							loadOrganizationTimezone(db, organizationId),
+						])
+					: [{ hasPin: false, lockedUntil: null }, null, null, "UTC"];
+				return {
+					canManagePin,
+					hasPin: status.hasPin,
+					lockedUntil: status.lockedUntil ? instantToCanonicalString(status.lockedUntil) : null,
+					kioskOnly,
+					canAddEmail: kioskOnly && isAdmin,
+					badge: badge && {
+						activeBadgeId: badge.active?.badgeId ?? null,
+						activeIssuedAt: badge.active ? instantToCanonicalString(badge.active.issuedAt) : null,
+						lastRevokedAt: badge.lastRevoked
+							? instantToCanonicalString(badge.lastRevoked.revokedAt)
+							: null,
+						lastRevokedReason: badge.lastRevoked?.reason ?? null,
+						departureLastWorkingDay: badge.lastRevoked?.lastWorkingDay?.toString() ?? null,
+						timezone,
+						canIssue: badge.canIssue,
 					},
-					fobReaderInUse: fob.fobReaderInUse,
-					timezone,
-				},
-			} satisfies EmployeeKioskState;
-		}),
+					fob: fob && {
+						active: fob.active && kioskFobViewState(fob.active),
+						lastEnded: fob.lastEnded && {
+							at: instantToCanonicalString(fob.lastEnded.endedAt),
+							reason: fob.lastEnded.reason,
+							departureLastWorkingDay: fob.lastEnded.lastWorkingDay?.toString() ?? null,
+						},
+						fobReaderInUse: fob.fobReaderInUse,
+						timezone,
+					},
+				} satisfies EmployeeKioskState;
+			},
+			{ refusal: KioskPinRefusal },
+		),
 );
 
 /**
@@ -194,15 +198,19 @@ export const removeEmployeeKioskFobAction = organizationAction(
 		schema: z.strictObject({ employeeId: z.string(), expectedFobId: z.string() }),
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("kiosk.removeFob", KioskFobManagementRefusal, async (db) => {
-			await removeKioskFob(db, {
-				organizationId,
-				actorUserId: actor.userId,
-				employeeId: input.employeeId,
-				expectedFobId: input.expectedFobId,
-			});
-			return { removed: true as const };
-		}),
+		storeStep(
+			"kiosk.removeFob",
+			async (db) => {
+				await removeKioskFob(db, {
+					organizationId,
+					actorUserId: actor.userId,
+					employeeId: input.employeeId,
+					expectedFobId: input.expectedFobId,
+				});
+				return { removed: true as const };
+			},
+			{ refusal: KioskFobManagementRefusal },
+		),
 );
 
 /** The PDF's file name: ASCII letters and digits of the employee's name. */
@@ -239,14 +247,18 @@ async function renderBadgeFor(badge: KioskBadgeDelivery): Promise<IssuedKioskBad
 export const issueEmployeeKioskBadgeAction = organizationAction(
 	{ name: "kiosk.issueBadge", requires: "member", schema: employeeIdSchema },
 	({ actor, organizationId, input: employeeId }) =>
-		refusalStep("kiosk.issueBadge", KioskBadgeRefusal, async (db) => {
-			const issued = await issueKioskBadge(
-				db,
-				{ organizationId, actorUserId: actor.userId, employeeId },
-				renderBadgeFor,
-			);
-			return issued.delivery;
-		}),
+		storeStep(
+			"kiosk.issueBadge",
+			async (db) => {
+				const issued = await issueKioskBadge(
+					db,
+					{ organizationId, actorUserId: actor.userId, employeeId },
+					renderBadgeFor,
+				);
+				return issued.delivery;
+			},
+			{ refusal: KioskBadgeRefusal },
+		),
 );
 
 /**
@@ -257,14 +269,18 @@ export const issueEmployeeKioskBadgeAction = organizationAction(
 export const replaceEmployeeKioskBadgeAction = organizationAction(
 	{ name: "kiosk.replaceBadge", requires: "member", schema: employeeBadgeSchema },
 	({ actor, organizationId, input }) =>
-		refusalStep("kiosk.replaceBadge", KioskBadgeRefusal, async (db) => {
-			const issued = await replaceKioskBadge(
-				db,
-				{ organizationId, actorUserId: actor.userId, ...input },
-				renderBadgeFor,
-			);
-			return issued.delivery;
-		}),
+		storeStep(
+			"kiosk.replaceBadge",
+			async (db) => {
+				const issued = await replaceKioskBadge(
+					db,
+					{ organizationId, actorUserId: actor.userId, ...input },
+					renderBadgeFor,
+				);
+				return issued.delivery;
+			},
+			{ refusal: KioskBadgeRefusal },
+		),
 );
 
 /**
@@ -274,18 +290,24 @@ export const replaceEmployeeKioskBadgeAction = organizationAction(
 export const revokeEmployeeKioskBadgeAction = organizationAction(
 	{ name: "kiosk.revokeBadge", requires: "member", schema: employeeBadgeSchema },
 	({ actor, organizationId, input }) =>
-		refusalStep("kiosk.revokeBadge", KioskBadgeRefusal, async (db) => {
-			await revokeKioskBadge(db, { organizationId, actorUserId: actor.userId, ...input });
-			return { revoked: true as const };
-		}),
+		storeStep(
+			"kiosk.revokeBadge",
+			async (db) => {
+				await revokeKioskBadge(db, { organizationId, actorUserId: actor.userId, ...input });
+				return { revoked: true as const };
+			},
+			{ refusal: KioskBadgeRefusal },
+		),
 );
 
 /** Issues a generated PIN; the PIN is in the result once and nowhere else. */
 export const issueEmployeeKioskPinAction = organizationAction(
 	{ name: "kiosk.issuePin", requires: "member", schema: employeeIdSchema },
 	({ actor, organizationId, input: employeeId }) =>
-		refusalStep("kiosk.issuePin", KioskPinRefusal, (db) =>
-			issueKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId }),
+		storeStep(
+			"kiosk.issuePin",
+			(db) => issueKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId }),
+			{ refusal: KioskPinRefusal },
 		),
 );
 
@@ -293,18 +315,24 @@ export const issueEmployeeKioskPinAction = organizationAction(
 export const resetEmployeeKioskPinAction = organizationAction(
 	{ name: "kiosk.resetPin", requires: "member", schema: employeeIdSchema },
 	({ actor, organizationId, input: employeeId }) =>
-		refusalStep("kiosk.resetPin", KioskPinRefusal, (db) =>
-			resetKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId }),
+		storeStep(
+			"kiosk.resetPin",
+			(db) => resetKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId }),
+			{ refusal: KioskPinRefusal },
 		),
 );
 
 export const unlockEmployeeKioskPinAction = organizationAction(
 	{ name: "kiosk.unlockPin", requires: "member", schema: employeeIdSchema },
 	({ actor, organizationId, input: employeeId }) =>
-		refusalStep("kiosk.unlockPin", KioskPinRefusal, async (db) => {
-			await unlockKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId });
-			return { unlocked: true as const };
-		}),
+		storeStep(
+			"kiosk.unlockPin",
+			async (db) => {
+				await unlockKioskPin(db, { organizationId, actorUserId: actor.userId, employeeId });
+				return { unlocked: true as const };
+			},
+			{ refusal: KioskPinRefusal },
+		),
 );
 
 const createKioskOnlyEmployeeSchema = z.strictObject({
@@ -345,15 +373,19 @@ export const createKioskOnlyEmployeeAction = organizationAction(
 		schema: createKioskOnlyEmployeeSchema,
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("kiosk.createKioskOnlyEmployee", KioskPinRefusal, async (db) => {
-			const { employeeId } = await createKioskOnlyEmployee(db, {
-				organizationId,
-				actorUserId: actor.userId,
-				...input,
-			});
-			revalidatePath(EMPLOYEES_PATH);
-			return { employeeId };
-		}),
+		storeStep(
+			"kiosk.createKioskOnlyEmployee",
+			async (db) => {
+				const { employeeId } = await createKioskOnlyEmployee(db, {
+					organizationId,
+					actorUserId: actor.userId,
+					...input,
+				});
+				revalidatePath(EMPLOYEES_PATH);
+				return { employeeId };
+			},
+			{ refusal: KioskPinRefusal },
+		),
 );
 
 /** Gives a kiosk-only employee a real email and sends them the invitation to choose a password. */
@@ -364,13 +396,17 @@ export const addKioskOnlyEmployeeEmailAction = organizationAction(
 		schema: z.strictObject({ employeeId: z.string(), email: z.string() }),
 	},
 	({ actor, organizationId, input }) =>
-		refusalStep("kiosk.addKioskOnlyEmployeeEmail", KioskPinRefusal, async (db) => {
-			const result = await addEmailToKioskOnlyEmployee(
-				db,
-				{ organizationId, actorUserId: actor.userId, ...input },
-				kioskOnlyEmailUpgradeDeps,
-			);
-			revalidatePath(EMPLOYEES_PATH);
-			return result;
-		}),
+		storeStep(
+			"kiosk.addKioskOnlyEmployeeEmail",
+			async (db) => {
+				const result = await addEmailToKioskOnlyEmployee(
+					db,
+					{ organizationId, actorUserId: actor.userId, ...input },
+					kioskOnlyEmailUpgradeDeps,
+				);
+				revalidatePath(EMPLOYEES_PATH);
+				return result;
+			},
+			{ refusal: KioskPinRefusal },
+		),
 );
