@@ -4,6 +4,11 @@
  * request's translator), so users read the same translated sentence either way.
  * Client-safe.
  */
+import {
+	actionMessageText,
+	type RefusalMessages,
+	type Translate,
+} from "@/lib/organization-action/action-error-message";
 import type { CustomFieldHistoryRefusal } from "./history-rules";
 
 /** Why the value store refused a write (`CustomFieldValuesRefused`). */
@@ -20,74 +25,75 @@ export type CustomFieldValuesRefusal =
 	| "missing_required";
 
 /** A Tolgee `t` (client `useTranslate` or server `getTranslate`). */
-export type CustomFieldMessageTranslate = (
-	key: string,
-	defaultValue: string,
-	params?: Record<string, string>,
-) => string;
+export type CustomFieldMessageTranslate = Translate;
 
 /** The English defaults with their placeholders filled in (server logs, tests). */
 export const englishDefaults: CustomFieldMessageTranslate = (_key, defaultValue, params) =>
-	defaultValue.replace(/\{(\w+)\}/g, (_match, name: string) => params?.[name] ?? "");
+	defaultValue.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? ""));
+
+/**
+ * Why a custom field value was refused, as a sentence about "this field": the
+ * override map custom field forms pass to `actionErrorMessage`.
+ */
+export const CUSTOM_FIELD_VALUE_REFUSALS = {
+	text_too_long: [
+		"settings.customFields.valueRefusal.textTooLong",
+		"Enter at most 255 characters.",
+	],
+	invalid_number: ["settings.customFields.valueRefusal.invalidNumber", "Enter a number."],
+	number_not_integer: [
+		"settings.customFields.valueRefusal.numberNotInteger",
+		"Enter a whole number.",
+	],
+	number_out_of_range: [
+		"settings.customFields.valueRefusal.numberOutOfRange",
+		"Enter a number within the allowed range.",
+	],
+	invalid_date: ["settings.customFields.valueRefusal.invalidDate", "Enter a valid date."],
+	option_archived: [
+		"settings.customFields.valueRefusal.optionArchived",
+		"This option is archived. Choose another one.",
+	],
+	invalid_option: ["settings.customFields.valueRefusal.invalidValue", "Enter a valid value."],
+	invalid_value: ["settings.customFields.valueRefusal.invalidValue", "Enter a valid value."],
+	invalid_valid_from: [
+		"settings.customFields.valueRefusal.invalidValidFrom",
+		"Enter a valid start date.",
+	],
+	duplicate_valid_from: [
+		"settings.customFields.valueRefusal.duplicateValidFrom",
+		"There is already a value starting on that date.",
+	],
+	missing_value: [
+		"settings.customFields.valueRefusal.missingValue",
+		"Enter a value for each date.",
+	],
+	unknown_history_entry: [
+		"settings.customFields.valueRefusal.unknownHistoryEntry",
+		"The history changed in the meantime. Reload the page and try again.",
+	],
+	tracked_field: [
+		"settings.customFields.valueRefusal.trackedField",
+		"This field keeps a history. Add a dated change instead.",
+	],
+	unknown_field: [
+		"settings.customFields.valueRefusal.unknownField",
+		"This field no longer exists. Reload the page and try again.",
+	],
+	field_archived: ["settings.customFields.valueRefusal.fieldArchived", "This field is archived."],
+	not_editable: ["settings.customFields.valueRefusal.notEditable", "You can't change this field."],
+	missing_required: [
+		"settings.customFields.valueRefusal.missingRequired",
+		"This field is required.",
+	],
+} satisfies RefusalMessages<CustomFieldValuesRefusal>;
 
 /** Why a custom field value was refused, as a sentence about "this field". */
 export function valueRefusalMessage(
 	t: CustomFieldMessageTranslate,
 	reason: CustomFieldValuesRefusal,
 ): string {
-	switch (reason) {
-		case "text_too_long":
-			return t("settings.customFields.valueRefusal.textTooLong", "Enter at most 255 characters.");
-		case "invalid_number":
-			return t("settings.customFields.valueRefusal.invalidNumber", "Enter a number.");
-		case "number_not_integer":
-			return t("settings.customFields.valueRefusal.numberNotInteger", "Enter a whole number.");
-		case "number_out_of_range":
-			return t(
-				"settings.customFields.valueRefusal.numberOutOfRange",
-				"Enter a number within the allowed range.",
-			);
-		case "invalid_date":
-			return t("settings.customFields.valueRefusal.invalidDate", "Enter a valid date.");
-		case "option_archived":
-			return t(
-				"settings.customFields.valueRefusal.optionArchived",
-				"This option is archived. Choose another one.",
-			);
-		case "invalid_option":
-		case "invalid_value":
-			return t("settings.customFields.valueRefusal.invalidValue", "Enter a valid value.");
-		case "invalid_valid_from":
-			return t("settings.customFields.valueRefusal.invalidValidFrom", "Enter a valid start date.");
-		case "duplicate_valid_from":
-			return t(
-				"settings.customFields.valueRefusal.duplicateValidFrom",
-				"There is already a value starting on that date.",
-			);
-		case "missing_value":
-			return t("settings.customFields.valueRefusal.missingValue", "Enter a value for each date.");
-		case "unknown_history_entry":
-			return t(
-				"settings.customFields.valueRefusal.unknownHistoryEntry",
-				"The history changed in the meantime. Reload the page and try again.",
-			);
-		case "tracked_field":
-			return t(
-				"settings.customFields.valueRefusal.trackedField",
-				"This field keeps a history. Add a dated change instead.",
-			);
-		case "unknown_field":
-			return t(
-				"settings.customFields.valueRefusal.unknownField",
-				"This field no longer exists. Reload the page and try again.",
-			);
-		case "field_archived":
-			return t("settings.customFields.valueRefusal.fieldArchived", "This field is archived.");
-		case "not_editable":
-			return t("settings.customFields.valueRefusal.notEditable", "You can't change this field.");
-		case "missing_required":
-			return t("settings.customFields.valueRefusal.missingRequired", "This field is required.");
-	}
+	return actionMessageText(t, CUSTOM_FIELD_VALUE_REFUSALS[reason]);
 }
 
 /** A refusal for a named field, as the save actions report it. */
