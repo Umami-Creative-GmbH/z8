@@ -349,7 +349,7 @@ describe("ProjectDialog, starting from a template", () => {
 		await user.click(screen.getByRole("button", { name: "Create Project" }));
 
 		expect(projectActions.createProject).toHaveBeenCalledWith(
-			expect.objectContaining({ organizationId: "org-1", name: "Blank one" }),
+			expect.objectContaining({ name: "Blank one" }),
 		);
 		expect(fromTemplateActions.createProjectFromTemplate).not.toHaveBeenCalled();
 	});
@@ -385,8 +385,7 @@ describe("ProjectDialog, task requirement (#884)", () => {
 		await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
 		expect(projectActions.updateProject).toHaveBeenCalledWith(
-			"project-1",
-			expect.objectContaining({ requiresTask: true }),
+			expect.objectContaining({ projectId: "project-1", requiresTask: true }),
 		);
 	});
 
@@ -400,8 +399,7 @@ describe("ProjectDialog, task requirement (#884)", () => {
 		await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
 		expect(projectActions.updateProject).toHaveBeenCalledWith(
-			"project-1",
-			expect.objectContaining({ requiresTask: false }),
+			expect.objectContaining({ projectId: "project-1", requiresTask: false }),
 		);
 	});
 
@@ -414,9 +412,9 @@ describe("ProjectDialog, task requirement (#884)", () => {
 		await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
 		expect(projectActions.updateProject).toHaveBeenCalledWith(
-			"project-1",
-			expect.not.objectContaining({ requiresTask: expect.anything() }),
+			expect.objectContaining({ projectId: "project-1" }),
 		);
+		expect(projectActions.updateProject.mock.calls[0][0]).not.toHaveProperty("requiresTask");
 	});
 
 	it("creates a blank project that requires a task", async () => {
@@ -489,8 +487,7 @@ describe("ProjectDialog, editing a project whose customer was deleted (#938)", (
 		await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
 		expect(projectActions.updateProject).toHaveBeenCalledWith(
-			"project-1",
-			expect.objectContaining({ customerId: "customer-1" }),
+			expect.objectContaining({ projectId: "project-1", customerId: "customer-1" }),
 		);
 	});
 
@@ -502,8 +499,7 @@ describe("ProjectDialog, editing a project whose customer was deleted (#938)", (
 		await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
 		expect(projectActions.updateProject).toHaveBeenCalledWith(
-			"project-1",
-			expect.objectContaining({ customerId: null }),
+			expect.objectContaining({ projectId: "project-1", customerId: null }),
 		);
 	});
 

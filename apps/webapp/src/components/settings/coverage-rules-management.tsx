@@ -94,7 +94,7 @@ export function CoverageRulesManagement({
 	const { data: rulesResult, isLoading } = useQuery({
 		queryKey: queryKeys.coverage.rules(organizationId),
 		queryFn: async () => {
-			const result = await getCoverageRules();
+			const result = await getCoverageRules({});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -122,7 +122,7 @@ export function CoverageRulesManagement({
 
 	// Delete mutation
 	const deleteRuleMutation = useMutation({
-		mutationFn: (ruleId: string) => deleteCoverageRule(ruleId),
+		mutationFn: (ruleId: string) => deleteCoverageRule({ ruleId }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(

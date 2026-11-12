@@ -1,773 +1,407 @@
 "use server";
 
-import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath, revalidateTag } from "next/cache";
+import * as z from "zod";
+import { employee } from "@/db/schema";
 import { CACHE_TAGS } from "@/lib/cache/tags";
-import { type AnyAppError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
-	type AssignSkillInput,
-	type CreateSkillInput,
-	type EmployeeSkill,
 	type EmployeeSkillWithDetails,
-	type SkillExpiryWindow,
 	SkillService,
-	type SkillValidationResult,
 	type SkillWithRelations,
-	type UpdateSkillInput,
 } from "@/lib/effect/services/skill.service";
 import { validateExpiryReminderLeadDays } from "@/lib/expiry-reminders/expiry";
 import { createLogger } from "@/lib/logger";
-import { saveSkillReminderLeadDays as saveSkillReminderLeadDaysToStore } from "@/lib/scheduling/skill-reminder-store";
 import {
-	ensureSettingsActorCanAccessEmployeeTarget,
-	getEmployeeContext,
-	getEmployeeSettingsActorContext,
-	getTargetEmployee,
-	requireOrgAdminEmployeeSettingsAccess,
-} from "../employees/employee-action-utils";
+	noInput,
+	type OrganizationActor,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
+import { saveSkillReminderLeadDays as saveSkillReminderLeadDaysToStore } from "@/lib/scheduling/skill-reminder-store";
 
 const logger = createLogger("SkillActions");
+
+// =============================================================================
+// Input schemas
+// =============================================================================
+
+const id = z.string().min(1);
+
+const skillCategory = z.enum([
+	"safety",
+	"equipment",
+	"certification",
+	"training",
+	"language",
+	"custom",
+]);
+
+const createSkillSchema = z.strictObject({
+	name: z.string().trim().min(1, "Skill name is required").max(255),
+	description: z.string().optional(),
+	category: skillCategory,
+	customCategoryName: z.string().optional(),
+	requiresExpiry: z.boolean(),
+});
+
+const updateSkillSchema = z.strictObject({
+	skillId: id,
+	data: z.strictObject({
+		name: z.string().trim().min(1, "Skill name is required").max(255).optional(),
+		description: z.string().optional(),
+		category: skillCategory.optional(),
+		customCategoryName: z.string().optional(),
+		requiresExpiry: z.boolean().optional(),
+		isActive: z.boolean().optional(),
+	}),
+});
+
+const employeeSkillSchema = z.strictObject({ employeeId: id, skillId: id });
+
+const skillRequirements = z.array(z.strictObject({ skillId: id, isRequired: z.boolean() }));
+
+/** The lead time as the reminder rule reads it (1–365 days), never trusting the client. */
+const leadDays = z.unknown().transform((value, context) => {
+	const validation = validateExpiryReminderLeadDays(value);
+	if (validation.ok) return validation.value;
+	context.addIssue({ code: "custom", message: validation.message });
+	return z.NEVER;
+});
+
+// =============================================================================
+// The employee a skill action works on
+// =============================================================================
+
+/**
+ * Loads `employeeId` in the session's organization (another organization's
+ * employee is not found) and refuses one outside the actor's managed scope.
+ */
+function employeeInScope(actor: OrganizationActor, organizationId: string, employeeId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const target = yield* dbService.query("skills.targetEmployee", () =>
+			dbService.db.query.employee.findFirst({
+				where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+				columns: { id: true },
+			}),
+		);
+		if (!target) {
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee not found",
+					entityType: "employee",
+					entityId: employeeId,
+				}),
+			);
+		}
+		const scope = yield* actor.managedScope();
+		if (!scope.organizationWide && !scope.employeeIds.has(employeeId)) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "You do not have access to this employee's skills",
+					userId: actor.userId,
+					resource: "employeeSkill",
+					action: "access",
+				}),
+			);
+		}
+	});
+}
 
 // =============================================================================
 // Skill Catalog Actions
 // =============================================================================
 
-/**
- * Create a new skill in the organization's catalog
- * Requires admin role
- */
-export async function createSkill(
-	data: Omit<CreateSkillInput, "organizationId" | "createdBy">,
-): Promise<ServerActionResult<SkillWithRelations>> {
-	const tracer = trace.getTracer("skills");
+/** Creates a skill in the organization's catalog. */
+export const createSkill = organizationAction(
+	{ name: "skills.create", requires: "orgAdmin", schema: createSkillSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			const newSkill = yield* skillService.createSkill({
+				...input,
+				organizationId,
+				createdBy: actor.userId,
+			});
+			logger.info({ skillId: newSkill.id, organizationId }, "Skill created successfully");
+			revalidateTag(CACHE_TAGS.SKILLS(organizationId), "max");
+			return newSkill as SkillWithRelations;
+		}),
+);
 
-	const effect = tracer.startActiveSpan(
-		"createSkill",
-		{
-			attributes: {
-				"skill.name": data.name,
-				"skill.category": data.category,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "createSkill:actor" });
-				const { session } = actor;
-				const skillService = yield* SkillService;
+/** Updates a skill of the organization's catalog. */
+export const updateSkill = organizationAction(
+	{ name: "skills.update", requires: "orgAdmin", schema: updateSkillSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			const updatedSkill = yield* skillService.updateSkill(organizationId, input.skillId, {
+				...input.data,
+				updatedBy: actor.userId,
+			});
+			logger.info({ skillId: input.skillId }, "Skill updated successfully");
+			revalidateTag(CACHE_TAGS.SKILLS(organizationId), "max");
+			return updatedSkill as SkillWithRelations;
+		}),
+);
 
-				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Only organization admins can create skills",
-					resource: "skill",
-					action: "create",
-				});
+/** Soft-deletes a skill of the organization's catalog. */
+export const deleteSkill = organizationAction(
+	{ name: "skills.delete", requires: "orgAdmin", schema: id },
+	({ organizationId, input: skillId }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			yield* skillService.deleteSkill(organizationId, skillId);
+			logger.info({ skillId }, "Skill deleted successfully");
+			revalidateTag(CACHE_TAGS.SKILLS(organizationId), "max");
+		}),
+);
 
-				if (actor.currentEmployee) {
-					span.setAttribute("employee.id", actor.currentEmployee.id);
-				}
-
-				const newSkill = yield* skillService.createSkill({
-					...data,
-					organizationId: actor.organizationId,
-					createdBy: session.user.id,
-				});
-
-				logger.info(
-					{
-						skillId: newSkill.id,
-						name: newSkill.name,
-						organizationId: newSkill.organizationId,
-					},
-					"Skill created successfully",
-				);
-
-				revalidateTag(CACHE_TAGS.SKILLS(actor.organizationId), "max");
-
-				span.setAttribute("skill.id", newSkill.id);
-				span.setStatus({ code: SpanStatusCode.OK });
-				return newSkill as SkillWithRelations;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error }, "Failed to create skill");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Update an existing skill
- * Requires admin role
- */
-export async function updateSkill(
-	skillId: string,
-	data: Omit<UpdateSkillInput, "updatedBy">,
-): Promise<ServerActionResult<SkillWithRelations>> {
-	const tracer = trace.getTracer("skills");
-
-	const effect = tracer.startActiveSpan(
-		"updateSkill",
-		{
-			attributes: {
-				"skill.id": skillId,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateSkill:actor" });
-				const { session } = actor;
-				const skillService = yield* SkillService;
-
-				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Only organization admins can update skills",
-					resource: "skill",
-					action: "update",
-				});
-
-				const updatedSkill = yield* skillService.updateSkill(actor.organizationId, skillId, {
-					...data,
-					updatedBy: session.user.id,
-				});
-
-				logger.info({ skillId }, "Skill updated successfully");
-
-				revalidateTag(CACHE_TAGS.SKILLS(actor.organizationId), "max");
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return updatedSkill as SkillWithRelations;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, skillId }, "Failed to update skill");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Delete (soft-delete) a skill
- * Requires admin role
- */
-export async function deleteSkill(skillId: string): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("skills");
-
-	const effect = tracer.startActiveSpan(
-		"deleteSkill",
-		{
-			attributes: {
-				"skill.id": skillId,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteSkill:actor" });
-				const skillService = yield* SkillService;
-
-				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Only organization admins can delete skills",
-					resource: "skill",
-					action: "delete",
-				});
-
-				yield* skillService.deleteSkill(actor.organizationId, skillId);
-
-				logger.info({ skillId }, "Skill deleted successfully");
-
-				revalidateTag(CACHE_TAGS.SKILLS(actor.organizationId), "max");
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, skillId }, "Failed to delete skill");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Get all skills for the organization
- */
-export async function getOrganizationSkills(options?: {
-	includeInactive?: boolean;
-}): Promise<ServerActionResult<SkillWithRelations[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getOrganizationSkills:actor" });
-		const skillService = yield* SkillService;
-
-		const skills = yield* skillService.getOrganizationSkills(actor.organizationId, options);
-
-		return skills;
-	});
-
-	return runServerActionSafe(effect);
-}
+/** The organization's skill catalog. */
+export const getOrganizationSkills = organizationAction(
+	{
+		name: "skills.listOrganization",
+		requires: "scopedManager",
+		schema: z.strictObject({ includeInactive: z.boolean().optional() }),
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			return yield* skillService.getOrganizationSkills(organizationId, input);
+		}),
+);
 
 // =============================================================================
 // Employee Skill Assignment Actions
 // =============================================================================
 
-/**
- * Assign a skill to an employee
- * Requires admin or manager role
- */
-export async function assignSkillToEmployee(
-	data: Omit<AssignSkillInput, "organizationId" | "assignedBy">,
-): Promise<ServerActionResult<EmployeeSkillWithDetails>> {
-	const tracer = trace.getTracer("skills");
-
-	const effect = tracer.startActiveSpan(
-		"assignSkillToEmployee",
-		{
-			attributes: {
-				"employee.id": data.employeeId,
-				"skill.id": data.skillId,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "assignSkillToEmployee:actor" });
-				const { session } = actor;
-				const skillService = yield* SkillService;
-
-				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
-					yield* Effect.fail(
-						new AuthorizationError({
-							message: "Only admins and managers can assign skills",
-							userId: session.user.id,
-							resource: "employeeSkill",
-							action: "create",
-						}),
-					);
-				}
-
-				const targetEmployee = yield* getTargetEmployee(data.employeeId);
-
-				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-					message: "You do not have access to this employee's skills",
-					resource: "employeeSkill",
-					action: "create",
-				});
-
-				const assignment = yield* skillService.assignSkillToEmployee({
-					...data,
-					organizationId: actor.organizationId,
-					assignedBy: session.user.id,
-				});
-
-				// Get the skill details for the response
-				const skillDetails = yield* skillService.getSkillById(actor.organizationId, data.skillId);
-
-				logger.info(
-					{
-						employeeId: data.employeeId,
-						skillId: data.skillId,
-					},
-					"Skill assigned to employee",
-				);
-
-				revalidateTag(CACHE_TAGS.EMPLOYEE_SKILLS(data.employeeId), "max");
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return {
-					...assignment,
-					skill: skillDetails!,
-				} as EmployeeSkillWithDetails;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error }, "Failed to assign skill to employee");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+/** Assigns a skill to an employee the actor manages. */
+export const assignSkillToEmployee = organizationAction(
+	{
+		name: "skills.assignToEmployee",
+		requires: "scopedManager",
+		schema: z.strictObject({
+			employeeId: id,
+			skillId: id,
+			/** Skill expiry date: `YYYY-MM-DD`, the last valid day. Empty never expires. */
+			expiresAt: z.string().nullable().optional(),
+			notes: z.string().optional(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* employeeInScope(actor, organizationId, input.employeeId);
+			const skillService = yield* SkillService;
+			const assignment = yield* skillService.assignSkillToEmployee({
+				...input,
+				organizationId,
+				assignedBy: actor.userId,
+			});
+			const skillDetails = yield* skillService.getSkillById(organizationId, input.skillId);
+			logger.info(
+				{ employeeId: input.employeeId, skillId: input.skillId },
+				"Skill assigned to employee",
 			);
-		},
-	);
+			revalidateTag(CACHE_TAGS.EMPLOYEE_SKILLS(input.employeeId), "max");
+			return { ...assignment, skill: skillDetails! } as EmployeeSkillWithDetails;
+		}),
+);
 
-	return runServerActionSafe(effect);
-}
-
-/**
- * Change an assigned employee skill's expiry date in place
- * Requires admin or manager role with access to the employee
- */
-export async function updateEmployeeSkillExpiry(data: {
-	employeeId: string;
-	skillId: string;
-	/** `YYYY-MM-DD`, the last valid day; null never expires. */
-	expiresAt: string | null;
-}): Promise<ServerActionResult<EmployeeSkill>> {
-	const tracer = trace.getTracer("skills");
-
-	const effect = tracer.startActiveSpan(
-		"updateEmployeeSkillExpiry",
-		{
-			attributes: {
-				"employee.id": data.employeeId,
-				"skill.id": data.skillId,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({
-					queryName: "updateEmployeeSkillExpiry:actor",
-				});
-				const skillService = yield* SkillService;
-
-				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "Only admins and managers can change skill expiry dates",
-							userId: actor.session.user.id,
-							resource: "employeeSkill",
-							action: "update",
-						}),
-					);
-				}
-
-				const targetEmployee = yield* getTargetEmployee(data.employeeId);
-
-				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-					message: "You do not have access to this employee's skills",
-					resource: "employeeSkill",
-					action: "update",
-				});
-
-				const updated = yield* skillService.updateEmployeeSkillExpiry({
-					organizationId: actor.organizationId,
-					employeeId: data.employeeId,
-					skillId: data.skillId,
-					expiresAt: data.expiresAt,
-				});
-
-				logger.info(
-					{ employeeId: data.employeeId, skillId: data.skillId },
-					"Employee skill expiry date changed",
-				);
-
-				revalidateTag(CACHE_TAGS.EMPLOYEE_SKILLS(data.employeeId), "max");
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return updated;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error }, "Failed to change employee skill expiry date");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+/** Changes an assigned employee skill's expiry date in place. */
+export const updateEmployeeSkillExpiry = organizationAction(
+	{
+		name: "skills.updateEmployeeSkillExpiry",
+		requires: "scopedManager",
+		schema: z.strictObject({
+			employeeId: id,
+			skillId: id,
+			/** `YYYY-MM-DD`, the last valid day; null never expires. */
+			expiresAt: z.string().nullable(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* employeeInScope(actor, organizationId, input.employeeId);
+			const skillService = yield* SkillService;
+			const updated = yield* skillService.updateEmployeeSkillExpiry({
+				organizationId,
+				employeeId: input.employeeId,
+				skillId: input.skillId,
+				expiresAt: input.expiresAt,
+			});
+			logger.info(
+				{ employeeId: input.employeeId, skillId: input.skillId },
+				"Employee skill expiry date changed",
 			);
-		},
-	);
+			revalidateTag(CACHE_TAGS.EMPLOYEE_SKILLS(input.employeeId), "max");
+			return updated;
+		}),
+);
 
-	return runServerActionSafe(effect);
-}
-
-/**
- * The organization's today and the "Expiring soon" window the skill badges count from
- */
-export async function getSkillExpiryWindow(): Promise<ServerActionResult<SkillExpiryWindow>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getSkillExpiryWindow:actor",
-		});
-		const skillService = yield* SkillService;
-
-		return yield* skillService.getSkillExpiryWindow(actor.organizationId);
-	});
-
-	return runServerActionSafe(effect);
-}
+/** The organization's today and the "Expiring soon" window the skill badges count from. */
+export const getSkillExpiryWindow = organizationAction(
+	{ name: "skills.expiryWindow", requires: "scopedManager", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			return yield* skillService.getSkillExpiryWindow(organizationId);
+		}),
+);
 
 /**
  * The skill reminder lead time (#1143): days before a skill expiry date at which the employee and
- * their managers are reminded and the "Expiring soon" badge shows. Owners and admins only, for
- * their active organization; 1–365 days, validated here, never trusting the client.
+ * their managers are reminded and the "Expiring soon" badge shows. 1–365 days.
  */
-export async function saveSkillReminderLeadDays(input: {
-	leadDays: unknown;
-}): Promise<ServerActionResult<{ leadDays: number }>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "saveSkillReminderLeadDays:actor",
-		});
-		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-			message: "Only owners and admins can change the skill reminder lead time",
-			resource: "skillReminderSetting",
-			action: "update",
-		});
-		const validation = validateExpiryReminderLeadDays(input?.leadDays);
-		if (!validation.ok) {
-			return yield* Effect.fail(
-				new ValidationError({ message: validation.message, field: "leadDays" }),
+export const saveSkillReminderLeadDays = organizationAction(
+	{
+		name: "skills.saveReminderLeadDays",
+		requires: "orgAdmin",
+		schema: z.strictObject({ leadDays }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			yield* dbService.query("saveSkillReminderLeadDays", () =>
+				saveSkillReminderLeadDaysToStore(dbService.db, {
+					organizationId,
+					leadDays: input.leadDays,
+					actorUserId: actor.userId,
+				}),
 			);
-		}
-		const dbService = yield* DatabaseService;
-		yield* dbService.query("saveSkillReminderLeadDays", () =>
-			saveSkillReminderLeadDaysToStore(dbService.db, {
-				organizationId: actor.organizationId,
-				leadDays: validation.value,
-				actorUserId: actor.session.user.id,
-			}),
-		);
-		logger.info(
-			{ organizationId: actor.organizationId, leadDays: validation.value },
-			"Skill reminder lead time changed",
-		);
-		revalidatePath("/settings/skills");
-		return { leadDays: validation.value };
-	});
+			logger.info({ organizationId, leadDays: input.leadDays }, "Skill reminder lead time changed");
+			revalidatePath("/settings/skills");
+			return { leadDays: input.leadDays };
+		}),
+);
 
-	return runServerActionSafe(effect);
-}
-
-/**
- * Remove a skill from an employee
- * Requires admin or manager role
- */
-export async function removeSkillFromEmployee(
-	employeeId: string,
-	skillId: string,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("skills");
-
-	const effect = tracer.startActiveSpan(
-		"removeSkillFromEmployee",
-		{
-			attributes: {
-				"employee.id": employeeId,
-				"skill.id": skillId,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "removeSkillFromEmployee:actor" });
-				const skillService = yield* SkillService;
-
-				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
-					yield* Effect.fail(
-						new AuthorizationError({
-							message: "Only admins and managers can remove skills",
-							userId: actor.session.user.id,
-							resource: "employeeSkill",
-							action: "delete",
-						}),
-					);
-				}
-
-				const targetEmployee = yield* getTargetEmployee(employeeId);
-
-				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-					message: "You do not have access to this employee's skills",
-					resource: "employeeSkill",
-					action: "delete",
-				});
-
-				yield* skillService.removeSkillFromEmployee(actor.organizationId, employeeId, skillId);
-
-				logger.info(
-					{
-						employeeId,
-						skillId,
-					},
-					"Skill removed from employee",
-				);
-
-				revalidateTag(CACHE_TAGS.EMPLOYEE_SKILLS(employeeId), "max");
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, employeeId, skillId }, "Failed to remove skill from employee");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+/** Removes a skill from an employee the actor manages. */
+export const removeSkillFromEmployee = organizationAction(
+	{ name: "skills.removeFromEmployee", requires: "scopedManager", schema: employeeSkillSchema },
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			yield* employeeInScope(actor, organizationId, input.employeeId);
+			const skillService = yield* SkillService;
+			yield* skillService.removeSkillFromEmployee(organizationId, input.employeeId, input.skillId);
+			logger.info(
+				{ employeeId: input.employeeId, skillId: input.skillId },
+				"Skill removed from employee",
 			);
-		},
-	);
+			revalidateTag(CACHE_TAGS.EMPLOYEE_SKILLS(input.employeeId), "max");
+		}),
+);
 
-	return runServerActionSafe(effect);
-}
-
-/**
- * Get all skills for an employee
- */
-export async function getEmployeeSkills(
-	employeeId: string,
-): Promise<ServerActionResult<EmployeeSkillWithDetails[]>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getEmployeeSkills:actor" });
-		const skillService = yield* SkillService;
-
-		const targetEmployee = yield* getTargetEmployee(employeeId);
-
-		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-			message: "You do not have access to this employee's skills",
-			resource: "employeeSkill",
-			action: "read",
-		});
-
-		const skills = yield* skillService.getEmployeeSkills(actor.organizationId, employeeId);
-
-		return skills;
-	});
-
-	return runServerActionSafe(effect);
-}
+/** The skills of an employee the actor manages. */
+export const getEmployeeSkills = organizationAction(
+	{ name: "skills.listEmployee", requires: "scopedManager", schema: id },
+	({ actor, organizationId, input: employeeId }) =>
+		Effect.gen(function* () {
+			yield* employeeInScope(actor, organizationId, employeeId);
+			const skillService = yield* SkillService;
+			return yield* skillService.getEmployeeSkills(organizationId, employeeId);
+		}),
+);
 
 // =============================================================================
 // Skill Requirements Actions (Subareas & Templates)
 // =============================================================================
 
-/**
- * Set skill requirements for a subarea
- * Requires admin role
- */
-export async function setSubareaSkillRequirements(
-	subareaId: string,
-	requirements: Array<{ skillId: string; isRequired: boolean }>,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("skills");
-
-	const effect = tracer.startActiveSpan(
-		"setSubareaSkillRequirements",
-		{
-			attributes: {
-				"subarea.id": subareaId,
-				"requirements.count": requirements.length,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "setSubareaSkillRequirements:actor" });
-				const { session } = actor;
-				const skillService = yield* SkillService;
-
-				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Only organization admins can set subarea skill requirements",
-					resource: "subareaSkillRequirement",
-					action: "update",
-				});
-
-				yield* skillService.setSubareaSkillRequirements({
-					organizationId: actor.organizationId,
-					targetId: subareaId,
-					requirements,
-					createdBy: session.user.id,
-				});
-
-				logger.info(
-					{
-						subareaId,
-						requirementCount: requirements.length,
-					},
-					"Subarea skill requirements updated",
-				);
-
-				revalidateTag(CACHE_TAGS.SUBAREA_SKILLS(subareaId), "max");
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, subareaId }, "Failed to set subarea skill requirements");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+/** Sets the skill requirements of a subarea. */
+export const setSubareaSkillRequirements = organizationAction(
+	{
+		name: "skills.setSubareaRequirements",
+		requires: "orgAdmin",
+		schema: z.strictObject({ subareaId: id, requirements: skillRequirements }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			yield* skillService.setSubareaSkillRequirements({
+				organizationId,
+				targetId: input.subareaId,
+				requirements: input.requirements,
+				createdBy: actor.userId,
+			});
+			logger.info(
+				{ subareaId: input.subareaId, requirementCount: input.requirements.length },
+				"Subarea skill requirements updated",
 			);
-		},
-	);
+			revalidateTag(CACHE_TAGS.SUBAREA_SKILLS(input.subareaId), "max");
+		}),
+);
 
-	return runServerActionSafe(effect);
-}
-
-/**
- * Set skill requirements for a shift template
- * Requires admin role
- */
-export async function setTemplateSkillRequirements(
-	templateId: string,
-	requirements: Array<{ skillId: string; isRequired: boolean }>,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("skills");
-
-	const effect = tracer.startActiveSpan(
-		"setTemplateSkillRequirements",
-		{
-			attributes: {
-				"template.id": templateId,
-				"requirements.count": requirements.length,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "setTemplateSkillRequirements:actor" });
-				const { session } = actor;
-				const skillService = yield* SkillService;
-
-				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Only organization admins can set template skill requirements",
-					resource: "templateSkillRequirement",
-					action: "update",
-				});
-
-				yield* skillService.setTemplateSkillRequirements({
-					organizationId: actor.organizationId,
-					targetId: templateId,
-					requirements,
-					createdBy: session.user.id,
-				});
-
-				logger.info(
-					{
-						templateId,
-						requirementCount: requirements.length,
-					},
-					"Template skill requirements updated",
-				);
-
-				revalidateTag(CACHE_TAGS.TEMPLATE_SKILLS(templateId), "max");
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, templateId }, "Failed to set template skill requirements");
-						return yield* Effect.fail(error as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+/** Sets the skill requirements of a shift template. */
+export const setTemplateSkillRequirements = organizationAction(
+	{
+		name: "skills.setTemplateRequirements",
+		requires: "orgAdmin",
+		schema: z.strictObject({ templateId: id, requirements: skillRequirements }),
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			yield* skillService.setTemplateSkillRequirements({
+				organizationId,
+				targetId: input.templateId,
+				requirements: input.requirements,
+				createdBy: actor.userId,
+			});
+			logger.info(
+				{ templateId: input.templateId, requirementCount: input.requirements.length },
+				"Template skill requirements updated",
 			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
+			revalidateTag(CACHE_TAGS.TEMPLATE_SKILLS(input.templateId), "max");
+		}),
+);
 
 // =============================================================================
 // Skill Validation Actions
 // =============================================================================
 
-/**
- * Validate if an employee is qualified for a shift
- * Returns qualification status and any missing/expired skills
- */
-export async function validateEmployeeForShift(
-	employeeId: string,
-	shiftData: {
-		subareaId: string;
-		templateId?: string | null;
-		/** The shift date, `YYYY-MM-DD` on the organization's calendar. */
-		date: string;
+/** The shift date, `YYYY-MM-DD` on the organization's calendar. */
+const shiftDate = z.string().min(1);
+
+/** Whether an employee is qualified for a shift, with any missing or expired skills. */
+export const validateEmployeeForShift = organizationAction(
+	{
+		name: "skills.validateEmployeeForShift",
+		requires: "member",
+		schema: z.strictObject({
+			employeeId: id,
+			shift: z.strictObject({
+				subareaId: id,
+				templateId: z.string().nullable().optional(),
+				date: shiftDate,
+			}),
+		}),
 	},
-): Promise<ServerActionResult<SkillValidationResult>> {
-	const effect = Effect.gen(function* () {
-		const { currentEmployee } = yield* getEmployeeContext({
-			queryName: "validateEmployeeForShift:actor",
-		});
-		const skillService = yield* SkillService;
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			return yield* skillService.validateEmployeeForShift(
+				organizationId,
+				input.employeeId,
+				input.shift,
+			);
+		}),
+);
 
-		const result = yield* skillService.validateEmployeeForShift(
-			currentEmployee.organizationId,
-			employeeId,
-			shiftData,
-		);
-
-		return result;
-	});
-
-	return runServerActionSafe(effect);
-}
-
-/**
- * Get qualified employees for a set of required skills
- * Returns employee IDs that have all required skills, none expired on the shift date
- */
-export async function getQualifiedEmployeesForSkills(
-	skillIds: string[],
-	/** The shift date, `YYYY-MM-DD` on the organization's calendar. */
-	shiftDate: string,
-): Promise<ServerActionResult<string[]>> {
-	const effect = Effect.gen(function* () {
-		// The current employee of the active organization, not any of the user's employees
-		const { currentEmployee } = yield* getEmployeeContext({
-			queryName: "getQualifiedEmployeesForSkills:actor",
-		});
-		const skillService = yield* SkillService;
-
-		const qualifiedEmployeeIds = yield* skillService.getQualifiedEmployeesForSkills(
-			currentEmployee.organizationId,
-			skillIds,
-			shiftDate,
-		);
-
-		return qualifiedEmployeeIds;
-	});
-
-	return runServerActionSafe(effect);
-}
+/** The employees that hold all `skillIds`, none expired on the shift date. */
+export const getQualifiedEmployeesForSkills = organizationAction(
+	{
+		name: "skills.qualifiedEmployees",
+		requires: "member",
+		schema: z.strictObject({ skillIds: z.array(id), shiftDate }),
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const skillService = yield* SkillService;
+			return yield* skillService.getQualifiedEmployeesForSkills(
+				organizationId,
+				input.skillIds,
+				input.shiftDate,
+			);
+		}),
+);

@@ -370,11 +370,11 @@ const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
 	{
 		file: "app/[locale]/(app)/settings/teams/actions.ts",
 		functions: [
-			"resolveTeamSettingsActor",
+			"authorizeTeamMemberChange",
 			"writeTeamMemberRemoval",
 			"listTeams",
 		],
-		note: "the acting user, and removals, which stay possible for former employees",
+		note: "the change's target, whose addition the action's addsEmployees refuses for a former employee, and removals, which stay possible for former employees",
 	},
 	{
 		file: "lib/organization/driving-licence/verifier-actions.ts",
@@ -403,10 +403,21 @@ function collectFunctionBodies(
 					body: source.slice(body.getStart(sourceFile), body.getEnd()),
 				});
 		};
-		const functionLike = (node: ts.Node | undefined) =>
-			node && (ts.isArrowFunction(node) || ts.isFunctionExpression(node))
-				? node
-				: undefined;
+		const functionLike = (
+			node: ts.Node | undefined,
+		): ts.ArrowFunction | ts.FunctionExpression | undefined => {
+			if (node && (ts.isArrowFunction(node) || ts.isFunctionExpression(node))) return node;
+			// `const x = organizationAction(declaration, handler)`: the handler is x's body.
+			if (
+				node &&
+				ts.isCallExpression(node) &&
+				ts.isIdentifier(node.expression) &&
+				node.expression.text === "organizationAction"
+			) {
+				return functionLike(node.arguments.at(-1));
+			}
+			return undefined;
+		};
 
 		function visit(node: ts.Node) {
 			if (

@@ -85,9 +85,10 @@ function SaveProjectAsTemplateForm({
 	const form = useForm({
 		defaultValues: { name: project.name },
 		onSubmit: async ({ value }) => {
-			const result = await saveProjectAsTemplate(project.id, { name: value.name.trim() }).catch(
-				() => null,
-			);
+			const result = await saveProjectAsTemplate({
+				projectId: project.id,
+				name: value.name.trim(),
+			}).catch(() => null);
 			if (!result?.success) {
 				toast.error(
 					result?.error ||

@@ -451,7 +451,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			],
 			mutate: () =>
 				asOwner(() =>
-					projects.updateProject(ids.project, { status: "completed" }),
+					projects.updateProject({ projectId: ids.project, status: "completed" }),
 				),
 		},
 		{
@@ -464,7 +464,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 				[ids.projectAssignment],
 			],
 			mutate: () =>
-				asOwner(() => projects.removeProjectAssignment(ids.projectAssignment)),
+				asOwner(() => projects.removeProjectAssignment({ assignmentId: ids.projectAssignment })),
 		},
 		{
 			name: "an inserted team project assignment where none existed",
@@ -477,7 +477,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			],
 			mutate: () =>
 				asOwner(() =>
-					projects.addProjectAssignment(ids.project, "team", ids.team),
+					projects.addProjectAssignment({ projectId: ids.project, type: "team", targetId: ids.team }),
 				),
 		},
 		{
@@ -491,7 +491,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			],
 			mutate: () =>
 				asOwner(() =>
-					projects.addProjectAssignment(ids.project, "employee", ids.employee),
+					projects.addProjectAssignment({ projectId: ids.project, type: "employee", targetId: ids.employee }),
 				),
 		},
 		{
@@ -663,25 +663,17 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 		it("rejects project assignments to another organization's team or employee", async () => {
 			await expect(
 				asOwner(() =>
-					projects.addProjectAssignment(ids.project, "team", ids.otherTeam),
+					projects.addProjectAssignment({ projectId: ids.project, type: "team", targetId: ids.otherTeam }),
 				),
 			).resolves.toMatchObject({ success: false });
 			await expect(
 				asOwner(() =>
-					projects.addProjectAssignment(
-						ids.project,
-						"employee",
-						ids.otherEmployee,
-					),
+					projects.addProjectAssignment({ projectId: ids.project, type: "employee", targetId: ids.otherEmployee }),
 				),
 			).resolves.toMatchObject({ success: false });
 			await expect(
 				asOwner(() =>
-					projects.addProjectAssignment(
-						ids.otherProject,
-						"employee",
-						ids.employee,
-					),
+					projects.addProjectAssignment({ projectId: ids.otherProject, type: "employee", targetId: ids.employee }),
 				),
 			).resolves.toMatchObject({ success: false });
 			const { rows } = await admin.query("select id from project_assignment");
@@ -922,7 +914,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 
 			await expect(
 				asOwner(() =>
-					projects.updateProject(ids.project, { status: "archived" }),
+					projects.updateProject({ projectId: ids.project, status: "archived" }),
 				),
 			).resolves.toMatchObject({ success: true });
 			await expect(
@@ -960,7 +952,7 @@ describe("project and category eligibility coordination on PostgreSQL", () => {
 			expect(committed).toMatchObject({ success: true });
 
 			await expect(
-				asOwner(() => projects.removeProjectAssignment(ids.projectAssignment)),
+				asOwner(() => projects.removeProjectAssignment({ assignmentId: ids.projectAssignment })),
 			).resolves.toMatchObject({ success: true });
 			await expect(
 				asOwner(() => categories.updateSetCategories(ids.categorySet, [])),

@@ -416,7 +416,7 @@ export function PendingMembersCard({
 	// Fetch teams for assignment
 	const { data: teamsResult } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
-		queryFn: () => listTeams(organizationId),
+		queryFn: () => listTeams(),
 		enabled: canManage && pendingMembers.length > 0,
 	});
 

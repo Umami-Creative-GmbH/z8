@@ -1,18 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mockState = vi.hoisted(() => ({
-	actorSession: {
-		user: { id: "user-1", email: "manager@example.com", name: "Manager" },
-		session: { activeOrganizationId: "org-1" },
-	},
-	employeeRecord: {
-		id: "employee-1",
-		userId: "user-1",
-		organizationId: "org-1",
-		role: "manager" as const,
-		isActive: true,
-	},
-	membershipRecord: { role: "member" as const },
+	caller: null as StubCaller | null,
 	projectManagers: [] as Array<any>,
 	customerRows: [] as Array<any>,
 	projectRows: [] as Array<any>,
@@ -20,20 +10,12 @@ const mockState = vi.hoisted(() => ({
 	customerQueue: [] as Array<any>,
 	updateWhereArgs: [] as Array<any>,
 	insertValues: [] as Array<any>,
-	deleteWhereArgs: [] as Array<any>,
 	transactionProjectUpdateShouldFail: false,
 	transactionCalls: 0,
 }));
 
 vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
-}));
-
-vi.mock("drizzle-orm", () => ({
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	desc: vi.fn((value: unknown) => value),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
 }));
 
 vi.mock("@/lib/organization/custom-fields/values", () => ({
@@ -45,34 +27,6 @@ vi.mock("@/lib/organization/custom-fields/form-values", () => ({
 	saveFormCustomFieldValues: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/db/schema", () => ({
-	customer: {
-		id: "id",
-		organizationId: "organizationId",
-		isActive: "isActive",
-		name: "name",
-		$inferInsert: {},
-	},
-	employee: {
-		id: "id",
-		userId: "userId",
-		organizationId: "organizationId",
-		isActive: "isActive",
-		role: "role",
-	},
-	project: {
-		id: "id",
-		organizationId: "organizationId",
-		customerId: "customerId",
-		isActive: "isActive",
-	},
-	projectManager: { id: "id", projectId: "projectId", employeeId: "employeeId" },
-}));
-
-vi.mock("@/db/auth-schema", () => ({
-	member: { userId: "userId", organizationId: "organizationId", role: "role" },
-}));
-
 vi.mock("@/lib/audit-logger", () => ({
 	AuditAction: {
 		CUSTOMER_CREATED: "CUSTOMER_CREATED",
@@ -82,170 +36,81 @@ vi.mock("@/lib/audit-logger", () => ({
 	logAudit: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/lib/logger", () => ({
-	logger: {
-		error: vi.fn(),
-	},
-}));
-
-vi.mock("@opentelemetry/api", () => ({
-	SpanStatusCode: { OK: "OK", ERROR: "ERROR" },
-	trace: {
-		getTracer: () => ({
-			startActiveSpan: (_name: string, ...args: any[]) => {
-				const callback = args[args.length - 1];
-				return callback({
-					setStatus: vi.fn(),
-					recordException: vi.fn(),
-					end: vi.fn(),
-				});
-			},
-		}),
-	},
-}));
-
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context, Effect, Layer } = await import("effect");
-	const AuthService = Context.Service<any>("AuthService");
-	const AuthServiceLive = Layer.succeed(AuthService, {
-		getSession: () => Effect.succeed(mockState.actorSession),
-	});
-	return { AuthService, AuthServiceLive };
-});
-
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context, Effect, Layer } = await import("effect");
-	const dbModule = await import("@/db");
-	const DatabaseService = Context.Service<any>("DatabaseService");
-	const DatabaseServiceLive = Layer.succeed(DatabaseService, {
-		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
-		get db() {
-			return dbModule.db;
-		},
-	});
-	return { DatabaseService, DatabaseServiceLive };
-});
-
-// The shared runtime over the stub AppLayer members the actions read.
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Layer } = await import("effect");
-	const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(
-		Layer.mergeAll(AuthServiceLive, DatabaseServiceLive),
-	);
-});
-
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			employee: {
-				findFirst: vi.fn(async () => mockState.employeeRecord),
-			},
-			member: {
-				findFirst: vi.fn(async () => mockState.membershipRecord),
-			},
-			customer: {
-				findMany: vi.fn(async () => mockState.customerRows),
-				findFirst: vi.fn(async () => mockState.customerQueue.shift() ?? null),
-			},
-			project: {
-				findMany: vi.fn(async () => mockState.projectRows),
-				findFirst: vi.fn(async () => mockState.projectQueue.shift() ?? null),
-			},
-			projectManager: {
-				findMany: vi.fn(async () => mockState.projectManagers),
-				findFirst: vi.fn(async () => null),
-			},
-		},
-		insert: vi.fn(() => ({
-			values: vi.fn((values: unknown) => {
-				mockState.insertValues.push(values);
-				return {
-					returning: vi.fn(async () => [{ id: "customer-3" }]),
-				};
-			}),
-		})),
-		update: vi.fn(() => ({
-			set: vi.fn((values: unknown) => ({
-				where: vi.fn(async (whereArg: unknown) => {
-					mockState.insertValues.push(values);
-					mockState.updateWhereArgs.push(whereArg);
-					return undefined;
-				}),
-			})),
-		})),
-		delete: vi.fn(() => ({
+vi.mock("@/db", async () => {
+	const { customer } = await import("@/db/schema");
+	const update = () => ({
+		set: vi.fn((values: unknown) => ({
 			where: vi.fn(async (whereArg: unknown) => {
-				mockState.deleteWhereArgs.push(whereArg);
+				if (mockState.transactionProjectUpdateShouldFail) {
+					throw new Error("project-update-failed");
+				}
+				mockState.insertValues.push(values);
+				mockState.updateWhereArgs.push(whereArg);
 				return undefined;
 			}),
 		})),
-		transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => {
-			mockState.transactionCalls += 1;
-			const tx = {
-				insert: vi.fn((table: any) => {
-					if (table?.name === "name") {
-						return {
-							values: vi.fn((values: unknown) => {
-								mockState.insertValues.push(values);
-								return {
-									returning: vi.fn(async () => [{ id: "customer-3" }]),
-								};
-							}),
-						};
-					}
-
-					return {
-						values: vi.fn(async (values: unknown) => {
+	});
+	return {
+		db: {
+			query: {
+				customer: {
+					findMany: vi.fn(async () => mockState.customerRows),
+					findFirst: vi.fn(async () => mockState.customerQueue.shift() ?? null),
+				},
+				project: {
+					findMany: vi.fn(async () => mockState.projectRows),
+					findFirst: vi.fn(async () => mockState.projectQueue.shift() ?? null),
+				},
+				projectManager: {
+					findMany: vi.fn(async () => mockState.projectManagers),
+					findFirst: vi.fn(async () => null),
+				},
+			},
+			transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => {
+				mockState.transactionCalls += 1;
+				const tx = {
+					insert: vi.fn((table: unknown) => ({
+						values: vi.fn((values: unknown) => {
 							mockState.insertValues.push(values);
-							return undefined;
-						}),
-					};
-				}),
-				update: vi.fn(() => ({
-					set: vi.fn((values: unknown) => ({
-						where: vi.fn(async (whereArg: unknown) => {
-							if (mockState.transactionProjectUpdateShouldFail) {
-								throw new Error("project-update-failed");
-							}
-							mockState.insertValues.push(values);
-							mockState.updateWhereArgs.push(whereArg);
-							return undefined;
+							return {
+								returning: vi.fn(async () => (table === customer ? [{ id: "customer-3" }] : [])),
+							};
 						}),
 					})),
-				})),
-				delete: vi.fn(() => ({
-					where: vi.fn(async (whereArg: unknown) => {
-						mockState.deleteWhereArgs.push(whereArg);
-						return undefined;
-					}),
-				})),
-			};
+					update: vi.fn(update),
+				};
 
-			return await callback(tx);
-		}),
-	},
-}));
+				return await callback(tx);
+			}),
+		},
+	};
+});
 
-const { createCustomer, getCustomers, getCustomersForSelection, updateCustomer } = await import(
-	"./actions"
-);
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	const { db } = await import("@/db");
+	return runtimeModuleOver(organizationActionStubLayer(() => mockState.caller, { db }));
+});
+
+const { createCustomer, deleteCustomer, getCustomers, getCustomersForSelection, updateCustomer } =
+	await import("./actions");
+
+const scopedManager: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "manager", former: false },
+};
+const orgMember: StubCaller = {
+	...scopedManager,
+	employee: { id: "employee-1", role: "employee", former: false },
+};
+const owner: StubCaller = { ...scopedManager, membershipRole: "owner", employee: null };
 
 describe("customer settings manager scope", () => {
 	beforeEach(() => {
-		mockState.actorSession = {
-			user: { id: "user-1", email: "manager@example.com", name: "Manager" },
-			session: { activeOrganizationId: "org-1" },
-		};
-		mockState.employeeRecord = {
-			id: "employee-1",
-			userId: "user-1",
-			organizationId: "org-1",
-			role: "manager",
-			isActive: true,
-		};
-		mockState.membershipRecord = { role: "member" };
+		mockState.caller = scopedManager;
 		mockState.projectManagers = [{ id: "pm-1", projectId: "project-1", employeeId: "employee-1" }];
 		mockState.customerRows = [
 			{ id: "customer-1", organizationId: "org-1", name: "Managed Customer", isActive: true },
@@ -258,13 +123,12 @@ describe("customer settings manager scope", () => {
 		mockState.customerQueue = [];
 		mockState.updateWhereArgs = [];
 		mockState.insertValues = [];
-		mockState.deleteWhereArgs = [];
 		mockState.transactionProjectUpdateShouldFail = false;
 		mockState.transactionCalls = 0;
 	});
 
 	it("shows managers only customers attached to managed projects", async () => {
-		const result = await getCustomers("org-1");
+		const result = await getCustomers();
 
 		expect(result).toEqual({
 			success: true,
@@ -273,7 +137,7 @@ describe("customer settings manager scope", () => {
 	});
 
 	it("shows managers only scoped customers in project customer selection", async () => {
-		const result = await getCustomersForSelection("org-1");
+		const result = await getCustomersForSelection();
 
 		expect(result).toEqual({
 			success: true,
@@ -286,29 +150,31 @@ describe("customer settings manager scope", () => {
 			{ id: "project-1", organizationId: "org-1", customerId: null, isActive: true },
 		];
 
-		const result = await createCustomer({
-			organizationId: "org-1",
-			name: "Scoped Customer",
-			projectId: "project-1",
-		} as any);
+		const result = await createCustomer({ name: "Scoped Customer", projectId: "project-1" });
 
 		expect(result).toEqual({ success: true, data: { id: "customer-3" } });
 		expect(mockState.updateWhereArgs).toHaveLength(1);
 		expect(mockState.transactionCalls).toBe(1);
 	});
 
-	it("validates org-admin project ids before attaching new customers", async () => {
-		mockState.membershipRecord = { role: "owner" };
-		mockState.employeeRecord = null;
+	it("refuses managers a customer that is not tied to a project", async () => {
+		const result = await createCustomer({ name: "Loose Customer" });
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.transactionCalls).toBe(0);
+	});
+
+	it("reads another organization's project as not found when attaching a new customer", async () => {
+		mockState.caller = owner;
 		mockState.projectQueue = [null];
 
 		const result = await createCustomer({
-			organizationId: "org-1",
 			name: "Owner Customer",
 			projectId: "project-outside-org",
-		} as any);
+		});
 
-		expect(result).toMatchObject({ success: false });
+		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(mockState.transactionCalls).toBe(0);
 	});
 
 	it("does not leave a customer behind when project attachment fails", async () => {
@@ -317,21 +183,16 @@ describe("customer settings manager scope", () => {
 		];
 		mockState.transactionProjectUpdateShouldFail = true;
 
-		const result = await createCustomer({
-			organizationId: "org-1",
-			name: "Scoped Customer",
-			projectId: "project-1",
-		} as any);
+		const result = await createCustomer({ name: "Scoped Customer", projectId: "project-1" });
 
 		expect(result).toMatchObject({ success: false });
 		expect(mockState.transactionCalls).toBe(1);
 	});
 
 	it("keeps owner membership parity with org admins for customer reads", async () => {
-		mockState.membershipRecord = { role: "owner" };
-		mockState.employeeRecord = null;
+		mockState.caller = owner;
 
-		const result = await getCustomers("org-1");
+		const result = await getCustomers();
 
 		expect(result).toEqual({
 			success: true,
@@ -350,12 +211,38 @@ describe("customer settings manager scope", () => {
 			{ id: "customer-2", organizationId: "org-1", name: "Other Customer", isActive: true },
 		];
 
-		const result = await updateCustomer("customer-2", { name: "Changed" });
+		const result = await updateCustomer({ customerId: "customer-2", name: "Changed" });
 
 		expect(result).toEqual({
 			success: false,
 			error: "You do not have access to update this customer",
 			code: "AuthorizationError",
 		});
+	});
+
+	it("reads another organization's customer as not found", async () => {
+		mockState.caller = owner;
+		mockState.customerQueue = [null];
+
+		const result = await deleteCustomer({ customerId: "customer-elsewhere" });
+
+		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(mockState.transactionCalls).toBe(0);
+	});
+});
+
+describe("customer settings access levels", () => {
+	it.each([
+		["getCustomers", () => getCustomers()],
+		["getCustomersForSelection", () => getCustomersForSelection()],
+		["createCustomer", () => createCustomer({ name: "New", projectId: "project-1" })],
+		["updateCustomer", () => updateCustomer({ customerId: "customer-1", name: "Changed" })],
+		["deleteCustomer", () => deleteCustomer({ customerId: "customer-1" })],
+	])("refuses %s to an org member", async (_name, call) => {
+		mockState.caller = orgMember;
+		mockState.transactionCalls = 0;
+
+		await expect(call()).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.transactionCalls).toBe(0);
 	});
 });

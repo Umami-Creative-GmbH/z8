@@ -448,18 +448,32 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		// Leaving a team that is not the primary team changes nothing.
 		expect(
 			impact(
-				await owner(() => previewTeamMemberChangeDrivingImpact(office, alex.employeeId, "remove")),
+				await owner(() =>
+					previewTeamMemberChangeDrivingImpact({
+						teamId: office,
+						employeeId: alex.employeeId,
+						change: "remove",
+					}),
+				),
 			),
 		).toEqual(full([]));
 		const preview = impact(
-			await owner(() => previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove")),
+			await owner(() =>
+				previewTeamMemberChangeDrivingImpact({
+					teamId: drivers,
+					employeeId: alex.employeeId,
+					change: "remove",
+				}),
+			),
 		);
 		expect(preview).toEqual(full([ending(alex)]));
 		expect(await status(alex)).toBe("active");
 
 		expect(
 			await owner(() =>
-				removeTeamMember(drivers, alex.employeeId, {
+				removeTeamMember({
+					teamId: drivers,
+					employeeId: alex.employeeId,
 					drivingLicencePreviewToken: preview.previewToken,
 				}),
 			),
@@ -481,12 +495,20 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		await check(carol, ["B"]);
 
 		const preview = impact(
-			await owner(() => previewTeamMemberChangeDrivingImpact(office, carol.employeeId, "add")),
+			await owner(() =>
+				previewTeamMemberChangeDrivingImpact({
+					teamId: office,
+					employeeId: carol.employeeId,
+					change: "add",
+				}),
+			),
 		);
 		expect(preview).toEqual(full([ending(carol, ["B"])]));
 		expect(
 			await owner(() =>
-				addTeamMember(office, carol.employeeId, {
+				addTeamMember({
+					teamId: office,
+					employeeId: carol.employeeId,
 					drivingLicencePreviewToken: preview.previewToken,
 				}),
 			),
@@ -496,7 +518,13 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		await check(alex, ["B"]);
 		expect(
 			impact(
-				await owner(() => previewTeamMemberChangeDrivingImpact(office, alex.employeeId, "add")),
+				await owner(() =>
+					previewTeamMemberChangeDrivingImpact({
+						teamId: office,
+						employeeId: alex.employeeId,
+						change: "add",
+					}),
+				),
 			),
 		).toEqual(full([]));
 	});
@@ -512,7 +540,9 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		const preview = impact(await owner(() => previewTeamDeletionDrivingImpact(vans)));
 		expect(preview).toEqual(full([ending(dana)]));
 		expect(
-			await owner(() => deleteTeam(vans, { drivingLicencePreviewToken: preview.previewToken })),
+			await owner(() =>
+				deleteTeam({ teamId: vans, drivingLicencePreviewToken: preview.previewToken }),
+			),
 		).toMatchObject({ success: true });
 		await expectEnded(dana);
 	});
@@ -540,19 +570,29 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		const { updateEmployeeAction } = await employees();
 		await assign({ type: "team", teamId: drivers }, "required");
 		const preview = impact(
-			await owner(() => previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove")),
+			await owner(() =>
+				previewTeamMemberChangeDrivingImpact({
+					teamId: drivers,
+					employeeId: alex.employeeId,
+					change: "remove",
+				}),
+			),
 		);
 		expect(preview).toEqual(full([]));
 		await check(alex);
 
 		const stale = await owner(() =>
-			removeTeamMember(drivers, alex.employeeId, {
+			removeTeamMember({
+				teamId: drivers,
+				employeeId: alex.employeeId,
 				drivingLicencePreviewToken: preview.previewToken,
 			}),
 		);
 		expect(stale).toMatchObject({ success: false, refusal: "stale_preview" });
 		// Callers that previewed nothing are held to "nobody is affected".
-		expect(await owner(() => removeTeamMember(drivers, alex.employeeId))).toMatchObject({
+		expect(
+			await owner(() => removeTeamMember({ teamId: drivers, employeeId: alex.employeeId })),
+		).toMatchObject({
 			success: false,
 			refusal: "stale_preview",
 		});
@@ -566,7 +606,7 @@ describe("primary-team changes end the authorizations of employees who stop bein
 			blair.employeeId,
 		]);
 		await check(blair, ["B"]);
-		expect(await owner(() => deleteTeam(vans))).toMatchObject({
+		expect(await owner(() => deleteTeam({ teamId: vans }))).toMatchObject({
 			success: false,
 			refusal: "stale_preview",
 		});
@@ -582,7 +622,11 @@ describe("primary-team changes end the authorizations of employees who stop bein
 
 		const preview = impact(
 			await as(manager.userId, () =>
-				previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove"),
+				previewTeamMemberChangeDrivingImpact({
+					teamId: drivers,
+					employeeId: alex.employeeId,
+					change: "remove",
+				}),
 			),
 		);
 		expect(preview).toEqual({
@@ -593,7 +637,9 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		expect(JSON.stringify(preview)).not.toContain(alex.employeeId);
 		expect(
 			await as(manager.userId, () =>
-				removeTeamMember(drivers, alex.employeeId, {
+				removeTeamMember({
+					teamId: drivers,
+					employeeId: alex.employeeId,
 					drivingLicencePreviewToken: preview.previewToken,
 				}),
 			),
@@ -609,7 +655,11 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		await check(alex);
 		const preview = () =>
 			as(manager.userId, () =>
-				previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove"),
+				previewTeamMemberChangeDrivingImpact({
+					teamId: drivers,
+					employeeId: alex.employeeId,
+					change: "remove",
+				}),
 			);
 		expect(impact(await preview())).toEqual(full([ending(alex)]));
 		unwrap(await policies.switchDrivingLicenceControlAction({ enabled: false }));
@@ -617,7 +667,13 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		// Owners and admins see the names whether the feature is on or off.
 		expect(
 			impact(
-				await owner(() => previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove")),
+				await owner(() =>
+					previewTeamMemberChangeDrivingImpact({
+						teamId: drivers,
+						employeeId: alex.employeeId,
+						change: "remove",
+					}),
+				),
 			),
 		).toEqual(full([ending(alex)]));
 	});
@@ -632,14 +688,22 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		await check(carol, ["B"]);
 
 		const preview = await as(manager.userId, () =>
-			previewTeamMemberChangeDrivingImpact(office, carol.employeeId, "add"),
+			previewTeamMemberChangeDrivingImpact({
+				teamId: office,
+				employeeId: carol.employeeId,
+				change: "add",
+			}),
 		);
 		expect(preview).toMatchObject({
 			success: false,
 			error: "Cannot move employees from teams outside your scope",
 		});
 		expect(JSON.stringify(preview)).not.toContain(carol.employeeId);
-		expect(await as(manager.userId, () => addTeamMember(office, carol.employeeId))).toMatchObject({
+		expect(
+			await as(manager.userId, () =>
+				addTeamMember({ teamId: office, employeeId: carol.employeeId }),
+			),
+		).toMatchObject({
 			success: false,
 			error: "Cannot move employees from teams outside your scope",
 		});
@@ -651,11 +715,19 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		await check(alex);
 		unwrap(await policies.switchDrivingLicenceControlAction({ enabled: false }));
 		const preview = impact(
-			await owner(() => previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove")),
+			await owner(() =>
+				previewTeamMemberChangeDrivingImpact({
+					teamId: drivers,
+					employeeId: alex.employeeId,
+					change: "remove",
+				}),
+			),
 		);
 		expect(
 			await owner(() =>
-				removeTeamMember(drivers, alex.employeeId, {
+				removeTeamMember({
+					teamId: drivers,
+					employeeId: alex.employeeId,
 					drivingLicencePreviewToken: preview.previewToken,
 				}),
 			),

@@ -285,7 +285,7 @@ export function InviteCodeDialog({
 	// Fetch teams for team selection
 	const { data: teamsResult } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
-		queryFn: () => listTeams(organizationId),
+		queryFn: () => listTeams(),
 		enabled: open,
 	});
 

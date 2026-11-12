@@ -16,12 +16,8 @@ export function requiresScopedProjectSelection(accessTier: SettingsAccessTier, i
 	return accessTier === "manager" && !isEditing;
 }
 
-export function buildCreateCustomerInput(
-	organizationId: string,
-	value: CustomerDialogFormValues,
-): CreateCustomerInput {
+export function buildCreateCustomerInput(value: CustomerDialogFormValues): CreateCustomerInput {
 	return {
-		organizationId,
 		projectId: value.projectId || undefined,
 		name: value.name,
 		address: value.address || undefined,

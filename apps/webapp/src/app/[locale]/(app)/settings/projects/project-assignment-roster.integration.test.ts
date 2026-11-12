@@ -122,7 +122,7 @@ describe("project assignments on PostgreSQL (#1438)", () => {
 	});
 
 	it("marks former employees' assignments", async () => {
-		const result = await getProjects(fixture.organizationId);
+		const result = await getProjects();
 
 		if (!result.success) throw new Error(result.error);
 		const project = result.data.find((entry) => entry.id === projectId);
@@ -152,7 +152,7 @@ describe("project assignments on PostgreSQL (#1438)", () => {
 	});
 
 	it("offers only the organization's current roster for new assignments", async () => {
-		const result = await getEmployeesForSelection(fixture.organizationId);
+		const result = await getEmployeesForSelection();
 
 		if (!result.success) throw new Error(result.error);
 		expect(result.data.map((entry) => entry.id).toSorted()).toEqual(

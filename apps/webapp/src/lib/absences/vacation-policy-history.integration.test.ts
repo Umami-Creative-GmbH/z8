@@ -386,7 +386,7 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 				reviewedBackdate: true,
 			}),
 		).toMatchObject({ success: true });
-		expect(await addTeamMember(targetTeam.id, target.employeeId)).toMatchObject(
+		expect(await addTeamMember({ teamId: targetTeam.id, employeeId: target.employeeId })).toMatchObject(
 			{
 				success: false,
 				error: expect.stringContaining("1 January"),
@@ -425,7 +425,7 @@ describe("dated employee vacation policy eligibility (#989)", () => {
 			)
 			.returning();
 		for (const item of teams) {
-			expect(await addTeamMember(item.id, target.employeeId)).toMatchObject({
+			expect(await addTeamMember({ teamId: item.id, employeeId: target.employeeId })).toMatchObject({
 				success: true,
 			});
 			expect(

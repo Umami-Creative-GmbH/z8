@@ -3,8 +3,7 @@
 import { and, count, eq, gte, inArray, lt } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { db } from "@/db";
-import { member, session } from "@/db/auth-schema";
+import { session } from "@/db/auth-schema";
 import {
 	absenceEntry,
 	approvalRequest,
@@ -13,15 +12,12 @@ import {
 	teamPermissions,
 	timeEntry,
 } from "@/db/schema";
-import { AuthorizationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
-	isSettingsAccessMembershipRole,
-	resolveSettingsAccessTier,
-	type SettingsAccessTier,
-} from "@/lib/settings-access";
+	noInput,
+	type OrganizationActor,
+	organizationAction,
+} from "@/lib/organization-action/organization-action";
 
 interface StatisticsBase {
 	totalEmployees: number;
@@ -48,119 +44,31 @@ export interface InstanceStats extends OrganizationStats {}
 
 export interface ManagerStatisticsReadView extends StatisticsBase {}
 
-interface StatisticsActorContext {
-	organizationId: string;
-	accessTier: SettingsAccessTier;
-	currentEmployee: typeof employee.$inferSelect | null;
-	userId: string;
-}
-
-function getStatisticsActorContext(queryName: string) {
+/**
+ * The teams whose statistics a scoped manager reads: the teams whose settings they
+ * manage, when their employee role is manager; none otherwise. An org admin reads
+ * the organization's statistics instead.
+ */
+function manageableTeamIds(actor: OrganizationActor, organizationId: string) {
 	return Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const dbService = yield* DatabaseService;
-		const authSession = yield* authService.getSession();
-		const organizationId = authSession.session.activeOrganizationId;
-
-		if (!organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "No active organization selected",
-					resource: "statistics",
-					action: "read",
-				}),
-			);
-		}
-
-		const [membershipRecord, currentEmployee] = yield* dbService.query(
-			`statistics.${queryName}.actor`,
-			() =>
-				Promise.all([
-					db.query.member.findFirst({
-						where: and(
-							eq(member.userId, authSession.user.id),
-							eq(member.organizationId, organizationId),
-						),
-						columns: { role: true },
-					}),
-					db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, authSession.user.id),
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-						),
-					}),
-				]),
-		);
-
-		const accessTier = resolveSettingsAccessTier({
-			activeOrganizationId: organizationId,
-			membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
-				? membershipRecord.role
-				: null,
-			employeeRole: currentEmployee?.role ?? null,
-		});
-
-		if (accessTier === "member") {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "You do not have access to statistics",
-					resource: "statistics",
-					action: "read",
-				}),
-			);
-		}
-
-		return {
-			organizationId,
-			accessTier,
-			currentEmployee: currentEmployee ?? null,
-			userId: authSession.user.id,
-		} satisfies StatisticsActorContext;
-	});
-}
-
-function requireOrgAdminStatisticsAccess(actor: StatisticsActorContext) {
-	if (actor.accessTier === "orgAdmin") {
-		return Effect.void;
-	}
-
-	return Effect.fail(
-		new AuthorizationError({
-			message: "Only org admins can view instance statistics",
-			userId: actor.userId,
-			resource: "instance-stats",
-			action: "read",
-		}),
-	);
-}
-
-function getManageableTeamIds(actor: StatisticsActorContext, queryName: string) {
-	return Effect.gen(function* () {
-		if (actor.accessTier === "orgAdmin") {
-			return null as Set<string> | null;
-		}
-
-		if (actor.currentEmployee?.role !== "manager") {
+		const managerId =
+			actor.settingsAccess === "scopedManager" && actor.employee?.role === "manager"
+				? actor.employee.id
+				: null;
+		if (!managerId) {
 			return new Set<string>();
 		}
-
-		const currentEmployee = actor.currentEmployee;
 		const dbService = yield* DatabaseService;
-
-		const teamPermissionRows = yield* dbService.query(
-			`statistics.${queryName}.manageableTeams`,
-			() =>
-				db.query.teamPermissions.findMany({
-					where: and(
-						eq(teamPermissions.employeeId, currentEmployee.id),
-						eq(teamPermissions.organizationId, actor.organizationId),
-						eq(teamPermissions.canManageTeamSettings, true),
-					),
-					columns: { teamId: true },
-				}),
+		const teamPermissionRows = yield* dbService.query("statistics.manageableTeams", () =>
+			dbService.db.query.teamPermissions.findMany({
+				where: and(
+					eq(teamPermissions.employeeId, managerId),
+					eq(teamPermissions.organizationId, organizationId),
+					eq(teamPermissions.canManageTeamSettings, true),
+				),
+				columns: { teamId: true },
+			}),
 		);
-
 		return new Set(
 			teamPermissionRows
 				.map((permission) => permission.teamId)
@@ -194,11 +102,21 @@ function buildStatisticsBase(params: {
  * Get active-organization statistics.
  * Only accessible by org admins.
  */
-export async function getOrganizationStats(): Promise<ServerActionResult<OrganizationStats>> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getStatisticsActorContext("getOrganizationStats");
+export const getOrganizationStats = organizationAction(
+	{ name: "statistics.getOrganizationStats", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) => organizationStats(organizationId),
+);
+
+/** The active organization's statistics; the same as `getOrganizationStats`. */
+export const getInstanceStats = organizationAction(
+	{ name: "statistics.getInstanceStats", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) => organizationStats(organizationId),
+);
+
+function organizationStats(organizationId: string) {
+	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
-		yield* requireOrgAdminStatisticsAccess(actor);
+		const { db } = dbService;
 
 		const firstDayThisMonth = DateTime.now().startOf("month").toJSDate();
 		const firstDayLastMonth = DateTime.now().minus({ months: 1 }).startOf("month").toJSDate();
@@ -208,27 +126,22 @@ export async function getOrganizationStats(): Promise<ServerActionResult<Organiz
 				db
 					.select({ count: count() })
 					.from(employee)
-					.where(eq(employee.organizationId, actor.organizationId)),
+					.where(eq(employee.organizationId, organizationId)),
 				db
 					.select({ count: count() })
 					.from(employee)
-					.where(
-						and(eq(employee.organizationId, actor.organizationId), eq(employee.isActive, true)),
-					),
-				db
-					.select({ count: count() })
-					.from(team)
-					.where(eq(team.organizationId, actor.organizationId)),
+					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true))),
+				db.select({ count: count() }).from(team).where(eq(team.organizationId, organizationId)),
 				db
 					.select({ count: count() })
 					.from(timeEntry)
-					.where(eq(timeEntry.organizationId, actor.organizationId)),
+					.where(eq(timeEntry.organizationId, organizationId)),
 				db
 					.select({ count: count() })
 					.from(timeEntry)
 					.where(
 						and(
-							eq(timeEntry.organizationId, actor.organizationId),
+							eq(timeEntry.organizationId, organizationId),
 							gte(timeEntry.timestamp, firstDayThisMonth),
 						),
 					),
@@ -237,7 +150,7 @@ export async function getOrganizationStats(): Promise<ServerActionResult<Organiz
 					.from(timeEntry)
 					.where(
 						and(
-							eq(timeEntry.organizationId, actor.organizationId),
+							eq(timeEntry.organizationId, organizationId),
 							gte(timeEntry.timestamp, firstDayLastMonth),
 							lt(timeEntry.timestamp, firstDayThisMonth),
 						),
@@ -245,13 +158,13 @@ export async function getOrganizationStats(): Promise<ServerActionResult<Organiz
 				db
 					.select({ count: count() })
 					.from(absenceEntry)
-					.where(eq(absenceEntry.organizationId, actor.organizationId)),
+					.where(eq(absenceEntry.organizationId, organizationId)),
 				db
 					.select({ count: count() })
 					.from(absenceEntry)
 					.where(
 						and(
-							eq(absenceEntry.organizationId, actor.organizationId),
+							eq(absenceEntry.organizationId, organizationId),
 							eq(absenceEntry.status, "pending"),
 						),
 					),
@@ -260,7 +173,7 @@ export async function getOrganizationStats(): Promise<ServerActionResult<Organiz
 					.from(absenceEntry)
 					.where(
 						and(
-							eq(absenceEntry.organizationId, actor.organizationId),
+							eq(absenceEntry.organizationId, organizationId),
 							eq(absenceEntry.status, "approved"),
 						),
 					),
@@ -269,27 +182,27 @@ export async function getOrganizationStats(): Promise<ServerActionResult<Organiz
 					.from(absenceEntry)
 					.where(
 						and(
-							eq(absenceEntry.organizationId, actor.organizationId),
+							eq(absenceEntry.organizationId, organizationId),
 							eq(absenceEntry.status, "rejected"),
 						),
 					),
 				db
 					.select({ count: count() })
 					.from(approvalRequest)
-					.where(eq(approvalRequest.organizationId, actor.organizationId)),
+					.where(eq(approvalRequest.organizationId, organizationId)),
 				db
 					.select({ count: count() })
 					.from(approvalRequest)
 					.where(
 						and(
-							eq(approvalRequest.organizationId, actor.organizationId),
+							eq(approvalRequest.organizationId, organizationId),
 							eq(approvalRequest.status, "pending"),
 						),
 					),
 				db
 					.select({ count: count() })
 					.from(session)
-					.where(eq(session.activeOrganizationId, actor.organizationId)),
+					.where(eq(session.activeOrganizationId, organizationId)),
 			]),
 		);
 
@@ -330,204 +243,197 @@ export async function getOrganizationStats(): Promise<ServerActionResult<Organiz
 			activeSessions: sessionsResult[0]?.count ?? 0,
 		};
 	});
-
-	return runServerActionSafe(effect);
 }
 
-export async function getInstanceStats(): Promise<ServerActionResult<InstanceStats>> {
-	return getOrganizationStats();
-}
+/** Statistics of the teams whose settings a scoped manager manages. */
+export const getManagerStatisticsReadView = organizationAction(
+	{ name: "statistics.getManagerReadView", requires: "scopedManager", schema: noInput },
+	({ actor, organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const { db } = dbService;
+			const teamIdSet = yield* manageableTeamIds(actor, organizationId);
 
-export async function getManagerStatisticsReadView(): Promise<
-	ServerActionResult<ManagerStatisticsReadView>
-> {
-	const effect = Effect.gen(function* () {
-		const actor = yield* getStatisticsActorContext("getManagerStatisticsReadView");
-		const dbService = yield* DatabaseService;
-		const manageableTeamIds = yield* getManageableTeamIds(actor, "getManagerStatisticsReadView");
+			if (teamIdSet.size === 0) {
+				return buildStatisticsBase({
+					totalEmployees: 0,
+					activeEmployees: 0,
+					totalTeams: 0,
+					totalTimeEntries: 0,
+					timeEntriesThisMonth: 0,
+					timeEntriesLastMonth: 0,
+					totalAbsences: 0,
+					pendingAbsences: 0,
+					approvedAbsences: 0,
+					rejectedAbsences: 0,
+					totalApprovals: 0,
+					pendingApprovals: 0,
+				});
+			}
 
-		if (!manageableTeamIds || manageableTeamIds.size === 0) {
-			return buildStatisticsBase({
-				totalEmployees: 0,
-				activeEmployees: 0,
-				totalTeams: 0,
-				totalTimeEntries: 0,
-				timeEntriesThisMonth: 0,
-				timeEntriesLastMonth: 0,
-				totalAbsences: 0,
-				pendingAbsences: 0,
-				approvedAbsences: 0,
-				rejectedAbsences: 0,
-				totalApprovals: 0,
-				pendingApprovals: 0,
-			});
-		}
+			const teamIds = [...teamIdSet];
+			const firstDayThisMonth = DateTime.now().startOf("month").toJSDate();
+			const firstDayLastMonth = DateTime.now().minus({ months: 1 }).startOf("month").toJSDate();
 
-		const teamIds = [...manageableTeamIds];
-		const firstDayThisMonth = DateTime.now().startOf("month").toJSDate();
-		const firstDayLastMonth = DateTime.now().minus({ months: 1 }).startOf("month").toJSDate();
+			const teamScopedEmployees = yield* dbService.query("statistics.getScopedEmployees", () =>
+				db.query.employee.findMany({
+					where: and(
+						eq(employee.organizationId, organizationId),
+						inArray(employee.teamId, teamIds),
+					),
+					columns: {
+						id: true,
+						isActive: true,
+					},
+				}),
+			);
 
-		const teamScopedEmployees = yield* dbService.query("statistics.getScopedEmployees", () =>
-			db.query.employee.findMany({
-				where: and(
-					eq(employee.organizationId, actor.organizationId),
-					inArray(employee.teamId, teamIds),
-				),
-				columns: {
-					id: true,
-					isActive: true,
-				},
-			}),
-		);
+			const scopedEmployeeIds = teamScopedEmployees.map((employeeRecord) => employeeRecord.id);
+			const totalEmployees = teamScopedEmployees.length;
+			const activeEmployees = teamScopedEmployees.filter(
+				(employeeRecord) => employeeRecord.isActive,
+			).length;
 
-		const scopedEmployeeIds = teamScopedEmployees.map((employeeRecord) => employeeRecord.id);
-		const totalEmployees = teamScopedEmployees.length;
-		const activeEmployees = teamScopedEmployees.filter(
-			(employeeRecord) => employeeRecord.isActive,
-		).length;
+			if (scopedEmployeeIds.length === 0) {
+				return buildStatisticsBase({
+					totalEmployees,
+					activeEmployees,
+					totalTeams: 0,
+					totalTimeEntries: 0,
+					timeEntriesThisMonth: 0,
+					timeEntriesLastMonth: 0,
+					totalAbsences: 0,
+					pendingAbsences: 0,
+					approvedAbsences: 0,
+					rejectedAbsences: 0,
+					totalApprovals: 0,
+					pendingApprovals: 0,
+				});
+			}
 
-		if (scopedEmployeeIds.length === 0) {
+			const results = yield* dbService.query("statistics.getManagerCounts", () =>
+				Promise.all([
+					db
+						.select({ count: count() })
+						.from(team)
+						.where(and(eq(team.organizationId, organizationId), inArray(team.id, teamIds))),
+					db
+						.select({ count: count() })
+						.from(timeEntry)
+						.where(
+							and(
+								eq(timeEntry.organizationId, organizationId),
+								inArray(timeEntry.employeeId, scopedEmployeeIds),
+							),
+						),
+					db
+						.select({ count: count() })
+						.from(timeEntry)
+						.where(
+							and(
+								eq(timeEntry.organizationId, organizationId),
+								inArray(timeEntry.employeeId, scopedEmployeeIds),
+								gte(timeEntry.timestamp, firstDayThisMonth),
+							),
+						),
+					db
+						.select({ count: count() })
+						.from(timeEntry)
+						.where(
+							and(
+								eq(timeEntry.organizationId, organizationId),
+								inArray(timeEntry.employeeId, scopedEmployeeIds),
+								gte(timeEntry.timestamp, firstDayLastMonth),
+								lt(timeEntry.timestamp, firstDayThisMonth),
+							),
+						),
+					db
+						.select({ count: count() })
+						.from(absenceEntry)
+						.where(
+							and(
+								eq(absenceEntry.organizationId, organizationId),
+								inArray(absenceEntry.employeeId, scopedEmployeeIds),
+							),
+						),
+					db
+						.select({ count: count() })
+						.from(absenceEntry)
+						.where(
+							and(
+								eq(absenceEntry.organizationId, organizationId),
+								inArray(absenceEntry.employeeId, scopedEmployeeIds),
+								eq(absenceEntry.status, "pending"),
+							),
+						),
+					db
+						.select({ count: count() })
+						.from(absenceEntry)
+						.where(
+							and(
+								eq(absenceEntry.organizationId, organizationId),
+								inArray(absenceEntry.employeeId, scopedEmployeeIds),
+								eq(absenceEntry.status, "approved"),
+							),
+						),
+					db
+						.select({ count: count() })
+						.from(absenceEntry)
+						.where(
+							and(
+								eq(absenceEntry.organizationId, organizationId),
+								inArray(absenceEntry.employeeId, scopedEmployeeIds),
+								eq(absenceEntry.status, "rejected"),
+							),
+						),
+					db
+						.select({ count: count() })
+						.from(approvalRequest)
+						.where(
+							and(
+								eq(approvalRequest.organizationId, organizationId),
+								inArray(approvalRequest.requestedBy, scopedEmployeeIds),
+							),
+						),
+					db
+						.select({ count: count() })
+						.from(approvalRequest)
+						.where(
+							and(
+								eq(approvalRequest.organizationId, organizationId),
+								inArray(approvalRequest.requestedBy, scopedEmployeeIds),
+								eq(approvalRequest.status, "pending"),
+							),
+						),
+				]),
+			);
+
+			const [
+				teamsResult,
+				timeEntriesResult,
+				timeEntriesThisMonthResult,
+				timeEntriesLastMonthResult,
+				absencesResult,
+				pendingAbsencesResult,
+				approvedAbsencesResult,
+				rejectedAbsencesResult,
+				approvalsResult,
+				pendingApprovalsResult,
+			] = results;
+
 			return buildStatisticsBase({
 				totalEmployees,
 				activeEmployees,
-				totalTeams: 0,
-				totalTimeEntries: 0,
-				timeEntriesThisMonth: 0,
-				timeEntriesLastMonth: 0,
-				totalAbsences: 0,
-				pendingAbsences: 0,
-				approvedAbsences: 0,
-				rejectedAbsences: 0,
-				totalApprovals: 0,
-				pendingApprovals: 0,
+				totalTeams: teamsResult[0]?.count ?? 0,
+				totalTimeEntries: timeEntriesResult[0]?.count ?? 0,
+				timeEntriesThisMonth: timeEntriesThisMonthResult[0]?.count ?? 0,
+				timeEntriesLastMonth: timeEntriesLastMonthResult[0]?.count ?? 0,
+				totalAbsences: absencesResult[0]?.count ?? 0,
+				pendingAbsences: pendingAbsencesResult[0]?.count ?? 0,
+				approvedAbsences: approvedAbsencesResult[0]?.count ?? 0,
+				rejectedAbsences: rejectedAbsencesResult[0]?.count ?? 0,
+				totalApprovals: approvalsResult[0]?.count ?? 0,
+				pendingApprovals: pendingApprovalsResult[0]?.count ?? 0,
 			});
-		}
-
-		const results = yield* dbService.query("statistics.getManagerCounts", () =>
-			Promise.all([
-				db
-					.select({ count: count() })
-					.from(team)
-					.where(and(eq(team.organizationId, actor.organizationId), inArray(team.id, teamIds))),
-				db
-					.select({ count: count() })
-					.from(timeEntry)
-					.where(
-						and(
-							eq(timeEntry.organizationId, actor.organizationId),
-							inArray(timeEntry.employeeId, scopedEmployeeIds),
-						),
-					),
-				db
-					.select({ count: count() })
-					.from(timeEntry)
-					.where(
-						and(
-							eq(timeEntry.organizationId, actor.organizationId),
-							inArray(timeEntry.employeeId, scopedEmployeeIds),
-							gte(timeEntry.timestamp, firstDayThisMonth),
-						),
-					),
-				db
-					.select({ count: count() })
-					.from(timeEntry)
-					.where(
-						and(
-							eq(timeEntry.organizationId, actor.organizationId),
-							inArray(timeEntry.employeeId, scopedEmployeeIds),
-							gte(timeEntry.timestamp, firstDayLastMonth),
-							lt(timeEntry.timestamp, firstDayThisMonth),
-						),
-					),
-				db
-					.select({ count: count() })
-					.from(absenceEntry)
-					.where(
-						and(
-							eq(absenceEntry.organizationId, actor.organizationId),
-							inArray(absenceEntry.employeeId, scopedEmployeeIds),
-						),
-					),
-				db
-					.select({ count: count() })
-					.from(absenceEntry)
-					.where(
-						and(
-							eq(absenceEntry.organizationId, actor.organizationId),
-							inArray(absenceEntry.employeeId, scopedEmployeeIds),
-							eq(absenceEntry.status, "pending"),
-						),
-					),
-				db
-					.select({ count: count() })
-					.from(absenceEntry)
-					.where(
-						and(
-							eq(absenceEntry.organizationId, actor.organizationId),
-							inArray(absenceEntry.employeeId, scopedEmployeeIds),
-							eq(absenceEntry.status, "approved"),
-						),
-					),
-				db
-					.select({ count: count() })
-					.from(absenceEntry)
-					.where(
-						and(
-							eq(absenceEntry.organizationId, actor.organizationId),
-							inArray(absenceEntry.employeeId, scopedEmployeeIds),
-							eq(absenceEntry.status, "rejected"),
-						),
-					),
-				db
-					.select({ count: count() })
-					.from(approvalRequest)
-					.where(
-						and(
-							eq(approvalRequest.organizationId, actor.organizationId),
-							inArray(approvalRequest.requestedBy, scopedEmployeeIds),
-						),
-					),
-				db
-					.select({ count: count() })
-					.from(approvalRequest)
-					.where(
-						and(
-							eq(approvalRequest.organizationId, actor.organizationId),
-							inArray(approvalRequest.requestedBy, scopedEmployeeIds),
-							eq(approvalRequest.status, "pending"),
-						),
-					),
-			]),
-		);
-
-		const [
-			teamsResult,
-			timeEntriesResult,
-			timeEntriesThisMonthResult,
-			timeEntriesLastMonthResult,
-			absencesResult,
-			pendingAbsencesResult,
-			approvedAbsencesResult,
-			rejectedAbsencesResult,
-			approvalsResult,
-			pendingApprovalsResult,
-		] = results;
-
-		return buildStatisticsBase({
-			totalEmployees,
-			activeEmployees,
-			totalTeams: teamsResult[0]?.count ?? 0,
-			totalTimeEntries: timeEntriesResult[0]?.count ?? 0,
-			timeEntriesThisMonth: timeEntriesThisMonthResult[0]?.count ?? 0,
-			timeEntriesLastMonth: timeEntriesLastMonthResult[0]?.count ?? 0,
-			totalAbsences: absencesResult[0]?.count ?? 0,
-			pendingAbsences: pendingAbsencesResult[0]?.count ?? 0,
-			approvedAbsences: approvedAbsencesResult[0]?.count ?? 0,
-			rejectedAbsences: rejectedAbsencesResult[0]?.count ?? 0,
-			totalApprovals: approvalsResult[0]?.count ?? 0,
-			pendingApprovals: pendingApprovalsResult[0]?.count ?? 0,
-		});
-	});
-
-	return runServerActionSafe(effect);
-}
+		}),
+);

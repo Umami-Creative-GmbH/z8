@@ -58,9 +58,9 @@ export function SubareaDialog({
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
 			if (isEditing && subarea) {
-				const result = await updateSubarea(subarea.id, {
-					name: value.name,
-					isActive: value.isActive,
+				const result = await updateSubarea({
+					subareaId: subarea.id,
+					data: { name: value.name, isActive: value.isActive },
 				}).then(
 					(response) => response,
 					() => null,

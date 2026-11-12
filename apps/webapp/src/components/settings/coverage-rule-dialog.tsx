@@ -166,7 +166,7 @@ export function CoverageRuleDialog({
 				priority?: number;
 			};
 		}) => {
-			const result = await updateCoverageRule(ruleId, data);
+			const result = await updateCoverageRule({ ruleId, data });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

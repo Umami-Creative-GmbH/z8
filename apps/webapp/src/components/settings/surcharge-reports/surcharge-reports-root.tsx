@@ -140,12 +140,11 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		});
 
 		const employeeId = filters.employeeId.trim() || undefined;
-		const result = await getSurchargeCalculationsForPeriod(
-			organizationId,
-			startDate.toJSDate(),
-			endDate.toJSDate(),
+		const result = await getSurchargeCalculationsForPeriod({
+			startDate: startDate.toJSDate(),
+			endDate: endDate.toJSDate(),
 			employeeId,
-		).catch(() => ({
+		}).catch(() => ({
 			success: false as const,
 			error: "Failed to load surcharge calculations.",
 		}));

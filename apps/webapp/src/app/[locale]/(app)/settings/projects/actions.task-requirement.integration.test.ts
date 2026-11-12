@@ -248,12 +248,12 @@ describe("project task requirement on PostgreSQL", () => {
 
 			await expect(
 				actAs(ids.ownerUser, () =>
-					projects.updateProject(ids.managedProject, { requiresTask: true }),
+					projects.updateProject({ projectId: ids.managedProject, requiresTask: true }),
 				),
 			).resolves.toEqual({ success: true, data: undefined });
 			expect(await requiresTask(ids.managedProject)).toBe(true);
 			const listed = await actAs(ids.ownerUser, () =>
-				projects.getProjects(ids.organization),
+				projects.getProjects(),
 			);
 			expect(
 				listed.success &&
@@ -262,7 +262,7 @@ describe("project task requirement on PostgreSQL", () => {
 
 			await expect(
 				actAs(ids.ownerUser, () =>
-					projects.updateProject(ids.managedProject, { requiresTask: false }),
+					projects.updateProject({ projectId: ids.managedProject, requiresTask: false }),
 				),
 			).resolves.toMatchObject({ success: true });
 			expect(await requiresTask(ids.managedProject)).toBe(false);
@@ -270,11 +270,11 @@ describe("project task requirement on PostgreSQL", () => {
 
 		it("keeps the setting when other fields are edited", async () => {
 			await actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.managedProject, { requiresTask: true }),
+				projects.updateProject({ projectId: ids.managedProject, requiresTask: true }),
 			);
 
 			await actAs(ids.ownerUser, () =>
-				projects.updateProject(ids.managedProject, { description: "Edited" }),
+				projects.updateProject({ projectId: ids.managedProject, description: "Edited" }),
 			);
 
 			expect(await requiresTask(ids.managedProject)).toBe(true);
@@ -283,7 +283,6 @@ describe("project task requirement on PostgreSQL", () => {
 		it("creates a project with the requirement on", async () => {
 			const created = await actAs(ids.ownerUser, () =>
 				projects.createProject({
-					organizationId: ids.organization,
 					name: "Strict project",
 					requiresTask: true,
 				}),
@@ -296,14 +295,14 @@ describe("project task requirement on PostgreSQL", () => {
 		it("lets a project manager change it on their project, but not on another one", async () => {
 			await expect(
 				actAs(ids.projectManagerUser, () =>
-					projects.updateProject(ids.managedProject, { requiresTask: true }),
+					projects.updateProject({ projectId: ids.managedProject, requiresTask: true }),
 				),
 			).resolves.toMatchObject({ success: true });
 			expect(await requiresTask(ids.managedProject)).toBe(true);
 
 			await expect(
 				actAs(ids.projectManagerUser, () =>
-					projects.updateProject(ids.unmanagedProject, { requiresTask: true }),
+					projects.updateProject({ projectId: ids.unmanagedProject, requiresTask: true }),
 				),
 			).resolves.toMatchObject({ success: false });
 			expect(await requiresTask(ids.unmanagedProject)).toBe(false);
@@ -312,12 +311,12 @@ describe("project task requirement on PostgreSQL", () => {
 		it("refuses users who cannot edit the project, and another organization's project", async () => {
 			await expect(
 				actAs(ids.employeeUser, () =>
-					projects.updateProject(ids.managedProject, { requiresTask: true }),
+					projects.updateProject({ projectId: ids.managedProject, requiresTask: true }),
 				),
 			).resolves.toMatchObject({ success: false });
 			await expect(
 				actAs(ids.ownerUser, () =>
-					projects.updateProject(ids.foreignProject, { requiresTask: true }),
+					projects.updateProject({ projectId: ids.foreignProject, requiresTask: true }),
 				),
 			).resolves.toMatchObject({ success: false });
 
@@ -328,7 +327,8 @@ describe("project task requirement on PostgreSQL", () => {
 		it("refuses a requirement that is not a boolean", async () => {
 			await expect(
 				actAs(ids.ownerUser, () =>
-					projects.updateProject(ids.managedProject, {
+					projects.updateProject({
+						projectId: ids.managedProject,
 						requiresTask: "yes" as never,
 					}),
 				),
@@ -336,7 +336,6 @@ describe("project task requirement on PostgreSQL", () => {
 			await expect(
 				actAs(ids.ownerUser, () =>
 					projects.createProject({
-						organizationId: ids.organization,
 						name: "Not a boolean",
 						requiresTask: 1 as never,
 					}),
@@ -377,7 +376,8 @@ describe("project task requirement on PostgreSQL", () => {
 			).resolves.toMatchObject({ success: true, data: { requiresTask: true } });
 
 			await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(templateId, {
+				templates.updateProjectTemplate({
+					templateId,
 					name: "Strict",
 					requiresTask: false,
 				}),
@@ -403,17 +403,19 @@ describe("project task requirement on PostgreSQL", () => {
 
 			// No live link either way.
 			await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(templateId, {
+				templates.updateProjectTemplate({
+					templateId,
 					name: "Strict",
 					requiresTask: false,
 				}),
 			);
 			expect(await requiresTask(created.data.id)).toBe(true);
 			await actAs(ids.ownerUser, () =>
-				projects.updateProject(created.data.id, { requiresTask: false }),
+				projects.updateProject({ projectId: created.data.id, requiresTask: false }),
 			);
 			await actAs(ids.ownerUser, () =>
-				templates.updateProjectTemplate(templateId, {
+				templates.updateProjectTemplate({
+					templateId,
 					name: "Strict",
 					requiresTask: true,
 				}),
@@ -442,12 +444,14 @@ describe("project task requirement on PostgreSQL", () => {
 			);
 
 			const strict = await actAs(ids.ownerUser, () =>
-				fromTemplate.saveProjectAsTemplate(ids.managedProject, {
+				fromTemplate.saveProjectAsTemplate({
+					projectId: ids.managedProject,
 					name: "From managed",
 				}),
 			);
 			const relaxed = await actAs(ids.ownerUser, () =>
-				fromTemplate.saveProjectAsTemplate(ids.unmanagedProject, {
+				fromTemplate.saveProjectAsTemplate({
+					projectId: ids.unmanagedProject,
 					name: "From unmanaged",
 				}),
 			);

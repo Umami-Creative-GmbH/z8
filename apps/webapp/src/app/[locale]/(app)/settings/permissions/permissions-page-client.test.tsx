@@ -107,7 +107,8 @@ describe("PermissionsPageClient", () => {
 		vi.clearAllMocks();
 		mocks.loadPermissionsPageData.mockReset();
 		mocks.loadPermissionsPageData.mockImplementation(
-			async (organizationId: string) => pageResult(organizationId),
+			// The action reads the organization from the session; these tests render org-a.
+			async () => pageResult("org-a"),
 		);
 	});
 
@@ -158,7 +159,7 @@ describe("PermissionsPageClient", () => {
 		expect(await screen.findByText("Empty")).toBeTruthy();
 		expect(screen.queryByText("Organization A Employee")).toBeNull();
 		expect(mocks.loadPermissionsPageData).toHaveBeenCalledTimes(1);
-		expect(mocks.loadPermissionsPageData).toHaveBeenCalledWith("org-a");
+		expect(mocks.loadPermissionsPageData).toHaveBeenCalledWith();
 	});
 
 	it("does not let an earlier organization request overwrite newer employees", async () => {
@@ -193,8 +194,8 @@ describe("PermissionsPageClient", () => {
 
 		expect(screen.getByText("New Employee")).toBeTruthy();
 		expect(screen.queryByText("Old Employee")).toBeNull();
-		expect(mocks.loadPermissionsPageData).toHaveBeenNthCalledWith(1, "org-old");
-		expect(mocks.loadPermissionsPageData).toHaveBeenNthCalledWith(2, "org-new");
+		expect(mocks.loadPermissionsPageData).toHaveBeenNthCalledWith(1);
+		expect(mocks.loadPermissionsPageData).toHaveBeenNthCalledWith(2);
 	});
 
 	it("hides the previous organization while the next organization loads", async () => {
@@ -228,7 +229,7 @@ describe("PermissionsPageClient", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
 		await waitFor(() =>
-			expect(mocks.loadPermissionsPageData).toHaveBeenNthCalledWith(2, "org-a"),
+			expect(mocks.loadPermissionsPageData).toHaveBeenNthCalledWith(2),
 		);
 
 		rerender(<PermissionsPageClient organizationId="org-b" isOrgAdmin />);
@@ -241,7 +242,7 @@ describe("PermissionsPageClient", () => {
 
 		expect(screen.getByText("Organization B Employee")).toBeTruthy();
 		expect(screen.queryByText("Stale Organization A Employee")).toBeNull();
-		expect(mocks.loadPermissionsPageData).toHaveBeenNthCalledWith(3, "org-b");
+		expect(mocks.loadPermissionsPageData).toHaveBeenNthCalledWith(3);
 	});
 
 	it("settles bootstrap loading with a safe error when a data action rejects", async () => {

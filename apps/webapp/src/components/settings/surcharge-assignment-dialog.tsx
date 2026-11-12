@@ -59,7 +59,7 @@ export function SurchargeAssignmentDialog({
 	// Fetch teams (only for team assignments)
 	const teamsQuery = useQuery({
 		queryKey: ["teams-for-assignment", organizationId],
-		queryFn: () => getTeamsForAssignment(organizationId),
+		queryFn: () => getTeamsForAssignment(),
 		enabled: open && assignmentType === "team",
 	});
 
@@ -106,7 +106,7 @@ export function SurchargeAssignmentDialog({
 			effectiveFrom: Date | null;
 			effectiveUntil: Date | null;
 			isActive: boolean;
-		}) => createSurchargeAssignment(organizationId, data),
+		}) => createSurchargeAssignment(data),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({

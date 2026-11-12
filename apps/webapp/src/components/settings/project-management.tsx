@@ -109,7 +109,7 @@ function useProjectManagement({
 	} = useQuery({
 		queryKey: queryKeys.projects.list(organizationId),
 		queryFn: async () => {
-			const result = await getProjects(organizationId);
+			const result = await getProjects();
 			if (!result.success) throw new Error(result.error ?? "Unknown error");
 			return result.data;
 		},

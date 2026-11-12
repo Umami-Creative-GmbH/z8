@@ -65,7 +65,7 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 	const teamsQuery = useQuery({
 		queryKey: ["teams", props.organizationId, "rehire-options"],
 		queryFn: async () => {
-			const result = await listTeams(props.organizationId);
+			const result = await listTeams();
 			return result.success ? result.data.map((team) => ({ id: team.id, name: team.name })) : [];
 		},
 		enabled: panel?.kind === "rehire",

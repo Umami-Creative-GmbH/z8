@@ -136,7 +136,7 @@ export function EmployeeSkillsCard({
 	// Remove skill mutation
 	const removeMutation = useMutation({
 		mutationFn: async ({ skillId }: { skillId: string }) => {
-			const result = await removeSkillFromEmployee(employeeId, skillId);
+			const result = await removeSkillFromEmployee({ employeeId, skillId });
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {
