@@ -123,7 +123,8 @@ export function manualWorkExemption(input: {
  * Whether manual work needs approval under the change policy in effect, decided by the window rule
  * submitting applies (`decideChangePolicyOutcome`). The preview has no entry, so it asks about one
  * just beyond the self-service days: a policy that requires approval is routed, with a note when
- * entries within its self-service days skip it.
+ * entries within its self-service days skip it. A manual entry beyond the approval window still
+ * goes to approval (`manualApprovalIntentOf`), so a policy with no approval days routes too.
  */
 export function manualWorkChangePolicyRule(
 	policy: ChangePolicyTerms | null,

@@ -204,12 +204,18 @@ describe("manual work route parity (PostgreSQL)", () => {
 		}
 	}
 
-	async function changePolicy(terms: { noApprovalRequired: boolean }) {
+	async function changePolicy(terms: { noApprovalRequired: boolean; approvalDays?: number }) {
 		await admin.query(
 			`insert into change_policy
 			 (id, organization_id, name, self_service_days, approval_days, no_approval_required, created_by, updated_at)
-			 values ($1, $2, 'T1602 policy', 0, 365, $3, $4, now())`,
-			[ids.changePolicy, ids.organization, terms.noApprovalRequired, ids.ownerUser],
+			 values ($1, $2, 'T1602 policy', 0, $5, $3, $4, now())`,
+			[
+				ids.changePolicy,
+				ids.organization,
+				terms.noApprovalRequired,
+				ids.ownerUser,
+				terms.approvalDays ?? 365,
+			],
 		);
 		await admin.query(
 			`insert into change_policy_assignment
@@ -360,6 +366,16 @@ describe("manual work route parity (PostgreSQL)", () => {
 			expect(submitted.requiresApproval).toBe(true);
 			expect(submitted.approvers).toEqual(approversOf(route));
 			expect(approversOf(route)).toEqual(new Set([ids.manager]));
+		});
+
+		it("routes alike when the approval window is closed: a manual entry beyond it still goes to approval", async () => {
+			await changePolicy({ noApprovalRequired: false, approvalDays: 0 });
+			const route = await preview(ids.employee);
+			const submitted = await submit(path, ids.employeeUser, ids.employee);
+
+			expect(route).toMatchObject({ kind: "routed" });
+			expect(submitted.requiresApproval).toBe(true);
+			expect(submitted.approvers).toEqual(approversOf(route));
 		});
 
 		it("exempts an entry made on someone's behalf, which the preview of their own entries routes", async () => {
