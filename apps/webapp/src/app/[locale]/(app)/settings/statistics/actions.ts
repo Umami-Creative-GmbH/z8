@@ -115,7 +115,7 @@ function buildStatisticsBase(params: {
 }
 
 /**
- * Get active-organization statistics.
+ * Get active-organization statistics with its active sessions count.
  * Only accessible by org admins.
  */
 export const getOrganizationStats = organizationAction(

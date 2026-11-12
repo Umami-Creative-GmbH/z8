@@ -10,6 +10,7 @@ import {
 } from "@/db/schema";
 import type { AuthContext } from "@/lib/auth-helpers";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { reachesWholeOrganization } from "@/lib/organization-action/managed-scope";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 
 export interface ScopedSchedulingLocation {
@@ -139,6 +140,25 @@ export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSe
 	}
 
 	const currentEmployee = settingsRouteContext.authContext.employee;
+
+	// A workforce admin (#1651) reaches every coverage rule, as `coverageRuleSubareaScope`
+	// does; shift templates and the org-wide coverage settings stay out of reach.
+	if (
+		currentEmployee &&
+		reachesWholeOrganization({ settingsAccess: "scopedManager", employee: currentEmployee })
+	) {
+		return {
+			...settingsRouteContext,
+			organizationId,
+			canManageTeamSettings: false,
+			manageableTeamIds: new Set(),
+			manageableShiftTemplateSubareaIds: new Set(),
+			manageableSubareaIds: null,
+			canAccessShiftTemplates: false,
+			canAccessCoverageRules: true,
+			canManageCoverageSettings: false,
+		};
+	}
 
 	if (currentEmployee?.role !== "manager") {
 		return null;
