@@ -1,5 +1,9 @@
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { LegacyRouteFailure } from "../policies/legacy-route-decision";
+import {
+	classifyLegacyStage,
+	type LegacyStageDisposition,
+} from "../policies/requester-auto-approval";
 import type { ApprovalPolicyDraft } from "../policies/types";
 import type { ApprovalDirectChange, ApprovalRouteNote, ApprovalRouteSkipReason } from "./types";
 
@@ -18,17 +22,50 @@ export type ChangePolicyTerms = {
 
 // --- Absence ---------------------------------------------------------------------------------
 
+/**
+ * Only an absence of a category that requires approval starts a route; any other is approved on
+ * submission. The submit path asks this of the requested category, the snapshot of every active one.
+ */
+export function absenceCategoryNeedsApproval(category: { requiresApproval: boolean }): boolean {
+	return category.requiresApproval;
+}
+
 /** Absence requests need an approver only when an active category requires approval. */
 export function absenceNeedsApproval(approvalCategoryIds: readonly string[]): boolean {
 	return approvalCategoryIds.length > 0;
 }
 
+export type AbsenceRouteFallback =
+	| {
+			kind: "default_approver";
+			approverEmployeeId: string;
+			disposition: LegacyStageDisposition;
+	  }
+	/** Submitting fails with "No manager assigned to approve absence requests". */
+	| { kind: "no_default_approver" };
+
 /**
- * Under legacy authority an absence whose policy routing fails goes to the default approver
- * instead. Malformed policies are not a routing failure: submitting throws on them.
+ * Under legacy authority an absence whose policy routing fails goes to the requester's default
+ * approver instead, completing on submission when that is the requester themselves; with no
+ * default approver it can't be submitted. Every route failure falls back (no default approver,
+ * an unresolvable stage, a policy without stages) except malformed policies: submitting throws
+ * on them (`null`).
  */
-export function absenceFallsBackToDefaultApprover(failure: LegacyRouteFailure): boolean {
-	return failure.reason !== "invalid_policies";
+export function absenceRouteFallback(input: {
+	failure: LegacyRouteFailure;
+	requesterEmployeeId: string;
+	defaultApproverId: string | null;
+}): AbsenceRouteFallback | null {
+	if (input.failure.reason === "invalid_policies") return null;
+	if (input.defaultApproverId === null) return { kind: "no_default_approver" };
+	return {
+		kind: "default_approver",
+		approverEmployeeId: input.defaultApproverId,
+		disposition: classifyLegacyStage({
+			requesterEmployeeId: input.requesterEmployeeId,
+			approverEmployeeId: input.defaultApproverId,
+		}),
+	};
 }
 
 /**

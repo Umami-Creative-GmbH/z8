@@ -252,6 +252,40 @@ describe("absence canonical decision errors", () => {
 	});
 });
 
+const requestedAbsence = {
+	id: "absence-1",
+	organizationId: "org-1",
+	employeeId: "emp-requester",
+	categoryId: "category-1",
+	employee: { teamId: "team-1" },
+};
+
+/** An absence policy whose only stage names an employee who isn't there. */
+const unresolvableAbsencePolicy = {
+	id: "policy-1",
+	organizationId: "org-1",
+	name: "Broken absence policy",
+	isActive: true,
+	priority: 1,
+	conditions: [
+		{
+			conditionType: "approval_type",
+			operator: "equals",
+			valueJson: "absence_entry",
+		},
+	],
+	stages: [
+		{
+			id: "stage-1",
+			stepOrder: 1,
+			label: "Missing approver",
+			approverType: "specific_employee",
+			approverEmployeeId: "missing-employee",
+			fallbackBehavior: "fail",
+		},
+	],
+};
+
 function createPolicyResolutionDbService(policies: unknown[]) {
 	const inserts: Array<{ table: unknown; values: Record<string, unknown> }> =
 		[];
@@ -1612,6 +1646,59 @@ describe("absence approval policy resolution", () => {
 			approverId: "emp-manager",
 			status: "pending",
 		});
+	});
+
+	it("fails with no manager assigned when an unresolvable policy has no default approver to fall back to", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([
+			unresolvableAbsencePolicy,
+		]);
+
+		const exit = await Effect.runPromiseExit(
+			createAbsenceApprovalWorkflow(dbService, {
+				absence: requestedAbsence,
+				defaultApproverId: null,
+			}),
+		);
+
+		expect(exit).toMatchObject({
+			_tag: "Failure",
+			cause: {
+				reasons: [
+					expect.objectContaining({
+						error: expect.objectContaining({
+							_tag: "ValidationError",
+							message: "No manager assigned to approve absence requests",
+						}),
+					}),
+				],
+			},
+		});
+		expect(inserts).toEqual([]);
+	});
+
+	it("does not fall back on a malformed policy: submitting throws its error", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([
+			{
+				...unresolvableAbsencePolicy,
+				conditions: [
+					{
+						conditionType: "approval_type",
+						operator: "equals",
+						valueJson: "not_an_approval_type",
+					},
+				],
+			},
+		]);
+
+		await expect(
+			Effect.runPromise(
+				createAbsenceApprovalWorkflow(dbService, {
+					absence: requestedAbsence,
+					defaultApproverId: "emp-manager",
+				}),
+			),
+		).rejects.toThrow(/Invalid conditions\[0\]/);
+		expect(inserts).toEqual([]);
 	});
 
 	it("finalizes an auto-completed requester approval without sending transaction-bound notifications", async () => {
