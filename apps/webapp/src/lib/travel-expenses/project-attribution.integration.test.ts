@@ -551,7 +551,11 @@ describe("expense project attribution (#605)", () => {
 				validFrom: "2026-01-01",
 				validTo: "2026-01-31",
 			}),
-		).toEqual({ success: false, error: "Unauthorized: Admin access required" });
+		).toEqual({
+			success: false,
+			code: "AuthorizationError",
+			error: "You do not have access to this setting",
+		});
 
 		signIn("admin");
 		expect(
@@ -584,7 +588,7 @@ describe("expense project attribution (#605)", () => {
 				validFrom: "2026-01-01",
 				validTo: "2026-01-31",
 			}),
-		).toEqual({ success: false, error: "Project not found" });
+		).toEqual({ success: false, code: "NotFoundError", error: "Project not found" });
 		expect(
 			await authorizeException({
 				employeeId: ids.foreigner,
@@ -592,7 +596,7 @@ describe("expense project attribution (#605)", () => {
 				validFrom: "2026-01-01",
 				validTo: "2026-01-31",
 			}),
-		).toEqual({ success: false, error: "Employee not found" });
+		).toEqual({ success: false, code: "NotFoundError", error: "Employee not found" });
 
 		const { rows } = await admin.query(
 			"select count(*)::int as count from travel_expense_project_attribution_exception",

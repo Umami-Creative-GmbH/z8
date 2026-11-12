@@ -418,7 +418,15 @@ function collectFunctionBodies(
 				(ts.isVariableDeclaration(node) || ts.isPropertyAssignment(node)) &&
 				ts.isIdentifier(node.name)
 			) {
-				const fn = functionLike(node.initializer);
+				// `const x = organizationAction(declaration, handler)`: the handler is the body.
+				const fn =
+					functionLike(node.initializer) ??
+					(node.initializer &&
+					ts.isCallExpression(node.initializer) &&
+					ts.isIdentifier(node.initializer.expression) &&
+					node.initializer.expression.text === "organizationAction"
+						? functionLike(node.initializer.arguments.at(-1))
+						: undefined);
 				if (fn) record(node.name.text, fn.body);
 			}
 			node.forEachChild(visit);
