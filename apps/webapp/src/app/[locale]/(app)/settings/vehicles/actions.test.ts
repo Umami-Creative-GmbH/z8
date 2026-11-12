@@ -95,15 +95,25 @@ describe("vehicle settings actions", () => {
 	});
 
 	it("applies a change to the session's organization as the caller", async () => {
-		mocks.changeOrganizationVehicles.mockResolvedValue({ ok: false, reason: "vehicle_not_found" });
+		mocks.changeOrganizationVehicles.mockResolvedValue({ ok: true, vehicles: [] });
 
 		const result = await changeVehicles({ kind: "archive", vehicleId });
 
-		expect(result).toEqual({ success: true, data: { ok: false, reason: "vehicle_not_found" } });
+		expect(result).toEqual({ success: true, data: [] });
 		expect(mocks.changeOrganizationVehicles).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			actorUserId: "user-1",
 			change: { kind: "archive", vehicleId },
+		});
+	});
+
+	it("fails a refused change with its refusal code", async () => {
+		mocks.changeOrganizationVehicles.mockResolvedValue({ ok: false, reason: "vehicle_not_found" });
+
+		expect(await changeVehicles({ kind: "archive", vehicleId })).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "vehicle_not_found",
 		});
 	});
 

@@ -3,6 +3,7 @@
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { CustomFieldChange } from "@/lib/organization/custom-fields/definition-rules";
 import {
@@ -26,8 +27,8 @@ export const getCustomFieldDefinitions = organizationAction(
 
 /**
  * A custom field change as the client sends it. `parseCustomFieldChange` reads
- * it inside the store, so a malformed change keeps coming back as the
- * `{ ok: false, reason }` refusal the settings form maps.
+ * it inside the store, so a malformed change keeps its own refusal code, which
+ * the settings form maps.
  */
 const customFieldChangeSchema = z.custom<CustomFieldChange>(
 	(value) => typeof value === "object" && value !== null,
@@ -35,9 +36,10 @@ const customFieldChangeSchema = z.custom<CustomFieldChange>(
 );
 
 /**
- * Applies one change to the custom fields of the active organization. Org
- * admins only. A refused change comes back as `{ ok: false, reason }`; an
- * accepted one returns every definition of the organization.
+ * Applies one change to the custom fields of the active organization and
+ * returns every definition of the organization. Org admins only. A refused
+ * change fails with a `ValidationError` whose `refusal` is the store's reason;
+ * `used_as_payroll_identifier` carries the payroll `configurations` as details.
  */
 export const changeCustomFields = organizationAction(
 	{ name: "customFields.change", requires: "orgAdmin", schema: customFieldChangeSchema },
@@ -52,7 +54,18 @@ export const changeCustomFields = organizationAction(
 					archiveGuards: [payrollIdentifierArchiveGuard],
 				}),
 			);
-			if (outcome.ok) revalidatePath("/settings/custom-fields");
-			return outcome;
+			if (!outcome.ok) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "The custom field change was refused",
+						refusal: outcome.reason,
+						...(outcome.configurations
+							? { value: { configurations: outcome.configurations } }
+							: {}),
+					}),
+				);
+			}
+			revalidatePath("/settings/custom-fields");
+			return outcome.fields;
 		}),
 );

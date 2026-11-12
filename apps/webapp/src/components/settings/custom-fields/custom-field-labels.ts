@@ -5,6 +5,10 @@ import type {
 	CustomFieldType,
 	FieldVisibility,
 } from "@/lib/organization/custom-fields/definition-rules";
+import type {
+	ActionFailure,
+	RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -46,115 +50,107 @@ export function levelLabel(t: Translate, level: FieldVisibility): string {
 	}
 }
 
-export function refusalMessage(
-	t: Translate,
-	reason: CustomFieldRefusal,
-	/** For `used_as_payroll_identifier`: the payroll configurations using the field. */
-	configurations: readonly string[] = [],
-): string {
-	switch (reason) {
-		case "used_as_payroll_identifier":
-			return t(
-				"settings.customFields.refusal.usedAsPayrollIdentifier",
-				"This field is the personnel identifier of the payroll export configuration {configurations}. Choose another identifier there first.",
-				{ configurations: configurations.join(", ") },
-			);
-		case "invalid_name":
-			return t(
-				"settings.customFields.refusal.invalidName",
-				"Enter a name of at most 100 characters.",
-			);
-		case "invalid_level":
-			return t("settings.customFields.refusal.invalidLevel", "Choose who can see and edit values.");
-		case "employees_never_edit":
-			return t(
-				"settings.customFields.refusal.employeesNeverEdit",
-				"Employees can't edit custom field values.",
-			);
-		case "edit_level_broader_than_visibility":
-			return t(
-				"settings.customFields.refusal.editBroaderThanVisibility",
-				"Everyone who can edit values must also be able to see them.",
-			);
-		case "boolean_cannot_be_required":
-			return t(
-				"settings.customFields.refusal.booleanRequired",
-				"A yes/no field can't be required.",
-			);
-		case "invalid_number_bounds":
-			return t(
-				"settings.customFields.refusal.numberBounds",
-				"Enter a minimum and maximum as numbers, with the minimum not above the maximum.",
-			);
-		case "select_needs_option":
-			return t(
-				"settings.customFields.refusal.selectNeedsOption",
-				"Add at least one option to a select field.",
-			);
-		case "invalid_option_label":
-			return t(
-				"settings.customFields.refusal.invalidOptionLabel",
-				"Enter an option of at most 100 characters.",
-			);
-		case "duplicate_option_label":
-			return t(
-				"settings.customFields.refusal.duplicateOption",
-				"This field already has an active option with this name.",
-			);
-		case "stale_order":
-			return t(
-				"settings.customFields.refusal.staleOrder",
-				"The list changed in the meantime. Reload the page and try again.",
-			);
-		case "type_fixed":
-			return t(
-				"settings.customFields.refusal.typeFixed",
-				"A custom field's type can't change after it is created.",
-			);
-		case "tracked_fixed":
-			return t(
-				"settings.customFields.refusal.trackedFixed",
-				"Whether a custom field keeps a history can't change after it is created.",
-			);
-		case "too_many_fields":
-			return t(
-				"settings.customFields.refusal.tooManyFields",
-				"This record type already has 25 active custom fields. Archive one first.",
-			);
-		case "name_taken":
-			return t(
-				"settings.customFields.refusal.nameTaken",
-				"An active custom field on this record type already has this name.",
-			);
-		case "field_not_found":
-		case "option_not_found":
-			return t(
-				"settings.customFields.refusal.notFound",
-				"This custom field no longer exists. Reload the page.",
-			);
-		case "field_archived":
-			return t(
-				"settings.customFields.refusal.fieldArchived",
-				"Restore this custom field before changing it.",
-			);
-		case "not_select":
-			return t("settings.customFields.refusal.notSelect", "Only select fields have options.");
-		case "option_archived":
-			return t("settings.customFields.refusal.optionArchived", "Restore this option first.");
-		case "last_active_option":
-			return t(
-				"settings.customFields.refusal.lastActiveOption",
-				"A select field needs at least one active option.",
-			);
-		case "invalid_entity":
-		case "invalid_type":
-		case "invalid_change":
-			return t(
-				"settings.customFields.refusal.invalidChange",
-				"This change can't be saved. Reload the page and try again.",
-			);
-	}
+/** The payroll configurations a `used_as_payroll_identifier` refusal names (#821). */
+function configurationsOf(failure: ActionFailure): string[] {
+	const configurations = failure.details?.configurations;
+	return Array.isArray(configurations) ? configurations.map(String) : [];
 }
+
+/** The custom field settings' texts for `actionErrorMessage`, by the store's refusal. */
+export const CUSTOM_FIELD_REFUSALS = {
+	used_as_payroll_identifier: (t, failure) =>
+		t(
+			"settings.customFields.refusal.usedAsPayrollIdentifier",
+			"This field is the personnel identifier of the payroll export configuration {configurations}. Choose another identifier there first.",
+			{ configurations: configurationsOf(failure).join(", ") },
+		),
+	invalid_name: [
+		"settings.customFields.refusal.invalidName",
+		"Enter a name of at most 100 characters.",
+	],
+	invalid_level: [
+		"settings.customFields.refusal.invalidLevel",
+		"Choose who can see and edit values.",
+	],
+	employees_never_edit: [
+		"settings.customFields.refusal.employeesNeverEdit",
+		"Employees can't edit custom field values.",
+	],
+	edit_level_broader_than_visibility: [
+		"settings.customFields.refusal.editBroaderThanVisibility",
+		"Everyone who can edit values must also be able to see them.",
+	],
+	boolean_cannot_be_required: [
+		"settings.customFields.refusal.booleanRequired",
+		"A yes/no field can't be required.",
+	],
+	invalid_number_bounds: [
+		"settings.customFields.refusal.numberBounds",
+		"Enter a minimum and maximum as numbers, with the minimum not above the maximum.",
+	],
+	select_needs_option: [
+		"settings.customFields.refusal.selectNeedsOption",
+		"Add at least one option to a select field.",
+	],
+	invalid_option_label: [
+		"settings.customFields.refusal.invalidOptionLabel",
+		"Enter an option of at most 100 characters.",
+	],
+	duplicate_option_label: [
+		"settings.customFields.refusal.duplicateOption",
+		"This field already has an active option with this name.",
+	],
+	stale_order: [
+		"settings.customFields.refusal.staleOrder",
+		"The list changed in the meantime. Reload the page and try again.",
+	],
+	type_fixed: [
+		"settings.customFields.refusal.typeFixed",
+		"A custom field's type can't change after it is created.",
+	],
+	tracked_fixed: [
+		"settings.customFields.refusal.trackedFixed",
+		"Whether a custom field keeps a history can't change after it is created.",
+	],
+	too_many_fields: [
+		"settings.customFields.refusal.tooManyFields",
+		"This record type already has 25 active custom fields. Archive one first.",
+	],
+	name_taken: [
+		"settings.customFields.refusal.nameTaken",
+		"An active custom field on this record type already has this name.",
+	],
+	field_not_found: [
+		"settings.customFields.refusal.notFound",
+		"This custom field no longer exists. Reload the page.",
+	],
+	option_not_found: [
+		"settings.customFields.refusal.notFound",
+		"This custom field no longer exists. Reload the page.",
+	],
+	field_archived: [
+		"settings.customFields.refusal.fieldArchived",
+		"Restore this custom field before changing it.",
+	],
+	not_select: ["settings.customFields.refusal.notSelect", "Only select fields have options."],
+	option_archived: ["settings.customFields.refusal.optionArchived", "Restore this option first."],
+	last_active_option: [
+		"settings.customFields.refusal.lastActiveOption",
+		"A select field needs at least one active option.",
+	],
+	invalid_entity: [
+		"settings.customFields.refusal.invalidChange",
+		"This change can't be saved. Reload the page and try again.",
+	],
+	invalid_type: [
+		"settings.customFields.refusal.invalidChange",
+		"This change can't be saved. Reload the page and try again.",
+	],
+	invalid_change: [
+		"settings.customFields.refusal.invalidChange",
+		"This change can't be saved. Reload the page and try again.",
+	],
+} satisfies RefusalMessages<CustomFieldRefusal>;
 
 /** Why a value doesn't fit its field (#819 history editor); shared with the save actions. */
 export { valueRefusalMessage } from "@/lib/organization/custom-fields/refusal-messages";

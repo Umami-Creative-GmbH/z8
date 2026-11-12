@@ -206,9 +206,9 @@ beforeEach(async () => {
 		licencePlate: "PHOTO 1",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!result.success || !result.data.ok)
+	if (!result.success)
 		throw new Error(JSON.stringify(result));
-	vehicleId = result.data.vehicles[0].id;
+	vehicleId = result.data[0].id;
 });
 afterAll(cleanup);
 afterEach(() => vi.restoreAllMocks());
@@ -248,7 +248,7 @@ it("keeps failed cleanup recoverable after vehicle deletion and never cleans att
 	expect((await read(id)).status).toBe(200);
 	harness.failDelete = true;
 	const removed = await changeVehicles({ kind: "delete", vehicleId });
-	expect(removed).toMatchObject({ success: true, data: { ok: true } });
+	expect(removed).toMatchObject({ success: true });
 	expect((await read(id)).status).toBe(404);
 	expect(await runVehiclePhotoCleanupJob()).toMatchObject({ failed: 1 });
 	expect(harness.objects.size).toBe(1);
@@ -442,8 +442,8 @@ it("permits organization admin access but denies other-organization and mismatch
 		licencePlate: "PHOTO 2",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!other.success || !other.data.ok) throw new Error("create failed");
-	const otherVehicle = other.data.vehicles.find((v) => v.id !== vehicleId);
+	if (!other.success) throw new Error("create failed");
+	const otherVehicle = other.data.find((v) => v.id !== vehicleId);
 	if (!otherVehicle) throw new Error("Missing other vehicle");
 	expect((await read(id, otherVehicle.id)).status).toBe(404);
 	harness.userId = "photo-owner";
@@ -529,10 +529,7 @@ it.each(["archive", "delete"] as const)(
 			params: Promise.resolve({ vehicleId, photoId: id }),
 		});
 		await reading;
-		expect(await changeVehicles({ kind, vehicleId })).toMatchObject({
-			success: true,
-			data: { ok: true },
-		});
+		expect(await changeVehicles({ kind, vehicleId })).toMatchObject({ success: true });
 		release();
 		expect((await pending).status).toBe(409);
 		expect((await read(id)).status).toBe(404);
@@ -598,8 +595,8 @@ it("preserves the gallery when existing work usage prevents vehicle deletion", a
 			[vehicleId],
 		);
 		expect(await changeVehicles({ kind: "delete", vehicleId })).toMatchObject({
-			success: true,
-			data: { ok: false, reason: "vehicle_used" },
+			success: false,
+			refusal: "vehicle_used",
 		});
 		expect((await read(id)).status).toBe(200);
 		await runVehiclePhotoCleanupJob();
@@ -706,9 +703,9 @@ it("rate limits expensive uploads before reading invalid content without changin
 		licencePlate: "RATE 2",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!other.success || !other.data.ok)
+	if (!other.success)
 		throw new Error("Other vehicle missing");
-	const otherId = other.data.vehicles[0].id;
+	const otherId = other.data[0].id;
 	expect(
 		(await upload(await start(otherId), await image(), "image/png", otherId))
 			.status,

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
+import { ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	formerSinceDate,
@@ -105,9 +106,8 @@ export const getVehicleSettings = organizationAction(
 
 /**
  * A vehicle change as the client sends it. `parseVehicleChange` reads it inside
- * `changeOrganizationVehicles`, so a malformed change keeps coming back as the
- * `{ ok: false, reason }` refusal the form maps; newly assigned former drivers
- * are refused there too (`former_driver`), while kept ones stay.
+ * `changeOrganizationVehicles`, so a malformed change keeps its own refusal
+ * code, which the form maps.
  */
 const vehicleChangeSchema = z.custom<VehicleChangeInput>(
 	(value) => typeof value === "object" && value !== null,
@@ -115,11 +115,13 @@ const vehicleChangeSchema = z.custom<VehicleChangeInput>(
 );
 
 /**
- * Applies one change to the vehicles of the active organization. Org admins
- * only. A refused change comes back as `{ ok: false, reason }`; an accepted one
- * returns every vehicle of the organization.
+ * Applies one change to the vehicles of the active organization and returns
+ * every vehicle of the organization. Org admins only. A refused change fails
+ * with a `ValidationError` whose `refusal` is the store's reason.
  */
 export const changeVehicles = organizationAction(
+	// No `addsEmployees`: the store refuses only newly assigned former drivers
+	// (`former_driver`) and keeps the ones a vehicle already has (#1438).
 	{ name: "vehicles.change", requires: "orgAdmin", schema: vehicleChangeSchema },
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
@@ -131,7 +133,15 @@ export const changeVehicles = organizationAction(
 					change: input,
 				}),
 			);
-			if (outcome.ok) revalidatePath("/settings/vehicles");
-			return outcome;
+			if (!outcome.ok) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "The vehicle change was refused",
+						refusal: outcome.reason,
+					}),
+				);
+			}
+			revalidatePath("/settings/vehicles");
+			return outcome.vehicles;
 		}),
 );

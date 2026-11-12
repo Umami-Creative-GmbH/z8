@@ -155,9 +155,9 @@ beforeEach(async () => {
 		licencePlate: "PHOTO 1",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!result.success || !result.data.ok)
+	if (!result.success)
 		throw new Error(JSON.stringify(result));
-	vehicleId = result.data.vehicles[0].id;
+	vehicleId = result.data[0].id;
 });
 afterAll(cleanup);
 it("removes a photo immediately, releases capacity and durably retries physical deletion", async () => {
@@ -225,8 +225,8 @@ it("denies other organizations and mismatched vehicle identities, while allowing
 		licencePlate: "PHOTO2",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!other.success || !other.data.ok) throw new Error("create failed");
-	const otherVehicle = other.data.vehicles.find((v) => v.id !== vehicleId);
+	if (!other.success) throw new Error("create failed");
+	const otherVehicle = other.data.find((v) => v.id !== vehicleId);
 	if (!otherVehicle) throw new Error("Missing other vehicle");
 	expect(await removeVehiclePhoto({ vehicleId: otherVehicle.id, photoId: id })).toMatchObject({
 		success: true,

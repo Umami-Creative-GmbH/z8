@@ -118,6 +118,30 @@ describe("custom field settings actions", () => {
 		);
 	});
 
+	it("fails a refused change with its refusal code and details", async () => {
+		mocks.changeCustomFields.mockResolvedValue({
+			ok: false,
+			reason: "used_as_payroll_identifier",
+			configurations: ["Sage Lohn"],
+		});
+
+		expect(await changeCustomFields({ kind: "archive", fieldId: recordId })).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "used_as_payroll_identifier",
+			details: { configurations: ["Sage Lohn"] },
+		});
+	});
+
+	it("returns every definition after an accepted change", async () => {
+		mocks.changeCustomFields.mockResolvedValue({ ok: true, fields: [] });
+
+		expect(await changeCustomFields({ kind: "archive", fieldId: recordId })).toEqual({
+			success: true,
+			data: [],
+		});
+	});
+
 	it("reads an employee section of the session's organization only", async () => {
 		mocks.employeeFindFirst.mockResolvedValue(undefined);
 

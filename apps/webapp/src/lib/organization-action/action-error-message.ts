@@ -21,6 +21,8 @@ export interface ActionFailure {
 	readonly refusal?: string | null;
 	/** `YYYY-MM` of a closed month refusal. */
 	readonly closedMonth?: string | null;
+	/** What a refusal carries beside its code, e.g. the payroll configurations using a field. */
+	readonly details?: Readonly<Record<string, unknown>> | null;
 }
 
 /**

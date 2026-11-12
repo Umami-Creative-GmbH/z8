@@ -159,9 +159,9 @@ beforeEach(async () => {
 		licencePlate: "BATCH 1271",
 		drivers: { employeeIds: [], teamIds: [] },
 	});
-	if (!result.success || !result.data.ok)
+	if (!result.success)
 		throw new Error(JSON.stringify(result));
-	vehicleId = result.data.vehicles[0].id;
+	vehicleId = result.data[0].id;
 });
 afterAll(cleanup);
 describe("vehicle photo batch reconciliation", () => {
@@ -404,10 +404,10 @@ describe("vehicle photo batch reconciliation", () => {
 			licencePlate: "BATCH 2",
 			drivers: { employeeIds: [], teamIds: [] },
 		});
-		if (!created.success || !created.data.ok)
+		if (!created.success)
 			throw new Error("Vehicle creation failed");
 		expect(
-			await initiateVehiclePhotoBatchUpload({ vehicleId: created.data.vehicles[0].id, uploadIds: [
+			await initiateVehiclePhotoBatchUpload({ vehicleId: created.data[0].id, uploadIds: [
 				fresh,
 				existing,
 			] }),

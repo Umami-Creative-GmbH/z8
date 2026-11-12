@@ -133,16 +133,16 @@ describe("custom field definitions on PostgreSQL", () => {
 	/** Applies a change that must succeed, returning every definition of the org. */
 	async function apply(change: Change) {
 		const result = await changeCustomFields(change);
-		if (!result.success) throw new Error(`action failed: ${result.error}`);
-		if (!result.data.ok)
-			throw new Error(`change refused: ${result.data.reason}`);
-		return result.data.fields;
+		if (!result.success)
+			throw new Error(`change refused: ${result.refusal ?? result.error}`);
+		return result.data;
 	}
 
 	async function refusal(change: Change) {
 		const result = await changeCustomFields(change);
-		if (!result.success) throw new Error(`action failed: ${result.error}`);
-		return result.data.ok ? "accepted" : result.data.reason;
+		if (result.success) return "accepted";
+		if (!result.refusal) throw new Error(`action failed: ${result.error}`);
+		return result.refusal;
 	}
 
 	async function create(overrides: Record<string, unknown> = {}) {
@@ -582,11 +582,11 @@ describe("custom field definitions on PostgreSQL", () => {
 				fieldId: payrollId.id,
 			});
 
-			expect(outcome).toEqual({
-				success: true,
-				data: {
-					ok: false,
-					reason: "used_as_payroll_identifier",
+			expect(outcome).toMatchObject({
+				success: false,
+				code: "ValidationError",
+				refusal: "used_as_payroll_identifier",
+				details: {
 					configurations: [
 						formats.find((format) => format.id === "sage_lohn")?.name,
 					],
