@@ -20,7 +20,22 @@ const harness = vi.hoisted(() => ({
 	tus: new Map<string, Buffer>(),
 	objects: new Map<string, Buffer>(),
 	notifications: [] as Array<{ action: string; reportId: string; reason?: string }>,
+	/** Makes the submission's lifecycle check fail, as an incomplete record would. */
+	lifecycleFails: false,
 }));
+vi.mock("@/lib/approvals/evidence/travel-expense-report-submission", async (original) => {
+	const actual =
+		await original<typeof import("@/lib/approvals/evidence/travel-expense-report-submission")>();
+	return {
+		...actual,
+		verifyTravelExpenseReportLifecycle: (
+			...args: Parameters<typeof actual.verifyTravelExpenseReportLifecycle>
+		) => {
+			if (harness.lifecycleFails) throw new Error("T1593 lifecycle check failed");
+			return actual.verifyTravelExpenseReportLifecycle(...args);
+		},
+	};
+});
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
@@ -705,6 +720,17 @@ describe("report submission through approval authority (#602)", () => {
 			data: { status: "self_approval_route" },
 		});
 		expect(await reportState(selfRouted)).toMatchObject({ status: "draft", requests: [] });
+
+		// The route is refused before its lifecycle is checked, so a lifecycle failure can't hide it.
+		harness.lifecycleFails = true;
+		try {
+			expect(await submit(selfRouted)).toEqual({
+				success: true,
+				data: { status: "self_approval_route" },
+			});
+		} finally {
+			harness.lifecycleFails = false;
+		}
 	});
 
 	it("approves the owner's reports on submit when nobody else can review them, labelled everywhere (#679)", async () => {
