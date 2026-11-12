@@ -599,7 +599,8 @@
       "billable": "Facturable",
       "editedBy": "(editado por {name} el {date})",
       "missingTask": "Falta una tarea",
-      "missingTaskHint": "Falta una tarea: añadir una tarea"
+      "missingTaskHint": "Falta una tarea: añadir una tarea",
+      "breakEnforcementNote": "Ajustado automáticamente: aplicación de pausas"
     },
     "workStatus": {
       "overRequirement": "por encima del requisito",

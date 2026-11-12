@@ -599,7 +599,8 @@
       "billable": "Оплачуване",
       "editedBy": "(відредаговано {name} {date})",
       "missingTask": "Відсутнє завдання",
-      "missingTaskHint": "Відсутнє завдання: додайте завдання"
+      "missingTaskHint": "Відсутнє завдання: додайте завдання",
+      "breakEnforcementNote": "Автоматично скориговано: дотримання перерв"
     },
     "workStatus": {
       "overRequirement": "понад норму",

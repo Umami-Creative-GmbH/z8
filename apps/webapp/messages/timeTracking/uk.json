@@ -594,7 +594,55 @@
       "title": "Часова шкала робочого дня",
       "today": "Сьогодні",
       "unavailableDescription": "Фіксація часу все одно працює. Спробуйте оновити цей екран пізніше.",
-      "unavailableTitle": "Часова шкала недоступна"
+      "unavailableTitle": "Часова шкала недоступна",
+      "workPeriod": {
+        "title": "Облікована робота"
+      },
+      "shift": {
+        "title": "Запланована зміна"
+      },
+      "status": {
+        "approved": "Схвалено",
+        "pending": "Очікує",
+        "rejected": "Відхилено",
+        "cancelled": "Скасовано",
+        "published": "Опубліковано",
+        "draft": "Чернетка",
+        "active": "Активно"
+      },
+      "absence": {
+        "fullDay": "Увесь день",
+        "morning": "Ранок",
+        "afternoon": "Після обіду"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Запит на виправлення часу",
+          "subtitle": "Виправлення запису часу"
+        },
+        "absence": {
+          "title": "Запит на відсутність",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Переглянути відсутність",
+        "reviewRequest": "Переглянути запит"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Запит на зміну очікує",
+          "description": "Цей робочий період має зміни, що очікують схвалення."
+        },
+        "missingClockOut": {
+          "title": "Немає відмітки про вихід",
+          "description": "Цей робочий період досі активний."
+        },
+        "autoAdjusted": {
+          "title": "Автоматично скоригований запис",
+          "description": "Правила перерв або відповідності скоригували цей робочий період."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Скасувати",
@@ -669,7 +717,10 @@
     "workLocationHome": "Дім",
     "workLocationOffice": "Офіс",
     "workLocationOther": "Інше",
-    "workLocationRemote": "Дистанційно"
+    "workLocationRemote": "Дистанційно",
+    "systemNote": {
+      "breakEnforcement": "Автоматично скориговано: дотримання перерв"
+    }
   },
   "wellness": {
     "water": {

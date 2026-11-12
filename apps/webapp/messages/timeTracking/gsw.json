@@ -594,7 +594,55 @@
       "title": "Arbeitstag-Timeline",
       "today": "Hüt",
       "unavailableDescription": "D'Ziiterfassig funktioniert no. Versuech spöter, die Aasicht z'aktualisiere.",
-      "unavailableTitle": "Timeline nöd verfügbar"
+      "unavailableTitle": "Timeline nöd verfügbar",
+      "workPeriod": {
+        "title": "Erfassti Arbeit"
+      },
+      "shift": {
+        "title": "Planti Schicht"
+      },
+      "status": {
+        "approved": "Gnehmigt",
+        "pending": "Usstehend",
+        "rejected": "Abgleh",
+        "cancelled": "Storniert",
+        "published": "Veröffentlicht",
+        "draft": "Entwurf",
+        "active": "Aktiv"
+      },
+      "absence": {
+        "fullDay": "Ganze Tag",
+        "morning": "Vormittag",
+        "afternoon": "Nammittag"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Zitkorrektur-Aatrag",
+          "subtitle": "Korrektur vomene Zitiitrag"
+        },
+        "absence": {
+          "title": "Abwäseheits-Aatrag",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Abwäseheit aazeige",
+        "reviewRequest": "Aatrag prüefe"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Änderigs-Aatrag usstehend",
+          "description": "Für dä Arbeitsziitruum warted Änderige uf Gnehmigung."
+        },
+        "missingClockOut": {
+          "title": "Fählends Usstämple",
+          "description": "Dä Arbeitsziitruum isch na aktiv."
+        },
+        "autoAdjusted": {
+          "title": "Automatisch aapasste Iitrag",
+          "description": "Pause- oder Compliance-Regle händ dä Arbeitsziitruum aapasst."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Abbräche",
@@ -669,7 +717,10 @@
     "workLocationHome": "Dihei",
     "workLocationOffice": "Büro",
     "workLocationOther": "Anders",
-    "workLocationRemote": "Mobil"
+    "workLocationRemote": "Mobil",
+    "systemNote": {
+      "breakEnforcement": "Automatisch aapasst: Pauseregelig"
+    }
   },
   "wellness": {
     "water": {

@@ -3251,7 +3251,7 @@ describe(
 				`select id, organization_id, employee_id, type, timestamp,
 				 utc_offset_minutes, timezone, timezone_source, previous_entry_id,
 				 hash, previous_hash
-				 from time_entry where organization_id = $1 and notes = 'Auto-adjusted: break enforcement'
+				 from time_entry where organization_id = $1 and notes = 'z8:system-note:break-enforcement'
 				 order by timestamp, id`,
 				[ids.organization],
 			);
@@ -3387,8 +3387,8 @@ describe(
 		declare selected_stage text;
 		begin
 			select failpoint.stage into selected_stage from task11_split_failpoint failpoint limit 1;
-			if (selected_stage = 'first entry' and TG_TABLE_NAME = 'time_entry' and NEW.notes = 'Auto-adjusted: break enforcement' and NEW.type = 'clock_out')
-				or (selected_stage = 'second entry' and TG_TABLE_NAME = 'time_entry' and NEW.notes = 'Auto-adjusted: break enforcement' and NEW.type = 'clock_in')
+			if (selected_stage = 'first entry' and TG_TABLE_NAME = 'time_entry' and NEW.notes = 'z8:system-note:break-enforcement' and NEW.type = 'clock_out')
+				or (selected_stage = 'second entry' and TG_TABLE_NAME = 'time_entry' and NEW.notes = 'z8:system-note:break-enforcement' and NEW.type = 'clock_in')
 				or (selected_stage = 'original period' and TG_TABLE_NAME = 'work_period' and TG_OP = 'UPDATE' and OLD.id = '${ids.period}' and NEW.was_auto_adjusted = true)
 				or (selected_stage = 'original canonical' and TG_TABLE_NAME = 'time_record' and TG_OP = 'UPDATE' and OLD.id = '${ids.canonical}' and NEW.end_at is distinct from OLD.end_at)
 				or (selected_stage = 'new canonical base' and TG_TABLE_NAME = 'time_record' and TG_OP = 'INSERT')

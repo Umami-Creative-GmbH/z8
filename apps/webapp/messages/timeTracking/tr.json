@@ -594,7 +594,55 @@
       "title": "İş günü zaman çizelgesi",
       "today": "Bugün",
       "unavailableDescription": "Zaman takibi hala çalışıyor. Bu görünümü daha sonra yenilemeyi deneyin.",
-      "unavailableTitle": "Zaman çizelgesi kullanılamıyor"
+      "unavailableTitle": "Zaman çizelgesi kullanılamıyor",
+      "workPeriod": {
+        "title": "Kaydedilen çalışma"
+      },
+      "shift": {
+        "title": "Planlanan vardiya"
+      },
+      "status": {
+        "approved": "Onaylandı",
+        "pending": "Beklemede",
+        "rejected": "Reddedildi",
+        "cancelled": "İptal edildi",
+        "published": "Yayınlandı",
+        "draft": "Taslak",
+        "active": "Aktif"
+      },
+      "absence": {
+        "fullDay": "Tam gün",
+        "morning": "Öğleden önce",
+        "afternoon": "Öğleden sonra"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Zaman düzeltme talebi",
+          "subtitle": "Bir zaman kaydının düzeltilmesi"
+        },
+        "absence": {
+          "title": "İzin talebi",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "İzni görüntüle",
+        "reviewRequest": "Talebi incele"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Bekleyen düzenleme talebi",
+          "description": "Bu çalışma döneminde onay bekleyen değişiklikler var."
+        },
+        "missingClockOut": {
+          "title": "Çıkış kaydı eksik",
+          "description": "Bu çalışma dönemi hâlâ aktif."
+        },
+        "autoAdjusted": {
+          "title": "Otomatik düzeltilmiş kayıt",
+          "description": "Mola veya uyumluluk kuralları bu çalışma dönemini düzeltti."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "İptal",
@@ -669,7 +717,10 @@
     "workLocationHome": "Ev",
     "workLocationOffice": "Ofis",
     "workLocationOther": "Diğer",
-    "workLocationRemote": "Uzaktan"
+    "workLocationRemote": "Uzaktan",
+    "systemNote": {
+      "breakEnforcement": "Otomatik düzeltildi: mola uygulaması"
+    }
   },
   "wellness": {
     "water": {

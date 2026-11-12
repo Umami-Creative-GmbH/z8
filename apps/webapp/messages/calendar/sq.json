@@ -599,7 +599,8 @@
       "billable": "E faturueshme",
       "editedBy": "(redaktuar nga {name} më {date})",
       "missingTask": "Mungon detyra",
-      "missingTaskHint": "Mungon detyra: shtoni një detyrë"
+      "missingTaskHint": "Mungon detyra: shtoni një detyrë",
+      "breakEnforcementNote": "Rregulluar automatikisht: zbatimi i pushimeve"
     },
     "workStatus": {
       "overRequirement": "mbi kërkesën",

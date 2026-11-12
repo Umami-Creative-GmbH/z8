@@ -594,7 +594,55 @@
       "title": "Tidslinje för arbetsdag",
       "today": "Idag",
       "unavailableDescription": "Tidsstämpling fungerar fortfarande. Prova att uppdatera den här vyn senare.",
-      "unavailableTitle": "Tidslinjen är inte tillgänglig"
+      "unavailableTitle": "Tidslinjen är inte tillgänglig",
+      "workPeriod": {
+        "title": "Registrerat arbete"
+      },
+      "shift": {
+        "title": "Schemalagt pass"
+      },
+      "status": {
+        "approved": "Godkänd",
+        "pending": "Väntande",
+        "rejected": "Avvisad",
+        "cancelled": "Avbruten",
+        "published": "Publicerad",
+        "draft": "Utkast",
+        "active": "Aktiv"
+      },
+      "absence": {
+        "fullDay": "Heldag",
+        "morning": "Förmiddag",
+        "afternoon": "Eftermiddag"
+      },
+      "request": {
+        "timeCorrection": {
+          "title": "Begäran om tidskorrigering",
+          "subtitle": "Korrigering av en tidspost"
+        },
+        "absence": {
+          "title": "Frånvaroansökan",
+          "dateRange": "{startDate} – {endDate}"
+        }
+      },
+      "link": {
+        "viewAbsence": "Visa frånvaro",
+        "reviewRequest": "Granska begäran"
+      },
+      "warning": {
+        "pendingEdit": {
+          "title": "Väntande ändringsbegäran",
+          "description": "Den här arbetsperioden har ändringar som väntar på godkännande."
+        },
+        "missingClockOut": {
+          "title": "Utstämpling saknas",
+          "description": "Den här arbetsperioden är fortfarande aktiv."
+        },
+        "autoAdjusted": {
+          "title": "Automatiskt justerad post",
+          "description": "Rast- eller efterlevnadsregler justerade den här arbetsperioden."
+        }
+      }
     },
     "timezoneMismatch": {
       "cancel": "Avbryt",
@@ -669,7 +717,10 @@
     "workLocationHome": "Hem",
     "workLocationOffice": "Kontor",
     "workLocationOther": "Annat",
-    "workLocationRemote": "Distans"
+    "workLocationRemote": "Distans",
+    "systemNote": {
+      "breakEnforcement": "Automatiskt justerad: rastregler"
+    }
   },
   "wellness": {
     "water": {
