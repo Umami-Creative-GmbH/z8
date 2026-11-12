@@ -325,7 +325,8 @@ describe("audited allowance overrides (#610)", () => {
 		for (const person of ["requester", "manager"] as const) {
 			expect(await authorize(reportId, item.id, {}, person)).toEqual({
 				success: false,
-				error: "Unauthorized: Admin access required",
+				code: "AuthorizationError",
+				error: "You do not have access to this setting",
 			});
 			signIn(person);
 			expect(await overrideActions.getAllowanceExceptionItems()).toMatchObject({ success: false });

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
-	requireExpenseAdministrator: vi.fn(),
+	caller: null as StubCaller | null,
 	isPayrollRunPreviewOpen: vi.fn(),
 	getReimbursementChannel: vi.fn(),
 	saveReimbursementChannel: vi.fn(),
@@ -9,12 +10,12 @@ const mocks = vi.hoisted(() => ({
 	revalidatePath: vi.fn(),
 }));
 
+vi.mock("@/lib/effect/runtime", async () => {
+	const { runtimeModuleOver } = await import("@/test/effect-runtime");
+	const { organizationActionStubLayer } = await import("@/test/organization-action");
+	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db: {} }));
+});
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
-vi.mock("@/db", () => ({ db: {} }));
-vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
-vi.mock("@/lib/travel-expenses/expense-administrator", () => ({
-	requireExpenseAdministrator: mocks.requireExpenseAdministrator,
-}));
 vi.mock("@/lib/travel-expenses/payroll-run-preview", () => ({
 	isPayrollRunPreviewOpen: mocks.isPayrollRunPreviewOpen,
 }));
@@ -28,29 +29,37 @@ const { getReimbursementChannelSetting, saveReimbursementChannelSetting } = awai
 	"./reimbursement-channel-actions"
 );
 
-const admin = { organizationId: "org-1", userId: "user-1", employeeId: null };
+const orgAdmin: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: "org-1",
+	membershipRole: "admin",
+	employee: null,
+};
+const scopedManager: StubCaller = {
+	...orgAdmin,
+	membershipRole: "member",
+	employee: { id: "employee-1", role: "manager", former: false },
+};
 
 describe("reimbursement channel actions (#849)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.requireExpenseAdministrator.mockResolvedValue(admin);
+		mocks.caller = orgAdmin;
 		mocks.isPayrollRunPreviewOpen.mockResolvedValue(false);
 		mocks.getReimbursementChannel.mockResolvedValue("bank_transfer");
 		mocks.countUnconfirmedPayrollRuns.mockResolvedValue(0);
 	});
 
-	it("refuses a non-admin without reading or saving the channel", async () => {
-		mocks.requireExpenseAdministrator.mockResolvedValue({
-			error: "Unauthorized: Admin access required",
-		});
+	it("refuses a scoped manager without reading or saving the channel", async () => {
+		mocks.caller = scopedManager;
 
-		expect(await getReimbursementChannelSetting()).toEqual({
+		expect(await getReimbursementChannelSetting()).toMatchObject({
 			success: false,
-			error: "Unauthorized: Admin access required",
+			code: "AuthorizationError",
 		});
-		expect(await saveReimbursementChannelSetting({ channel: "bank_transfer" })).toEqual({
+		expect(await saveReimbursementChannelSetting({ channel: "bank_transfer" })).toMatchObject({
 			success: false,
-			error: "Unauthorized: Admin access required",
+			code: "AuthorizationError",
 		});
 		expect(mocks.getReimbursementChannel).not.toHaveBeenCalled();
 		expect(mocks.saveReimbursementChannel).not.toHaveBeenCalled();
@@ -67,10 +76,18 @@ describe("reimbursement channel actions (#849)", () => {
 		expect(mocks.isPayrollRunPreviewOpen).toHaveBeenCalledWith("org-1", expect.anything());
 	});
 
+	it("refuses an unknown channel before saving", async () => {
+		expect(await saveReimbursementChannelSetting({ channel: "cash" as never })).toMatchObject({
+			success: false,
+			code: "ValidationError",
+		});
+		expect(mocks.saveReimbursementChannel).not.toHaveBeenCalled();
+	});
+
 	it("saves for the active organization and actor, and refuses the closed preview", async () => {
 		mocks.saveReimbursementChannel.mockResolvedValue({ kind: "preview_closed" });
 
-		expect(await saveReimbursementChannelSetting({ channel: "payroll_run" })).toEqual({
+		expect(await saveReimbursementChannelSetting({ channel: "payroll_run" })).toMatchObject({
 			success: false,
 			error: "The payroll run is not available for this organization",
 		});

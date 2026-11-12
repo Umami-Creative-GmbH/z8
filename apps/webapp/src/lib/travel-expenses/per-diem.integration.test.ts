@@ -296,7 +296,8 @@ describe("domestic per diem from travel timing and daily meals (#609)", () => {
 	it("lets only expense administrators adopt the verified German default, never before its edition", async () => {
 		expect(await adoptGermanDefault("2026-01-01", "requester")).toEqual({
 			success: false,
-			error: "Unauthorized: Admin access required",
+			code: "AuthorizationError",
+			error: "You do not have access to this setting",
 		});
 		expect(await adoptGermanDefault("2025-12-31")).toEqual({
 			success: true,

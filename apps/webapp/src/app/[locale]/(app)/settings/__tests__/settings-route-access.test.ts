@@ -817,9 +817,8 @@ describe("org-admin settings route access", () => {
 				"utf8",
 			),
 		);
-		expect(travelExpensesSource.includes("requireExpenseAdministrator(")).toBe(
-			true,
-		);
+		// Travel expense settings actions authorize through the organization action module (#1617).
+		expect(travelExpensesSource.includes('requires: "orgAdmin"')).toBe(true);
 		expect(
 			expenseAdministratorSource.includes(
 				"canManageCurrentOrganizationSettings(",
