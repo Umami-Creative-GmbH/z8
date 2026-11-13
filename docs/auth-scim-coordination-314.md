@@ -151,8 +151,9 @@ invitation's organization-creation flag, and billing seats.
   - The verified-domain path requires a verified email that maps to exactly one
     organization's verified provider.
 
-  For provider-bound logins, the employee (inactive while the organization requires SSO
-  approval) and the membership now commit together. Previously they were two separate commits.
+  For provider-bound logins, the employee and the membership now commit together. Previously
+  they were two separate commits. While the organization requires SSO approval, both SSO paths
+  write a pending membership and no employee; the pending-member approval lets the person in (#1668).
   - The role is now read from `provisionUser`'s user info. For OIDC that is the same object the
     plugin used.
   - For SAML the plugin passed the raw attribute map. A raw attribute literally named
@@ -177,8 +178,8 @@ invitation's organization-creation flag, and billing seats.
   (`platform-admin.service.ts`) and user settings belong to #312.
 - Invitation creation, rejection and cancellation, and `updateOrganization` (other than
   timezone, which #311 rejects): none of these changes a fact that manual creation reads.
-  `ssoRequiresApproval` only affects SSO employee creation. SSO provisioning reads it inside
-  its own guarded transaction.
+  `ssoRequiresApproval` only decides whether an SSO membership starts pending. SSO provisioning
+  reads it inside its own guarded transaction.
 - `accountBanPlugin` enforces bans on reads and writes nothing.
 - `storePendingInvitation` (`app/[locale]/(auth)/invitation-actions.ts`) writes only `user.invitedVia`,
   which manual creation does not read.
