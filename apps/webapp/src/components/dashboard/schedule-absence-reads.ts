@@ -298,8 +298,9 @@ export function loadWhosOutForOrganization(
 
 		const schedulesByEmployee = new Map<string, EffectiveWorkPolicy | null>();
 		for (const employeeId of new Set(typedTodayAbsences.map((absence) => absence.employee.id))) {
+			// The policy in force at the same `now` as `today`, in this organization only.
 			const policy = yield* workPolicyService
-				.getEffectivePolicy(employeeId)
+				.getEffectivePolicyAt({ employeeId, organizationId, at: now })
 				.pipe(Effect.catch(() => Effect.succeed(null)));
 			schedulesByEmployee.set(employeeId, policy);
 		}
