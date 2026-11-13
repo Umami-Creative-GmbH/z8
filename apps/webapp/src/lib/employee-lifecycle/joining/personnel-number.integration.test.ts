@@ -1,5 +1,5 @@
 /**
- * #1197: accepting an invitation never fails because of the draft's personnel
+ * #1197: joining with an invitation never fails because of the draft's personnel
  * number. A draft number another employee of the organization holds by then is
  * not copied onto the new or reactivated employee, and the drop is written to
  * the audit log; a reactivated employee keeps their own number.
@@ -36,9 +36,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 const { db } = await import("@/db");
-const { ensureEmployeeForOrganizationMember } = await import(
-	"@/lib/auth/organization-member-provisioning"
-);
+const { joinOrganization } = await import("./joining");
 
 describe("personnel number of an accepted invitation on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -62,7 +60,13 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 			 values ($1, 'Invitee', $2, now(), now())`,
 			[userId, `${userId}@invitee.test`],
 		);
-		return { userId, email: `${userId}@invitee.test` };
+		const memberId = randomUUID();
+		await fixture.pool.query(
+			`insert into member (id, organization_id, user_id, role, status, created_at)
+			 values ($1, $2, $3, 'member', 'approved', now())`,
+			[memberId, fixture.organizationId, userId],
+		);
+		return { userId, memberId, email: `${userId}@invitee.test` };
 	}
 
 	async function invite(email: string, employeeNumber: string) {
@@ -82,14 +86,17 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 		return { invitationId, draftId: rows[0]?.id as string };
 	}
 
-	function accept(userId: string, invitationId: string) {
-		return ensureEmployeeForOrganizationMember(db, {
-			mode: "membershipAccepted",
-			userId,
-			organizationId: fixture.organizationId,
-			memberRole: "member",
-			invitationId,
-		});
+	async function accept(person: { userId: string; memberId: string }, invitationId: string) {
+		const joined = await db.transaction((tx) =>
+			joinOrganization(tx, {
+				userId: person.userId,
+				organizationId: fixture.organizationId,
+				membership: { id: person.memberId, role: "member" },
+				invitation: { id: invitationId },
+			}),
+		);
+		await joined.afterCommit.run();
+		return joined.outcome.employee;
 	}
 
 	async function droppedNumberAudits(employeeId: string) {
@@ -130,7 +137,7 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 		const invitee = await createInvitee();
 		const { invitationId, draftId } = await invite(invitee.email, " e-42 ");
 
-		const employee = await accept(invitee.userId, invitationId);
+		const employee = await accept(invitee, invitationId);
 
 		expect(employee).toMatchObject({
 			userId: invitee.userId,
@@ -163,7 +170,7 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 			"E-42",
 		);
 
-		const employee = await accept(former.userId, invitationId);
+		const employee = await accept(former, invitationId);
 
 		expect(employee).toMatchObject({
 			id: former.employeeId,
@@ -196,7 +203,7 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 				[holderId],
 			);
 
-			const accepting = accept(invitee.userId, invitationId);
+			const accepting = accept(invitee, invitationId);
 			await vi.waitFor(
 				async () => {
 					const { rows } = await fixture.pool.query(
@@ -240,7 +247,7 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 			`${former.userId}@lifecycle.test`,
 			"LOCAL-INVITE",
 		);
-		const employee = await accept(former.userId, invitationId);
+		const employee = await accept(former, invitationId);
 		expect(employee).toMatchObject({
 			employeeNumber: "IDP-INVITE",
 			personnelNumberManagedByScim: true,
@@ -250,7 +257,7 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 		const invitee = await createInvitee();
 		const { invitationId } = await invite(invitee.email, " N-7 ");
 
-		const employee = await accept(invitee.userId, invitationId);
+		const employee = await accept(invitee, invitationId);
 
 		expect(employee).toMatchObject({ employeeNumber: "N-7" });
 		expect(await droppedNumberAudits(employee?.id as string)).toEqual([]);
@@ -267,7 +274,7 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 			"own-2",
 		);
 
-		const employee = await accept(former.userId, invitationId);
+		const employee = await accept(former, invitationId);
 
 		expect(employee).toMatchObject({ isActive: true, employeeNumber: "own-2" });
 		expect(await droppedNumberAudits(former.employeeId)).toEqual([]);
@@ -277,7 +284,7 @@ describe("personnel number of an accepted invitation on PostgreSQL", () => {
 		const invitee = await createInvitee();
 		const { invitationId } = await invite(invitee.email, "   ");
 
-		const employee = await accept(invitee.userId, invitationId);
+		const employee = await accept(invitee, invitationId);
 
 		expect(employee).toMatchObject({ employeeNumber: null });
 		expect(await droppedNumberAudits(employee?.id as string)).toEqual([]);

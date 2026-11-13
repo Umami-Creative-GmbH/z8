@@ -83,7 +83,8 @@ describe("resolveInvitationTargetTeamId", () => {
 });
 
 describe("billing seat sync hooks", () => {
-	it("syncs billing seats after standard invitation acceptance", () => {
+	// The seat signal is joining's after-commit step (joining.integration.test.ts).
+	it("joins the accepting user with the invitation and runs joining's after-commit step", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 		const acceptInvitationHook = source.slice(
 			source.indexOf("afterAcceptInvitation"),
@@ -91,21 +92,9 @@ describe("billing seat sync hooks", () => {
 				"// Create employee record when user is added to organization",
 			),
 		);
-
-		expect(acceptInvitationHook).toContain("syncBillingSeats");
-		expect(acceptInvitationHook).toContain('change: "added"');
-	});
-
-	it("passes invitation id into employee provisioning", () => {
-		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
-		const acceptInvitationHook = source.slice(
-			source.indexOf("afterAcceptInvitation"),
-			source.indexOf(
-				"// Create employee record when user is added to organization",
-			),
-		);
-		expect(acceptInvitationHook).toContain("invitationId: invitation.id");
-		expect(acceptInvitationHook).toContain('mode: "membershipAccepted"');
+		expect(acceptInvitationHook).toContain("joinOrganization(tx, {");
+		expect(acceptInvitationHook).toContain("invitation: { id: invitation.id }");
+		expect(acceptInvitationHook).toContain("await joined.afterCommit.run()");
 	});
 
 	it("resolves organization creation permission through the stable invitation draft fallback", () => {
@@ -143,14 +132,16 @@ describe("billing seat sync hooks", () => {
 		);
 	});
 
-	it("uses explicit membership acceptance provisioning after directly adding a member", () => {
+	it("joins a directly added member, matching their draft by email", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 		const addMemberHook = source.slice(
 			source.indexOf("afterAddMember"),
 			source.indexOf("// Sync seat count when member is removed"),
 		);
 
-		expect(addMemberHook).toContain('mode: "membershipAccepted"');
+		expect(addMemberHook).toContain("joinOrganization(tx, {");
+		expect(addMemberHook).toContain("invitation: { id: null }");
+		expect(addMemberHook).toContain("await joined.afterCommit.run()");
 	});
 });
 

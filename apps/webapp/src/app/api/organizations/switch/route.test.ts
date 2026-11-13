@@ -13,7 +13,7 @@ const mockState = vi.hoisted(() => {
 		getSession: vi.fn(),
 		canAccessOrganization: vi.fn(async () => true),
 		setActiveOrganization: vi.fn(),
-		ensureEmployeeForOrganizationMember: vi.fn(),
+		joinMemberWithoutEmployee: vi.fn(),
 		select,
 		from,
 		where,
@@ -44,9 +44,9 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/auth/organization-member-provisioning", () => ({
-	ensureEmployeeForOrganizationMember:
-		mockState.ensureEmployeeForOrganizationMember,
+vi.mock("@/lib/employee-lifecycle/joining", () => ({
+	joinMemberWithoutEmployee:
+		mockState.joinMemberWithoutEmployee,
 }));
 
 vi.mock("@/lib/organization-mfa/organization-access", () => ({
@@ -133,7 +133,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 			"org-2",
 		);
 		expect(
-			mockState.ensureEmployeeForOrganizationMember,
+			mockState.joinMemberWithoutEmployee,
 		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
@@ -177,7 +177,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 				error: "You are not a member of this organization",
 			});
 			expect(
-				mockState.ensureEmployeeForOrganizationMember,
+				mockState.joinMemberWithoutEmployee,
 			).not.toHaveBeenCalled();
 			expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 		},
@@ -195,7 +195,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 
 		expect(response.status).toBe(403);
 		expect(
-			mockState.ensureEmployeeForOrganizationMember,
+			mockState.joinMemberWithoutEmployee,
 		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
@@ -236,7 +236,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 			error: "Organization access is inactive",
 		});
 		expect(
-			mockState.ensureEmployeeForOrganizationMember,
+			mockState.joinMemberWithoutEmployee,
 		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
@@ -314,13 +314,12 @@ describe("POST /api/organizations/switch bearer access", () => {
 		const response = await POST(createRequest({}, { organizationId: "org-2" }));
 
 		expect(response.status).toBe(200);
-		expect(mockState.ensureEmployeeForOrganizationMember).toHaveBeenCalledWith(
+		expect(mockState.joinMemberWithoutEmployee).toHaveBeenCalledWith(
 			expect.anything(),
 			{
-				mode: "reconcile",
 				userId: "user-1",
 				organizationId: "org-2",
-				memberRole: "member",
+				membership: { id: "member-1", role: "member" },
 			},
 		);
 	});
@@ -340,7 +339,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 			hasEmployeeRecord: true,
 		});
 		expect(
-			mockState.ensureEmployeeForOrganizationMember,
+			mockState.joinMemberWithoutEmployee,
 		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).toHaveBeenCalledOnce();
 	});

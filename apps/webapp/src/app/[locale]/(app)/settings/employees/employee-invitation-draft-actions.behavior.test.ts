@@ -23,8 +23,8 @@ const mocks = vi.hoisted(() => ({
 	revalidateTag: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/organization-member-provisioning", () => ({
-	ensureEmployeeProfilesForOrganizationMembers: mocks.ensureEmployeeProfiles,
+vi.mock("@/lib/employee-lifecycle/joining", () => ({
+	joinMembersWithoutEmployee: mocks.ensureEmployeeProfiles,
 }));
 
 vi.mock("@/lib/effect/runtime", async () => {

@@ -133,9 +133,7 @@ const { PendingMemberService, PendingMemberServiceLive } = await import(
 	"@/lib/effect/services/pending-member.service"
 );
 const { db } = await import("@/db");
-const { ensureEmployeeForOrganizationMember } = await import(
-	"@/lib/auth/organization-member-provisioning"
-);
+const { joinOrganization } = await import("./joining");
 const { createLifecycleDatabaseFixture } = await import(
 	"./testing/database.test.fixture"
 );
@@ -321,14 +319,16 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		expect(joined).toMatchObject({ status: "approved" });
 	}
 
-	/** They accept an invitation, which provisions their employee. */
+	/** They accept an invitation: joining brings their employee back. */
 	async function acceptInvitation(person: SeededEmployee) {
-		await ensureEmployeeForOrganizationMember(db, {
-			mode: "membershipAccepted",
-			userId: person.userId,
-			organizationId: fixture.organizationId,
-			memberRole: "member",
-		});
+		const joined = await db.transaction((tx) =>
+			joinOrganization(tx, {
+				userId: person.userId,
+				organizationId: fixture.organizationId,
+				membership: { id: person.memberId, role: "member" },
+			}),
+		);
+		await joined.afterCommit.run();
 	}
 
 	it("reactivates a deactivated employee whose pending membership an admin approves, by the admin", async () => {
@@ -343,7 +343,7 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		await expectReactivatedBy(person, person.userId);
 	});
 
-	it("reactivates a deactivated employee whose accepted invitation provisions them, by the accepting user", async () => {
+	it("reactivates a deactivated employee whose accepted invitation joins them, by the accepting user", async () => {
 		const person = await deactivatedPerson();
 		await acceptInvitation(person);
 		await expectReactivatedBy(person, person.userId);
