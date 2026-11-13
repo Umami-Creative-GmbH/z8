@@ -20,22 +20,17 @@ vi.mock("@/lib/employment-history/first-terms", () => ({
 	writeFirstEmploymentTerms,
 }));
 
-// The placement itself is covered by primary-team.integration.test.ts (#1575).
-const setPrimaryTeam = vi.hoisted(() =>
+// The placement itself is covered by team-placement.integration.test.ts (#1594).
+const placeArrivingEmployee = vi.hoisted(() =>
 	vi.fn(async (_tx: unknown, input: { teamId: string | null }) => ({
 		addTeamId: input.teamId,
 		endTeamId: null,
 		primaryTeamId: input.teamId,
 	})),
 );
-vi.mock("@/lib/organization/primary-team", () => ({
-	setPrimaryTeam,
-	// As placeInTeam: no team places nothing.
-	placeInTeam: (tx: unknown, input: { teamId?: string | null }) =>
-		input.teamId ? setPrimaryTeam(tx, { ...input, teamId: input.teamId }) : null,
-}));
+vi.mock("@/lib/organization/team-placement/team-placement", () => ({ placeArrivingEmployee }));
 const placedIn = (employeeId: string, teamId: string) =>
-	expect(setPrimaryTeam).toHaveBeenCalledWith(expect.anything(), {
+	expect(placeArrivingEmployee).toHaveBeenCalledWith(expect.anything(), {
 		organizationId: "org-1",
 		employeeId,
 		teamId,
@@ -61,7 +56,7 @@ vi.mock("@/lib/employee-lifecycle/reactivation", () => ({ reactivateOnReturn }))
 type ProvisioningDb = Parameters<typeof ensureEmployeeForOrganizationMember>[0];
 
 beforeEach(() => {
-	setPrimaryTeam.mockClear();
+	placeArrivingEmployee.mockClear();
 	reactivateOnReturn.mockClear();
 });
 
@@ -161,7 +156,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			role: "employee",
 			isActive: true,
 		});
-		expect(setPrimaryTeam).not.toHaveBeenCalled();
+		expect(placeArrivingEmployee).not.toHaveBeenCalled();
 	});
 
 	it("places a new employee in targetTeamId as a membership and primary team", async () => {
@@ -226,7 +221,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		cameBack("employee-existing");
 		// Without a draft there is nothing else to write.
 		expect(update).not.toHaveBeenCalled();
-		expect(setPrimaryTeam).not.toHaveBeenCalled();
+		expect(placeArrivingEmployee).not.toHaveBeenCalled();
 	});
 
 	it("reactivates an inactive admin employee without a team and grants org-wide team permissions", async () => {
@@ -1010,7 +1005,7 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 		});
 
 		if (expectedTeamId) placedIn("employee-created", expectedTeamId);
-		else expect(setPrimaryTeam).not.toHaveBeenCalled();
+		else expect(placeArrivingEmployee).not.toHaveBeenCalled();
 	});
 
 	it("falls back to the same organization and accepting email for a replacement invitation", async () => {
@@ -1093,7 +1088,7 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 		);
 		expect(fallbackQuery.params).toEqual(["org-1", "invitee@example.com"]);
 		expect(db.values).toHaveBeenCalledWith(expect.objectContaining({ role: "employee" }));
-		expect(setPrimaryTeam).not.toHaveBeenCalled();
+		expect(placeArrivingEmployee).not.toHaveBeenCalled();
 	});
 
 	it("ignores a draft team that no longer belongs to the organization", async () => {
@@ -1117,7 +1112,7 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 		});
 
 		expect(db.values).toHaveBeenCalledWith(expect.objectContaining({ role: "employee" }));
-		expect(setPrimaryTeam).not.toHaveBeenCalled();
+		expect(placeArrivingEmployee).not.toHaveBeenCalled();
 	});
 
 	it("keeps current behavior when no draft exists", async () => {
@@ -1131,7 +1126,7 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 		});
 
 		expect(db.values).toHaveBeenCalledWith(expect.objectContaining({ role: "admin" }));
-		expect(setPrimaryTeam).not.toHaveBeenCalled();
+		expect(placeArrivingEmployee).not.toHaveBeenCalled();
 	});
 
 	it("applies draft fields when reactivating an inactive placeholder employee", async () => {

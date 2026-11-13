@@ -81,7 +81,7 @@ import {
 	absencePendingApprovalContent,
 	timeCorrectionPendingApprovalContent,
 } from "@/lib/notifications/triggers";
-import { placeInTeam } from "@/lib/organization/primary-team";
+import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { RECORDED_VEHICLE_FOREIGN_KEYS } from "@/lib/organization/vehicles/vehicle-rules";
 import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
@@ -1668,7 +1668,7 @@ async function generateDemoTeamsInTransaction(
 	let employeesAssigned = 0;
 	// A team membership, which is also the primary team (Organization ADR 0010).
 	const assign = (employeeId: string, teamId: string) =>
-		placeInTeam(tx, {
+		placeArrivingEmployee(tx, {
 			organizationId: options.organizationId,
 			employeeId,
 			teamId,

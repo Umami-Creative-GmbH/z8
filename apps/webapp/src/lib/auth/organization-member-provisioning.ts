@@ -19,7 +19,7 @@ import {
 	findPersonnelNumberHolder,
 	isPersonnelNumberConflict,
 } from "@/lib/organization/personnel-number-uniqueness";
-import { placeInTeam } from "@/lib/organization/primary-team";
+import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { hourlyWageSchema } from "@/lib/validations/employment-history";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
@@ -87,7 +87,7 @@ async function resolveDraftTeamId(
 /**
  * The employee values a draft gives a new employee. The personnel number is
  * left out: `writeWithDraftPersonnelNumber` adds it only while it is free. So is
- * the team: `placeInTeam` places the employee in it (Organization ADR 0010).
+ * the team: `placeArrivingEmployee` places the employee in it (Organization ADR 0010).
  */
 function draftEmployeeCreationValues(draft: typeof employeeInvitationDraft.$inferSelect | null) {
 	if (!draft) return {};
@@ -419,8 +419,9 @@ export async function ensureEmployeeForOrganizationMember(
 
 				// The draft's team is a move: its old primary team's membership ends.
 				const reactivated = reactivatedEmployee ?? existingEmployee;
-				const placed = draft
-					? await placeInTeam(tx, {
+				const placed =
+					draft && targetTeamId
+					? await placeArrivingEmployee(tx, {
 							organizationId: input.organizationId,
 							employeeId: reactivated.id,
 							teamId: targetTeamId,
@@ -502,8 +503,9 @@ export async function ensureEmployeeForOrganizationMember(
 					return insertResult.returning ? await insertResult.returning() : [];
 				},
 			);
-			const placed = newEmployee
-				? await placeInTeam(tx, {
+			const placed =
+				newEmployee && targetTeamId
+				? await placeArrivingEmployee(tx, {
 						organizationId: input.organizationId,
 						employeeId: newEmployee.id,
 						teamId: targetTeamId,

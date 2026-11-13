@@ -33,11 +33,6 @@ import {
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
-import {
-	previewDrivingLicenceIntendedDriverWrite,
-	runDrivingLicenceIntendedDriverWrite,
-} from "@/lib/organization/driving-licence/no-longer-intended";
-import { keepDrivingLicenceStalePreview } from "@/lib/organization/driving-licence/stale-preview";
 import { type BirthdayChange, birthdayChange } from "@/lib/organization/employee-birthday";
 import { personnelNumberKey } from "@/lib/organization/personnel-number";
 import {
@@ -46,7 +41,14 @@ import {
 	findPersonnelNumberHolder,
 	keepPersonnelNumberRefusal,
 } from "@/lib/organization/personnel-number-uniqueness";
-import { keepPrimaryTeamRefusal, setPrimaryTeam } from "@/lib/organization/primary-team";
+import {
+	applyTeamChange,
+	keepTeamChangeRefusals,
+	placeArrivingEmployee,
+	previewTeamChange,
+	previewUnchangedTeamPlacement,
+	teamChangeScope,
+} from "@/lib/organization/team-placement/team-placement";
 import {
 	type OrganizationActor,
 	organizationAction,
@@ -201,7 +203,7 @@ export const createEmployeeAction = organizationAction(
 								.returning();
 							// The team is a membership and the primary team (Organization ADR 0010).
 							const placed = validatedData.teamId
-								? await setPrimaryTeam(tx, {
+								? await placeArrivingEmployee(tx, {
 										organizationId,
 										employeeId: inserted.id,
 										teamId: validatedData.teamId,
@@ -238,7 +240,7 @@ export const createEmployeeAction = organizationAction(
 						// Keep the terms refusal for the user (D8).
 						return keepTermsRefusal(error);
 					}),
-					keepPrimaryTeamRefusal,
+					keepTeamChangeRefusals,
 				);
 
 			if (firstTerms) {
@@ -317,36 +319,22 @@ export const previewEmployeeTeamChangeDrivingImpact = organizationAction(
 				teamId: input.teamId,
 			});
 			const dbService = yield* DatabaseService;
+			const target = { organizationId, employeeId };
+			const viewer = { userId: actor.userId, organizationAdmin: isOrgAdmin(actor) };
 			return yield* dbService
 				.query("employee.previewTeamChangeDrivingImpact", () =>
-					previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
-						{
-							organizationId,
-							employeeIds: [employeeId],
-							viewer: { userId: actor.userId, organizationAdmin: isOrgAdmin(actor) },
-						},
-						(work) =>
-							withAuthorizationMutation(
-								{ organizationId, employeeIds: [employeeId] },
-								work,
+					// A scoped manager can't change the team: nothing changes then.
+					Object.hasOwn(validatedData, "teamId")
+						? previewTeamChange(
 								dbService.db,
-							),
-						async (tx) => {
-							// A scoped manager can't change the team: nothing changes then.
-							if (!Object.hasOwn(validatedData, "teamId")) return;
-							await setPrimaryTeam(tx, {
-								organizationId,
-								employeeId,
-								teamId: validatedData.teamId ?? null,
-							});
-						},
-					),
+								{ ...target, kind: "move", teamId: validatedData.teamId ?? null },
+								viewer,
+							)
+						: previewUnchangedTeamPlacement(dbService.db, target, viewer),
 				)
-				.pipe(keepPrimaryTeamRefusal);
+				.pipe(keepTeamChangeRefusals);
 		}),
 );
-
-type TeamWriteTransaction = Parameters<Parameters<typeof withAuthorizationMutation>[1]>[0];
 
 /**
  * Saves the employee detail form. `customFieldValues` are the form's custom
@@ -406,11 +394,12 @@ export const updateEmployeeAction = organizationAction(
 					: null;
 			const personnelNumberScope = { organizationId, exceptEmployeeId: employeeId };
 
-			// Role, team and active state feed creation authority and target checks.
+			// Role, team and active state feed creation authority and target checks. The
+			// employee's protection is also the one a move of their team needs (`teamChangeScope`).
 			const birthdayUpdate = yield* dbService
 				.query("updateEmployee", () =>
 					withAuthorizationMutation(
-						{ organizationId, employeeIds: [employeeId] },
+						teamChangeScope({ organizationId, employeeId }),
 						async (tx) => {
 							// Actual joining dates require a reviewed correction. Recheck under the employee guard,
 							// including stale full-form payloads that would otherwise undo a reviewed save.
@@ -452,36 +441,24 @@ export const updateEmployeeAction = organizationAction(
 									.for("update");
 								birthdayUpdate = birthdayChange(stored?.birthday, scopedData.birthday);
 							}
-							const writeEmployee = async () => {
-								await tx
-									.update(employee)
-									.set(employeeUpdateData)
-									.where(
-										and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-									);
-								if (hasTeamUpdate) {
-									await setPrimaryTeam(tx, {
-										organizationId,
-										employeeId,
-										teamId: nextTeamId ?? null,
-										createdBy: actor.userId,
-									});
-								}
-							};
+							await tx
+								.update(employee)
+								.set(employeeUpdateData)
+								.where(
+									and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+								);
 							// A new primary team can end the employee's driving authorization (#1425).
-							if (hasTeamUpdate)
-								await runDrivingLicenceIntendedDriverWrite(
+							if (hasTeamUpdate) {
+								await applyTeamChange(
 									tx,
+									{ kind: "move", organizationId, employeeId, teamId: nextTeamId ?? null },
 									{
-										organizationId,
-										employeeIds: [employeeId],
 										actorUserId: actor.userId,
 										viewer: { userId: actor.userId, organizationAdmin: isOrgAdmin(actor) },
 										previewToken: input.drivingLicencePreviewToken,
 									},
-									writeEmployee,
 								);
-							else await writeEmployee();
+							}
 							await saveFormCustomFieldValues(tx, {
 								organizationId,
 								actorUserId: actor.userId,
@@ -496,8 +473,7 @@ export const updateEmployeeAction = organizationAction(
 				)
 				.pipe(
 					keepCustomFieldRefusal,
-					keepDrivingLicenceStalePreview,
-					keepPrimaryTeamRefusal,
+					keepTeamChangeRefusals,
 					// A concurrent save that took the number first hits the unique index.
 					keepPersonnelNumberRefusal(() =>
 						personnelNumber === null
