@@ -8,7 +8,8 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import webpush from "web-push";
+// web-push 4 is ESM-only and has no default export.
+import { sendNotification, setVapidDetails, WebPushError } from "web-push";
 import { db } from "@/db";
 import { pushSubscription } from "@/db/schema";
 import { env } from "@/env";
@@ -36,7 +37,7 @@ function configureWebPush() {
 	}
 
 	try {
-		webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+		setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 		isConfigured = true;
 		logger.info("Web push configured successfully");
 		return true;
@@ -115,23 +116,19 @@ export async function sendPushNotification(
 	};
 
 	try {
-		await webpush.sendNotification(pushSubscription, JSON.stringify(payload));
+		await sendNotification(pushSubscription, JSON.stringify(payload));
 		logger.debug({ endpoint: subscription.endpoint.slice(0, 50) }, "Push notification sent");
 		return { success: true };
 	} catch (error: unknown) {
-		// Handle specific web-push errors
-		const webPushError = error as { statusCode?: number; message?: string };
-		if (webPushError.statusCode === 410 || webPushError.statusCode === 404) {
+		const statusCode = error instanceof WebPushError ? error.statusCode : undefined;
+		if (statusCode === 410 || statusCode === 404) {
 			// Subscription has expired or is invalid
 			logger.info({ endpoint: subscription.endpoint.slice(0, 50) }, "Push subscription expired");
 			return { success: false, error: "subscription_expired" };
 		}
 
-		logger.error(
-			{ error, statusCode: webPushError.statusCode },
-			"Failed to send push notification",
-		);
-		return { success: false, error: webPushError.message || "Unknown error" };
+		logger.error({ error, statusCode }, "Failed to send push notification");
+		return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
 	}
 }
 

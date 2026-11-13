@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_rethrow } from "next/navigation";
 import { db } from "@/db";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
@@ -39,6 +40,8 @@ export interface PersonnelFileData {
 }
 
 function failure(error: unknown, fallback: string): { success: false; error: string } {
+	// Next.js signals (a finished prerender, redirects, not found) are not failures.
+	unstable_rethrow(error);
 	logger.error({ error }, fallback);
 	return { success: false, error: fallback };
 }

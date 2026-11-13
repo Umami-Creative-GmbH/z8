@@ -24,7 +24,8 @@ describe("ProgressIndicator", () => {
 
 		const list = screen.getByRole("list");
 		expect(screen.getAllByRole("listitem")).toHaveLength(9);
-		expect(list.style.gridTemplateColumns).toBe("repeat(9, minmax(0, 1fr))");
+		// jsdom 31 serializes lengths like browsers do: `0` becomes `0px`.
+		expect(list.style.gridTemplateColumns).toBe("repeat(9, minmax(0px, 1fr))");
 	});
 
 	it("runs the progress line from the first circle centre to the current one", () => {
