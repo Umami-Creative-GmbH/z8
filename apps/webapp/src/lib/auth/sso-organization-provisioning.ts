@@ -8,10 +8,14 @@
  * configuration/access guard before its first dependent write:
  *
  * - provider-bound SSO login (`provisionUser`): the provider organization's
- *   employee (inactive while the organization requires SSO approval) and
- *   membership;
+ *   membership, and its employee when no approval is required;
  * - a social login whose verified email domain belongs to exactly one
  *   organization's verified SSO provider: membership.
+ *
+ * While the organization requires SSO approval (`ssoRequiresApproval`, on by
+ * default), both produce a pending membership and no employee: the
+ * pending-member approval is the way in, and the person joins at approval
+ * (#1668). Otherwise the membership is approved at once.
  *
  * Membership keeps the plugin's rules: an existing member or a pending,
  * unexpired invitation for the email means no new membership, and the role
@@ -80,16 +84,32 @@ export function verifiedProviderDomainMatches(domain: string, domains: string): 
 	return parsed.some((entry) => search === entry || search.endsWith(`.${entry}`));
 }
 
+/** Whether an SSO sign-in waits for an admin's approval; true unless the organization says not. */
+async function ssoRequiresApproval(transaction: Transaction, organizationId: string) {
+	const [row] = await transaction
+		.select({ ssoRequiresApproval: organization.ssoRequiresApproval })
+		.from(organization)
+		.where(eq(organization.id, organizationId))
+		.limit(1);
+	return row?.ssoRequiresApproval ?? true;
+}
+
+/**
+ * The SSO membership: pending while the organization requires SSO approval
+ * (the pending-member approval is the way in), approved otherwise. Returns the
+ * status written, or null when an existing member or a pending invitation means
+ * no new membership.
+ */
 async function addOrganizationMember(
 	transaction: Transaction,
 	input: { organizationId: string; userId: string; email: string; role: string },
-) {
+): Promise<"pending" | "approved" | null> {
 	const [existing] = await transaction
 		.select({ id: member.id })
 		.from(member)
 		.where(and(eq(member.organizationId, input.organizationId), eq(member.userId, input.userId)))
 		.limit(1);
-	if (existing) return;
+	if (existing) return null;
 	const [pendingInvitation] = await transaction
 		.select({ id: invitation.id })
 		.from(invitation)
@@ -102,15 +122,19 @@ async function addOrganizationMember(
 			),
 		)
 		.limit(1);
-	if (pendingInvitation) return;
+	if (pendingInvitation) return null;
+	const status = (await ssoRequiresApproval(transaction, input.organizationId))
+		? "pending"
+		: "approved";
 	await transaction.insert(member).values({
 		id: nanoid(),
 		organizationId: input.organizationId,
 		userId: input.userId,
 		role: input.role,
-		status: "approved",
+		status,
 		createdAt: new Date(),
 	});
+	return status;
 }
 
 /** Provider-bound SSO login: the organization's employee and membership, guarded. */
@@ -129,11 +153,16 @@ export async function provisionSsoProviderOrganization(
 			organizationId,
 			userIds: [input.user.id],
 		});
-		const [providerOrganization] = await transaction
-			.select({ ssoRequiresApproval: organization.ssoRequiresApproval })
-			.from(organization)
-			.where(eq(organization.id, organizationId))
-			.limit(1);
+		// A pending membership gets no employee: the person joins at approval.
+		if (await ssoRequiresApproval(transaction, organizationId)) {
+			await addOrganizationMember(transaction, {
+				organizationId,
+				userId: input.user.id,
+				email: input.user.email,
+				role: ssoMemberRole(input.userInfo),
+			});
+			return;
+		}
 		const [existingEmployee] = await transaction
 			.select({ id: employee.id })
 			.from(employee)
@@ -144,8 +173,7 @@ export async function provisionSsoProviderOrganization(
 				userId: input.user.id,
 				organizationId,
 				role: "employee",
-				// Inactive while the organization requires SSO approval.
-				isActive: !(providerOrganization?.ssoRequiresApproval ?? true),
+				isActive: true,
 			});
 		}
 		await addOrganizationMember(transaction, {
