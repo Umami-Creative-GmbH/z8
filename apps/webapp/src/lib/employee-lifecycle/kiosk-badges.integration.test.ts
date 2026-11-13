@@ -437,7 +437,7 @@ describe("kiosk badges across departure and rehire", () => {
 		now = parseInstant("2026-10-02T08:00:00Z");
 		await commands().executeDeparture(identityOf(worker, scheduled));
 		now = parseInstant("2026-11-02T08:00:00Z");
-		await rehire(worker);
+		const newPeriodId = await rehire(worker);
 
 		const staleRetries = () =>
 			Array.from({ length: 3 }, () => commands().executeDeparture(identityOf(worker, scheduled)));
@@ -456,11 +456,16 @@ describe("kiosk badges across departure and rehire", () => {
 			"kiosk_badge.revoked",
 			"kiosk_badge.issued",
 		]);
-		const employment = await fixture.pool.query<{ status: string }>(
-			"select status from employee_employment_period where employee_id = $1 order by created_at",
+		// By identity: the seeded period's created_at comes from the database clock,
+		// the rehired one's from the test clock, so their created_at order is arbitrary.
+		const employment = await fixture.pool.query<{ id: string; status: string }>(
+			"select id, status from employee_employment_period where employee_id = $1 order by started_at",
 			[worker.employeeId],
 		);
-		expect(employment.rows.map((period) => period.status)).toEqual(["closed", "open"]);
+		expect(employment.rows).toEqual([
+			{ id: worker.employmentPeriodId, status: "closed" },
+			{ id: newPeriodId, status: "open" },
+		]);
 	});
 
 	it("leaves no working badge when an issuance races the departure", async () => {

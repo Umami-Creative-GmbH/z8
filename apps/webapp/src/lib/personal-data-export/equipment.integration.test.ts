@@ -144,8 +144,10 @@ beforeEach(async () => {
 				org === ORG ? "Shirts" : "Foreign secret type",
 			],
 		);
+	// Pin the last activity to the latest seeded event: the column defaults to the
+	// database clock, which would make retention depend on the real date.
 	await pool.query(
-		"insert into equipment_assignment(id,organization_id,type_id,employee_id,quantity,received_quantity,lost_quantity,waived_quantity,exception_received_quantity,return_required,explicit_deadline,revision) values($1,$2,$3,$4,5,3,2,1,1,true,'2026-10-30',4)",
+		"insert into equipment_assignment(id,organization_id,type_id,employee_id,quantity,received_quantity,lost_quantity,waived_quantity,exception_received_quantity,return_required,explicit_deadline,revision,last_activity_at) values($1,$2,$3,$4,5,3,2,1,1,true,'2026-10-30',4,'2026-11-02T05:00:00Z')",
 		[id(20), ORG, id(10), id(1)],
 	);
 	await pool.query(
