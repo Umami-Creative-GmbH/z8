@@ -49,6 +49,10 @@ _Avoid_: removal cleanup, deprovisioning job
 The organization's employees who are not former employees. Everything that answers "who works here now" shows only the current roster: teams, presence, planning, the people offered for picking, and who gets notified.
 _Avoid_: active users, active members, all employees
 
+**Joining**:
+A user coming onto an organization's current roster through an approved membership, whatever the way in: an invitation, an invite code, the approval of a pending membership, signing in through the organization's identity provider, or creating the organization. Joining again after a deactivation is a reactivation. A former employee whose departure took effect does not join by regaining a membership; only a rehire brings them back. Joining twice changes nothing more.
+_Avoid_: onboarding, provisioning, admission, enrollment
+
 **Birthday**:
 An employee's date of birth as one organization records it, if any; an employee of several organizations has a separate one in each. Only the employee and org admins see the full date; the rest of the current roster sees its day and month.
 _Avoid_: date of birth, DOB, birth date
@@ -359,3 +363,4 @@ _Avoid_: rehearsal record, test data
 - [Intended-driver status is a scoped assignment, and losing it ends driving authorization](./docs/adr/0005-intended-driver-is-a-scoped-assignment-and-losing-it-ends-authorization.md): why intended drivers are assigned like a policy, matched by primary team, and why leaving ends authorization.
 - [A primary team is always a team membership, and changing it moves the employee](./docs/adr/0010-primary-team-is-always-a-team-membership.md): why every write keeps the primary team among the memberships instead of readers combining both, and why changing the Team field is a move.
 - [Going live is checked, never staged](./docs/adr/0007-going-live-is-checked-never-staged.md): why go-live checks are worked out live, the go-live rehearsal writes nothing, there is no test-employee mode, and manual confirmations carry configuration fingerprints.
+- [Joining is one module, and SCIM provisioning stays outside it](./docs/adr/0012-joining-is-one-module-and-scim-provisioning-stays-outside-it.md): why every way into an organization joins through one module in the membership's transaction, and why SCIM provisioning stays a second writer of employees.
