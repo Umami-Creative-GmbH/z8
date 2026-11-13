@@ -53,7 +53,11 @@ describe("0313 SSO employees never switched on become pending memberships", () =
 
 	/** What an SSO sign-in with approval required used to leave: approved member, inactive employee, no period. */
 	async function neverSwitchedOn() {
-		const person = await fixture.seedEmployee({ organizationId, isActive: false, withPeriod: false });
+		const person = await fixture.seedEmployee({
+			organizationId,
+			isActive: false,
+			withPeriod: false,
+		});
 		await signedInThroughProvider(person.userId);
 		return person;
 	}

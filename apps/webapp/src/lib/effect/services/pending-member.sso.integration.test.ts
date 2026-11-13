@@ -20,9 +20,7 @@ vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 const { Effect, Layer } = await import("effect");
 const { db } = await import("@/db");
 const { DatabaseServiceLive } = await import("./database.service");
-const { PendingMemberService, PendingMemberServiceLive } = await import(
-	"./pending-member.service"
-);
+const { PendingMemberService, PendingMemberServiceLive } = await import("./pending-member.service");
 const { provisionSsoProviderOrganization } = await import(
 	"@/lib/auth/sso-organization-provisioning"
 );
@@ -77,7 +75,9 @@ describe("SSO pending memberships in the pending-member approval (#1668)", () =>
 		const person = await ssoSignIn("manager");
 
 		const pending = await run(
-			PendingMemberService.pipe(Effect.flatMap((service) => service.listPending({ organizationId }))),
+			PendingMemberService.pipe(
+				Effect.flatMap((service) => service.listPending({ organizationId })),
+			),
 		);
 		expect(pending.find((entry) => entry.id === person.memberId)).toMatchObject({
 			userId: person.userId,
@@ -102,7 +102,9 @@ describe("SSO pending memberships in the pending-member approval (#1668)", () =>
 		const approved = await fixture.seedEmployee();
 
 		const pending = await run(
-			PendingMemberService.pipe(Effect.flatMap((service) => service.listPending({ organizationId }))),
+			PendingMemberService.pipe(
+				Effect.flatMap((service) => service.listPending({ organizationId })),
+			),
 		);
 		const ids = pending.map((entry) => entry.id);
 		expect(ids).not.toContain(elsewhere.memberId);
