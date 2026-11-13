@@ -2192,6 +2192,13 @@
       "when": 1811692800000,
       "tag": "0312_follow_up_deactivation_reports_notice",
       "breakpoints": true
+    },
+    {
+      "idx": 313,
+      "version": "7",
+      "when": 1811779200000,
+      "tag": "0313_sso_unapproved_employee_to_pending_membership",
+      "breakpoints": true
     }
   ]
 }
