@@ -11,6 +11,7 @@ import { Effect } from "effect";
 import type { Pool, PoolClient } from "pg";
 import {
 	afterAll,
+	afterEach,
 	beforeEach,
 	describe,
 	expect,
@@ -86,6 +87,54 @@ vi.mock("@/lib/auth", async (importOriginal) => {
 							}
 						: null,
 			},
+		},
+	};
+});
+
+// The inbox decision cases count the requester notifications and the logged
+// after-commit failures; every other case keeps the real behaviour.
+const inboxObservation = vi.hoisted(() => ({
+	active: false,
+	notifications: [] as Array<{ trigger: string; workPeriodId: unknown }>,
+	loggedErrors: [] as Array<{ component: string; message: unknown }>,
+}));
+
+vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
+	const original =
+		await importOriginal<typeof import("@/lib/notifications/triggers")>();
+	const observed = <Name extends keyof typeof original>(trigger: Name) =>
+		(async (params: { workPeriodId?: unknown }) => {
+			if (!inboxObservation.active) {
+				return (original[trigger] as (input: unknown) => unknown)(params);
+			}
+			inboxObservation.notifications.push({
+				trigger,
+				workPeriodId: params.workPeriodId,
+			});
+		}) as unknown as (typeof original)[Name];
+	return {
+		...original,
+		onManualEntryApproved: observed("onManualEntryApproved"),
+		onManualEntryRejected: observed("onManualEntryRejected"),
+		onClockOutApproved: observed("onClockOutApproved"),
+		onClockOutRejected: observed("onClockOutRejected"),
+	};
+});
+
+vi.mock("@/lib/logger", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/logger")>();
+	return {
+		...original,
+		createLogger: (component: string) => {
+			const child = original.createLogger(component);
+			const error = child.error.bind(child);
+			child.error = ((...args: unknown[]) => {
+				if (inboxObservation.active) {
+					inboxObservation.loggedErrors.push({ component, message: args[1] });
+				}
+				return (error as (...input: unknown[]) => void)(...args);
+			}) as typeof child.error;
+			return child;
 		},
 	};
 });
@@ -465,6 +514,7 @@ describe(
 
 		function runtime(
 			borrowed: ApprovalWorkflowDatabase = database as unknown as ApprovalWorkflowDatabase,
+			clock: { nowInstant: () => typeof now } = { nowInstant: () => now },
 		) {
 			return createProductionApprovalWorkflowRuntime({
 				db: borrowed,
@@ -495,7 +545,7 @@ describe(
 				canManageApproval: async ({ organizationId, actorEmployeeId }) =>
 					organizationId === ids.organization &&
 					actorEmployeeId === ids.manager,
-				clock: { nowInstant: () => now },
+				clock,
 			});
 		}
 
@@ -816,8 +866,9 @@ describe(
 			kind: OrdinaryWorkPeriodApprovalKind,
 			submissionId = ids.submission,
 			applicationName?: string,
+			clock?: { nowInstant: () => typeof now },
 		) {
-			const productionRuntime = runtime();
+			const productionRuntime = runtime(undefined, clock);
 			return productionRuntime.repository.withTransaction(async (context) => {
 				if (applicationName) {
 					await context.dbService.db.execute(
@@ -3817,6 +3868,183 @@ describe(
 					},
 				]);
 			}
+		});
+
+		describe("time approval inbox handler decision", () => {
+			// Submitted just after the work ended, so the handler's real clock decides later.
+			const submittedAt = parseInstant("2026-07-22T17:00:00Z");
+
+			beforeEach(() => {
+				inboxObservation.active = true;
+				inboxObservation.notifications = [];
+				inboxObservation.loggedErrors = [];
+			});
+
+			afterEach(() => {
+				inboxObservation.active = false;
+			});
+
+			async function submitForInbox(
+				kind: OrdinaryWorkPeriodApprovalKind,
+				mode: ApprovalWorkflowLifecycleMode,
+				withApprovalChain = false,
+			) {
+				await seed(kind, false, mode, false, withApprovalChain);
+				await seedMaintenanceState();
+				return (
+					await submit(kind, ids.submission, undefined, { nowInstant: () => submittedAt })
+				).result.approvalRequestId;
+			}
+
+			async function decideFromInbox(
+				approvalRequestId: string,
+				action: "approve" | "reject",
+			) {
+				const service = DatabaseService.of(dbService(database) as never);
+				const options = { approvalRequestId };
+				await Effect.runPromise(
+					(action === "approve"
+						? TimeCorrectionHandler.approve(ids.period, ids.manager, options)
+						: TimeCorrectionHandler.reject(
+								ids.period,
+								ids.manager,
+								"Inbox rejection",
+								options,
+							)
+					).pipe(Effect.provideService(DatabaseService, service)),
+				);
+			}
+
+			async function localCalculations() {
+				return (await maintenanceSnapshot()).calculations
+					.filter(({ organization_id }) => organization_id === ids.organization)
+					.map(({ work_period_id, base_minutes, surcharge_minutes }) => ({
+						work_period_id,
+						base_minutes,
+						surcharge_minutes,
+					}));
+			}
+
+			it.each([
+				"legacy",
+				"canonical",
+			] as const)("approving a manual time submission runs surcharge maintenance once after commit under %s authority", async (mode) => {
+				const target = await submitForInbox("manual_time_submission", mode);
+
+				await decideFromInbox(target, "approve");
+
+				expect(
+					await pool.query(
+						"select approval_status from work_period where id = $1 and organization_id = $2",
+						[ids.period, ids.organization],
+					),
+				).toMatchObject({ rows: [{ approval_status: "approved" }] });
+				// The stale seeded calculation is replaced by exactly one fresh one.
+				expect(await localCalculations()).toEqual([
+					{ work_period_id: ids.period, base_minutes: 480, surcharge_minutes: 240 },
+				]);
+				expect(inboxObservation.loggedErrors).toEqual([]);
+				// Legacy authority notifies from this path; canonical authority notifies
+				// through the workflow outbox.
+				expect(inboxObservation.notifications).toEqual(
+					mode === "legacy"
+						? [{ trigger: "onManualEntryApproved", workPeriodId: ids.period }]
+						: [],
+				);
+			});
+
+			it.each([
+				"legacy",
+				"canonical",
+			] as const)("rejecting a manual time submission removes its stale surcharges after commit under %s authority", async (mode) => {
+				const target = await submitForInbox("manual_time_submission", mode);
+
+				await decideFromInbox(target, "reject");
+
+				expect(
+					await pool.query(
+						"select approval_status from work_period where id = $1 and organization_id = $2",
+						[ids.period, ids.organization],
+					),
+				).toMatchObject({ rows: [{ approval_status: "rejected" }] });
+				expect(await localCalculations()).toEqual([]);
+				expect(inboxObservation.loggedErrors).toEqual([]);
+				expect(inboxObservation.notifications).toEqual(
+					mode === "legacy"
+						? [{ trigger: "onManualEntryRejected", workPeriodId: ids.period }]
+						: [],
+				);
+			});
+
+			it("approving a policy clock-out runs surcharge maintenance after commit", async () => {
+				const target = await submitForInbox("policy_clock_out", "legacy");
+
+				await decideFromInbox(target, "approve");
+
+				expect(await localCalculations()).toEqual([
+					{ work_period_id: ids.period, base_minutes: 480, surcharge_minutes: 240 },
+				]);
+				expect(inboxObservation.notifications).toEqual([
+					{ trigger: "onClockOutApproved", workPeriodId: ids.period },
+				]);
+			});
+
+			it("a decision that only advances to the next stage runs no maintenance", async () => {
+				const target = await submitForInbox("manual_time_submission", "legacy", true);
+
+				await decideFromInbox(target, "approve");
+
+				expect(
+					await pool.query(
+						"select approval_status from work_period where id = $1 and organization_id = $2",
+						[ids.period, ids.organization],
+					),
+				).toMatchObject({ rows: [{ approval_status: "pending" }] });
+				expect(await localCalculations()).toEqual([
+					{ work_period_id: ids.period, base_minutes: 999, surcharge_minutes: 999 },
+				]);
+				expect(inboxObservation.notifications).toEqual([]);
+				expect(inboxObservation.loggedErrors).toEqual([]);
+			});
+
+			it("a failing maintenance run is logged without changing the decision or stopping the notification", async () => {
+				const target = await submitForInbox("manual_time_submission", "legacy");
+				await pool.query(`create or replace function inbox1674_fail_surcharge_delete() returns trigger as $$
+			begin raise exception 'inbox surcharge reconciliation failure'; end;
+			$$ language plpgsql`);
+				await pool.query(
+					`create trigger inbox1674_fail_surcharge_delete
+					 before delete on surcharge_calculation
+					 for each row execute function inbox1674_fail_surcharge_delete()`,
+				);
+				try {
+					await expect(decideFromInbox(target, "approve")).resolves.toBeUndefined();
+				} finally {
+					await pool.query(
+						"drop trigger if exists inbox1674_fail_surcharge_delete on surcharge_calculation",
+					);
+					await pool.query("drop function if exists inbox1674_fail_surcharge_delete()");
+				}
+
+				expect(
+					await pool.query(
+						"select approval_status from work_period where id = $1 and organization_id = $2",
+						[ids.period, ids.organization],
+					),
+				).toMatchObject({ rows: [{ approval_status: "approved" }] });
+				expect(await localCalculations()).toEqual([
+					{ work_period_id: ids.period, base_minutes: 999, surcharge_minutes: 999 },
+				]);
+				expect(inboxObservation.loggedErrors).toEqual([
+					{
+						component: "TimeCorrectionApprovals",
+						message: "Ordinary work-period maintenance after commit failed",
+					},
+				]);
+				expect(inboxObservation.notifications).toEqual([
+					{ trigger: "onManualEntryApproved", workPeriodId: ids.period },
+				]);
+			});
 		});
 
 		it("rolls back surcharge reconciliation atomically with terminal maintenance", async () => {

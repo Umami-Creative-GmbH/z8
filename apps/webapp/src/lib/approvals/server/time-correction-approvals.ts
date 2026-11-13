@@ -201,10 +201,12 @@ import type {
 import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
 import {
 	canManageOrganizationTimeApproval,
+	completeOrdinaryWorkPeriodDecisionAfterCommit,
 	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	isBoundTimeDecisionSignal,
 	notifyWorkPeriodApprovalAfterCommit,
+	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "./work-period-approvals";
 
 const logger = createLogger("TimeCorrectionApprovals");
@@ -6043,48 +6045,62 @@ export function decideTimeCorrectionWithStableTargetEffect(
 				if (!(error instanceof OrdinaryWorkPeriodDecisionDelegation)) {
 					throw error;
 				}
-				const ordinary = await executeOrdinaryWorkPeriodDecisionInTransaction({
-					dbService,
-					createRuntime,
-					organizationId: currentEmployee.organizationId,
-					approvalRequestId,
-					workPeriodId: error.workPeriodId,
-					actor: currentEmployee,
-					allowAnyApprover: options?.allowAnyApprover,
-					allowOrganizationWideApprover: options?.allowOrganizationWideApprover,
-					canManageOrganizationApproval: () =>
-						canManageOrganizationTimeApproval(options),
-					decision:
-						action === "approve"
-							? { kind: "approve", reason: reason ?? null }
-							: { kind: "reject", reason: reason ?? "" },
-				}).catch((ordinaryError: unknown) => {
-					if (ordinaryError instanceof ApprovalAssignmentReassignedError) {
-						throw approvalReassignedConflict(ordinaryError);
-					}
-					// Manual/policy clock-out evidence holds answer as 409 conflicts.
-					throw translateWorkPeriodEvidenceError(ordinaryError);
-				});
-				if (
-					ordinary.postCommit?.disposition === "dispatch" &&
-					ordinary.postCommit.event !== "pending"
-				) {
-					try {
+				const workPeriodId = error.workPeriodId;
+				// The ordinary kinds' after-commit completion, as the direct ordinary
+				// decision runs it: requester notification and surcharge maintenance (#1674).
+				const ordinary = await completeOrdinaryWorkPeriodDecisionAfterCommit({
+					execute: () =>
+						executeOrdinaryWorkPeriodDecisionInTransaction({
+							dbService,
+							createRuntime,
+							organizationId: currentEmployee.organizationId,
+							approvalRequestId,
+							workPeriodId,
+							actor: currentEmployee,
+							allowAnyApprover: options?.allowAnyApprover,
+							allowOrganizationWideApprover: options?.allowOrganizationWideApprover,
+							canManageOrganizationApproval: () =>
+								canManageOrganizationTimeApproval(options),
+							decision:
+								action === "approve"
+									? { kind: "approve", reason: reason ?? null }
+									: { kind: "reject", reason: reason ?? "" },
+						}).catch((ordinaryError: unknown) => {
+							if (ordinaryError instanceof ApprovalAssignmentReassignedError) {
+								throw approvalReassignedConflict(ordinaryError);
+							}
+							// Manual/policy clock-out evidence holds answer as 409 conflicts.
+							throw translateWorkPeriodEvidenceError(ordinaryError);
+						}),
+					dispatch: async (execution) => {
 						await Effect.runPromise(
 							notifyWorkPeriodApprovalAfterCommit(
-								ordinary.result,
+								execution.result,
 								currentEmployee,
 								dbService,
 								approvalRequestId,
 							),
 						);
-					} catch (dispatchError) {
+					},
+					maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+					onDispatchError: (dispatchError) => {
 						logger.error(
 							{ error: dispatchError, approvalRequestId, action },
 							"Ordinary work-period decision after-commit work failed",
 						);
-					}
-				}
+					},
+					onMaintenanceError: (maintenanceError) => {
+						logger.error(
+							{
+								error: maintenanceError,
+								organizationId: currentEmployee.organizationId,
+								workflowTargetId: approvalRequestId,
+								workPeriodId,
+							},
+							"Ordinary work-period maintenance after commit failed",
+						);
+					},
+				});
 				if (ordinary.deliveryIntent) {
 					// The legacy cycle's intent committed with the decision (#432);
 					// this only runs the delivery owner sooner.
