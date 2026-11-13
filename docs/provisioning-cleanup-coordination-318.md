@@ -63,7 +63,7 @@ database-free test (**unit**).
 
 | Entry point → owner | Participation | Acceptance |
 | --- | --- | --- |
-| Invitation acceptance / member addition after-hooks (`lib/auth.ts`), `POST /api/organizations/switch`, the employee and team settings reconciliation (`ensureEmployeeProfilesForOrganizationMembers`) → `ensureEmployeeForOrganizationMember` | The user guard is the first statement of its transaction, before the identity lock, draft reads, employee create/reactivate/placement and the admin `team_permissions` grant | PG: joining another organization, a user-global change of the target's employees, waits for a parked submission and writes nothing meanwhile. Unit: guard → identity lock → reads → write |
+| Invitation acceptance / member addition after-hooks (`lib/auth.ts`), `POST /api/organizations/switch`, the employee and team settings repairs (`joinMembersWithoutEmployee`, `joinMemberWithoutEmployee`) → Joining (`joinOrganization` in `lib/employee-lifecycle/joining/`, #1665) | The user guard is the first statement joining takes in the caller's transaction, before the identity lock, draft reads, employee create/reactivate/placement and the admin `team_permissions` grant | PG: joining another organization, a user-global change of the target's employees, waits for a parked submission and writes nothing meanwhile. PG (`joining.integration.test.ts`): joining holds the user guard while it waits on the identity lock, and writes nothing before both |
 | Invite-code redemption (`useCode`, `processPendingInviteCode`) → `redeemInviteCodeInTransaction`, including auto-approved codes that provision the employee | The user guard comes before the invite-code `FOR UPDATE` row lock and the identity lock | PG: waits for a parked submission while the invite-code row stays unlocked (`for update nowait`), then commits the approved membership and employee. Unit: guard statement precedes the row lock |
 | Pending-member approval (`approvePendingMemberAtomically`) | Already under `withAuthorizationMutation` (#313) | #313's suite |
 | Pending-member rejection (`reject`, `bulkReject`) → `rejectPendingMemberAtomically` | The user guard now comes before the identity lock and the member row lock. Before this, removal cleanup took it late, after both (a rank inversion) | PG: waits while the member row stays unlocked. Unit: guard → identity lock → member lock |
@@ -206,8 +206,9 @@ Linux.
 
 - `import-review/committers.setup.test.ts`: work-category setup rows take the guard before
   the claim.
-- `auth/organization-member-provisioning.test.ts`: user guard → identity lock → draft and
-  employee reads → write.
+- The former `auth/organization-member-provisioning.test.ts` (user guard → identity lock →
+  reads → write) is replaced by the PostgreSQL case in
+  `employee-lifecycle/joining/joining.integration.test.ts` (#1665).
 - `effect/services/invite-code.service.test.ts`: the user-guard statement precedes the
   invite-code row lock.
 - `effect/services/pending-member.service.test.ts`: user guard → identity lock → member lock.
@@ -238,7 +239,7 @@ This slice closes on implementation. The items below are activation gates for #3
   cross-organization cascade of a deleted demo user (the global user guard is shown by the
   provisioning cases), `setWorkSchedule` (same guarded pattern as `updateProfile`),
   `bulkReject` (same transaction as `reject`), the reconciliation and switch callers of
-  `ensureEmployeeForOrganizationMember` (same owner), and `processPendingInviteCode` (same
+  `joinOrganization` (same owner), and `processPendingInviteCode` (same
   redemption transaction as `useCode`).
 - **SSO approval refusal** rejects any update payload that carries the key, even with an
   unchanged value. No z8 caller sends it.
