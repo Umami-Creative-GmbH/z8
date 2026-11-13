@@ -1,14 +1,16 @@
 import { getCurrentAuthEndpointContext } from "@better-auth/core/context";
+import { BASE_ERROR_CODES } from "@better-auth/core/error";
 import type { PasskeyOptions } from "@better-auth/passkey";
 import type { BetterAuthPlugin } from "better-auth";
 import {
 	APIError,
 	createAuthEndpoint,
 	createAuthMiddleware,
+	freshSessionMiddleware,
 	getSessionFromCtx,
 } from "better-auth/api";
 import { z } from "zod";
-import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import type { LocalMfaProof, MfaSession } from "./access";
 import { hasRecentVerification } from "./policy";
 
@@ -70,6 +72,57 @@ export const recordVerifiedMfaPasskey: NonNullable<
 		attempt.passkeyVerified = true;
 };
 
+/**
+ * Requests whose recent MFA evidence the `before` hook accepted, keyed by the
+ * request context, with the session the evidence belongs to.
+ */
+const freshnessGrants = new WeakMap<object, string>();
+const passkeyRegistrationPaths = new Set([
+	"/passkey/generate-register-options",
+	"/passkey/verify-registration",
+]);
+
+/**
+ * Better Auth's `freshSessionMiddleware`, which also accepts a grant for this
+ * request. The passkey plugin checks session creation rather than
+ * reauthentication. Since Better Auth 1.7.16 it reloads the session from the
+ * store first (`sensitiveSessionMiddleware`), so revoked sessions still fail.
+ * The durable session and its identity stay unchanged.
+ */
+const freshOrMfaVerifiedSessionMiddleware = createAuthMiddleware(async (ctx) => {
+	const session = await getSessionFromCtx(ctx);
+	if (!session?.session)
+		throw APIError.from("UNAUTHORIZED", { message: "Unauthorized", code: "UNAUTHORIZED" });
+	const grantedSessionId = freshnessGrants.get(ctx.context);
+	freshnessGrants.delete(ctx.context);
+	if (grantedSessionId === session.session.id) return { session };
+	const { freshAge } = ctx.context.sessionConfig;
+	if (freshAge !== 0) {
+		const age = Date.now() - new Date(session.session.createdAt).getTime();
+		if (age >= freshAge * 1000)
+			throw APIError.from("FORBIDDEN", BASE_ERROR_CODES.SESSION_NOT_FRESH);
+	}
+	return { session };
+});
+
+/** Swaps the freshness check of every installed passkey registration endpoint. */
+function acceptMfaEvidenceForPasskeyRegistration(plugins: BetterAuthPlugin[]) {
+	for (const plugin of plugins) {
+		for (const endpoint of Object.values(plugin.endpoints ?? {})) {
+			if (!passkeyRegistrationPaths.has(endpoint.path)) continue;
+			const use = endpoint.options.use ?? [];
+			if (use.includes(freshOrMfaVerifiedSessionMiddleware)) continue;
+			if (!use.includes(freshSessionMiddleware))
+				throw new Error(
+					`MFA: ${endpoint.path} no longer uses freshSessionMiddleware; recheck passkey registration freshness after the Better Auth upgrade`,
+				);
+			endpoint.options.use = use.map((middleware) =>
+				middleware === freshSessionMiddleware ? freshOrMfaVerifiedSessionMiddleware : middleware,
+			);
+		}
+	}
+}
+
 const authenticationPaths = new Set([
 	"/sign-in/email",
 	"/callback/:id",
@@ -95,6 +148,9 @@ export function createMfaAuthenticationPlugin(
 ): BetterAuthPlugin {
 	return {
 		id: "z8-mfa-authentication",
+		init(ctx) {
+			acceptMfaEvidenceForPasskeyRegistration(ctx.options.plugins ?? []);
+		},
 		rateLimit: [
 			{
 				pathMatcher: (path) => path === "/organization-mfa/verify-password",
@@ -304,21 +360,9 @@ export function createMfaAuthenticationPlugin(
 										? "Verify an existing authenticator or use recovery before adding a replacement"
 										: "Verify your current sign-in method before enrolling",
 								});
-							if (
-								ctx.path === "/passkey/generate-register-options" ||
-								ctx.path === "/passkey/verify-registration"
-							) {
-								// The passkey plugin checks session creation rather than reauthentication.
-								// Only this request may use the accepted five-minute evidence above.
-								// Keep the durable session and its identity unchanged.
-								ctx.context.session = {
-									...subject,
-									session: {
-										...subject.session,
-										createdAt: dateFromInstant(systemClock.nowInstant()),
-									},
-								};
-							}
+							// Only this request may use the accepted five-minute evidence above.
+							if (passkeyRegistrationPaths.has(ctx.path))
+								freshnessGrants.set(ctx.context, subject.session.id);
 						}
 					}),
 				},
