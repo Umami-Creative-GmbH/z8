@@ -50,9 +50,7 @@ vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 const { db } = await import("@/db");
 const { withAuthorizationMutation } = await import("@/lib/authorization/authorization-mutation");
 const { DrivingLicenceStalePreviewError } = await import("../driving-licence/stale-preview");
-const { ensureEmployeeForOrganizationMember } = await import(
-	"@/lib/auth/organization-member-provisioning"
-);
+const { joinOrganization } = await import("@/lib/employee-lifecycle/joining");
 const placement = await import("./team-placement");
 const policies = await import("../driving-licence/policy-actions");
 const intendedDrivers = await import("../driving-licence/intended-driver-actions");
@@ -289,14 +287,16 @@ describe("arriving and leaving employees", () => {
 			"insert into member (id, organization_id, user_id, role, created_at) values ($1, $2, $3, 'member', now())",
 			[`${joiner}-member`, fixture.organizationId, joiner],
 		);
-		const joined = await ensureEmployeeForOrganizationMember(db, {
-			mode: "membershipAccepted",
-			userId: joiner,
-			organizationId: fixture.organizationId,
-			memberRole: "member",
-			targetTeamId: b,
-		});
-		if (!joined) throw new Error("The invited member was not provisioned");
+		const {
+			outcome: { employee: joined },
+		} = await db.transaction((tx) =>
+			joinOrganization(tx, {
+				userId: joiner,
+				organizationId: fixture.organizationId,
+				membership: { id: `${joiner}-member`, role: "member" },
+				teamId: b,
+			}),
+		);
 		expect(joined.teamId).toBe(b);
 		expect(await teamsOf(joined.id)).toEqual({ primary: b, memberships: [b] });
 	});
@@ -321,13 +321,14 @@ describe("arriving and leaving employees", () => {
 			 values ($1, $2, lower($3), $4)`,
 			[invitationId, fixture.organizationId, email, b],
 		);
-		await ensureEmployeeForOrganizationMember(db, {
-			mode: "membershipAccepted",
-			userId: alex.userId,
-			organizationId: fixture.organizationId,
-			memberRole: "member",
-			invitationId,
-		});
+		await db.transaction((tx) =>
+			joinOrganization(tx, {
+				userId: alex.userId,
+				organizationId: fixture.organizationId,
+				membership: { id: alex.memberId, role: "member" },
+				invitation: { id: invitationId },
+			}),
+		);
 		expect(await teamsOf(alex.employeeId)).toEqual({
 			primary: b,
 			memberships: [b, c],

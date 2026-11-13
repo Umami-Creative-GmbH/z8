@@ -7,8 +7,8 @@ import { employee } from "@/db/schema";
 import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
-import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
+import { joinMemberWithoutEmployee } from "@/lib/employee-lifecycle/joining";
 import { SsoRequiredError } from "@/lib/enterprise-identity/session-sso";
 import { getOrganizationAccessRequirement } from "@/lib/organization-mfa/organization-access";
 import { createLogger } from "@/lib/logger";
@@ -125,11 +125,10 @@ if(!access.allowed){
 		}
 
 		if (!employeeRecord) {
-			employeeRecord = await ensureEmployeeForOrganizationMember(db, {
-				mode: "reconcile",
+			employeeRecord = await joinMemberWithoutEmployee(db, {
 				userId: session.user.id,
 				organizationId,
-				memberRole: membership.role,
+				membership: { id: membership.id, role: membership.role },
 			});
 		}
 

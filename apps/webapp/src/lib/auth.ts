@@ -38,7 +38,6 @@ import {
 	resolveAcceptedInvitationCanCreateOrganizations,
 } from "@/lib/auth/employee-invitation-draft";
 import { createGuardedAuthSecondaryStorage } from "@/lib/auth/guarded-secondary-storage";
-import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { rejectOrganizationSsoApprovalUpdate } from "@/lib/auth/organization-sso-approval-update-guard";
 import { rejectOrganizationTimezoneUpdate } from "@/lib/auth/organization-timezone-update-guard";
 import { passwordSetupVerification } from "@/lib/auth/password-setup-verification";
@@ -55,7 +54,7 @@ import {
 	getOrganizationPlatformOrigins,
 	getStaticTrustedOrigins,
 } from "@/lib/auth-domain-config";
-import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { joinOrganization } from "@/lib/employee-lifecycle/joining";
 import {
 	enterpriseIdentityInvitationResendPlugin,
 	refuseInvitationOutsideEnterpriseIdentity,
@@ -182,20 +181,6 @@ export async function getSSOTrustedOrigins(
 	}
 
 	return [...origins];
-}
-
-async function syncBillingSeats({
-	organizationId,
-	memberId,
-	userId,
-	change,
-}: Parameters<typeof syncBillingSeatsAfterMemberChange>[0]) {
-	await syncBillingSeatsAfterMemberChange({
-		organizationId,
-		memberId,
-		userId,
-		change,
-	});
 }
 
 type AuthDatabaseAdapterFactory = ReturnType<typeof drizzleAdapter>;
@@ -516,38 +501,32 @@ export const auth = betterAuth({
 						})
 						.where(eq(schema.user.id, user.id));
 
-					await ensureEmployeeForOrganizationMember(db, {
-						mode: "membershipAccepted",
-						userId: user.id,
-						organizationId: invitation.organizationId,
-						memberRole: member.role,
-						targetTeamId,
-						invitationId: invitation.id,
-					});
-
-					await syncBillingSeats({
-						organizationId: invitation.organizationId,
-						memberId: member.id,
-						userId: user.id,
-						change: "added",
-					});
+					// Joining runs in its own transaction after Better Auth's commit until it
+					// moves into the auth transaction (#1664). Its after-commit step sends the seat signal.
+					const joined = await db.transaction((tx) =>
+						joinOrganization(tx, {
+							organizationId: invitation.organizationId,
+							userId: user.id,
+							membership: { id: member.id, role: member.role },
+							teamId: targetTeamId,
+							invitation: { id: invitation.id },
+						}),
+					);
+					await joined.afterCommit.run();
 				},
 
 				// Create employee record when user is added to organization (after it commits)
 				afterAddMember: async ({ member, user, organization }) => {
-					await ensureEmployeeForOrganizationMember(db, {
-						mode: "membershipAccepted",
-						userId: user.id,
-						organizationId: organization.id,
-						memberRole: member.role,
-					});
-
-					await syncBillingSeats({
-						organizationId: organization.id,
-						memberId: member.id,
-						userId: user.id,
-						change: "added",
-					});
+					// A direct add carries no invitation: its draft is found by the user's email.
+					const joined = await db.transaction((tx) =>
+						joinOrganization(tx, {
+							organizationId: organization.id,
+							userId: user.id,
+							membership: { id: member.id, role: member.role },
+							invitation: { id: null },
+						}),
+					);
+					await joined.afterCommit.run();
 				},
 			}),
 		}),

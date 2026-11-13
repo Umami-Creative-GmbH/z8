@@ -13,8 +13,8 @@ const mocks = vi.hoisted(() => ({
 	dbService: null as null | ReturnType<typeof createDb>["dbService"],
 }));
 
-vi.mock("@/lib/auth/organization-member-provisioning", () => ({
-	ensureEmployeeProfilesForOrganizationMembers: mocks.ensureEmployeeProfiles,
+vi.mock("@/lib/employee-lifecycle/joining", () => ({
+	joinMembersWithoutEmployee: mocks.ensureEmployeeProfiles,
 }));
 
 vi.mock("@/lib/effect/runtime", async () => {

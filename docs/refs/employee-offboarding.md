@@ -537,8 +537,8 @@ no grant, badge, fob, driving authorization, manager link, team or project link,
 shift or absence; the acceptance suite asserts that.
 
 **Every way back is a reactivation** (#1628). The invite-code join, the
-pending-member approval, provisioning (`ensureEmployeeForOrganizationMember` in
-`membershipAccepted` mode) and a SCIM re-enable (the reconciler's
+pending-member approval, joining (`joinOrganization` in
+`lib/employee-lifecycle/joining/`) and a SCIM re-enable (the reconciler's
 `onEmployeeReactivated` hook) each make one call in their transaction (#1643):
 `reactivateOnReturn(tx, { organizationId, employeeId, actorUserId, metadata? },
 audit)`. It switches the employee on when they are off (the SCIM reconciler has

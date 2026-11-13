@@ -172,8 +172,8 @@ invitation's organization-creation flag, and billing seats.
   organization. No manual submission can be in flight in an organization that does not exist
   yet. Onboarding belongs to #318.
 - Employee provisioning after membership addition or acceptance
-  (`ensureEmployeeForOrganizationMember`) runs after commit in its own transaction. It still
-  takes no user guard. This is `organization-member-provisioning`, owned by #318.
+  (now Joining, `lib/employee-lifecycle/joining/`, #1665) runs after commit in its own
+  transaction. It takes the user guard (#318); moving it into the auth transaction is #1664.
 - Platform-administration direct writes of `user.role`, `banned` and `banExpires`
   (`platform-admin.service.ts`) and user settings belong to #312.
 - Invitation creation, rejection and cancellation, and `updateOrganization` (other than

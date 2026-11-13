@@ -140,9 +140,7 @@ const { generateDemoEmployees } = await import("@/lib/demo/employee-generator");
 const { runOrganizationCleanup } = await import("@/lib/jobs/organization-cleanup");
 const { db } = await import("@/db");
 const { Effect, Layer } = await import("effect");
-const { ensureEmployeeForOrganizationMember } = await import(
-	"@/lib/auth/organization-member-provisioning"
-);
+const { joinOrganization } = await import("@/lib/employee-lifecycle/joining");
 const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
 const { InviteCodeService, InviteCodeServiceLive } = await import(
@@ -550,18 +548,19 @@ describe("provisioning, import, demo and cleanup writers on PostgreSQL", () => {
 			}
 		}
 
-		it("ensureEmployeeForOrganizationMember waits on the member's user guard", async () => {
+		it("joining waits on the member's user guard", async () => {
 			await leaveOtherOrganization({ membership: false });
 
 			const { submitted } = await writeBehindParkedSubmission(
 				userGuard(ids.employeeUser),
 				() =>
-					ensureEmployeeForOrganizationMember(db, {
-						mode: "membershipAccepted",
-						userId: ids.employeeUser,
-						organizationId: ids.otherOrganization,
-						memberRole: "member",
-					}),
+					db.transaction((tx) =>
+						joinOrganization(tx, {
+							userId: ids.employeeUser,
+							organizationId: ids.otherOrganization,
+							membership: { id: "t318-m-other-employee", role: "member" },
+						}),
+					),
 				noOtherEmployeeYet,
 			);
 
