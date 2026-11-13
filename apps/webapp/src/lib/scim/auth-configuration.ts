@@ -19,7 +19,10 @@ import {
 	scimRoleProjection,
 } from "./projection-reconciler";
 import { SCIM_MODELS } from "./transaction-store";
-import { withSCIMPersonnelNumber } from "./personnel-number-endpoints";
+import {
+	keepExplicitEmptyPersonnelNumber,
+	withSCIMPersonnelNumber,
+} from "./personnel-number-endpoints";
 
 const optionalString = { type: "string", required: false } as const;
 const optionalNumber = { type: "number", required: false } as const;
@@ -292,6 +295,11 @@ export function createZ8SCIMPlugin(credentialHashSecret: string) {
 	});
 	return {
 		...plugin,
+		async onRequest(request: Request) {
+			const prepared = await keepExplicitEmptyPersonnelNumber(request);
+			const result = await plugin.onRequest(prepared ?? request);
+			return result ?? (prepared ? { request: prepared } : undefined);
+		},
 		endpoints: {
 			...plugin.endpoints,
 			createSCIMUser: withSCIMPersonnelNumber(plugin.endpoints.createSCIMUser, "POST"),
