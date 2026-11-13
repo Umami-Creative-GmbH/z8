@@ -3,7 +3,7 @@ import type {
 	SCIMTransactionContext,
 } from "@better-auth/scim";
 import { scim } from "@better-auth/scim";
-import type { BetterAuthPlugin } from "better-auth";
+import type { AuthContext, BetterAuthPlugin } from "better-auth";
 import {
 	queueAfterAuthTransactionCommit,
 	requireAuthTransaction,
@@ -295,9 +295,9 @@ export function createZ8SCIMPlugin(credentialHashSecret: string) {
 	});
 	return {
 		...plugin,
-		async onRequest(request: Request) {
+		async onRequest(request: Request, ctx: AuthContext) {
 			const prepared = await keepExplicitEmptyPersonnelNumber(request);
-			const result = await plugin.onRequest(prepared ?? request);
+			const result = await plugin.onRequest(prepared ?? request, ctx);
 			return result ?? (prepared ? { request: prepared } : undefined);
 		},
 		endpoints: {
