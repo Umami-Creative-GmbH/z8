@@ -109,7 +109,7 @@ function ClockWidgetHeading({
 					aria-hidden="true"
 					className={cn(
 						"size-2.5 shrink-0 rounded-full",
-						onBreak ? "bg-amber-500" : "bg-emerald-500 motion-safe:animate-pulse",
+						onBreak ? "bg-amber-300" : "bg-emerald-500 motion-safe:animate-pulse",
 					)}
 				/>
 				{onBreak

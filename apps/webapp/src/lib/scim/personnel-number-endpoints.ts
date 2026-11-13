@@ -41,11 +41,14 @@ function record(value: unknown): value is JsonObject {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/** The key that SCIM's case-insensitive attribute names match, if any. */
+function keyOf(object: JsonObject, name: string) {
+	return Object.keys(object).find((key) => key.toLowerCase() === name.toLowerCase());
+}
+
 function field(object: unknown, name: string): unknown {
 	if (!record(object)) return undefined;
-	const key = Object.keys(object).find(
-		(key) => key.toLowerCase() === name.toLowerCase(),
-	);
+	const key = keyOf(object, name);
 	return key === undefined ? undefined : object[key];
 }
 
@@ -136,6 +139,45 @@ function emptyNumber(value: unknown) {
 	return (
 		scalar === null || (typeof scalar === "string" && scalar.trim() === "")
 	);
+}
+
+/**
+ * Better Auth's SCIM plugin drops null attributes from POST and PUT bodies in
+ * its `onRequest`, before any endpoint runs (RFC 7643 treats null as
+ * unassigned). An explicit `employeeNumber: null` still clears the number and
+ * claims IdP ownership (#1139), so it becomes the equivalent empty string first.
+ */
+export async function keepExplicitEmptyPersonnelNumber(
+	request: Request,
+): Promise<Request | undefined> {
+	const path = new URL(request.url).pathname;
+	const resource =
+		(request.method === "POST" && /\/scim\/v2\/Users$/.test(path)) ||
+		(request.method === "PUT" && /\/scim\/v2\/Users\/[^/]+$/.test(path));
+	if (!resource) return;
+	let body: unknown;
+	try {
+		body = JSON.parse(await request.clone().text());
+	} catch {
+		return;
+	}
+	if (!record(body)) return;
+	const extensionKey = keyOf(body, SCIM_ENTERPRISE_USER);
+	const extension = extensionKey === undefined ? undefined : body[extensionKey];
+	if (extensionKey === undefined || !record(extension)) return;
+	const numberKey = keyOf(extension, "employeeNumber");
+	if (numberKey === undefined || numberScalar(extension[numberKey]) !== null) return;
+	const headers = new Headers(request.headers);
+	headers.delete("content-length");
+	return new Request(request.url, {
+		method: request.method,
+		headers,
+		body: JSON.stringify({
+			...body,
+			[extensionKey]: { ...extension, [numberKey]: "" },
+		}),
+		signal: request.signal,
+	});
 }
 
 function withoutNumber(value: JsonObject): JsonObject {

@@ -13,6 +13,20 @@ import {
 import type { SessionSsoProvenance, SessionSsoStore } from "./session-sso";
 import { startOrganizationSsoReauthentication } from "./sso-reauthentication";
 
+/**
+ * The Cookie header a browser sends after these Set-Cookie headers. A browser
+ * keeps the last value per name; Better Auth can set `session_data` twice in
+ * one response (a stale refresh, then the updated session).
+ */
+function browserCookies(setCookies: string[]) {
+	const jar = new Map<string, string>();
+	for (const setCookie of setCookies) {
+		const pair = setCookie.split(";")[0];
+		jar.set(pair.slice(0, pair.indexOf("=")), pair);
+	}
+	return [...jar.values()].join("; ");
+}
+
 async function fixture(realSso = false) {
 	const data: Record<string, Record<string, unknown>[]> = {
 		user: [],
@@ -217,10 +231,7 @@ describe("SSO enforcement in installed Better Auth endpoint dispatch", () => {
 			expect(callback.status).toBe(302);
 			expect(proofs.size).toBe(login + 1);
 			const freshHeaders = new Headers({
-				cookie: callback.headers
-					.getSetCookie()
-					.map((value) => value.split(";")[0])
-					.join("; "),
+				cookie: browserCookies(callback.headers.getSetCookie()),
 			});
 			expect(
 				await auth.api.setActiveOrganization({
@@ -426,10 +437,7 @@ describe("SSO enforcement in installed Better Auth endpoint dispatch", () => {
 			returnHeaders: true,
 		});
 		const cachedHeaders = new Headers({
-			cookie: response.headers
-				.getSetCookie()
-				.map((cookie) => cookie.split(";")[0])
-				.join("; "),
+			cookie: browserCookies(response.headers.getSetCookie()),
 		});
 		expect(
 			(await auth.api.getSession({ headers: cachedHeaders }))?.session

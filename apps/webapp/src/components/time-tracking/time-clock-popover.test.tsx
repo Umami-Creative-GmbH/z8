@@ -267,7 +267,7 @@ describe("TimeClockPopover", () => {
 				const startBreak = screen.getByRole("button", { name: "Start break" });
 				const addBreak = screen.getByRole("button", { name: "Add break" });
 				expect(startBreak.textContent).toBe("");
-				expect(startBreak.className).toContain("bg-amber-500");
+				expect(startBreak.className).toContain("bg-amber-200");
 				expect(clockOut.compareDocumentPosition(startBreak)).toBe(
 					Node.DOCUMENT_POSITION_FOLLOWING,
 				);

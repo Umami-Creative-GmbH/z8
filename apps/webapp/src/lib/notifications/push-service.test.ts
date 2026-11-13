@@ -18,8 +18,12 @@ vi.mock("@/env", () => ({ env: state.env }));
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
-vi.mock("web-push", () => ({
-	default: { setVapidDetails: vi.fn(), sendNotification: state.webPushSend },
+// Keep the real export shape: web-push 4 has no default export, so a
+// default import fails here instead of in production.
+vi.mock("web-push", async (importOriginal) => ({
+	...(await importOriginal<typeof import("web-push")>()),
+	setVapidDetails: vi.fn(),
+	sendNotification: state.webPushSend,
 }));
 vi.mock("@/db", () => ({
 	db: {
@@ -213,6 +217,34 @@ describe("sendPushToUser", { timeout: 30_000 }, () => {
 
 		expect(result).toEqual({ sent: 1, failed: 0, expired: ["device-dead"] });
 		expect(updatedIds({ isActive: false })).toEqual(["device-dead"]);
+	});
+
+	it("deactivates a browser subscription the push service reports as gone", async () => {
+		state.webSubscriptions = [
+			{ id: "web-live", endpoint: "https://push.example/live", p256dh: "k", auth: "a" },
+			{ id: "web-gone", endpoint: "https://push.example/gone", p256dh: "k", auth: "a" },
+		];
+		const { WebPushError } = await import("web-push");
+		state.webPushSend.mockImplementation(async (subscription: { endpoint: string }) => {
+			if (subscription.endpoint.endsWith("/gone")) {
+				throw new WebPushError(
+					"Received unexpected response code",
+					410,
+					{},
+					"",
+					subscription.endpoint,
+				);
+			}
+			return { statusCode: 201 };
+		});
+		const push = await loadPushService(VAPID_ENV);
+
+		const result = await push.sendPushToUser("user-1", approvalPayload, {
+			organizationId: "org-1",
+		});
+
+		expect(result).toEqual({ sent: 1, failed: 0, expired: ["web-gone"] });
+		expect(updatedIds({ isActive: false })).toEqual(["web-gone"]);
 	});
 
 	it("leaves web push exactly as before when FCM is not configured", async () => {

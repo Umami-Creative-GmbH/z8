@@ -80,7 +80,7 @@ export function HeaderStartBreakButton({
 						onClick={onClick}
 						disabled={disabled || isOffline}
 						aria-label={label}
-						className="h-8 rounded-none bg-amber-500 px-2.5 text-amber-950 hover:bg-amber-600"
+						className="h-8 rounded-none bg-amber-200 px-2.5 text-amber-900 hover:bg-amber-300 dark:bg-amber-300/80 dark:text-amber-950 dark:hover:bg-amber-300"
 					>
 						{pending ? (
 							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
