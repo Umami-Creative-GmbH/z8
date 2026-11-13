@@ -143,6 +143,9 @@ function PendingMembersTable({
 						{t("settings.pendingMembers.joinedVia", "Joined Via")}
 					</TableHead>
 					<TableHead>
+						{t("settings.pendingMembers.requestedRole", "Requested Role")}
+					</TableHead>
+					<TableHead>
 						{t("settings.pendingMembers.requestedAt", "Requested")}
 					</TableHead>
 					<TableHead>
@@ -180,15 +183,22 @@ function PendingMembersTable({
 							</div>
 						</TableCell>
 						<TableCell>
-							{member.inviteCode ? (
-								<Badge variant="outline">
-									{member.inviteCode.label || member.inviteCode.code}
-								</Badge>
-							) : (
+							{member.source === "sso" ? (
 								<Badge variant="secondary">
 									{t("settings.pendingMembers.sso", "SSO")}
 								</Badge>
+							) : (
+								<Badge variant="outline">
+									{member.inviteCode?.label || member.inviteCode?.code || "-"}
+								</Badge>
 							)}
+						</TableCell>
+						<TableCell>
+							{member.role === "owner"
+								? t("settings.pendingMembers.roleOwner", "Owner")
+								: member.role === "admin"
+									? t("settings.pendingMembers.roleAdmin", "Admin")
+									: t("settings.pendingMembers.roleMember", "Member")}
 						</TableCell>
 						<TableCell>
 							{formatDate(member.createdAt, locale, timezone)}
