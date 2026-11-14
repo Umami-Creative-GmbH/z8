@@ -1,0 +1,52 @@
+{
+  "result": [
+    {
+      "label": "branded-desktop",
+      "heading": [
+        "Accept invitation"
+      ],
+      "brand": true,
+      "color": "#2563eb",
+      "text": "Performance small\n\nAccept invitation\n\nAccept this invitation to join Performance small.\n\nInvitation details\nWorkspace\nPerformance small\nInvited email\nperf-large-3-6f068b73bdef@example.test\nRole\nmember\nInvited by\nPerson 0\nWhat happens next\n\nUse the invited email address so the workspace can match this invitation automatically.\n\nAfter signing in or creating an account, return here to review and accept the invitation.\n\nCreate account with invited emailSign in with invited email\n\nVersion a8ec7c2",
+      "width": 1600,
+      "documentWidth": 1600
+    },
+    {
+      "label": "branded-phone",
+      "heading": [
+        "Accept invitation"
+      ],
+      "brand": true,
+      "color": "#2563eb",
+      "text": "Performance small\n\nAccept invitation\n\nAccept this invitation to join Performance small.\n\nInvitation details\nWorkspace\nPerformance small\nInvited email\nperf-large-3-6f068b73bdef@example.test\nRole\nmember\nInvited by\nPerson 0\nWhat happens next\n\nUse the invited email address so the workspace can match this invitation automatically.\n\nAfter signing in or creating an account, return here to review and accept the invitation.\n\nCreate account with invited emailSign in with invited email\n\nVersion a8ec7c2",
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "label": "long-organization",
+      "heading": [
+        "Accept invitation"
+      ],
+      "brand": true,
+      "color": "#2563eb",
+      "text": "Performance small\n\nAccept invitation\n\nAccept this invitation to join Performance small — Workforce operations for a multilingual organization with distributed teams and international offices across Europe.\n\nInvitation details\nWorkspace\nPerformance small — Workforce operations for a multilingual organization with distributed teams and international offices across Europe\nInvited email\nperf-large-3-6f068b73bdef@example.test\nRole\nmember\nInvited by\nPerson 0\nWhat happens next\n\nUse the invited email address so the workspace can match this invitation automatically.\n\nAfter signing in or creating an account, return here to review and accept the invitation.\n\nCreate account with invited emailSign in with invited email\n\nVersion a8ec7c2",
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "label": "keyboard-visible-focus",
+      "focus": [
+        {
+          "name": "Create account with invited email",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0 0 0 / 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px"
+        }
+      ]
+    },
+    {
+      "label": "real-session-loading",
+      "busyAnnounced": true,
+      "actionsWithheldUntilResolved": true
+    }
+  ],
+  "errors": []
+}

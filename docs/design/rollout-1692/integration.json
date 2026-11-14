@@ -80,8 +80,10 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "996074d9fcbbaeb956a1b7316f914052d8c24733",
+                        "evidence":  "docs/design/rollout-1692/1820.md",
+                        "integrationVerification":  "11 unique suites / 103 tests across invitation and wrapper/header/init selections; evidence assertions, exact tree/ancestry and diff --check passed. 64 PostgreSQL tests and live runtime inherited from implementer. Shared version-label contrast corrected separately; final-review limits retained."
                     },
                     {
                         "id":  "R004",
@@ -180,7 +182,7 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

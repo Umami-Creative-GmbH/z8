@@ -3,13 +3,8 @@
 import { IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import {
-	Card,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
+import { useBranding } from "@/lib/auth/domain-auth-context";
 import { useAuthPageSession } from "@/lib/auth/use-auth-page-session";
 import { useRouter } from "@/navigation";
 import {
@@ -64,9 +59,11 @@ export function AcceptInvitationForm({
 }: AcceptInvitationFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const branding = useBranding();
 	const { data: session, isPending: sessionLoading } = useAuthPageSession();
 	const [state, setState] = useState<InvitationState>("ready");
 	const [error, setError] = useState<string | null>(null);
+	const [signingOut, setSigningOut] = useState(false);
 
 	const callbackUrl = getInvitationCallbackUrl(invitationId);
 	const signUpUrl = getInvitationSignUpUrl(
@@ -103,11 +100,10 @@ export function AcceptInvitationForm({
 		Boolean(normalizedInvitedEmail) &&
 		Boolean(normalizedSessionEmail) &&
 		normalizedInvitedEmail !== normalizedSessionEmail;
-	const fatalError = error ?? invitationError;
-	const displayedError =
-		fatalError ?? (isEmailMismatch ? emailMismatchMessage : null);
+	const fatalError = invitationError;
 
 	const handleAcceptInvitation = async () => {
+		if (state !== "ready" || signingOut) return;
 		if (!invitation || invitationError) {
 			setError(
 				invitationError ||
@@ -162,27 +158,58 @@ export function AcceptInvitationForm({
 	};
 
 	const handleSignOut = async () => {
-		const { signOut } = await loadSignOut();
-		await signOut({
-			fetchOptions: {
-				onSuccess: () => {
-					// Sign-out ends this tab's manual-entry recovery (#310).
-					clearManualRecoveries();
-					router.push(withCallbackUrl("/sign-in", callbackUrl));
+		if (signingOut || state !== "ready") return;
+		setSigningOut(true);
+		setError(null);
+		try {
+			const { signOut } = await loadSignOut();
+			const result = await signOut({
+				fetchOptions: {
+					onSuccess: () => {
+						// Sign-out ends this tab's manual-entry recovery (#310).
+						clearManualRecoveries();
+						router.push(withCallbackUrl("/sign-in", callbackUrl));
+					},
 				},
-			},
-		});
+			});
+			if (result?.error) {
+				setError(
+					result.error.message ||
+						t(
+							"auth.invitation-sign-out-failed",
+							"Could not sign out. Try switching accounts again.",
+						),
+				);
+			}
+		} catch (err) {
+			setError(
+				err instanceof Error
+					? err.message
+					: t(
+							"auth.invitation-sign-out-failed",
+							"Could not sign out. Try switching accounts again.",
+						),
+			);
+		}
+		setSigningOut(false);
 	};
 
 	if (sessionLoading) {
 		return (
-			<AuthFormWrapper title={t("auth.accept-invitation", "Accept invitation")}>
-				<div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+			<AuthFormWrapper
+				branding={branding}
+				title={t("auth.accept-invitation", "Accept invitation")}
+			>
+				<div
+					role="status"
+					aria-busy="true"
+					className="flex flex-col items-center justify-center gap-3 py-8 text-center"
+				>
 					<IconLoader2
-						className="size-8 animate-spin text-muted-foreground"
+						className="size-5 animate-spin text-muted-foreground motion-reduce:animate-none"
 						aria-hidden="true"
 					/>
-					<p aria-live="polite" className="text-muted-foreground text-sm">
+					<p className="text-muted-foreground text-sm">
 						{t(
 							"auth.loading-invitation",
 							"Checking your invitation details...",
@@ -195,26 +222,25 @@ export function AcceptInvitationForm({
 
 	if (state === "success") {
 		return (
-			<AuthFormWrapper title={t("auth.accept-invitation", "Accept invitation")}>
-				<Card className="border-none shadow-none">
-					<CardHeader className="px-0 text-center">
-						<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-							<IconCheck
-								className="size-8 text-green-600 dark:text-green-400"
-								aria-hidden="true"
-							/>
-						</div>
-						<CardTitle>
-							{t("auth.invitation-accepted", "Invitation accepted")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"auth.invitation-accepted-generic",
-								"Your workspace is being prepared.",
-							)}
-						</CardDescription>
-					</CardHeader>
-				</Card>
+			<AuthFormWrapper
+				branding={branding}
+				title={t("auth.accept-invitation", "Accept invitation")}
+			>
+				<div role="status" className="space-y-3 text-center">
+					<IconCheck
+						className="mx-auto size-6 text-primary"
+						aria-hidden="true"
+					/>
+					<h2 className="font-semibold">
+						{t("auth.invitation-accepted", "Invitation accepted")}
+					</h2>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"auth.invitation-accepted-generic",
+							"Your workspace is being prepared.",
+						)}
+					</p>
+				</div>
 			</AuthFormWrapper>
 		);
 	}
@@ -223,13 +249,14 @@ export function AcceptInvitationForm({
 		<AcceptInvitationFormBody
 			accepting={state === "accepting"}
 			callbackUrl={callbackUrl}
-			displayedError={displayedError}
+			actionError={error}
 			fatalError={fatalError}
 			invitation={invitation}
 			isEmailMismatch={isEmailMismatch}
 			onAccept={handleAcceptInvitation}
 			onSignOut={handleSignOut}
 			session={Boolean(session)}
+			signingOut={signingOut}
 			signUpUrl={signUpUrl}
 		/>
 	);

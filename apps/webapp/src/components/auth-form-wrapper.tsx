@@ -95,7 +95,7 @@ export function AuthFormWrapper({
 					</form>
 				</CardContent>
 				{visibleBuildHash ? (
-					<div className="absolute right-3 bottom-1.5 text-[10px] text-foreground/55">
+					<div className="absolute right-3 bottom-1.5 text-[10px] text-muted-foreground">
 						{t("auth.wrapper.version", "Version {version}", {
 							version: visibleBuildHash,
 						})}
