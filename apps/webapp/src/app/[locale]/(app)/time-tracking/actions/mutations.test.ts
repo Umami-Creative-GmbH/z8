@@ -102,7 +102,8 @@ describe("approveWorkPeriod", () => {
 
 		expect(await approve()).toEqual({
 			success: false,
-			error: "Only admins and owners can approve time entries",
+			error: "You need the right to manage approvals to approve time entries",
+			code: "AuthorizationError",
 		});
 	});
 

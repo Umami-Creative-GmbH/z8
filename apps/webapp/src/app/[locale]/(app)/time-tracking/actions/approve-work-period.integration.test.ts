@@ -336,7 +336,8 @@ describe("approving from the time-entries table (PostgreSQL)", () => {
 
 			expect(await approveAs(ids.thirdUser, { workPeriodId, approvalRequestId })).toEqual({
 				success: false,
-				error: "Only admins and owners can approve time entries",
+				error: "You need the right to manage approvals to approve time entries",
+				code: "AuthorizationError",
 			});
 			expect(await periodStatus(workPeriodId)).toBe("pending");
 		});
