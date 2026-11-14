@@ -1,17 +1,17 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import type { db } from "@/db";
 import { approvalRequest, approvalStageAssignment, approvalWorkflow, employee } from "@/db/schema";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import type { DecisionRight } from "@/lib/approvals/decision-right";
 import {
 	getEligibleManagerIdsForRequester,
 	isEligibleManagerForApprovalRequest,
 } from "@/lib/approvals/policies/manager-eligibility-db";
-import { decideTimeCorrectionWithStableTargetEffect } from "@/lib/approvals/server/time-correction-approvals";
+import { decideTimeApproval } from "@/lib/approvals/server/time-approval-decision";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 
 /**
  * On-behalf time corrections (#507): a manager, admin or owner edits or
@@ -51,49 +51,26 @@ export async function resolveOnBehalfCorrectionAuthority(input: {
 	return managerIds.includes(input.actorEmployeeId) ? "eligible_manager" : null;
 }
 
-/** Whether the work period still has a pending time correction in either lifecycle. */
-export async function hasPendingTimeCorrectionForWorkPeriod(input: {
-	db: ReadDb;
-	organizationId: string;
-	workPeriodId: string;
-}): Promise<boolean> {
-	const [legacyPending, canonicalPending] = await Promise.all([
-		input.db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.organizationId, input.organizationId),
-				eq(approvalRequest.entityType, "time_entry"),
-				eq(approvalRequest.entityId, input.workPeriodId),
-				eq(approvalRequest.status, "pending"),
-			),
-			columns: { id: true },
-		}),
-		input.db.query.approvalWorkflow.findFirst({
-			where: and(
-				eq(approvalWorkflow.organizationId, input.organizationId),
-				eq(approvalWorkflow.workflowType, "time_correction"),
-				eq(approvalWorkflow.sourceType, "time_entry"),
-				eq(approvalWorkflow.sourceId, input.workPeriodId),
-				eq(approvalWorkflow.status, "pending"),
-			),
-			columns: { id: true },
-		}),
-	]);
-	return Boolean(legacyPending || canonicalPending);
+/** What the editor claims for the correction's current stage: one approval and one right. */
+export interface EditorDecisionClaim {
+	approvalId: string;
+	right: DecisionRight;
 }
 
 /**
- * Whether the editor is an approver of the correction's current stage: the
- * legacy request's approver or one of its eligible managers, or a pending
- * canonical assignment. Organization-wide approval rights do not count here;
- * an admin who is not a configured approver leaves the change to the chain.
+ * The right the editor holds for the correction's current stage: the legacy
+ * request's approver, else one of its eligible managers; or the holder of a
+ * pending canonical assignment. Manager of approvals is never claimed; an
+ * organization admin who is not a configured approver leaves the change to
+ * the chain.
  */
-export async function isEditorCurrentCorrectionApprover(input: {
+export async function resolveEditorDecisionClaim(input: {
 	db: ReadDb;
 	organizationId: string;
 	workPeriodId: string;
 	approvalRequestId: string;
 	editorEmployeeId: string;
-}): Promise<boolean> {
+}): Promise<EditorDecisionClaim | null> {
 	const legacy = await input.db.query.approvalRequest.findFirst({
 		where: and(
 			eq(approvalRequest.id, input.approvalRequestId),
@@ -105,13 +82,16 @@ export async function isEditorCurrentCorrectionApprover(input: {
 		columns: { id: true, approverId: true },
 	});
 	if (legacy) {
-		if (legacy.approverId === input.editorEmployeeId) return true;
-		return isEligibleManagerForApprovalRequest({
+		if (legacy.approverId === input.editorEmployeeId) {
+			return { approvalId: legacy.id, right: { as: "approver" } };
+		}
+		const eligible = await isEligibleManagerForApprovalRequest({
 			db: input.db as never,
 			approvalRequestId: legacy.id,
 			managerEmployeeId: input.editorEmployeeId,
 			organizationId: input.organizationId,
 		});
+		return eligible ? { approvalId: legacy.id, right: { as: "eligible_manager" } } : null;
 	}
 
 	const workflow = await input.db.query.approvalWorkflow.findFirst({
@@ -124,7 +104,7 @@ export async function isEditorCurrentCorrectionApprover(input: {
 		),
 		columns: { id: true },
 	});
-	if (!workflow) return false;
+	if (!workflow) return null;
 	const assignment = await input.db.query.approvalStageAssignment.findFirst({
 		where: and(
 			eq(approvalStageAssignment.organizationId, input.organizationId),
@@ -134,14 +114,15 @@ export async function isEditorCurrentCorrectionApprover(input: {
 		),
 		columns: { id: true },
 	});
-	return Boolean(assignment);
+	return assignment ? { approvalId: assignment.id, right: { as: "approver" } } : null;
 }
 
 /**
  * After an on-behalf submission committed pending, the editor decides the
- * stage they are an approver of, through the ordinary approval decision. A
- * later chain stage stays pending for its own approver. A failed decision
- * leaves the request pending in the editor's inbox; the submission stands.
+ * stage they are an approver of through the time approval decision, under the
+ * one right they hold for it. A later chain stage stays pending for its own
+ * approver. A refused or failed decision leaves the correction pending in the
+ * editor's inbox; the submission stands.
  */
 export async function approveOnBehalfCorrectionAsEditor(input: {
 	dbService: ApprovalDbService;
@@ -152,14 +133,14 @@ export async function approveOnBehalfCorrectionAsEditor(input: {
 }): Promise<"approved" | "pending"> {
 	const readDb = input.dbService.db as unknown as ReadDb;
 	try {
-		const isApprover = await isEditorCurrentCorrectionApprover({
+		const claim = await resolveEditorDecisionClaim({
 			db: readDb,
 			organizationId: input.organizationId,
 			workPeriodId: input.workPeriodId,
 			approvalRequestId: input.approvalRequestId,
 			editorEmployeeId: input.editorEmployeeId,
 		});
-		if (!isApprover) return "pending";
+		if (!claim) return "pending";
 
 		const editor = await readDb.query.employee.findFirst({
 			where: and(
@@ -167,18 +148,31 @@ export async function approveOnBehalfCorrectionAsEditor(input: {
 				eq(employee.organizationId, input.organizationId),
 				eq(employee.isActive, true),
 			),
-			with: { user: true },
+			columns: { id: true, userId: true },
 		});
 		if (!editor) return "pending";
 
-		await Effect.runPromise(
-			decideTimeCorrectionWithStableTargetEffect(
-				input.dbService,
-				editor as Parameters<typeof decideTimeCorrectionWithStableTargetEffect>[1],
-				input.approvalRequestId,
-				"approve",
-			),
-		);
+		const result = await decideTimeApproval({
+			organizationId: input.organizationId,
+			approvalId: claim.approvalId,
+			actor: { employeeId: editor.id, userId: editor.userId },
+			right: claim.right,
+			decision: { kind: "approve" },
+			database: input.dbService.db,
+		});
+		if (result.status === "refused") {
+			logger.warn(
+				{
+					reason: result.reason,
+					right: claim.right.as,
+					workPeriodId: input.workPeriodId,
+					approvalId: claim.approvalId,
+				},
+				"On-behalf time correction stayed pending: editor decision refused",
+			);
+			return "pending";
+		}
+		return result.outcome === "approved" ? "approved" : "pending";
 	} catch (error) {
 		logger.error(
 			{ error, workPeriodId: input.workPeriodId, approvalRequestId: input.approvalRequestId },
@@ -186,11 +180,4 @@ export async function approveOnBehalfCorrectionAsEditor(input: {
 		);
 		return "pending";
 	}
-
-	const stillPending = await hasPendingTimeCorrectionForWorkPeriod({
-		db: readDb,
-		organizationId: input.organizationId,
-		workPeriodId: input.workPeriodId,
-	});
-	return stillPending ? "pending" : "approved";
 }

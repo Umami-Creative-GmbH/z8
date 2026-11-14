@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
@@ -10,23 +9,24 @@ const state = vi.hoisted(() => ({
 	assignmentFindFirst: vi.fn(),
 	employeeFindFirst: vi.fn(),
 	logError: vi.fn(),
+	logWarn: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", () => ({
-	logger: { error: state.logError },
+	logger: { error: state.logError, warn: state.logWarn },
 }));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getEligibleManagerIdsForRequester: state.eligibleManagerIds,
 	isEligibleManagerForApprovalRequest: state.isEligibleForRequest,
 }));
-vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
-	decideTimeCorrectionWithStableTargetEffect: state.decide,
+vi.mock("@/lib/approvals/server/time-approval-decision", () => ({
+	decideTimeApproval: state.decide,
 }));
 
 const {
 	approveOnBehalfCorrectionAsEditor,
-	isEditorCurrentCorrectionApprover,
+	resolveEditorDecisionClaim,
 	resolveOnBehalfCorrectionAuthority,
 } = await import("./time-correction-on-behalf");
 
@@ -93,106 +93,133 @@ describe("resolveOnBehalfCorrectionAuthority", () => {
 	});
 });
 
-describe("isEditorCurrentCorrectionApprover", () => {
+describe("resolveEditorDecisionClaim", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		state.isEligibleForRequest.mockResolvedValue(false);
 	});
 
-	it("accepts the legacy request's approver or one of its eligible managers", async () => {
+	it("claims approver for the legacy request's approver", async () => {
 		state.approvalRequestFindFirst.mockResolvedValue({
 			id: "request-1",
 			approverId: "employee-manager",
 		});
-		await expect(isEditorCurrentCorrectionApprover({ db: db as never, ...base })).resolves.toBe(
-			true,
-		);
+		await expect(resolveEditorDecisionClaim({ db: db as never, ...base })).resolves.toEqual({
+			approvalId: "request-1",
+			right: { as: "approver" },
+		});
+	});
 
+	it("claims eligible manager for an eligible manager of the legacy request", async () => {
 		state.approvalRequestFindFirst.mockResolvedValue({
 			id: "request-1",
 			approverId: "employee-other-manager",
 		});
-		await expect(isEditorCurrentCorrectionApprover({ db: db as never, ...base })).resolves.toBe(
-			false,
-		);
 		state.isEligibleForRequest.mockResolvedValue(true);
-		await expect(isEditorCurrentCorrectionApprover({ db: db as never, ...base })).resolves.toBe(
-			true,
-		);
+		await expect(resolveEditorDecisionClaim({ db: db as never, ...base })).resolves.toEqual({
+			approvalId: "request-1",
+			right: { as: "eligible_manager" },
+		});
 	});
 
-	it("uses the pending canonical assignment when no legacy request exists", async () => {
+	it("claims nothing for an editor who is neither, such as an organization admin", async () => {
+		state.approvalRequestFindFirst.mockResolvedValue({
+			id: "request-1",
+			approverId: "employee-other-manager",
+		});
+		await expect(resolveEditorDecisionClaim({ db: db as never, ...base })).resolves.toBeNull();
+	});
+
+	it("claims approver on the editor's own pending canonical assignment", async () => {
 		state.approvalRequestFindFirst.mockResolvedValue(undefined);
 		state.approvalWorkflowFindFirst.mockResolvedValue({ id: "workflow-1" });
-		state.assignmentFindFirst.mockResolvedValue({ id: "assignment-1" });
-		await expect(isEditorCurrentCorrectionApprover({ db: db as never, ...base })).resolves.toBe(
-			true,
-		);
+		state.assignmentFindFirst.mockResolvedValue({ id: "assignment-editor" });
+		await expect(resolveEditorDecisionClaim({ db: db as never, ...base })).resolves.toEqual({
+			approvalId: "assignment-editor",
+			right: { as: "approver" },
+		});
 
 		state.assignmentFindFirst.mockResolvedValue(undefined);
-		await expect(isEditorCurrentCorrectionApprover({ db: db as never, ...base })).resolves.toBe(
-			false,
-		);
+		await expect(resolveEditorDecisionClaim({ db: db as never, ...base })).resolves.toBeNull();
 	});
 });
 
 describe("approveOnBehalfCorrectionAsEditor", () => {
-	const editor = {
-		id: "employee-manager",
-		userId: "user-manager",
-		organizationId: "org-1",
-		user: { id: "user-manager", name: "John Doe" },
-	};
+	const decided = (outcome: "approved" | "advanced") => ({
+		status: "decided",
+		kind: "time_correction",
+		workPeriodId: "period-1",
+		outcome,
+		replayed: false,
+	});
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 		state.isEligibleForRequest.mockResolvedValue(false);
-		state.employeeFindFirst.mockResolvedValue(editor);
-		state.decide.mockReturnValue(Effect.void);
+		state.employeeFindFirst.mockResolvedValue({ id: "employee-manager", userId: "user-manager" });
+		state.approvalRequestFindFirst.mockResolvedValue({
+			id: "request-1",
+			approverId: "employee-manager",
+		});
+		state.decide.mockResolvedValue(decided("approved"));
 	});
 
-	it("decides the stage as the editor and reports the applied change", async () => {
-		state.approvalRequestFindFirst
-			.mockResolvedValueOnce({ id: "request-1", approverId: "employee-manager" })
-			.mockResolvedValue(undefined);
-		state.approvalWorkflowFindFirst.mockResolvedValue(undefined);
-
+	it("decides as the claimed right and reports an approved correction", async () => {
 		await expect(
 			approveOnBehalfCorrectionAsEditor({ dbService: { db } as never, ...base }),
 		).resolves.toBe("approved");
-		expect(state.decide).toHaveBeenCalledWith({ db }, editor, "request-1", "approve");
+		expect(state.decide).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			approvalId: "request-1",
+			actor: { employeeId: "employee-manager", userId: "user-manager" },
+			right: { as: "approver" },
+			decision: { kind: "approve" },
+			database: db,
+		});
 	});
 
-	it("reports pending when a later chain stage still waits", async () => {
-		state.approvalRequestFindFirst
-			.mockResolvedValueOnce({ id: "request-1", approverId: "employee-manager" })
-			.mockResolvedValue({ id: "request-2" });
-
-		await expect(
-			approveOnBehalfCorrectionAsEditor({ dbService: { db } as never, ...base }),
-		).resolves.toBe("pending");
-		expect(state.decide).toHaveBeenCalledOnce();
-	});
-
-	it("leaves the change to the configured approver when the editor is not one", async () => {
+	it("claims eligible manager, never manager of approvals", async () => {
 		state.approvalRequestFindFirst.mockResolvedValue({
 			id: "request-1",
 			approverId: "employee-other-manager",
 		});
+		state.isEligibleForRequest.mockResolvedValue(true);
 
+		await approveOnBehalfCorrectionAsEditor({ dbService: { db } as never, ...base });
+		expect(state.decide).toHaveBeenCalledWith(
+			expect.objectContaining({ right: { as: "eligible_manager" } }),
+		);
+	});
+
+	it("reports pending when a later chain stage still waits", async () => {
+		state.decide.mockResolvedValue(decided("advanced"));
+		await expect(
+			approveOnBehalfCorrectionAsEditor({ dbService: { db } as never, ...base }),
+		).resolves.toBe("pending");
+	});
+
+	it("leaves the change to the chain when the editor claims no right", async () => {
+		state.approvalRequestFindFirst.mockResolvedValue({
+			id: "request-1",
+			approverId: "employee-other-manager",
+		});
 		await expect(
 			approveOnBehalfCorrectionAsEditor({ dbService: { db } as never, ...base }),
 		).resolves.toBe("pending");
 		expect(state.decide).not.toHaveBeenCalled();
 	});
 
-	it("keeps the submission pending when the editor's decision fails", async () => {
-		state.approvalRequestFindFirst.mockResolvedValue({
-			id: "request-1",
-			approverId: "employee-manager",
-		});
-		state.decide.mockReturnValue(Effect.fail(new Error("stale")));
+	it("keeps the correction pending on a refusal and claims no other right", async () => {
+		state.decide.mockResolvedValue({ status: "refused", reason: "reassigned" });
+		await expect(
+			approveOnBehalfCorrectionAsEditor({ dbService: { db } as never, ...base }),
+		).resolves.toBe("pending");
+		expect(state.decide).toHaveBeenCalledOnce();
+		expect(state.logWarn).toHaveBeenCalledOnce();
+	});
 
+	it("keeps the submission pending when the decision fails", async () => {
+		state.decide.mockRejectedValue(new Error("connection lost"));
 		await expect(
 			approveOnBehalfCorrectionAsEditor({ dbService: { db } as never, ...base }),
 		).resolves.toBe("pending");
