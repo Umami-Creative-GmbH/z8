@@ -28,8 +28,10 @@
  * Removal cleanup is part of the removal: the employee is deactivated and the
  * organization's session rows are deleted in the same transaction, and only
  * the secondary-storage session deletion and billing reconciliation wait for
- * the commit. Provisioning after a membership is added or accepted keeps its
- * existing after-commit timing.
+ * the commit. Joining after a membership is added or accepted (#1666) is part
+ * of the same transaction too: a failed joining rolls the membership back, and
+ * only its after-commit step (audit forwarding, draft clean-up, seat signal)
+ * waits for the commit.
  */
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
@@ -46,6 +48,7 @@ import {
 import { createOrganizationTrackingSettings } from "@/lib/organization/tracking-setup";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
+	type AuthTransaction,
 	type CoordinatedAuthContext,
 	queueAfterAuthTransactionCommit,
 	requireAuthTransaction,
@@ -158,16 +161,42 @@ async function cleanUpRemovedMember(input: {
 	);
 }
 
+type HookData<Name extends keyof OrganizationHooks> = Parameters<
+	NonNullable<OrganizationHooks[Name]>
+>[0];
+
+/**
+ * Joining after a membership is written (spec #1664): it runs on the auth
+ * transaction that writes the membership and returns the step to run once
+ * that transaction committed.
+ */
+type JoiningHook<Data> = (
+	transaction: AuthTransaction,
+	data: Data,
+) => Promise<() => Promise<void>>;
+
+export type CoordinatedOrganizationHookInput = Required<
+	Pick<OrganizationHooks, "beforeUpdateOrganization" | "beforeCreateInvitation">
+> & {
+	/** Invitation acceptance fires only `afterAcceptInvitation`. */
+	joinOnAcceptedInvitation: JoiningHook<HookData<"afterAcceptInvitation">>;
+	/** Organization creation and a member added directly. */
+	joinOnAddedMember: JoiningHook<HookData<"afterAddMember">>;
+};
+
+/** Joins in the membership's transaction; the after-commit step waits for its commit. */
+async function joinInAuthTransaction<Data>(
+	operation: string,
+	join: JoiningHook<Data>,
+	data: Data,
+) {
+	const transaction = requireAuthTransaction(operation);
+	const afterCommit = await join(transaction, data);
+	await queueAfterAuthTransactionCommit(afterCommit);
+}
+
 export function createCoordinatedOrganizationHooks(
-	hooks: Required<
-		Pick<
-			OrganizationHooks,
-			| "beforeUpdateOrganization"
-			| "beforeCreateInvitation"
-			| "afterAcceptInvitation"
-			| "afterAddMember"
-		>
-	>,
+	hooks: CoordinatedOrganizationHookInput,
 ): OrganizationHooks {
 	return {
 		// Refuses before the organization row is written, so an uncoordinated
@@ -211,7 +240,11 @@ export function createCoordinatedOrganizationHooks(
 			});
 		},
 		afterAddMember: async (data) => {
-			await queueAfterAuthTransactionCommit(() => hooks.afterAddMember(data));
+			await joinInAuthTransaction(
+				"organization member addition",
+				hooks.joinOnAddedMember,
+				data,
+			);
 		},
 		beforeAcceptInvitation: async ({ user, organization }) => {
 			await protectAuthMutation("organization invitation acceptance", {
@@ -220,8 +253,10 @@ export function createCoordinatedOrganizationHooks(
 			});
 		},
 		afterAcceptInvitation: async (data) => {
-			await queueAfterAuthTransactionCommit(() =>
-				hooks.afterAcceptInvitation(data),
+			await joinInAuthTransaction(
+				"organization invitation acceptance",
+				hooks.joinOnAcceptedInvitation,
+				data,
 			);
 		},
 		beforeDeleteOrganization: async ({ organization }) => {
