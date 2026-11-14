@@ -32,7 +32,11 @@ import { nanoid } from "nanoid";
 import type { db } from "@/db";
 import { invitation, member, organization, ssoProvider, user } from "@/db/auth-schema";
 import { protectAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
-import { type JoiningOutcome, joinOrganization } from "@/lib/employee-lifecycle/joining";
+import {
+	type JoiningOutcome,
+	joinOrganization,
+	runAfterJoiningCommitted,
+} from "@/lib/employee-lifecycle/joining";
 import { createLogger } from "@/lib/logger";
 
 type Database = typeof db;
@@ -185,16 +189,11 @@ async function signInToOrganization(
 		membershipCreated ||
 		joining.outcome.kind === "joined" ||
 		joining.outcome.kind === "reactivated";
-	// The sign-in committed; a failed after-commit step must not fail it. The
-	// hourly seat reconciliation is the safety net for the seat signal.
-	try {
-		await joining.afterCommit.run({ seatSignal: seatChanged });
-	} catch (error) {
-		logger.error(
-			{ error, organizationId: input.organizationId, userId: input.userId },
-			"Joining's after-commit step failed after an SSO sign-in",
-		);
-	}
+	await runAfterJoiningCommitted(
+		joining.afterCommit,
+		{ organizationId: input.organizationId, userId: input.userId, path: "an SSO sign-in" },
+		{ seatSignal: seatChanged },
+	);
 	return joining.outcome;
 }
 

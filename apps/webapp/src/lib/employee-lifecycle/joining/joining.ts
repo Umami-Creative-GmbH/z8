@@ -220,6 +220,27 @@ export async function joinOrganization(
 	};
 }
 
+/**
+ * Runs joining's after-commit step for a caller whose membership already
+ * committed: a failure is logged, never turned into a failed sign-in or
+ * acceptance. The hourly seat reconciliation and the draft clean-up's later
+ * passes are the safety nets.
+ */
+export async function runAfterJoiningCommitted(
+	afterCommit: AfterJoining,
+	context: { organizationId: string; userId: string; path: string },
+	options?: { seatSignal?: boolean },
+): Promise<void> {
+	try {
+		await afterCommit.run(options);
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: context.organizationId, userId: context.userId },
+			`Joining's after-commit step failed after ${context.path}`,
+		);
+	}
+}
+
 /** Best effort after commit: the notice never fails the step. */
 async function sendRehireNotice(notice: RehireNotice) {
 	try {

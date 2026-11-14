@@ -62,7 +62,7 @@ export async function loadInvitationDraft(
 
 /** The team, when it belongs to this organization; only such a team places the employee. */
 export async function teamOfOrganization(
-	client: JoiningClient,
+	client: Pick<JoiningClient, "query">,
 	organizationId: string,
 	teamId: string | null | undefined,
 ): Promise<string | null> {

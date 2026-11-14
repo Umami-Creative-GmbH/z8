@@ -386,6 +386,67 @@ describe("joining inside the auth transaction (#1666)", () => {
 			]);
 		});
 
+		it("writes the user row only after joining took its locks: user guard, identity lock, rows", async () => {
+			const { invitationId } = await invite("member", { canCreateOrganizations: true });
+			const memberId = randomUUID();
+			await admin.query(
+				`insert into member (id, organization_id, user_id, role, status, created_at)
+				 values ($1, $2, $3, 'member', 'approved', now())`,
+				[memberId, organizationId, inviteeUser],
+			);
+			// Another writer holds the organization identity lock of the invitee's email.
+			const identityHolder = await admin.connect();
+			const rowProbe = await admin.connect();
+			let accepting: Promise<unknown> = Promise.resolve();
+			try {
+				await identityHolder.query("begin");
+				await identityHolder.query(
+					`select pg_advisory_xact_lock(hashtextextended(jsonb_build_array($1::text, $2::text)::text, 0))`,
+					[organizationId, inviteeEmail],
+				);
+
+				const joining = db.transaction((tx) =>
+					joinOnAcceptedInvitation(tx, {
+						user: { id: inviteeUser },
+						invitation: { id: invitationId, organizationId, email: inviteeEmail },
+						member: { id: memberId, role: "member" },
+					}),
+				);
+				accepting = joining;
+				await vi.waitFor(
+					async () => {
+						const { rows } = await admin.query(
+							`select 1 from pg_locks where locktype = 'advisory' and not granted`,
+						);
+						expect(rows.length).toBeGreaterThan(0);
+					},
+					{ timeout: 20_000, interval: 50 },
+				);
+
+				// While it waits for the identity lock, it holds no lock on the user row.
+				await rowProbe.query("begin");
+				await rowProbe.query("set local lock_timeout = '200ms'");
+				await expect(
+					rowProbe.query('select 1 from "user" where id = $1 for update', [inviteeUser]),
+				).resolves.toMatchObject({ rowCount: 1 });
+				await rowProbe.query("rollback");
+
+				await identityHolder.query("commit");
+				const afterCommit = await joining;
+				await afterCommit();
+				expect(await userFields(inviteeUser)).toEqual({
+					can_create_organizations: true,
+					invited_via: invitationId,
+				});
+			} finally {
+				await rowProbe.query("rollback").catch(() => undefined);
+				await identityHolder.query("rollback").catch(() => undefined);
+				await accepting.catch(() => undefined);
+				identityHolder.release();
+				rowProbe.release();
+			}
+		});
+
 		it("tells nobody when the invitee joins as a new employee (#1672)", async () => {
 			const { invitationId } = await invite("member");
 

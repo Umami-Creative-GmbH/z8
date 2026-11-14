@@ -106,7 +106,6 @@ export {
 	completeRemovedMemberCleanup,
 	revokeRemovedMemberAccess,
 } from "@/lib/auth/member-removal-cleanup";
-export { resolveInvitationTargetTeamId } from "@/lib/auth/organization-joining-hooks";
 
 function getAuthSecrets() {
 	const resolved = resolveAuthSecrets({

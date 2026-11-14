@@ -8,16 +8,17 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import * as schema from "@/db/auth-schema";
-import { team } from "@/db/schema";
-import { joinOrganization } from "@/lib/employee-lifecycle/joining";
-import { createLogger } from "@/lib/logger";
+import {
+	joinOrganization,
+	runAfterJoiningCommitted,
+	teamOfOrganization,
+} from "@/lib/employee-lifecycle/joining";
 import type { AuthTransaction } from "./auth-transaction";
 import {
 	normalizeInvitationEmail,
 	resolveAcceptedInvitationCanCreateOrganizations,
 } from "./employee-invitation-draft";
 
-const logger = createLogger("OrganizationJoiningHooks");
 const targetTeamIdSchema = z.uuid();
 
 /** Runs once the auth transaction committed. */
@@ -38,45 +39,24 @@ type AddedMemberData = MembershipHookData & {
 
 type InvitationTargetTeamLookupDb = Pick<AuthTransaction, "query">;
 
-/** The invitation's team when it is a team of the invitation's organization. */
+/**
+ * The invitation's team when it is a team of the invitation's organization.
+ * A stored id that is not a UUID never reaches the team lookup.
+ */
 export async function resolveInvitationTargetTeamId(
 	dbClient: InvitationTargetTeamLookupDb,
 	organizationId: string,
 	targetTeamId: string | null | undefined,
 ) {
-	const targetTeamIdResult = targetTeamId ? targetTeamIdSchema.safeParse(targetTeamId) : null;
-	if (!targetTeamIdResult?.success) {
-		return null;
-	}
-
-	const targetTeam = await dbClient.query.team.findFirst({
-		where: and(eq(team.id, targetTeamIdResult.data), eq(team.organizationId, organizationId)),
-	});
-
-	return targetTeam?.id ?? null;
+	const parsed = targetTeamId ? targetTeamIdSchema.safeParse(targetTeamId) : null;
+	return parsed?.success ? teamOfOrganization(dbClient, organizationId, parsed.data) : null;
 }
 
 /**
- * The membership already committed when this runs: a failure here is logged,
- * never turned into a refusal of the change. The hourly seat reconciliation
- * and the draft clean-up's later passes are the safety nets.
- */
-function afterJoiningCommitted(
-	run: () => Promise<void>,
-	context: { organizationId: string; userId: string },
-): AfterAuthCommit {
-	return async () => {
-		try {
-			await run();
-		} catch (error) {
-			logger.error({ error, ...context }, "Joining's after-commit step failed");
-		}
-	};
-}
-
-/**
- * An accepted email invitation: the invitation's organization-creation right
- * and the joining, both in the acceptance's transaction.
+ * An accepted email invitation: the joining and the invitation's
+ * organization-creation right, both in the acceptance's transaction. The user
+ * row is written after joining took its locks, so the order stays the user
+ * guard, then the identity lock, then rows (#318).
  */
 export async function joinOnAcceptedInvitation(
 	tx: AuthTransaction,
@@ -94,16 +74,6 @@ export async function joinOnAcceptedInvitation(
 		invitation.organizationId,
 		invitationRecord?.targetTeamId,
 	);
-	const canCreateOrganizations = await resolveAcceptedInvitationCanCreateOrganizations(tx, {
-		organizationId: invitation.organizationId,
-		normalizedEmail: normalizeInvitationEmail(invitation.email),
-		invitationCanCreateOrganizations: invitationRecord?.canCreateOrganizations ?? false,
-	});
-
-	await tx
-		.update(schema.user)
-		.set({ canCreateOrganizations, invitedVia: invitation.id })
-		.where(eq(schema.user.id, user.id));
 
 	const joined = await joinOrganization(tx, {
 		organizationId: invitation.organizationId,
@@ -117,10 +87,23 @@ export async function joinOnAcceptedInvitation(
 			? { to: "users", userIds: [invitationRecord.inviterId] }
 			: { to: "organization_admins" },
 	});
-	return afterJoiningCommitted(() => joined.afterCommit.run(), {
+
+	const canCreateOrganizations = await resolveAcceptedInvitationCanCreateOrganizations(tx, {
 		organizationId: invitation.organizationId,
-		userId: user.id,
+		normalizedEmail: normalizeInvitationEmail(invitation.email),
+		invitationCanCreateOrganizations: invitationRecord?.canCreateOrganizations ?? false,
 	});
+	await tx
+		.update(schema.user)
+		.set({ canCreateOrganizations, invitedVia: invitation.id })
+		.where(eq(schema.user.id, user.id));
+
+	return () =>
+		runAfterJoiningCommitted(joined.afterCommit, {
+			organizationId: invitation.organizationId,
+			userId: user.id,
+			path: "an invitation acceptance",
+		});
 }
 
 /**
@@ -140,8 +123,10 @@ export async function joinOnAddedMember(
 		// former employee who needs a rehire (#1672).
 		rehireNotice: { to: "organization_admins" },
 	});
-	return afterJoiningCommitted(() => joined.afterCommit.run(), {
-		organizationId: organization.id,
-		userId: user.id,
-	});
+	return () =>
+		runAfterJoiningCommitted(joined.afterCommit, {
+			organizationId: organization.id,
+			userId: user.id,
+			path: "a member add",
+		});
 }
