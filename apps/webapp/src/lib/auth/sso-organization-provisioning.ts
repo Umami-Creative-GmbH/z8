@@ -159,14 +159,14 @@ async function signInToOrganization(
 	database: Pick<Database, "transaction">,
 	input: { organizationId: string; userId: string; email: string; role: string },
 ): Promise<JoiningOutcome | null> {
-	const joining = await database.transaction(async (transaction) => {
+	const signedIn = await database.transaction(async (transaction) => {
 		await protectAuthorizationMutation(transaction, {
 			organizationId: input.organizationId,
 			userIds: [input.userId],
 		});
 		const membership = await addOrganizationMember(transaction, input);
 		if (membership?.status !== "approved") return null;
-		return joinOrganization(transaction, {
+		const joining = await joinOrganization(transaction, {
 			organizationId: input.organizationId,
 			userId: input.userId,
 			membership: { id: membership.id, role: membership.role },
@@ -175,12 +175,20 @@ async function signInToOrganization(
 			// sign-ins with the kept membership tell nobody again.
 			...(membership.created ? { rehireNotice: { to: "organization_admins" as const } } : {}),
 		});
+		return { joining, membershipCreated: membership.created };
 	});
-	if (!joining) return null;
+	if (!signedIn) return null;
+	const { joining, membershipCreated } = signedIn;
+	// Every sign-in of an approved member joins, but a seat changes only with a
+	// new membership or an employee joining or coming back.
+	const seatChanged =
+		membershipCreated ||
+		joining.outcome.kind === "joined" ||
+		joining.outcome.kind === "reactivated";
 	// The sign-in committed; a failed after-commit step must not fail it. The
 	// hourly seat reconciliation is the safety net for the seat signal.
 	try {
-		await joining.afterCommit.run();
+		await joining.afterCommit.run({ seatSignal: seatChanged });
 	} catch (error) {
 		logger.error(
 			{ error, organizationId: input.organizationId, userId: input.userId },

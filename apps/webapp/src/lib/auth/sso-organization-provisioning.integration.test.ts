@@ -438,6 +438,20 @@ describe("SSO sign-ins join the organization (#1669)", () => {
 
 			expect(outcome?.kind).toBe("membership_only");
 			expect(notices).toEqual([]);
+			// Neither the membership nor the employee changed: no seat signal.
+			expect(seatSignals).toEqual([]);
+		});
+
+		it("sends no seat signal when a current employee signs in again", async () => {
+			const { organizationId, domain } = await openSsoOrganization();
+			const user = await newSsoUser(domain);
+			await signIn(kind, { organizationId, user });
+			seatSignals.length = 0;
+
+			const outcome = await signIn(kind, { organizationId, user });
+
+			expect(outcome?.kind).toBe("already_current");
+			expect(seatSignals).toEqual([]);
 		});
 
 		it("joins nothing while the membership waits for approval", async () => {
