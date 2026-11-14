@@ -229,7 +229,6 @@ import {
 	calculateCorrectedDurationMinutes,
 	createTimeCorrectionApprovalWorkflow,
 	deleteCancelledTimeCorrectionsInTransaction,
-	executeTimeCorrectionDecisionInTransaction,
 	executeTimeCorrectionSubmissionInTransaction,
 	type FinalizeTimeCorrectionTerminalInput,
 	finalizeTimeCorrectionTerminalInTransaction,
@@ -291,6 +290,52 @@ function workRecordChanges() {
 function requiredValue<T>(value: T | undefined): T {
 	if (value === undefined) throw new Error("Expected fixture value");
 	return value;
+}
+
+/**
+ * The submitted workflow once its one assignment was decided. Decisions are
+ * verified against PostgreSQL at the time approval decision's interface
+ * (time-approval-decision.integration.test.ts); these submission fixtures only
+ * need the decided state they replay or follow.
+ */
+function decidedSnapshot(
+	pending: ApprovalWorkflowSnapshot,
+	assignmentId: string,
+	status: "approved" | "rejected",
+): ApprovalWorkflowSnapshot {
+	const at = parseInstant("2026-07-20T11:00:00Z");
+	return {
+		...pending,
+		version: pending.version + 1,
+		status,
+		currentStageOrder: null,
+		completedAt: at,
+		stages: pending.stages.map((stage) => ({
+			...stage,
+			status,
+			decidedAt: at,
+			assignments: stage.assignments.map((assignment) => ({
+				...assignment,
+				status: assignment.id === assignmentId ? status : ("cancelled" as const),
+				resolvedAt: at,
+			})),
+		})),
+	};
+}
+
+/** The legacy request (and its observed workflow) once its approver decided it. */
+function settleObservedRequest(
+	fixture: {
+		requests: Array<Record<string, unknown>>;
+		workflows: Map<string, { status: string }>;
+	},
+	status: "approved" | "rejected",
+) {
+	const request = requiredValue(fixture.requests.at(-1));
+	request.status = status;
+	request.approvedAt = new Date("2026-07-20T11:00:00.000Z");
+	if (status === "rejected") request.rejectionReason = "Rejected by manager";
+	for (const workflow of fixture.workflows.values()) workflow.status = status;
 }
 
 describe("time correction canonical decision error translation", () => {
@@ -1180,36 +1225,6 @@ describe("time correction transaction boundaries", () => {
 				failAt = point;
 				failureEvidence = null;
 			},
-			async decide(
-				approvalRequestId: string,
-				action: "approve" | "reject" = "approve",
-				reason?: string,
-				shortcutGuard?: (database: unknown) => Promise<void>,
-			) {
-				decisionReads = true;
-				decisionApprovalRequestId = approvalRequestId;
-				employeeRead = 0;
-				memberRead = 0;
-				// Its workflow reads toggle: name the owner instead of routing it.
-				correctionRouting.decisionOwner = ids.requester;
-				try {
-					return await executeTimeCorrectionDecisionInTransaction({
-						createRuntime: () => runtime,
-						organizationId: "org-1",
-						actorEmployeeId: ids.manager,
-						actorUserId: "user-manager",
-						approvalRequestId,
-						shortcutGuard,
-						action,
-						reason,
-						processLegacy: async () => {
-							throw new Error("Legacy processing is outside canonical authority");
-						},
-					});
-				} finally {
-					correctionRouting.decisionOwner = null;
-				}
-			},
 			terminalFinalizations: () => terminalFinalizations,
 			requesterIdentityLookup: db.query.employee.findFirst,
 			projections,
@@ -1300,25 +1315,6 @@ describe("time correction transaction boundaries", () => {
 		};
 	}
 
-	it("executes the shortcut guard inside the coordinated correction transaction before changing work", async () => {
-		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
-		await fixture.execute();
-		const snapshot = requiredValue([...fixture.snapshots.values()][0]);
-		const assignment = requiredValue(
-			requiredValue(snapshot.stages[0]).assignments[0],
-		);
-		const before = fixture.durableSnapshot();
-		const refusal = new Error("Shortcut became stale");
-		const guard = vi.fn(async (database: unknown) => {
-			expect(database).toHaveProperty("query.workPeriod");
-			throw refusal;
-		});
-		await expect(
-			fixture.decide(assignment.id, "approve", undefined, guard),
-		).rejects.toBe(refusal);
-		expect(guard).toHaveBeenCalledOnce();
-		expect(fixture.durableSnapshot()).toEqual(before);
-	});
 	it("locks the requester then exact work period before submission lifecycle reads", async () => {
 		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
 
@@ -2051,101 +2047,6 @@ describe("time correction transaction boundaries", () => {
 				);
 			},
 			transaction: runTransaction,
-			async decide(
-				action: "approve" | "reject",
-				reason?: string,
-				approvalRequestId = ids.request,
-			) {
-				decisionMode = true;
-				decisionEmployeeRead = 0;
-				decisionApprovalRequestId = approvalRequestId;
-				chainQueryRead = 0;
-				captureRead = 0;
-				const runtime = {
-					repository: {
-						withTransaction: async <T>(
-							operation: (transactionContext: typeof context) => Promise<T>,
-						) => runTransaction(() => operation(context)),
-					},
-					transitionEngine: {
-						executeInTransaction: async () => {
-							throw new Error("Canonical decision is outside legacy authority");
-						},
-					},
-				};
-				return executeTimeCorrectionDecisionInTransaction({
-					createRuntime: () => runtime,
-					organizationId: "org-1",
-					actorEmployeeId: ids.manager,
-					actorUserId: "user-manager",
-					approvalRequestId,
-					action,
-					reason,
-					processLegacy: async (transactionDbService, actor) =>
-						runTimeCorrectionDecisionEffect(
-							processApprovalWithCurrentEmployee(
-								transactionDbService,
-								actor,
-								"time_entry",
-								ids.period,
-								action,
-								reason,
-								(service, _entityId, approver, approval) =>
-									Effect.tryPromise({
-										try: async () => {
-											const correction = (
-												approval.metadata as TimeCorrectionWorkflowPayload
-											).timeCorrection;
-											const originalWorkMetadata = Object.hasOwn(
-												correction,
-												"workLocationType",
-											)
-												? normalizeTimeCorrectionOriginalWorkMetadata(
-														(approval.metadata as Record<string, unknown>)
-															.timeCorrectionOriginalWorkMetadata,
-													)
-												: undefined;
-											const finalized =
-												await finalizeTimeCorrectionTerminalInTransaction({
-													dbService: service,
-													organizationId: "org-1",
-													workPeriodId: ids.period,
-													expectedApprovalWorkflowId: null,
-													expectedApprovalWorkflowVersion: null,
-													expectedRequesterEmployeeId: ids.requester,
-													actorEmployeeId: approver.id,
-													actorUserId: approver.userId,
-													correction,
-													expectedOriginalWorkMetadata: originalWorkMetadata,
-													legacyApprovalRequestId: approval.id,
-													transition:
-														action === "approve"
-															? { kind: "approve", reason: null }
-															: {
-																	kind: "reject",
-																	reason: reason ?? "Rejected",
-																},
-													finalizedAt: parseInstant(now.toISOString()),
-													allowMetadataLessLegacyFallback: false,
-												});
-											return {
-												workBalanceDirtyMark: finalized.dirtyFromDate
-													? { dirtyFromDate: finalized.dirtyFromDate }
-													: undefined,
-											};
-										},
-										catch: (error) => error as never,
-									}),
-								undefined,
-								{ approvalRequestId, transactional: true },
-								undefined,
-								"existing",
-							),
-						),
-					captureLegacyState: captureTimeCorrectionLegacyApprovalState,
-					nowInstant: () => parseInstant(now.toISOString()),
-				});
-			},
 			execute: (
 				submissionKey = `${mode}-submission-1`,
 				submissionId?: string,
@@ -2447,25 +2348,6 @@ describe("time correction transaction boundaries", () => {
 		},
 	);
 
-	it.each(["legacy", "shadow", "ready"] as const)(
-		"rejects parity-preserving stale metadata after %s submission",
-		async (mode) => {
-			const fixture = observedSubmissionHarness(mode);
-			await fixture.execute(`${mode}-stale-work-metadata`, undefined, {
-				action: "edit",
-				workLocationType: "home",
-				workCategoryId: null,
-			});
-			fixture.driftWorkMetadata("remote");
-			const stale = fixture.durableSnapshot();
-
-			await expect(fixture.decide("approve")).rejects.toThrow(
-				"Time correction source changed during finalization",
-			);
-			expect(fixture.durableSnapshot()).toEqual(stale);
-		},
-	);
-
 	it("replays unchanged current metadata through legacy authority", async () => {
 		const fixture = observedSubmissionHarness("legacy");
 		const correction = {
@@ -2517,28 +2399,6 @@ describe("time correction transaction boundaries", () => {
 		});
 		expect(fixture.durableSnapshot()).toEqual(drifted);
 	});
-
-	it.each(["canonical", "complete"] as const)(
-		"rejects parity-preserving stale metadata after %s submission",
-		async (mode) => {
-			const fixture = canonicalSubmissionHarness({ mode });
-			await fixture.execute({
-				correction: {
-					action: "edit",
-					workLocationType: "home",
-					workCategoryId: null,
-				},
-			});
-			fixture.sourceRow.workLocationType = "remote";
-			fixture.canonicalWork.workLocationType = "remote";
-			const stale = fixture.durableSnapshot();
-			const pending = requiredValue([...fixture.snapshots.values()][0]);
-			const target = requiredValue(pending.stages[0]?.assignments[0]);
-
-			await expect(fixture.decide(target.id)).rejects.toThrow();
-			expect(fixture.durableSnapshot()).toEqual(stale);
-		},
-	);
 
 	it.each(["canonical", "complete"] as const)(
 		"auto-completes a zero-entry metadata-only edit once and rejects its stale %s replay",
@@ -2698,396 +2558,6 @@ describe("time correction transaction boundaries", () => {
 		);
 		expect(fixture.compatibilityRows).toEqual([]);
 		expect(fixture.legacyWrites).toEqual([]);
-	});
-
-	it.each(["canonical", "complete"] as const)(
-		"executes a terminal %s approval through the actual command stack",
-		async (mode) => {
-			const fixture = canonicalSubmissionHarness({ mode });
-			await fixture.execute();
-			const before = requiredValue([...fixture.snapshots.values()][0]);
-			const assignment = requiredValue(before.stages[0]?.assignments[0]);
-
-			const decision = await fixture.decide(assignment.id);
-			const after = requiredValue(fixture.snapshots.get(before.id));
-
-			expect(decision).toMatchObject({
-				kind: "time_correction",
-				commandResult: { snapshot: { id: before.id, status: "approved" } },
-				postCommit: { authority: "canonical", terminal: null },
-			});
-			expect(after.status).toBe("approved");
-			expect(after.version).toBe(before.version + 1);
-			expect(fixture.terminalFinalizations()).toBe(1);
-			expect(fixture.repository.claimCommand).toHaveBeenCalledOnce();
-			expect(fixture.repository.completeCommand).toHaveBeenCalledOnce();
-		},
-	);
-
-	it.each(["canonical", "complete"] as const)(
-		"executes a terminal %s rejection through the actual command stack",
-		async (mode) => {
-			const fixture = canonicalSubmissionHarness({ mode });
-			await fixture.execute();
-			const before = requiredValue([...fixture.snapshots.values()][0]);
-			const assignment = requiredValue(before.stages[0]?.assignments[0]);
-
-			const decision = await fixture.decide(
-				assignment.id,
-				"reject",
-				"Correction is not supported by the evidence",
-			);
-			const after = requiredValue(fixture.snapshots.get(before.id));
-
-			expect(decision.commandResult).toMatchObject({
-				snapshot: {
-					id: before.id,
-					status: "rejected",
-					decisionReason: "Correction is not supported by the evidence",
-				},
-			});
-			expect(after.stages[0]?.assignments[0]).toMatchObject({
-				status: "rejected",
-			});
-			expect(fixture.repository.completeCommand).toHaveBeenCalledOnce();
-		},
-	);
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("advances and then completes an actual two-stage %s decision", async (mode) => {
-		const fixture = canonicalSubmissionHarness({
-			mode,
-			policies: [canonicalPolicy(2)],
-			reviewersByStage: [
-				["31000000-0000-4000-8000-000000000802"],
-				["31000000-0000-4000-8000-000000000802"],
-			],
-		});
-		await fixture.execute({ defaultApproverId: null });
-		const initial = requiredValue([...fixture.snapshots.values()][0]);
-		const firstTarget = requiredValue(initial.stages[0]?.assignments[0]);
-
-		const intermediate = await fixture.decide(firstTarget.id);
-		const advanced = requiredValue(fixture.snapshots.get(initial.id));
-		const secondTarget = requiredValue(advanced.stages[1]?.assignments[0]);
-
-		expect(intermediate.commandResult?.snapshot).toMatchObject({
-			status: "pending",
-			currentStageOrder: 2,
-			stages: [{ status: "approved" }, { status: "pending" }],
-		});
-		expect(advanced.version).toBe(initial.version + 2);
-		expect(fixture.terminalFinalizations()).toBe(0);
-
-		const terminal = await fixture.decide(secondTarget.id);
-
-		expect(terminal.commandResult?.snapshot).toMatchObject({
-			status: "approved",
-			currentStageOrder: null,
-		});
-		expect(fixture.terminalFinalizations()).toBe(1);
-		expect(fixture.repository.completeCommand).toHaveBeenCalledTimes(2);
-	});
-
-	it("accepts the compatibility stage id as the stable canonical target", async () => {
-		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
-		await fixture.execute();
-		const before = requiredValue([...fixture.snapshots.values()][0]);
-		const stage = requiredValue(before.stages[0]);
-		const compatibilityTarget = requiredValue(
-			stage.legacyApprovalRequestId ?? undefined,
-		);
-
-		const decision = await fixture.decide(compatibilityTarget);
-
-		expect(decision.commandResult?.snapshot.status).toBe("approved");
-		expect(fixture.repository.claimCommand).toHaveBeenCalledOnce();
-	});
-
-	it("resolves a parallel compatibility target to its persisted representative assignment", async () => {
-		const fixture = canonicalSubmissionHarness({
-			mode: "canonical",
-			reviewersByStage: [
-				[
-					"31000000-0000-4000-8000-000000000802",
-					"31000000-0000-4000-8000-000000000803",
-				],
-			],
-		});
-		await fixture.execute();
-		const before = requiredValue([...fixture.snapshots.values()][0]);
-		const stage = requiredValue(before.stages[0]);
-		const representative = requiredValue(stage.assignments[0]);
-		const compatibilityTarget = requiredValue(
-			stage.legacyApprovalRequestId ?? undefined,
-		);
-		expect(fixture.compatibilityRows[0]).toMatchObject({
-			approverId: representative.approverEmployeeId,
-			metadata: { stage: { assignmentId: representative.id } },
-		});
-
-		const decision = await fixture.decide(compatibilityTarget);
-
-		expect(decision.commandResult?.snapshot.status).toBe("approved");
-		expect(fixture.repository.claimCommand).toHaveBeenCalledOnce();
-	});
-
-	it("fails closed when compatibility metadata names a foreign assignment", async () => {
-		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
-		await fixture.execute();
-		const row = requiredValue(fixture.compatibilityRows[0]);
-		const metadata = row.metadata as Record<string, unknown>;
-		metadata.stage = {
-			...(metadata.stage as Record<string, unknown>),
-			assignmentId: "31000000-0000-4000-8000-000000000999",
-		};
-
-		await expect(fixture.decide(String(row.id))).rejects.toMatchObject({
-			conflictType: "approval_transition",
-		});
-		expect(fixture.repository.claimCommand).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		[
-			"workflow",
-			{ id: "71000000-0000-4000-8000-000000000999", organizationId: "org-1" },
-		],
-		[
-			"workflow",
-			{ id: "71000000-0000-4000-8000-000000000801", organizationId: "org-2" },
-		],
-		["stage", { id: "71000000-0000-4000-8000-000000000999", sequence: 1 }],
-		["stage", { id: "71000000-0000-4000-8000-000000000801", sequence: 99 }],
-	] as const)("fails closed on foreign compatibility %s metadata", async (key, value) => {
-		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
-		await fixture.execute();
-		const row = requiredValue(fixture.compatibilityRows[0]);
-		const metadata = row.metadata as Record<string, unknown>;
-		metadata[key] = value;
-
-		await expect(fixture.decide(String(row.id))).rejects.toMatchObject({
-			conflictType: "approval_transition",
-		});
-		expect(fixture.repository.claimCommand).not.toHaveBeenCalled();
-	});
-
-	it("rejects compatibility metadata accessors without reading them during resolution", async () => {
-		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
-		await fixture.execute();
-		const row = requiredValue(fixture.compatibilityRows[0]);
-		const metadata = row.metadata as Record<string, unknown>;
-		const getter = vi.fn(() => "unexpected");
-		metadata.stage = Object.defineProperty({}, "id", {
-			enumerable: true,
-			get: getter,
-		});
-
-		await expect(fixture.decide(String(row.id))).rejects.toMatchObject({
-			conflictType: "approval_transition",
-		});
-		// The rollback harness snapshots the injected row once before resolution.
-		expect(getter).toHaveBeenCalledOnce();
-		expect(fixture.repository.claimCommand).not.toHaveBeenCalled();
-	});
-
-	it("uses an exact active approver match for compatibility rows without assignment metadata", async () => {
-		const fixture = canonicalSubmissionHarness({
-			mode: "canonical",
-			reviewersByStage: [
-				[
-					"31000000-0000-4000-8000-000000000802",
-					"31000000-0000-4000-8000-000000000803",
-				],
-			],
-		});
-		await fixture.execute();
-		const row = requiredValue(fixture.compatibilityRows[0]);
-		const metadata = row.metadata as Record<string, unknown>;
-		const stage = metadata.stage as Record<string, unknown>;
-		delete stage.assignmentId;
-
-		const decision = await fixture.decide(String(row.id));
-
-		expect(decision.commandResult?.snapshot.status).toBe("approved");
-	});
-
-	it("fails closed when a compatibility row approver does not match an active assignment", async () => {
-		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
-		await fixture.execute();
-		const row = requiredValue(fixture.compatibilityRows[0]);
-		row.approverId = "31000000-0000-4000-8000-000000000999";
-		const metadata = row.metadata as Record<string, unknown>;
-		const stage = metadata.stage as Record<string, unknown>;
-		delete stage.assignmentId;
-
-		await expect(fixture.decide(String(row.id))).rejects.toMatchObject({
-			conflictType: "approval_transition",
-		});
-		expect(fixture.repository.claimCommand).not.toHaveBeenCalled();
-	});
-
-	it("fails closed when legacy fallback matches multiple active assignments", async () => {
-		const fixture = canonicalSubmissionHarness({
-			mode: "canonical",
-			reviewersByStage: [
-				[
-					"31000000-0000-4000-8000-000000000802",
-					"31000000-0000-4000-8000-000000000803",
-				],
-			],
-		});
-		await fixture.execute();
-		const pending = requiredValue([...fixture.snapshots.values()][0]);
-		const stage = requiredValue(pending.stages[0]);
-		fixture.snapshots.set(pending.id, {
-			...pending,
-			stages: [
-				{
-					...stage,
-					assignments: stage.assignments.map((assignment) => ({
-						...assignment,
-						approverEmployeeId: fixture.ids.manager,
-					})),
-				},
-			],
-		});
-		const row = requiredValue(fixture.compatibilityRows[0]);
-		const metadata = row.metadata as Record<string, unknown>;
-		delete (metadata.stage as Record<string, unknown>).assignmentId;
-
-		await expect(fixture.decide(String(row.id))).rejects.toMatchObject({
-			conflictType: "approval_transition",
-		});
-		expect(fixture.repository.claimCommand).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("replays the exact %s decision receipt without durable side effects", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		await fixture.execute();
-		const before = requiredValue([...fixture.snapshots.values()][0]);
-		const assignment = requiredValue(before.stages[0]?.assignments[0]);
-		const first = await fixture.decide(assignment.id);
-		const durable = {
-			version: requiredValue(fixture.snapshots.get(before.id)).version,
-			finalizations: fixture.terminalFinalizations(),
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			legacy: fixture.legacyWrites.length,
-		};
-
-		const replay = await fixture.decide(assignment.id);
-
-		expect(replay.commandResult).toEqual(first.commandResult);
-		expect({
-			version: requiredValue(fixture.snapshots.get(before.id)).version,
-			finalizations: fixture.terminalFinalizations(),
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			legacy: fixture.legacyWrites.length,
-		}).toEqual(durable);
-		expect(fixture.repository.claimCommand).toHaveBeenCalledTimes(2);
-		expect(fixture.repository.completeCommand).toHaveBeenCalledOnce();
-	});
-
-	it("rejects an unknown canonical stable target before reserving a receipt", async () => {
-		const fixture = canonicalSubmissionHarness({ mode: "complete" });
-		await fixture.execute();
-
-		await expect(
-			fixture.decide("31000000-0000-4000-8000-000000000999"),
-		).rejects.toMatchObject({ conflictType: "approval_transition" });
-		expect(fixture.repository.claimCommand).not.toHaveBeenCalled();
-		expect(requiredValue([...fixture.snapshots.values()][0]).status).toBe(
-			"pending",
-		);
-	});
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("rolls back every %s decision write and dispatches no effect", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		await fixture.execute();
-		const before = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(before.stages[0]?.assignments[0]);
-		const durable = {
-			compatibility: structuredClone(fixture.compatibilityRows),
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			legacy: fixture.legacyWrites.length,
-		};
-		fixture.failProjection(new Error("injected:decision-projection"));
-
-		await expect(fixture.decide(target.id)).rejects.toThrow(
-			"injected:decision-projection",
-		);
-
-		expect(requiredValue(fixture.snapshots.get(before.id))).toEqual(before);
-		expect(fixture.compatibilityRows).toEqual(durable.compatibility);
-		expect(fixture.projections).toHaveLength(durable.projections);
-		expect(fixture.outbox).toHaveLength(durable.outbox);
-		expect(fixture.legacyWrites).toHaveLength(durable.legacy);
-		expect(fixture.terminalFinalizations()).toBe(0);
-		expect(fixture.repository.completeCommand).not.toHaveBeenCalled();
-		expect(markedAfterCommit()).toEqual([]);
-		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
-		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("uses actual assignment authorization for %s decisions", async (mode) => {
-		const fixture = canonicalSubmissionHarness({
-			mode,
-			reviewersByStage: [["31000000-0000-4000-8000-000000000803"]],
-		});
-		await fixture.execute();
-		const before = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(before.stages[0]?.assignments[0]);
-
-		await expect(fixture.decide(target.id)).rejects.toThrow(
-			/forbidden command actor/i,
-		);
-		expect(requiredValue(fixture.snapshots.get(before.id))).toEqual(before);
-		expect(
-			fixture.repository.applyMaterializedTransition,
-		).not.toHaveBeenCalled();
-		expect(fixture.repository.completeCommand).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("completes a parallel-reviewer %s stage with real sibling semantics", async (mode) => {
-		const fixture = canonicalSubmissionHarness({
-			mode,
-			reviewersByStage: [
-				[
-					"31000000-0000-4000-8000-000000000802",
-					"31000000-0000-4000-8000-000000000803",
-				],
-			],
-		});
-		await fixture.execute();
-		const before = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(before.stages[0]?.assignments[0]);
-
-		await fixture.decide(target.id);
-		const after = requiredValue(fixture.snapshots.get(before.id));
-
-		expect(after.status).toBe("approved");
-		expect(after.stages[0]?.assignments.map(({ status }) => status)).toEqual([
-			"approved",
-			"cancelled",
-		]);
-		expect(fixture.terminalFinalizations()).toBe(1);
 	});
 
 	it.each(["canonical", "complete"] as const)(
@@ -3255,70 +2725,13 @@ describe("time correction transaction boundaries", () => {
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		["receipt_claim", "receiptCount"],
-		["canonical_root", "rootCount"],
-		["canonical_event", "eventCount"],
-		["finalizer", "terminalFinalizations"],
-		["compatibility", "legacyWriteCount"],
-		["projection", "projectionCount"],
-		["outbox", "outboxCount"],
-	] as const)(
-		"restores the full canonical decision state after %s failure with changed evidence",
-		async (point, evidenceKey) => {
-			const fixture = canonicalSubmissionHarness({ mode: "canonical" });
-			await fixture.execute();
-			const pending = requiredValue([...fixture.snapshots.values()][0]);
-			const target = requiredValue(pending.stages[0]?.assignments[0]);
-			const before = fixture.durableSnapshot();
-			fixture.injectFailure(point);
-
-			await expect(fixture.decide(target.id)).rejects.toThrow(
-				`injected:${point}`,
-			);
-
-			const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
-			expect(evidence[evidenceKey]).toBeTruthy();
-			expect(evidence.state).not.toEqual(before);
-			expect(fixture.durableSnapshot()).toEqual(before);
-			expect(markedAfterCommit()).toEqual([]);
-			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
-			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-		},
-	);
-
-	it.each(["canonical", "complete"] as const)(
-		"commits the expected full %s submission and decision state control",
-		async (mode) => {
-			const fixture = canonicalSubmissionHarness({ mode });
-			const empty = fixture.durableSnapshot();
-			await fixture.transaction(() => fixture.execute());
-			const submitted = fixture.durableSnapshot();
-			expect(submitted).not.toEqual(empty);
-			expect(fixture.snapshots.size).toBe(1);
-			expect(fixture.canonicalEvents.length).toBeGreaterThan(0);
-			expect(fixture.projections.length).toBeGreaterThan(0);
-			expect(fixture.outbox.length).toBeGreaterThan(0);
-			const pending = requiredValue([...fixture.snapshots.values()][0]);
-			const target = requiredValue(pending.stages[0]?.assignments[0]);
-
-			await fixture.decide(target.id);
-
-			expect(fixture.durableSnapshot()).not.toEqual(submitted);
-			expect(requiredValue(fixture.snapshots.get(pending.id)).status).toBe(
-				"approved",
-			);
-			expect(fixture.terminalFinalizations()).toBe(1);
-		},
-	);
-
 	it.each(["legacy", "shadow", "ready"] as const)(
 		"replays the original pending %s submission after actual terminal rejection without writes",
 		async (mode) => {
 			const fixture = observedSubmissionHarness(mode);
 			const key = `${mode}-rejected-replay`;
 			const submitted = await fixture.transaction(() => fixture.execute(key));
-			await fixture.decide("reject", "Rejected by manager");
+			settleObservedRequest(fixture, "rejected");
 			const beforeReplay = fixture.durableSnapshot();
 
 			const replay = await fixture.transaction(() => fixture.execute(key));
@@ -3387,7 +2800,7 @@ describe("time correction transaction boundaries", () => {
 		);
 		const pending = requiredValue([...fixture.snapshots.values()][0]);
 		const target = requiredValue(pending.stages[0]?.assignments[0]);
-		await fixture.decide(target.id, "reject", "Rejected by manager");
+		fixture.setSnapshot(decidedSnapshot(pending, target.id, "rejected"));
 		const beforeReplay = fixture.durableSnapshot();
 
 		const replay = await fixture.transaction(() =>
@@ -3407,34 +2820,10 @@ describe("time correction transaction boundaries", () => {
 		const first = await fixture.transaction(() =>
 			fixture.execute("legacy-cycle-1", "41000000-0000-4000-8000-000000000101"),
 		);
-		await fixture.decide("reject", "Rejected by manager");
+		settleObservedRequest(fixture, "rejected");
 
 		const later = await fixture.transaction(() =>
 			fixture.execute("legacy-cycle-2", "41000000-0000-4000-8000-000000000102"),
-		);
-
-		expect(later.approvalRequestId).not.toBe(first.approvalRequestId);
-		expect(fixture.requests).toHaveLength(2);
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("starts a genuine later %s cycle with a new token after rejection", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		const first = await fixture.transaction(() =>
-			fixture.execute(
-				`${mode}-cycle-1`,
-				"41000000-0000-4000-8000-000000000101",
-			),
-		);
-		await fixture.decide("reject", "Rejected by manager");
-
-		const later = await fixture.transaction(() =>
-			fixture.execute(
-				`${mode}-cycle-2`,
-				"41000000-0000-4000-8000-000000000102",
-			),
 		);
 
 		expect(later.approvalRequestId).not.toBe(first.approvalRequestId);
@@ -3499,39 +2888,13 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.requests).toHaveLength(1);
 	});
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("starts a genuine later %s cycle with a different key after rejection", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		const first = await fixture.transaction(() =>
-			fixture.execute({
-				submissionKey: `${mode}-cycle-1`,
-				submissionId: "41000000-0000-4000-8000-000000000101",
-			}),
-		);
-		const pending = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(pending.stages[0]?.assignments[0]);
-		await fixture.decide(target.id, "reject", "Rejected by manager");
-
-		const later = await fixture.transaction(() =>
-			fixture.execute({
-				submissionKey: `${mode}-cycle-2`,
-				submissionId: "41000000-0000-4000-8000-000000000102",
-			}),
-		);
-
-		expect(later.approvalRequestId).not.toBe(first.approvalRequestId);
-		expect(fixture.snapshots.size).toBe(2);
-	});
-
 	it.each(["legacy", "shadow", "ready"] as const)(
 		"keeps original pending semantics when replaying a manager-approved %s submission",
 		async (mode) => {
 			const fixture = observedSubmissionHarness(mode);
 			const key = `${mode}-manager-approved-replay`;
 			const submitted = await fixture.transaction(() => fixture.execute(key));
-			await fixture.decide("approve");
+			settleObservedRequest(fixture, "approved");
 			const beforeReplay = fixture.durableSnapshot();
 
 			const replay = await fixture.transaction(() => fixture.execute(key));
@@ -3552,7 +2915,7 @@ describe("time correction transaction boundaries", () => {
 			);
 			const pending = requiredValue([...fixture.snapshots.values()][0]);
 			const target = requiredValue(pending.stages[0]?.assignments[0]);
-			await fixture.decide(target.id);
+			fixture.setSnapshot(decidedSnapshot(pending, target.id, "approved"));
 			const beforeReplay = fixture.durableSnapshot();
 
 			const replay = await fixture.transaction(() =>
@@ -4006,36 +3369,6 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.durableSnapshot()).toEqual(beforeReplay);
 	});
 
-	it.each([
-		["forbidden", AuthorizationError],
-		["version_conflict", ConflictError],
-		["idempotency_mismatch", ConflictError],
-		["malformed_command", ValidationError],
-	] as const)("translates canonical decision engine %s at the transaction boundary", async (code, Expected) => {
-		const fixture = canonicalSubmissionHarness({
-			mode: "complete",
-			transitionError: new ApprovalTransitionEngineError(code),
-		});
-		await fixture.execute();
-		const pending = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(pending.stages[0]?.assignments[0]);
-
-		await expect(fixture.decide(target.id)).rejects.toBeInstanceOf(Expected);
-	});
-
-	it("does not cast unknown canonical decision failures as application errors", async () => {
-		const internal = new Error("internal transition failure");
-		const fixture = canonicalSubmissionHarness({
-			mode: "complete",
-			transitionError: internal,
-		});
-		await fixture.execute();
-		const pending = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(pending.stages[0]?.assignments[0]);
-
-		await expect(fixture.decide(target.id)).rejects.toBe(internal);
-	});
-
 	it.each(["canonical", "complete"] as const)(
 		"returns the original submission target through advanced and terminal %s replay",
 		async (mode) => {
@@ -4244,89 +3577,6 @@ describe("time correction transaction boundaries", () => {
 		},
 	);
 
-	it.each(
-		(["shadow", "ready"] as const).flatMap((mode) =>
-			(
-				[
-					["legacy_mutation", "requestCount"],
-					["capture_after", "captureCount"],
-					["observed_root", "rootCount"],
-					["observed_event", "eventCount"],
-					["projection", "projectionCount"],
-					["outbox", "outboxCount"],
-					["finalizer", "terminalFinalizations"],
-				] as const
-			).map(([point, evidenceKey]) => ({ mode, point, evidenceKey })),
-		),
-	)("restores full $mode decision state after $point with nonempty failure evidence", async ({
-		mode,
-		point,
-		evidenceKey,
-	}) => {
-		const fixture = observedSubmissionHarness(mode);
-		await fixture.transaction(() => fixture.execute());
-		const before = fixture.durableSnapshot();
-		fixture.injectFailure(point);
-
-		await expect(fixture.decide("approve")).rejects.toThrow(
-			point === "capture_after"
-				? /legacy approval state capture failed/i
-				: `injected:${point}`,
-		);
-
-		const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
-		expect(evidence[evidenceKey]).toBeTruthy();
-		expect(evidence.state).not.toEqual(before);
-		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markedAfterCommit()).toEqual([]);
-		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
-		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-	});
-
-	it("restores request, chain, and stage stores after an actual intermediate chain-status failure", async () => {
-		const fixture = observedSubmissionHarness("legacy");
-		await fixture.transaction(() => fixture.execute());
-		fixture.configureSequentialChain();
-		const before = fixture.durableSnapshot();
-		fixture.injectFailure("chain_status");
-
-		await expect(fixture.decide("approve")).rejects.toThrow(
-			"injected:chain_status",
-		);
-
-		const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
-		expect(evidence.chainStageCount).toBe(2);
-		expect(evidence.chainStageStatus).toBe("approved");
-		expect(evidence.state).not.toEqual(before);
-		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markedAfterCommit()).toEqual([]);
-		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
-		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("commits expected full %s observed submission and decision state control", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		const empty = fixture.durableSnapshot();
-		await fixture.transaction(() => fixture.execute());
-		const submitted = fixture.durableSnapshot();
-		expect(submitted).not.toEqual(empty);
-		expect(fixture.requests).toHaveLength(1);
-		expect(fixture.workflows.size).toBe(1);
-		expect(fixture.observedEvents.length).toBeGreaterThan(0);
-		expect(fixture.projections.length).toBeGreaterThan(0);
-		expect(fixture.outbox.length).toBeGreaterThan(0);
-
-		await fixture.decide("approve");
-
-		expect(fixture.durableSnapshot()).not.toEqual(submitted);
-		expect(fixture.requests[0]?.status).toBe("approved");
-		expect([...fixture.workflows.values()][0]?.status).toBe("approved");
-		expect(fixture.terminalFinalizations()).toBe(1);
-	});
-
 	it.each([
 		"shadow",
 		"ready",
@@ -4367,195 +3617,6 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.terminalFinalizations()).toBe(1);
 	});
 
-	it.each(
-		(["legacy", "shadow", "ready"] as const).flatMap((mode) => [
-			{ mode, action: "approve" as const, reason: undefined },
-			{
-				mode,
-				action: "reject" as const,
-				reason: "Correction evidence is insufficient",
-			},
-		]),
-	)("executes an actual $mode $action decision through shared mutation and finalization", async ({
-		mode,
-		action,
-		reason,
-	}) => {
-		const fixture = observedSubmissionHarness(mode);
-		await fixture.execute();
-		expect(fixture.requests.at(-1)?.metadata).toMatchObject({
-			timeCorrection: {
-				action: "edit",
-				clockInCorrectionId: fixture.ids.correction,
-			},
-		});
-		const observationsBefore = fixture.order.filter(
-			(entry) => entry === "observe",
-		).length;
-
-		const decision = await fixture.decide(action, reason);
-		const request = requiredValue(fixture.requests.at(-1));
-
-			expect(request.status).toBe(
-				action === "approve" ? "approved" : "rejected",
-			);
-			expect(decision).toMatchObject({
-				kind: "time_correction",
-				postCommit: {
-					authority: "legacy",
-					terminal: {
-						kind: action === "approve" ? "approved" : "rejected",
-						requesterEmployeeId: fixture.ids.requester,
-					},
-				},
-			});
-			if (mode === "legacy") {
-				expect(fixture.workflows).toHaveLength(0);
-				expect(
-					fixture.order.filter((entry) => entry === "observe"),
-				).toHaveLength(0);
-			} else {
-				expect(
-					fixture.order.filter((entry) => entry === "observe"),
-				).toHaveLength(observationsBefore + 1);
-				expect([...fixture.workflows.values()][0]?.status).toBe(
-					action === "approve" ? "approved" : "rejected",
-				);
-				expect(fixture.order.filter((entry) => entry === "bind")).toHaveLength(
-					1,
-				);
-			}
-			expect(fixture.terminalFinalizations()).toBe(
-				action === "approve" ? 1 : 0,
-			);
-		},
-	);
-
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("rejects a missing transactional member before %s decision mutation", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		await fixture.execute();
-		fixture.setMembershipRows([]);
-		const before = structuredClone(fixture.requests);
-
-		await expect(fixture.decide("approve")).rejects.toMatchObject({
-			_tag: "NotFoundError",
-		});
-		expect(fixture.requests).toEqual(before);
-		expect(fixture.terminalFinalizations()).toBe(0);
-	});
-
-	it.each(["legacy", "shadow", "ready"] as const)(
-		"rejects a changed transactional actor before %s decision mutation",
-		async (mode) => {
-			const fixture = observedSubmissionHarness(mode);
-			await fixture.execute();
-			fixture.setDecisionActorRows([
-				{
-					id: "31000000-0000-4000-8000-000000000999",
-					organizationId: "org-1",
-					userId: "user-manager",
-					isActive: true,
-					user: { id: "user-manager" },
-				},
-			]);
-			const before = structuredClone(fixture.requests);
-
-			await expect(fixture.decide("approve")).rejects.toMatchObject({
-				_tag: "NotFoundError",
-			});
-			expect(fixture.requests).toEqual(before);
-			expect(fixture.terminalFinalizations()).toBe(0);
-		},
-	);
-
-	it.each(["legacy", "shadow", "ready"] as const)(
-		"rejects a stale selected request before %s decision mutation",
-		async (mode) => {
-			const fixture = observedSubmissionHarness(mode);
-			await fixture.execute();
-			const request = requiredValue(fixture.requests.at(-1));
-			request.status = "approved";
-			request.approvedAt = new Date("2026-07-20T11:00:00.000Z");
-
-			await expect(fixture.decide("approve")).rejects.toMatchObject({
-				conflictType: "approval_status",
-			});
-			expect(fixture.terminalFinalizations()).toBe(0);
-		},
-	);
-
-	it.each(["legacy", "shadow", "ready"] as const)(
-		"refuses a replaced approver of a transferred request before %s decision mutation (#439)",
-		async (mode) => {
-			const fixture = observedSubmissionHarness(mode);
-			await fixture.execute();
-			const before = structuredClone(fixture.requests);
-			legacyTransferMocks.assertDecisionAuthority.mockRejectedValueOnce(
-				new ApprovalAssignmentReassignedError(),
-			);
-
-			await expect(fixture.decide("approve")).rejects.toMatchObject({
-				conflictType: "approval_reassigned",
-			});
-			expect(legacyTransferMocks.assertDecisionAuthority).toHaveBeenLastCalledWith(
-				expect.anything(),
-				{
-					organizationId: "org-1",
-					entityType: "time_entry",
-					entityId: fixture.ids.period,
-					approvalRequestId: fixture.ids.request,
-					actorEmployeeId: fixture.ids.manager,
-				},
-			);
-			expect(fixture.requests).toEqual(before);
-			expect(fixture.terminalFinalizations()).toBe(0);
-		},
-	);
-
-	it("runs actual sequential legacy request-chain mutation and finalizes only the terminal stage", async () => {
-		const fixture = observedSubmissionHarness("legacy");
-		await fixture.execute();
-		fixture.configureSequentialChain();
-		markEmployeeWorkBalanceDirty.mockClear();
-		onTimeCorrectionApproved.mockClear();
-
-		const intermediate = await fixture.decide("approve");
-		const nextRequest = requiredValue(fixture.requests.at(-1));
-
-		expect(intermediate.domainResult).toBeUndefined();
-		expect(fixture.requests[0]?.status).toBe("approved");
-		expect(nextRequest).toMatchObject({
-			status: "pending",
-			approverId: fixture.ids.manager,
-			entityId: fixture.ids.period,
-		});
-		expect(fixture.chains[0]).toMatchObject({
-			status: "pending",
-			currentStageOrder: 2,
-		});
-		expect(fixture.terminalFinalizations()).toBe(0);
-		expect(markedAfterCommit()).toEqual([]);
-		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
-
-		const terminal = await fixture.decide(
-			"approve",
-			undefined,
-			String(nextRequest.id),
-		);
-
-		expect(terminal.kind).toBe("time_correction");
-		expect(fixture.chains[0]?.status).toBe("approved");
-		expect(fixture.chainRows.map((row) => row.status)).toEqual([
-			"approved",
-			"approved",
-		]);
-		expect(fixture.terminalFinalizations()).toBe(1);
-	});
-
 	it.each(["legacy", "shadow", "ready"] as const)(
 		"persists strict current correction metadata through the %s boundary",
 		async (mode) => {
@@ -4574,51 +3635,6 @@ describe("time correction transaction boundaries", () => {
 					workLocationType: "home",
 					workCategoryId: null,
 				},
-			});
-		},
-	);
-
-	it.each(["shadow", "ready"] as const)(
-		"preserves initial work metadata display evidence after %s approval",
-		async (mode) => {
-			const fixture = observedSubmissionHarness(mode);
-			const correction = {
-				action: "edit" as const,
-				workLocationType: "home" as const,
-				workCategoryId: "71000000-0000-4000-8000-000000000903",
-			};
-			await fixture.execute(undefined, undefined, correction);
-			const pending = [...fixture.workflows.values()][0];
-
-			expect(pending?.displaySnapshot).toMatchObject({
-				status: "pending",
-				workMetadata: {
-					original: {
-						workLocationType: "office",
-						workCategoryId: "71000000-0000-4000-8000-000000000902",
-					},
-					requested: {
-						workLocationType: "home",
-						workCategoryId: correction.workCategoryId,
-					},
-				},
-			});
-
-			await fixture.decide("approve");
-			const terminal = [...fixture.workflows.values()][0];
-			const terminalProjection = fixture.projections.at(-1) as {
-				status?: string;
-				displayPayload?: unknown;
-			};
-
-			expect(terminal?.status).toBe("approved");
-			expect(terminal?.displaySnapshot).toEqual({
-				...pending?.displaySnapshot,
-				status: "approved",
-			});
-			expect(terminalProjection).toMatchObject({
-				status: "approved",
-				displayPayload: terminal?.displaySnapshot,
 			});
 		},
 	);
@@ -10813,38 +9829,6 @@ describe("time correction approval policy resolution", () => {
 				afterCommit: expect.any(Function),
 			}),
 		);
-		vi.doUnmock("@/lib/approvals/server/shared");
-	});
-
-	it("rejects the legacy correction decision with the owner's failure, else its defect", async () => {
-		vi.resetModules();
-		const { AuthorizationError } = await import("@/lib/effect/errors");
-		const { CompletedWorkCollisionError } = await import(
-			"@/lib/time-tracking/close-active-work"
-		);
-		const refusal = new AuthorizationError({ message: "Not the approver" });
-		const defect = new CompletedWorkCollisionError();
-		const processApprovalWithCurrentEmployee = vi
-			.fn()
-			.mockReturnValueOnce(Effect.fail(refusal))
-			.mockReturnValueOnce(Effect.die(defect));
-		vi.doMock("@/lib/approvals/server/shared", () => ({
-			processApprovalWithCurrentEmployee,
-			processApproval: vi.fn(),
-		}));
-		const { createLegacyTimeCorrectionDecisionProcessor } = await import(
-			"@/lib/approvals/server/time-correction-approvals"
-		);
-		const processLegacy = createLegacyTimeCorrectionDecisionProcessor({
-			approvalRequestId: "approval-1",
-			action: "approve",
-			reason: undefined,
-		});
-		const decide = () =>
-			processLegacy({} as ApprovalDbService, {} as never, "existing", "period-1");
-
-		await expect(decide()).rejects.toBe(refusal);
-		await expect(decide()).rejects.toBe(defect);
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 

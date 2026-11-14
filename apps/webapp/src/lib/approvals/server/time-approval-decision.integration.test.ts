@@ -573,7 +573,8 @@ describe("time approval decision (PostgreSQL)", () => {
 				   and a.status = 'pending'`,
 				[ids.organization, workPeriodId],
 			);
-			return only(rows);
+			// Parallel reviewers: the stage's assignment of the approver.
+			return rows.length > 1 ? only(rows.filter((row) => row.approver_id === ids.approver)) : only(rows);
 		}
 		const { rows } = await admin.query<{
 			id: string;
@@ -635,6 +636,37 @@ describe("time approval decision (PostgreSQL)", () => {
 			[approvalId, ids.organization],
 		);
 		return only(rows).status;
+	}
+
+	/** The work period's approval workflow (observed under shadow mirroring, else canonical). */
+	async function workflowOf(workPeriodId: string) {
+		const { rows } = await admin.query<{ status: string; display_snapshot: unknown }>(
+			`select status::text as status, display_snapshot from approval_workflow
+			 where organization_id = $1 and source_id = $2`,
+			[ids.organization, workPeriodId],
+		);
+		return only(rows);
+	}
+
+	/** Raises inside the decision whenever `table` is written as `event`. */
+	async function failingWrites<T>(
+		table: string,
+		event: "insert" | "update",
+		run: () => Promise<T>,
+	): Promise<T> {
+		await admin.query(`create or replace function t1681_fail_write() returns trigger as $$
+			begin raise exception 't1681 injected write failure'; end;
+			$$ language plpgsql`);
+		await admin.query(
+			`create trigger t1681_fail_write before ${event} on ${table}
+			 for each row execute function t1681_fail_write()`,
+		);
+		try {
+			return await run();
+		} finally {
+			await admin.query(`drop trigger if exists t1681_fail_write on ${table}`);
+			await admin.query("drop function if exists t1681_fail_write()");
+		}
 	}
 
 	async function surchargeCount(workPeriodId: string) {
@@ -704,6 +736,8 @@ describe("time approval decision (PostgreSQL)", () => {
 				});
 				expect(await approvalStatus(approval.id)).toBe("approved");
 				if (kind !== "time_correction") expect(await periodStatus(workPeriodId)).toBe("approved");
+				// Shadow mirroring decides the observed workflow in the same transaction.
+				if (authority !== "legacy") expect((await workflowOf(workPeriodId)).status).toBe("approved");
 				// Legacy authority notifies from here; canonical authority through the outbox.
 				expect(decisionNotifications().map((entry) => entry.name)).toEqual(
 					legacy ? [DECISION_TRIGGERS[kind].approve] : [],
@@ -737,6 +771,7 @@ describe("time approval decision (PostgreSQL)", () => {
 			});
 			expect(await approvalStatus(approval.id)).toBe("rejected");
 			if (kind !== "time_correction") expect(await periodStatus(workPeriodId)).toBe("rejected");
+			if (authority !== "legacy") expect((await workflowOf(workPeriodId)).status).toBe("rejected");
 			expect(decisionNotifications().map((entry) => entry.name)).toEqual(
 				legacy ? [DECISION_TRIGGERS[kind].reject] : [],
 			);
@@ -850,6 +885,22 @@ describe("time approval decision (PostgreSQL)", () => {
 					replayed: true,
 				});
 				expect(decisionNotifications()).toEqual([]);
+				expect(harness.kicks).toEqual([]);
+			},
+		);
+
+		it.each(TIME_KINDS)(
+			"an exact repeat of a canonical %s decision replays its receipt and writes nothing more",
+			async (kind) => {
+				const { workPeriodId, approval } = await submitted(kind, "canonical");
+				await decide(actors.approver, approval.id, { as: "approver" });
+				const decided = await workflowOf(workPeriodId);
+				harness.kicks.length = 0;
+
+				const repeat = await decide(actors.approver, approval.id, { as: "approver" });
+
+				expect(repeat).toMatchObject({ status: "decided", kind, workPeriodId, outcome: "approved" });
+				expect(await workflowOf(workPeriodId)).toEqual(decided);
 				expect(harness.kicks).toEqual([]);
 			},
 		);
@@ -1097,9 +1148,11 @@ describe("time approval decision (PostgreSQL)", () => {
 			});
 		});
 
-		it("a changed fast-lane assessment refuses the decision and writes nothing", async () => {
+		it.each(["legacy", "canonical"] as const)(
+			"a changed fast-lane assessment refuses the decision under %s authority and writes nothing",
+			async (authority) => {
 			for (const kind of TIME_KINDS) {
-				const { approval } = await submitted(kind, "legacy");
+				const { approval } = await submitted(kind, authority);
 
 				const result = await decide(
 					actors.approver,
@@ -1121,7 +1174,8 @@ describe("time approval decision (PostgreSQL)", () => {
 				expect(harness.kicks, kind).toEqual([]);
 				expect(await approvalStatus(approval.id), kind).toBe("pending");
 			}
-		});
+		},
+		);
 
 		it("a request submitted before evidence capture is refused until it has evidence", async () => {
 			const { approval } = await submitted("manual_time_submission", "legacy", {
@@ -1170,6 +1224,340 @@ describe("time approval decision (PostgreSQL)", () => {
 			expect(await decide(actors.approver, approval.id, { as: "approver" })).toEqual({
 				status: "refused",
 				reason: "changed",
+			});
+		});
+
+		describe.each(AUTHORITIES)("under %s authority", (authority) => {
+			it.each(TIME_KINDS)(
+				"a %s whose work changed in place after submission is refused as changed",
+				async (kind) => {
+					const { workPeriodId, approval } = await submitted(kind, authority);
+					// Someone edits the work behind the approval's back: the correction's
+					// location, or the submitted work's end on both of its records.
+					if (kind === "time_correction") {
+						await admin.query(
+							`update work_period set work_location_type = 'home'
+							 where organization_id = $1 and id = $2`,
+							[ids.organization, workPeriodId],
+						);
+					} else {
+						await admin.query(
+							`update work_period set end_time = end_time - interval '30 minutes',
+							   duration_minutes = duration_minutes - 30
+							 where organization_id = $1 and id = $2`,
+							[ids.organization, workPeriodId],
+						);
+						await admin.query(
+							`update time_record set end_at = end_at - interval '30 minutes',
+							   duration_minutes = duration_minutes - 30
+							 where organization_id = $1
+							   and id = (select canonical_record_id from work_period where id = $2)`,
+							[ids.organization, workPeriodId],
+						);
+					}
+
+					expect(await decide(actors.approver, approval.id, { as: "approver" })).toEqual({
+						status: "refused",
+						reason: "changed",
+					});
+					expect(await approvalStatus(approval.id)).toBe("pending");
+					expect(decisionNotifications()).toEqual([]);
+					expect(harness.kicks).toEqual([]);
+				},
+			);
+		});
+
+		it("an approver whose employee was deactivated is not found and decides nothing", async () => {
+			for (const authority of ["legacy", "canonical"] as const) {
+				const { approval } = await submitted("time_correction", authority);
+				await admin.query("update employee set is_active = false where id = $1", [ids.approver]);
+
+				expect(await decide(actors.approver, approval.id, { as: "approver" }), authority).toEqual({
+					status: "refused",
+					reason: "not_found",
+				});
+				expect(await approvalStatus(approval.id), authority).toBe("pending");
+			}
+		});
+
+		it("an approver who is no longer a member of the organization decides nothing", async () => {
+			for (const authority of ["legacy", "shadow"] as const) {
+				const { approval } = await submitted("time_correction", authority);
+				await admin.query("delete from member where organization_id = $1 and user_id = $2", [
+					ids.organization,
+					ids.approverUser,
+				]);
+
+				expect(await decide(actors.approver, approval.id, { as: "approver" }), authority).toEqual({
+					status: "refused",
+					reason: "not_found",
+				});
+				expect(await approvalStatus(approval.id), authority).toBe("pending");
+			}
+		});
+
+		it("a legacy request whose stored kind contradicts its evidence decides nothing", async () => {
+			const { workPeriodId, approval } = await submitted("manual_time_submission", "legacy");
+			await admin.query(
+				`update approval_request
+				 set metadata = jsonb_set(metadata, '{timeRequest,kind}', '"policy_clock_out"')
+				 where id = $1`,
+				[approval.id],
+			);
+
+			expect(await decide(actors.approver, approval.id, { as: "approver" })).toMatchObject({
+				status: "refused",
+			});
+			expect(await approvalStatus(approval.id)).toBe("pending");
+			expect(await periodStatus(workPeriodId)).toBe("pending");
+		});
+	});
+
+	describe("a failure inside the decision", () => {
+		it.each(
+			AUTHORITIES.flatMap((authority) => TIME_KINDS.map((kind) => ({ authority, kind }))),
+		)(
+			"rolls back every write of a $authority $kind decision and runs nothing after commit",
+			async ({ authority, kind }) => {
+				const { workPeriodId, approval } = await submitted(kind, authority);
+				const before = {
+					workflow: authority === "legacy" ? null : await workflowOf(workPeriodId),
+					period: await periodStatus(workPeriodId),
+					surcharges: await surchargeCount(workPeriodId),
+				};
+
+				// A failure is thrown, never a refusal: the injected one or its failed query.
+				await expect(
+					failingWrites("work_period", "update", () =>
+						decide(actors.approver, approval.id, { as: "approver" }),
+					),
+				).rejects.toThrow();
+
+				expect(await approvalStatus(approval.id)).toBe("pending");
+				expect(await periodStatus(workPeriodId)).toBe(before.period);
+				if (before.workflow) expect(await workflowOf(workPeriodId)).toEqual(before.workflow);
+				expect(decisionNotifications()).toEqual([]);
+				expect(harness.kicks).toEqual([]);
+				expect(await surchargeCount(workPeriodId)).toBe(before.surcharges);
+			},
+		);
+
+		it.each(TIME_KINDS)(
+			"rolls back a legacy %s decision whose evidence cannot be recorded",
+			async (kind) => {
+				const { workPeriodId, approval } = await submitted(kind, "legacy");
+				const period = await periodStatus(workPeriodId);
+
+				await expect(
+					failingWrites("approval_decision_evidence", "insert", () =>
+						decide(actors.approver, approval.id, { as: "approver" }),
+					),
+				).rejects.toThrow();
+
+				expect(await approvalStatus(approval.id)).toBe("pending");
+				expect(await periodStatus(workPeriodId)).toBe(period);
+				expect(decisionNotifications()).toEqual([]);
+			},
+		);
+	});
+
+	describe("decision evidence", () => {
+		it.each(TIME_KINDS)(
+			"a legacy %s decision records its evidence with the finalized outcome",
+			async (kind) => {
+				const { approval } = await submitted(kind, "legacy");
+
+				await decide(
+					actors.approver,
+					approval.id,
+					{ as: "approver" },
+					{ decision: { kind: "reject", reason: "Not this week" } },
+				);
+
+				const { rows } = await admin.query(
+					`select action, request_outcome::text as request_outcome, actor_employee_id,
+					   reviewed_binding_id
+					 from approval_decision_evidence
+					 where organization_id = $1 and authority = 'legacy' and legacy_approval_request_id = $2`,
+					[ids.organization, approval.id],
+				);
+				expect(rows).toEqual([
+					{
+						action: "reject",
+						request_outcome: "rejected",
+						actor_employee_id: ids.approver,
+						reviewed_binding_id: null,
+					},
+				]);
+			},
+		);
+	});
+
+	describe("two stages", () => {
+		it.each(
+			AUTHORITIES.flatMap((authority) => TIME_KINDS.map((kind) => ({ authority, kind }))),
+		)(
+			"a $authority $kind advances on its first stage and is decided on its second",
+			async ({ authority, kind }) => {
+				const { workPeriodId, approval } = await submitted(kind, authority, {
+					twoStageChain: true,
+				});
+
+				expect(await decide(actors.approver, approval.id, { as: "approver" })).toMatchObject({
+					status: "decided",
+					outcome: "advanced",
+				});
+				if (kind !== "time_correction") expect(await periodStatus(workPeriodId)).toBe("pending");
+				if (authority === "canonical") {
+					// Parallel reviewers of the first stage: one decision settles the stage.
+					const { rows: firstStage } = await admin.query<{ status: string }>(
+						`select a.status::text as status from approval_stage_assignment a
+						 where a.organization_id = $1 and a.stage_id =
+						   (select stage_id from approval_stage_assignment where id = $2)
+						   and a.id <> $2`,
+						[ids.organization, approval.id],
+					);
+					expect(firstStage.every((row) => row.status === "cancelled")).toBe(true);
+				}
+				const next = await pendingApproval(workPeriodId, authority);
+				expect(next.id).not.toBe(approval.id);
+				expect(next.approver_id).toBe(ids.admin);
+
+				expect(await decide(actors.admin, next.id, { as: "approver" })).toMatchObject({
+					status: "decided",
+					kind,
+					outcome: "approved",
+				});
+				expect(await approvalStatus(next.id)).toBe("approved");
+				if (kind !== "time_correction") expect(await periodStatus(workPeriodId)).toBe("approved");
+				if (authority !== "legacy") expect((await workflowOf(workPeriodId)).status).toBe("approved");
+			},
+		);
+	});
+
+	describe("canonical compatibility requests", () => {
+		/** Under canonical authority the stage's legacy request mirrors the assignment. */
+		async function compatibilityRequest(workPeriodId: string) {
+			const { rows } = await admin.query<{ id: string; metadata: Record<string, unknown> }>(
+				`select id, metadata from approval_request
+				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2
+				   and status = 'pending'`,
+				[ids.organization, workPeriodId],
+			);
+			return only(rows);
+		}
+
+		it.each(TIME_KINDS)(
+			"a %s is decided through its compatibility request as through its assignment",
+			async (kind) => {
+				const { workPeriodId, approval } = await submitted(kind, "canonical");
+				const request = await compatibilityRequest(workPeriodId);
+
+				expect(await decide(actors.approver, request.id, { as: "approver" })).toMatchObject({
+					status: "decided",
+					kind,
+					workPeriodId,
+					outcome: "approved",
+				});
+				expect(await approvalStatus(approval.id)).toBe("approved");
+				expect((await workflowOf(workPeriodId)).status).toBe("approved");
+			},
+		);
+
+		it("a compatibility request without its assignment id decides the approver's exact assignment", async () => {
+			const { workPeriodId, approval } = await submitted("time_correction", "canonical");
+			const request = await compatibilityRequest(workPeriodId);
+			await admin.query("update approval_request set metadata = metadata #- '{stage,assignmentId}' where id = $1", [
+				request.id,
+			]);
+
+			expect(await decide(actors.approver, request.id, { as: "approver" })).toMatchObject({
+				status: "decided",
+				outcome: "approved",
+			});
+			expect(await approvalStatus(approval.id)).toBe("approved");
+		});
+
+		it.each([
+			["a foreign assignment", `jsonb_set(metadata, '{stage,assignmentId}', to_jsonb($2::text))`],
+			["a foreign workflow", `jsonb_set(metadata, '{workflow,id}', to_jsonb($2::text))`],
+			["a foreign stage", `jsonb_set(metadata, '{stage,id}', to_jsonb($2::text))`],
+			["another stage sequence", `jsonb_set(metadata, '{stage,sequence}', '99') || jsonb_build_object('t1681', $2::text)`],
+		] as const)(
+			"a compatibility request naming %s decides nothing",
+			async (_label, metadata) => {
+				const { workPeriodId, approval } = await submitted("time_correction", "canonical");
+				const request = await compatibilityRequest(workPeriodId);
+				await admin.query(`update approval_request set metadata = ${metadata} where id = $1`, [
+					request.id,
+					randomUUID(),
+				]);
+
+				expect(await decide(actors.approver, request.id, { as: "approver" })).toMatchObject({
+					status: "refused",
+				});
+				expect(await approvalStatus(approval.id)).toBe("pending");
+				expect((await workflowOf(workPeriodId)).status).toBe("pending");
+			},
+		);
+
+		it("a compatibility request whose approver matches no active assignment decides nothing", async () => {
+			const { workPeriodId, approval } = await submitted("time_correction", "canonical");
+			const request = await compatibilityRequest(workPeriodId);
+			await admin.query(
+				`update approval_request set approver_id = $2, metadata = metadata #- '{stage,assignmentId}'
+				 where id = $1`,
+				[request.id, ids.third],
+			);
+
+			expect(await decide(actors.approver, request.id, { as: "approver" })).toMatchObject({
+				status: "refused",
+			});
+			expect(await decide(actors.third, request.id, { as: "approver" })).toMatchObject({
+				status: "refused",
+			});
+			expect(await approvalStatus(approval.id)).toBe("pending");
+		});
+	});
+
+	describe("after a decision", () => {
+		it.each(AUTHORITIES)(
+			"a rejected time correction under %s authority is followed by a new approval for the next correction",
+			async (authority) => {
+				const { workPeriodId, approval } = await submitted("time_correction", authority);
+				await decide(
+					actors.approver,
+					approval.id,
+					{ as: "approver" },
+					{ decision: { kind: "reject", reason: "Not this week" } },
+				);
+
+				await requestEdit(workPeriodId);
+
+				const next = await pendingApproval(workPeriodId, authority);
+				expect(next.id).not.toBe(approval.id);
+				expect(await approvalStatus(approval.id)).toBe("rejected");
+				expect(await decide(actors.approver, next.id, { as: "approver" })).toMatchObject({
+					status: "decided",
+					outcome: "approved",
+				});
+			},
+		);
+	});
+
+	describe("observed display evidence", () => {
+		it("a shadow-mirrored time correction keeps its submitted labels and work metadata, marked approved", async () => {
+			const { workPeriodId, approval } = await submitted("time_correction", "shadow");
+			const pending = (await workflowOf(workPeriodId)).display_snapshot as Record<string, unknown>;
+
+			await decide(actors.approver, approval.id, { as: "approver" });
+
+			const decided = await workflowOf(workPeriodId);
+			expect(decided.status).toBe("approved");
+			expect(decided.display_snapshot).toMatchObject({
+				labels: pending.labels,
+				workMetadata: pending.workMetadata,
+				status: "approved",
 			});
 		});
 	});

@@ -18,7 +18,6 @@ import "server-only";
  * A refusal is a value. Infrastructure failures and broken invariants throw.
  */
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { db as applicationDatabase } from "@/db";
 import {
 	approvalRequest,
@@ -35,17 +34,15 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { createLogger } from "@/lib/logger";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import { readReviewBindingAuthority } from "../authority/binding";
+import { TimeCorrectionApprovalAdapterError } from "../domain-adapters/time-correction.adapter";
+import { TimeCorrectionLegacyStateCaptureError } from "../domain-adapters/time-correction-legacy-state";
+import { OrdinaryWorkPeriodApprovalAdapterError } from "../domain-adapters/work-period.adapter";
+import { OrdinaryWorkPeriodLegacyStateCaptureError } from "../domain-adapters/work-period-legacy-state";
 import type { DecisionRight } from "../decision-right";
-import { kickApprovalDelivery } from "../delivery/kick";
-import { loadCover } from "../deputy/covering-store";
-import {
-	ApprovalAssignmentReassignedError,
-	eligibleManagerFallbackAllowed,
-} from "../escalation/decision-authority";
+import { ApprovalAssignmentReassignedError } from "../escalation/decision-authority";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import { ApprovalInvocationNotAdmittedError } from "../evidence/invocation";
 import {
@@ -54,40 +51,21 @@ import {
 	loadLegacyReviewBinding,
 	loadReviewBinding,
 } from "../evidence/store";
-import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { isOwnRequestDecisionRefusal } from "../policies/self-decision";
+import { classifyCanonicalTimeCard, classifyLegacyTimeCard } from "../presentation/time-card";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
-import type { ApprovalWorkflowDatabase } from "../workflow/repository";
-import {
-	createProductionApprovalWorkflowRuntime,
-	isForbiddenCommandActorFailure,
-} from "../workflow/runtime";
+import { isForbiddenCommandActorFailure } from "../workflow/runtime";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
-import { holdsApprovalManagement } from "./approval-management";
-import {
-	type BoundTimeInvocation,
-	type BoundTimeInvocationOutcome,
-	BoundTimeInvocationReplay,
-} from "./bound-time-invocation";
+import { type BoundTimeInvocation, BoundTimeInvocationReplay } from "./bound-time-invocation";
 import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
 import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
+import { decideTimeCorrectionApproval } from "./time-correction-approvals";
+import type { ApprovalDatabase, CurrentApprover } from "./types";
 import {
-	createLegacyTimeCorrectionDecisionProcessor,
-	deleteCancelledTimeCorrectionsInTransaction,
-	dispatchTimeCorrectionDecisionPostCommit,
-	executeTimeCorrectionDecisionInTransaction,
-	finalizeTimeCorrectionTerminalInTransaction,
-} from "./time-correction-approvals";
-import type { ApprovalDatabase, ApprovalDbService, CurrentApprover } from "./types";
-import {
-	executeOrdinaryWorkPeriodDecisionInTransaction,
-	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+	decideOrdinaryTimeApproval,
 	isOrdinaryWorkPeriodDecisionRefusal,
-	notifyWorkPeriodApprovalAfterCommit,
-	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+	OrdinaryWorkPeriodFinalizationConflict,
 } from "./work-period-approvals";
-
-const logger = createLogger("TimeApprovalDecision");
 
 /** A restart is a race with a reclassification; it settles at once. */
 const MAX_ATTEMPTS = 3;
@@ -291,198 +269,6 @@ async function loadActor(
 }
 
 /**
- * The one approval workflow runtime of a decision. Its management callback is
- * one switch on the claimed right; a covering deputy is granted only under
- * that right and only for the named approver.
- */
-function decisionRuntime(
-	right: DecisionRight,
-	actor: CurrentApprover,
-	clock: Clock,
-): (
-	database: ApprovalWorkflowDatabase,
-) => ReturnType<typeof createProductionApprovalWorkflowRuntime> {
-	return (database) =>
-		createProductionApprovalWorkflowRuntime({
-			db: database,
-			adapters: {
-				absence: {
-					clock,
-					finalizeAbsenceTerminal: async () => {
-						throw new Error("Absence finalization is outside this boundary");
-					},
-					deleteCancelledAbsence: async () => {
-						throw new Error("Absence cancellation is outside this boundary");
-					},
-				},
-				timeCorrection: {
-					clock,
-					finalizeTimeCorrectionTerminal: finalizeTimeCorrectionTerminalInTransaction,
-					deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
-				},
-				ordinaryWorkPeriod: {
-					finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
-				},
-			},
-			canManageApproval: async (authorization) => {
-				if (
-					authorization.organizationId !== actor.organizationId ||
-					authorization.actorEmployeeId !== actor.id
-				) {
-					return false;
-				}
-				switch (right.as) {
-					case "approval_manager":
-						return holdsApprovalManagement(authorization.dbService.db as never, {
-							organizationId: actor.organizationId,
-							userId: actor.userId,
-						});
-					case "eligible_manager": {
-						const command = authorization.command;
-						if (command.type !== "approve" && command.type !== "reject") return false;
-						const stage = authorization.workflow.stages.find(
-							(candidate) =>
-								candidate.id === command.stageId &&
-								candidate.sequence === authorization.workflow.currentStageOrder &&
-								candidate.status === "pending",
-						);
-						if (!stage?.legacyApprovalRequestId) return false;
-						const eligible = await isEligibleManagerForApprovalRequest({
-							db: authorization.dbService.db as never,
-							approvalRequestId: stage.legacyApprovalRequestId,
-							managerEmployeeId: actor.id,
-							organizationId: authorization.organizationId,
-						});
-						// Eligibility never bypasses an escalation replacement (#255 §4, #326).
-						if (eligible && !eligibleManagerFallbackAllowed(stage, command.assignmentId)) {
-							throw new ApprovalAssignmentReassignedError();
-						}
-						return eligible;
-					}
-					case "approver":
-					case "covering_deputy":
-						return false;
-				}
-			},
-			deputyAuthority: {
-				coverFor: async (cover) => {
-					if (right.as !== "covering_deputy") return null;
-					// The deputy right follows the named approver; a transfer away ends it.
-					if (cover.approverEmployeeId !== right.forEmployeeId) {
-						throw new ApprovalAssignmentReassignedError();
-					}
-					return loadCover(cover.dbService.db as never, {
-						organizationId: cover.organizationId,
-						approverId: cover.approverEmployeeId,
-						deputyId: cover.deputyEmployeeId,
-						at: clock.nowInstant(),
-					});
-				},
-			},
-			clock,
-		});
-}
-
-function decisionDbService(database: ApprovalDatabase): ApprovalDbService {
-	return {
-		db: database,
-		query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
-	};
-}
-
-async function afterCommit(
-	name: string,
-	context: Record<string, unknown>,
-	work: () => Promise<void>,
-) {
-	try {
-		await work();
-	} catch (error) {
-		logger.error({ error, ...context }, name);
-	}
-}
-
-async function decideTimeCorrection(
-	input: TimeApprovalDecisionInput,
-	actor: CurrentApprover,
-	database: ApprovalDatabase,
-	clock: Clock,
-	workPeriodId: string,
-): Promise<TimeApprovalDecisionResult> {
-	const action = input.decision.kind;
-	const reason = input.decision.kind === "reject" ? input.decision.reason : undefined;
-	const execution = await executeTimeCorrectionDecisionInTransaction({
-		createRuntime: decisionRuntime(input.right, actor, clock),
-		database: database as never,
-		organizationId: input.organizationId,
-		actorEmployeeId: actor.id,
-		actorUserId: actor.userId,
-		approvalRequestId: input.approvalId,
-		action,
-		reason,
-		shortcutGuard: input.fastLaneGuard,
-		bound: input.card,
-		nowInstant: () => clock.nowInstant(),
-		decisionRight: input.right,
-		processLegacy: createLegacyTimeCorrectionDecisionProcessor({
-			approvalRequestId: input.approvalId,
-			action,
-			reason,
-			options: { decisionRight: input.right },
-		}),
-	});
-	const context = { organizationId: input.organizationId, approvalId: input.approvalId, action };
-	if (execution.postCommit?.authority === "legacy" && execution.postCommit.terminal !== null) {
-		const effects = execution.postCommit;
-		await afterCommit("Time correction decision after-commit work failed", context, () =>
-			dispatchTimeCorrectionDecisionPostCommit({
-				dbService: decisionDbService(database),
-				actor,
-				approvalRequestId: input.approvalId,
-				effects,
-				reason,
-			}),
-		);
-	}
-	if ("deliveryIntent" in execution && execution.deliveryIntent) {
-		// The legacy cycle's intent committed with the decision (#432); this
-		// only runs the delivery owner sooner.
-		await afterCommit("Time approval delivery kick failed", context, async () =>
-			kickApprovalDelivery({ organizationId: input.organizationId }),
-		);
-	}
-	const outcome =
-		execution.postCommit?.authority === "legacy"
-			? (execution.postCommit.terminal?.kind ?? "advanced")
-			: execution.commandResult?.snapshot.status === "approved"
-				? "approved"
-				: execution.commandResult?.snapshot.status === "rejected"
-					? "rejected"
-					: "advanced";
-	return {
-		status: "decided",
-		kind: "time_correction",
-		workPeriodId,
-		outcome,
-		replayed: "replayed" in execution && execution.replayed === true,
-		...receiptOf(input, "invocation" in execution ? execution.invocation : undefined),
-	};
-}
-
-/** A card press's receipt; a card decision without one broke an invariant. */
-function receiptOf(
-	input: TimeApprovalDecisionInput,
-	invocation: BoundTimeInvocationOutcome | undefined,
-): { receipt?: TimeApprovalDecisionReceipt; replayed?: true } {
-	if (!input.card) return {};
-	if (!invocation) throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
-	return {
-		receipt: invocation.evidence,
-		...(invocation.replayed ? { replayed: true as const } : {}),
-	};
-}
-
-/**
  * How far an already committed decision got, for a replayed card press: the
  * approval's own status, or `advanced` while its time approval is still pending.
  */
@@ -532,94 +318,6 @@ async function committedOutcome(
 	return workflow?.status === "approved" || workflow?.status === "rejected"
 		? workflow.status
 		: "advanced";
-}
-
-async function decideOrdinary(
-	input: TimeApprovalDecisionInput,
-	actor: CurrentApprover,
-	database: ApprovalDatabase,
-	clock: Clock,
-	kind: "manual_time_submission" | "policy_clock_out",
-	workPeriodId: string,
-): Promise<TimeApprovalDecisionResult> {
-	const dbService = decisionDbService(database);
-	const execution = await executeOrdinaryWorkPeriodDecisionInTransaction({
-		historicalOnly: input.replayOnly,
-		dbService,
-		createRuntime: decisionRuntime(input.right, actor, clock),
-		bound: input.card,
-		organizationId: input.organizationId,
-		approvalRequestId: input.approvalId,
-		workPeriodId,
-		actor,
-		decisionRight: input.right,
-		shortcutGuard: input.fastLaneGuard,
-		decision:
-			input.decision.kind === "approve"
-				? { kind: "approve", reason: null }
-				: { kind: "reject", reason: input.decision.reason },
-	});
-	const context = {
-		organizationId: input.organizationId,
-		approvalId: input.approvalId,
-		workPeriodId,
-	};
-	const postCommit = execution.postCommit;
-	const maintenance = postCommit?.maintenance;
-	const notify = postCommit?.disposition === "dispatch" && postCommit.event !== "pending";
-	await Promise.all([
-		maintenance
-			? afterCommit("Ordinary work-period maintenance after commit failed", context, () =>
-					reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(maintenance),
-				)
-			: undefined,
-		notify
-			? afterCommit("Ordinary work-period decision after-commit work failed", context, () =>
-					Effect.runPromise(
-						notifyWorkPeriodApprovalAfterCommit(
-							execution.result,
-							actor,
-							dbService,
-							input.approvalId,
-						),
-					),
-				)
-			: undefined,
-	]);
-	if (execution.deliveryIntent) {
-		await afterCommit("Time approval delivery kick failed", context, async () =>
-			kickApprovalDelivery({ organizationId: input.organizationId }),
-		);
-	}
-	if (!postCommit) {
-		// A replay: nothing ran after commit; the period says how far it got.
-		const period = await database.query.workPeriod.findFirst({
-			where: and(
-				eq(workPeriod.id, workPeriodId),
-				eq(workPeriod.organizationId, input.organizationId),
-			),
-			columns: { approvalStatus: true },
-		});
-		return {
-			status: "decided",
-			kind,
-			workPeriodId,
-			outcome:
-				period?.approvalStatus === "approved" || period?.approvalStatus === "rejected"
-					? period.approvalStatus
-					: "advanced",
-			replayed: true,
-			...receiptOf(input, execution.invocation),
-		};
-	}
-	return {
-		status: "decided",
-		kind,
-		workPeriodId,
-		outcome: postCommit.event === "pending" ? "advanced" : postCommit.event,
-		replayed: false,
-		...receiptOf(input, execution.invocation),
-	};
 }
 
 const approvalNotFound = () =>
@@ -697,6 +395,61 @@ function refusalOf(error: unknown): TimeApprovalDecisionRefusalReason | null {
 }
 
 /**
+ * The owners' failures when the live work no longer matches the approval's
+ * source. The same failures also stand for broken invariants, so they are a
+ * refusal only when the submitted evidence confirms the work changed.
+ */
+function isSourceMismatch(error: unknown): boolean {
+	return (
+		isOrdinaryWorkPeriodDecisionRefusal(error) ||
+		error instanceof OrdinaryWorkPeriodFinalizationConflict ||
+		error instanceof OrdinaryWorkPeriodApprovalAdapterError ||
+		error instanceof OrdinaryWorkPeriodLegacyStateCaptureError ||
+		error instanceof TimeCorrectionApprovalAdapterError ||
+		error instanceof TimeCorrectionLegacyStateCaptureError ||
+		(error instanceof ConflictError &&
+			(error.conflictType === "approval_status" ||
+				error.conflictType === "time_correction_finalization_conflict"))
+	);
+}
+
+/**
+ * Whether the pending approval's work changed since it was submitted, by its
+ * submitted revision: the comparison review and cards show. Without captured
+ * evidence nothing is known to have changed.
+ */
+async function workChangedSinceSubmission(
+	database: ApprovalDatabase,
+	input: { organizationId: string; approvalId: string },
+	target: { kind: TimeApprovalWorkflowType; workPeriodId: string },
+): Promise<boolean> {
+	const legacy = await classifyLegacyTimeCard(database, {
+		organizationId: input.organizationId,
+		approvalRequestId: input.approvalId,
+	});
+	if (legacy) return legacy.status === "material_change";
+	const workflow = await database.query.approvalWorkflow.findFirst({
+		where: and(
+			eq(approvalWorkflow.organizationId, input.organizationId),
+			eq(approvalWorkflow.sourceType, "time_entry"),
+			eq(approvalWorkflow.sourceId, target.workPeriodId),
+			eq(approvalWorkflow.workflowType, target.kind),
+			eq(approvalWorkflow.status, "pending"),
+		),
+		columns: { id: true },
+	});
+	if (!workflow) return false;
+	return (
+		(await classifyCanonicalTimeCard(database, {
+			organizationId: input.organizationId,
+			workflowId: workflow.id,
+			workflowType: target.kind,
+			sourceId: target.workPeriodId,
+		})) === "material_change"
+	);
+}
+
+/**
  * The decision with the original error of a refusal. Only the inbox adapter and
  * the time entry handler read the cause, to throw what their routes expect.
  */
@@ -769,11 +522,17 @@ export async function decideTimeApprovalWithCause(
 					);
 				}
 				return {
-					result: await decideTimeCorrection(input, actor, database, clock, target.workPeriodId),
+					result: await decideTimeCorrectionApproval(
+						input,
+						actor,
+						database,
+						clock,
+						target.workPeriodId,
+					),
 				};
 			}
 			return {
-				result: await decideOrdinary(
+				result: await decideOrdinaryTimeApproval(
 					input,
 					actor,
 					database,
@@ -810,8 +569,26 @@ export async function decideTimeApprovalWithCause(
 				return refused("invocation_conflict", error);
 			}
 			const reason = refusalOf(error);
-			if (reason) return refused(reason, error);
+			const statusConflict =
+				error instanceof ConflictError && error.conflictType === "approval_status";
+			if (reason && !statusConflict) return refused(reason, error);
 			const now = await routeTimeApproval(database, input);
+			// Work changed in place since submission: the source no longer is the reviewed one.
+			if (
+				now.found &&
+				now.pending &&
+				isSourceMismatch(error) &&
+				(await workChangedSinceSubmission(database, input, {
+					kind: target.kind,
+					workPeriodId: target.workPeriodId,
+				}))
+			) {
+				return refused("changed", error);
+			}
+			// A status conflict on an approval that still is pending is no refusal:
+			// the owner's legacy mutation failed for another reason.
+			if (statusConflict && now.found && now.pending) throw error;
+			if (reason) return refused(reason, error);
 			if (isOrdinaryWorkPeriodDecisionRefusal(error)) {
 				// The ordinary owner's generic refusal: the current state names it.
 				return refused(
