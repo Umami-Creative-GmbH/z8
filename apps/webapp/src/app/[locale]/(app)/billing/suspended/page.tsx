@@ -1,44 +1,29 @@
-import { IconAlertTriangle } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAbility } from "@/lib/auth-helpers";
-import { Link } from "@/navigation";
-import { getTranslate } from "@/tolgee/server";
+import { Suspense } from "react";
+import { Card, CardHeader } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SuspendedBillingContent } from "./suspended-billing-content";
 
-export default async function SuspendedBillingPage() {
-	const [t, ability] = await Promise.all([getTranslate(), getAbility()]);
-	const canManageBilling = ability?.can("manage", "OrgBilling") ?? false;
-
+export default function SuspendedBillingPage() {
 	return (
-		<div className="flex flex-1 items-center justify-center p-6">
-			<Card className="w-full max-w-lg border-destructive/20">
-				<CardHeader className="text-center">
-					<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10">
-						<IconAlertTriangle aria-hidden="true" className="size-6 text-destructive" />
-					</div>
-					<CardTitle>{t("billing.suspended.title", "Organization suspended")}</CardTitle>
-					<CardDescription>
-						{canManageBilling
-							? t(
-									"billing.suspended.adminDescription",
-									"Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",
-								)
-							: t(
-									"billing.suspended.memberDescription",
-									"This organization is suspended. Contact an organization admin to update billing.",
-								)}
-					</CardDescription>
-				</CardHeader>
-				{canManageBilling ? (
-					<CardContent>
-						<Button asChild className="w-full">
-							<Link href="/settings/billing">
-								{t("billing.suspended.goToBilling", "Go to billing")}
-							</Link>
-						</Button>
-					</CardContent>
-				) : null}
-			</Card>
-		</div>
+		<Suspense
+			fallback={
+				<LoadingRegion
+					className="flex flex-1 items-center justify-center px-4 py-6 sm:p-6"
+					label={{ labelKey: "common.loading", labelDefault: "Loading..." }}
+				>
+					<Card className="my-auto w-full max-w-xl shadow-none">
+						<CardHeader className="gap-4">
+							<Skeleton className="size-10 rounded-lg" />
+							<Skeleton className="h-5 w-1/2" />
+							<Skeleton className="h-8 w-3/4" />
+							<Skeleton className="h-16 w-full" />
+						</CardHeader>
+					</Card>
+				</LoadingRegion>
+			}
+		>
+			<SuspendedBillingContent />
+		</Suspense>
 	);
 }

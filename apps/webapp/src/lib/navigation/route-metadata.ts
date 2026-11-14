@@ -207,7 +207,12 @@ export function normalizeAppPath(pathname: string): string {
  */
 export function appPageOwnsHeading(pathname: string): boolean {
 	const path = normalizeAppPath(pathname);
-	return path === "/" || path === "/time-tracking" || path === "/reports";
+	return (
+		path === "/" ||
+		path === "/time-tracking" ||
+		path === "/reports" ||
+		path === "/billing/suspended"
+	);
 }
 
 function routeMatches(pathname: string, href: string): boolean {
