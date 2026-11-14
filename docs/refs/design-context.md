@@ -22,6 +22,8 @@ The right reference feel is closer to Stripe's crisp, technical polish than to e
 
 Preserve support for both light and dark themes. Keep the overall visual language practical, legible, and operationally trustworthy rather than ornamental.
 
+For dashboard or time-tracking redesign work, read the [approved dashboard and time-tracking direction](../design/2026-11-14-dashboard-time-tracking-redesign.md). It records the approved module organization, review prototype, visual references and production conversion requirements.
+
 ## Design Principles
 
 1. Prioritize operational clarity: layouts, copy, and interaction patterns should make time tracking, approvals, and reporting feel immediately understandable.
