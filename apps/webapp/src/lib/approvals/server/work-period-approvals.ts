@@ -1399,8 +1399,16 @@ function conflict(message: string) {
 	return new ConflictError({ message, conflictType: "approval_status" });
 }
 
+/** The work period no longer matches the request being finalized. */
+export class OrdinaryWorkPeriodFinalizationConflict extends Error {
+	constructor() {
+		super("Ordinary work-period finalization conflict");
+		this.name = "OrdinaryWorkPeriodFinalizationConflict";
+	}
+}
+
 function ordinaryWorkPeriodFinalizationConflict(): Error {
-	return new Error("Ordinary work-period finalization conflict");
+	return new OrdinaryWorkPeriodFinalizationConflict();
 }
 
 function sameDate(left: Date, right: Date): boolean {

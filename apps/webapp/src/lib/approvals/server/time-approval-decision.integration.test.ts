@@ -1172,6 +1172,46 @@ describe("time approval decision (PostgreSQL)", () => {
 				reason: "changed",
 			});
 		});
+
+		describe.each(AUTHORITIES)("under %s authority", (authority) => {
+			it.each(TIME_KINDS)(
+				"a %s whose work changed in place after submission is refused as changed",
+				async (kind) => {
+					const { workPeriodId, approval } = await submitted(kind, authority);
+					// Someone edits the work behind the approval's back: the correction's
+					// location, or the submitted work's end on both of its records.
+					if (kind === "time_correction") {
+						await admin.query(
+							`update work_period set work_location_type = 'home'
+							 where organization_id = $1 and id = $2`,
+							[ids.organization, workPeriodId],
+						);
+					} else {
+						await admin.query(
+							`update work_period set end_time = end_time - interval '30 minutes',
+							   duration_minutes = duration_minutes - 30
+							 where organization_id = $1 and id = $2`,
+							[ids.organization, workPeriodId],
+						);
+						await admin.query(
+							`update time_record set end_at = end_at - interval '30 minutes',
+							   duration_minutes = duration_minutes - 30
+							 where organization_id = $1
+							   and id = (select canonical_record_id from work_period where id = $2)`,
+							[ids.organization, workPeriodId],
+						);
+					}
+
+					expect(await decide(actors.approver, approval.id, { as: "approver" })).toEqual({
+						status: "refused",
+						reason: "changed",
+					});
+					expect(await approvalStatus(approval.id)).toBe("pending");
+					expect(decisionNotifications()).toEqual([]);
+					expect(harness.kicks).toEqual([]);
+				},
+			);
+		});
 	});
 
 	describe("shadow mirroring", () => {

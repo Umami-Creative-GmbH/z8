@@ -39,6 +39,10 @@ import { createLogger } from "@/lib/logger";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import { readReviewBindingAuthority } from "../authority/binding";
+import { TimeCorrectionApprovalAdapterError } from "../domain-adapters/time-correction.adapter";
+import { TimeCorrectionLegacyStateCaptureError } from "../domain-adapters/time-correction-legacy-state";
+import { OrdinaryWorkPeriodApprovalAdapterError } from "../domain-adapters/work-period.adapter";
+import { OrdinaryWorkPeriodLegacyStateCaptureError } from "../domain-adapters/work-period-legacy-state";
 import type { DecisionRight } from "../decision-right";
 import { kickApprovalDelivery } from "../delivery/kick";
 import { loadCover } from "../deputy/covering-store";
@@ -56,6 +60,7 @@ import {
 } from "../evidence/store";
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { isOwnRequestDecisionRefusal } from "../policies/self-decision";
+import { classifyCanonicalTimeCard, classifyLegacyTimeCard } from "../presentation/time-card";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import {
@@ -84,6 +89,7 @@ import {
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	isOrdinaryWorkPeriodDecisionRefusal,
 	notifyWorkPeriodApprovalAfterCommit,
+	OrdinaryWorkPeriodFinalizationConflict,
 	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "./work-period-approvals";
 
@@ -697,6 +703,61 @@ function refusalOf(error: unknown): TimeApprovalDecisionRefusalReason | null {
 }
 
 /**
+ * The owners' failures when the live work no longer matches the approval's
+ * source. The same failures also stand for broken invariants, so they are a
+ * refusal only when the submitted evidence confirms the work changed.
+ */
+function isSourceMismatch(error: unknown): boolean {
+	return (
+		isOrdinaryWorkPeriodDecisionRefusal(error) ||
+		error instanceof OrdinaryWorkPeriodFinalizationConflict ||
+		error instanceof OrdinaryWorkPeriodApprovalAdapterError ||
+		error instanceof OrdinaryWorkPeriodLegacyStateCaptureError ||
+		error instanceof TimeCorrectionApprovalAdapterError ||
+		error instanceof TimeCorrectionLegacyStateCaptureError ||
+		(error instanceof ConflictError &&
+			(error.conflictType === "approval_status" ||
+				error.conflictType === "time_correction_finalization_conflict"))
+	);
+}
+
+/**
+ * Whether the pending approval's work changed since it was submitted, by its
+ * submitted revision: the comparison review and cards show. Without captured
+ * evidence nothing is known to have changed.
+ */
+async function workChangedSinceSubmission(
+	database: ApprovalDatabase,
+	input: { organizationId: string; approvalId: string },
+	target: { kind: TimeApprovalWorkflowType; workPeriodId: string },
+): Promise<boolean> {
+	const legacy = await classifyLegacyTimeCard(database, {
+		organizationId: input.organizationId,
+		approvalRequestId: input.approvalId,
+	});
+	if (legacy) return legacy.status === "material_change";
+	const workflow = await database.query.approvalWorkflow.findFirst({
+		where: and(
+			eq(approvalWorkflow.organizationId, input.organizationId),
+			eq(approvalWorkflow.sourceType, "time_entry"),
+			eq(approvalWorkflow.sourceId, target.workPeriodId),
+			eq(approvalWorkflow.workflowType, target.kind),
+			eq(approvalWorkflow.status, "pending"),
+		),
+		columns: { id: true },
+	});
+	if (!workflow) return false;
+	return (
+		(await classifyCanonicalTimeCard(database, {
+			organizationId: input.organizationId,
+			workflowId: workflow.id,
+			workflowType: target.kind,
+			sourceId: target.workPeriodId,
+		})) === "material_change"
+	);
+}
+
+/**
  * The decision with the original error of a refusal. Only the inbox adapter and
  * the time entry handler read the cause, to throw what their routes expect.
  */
@@ -810,8 +871,23 @@ export async function decideTimeApprovalWithCause(
 				return refused("invocation_conflict", error);
 			}
 			const reason = refusalOf(error);
-			if (reason) return refused(reason, error);
+			const statusConflict =
+				error instanceof ConflictError && error.conflictType === "approval_status";
+			if (reason && !statusConflict) return refused(reason, error);
 			const now = await routeTimeApproval(database, input);
+			// Work changed in place since submission: the source no longer is the reviewed one.
+			if (
+				now.found &&
+				now.pending &&
+				isSourceMismatch(error) &&
+				(await workChangedSinceSubmission(database, input, target))
+			) {
+				return refused("changed", error);
+			}
+			// A status conflict on an approval that still is pending is no refusal:
+			// the owner's legacy mutation failed for another reason.
+			if (statusConflict && now.found && now.pending) throw error;
+			if (reason) return refused(reason, error);
 			if (isOrdinaryWorkPeriodDecisionRefusal(error)) {
 				// The ordinary owner's generic refusal: the current state names it.
 				return refused(
