@@ -34,26 +34,40 @@ export function NavMain({
 
 	return (
 		<SidebarGroup>
-			{label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
-			<SidebarGroupContent>
-				<SidebarMenu>
-					{items.map((item) => {
-						const isActive = item.url === activeUrl;
+			{label && (
+				<SidebarGroupLabel className="font-semibold uppercase tracking-wide">
+					{label}
+				</SidebarGroupLabel>
+			)}
+			<nav aria-label={typeof label === "string" ? label : undefined}>
+				<SidebarGroupContent>
+					<SidebarMenu>
+						{items.map((item) => {
+							const isActive = item.url === activeUrl;
 
-						return (
-							<SidebarMenuItem key={item.title}>
-								<SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-									<Link href={item.url}>
-										{item.icon && <item.icon />}
-										<span>{item.title}</span>
-									</Link>
-								</SidebarMenuButton>
-								{item.badge}
-							</SidebarMenuItem>
-						);
-					})}
-				</SidebarMenu>
-			</SidebarGroupContent>
+							return (
+								<SidebarMenuItem key={item.title}>
+									<SidebarMenuButton
+										asChild
+										isActive={isActive}
+										tooltip={item.title}
+									>
+										<Link
+											href={item.url}
+											aria-label={item.title}
+											aria-current={isActive ? "page" : undefined}
+										>
+											{item.icon && <item.icon />}
+											<span>{item.title}</span>
+										</Link>
+									</SidebarMenuButton>
+									{item.badge}
+								</SidebarMenuItem>
+							);
+						})}
+					</SidebarMenu>
+				</SidebarGroupContent>
+			</nav>
 		</SidebarGroup>
 	);
 }

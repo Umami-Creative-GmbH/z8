@@ -308,10 +308,11 @@ function SidebarTrigger({
 	...props
 }: React.ComponentProps<typeof Button>) {
 	const { t } = useTranslate();
-	const { toggleSidebar } = useSidebar();
+	const { toggleSidebar, isMobile, openMobile, open } = useSidebar();
 
 	return (
 		<Button
+			aria-expanded={isMobile ? openMobile : open}
 			className={cn("size-7", className)}
 			data-sidebar="trigger"
 			data-slot="sidebar-trigger"

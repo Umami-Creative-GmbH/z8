@@ -37,6 +37,10 @@ vi.mock("@/components/notifications", () => ({
 	NotificationBell: () => <button type="button">Notifications</button>,
 }));
 
+vi.mock("@/components/theme-toggle", () => ({
+	ThemeToggle: () => <button type="button">Toggle theme</button>,
+}));
+
 vi.mock("@/components/time-tracking/time-clock-popover", () => ({
 	TimeClockPopover: () => <button type="button">Clock In</button>,
 }));
@@ -65,6 +69,7 @@ describe("SiteHeader", () => {
 			"Timezone",
 			"Clock In",
 			"Refresh data",
+			"Toggle theme",
 			"Notifications",
 			"More actions",
 		]);
@@ -125,8 +130,9 @@ describe("SiteHeader", () => {
 
 		render(<SiteHeader />);
 
-		expect(screen.getByRole("heading", { name: "Employees" })).toBeTruthy();
-		expect(screen.queryByRole("heading", { name: "Dashboard" })).toBeNull();
+		expect(screen.getByText("Employees")).toBeTruthy();
+		expect(screen.queryByText("Dashboard")).toBeNull();
+		expect(screen.queryByRole("heading")).toBeNull();
 	});
 
 	it("truncates a long title so the header actions stay on a phone screen (#846)", () => {
@@ -134,7 +140,9 @@ describe("SiteHeader", () => {
 
 		render(<SiteHeader />);
 
-		const title = screen.getByRole("heading");
+		const title = screen.getByText("Notifications", {
+			selector: '[data-slot="route-title"]',
+		});
 		expect(title.classList.contains("truncate")).toBe(true);
 		expect(title.classList.contains("min-w-0")).toBe(true);
 	});

@@ -11,6 +11,7 @@ import { HeaderRefreshButton } from "@/components/header-refresh-button";
 import { HeaderTimezoneControl } from "@/components/header-timezone-control";
 import { NotificationBell } from "@/components/notifications";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { TimeClockPopover } from "@/components/time-tracking/time-clock-popover";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
 	normalizeAppPath,
@@ -33,21 +33,34 @@ export function SiteHeader() {
 	const normalizedPath = normalizeAppPath(pathname);
 	const isDashboardRoute = normalizedPath === "/" || normalizedPath === "";
 	const routeMetadata = resolveAppRouteMetadata(pathname);
+	const showWorkplaceScope =
+		isDashboardRoute || normalizedPath === "/time-tracking";
 	const moreActionsLabel = t("common.moreActions", "More actions");
 
 	return (
 		// Edge to edge (store app shell, #846) the header sits below the status bar.
-		<header className="box-content flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-white dark:bg-background pt-[env(safe-area-inset-top)] transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+		<header className="box-content flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-card pt-[env(safe-area-inset-top)]">
 			<div className="flex w-full min-w-0 items-center gap-2 px-3 sm:px-4 lg:px-6">
 				<SidebarTrigger className="-ml-1" />
-				<Separator
-					className="mx-2 hidden data-[orientation=vertical]:h-4 sm:block"
-					orientation="vertical"
+				<span
+					aria-hidden="true"
+					className="mx-2 hidden h-4 border-l sm:block"
 				/>
 				{/* Truncates on phones so the clock and notification controls stay on screen. */}
-				<h1 className="min-w-0 flex-1 truncate font-medium text-base">
+				{showWorkplaceScope ? (
+					<span className="hidden shrink-0 text-muted-foreground text-sm lg:inline">
+						{t("nav.workplace-label", "Workplace")}
+						<span className="mx-3" aria-hidden="true">
+							/
+						</span>
+					</span>
+				) : null}
+				<p
+					className="min-w-0 flex-1 truncate font-medium text-sm"
+					data-slot="route-title"
+				>
 					{t(routeMetadata.titleKey, routeMetadata.titleDefault)}
-				</h1>
+				</p>
 				<div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
 					<div className="hidden items-center gap-2 sm:flex">
 						{isDashboardRoute ? <DashboardHeaderCustomize /> : null}
@@ -56,6 +69,9 @@ export function SiteHeader() {
 					<TimeClockPopover timeFormat={timeFormat} />
 					<div className="hidden sm:block">
 						<HeaderRefreshButton />
+					</div>
+					<div className="hidden sm:block">
+						<ThemeToggle />
 					</div>
 					<NotificationBell />
 					<Popover>

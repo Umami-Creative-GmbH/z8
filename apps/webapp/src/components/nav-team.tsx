@@ -31,25 +31,37 @@ export function NavTeam({
 
 	return (
 		<SidebarGroup>
-			<SidebarGroupLabel>{t("nav.team-label", "Team")}</SidebarGroupLabel>
-			<SidebarGroupContent>
-				<SidebarMenu>
-					{items.map((item) => {
-						const isActive = item.url === activeUrl;
+			<SidebarGroupLabel className="font-semibold uppercase tracking-wide">
+				{t("nav.team-organization-label", "Team & organization")}
+			</SidebarGroupLabel>
+			<nav aria-label={t("nav.team-organization-label", "Team & organization")}>
+				<SidebarGroupContent>
+					<SidebarMenu>
+						{items.map((item) => {
+							const isActive = item.url === activeUrl;
 
-						return (
-							<SidebarMenuItem key={item.title}>
-								<SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-									<Link href={item.url}>
-										{item.icon && <item.icon />}
-										<span>{item.title}</span>
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						);
-					})}
-				</SidebarMenu>
-			</SidebarGroupContent>
+							return (
+								<SidebarMenuItem key={item.title}>
+									<SidebarMenuButton
+										asChild
+										isActive={isActive}
+										tooltip={item.title}
+									>
+										<Link
+											href={item.url}
+											aria-label={item.title}
+											aria-current={isActive ? "page" : undefined}
+										>
+											{item.icon && <item.icon />}
+											<span>{item.title}</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							);
+						})}
+					</SidebarMenu>
+				</SidebarGroupContent>
+			</nav>
 		</SidebarGroup>
 	);
 }
