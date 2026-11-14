@@ -1,0 +1,487 @@
+import { and, eq, isNull } from "drizzle-orm";
+import { db } from "@/db";
+import { user } from "@/db/auth-schema";
+import { employee, teamPermissions } from "@/db/schema";
+import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
+import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import { AuditTrail } from "@/lib/audit-trail";
+import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import { createLogger } from "@/lib/logger";
+import { notifyFormerEmployeeNeedsRehire } from "@/lib/notifications/former-employee-needs-rehire";
+import { currentOrganizationAdminUserIds } from "@/lib/notifications/manager-notice-recipients";
+import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
+import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
+import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
+import { onCurrentRoster } from "../current-roster";
+import { reactivateOnReturn } from "../reactivation";
+import {
+	consumeInvitationDrafts,
+	type DraftCleanup,
+	type DroppedPersonnelNumber,
+	draftCreationValues,
+	draftReactivationValues,
+	type InvitationDraft,
+	type JoiningTransaction,
+	loadInvitationDraft,
+	recordDraftNotApplied,
+	recordDroppedPersonnelNumber,
+	teamOfOrganization,
+	writeDraftFirstTerms,
+	writeWithDraftPersonnelNumber,
+} from "./invitation-draft";
+
+export type { JoiningTransaction } from "./invitation-draft";
+
+type Employee = typeof employee.$inferSelect;
+
+const logger = createLogger("joining");
+
+/** A role as Better Auth stores it on the membership. */
+export type MembershipRole = string | string[] | null | undefined;
+
+export type JoiningInput = {
+	organizationId: string;
+	userId: string;
+	/** The approved membership the user now holds. */
+	membership: { id: string; role: MembershipRole };
+	/**
+	 * The team to place the employee in when no invitation draft names one: a new
+	 * employee, or one reactivated onto the current roster (#1667).
+	 */
+	teamId?: string | null;
+	/**
+	 * The invitation the membership comes from, for its draft. Without an id
+	 * (a direct member add) the draft is found by the user's email. Absent: no draft.
+	 */
+	invitation?: { id: string | null };
+	/**
+	 * The admin who brought the person in or back, such as one creating a kiosk-only
+	 * employee. Recorded on the team placement and on a reactivation; a reactivation
+	 * defaults to the joining user.
+	 */
+	actorUserId?: string;
+	/**
+	 * Who is told, once the membership committed, when it brings back a former
+	 * employee who needs a rehire (`membership_only`, #1672): the named users,
+	 * such as the admin who sent the invitation, or the organization's current
+	 * owners and admins when nobody brought them in. Absent: nobody, such as an
+	 * approver who sees the outcome where they approved.
+	 */
+	rehireNotice?: RehireNoticeRecipients;
+};
+
+export type RehireNoticeRecipients =
+	| { to: "users"; userIds: readonly string[] }
+	| { to: "organization_admins" };
+
+/** The notice the after-commit step sends for a `membership_only` outcome. */
+export type RehireNotice = {
+	organizationId: string;
+	membershipId: string;
+	employeeId: string;
+	userId: string;
+	recipients: RehireNoticeRecipients;
+};
+
+/**
+ * What joining did (Organization glossary, **Joining**):
+ * - `joined`: a new employee;
+ * - `reactivated`: an employee who was off is on the current roster again;
+ * - `already_current`: the employee was on the current roster, nothing changed;
+ * - `membership_only`: a former employee whose departure took effect; only a rehire brings them back.
+ */
+export type JoiningOutcome =
+	| { kind: "joined"; employee: Employee }
+	| { kind: "reactivated"; employee: Employee; reactivationRequestId: string | null }
+	| { kind: "already_current"; employee: Employee }
+	| { kind: "membership_only"; employee: Employee };
+
+/** The seat signal of the new membership, sent after commit. */
+export type SeatSignal = {
+	organizationId: string;
+	memberId: string;
+	userId: string;
+	change: "added";
+};
+
+/**
+ * The one step the caller runs once the joining transaction committed: audit
+ * forwarding, the invitation draft clean-up and the seat signal.
+ */
+export type AfterJoining = {
+	seatSignal: SeatSignal;
+	draftCleanup: DraftCleanup | null;
+	/** Only for a `membership_only` outcome with recipients named in the input. */
+	rehireNotice: RehireNotice | null;
+	/** A repair of an older membership passes `seatSignal: false`: no seat changed now. */
+	run(options?: { seatSignal?: boolean }): Promise<void>;
+};
+
+export type Joining = { outcome: JoiningOutcome; afterCommit: AfterJoining };
+
+/**
+ * Takes the joining locks in their order: the user's exclusive configuration
+ * guard (#318), then the organization's identity lock for the user's email.
+ * Both are transaction-scoped advisory locks and re-entrant, so a caller that
+ * already holds them may call this again.
+ */
+export async function acquireJoiningLocks(
+	tx: JoiningTransaction,
+	input: { organizationId: string; userId: string },
+): Promise<{ normalizedEmail: string }> {
+	await acquireExclusiveUserConfigurationAccessGuards(tx, [input.userId]);
+	const targetUser = await tx.query.user.findFirst({
+		where: eq(user.id, input.userId),
+		columns: { email: true },
+	});
+	if (!targetUser) throw new Error("Cannot join a missing user to an organization");
+	const normalizedEmail = normalizeInvitationEmail(targetUser.email);
+	await acquireEmployeeIdentityLock(tx, { organizationId: input.organizationId, normalizedEmail });
+	return { normalizedEmail };
+}
+
+/**
+ * Joining (spec #1664): what follows "this user now holds an approved
+ * membership in this organization", in the caller's transaction, which it
+ * never commits or opens. The user gets an employee, comes back to the
+ * current roster through `reactivateOnReturn`, or, as a former employee whose
+ * departure took effect, keeps only the membership. An employee already on the
+ * current roster is left exactly as it is. The caller runs `afterCommit` once
+ * its transaction committed.
+ */
+export async function joinOrganization(
+	tx: JoiningTransaction,
+	input: JoiningInput,
+): Promise<Joining> {
+	// Entries reach the external audit service only once the transaction committed.
+	const audit = new AuditTrail();
+	const { organizationId, userId } = input;
+	const { normalizedEmail } = await acquireJoiningLocks(tx, input);
+
+	const isAdminMembership =
+		hasOrganizationRole(input.membership.role, "owner") ||
+		hasOrganizationRole(input.membership.role, "admin");
+	const loadedDraft = input.invitation
+		? await loadInvitationDraft(tx, {
+				organizationId,
+				invitationId: input.invitation.id,
+				normalizedEmail,
+			})
+		: null;
+	const draft = loadedDraft?.draft ?? null;
+	const context: JoiningContext = { tx, audit, input, draft, isAdminMembership };
+
+	const existing = await tx.query.employee.findFirst({
+		where: and(eq(employee.userId, userId), eq(employee.organizationId, organizationId)),
+	});
+	const outcome = !existing
+		? await joinAsNewEmployee(context)
+		: (await isOnCurrentRoster(tx, existing))
+			? await joinAsCurrentEmployee(context, existing)
+			: await joinAsReturningEmployee(context, existing);
+
+	const draftCleanup: DraftCleanup | null = draft
+		? {
+				organizationId,
+				draftId: draft.id,
+				allowStaleLinkedInvitation: loadedDraft?.identityFallback,
+			}
+		: null;
+	const seatSignal: SeatSignal = {
+		organizationId,
+		memberId: input.membership.id,
+		userId,
+		change: "added",
+	};
+	const rehireNotice: RehireNotice | null =
+		outcome.kind === "membership_only" && input.rehireNotice
+			? {
+					organizationId,
+					membershipId: input.membership.id,
+					employeeId: outcome.employee.id,
+					userId,
+					recipients: input.rehireNotice,
+				}
+			: null;
+	return {
+		outcome,
+		afterCommit: {
+			seatSignal,
+			draftCleanup,
+			rehireNotice,
+			async run(options = {}) {
+				// The global `db` on purpose: this runs after the caller's transaction
+				// committed, and is shared with callers that are not Effect code.
+				audit.forwardCommitted();
+				if (draftCleanup) await consumeInvitationDrafts(db, draftCleanup);
+				if (rehireNotice) await sendRehireNotice(rehireNotice);
+				if (options.seatSignal !== false) await syncBillingSeatsAfterMemberChange(seatSignal);
+			},
+		},
+	};
+}
+
+/**
+ * Runs joining's after-commit step for a caller whose membership already
+ * committed: a failure is logged, never turned into a failed sign-in or
+ * acceptance. The hourly seat reconciliation and the draft clean-up's later
+ * passes are the safety nets.
+ */
+export async function runAfterJoiningCommitted(
+	afterCommit: AfterJoining,
+	context: { organizationId: string; userId: string; path: string },
+	options?: { seatSignal?: boolean },
+): Promise<void> {
+	try {
+		await afterCommit.run(options);
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: context.organizationId, userId: context.userId },
+			`Joining's after-commit step failed after ${context.path}`,
+		);
+	}
+}
+
+/** Best effort after commit: the notice never fails the step. */
+async function sendRehireNotice(notice: RehireNotice) {
+	try {
+		const recipientUserIds =
+			notice.recipients.to === "users"
+				? notice.recipients.userIds
+				: await currentOrganizationAdminUserIds(db, { organizationId: notice.organizationId });
+		if (recipientUserIds.length === 0) return;
+		const person = await db.query.user.findFirst({
+			where: eq(user.id, notice.userId),
+			columns: { name: true, email: true },
+		});
+		await notifyFormerEmployeeNeedsRehire({
+			organizationId: notice.organizationId,
+			membershipId: notice.membershipId,
+			employeeId: notice.employeeId,
+			name: person?.name || person?.email || notice.employeeId,
+			recipientUserIds,
+		});
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: notice.organizationId, employeeId: notice.employeeId },
+			"Could not tell admins that a former employee needs a rehire",
+		);
+	}
+}
+
+type JoiningContext = {
+	tx: JoiningTransaction;
+	audit: AuditTrail;
+	input: JoiningInput;
+	draft: InvitationDraft | null;
+	isAdminMembership: boolean;
+};
+
+async function isOnCurrentRoster(tx: JoiningTransaction, existing: Employee): Promise<boolean> {
+	const [current] = await tx
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.id, existing.id),
+				onCurrentRoster(existing.organizationId, employee, systemClock.nowInstant()),
+			),
+		);
+	return current !== undefined;
+}
+
+async function joinAsNewEmployee(context: JoiningContext): Promise<JoiningOutcome> {
+	const { tx, input, draft, isAdminMembership } = context;
+	const { organizationId, userId } = input;
+	const {
+		written: [created],
+		dropped,
+	} = await writeWithDraftPersonnelNumber(
+		tx,
+		{ organizationId, personnelNumber: normalizePersonnelNumber(draft?.employeeNumber) },
+		(client, personnelNumber) =>
+			client
+				.insert(employee)
+				.values({
+					userId,
+					organizationId,
+					role: isAdminMembership ? "admin" : "employee",
+					isActive: true,
+					// With a draft, its role decides (spec #1664 decision 6).
+					...draftCreationValues(draft),
+					...personnelNumber,
+				})
+				.returning(),
+	);
+	if (!created) throw new Error("Joining did not create the employee");
+
+	return {
+		kind: "joined",
+		employee: await settleArrivingEmployee(context, created, { dropped, outcome: "created" }),
+	};
+}
+
+/**
+ * What every employee who arrives on the current roster gets, new or back:
+ * the team placement, the dropped personnel number's entry, the draft's first
+ * terms and an owner or admin membership's organization-wide team permissions.
+ */
+async function settleArrivingEmployee(
+	context: JoiningContext,
+	arrived: Employee,
+	personnelNumber: {
+		dropped: DroppedPersonnelNumber | null;
+		outcome: "created" | "reactivated";
+	},
+): Promise<Employee> {
+	const { tx, audit, input, draft, isAdminMembership } = context;
+	const { organizationId, userId } = input;
+	// The draft's team wins over the given one; only a team of this organization
+	// places. For a returning employee placing is a move: the old primary team's
+	// membership ends.
+	const teamId = await teamOfOrganization(
+		tx,
+		organizationId,
+		draft ? draft.teamId : (input.teamId ?? null),
+	);
+	const placed = teamId
+		? await placeArrivingEmployee(tx, {
+				organizationId,
+				employeeId: arrived.id,
+				teamId,
+				createdBy: input.actorUserId ?? null,
+			})
+		: null;
+	const settled = placed ? { ...arrived, teamId: placed.primaryTeamId } : arrived;
+	if (draft && personnelNumber.dropped) {
+		await recordDroppedPersonnelNumber(tx, audit, {
+			organizationId,
+			userId,
+			employee: settled,
+			draft,
+			dropped: personnelNumber.dropped,
+			outcome: personnelNumber.outcome,
+		});
+	}
+	if (draft) {
+		await writeDraftFirstTerms(tx, { organizationId, userId, employeeId: settled.id, draft });
+	}
+	if (isAdminMembership) await grantOrganizationWideTeamPermissions(tx, settled);
+	return settled;
+}
+
+/**
+ * An employee on the current roster is left exactly as it is (spec #1664
+ * decision 5). A draft is not applied; the entry says so before it is discarded.
+ */
+async function joinAsCurrentEmployee(
+	context: JoiningContext,
+	existing: Employee,
+): Promise<JoiningOutcome> {
+	const { tx, audit, input, draft } = context;
+	if (draft) {
+		await recordDraftNotApplied(tx, audit, {
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId ?? input.userId,
+			employeeId: existing.id,
+			draft,
+			reason: "employee_already_current",
+		});
+	}
+	return { kind: "already_current", employee: existing };
+}
+
+async function joinAsReturningEmployee(
+	context: JoiningContext,
+	existing: Employee,
+): Promise<JoiningOutcome> {
+	const { tx, audit, input, draft, isAdminMembership } = context;
+	const { organizationId, userId } = input;
+	const actorUserId = input.actorUserId ?? userId;
+	// Coming back after a deactivation is a reactivation by whoever brought
+	// them back (#1628). Whether they are current afterwards decides the rest.
+	const returned = await reactivateOnReturn(
+		tx,
+		{ organizationId, employeeId: existing.id, actorUserId },
+		audit,
+	);
+	if (!returned.current) {
+		// A departure took effect (migration 0073): only a rehire brings them back.
+		if (draft) {
+			await recordDraftNotApplied(tx, audit, {
+				organizationId,
+				actorUserId,
+				employeeId: existing.id,
+				draft,
+				reason: "former_employee_needs_rehire",
+			});
+		}
+		return { kind: "membership_only", employee: existing };
+	}
+
+	const isExisting = and(eq(employee.id, existing.id), eq(employee.organizationId, organizationId));
+	const draftPersonnelNumber = normalizePersonnelNumber(draft?.employeeNumber);
+	const returnValues = {
+		...draftReactivationValues(draft),
+		...(!draft && isAdminMembership ? { role: "admin" as const } : {}),
+	};
+	const {
+		written: [reactivated],
+		dropped,
+	} = await writeWithDraftPersonnelNumber(
+		tx,
+		{
+			organizationId,
+			personnelNumber: draftPersonnelNumber,
+			exceptEmployeeId: existing.id,
+			personnelNumberManagedByScim:
+				existing.personnelNumberManagedByScim && existing.employeeNumber !== draftPersonnelNumber,
+		},
+		async (client, personnelNumber) => {
+			const values = { ...returnValues, ...personnelNumber };
+			if (Object.keys(values).length > 0) {
+				return client.update(employee).set(values).where(isExisting).returning();
+			}
+			// Nothing of the draft to write: the switched-on row as it is.
+			return client.select().from(employee).where(isExisting);
+		},
+	);
+	if (!reactivated) throw new Error("Joining lost the returning employee");
+
+	return {
+		kind: "reactivated",
+		employee: await settleArrivingEmployee(context, reactivated, {
+			dropped,
+			outcome: "reactivated",
+		}),
+		reactivationRequestId: returned.reactivationRequestId,
+	};
+}
+
+/** The organization-wide team permission row of an owner or admin membership (spec #1664 decision 7). */
+async function grantOrganizationWideTeamPermissions(
+	tx: JoiningTransaction,
+	joined: { id: string; organizationId: string },
+) {
+	const existing = await tx.query.teamPermissions.findFirst({
+		where: and(
+			eq(teamPermissions.employeeId, joined.id),
+			eq(teamPermissions.organizationId, joined.organizationId),
+			isNull(teamPermissions.teamId),
+		),
+		columns: { id: true },
+	});
+	if (existing) return;
+	await tx.insert(teamPermissions).values({
+		employeeId: joined.id,
+		organizationId: joined.organizationId,
+		teamId: null,
+		canCreateTeams: true,
+		canManageTeamMembers: true,
+		canManageTeamSettings: true,
+		canApproveTeamRequests: true,
+		grantedBy: joined.id,
+	});
+}

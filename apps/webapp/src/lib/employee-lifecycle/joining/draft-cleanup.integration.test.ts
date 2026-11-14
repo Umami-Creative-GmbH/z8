@@ -1,5 +1,5 @@
 /**
- * #1185: accepting an invitation consumes its employee invitation draft in
+ * #1185: joining with an accepted invitation consumes its employee invitation draft in
  * PostgreSQL. The cleanup's `exists` subqueries were raw `sql` chunks, which
  * Drizzle renders without parentheses (`exists select 1 …`). PostgreSQL
  * rejected the delete, the error was logged and swallowed, and every draft
@@ -10,8 +10,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const { db } = await import("@/db");
-const { ensureEmployeeForOrganizationMember, ensureEmployeeProfilesForOrganizationMembers } =
-	await import("@/lib/auth/organization-member-provisioning");
+const { joinOrganization } = await import("./index");
+const { backfillMembersWithoutEmployee } = await import("./backfill");
 
 const acceptingOrg = "t1185-accepting-org";
 const otherOrg = "t1185-other-org";
@@ -84,17 +84,25 @@ describe("employee invitation draft cleanup in PostgreSQL", () => {
 		);
 	}
 
+	/** The invitee joins with the invitation, or without one as a direct member add. */
+	async function join(invitationId: string | null) {
+		const joined = await db.transaction((tx) =>
+			joinOrganization(tx, {
+				userId: inviteeUser,
+				organizationId: acceptingOrg,
+				membership: { id: "t1185-invitee-member", role: "member" },
+				invitation: { id: invitationId },
+			}),
+		);
+		await joined.afterCommit.run();
+		return joined.outcome.employee;
+	}
+
 	beforeEach(seed);
 	afterAll(cleanup);
 
 	it("deletes the draft once its invitation is accepted", async () => {
-		const provisioned = await ensureEmployeeForOrganizationMember(db, {
-			mode: "membershipAccepted",
-			userId: inviteeUser,
-			organizationId: acceptingOrg,
-			memberRole: "member",
-			invitationId: acceptedInvitation,
-		});
+		const provisioned = await join(acceptedInvitation);
 
 		expect(provisioned).toMatchObject({
 			userId: inviteeUser,
@@ -113,12 +121,7 @@ describe("employee invitation draft cleanup in PostgreSQL", () => {
 		);
 
 		// A direct member add carries no invitation id, so the draft is matched by email.
-		await ensureEmployeeForOrganizationMember(db, {
-			mode: "membershipAccepted",
-			userId: inviteeUser,
-			organizationId: acceptingOrg,
-			memberRole: "member",
-		});
+		await join(null);
 
 		expect(await draftsFor(acceptingOrg)).toEqual([]);
 		expect(await draftsFor(otherOrg)).toEqual([otherOrgInvitation]);
@@ -129,13 +132,13 @@ describe("employee invitation draft cleanup in PostgreSQL", () => {
 			acceptedInvitation,
 		]);
 
-		await ensureEmployeeProfilesForOrganizationMembers(db, acceptingOrg);
+		await backfillMembersWithoutEmployee(db, { organizationIds: [acceptingOrg], apply: true });
 
 		expect(await draftsFor(acceptingOrg)).toEqual([acceptedInvitation]);
 	});
 
-	it("reconciling one organization consumes only that organization's drafts", async () => {
-		await ensureEmployeeProfilesForOrganizationMembers(db, acceptingOrg);
+	it("backfilling one organization consumes only that organization's drafts", async () => {
+		await backfillMembersWithoutEmployee(db, { organizationIds: [acceptingOrg], apply: true });
 
 		expect(await draftsFor(acceptingOrg)).toEqual([]);
 		expect(await draftsFor(otherOrg)).toEqual([otherOrgInvitation]);

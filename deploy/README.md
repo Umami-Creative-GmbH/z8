@@ -352,6 +352,45 @@ Locally: `pnpm --dir apps/webapp employees:backfill-deactivations [--apply] [--o
   example is an absence in a closed month. Nothing was changed for that employee. Fix the cause
   and run again.
 
+### After Deploying #1671: Join Members Without an Employee (once)
+
+Since #1671, every path joins in the membership's transaction, and the reads that created a missing
+employee are gone. Members left without an employee by earlier releases need one. **Run once after
+the release**, from the worker image of the same release with the worker's environment: a dry run
+first (the default), then the real run.
+
+```bash
+# 1. Dry run: lists per organization the members it would join; changes nothing
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/backfill-member-employees.ts --json > joining-backfill-dry-run.json
+
+# 2. After reviewing the dry run: apply it
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/backfill-member-employees.ts --apply --json > joining-backfill-applied.json
+```
+
+Locally: `pnpm --dir apps/webapp employees:backfill-joining [--apply] [--organization-id <org-id>] [--json]`.
+
+- It joins every approved member who has no employee row, as joining does: an owner or admin
+  membership becomes an admin employee, any other an employee. It never touches an existing
+  employee, so nobody deactivated is switched back on.
+- No invitation draft is applied and no seat signal is sent; the hourly seat reconciliation counts
+  the new employees.
+- Each member is joined in its own transaction. An interrupted run keeps its progress, and a second
+  run joins nobody. A member that cannot be joined is listed with the reason and the run exits
+  non-zero.
+- Afterwards the organization switch route still joins a member without an employee for one
+  release and logs *Organization switch joined an approved member without an employee*. That log
+  should stay silent; #1688 removes the route's join once it has.
+
 ## Services
 
 | Service | Port | Description |

@@ -2,7 +2,6 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, team, teamMembership } from "@/db/schema";
-import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import type { TeamPermissions } from "@/lib/authorization";
 import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { formerMark } from "@/lib/employee-lifecycle/former-since";
@@ -14,7 +13,6 @@ export async function loadTeamSettingsPageData(input: {
 	principalContext: { permissions: TeamPermissions };
 }) {
 	const { organizationId, settingsRouteContext, principalContext } = input;
-	await ensureEmployeeProfilesForOrganizationMembers(db, organizationId);
 
 	const [membersData, allTeams, membershipRows] = await Promise.all([
 		db

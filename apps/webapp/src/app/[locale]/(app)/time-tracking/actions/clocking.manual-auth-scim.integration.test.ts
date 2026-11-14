@@ -272,10 +272,10 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 				organizationHooks: createCoordinatedOrganizationHooks({
 					beforeUpdateOrganization: async () => undefined,
 					beforeCreateInvitation: async () => undefined,
-					afterAcceptInvitation: async ({ user }) => {
+					joinOnAcceptedInvitation: async (_transaction, { user }) => async () => {
 						harness.provisioned.push(`accepted:${user.id}`);
 					},
-					afterAddMember: async ({ user }) => {
+					joinOnAddedMember: async (_transaction, { user }) => async () => {
 						harness.provisioned.push(`added:${user.id}`);
 					},
 				}),
@@ -970,7 +970,7 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			expect(await employeeActive(ids.ssoUser)).toBe(true);
 		});
 
-		it("holds verified-domain SSO membership on the user's protection", async () => {
+		it("holds verified-domain SSO membership and joining on the user's protection", async () => {
 			await admin.query(
 				`insert into sso_provider (id, issuer, user_id, provider_id, organization_id, domain, domain_verified)
 				 values ($1, 'https://idp.t314.example.test', $2, 't314-idp', $3, 't314.example.test', true)`,
@@ -984,7 +984,8 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 
 			await assignment;
 			expect(await membership(ids.ssoUser)).toMatchObject({ role: "member" });
-			expect(await employeeActive(ids.ssoUser)).toBeNull();
+			// The verified-domain sign-in joins at once (#1669), not at the first organization switch.
+			expect(await employeeActive(ids.ssoUser)).toBe(true);
 		});
 	});
 

@@ -14,7 +14,6 @@ import { nanoid } from "nanoid";
 import { member, user } from "@/db/auth-schema";
 import {
 	auditLog,
-	employee,
 	type inviteCode as InviteCodeTable,
 	type inviteCodeUsage as InviteCodeUsageTable,
 	inviteCode,
@@ -24,13 +23,12 @@ import {
 } from "@/db/schema";
 import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
-import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
-import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
-import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
+import {
+	type Joining,
+	type JoiningTransaction,
+	joinOrganization,
+} from "@/lib/employee-lifecycle/joining";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
-import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -44,6 +42,23 @@ import { DatabaseService } from "./database.service";
 type InviteCode = typeof InviteCodeTable.$inferSelect;
 type InviteCodeUsage = typeof InviteCodeUsageTable.$inferSelect;
 type InviteCodeStatus = "active" | "paused" | "expired" | "archived";
+
+/**
+ * What one redemption transaction did. Null: the pending code the caller
+ * expected changed meanwhile, so this redemption is stale.
+ */
+type InviteCodeRedemption =
+	| { outcome: "unusable"; reason: string }
+	| { outcome: "rejected" }
+	| { outcome: "enterprise_denied"; message: string }
+	| {
+			outcome: "redeemed";
+			member: typeof member.$inferSelect;
+			created: boolean;
+			/** Null while the membership waits for approval. */
+			joining: Joining | null;
+	  }
+	| null;
 
 export interface CreateInviteCodeInput {
 	organizationId: string;
@@ -303,98 +318,53 @@ export const InviteCodeServiceLive = Layer.effect(
 			return Boolean(clearedUser);
 		};
 
-		const resolveInviteCodeTargetTeamId = async (
-			dbClient: RedemptionDb,
-			organizationId: string,
-			targetTeamId: string | null | undefined,
-		) => {
-			if (!targetTeamId) return null;
-
-			const targetTeam = await dbClient.query.team.findFirst({
-				where: and(
-					eq(team.id, targetTeamId),
-					eq(team.organizationId, organizationId),
-				),
-			});
-
-			return targetTeam?.id ?? null;
-		};
-
-		const provisionEmployeeForInviteCode = async (
-			dbClient: RedemptionDb,
+		// An approved membership by code joins the organization (spec #1664): the
+		// code's team places a new or returning employee, the redeeming user is the actor.
+		const joinByInviteCode = (
+			tx: JoiningTransaction,
 			inviteCodeRecord: InviteCode,
 			userId: string,
-			memberRole: unknown,
-			audit: AuditTrail,
-		): Promise<void> => {
-			const [existingEmployee, targetTeamId] = await Promise.all([
-				dbClient.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, userId),
-						eq(employee.organizationId, inviteCodeRecord.organizationId),
-					),
-				}),
-				resolveInviteCodeTargetTeamId(
-					dbClient,
-					inviteCodeRecord.organizationId,
-					inviteCodeRecord.defaultTeamId,
-				),
-			]);
+			joinedMember: { id: string; role: string },
+		) =>
+			joinOrganization(tx, {
+				organizationId: inviteCodeRecord.organizationId,
+				userId,
+				membership: { id: joinedMember.id, role: joinedMember.role },
+				teamId: inviteCodeRecord.defaultTeamId,
+				actorUserId: userId,
+				// No admin looks at a redemption: the admins learn of a former
+				// employee who needs a rehire (#1672).
+				rehireNotice: { to: "organization_admins" },
+			});
 
-			// The code's team is a membership and the primary team (Organization ADR 0010).
-			const placeInTargetTeam = async (employeeId: string) => {
-				if (!targetTeamId) return;
-				await placeArrivingEmployee(dbClient, {
-					organizationId: inviteCodeRecord.organizationId,
-					employeeId,
-					teamId: targetTeamId,
-				});
-			};
-
-			if (existingEmployee) {
-				if (!existingEmployee.isActive) {
-					// Coming back after a deactivation is a reactivation by the joining user (#1628).
-					await reactivateOnReturn(
-						dbClient as LifecycleClient,
-						{
-							organizationId: inviteCodeRecord.organizationId,
-							employeeId: existingEmployee.id,
-							actorUserId: userId,
-						},
-						audit,
-					);
-					await placeInTargetTeam(existingEmployee.id);
-				}
-				return;
-			}
-
-			const [created] = await dbClient
-				.insert(employee)
-				.values({
-					userId,
-					organizationId: inviteCodeRecord.organizationId,
-					role:
-						hasOrganizationRole(memberRole, "owner") ||
-						hasOrganizationRole(memberRole, "admin")
-							? "admin"
-							: "employee",
-					isActive: true,
-				})
-				.returning({ id: employee.id });
-			if (created) await placeInTargetTeam(created.id);
+		type RedemptionInput = {
+			userId: string;
+			ipAddress?: string | null;
+			userAgent?: string | null;
+			expectedPendingInviteCode?: string;
 		};
 
-		const redeemInviteCodeInTransaction = async (
+		/**
+		 * Redeems the code in its own transaction and, once that committed, runs
+		 * joining's after-commit step (audit forwarding, seat signal).
+		 */
+		const commitInviteCodeRedemption = async (
 			inviteCodeRecord: InviteCode,
-			input: {
-				userId: string;
-				ipAddress?: string | null;
-				userAgent?: string | null;
-				expectedPendingInviteCode?: string;
-			},
-		) =>
-			// A reactivation's audit entries are forwarded once the redemption committed.
-			withAuditTrail((audit) => dbService.db.transaction(async (tx) => {
+			input: RedemptionInput,
+		): Promise<InviteCodeRedemption> => {
+			const redemption = await runRedemptionTransaction(inviteCodeRecord, input);
+			if (redemption?.outcome === "redeemed" && redemption.joining) {
+				await redemption.joining.afterCommit.run();
+			}
+			return redemption;
+		};
+
+		/** The redemption's transaction; the caller runs joining's after-commit step. */
+		const runRedemptionTransaction = async (
+			inviteCodeRecord: InviteCode,
+			input: RedemptionInput,
+		): Promise<InviteCodeRedemption> =>
+			dbService.db.transaction(async (tx): Promise<InviteCodeRedemption> => {
 				const redemptionDb = tx as RedemptionDb;
 				// Redemption adds the user's membership and employee in the code's
 				// organization: the user's exclusive configuration/access guard comes
@@ -420,7 +390,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					},
 				});
 				if (!lockedInviteCode) {
-					return { unusableReason: "Code is not usable" } as const;
+					return { outcome: "unusable", reason: "Code is not usable" };
 				}
 
 				const targetUser = await redemptionDb.query.user.findFirst({
@@ -441,7 +411,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					),
 				});
 				if (existingMember?.status === "rejected") {
-					return { rejected: true } as const;
+					return { outcome: "rejected" };
 				}
 
 				const rejectionAudits = await redemptionDb.query.auditLog.findMany({
@@ -461,7 +431,7 @@ export const InviteCodeServiceLive = Layer.effect(
 							input.userId,
 					)
 				) {
-					return { rejected: true } as const;
+					return { outcome: "rejected" };
 				}
 
 				const { usable, reason } =
@@ -477,7 +447,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					) {
 						return null;
 					}
-					return { unusableReason: reason ?? "Code is not usable" } as const;
+					return { outcome: "unusable", reason: reason ?? "Code is not usable" };
 				}
 
 				let enterpriseDenial: string | undefined;
@@ -504,20 +474,16 @@ export const InviteCodeServiceLive = Layer.effect(
 					return null;
 				}
 				if (enterpriseDenial) {
-					return { enterpriseDenial } as const;
+					return { outcome: "enterprise_denied", message: enterpriseDenial };
 				}
 
 				if (existingMember) {
-					if (!lockedInviteCode.requiresApproval && existingMember.status === "approved") {
-						await provisionEmployeeForInviteCode(
-							redemptionDb,
-							lockedInviteCode,
-							input.userId,
-							existingMember.role,
-							audit,
-						);
-					}
-					return { member: existingMember, created: false };
+					// A pending membership joins at approval, not here.
+					const joining =
+						!lockedInviteCode.requiresApproval && existingMember.status === "approved"
+							? await joinByInviteCode(tx, lockedInviteCode, input.userId, existingMember)
+							: null;
+					return { outcome: "redeemed", member: existingMember, created: false, joining };
 				}
 
 				const memberStatus = lockedInviteCode.requiresApproval
@@ -544,15 +510,9 @@ export const InviteCodeServiceLive = Layer.effect(
 					userAgent: input.userAgent,
 				});
 
-				if (!lockedInviteCode.requiresApproval) {
-					await provisionEmployeeForInviteCode(
-						redemptionDb,
-						lockedInviteCode,
-						input.userId,
-						createdMember.role,
-						audit,
-					);
-				}
+				const joining = lockedInviteCode.requiresApproval
+					? null
+					: await joinByInviteCode(tx, lockedInviteCode, input.userId, createdMember);
 
 				const [incrementedInviteCode] = await redemptionDb
 					.update(inviteCode)
@@ -576,8 +536,8 @@ export const InviteCodeServiceLive = Layer.effect(
 					throw new Error("Invite code changed before usage increment");
 				}
 
-				return { member: createdMember, created: true };
-			}));
+				return { outcome: "redeemed", member: createdMember, created: true, joining };
+			});
 
 		return InviteCodeService.of({
 			create: (input) =>
@@ -959,48 +919,34 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					const inviteCodeRecord = validationResult;
 					const redemption = yield* dbService.query("redeemInviteCode", async () => {
-						return await redeemInviteCodeInTransaction(
-							inviteCodeRecord,
-							input,
-						);
+						return await commitInviteCodeRedemption(inviteCodeRecord, input);
 					});
 					if (!redemption) {
 						return yield* Effect.die(
 							"Direct invite-code redemption unexpectedly became stale",
 						);
 					}
-					if (redemption.rejected === true) {
+					if (redemption.outcome === "rejected") {
 						yield* resolveRedemptionStatus("rejected");
 						return yield* Effect.die("Rejected redemption unexpectedly resolved");
 					}
-					if (typeof redemption.unusableReason === "string") {
+					if (redemption.outcome === "unusable") {
 						return yield* Effect.fail(
 							new ValidationError({
-								message: redemption.unusableReason,
+								message: redemption.reason,
 								field: "code",
 							}),
 						);
 					}
-					if (typeof redemption.enterpriseDenial === "string") {
+					if (redemption.outcome === "enterprise_denied") {
 						return yield* Effect.fail(
 							new ValidationError({
-								message: redemption.enterpriseDenial,
+								message: redemption.message,
 								field: "domainRestrictionEnabled",
 							}),
 						);
 					}
 					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
-
-					if (redemption.created && redemptionStatus === "approved") {
-						yield* Effect.promise(() =>
-							syncBillingSeatsAfterMemberChange({
-								organizationId: inviteCodeRecord.organizationId,
-								memberId: redemption.member.id,
-								userId: input.userId,
-								change: "added",
-							}),
-						);
-					}
 
 					return {
 						success: true,
@@ -1203,39 +1149,28 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					const inviteCodeRecord = preRedemptionResult.success;
 					const redemption = yield* dbService.query("redeemPendingInviteCode", async () => {
-						return await redeemInviteCodeInTransaction(inviteCodeRecord, {
+						return await commitInviteCodeRedemption(inviteCodeRecord, {
 							userId,
 							expectedPendingInviteCode: code,
 						});
 					});
 					if (!redemption) return null;
-					if (redemption.rejected === true) {
+					if (redemption.outcome === "rejected") {
 						yield* resolveRedemptionStatus("rejected");
 						return yield* Effect.die("Rejected redemption unexpectedly resolved");
 					}
-					if (typeof redemption.unusableReason === "string") {
+					if (redemption.outcome === "unusable") {
 						return null;
 					}
-					if (typeof redemption.enterpriseDenial === "string") {
+					if (redemption.outcome === "enterprise_denied") {
 						return yield* Effect.fail(
 							new ValidationError({
-								message: redemption.enterpriseDenial,
+								message: redemption.message,
 								field: "domainRestrictionEnabled",
 							}),
 						);
 					}
 					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
-
-					if (redemption.created && redemptionStatus === "approved") {
-						yield* Effect.promise(() =>
-							syncBillingSeatsAfterMemberChange({
-								organizationId: inviteCodeRecord.organizationId,
-								memberId: redemption.member.id,
-								userId,
-								change: "added",
-							}),
-						);
-					}
 
 					return {
 						success: true,

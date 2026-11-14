@@ -26,7 +26,6 @@ const mocks = vi.hoisted(() => ({
 	managerService: null as Record<string, unknown> | null,
 	markEmployeeWorkBalanceDirty: vi.fn(),
 	requestEmployeeWorkBalanceFullRebuild: vi.fn(),
-	writeFirstEmploymentTerms: vi.fn(),
 	logAudit: vi.fn(async () => undefined),
 	revalidateTag: vi.fn(),
 }));
@@ -66,11 +65,6 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 	logAudit: mocks.logAudit,
 }));
 
-// The terms themselves are covered by first-terms.integration.test.ts.
-vi.mock("@/lib/employment-history/first-terms", () => ({
-	writeFirstEmploymentTerms: mocks.writeFirstEmploymentTerms,
-}));
-
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
 }));
@@ -104,17 +98,9 @@ vi.mock("@/lib/organization/personnel-number-uniqueness", () => ({
 }));
 
 // The placement itself is covered by team-placement.integration.test.ts (#1594).
-const placeArrivingEmployee = vi.hoisted(() =>
-	vi.fn(async (_tx: unknown, input: { teamId: string | null }) => ({
-		addTeamId: input.teamId,
-		endTeamId: null,
-		primaryTeamId: input.teamId,
-	})),
-);
 vi.mock("@/lib/organization/team-placement/team-placement", () => ({
 	applyTeamChange: vi.fn(async () => undefined),
 	keepTeamChangeRefusals: (effect: unknown) => effect,
-	placeArrivingEmployee,
 	previewTeamChange: vi.fn(async () => undefined),
 	previewUnchangedTeamPlacement: vi.fn(async () => undefined),
 	teamChangeScope: (change: { organizationId: string; employeeId: string }) => ({
@@ -134,14 +120,12 @@ vi.mock("@/lib/work-balance/service", () => ({
 }));
 
 import {
-	createEmployeeSchema,
 	personalInformationSchema,
 	updateEmployeeInvitationDraftSchema,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
 import {
 	assignManagersAction,
-	createEmployeeAction,
 	previewEmployeeTeamChangeDrivingImpact,
 	requestEmployeeWorkBalanceRecalculationAction,
 	updateEmployeeAction,
@@ -231,22 +215,6 @@ describe("employee mutation schemas", () => {
 		expect(source()).not.toContain("invitedVia");
 	});
 
-	it("strips employee-owned names from create employee input", () => {
-		const result = createEmployeeSchema.safeParse({
-			userId: validUserId,
-			organizationId: "org-1",
-			teamId: validTeamId,
-			role: "employee",
-			firstName: "Ada",
-			lastName: "Lovelace",
-		});
-
-		expect(result.success).toBe(true);
-		if (!result.success) return;
-		expect(result.data).not.toHaveProperty("firstName");
-		expect(result.data).not.toHaveProperty("lastName");
-	});
-
 	it("accepts and trims auth user names in update employee input", () => {
 		const result = updateEmployeeSchema.safeParse({
 			position: "Engineer",
@@ -298,179 +266,6 @@ describe("employee mutation schemas", () => {
 		expect(result.success).toBe(true);
 		if (!result.success) return;
 		expect(result.data).toEqual({ contractType: "hourly", hourlyRate: "42.50" });
-	});
-});
-
-describe("createEmployeeAction", () => {
-	const createdEmployee = { id: "employee-1", userId: validUserId, organizationId: "org-1" };
-
-	function arrange() {
-		const returning = vi.fn().mockResolvedValue([createdEmployee]);
-		const values = vi.fn(() => ({ returning }));
-		const insert = vi.fn(() => ({ values }));
-		const db = {
-			insert,
-			query: {
-				employee: { findFirst: vi.fn().mockResolvedValue(null) },
-				user: { findFirst: vi.fn().mockResolvedValue({ id: validUserId }) },
-			},
-		};
-		const dbService = fakeDatabase(db);
-		return { db, dbService, insert, values };
-	}
-
-	const create = (input: Record<string, unknown> = {}) =>
-		createEmployeeAction({ userId: validUserId, role: "employee", ...input });
-
-	it("does not write employee-owned names into the employee insert payload", async () => {
-		const { values } = arrange();
-		mocks.writeFirstEmploymentTerms.mockResolvedValue(null);
-
-		await expect(
-			create({
-				teamId: validTeamId,
-				position: "Engineer",
-				firstName: "Ada",
-				lastName: "Lovelace",
-			}),
-		).resolves.toMatchObject({ success: true });
-
-		expect(values).toHaveBeenCalledWith(
-			expect.not.objectContaining({ firstName: expect.anything(), lastName: expect.anything() }),
-		);
-		expect(values).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1" }));
-		// The team is a membership and the primary team (Organization ADR 0010).
-		expect(placeArrivingEmployee).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({ organizationId: "org-1", teamId: validTeamId }),
-		);
-		// The absent employee row is inserted under the new user's protection.
-		expect(protection.scopes).toContainEqual({ organizationId: "org-1", userIds: [validUserId] });
-		expect(mocks.revalidateTag).toHaveBeenCalledWith(CACHE_TAGS.EMPLOYEES("org-1"), "max");
-	});
-
-	it("creates the employee in the session's organization, not one the client names", async () => {
-		const { values } = arrange();
-		mocks.writeFirstEmploymentTerms.mockResolvedValue(null);
-
-		await expect(create({ organizationId: "org-2" })).resolves.toMatchObject({ success: true });
-
-		expect(values).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1" }));
-	});
-
-	it("refuses a scoped manager, one level below org admin", async () => {
-		const { insert } = arrange();
-		mocks.caller = scopedManager;
-
-		await expect(create()).resolves.toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(insert).not.toHaveBeenCalled();
-	});
-
-	it("translates the serialized employee identity conflict without leaking database details", async () => {
-		const triggerError = Object.assign(
-			new Error("Employee identity already exists in organization"),
-			{ code: "23505", detail: "private-row-detail" },
-		);
-		const { dbService } = arrange();
-		const query = dbService.query;
-		dbService.query = vi.fn((name: string, run: () => Promise<unknown>) =>
-			name === "createEmployee"
-				? Effect.fail(
-						new DatabaseError({
-							message: "Database query failed: createEmployee",
-							operation: "createEmployee",
-							cause: triggerError,
-						}),
-					)
-				: query(name, run),
-		);
-
-		const result = await create();
-
-		expect(result).toEqual({
-			success: false,
-			code: "ValidationError",
-			error: "Employee already exists for this user in this organization",
-		});
-		expect(JSON.stringify(result)).not.toContain("private-row-detail");
-	});
-
-	describe("first employment terms", () => {
-		const startDate = new Date("2026-03-01T00:00:00.000Z");
-
-		it("writes an hourly employee's first terms in the employee transaction, and no rate history", async () => {
-			const { insert } = arrange();
-			mocks.writeFirstEmploymentTerms.mockResolvedValue({
-				validFrom: startDate,
-				reviewState: "confirmed",
-			});
-
-			const result = await create({ contractType: "hourly", hourlyRate: "25.50", startDate });
-
-			expect(result).toMatchObject({ success: true, data: createdEmployee });
-			// The fake protection runs the mutation on the database itself.
-			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
-				organizationId: "org-1",
-				employeeId: "employee-1",
-				actorUserId: "user-admin-1",
-				contractType: "hourly",
-				hourlyRate: 25.5,
-				startDate,
-			});
-			expect(insert).toHaveBeenCalledOnce();
-			expect(mocks.markEmployeeWorkBalanceDirty).toHaveBeenCalledExactlyOnceWith({
-				employeeId: "employee-1",
-				organizationId: "org-1",
-				dirtyFromDate: "2026-03-01",
-			});
-		});
-
-		it("writes no terms and marks no balance for a fixed employee", async () => {
-			arrange();
-			mocks.writeFirstEmploymentTerms.mockResolvedValue(null);
-
-			const result = await create({ contractType: "fixed" });
-
-			expect(result).toMatchObject({ success: true });
-			expect(mocks.writeFirstEmploymentTerms).toHaveBeenCalledExactlyOnceWith(
-				expect.anything(),
-				expect.objectContaining({ contractType: "fixed", hourlyRate: null }),
-			);
-			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		});
-
-		it("fails the creation with the terms refusal when the terms write fails", async () => {
-			arrange();
-			mocks.writeFirstEmploymentTerms.mockRejectedValue(
-				new ValidationError({
-					message: "Employment terms cannot start before the current employment period.",
-					field: "validFrom",
-				}),
-			);
-
-			const result = await create({ contractType: "hourly", hourlyRate: "25.50", startDate });
-
-			expect(result).toEqual({
-				success: false,
-				code: "ValidationError",
-				error: "Employment terms cannot start before the current employment period.",
-			});
-			expect(mocks.revalidateTag).not.toHaveBeenCalled();
-			expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		});
-
-		it("refuses an hourly wage that employment terms cannot hold", async () => {
-			const { insert } = arrange();
-
-			const result = await create({ contractType: "hourly", hourlyRate: "25.555", startDate });
-
-			expect(result).toMatchObject({ success: false, code: "ValidationError" });
-			expect(insert).not.toHaveBeenCalled();
-			expect(mocks.writeFirstEmploymentTerms).not.toHaveBeenCalled();
-		});
 	});
 });
 

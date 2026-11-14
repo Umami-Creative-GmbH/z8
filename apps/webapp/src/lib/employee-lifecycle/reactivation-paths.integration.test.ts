@@ -26,6 +26,8 @@ const harness = vi.hoisted(() => ({
 	userId: "",
 	organizationId: "",
 	now: "2026-10-20T08:00:00Z",
+	seatSignals: [] as unknown[],
+	notices: [] as { userId: string; type: string; entityId?: string }[],
 }));
 
 vi.mock("next/server", async (importOriginal) =>
@@ -84,7 +86,18 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	reconcileBillingSeatsForOrganization: async () => undefined,
-	syncBillingSeatsAfterMemberChange: async () => undefined,
+	syncBillingSeatsAfterMemberChange: async (signal: unknown) => {
+		harness.seatSignals.push(signal);
+	},
+}));
+vi.mock("@/lib/notifications/notification-service", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@/lib/notifications/notification-service")
+	>()),
+	createNotification: async (params: { userId: string; type: string; entityId?: string }) => {
+		harness.notices.push(params);
+		return null;
+	},
 }));
 vi.mock("@/lib/queue", async (importOriginal) =>
 	(await import("@/test/integration-harness")).calendarSyncQueue(
@@ -133,9 +146,7 @@ const { PendingMemberService, PendingMemberServiceLive } = await import(
 	"@/lib/effect/services/pending-member.service"
 );
 const { db } = await import("@/db");
-const { ensureEmployeeForOrganizationMember } = await import(
-	"@/lib/auth/organization-member-provisioning"
-);
+const { joinOrganization } = await import("./joining");
 const { createLifecycleDatabaseFixture } = await import(
 	"./testing/database.test.fixture"
 );
@@ -213,12 +224,21 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		return Effect.runPromise(effect.pipe(Effect.provide(services)));
 	}
 
-	async function inviteCode(requiresApproval: boolean) {
+	async function inviteCode(
+		requiresApproval: boolean,
+		defaultTeamId: string | null = null,
+	) {
 		const code = `R${randomUUID().slice(0, 8).toUpperCase()}`;
 		await fixture.pool.query(
-			`insert into invite_code (organization_id, code, label, requires_approval, created_by)
-			 values ($1, $2, 'Rejoin', $3, $4)`,
-			[fixture.organizationId, code, requiresApproval, fixture.ownerUserId],
+			`insert into invite_code (organization_id, code, label, requires_approval, created_by, default_team_id)
+			 values ($1, $2, 'Rejoin', $3, $4, $5)`,
+			[
+				fixture.organizationId,
+				code,
+				requiresApproval,
+				fixture.ownerUserId,
+				defaultTeamId,
+			],
 		);
 		return code;
 	}
@@ -229,6 +249,20 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 			[person.employeeId],
 		);
 		return rows[0];
+	}
+
+	/** The person's employees with their team placement and organization-wide permissions. */
+	async function employeesOf(userId: string) {
+		const { rows } = await fixture.pool.query(
+			`select e.role, e.is_active, e.team_id,
+			   (select coalesce(array_agg(m.team_id::text), '{}') from team_membership m
+			      where m.employee_id = e.id) as team_memberships,
+			   (select count(*)::int from team_permissions p
+			      where p.employee_id = e.id and p.team_id is null) as org_wide_permissions
+			 from employee e where e.organization_id = $1 and e.user_id = $2`,
+			[fixture.organizationId, userId],
+		);
+		return rows;
 	}
 
 	async function ledger(person: SeededEmployee) {
@@ -282,11 +316,26 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 	}
 
 	/** They were removed, asked to join again with a code that needs approval, and the owner approves. */
-	async function approvePendingRejoin(person: SeededEmployee) {
+	async function approvePendingRejoin(
+		person: Pick<SeededEmployee, "userId" | "memberId">,
+		assignedTeamId: string | null = null,
+	) {
 		await fixture.pool.query("delete from member where id = $1", [
 			person.memberId,
 		]);
+		return approvePendingJoin(person, assignedTeamId);
+	}
+
+	let lastApproval: unknown = null;
+
+	/** They ask to join with a code that needs approval, and the owner approves into `assignedTeamId`. */
+	async function approvePendingJoin(
+		person: Pick<SeededEmployee, "userId">,
+		assignedTeamId: string | null = null,
+		beforeApproval: (memberId: string) => Promise<void> = async () => {},
+	) {
 		const code = await inviteCode(true);
+		const before = await employeesOf(person.userId);
 		const joined = await run(
 			InviteCodeService.pipe(
 				Effect.flatMap((service) =>
@@ -295,22 +344,34 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 			),
 		);
 		expect(joined).toMatchObject({ status: "pending" });
-		await run(
+		// A redemption that leaves the membership pending does not join.
+		expect(await employeesOf(person.userId)).toEqual(before);
+		await beforeApproval(joined.memberId ?? "");
+		harness.seatSignals = [];
+		harness.notices = [];
+		lastApproval = await run(
 			PendingMemberService.pipe(
 				Effect.flatMap((service) =>
 					service.approve({
 						memberId: joined.memberId ?? "",
 						organizationId: fixture.organizationId,
 						approvedBy: fixture.ownerUserId,
+						assignedTeamId,
 					}),
 				),
 			),
 		);
+		return joined.memberId ?? "";
 	}
 
 	/** Still a member, they join again with a code that needs no approval. */
-	async function joinWithInviteCode(person: SeededEmployee) {
-		const code = await inviteCode(false);
+	async function joinWithInviteCode(
+		person: Pick<SeededEmployee, "userId">,
+		defaultTeamId: string | null = null,
+	) {
+		harness.seatSignals = [];
+		harness.notices = [];
+		const code = await inviteCode(false, defaultTeamId);
 		const joined = await run(
 			InviteCodeService.pipe(
 				Effect.flatMap((service) =>
@@ -319,16 +380,19 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 			),
 		);
 		expect(joined).toMatchObject({ status: "approved" });
+		return joined.memberId ?? "";
 	}
 
-	/** They accept an invitation, which provisions their employee. */
+	/** They accept an invitation: joining brings their employee back. */
 	async function acceptInvitation(person: SeededEmployee) {
-		await ensureEmployeeForOrganizationMember(db, {
-			mode: "membershipAccepted",
-			userId: person.userId,
-			organizationId: fixture.organizationId,
-			memberRole: "member",
-		});
+		const joined = await db.transaction((tx) =>
+			joinOrganization(tx, {
+				userId: person.userId,
+				organizationId: fixture.organizationId,
+				membership: { id: person.memberId, role: "member" },
+			}),
+		);
+		await joined.afterCommit.run();
 	}
 
 	it("reactivates a deactivated employee whose pending membership an admin approves, by the admin", async () => {
@@ -343,9 +407,206 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		await expectReactivatedBy(person, person.userId);
 	});
 
-	it("reactivates a deactivated employee whose accepted invitation provisions them, by the accepting user", async () => {
+	it("reactivates a deactivated employee whose accepted invitation joins them, by the accepting user", async () => {
 		const person = await deactivatedPerson();
 		await acceptInvitation(person);
 		await expectReactivatedBy(person, person.userId);
+	});
+
+	/**
+	 * #1667 (spec #1664): invite code redemption and pending-member approval join
+	 * through the joining module, in their own transactions, and signal the seat
+	 * change after commit.
+	 */
+	describe("invite codes and pending-member approval join (#1667)", () => {
+		let teamId: string;
+
+		beforeAll(async () => {
+			const { rows } = await fixture.pool.query<{ id: string }>(
+				`insert into team (organization_id, name, updated_at) values ($1, 'Arrivals', now()) returning id`,
+				[fixture.organizationId],
+			);
+			teamId = rows[0]?.id ?? "";
+		});
+
+		/** A user with no membership and no employee in the organization. */
+		async function newUser() {
+			const userId = randomUUID();
+			await fixture.pool.query(
+				`insert into "user" (id, name, email, created_at, updated_at) values ($1, 'Arrival', $2, now(), now())`,
+				[userId, `${userId}@arrival.test`],
+			);
+			return { userId };
+		}
+
+		/** A deactivated person whose departure then took effect: only a rehire brings them back. */
+		async function departedPerson() {
+			const person = await deactivatedPerson();
+			await fixture.pool.query(
+				`insert into employee_departure
+				 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+				  cutoff_at, created_by, request_id, request_fingerprint, revision, status, effective_at)
+				 values ($1, $2, $3, 'immediate', '2026-10-20', 'UTC', '2026-10-21T00:00:00Z', $4,
+				         gen_random_uuid(), 'test', 1, 'effective', '2026-10-21T00:00:00Z')`,
+				[
+					fixture.organizationId,
+					person.employeeId,
+					person.employmentPeriodId,
+					fixture.ownerUserId,
+				],
+			);
+			await fixture.pool.query(
+				`update employee_employment_period set status = 'closed', ended_at = '2026-10-21T00:00:00Z' where id = $1`,
+				[person.employmentPeriodId],
+			);
+			return person;
+		}
+
+		function seatSignal(userId: string, memberId: string) {
+			return {
+				organizationId: fixture.organizationId,
+				memberId,
+				userId,
+				change: "added",
+			};
+		}
+
+		type Path = {
+			name: string;
+			/** Joins the person into `teamId`; returns the membership id. */
+			joinNew(person: { userId: string }): Promise<string>;
+			rejoin(person: SeededEmployee): Promise<string>;
+		};
+		const PATHS: Path[] = [
+			{
+				name: "invite code",
+				joinNew: (person) => joinWithInviteCode(person, teamId),
+				rejoin: async (person) => {
+					await joinWithInviteCode(person, teamId);
+					return person.memberId;
+				},
+			},
+			{
+				name: "pending-member approval",
+				joinNew: (person) => approvePendingJoin(person, teamId),
+				rejoin: (person) => approvePendingRejoin(person, teamId),
+			},
+		];
+
+		describe.each(PATHS)("$name", (path) => {
+			it("joins a new member as an employee placed in the team, with the seat signal", async () => {
+				const person = await newUser();
+				const memberId = await path.joinNew(person);
+
+				expect(await employeesOf(person.userId)).toEqual([
+					{
+						role: "employee",
+						is_active: true,
+						team_id: teamId,
+						team_memberships: [teamId],
+						org_wide_permissions: 0,
+					},
+				]);
+				expect(harness.seatSignals).toEqual([
+					seatSignal(person.userId, memberId),
+				]);
+			});
+
+			it("reactivates a deactivated returner onto the current roster and places them in the team", async () => {
+				const person = await deactivatedPerson();
+				const memberId = await path.rejoin(person);
+
+				expect(await employeesOf(person.userId)).toEqual([
+					{
+						role: "employee",
+						is_active: true,
+						team_id: teamId,
+						team_memberships: [teamId],
+						org_wide_permissions: 0,
+					},
+				]);
+				expect(harness.seatSignals).toEqual([
+					seatSignal(person.userId, memberId),
+				]);
+			});
+
+			it("leaves a departed returner off the current roster and does not place them (#1641)", async () => {
+				const person = await departedPerson();
+				await path.rejoin(person);
+
+				expect(await employeesOf(person.userId)).toEqual([
+					{
+						role: "employee",
+						is_active: false,
+						team_id: null,
+						team_memberships: [],
+						org_wide_permissions: 0,
+					},
+				]);
+				expect(await ledger(person)).toMatchObject([{ reactivated_at: null }]);
+			});
+		});
+
+		it("gives an admin membership approved from pending an admin employee with organization-wide team permissions", async () => {
+			const person = await newUser();
+			await approvePendingJoin(person, null, async (memberId) => {
+				await fixture.pool.query("update member set role = 'admin' where id = $1", [
+					memberId,
+				]);
+			});
+
+			expect(await employeesOf(person.userId)).toEqual([
+				{
+					role: "admin",
+					is_active: true,
+					team_id: null,
+					team_memberships: [],
+					org_wide_permissions: 1,
+				},
+			]);
+		});
+
+		describe("a departed returner needs a rehire (#1672)", () => {
+			it("tells the approver in the approval result, and nobody else", async () => {
+				const person = await departedPerson();
+				await approvePendingRejoin(person);
+
+				expect(lastApproval).toMatchObject({
+					success: true,
+					rehireNeeded: { employeeId: person.employeeId },
+				});
+				expect(harness.notices).toEqual([]);
+			});
+
+			it("reports no rehire for a returner the approval brings back", async () => {
+				const person = await deactivatedPerson();
+				await approvePendingRejoin(person);
+
+				expect(lastApproval).toMatchObject({ success: true, rehireNeeded: null });
+			});
+
+			it("tells the organization's admins when an invite code without approval brought them in", async () => {
+				const person = await departedPerson();
+				await joinWithInviteCode(person);
+
+				expect(harness.notices).toContainEqual(
+					expect.objectContaining({
+						userId: fixture.ownerUserId,
+						type: "former_employee_needs_rehire",
+						entityId: person.employeeId,
+					}),
+				);
+				expect(harness.notices.map((notice) => notice.userId)).not.toContain(person.userId);
+			});
+		});
+
+		it("signals the seat after an existing approved member rejoins by invite code (#1642)", async () => {
+			const person = await deactivatedPerson();
+			await joinWithInviteCode(person);
+
+			expect(harness.seatSignals).toEqual([
+				seatSignal(person.userId, person.memberId),
+			]);
+		});
 	});
 });

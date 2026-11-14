@@ -10,7 +10,8 @@
  * configured with the production coordination hooks: the HTTP
  * `/organization/create` endpoint through the coordinated `/api/auth` handler,
  * and the onboarding service's server-side call. Only request headers, Next
- * cache and the after-commit membership provisioning are replaced.
+ * cache and joining are replaced (organization-joining.integration.test.ts
+ * covers joining).
  */
 
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
@@ -164,8 +165,8 @@ describe("coordinated organization creation on PostgreSQL", () => {
 				organizationHooks: createCoordinatedOrganizationHooks({
 					beforeUpdateOrganization: async () => undefined,
 					beforeCreateInvitation: async () => undefined,
-					afterAcceptInvitation: async () => undefined,
-					afterAddMember: async ({ user }) => {
+					joinOnAcceptedInvitation: async () => async () => undefined,
+					joinOnAddedMember: async (_transaction, { user }) => async () => {
 						harness.provisioned.push(`added:${user.id}`);
 					},
 				}),

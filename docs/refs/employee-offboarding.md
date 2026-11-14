@@ -537,8 +537,8 @@ no grant, badge, fob, driving authorization, manager link, team or project link,
 shift or absence; the acceptance suite asserts that.
 
 **Every way back is a reactivation** (#1628). The invite-code join, the
-pending-member approval, provisioning (`ensureEmployeeForOrganizationMember` in
-`membershipAccepted` mode) and a SCIM re-enable (the reconciler's
+pending-member approval, joining (`joinOrganization` in
+`lib/employee-lifecycle/joining/`) and a SCIM re-enable (the reconciler's
 `onEmployeeReactivated` hook) each make one call in their transaction (#1643):
 `reactivateOnReturn(tx, { organizationId, employeeId, actorUserId, metadata? },
 audit)`. It switches the employee on when they are off (the SCIM reconciler has
@@ -752,6 +752,30 @@ recorded*). A rehire never restores expense officer, payroll access or
 personnel file officer grants; an admin must grant them again. Nor does it
 revive a kiosk badge (issue a new one) or a kiosk fob (the employee registers
 it again at a kiosk).
+
+### A membership that needs a rehire
+
+A former employee whose departure took effect can regain an approved membership
+by accepting an invitation, redeeming an invite code, being approved as a
+pending member, or signing in through the organization's identity provider.
+Joining then keeps them off the current roster, and its outcome is
+`membership_only` (#1672). Who is told:
+
+- **The approver of a pending member** sees it on the pending members card,
+  with *Start rehire*, which links to the employee's page.
+- **The admin who sent the invitation** gets the `former_employee_needs_rehire`
+  notification. Without a recorded inviter, the organization's current owners
+  and admins get it.
+- **The organization's current owners and admins** get the same notification
+  for an invite code that needs no approval, a direct member add, and an SSO
+  sign-in that creates the membership. A later SSO sign-in with the kept
+  membership tells nobody again.
+- **The person** sees *Your employment here has ended* in place of the
+  employee-profile card, asking an administrator to rehire them.
+
+Joining sends the notification after the membership commits, as best effort,
+keyed by membership and recipient, so a retry sends nothing twice. The warning
+comes after the membership is granted, not before.
 
 ## Personnel file retention
 

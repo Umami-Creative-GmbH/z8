@@ -158,6 +158,8 @@ function getNotificationStyle(type: NotificationType): {
 		case "employee_deactivation_shifts_opened":
 		// Reports left with only a former manager (#1442)
 		case "former_employee_reports_without_manager":
+		// A former employee regained a membership and needs a rehire (#1672)
+		case "former_employee_needs_rehire":
 			return {
 				icon: <IconUserX className="size-4" />,
 				bgColor: "bg-amber-100 dark:bg-amber-900/30",

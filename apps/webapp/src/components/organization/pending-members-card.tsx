@@ -4,6 +4,7 @@ import {
 	IconCheck,
 	IconLoader2,
 	IconUserCheck,
+	IconUserExclamation,
 	IconUserX,
 	IconX,
 } from "@tabler/icons-react";
@@ -59,6 +60,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { formatDateOnly } from "@/lib/datetime/format";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
 import {
@@ -66,6 +68,7 @@ import {
 	type SettingsAccess,
 } from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
+import { Link } from "@/navigation";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import {
 	buildBulkApproveRequests,
@@ -87,6 +90,93 @@ function formatDate(
 ) {
 	if (!date) return "-";
 	return formatDateOnly(new Date(date), { locale, timezone });
+}
+
+type RehireNotice = { employeeId: string; name: string };
+
+/** Former employees an approval did not bring back: only a rehire does (#1672). */
+function useRehireNotices(pendingMembers: PendingMember[]) {
+	const [rehireNotices, setRehireNotices] = useState<RehireNotice[]>([]);
+	const dismissRehireNotice = (employeeId: string) =>
+		setRehireNotices((notices) => notices.filter((notice) => notice.employeeId !== employeeId));
+	/** Called with the approved member before the pending list refetches without them. */
+	const addRehireNotice = (
+		rehireNeeded: { employeeId: string } | null,
+		memberId: string,
+	) => {
+		if (!rehireNeeded) return;
+		const member = pendingMembers.find((candidate) => candidate.id === memberId);
+		const name = member?.user?.name || member?.user?.email || "";
+		setRehireNotices((notices) => [
+			...notices.filter((notice) => notice.employeeId !== rehireNeeded.employeeId),
+			{ employeeId: rehireNeeded.employeeId, name },
+		]);
+	};
+	return { rehireNotices, addRehireNotice, dismissRehireNotice };
+}
+
+function RehireNeededNotices({
+	notices,
+	onDismiss,
+	t,
+}: {
+	notices: RehireNotice[];
+	onDismiss: (employeeId: string) => void;
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return notices.map((notice) => (
+		<RehireNeededNotice
+			key={notice.employeeId}
+			notice={notice}
+			onDismiss={() => onDismiss(notice.employeeId)}
+			t={t}
+		/>
+	));
+}
+
+/**
+ * The approved person is a former employee whose departure took effect: the
+ * membership stands, but only a rehire brings them back (#1672).
+ */
+function RehireNeededNotice({
+	notice,
+	onDismiss,
+	t,
+}: {
+	notice: RehireNotice;
+	onDismiss: () => void;
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<div
+			role="status"
+			className="flex flex-col gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 sm:flex-row sm:items-center dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+		>
+			<IconUserExclamation aria-hidden className="size-5 shrink-0" />
+			<p className="flex-1">
+				{t(
+					"settings.pendingMembers.rehireNeeded",
+					"{name} is a former employee. The membership is approved, but they have no access until you rehire them.",
+					{ name: notice.name },
+				)}
+			</p>
+			<div className="flex shrink-0 items-center gap-2">
+				<Button asChild size="sm" variant="outline">
+					<Link href={`/settings/employees/${notice.employeeId}`}>
+						{t("settings.pendingMembers.startRehire", "Start rehire")}
+					</Link>
+				</Button>
+				<Button
+					size="icon"
+					variant="ghost"
+					onClick={onDismiss}
+					aria-label={t("settings.pendingMembers.dismissRehireNotice", "Dismiss")}
+				>
+					<IconX className="size-4" />
+				</Button>
+			</div>
+		</div>
+	);
 }
 
 function PendingMembersTable({
@@ -143,6 +233,9 @@ function PendingMembersTable({
 						{t("settings.pendingMembers.joinedVia", "Joined Via")}
 					</TableHead>
 					<TableHead>
+						{t("settings.pendingMembers.requestedRole", "Requested Role")}
+					</TableHead>
+					<TableHead>
 						{t("settings.pendingMembers.requestedAt", "Requested")}
 					</TableHead>
 					<TableHead>
@@ -180,15 +273,22 @@ function PendingMembersTable({
 							</div>
 						</TableCell>
 						<TableCell>
-							{member.inviteCode ? (
-								<Badge variant="outline">
-									{member.inviteCode.label || member.inviteCode.code}
-								</Badge>
-							) : (
+							{member.source === "sso" ? (
 								<Badge variant="secondary">
 									{t("settings.pendingMembers.sso", "SSO")}
 								</Badge>
+							) : (
+								<Badge variant="outline">
+									{member.inviteCode?.label || member.inviteCode?.code || "-"}
+								</Badge>
 							)}
+						</TableCell>
+						<TableCell>
+							{hasOrganizationRole(member.role, "owner")
+								? t("settings.pendingMembers.roleOwner", "Owner")
+								: hasOrganizationRole(member.role, "admin")
+									? t("settings.pendingMembers.roleAdmin", "Admin")
+									: t("settings.pendingMembers.roleMember", "Member")}
 						</TableCell>
 						<TableCell>
 							{formatDate(member.createdAt, locale, timezone)}
@@ -427,6 +527,8 @@ export function PendingMembersCard({
 
 	const teams = teamsResult?.success ? teamsResult.data : [];
 
+	const { rehireNotices, addRehireNotice, dismissRehireNotice } = useRehireNotices(pendingMembers);
+
 	// Approve mutation
 	const approveMutation = useMutation({
 		mutationFn: async ({
@@ -443,7 +545,8 @@ export function PendingMembersCard({
 			if (!result.success) throw new Error(result.error || "Failed to approve");
 			return result.data;
 		},
-		onSuccess: () => {
+		onSuccess: (approval, { memberId }) => {
+			addRehireNotice(approval.rehireNeeded, memberId);
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.pendingMembers.list(organizationId),
 			});
@@ -496,6 +599,7 @@ export function PendingMembersCard({
 
 					if (!result.success)
 						throw new Error(result.error || "Failed to approve");
+					addRehireNotice(result.data.rehireNeeded, memberId);
 				}),
 			);
 
@@ -587,8 +691,8 @@ export function PendingMembersCard({
 		return null;
 	}
 
-	// Don't show card if no pending members
-	if (!isLoading && pendingMembers.length === 0) {
+	// Don't show card if no pending members, unless an approval needs a rehire
+	if (!isLoading && pendingMembers.length === 0 && rehireNotices.length === 0) {
 		return null;
 	}
 
@@ -642,7 +746,8 @@ export function PendingMembersCard({
 					)}
 				</div>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="space-y-4">
+				<RehireNeededNotices notices={rehireNotices} onDismiss={dismissRehireNotice} t={t} />
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
 						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
