@@ -46,6 +46,8 @@
     "typecheck": "Passed all three projects after merge",
     "runtime": "One Organization suspended h1; 390px viewport and document width; expected name, description and link",
     "compilation": { "issues": [] },
-    "errors": { "configErrors": [], "sessionErrors": [] }
+    "errors": { "configErrors": [], "sessionErrors": [] },
+    "doctor": "Final committed-tree scope: 5 files, no issues; numeric score/supply-chain disabled",
+    "cleanup": "Ticket Preview/native inspector closed, verified Next child tree stopped, three owned services removed, port/container probes empty"
   }
 }
