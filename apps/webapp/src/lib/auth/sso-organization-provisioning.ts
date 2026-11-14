@@ -97,7 +97,13 @@ async function ssoRequiresApproval(transaction: Transaction, organizationId: str
 	return row?.ssoRequiresApproval ?? true;
 }
 
-type HeldMembership = { id: string; role: string; status: string | null };
+type HeldMembership = {
+	id: string;
+	role: string;
+	status: string | null;
+	/** Whether this sign-in created the membership. */
+	created: boolean;
+};
 
 /**
  * The SSO membership: pending while the organization requires SSO approval
@@ -114,7 +120,7 @@ async function addOrganizationMember(
 		.from(member)
 		.where(and(eq(member.organizationId, input.organizationId), eq(member.userId, input.userId)))
 		.limit(1);
-	if (existing) return existing;
+	if (existing) return { ...existing, created: false };
 	const [pendingInvitation] = await transaction
 		.select({ id: invitation.id })
 		.from(invitation)
@@ -128,7 +134,7 @@ async function addOrganizationMember(
 		)
 		.limit(1);
 	if (pendingInvitation) return null;
-	const membership: HeldMembership = {
+	const membership = {
 		id: nanoid(),
 		role: input.role,
 		status: (await ssoRequiresApproval(transaction, input.organizationId)) ? "pending" : "approved",
@@ -139,7 +145,7 @@ async function addOrganizationMember(
 		userId: input.userId,
 		createdAt: new Date(),
 	});
-	return membership;
+	return { ...membership, created: true };
 }
 
 /**
@@ -164,6 +170,10 @@ async function signInToOrganization(
 			organizationId: input.organizationId,
 			userId: input.userId,
 			membership: { id: membership.id, role: membership.role },
+			// Nobody watches a sign-in: the admins learn once, when it creates the
+			// membership, that a former employee needs a rehire (#1672). Later
+			// sign-ins with the kept membership tell nobody again.
+			...(membership.created ? { rehireNotice: { to: "organization_admins" as const } } : {}),
 		});
 	});
 	if (!joining) return null;

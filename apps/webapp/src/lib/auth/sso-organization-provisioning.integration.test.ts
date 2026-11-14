@@ -13,6 +13,14 @@ vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 		seatSignals.push(signal);
 	},
 }));
+const notices = vi.hoisted(() => [] as unknown[]);
+vi.mock("@/lib/notifications/notification-service", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/notifications/notification-service")>()),
+	createNotification: async (params: unknown) => {
+		notices.push(params);
+		return null;
+	},
+}));
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
 	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
@@ -204,6 +212,7 @@ describe("SSO sign-ins join the organization (#1669)", () => {
 	afterAll(async () => fixture?.close());
 	beforeEach(() => {
 		seatSignals.length = 0;
+		notices.length = 0;
 	});
 
 	type SignIn = "provider-bound" | "verified domain";
@@ -394,6 +403,7 @@ describe("SSO sign-ins join the organization (#1669)", () => {
 
 		it("keeps a departed returner off the current roster with the membership only", async () => {
 			const { organizationId, domain } = await openSsoOrganization();
+			const owner = await fixture.seedEmployee({ organizationId, role: "owner" });
 			const former = await formerEmployee(organizationId, "departed", { keepMembership: false });
 			const user = await onDomain(former.userId, domain);
 
@@ -407,6 +417,27 @@ describe("SSO sign-ins join the organization (#1669)", () => {
 				{ id: former.employeeId, role: "employee", is_active: false },
 			]);
 			expect(seatSignals).toEqual(seatSignalFor(organizationId, user.id));
+			// Nobody watches an SSO sign-in: the admins learn a rehire is needed (#1672).
+			expect(notices).toContainEqual(
+				expect.objectContaining({
+					userId: owner.userId,
+					organizationId,
+					type: "former_employee_needs_rehire",
+					entityId: former.employeeId,
+				}),
+			);
+		});
+
+		it("tells nobody again when a departed returner who kept the membership signs in (#1672)", async () => {
+			const { organizationId, domain } = await openSsoOrganization();
+			await fixture.seedEmployee({ organizationId, role: "owner" });
+			const former = await formerEmployee(organizationId, "departed", { keepMembership: true });
+			const user = await onDomain(former.userId, domain);
+
+			const outcome = await signIn(kind, { organizationId, user });
+
+			expect(outcome?.kind).toBe("membership_only");
+			expect(notices).toEqual([]);
 		});
 
 		it("joins nothing while the membership waits for approval", async () => {

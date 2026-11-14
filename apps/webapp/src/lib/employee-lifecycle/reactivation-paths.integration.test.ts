@@ -27,6 +27,7 @@ const harness = vi.hoisted(() => ({
 	organizationId: "",
 	now: "2026-10-20T08:00:00Z",
 	seatSignals: [] as unknown[],
+	notices: [] as { userId: string; type: string; entityId?: string }[],
 }));
 
 vi.mock("next/server", async (importOriginal) =>
@@ -87,6 +88,15 @@ vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	reconcileBillingSeatsForOrganization: async () => undefined,
 	syncBillingSeatsAfterMemberChange: async (signal: unknown) => {
 		harness.seatSignals.push(signal);
+	},
+}));
+vi.mock("@/lib/notifications/notification-service", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@/lib/notifications/notification-service")
+	>()),
+	createNotification: async (params: { userId: string; type: string; entityId?: string }) => {
+		harness.notices.push(params);
+		return null;
 	},
 }));
 vi.mock("@/lib/queue", async (importOriginal) =>
@@ -316,6 +326,8 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		return approvePendingJoin(person, assignedTeamId);
 	}
 
+	let lastApproval: unknown = null;
+
 	/** They ask to join with a code that needs approval, and the owner approves into `assignedTeamId`. */
 	async function approvePendingJoin(
 		person: Pick<SeededEmployee, "userId">,
@@ -336,7 +348,8 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		expect(await employeesOf(person.userId)).toEqual(before);
 		await beforeApproval(joined.memberId ?? "");
 		harness.seatSignals = [];
-		await run(
+		harness.notices = [];
+		lastApproval = await run(
 			PendingMemberService.pipe(
 				Effect.flatMap((service) =>
 					service.approve({
@@ -357,6 +370,7 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 		defaultTeamId: string | null = null,
 	) {
 		harness.seatSignals = [];
+		harness.notices = [];
 		const code = await inviteCode(false, defaultTeamId);
 		const joined = await run(
 			InviteCodeService.pipe(
@@ -550,6 +564,40 @@ describe("every way back after a deactivation is a reactivation (#1628)", () => 
 					org_wide_permissions: 1,
 				},
 			]);
+		});
+
+		describe("a departed returner needs a rehire (#1672)", () => {
+			it("tells the approver in the approval result, and nobody else", async () => {
+				const person = await departedPerson();
+				await approvePendingRejoin(person);
+
+				expect(lastApproval).toMatchObject({
+					success: true,
+					rehireNeeded: { employeeId: person.employeeId },
+				});
+				expect(harness.notices).toEqual([]);
+			});
+
+			it("reports no rehire for a returner the approval brings back", async () => {
+				const person = await deactivatedPerson();
+				await approvePendingRejoin(person);
+
+				expect(lastApproval).toMatchObject({ success: true, rehireNeeded: null });
+			});
+
+			it("tells the organization's admins when an invite code without approval brought them in", async () => {
+				const person = await departedPerson();
+				await joinWithInviteCode(person);
+
+				expect(harness.notices).toContainEqual(
+					expect.objectContaining({
+						userId: fixture.ownerUserId,
+						type: "former_employee_needs_rehire",
+						entityId: person.employeeId,
+					}),
+				);
+				expect(harness.notices.map((notice) => notice.userId)).not.toContain(person.userId);
+			});
 		});
 
 		it("signals the seat after an existing approved member rejoins by invite code (#1642)", async () => {

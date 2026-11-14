@@ -311,6 +311,9 @@ export const InviteCodeServiceLive = Layer.effect(
 				membership: { id: joinedMember.id, role: joinedMember.role },
 				teamId: inviteCodeRecord.defaultTeamId,
 				actorUserId: userId,
+				// No admin looks at a redemption: the admins learn of a former
+				// employee who needs a rehire (#1672).
+				rehireNotice: { to: "organization_admins" },
 			});
 
 		const redeemInviteCodeInTransaction = async (

@@ -82,6 +82,12 @@ export interface ApprovalResult {
 	success: boolean;
 	member: PendingMember;
 	approval: MemberApproval;
+	/**
+	 * Set when the approved person is a former employee whose departure took
+	 * effect: the membership stands, but only a rehire of this employee brings
+	 * them back (#1672).
+	 */
+	rehireNeeded?: { employeeId: string } | null;
 }
 
 export class PendingMemberService extends Context.Service<
@@ -569,12 +575,16 @@ export const PendingMemberServiceLive = Layer.effect(
 							}),
 						);
 					}
-					const { approval } = approved;
+					const { approval, joining } = approved;
+					const { outcome } = joining;
 
 					return {
 						success: true,
 						member: pendingMember,
 						approval,
+						// The approver sees it where they approved; nobody else is told.
+						rehireNeeded:
+							outcome.kind === "membership_only" ? { employeeId: outcome.employee.id } : null,
 					};
 				}),
 
