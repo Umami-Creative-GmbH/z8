@@ -23,7 +23,11 @@ import {
 } from "@/db/schema";
 import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
-import { type JoiningTransaction, joinOrganization } from "@/lib/employee-lifecycle/joining";
+import {
+	type Joining,
+	type JoiningTransaction,
+	joinOrganization,
+} from "@/lib/employee-lifecycle/joining";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
@@ -38,6 +42,23 @@ import { DatabaseService } from "./database.service";
 type InviteCode = typeof InviteCodeTable.$inferSelect;
 type InviteCodeUsage = typeof InviteCodeUsageTable.$inferSelect;
 type InviteCodeStatus = "active" | "paused" | "expired" | "archived";
+
+/**
+ * What one redemption transaction did. Null: the pending code the caller
+ * expected changed meanwhile, so this redemption is stale.
+ */
+type InviteCodeRedemption =
+	| { outcome: "unusable"; reason: string }
+	| { outcome: "rejected" }
+	| { outcome: "enterprise_denied"; message: string }
+	| {
+			outcome: "redeemed";
+			member: typeof member.$inferSelect;
+			created: boolean;
+			/** Null while the membership waits for approval. */
+			joining: Joining | null;
+	  }
+	| null;
 
 export interface CreateInviteCodeInput {
 	organizationId: string;
@@ -316,33 +337,34 @@ export const InviteCodeServiceLive = Layer.effect(
 				rehireNotice: { to: "organization_admins" },
 			});
 
-		const redeemInviteCodeInTransaction = async (
+		type RedemptionInput = {
+			userId: string;
+			ipAddress?: string | null;
+			userAgent?: string | null;
+			expectedPendingInviteCode?: string;
+		};
+
+		/**
+		 * Redeems the code in its own transaction and, once that committed, runs
+		 * joining's after-commit step (audit forwarding, seat signal).
+		 */
+		const commitInviteCodeRedemption = async (
 			inviteCodeRecord: InviteCode,
-			input: {
-				userId: string;
-				ipAddress?: string | null;
-				userAgent?: string | null;
-				expectedPendingInviteCode?: string;
-			},
-		) => {
-			const redemption = await redeemInviteCodeTransaction(inviteCodeRecord, input);
-			// Joining's audit forwarding and seat signal run once the redemption committed.
-			if (redemption && "joining" in redemption && redemption.joining) {
+			input: RedemptionInput,
+		): Promise<InviteCodeRedemption> => {
+			const redemption = await runRedemptionTransaction(inviteCodeRecord, input);
+			if (redemption?.outcome === "redeemed" && redemption.joining) {
 				await redemption.joining.afterCommit.run();
 			}
 			return redemption;
 		};
 
-		const redeemInviteCodeTransaction = async (
+		/** The redemption's transaction; the caller runs joining's after-commit step. */
+		const runRedemptionTransaction = async (
 			inviteCodeRecord: InviteCode,
-			input: {
-				userId: string;
-				ipAddress?: string | null;
-				userAgent?: string | null;
-				expectedPendingInviteCode?: string;
-			},
-		) =>
-			dbService.db.transaction(async (tx) => {
+			input: RedemptionInput,
+		): Promise<InviteCodeRedemption> =>
+			dbService.db.transaction(async (tx): Promise<InviteCodeRedemption> => {
 				const redemptionDb = tx as RedemptionDb;
 				// Redemption adds the user's membership and employee in the code's
 				// organization: the user's exclusive configuration/access guard comes
@@ -368,7 +390,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					},
 				});
 				if (!lockedInviteCode) {
-					return { unusableReason: "Code is not usable" } as const;
+					return { outcome: "unusable", reason: "Code is not usable" };
 				}
 
 				const targetUser = await redemptionDb.query.user.findFirst({
@@ -389,7 +411,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					),
 				});
 				if (existingMember?.status === "rejected") {
-					return { rejected: true } as const;
+					return { outcome: "rejected" };
 				}
 
 				const rejectionAudits = await redemptionDb.query.auditLog.findMany({
@@ -409,7 +431,7 @@ export const InviteCodeServiceLive = Layer.effect(
 							input.userId,
 					)
 				) {
-					return { rejected: true } as const;
+					return { outcome: "rejected" };
 				}
 
 				const { usable, reason } =
@@ -425,7 +447,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					) {
 						return null;
 					}
-					return { unusableReason: reason ?? "Code is not usable" } as const;
+					return { outcome: "unusable", reason: reason ?? "Code is not usable" };
 				}
 
 				let enterpriseDenial: string | undefined;
@@ -452,7 +474,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					return null;
 				}
 				if (enterpriseDenial) {
-					return { enterpriseDenial } as const;
+					return { outcome: "enterprise_denied", message: enterpriseDenial };
 				}
 
 				if (existingMember) {
@@ -461,7 +483,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						!lockedInviteCode.requiresApproval && existingMember.status === "approved"
 							? await joinByInviteCode(tx, lockedInviteCode, input.userId, existingMember)
 							: null;
-					return { member: existingMember, created: false, joining };
+					return { outcome: "redeemed", member: existingMember, created: false, joining };
 				}
 
 				const memberStatus = lockedInviteCode.requiresApproval
@@ -514,7 +536,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					throw new Error("Invite code changed before usage increment");
 				}
 
-				return { member: createdMember, created: true, joining };
+				return { outcome: "redeemed", member: createdMember, created: true, joining };
 			});
 
 		return InviteCodeService.of({
@@ -897,32 +919,29 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					const inviteCodeRecord = validationResult;
 					const redemption = yield* dbService.query("redeemInviteCode", async () => {
-						return await redeemInviteCodeInTransaction(
-							inviteCodeRecord,
-							input,
-						);
+						return await commitInviteCodeRedemption(inviteCodeRecord, input);
 					});
 					if (!redemption) {
 						return yield* Effect.die(
 							"Direct invite-code redemption unexpectedly became stale",
 						);
 					}
-					if (redemption.rejected === true) {
+					if (redemption.outcome === "rejected") {
 						yield* resolveRedemptionStatus("rejected");
 						return yield* Effect.die("Rejected redemption unexpectedly resolved");
 					}
-					if (typeof redemption.unusableReason === "string") {
+					if (redemption.outcome === "unusable") {
 						return yield* Effect.fail(
 							new ValidationError({
-								message: redemption.unusableReason,
+								message: redemption.reason,
 								field: "code",
 							}),
 						);
 					}
-					if (typeof redemption.enterpriseDenial === "string") {
+					if (redemption.outcome === "enterprise_denied") {
 						return yield* Effect.fail(
 							new ValidationError({
-								message: redemption.enterpriseDenial,
+								message: redemption.message,
 								field: "domainRestrictionEnabled",
 							}),
 						);
@@ -1130,23 +1149,23 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					const inviteCodeRecord = preRedemptionResult.success;
 					const redemption = yield* dbService.query("redeemPendingInviteCode", async () => {
-						return await redeemInviteCodeInTransaction(inviteCodeRecord, {
+						return await commitInviteCodeRedemption(inviteCodeRecord, {
 							userId,
 							expectedPendingInviteCode: code,
 						});
 					});
 					if (!redemption) return null;
-					if (redemption.rejected === true) {
+					if (redemption.outcome === "rejected") {
 						yield* resolveRedemptionStatus("rejected");
 						return yield* Effect.die("Rejected redemption unexpectedly resolved");
 					}
-					if (typeof redemption.unusableReason === "string") {
+					if (redemption.outcome === "unusable") {
 						return null;
 					}
-					if (typeof redemption.enterpriseDenial === "string") {
+					if (redemption.outcome === "enterprise_denied") {
 						return yield* Effect.fail(
 							new ValidationError({
-								message: redemption.enterpriseDenial,
+								message: redemption.message,
 								field: "domainRestrictionEnabled",
 							}),
 						);
