@@ -10,7 +10,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const { db } = await import("@/db");
-const { joinOrganization, joinMembersWithoutEmployee } = await import("./index");
+const { joinOrganization } = await import("./index");
+const { backfillMembersWithoutEmployee } = await import("./backfill");
 
 const acceptingOrg = "t1185-accepting-org";
 const otherOrg = "t1185-other-org";
@@ -131,13 +132,13 @@ describe("employee invitation draft cleanup in PostgreSQL", () => {
 			acceptedInvitation,
 		]);
 
-		await joinMembersWithoutEmployee(db, acceptingOrg);
+		await backfillMembersWithoutEmployee(db, { organizationIds: [acceptingOrg], apply: true });
 
 		expect(await draftsFor(acceptingOrg)).toEqual([acceptedInvitation]);
 	});
 
-	it("reconciling one organization consumes only that organization's drafts", async () => {
-		await joinMembersWithoutEmployee(db, acceptingOrg);
+	it("backfilling one organization consumes only that organization's drafts", async () => {
+		await backfillMembersWithoutEmployee(db, { organizationIds: [acceptingOrg], apply: true });
 
 		expect(await draftsFor(acceptingOrg)).toEqual([]);
 		expect(await draftsFor(otherOrg)).toEqual([otherOrgInvitation]);

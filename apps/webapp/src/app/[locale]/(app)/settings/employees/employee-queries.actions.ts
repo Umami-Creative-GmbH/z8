@@ -5,7 +5,6 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { invitation, member, user } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft, team, workPolicyAssignment } from "@/db/schema";
-import { joinMembersWithoutEmployee } from "@/lib/employee-lifecycle/joining";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
@@ -271,9 +270,6 @@ function loadEmployeePage(
 		const dbService = yield* DatabaseService;
 		const viewer = directoryViewerOf(actor, organizationId);
 		const approvedMembership = approvedMembershipOf(dbService, organizationId);
-		yield* dbService.query("reconcileOrganizationEmployeeProfiles", async () => {
-			await joinMembersWithoutEmployee(dbService.db, organizationId);
-		});
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
 		const filterParams = {

@@ -29,7 +29,7 @@ vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 const { db } = await import("@/db");
 const { parseInstant } = await import("@/lib/datetime/temporal-core");
 const { joinOrganization } = await import("./joining");
-const { joinMemberWithoutEmployee } = await import("./repairs");
+const { joinMemberWithoutEmployee } = await import("./member-without-employee");
 const { recordFollowUpDeactivation } = await import("../deactivation/follow-up-record");
 const { insertDeactivation } = await import("../receipts");
 const { createLifecycleDatabaseFixture } = await import("../testing/database.test.fixture");
@@ -583,8 +583,8 @@ describe("joining an organization (#1665)", () => {
 		});
 	});
 
-	describe("repairs on read", () => {
-		it("join a member without an employee, without a seat signal", async () => {
+	describe("joining a member without an employee", () => {
+		it("joins them, without a seat signal", async () => {
 			const person = await newMember("admin");
 
 			const repaired = await joinMemberWithoutEmployee(db, {
@@ -593,10 +593,10 @@ describe("joining an organization (#1665)", () => {
 				membership: { id: person.memberId, role: person.role },
 			});
 
-			expect(repaired).toMatchObject({ role: "admin", isActive: true });
+			expect(repaired).toMatchObject({ joined: true, employee: { role: "admin", isActive: true } });
 		});
 
-		it("never reactivate a member who has an employee", async () => {
+		it("never reactivates a member who has an employee", async () => {
 			const person = await personIn("deactivated", "member");
 
 			const repaired = await joinMemberWithoutEmployee(db, {
@@ -605,7 +605,10 @@ describe("joining an organization (#1665)", () => {
 				membership: { id: person.memberId, role: person.role },
 			});
 
-			expect(repaired).toMatchObject({ id: person.employeeId, isActive: false });
+			expect(repaired).toMatchObject({
+				joined: false,
+				employee: { id: person.employeeId, isActive: false },
+			});
 			expect(await rowsOf(person.userId)).toEqual([expect.objectContaining({ is_active: false })]);
 		});
 	});

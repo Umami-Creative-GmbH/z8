@@ -29,7 +29,6 @@ import {
 	normalizeOrganizationCreationFlag,
 } from "@/lib/organization/creation-policy";
 import { withOrganizationTrackingSetup } from "@/lib/organization/tracking-setup";
-import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { isTimeFormat } from "@/lib/user-preferences/time-format";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
@@ -425,46 +424,29 @@ export const OnboardingServiceLive = Layer.effect(
 							birthday: data.birthday || null,
 						};
 
-						// Creating the user's employee is a manual dependency: the lookup and the
-						// write run under the user's exclusive configuration/access guard (#318).
-						await dbService.db.transaction(async (tx) => {
-							await acquireExclusiveUserConfigurationAccessGuards(tx, [
-								session.user.id,
-							]);
-							// Find employee record - prioritize the one with the active organization
-							let emp = activeOrgId
-								? await tx.query.employee.findFirst({
-										where: and(
-											eq(employee.userId, session.user.id),
-											eq(employee.organizationId, activeOrgId),
-										),
-									})
-								: null;
-
-							// Fallback only when there is no active organization to scope the employee lookup.
-							if (!emp && !activeOrgId) {
-								emp = await tx.query.employee.findFirst({
+						// The employee comes from joining (spec #1664); this step only fills it in.
+						// Prefer the active organization's employee; without one, the user's first.
+						const emp = activeOrgId
+							? await dbService.db.query.employee.findFirst({
+									where: and(
+										eq(employee.userId, session.user.id),
+										eq(employee.organizationId, activeOrgId),
+									),
+								})
+							: await dbService.db.query.employee.findFirst({
 									where: eq(employee.userId, session.user.id),
 								});
-							}
-
-							if (emp) {
-								// Update existing employee record
-								await tx
-									.update(employee)
-									.set(profileData)
-									.where(eq(employee.id, emp.id));
-							} else if (activeOrgId) {
-								// Create new employee record (only if we have an organization)
-								await tx.insert(employee).values({
-									userId: session.user.id,
-									organizationId: activeOrgId,
-									...profileData,
-								});
-							}
-							// If no existing employee and no active org, skip employee creation
-							// The employee will be created when they join an organization
-						});
+						if (emp) {
+							await dbService.db
+								.update(employee)
+								.set(profileData)
+								.where(
+									and(
+										eq(employee.id, emp.id),
+										eq(employee.organizationId, emp.organizationId),
+									),
+								);
+						}
 
 						const membership = activeOrgId
 							? await dbService.db.query.member.findFirst({
@@ -536,35 +518,8 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 					const activeOrgId = session.session.activeOrganizationId;
 
+					// The employee comes from joining (spec #1664); this step creates none.
 					yield* dbService.query("setWorkSchedule", async () => {
-						// Find or create employee record under the user's exclusive
-						// configuration/access guard (#318).
-						await dbService.db.transaction(async (tx) => {
-							await acquireExclusiveUserConfigurationAccessGuards(tx, [
-								session.user.id,
-							]);
-							const emp =
-								(activeOrgId
-									? await tx.query.employee.findFirst({
-											where: and(
-												eq(employee.userId, session.user.id),
-												eq(employee.organizationId, activeOrgId),
-											),
-										})
-									: null) ??
-								(await tx.query.employee.findFirst({
-									where: eq(employee.userId, session.user.id),
-								}));
-
-							if (!emp && activeOrgId) {
-								// Create employee record with organizationId if available
-								await tx.insert(employee).values({
-									userId: session.user.id,
-									organizationId: activeOrgId,
-								});
-							}
-						});
-
 						// Determine next step based on admin status
 						// Admins go to vacation_policy, employees go to wellness
 						const membership = activeOrgId

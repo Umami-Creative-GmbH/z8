@@ -11,4 +11,4 @@ export {
 	type RehireNoticeRecipients,
 	type SeatSignal,
 } from "./joining";
-export { joinMembersWithoutEmployee, joinMemberWithoutEmployee } from "./repairs";
+export { joinMemberWithoutEmployee } from "./member-without-employee";

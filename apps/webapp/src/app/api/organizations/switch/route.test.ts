@@ -14,6 +14,7 @@ const mockState = vi.hoisted(() => {
 		canAccessOrganization: vi.fn(async () => true),
 		setActiveOrganization: vi.fn(),
 		joinMemberWithoutEmployee: vi.fn(),
+		logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
 		select,
 		from,
 		where,
@@ -68,7 +69,7 @@ vi.mock("@/lib/diagnostics", () => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({ warn: vi.fn(), info: vi.fn(), error: vi.fn() }),
+	createLogger: () => mockState.logger,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -297,7 +298,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 		});
 	});
 
-	it("repairs a missing employee profile for an existing organization member", async () => {
+	it("joins an approved member who has no employee and warns that it did (#1671)", async () => {
 		mockState.limit.mockReset();
 		mockState.limit
 			.mockResolvedValueOnce([
@@ -310,10 +311,15 @@ describe("POST /api/organizations/switch bearer access", () => {
 			},
 			session: {},
 		});
+		mockState.joinMemberWithoutEmployee.mockResolvedValue({
+			employee: { id: "emp-new", isActive: true },
+			joined: true,
+		});
 
 		const response = await POST(createRequest({}, { organizationId: "org-2" }));
 
 		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({ hasEmployeeRecord: true });
 		expect(mockState.joinMemberWithoutEmployee).toHaveBeenCalledWith(
 			expect.anything(),
 			{
@@ -322,6 +328,34 @@ describe("POST /api/organizations/switch bearer access", () => {
 				membership: { id: "member-1", role: "member" },
 			},
 		);
+		// The last net for members without an employee: it should stay silent (#1671).
+		expect(mockState.logger.warn).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({
+				userId: "user-1",
+				organizationId: "org-2",
+				employeeId: "emp-new",
+			}),
+			expect.stringContaining("without an employee"),
+		);
+	});
+
+	it("does not warn when another request joined the member first", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([
+				{ id: "member-1", role: "member", status: "approved" },
+			])
+			.mockResolvedValueOnce([]);
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+		mockState.joinMemberWithoutEmployee.mockResolvedValue({
+			employee: { id: "emp-1", isActive: true },
+			joined: false,
+		});
+
+		const response = await POST(createRequest({}, { organizationId: "org-2" }));
+
+		expect(response.status).toBe(200);
+		expect(mockState.logger.warn).not.toHaveBeenCalled();
 	});
 
 	it("switches successfully for an approved member with an active employee", async () => {

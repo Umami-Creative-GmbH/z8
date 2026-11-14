@@ -17,14 +17,9 @@ const mocks = vi.hoisted(() => ({
 		db: Record<string, unknown>;
 		query: (name: string, run: () => Promise<unknown>) => unknown;
 	},
-	ensureEmployeeProfiles: vi.fn(),
 	logAudit: vi.fn(async () => undefined),
 	predicateInputs: vi.fn(),
 	revalidateTag: vi.fn(),
-}));
-
-vi.mock("@/lib/employee-lifecycle/joining", () => ({
-	joinMembersWithoutEmployee: mocks.ensureEmployeeProfiles,
 }));
 
 vi.mock("@/lib/effect/runtime", async () => {
@@ -429,8 +424,6 @@ describe("invitation draft action eligibility", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.spyOn(console, "error").mockImplementation(() => undefined);
-		mocks.ensureEmployeeProfiles.mockResolvedValue(undefined);
-
 	});
 
 	afterEach(() => {
@@ -734,27 +727,6 @@ describe("invitation draft action eligibility", () => {
 			"update",
 		]);
 		expect(mocks.revalidateTag).not.toHaveBeenCalled();
-	});
-
-	it("excludes an invitation that expires during employee reconciliation", async () => {
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2026-07-18T10:00:00.000Z"));
-		const model = structuredClone(baseModel);
-		model.invitation.expiresAt = new Date("2026-07-18T10:01:00.000Z");
-		mocks.ensureEmployeeProfiles.mockImplementation(async () => {
-			vi.setSystemTime(new Date("2026-07-18T10:02:00.000Z"));
-		});
-		const fake = createConditionAwareDb(model);
-		setActor("orgAdmin", fake.dbService);
-
-		const result = await listEmployeesAction({});
-
-		expect(result.success).toBe(true);
-		if (!result.success) return;
-		expect(result.data.employees).toHaveLength(0);
-		expect(mocks.predicateInputs).toHaveBeenCalledWith(
-			expect.objectContaining({ now: new Date("2026-07-18T10:02:00.000Z") }),
-		);
 	});
 
 	it("excludes an invitation that expires between the draft lookup and the locked recheck", async () => {
