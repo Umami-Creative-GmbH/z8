@@ -48,6 +48,7 @@ These references keep this file concise; open them when deeper implementation de
 - [Date/Time](docs/refs/dates.md) - Temporal, timezone, and date-boundary rules.
 - [Billing & Stripe](docs/refs/billing-stripe.md) - Stripe setup, webhooks, per-seat billing.
 - [Employee Offboarding](docs/refs/employee-offboarding.md) - Departures, rehire, handover, reviews, release gate.
+- [Employee Joining](docs/refs/employee-joining.md) - The joining module, its outcome and after-commit step, the backfill, who may create employees.
 
 ## Agent skills
 
