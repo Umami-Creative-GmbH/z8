@@ -14,7 +14,6 @@ import {
 } from "./employee-offboarding.actions";
 import {
 	assignManagersAction,
-	createEmployeeAction,
 	deleteEmployeeInvitationDraftAction,
 	previewEmployeeTeamChangeDrivingImpact,
 	requestEmployeeWorkBalanceRecalculationAction,
@@ -40,7 +39,6 @@ export type {
 } from "./employee-action-types";
 
 // The employee settings actions under their client names; each is an `organizationAction`.
-export const createEmployee = createEmployeeAction;
 export const updateEmployee = updateEmployeeAction;
 /** The driving licence warning a Team field change confirmed (#1425), read before the save. */
 export const previewEmployeeTeamChange = previewEmployeeTeamChangeDrivingImpact;

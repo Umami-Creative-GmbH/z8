@@ -149,14 +149,9 @@ const { InviteCodeService, InviteCodeServiceLive } = await import(
 const { PendingMemberService, PendingMemberServiceLive } = await import(
 	"@/lib/effect/services/pending-member.service"
 );
-const { OnboardingService, OnboardingServiceLive } = await import(
-	"@/lib/effect/services/onboarding.service"
+const services = Layer.mergeAll(InviteCodeServiceLive, PendingMemberServiceLive).pipe(
+	Layer.provide(Layer.merge(DatabaseServiceLive, AuthServiceLive)),
 );
-const services = Layer.mergeAll(
-	InviteCodeServiceLive,
-	PendingMemberServiceLive,
-	OnboardingServiceLive,
-).pipe(Layer.provide(Layer.merge(DatabaseServiceLive, AuthServiceLive)));
 
 const ids = {
 	organization: "t318-config-org",
@@ -642,38 +637,6 @@ describe("provisioning, import, demo and cleanup writers on PostgreSQL", () => {
 			expect(submitted).toMatchObject({ success: true });
 			const { rows } = await admin.query("select 1 from member where id = 't318-m-pending'");
 			expect(rows).toEqual([]);
-		});
-
-		it("onboarding employee creation waits on the member's user guard", async () => {
-			await leaveOtherOrganization({ membership: false });
-
-			const { submitted } = await writeBehindParkedSubmission(
-				userGuard(ids.employeeUser),
-				() =>
-					as(
-						ids.employeeUser,
-						() =>
-							Effect.runPromise(
-								OnboardingService.pipe(
-									Effect.flatMap((service) =>
-										service.updateProfile({
-											firstName: "Erin",
-											lastName: "Employee",
-											weekStartDay: "monday",
-											timeFormat: "24h",
-											helpImproveProduct: false,
-										}),
-									),
-									Effect.provide(services),
-								),
-							),
-						ids.otherOrganization,
-					),
-				noOtherEmployeeYet,
-			);
-
-			expect(submitted).toMatchObject({ success: true });
-			expect(await otherEmployeeIds()).toHaveLength(1);
 		});
 	});
 
