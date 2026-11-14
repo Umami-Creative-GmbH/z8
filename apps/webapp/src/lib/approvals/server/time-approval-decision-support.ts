@@ -17,7 +17,7 @@ import {
 	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
 import { ApprovalEvidenceError } from "../evidence/errors";
-import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
+import { eligibleManagerRight } from "../policies/eligible-manager-right";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { holdsApprovalManagement } from "./approval-management";
@@ -99,18 +99,19 @@ export function timeApprovalDecisionRuntime(
 								candidate.status === "pending",
 						);
 						if (!stage?.legacyApprovalRequestId) return false;
-						const eligible = await isEligibleManagerForApprovalRequest({
+						// Eligibility never bypasses an escalation replacement (#255 §4, #326).
+						const held = await eligibleManagerRight({
 							db: authorization.dbService.db as never,
+							organizationId: authorization.organizationId,
 							approvalRequestId: stage.legacyApprovalRequestId,
 							managerEmployeeId: actor.id,
-							organizationId: authorization.organizationId,
+							replacedByEscalation: () =>
+								!eligibleManagerFallbackAllowed(stage, command.assignmentId),
 						});
-						// Eligibility never bypasses an escalation replacement (#255 §4, #326).
-						if (eligible && !eligibleManagerFallbackAllowed(stage, command.assignmentId)) {
-							throw new ApprovalAssignmentReassignedError();
-						}
-						return eligible;
+						if (held === "reassigned") throw new ApprovalAssignmentReassignedError();
+						return held === "held";
 					}
+					// The runtime grants these rights itself, only under their claim.
 					case "approver":
 					case "covering_deputy":
 						return false;
@@ -132,6 +133,7 @@ export function timeApprovalDecisionRuntime(
 				},
 			},
 			clock,
+			claimedRight: right,
 		});
 }
 

@@ -1132,7 +1132,9 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 						input.decision.reason ?? undefined,
 						{
 							approvalRequestId: input.approvalRequestId,
-							...(input.decisionRight ? { decisionRight: input.decisionRight } : {}),
+							...(input.decisionRight
+								? { decisionRight: input.decisionRight, clock: input.clock }
+								: {}),
 						},
 					).pipe(
 						Effect.provideService(

@@ -835,6 +835,50 @@ describe("time approval decision (PostgreSQL)", () => {
 			},
 		);
 
+		it.each(TIME_KINDS)(
+			"no fallback: the approver who claims management of approvals on a %s they do not manage is refused",
+			async (kind) => {
+				const { approval } = await submitted(kind, authority);
+
+				const result = await decide(actors.approver, approval.id, { as: "approval_manager" });
+
+				expect(result).toEqual({ status: "refused", reason: "right_not_held" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+			},
+		);
+
+		it.each(TIME_KINDS)(
+			"no fallback: the approver who claims to cover for themselves on a %s is refused and no deputy decision is made",
+			async (kind) => {
+				const { approval } = await submitted(kind, authority);
+				await seedCover();
+
+				const result = await decide(actors.approver, approval.id, {
+					as: "covering_deputy",
+					forEmployeeId: ids.approver,
+				});
+
+				expect(result).toEqual({ status: "refused", reason: "right_not_held" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+				expect(await deputyRecords()).toEqual([]);
+			},
+		);
+
+		it.each(TIME_KINDS)(
+			"a platform administrator's session-wide access alone does not decide a %s",
+			async (kind) => {
+				const { approval } = await submitted(kind, authority);
+				// Y is a plain member who manages nobody; only the platform role is raised.
+				await admin.query(`update "user" set role = 'admin' where id = $1`, [ids.deputyUser]);
+				actAs(ids.deputyUser);
+
+				const result = await decide(actors.deputy, approval.id, { as: "approval_manager" });
+
+				expect(result).toEqual({ status: "refused", reason: "right_not_held" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+			},
+		);
+
 		it.each(TIME_KINDS)("a requester's own %s is refused as their own request", async (kind) => {
 			const { approval } = await submitted(kind, authority);
 
@@ -1116,19 +1160,6 @@ describe("time approval decision (PostgreSQL)", () => {
 					forEmployeeId: ids.approver,
 				}),
 			).toEqual({ status: "refused", reason: "reassigned" });
-			expect(await deputyRecords()).toEqual([]);
-		});
-
-		it("a person with a right of their own never makes a deputy decision", async () => {
-			const { approval } = await submitted("time_correction", "legacy");
-			await seedCover();
-
-			const result = await decide(actors.approver, approval.id, {
-				as: "covering_deputy",
-				forEmployeeId: ids.approver,
-			});
-
-			expect(result).toMatchObject({ status: "decided" });
 			expect(await deputyRecords()).toEqual([]);
 		});
 

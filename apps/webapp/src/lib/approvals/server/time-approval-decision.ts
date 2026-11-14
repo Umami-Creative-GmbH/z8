@@ -54,7 +54,7 @@ import {
 import { isOwnRequestDecisionRefusal } from "../policies/self-decision";
 import { classifyCanonicalTimeCard, classifyLegacyTimeCard } from "../presentation/time-card";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
-import { isForbiddenCommandActorFailure } from "../workflow/runtime";
+import { ApprovalCommandActorForbiddenError } from "../workflow/runtime";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
 import { type BoundTimeInvocation, BoundTimeInvocationReplay } from "./bound-time-invocation";
 import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
@@ -364,7 +364,7 @@ function refusalOf(error: unknown): TimeApprovalDecisionRefusalReason | null {
 				return null;
 		}
 	}
-	if (isForbiddenCommandActorFailure(error)) return "right_not_held";
+	if (error instanceof ApprovalCommandActorForbiddenError) return "right_not_held";
 	if (error instanceof NotFoundError) return "not_found";
 	if (error instanceof AuthorizationError) {
 		return isOwnRequestDecisionRefusal(error.message) ? "own_request" : "right_not_held";

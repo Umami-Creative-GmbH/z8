@@ -18,7 +18,7 @@ import {
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
 import type { ActingFor } from "../deputy/deputy-decision";
 import {
 	authorizeLegacyDeputyDecision,
@@ -39,6 +39,7 @@ import {
 	createApprovalAuditLogger,
 } from "../infrastructure/audit-logger";
 import { progressApprovalChainIfLinked } from "../policies/chain-service";
+import { eligibleManagerRight } from "../policies/eligible-manager-right";
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import {
 	isOwnRequestDecision,
@@ -353,7 +354,9 @@ function notAuthorizedToDecide(
 /**
  * Verifies the one claimed decision right on the locked legacy request, in the
  * decision's transaction (Approvals ADR 0003). It never falls back to another
- * right; a covering deputy's own right wins, so it decides as the approver.
+ * right. A covering deputy claim holds only while the request is still the
+ * named approver's and the actor covers for them: their own right is claimed
+ * as such, never reached through covering.
  */
 function verifyLegacyDecisionRight(
 	dbService: ApprovalDbService,
@@ -362,59 +365,51 @@ function verifyLegacyDecisionRight(
 	entityType: ApprovalEntityType,
 	action: ApprovalAction,
 	right: DecisionRight,
+	clock: Clock,
 ): Effect.Effect<ActingFor | null, AnyAppError> {
 	const transferred = () =>
-		Effect.tryPromise({
-			try: () =>
-				wasLegacyRequestTransferred(dbService.db, {
-					organizationId: currentEmployee.organizationId,
-					approvalRequestId: approval.id,
-				}),
-			catch: (error) => error as AnyAppError,
+		wasLegacyRequestTransferred(dbService.db, {
+			organizationId: currentEmployee.organizationId,
+			approvalRequestId: approval.id,
 		});
 	const reassigned = () =>
 		Effect.fail(approvalReassignedConflict(new ApprovalAssignmentReassignedError()));
+	const refused = () => Effect.fail(notAuthorizedToDecide(currentEmployee, entityType, action));
 	return Effect.gen(function* () {
 		switch (right.as) {
 			case "approver": {
 				if (approval.approverId === currentEmployee.id) return null;
-				if (yield* transferred()) return yield* reassigned();
-				return yield* Effect.fail(notAuthorizedToDecide(currentEmployee, entityType, action));
+				if (yield* dbService.query("approvals.wasLegacyRequestTransferred", transferred)) {
+					return yield* reassigned();
+				}
+				return yield* refused();
 			}
 			case "eligible_manager": {
-				const eligible = yield* Effect.tryPromise({
-					try: () =>
-						isEligibleManagerForApprovalRequest({
-							db: dbService.db,
-							approvalRequestId: approval.id,
-							managerEmployeeId: currentEmployee.id,
-							organizationId: currentEmployee.organizationId,
-						}),
-					catch: (error) => error as AnyAppError,
-				});
-				if (!eligible) {
-					return yield* Effect.fail(notAuthorizedToDecide(currentEmployee, entityType, action));
-				}
 				// Eligibility never bypasses an escalation replacement (#255 §4, #439).
-				if (yield* transferred()) return yield* reassigned();
+				const held = yield* dbService.query("approvals.eligibleManagerRight", () =>
+					eligibleManagerRight({
+						db: dbService.db,
+						organizationId: currentEmployee.organizationId,
+						approvalRequestId: approval.id,
+						managerEmployeeId: currentEmployee.id,
+						replacedByEscalation: transferred,
+					}),
+				);
+				if (held === "reassigned") return yield* reassigned();
+				if (held === "not_held") return yield* refused();
 				return null;
 			}
 			case "approval_manager": {
-				const manages = yield* Effect.tryPromise({
-					try: () =>
-						holdsApprovalManagement(dbService.db, {
-							organizationId: currentEmployee.organizationId,
-							userId: currentEmployee.userId,
-						}),
-					catch: (error) => error as AnyAppError,
-				});
-				if (!manages) {
-					return yield* Effect.fail(notAuthorizedToDecide(currentEmployee, entityType, action));
-				}
+				const manages = yield* dbService.query("approvals.holdsApprovalManagement", () =>
+					holdsApprovalManagement(dbService.db, {
+						organizationId: currentEmployee.organizationId,
+						userId: currentEmployee.userId,
+					}),
+				);
+				if (!manages) return yield* refused();
 				return null;
 			}
 			case "covering_deputy": {
-				if (approval.approverId === currentEmployee.id) return null;
 				// The deputy right follows the named approver; a transfer away ends it.
 				if (approval.approverId !== right.forEmployeeId) return yield* reassigned();
 				return yield* dbService
@@ -426,7 +421,7 @@ function verifyLegacyDecisionRight(
 							approverEmployeeId: approval.approverId,
 							actorEmployeeId: currentEmployee.id,
 							action,
-							at: systemClock.nowInstant(),
+							at: clock.nowInstant(),
 						}),
 					)
 					.pipe(
@@ -481,6 +476,7 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 				entityType,
 				action,
 				options.decisionRight,
+				options.clock ?? systemClock,
 			);
 		} else if (
 			!options?.allowOrganizationWideApprover &&
