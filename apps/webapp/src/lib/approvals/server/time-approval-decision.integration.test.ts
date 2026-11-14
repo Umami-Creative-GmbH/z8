@@ -903,6 +903,90 @@ describe("time approval decision (PostgreSQL)", () => {
 			expect(await approvalStatus(approval.id)).toBe("rejected");
 			expect(decisionNotifications()).toEqual([]);
 		});
+
+		it("replayOnly never decides a time correction, nor confirms one", async () => {
+			const { workPeriodId, approval } = await submitted("time_correction", "legacy");
+			const replay = () =>
+				decide(actors.approver, approval.id, { as: "approver" }, { replayOnly: true });
+
+			expect(await replay()).toMatchObject({ status: "refused" });
+			expect(await approvalStatus(approval.id)).toBe("pending");
+
+			await decide(actors.approver, approval.id, { as: "approver" });
+			harness.notifications.length = 0;
+			expect(await replay()).toMatchObject({ status: "refused" });
+			expect(await periodStatus(workPeriodId)).not.toBe("pending");
+			expect(decisionNotifications()).toEqual([]);
+		});
+	});
+
+	describe("an unbound bot card (#1679)", () => {
+		async function press(
+			employeeId: string,
+			approvalId: string,
+			action: "approve" | "reject",
+		) {
+			const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
+			return attemptBotApproval({
+				approvalId,
+				actorEmployeeId: employeeId,
+				organizationId: ids.organization,
+				action,
+				platform: "telegram",
+			});
+		}
+
+		it("confirms its approver's committed decision and makes no new one", async () => {
+			const { workPeriodId, approval } = await submitted("manual_time_submission", "legacy");
+
+			expect(await press(ids.approver, approval.id, "approve")).toEqual({
+				status: "review_required",
+			});
+			expect(await periodStatus(workPeriodId)).toBe("pending");
+
+			await decide(
+				actors.approver,
+				approval.id,
+				{ as: "approver" },
+				{ decision: { kind: "reject", reason: "Rejected via Telegram" } },
+			);
+			harness.notifications.length = 0;
+			harness.kicks.length = 0;
+
+			expect(await press(ids.approver, approval.id, "reject")).toEqual({
+				status: "historical",
+				action: "reject",
+			});
+			expect(await press(ids.approver, approval.id, "approve")).toEqual({
+				status: "review_required",
+			});
+			expect(await approvalStatus(approval.id)).toBe("rejected");
+			expect(decisionNotifications()).toEqual([]);
+			expect(harness.kicks).toEqual([]);
+		});
+
+		it("refuses someone who is not the approval's approver", async () => {
+			const { workPeriodId, approval } = await submitted("policy_clock_out", "legacy");
+
+			expect(await press(ids.third, approval.id, "approve")).toEqual({
+				status: "unauthorized",
+			});
+			expect(await periodStatus(workPeriodId)).toBe("pending");
+		});
+
+		it("answers review required for a time correction, even one its approver decided", async () => {
+			const { approval } = await submitted("time_correction", "legacy");
+
+			expect(await press(ids.approver, approval.id, "approve")).toEqual({
+				status: "review_required",
+			});
+			expect(await approvalStatus(approval.id)).toBe("pending");
+
+			await decide(actors.approver, approval.id, { as: "approver" });
+			expect(await press(ids.approver, approval.id, "approve")).toEqual({
+				status: "review_required",
+			});
+		});
 	});
 
 	describe("a decision that only advances to the next stage", () => {
