@@ -1,6 +1,6 @@
 # Webapp UI and UX rollout: grilling record
 
-Status: working decisions, not an approved implementation specification.
+Status: all product decisions and the concrete spec, testing boundaries and ticket breakdown approved on 14 November 2026.
 
 Tracking issue: [#1692](https://github.com/Umami-Creative-GmbH/z8/issues/1692), assigned to KaiSoellch. Documentation branch: `docs/1692-app-wide-ui-ux-spec`, based on the dashboard/time-tracking refresh through `f4a2acd80`.
 
@@ -54,3 +54,7 @@ The product-decision frontier is settled. Keep implementation details in the spe
 The [canonical draft spec](2026-11-14-webapp-ui-ux-spec.md) now combines the shared contract, testing boundaries and all 153 composition briefs. The [numbered breakdown](2026-11-14-webapp-ui-ux-ticket-breakdown.md) proposes three shared foundations, four organizational groups and 153 page tickets, including seven proven route-to-route presentation handoffs.
 
 Review this concrete result for shared understanding, testing seams, ticket granularity and blocking edges before finalizing the spec with `to-spec` and publishing via `to-tickets`. All Q1–Q10 product decisions remain approved; this review concerns the completed artifacts. No route implementation tickets have been created during discovery.
+
+## Final review outcome
+
+The user approved the completed spec, its test boundaries and the numbered 160-issue breakdown. Proceed with versioned spec publication, native grouped issues and verified blocking edges. This approval completes grilling and breakdown review; it does not request route implementation, merge or deployment in this documentation/publication phase.

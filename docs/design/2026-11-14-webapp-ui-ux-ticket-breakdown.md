@@ -1,6 +1,6 @@
 # Webapp UI and UX rollout: proposed ticket breakdown
 
-Status: concrete breakdown for review; no subordinate implementation issues have been published. All ten product decisions remain approved.
+Status: approved on 14 November 2026, including test boundaries, complete-page sizes and blocking edges. Publication is tracked in #1692.
 
 This is the execution index for the [single spec](2026-11-14-webapp-ui-ux-spec.md), tracked by [#1692](https://github.com/Umami-Creative-GmbH/z8/issues/1692). The spec owns design and acceptance; this index owns proposed ticket identity and blocking edges. Planning IDs remain stable when GitHub numbers are assigned.
 
@@ -1311,4 +1311,4 @@ On 14 November 2026, source enumeration matched all 172 unique page templates to
 
 All 159 local document links across the six discovery/spec documents resolved. Root foundation and grouping manifests passed the repository publisher's dry run; page batches must receive actual group numbers and pass their own dry runs before publication. Independent reviews found no remaining concrete preservation or graph blockers after clarifying contract-only references and adding in-flight tenant/permission verification.
 
-This verifies the documentation and proposed rollout, not the future application changes. Spec/test-boundary/breakdown approval and native issue publication/read-back remain outstanding. No route code was changed and no subordinate issues were published in this phase.
+This verifies the documentation and proposed rollout, not the future application changes. The user subsequently approved the concrete spec, test boundaries and breakdown. Native issue publication/read-back is the next step. No route code was changed and no subordinate issues were published in this phase.

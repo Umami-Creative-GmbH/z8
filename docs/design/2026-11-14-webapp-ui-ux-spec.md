@@ -1,6 +1,6 @@
 # Z8 webapp UI and UX refresh specification
 
-Status: draft for coverage, verification-boundary and ticket-breakdown review. Product direction Q1–Q10 is agreed; implementation tickets are not yet published.
+Status: approved on 14 November 2026, including all ten product decisions, testing boundaries, page briefs and ticket breakdown. Publication is tracked in #1692.
 
 Canonical spec issue: [#1692](https://github.com/Umami-Creative-GmbH/z8/issues/1692). This document is one specification, including its per-page briefs. Organizational issues arrange its execution; they do not introduce separate specifications.
 
@@ -236,6 +236,8 @@ Root verification checks route/alias coverage, shared-consumer consistency, appl
 
 The briefs cover all 153 persistent pages by stable inventory ID. They supplement the shared contract and implementation-time capability map. Destination briefs explicitly cover all 19 redirect-only aliases.
 
+<a id="r001"></a>
+
 ### R001 — /
 
 - Task and scope: Give the active organization's member a personal work overview, with team oversight only where authorized.
@@ -243,6 +245,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Preserve the approved date/greeting, summary strip, attention/team main column, personal-day/leave/history support and disclosed secondary widgets.
 - Preserve and verify: This is reference conformance: close outstanding role, timezone, offline, mutation, translation and billing checks; retain widget order/visibility and synchronized clock state.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r002"></a>
 
 ### R002 — /absences
 
@@ -252,6 +256,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep holidays, categories, half days, deputy and sick-note paths, approved-change proposals and table actions. Distinguish missing/conflicting policy and zero-working-day setup from an empty calendar; verify balance calculations and failed submission recovery.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r003"></a>
+
 ### R003 — /accept-invitation/[invitationId]
 
 - Task and scope: Review an invitation to the named organization using the intended recipient account.
@@ -259,6 +265,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Use a bounded branded flow with organization, inviter, invited email and role context before the action; place account mismatch guidance beside account switching.
 - Preserve and verify: Retain expiry/status refusal, matching-email checks, callback continuity, sign-out recovery, pending/error feedback and successful initialization handoff. Joining retains current membership and reactivation rules.
 - Shared work: F1 auth-shell presentation and states; F3 focus and action feedback.
+
+<a id="r004"></a>
 
 ### R004 — /analytics
 
@@ -268,6 +276,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep organization-zone presets, current-month initialization and independent data failures. Approval analytics unavailable must remain distinct from zero; verify background refresh retains the selected range and that exports match their existing team dataset.
 - Shared work: F1/F2; owners unchanged.
 
+<a id="r005"></a>
+
 ### R005 — /analytics/overtime-burn-down
 
 - Task and scope: Let managers and workforce admins compare overtime reduction across the active organization's selected period and grouping.
@@ -275,6 +285,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with period, team, cost-center, manager and breakdown controls; align current overtime/change/direction summaries above weekly trend and comparison records.
 - Preserve and verify: Retain all-team defaults, grouping dimensions, previous-period comparison, export scope and explicit empty trend/breakdown states. Verify organization-zone presets and filter/range retention during refresh or failed reads.
 - Shared work: F1/F2; owners unchanged.
+
+<a id="r006"></a>
 
 ### R006 — /analytics/team-performance
 
@@ -284,6 +296,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain organization-zone presets, employee counts, per-employee averages, variance/status meaning and authoritative totals. Verify empty periods, failed background refresh and export consistency; allow local scrolling where phone comparison requires columns.
 - Shared work: F1/F2; owners unchanged.
 
+<a id="r007"></a>
+
 ### R007 — /analytics/vacation-trends
 
 - Task and scope: Give managers and workforce admins vacation utilization and employee balance comparisons for the selected organization period.
@@ -291,6 +305,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with period and utilization summary; give employee allocated/taken/remaining records a clear comparison surface, with monthly usage and peak months supporting it.
 - Preserve and verify: Keep organization-zone presets, utilization units and existing allowance sources. Verify unavailable configuration, empty periods, failed refresh and exported values; phone comparison may scroll locally without losing employee identity.
 - Shared work: F1/F2; owners unchanged.
+
+<a id="r008"></a>
 
 ### R008 — /analytics/work-hours
 
@@ -300,6 +316,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain total hours, overtime, undertime, weekly averages and status precision. Keep organization-zone presets and independent empty chart states; verify failed refresh preserves context and the export matches the existing dataset rather than a newly computed display total.
 - Shared work: F1/F2; owners unchanged.
 
+<a id="r009"></a>
+
 ### R009 — /approvals
 
 - Task and scope: Let managers and workforce admins decide legacy absence and time-correction requests in their authorized organization scope.
@@ -307,6 +325,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with pending work and the Absence Requests/Time Corrections tabs; keep the Unified Inbox destination visible as supporting navigation.
 - Preserve and verify: Retain both queues, default-tab behavior, rejection reasons, row/bulk controls and request evidence. Verify current legacy/canonical authority, stale eligibility, partial failures and scoped actors; do not retire this route through the refresh.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r010"></a>
 
 ### R010 — /approvals/deputy-decisions/[absenceId]
 
@@ -316,6 +336,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain both the deputy and approver context, approved/rejected meaning, preferred time formatting and the safe not-found boundary. Verify cancelled absences retain their historical summary, unknown labels remain honest, and an empty history says nobody decided during this absence.
 - Shared work: F1/F2; owners unchanged.
 
+<a id="r011"></a>
+
 ### R011 — /approvals/inbox
 
 - Task and scope: Let authorized approvers decide organization requests under each item's current decision right, including explicit covering sections.
@@ -323,6 +345,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with pending count, warnings and type/search controls; give requests the main surface and evidence/decision panels the supporting workspace.
 - Preserve and verify: Keep URL type arrivals, search draft, loaded-item selection, covering exclusions, required reasons, pagination and mixed outcomes. Verify held/material-change/evidence-unavailable states and stale rights without fallback.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r012"></a>
 
 ### R012 — /approvals/review/[organizationId]/[kind]/[id]
 
@@ -332,6 +356,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve callback/organization-switch flow and reauthorization after switching. Missing, forbidden, reassigned and removed targets share safe unavailable copy; infrastructure failure remains distinct. Verify decisions return to the inbox.
 - Shared work: F1/F3; owners unchanged.
 
+<a id="r013"></a>
+
 ### R013 — /billing/suspended
 
 - Task and scope: Explain suspended access for the active organization's member and the available billing recovery path.
@@ -339,6 +365,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Use a bounded recovery surface with organization suspension, clear consequence and one role-appropriate next step.
 - Preserve and verify: Keep the suspension escape route, authoritative billing gate and current actor distinction. Verify disabled billing, trial/subscription/payment states and billing-enabled actors; do not unify this page's ability check with the shell trial CTA through presentation work.
 - Shared work: F1; owners unchanged.
+
+<a id="r014"></a>
 
 ### R014 — /calendar
 
@@ -348,6 +376,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain manual range selection, edit/split/delete/on-behalf actions, closed ranges and adjustment history. Verify selected-employee timezone boundaries, endpoint offsets, live/break state, week-start preference and phone filters without changing authorization.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r015"></a>
+
 ### R015 — /calendar/[employeeId]
 
 - Task and scope: Open the authorized target employee's calendar in the active organization, including date-linked arrivals.
@@ -355,6 +385,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Make target identity and period unmistakable above the existing calendar; keep balance, legend and record-detail support synchronized with selection.
 - Preserve and verify: Preserve selected-person and date initialization, shared calendar scope, deep links and denied/missing-employee behavior. Verify target-local query boundaries, manager-on-behalf timezone, cross-zone endpoints and action refusal after access or organization changes.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r016"></a>
 
 ### R016 — /compliance
 
@@ -364,6 +396,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain each section's status, counts, source boundaries and real destinations. Verify all-clear differs from unavailable or partial coverage, feature gates remain intact, and refresh does not imply findings were reevaluated under a new policy.
 - Shared work: F1; owners unchanged.
 
+<a id="r017"></a>
+
 ### R017 — /driving-licence
 
 - Task and scope: Serve the active organization's driver, verifier and operational reader through their capability-granted role tabs.
@@ -371,6 +405,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Preserve My licence/Checks/Planning separation; lead each with authorization or due work, with class restrictions, evidence/history, responsibility and reminders alongside.
 - Preserve and verify: Keep feature-off/not-found behavior, self-check exclusion, retained ended records, searchable worklist and operational view without inspection content. Verify uncertain reminder delivery and explicit reinstatement after suspension.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r018"></a>
 
 ### R018 — /driving-licence/checks/[employee]
 
@@ -380,6 +416,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep self-verification prohibited, inspected classes/declaration explicit and supplements separate from originals. Verify UTC history boundaries, retained ended records, missing intended-driver state and fresh permissions after load failure.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r019"></a>
+
 ### R019 — /equipment
 
 - Task and scope: Let scoped equipment staff review organization assignments, outstanding returns and items ready to issue.
@@ -387,6 +425,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with scope and actionable return/readiness summaries; preserve Assignments/Items tabs and adjacent filters, with assignment detail reached from the main record.
 - Preserve and verify: Keep URL filters, sorting, paging, setup prerequisites and scoped historical holdings. Verify partial quantities, overdue versus outstanding, damaged-item clearance, feature-off access and separate issue/return authority.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r020"></a>
 
 ### R020 — /equipment/assignments/[assignmentId]
 
@@ -396,6 +436,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep physical receipt, loss, waiver and recovery distinct; never count recovered quantities twice. Verify partial settlement, reasoned amendments, retention/holds, former holders, stale previews and damaged receipt requiring separate clearance before reissue.
 - Shared work: F1/F3; owners unchanged.
 
+<a id="r021"></a>
+
 ### R021 — /equipment/employees/[employeeId]
 
 - Task and scope: Show authorized equipment staff an employee's holdings and outstanding returns within authorized organization scope.
@@ -403,6 +445,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with employee identity/former status and outstanding/overdue totals, then filtered assignment records and reachable history/actions.
 - Preserve and verify: Former employees retain return/history and existing-holdings paths while new issuance stays unavailable. Verify scoped access, assignment filters, deadlines, partial returns, missing setup and failures; do not let a return imply employment or credential restoration.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r022"></a>
 
 ### R022 — /forgot-password
 
@@ -412,6 +456,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain the non-enumerating success message, domain-resolved Turnstile policy, fresh token on the same request, widget reset after failure and localized reset destination. Preserve entered email and actionable validation during failed attempts.
 - Shared work: F1 auth-shell/state presentation; F3 labeled fields, validation and pending feedback.
 
+<a id="r023"></a>
+
 ### R023 — /init
 
 - Task and scope: Establish a signed-in user's active organization before entering the requested workspace destination.
@@ -419,6 +465,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Use a purpose-built bounded organization picker and distinct checking/activating/redirecting feedback, with activation errors beside the retained choices.
 - Preserve and verify: Keep valid last-organization restoration, requested organization, safe callback, no-organization flow and automatic activation. Verify SSO/MFA handoff, failed-SSO return without a loop, keyboard selection, duplicate prevention and long lists within store-shell safe areas.
 - Shared work: F1; owners unchanged.
+
+<a id="r024"></a>
 
 ### R024 — /join/[code]
 
@@ -428,6 +476,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain code editing and normalization, validation loading/errors, sign-in callback, already-member handling and distinct pending versus approved outcomes. Navigation into onboarding must not imply approved access; preserve reactivation and rehire boundaries.
 - Shared work: F1 branded flow/states; F3 field validation and action feedback.
 
+<a id="r025"></a>
+
 ### R025 — /kiosk
 
 - Task and scope: Let an enrolled organization/location device identify employees and capture their own clocking without account sign-in.
@@ -435,6 +485,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Preserve a large-target shared-device flow: location/language, employee identification, credential, attribution/action and explicit outcome; keep queue/recovery status visible.
 - Preserve and verify: Distinguish online badge proof, fob-plus-PIN and unconfirmed offline PIN commands. Verify revocation, throttling, idle reset and uncertain-outcome lookup before another action; retain capture-time timezone and device evidence.
 - Shared work: F1/F3; owners unchanged.
+
+<a id="r026"></a>
 
 ### R026 — /licenses
 
@@ -444,6 +496,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain package/license sorting, unknown-license wording, empty-search state, safe external-link behavior, locale handling and shell information links. This remains a read-only report.
 - Shared work: F1 public shell; F2 table/search presentation.
 
+<a id="r027"></a>
+
 ### R027 — /mfa
 
 - Task and scope: Let a signed-in user satisfy organization-specific security requirements while personal recovery and organization selection remain available.
@@ -451,6 +505,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with organization/deadline requirements and verification, followed by enrollment/replacement, recovery consequences, organization selection and sign-out.
 - Preserve and verify: Keep password/social alternatives, passkeys and two-factor controls, sanitized callback and five-minute replacement verification. Enrollment is not session proof; verify grace/enforced states, last-factor revocation and the absence of an administrator/support bypass.
 - Shared work: F1/F3; owners unchanged.
+
+<a id="r028"></a>
 
 ### R028 — /my-documents
 
@@ -460,6 +516,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain category restrictions, document visibility, file validation, request submission/retry and existing empty states. Uploaded request documents enter the personnel file immediately; return/cancellation never removes them. Verify employee access without exposing HR-only material or implied officer powers.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r029"></a>
+
 ### R029 — /my-equipment
 
 - Task and scope: Let an employee read equipment issued to them in the active organization and understand return obligations.
@@ -467,6 +525,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with To return, then Yours to keep and Returned & closed groups; show item identity, quantity/status and deadline before expandable evidence.
 - Preserve and verify: Keep every handover, correction and exception total accessible. Distinguish received, lost, waived and recovered outcomes; verify partial quantities, no-equipment and failed-read states without adding self-service receipt authority.
 - Shared work: F1; owners unchanged.
+
+<a id="r030"></a>
 
 ### R030 — /my-requests
 
@@ -476,6 +536,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain text/status/type filters, 30-day decision context, cancellation confirmation and destination links. Verify per-source partial failures, unavailable focused arrivals and period-readiness rechecks; do not imply this page includes unsupported request kinds.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r031"></a>
+
 ### R031 — /notifications
 
 - Task and scope: Let the signed-in user review their notification timeline and visible unread workload.
@@ -483,6 +545,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with unread count and search/read filters, then Today/Yesterday/Earlier records; keep selection actions and notification settings close to the inbox.
 - Preserve and verify: Retain all/unread/read distinctions, visible-only selection, real destinations, refresh and per-item actions. Verify no-notifications versus no-match versus load failure, bulk outcome feedback and organization navigation without changing recipient language or channel preferences.
 - Shared work: F1/F2; owners unchanged.
+
+<a id="r032"></a>
 
 ### R032 — /onboarding/complete
 
@@ -492,6 +556,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain one completion operation, summary loading/errors, conditional guidance and the initialization handoff. Distinguish confirmed completion from failed finalization or unavailable summary; completing onboarding does not establish organization membership or security proof.
 - Shared work: F1 onboarding shell, hierarchy and states.
 
+<a id="r033"></a>
+
 ### R033 — /onboarding/notifications
 
 - Task and scope: Set the onboarding user's notification preferences and request supported push permission.
@@ -499,6 +565,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Use a full onboarding step with push availability/permission context separated from email and approval/status/team preferences. Keep action feedback beside the affected group.
 - Preserve and verify: Retain browser support and denied-permission outcomes, push request behavior, channel-specific values, save/skip destinations and failure recovery. Choosing preferences or skipping must not appear to grant browser permission or organization access.
 - Shared work: F1 wizard/states; F3 field and action presentation.
+
+<a id="r034"></a>
 
 ### R034 — /onboarding/organization
 
@@ -508,6 +576,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain membership detection/step skipping, creation-disabled guidance, asynchronous slug checks without stale responses, validation and recoverable input. Preserve organization-local tracking-start meaning and current joining rules.
 - Shared work: F1 wizard/states; F3 form presentation.
 
+<a id="r035"></a>
+
 ### R035 — /onboarding/profile
 
 - Task and scope: Establish the onboarding user's personal profile and display preferences.
@@ -515,6 +585,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep one full onboarding step with identity fields, optional birthday/gender, time-format/week-start preferences and product-improvement choice in meaningful sections. Keep calendar selection usable on phones.
 - Preserve and verify: Retain field optionality, validation, saved preferences, skip/save routing and recoverable failure. Birthday remains a calendar date; a display week-start preference must not change compliance boundaries. Preserve the explicit product-improvement choice.
 - Shared work: F1 wizard/states; F3 fields/focus.
+
+<a id="r036"></a>
 
 ### R036 — /onboarding/vacation-policy
 
@@ -524,6 +596,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain access checking/loading and non-admin routing, accrual semantics, carryover toggle/limit, validation, save/skip destinations and recoverable failures. These are organization defaults, not an editable personal vacation balance; presentation must not change allowance calculations.
 - Shared work: F1 wizard/states; F3 conditional form presentation.
 
+<a id="r037"></a>
+
 ### R037 — /onboarding/welcome
 
 - Task and scope: Start or resume the user's onboarding with organization context.
@@ -531,6 +605,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep a concise welcome heading, progress and existing capability guidance, followed by organization-arrival context and one clear continuation action. Use restrained surfaces instead of competing decorative panels.
 - Preserve and verify: Retain onboarding initialization, summary resolution, organization name, step persistence and organization-versus-profile routing. A welcome or joined message must not replace current membership/security checks when entering the workspace.
 - Shared work: F1 onboarding shell and state hierarchy.
+
+<a id="r038"></a>
 
 ### R038 — /onboarding/wellness
 
@@ -540,6 +616,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain preset/custom relationships, allowed interval/goal values, enabled-state behavior, save/skip progression and failure recovery without losing input. This remains a personal preference step rather than a workspace requirement.
 - Shared work: F1 wizard/states; F3 field/slider and action presentation.
 
+<a id="r039"></a>
+
 ### R039 — /onboarding/work-schedule
 
 - Task and scope: Set the initial organization weekly work schedule for an eligible onboarding administrator.
@@ -547,6 +625,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep a full onboarding step with hours and classification together, supporting explanation and a stable save/skip action area.
 - Preserve and verify: Retain asynchronous administrator checks, non-admin skipping, failure fallback, validation and server-returned next steps. Preserve the effective-from boundary and existing work-policy meaning; display reorganization must not alter contractual hours or classify unavailable access as successful setup.
 - Shared work: F1 wizard/states; F3 form presentation.
+
+<a id="r040"></a>
 
 ### R040 — /onboarding/work-templates
 
@@ -556,6 +636,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain administrator checking/non-admin routing, weekday selection and validation, default selection, save/skip destinations and failed-submit input. Keep work-template configuration distinct from recorded time and from the user's display week preference; do not invent template management controls here.
 - Shared work: F1 wizard/states; F3 form presentation.
 
+<a id="r041"></a>
+
 ### R041 — /organization
 
 - Task and scope: Let organization readers explore the current roster's teams, direct managers and reporting relationships.
@@ -563,6 +645,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with Teams/Reporting Lines view controls, team filtering and employee search; use the relationship canvas/outline or teams as main record and person panel as detail.
 - Preserve and verify: Keep URL selection, lazy expansion/loading for large organizations, mobile outline, no-reporting-line groups and current-roster/privacy rules. Verify failed branch loads and deep-linked selections without adding management authority.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r042"></a>
 
 ### R042 — /payroll
 
@@ -572,6 +656,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep explicit Apply, closed-month independence, former-employee fallback, connector outcomes and retained evidence unavailable states. Verify comparison never delivers, expense exclusions and uncarried-payout warnings; export is not payment.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r043"></a>
+
 ### R043 — /payroll/work-balances
 
 - Task and scope: Give an active payroll-grant holder a directory of covered employees, including former employees, for work-balance operations.
@@ -579,6 +665,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with scope explanation and upload action, followed by employee identity/former-status records and a clear return to payroll.
 - Preserve and verify: Keep current-membership grant scope independent of personnel files and expense snapshots. Verify template download, whole-file validation, replacement preview and all-or-nothing upload; an erroneous row must not save other balances.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r044"></a>
 
 ### R044 — /payroll/work-balances/[employeeId]
 
@@ -588,6 +676,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Never turn the balance into an editable total. Verify opening replacement, payout limits, cancellation evidence, unavailable projection, stale results and not-found for uncovered or foreign employees.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r045"></a>
+
 ### R045 — /personnel-files
 
 - Task and scope: Give category-scoped personnel-file officers a directory of employees whose documents they manage in the active organization.
@@ -595,6 +685,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with expiring documents needing attention, then employee records; group payslip batches, requests, sick leave, deletion and officer settings as capability-based destinations.
 - Preserve and verify: Retain former-employee marking, category/employee scope and empty-scope guidance. Verify expiry links and counts reveal only permitted categories; managers/payroll access alone grant no file access, including an officer's own file.
 - Shared work: F1/F2; owners unchanged.
+
+<a id="r046"></a>
 
 ### R046 — /personnel-files/[employeeId]
 
@@ -604,6 +696,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep category deep links, shared versus HR-only visibility, file export and skill/sick-note links. Verify own-file exclusion, former access, failed reads, revision/permission changes and reasoned deletion; document presence never grants content access elsewhere.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r047"></a>
+
 ### R047 — /personnel-files/document-requests
 
 - Task and scope: Let authorized officers track certificate/other-document requests across employees and categories they manage.
@@ -611,6 +705,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with scope/deadline explanation and creation action, then status/overdue filters and paged request records with employee context and officer decisions.
 - Preserve and verify: Keep organization-calendar overdue meaning, open/submitted/accepted/returned/cancelled distinctions, required return reason and former-employee markings. Verify category scope, paging and partial outcomes; uploaded documents survive request return/cancellation, and acceptance alone renews the linked document.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r048"></a>
 
 ### R048 — /personnel-files/due-for-deletion
 
@@ -620,6 +716,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain document opening, explicit confirmation, retry and skipped/no-longer-due feedback. Verify fresh scope/retention checks, unknown employment-end handling and audit descriptions removed while actor/category/date/pay-period evidence remains; leaving a row keeps it.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r049"></a>
+
 ### R049 — /personnel-files/payslip-batches
 
 - Task and scope: Let an authorized payslip officer start a batch for one pay period and inspect their existing batches.
@@ -627,6 +725,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with the compact batch-start form and its save/notification consequence, followed by batch history showing pay period, file count and confirmation state.
 - Preserve and verify: Keep category scope, shared versus HR-only visibility and current organization-calendar defaults. Verify starting a batch saves no personnel documents, validation retains input, and history links reach the correct authorized batch.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r050"></a>
 
 ### R050 — /personnel-files/payslip-batches/[batchId]
 
@@ -636,6 +736,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain file/ZIP limits, browser unpacking, ambiguous/unmatched/duplicate states, manual matches and dropped files. Verify expired staging, scope loss, partial retry and one batch notification; unconfirmed matches never save documents.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r051"></a>
+
 ### R051 — /personnel-files/sick-leave
 
 - Task and scope: Let sick-note-category officers review covered employees' sick-leave absences and linked sick notes for a chosen range.
@@ -643,6 +745,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with date/employee/team/detail/note/status filters; give the paged absence record its full comparison space, with note detail in the existing panel.
 - Preserve and verify: Keep pending/approved meaning, former-employee visibility, certificate-presence distinctions and reset/paging behavior. Verify notes require document permission and this overview sends no reminders or requests; an absent note is not a failed read.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r052"></a>
 
 ### R052 — /platform-admin
 
@@ -652,6 +756,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain metric deep links and status filters, billing-enabled visibility, authoritative seat/revenue values, loading states, separate admin navigation and exit. Organization administration rights must not grant this shell.
 - Shared work: F1 admin shell, summary and state presentation.
 
+<a id="r053"></a>
+
 ### R053 — /platform-admin/analytics
 
 - Task and scope: Inspect platform growth, engagement, operational activity and billing trends as a platform administrator.
@@ -659,6 +765,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep scope and range controls together above aligned metrics and readable trend sections; give charts room without nesting every value in another card.
 - Preserve and verify: Retain URL-backed range/bucket selection, allowed bucket changes, existing metric definitions and billing-dependent information. Keep pending, absent and unavailable data distinct; verify long labels and chart readability on phones without page overflow.
 - Shared work: F1 summaries/states; F2 filter-toolbar presentation.
+
+<a id="r054"></a>
 
 ### R054 — /platform-admin/billing
 
@@ -668,6 +776,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain billing-disabled redirect, current result limit/order, demo-user distinction, authoritative revenue calculations and per-organization synchronization outcomes. Avoid implying subscription status is an editable entitlement here.
 - Shared work: F1 summaries/states; F2 records.
 
+<a id="r055"></a>
+
 ### R055 — /platform-admin/diagnostics
 
 - Task and scope: Inspect deployment configuration and service health under platform-admin authorization.
@@ -675,6 +785,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with overall status and refresh time, then configuration/health evidence, recommended actions and test forms. Keep temporary SMTP overrides beside the email test.
 - Preserve and verify: Retain safe configuration redaction, status announcements, retained snapshots after refresh failure, test outcomes and pending protection. Overrides apply only to the test; secrets must not enter ordinary diagnostic output.
 - Shared work: F1 status/refresh presentation; F3 test-form fields.
+
+<a id="r056"></a>
 
 ### R056 — /platform-admin/organizations
 
@@ -684,6 +796,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain suspended/deleted states, suspension reasons, unsuspension, exact-name deletion confirmation, immediate/grace-period and notification choices, pending protection and error recovery. Show the named global target throughout consequential actions; retain every phone field/action.
 - Shared work: F1 states; F2 list/toolbar; F3 consequential overlays.
 
+<a id="r057"></a>
+
 ### R057 — /platform-admin/settings
 
 - Task and scope: Configure global authentication-page consent behavior and perform privileged approval maintenance as a platform administrator.
@@ -691,6 +805,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Group the editable consent configuration, approval-maintenance target form and read-only Turnstile deployment guidance into sections. Make global reach and deletion scope explicit.
 - Preserve and verify: Retain consent disable/save/loading behavior, organization-plus-approval targeting, UUID validation, ambiguity/not-found refusals and deletion results. Maintenance removes linked approval records while preserving source records/statuses; no org decision authority is implied.
 - Shared work: F1 states; F3 validation/action presentation.
+
+<a id="r058"></a>
 
 ### R058 — /platform-admin/system-email-templates
 
@@ -700,6 +816,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain independent template drafts, built-in fallback copy, first-override requirements, test delivery to the current admin, reset confirmation and pending/error feedback. Clearly communicate that saved/reset overrides affect global outgoing system mail.
 - Shared work: F1 states; F3 editor/action and confirmation presentation.
 
+<a id="r059"></a>
+
 ### R059 — /platform-admin/users
 
 - Task and scope: Find platform accounts and manage bans or sessions with explicit platform-admin authority.
@@ -707,6 +825,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Use search/status and retained organization filtering above a paginated account surface; put session evidence in its panel and the ban form beside named account context.
 - Preserve and verify: Retain URL filter arrivals, ban reason/expiry, single/all-session revocation, pending/error outcomes and current protections. Ban effects include existing session invalidation; organization roles never substitute for platform authority.
 - Shared work: F1 states; F2 records/filters; F3 panels.
+
+<a id="r060"></a>
 
 ### R060 — /platform-admin/worker-queue
 
@@ -716,6 +836,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain unknown/stale/failing distinctions, job filters, supported presets, read-only defaults, high-risk typed acknowledgment, reset behavior and saved-versus-worker mismatch warnings. Keep wide evidence locally scrollable when comparison requires it.
 - Shared work: F1 states; F2 records/filters; F3 schedule editing.
 
+<a id="r061"></a>
+
 ### R061 — /reports
 
 - Task and scope: Let an employee generate work, absence and home-office reports for an employee within their authorized report scope.
@@ -723,6 +845,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with employee/range controls and explicit generation, followed by period-labeled summaries and report preview; keep custom fields, closure context and export beside the result.
 - Preserve and verify: Retain staged filters, authoritative totals, redaction and format-specific output. Verify no-report versus generating/error states, historic employees, captured time context and exported scope matching the preview.
 - Shared work: F1/F2; owners unchanged.
+
+<a id="r062"></a>
 
 ### R062 — /reports/projects
 
@@ -732,6 +856,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep explicit generation, drilldown/refresh context and billable visibility. Verify unpriced/unknown margin, missing-task rows, frozen share snapshots, secret-link reveal and trimmed shared content; sharing and downloads must use their existing report scope.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r063"></a>
+
 ### R063 — /reports/vehicles
 
 - Task and scope: Let an authorized employee report organization-scoped driven distance by vehicle, employee and month for a selected range.
@@ -739,6 +865,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with period/generate controls, then total kilometres and the vehicle/employee monthly comparison, with scope and generation metadata beside exports.
 - Preserve and verify: Keep whole kilometres from completed work grouped by recorded start-local month, own vehicles, archived vehicle identity and totals. Verify empty versus ungenerated/error states and exact export parity; this is not a tax logbook.
 - Shared work: F1/F2; owners unchanged.
+
+<a id="r064"></a>
 
 ### R064 — /reset-password
 
@@ -748,6 +876,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain missing/invalid/expired-token handling, request-new-link destination, password policy, confirmation matching, recoverable errors and duplicate-submit prevention. Successful replacement must retain existing account-security consequences.
 - Shared work: F1 auth states; F3 password fields, validation and focus.
 
+<a id="r065"></a>
+
 ### R065 — /scheduling
 
 - Task and scope: Give planners organization shift planning and employees their own published schedule, using organization-local shift dates.
@@ -755,6 +885,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Preserve planner calendar/templates, coverage, compliance and request review; give employees a focused schedule with the existing phone weekly agenda.
 - Preserve and verify: Keep employee/date deep links, draft/published/open distinctions, gestures and non-gesture access. Verify advisory staffing, blockers, reasoned skill overrides and publish acknowledgment bound to its evaluation; planning never writes recorded work.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r066"></a>
 
 ### R066 — /settings
 
@@ -764,6 +896,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve resolved member, scoped-manager, org-admin and owner access, project-manager exceptions, feature visibility, locale navigation and direct-page guards; test organization changes and empty eligibility.
 - Shared work: F1 supplies shell, heading and state presentation; navigation visibility remains domain-owned.
 
+<a id="r068"></a>
+
 ### R068 — /settings/approval-policies
 
 - Task and scope: Configure active-organization approval policies as org admin; escalation uses its existing Approval-management capability.
@@ -771,6 +905,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep policies, groups, triage, escalation and history in linkable tabs, with records first and ordinary edits in panels.
 - Preserve and verify: Retain distinct capabilities and routing/history; attach R067 `/settings/approval-escalation` to `?tab=escalation`, preserving locale, capability guard and refusal redirect.
 - Shared work: F1 presentation, F2 management records, F3 task panels; existing approval owners remain authoritative.
+
+<a id="r069"></a>
 
 ### R069 — /settings/audit-export
 
@@ -780,6 +916,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep key availability, package lifecycle and authorized downloads. Attach R070 `/settings/audit-log` and R098 `/settings/enterprise/audit-log` to `?tab=activity`, retaining locale and admin guards.
 - Shared work: F1 states, F2 logs/packages, F3 configuration and confirmations; audit actions remain domain-owned.
 
+<a id="r071"></a>
+
 ### R071 — /settings/avv
 
 - Task and scope: Review the active organization's AVV details as org admin when deployment billing is enabled.
@@ -787,6 +925,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Put legal identity/registered address beside processor/hosting details, with readiness guidance and the existing profile-edit link near download.
 - Preserve and verify: Preserve country-aware validation, billing gate and authorized download. The document uses the current profile and must not imply historical signature or acceptance evidence.
 - Shared work: F1 supplies restrained heading, surfaces and feedback; retain the existing download owner.
+
+<a id="r072"></a>
 
 ### R072 — /settings/billable-time
 
@@ -796,6 +936,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve enabled/currency prerequisites, currency locking and refusal feedback. Distinguish customer-chargeable work from Z8 subscription billing; changing presentation cannot unlock established currency.
 - Shared work: F1 settings shell/feedback; F3 accessible configuration fields and submission; module state remains domain-owned.
 
+<a id="r073"></a>
+
 ### R073 — /settings/billable-time/accounting
 
 - Task and scope: Connect accounting and prepare customer contact links in the active organization as eligible Billable Time org admin.
@@ -803,6 +945,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Show connection status/default tax treatment, then customer/contact/tax records with edit panels; retain Import customers into reviewed import.
 - Preserve and verify: Keep provider availability, secret storage, one active connection and account-specific contact links. Customer imports require review; linking never creates remote contacts.
 - Shared work: F1 feedback, F2 customer records and F3 configuration panels; existing accounting actions retain ownership.
+
+<a id="r074"></a>
 
 ### R074 — /settings/billable-time/cost-rates
 
@@ -812,6 +956,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve effective dates, inactive/history visibility and unknown-cost states. Cost rates remain distinct from wages and billable rates; existing reads compute applicability and margin.
 - Shared work: F1 hierarchy, F2 employee records and F3 rate panels; rate history remains domain-owned.
 
+<a id="r075"></a>
+
 ### R075 — /settings/billable-time/hand-off
 
 - Task and scope: Prepare accounting invoice drafts for one customer/period within the active organization as eligible org admin.
@@ -819,6 +965,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep customer/period controls, readiness blockers and work preview together; show draft history, timesheets and changed-after-invoicing reconciliation below.
 - Preserve and verify: Preserve held-back work, frozen rates, unknown differences, reasoned resolutions and release history. Z8 creates drafts only; corrections remain possible.
 - Shared work: F1 status presentation, F2 work/history comparisons, F3 confirmation/reason tasks; hand-off actions retain their lifecycle.
+
+<a id="r076"></a>
 
 ### R076 — /settings/billable-time/rates
 
@@ -828,6 +976,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve employee-on-project, project, customer and employee precedence; dates, missing-rate states and currency/module gates remain authoritative. New rates cannot rewrite frozen invoice drafts or become employee wages.
 - Shared work: F1 hierarchy, F2 rate records and F3 edit panels; pricing resolution stays with Billable Time.
 
+<a id="r077"></a>
+
 ### R077 — /settings/billing
 
 - Task and scope: Manage the active organization's Z8 subscription as org admin in billing-enabled deployments; owner-only actions retain their boundary.
@@ -835,6 +985,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with subscription/access status and recovery action, followed by seats, payment methods and invoices; keep billing failures explicit.
 - Preserve and verify: Preserve trial, active, suspended and unavailable states, authorized recovery routes, seat definitions and kiosk-price availability; the billing evaluator decides entitlement.
 - Shared work: F1 shell/status presentation and F3 existing consequential dialogs; Stripe actions and billing state retain ownership.
+
+<a id="r078"></a>
 
 ### R078 — /settings/calendar
 
@@ -844,6 +996,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep manager read projection separate from admin configuration, existing sync behavior and server action authorization. Organization/employee timezone semantics and saved display preferences remain distinct.
 - Shared work: F1 settings presentation and F3 field/validation behavior; current calendar reads/actions stay owned.
 
+<a id="r080"></a>
+
 ### R080 — /settings/clocking
 
 - Task and scope: Configure active-organization clocking as org admin.
@@ -851,6 +1005,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Group four named configuration tasks with current values, explanatory policy context and local save/pending feedback; keep consequential switches beside their effects.
 - Preserve and verify: Preserve employee-local reminder/submission interpretation, cadence, grace periods and authorization. Reminders notify rather than change work; clock-out rules and policy calculations keep their existing owners.
 - Shared work: F1 hierarchy/feedback; F3 accessible fields/submission without merging independently saved tasks.
+
+<a id="r082"></a>
 
 ### R082 — /settings/closed-months
 
@@ -860,6 +1016,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Keep fixed employee-local coverage, cross-boundary records, automatic-close exceptions and history. A close is independent of payroll export and period submission.
 - Shared work: F1 statuses, F2 month/history records, F3 close/reopen tasks; domain freeze checks stay authoritative.
 
+<a id="r083"></a>
+
 ### R083 — /settings/compliance
 
 - Task and scope: Review pending working-time exception requests for managed employees as manager/workforce admin with an employee profile.
@@ -867,6 +1025,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with pending requests, employee identity, planned duration and supporting reason; keep decisions beside the request and rejection in its focused reason dialog.
 - Preserve and verify: Keep employee prerequisites, managed scope, eligibility and pending/retry feedback. This queue cannot become an editor for captured historical violations or the separate compliance command center.
 - Shared work: F1 queue/states and F3 reason/focus behavior; exception actions remain authoritative.
+
+<a id="r084"></a>
 
 ### R084 — /settings/compliance/works-council
 
@@ -876,6 +1036,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve portal feature gates, permitted viewers, privacy thresholds and export enablement as distinct settings. Configuration access does not confer portal data access or invent a new export workflow.
 - Shared work: F1 settings hierarchy/feedback and F3 accessible configuration form; current permission/data owners stay intact.
 
+<a id="r086"></a>
+
 ### R086 — /settings/custom-fields
 
 - Task and scope: Define employee, project and customer custom fields for the active organization as org admin.
@@ -883,6 +1045,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep entity selection above field records, with type, requirement, visibility and edit level visible; edit definitions/options in task panels.
 - Preserve and verify: Preserve base-role visibility/edit rules, tracked effective dates, required-value validation and option archival. Archived values survive; employees cannot edit their own values through this refresh.
 - Shared work: F1 hierarchy, F2 field records and F3 definition panels; custom-field semantics remain domain-owned.
+
+<a id="r087"></a>
 
 ### R087 — /settings/customers
 
@@ -892,6 +1056,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve scoped reads, object-level mutation checks, active/archive behavior, custom-field requirements and account-link distinctions. Customer ownership remains Organization's; rate and tax behavior retains Billable Time authorization.
 - Shared work: F1 presentation, F2 customer records and F3 edit/confirmation tasks; current read/action owners remain intact.
 
+<a id="r088"></a>
+
 ### R088 — /settings/demo
 
 - Task and scope: Generate/clear demonstration data in the active organization as org admin when its demo-data feature is enabled.
@@ -899,6 +1065,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep the long setup task as a wizard with scope/options, progress and outcome; separate the existing clear-data action and its consequence confirmation.
 - Preserve and verify: Preserve feature gate, selected organization, generation options, destructive-clear safeguards and failure/retry states. Demonstration records must not be presented as go-live rehearsal evidence.
 - Shared work: F1 feedback and F3 wizard/confirmation accessibility; existing generation/deletion actions retain ownership.
+
+<a id="r090"></a>
 
 ### R090 — /settings/driving-licence
 
@@ -908,6 +1076,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve first-activation arrival, disabled retention-only presentation, explicit-off assignment precedence and verifier scope. Switching off stops visibility/reminders without deleting evidence/deadlines; authorization and check evidence retain separate lifecycles.
 - Shared work: F1 state treatment, F2 assignment records and F3 policy/grant tasks; existing driving controls retain ownership.
 
+<a id="r092"></a>
+
 ### R092 — /settings/employees
 
 - Task and scope: Administer employee/member/invitation records in the active organization within existing scoped-manager-or-higher coverage.
@@ -915,6 +1085,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with existing record categories, filters and employee identity/status; retain invitation and employee edit panels and clear routes to full detail.
 - Preserve and verify: Preserve current/former roster distinctions, invitation state, role/object checks and kiosk-only identities. Retain grant, approval, membership and lifecycle safeguards rather than deriving authority from visible rows.
 - Shared work: F1 feedback, F2 directory/toolbars and F3 task panels; employee owners remain authoritative.
+
+<a id="r093"></a>
 
 ### R093 — /settings/employees/[employeeId]
 
@@ -924,6 +1096,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain target checks, SCIM-owned personnel-number restrictions, wage/terms history, birthday privacy, release gates and follow-up/retry evidence.
 - Shared work: F1 hierarchy, F2 histories and F3 edit/review tasks; section handoffs: R044 work-balance, R046 personnel-file, R021 employee-equipment.
 
+<a id="r096"></a>
+
 ### R096 — /settings/enterprise/api-keys
 
 - Task and scope: Manage organization-owned API keys as org admin; webhook mutations retain existing owner restrictions.
@@ -931,6 +1105,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Separate keys/webhooks, showing identity/status/scopes and delivery evidence; use edit panels and focused revocation confirmations.
 - Preserve and verify: Preserve one-time secret reveal, org-acting scopes, health/restricted-field opt-ins and log access. Attach R148 `/settings/webhooks` to `?tab=webhooks`, retaining locale and admin arrival guard.
 - Shared work: F1 presentation, F2 keys/deliveries and F3 credential/confirmation tasks; existing security/webhook actions retain ownership.
+
+<a id="r097"></a>
 
 ### R097 — /settings/enterprise/api-keys/[keyId]
 
@@ -940,6 +1116,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve organization-plus-key lookup, expiry/revocation, one-time secret handling and request attribution. Creator departure does not revoke an organization-owned key; scope explanations retain health and restricted-field distinctions.
 - Shared work: F1 feedback, F2 logs and F3 edit/confirmation patterns; key authorization remains domain-owned.
 
+<a id="r100"></a>
+
 ### R100 — /settings/enterprise/domains
 
 - Task and scope: Configure active-organization domains and branding as org admin.
@@ -947,6 +1125,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep domain verification records and branding controls in separate linkable tabs with current state, assets and task panels.
 - Preserve and verify: Retain domain/brand gates and identity-tab forwarding. Attach R095 `/settings/enterprise` to this route and R099 `/settings/enterprise/branding` to `?tab=branding`; preserve locale, admin enforcement and existing query behavior.
 - Shared work: F1 shell, F2 domain records and F3 configuration tasks; domain policy remains server-resolved.
+
+<a id="r101"></a>
 
 ### R101 — /settings/enterprise/email
 
@@ -956,6 +1136,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve secret-store availability, stored-secret behavior, test/reset actions and overrides sent as written in one language. Attach R091 `/settings/email-templates` to `?tab=templates`, retaining locale and admin guard.
 - Shared work: F1 status presentation and F3 configuration/editor behavior; delivery and recipient-language owners remain intact.
 
+<a id="r102"></a>
+
 ### R102 — /settings/enterprise/identity-setup
 
 - Task and scope: Configure organization identity as active-organization org admin through existing provider/provisioning policy boundaries.
@@ -963,6 +1145,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Retain the setup wizard and linkable provider/policy tabs; show prerequisites, current configuration, connection state and recovery beside each task.
 - Preserve and verify: Preserve session-proof/grace semantics, secrets, provisioning ownership and required-SSO recovery. Attach R103 `/settings/enterprise/sso` to `?tab=sso`, retaining locale and admin guard.
 - Shared work: F1 feedback, F2 provider records, F3 wizard/panels; authentication authority remains unchanged.
+
+<a id="r104"></a>
 
 ### R104 — /settings/equipment
 
@@ -972,6 +1156,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve individually identified versus quantity types, outstanding obligations, finite retention and holds. Switching off preserves records/returns/retention; management does not imply officer authority.
 - Shared work: F1 states, F2 configuration records and F3 grant/edit tasks; equipment owners retain lifecycle rules.
 
+<a id="r105"></a>
+
 ### R105 — /settings/export
 
 - Task and scope: Request/inspect organization-wide data exports for the active organization as org admin.
@@ -979,6 +1165,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Retain New Export, History and Storage tasks; show storage prerequisites/current configuration, scoped export options and record-local state, expiry and downloads.
 - Preserve and verify: Preserve asynchronous lifecycle, authorization, file expiry and failure/retry behavior. This complete organization export differs from employee personal-data exports, payroll delivery, audit packages and frozen report sharing.
 - Shared work: F1 hierarchy/feedback, F2 export history and F3 request configuration; existing export state and downloads retain ownership.
+
+<a id="r106"></a>
 
 ### R106 — /settings/export-operations
 
@@ -988,6 +1176,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve partial-data warnings and independent read failures. Health totals do not execute exports, confirm reimbursement or replace the source workflow's run/delivery state.
 - Shared work: F1 attention/feedback presentation and F2 run/activity records; current health reads and linked workflows retain ownership.
 
+<a id="r107"></a>
+
 ### R107 — /settings/export/history/[organizationId]
 
 - Task and scope: Arrive at organization-addressed export history while retaining active-organization and org-admin authorization.
@@ -995,6 +1185,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep the switch prerequisite explicit; after validation, reuse export configuration/history opening History, with organization identity and record-local download states.
 - Preserve and verify: Preserve membership, active-organization reconciliation, admin checks, refusal behavior and locale. Never display another tenant's history while switching.
 - Shared work: F1 prerequisite states, F2 history and F3 requests; R105 owns shared export presentation and precedes arrival integration.
+
+<a id="r109"></a>
 
 ### R109 — /settings/implementation-checklist
 
@@ -1004,6 +1196,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve fresh-read checks, configuration fingerprints, scoped candidates and first-workflow evidence. Rehearsal changes nothing, notifies nobody and delivers nothing; it cannot stage successful operational records.
 - Shared work: F1 attention states, F2 check/group records and F3 existing review tasks; go-live owners remain authoritative.
 
+<a id="r110"></a>
+
 ### R110 — /settings/import
 
 - Task and scope: Select an import source and configure a reviewed import for the active organization as org admin.
@@ -1011,6 +1205,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with source choices and prerequisites, retaining source-specific upload/connection steps and existing batch continuation; long setup remains a wizard.
 - Preserve and verify: Preserve source availability, credentials and batch identity. Attach R081 `/settings/clockodo-import` to this destination, retaining locale and destination admin enforcement; starting setup does not commit an import.
 - Shared work: F1 states and F3 source-specific setup; current import owners retain parsing and writes.
+
+<a id="r111"></a>
 
 ### R111 — /settings/import/[batchId]
 
@@ -1020,6 +1216,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve scanning, needs-review, committing, completed, failed and cancelled distinctions, query state and retry/cancel behavior. Blocking issues cannot become committable through presentation changes.
 - Shared work: F1 progress/states, F2 review records and F3 controls; import authority remains intact.
 
+<a id="r112"></a>
+
 ### R112 — /settings/kiosks
 
 - Task and scope: Administer shared devices enrolled to active-organization locations as org admin.
@@ -1027,6 +1225,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with device/location/status records and create action; use edit panels, dedicated pairing-code presentation and focused revoke confirmation.
 - Preserve and verify: Preserve location prerequisites, single-use short-lived pairing, revocation and offline-mode eligibility. Distinguish kiosk credentials from employee PIN, badge and fob; enrollment does not grant account sign-in or bypass clock-command proof.
 - Shared work: F1 state feedback, F2 device records and F3 edit/credential tasks; existing device actions retain ownership.
+
+<a id="r113"></a>
 
 ### R113 — /settings/locations
 
@@ -1036,6 +1236,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve scoped readers, admin mutation checks and location/subarea relationships. Operating locations remain distinct from registered organization address and event-reported position stamps; unavailable and empty states remain separate.
 - Shared work: F1 hierarchy, F2 location records and F3 management panels; existing location owners stay authoritative.
 
+<a id="r114"></a>
+
 ### R114 — /settings/locations/[locationId]
 
 - Task and scope: Review one active-organization location/subareas within existing manager scope; org admins retain editing.
@@ -1043,6 +1245,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with location identity/current configuration, then subarea records and relevant requirements; use ordinary panels while retaining the detail route and back navigation.
 - Preserve and verify: Preserve organization-plus-ID resolution, manager read-only behavior, subarea/skill relationships, action refusals and not-found behavior. A location view cannot imply access to personnel evidence.
 - Shared work: F1 detail hierarchy, F2 subarea records and F3 edit tasks; location actions retain ownership.
+
+<a id="r115"></a>
 
 ### R115 — /settings/my-data
 
@@ -1052,6 +1256,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve membership, employee prerequisites, withholding categories and asynchronous recovery. This is not the complete admin export or organization-wide export; former employees use the existing admin route.
 - Shared work: F1 scope/status presentation and F2 export records; retain the current request/download owner without new controls.
 
+<a id="r116"></a>
+
 ### R116 — /settings/notification-channels
 
 - Task and scope: Configure organization notification channels as active-organization org admin.
@@ -1059,6 +1265,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Retain Slack, Teams, Telegram and Discord tabs, current connection values and local save feedback.
 - Preserve and verify: Preserve credentials and channel-specific controls. Attach R089 `/settings/discord`, R135 `/settings/slack`, R139 `/settings/teams-notifications` and R141 `/settings/telegram` to matching `?tab=discord`, `?tab=slack`, `?tab=teams`, `?tab=telegram`; retain locale and admin guards.
 - Shared work: F1 feedback and F3 channel forms; existing delivery/preferences and connection owners remain authoritative.
+
+<a id="r117"></a>
 
 ### R117 — /settings/notifications
 
@@ -1068,6 +1276,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve enabled-channel availability, recipient-language behavior, per-user persistence and browser permission/device state. Personal preferences do not configure organization credentials or turn optional features on.
 - Shared work: F1 hierarchy/feedback and F3 accessible preference controls; existing preference and delivery owners retain scope and defaults.
 
+<a id="r118"></a>
+
 ### R118 — /settings/organization
 
 - Task and scope: Administer active-organization identity/membership as org admin; owner-reserved changes retain their boundary.
@@ -1075,6 +1285,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Separate display identity, legal profile and membership tasks with current values/save states; preserve creation/switching and consequential controls where currently available.
 - Preserve and verify: Retain owner checks and legal/registered-address distinctions. Attach R094 `/settings/employees/new` and R119 `/settings/organizations` to this destination, preserving locale and destination admin enforcement.
 - Shared work: F1 context, F2 membership records and F3 configuration tasks; organization/account ownership remains intact.
+
+<a id="r120"></a>
 
 ### R120 — /settings/payroll-access
 
@@ -1084,6 +1296,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve independent administration checks, current-membership scope, eligibility and revocation. Payroll access confers neither expense reimbursement nor personnel-file/payslip access; server refusals remain visible.
 - Shared work: F1 restricted states, F2 grant records and F3 scoped grant tasks; payroll-access owners remain authoritative.
 
+<a id="r121"></a>
+
 ### R121 — /settings/payroll-export
 
 - Task and scope: Configure payroll targets and prepare exports for the active organization as org admin.
@@ -1091,6 +1305,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Retain export, connector, mappings and history tasks; place period/employee scope, warnings and result records beside the action, with credential/configuration forms separate.
 - Preserve and verify: Preserve withdrawn-connector restrictions, secret handling, mixed delivery outcomes and comparison evidence. Export moves no money, closes no month and confirms no reimbursement; previews remain read-only.
 - Shared work: F1 feedback, F2 export/history records and F3 configuration; payroll domain actions stay authoritative.
+
+<a id="r122"></a>
 
 ### R122 — /settings/payroll-readiness
 
@@ -1100,6 +1316,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve query-period behavior, authoritative checks and supported targets. Readiness must not execute payroll, repair work, freeze a month or imply successful vendor delivery.
 - Shared work: F1 attention/state hierarchy and F2 check records; existing readiness reads and remediation owners remain intact.
 
+<a id="r123"></a>
+
 ### R123 — /settings/permissions
 
 - Task and scope: Review employee permissions in the active organization as scoped manager or higher; management actions retain existing administrative boundaries.
@@ -1107,6 +1325,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with employee identity, role and effective permissions; retain search/filters and management panels, with read-only differences evident alongside values.
 - Preserve and verify: Preserve base/custom-role interpretation, manager object checks, owner-reserved membership changes and direct mutation authorization. A visible capability summary does not grant action authority.
 - Shared work: F1 context/feedback, F2 permission records and F3 management tasks; access resolution remains domain-owned.
+
+<a id="r124"></a>
 
 ### R124 — /settings/personnel-files
 
@@ -1116,6 +1336,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve category-scoped grants, own-file exclusion, finite retention and former-employee rules. Neither management nor payroll grants imply document access; changing a reminder does not renew a document.
 - Shared work: F1 states, F2 grant records and F3 configuration tasks; personnel-file permissions/retention stay domain-owned.
 
+<a id="r125"></a>
+
 ### R125 — /settings/position-capture
 
 - Task and scope: Configure active-organization position capture as org admin.
@@ -1123,6 +1345,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Separate enablement/purpose/retention, assignments and versioned notice management; show current settings, coverage and save states before supporting records, with ordinary editors in panels.
 - Preserve and verify: Preserve purpose prerequisites, explicit assignments, consent and notice versions. Enablement alone applies to nobody; switching off preserves recorded stamps until deletion. No background capture, geofencing or clock-command blocking is introduced.
 - Shared work: F1 feedback, F2 assignment/notice records and F3 configuration; consent/evidence owners remain authoritative.
+
+<a id="r126"></a>
 
 ### R126 — /settings/position-stamps
 
@@ -1132,6 +1356,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve current-user scope, notice versions, consent-dependent deletion and immutable evidence. Device permission and organization assignment remain distinct from consent; clocking remains possible without a stamp.
 - Shared work: F1 statuses, F2 evidence records and F3 consent confirmation; current consent owner remains authoritative.
 
+<a id="r127"></a>
+
 ### R127 — /settings/profile
 
 - Task and scope: Edit the signed-in account's profile/display preferences; organization-specific custom fields/skills retain their own read boundary.
@@ -1139,6 +1365,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with profile identity/form, then timezone, week start and time format; retain eligible own custom fields/skills as supporting records with current values.
 - Preserve and verify: Preserve account-versus-organization persistence, picture/name behavior and read-only employee custom fields. Display preferences do not change compliance weeks, historical offsets or submission cadence.
 - Shared work: F1 hierarchy/feedback and F3 accessible forms; account/preference and organization reads remain owners.
+
+<a id="r128"></a>
 
 ### R128 — /settings/projects
 
@@ -1148,6 +1376,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve booking assignments, flat projects, open/done tasks, template copying, custom-field requirements and feature gates. Templates are not bookable; project-manager access does not become general settings access.
 - Shared work: F1 hierarchy, F2 portfolios/tasks and F3 edit panels; project owners remain authoritative.
 
+<a id="r129"></a>
+
 ### R129 — /settings/report-share-links
 
 - Task and scope: Manage frozen report share links belonging to the active organization as org admin.
@@ -1155,6 +1385,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with report/link identity, creator, expiry/status and useful actions; keep report context and link details available through accessible phone records.
 - Preserve and verify: Preserve snapshot freezing, trimmed content, creator-access revocation and secret-link handling. These links grant snapshot viewing without sign-in and differ from scheduled-export downloads requiring a mailbox code.
 - Shared work: F1 states and F2 link records/actions; retain existing share-link lifecycle and authorization owners.
+
+<a id="r130"></a>
 
 ### R130 — /settings/roles
 
@@ -1164,6 +1396,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve protected roles, base-role semantics, authorization and required confirmations. Custom roles cannot bypass custom-field visibility/edit levels or replace distinct officer/verifier grants; settings access is not inferred solely from labels.
 - Shared work: F1 hierarchy, F2 roles and F3 edit/confirmation tasks; access owners retain authority.
 
+<a id="r131"></a>
+
 ### R131 — /settings/scheduled-exports
 
 - Task and scope: Schedule payroll, data or audit exports for the active organization as org admin.
@@ -1171,6 +1405,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with schedules, enabled/paused state and next run; retain wizard type, filters, cadence, recipients and review, plus run history and approved recipients.
 - Preserve and verify: Preserve schedule-owner pause, recipient approval, connector availability and per-run outcomes. External downloads require a one-time mailbox code; execution does not imply reimbursement.
 - Shared work: F1 status, F2 schedules/runs and F3 wizard; scheduled-export owners retain operational semantics.
+
+<a id="r132"></a>
 
 ### R132 — /settings/security
 
@@ -1180,6 +1416,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve verification challenges, secret/recovery reveals, last-factor consequences and session proof. Fobs select identity but still require PIN; kiosk credentials do not grant account sign-in.
 - Shared work: F1 feedback, F2 sessions and F3 security tasks; authentication owners remain authoritative.
 
+<a id="r133"></a>
+
 ### R133 — /settings/shifts
 
 - Task and scope: Configure shift templates/coverage within existing scheduling-settings team/subarea capabilities.
@@ -1187,6 +1425,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Retain templates/coverage tabs with scoped records and edit panels; make read-only values useful and keep time/required-skill context beside fields.
 - Preserve and verify: Preserve separate read/manage capabilities and organization-local planning. Attach R085 `/settings/coverage-rules` to `?tab=coverage`, retaining locale and scheduling scope; planned shifts are not recorded work.
 - Shared work: F1 states, F2 settings records and F3 task panels; scheduling permission/calculation owners remain intact.
+
+<a id="r134"></a>
 
 ### R134 — /settings/skills
 
@@ -1196,6 +1436,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve catalog rights, employee-skill scope, organization-calendar expiry and certificate-driven read-only dates. Knowing a certificate exists never grants access to personnel-file contents.
 - Shared work: F1 hierarchy, F2 skill records and F3 editors; scheduling/personnel-file owners retain boundaries.
 
+<a id="r136"></a>
+
 ### R136 — /settings/statistics
 
 - Task and scope: Inspect organization statistics or existing managed-scope statistics as scoped manager or higher.
@@ -1203,6 +1445,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with explicit organization/managed scope, then aligned workforce, work/absence and other available metric groups; keep units, periods and comparison context beside values.
 - Preserve and verify: Preserve scoped reads, optional metric eligibility, authoritative totals, loading and read errors. Unknown/failed values remain distinct from zero; reorganization cannot broaden employee visibility.
 - Shared work: F1 summary hierarchy and feedback; statistics reads retain calculations and scope.
+
+<a id="r137"></a>
 
 ### R137 — /settings/surcharges
 
@@ -1212,6 +1456,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve assignment precedence, effective periods, manager scope and captured surcharge evidence. Restyling current configuration cannot recompute historical work or change payroll calculation sources.
 - Shared work: F1 hierarchy, F2 models/assignments and F3 editors; surcharge owners remain authoritative.
 
+<a id="r138"></a>
+
 ### R138 — /settings/teams
 
 - Task and scope: Review/administer active-organization teams within existing scoped-manager-or-higher team-management coverage.
@@ -1219,6 +1465,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with searchable team identity, lead and membership counts; retain scoped actions, detail links and create/edit panels, keeping empty/restricted states distinct.
 - Preserve and verify: Preserve management coverage, current-roster selection, team-lead rules and multi-team membership/primary-team invariants. Team presentation cannot create officer/verifier authority.
 - Shared work: F1 states, F2 directory and F3 team forms; touched native forms follow TanStack conventions; current team actions retain ownership.
+
+<a id="r140"></a>
 
 ### R140 — /settings/teams/[teamId]
 
@@ -1228,6 +1476,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve team-specific read/manage checks, cross-tenant refusal, current-roster candidates and primary-team membership invariants. Distinguish team lead from reporting lines and preserve effective assignment behavior.
 - Shared work: F1 detail hierarchy, F2 members and F3 edit/member panels; current team owners remain authoritative.
 
+<a id="r142"></a>
+
 ### R142 — /settings/travel-expenses
 
 - Task and scope: Configure expense policy/officer coverage for the active organization as org admin.
@@ -1235,6 +1485,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Retain task tabs for review/receipts, currency/conversions, mileage/per-diem policies and finance coverage; show current values/effective dates and local save feedback, with grant/policy editors in panels.
 - Preserve and verify: Preserve separate approval/export/reimbursement powers, approval-time team snapshots, coverage gaps, currency locking and historical rates. Export moves no money; payroll inclusion is not reimbursement.
 - Shared work: F1 hierarchy, F2 policy/grant records and F3 forms; expense owners retain calculation/action authority.
+
+<a id="r143"></a>
 
 ### R143 — /settings/vacation
 
@@ -1244,6 +1496,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve scoped assignments, dated policy gaps/conflicts, posting gates, committed carryover/accrual and sick-note permissions. Attach R108 `/settings/holidays` to `?tab=holidays`, retaining locale and manager guard.
 - Shared work: F1 feedback, F2 policies/holidays and F3 editors; Absences retains authoritative calculations.
 
+<a id="r144"></a>
+
 ### R144 — /settings/vacation/employees
 
 - Task and scope: Review active-organization employee vacation allowances as org admin.
@@ -1251,6 +1505,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with year/scope controls and employee allowance/balance records, then policy assignment and proration/working-week notices explaining review needs; preserve complete employee detail access.
 - Preserve and verify: Preserve organization-calendar year, current/former visibility, applicable policy periods and unknown/conflicting results. Custom allowance, carryover, adjustments and taken/pending days remain distinct; totals come from the shared balance owner.
 - Shared work: F1 hierarchy/state presentation and F2 allowance records; retain existing year/selection persistence.
+
+<a id="r145"></a>
 
 ### R145 — /settings/vacation/employees/[employeeId]
 
@@ -1260,6 +1516,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve employee scope, final unprorated custom allowance, reason/history requirements, committed postings and reviewed corrections. Accrual history remains visible after policy changes; unavailable allowance never becomes zero.
 - Shared work: F1 detail presentation, F2 histories and F3 accessible form; Absences remains calculation owner.
 
+<a id="r147"></a>
+
 ### R147 — /settings/vehicles
 
 - Task and scope: Configure active-organization vehicles and vehicle-use assignments as org admin.
@@ -1267,6 +1525,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Separate vehicle records from use enablement/driver assignments; show identity, plate and active/archive state with ordinary edit panels.
 - Preserve and verify: Preserve archived vehicles on historical work and assignment precedence; assigned drivers provide defaults rather than exclusive selection. Attach R146 `/settings/vehicle-use` to `?tab=use`, retaining locale and admin guard. Driving authorization remains separate.
 - Shared work: F1 states, F2 vehicles/assignments and F3 editors; organization/work-attribution owners remain intact.
+
+<a id="r149"></a>
 
 ### R149 — /settings/wellness
 
@@ -1276,6 +1536,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve defaults, notification availability, timing interpretation and user scope. Personal preferences cannot change organization clocking rules or introduce new health tracking; retain values when saving fails.
 - Shared work: F1 settings hierarchy/feedback and F3 accessible configuration fields; existing wellness owner remains authoritative.
 
+<a id="r150"></a>
+
 ### R150 — /settings/work-categories
 
 - Task and scope: Review work categories/sets in the active organization as scoped manager or higher; org admins retain management.
@@ -1283,6 +1545,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with category records/counting meaning, followed by sets and organization/team/employee assignment sections; retain ordinary edit panels and read-only assignment detail.
 - Preserve and verify: Preserve assignment precedence/effective periods, eligibility, archive behavior and historical attribution. Work categories describe how time counts; they remain distinct from project tasks.
 - Shared work: F1 hierarchy, F2 categories/sets and F3 editors; existing category owners retain rules.
+
+<a id="r151"></a>
 
 ### R151 — /settings/work-diagnostics
 
@@ -1292,6 +1556,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Preserve organization/employee validation, month/range parameters, admission gates, record agreement and closed-month refusals. Read diagnostics never silently repair records; proposals are not committed work.
 - Shared work: F1 states, F2 findings/history and F3 review tasks; time-workflow owners retain authority.
 
+<a id="r152"></a>
+
 ### R152 — /settings/work-policies
 
 - Task and scope: Review work schedules, limits, breaks and change policies in the active organization within existing manager scope; org admins retain policy management.
@@ -1299,6 +1565,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep work/change tasks distinct, with policy records, effective assignment levels and ordinary editor panels.
 - Preserve and verify: Preserve captured compliance evidence, employee-local change windows, inheritance and read-only assignments. Attach R079 `/settings/change-policies` to `?tab=changes`, retaining locale and manager guard; changes cannot rewrite historical violations.
 - Shared work: F1 hierarchy, F2 policies/assignments and F3 editors; current domain owners remain authoritative.
+
+<a id="r153"></a>
 
 ### R153 — /setup
 
@@ -1308,6 +1576,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain one-use code exchange, credential-free address, one-hour/ten-minute expiry guidance, retry while authorized, configured-instance redirect and fail-closed infrastructure behavior. Keep no-referrer/no-index metadata and prevent duplicate creation; this boundary remains separate from public signup.
 - Shared work: F1 setup states; F3 validation/focus.
 
+<a id="r154"></a>
+
 ### R154 — /share/[token]
 
 - Task and scope: Read a frozen, redacted project-report snapshot through its secret share URL.
@@ -1315,6 +1585,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with organization/report identity, sharer, snapshot time and link expiry; follow with report facts, comparison tables, notes and the read-only explanation. Allow local table scrolling on phones.
 - Preserve and verify: Retain snapshot/download agreement, cost/margin exclusion, organization timezone, access logging, expiry/revocation and creator-access-loss checks. Keep generic unavailable outcomes and no-referrer/no-index behavior; never expose live source data.
 - Shared work: F1 public states; F2 report tables.
+
+<a id="r155"></a>
 
 ### R155 — /sign-in
 
@@ -1324,6 +1596,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain domain policy, callbacks, Turnstile retry tokens, second-factor challenges, required-SSO session proof, browser/native return behavior and all error recovery. Keep shell preferences and information links reachable.
 - Shared work: F1 auth shell/states; F3 fields and focus.
 
+<a id="r156"></a>
+
 ### R156 — /sign-up
 
 - Task and scope: Create an account under the deployment and domain signup policy, including invitation arrivals.
@@ -1331,6 +1605,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Keep a purpose-built branded signup flow with personal/account fields, password guidance and the invited organization/email context where supplied; place sign-in nearby.
 - Preserve and verify: Retain signup restrictions, invitation/code and callback continuity, password validation, enabled authentication options, same-request Turnstile verification and fresh-token retries. Preserve verification-required outcomes and recoverable input; account creation must not imply approved organization access.
 - Shared work: F1 shell/states; F3 form validation and focus.
+
+<a id="r157"></a>
 
 ### R157 — /team
 
@@ -1340,6 +1616,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain sorting, paging, view choice, primary-manager/You indicators and settings entry when offered. Verify current/former distinction, unknown balance, empty scope versus no-match and authorized employee destinations; do not infer officer access.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r158"></a>
+
 ### R158 — /team/absences
 
 - Task and scope: Let managers and workforce admins review managed employees' annual absence allowances and absence calendar.
@@ -1347,6 +1625,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with selected year/team/search scope, then calendar and comparable allowance/used/pending/left/sick records with employee actions nearby.
 - Preserve and verify: Keep sorting/paging, deputy-filter deep links, show-all recovery, policy-configuration explanations and recorded-absence permissions. Verify half days, overdrawn vacation, allowance evidence and sick-note access separately; calendar failure must not erase usable employee records.
 - Shared work: F1/F2/F3; owners unchanged.
+
+<a id="r159"></a>
 
 ### R159 — /team/driving
 
@@ -1356,6 +1636,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain newest-result limit disclosure, filter access to remaining records and former-employee marking. Verify captured start-local display, no-vehicle versus missing-reading distinctions and scoped links; missing details never block clocking or confer driving authorization.
 - Shared work: F1/F2; owners unchanged.
 
+<a id="r160"></a>
+
 ### R160 — /team/period-submissions
 
 - Task and scope: Let organization owners/admins or scoped managers inspect expected employee submissions for a selected organization cadence period.
@@ -1363,6 +1645,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with submission-period choice and running-period context, then status counts and employee/period/status records with calendar links.
 - Preserve and verify: Keep cadence-disabled guidance, employee-local frozen ranges and awaiting/submitted/approved/rejected/sent-back distinctions. Verify employment clipping and no-expected-employees state; submissions confirm records without freezing them, and changed records require resubmission.
 - Shared work: F1/F2; owners unchanged.
+
+<a id="r161"></a>
 
 ### R161 — /team/presence
 
@@ -1372,6 +1656,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain authorized location scope and navigation, distinguish working from break presence in counts where shown, and verify refreshed results after organization changes. An empty location count is not an all-clear compliance assessment or proof that nobody is employed there.
 - Shared work: F1; owners unchanged.
 
+<a id="r162"></a>
+
 ### R162 — /team/presence/[locationId]
 
 - Task and scope: Show an authorized reader employees assigned to this organization location who are currently clocked in or on break.
@@ -1379,6 +1665,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with selected location and reader-scope explanation, then name/state/since records with working and break labels.
 - Preserve and verify: Keep manager-limited visibility, authorized location/not-found boundary and current-roster rules. Verify live/break synchronization, time-format context, refreshed absence of ended work and truthful empty scope; assignment to a location is not device-position evidence.
 - Shared work: F1/F2; owners unchanged.
+
+<a id="r163"></a>
 
 ### R163 — /time-tracking
 
@@ -1388,6 +1676,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Close applicable mismatch/DST/cross-zone, offline replay, failure, permission and organization-switch verification gaps. Retain endpoint offsets, break state, task/project/billable/vehicle attribution, recovery identity, pagination and calendar access; never reset drafts on refresh.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r164"></a>
+
 ### R164 — /today
 
 - Task and scope: Give managers and workforce admins today's briefing for the employees and organization they may oversee.
@@ -1395,6 +1685,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with briefing date/update time and Needs Action, then aligned summary and supporting operational sections; keep approval work close to its evidence.
 - Preserve and verify: Keep severity order, real destinations, section-level failures and supporting results. Verify all-clear does not assert presence, counts match scope, approval rights recheck and stale refresh remains understandable.
 - Shared work: F1/F3; owners unchanged.
+
+<a id="r165"></a>
 
 ### R165 — /travel-expenses
 
@@ -1404,6 +1696,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain legacy and current report links, history filtering/status and no-report/error states. Verify optional finance/approval access does not imply the other, drafts survive failure, and exported or payroll-included does not appear reimbursed.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r166"></a>
+
 ### R166 — /travel-expenses/[claimId]
 
 - Task and scope: Let an authorized employee or legacy-claim reader inspect one claim's retained organization evidence.
@@ -1411,6 +1705,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Lead with claim identity/status, amount and travel context, followed by receipts, decision timeline and capability-specific conversion/settlement support.
 - Preserve and verify: Keep original amount, notes, missing destinations and checksum-unavailable disclosure. Verify UTC decision history, partial approvals, retry/refetch, legacy conversion provenance and scoped settlement; do not replace historical claims with a new report presentation that loses evidence.
 - Shared work: F1/F3; owners unchanged.
+
+<a id="r167"></a>
 
 ### R167 — /travel-expenses/finance
 
@@ -1420,6 +1716,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Verify page-only selection, partial settlement, recoveries, included-payroll restrictions, immutable export evidence and mixed outcomes. Export moves no money; payroll grants alone confer no reimbursement authority.
 - Shared work: F1/F2/F3; owners unchanged.
 
+<a id="r168"></a>
+
 ### R168 — /travel-expenses/reports/[reportId]
 
 - Task and scope: Let the authorized owner edit a current expense draft, while reviewers/finance and earlier cycles read the appropriate frozen submission.
@@ -1427,6 +1725,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Retain the full-page report workspace: trip details or standalone item, item editors, still-needed guidance, totals and submission; frozen views lead with cycle/status and evidence/history.
 - Preserve and verify: Keep drafts/future plans, plain dates/trip zones, receipt provenance, withdrawals/returns/reopen, late receipts and correct return destination. Verify permissions and old-cycle immutability.
 - Shared work: F1/F3; owners unchanged.
+
+<a id="r169"></a>
 
 ### R169 — /verify-2fa
 
@@ -1436,6 +1736,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain six-digit authenticator validation, backup-code validation, failure recovery, duplicate-submit prevention and successful continuation. Existing full sessions redirect away; do not conflate this challenge with organization MFA enrollment.
 - Shared work: F1 states; F3 input/focus presentation.
 
+<a id="r170"></a>
+
 ### R170 — /verify-email
 
 - Task and scope: Verify the current email token and resolve the appropriate next step.
@@ -1444,6 +1746,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Preserve and verify: Retain missing-token and verification errors, pending versus approved join outcomes, invitation processing, manual continuation and timed redirect. Token changes must cancel stale results/redirects; error states retain sign-in/signup recovery.
 - Shared work: F1 auth shell and accessible state presentation.
 
+<a id="r171"></a>
+
 ### R171 — /verify-email-pending
 
 - Task and scope: Explain the pending verification step and help the account holder obtain another email.
@@ -1451,6 +1755,8 @@ The briefs cover all 153 persistent pages by stable inventory ID. They supplemen
 - Composition: Use a concise instruction surface with inbox/spam guidance, resend feedback beside its action and a clearly available return to sign-in.
 - Preserve and verify: Retain email resolution from the supported query/session context, missing-email guidance, resend pending/failure/success distinctions and callback-preserving sign-in navigation. Verification remains a separate step; a resend must not communicate that the account is already verified.
 - Shared work: F1 shell/states; F3 pending-action and focus treatment.
+
+<a id="r172"></a>
 
 ### R172 — /works-council
 
