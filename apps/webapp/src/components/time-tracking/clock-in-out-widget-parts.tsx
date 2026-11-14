@@ -12,7 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
-import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
+import {
+	getTimeFormatDateTimeOptions,
+	type TimeFormat,
+} from "@/lib/user-preferences/time-format";
 import { workLocationIcons } from "./work-location-indicator";
 
 export function ActiveSessionSummary({
@@ -26,7 +29,10 @@ export function ActiveSessionSummary({
 	t: TFnType;
 	timeFormat?: TimeFormat;
 }) {
-	const timeFormatter = Intl.DateTimeFormat(undefined, getTimeFormatDateTimeOptions(timeFormat));
+	const timeFormatter = Intl.DateTimeFormat(
+		undefined,
+		getTimeFormatDateTimeOptions(timeFormat),
+	);
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -34,7 +40,8 @@ export function ActiveSessionSummary({
 				{formatDurationWithSeconds(elapsedSeconds)}
 			</div>
 			<div className="text-muted-foreground text-sm">
-				{t("timeTracking.startedAt", "Started at")} {timeFormatter.format(new Date(startTime))}
+				{t("timeTracking.startedAt", "Started at")}{" "}
+				{timeFormatter.format(new Date(startTime))}
 			</div>
 		</div>
 	);
@@ -71,7 +78,7 @@ export function WorkLocationField({
 }) {
 	return (
 		<fieldset className="min-w-0">
-			<legend className="mb-2 font-medium text-muted-foreground text-xs">
+			<legend className="mb-2 font-medium text-muted-foreground text-sm">
 				{t("timeTracking.workLocation", "Work location")}
 			</legend>
 			<WorkLocationSelector value={value} onChange={onChange} t={t} />
@@ -104,23 +111,41 @@ export function WorkLocationSelector({
 			}}
 			className="grid w-full grid-cols-2 items-stretch gap-1.5 data-[variant=outline]:shadow-none @[22rem]/widget:grid-cols-4"
 		>
-			<WorkLocationOption value="office" label={t("timeTracking.workLocationOffice", "Office")} />
-			<WorkLocationOption value="home" label={t("timeTracking.workLocationHome", "Home")} />
-			<WorkLocationOption value="remote" label={t("timeTracking.workLocationRemote", "Remote")} />
-			<WorkLocationOption value="other" label={t("timeTracking.workLocationOther", "Other")} />
+			<WorkLocationOption
+				value="office"
+				label={t("timeTracking.workLocationOffice", "Office")}
+			/>
+			<WorkLocationOption
+				value="home"
+				label={t("timeTracking.workLocationHome", "Home")}
+			/>
+			<WorkLocationOption
+				value="remote"
+				label={t("timeTracking.workLocationRemote", "Remote")}
+			/>
+			<WorkLocationOption
+				value="other"
+				label={t("timeTracking.workLocationOther", "Other")}
+			/>
 		</ToggleGroup>
 	);
 }
 
-function WorkLocationOption({ value, label }: { value: WorkLocationType; label: string }) {
+function WorkLocationOption({
+	value,
+	label,
+}: {
+	value: WorkLocationType;
+	label: string;
+}) {
 	const Icon = workLocationIcons[value];
 	return (
 		<ToggleGroupItem
 			value={value}
-			className="h-auto min-h-9 rounded-md px-2 py-1.5 shadow-xs data-[variant=outline]:border-l pointer-coarse:min-h-11 @[22rem]/widget:min-h-14 @[22rem]/widget:flex-col @[22rem]/widget:gap-1 data-pressed:border-primary data-pressed:bg-primary/10 data-pressed:text-primary data-pressed:hover:bg-primary/15 data-pressed:hover:text-primary"
+			className="h-auto min-h-9 rounded-md px-2 py-1.5 shadow-xs data-[variant=outline]:border-l pointer-coarse:min-h-11 @[22rem]/widget:gap-2 data-pressed:border-primary data-pressed:bg-primary/10 data-pressed:text-primary data-pressed:hover:bg-primary/15 data-pressed:hover:text-primary"
 		>
 			<Icon aria-hidden="true" className="size-4" />
-			<span className="min-w-0 truncate text-xs">{label}</span>
+			<span className="min-w-0 break-words text-sm">{label}</span>
 		</ToggleGroupItem>
 	);
 }
@@ -190,12 +215,18 @@ export function PostClockOutNotesForm({
 	return (
 		<div className="flex flex-col gap-3 motion-safe:transition-[opacity,transform] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-200">
 			<div className="text-sm text-muted-foreground">
-				{t("timeTracking.addNotePrompt", "Add a note about your work (optional)")}
+				{t(
+					"timeTracking.addNotePrompt",
+					"Add a note about your work (optional)",
+				)}
 			</div>
 			<Textarea
 				name="notes"
 				autoComplete="off"
-				placeholder={t("timeTracking.notesPlaceholder", "What did you work on…")}
+				placeholder={t(
+					"timeTracking.notesPlaceholder",
+					"What did you work on…",
+				)}
 				value={notes}
 				onChange={(event) => onChange(event.target.value)}
 				rows={3}
@@ -203,7 +234,12 @@ export function PostClockOutNotesForm({
 				autoFocus
 			/>
 			<div className="flex gap-2">
-				<Button size="sm" onClick={onSave} disabled={isSaving} className="flex-1">
+				<Button
+					size="sm"
+					onClick={onSave}
+					disabled={isSaving}
+					className="flex-1"
+				>
 					{isSaving ? (
 						<IconLoader2 className="size-4 animate-spin" />
 					) : (
@@ -211,7 +247,12 @@ export function PostClockOutNotesForm({
 					)}
 					{t("common.save", "Save")}
 				</Button>
-				<Button size="sm" variant="outline" onClick={onSkip} disabled={isSaving}>
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={onSkip}
+					disabled={isSaving}
+				>
 					<IconX className="size-4" />
 					{t("common.skip", "Skip")}
 				</Button>

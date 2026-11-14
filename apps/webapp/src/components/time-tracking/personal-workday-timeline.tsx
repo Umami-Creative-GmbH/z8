@@ -18,10 +18,18 @@ import type {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { workPeriodFocusTargetId } from "@/lib/time-tracking/period-submissions/blocker-navigation";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { WorkdayWeekStrip } from "./workday-date-navigation";
 
 export interface SerializableSelectedWorkdayDate {
 	dateKey: string;
@@ -68,15 +76,21 @@ export type SerializableWorkdayTimelineResult =
 
 interface PersonalWorkdayTimelineProps {
 	result: SerializableWorkdayTimelineResult;
+	weekStartDay?: WeekStartDay;
 }
 
-export function PersonalWorkdayTimeline({ result }: PersonalWorkdayTimelineProps) {
+export function PersonalWorkdayTimeline({
+	result,
+	weekStartDay = "monday",
+}: PersonalWorkdayTimelineProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const selectedDate = result.success ? result.data.selectedDate : result.selectedDate;
+	const selectedDate = result.success
+		? result.data.selectedDate
+		: result.selectedDate;
 
 	return (
-		<Card>
+		<Card className="rounded-xl shadow-none">
 			<CardHeader className="gap-4 sm:flex sm:flex-row sm:items-start sm:justify-between">
 				<div className="space-y-1.5">
 					<CardTitle>
@@ -85,26 +99,43 @@ export function PersonalWorkdayTimeline({ result }: PersonalWorkdayTimelineProps
 						</h2>
 					</CardTitle>
 					<CardDescription>
-						{Temporal.PlainDate.from(selectedDate.dateKey).toLocaleString(locale, {
-							dateStyle: "long",
-						})}
+						{Temporal.PlainDate.from(selectedDate.dateKey).toLocaleString(
+							locale,
+							{
+								dateStyle: "long",
+							},
+						)}
 					</CardDescription>
 				</div>
 				<DayPicker selectedDate={selectedDate} />
 			</CardHeader>
 
-			<CardContent>
-				{result.success ? <TimelineContent result={result.data} /> : <UnavailableAlert />}
+			<CardContent className="space-y-5">
+				<WorkdayWeekStrip
+					dateKey={selectedDate.dateKey}
+					weekStartDay={weekStartDay}
+				/>
+				{result.success ? (
+					<TimelineContent result={result.data} />
+				) : (
+					<UnavailableAlert />
+				)}
 			</CardContent>
 		</Card>
 	);
 }
 
-function DayPicker({ selectedDate }: { selectedDate: SerializableSelectedWorkdayDate }) {
+function DayPicker({
+	selectedDate,
+}: {
+	selectedDate: SerializableSelectedWorkdayDate;
+}) {
 	const { t } = useTranslate();
 
 	return (
-		<nav aria-label={t("timeTracking.timeline.dayPicker", "Timeline day picker")}>
+		<nav
+			aria-label={t("timeTracking.timeline.dayPicker", "Timeline day picker")}
+		>
 			<div className="flex items-center gap-1">
 				<Button asChild size="sm" variant="outline">
 					<Link
@@ -128,7 +159,9 @@ function DayPicker({ selectedDate }: { selectedDate: SerializableSelectedWorkday
 						aria-label={t("timeTracking.timeline.nextDay", "Next day")}
 						href={dayHref(selectedDate.nextDateKey)}
 					>
-						<span className="sr-only">{t("timeTracking.timeline.nextDay", "Next day")}</span>
+						<span className="sr-only">
+							{t("timeTracking.timeline.nextDay", "Next day")}
+						</span>
 						<IconChevronRight aria-hidden="true" className="size-4" />
 					</Link>
 				</Button>
@@ -137,13 +170,23 @@ function DayPicker({ selectedDate }: { selectedDate: SerializableSelectedWorkday
 	);
 }
 
-function TimelineContent({ result }: { result: SerializableWorkdayTimelineData }) {
-	const renderedWarningIds = new Set(result.dayWarnings.map((warning) => warning.id));
-	const timelineItems = result.items.filter((item) => !renderedWarningIds.has(item.id));
+function TimelineContent({
+	result,
+}: {
+	result: SerializableWorkdayTimelineData;
+}) {
+	const renderedWarningIds = new Set(
+		result.dayWarnings.map((warning) => warning.id),
+	);
+	const timelineItems = result.items.filter(
+		(item) => !renderedWarningIds.has(item.id),
+	);
 
 	return (
 		<div className="space-y-4">
-			{result.dayWarnings.length > 0 && <WarningSummary warnings={result.dayWarnings} />}
+			{result.dayWarnings.length > 0 && (
+				<WarningSummary warnings={result.dayWarnings} />
+			)}
 			{timelineItems.length > 0 ? (
 				<ol className="divide-y rounded-lg border">
 					{timelineItems.map((item) => (
@@ -157,7 +200,11 @@ function TimelineContent({ result }: { result: SerializableWorkdayTimelineData }
 	);
 }
 
-function WarningSummary({ warnings }: { warnings: SerializableWorkdayTimelineItem[] }) {
+function WarningSummary({
+	warnings,
+}: {
+	warnings: SerializableWorkdayTimelineItem[];
+}) {
 	return (
 		<div className="space-y-2">
 			{warnings.map((warning) => (
@@ -190,17 +237,27 @@ function useItemText(item: SerializableWorkdayTimelineItem) {
 			item.subtitle && item.subtitleKey
 				? t(item.subtitleKey, item.subtitle, subtitleParams)
 				: item.subtitle,
-		badge: item.badge && item.badgeKey ? t(item.badgeKey, item.badge) : item.badge,
-		linkLabel: item.link?.labelKey ? t(item.link.labelKey, item.link.label) : item.link?.label,
+		badge:
+			item.badge && item.badgeKey ? t(item.badgeKey, item.badge) : item.badge,
+		linkLabel: item.link?.labelKey
+			? t(item.link.labelKey, item.link.label)
+			: item.link?.label,
 	};
 }
 
-function WarningAlert({ warning }: { warning: SerializableWorkdayTimelineItem }) {
+function WarningAlert({
+	warning,
+}: {
+	warning: SerializableWorkdayTimelineItem;
+}) {
 	const text = useItemText(warning);
 
 	return (
 		<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
-			<IconAlertTriangle aria-hidden="true" className="text-amber-600 dark:text-amber-400" />
+			<IconAlertTriangle
+				aria-hidden="true"
+				className="text-amber-600 dark:text-amber-400"
+			/>
 			<AlertTitle>{text.title}</AlertTitle>
 			<AlertDescription>
 				{text.subtitle && <p>{text.subtitle}</p>}
@@ -220,7 +277,13 @@ function WarningAlert({ warning }: { warning: SerializableWorkdayTimelineItem })
 function TimelineRow({ item }: { item: SerializableWorkdayTimelineItem }) {
 	const text = useItemText(item);
 	const timeRange = getTimeRange(item);
-	const content = <TimelineRowContent severity={item.severity} text={text} timeRange={timeRange} />;
+	const content = (
+		<TimelineRowContent
+			severity={item.severity}
+			text={text}
+			timeRange={timeRange}
+		/>
+	);
 	// A work entry's row is where a period blocker link focuses it (#1349).
 	const focusTargetId =
 		item.type === "work-period" && item.workPeriodId
@@ -263,17 +326,28 @@ function TimelineRowContent({
 }) {
 	return (
 		<div className="flex gap-3 px-4 py-3">
-			<div className={cn("mt-1 size-2.5 shrink-0 rounded-full", severityClassName(severity))} />
+			<div
+				className={cn(
+					"mt-1 size-2.5 shrink-0 rounded-full",
+					severityClassName(severity),
+				)}
+			/>
 			<div className="min-w-0 flex-1 space-y-1">
 				<div className="flex flex-wrap items-center gap-2">
-					<p className="break-words font-medium text-sm leading-5">{text.title}</p>
+					<p className="break-words font-medium text-sm leading-5">
+						{text.title}
+					</p>
 					{text.badge && <Badge variant="secondary">{text.badge}</Badge>}
 				</div>
 				{timeRange && (
-					<p className="font-medium text-muted-foreground text-xs tabular-nums">{timeRange}</p>
+					<p className="font-medium text-muted-foreground text-xs tabular-nums">
+						{timeRange}
+					</p>
 				)}
 				{text.subtitle && (
-					<p className="break-words text-muted-foreground text-sm leading-5">{text.subtitle}</p>
+					<p className="break-words text-muted-foreground text-sm leading-5">
+						{text.subtitle}
+					</p>
 				)}
 			</div>
 		</div>
@@ -286,7 +360,10 @@ function EmptyState() {
 	return (
 		<div className="rounded-lg border border-dashed px-4 py-6 text-center">
 			<p className="font-medium text-sm">
-				{t("timeTracking.timeline.emptyTitle", "No activity recorded for this day.")}
+				{t(
+					"timeTracking.timeline.emptyTitle",
+					"No activity recorded for this day.",
+				)}
 			</p>
 			<p className="mt-1 text-muted-foreground text-sm">
 				{t(
@@ -304,7 +381,9 @@ function UnavailableAlert() {
 	return (
 		<Alert>
 			<IconAlertTriangle aria-hidden="true" className="text-muted-foreground" />
-			<AlertTitle>{t("timeTracking.timeline.unavailableTitle", "Timeline unavailable")}</AlertTitle>
+			<AlertTitle>
+				{t("timeTracking.timeline.unavailableTitle", "Timeline unavailable")}
+			</AlertTitle>
 			<AlertDescription>
 				{t(
 					"timeTracking.timeline.unavailableDescription",

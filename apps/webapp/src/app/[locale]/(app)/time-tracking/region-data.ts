@@ -1,15 +1,15 @@
 import "server-only";
 
 import { unstable_rethrow } from "next/navigation";
+import { cache } from "react";
 import { db } from "@/db";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { localWeekRange } from "@/lib/datetime/temporal-boundaries";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	type EmployeePeriodView,
 	loadEmployeePeriodView,
 } from "@/lib/time-tracking/period-submissions/employee-period-view-store";
-import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import {
 	type DrivingDetailsMissingWork,
 	listDrivingDetailsMissing,
@@ -42,34 +42,46 @@ export type DrivingRegionData = {
 /** How many of the employee's flagged work periods the notice lists. */
 const DRIVING_NOTICE_LIMIT = 20;
 
-export async function readSummaryRegion(
-	context: EmployeeRenderContext,
-): Promise<SummaryRegionData> {
-	const scope: EmployeeReadScope = {
-		employeeId: context.employee.id,
-		organizationId: context.employee.organizationId,
-	};
-	const [kpis, workBalance] = await Promise.all([
-		readTimeKpis(scope, context.timezone, context.weekStartDay),
-		getSafeEmployeeWorkBalance(scope),
-	]);
-	return { kpis, workBalance };
-}
+export const readSummaryRegion = cache(
+	async (context: EmployeeRenderContext): Promise<SummaryRegionData> => {
+		const scope: EmployeeReadScope = {
+			employeeId: context.employee.id,
+			organizationId: context.employee.organizationId,
+		};
+		const [kpis, workBalance] = await Promise.all([
+			readTimeKpis(scope, context.timezone, context.weekStartDay),
+			getSafeEmployeeWorkBalance(scope),
+		]);
+		return { kpis, workBalance };
+	},
+);
 
 export async function readHistoryRegion(
 	context: EmployeeRenderContext,
+	selectedDateKey?: string,
 ): Promise<HistoryRegionData> {
 	const scope: EmployeeReadScope = {
 		employeeId: context.employee.id,
 		organizationId: context.employee.organizationId,
 	};
-	const { start, end } = getWeekRangeInTimezone(
-		new Date(),
+	const dateKey =
+		selectedDateKey ??
+		systemClock
+			.nowInstant()
+			.toZonedDateTimeISO(context.timezone)
+			.toPlainDate()
+			.toString();
+	const { start, endExclusive } = localWeekRange(
+		dateKey,
 		context.timezone,
 		context.weekStartDay,
 	);
 	const [workPeriods, managerId] = await Promise.all([
-		readWorkPeriods(scope, dateToDB(start)!, dateToDB(end)!),
+		readWorkPeriods(
+			scope,
+			dateFromInstant(start),
+			dateFromInstant(endExclusive.subtract({ nanoseconds: 1_000_000 })),
+		),
 		getPrimaryEligibleManagerIdForRequester({
 			db,
 			requesterEmployeeId: scope.employeeId,
@@ -110,7 +122,10 @@ export async function readDrivingRegion(
 }
 
 function drivingScope(scope: EmployeeReadScope) {
-	return { organizationId: scope.organizationId, employeeIds: [scope.employeeId] };
+	return {
+		organizationId: scope.organizationId,
+		employeeIds: [scope.employeeId],
+	};
 }
 
 /** The employee's period submissions (#1059); null when the organization collects none. */

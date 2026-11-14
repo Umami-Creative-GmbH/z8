@@ -5,19 +5,24 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { ClockDayTotal } from "@/components/time-tracking/clock-day-total";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { DrivingDetailsMissingNotice } from "@/components/time-tracking/driving-details-missing-notice";
 import { PeriodBlockerFocus } from "@/components/time-tracking/period-blocker-focus";
 import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submissions-card";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
+import { TimeTrackingPageActions } from "@/components/time-tracking/time-tracking-page-actions";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
+import { WorkdayMonthPicker } from "@/components/time-tracking/workday-date-navigation";
+import { WorkplacePolicyContext } from "@/components/time-tracking/workplace-policy-context";
 import {
 	CLOCK_FOCUS_TARGET_ID,
 	CLOCK_REGION_ID,
 	TIMELINE_REGION_ID,
 } from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import { getTranslate } from "@/tolgee/server";
+import { getPresenceStatus } from "./actions";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
 import {
@@ -41,6 +46,7 @@ import {
 } from "./render-context";
 import { serializeWorkdayTimelineResult } from "./timeline-serialization";
 import { getWorkdayTimelineData } from "./workday-timeline-data";
+import { getSelectedWorkdayDate } from "./workday-timeline-date";
 
 export async function ClockRegion({
 	context,
@@ -78,9 +84,29 @@ export async function ClockRegion({
 				activeWorkPeriod={activeWorkPeriod}
 				employeeName={employeeName}
 				timeFormat={context.timeFormat}
+				daySummary={
+					<Suspense fallback={null}>
+						<ClockDayTotalRegion context={context} />
+					</Suspense>
+				}
 			/>
 		</div>
 	);
+}
+
+async function ClockDayTotalRegion({
+	context,
+}: {
+	context: EmployeeRenderContext;
+}) {
+	let data: Awaited<ReturnType<typeof readSummaryRegion>>;
+	try {
+		data = await readSummaryRegion(context);
+	} catch (error) {
+		unstable_rethrow(error);
+		return null;
+	}
+	return <ClockDayTotal data={data.kpis} />;
 }
 
 /**
@@ -145,6 +171,7 @@ export async function TimelineRegion({
 		<div id={TIMELINE_REGION_ID} className="px-4 lg:px-6">
 			<PersonalWorkdayTimeline
 				result={serializeWorkdayTimelineResult(result)}
+				weekStartDay={context.weekStartDay}
 			/>
 		</div>
 	);
@@ -169,9 +196,7 @@ export async function SummaryRegion({
 			</div>
 		);
 	}
-	return (
-		<WeeklySummaryCards kpis={data.kpis} workBalance={data.workBalance} />
-	);
+	return <WeeklySummaryCards kpis={data.kpis} workBalance={data.workBalance} />;
 }
 
 export async function PeriodsRegion({
@@ -188,7 +213,10 @@ export async function PeriodsRegion({
 		return (
 			<div className="px-4 lg:px-6">
 				<RegionLoadError
-					label={t("timeTracking.periodSubmissions.title", "Period submissions")}
+					label={t(
+						"timeTracking.periodSubmissions.title",
+						"Period submissions",
+					)}
 				/>
 			</div>
 		);
@@ -207,12 +235,19 @@ export async function PeriodsRegion({
 
 export async function HistoryRegion({
 	context,
+	searchParams,
 }: {
 	context: EmployeeRenderContext;
+	searchParams?: Promise<TimeTrackingPageSearchParams>;
 }): Promise<ReactNode> {
 	let data: Awaited<ReturnType<typeof readHistoryRegion>>;
 	try {
-		data = await readHistoryRegion(context);
+		const { date } = (await searchParams) ?? {};
+		const selected = getSelectedWorkdayDate({
+			dateParam: typeof date === "string" ? date : undefined,
+			timezone: context.timezone,
+		});
+		data = await readHistoryRegion(context, selected.dateKey);
 	} catch (error) {
 		unstable_rethrow(error);
 		const t = await getTranslate();
@@ -257,6 +292,45 @@ export async function PeriodBlockerFocusRegion({
 	);
 }
 
+export async function WorkdayContextRegion({
+	context,
+	searchParams,
+}: {
+	context: EmployeeRenderContext;
+	searchParams: Promise<TimeTrackingPageSearchParams>;
+}) {
+	const { date } = await searchParams;
+	const selectedDate = getSelectedWorkdayDate({
+		dateParam: typeof date === "string" ? date : undefined,
+		timezone: context.timezone,
+	});
+	return (
+		<WorkdayMonthPicker
+			key={selectedDate.dateKey}
+			dateKey={selectedDate.dateKey}
+			todayDateKey={selectedDate.todayDateKey}
+			weekStartDay={context.weekStartDay}
+		/>
+	);
+}
+
+export async function WorkplacePolicyRegion({
+	context,
+}: {
+	context: EmployeeRenderContext;
+}) {
+	let result: Awaited<ReturnType<typeof getPresenceStatus>>;
+	try {
+		result = await getPresenceStatus(context.employee.id);
+	} catch (error) {
+		unstable_rethrow(error);
+		return null;
+	}
+	return result.success ? (
+		<WorkplacePolicyContext status={result.data} />
+	) : null;
+}
+
 export async function TimeTrackingPageContent({
 	searchParams,
 }: {
@@ -278,10 +352,28 @@ export async function TimeTrackingPageContent({
 			</div>
 		);
 	}
+	const t = await getTranslate();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 py-6 md:py-8">
+			<div className="flex flex-wrap items-end justify-between gap-4 px-4 lg:px-6">
+				<div className="space-y-2">
+					<p className="text-sm text-muted-foreground">
+						{context.employeeName}
+					</p>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("timeTracking.title", "Time Tracking")}
+					</h1>
+				</div>
+				<TimeTrackingPageActions
+					employeeId={context.employee.id}
+					timezone={context.timezone}
+				/>
+			</div>
 			<Suspense fallback={null}>
-				<PeriodBlockerFocusRegion context={context} searchParams={searchParams} />
+				<PeriodBlockerFocusRegion
+					context={context}
+					searchParams={searchParams}
+				/>
 			</Suspense>
 			<Suspense fallback={<ClockLoading />}>
 				<ClockRegion context={context} />
@@ -293,15 +385,30 @@ export async function TimeTrackingPageContent({
 			<Suspense fallback={<SummaryLoading />}>
 				<SummaryRegion context={context} />
 			</Suspense>
-			<Suspense fallback={<TimelineLoading />}>
-				<TimelineRegion context={context} searchParams={searchParams} />
-			</Suspense>
-			<Suspense fallback={<PeriodsLoading />}>
-				<PeriodsRegion context={context} />
-			</Suspense>
-			<Suspense fallback={<HistoryLoading />}>
-				<HistoryRegion context={context} />
-			</Suspense>
+			<div className="grid min-w-0 gap-6 @5xl/main:grid-cols-[minmax(0,1fr)_19rem]">
+				<div className="min-w-0 space-y-6">
+					<Suspense fallback={<TimelineLoading />}>
+						<TimelineRegion context={context} searchParams={searchParams} />
+					</Suspense>
+					<Suspense fallback={<HistoryLoading />}>
+						<HistoryRegion context={context} searchParams={searchParams} />
+					</Suspense>
+					<Suspense fallback={<PeriodsLoading />}>
+						<PeriodsRegion context={context} />
+					</Suspense>
+				</div>
+				<aside className="min-w-0 space-y-6 px-4 lg:pr-6 @5xl/main:pl-0">
+					<Suspense fallback={null}>
+						<WorkdayContextRegion
+							context={context}
+							searchParams={searchParams}
+						/>
+					</Suspense>
+					<Suspense fallback={null}>
+						<WorkplacePolicyRegion context={context} />
+					</Suspense>
+				</aside>
+			</div>
 		</div>
 	);
 }

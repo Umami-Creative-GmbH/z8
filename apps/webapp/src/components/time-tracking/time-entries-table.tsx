@@ -10,6 +10,7 @@ import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { startTransition, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { approveWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions/mutations";
 import { DataTable } from "@/components/data-table-server";
 import {
@@ -24,9 +25,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatDuration } from "@/lib/time-tracking/time-utils";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { Link, useRouter } from "@/navigation";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
+import { timeEntryDayGroups } from "./time-entry-day-groups";
 
 const TimeCorrectionDialog = dynamic(
 	() =>
@@ -66,6 +69,8 @@ export function TimeEntriesTable({
 	const locale = useLocale();
 	const { refresh } = useRouter();
 	const billableTimeEnabled = useBillableTimeEnabled();
+	const [grouped, setGrouped] = useState(true);
+	const groups = timeEntryDayGroups(workPeriods, employeeTimezone);
 	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<
 		string | null
 	>(null);
@@ -120,10 +125,20 @@ export function TimeEntriesTable({
 	});
 
 	return (
-		<Card>
+		<Card className="gap-0 overflow-hidden rounded-xl shadow-none">
 			<CardHeader className="flex min-w-0 flex-col items-start justify-between gap-3 pb-4 sm:flex-row sm:items-center">
 				<CardTitle>{t("timeTracking.table.title", "Time Entries")}</CardTitle>
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						aria-pressed={grouped}
+						onClick={() => setGrouped(!grouped)}
+					>
+						{grouped
+							? t("timeTracking.table.groupedByDay", "Grouped by day")
+							: t("timeTracking.table.allEntries", "All entries")}
+					</Button>
 					<Button asChild variant="outline" size="sm">
 						<Link href="/calendar">
 							<IconCalendarEvent className="size-4" aria-hidden="true" />
@@ -138,16 +153,80 @@ export function TimeEntriesTable({
 					/>
 				</div>
 			</CardHeader>
-			<CardContent>
-				<DataTable
-					mobileLayout="stacked"
-					columns={columns}
-					data={workPeriods}
-					emptyMessage={t(
-						"timeTracking.table.emptyState",
-						"No time entries found for this week. Clock in to start tracking your time.",
+			<CardContent className="space-y-0 px-0">
+				{grouped && groups.length > 0 ? (
+					groups.map((group) => (
+						<section
+							key={group.date}
+							aria-label={Temporal.PlainDate.from(group.date).toLocaleString(
+								locale,
+								{ dateStyle: "full" },
+							)}
+						>
+							<div className="flex flex-wrap items-center justify-between gap-2 border-y bg-muted/40 px-6 py-3 text-sm">
+								<h3 className="font-medium">
+									{Temporal.PlainDate.from(group.date).toLocaleString(locale, {
+										weekday: "long",
+										day: "numeric",
+										month: "long",
+									})}
+								</h3>
+								<div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+									<span>
+										{t(
+											"timeTracking.table.entryCount",
+											"{count, plural, one {# entry} other {# entries}}",
+											{ count: group.periods.length },
+										)}
+									</span>
+									<span className="font-semibold text-foreground tabular-nums">
+										{formatDuration(group.durationMinutes)}
+									</span>
+									{group.incomplete ? (
+										<span>
+											{t(
+												"timeTracking.table.incompleteDay",
+												"Includes active or incomplete entries",
+											)}
+										</span>
+									) : null}
+								</div>
+							</div>
+							<DataTable
+								mobileLayout="stacked"
+								columns={columns.filter(
+									(column) =>
+										!(
+											"accessorKey" in column &&
+											column.accessorKey === "startTime"
+										),
+								)}
+								data={group.periods}
+								manualPagination
+								className="rounded-none border-0"
+							/>
+						</section>
+					))
+				) : (
+					<DataTable
+						mobileLayout="stacked"
+						columns={columns}
+						data={workPeriods}
+						manualPagination
+						className="rounded-none border-x-0"
+						emptyMessage={t(
+							"timeTracking.table.emptyState",
+							"No time entries found for this week. Clock in to start tracking your time.",
+						)}
+					/>
+				)}
+				<p className="px-6 pt-4 text-sm text-muted-foreground">
+					{t(
+						"timeTracking.table.offsetContext",
+						"Endpoint times use each entry's captured local UTC offset. Day headings follow your calendar timezone: {timezone}.",
+						{ timezone: employeeTimezone },
 					)}
-				/>
+				</p>
 			</CardContent>
 		</Card>
 	);
