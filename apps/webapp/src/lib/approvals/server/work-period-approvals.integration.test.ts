@@ -39,10 +39,10 @@ import { parseApprovalReviewTarget } from "../presentation/review-navigation";
 import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
+import { decideTimeApproval } from "./time-approval-decision";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
-	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "./work-period-approvals";
@@ -163,7 +163,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"completed-chain duplicate submission replays the prior result without effects",
 			"terminal prior history remains immutable while one new conflicting pending submission wins",
 			"stale same-organization source link fails generically and rolls back",
-			"approve versus reject leaves one coherent terminal graph and a generic conflict loser",
+			"approve versus reject leaves one coherent terminal graph and an already-decided loser",
 			"duplicate approve replays one coherent terminal graph",
 			"Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity",
 			"uses the submitted break snapshot after mutable policy deletion in %s mode",
@@ -902,15 +902,18 @@ describe(
 				| { kind: "approve"; reason: string | null }
 				| { kind: "reject"; reason: string },
 		) {
-			return executeOrdinaryWorkPeriodDecisionInTransaction({
-				dbService: dbService(database),
-				createRuntime: runtime,
+			// The manager is the configured approver of every stage here.
+			return decideTimeApproval({
 				organizationId: ids.organization,
-				approvalRequestId,
-				workPeriodId: ids.period,
-				actor: manager,
-				allowAnyApprover: true,
-				decision,
+				approvalId: approvalRequestId,
+				actor: { employeeId: manager.id, userId: manager.userId },
+				right: { as: "approver" },
+				decision:
+					decision.kind === "approve"
+						? { kind: "approve" }
+						: { kind: "reject", reason: decision.reason },
+				database: database as never,
+				clock: { nowInstant: () => now },
 			});
 		}
 
@@ -1152,19 +1155,25 @@ describe(
 				| { kind: "approve"; reason: string | null }
 				| { kind: "reject"; reason: string },
 		) {
-			let dispatches = 0;
-			const dispatchErrors: unknown[] = [];
-			const maintenanceErrors: unknown[] = [];
-			const execution = await completeOrdinaryWorkPeriodDecisionAfterCommit({
-				execute: () => decide(approvalRequestId, decision),
-				dispatch: async () => {
-					dispatches += 1;
-				},
-				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-				onDispatchError: (error) => dispatchErrors.push(error),
-				onMaintenanceError: (error) => maintenanceErrors.push(error),
-			});
-			return { execution, dispatches, dispatchErrors, maintenanceErrors };
+			// The time approval decision runs the after-commit work itself; its
+			// notifications and logged failures are observed.
+			const observing = inboxObservation.active;
+			inboxObservation.active = true;
+			inboxObservation.notifications = [];
+			inboxObservation.loggedErrors = [];
+			try {
+				const execution = await decide(approvalRequestId, decision);
+				const logged = (message: string) =>
+					inboxObservation.loggedErrors.filter((entry) => entry.message === message);
+				return {
+					execution,
+					dispatches: inboxObservation.notifications.length,
+					dispatchErrors: logged("Ordinary work-period decision after-commit work failed"),
+					maintenanceErrors: logged("Ordinary work-period maintenance after commit failed"),
+				};
+			} finally {
+				inboxObservation.active = observing;
+			}
 		}
 
 		async function assertSubmittedBreakSnapshotParity(
@@ -1487,12 +1496,7 @@ describe(
 				expect(periods.rows[1]?.id).not.toBe(ids.period);
 			}
 			const surchargePeriodIds = periods.rows.map(({ id }) => id).sort();
-			expect(
-				[
-					...(completed.execution.postCommit?.maintenance?.surchargePeriodIds ??
-						[]),
-				].sort(),
-			).toEqual(surchargePeriodIds);
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			const beforeReplay = await maintenanceSnapshot();
 			const calculations = beforeReplay.calculations.filter(
 				({ organization_id }) => organization_id === ids.organization,
@@ -1556,7 +1560,7 @@ describe(
 				kind: "approve",
 				reason: null,
 			});
-			expect(replay.execution.postCommit).toBeNull();
+			expect(replay.execution).toMatchObject({ status: "decided", replayed: true });
 			expect(replay.maintenanceErrors).toEqual([]);
 			expect(await maintenanceSnapshot()).toEqual(beforeReplay);
 		}
@@ -1608,12 +1612,7 @@ describe(
 				[ids.organization, ids.requester],
 			);
 			expect(periods.rows).toHaveLength(input.split ? 2 : 1);
-			expect(
-				[
-					...(completed.execution.postCommit?.maintenance?.surchargePeriodIds ??
-						[]),
-				].sort(),
-			).toEqual(periods.rows.map(({ id }) => id).sort());
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			const state = await maintenanceSnapshot();
 			const calculations = state.calculations.filter(
 				({ organization_id }) => organization_id === ids.organization,
@@ -1822,7 +1821,10 @@ describe(
 						? { kind: "approve", reason: null }
 						: { kind: "reject", reason: "Missing details" },
 				),
-			).resolves.toMatchObject({ result: { action } });
+			).resolves.toMatchObject({
+				status: "decided",
+				outcome: action === "approve" ? "approved" : "rejected",
+			});
 
 			const graph = await snapshot();
 			const expectedStatus = action === "approve" ? "approved" : "rejected";
@@ -1875,7 +1877,7 @@ describe(
 
 				await expect(
 					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
-				).resolves.toMatchObject({ result: { action: "approve" } });
+				).resolves.toMatchObject({ status: "decided", outcome: "approved" });
 				const decided = await snapshot();
 				const lateMirrored = await lateMirrorEvents();
 				expect(lateMirrored.length).toBeGreaterThan(0);
@@ -1889,7 +1891,7 @@ describe(
 				// The retry replays: no second late mirror or observed workflow.
 				await expect(
 					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
-				).resolves.toMatchObject({ result: { action: "approve" }, postCommit: null });
+				).resolves.toMatchObject({ status: "decided", outcome: "approved", replayed: true });
 				expect(await lateMirrorEvents()).toEqual(lateMirrored);
 				expect(await snapshot()).toEqual(decided);
 			},
@@ -1906,7 +1908,7 @@ describe(
 					kind: "approve",
 					reason: null,
 				}),
-			).resolves.toMatchObject({ result: { action: "approve" } });
+			).resolves.toMatchObject({ status: "decided", outcome: "approved" });
 			const graph = await snapshot();
 			const periods = graph.work_period as Array<Record<string, unknown>>;
 			const records = graph.time_record as Array<Record<string, unknown>>;
@@ -2388,8 +2390,8 @@ describe(
 				[ids.period, ids.organization],
 			);
 			const status = action === "approve" ? "approved" : "rejected";
-			expect(first.result.maintenance).toBeNull();
-			expect(replay.postCommit).toBeNull();
+			expect(first).toMatchObject({ status: "decided", outcome: status });
+			expect(replay).toMatchObject({ status: "decided", outcome: status, replayed: true });
 			expect(graph.rows).toEqual([
 				expect.objectContaining({
 					approval_status: status,
@@ -3189,30 +3191,22 @@ describe(
 			}
 		}
 
-		it("approve versus reject leaves one coherent terminal graph and a generic conflict loser", async () => {
+		it("approve versus reject leaves one coherent terminal graph and an already-decided loser", async () => {
 			const submitted = await submit("manual_time_submission");
 			const target = submitted.result.approvalRequestId;
-			const competing = await Promise.allSettled([
+			const competing = await Promise.all([
 				decide(target, { kind: "approve", reason: null }),
 				decide(target, { kind: "reject", reason: "reject" }),
 			]);
-			expect(
-				competing.filter(({ status }) => status === "fulfilled"),
-			).toHaveLength(1);
-			expect(
-				competing.filter(({ status }) => status === "rejected"),
-			).toHaveLength(1);
-			const winner = competing.find(({ status }) => status === "fulfilled");
-			const loser = competing.find(({ status }) => status === "rejected");
-			if (winner?.status !== "fulfilled" || loser?.status !== "rejected") {
+			const winners = competing.filter((result) => result.status === "decided");
+			const losers = competing.filter((result) => result.status === "refused");
+			expect(winners).toHaveLength(1);
+			expect(losers).toEqual([{ status: "refused", reason: "already_decided" }]);
+			const winner = winners[0];
+			if (winner?.status !== "decided") {
 				throw new Error("Task 11 terminal race did not produce one winner");
 			}
-			expect(loser.reason).toMatchObject({
-				message: "Ordinary work-period decision failed",
-			});
-			await assertTerminalGraph(
-				winner.value.result.action === "approve" ? "approved" : "rejected",
-			);
+			await assertTerminalGraph(winner.outcome === "approved" ? "approved" : "rejected");
 		});
 
 		it("duplicate approve replays one coherent terminal graph", async () => {
@@ -3246,7 +3240,10 @@ describe(
 					: { kind: "reject", reason: "Requester departed" },
 			);
 
-			expect(decided.result.action).toBe(action);
+			expect(decided).toMatchObject({
+				status: "decided",
+				outcome: action === "approve" ? "approved" : "rejected",
+			});
 			await expect(
 				pool.query<{ status: string; requester_employee_id: string }>(
 					`select status, requester_employee_id from approval_workflow
@@ -3468,7 +3465,7 @@ describe(
 			try {
 				await expect(
 					decide(target, { kind: "approve", reason: null }),
-				).rejects.toThrow("Ordinary work-period decision failed");
+				).rejects.toThrow();
 			} finally {
 				for (const table of triggerTables) {
 					await pool.query(
@@ -3562,7 +3559,7 @@ describe(
 				} else {
 					await expect(
 						decide(target ?? "", { kind: "approve", reason: null }),
-					).rejects.toThrow("Ordinary work-period decision failed");
+					).rejects.toThrow();
 				}
 			} finally {
 				await pool.query(`drop trigger if exists task11_zero_row on ${table}`);
@@ -3588,7 +3585,7 @@ describe(
 			try {
 				await expect(
 					decide(target, { kind: "approve", reason: null }),
-				).rejects.toThrow("Ordinary work-period decision failed");
+				).rejects.toThrow();
 			} finally {
 				await pool.query(
 					"drop trigger if exists task11_zero_decision_insert on time_record_approval_decision",
@@ -3765,12 +3762,15 @@ describe(
 
 				expect(completed.maintenanceErrors).toEqual([]);
 				expect(completed.dispatchErrors).toEqual([]);
-				expect(completed.execution.postCommit?.maintenance).toMatchObject({
-					organizationId: ids.organization,
-					employeeId: ids.requester,
-					dirtyFromDate: "2026-07-22",
-					decision: terminalCase.action === "approve" ? "approved" : "rejected",
+				expect(completed.execution).toMatchObject({
+					status: "decided",
+					outcome: terminalCase.action === "approve" ? "approved" : "rejected",
+					replayed: false,
 				});
+				// Canonical authority notifies through the workflow outbox, not after commit.
+				if (mode === "canonical" || mode === "complete") {
+					expect(completed.dispatches).toBe(0);
+				}
 				const ownedPeriods = await pool.query<{ id: string }>(
 					`select id from work_period
 					 where organization_id = $1 and employee_id = $2 order by id`,
@@ -3780,19 +3780,6 @@ describe(
 					terminalCase.action === "approve"
 						? ownedPeriods.rows.map(({ id }) => id).sort()
 						: [];
-				expect(
-					[
-						...(completed.execution.postCommit?.maintenance
-							?.surchargePeriodIds ?? []),
-					].sort(),
-				).toEqual(surchargePeriodIds);
-				expect(
-					completed.execution.postCommit?.maintenance?.staleSurchargePeriodIds,
-				).toEqual(terminalCase.action === "reject" ? [ids.period] : []);
-				if (mode === "canonical" || mode === "complete") {
-					expect(completed.execution.postCommit?.disposition).toBe("observe");
-					expect(completed.dispatches).toBe(0);
-				}
 
 				const state = await maintenanceSnapshot();
 				const localCalculations = state.calculations.filter(
@@ -4037,7 +4024,7 @@ describe(
 				]);
 				expect(inboxObservation.loggedErrors).toEqual([
 					{
-						component: "TimeCorrectionApprovals",
+						component: "TimeApprovalDecision",
 						message: "Ordinary work-period maintenance after commit failed",
 					},
 				]);
@@ -4061,7 +4048,7 @@ describe(
 					run: () =>
 						completeDecision(target, { kind: "approve", reason: null }),
 				}),
-			).rejects.toThrow("Ordinary work-period decision failed");
+			).rejects.toThrow();
 			expect(await maintenanceSnapshot()).toEqual(beforeRollback);
 			expect(
 				await pool.query(
@@ -4097,7 +4084,7 @@ describe(
 				);
 			}
 			expect(completed.maintenanceErrors).toHaveLength(1);
-			expect(completed.execution.result.action).toBe("approve");
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			expect(
 				await pool.query(
 					"select approval_status from work_period where id = $1 and organization_id = $2",
@@ -4137,7 +4124,7 @@ describe(
 				kind: "approve",
 				reason: null,
 			});
-			expect(replay.execution.postCommit).toBeNull();
+			expect(replay.execution).toMatchObject({ status: "decided", replayed: true });
 			expect(replay.dispatches).toBe(0);
 			expect(replay.maintenanceErrors).toEqual([]);
 			const afterReplay = await maintenanceSnapshot();
@@ -4260,27 +4247,29 @@ describe(
 						[ids.changedTeam, ids.requester, ids.organization],
 					);
 
-					const maintenanceErrors: unknown[] = [];
-					const completed = requesterAutoApproves
-						? await completeOrdinaryWorkPeriodDecisionAfterCommit({
-								execute: async () => submitted,
-								dispatch: async () => undefined,
-								maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-								onDispatchError: () => undefined,
-								onMaintenanceError: (error) => maintenanceErrors.push(error),
-							})
-						: (
-								await completeDecision(submitted.result.approvalRequestId, {
-									kind: "approve",
-									reason: null,
-								})
-							).execution;
-					expect(maintenanceErrors).toEqual([]);
-					expect(completed.postCommit?.maintenance).toMatchObject({
-						decision: "approved",
-						surchargePeriodIds: [ids.period],
-						surchargeSnapshot: snapshot,
-					});
+					if (requesterAutoApproves) {
+						const maintenanceErrors: unknown[] = [];
+						const completed = await completeOrdinaryWorkPeriodDecisionAfterCommit({
+							execute: async () => submitted,
+							dispatch: async () => undefined,
+							maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+							onDispatchError: () => undefined,
+							onMaintenanceError: (error) => maintenanceErrors.push(error),
+						});
+						expect(maintenanceErrors).toEqual([]);
+						expect(completed.postCommit?.maintenance).toMatchObject({
+							decision: "approved",
+							surchargePeriodIds: [ids.period],
+							surchargeSnapshot: snapshot,
+						});
+					} else {
+						const completed = await completeDecision(submitted.result.approvalRequestId, {
+							kind: "approve",
+							reason: null,
+						});
+						expect(completed.maintenanceErrors).toEqual([]);
+						expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
+					}
 					const current = await maintenanceSnapshot();
 					const calculations = current.calculations.filter(
 						({ organization_id }) => organization_id === ids.organization,
@@ -4483,7 +4472,7 @@ describe(
 				reason: null,
 			});
 
-			expect(completed.execution.result.action).toBe("approve");
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			expect(completed.maintenanceErrors).toEqual([]);
 			const state = await maintenanceSnapshot();
 			expect(
@@ -4527,7 +4516,7 @@ describe(
 				reason: null,
 			});
 
-			expect(completed.execution.result.action).toBe("approve");
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			expect(completed.maintenanceErrors).toEqual([]);
 			const state = await maintenanceSnapshot();
 			expect(

@@ -15,7 +15,6 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { env } from "@/env";
-import { getAbility } from "@/lib/auth-helpers";
 import {
 	compareInstants,
 	type Instant,
@@ -122,12 +121,10 @@ import {
 	type ExpectedTimeCorrectionLegacyCycle,
 } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
-import type { WorkPeriodApprovalResult } from "../domain-adapters/work-period-contract";
 import {
 	ApprovalAssignmentReassignedError,
 	approvalReassignedConflict,
 	assertNotReplacedByEscalation,
-	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
 import {
 	asDeputyDecider,
@@ -136,7 +133,6 @@ import {
 } from "../deputy/deputy-decision-store";
 import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
 import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
-import { kickApprovalDelivery } from "../delivery/kick";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import { loadLegacyTimeCorrectionSubmittedRevision } from "../evidence/store";
 import {
@@ -164,7 +160,6 @@ import {
 	type ResolvePolicyAndCreateApprovalResult,
 	resolvePolicyAndCreateApproval,
 } from "../policies/chain-service";
-import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import type {
 	ApprovalPolicyEvaluationContext,
 	ApprovalPolicyOvertimeRisk,
@@ -177,7 +172,6 @@ import type {
 	ApprovalWorkflowDatabase,
 	ApprovalWorkflowRepository,
 } from "../workflow/repository";
-import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { attemptApprovalRuntime } from "../workflow/work-transaction-port";
 import { startApprovalWorkflow } from "../workflow/start-workflow";
 import {
@@ -199,26 +193,10 @@ import type {
 	PendingApprovalRequest,
 } from "./types";
 import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
-import {
-	canManageOrganizationTimeApproval,
-	completeOrdinaryWorkPeriodDecisionAfterCommit,
-	executeOrdinaryWorkPeriodDecisionInTransaction,
-	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
-	isBoundTimeDecisionSignal,
-	notifyWorkPeriodApprovalAfterCommit,
-	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-} from "./work-period-approvals";
+import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
+import { isBoundTimeDecisionSignal } from "./work-period-approvals";
 
 const logger = createLogger("TimeCorrectionApprovals");
-
-class OrdinaryWorkPeriodDecisionDelegation extends Error {
-	constructor(
-		readonly workPeriodId: string,
-		readonly kind: "manual_time_submission" | "policy_clock_out",
-	) {
-		super("Ordinary work-period decision delegation");
-	}
-}
 
 export function translateTimeCorrectionDecisionError(error: unknown): unknown {
 	if (error instanceof ApprovalAssignmentReassignedError) {
@@ -5004,7 +4982,10 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 
 export interface TimeCorrectionDecisionRuntime {
 	repository: ApprovalWorkflowRepository;
-	transitionEngine: Pick<ApprovalTransitionEngine, "executeInTransaction">;
+	transitionEngine: Pick<
+		ApprovalTransitionEngine,
+		"executeInTransaction" | "executeInTransactionWithDisposition"
+	>;
 }
 
 export async function dispatchTimeCorrectionDecisionPostCommit(input: {
@@ -5049,10 +5030,10 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 	]);
 	// The balance refresh committed with the corrected work (work records, ADR 0010).
 	if (effects.terminal.kind === "approved") {
-		notifyApprovedCorrection(result.period, request.entityId, actor, result);
+		await notifyApprovedCorrection(result.period, request.entityId, actor, result);
 		return;
 	}
-	notifyRejectedCorrection(
+	await notifyRejectedCorrection(
 		result.period,
 		request.entityId,
 		actor,
@@ -5118,9 +5099,9 @@ export interface ExecuteTimeCorrectionDecisionInput {
 	nowInstant?: () => Instant;
 	/**
 	 * Explicit organization approval management, checked by the trusted
-	 * caller. Absent means none (fail closed).
+	 * caller on the decision's transaction. Absent means none (fail closed).
 	 */
-	canManageOrganizationApproval?: () => Promise<boolean>;
+	canManageOrganizationApproval?: (database: ApprovalDbService["db"]) => Promise<boolean>;
 }
 
 function decisionFingerprint(reason: string | undefined): string {
@@ -5464,11 +5445,9 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				throw new ApprovalEvidenceError("binding_mismatch");
 			}
 			if (kind === "manual_time_submission" || kind === "policy_clock_out") {
-				if (!input.processOrdinary) {
-					throw new Error(
-						"Ordinary time approval decision handler is unavailable",
-					);
-				}
+				// The time approval decision routed this as a time correction: it
+				// classifies again and restarts under the right kind's gate.
+				if (!input.processOrdinary) throw new TimeApprovalKindChanged(kind);
 				return {
 					kind,
 					domainResult: await input.processOrdinary({
@@ -5550,7 +5529,9 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					entityId: period.id,
 					approvalRequestId: request.id,
 					actorEmployeeId: actor.id,
-					canManageOrganizationApproval: input.canManageOrganizationApproval,
+					canManageOrganizationApproval: input.canManageOrganizationApproval
+						? () => input.canManageOrganizationApproval?.(transactionDb) ?? Promise.resolve(false)
+						: undefined,
 				});
 				const stage =
 					await transactionDb.query.approvalChainStageInstance.findFirst({
@@ -5797,8 +5778,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 			const idempotencyKey = input.bound
 				? boundTimeInvocationKey(input.bound)
 				: `time-correction:${input.organizationId}:${workflow.id}:${input.approvalRequestId}:${input.action}:${decisionFingerprint(input.reason)}`;
-			const commandResult =
-				await runtime.current().transitionEngine.executeInTransaction(
+			const execution =
+				await runtime.current().transitionEngine.executeInTransactionWithDisposition(
 					context,
 					{
 						organizationId: input.organizationId,
@@ -5824,6 +5805,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 									},
 					},
 				);
+			const commandResult = execution.result;
 			// A covering deputy's decision: the acting-for record and audit (#1016).
 			await recordCanonicalDeputyDecisionOf(transactionDb as never, {
 				organizationId: input.organizationId,
@@ -5855,6 +5837,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				kind: "time_correction" as const,
 				domainResult: undefined,
 				commandResult,
+				replayed: execution.disposition === "replayed",
 				...(invocation ? { invocation } : {}),
 				postCommit: {
 					authority: "canonical" as const,
@@ -5925,6 +5908,12 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 	};
 }
 
+/**
+ * Temporary adapter (#1675): resolves one decision right from today's flags,
+ * own rights first, and decides through the time approval decision. A
+ * refusal is thrown as the error this wrapper's callers expect. Deleted with
+ * its last caller (#1680).
+ */
 export function decideTimeCorrectionWithStableTargetEffect(
 	dbService: ApprovalDbService,
 	currentEmployee: CurrentApprover,
@@ -5935,196 +5924,18 @@ export function decideTimeCorrectionWithStableTargetEffect(
 ) {
 	return Effect.tryPromise({
 		try: async () => {
-			const createRuntime = (database: ApprovalWorkflowDatabase) =>
-				createProductionApprovalWorkflowRuntime({
-				db: database,
-				adapters: {
-					absence: {
-						clock: systemClock,
-						finalizeAbsenceTerminal: async () => {
-							throw new Error("Absence finalization is outside this boundary");
-						},
-						deleteCancelledAbsence: async () => {
-							throw new Error("Absence cancellation is outside this boundary");
-						},
-					},
-					timeCorrection: {
-						clock: systemClock,
-						finalizeTimeCorrectionTerminal:
-							finalizeTimeCorrectionTerminalInTransaction,
-						deleteCancelledCorrections:
-							deleteCancelledTimeCorrectionsInTransaction,
-					},
-					ordinaryWorkPeriod: {
-						finalizeTerminal:
-							finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
-					},
-				},
-				canManageApproval: async (authorization) => {
-					if (
-						authorization.organizationId !== currentEmployee.organizationId ||
-						authorization.actorEmployeeId !== currentEmployee.id
-					) {
-						return false;
-					}
-					const ability = await getAbility();
-					if (ability?.cannot("manage", "Approval") === false) return true;
-					const command = authorization.command;
-					if (command.type !== "approve" && command.type !== "reject") {
-						return false;
-					}
-					const stage = authorization.workflow.stages.find(
-						(candidate) =>
-							candidate.id === command.stageId &&
-							candidate.sequence === authorization.workflow.currentStageOrder &&
-							candidate.status === "pending",
-					);
-					if (!stage?.legacyApprovalRequestId) return false;
-					const eligible = await isEligibleManagerForApprovalRequest({
-						db: authorization.dbService.db as never,
-						approvalRequestId: stage.legacyApprovalRequestId,
-						managerEmployeeId: currentEmployee.id,
-						organizationId: authorization.organizationId,
-					});
-					// Eligible-manager status never bypasses an escalation replacement:
-					// the eligible manager is told the approval moved (#255 §4, #326).
-					if (eligible && !eligibleManagerFallbackAllowed(stage, command.assignmentId)) {
-						throw new ApprovalAssignmentReassignedError();
-					}
-					return eligible;
-				},
-				clock: systemClock,
+			const { decideTimeApprovalFromFlags } = await import("./time-approval-decision");
+			const { result, cause } = await decideTimeApprovalFromFlags({
+				database: dbService.db,
+				actor: currentEmployee,
+				approvalId: approvalRequestId,
+				decision:
+					action === "approve" ? { kind: "approve" } : { kind: "reject", reason: reason ?? "" },
+				options,
 			});
-			let execution: Awaited<
-				ReturnType<typeof executeTimeCorrectionDecisionInTransaction>
-			>;
-			try {
-				execution = await completeTimeCorrectionDecisionAfterCommit({
-					execute: () =>
-						executeTimeCorrectionDecisionInTransaction({
-							createRuntime,
-							database: dbService.db,
-							organizationId: currentEmployee.organizationId,
-							actorEmployeeId: currentEmployee.id,
-							actorUserId: currentEmployee.userId,
-							approvalRequestId,
-							shortcutGuard: options?.shortcutGuard,
-							action,
-							reason,
-							query: dbService.query,
-							canManageOrganizationApproval: () =>
-								canManageOrganizationTimeApproval(options),
-							processLegacy: createLegacyTimeCorrectionDecisionProcessor({
-								approvalRequestId,
-								action,
-								reason,
-								options,
-							}),
-							processOrdinary: async ({ workPeriodId, kind }) => {
-								throw new OrdinaryWorkPeriodDecisionDelegation(
-									workPeriodId,
-									kind,
-								);
-							},
-						}),
-					dispatch: (effects) =>
-						dispatchTimeCorrectionDecisionPostCommit({
-							dbService,
-							actor: currentEmployee,
-							approvalRequestId,
-							effects,
-							reason,
-						}),
-					onDispatchError: (error) =>
-						logger.error(
-							{ error, approvalRequestId, action },
-							"Time correction decision after-commit work failed",
-						),
-				});
-			} catch (error) {
-				if (!(error instanceof OrdinaryWorkPeriodDecisionDelegation)) {
-					throw error;
-				}
-				const workPeriodId = error.workPeriodId;
-				// The ordinary kinds' after-commit completion, as the direct ordinary
-				// decision runs it: requester notification and surcharge maintenance (#1674).
-				const ordinary = await completeOrdinaryWorkPeriodDecisionAfterCommit({
-					execute: () =>
-						executeOrdinaryWorkPeriodDecisionInTransaction({
-							dbService,
-							createRuntime,
-							organizationId: currentEmployee.organizationId,
-							approvalRequestId,
-							workPeriodId,
-							actor: currentEmployee,
-							allowAnyApprover: options?.allowAnyApprover,
-							allowOrganizationWideApprover: options?.allowOrganizationWideApprover,
-							canManageOrganizationApproval: () =>
-								canManageOrganizationTimeApproval(options),
-							decision:
-								action === "approve"
-									? { kind: "approve", reason: reason ?? null }
-									: { kind: "reject", reason: reason ?? "" },
-						}).catch((ordinaryError: unknown) => {
-							if (ordinaryError instanceof ApprovalAssignmentReassignedError) {
-								throw approvalReassignedConflict(ordinaryError);
-							}
-							// Manual/policy clock-out evidence holds answer as 409 conflicts.
-							throw translateWorkPeriodEvidenceError(ordinaryError);
-						}),
-					dispatch: async (execution) => {
-						await Effect.runPromise(
-							notifyWorkPeriodApprovalAfterCommit(
-								execution.result,
-								currentEmployee,
-								dbService,
-								approvalRequestId,
-							),
-						);
-					},
-					maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-					onDispatchError: (dispatchError) => {
-						logger.error(
-							{ error: dispatchError, approvalRequestId, action },
-							"Ordinary work-period decision after-commit work failed",
-						);
-					},
-					onMaintenanceError: (maintenanceError) => {
-						logger.error(
-							{
-								error: maintenanceError,
-								organizationId: currentEmployee.organizationId,
-								workflowTargetId: approvalRequestId,
-								workPeriodId,
-							},
-							"Ordinary work-period maintenance after commit failed",
-						);
-					},
-				});
-				if (ordinary.deliveryIntent) {
-					// The legacy cycle's intent committed with the decision (#432);
-					// this only runs the delivery owner sooner.
-					kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
-				}
-				return;
-			}
-			if ("deliveryIntent" in execution && execution.deliveryIntent) {
-				// The legacy correction cycle's intent committed with the decision
-				// (#432); this only runs the delivery owner sooner.
-				kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
-			}
-			if (
-				(execution.kind === "manual_time_submission" ||
-					execution.kind === "policy_clock_out") &&
-				execution.domainResult
-			) {
-				await Effect.runPromise(
-					notifyWorkPeriodApprovalAfterCommit(
-						execution.domainResult as WorkPeriodApprovalResult,
-						currentEmployee,
-						dbService,
-						approvalRequestId,
-					),
+			if (result.status === "refused") {
+				throw translateCorrectionWorkError(
+					translateWorkPeriodEvidenceError(translateTimeCorrectionDecisionError(cause)),
 				);
 			}
 		},
@@ -6477,7 +6288,7 @@ function notifyApprovedCorrection(
 	currentEmployee: CurrentApprover,
 	times: TimeCorrectionNotificationTimes,
 ) {
-	void onTimeCorrectionApproved({
+	return onTimeCorrectionApproved({
 		workPeriodId: entityId,
 		employeeUserId: period.employee.userId,
 		employeeName: period.employee.user.name,
@@ -6496,7 +6307,7 @@ function notifyRejectedCorrection(
 	reason: string,
 	times: TimeCorrectionNotificationTimes,
 ) {
-	void onTimeCorrectionRejected({
+	return onTimeCorrectionRejected({
 		workPeriodId: entityId,
 		employeeUserId: period.employee.userId,
 		employeeName: period.employee.user.name,
@@ -6609,9 +6420,9 @@ function notifyApprovedTimeCorrectionAfterCommit(
 	currentEmployee: CurrentApprover,
 	result: { period: WorkPeriodRecord } & TimeCorrectionNotificationTimes,
 ) {
-	return Effect.sync(() =>
-		notifyApprovedCorrection(result.period, entityId, currentEmployee, result),
-	);
+	return Effect.sync(() => {
+		void notifyApprovedCorrection(result.period, entityId, currentEmployee, result);
+	});
 }
 
 type RejectedTimeCorrectionResult = TimeCorrectionApprovalResult &
@@ -6709,15 +6520,9 @@ function notifyRejectedTimeCorrectionAfterCommit(
 	reason: string,
 	result: RejectedTimeCorrectionResult,
 ) {
-	return Effect.sync(() =>
-		notifyRejectedCorrection(
-			result.period,
-			entityId,
-			currentEmployee,
-			reason,
-			result,
-		),
-	);
+	return Effect.sync(() => {
+		void notifyRejectedCorrection(result.period, entityId, currentEmployee, reason, result);
+	});
 }
 
 function handleRejectedTimeCorrection(

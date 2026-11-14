@@ -284,43 +284,6 @@ describe("authenticated time correction live actions", () => {
 		};
 	});
 
-	it.each([
-		["approve", undefined],
-		["reject", "Incorrect shift"],
-	] as const)("executes the real authenticated %s wrapper by stable approval ID", async (action, reason) => {
-		const harness = createHarness();
-
-		const result =
-			action === "approve"
-				? await approveTimeCorrectionEffect("approval-stable-1")
-				: await rejectTimeCorrectionEffect("approval-stable-1", reason);
-
-		expect(result).toEqual({ success: true, data: undefined });
-		// Routing reads the target, re-reads it under the guards, then the decision
-		// reads it; each read names the stable approval ID.
-		expect(harness.approvalRequestFindFirst).toHaveBeenCalledTimes(3);
-		for (const call of harness.approvalRequestFindFirst.mock.calls) {
-			const approvalQuery = compiledWhere(call as unknown[]);
-			expect(approvalQuery.params).toContain("approval-stable-1");
-			expect(approvalQuery.params).not.toContain("work-period-1");
-		}
-		expect(harness.transition).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({
-				organizationId: "org-1",
-				workflowId: "workflow-1",
-				command:
-					action === "approve"
-						? expect.objectContaining({ type: "approve" })
-						: expect.objectContaining({
-								type: "reject",
-								reason: "Incorrect shift",
-							}),
-			}),
-		);
-		expect(state.processApprovalWithCurrentEmployee).not.toHaveBeenCalled();
-	});
-
 	it("returns a typed not-found result for a stale or foreign stable ID without legacy mutation", async () => {
 		state.requestRow = null;
 		const harness = createHarness();

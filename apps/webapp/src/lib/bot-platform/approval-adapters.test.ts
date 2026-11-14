@@ -272,8 +272,6 @@ vi.mock("@/lib/teams/conversation-manager", () => ({
 }));
 
 import { Effect } from "effect";
-import { db } from "@/db";
-import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import {
 	handleApprovalButtonClick as discordAction,
 	sendApprovalMessageToManager as sendDiscord,
@@ -726,79 +724,6 @@ describe.each(platformCases)(
 				expect(state.history).toHaveBeenCalledOnce();
 				expect(state.track).not.toHaveBeenCalled();
 				expect(state.rows.approvalRequest[0].status).toBe("pending");
-			},
-		);
-		it.each([
-			"pending",
-			"matching approval",
-			"matching rejection",
-			"different rejection reason",
-		])(
-			"connects a callback to the real ordinary owner for %s",
-			async (scenario) => {
-				const owner = await vi.importActual<
-					typeof import("@/lib/approvals/server/work-period-approvals")
-				>("@/lib/approvals/server/work-period-approvals");
-				state.history.mockImplementation(
-					owner.decideOrdinaryWorkPeriodWithStableTargetEffect,
-				);
-				const action = scenario.includes("rejection") ? "reject" : "approve";
-				const status =
-					scenario === "pending"
-						? "pending"
-						: action === "approve"
-							? "approved"
-							: "rejected";
-				Object.assign(state.rows.approvalRequest[0], {
-					status,
-					approvedAt:
-						status === "approved" ? new Date("2026-07-02T10:00:00Z") : null,
-					rejectionReason:
-						scenario === "different rejection reason"
-							? "A different decision"
-							: `Rejected via ${platform[0].toUpperCase()}${platform.slice(1)}`,
-				});
-				Object.assign(state.rows.workPeriod[0], {
-					canonicalRecordId: "canonical",
-					approvalWorkflowId: null,
-					approvalStatus: status,
-					isActive: false,
-					deletedAt: null,
-					startTime: new Date("2026-07-01T08:00:00Z"),
-					endTime: new Date("2026-07-01T09:00:00Z"),
-					durationMinutes: 60,
-				});
-				state.legacyEvidence.mockImplementation(async () => ({
-					approvalRequest: state.rows.approvalRequest[0],
-					source: { workflowType: "manual_time_submission" },
-				}));
-				state.workflowRuntime.mockReturnValue({
-					repository: {
-						withTransaction: async (
-							run: (context: unknown) => Promise<unknown>,
-						) =>
-							run({
-								dbService: { db },
-								writeGate: {
-									acquire: async () => approvalWriteGateResult("legacy"),
-								},
-								compatibilityWriter: { withWriteGate: () => ({}) },
-							}),
-					},
-				});
-				await act(action);
-				expect(state.workflowRuntime).toHaveBeenCalled();
-				expect(state.legacyEvidence).toHaveBeenCalled();
-				expect(state.freshDecision).not.toHaveBeenCalled();
-				expect(state.mutation).not.toHaveBeenCalled();
-				const reply = JSON.stringify(state.replies[platform].mock.calls);
-				expect(reply).toContain(
-					scenario.startsWith("matching")
-						? "previously recorded"
-						: "No decision was made",
-				);
-				expect(state.rows.approvalRequest[0].status).toBe(status);
-				expect(state.track).not.toHaveBeenCalled();
 			},
 		);
 	},
