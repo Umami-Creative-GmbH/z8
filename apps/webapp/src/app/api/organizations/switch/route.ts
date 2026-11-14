@@ -125,11 +125,26 @@ if(!access.allowed){
 		}
 
 		if (!employeeRecord) {
-			employeeRecord = await joinMemberWithoutEmployee(db, {
+			// The one remaining net for a member without an employee (spec #1664
+			// decision 9), for one release after the backfill (#1671). Every path now
+			// joins in the membership's transaction, so this should never create one.
+			const joined = await joinMemberWithoutEmployee(db, {
 				userId: session.user.id,
 				organizationId,
 				membership: { id: membership.id, role: membership.role },
 			});
+			employeeRecord = joined.employee;
+			if (joined.joined) {
+				logger.warn(
+					{
+						userId: session.user.id,
+						organizationId,
+						memberId: membership.id,
+						employeeId: joined.employee.id,
+					},
+					"Organization switch joined an approved member without an employee",
+				);
+			}
 		}
 
 		// Update the session's active organization
