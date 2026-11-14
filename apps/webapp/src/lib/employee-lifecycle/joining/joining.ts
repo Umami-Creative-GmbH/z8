@@ -19,6 +19,7 @@ import { reactivateOnReturn } from "../reactivation";
 import {
 	consumeInvitationDrafts,
 	type DraftCleanup,
+	type DroppedPersonnelNumber,
 	draftCreationValues,
 	draftReactivationValues,
 	type InvitationDraft,
@@ -211,6 +212,8 @@ export async function joinOrganization(
 			draftCleanup,
 			rehireNotice,
 			async run(options = {}) {
+				// The global `db` on purpose: this runs after the caller's transaction
+				// committed, and is shared with callers that are not Effect code.
 				audit.forwardCommitted();
 				if (draftCleanup) await consumeInvitationDrafts(db, draftCleanup);
 				if (rehireNotice) await sendRehireNotice(rehireNotice);
@@ -290,7 +293,7 @@ async function isOnCurrentRoster(tx: JoiningTransaction, existing: Employee): Pr
 }
 
 async function joinAsNewEmployee(context: JoiningContext): Promise<JoiningOutcome> {
-	const { tx, audit, input, draft, isAdminMembership } = context;
+	const { tx, input, draft, isAdminMembership } = context;
 	const { organizationId, userId } = input;
 	const {
 		written: [created],
@@ -314,7 +317,30 @@ async function joinAsNewEmployee(context: JoiningContext): Promise<JoiningOutcom
 	);
 	if (!created) throw new Error("Joining did not create the employee");
 
-	// The draft's team wins over the given one; only a team of this organization places.
+	return {
+		kind: "joined",
+		employee: await settleArrivingEmployee(context, created, { dropped, outcome: "created" }),
+	};
+}
+
+/**
+ * What every employee who arrives on the current roster gets, new or back:
+ * the team placement, the dropped personnel number's entry, the draft's first
+ * terms and an owner or admin membership's organization-wide team permissions.
+ */
+async function settleArrivingEmployee(
+	context: JoiningContext,
+	arrived: Employee,
+	personnelNumber: {
+		dropped: DroppedPersonnelNumber | null;
+		outcome: "created" | "reactivated";
+	},
+): Promise<Employee> {
+	const { tx, audit, input, draft, isAdminMembership } = context;
+	const { organizationId, userId } = input;
+	// The draft's team wins over the given one; only a team of this organization
+	// places. For a returning employee placing is a move: the old primary team's
+	// membership ends.
 	const teamId = await teamOfOrganization(
 		tx,
 		organizationId,
@@ -323,30 +349,27 @@ async function joinAsNewEmployee(context: JoiningContext): Promise<JoiningOutcom
 	const placed = teamId
 		? await placeArrivingEmployee(tx, {
 				organizationId,
-				employeeId: created.id,
+				employeeId: arrived.id,
 				teamId,
 				createdBy: input.actorUserId ?? null,
 			})
 		: null;
-	if (draft && dropped) {
+	const settled = placed ? { ...arrived, teamId: placed.primaryTeamId } : arrived;
+	if (draft && personnelNumber.dropped) {
 		await recordDroppedPersonnelNumber(tx, audit, {
 			organizationId,
 			userId,
-			employee: created,
+			employee: settled,
 			draft,
-			dropped,
-			outcome: "created",
+			dropped: personnelNumber.dropped,
+			outcome: personnelNumber.outcome,
 		});
 	}
 	if (draft) {
-		await writeDraftFirstTerms(tx, { organizationId, userId, employeeId: created.id, draft });
+		await writeDraftFirstTerms(tx, { organizationId, userId, employeeId: settled.id, draft });
 	}
-	if (isAdminMembership) await grantOrganizationWideTeamPermissions(tx, created);
-
-	return {
-		kind: "joined",
-		employee: placed ? { ...created, teamId: placed.primaryTeamId } : created,
-	};
+	if (isAdminMembership) await grantOrganizationWideTeamPermissions(tx, settled);
+	return settled;
 }
 
 /**
@@ -427,40 +450,12 @@ async function joinAsReturningEmployee(
 	);
 	if (!reactivated) throw new Error("Joining lost the returning employee");
 
-	// Placing is a move: the old primary team's membership ends. The draft's team
-	// wins over the given one, as for a new employee.
-	const teamId = await teamOfOrganization(
-		tx,
-		organizationId,
-		draft ? draft.teamId : (input.teamId ?? null),
-	);
-	const placed = teamId
-		? await placeArrivingEmployee(tx, {
-				organizationId,
-				employeeId: reactivated.id,
-				teamId,
-				createdBy: input.actorUserId ?? null,
-			})
-		: null;
-	const placedEmployee = placed ? { ...reactivated, teamId: placed.primaryTeamId } : reactivated;
-	if (draft && dropped) {
-		await recordDroppedPersonnelNumber(tx, audit, {
-			organizationId,
-			userId,
-			employee: placedEmployee,
-			draft,
-			dropped,
-			outcome: "reactivated",
-		});
-	}
-	if (draft) {
-		await writeDraftFirstTerms(tx, { organizationId, userId, employeeId: reactivated.id, draft });
-	}
-	if (isAdminMembership) await grantOrganizationWideTeamPermissions(tx, placedEmployee);
-
 	return {
 		kind: "reactivated",
-		employee: placedEmployee,
+		employee: await settleArrivingEmployee(context, reactivated, {
+			dropped,
+			outcome: "reactivated",
+		}),
 		reactivationRequestId: returned.reactivationRequestId,
 	};
 }
