@@ -21,7 +21,6 @@ import { and, eq } from "drizzle-orm";
 import { db as applicationDatabase } from "@/db";
 import {
 	approvalRequest,
-	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowStage,
 	employee,
@@ -35,37 +34,44 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
+import type { ClosedMonthKey } from "@/lib/time-tracking/closed-months/rules";
+import {
+	type CorrectionOverlap,
+	correctionOverlapsSchema,
+} from "@/lib/time-tracking/correction-overlaps";
 import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
-import { readReviewBindingAuthority } from "../authority/binding";
-import { TimeCorrectionApprovalAdapterError } from "../domain-adapters/time-correction.adapter";
-import { TimeCorrectionLegacyStateCaptureError } from "../domain-adapters/time-correction-legacy-state";
-import { OrdinaryWorkPeriodApprovalAdapterError } from "../domain-adapters/work-period.adapter";
-import { OrdinaryWorkPeriodLegacyStateCaptureError } from "../domain-adapters/work-period-legacy-state";
-import type { DecisionRight } from "../decision-right";
-import { ApprovalAssignmentReassignedError } from "../escalation/decision-authority";
-import { ApprovalEvidenceError } from "../evidence/errors";
-import { ApprovalInvocationNotAdmittedError } from "../evidence/invocation";
+import { readReviewBindingAuthority } from "../../authority/binding";
+import { TimeCorrectionApprovalAdapterError } from "../../domain-adapters/time-correction.adapter";
+import { TimeCorrectionLegacyStateCaptureError } from "../../domain-adapters/time-correction-legacy-state";
+import { OrdinaryWorkPeriodApprovalAdapterError } from "../../domain-adapters/work-period.adapter";
+import { OrdinaryWorkPeriodLegacyStateCaptureError } from "../../domain-adapters/work-period-legacy-state";
+import type { DecisionRight } from "../../decision-right";
+import { DEPUTY_FOUR_EYES_REFUSAL } from "../../deputy/deputy-decision";
+import { ApprovalAssignmentReassignedError } from "../../escalation/decision-authority";
+import { ApprovalEvidenceError } from "../../evidence/errors";
+import { ApprovalInvocationNotAdmittedError } from "../../evidence/invocation";
 import {
 	type DecisionEvidenceRecord,
 	type LegacyDecisionEvidenceRecord,
 	loadLegacyReviewBinding,
 	loadReviewBinding,
-} from "../evidence/store";
-import { isOwnRequestDecisionRefusal } from "../policies/self-decision";
-import { classifyCanonicalTimeCard, classifyLegacyTimeCard } from "../presentation/time-card";
-import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
-import { isForbiddenCommandActorFailure } from "../workflow/runtime";
-import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
-import { type BoundTimeInvocation, BoundTimeInvocationReplay } from "./bound-time-invocation";
-import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
-import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
-import { decideTimeCorrectionApproval } from "./time-correction-approvals";
-import type { ApprovalDatabase, CurrentApprover } from "./types";
+} from "../../evidence/store";
+import { OWN_REQUEST_REFUSAL } from "../../policies/self-decision";
+import { classifyCanonicalTimeCard, classifyLegacyTimeCard } from "../../presentation/time-card";
+import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../../time-approval-kinds";
+import { ApprovalCommandActorForbiddenError } from "../../workflow/runtime";
+import { ApprovalTransitionEngineError } from "../../workflow/transition-engine";
+import { type BoundTimeInvocation, BoundTimeInvocationReplay } from "../bound-time-invocation";
+import { classifyPersistedTimeApprovalRequest } from "../time-approval-classification";
+import { TimeApprovalKindChanged } from "../time-approval-kind-changed";
+import { findTimeApprovalTarget } from "../time-approval-work-period";
+import { decideTimeCorrectionApproval } from "../time-correction-approvals";
+import type { ApprovalDatabase, CurrentApprover } from "../types";
 import {
 	decideOrdinaryTimeApproval,
 	isOrdinaryWorkPeriodDecisionRefusal,
 	OrdinaryWorkPeriodFinalizationConflict,
-} from "./work-period-approvals";
+} from "../work-period-approvals";
 
 /** A restart is a race with a reclassification; it settles at once. */
 const MAX_ATTEMPTS = 3;
@@ -88,6 +94,32 @@ export type TimeApprovalDecisionRefusalReason =
 	| "not_admitted"
 	| "invocation_conflict";
 
+/**
+ * What an entry point needs to word a refusal beyond its reason, as typed
+ * data: never read from a message.
+ */
+export type TimeApprovalRefusalDetail =
+	/** `right_not_held`: a covering deputy already decided an earlier stage (four-eyes). */
+	| { kind: "deputy_four_eyes" }
+	/** `evidence_required` or `changed`: the submitted evidence's verdict. */
+	| { kind: "evidence"; code: "evidence_required" | "evidence_incomplete" | "material_change" }
+	/** `changed`: the corrected interval now overlaps other recorded work. */
+	| { kind: "work_overlap"; overlaps: CorrectionOverlap[] }
+	/** `changed`: an earlier request or changed work collides with the correction. */
+	| { kind: "work_collision" }
+	/** `changed`: another approval of the same work period is still pending. */
+	| { kind: "work_pending_review"; pending: "approval" | "time_correction" }
+	/** `changed`: the work needs review before it can change. */
+	| { kind: "work_review_required" }
+	/** `month_closed`: the closed month. */
+	| { kind: "month_closed"; month: ClosedMonthKey };
+
+export type TimeApprovalDecisionRefusal = {
+	status: "refused";
+	reason: TimeApprovalDecisionRefusalReason;
+	detail?: TimeApprovalRefusalDetail;
+};
+
 export type TimeApprovalDecisionResult =
 	| {
 			status: "decided";
@@ -99,7 +131,7 @@ export type TimeApprovalDecisionResult =
 			/** Card presses only: the decision evidence the press committed or replayed. */
 			receipt?: TimeApprovalDecisionReceipt;
 	  }
-	| { status: "refused"; reason: TimeApprovalDecisionRefusalReason };
+	| TimeApprovalDecisionRefusal;
 
 /** A card's receipt: canonical evidence, or legacy evidence for a legacy binding. */
 export type TimeApprovalDecisionReceipt = DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
@@ -148,19 +180,6 @@ export type TimeApprovalDecisionInput = TimeApprovalDecisionInputBase &
 		  }
 	);
 
-/** One time approval decision; a refusal is a value. */
-export async function decideTimeApproval(
-	input: TimeApprovalDecisionInput,
-): Promise<TimeApprovalDecisionResult> {
-	return (await decideTimeApprovalWithCause(input)).result;
-}
-
-interface DecisionOutcome {
-	result: TimeApprovalDecisionResult;
-	/** A refusal's original error, for the inbox adapters that throw what their routes expect. */
-	cause?: unknown;
-}
-
 type RoutedTarget =
 	| {
 			found: true;
@@ -184,14 +203,10 @@ async function routeTimeApproval(
 	/** A card's kind, from its binding: a legacy request is then never classified. */
 	cardKind?: TimeApprovalWorkflowType,
 ): Promise<RoutedTarget> {
-	const request = await database.query.approvalRequest.findFirst({
-		where: and(
-			eq(approvalRequest.id, input.approvalId),
-			eq(approvalRequest.organizationId, input.organizationId),
-			eq(approvalRequest.entityType, "time_entry"),
-		),
-	});
-	if (request) {
+	const target = await findTimeApprovalTarget(database, input);
+	if (!target) return { found: false };
+	if (target.authority === "legacy") {
+		const { request } = target;
 		const period = await database.query.workPeriod.findFirst({
 			where: and(
 				eq(workPeriod.id, request.entityId),
@@ -216,32 +231,15 @@ async function routeTimeApproval(
 			pending: request.status === "pending",
 		};
 	}
-	const assignment = await database.query.approvalStageAssignment.findFirst({
+	const { assignment, workflow } = target;
+	if (!isTimeApprovalWorkflowType(workflow.workflowType)) return { found: false };
+	const stage = await database.query.approvalWorkflowStage.findFirst({
 		where: and(
-			eq(approvalStageAssignment.id, input.approvalId),
-			eq(approvalStageAssignment.organizationId, input.organizationId),
+			eq(approvalWorkflowStage.id, assignment.stageId),
+			eq(approvalWorkflowStage.organizationId, input.organizationId),
 		),
-		columns: { workflowId: true, stageId: true, approverEmployeeId: true, status: true },
+		columns: { legacyApprovalRequestId: true },
 	});
-	if (!assignment) return { found: false };
-	const [workflow, stage] = await Promise.all([
-		database.query.approvalWorkflow.findFirst({
-			where: and(
-				eq(approvalWorkflow.id, assignment.workflowId),
-				eq(approvalWorkflow.organizationId, input.organizationId),
-				eq(approvalWorkflow.sourceType, "time_entry"),
-			),
-			columns: { workflowType: true, sourceId: true },
-		}),
-		database.query.approvalWorkflowStage.findFirst({
-			where: and(
-				eq(approvalWorkflowStage.id, assignment.stageId),
-				eq(approvalWorkflowStage.organizationId, input.organizationId),
-			),
-			columns: { legacyApprovalRequestId: true },
-		}),
-	]);
-	if (!workflow || !isTimeApprovalWorkflowType(workflow.workflowType)) return { found: false };
 	return {
 		found: true,
 		kind: workflow.workflowType,
@@ -265,7 +263,7 @@ async function loadActor(
 		),
 		with: { user: true },
 	});
-	return row?.user ? (row as unknown as CurrentApprover) : null;
+	return row?.user ? { ...row, user: row.user } : null;
 }
 
 /**
@@ -276,15 +274,9 @@ async function committedOutcome(
 	database: ApprovalDatabase,
 	input: { organizationId: string; approvalId: string },
 ): Promise<"approved" | "rejected" | "advanced"> {
-	const request = await database.query.approvalRequest.findFirst({
-		where: and(
-			eq(approvalRequest.id, input.approvalId),
-			eq(approvalRequest.organizationId, input.organizationId),
-			eq(approvalRequest.entityType, "time_entry"),
-		),
-		columns: { entityId: true, status: true },
-	});
-	if (request) {
+	const target = await findTimeApprovalTarget(database, input);
+	if (target?.authority === "legacy") {
+		const { request } = target;
 		const pending = await database.query.approvalRequest.findFirst({
 			where: and(
 				eq(approvalRequest.organizationId, input.organizationId),
@@ -299,94 +291,103 @@ async function committedOutcome(
 		}
 		return request.status;
 	}
-	const assignment = await database.query.approvalStageAssignment.findFirst({
-		where: and(
-			eq(approvalStageAssignment.id, input.approvalId),
-			eq(approvalStageAssignment.organizationId, input.organizationId),
-		),
-		columns: { workflowId: true },
-	});
-	const workflow = assignment
-		? await database.query.approvalWorkflow.findFirst({
-				where: and(
-					eq(approvalWorkflow.id, assignment.workflowId),
-					eq(approvalWorkflow.organizationId, input.organizationId),
-				),
-				columns: { status: true },
-			})
-		: undefined;
+	const workflow = target?.workflow;
 	return workflow?.status === "approved" || workflow?.status === "rejected"
 		? workflow.status
 		: "advanced";
 }
 
-const approvalNotFound = () =>
-	new NotFoundError({ message: "Approval not found", entityType: "approval_request" });
+type Refusal = Omit<TimeApprovalDecisionRefusal, "status">;
 
-function refused(reason: TimeApprovalDecisionRefusalReason, cause: unknown): DecisionOutcome {
-	return { result: { status: "refused", reason }, cause };
+function refused(reason: TimeApprovalDecisionRefusalReason, detail?: TimeApprovalRefusalDetail) {
+	return detail
+		? ({ status: "refused", reason, detail } as const)
+		: ({ status: "refused", reason } as const);
 }
 
-function evidenceRefusal(code: unknown): TimeApprovalDecisionRefusalReason | null {
+function evidenceRefusal(code: unknown): Refusal | null {
 	switch (code) {
 		case "evidence_required":
 		case "evidence_incomplete":
-			return "evidence_required";
+			return { reason: "evidence_required", detail: { kind: "evidence", code } };
 		case "material_change":
-			return "changed";
+			return { reason: "changed", detail: { kind: "evidence", code } };
 		case "binding_mismatch":
-			return "binding_mismatch";
+			return { reason: "binding_mismatch" };
 		case "invocation_mismatch":
-			return "invocation_conflict";
+			return { reason: "invocation_conflict" };
 		default:
 			return null;
 	}
 }
 
+/** The overlaps a correction's occupied interval names, as the routes show them. */
+function overlapsOf(details: Record<string, unknown> | undefined): CorrectionOverlap[] {
+	const overlaps = correctionOverlapsSchema.safeParse(details?.overlaps);
+	return overlaps.success ? overlaps.data : [];
+}
+
 /**
  * The refusal an owner's error stands for: each corresponds to an error the
- * owners raised before this module. Anything else is a failure and throws.
+ * owners raised before this module, and carries what its entry points show as
+ * typed detail. Anything else is a failure and throws.
  */
-function refusalOf(error: unknown): TimeApprovalDecisionRefusalReason | null {
-	if (monthClosedRefusalOf(error)) return "month_closed";
-	if (isUnresolvedWorkPeriodReview(error)) return "changed";
-	if (error instanceof ApprovalAssignmentReassignedError) return "reassigned";
-	if (error instanceof ApprovalInvocationNotAdmittedError) return "not_admitted";
+function refusalOf(error: unknown): Refusal | null {
+	const closed = monthClosedRefusalOf(error);
+	if (closed) return { reason: "month_closed", detail: { kind: "month_closed", month: closed.month } };
+	if (isUnresolvedWorkPeriodReview(error)) {
+		const pending =
+			error.conflictType === "pending_time_correction_approval" ? "time_correction" : "approval";
+		return { reason: "changed", detail: { kind: "work_pending_review", pending } };
+	}
+	if (error instanceof ApprovalAssignmentReassignedError) return { reason: "reassigned" };
+	if (error instanceof ApprovalInvocationNotAdmittedError) return { reason: "not_admitted" };
 	if (error instanceof ApprovalEvidenceError) return evidenceRefusal(error.code);
 	if (error instanceof ApprovalTransitionEngineError) {
 		switch (error.code) {
 			case "forbidden":
-				return "right_not_held";
+				return { reason: "right_not_held" };
 			case "version_conflict":
 			case "idempotency_mismatch":
-				return "changed";
+				return { reason: "changed" };
 			default:
 				return null;
 		}
 	}
-	if (isForbiddenCommandActorFailure(error)) return "right_not_held";
-	if (error instanceof NotFoundError) return "not_found";
+	if (error instanceof ApprovalCommandActorForbiddenError) return { reason: "right_not_held" };
+	if (error instanceof NotFoundError) return { reason: "not_found" };
 	if (error instanceof AuthorizationError) {
-		return isOwnRequestDecisionRefusal(error.message) ? "own_request" : "right_not_held";
+		if (error.refusal === OWN_REQUEST_REFUSAL) return { reason: "own_request" };
+		return error.refusal === DEPUTY_FOUR_EYES_REFUSAL
+			? { reason: "right_not_held", detail: { kind: "deputy_four_eyes" } }
+			: { reason: "right_not_held" };
 	}
 	if (error instanceof ValidationError) {
-		return error.field === "approvalRequest.metadata.timeRequest.kind" ? "unclassified" : null;
+		return error.field === "approvalRequest.metadata.timeRequest.kind"
+			? { reason: "unclassified" }
+			: null;
 	}
 	if (error instanceof ConflictError) {
 		switch (error.conflictType) {
 			case "approval_status":
-				return "already_decided";
+				return { reason: "already_decided" };
 			case "approval_reassigned":
-				return "reassigned";
+				return { reason: "reassigned" };
 			case "approval_triage":
-				return "guard_failed";
+				return { reason: "guard_failed" };
 			case "approval_evidence":
-				return evidenceRefusal((error.details as { code?: unknown } | undefined)?.code);
+				return evidenceRefusal(error.details?.code);
 			case "approval_transition":
+				return { reason: "changed" };
 			case "completed_work_collision":
-			case "work_interval_occupied":
+				return { reason: "changed", detail: { kind: "work_collision" } };
 			case "completed_work_review_required":
-				return "changed";
+				return { reason: "changed", detail: { kind: "work_review_required" } };
+			case "work_interval_occupied":
+				return {
+					reason: "changed",
+					detail: { kind: "work_overlap", overlaps: overlapsOf(error.details) },
+				};
 			default:
 				return null;
 		}
@@ -449,115 +450,95 @@ async function workChangedSinceSubmission(
 	);
 }
 
-/**
- * The decision with the original error of a refusal. Only the inbox adapter and
- * the time entry handler read the cause, to throw what their routes expect.
- */
-export async function decideTimeApprovalWithCause(
+/** The card's bound kind, or a refusal when the card cannot decide this approval. */
+async function cardKindOf(
+	database: ApprovalDatabase,
+	input: TimeApprovalDecisionInput & { card: TimeApprovalCard },
+): Promise<TimeApprovalWorkflowType | TimeApprovalDecisionRefusal> {
+	// A card conveys only its recipient's own right (Approvals ADR 0003).
+	const right: DecisionRight = input.right;
+	if (right.as !== "approver" && right.as !== "covering_deputy") {
+		return refused("right_not_held");
+	}
+	// The card's kind is its binding's, never a classification.
+	const bindingQuery = {
+		organizationId: input.organizationId,
+		bindingId: input.card.reviewedBindingId,
+	};
+	const binding = await readReviewBindingAuthority(database, bindingQuery);
+	// The card decides exactly the approval its binding names.
+	const boundApprovalId =
+		binding?.authority === "legacy"
+			? (await loadLegacyReviewBinding(database, bindingQuery))?.legacyApprovalRequestId
+			: (await loadReviewBinding(database, bindingQuery))?.assignmentId;
+	if (
+		!binding?.kind ||
+		!isTimeApprovalWorkflowType(binding.kind) ||
+		boundApprovalId !== input.approvalId
+	) {
+		return refused("binding_mismatch");
+	}
+	return binding.kind;
+}
+
+/** One time approval decision; a refusal is a value. */
+export async function decideTimeApproval(
 	input: TimeApprovalDecisionInput,
-): Promise<DecisionOutcome> {
-	const database = input.database ?? (applicationDatabase as unknown as ApprovalDatabase);
+): Promise<TimeApprovalDecisionResult> {
+	const database = input.database ?? applicationDatabase;
 	const clock = input.clock ?? systemClock;
 	const actor = await loadActor(database, input);
-	if (!actor) return refused("not_found", approvalNotFound());
+	if (!actor) return refused("not_found");
 	let cardKind: TimeApprovalWorkflowType | undefined;
 	if (input.card) {
-		// A card conveys only its recipient's own right (Approvals ADR 0003).
-		const right: DecisionRight = input.right;
-		if (right.as !== "approver" && right.as !== "covering_deputy") {
-			return refused(
-				"right_not_held",
-				new AuthorizationError({ message: "A card decides only as approver or covering deputy" }),
-			);
-		}
-		// The card's kind is its binding's, never a classification.
-		const binding = await readReviewBindingAuthority(database, {
-			organizationId: input.organizationId,
-			bindingId: input.card.reviewedBindingId,
-		});
-		const bindingQuery = {
-			organizationId: input.organizationId,
-			bindingId: input.card.reviewedBindingId,
-		};
-		// The card decides exactly the approval its binding names.
-		const boundApprovalId =
-			binding?.authority === "legacy"
-				? (await loadLegacyReviewBinding(database, bindingQuery))?.legacyApprovalRequestId
-				: (await loadReviewBinding(database, bindingQuery))?.assignmentId;
-		if (
-			!binding?.kind ||
-			!isTimeApprovalWorkflowType(binding.kind) ||
-			boundApprovalId !== input.approvalId
-		) {
-			return refused("binding_mismatch", new ApprovalEvidenceError("binding_mismatch"));
-		}
-		cardKind = binding.kind;
+		const kind = await cardKindOf(database, { ...input, card: input.card });
+		if (typeof kind !== "string") return kind;
+		cardKind = kind;
 	}
 	for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
 		const target = await routeTimeApproval(database, input, cardKind);
-		if (!target.found) return refused("not_found", approvalNotFound());
-		if (cardKind && target.kind !== cardKind) {
-			return refused("binding_mismatch", new ApprovalEvidenceError("binding_mismatch"));
-		}
-		if (target.kind === "unclassified") {
-			return refused(
-				"unclassified",
-				new ValidationError({
-					message:
-						"This legacy time approval could not be classified. Reconcile it before making a decision.",
-					field: "approvalRequest.metadata.timeRequest.kind",
-				}),
-			);
+		if (!target.found) return refused("not_found");
+		if (cardKind && target.kind !== cardKind) return refused("binding_mismatch");
+		if (target.kind === "unclassified") return refused("unclassified");
+		// `replayOnly` confirms only its approver's own committed decision.
+		if (input.replayOnly && target.currentApproverEmployeeId !== actor.id) {
+			return refused("right_not_held");
 		}
 		try {
 			if (target.kind === "time_correction") {
 				// Only a committed manual or policy decision can be confirmed by replay.
-				if (input.replayOnly) {
-					return refused(
-						"changed",
-						new ConflictError({
-							message: "Approval workflow decision conflicts with the current state",
-							conflictType: "approval_transition",
-						}),
-					);
-				}
-				return {
-					result: await decideTimeCorrectionApproval(
-						input,
-						actor,
-						database,
-						clock,
-						target.workPeriodId,
-					),
-				};
-			}
-			return {
-				result: await decideOrdinaryTimeApproval(
+				if (input.replayOnly) return refused("changed");
+				return await decideTimeCorrectionApproval(
 					input,
 					actor,
 					database,
 					clock,
-					target.kind,
 					target.workPeriodId,
-				),
-			};
+				);
+			}
+			return await decideOrdinaryTimeApproval(
+				input,
+				actor,
+				database,
+				clock,
+				target.kind,
+				target.workPeriodId,
+			);
 		} catch (error) {
 			if (error instanceof BoundTimeInvocationReplay) {
 				// The card's invocation had already committed: its original decision.
 				return {
-					result: {
-						status: "decided",
-						kind: target.kind,
-						workPeriodId: target.workPeriodId,
-						outcome: await committedOutcome(database, input),
-						replayed: true,
-						receipt: error.evidence,
-					},
+					status: "decided",
+					kind: target.kind,
+					workPeriodId: target.workPeriodId,
+					outcome: await committedOutcome(database, input),
+					replayed: true,
+					receipt: error.evidence,
 				};
 			}
 			if (error instanceof TimeApprovalKindChanged) {
 				// A card decides only the kind its binding names.
-				if (input.card) return refused("binding_mismatch", error);
+				if (input.card) return refused("binding_mismatch");
 				continue;
 			}
 			if (
@@ -566,12 +547,12 @@ export async function decideTimeApprovalWithCause(
 				error.code === "idempotency_mismatch"
 			) {
 				// The card's invocation is the receipt key: another command under it.
-				return refused("invocation_conflict", error);
+				return refused("invocation_conflict");
 			}
-			const reason = refusalOf(error);
+			const refusal = refusalOf(error);
 			const statusConflict =
 				error instanceof ConflictError && error.conflictType === "approval_status";
-			if (reason && !statusConflict) return refused(reason, error);
+			if (refusal && !statusConflict) return refused(refusal.reason, refusal.detail);
 			const now = await routeTimeApproval(database, input);
 			// Work changed in place since submission: the source no longer is the reviewed one.
 			if (
@@ -583,21 +564,21 @@ export async function decideTimeApprovalWithCause(
 					workPeriodId: target.workPeriodId,
 				}))
 			) {
-				return refused("changed", error);
+				return refused("changed");
 			}
-			// A status conflict on an approval that still is pending is no refusal:
-			// the owner's legacy mutation failed for another reason.
+			// A status conflict on an approval that is still pending is a broken
+			// invariant, not a refusal. The legacy owners raise it when the request
+			// they locked is no longer pending, which cannot be once it reads
+			// pending again after the rollback; and the ordinary legacy finalizer
+			// raises it for any failed write. No refusal reason stands for either.
 			if (statusConflict && now.found && now.pending) throw error;
-			if (reason) return refused(reason, error);
+			if (refusal) return refused(refusal.reason, refusal.detail);
 			if (isOrdinaryWorkPeriodDecisionRefusal(error)) {
 				// The ordinary owner's generic refusal: the current state names it.
-				return refused(
-					!now.found ? "not_found" : now.pending ? "changed" : "already_decided",
-					error,
-				);
+				return refused(!now.found ? "not_found" : now.pending ? "changed" : "already_decided");
 			}
 			// A decided approval is never decided again, however its owner refused it.
-			if (now.found && !now.pending) return refused("already_decided", error);
+			if (now.found && !now.pending) return refused("already_decided");
 			throw error;
 		}
 	}

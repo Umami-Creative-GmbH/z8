@@ -14,7 +14,13 @@
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	type Instant,
+	instantFromDate,
+	parseInstant,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -235,7 +241,7 @@ function only<T>(rows: readonly T[]): T {
 
 /** A UTC calendar date `days` from today. */
 function utcDay(days: number): string {
-	return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+	return plainDateAt(systemClock.nowInstant(), "UTC").add({ days }).toString();
 }
 
 describe("time approval decision (PostgreSQL)", () => {
@@ -696,11 +702,12 @@ describe("time approval decision (PostgreSQL)", () => {
 
 	async function escalate(approval: { created_at?: Date }) {
 		if (!approval.created_at) throw new Error("Escalation needs a legacy request");
-		const at = new Date(approval.created_at.getTime() + 60 * 60_000);
+		// The response window is one hour from submission.
+		const at = instantFromDate(approval.created_at).add({ hours: 1 });
 		expect(
 			await processDueEscalations({
 				organizationId: ids.organization,
-				now: parseInstant(at.toISOString()),
+				now: at,
 			}),
 		).toMatchObject({ transferred: 1 });
 	}
@@ -829,6 +836,50 @@ describe("time approval decision (PostgreSQL)", () => {
 				const { approval } = await submitted(kind, authority);
 
 				const result = await decide(actors.admin, approval.id, { as: "approver" });
+
+				expect(result).toEqual({ status: "refused", reason: "right_not_held" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+			},
+		);
+
+		it.each(TIME_KINDS)(
+			"no fallback: the approver who claims management of approvals on a %s they do not manage is refused",
+			async (kind) => {
+				const { approval } = await submitted(kind, authority);
+
+				const result = await decide(actors.approver, approval.id, { as: "approval_manager" });
+
+				expect(result).toEqual({ status: "refused", reason: "right_not_held" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+			},
+		);
+
+		it.each(TIME_KINDS)(
+			"no fallback: the approver who claims to cover for themselves on a %s is refused and no deputy decision is made",
+			async (kind) => {
+				const { approval } = await submitted(kind, authority);
+				await seedCover();
+
+				const result = await decide(actors.approver, approval.id, {
+					as: "covering_deputy",
+					forEmployeeId: ids.approver,
+				});
+
+				expect(result).toEqual({ status: "refused", reason: "right_not_held" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+				expect(await deputyRecords()).toEqual([]);
+			},
+		);
+
+		it.each(TIME_KINDS)(
+			"a platform administrator's session-wide access alone does not decide a %s",
+			async (kind) => {
+				const { approval } = await submitted(kind, authority);
+				// Y is a plain member who manages nobody; only the platform role is raised.
+				await admin.query(`update "user" set role = 'admin' where id = $1`, [ids.deputyUser]);
+				actAs(ids.deputyUser);
+
+				const result = await decide(actors.deputy, approval.id, { as: "approval_manager" });
 
 				expect(result).toEqual({ status: "refused", reason: "right_not_held" });
 				expect(await approvalStatus(approval.id)).toBe("pending");
@@ -1016,6 +1067,30 @@ describe("time approval decision (PostgreSQL)", () => {
 			expect(harness.kicks).toEqual([]);
 		});
 
+		it("loads its approval once on the way to confirming a decision", async () => {
+			const { approval } = await submitted("manual_time_submission", "legacy");
+			await decide(actors.approver, approval.id, { as: "approver" });
+			const { db } = await import("@/db");
+			const reads = vi.spyOn(db.query.approvalRequest, "findFirst");
+			try {
+				expect(await press(ids.approver, approval.id, "approve")).toEqual({
+					status: "historical",
+					action: "approve",
+				});
+				expect(reads).toHaveBeenCalledOnce();
+			} finally {
+				reads.mockRestore();
+			}
+		});
+
+		it("refuses a time correction's non-approver without telling them it needs review", async () => {
+			const { approval } = await submitted("time_correction", "legacy");
+
+			expect(await press(ids.third, approval.id, "approve")).toEqual({
+				status: "unauthorized",
+			});
+		});
+
 		it("refuses someone who is not the approval's approver", async () => {
 			const { workPeriodId, approval } = await submitted("policy_clock_out", "legacy");
 
@@ -1119,19 +1194,6 @@ describe("time approval decision (PostgreSQL)", () => {
 			expect(await deputyRecords()).toEqual([]);
 		});
 
-		it("a person with a right of their own never makes a deputy decision", async () => {
-			const { approval } = await submitted("time_correction", "legacy");
-			await seedCover();
-
-			const result = await decide(actors.approver, approval.id, {
-				as: "covering_deputy",
-				forEmployeeId: ids.approver,
-			});
-
-			expect(result).toMatchObject({ status: "decided" });
-			expect(await deputyRecords()).toEqual([]);
-		});
-
 		it("a legacy request that cannot be classified is refused as such", async () => {
 			const { workPeriodId, approval } = await submitted("manual_time_submission", "legacy");
 			await admin.query(
@@ -1190,6 +1252,7 @@ describe("time approval decision (PostgreSQL)", () => {
 			expect(await decide(actors.approver, approval.id, { as: "approver" })).toEqual({
 				status: "refused",
 				reason: "evidence_required",
+				detail: { kind: "evidence", code: "evidence_required" },
 			});
 		});
 
@@ -1210,6 +1273,7 @@ describe("time approval decision (PostgreSQL)", () => {
 			expect(await decide(actors.approver, approval.id, { as: "approver" })).toEqual({
 				status: "refused",
 				reason: "month_closed",
+				detail: { kind: "month_closed", month: "2026-07" },
 			});
 			expect(await periodStatus(workPeriodId)).toBe("pending");
 		});
@@ -1256,7 +1320,7 @@ describe("time approval decision (PostgreSQL)", () => {
 						);
 					}
 
-					expect(await decide(actors.approver, approval.id, { as: "approver" })).toEqual({
+					expect(await decide(actors.approver, approval.id, { as: "approver" })).toMatchObject({
 						status: "refused",
 						reason: "changed",
 					});
@@ -1339,6 +1403,24 @@ describe("time approval decision (PostgreSQL)", () => {
 				expect(decisionNotifications()).toEqual([]);
 				expect(harness.kicks).toEqual([]);
 				expect(await surchargeCount(workPeriodId)).toBe(before.surcharges);
+			},
+		);
+
+		it.each(["manual_time_submission", "policy_clock_out"] as const)(
+			"a status conflict on a legacy %s that is still pending is a failure, never a refusal",
+			async (kind) => {
+				const { workPeriodId, approval } = await submitted(kind, "legacy");
+
+				// The legacy finalizer reports any failed write as a status conflict
+				// while the request stays pending: no refusal reason stands for it.
+				await expect(
+					failingWrites("work_period", "update", () =>
+						decide(actors.approver, approval.id, { as: "approver" }),
+					),
+				).rejects.toMatchObject({ _tag: "ConflictError", conflictType: "approval_status" });
+
+				expect(await approvalStatus(approval.id)).toBe("pending");
+				expect(await periodStatus(workPeriodId)).toBe("pending");
 			},
 		);
 
@@ -1819,6 +1901,35 @@ describe("time approval decision (PostgreSQL)", () => {
 					expect(decisionNotifications()).toEqual([]);
 				},
 			);
+
+			it.runIf(legacy)("a legacy card press on a time correction whose work changed since submission answers material change", async () => {
+				const { workPeriodId, approval } = await submitted("time_correction", authority);
+				await allowCards();
+				const bindingId = await issueCard(workPeriodId, approval.id, authority);
+				await admin.query(
+					`update work_period set work_location_type = 'home'
+					 where organization_id = $1 and id = $2`,
+					[ids.organization, workPeriodId],
+				);
+				const { decideBoundLegacyTimeInvocation, decideBoundTimeInvocation } = await import(
+					"./time-bound-decision"
+				);
+				const { db } = await import("@/db");
+				const pressCard = legacy ? decideBoundLegacyTimeInvocation : decideBoundTimeInvocation;
+
+				const result = await pressCard({
+					database: db,
+					organizationId: ids.organization,
+					actorEmployeeId: ids.approver,
+					actorUserId: ids.approverUser,
+					bindingId,
+					action: "approve",
+					invocation: card(bindingId, `t1673-material-${authority}`).invocation,
+				});
+
+				expect(result).toEqual({ status: "review_required", reason: "material_change" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+			});
 
 			it("a press for another approval than its binding names is a binding mismatch", async () => {
 				const { workPeriodId, approval } = await submitted("manual_time_submission", authority);

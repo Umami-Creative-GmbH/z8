@@ -152,7 +152,7 @@ import {
 	timeApprovalDecisionDbService,
 	timeApprovalDecisionRuntime,
 	timeApprovalReceiptOf,
-} from "./time-approval-decision-support";
+} from "./time-approval-decision/support";
 import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 
@@ -1132,7 +1132,9 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 						input.decision.reason ?? undefined,
 						{
 							approvalRequestId: input.approvalRequestId,
-							...(input.decisionRight ? { decisionRight: input.decisionRight } : {}),
+							...(input.decisionRight
+								? { decisionRight: input.decisionRight, clock: input.clock }
+								: {}),
 						},
 					).pipe(
 						Effect.provideService(

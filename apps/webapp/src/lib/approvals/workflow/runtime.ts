@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
+import type { DecisionRight } from "../decision-right";
 import {
 	decideDeputyRight,
 	decidedEarlierStage,
@@ -68,14 +69,16 @@ function runtimeFailure(reason: string): never {
 	throw new Error(`Approval workflow runtime: ${reason}`);
 }
 
-const FORBIDDEN_COMMAND_ACTOR = "forbidden command actor";
-
 /** The authorization found no grant for the command's actor. */
-export function isForbiddenCommandActorFailure(error: unknown): boolean {
-	return (
-		error instanceof Error &&
-		error.message === `Approval workflow runtime: ${FORBIDDEN_COMMAND_ACTOR}`
-	);
+export class ApprovalCommandActorForbiddenError extends Error {
+	constructor() {
+		super("Approval workflow runtime: forbidden command actor");
+		this.name = "ApprovalCommandActorForbiddenError";
+	}
+}
+
+function forbiddenCommandActor(): never {
+	throw new ApprovalCommandActorForbiddenError();
 }
 
 function rows(result: unknown): unknown[] {
@@ -211,6 +214,12 @@ export function createApprovalWorkflowAuthorization(input: {
 	 * no deputy decision is granted.
 	 */
 	deputyAuthority?: ApprovalDeputyAuthority;
+	/**
+	 * The one decision right a decision claimed (Approvals ADR 0003). When set,
+	 * an approve or reject is granted only under that right, never under
+	 * another the actor also holds; without it every grant is tried in order.
+	 */
+	claimedRight?: DecisionRight;
 }): ApprovalWorkflowAuthorization {
 	return {
 		async authorize(request) {
@@ -276,7 +285,8 @@ export function createApprovalWorkflowAuthorization(input: {
 					action: command.type,
 				});
 			}
-			if (
+			const actorEmployeeId = request.actor.employeeId;
+			const holdsActiveAssignment = () =>
 				isDecision &&
 				workflow.stages.some(
 					(stage) =>
@@ -286,43 +296,58 @@ export function createApprovalWorkflowAuthorization(input: {
 							(assignment) =>
 								assignment.id === command.assignmentId &&
 								assignment.status === "pending" &&
-								assignment.approverEmployeeId === request.actor.employeeId,
+								assignment.approverEmployeeId === actorEmployeeId,
 						),
-				)
-			) {
-				return "active_assignment";
-			}
-			if (
-				command.type === "cancel" &&
-				workflow.requesterEmployeeId === request.actor.employeeId
-			) {
-				return "requester";
-			}
-			if (
-				await input.canManageApproval({
+				);
+			const managesApproval = () =>
+				input.canManageApproval({
 					dbService: request.dbService,
 					organizationId: request.organizationId,
-					actorEmployeeId: request.actor.employeeId,
+					actorEmployeeId,
 					workflow,
 					command,
-				})
-			) {
-				return "manage_approval";
-			}
-			// Own rights won above; only now may a covering deputy decide (#1016).
-			const deputyGrant =
+				});
+			const coveringDeputyGrant = () =>
 				isDecision && input.deputyAuthority
-					? await authorizeCoveringDeputy({
+					? authorizeCoveringDeputy({
 							deputyAuthority: input.deputyAuthority,
 							dbService: request.dbService,
 							organizationId: request.organizationId,
 							workflow,
 							command,
-							actorEmployeeId: request.actor.employeeId,
+							actorEmployeeId,
 						})
-					: null;
+					: Promise.resolve(null);
+			if (isDecision && input.claimedRight) {
+				// One claimed right, verified alone and never exchanged (Approvals ADR 0003).
+				switch (input.claimedRight.as) {
+					case "approver":
+						if (holdsActiveAssignment()) return "active_assignment";
+						break;
+					case "eligible_manager":
+					case "approval_manager":
+						if (await managesApproval()) return "manage_approval";
+						break;
+					case "covering_deputy": {
+						const grant = await coveringDeputyGrant();
+						if (grant) return grant;
+						break;
+					}
+				}
+				return forbiddenCommandActor();
+			}
+			if (holdsActiveAssignment()) return "active_assignment";
+			if (
+				command.type === "cancel" &&
+				workflow.requesterEmployeeId === actorEmployeeId
+			) {
+				return "requester";
+			}
+			if (await managesApproval()) return "manage_approval";
+			// Own rights won above; only now may a covering deputy decide (#1016).
+			const deputyGrant = await coveringDeputyGrant();
 			if (deputyGrant) return deputyGrant;
-			return runtimeFailure(FORBIDDEN_COMMAND_ACTOR);
+			return forbiddenCommandActor();
 		},
 	};
 }
@@ -595,6 +620,8 @@ export function createApprovalWorkflowRuntime(_input: {
 	clock?: Clock;
 	/** Defaults to covering read on the decision's transaction (#1016). */
 	deputyAuthority?: ApprovalDeputyAuthority;
+	/** The one decision right a decision claimed (Approvals ADR 0003). */
+	claimedRight?: DecisionRight;
 }): {
 	repository: ApprovalWorkflowRepository;
 	transitionEngine: ApprovalTransitionEngine;
@@ -614,6 +641,7 @@ export function createApprovalWorkflowRuntime(_input: {
 			canManageApproval: _input.canManageApproval,
 			offboardingAuthority: createOffboardingReassignmentAuthority({ clock }),
 			deputyAuthority: _input.deputyAuthority ?? createCoveringDeputyAuthority(clock),
+			claimedRight: _input.claimedRight,
 		}),
 		sourceLoader: createRegistryApprovalSourceLoader(_input.adapterRegistry),
 		resultBuilder: createApprovalTransitionResultBuilder(),
@@ -635,6 +663,8 @@ export function createProductionApprovalWorkflowRuntime(input: {
 	clock?: Clock;
 	/** Defaults to covering read on the decision's transaction (#1016). */
 	deputyAuthority?: ApprovalDeputyAuthority;
+	/** The one decision right a decision claimed (Approvals ADR 0003). */
+	claimedRight?: DecisionRight;
 }): {
 	repository: ApprovalWorkflowRepository;
 	transitionEngine: ApprovalTransitionEngine;
@@ -696,5 +726,6 @@ export function createProductionApprovalWorkflowRuntime(input: {
 		canManageApproval: input.canManageApproval,
 		clock: input.clock,
 		deputyAuthority: input.deputyAuthority,
+		claimedRight: input.claimedRight,
 	});
 }

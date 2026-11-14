@@ -1,6 +1,7 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
+import { Exit } from "effect";
 import { db } from "@/db";
 import { timeEntry, workPeriod } from "@/db/schema";
 import {
@@ -8,8 +9,9 @@ import {
 	type TimeApprovalDecisionRefusalReason,
 } from "@/lib/approvals/server/time-approval-decision";
 import { isTimeApprovalAboutWorkPeriod } from "@/lib/approvals/server/time-approval-work-period";
-import type { ApprovalDatabase } from "@/lib/approvals/server/types";
-import type { ServerActionResult } from "@/lib/effect/result";
+
+import { AuthorizationError, ConflictError } from "@/lib/effect/errors";
+import { type ServerActionResult, toServerActionResult } from "@/lib/effect/result";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
 import { updateWorkPeriodProject as updateWorkPeriodProjectAction } from "../actions";
 import { logger } from "./shared";
@@ -30,10 +32,9 @@ export async function approveWorkPeriod(input: {
 		return { success: false, error: "Employee profile not found" };
 	}
 	try {
-		const database = db as unknown as ApprovalDatabase;
 		// The table shows one work period; an approval about another is refused here,
 		// because the decision itself finds the work period from the approval.
-		const aboutThisWorkPeriod = await isTimeApprovalAboutWorkPeriod(database, {
+		const aboutThisWorkPeriod = await isTimeApprovalAboutWorkPeriod(db, {
 			organizationId: currentEmployee.organizationId,
 			approvalId: approvalRequestId,
 			workPeriodId,
@@ -74,17 +75,28 @@ const APPROVE_WORK_PERIOD_CONFLICTS: Partial<Record<TimeApprovalDecisionRefusalR
 		"The month of this entry is closed. It must be reopened before its work can change.",
 };
 
-// A conflict reaches the table as its conflict result; any other refusal is redacted.
+// A missing right and a conflict reach the table as their error results; any
+// other refusal is redacted.
 function approveWorkPeriodRefusal(
 	reason: TimeApprovalDecisionRefusalReason,
 	workPeriodId: string,
 ): ServerActionResult<{ workPeriodId: string }> {
 	if (reason === "right_not_held") {
-		return { success: false, error: "Only admins and owners can approve time entries" };
+		return toServerActionResult(
+			Exit.fail(
+				new AuthorizationError({
+					message: "You need the right to manage approvals to approve time entries",
+					resource: "Approval",
+					action: "approve",
+				}),
+			),
+		);
 	}
 	const conflict = APPROVE_WORK_PERIOD_CONFLICTS[reason];
 	if (conflict) {
-		return { success: false, error: conflict, code: "ConflictError" };
+		return toServerActionResult(
+			Exit.fail(new ConflictError({ message: conflict, conflictType: "approval_decision" })),
+		);
 	}
 	logger.error({ reason, workPeriodId }, "Approve work period refused");
 	return APPROVE_WORK_PERIOD_FAILED;

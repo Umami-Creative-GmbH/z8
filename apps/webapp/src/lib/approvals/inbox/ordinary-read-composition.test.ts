@@ -24,7 +24,7 @@ vi.mock("@/lib/approvals/presentation/time-review", async (importOriginal) => ({
 }));
 
 // Time approvals are decided by the time approval decision (#1676); this suite reads.
-vi.mock("@/lib/approvals/inbox/time-approval-decision", () => ({
+vi.mock("@/lib/approvals/inbox/time-approval-inbox-decision", () => ({
 	decideInboxTimeApproval: vi.fn(async ({ request }: { request: { id: string } }) => ({
 		status: "decided",
 		success: { id: request.id, type: "time_entry", status: "approved" },

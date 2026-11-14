@@ -992,7 +992,7 @@ export async function recordLegacyWorkPeriodDecisionEvidence(
 // Caller-facing holds
 // ---------------------------------------------------------------------------
 
-const WORK_PERIOD_EVIDENCE_MESSAGES = {
+export const WORK_PERIOD_EVIDENCE_MESSAGES = {
 	evidence_required:
 		"The times submitted for this entry were not captured. Review is required before a decision can be recorded.",
 	evidence_incomplete:

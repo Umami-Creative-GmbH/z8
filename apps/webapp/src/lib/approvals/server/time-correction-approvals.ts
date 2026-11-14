@@ -200,7 +200,7 @@ import {
 	timeApprovalDecisionDbService,
 	timeApprovalDecisionRuntime,
 	timeApprovalReceiptOf,
-} from "./time-approval-decision-support";
+} from "./time-approval-decision/support";
 import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
 import { isBoundTimeDecisionSignal } from "./work-period-approvals";
 
@@ -5228,7 +5228,7 @@ async function executeTimeCorrectionDecisionInTransaction(
 		approvalRequestId: input.approvalRequestId,
 		action: input.action,
 		reason: input.reason,
-		options: { decisionRight: input.decisionRight },
+		options: { decisionRight: input.decisionRight, clock: input.clock },
 	});
 	try {
 		// A work transaction (#301, #477) routed from the approval target: the

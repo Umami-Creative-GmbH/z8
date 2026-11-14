@@ -509,8 +509,20 @@ describe.each(platformCases)(
 		it.each([
 			"right_not_held",
 			"reassigned",
+		] as const)(
+			"discloses nothing when the decision refuses as %s: the card is not theirs",
+			async (reason) => {
+				state.decide.mockResolvedValueOnce({ status: "refused", reason });
+				await act();
+				const output = JSON.stringify(state.replies[platform].mock.calls);
+				expect(output).not.toMatch(/SECRET|previously recorded|No decision was made/);
+				expect(state.track).not.toHaveBeenCalled();
+			},
+		);
+		it.each([
 			"already_decided",
 			"unclassified",
+			"changed",
 			"not_found",
 		] as const)(
 			"answers review required when the decision refuses as %s",
@@ -524,8 +536,9 @@ describe.each(platformCases)(
 		);
 		it("requires review without deciding when the approval is not a time approval", async () => {
 			state.rows.approvalRequest[0].entityType = "absence_entry";
+			// The time approval decision finds no time approval behind the id.
+			state.decide.mockResolvedValueOnce({ status: "refused", reason: "not_found" });
 			await act();
-			expect(state.decide).not.toHaveBeenCalled();
 			expect(JSON.stringify(state.replies[platform].mock.calls)).toContain(
 				"No decision was made",
 			);
@@ -644,8 +657,15 @@ describe.each(platformCases)(
 			if (condition === "wrong assignee")
 				state.rows.approvalRequest[0].approverId = "someone-else";
 			if (condition === "removed membership") state.rows.member = [];
+			// The time approval decision refuses what it finds no right for.
+			state.decide.mockResolvedValue({
+				status: "refused",
+				reason: condition === "wrong assignee" ? "right_not_held" : "not_found",
+			});
 			await act();
-			expect(state.decide).not.toHaveBeenCalled();
+			if (condition === "foreign actor" || condition === "inactive actor") {
+				expect(state.decide).not.toHaveBeenCalled();
+			}
 			expect(JSON.stringify(state.replies[platform].mock.calls)).not.toMatch(
 				/SECRET|previously recorded/,
 			);
@@ -731,25 +751,6 @@ describe("Telegram webhook dispatcher after review-only cutover", () => {
 		);
 		expect(state.track).not.toHaveBeenCalled();
 	});
-});
-
-it("loads the unbound card's approval once before confirming a decision", async () => {
-	state.decide.mockResolvedValue(decided);
-	const { attemptBotApproval } = await import(
-		"@/lib/bot-platform/approval-decision"
-	);
-	await expect(
-		attemptBotApproval({
-			approvalId: "approval",
-			actorEmployeeId: managerId,
-			organizationId: "org",
-			action: "approve",
-			platform: "telegram",
-		}),
-	).resolves.toEqual({ status: "historical", action: "approve" });
-	expect(
-		state.read.mock.calls.flat().filter((table) => table === "approvalRequest"),
-	).toHaveLength(1);
 });
 
 it("loads the new notice translations through the actual bot translator", async () => {

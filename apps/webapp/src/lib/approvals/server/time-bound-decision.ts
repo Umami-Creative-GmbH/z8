@@ -22,7 +22,7 @@ import {
 	type CardDecisionRight,
 	decideTimeApproval,
 	type TimeApprovalDecisionReceipt,
-	type TimeApprovalDecisionRefusalReason,
+	type TimeApprovalDecisionRefusal,
 } from "./time-approval-decision";
 import type { ApprovalAction, ApprovalDatabase, CurrentApprover } from "./types";
 
@@ -202,7 +202,7 @@ export async function decideBoundTimeInvocation(
 	return canonicalOutcome(
 		result.status === "decided"
 			? decidedCard(result.replayed, result.receipt)
-			: cardRefusal(result.reason),
+			: cardRefusal(result),
 	);
 }
 
@@ -251,7 +251,7 @@ export async function decideBoundLegacyTimeInvocation(
 	return legacyOutcome(
 		result.status === "decided"
 			? decidedCard(result.replayed, result.receipt)
-			: cardRefusal(result.reason),
+			: cardRefusal(result),
 	);
 }
 
@@ -280,8 +280,8 @@ function legacyOutcome(result: ClassifiedBoundTimeResult): BoundLegacyTimeInvoca
 }
 
 /** What a card shows for a refused press: nothing was decided. */
-function cardRefusal(reason: TimeApprovalDecisionRefusalReason): BoundTimeRefusal {
-	switch (reason) {
+function cardRefusal(refusal: TimeApprovalDecisionRefusal): BoundTimeRefusal {
+	switch (refusal.reason) {
 		case "binding_mismatch":
 			return { status: "review_required", reason: "binding" };
 		case "not_admitted":
@@ -293,13 +293,17 @@ function cardRefusal(reason: TimeApprovalDecisionRefusalReason): BoundTimeRefusa
 			return { status: "review_required", reason: "reassigned" };
 		case "evidence_required":
 			return { status: "review_required", reason: "evidence" };
-		// Decided elsewhere, removed, changed, no longer the recipient's, or
-		// otherwise no longer the reviewed request: a stale card.
+		case "changed":
+			// The submitted evidence found the work changed since it was submitted.
+			return refusal.detail?.kind === "evidence" && refusal.detail.code === "material_change"
+				? { status: "review_required", reason: "material_change" }
+				: { status: "review_required", reason: "stale" };
+		// Decided elsewhere, removed, no longer the recipient's, or otherwise no
+		// longer the reviewed request: a stale card.
 		case "not_found":
 		case "already_decided":
 		case "right_not_held":
 		case "own_request":
-		case "changed":
 		case "month_closed":
 		case "unclassified":
 		case "guard_failed":
