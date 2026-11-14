@@ -57,6 +57,26 @@ vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
 }));
 
 describe("SiteHeader", () => {
+	it("hands the suspended recovery title to the page without opting descendants into heading ownership", () => {
+		pathname = "/de/billing/suspended";
+		const page = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Organization suspended" />
+			</>,
+		);
+		expect(
+			screen
+				.getAllByRole("heading", { level: 1 })
+				.map((heading) => heading.textContent),
+		).toEqual(["Organization suspended"]);
+		page.unmount();
+		pathname = "/en/billing/suspended/unconverted";
+		render(<SiteHeader />);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Billing & Subscription" }),
+		).toBeTruthy();
+	});
 	it("hands the main title to a converted report page while retaining Calendar's shell title", () => {
 		pathname = "/de/reports";
 		const page = render(
