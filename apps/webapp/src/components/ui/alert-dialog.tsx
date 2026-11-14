@@ -1,8 +1,13 @@
 "use client";
 
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
-import type * as React from "react";
-import { getAsChildNativeButton, getAsChildRender } from "@/components/ui/base-ui-compat";
+import * as React from "react";
+import {
+	cancelDismissIfPrevented,
+	type DismissEventHandlers,
+	getAsChildNativeButton,
+	getAsChildRender,
+} from "@/components/ui/base-ui-compat";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 
@@ -11,14 +16,31 @@ type AlertDialogProps = Omit<AlertDialogPrimitive.Root.Props, "children"> & {
 	"data-slot"?: string;
 };
 
+const AlertDialogDismissContext =
+	React.createContext<React.RefObject<DismissEventHandlers> | null>(null);
+
 type AlertDialogContentProps = AlertDialogPrimitive.Popup.Props & {
 	onEscapeKeyDown?: (event: KeyboardEvent) => void;
 	onInteractOutside?: (event: Event) => void;
 	onPointerDownOutside?: (event: PointerEvent) => void;
 };
 
-function AlertDialog({ ...props }: AlertDialogProps) {
-	return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+function AlertDialog({ onOpenChange, ...props }: AlertDialogProps) {
+	const dismissHandlersRef = React.useRef<DismissEventHandlers>({});
+	return (
+		<AlertDialogDismissContext.Provider value={dismissHandlersRef}>
+			<AlertDialogPrimitive.Root
+				data-slot="alert-dialog"
+				onOpenChange={(open, details) => {
+					if (
+						!cancelDismissIfPrevented(open, details, dismissHandlersRef.current)
+					)
+						onOpenChange?.(open, details);
+				}}
+				{...props}
+			/>
+		</AlertDialogDismissContext.Provider>
+	);
 }
 
 function AlertDialogTrigger({
@@ -41,10 +63,15 @@ function AlertDialogTrigger({
 }
 
 function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
-	return <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />;
+	return (
+		<AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+	);
 }
 
-function AlertDialogOverlay({ className, ...props }: AlertDialogPrimitive.Backdrop.Props) {
+function AlertDialogOverlay({
+	className,
+	...props
+}: AlertDialogPrimitive.Backdrop.Props) {
 	return (
 		<AlertDialogPrimitive.Backdrop
 			data-slot="alert-dialog-overlay"
@@ -59,11 +86,30 @@ function AlertDialogOverlay({ className, ...props }: AlertDialogPrimitive.Backdr
 
 function AlertDialogContent({
 	className,
-	onEscapeKeyDown: _onEscapeKeyDown,
-	onInteractOutside: _onInteractOutside,
-	onPointerDownOutside: _onPointerDownOutside,
+	onEscapeKeyDown,
+	onInteractOutside,
+	onPointerDownOutside,
 	...props
 }: AlertDialogContentProps) {
+	const dismissHandlersRef = React.use(AlertDialogDismissContext);
+	React.useEffect(() => {
+		if (!dismissHandlersRef) return;
+		const handlers = {
+			onEscapeKeyDown,
+			onInteractOutside,
+			onPointerDownOutside,
+		};
+		dismissHandlersRef.current = handlers;
+		return () => {
+			if (dismissHandlersRef.current === handlers)
+				dismissHandlersRef.current = {};
+		};
+	}, [
+		dismissHandlersRef,
+		onEscapeKeyDown,
+		onInteractOutside,
+		onPointerDownOutside,
+	]);
 	return (
 		<AlertDialogPortal>
 			<AlertDialogOverlay />
@@ -79,7 +125,10 @@ function AlertDialogContent({
 	);
 }
 
-function AlertDialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+function AlertDialogHeader({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="alert-dialog-header"
@@ -89,17 +138,26 @@ function AlertDialogHeader({ className, ...props }: React.ComponentProps<"div">)
 	);
 }
 
-function AlertDialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+function AlertDialogFooter({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="alert-dialog-footer"
-			className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+			className={cn(
+				"flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+				className,
+			)}
 			{...props}
 		/>
 	);
 }
 
-function AlertDialogTitle({ className, ...props }: AlertDialogPrimitive.Title.Props) {
+function AlertDialogTitle({
+	className,
+	...props
+}: AlertDialogPrimitive.Title.Props) {
 	return (
 		<AlertDialogPrimitive.Title
 			data-slot="alert-dialog-title"
