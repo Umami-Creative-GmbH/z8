@@ -31,8 +31,10 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "382b8f5be837dad724d3a54274d3050b0104881f",
+                        "evidence":  "docs/design/rollout-1692/1694.md",
+                        "integrationVerification":  "25 unique suites / 156 tests passed, exact tree and parent/base/F1/invitation ancestry verified; evidence JSON and diff --check passed. Real local/server record, selection/bulk/export/recovery/theme/role handoff demonstrated. Maintainability warning and broader final-review limits retained. H1 still awaits F3."
                     },
                     {
                         "id":  "F3",
@@ -92,7 +94,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
