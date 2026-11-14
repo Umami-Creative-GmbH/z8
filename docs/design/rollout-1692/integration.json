@@ -76,7 +76,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -188,8 +188,10 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+                        "evidence":  "docs/design/rollout-1692/1711.md",
+                        "integrationVerification":  "10 suites / 137 ticket tests and 9 suites / 43 shared compatibility tests passed; evidence, expected tree, 10 ancestry checks, prior paths, committed LF/Biome and whitespace verified. Local billing roles/states/runtime inherited from implementer. External provider completion unverified: automatic approval rejected portal POST as possible external session; catalog/build/device limits retained."
                     },
                     {
                         "id":  "R014",
