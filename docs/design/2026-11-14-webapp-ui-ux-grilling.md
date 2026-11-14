@@ -58,3 +58,7 @@ Review this concrete result for shared understanding, testing seams, ticket gran
 ## Final review outcome
 
 The user approved the completed spec, its test boundaries and the numbered 160-issue breakdown. Proceed with versioned spec publication, native grouped issues and verified blocking edges. This approval completes grilling and breakdown review; it does not request route implementation, merge or deployment in this documentation/publication phase.
+
+## Publication accommodation
+
+GitHub rejected blocking fanout above 100 for F3. Add one administrative H1 handoff blocked by F2/F3 and route their 75 joint consumers through it. This preserves all original reachable prerequisites and parallel foundation work, without changing any approved page brief or design. Total subordinate issues become 161; three UI foundations and four family groups remain, with the single additional readiness checkpoint. The publication index records the verified native graph.

@@ -4,7 +4,7 @@ Status: approved on 14 November 2026, including test boundaries, complete-page s
 
 This is the execution index for the [single spec](2026-11-14-webapp-ui-ux-spec.md), tracked by [#1692](https://github.com/Umami-Creative-GmbH/z8/issues/1692). The spec owns design and acceptance; this index owns proposed ticket identity and blocking edges. Planning IDs remain stable when GitHub numbers are assigned.
 
-There are **160 proposed subordinate issues: 153 page tickets, three shared foundations and four tracking groups**. All 172 source page templates are covered; the 19 redirect-only aliases belong to destination-page tickets. The root has seven direct children; G1/G2/G3/G4 have 52/68/24/9. Group membership is a native parent relationship, never an implementation blocker.
+There are **161 subordinate issues: 153 page tickets, three shared foundations, one administrative handoff and four tracking groups**. All 172 source page templates are covered; the 19 redirect-only aliases belong to destination-page tickets. The root has eight direct children; G1/G2/G3/G4 have 52/68/24/9. Group membership is a native parent relationship, never an implementation blocker.
 
 The entries below are in blockers-first publication order. Foundation IDs name required changed outputs; brief references also apply as design contracts where an existing primitive already complies. In particular, standalone initialization R023 can use existing primitives immediately, while accepting the F1 language. Invitation acceptance R003 and email resend R171 use existing action controls and do not wait for new editable-form/overlay outputs. Redundant transitive blockers are omitted. No page waits on an arbitrary preceding page.
 
@@ -18,9 +18,15 @@ The global verification matrix applies by actual capabilities, including organiz
 
 ## Publication and review
 
-Review the concrete titles, complete-page sizes, test seams and blocking edges below. Once approved, publish the root spec's global contract with the versioned per-page annex as part of the same spec. Publish three foundation children and four tracking groups, then the page issues under their groups, each referencing #1692. Keep groups out of the agent-ready implementation frontier.
+Review the concrete titles, complete-page sizes, test seams and blocking edges below. Once approved, publish the root spec's global contract with the versioned per-page annex as part of the same spec. Publish three foundation children, the administrative H1 handoff and four tracking groups, then the page issues under their groups, each referencing #1692. Keep groups out of the agent-ready implementation frontier.
 
 Use the repository publisher with dry runs for each correctly parented batch, add cross-batch dependencies natively, and read back every parent and blocking edge. Persist the number/ID mapping in scratch and record publication progress so retries do not duplicate tickets. If the hierarchy/dependency API fails, retain an explicitly incomplete setup rather than claiming body references are native relationships. Recheck source coverage and ownership before publishing. Do not close or merge existing work as a side effect.
+
+## Dependency capacity accommodation
+
+GitHub rejected F3's 101st blocking relation during publication. H1, blocked by F2 and F3, represents their joint readiness for the 75 consumers that require both. This factors the graph without changing any existing page's reachable prerequisites or serializing F2/F3. H1 reuses the required demonstration evidence; it does not introduce another UI pattern or redesign. The four family groups remain tracking containers.
+
+The verified graph transformation reduces 232 planned direct edges to 159 native edges. Fanouts are F1=15, F2=24, F3=37 and H1=75, all within the observed GitHub limit. All original IDs/titles/deliverables stay intact; H1 is the single additional issue.
 
 ## Numbered proposed issues
 
@@ -31,15 +37,11 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
    - Blocked by: #1689.
    - Delivers: Make navigation, page context and global feedback follow the approved language across their actual consumers, while preserving every destination, preference, role boundary and recovery path. Demonstrate staged title ownership and both converted and unconverted consumers.
 
-
-
 2. **F2 — [UI/UX] Refresh records, filters and responsive table interactions**
 
    - Parent: #1692.
    - Blocked by: F1.
    - Delivers: Make record tasks readable and fully operable on desktop and phones through existing table/list and toolbar compositions. Demonstrate a local list and a server-paged list with real filtering, sorting, selection, pagination and existing export/bulk actions.
-
-
 
 3. **F3 — [UI/UX] Refresh forms, panels and consequential confirmations**
 
@@ -47,57 +49,53 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
    - Blocked by: F1.
    - Delivers: Make ordinary editing, confirmations and long tasks use the agreed small family with accessible labels, validation, focus and save/cancel feedback. Demonstrate ordinary editing and a consequential reason/evidence task, including pending dismissal and failure recovery.
 
+4. **H1 — [UI/UX handoff] Verify shared record and form foundations are ready**
 
+   - Parent: #1692.
+   - Blocked by: F2, F3.
+   - Delivers: Confirm F2 and F3 have completed their approved consumer demonstrations and provide a compatible record/form handoff before their joint consumers start. Reuse their evidence; this administrative readiness checkpoint creates no new UI pattern, domain owner or page scope.
 
-4. **G1 — [UI/UX rollout] Workplace, team and operations**
+5. **G1 — [UI/UX rollout] Workplace, team and operations**
 
    - Parent: #1692.
    - Blocked by: None.
    - Delivers: Track the 52 page issues in this family, their alias coverage where applicable and their shared handoffs against the same root spec. This issue is an organizational container; completion requires its children and applicable integration evidence.
 
-
-
-5. **G2 — [UI/UX rollout] Settings**
+6. **G2 — [UI/UX rollout] Settings**
 
    - Parent: #1692.
    - Blocked by: None.
    - Delivers: Track the 68 page issues in this family, their alias coverage where applicable and their shared handoffs against the same root spec. This issue is an organizational container; completion requires its children and applicable integration evidence.
 
-
-
-6. **G3 — [UI/UX rollout] Entry, onboarding and public experiences**
+7. **G3 — [UI/UX rollout] Entry, onboarding and public experiences**
 
    - Parent: #1692.
    - Blocked by: None.
    - Delivers: Track the 24 page issues in this family, their alias coverage where applicable and their shared handoffs against the same root spec. This issue is an organizational container; completion requires its children and applicable integration evidence.
 
-
-
-7. **G4 — [UI/UX rollout] Platform administration**
+8. **G4 — [UI/UX rollout] Platform administration**
 
    - Parent: #1692.
    - Blocked by: None.
    - Delivers: Track the 9 page issues in this family, their alias coverage where applicable and their shared handoffs against the same root spec. This issue is an organizational container; completion requires its children and applicable integration evidence.
 
-
-
-8. **R001 — [UI/UX] Verify dashboard conformance (/)**
+9. **R001 — [UI/UX] Verify dashboard conformance (/)**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Give the active organization's member a personal work overview, with team oversight only where authorized. Use the existing clock, leave request, attention links or Customize control appropriate to the visible module.
 
    - Brief: R001 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-9. **R002 — [UI/UX] Refresh /absences**
+10. **R002 — [UI/UX] Refresh /absences**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an employee review their own absences and vacation balance for the current organization-calendar year. Add absence through the existing request flow.
 
    - Brief: R002 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-10. **R003 — [UI/UX] Refresh /accept-invitation/[invitationId]**
+11. **R003 — [UI/UX] Refresh /accept-invitation/[invitationId]**
 
    - Parent: G3.
    - Blocked by: F1.
@@ -105,7 +103,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R003 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-11. **R004 — [UI/UX] Refresh /analytics**
+12. **R004 — [UI/UX] Refresh /analytics**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -113,7 +111,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R004 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-12. **R005 — [UI/UX] Refresh /analytics/overtime-burn-down**
+13. **R005 — [UI/UX] Refresh /analytics/overtime-burn-down**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -121,7 +119,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R005 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-13. **R006 — [UI/UX] Refresh /analytics/team-performance**
+14. **R006 — [UI/UX] Refresh /analytics/team-performance**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -129,7 +127,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R006 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-14. **R007 — [UI/UX] Refresh /analytics/vacation-trends**
+15. **R007 — [UI/UX] Refresh /analytics/vacation-trends**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -137,7 +135,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R007 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-15. **R008 — [UI/UX] Refresh /analytics/work-hours**
+16. **R008 — [UI/UX] Refresh /analytics/work-hours**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -145,15 +143,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R008 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-16. **R009 — [UI/UX] Refresh /approvals**
+17. **R009 — [UI/UX] Refresh /approvals**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let managers and workforce admins decide legacy absence and time-correction requests in their authorized organization scope. Approve or reject an eligible request in its existing queue.
 
    - Brief: R009 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-17. **R010 — [UI/UX] Refresh /approvals/deputy-decisions/[absenceId]**
+18. **R010 — [UI/UX] Refresh /approvals/deputy-decisions/[absenceId]**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -161,15 +159,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R010 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-18. **R011 — [UI/UX] Refresh /approvals/inbox**
+19. **R011 — [UI/UX] Refresh /approvals/inbox**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let authorized approvers decide organization requests under each item's current decision right, including explicit covering sections. Open a request and decide it; retain eligible bulk actions, fast lanes and approval sprint.
 
    - Brief: R011 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-19. **R012 — [UI/UX] Refresh /approvals/review/[organizationId]/[kind]/[id]**
+20. **R012 — [UI/UX] Refresh /approvals/review/[organizationId]/[kind]/[id]**
 
    - Parent: G1.
    - Blocked by: R011.
@@ -177,7 +175,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R012 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-20. **R013 — [UI/UX] Refresh /billing/suspended**
+21. **R013 — [UI/UX] Refresh /billing/suspended**
 
    - Parent: G1.
    - Blocked by: F1.
@@ -185,15 +183,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R013 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-21. **R014 — [UI/UX] Refresh /calendar**
+22. **R014 — [UI/UX] Refresh /calendar**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an employee inspect authorized work, absences and holidays in the selected employee's calendar context. Browse the period and open an eligible record or existing calendar action.
 
    - Brief: R014 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-22. **R015 — [UI/UX] Refresh /calendar/[employeeId]**
+23. **R015 — [UI/UX] Refresh /calendar/[employeeId]**
 
    - Parent: G1.
    - Blocked by: R014.
@@ -201,7 +199,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R015 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-23. **R016 — [UI/UX] Refresh /compliance**
+24. **R016 — [UI/UX] Refresh /compliance**
 
    - Parent: G1.
    - Blocked by: F1.
@@ -209,31 +207,31 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R016 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-24. **R017 — [UI/UX] Refresh /driving-licence**
+25. **R017 — [UI/UX] Refresh /driving-licence**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Serve the active organization's driver, verifier and operational reader through their capability-granted role tabs. Report an impediment, open an employee check, or view planning status as currently permitted.
 
    - Brief: R017 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-25. **R018 — [UI/UX] Refresh /driving-licence/checks/[employee]**
+26. **R018 — [UI/UX] Refresh /driving-licence/checks/[employee]**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let a scoped driving-licence reader/verifier inspect the selected employee's authorization and original-check evidence. Record the original check, supplement evidence or reinstate authorization only when existing capabilities allow.
 
    - Brief: R018 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-26. **R019 — [UI/UX] Refresh /equipment**
+27. **R019 — [UI/UX] Refresh /equipment**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let scoped equipment staff review organization assignments, outstanding returns and items ready to issue. Issue equipment when setup and capabilities permit; otherwise follow existing setup guidance.
 
    - Brief: R019 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-27. **R020 — [UI/UX] Refresh /equipment/assignments/[assignmentId]**
+28. **R020 — [UI/UX] Refresh /equipment/assignments/[assignmentId]**
 
    - Parent: G1.
    - Blocked by: F3.
@@ -241,7 +239,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R020 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-28. **R021 — [UI/UX] Refresh /equipment/employees/[employeeId]**
+29. **R021 — [UI/UX] Refresh /equipment/employees/[employeeId]**
 
    - Parent: G1.
    - Blocked by: R019.
@@ -249,7 +247,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R021 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-29. **R022 — [UI/UX] Refresh /forgot-password**
+30. **R022 — [UI/UX] Refresh /forgot-password**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -257,7 +255,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R022 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-30. **R023 — [UI/UX] Refresh /init**
+31. **R023 — [UI/UX] Refresh /init**
 
    - Parent: G3.
    - Blocked by: None.
@@ -265,7 +263,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R023 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-31. **R024 — [UI/UX] Refresh /join/[code]**
+32. **R024 — [UI/UX] Refresh /join/[code]**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -273,7 +271,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R024 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-32. **R025 — [UI/UX] Refresh /kiosk**
+33. **R025 — [UI/UX] Refresh /kiosk**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -281,7 +279,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R025 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-33. **R026 — [UI/UX] Refresh /licenses**
+34. **R026 — [UI/UX] Refresh /licenses**
 
    - Parent: G3.
    - Blocked by: F2.
@@ -289,7 +287,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R026 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-34. **R027 — [UI/UX] Refresh /mfa**
+35. **R027 — [UI/UX] Refresh /mfa**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -297,15 +295,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R027 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-35. **R028 — [UI/UX] Refresh /my-documents**
+36. **R028 — [UI/UX] Refresh /my-documents**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an employee access their own organization-shared personnel documents and respond to document requests. Upload a permitted document or submit documents for a request.
 
    - Brief: R028 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-36. **R029 — [UI/UX] Refresh /my-equipment**
+37. **R029 — [UI/UX] Refresh /my-equipment**
 
    - Parent: G1.
    - Blocked by: F1.
@@ -313,15 +311,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R029 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-37. **R030 — [UI/UX] Refresh /my-requests**
+38. **R030 — [UI/UX] Refresh /my-requests**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an employee follow their own absence, time-correction and legacy expense requests in the active organization. Fix, view or cancel a request only where its existing action permits.
 
    - Brief: R030 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-38. **R031 — [UI/UX] Refresh /notifications**
+39. **R031 — [UI/UX] Refresh /notifications**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -329,7 +327,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R031 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-39. **R032 — [UI/UX] Refresh /onboarding/complete**
+40. **R032 — [UI/UX] Refresh /onboarding/complete**
 
    - Parent: G3.
    - Blocked by: F1.
@@ -337,7 +335,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R032 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-40. **R033 — [UI/UX] Refresh /onboarding/notifications**
+41. **R033 — [UI/UX] Refresh /onboarding/notifications**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -345,7 +343,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R033 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-41. **R034 — [UI/UX] Refresh /onboarding/organization**
+42. **R034 — [UI/UX] Refresh /onboarding/organization**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -353,7 +351,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R034 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-42. **R035 — [UI/UX] Refresh /onboarding/profile**
+43. **R035 — [UI/UX] Refresh /onboarding/profile**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -361,7 +359,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R035 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-43. **R036 — [UI/UX] Refresh /onboarding/vacation-policy**
+44. **R036 — [UI/UX] Refresh /onboarding/vacation-policy**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -369,7 +367,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R036 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-44. **R037 — [UI/UX] Refresh /onboarding/welcome**
+45. **R037 — [UI/UX] Refresh /onboarding/welcome**
 
    - Parent: G3.
    - Blocked by: F1.
@@ -377,7 +375,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R037 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-45. **R038 — [UI/UX] Refresh /onboarding/wellness**
+46. **R038 — [UI/UX] Refresh /onboarding/wellness**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -385,7 +383,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R038 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-46. **R039 — [UI/UX] Refresh /onboarding/work-schedule**
+47. **R039 — [UI/UX] Refresh /onboarding/work-schedule**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -393,7 +391,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R039 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-47. **R040 — [UI/UX] Refresh /onboarding/work-templates**
+48. **R040 — [UI/UX] Refresh /onboarding/work-templates**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -401,39 +399,39 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R040 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-48. **R041 — [UI/UX] Refresh /organization**
+49. **R041 — [UI/UX] Refresh /organization**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let organization readers explore the current roster's teams, direct managers and reporting relationships. Search or select a person to inspect their relationships; admins retain settings links.
 
    - Brief: R041 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-49. **R042 — [UI/UX] Refresh /payroll**
+50. **R042 — [UI/UX] Refresh /payroll**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let authorized payroll actors prepare exports for their selected organization period, target and employee/team scope. Trigger the configured payroll export; retain the separate PDF download.
 
    - Brief: R042 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-50. **R043 — [UI/UX] Refresh /payroll/work-balances**
+51. **R043 — [UI/UX] Refresh /payroll/work-balances**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Give an active payroll-grant holder a directory of covered employees, including former employees, for work-balance operations. Open an employee's work balance or upload opening balances from CSV.
 
    - Brief: R043 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-51. **R044 — [UI/UX] Refresh /payroll/work-balances/[employeeId]**
+52. **R044 — [UI/UX] Refresh /payroll/work-balances/[employeeId]**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let a payroll-grant holder covering this employee inspect their work balance and adjustment ledger, also after employment ends. Set opening balance or record overtime payout through existing authorized controls.
 
    - Brief: R044 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-52. **R045 — [UI/UX] Refresh /personnel-files**
+53. **R045 — [UI/UX] Refresh /personnel-files**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -441,55 +439,55 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R045 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-53. **R046 — [UI/UX] Refresh /personnel-files/[employeeId]**
+54. **R046 — [UI/UX] Refresh /personnel-files/[employeeId]**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an officer manage only authorized categories of the selected employee's organization personnel file. Upload a document, with edit/download/delete and linking actions available per capability.
 
    - Brief: R046 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-54. **R047 — [UI/UX] Refresh /personnel-files/document-requests**
+55. **R047 — [UI/UX] Refresh /personnel-files/document-requests**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let authorized officers track certificate/other-document requests across employees and categories they manage. Create bulk document requests or act on an eligible existing request.
 
    - Brief: R047 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-55. **R048 — [UI/UX] Refresh /personnel-files/due-for-deletion**
+56. **R048 — [UI/UX] Refresh /personnel-files/due-for-deletion**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let authorized officers review former employees' retained documents and confirm irreversible purge within their category scope. Select documents and confirm purge after reviewing its consequence.
 
    - Brief: R048 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-56. **R049 — [UI/UX] Refresh /personnel-files/payslip-batches**
+57. **R049 — [UI/UX] Refresh /personnel-files/payslip-batches**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an authorized payslip officer start a batch for one pay period and inspect their existing batches. Choose month, year and visibility, then Start batch.
 
    - Brief: R049 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-57. **R050 — [UI/UX] Refresh /personnel-files/payslip-batches/[batchId]**
+58. **R050 — [UI/UX] Refresh /personnel-files/payslip-batches/[batchId]**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an authorized officer match and distribute one pay-period batch's payslip files to covered employees. Confirm employee matches and Save payslips; retry only failed files when offered.
 
    - Brief: R050 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-58. **R051 — [UI/UX] Refresh /personnel-files/sick-leave**
+59. **R051 — [UI/UX] Refresh /personnel-files/sick-leave**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let sick-note-category officers review covered employees' sick-leave absences and linked sick notes for a chosen range. Open or attach/link sick notes where current file permission permits.
 
    - Brief: R051 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-59. **R052 — [UI/UX] Refresh /platform-admin**
+60. **R052 — [UI/UX] Refresh /platform-admin**
 
    - Parent: G4.
    - Blocked by: F1.
@@ -497,7 +495,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R052 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-60. **R053 — [UI/UX] Refresh /platform-admin/analytics**
+61. **R053 — [UI/UX] Refresh /platform-admin/analytics**
 
    - Parent: G4.
    - Blocked by: F2.
@@ -505,7 +503,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R053 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-61. **R054 — [UI/UX] Refresh /platform-admin/billing**
+62. **R054 — [UI/UX] Refresh /platform-admin/billing**
 
    - Parent: G4.
    - Blocked by: F2.
@@ -513,7 +511,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R054 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-62. **R055 — [UI/UX] Refresh /platform-admin/diagnostics**
+63. **R055 — [UI/UX] Refresh /platform-admin/diagnostics**
 
    - Parent: G4.
    - Blocked by: F3.
@@ -521,15 +519,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R055 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-63. **R056 — [UI/UX] Refresh /platform-admin/organizations**
+64. **R056 — [UI/UX] Refresh /platform-admin/organizations**
 
    - Parent: G4.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Find and manage platform organizations under global administrator authority. Open the selected organization's appropriate suspension or deletion workflow.
 
    - Brief: R056 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-64. **R057 — [UI/UX] Refresh /platform-admin/settings**
+65. **R057 — [UI/UX] Refresh /platform-admin/settings**
 
    - Parent: G4.
    - Blocked by: F3.
@@ -537,7 +535,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R057 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-65. **R058 — [UI/UX] Refresh /platform-admin/system-email-templates**
+66. **R058 — [UI/UX] Refresh /platform-admin/system-email-templates**
 
    - Parent: G4.
    - Blocked by: F3.
@@ -545,23 +543,23 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R058 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-66. **R059 — [UI/UX] Refresh /platform-admin/users**
+67. **R059 — [UI/UX] Refresh /platform-admin/users**
 
    - Parent: G4.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Find platform accounts and manage bans or sessions with explicit platform-admin authority. Inspect the selected account's sessions or apply the required ban/unban action.
 
    - Brief: R059 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-67. **R060 — [UI/UX] Refresh /platform-admin/worker-queue**
+68. **R060 — [UI/UX] Refresh /platform-admin/worker-queue**
 
    - Parent: G4.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Diagnose background-job reliability and maintain supported schedules as a platform administrator. Inspect failures or edit an eligible schedule.
 
    - Brief: R060 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-68. **R061 — [UI/UX] Refresh /reports**
+69. **R061 — [UI/UX] Refresh /reports**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -569,15 +567,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R061 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-69. **R062 — [UI/UX] Refresh /reports/projects**
+70. **R062 — [UI/UX] Refresh /reports/projects**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let authorized project-report readers inspect organization project/customer results for the selected period and project status. Generate the report, then open project detail or use permitted export/share actions.
 
    - Brief: R062 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-70. **R063 — [UI/UX] Refresh /reports/vehicles**
+71. **R063 — [UI/UX] Refresh /reports/vehicles**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -585,7 +583,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R063 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-71. **R064 — [UI/UX] Refresh /reset-password**
+72. **R064 — [UI/UX] Refresh /reset-password**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -593,15 +591,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R064 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-72. **R065 — [UI/UX] Refresh /scheduling**
+73. **R065 — [UI/UX] Refresh /scheduling**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Give planners organization shift planning and employees their own published schedule, using organization-local shift dates. Planners create/assign/publish shifts; employees inspect shifts and use existing pickup/swap paths where offered.
 
    - Brief: R065 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-73. **R066 — [UI/UX] Refresh /settings**
+74. **R066 — [UI/UX] Refresh /settings**
 
    - Parent: G2.
    - Blocked by: F1.
@@ -609,23 +607,23 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R066 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-74. **R068 — [UI/UX] Refresh /settings/approval-policies**
+75. **R068 — [UI/UX] Refresh /settings/approval-policies**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure active-organization approval policies as org admin; escalation uses its existing Approval-management capability. Create/edit an approval policy; save triage or escalation settings in their own task.
 
    - Brief: R068 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-75. **R069 — [UI/UX] Refresh /settings/audit-export**
+76. **R069 — [UI/UX] Refresh /settings/audit-export**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Inspect audit activity and configure audit packages for the active organization as org admin. Generate an audit package; save configuration within its tab.
 
    - Brief: R069 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-76. **R071 — [UI/UX] Refresh /settings/avv**
+77. **R071 — [UI/UX] Refresh /settings/avv**
 
    - Parent: G2.
    - Blocked by: F1.
@@ -633,7 +631,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R071 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-77. **R072 — [UI/UX] Refresh /settings/billable-time**
+78. **R072 — [UI/UX] Refresh /settings/billable-time**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -641,39 +639,39 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R072 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-78. **R073 — [UI/UX] Refresh /settings/billable-time/accounting**
+79. **R073 — [UI/UX] Refresh /settings/billable-time/accounting**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Connect accounting and prepare customer contact links in the active organization as eligible Billable Time org admin. Save the accounting connection or edit customer accounting details.
 
    - Brief: R073 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-79. **R074 — [UI/UX] Refresh /settings/billable-time/cost-rates**
+80. **R074 — [UI/UX] Refresh /settings/billable-time/cost-rates**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Maintain effective-dated employee cost rates in the active organization as eligible Billable Time org admin. Set a cost rate or open an employee's rate history.
 
    - Brief: R074 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-80. **R075 — [UI/UX] Refresh /settings/billable-time/hand-off**
+81. **R075 — [UI/UX] Refresh /settings/billable-time/hand-off**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Prepare accounting invoice drafts for one customer/period within the active organization as eligible org admin. Preview hand-off, then confirm creation of the invoice draft.
 
    - Brief: R075 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-81. **R076 — [UI/UX] Refresh /settings/billable-time/rates**
+82. **R076 — [UI/UX] Refresh /settings/billable-time/rates**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Maintain active-organization billable rates as eligible Billable Time org admin. Add or edit an effective-dated billable rate.
 
    - Brief: R076 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-82. **R077 — [UI/UX] Refresh /settings/billing**
+83. **R077 — [UI/UX] Refresh /settings/billing**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -681,7 +679,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R077 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-83. **R078 — [UI/UX] Refresh /settings/calendar**
+84. **R078 — [UI/UX] Refresh /settings/calendar**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -689,7 +687,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R078 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-84. **R080 — [UI/UX] Refresh /settings/clocking**
+85. **R080 — [UI/UX] Refresh /settings/clocking**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -697,15 +695,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R080 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-85. **R082 — [UI/UX] Refresh /settings/closed-months**
+86. **R082 — [UI/UX] Refresh /settings/closed-months**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Close/reopen covered employee months in the active organization with existing administrative authorization. Close a selected month, or reopen it with the required reason.
 
    - Brief: R082 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-86. **R083 — [UI/UX] Refresh /settings/compliance**
+87. **R083 — [UI/UX] Refresh /settings/compliance**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -713,7 +711,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R083 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-87. **R084 — [UI/UX] Refresh /settings/compliance/works-council**
+88. **R084 — [UI/UX] Refresh /settings/compliance/works-council**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -721,23 +719,23 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R084 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-88. **R086 — [UI/UX] Refresh /settings/custom-fields**
+89. **R086 — [UI/UX] Refresh /settings/custom-fields**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Define employee, project and customer custom fields for the active organization as org admin. Add/edit a custom field; archive through its existing confirmation.
 
    - Brief: R086 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-89. **R087 — [UI/UX] Refresh /settings/customers**
+90. **R087 — [UI/UX] Refresh /settings/customers**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Manage customer contacts/configuration in the active organization through existing scoped-manager-or-higher access and Projects context. Add or edit a customer.
 
    - Brief: R087 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-90. **R088 — [UI/UX] Refresh /settings/demo**
+91. **R088 — [UI/UX] Refresh /settings/demo**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -745,23 +743,23 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R088 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-91. **R090 — [UI/UX] Refresh /settings/driving-licence**
+92. **R090 — [UI/UX] Refresh /settings/driving-licence**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure active-organization driving licence control as authorized org admin. Save policy settings or manage intended-driver/verifier assignments.
 
    - Brief: R090 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-92. **R092 — [UI/UX] Refresh /settings/employees**
+93. **R092 — [UI/UX] Refresh /settings/employees**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Administer employee/member/invitation records in the active organization within existing scoped-manager-or-higher coverage. Invite/manage an employee using the currently allowed action.
 
    - Brief: R092 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-93. **R093 — [UI/UX] Refresh /settings/employees/[employeeId]**
+94. **R093 — [UI/UX] Refresh /settings/employees/[employeeId]**
 
    - Parent: G2.
    - Blocked by: R021, R044, R046.
@@ -769,31 +767,31 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R093 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-94. **R096 — [UI/UX] Refresh /settings/enterprise/api-keys**
+95. **R096 — [UI/UX] Refresh /settings/enterprise/api-keys**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Manage organization-owned API keys as org admin; webhook mutations retain existing owner restrictions. Create an API key or configure a webhook in its tab.
 
    - Brief: R096 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-95. **R097 — [UI/UX] Refresh /settings/enterprise/api-keys/[keyId]**
+96. **R097 — [UI/UX] Refresh /settings/enterprise/api-keys/[keyId]**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Inspect/configure one API key belonging to the active organization as authorized org admin. Save key configuration or revoke the key through its existing confirmation.
 
    - Brief: R097 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-96. **R100 — [UI/UX] Refresh /settings/enterprise/domains**
+97. **R100 — [UI/UX] Refresh /settings/enterprise/domains**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure active-organization domains and branding as org admin. Add/verify a custom domain or save branding in its existing task.
 
    - Brief: R100 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-97. **R101 — [UI/UX] Refresh /settings/enterprise/email**
+98. **R101 — [UI/UX] Refresh /settings/enterprise/email**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -801,31 +799,31 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R101 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-98. **R102 — [UI/UX] Refresh /settings/enterprise/identity-setup**
+99. **R102 — [UI/UX] Refresh /settings/enterprise/identity-setup**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure organization identity as active-organization org admin through existing provider/provisioning policy boundaries. Complete identity setup or save the selected SSO, social-login or local-MFA task.
 
    - Brief: R102 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-99. **R104 — [UI/UX] Refresh /settings/equipment**
+100. **R104 — [UI/UX] Refresh /settings/equipment**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure active-organization equipment tracking and officer grants as org admin under existing feature availability. Add/edit an equipment type/item, or update an officer grant.
 
    - Brief: R104 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-100. **R105 — [UI/UX] Refresh /settings/export**
+101. **R105 — [UI/UX] Refresh /settings/export**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Request/inspect organization-wide data exports for the active organization as org admin. Request an organization data export.
 
    - Brief: R105 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-101. **R106 — [UI/UX] Refresh /settings/export-operations**
+102. **R106 — [UI/UX] Refresh /settings/export-operations**
 
    - Parent: G2.
    - Blocked by: F2.
@@ -833,7 +831,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R106 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-102. **R107 — [UI/UX] Refresh /settings/export/history/[organizationId]**
+103. **R107 — [UI/UX] Refresh /settings/export/history/[organizationId]**
 
    - Parent: G2.
    - Blocked by: R105.
@@ -841,15 +839,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R107 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-103. **R109 — [UI/UX] Refresh /settings/implementation-checklist**
+104. **R109 — [UI/UX] Refresh /settings/implementation-checklist**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Assess/rehearse go-live setup for the active organization as org admin. Run an existing go-live rehearsal or open the setup task needing attention.
 
    - Brief: R109 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-104. **R110 — [UI/UX] Refresh /settings/import**
+105. **R110 — [UI/UX] Refresh /settings/import**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -857,39 +855,39 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R110 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-105. **R111 — [UI/UX] Refresh /settings/import/[batchId]**
+106. **R111 — [UI/UX] Refresh /settings/import/[batchId]**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review one active-organization import batch as org admin, using its existing source-specific workflow. Resolve review issues and commit eligible rows when the batch permits it.
 
    - Brief: R111 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-106. **R112 — [UI/UX] Refresh /settings/kiosks**
+107. **R112 — [UI/UX] Refresh /settings/kiosks**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Administer shared devices enrolled to active-organization locations as org admin. Create a kiosk or issue its pairing code.
 
    - Brief: R112 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-107. **R113 — [UI/UX] Refresh /settings/locations**
+108. **R113 — [UI/UX] Refresh /settings/locations**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review active-organization locations/subareas as scoped manager or higher; org admins retain management controls. Add/edit a location when authorized, or open its detail.
 
    - Brief: R113 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-108. **R114 — [UI/UX] Refresh /settings/locations/[locationId]**
+109. **R114 — [UI/UX] Refresh /settings/locations/[locationId]**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review one active-organization location/subareas within existing manager scope; org admins retain editing. Edit location details or add/edit a subarea when authorized.
 
    - Brief: R114 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-109. **R115 — [UI/UX] Refresh /settings/my-data**
+110. **R115 — [UI/UX] Refresh /settings/my-data**
 
    - Parent: G2.
    - Blocked by: F2.
@@ -897,7 +895,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R115 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-110. **R116 — [UI/UX] Refresh /settings/notification-channels**
+111. **R116 — [UI/UX] Refresh /settings/notification-channels**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -905,7 +903,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R116 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-111. **R117 — [UI/UX] Refresh /settings/notifications**
+112. **R117 — [UI/UX] Refresh /settings/notifications**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -913,31 +911,31 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R117 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-112. **R118 — [UI/UX] Refresh /settings/organization**
+113. **R118 — [UI/UX] Refresh /settings/organization**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Administer active-organization identity/membership as org admin; owner-reserved changes retain their boundary. Save authorized organization configuration or use an existing membership action.
 
    - Brief: R118 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-113. **R120 — [UI/UX] Refresh /settings/payroll-access**
+114. **R120 — [UI/UX] Refresh /settings/payroll-access**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Administer payroll-officer grants in the active organization as org admin with existing payroll-access administration authorization. Add/update a payroll-access grant.
 
    - Brief: R120 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-114. **R121 — [UI/UX] Refresh /settings/payroll-export**
+115. **R121 — [UI/UX] Refresh /settings/payroll-export**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure payroll targets and prepare exports for the active organization as org admin. Generate/deliver the selected payroll export, or save its target configuration.
 
    - Brief: R121 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-115. **R122 — [UI/UX] Refresh /settings/payroll-readiness**
+116. **R122 — [UI/UX] Refresh /settings/payroll-readiness**
 
    - Parent: G2.
    - Blocked by: F2.
@@ -945,39 +943,39 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R122 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-116. **R123 — [UI/UX] Refresh /settings/permissions**
+117. **R123 — [UI/UX] Refresh /settings/permissions**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review employee permissions in the active organization as scoped manager or higher; management actions retain existing administrative boundaries. Inspect/change an employee's permitted role/scope using the existing authorized action.
 
    - Brief: R123 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-117. **R124 — [UI/UX] Refresh /settings/personnel-files**
+118. **R124 — [UI/UX] Refresh /settings/personnel-files**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure active-organization personnel files as org admin while the feature is available. Manage personnel-file officer grants or save reminders/retention in their task.
 
    - Brief: R124 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-118. **R125 — [UI/UX] Refresh /settings/position-capture**
+119. **R125 — [UI/UX] Refresh /settings/position-capture**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure active-organization position capture as org admin. Save capture settings or its existing assignments/notice task.
 
    - Brief: R125 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-119. **R126 — [UI/UX] Refresh /settings/position-stamps**
+120. **R126 — [UI/UX] Refresh /settings/position-stamps**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review one's own clock-event position stamps and consent within the active organization. Agree to the current position notice or withdraw consent using existing actions.
 
    - Brief: R126 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-120. **R127 — [UI/UX] Refresh /settings/profile**
+121. **R127 — [UI/UX] Refresh /settings/profile**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -985,15 +983,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R127 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-121. **R128 — [UI/UX] Refresh /settings/projects**
+122. **R128 — [UI/UX] Refresh /settings/projects**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Manage organization projects within existing scope; project managers below manager settings access retain the tasks-only view. Create/edit a project, or manage tasks where that is the actor's available task.
 
    - Brief: R128 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-122. **R129 — [UI/UX] Refresh /settings/report-share-links**
+123. **R129 — [UI/UX] Refresh /settings/report-share-links**
 
    - Parent: G2.
    - Blocked by: F2.
@@ -1001,47 +999,47 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R129 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-123. **R130 — [UI/UX] Refresh /settings/roles**
+124. **R130 — [UI/UX] Refresh /settings/roles**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Manage custom organization roles in the active organization as org admin. Create/edit a custom role.
 
    - Brief: R130 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-124. **R131 — [UI/UX] Refresh /settings/scheduled-exports**
+125. **R131 — [UI/UX] Refresh /settings/scheduled-exports**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Schedule payroll, data or audit exports for the active organization as org admin. Create/edit a scheduled export through its existing multistep setup.
 
    - Brief: R131 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-125. **R132 — [UI/UX] Refresh /settings/security**
+126. **R132 — [UI/UX] Refresh /settings/security**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Manage signed-in account security; organization-specific kiosk credentials and MFA requirements retain existing scope. Change password, enroll a factor/passkey or revoke a session using the selected existing task.
 
    - Brief: R132 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-126. **R133 — [UI/UX] Refresh /settings/shifts**
+127. **R133 — [UI/UX] Refresh /settings/shifts**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure shift templates/coverage within existing scheduling-settings team/subarea capabilities. Create/edit a shift template or coverage rule when authorized.
 
    - Brief: R133 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-127. **R134 — [UI/UX] Refresh /settings/skills**
+128. **R134 — [UI/UX] Refresh /settings/skills**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review the active organization's skill catalog as scoped manager or higher; org admins retain catalog/reminder management. Add/edit a catalog skill when authorized or inspect qualifications.
 
    - Brief: R134 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-128. **R136 — [UI/UX] Refresh /settings/statistics**
+129. **R136 — [UI/UX] Refresh /settings/statistics**
 
    - Parent: G2.
    - Blocked by: F1.
@@ -1049,47 +1047,47 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R136 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-129. **R137 — [UI/UX] Refresh /settings/surcharges**
+130. **R137 — [UI/UX] Refresh /settings/surcharges**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review surcharge models/assignments for the active organization as scoped manager or higher; org admins retain management. Create/edit a surcharge model or permitted assignment.
 
    - Brief: R137 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-130. **R138 — [UI/UX] Refresh /settings/teams**
+131. **R138 — [UI/UX] Refresh /settings/teams**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review/administer active-organization teams within existing scoped-manager-or-higher team-management coverage. Create a team when authorized or open/manage an existing team.
 
    - Brief: R138 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-131. **R140 — [UI/UX] Refresh /settings/teams/[teamId]**
+132. **R140 — [UI/UX] Refresh /settings/teams/[teamId]**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review one active-organization team's members/configuration as authorized team reader/operator. Save an authorized team change or manage members using existing actions.
 
    - Brief: R140 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-132. **R142 — [UI/UX] Refresh /settings/travel-expenses**
+133. **R142 — [UI/UX] Refresh /settings/travel-expenses**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure expense policy/officer coverage for the active organization as org admin. Save the selected existing expense-policy, currency, reimbursement or officer task.
 
    - Brief: R142 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-133. **R143 — [UI/UX] Refresh /settings/vacation**
+134. **R143 — [UI/UX] Refresh /settings/vacation**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review absence categories, vacation policies/assignments and holidays in the active organization within existing manager access; org admins manage policies. Create/edit an authorized category, policy or assignment.
 
    - Brief: R143 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-134. **R144 — [UI/UX] Refresh /settings/vacation/employees**
+135. **R144 — [UI/UX] Refresh /settings/vacation/employees**
 
    - Parent: G2.
    - Blocked by: F2.
@@ -1097,23 +1095,23 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R144 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-135. **R145 — [UI/UX] Refresh /settings/vacation/employees/[employeeId]**
+136. **R145 — [UI/UX] Refresh /settings/vacation/employees/[employeeId]**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Edit one organization-scoped employee's annual vacation allowance under existing allowance-administration authorization. Save allowance changes or record an authorized vacation adjustment.
 
    - Brief: R145 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-136. **R147 — [UI/UX] Refresh /settings/vehicles**
+137. **R147 — [UI/UX] Refresh /settings/vehicles**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Configure active-organization vehicles and vehicle-use assignments as org admin. Add/edit a vehicle or save vehicle-use configuration.
 
    - Brief: R147 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-137. **R149 — [UI/UX] Refresh /settings/wellness**
+138. **R149 — [UI/UX] Refresh /settings/wellness**
 
    - Parent: G2.
    - Blocked by: F3.
@@ -1121,31 +1119,31 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R149 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-138. **R150 — [UI/UX] Refresh /settings/work-categories**
+139. **R150 — [UI/UX] Refresh /settings/work-categories**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review work categories/sets in the active organization as scoped manager or higher; org admins retain management. Create/edit a category, category set or authorized assignment.
 
    - Brief: R150 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-139. **R151 — [UI/UX] Refresh /settings/work-diagnostics**
+140. **R151 — [UI/UX] Refresh /settings/work-diagnostics**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Inspect missing/conflicting active-organization work records as org admin, within selected employee/period. Review/apply an eligible existing repair or work proposal.
 
    - Brief: R151 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-140. **R152 — [UI/UX] Refresh /settings/work-policies**
+141. **R152 — [UI/UX] Refresh /settings/work-policies**
 
    - Parent: G2.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Review work schedules, limits, breaks and change policies in the active organization within existing manager scope; org admins retain policy management. Create/edit an authorized work or change policy/assignment.
 
    - Brief: R152 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-141. **R153 — [UI/UX] Refresh /setup**
+142. **R153 — [UI/UX] Refresh /setup**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -1153,7 +1151,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R153 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-142. **R154 — [UI/UX] Refresh /share/[token]**
+143. **R154 — [UI/UX] Refresh /share/[token]**
 
    - Parent: G3.
    - Blocked by: F2.
@@ -1161,7 +1159,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R154 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-143. **R155 — [UI/UX] Refresh /sign-in**
+144. **R155 — [UI/UX] Refresh /sign-in**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -1169,7 +1167,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R155 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-144. **R156 — [UI/UX] Refresh /sign-up**
+145. **R156 — [UI/UX] Refresh /sign-up**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -1177,23 +1175,23 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R156 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-145. **R157 — [UI/UX] Refresh /team**
+146. **R157 — [UI/UX] Refresh /team**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let managers and workforce admins inspect the employees their management scope covers in the active organization. Open an employee's existing destination or inspect balance-adjustment history.
 
    - Brief: R157 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-146. **R158 — [UI/UX] Refresh /team/absences**
+147. **R158 — [UI/UX] Refresh /team/absences**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let managers and workforce admins review managed employees' annual absence allowances and absence calendar. Record an approved absence for an eligible employee through the existing flow.
 
    - Brief: R158 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-147. **R159 — [UI/UX] Refresh /team/driving**
+148. **R159 — [UI/UX] Refresh /team/driving**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -1201,7 +1199,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R159 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-148. **R160 — [UI/UX] Refresh /team/period-submissions**
+149. **R160 — [UI/UX] Refresh /team/period-submissions**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -1209,7 +1207,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R160 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-149. **R161 — [UI/UX] Refresh /team/presence**
+150. **R161 — [UI/UX] Refresh /team/presence**
 
    - Parent: G1.
    - Blocked by: F1.
@@ -1217,7 +1215,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R161 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-150. **R162 — [UI/UX] Refresh /team/presence/[locationId]**
+151. **R162 — [UI/UX] Refresh /team/presence/[locationId]**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -1225,15 +1223,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R162 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-151. **R163 — [UI/UX] Verify time-tracking conformance (/time-tracking)**
+152. **R163 — [UI/UX] Verify time-tracking conformance (/time-tracking)**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an employee clock and review their own organization work in the selected employee-local day/week. Use the current clock action or existing manual-entry/correction flow.
 
    - Brief: R163 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-152. **R164 — [UI/UX] Refresh /today**
+153. **R164 — [UI/UX] Refresh /today**
 
    - Parent: G1.
    - Blocked by: F3.
@@ -1241,15 +1239,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R164 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-153. **R165 — [UI/UX] Refresh /travel-expenses**
+154. **R165 — [UI/UX] Refresh /travel-expenses**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let an employee collect personal trip/standalone expenses and follow their review and reimbursement in their organization. Create a receipt expense, mileage expense or trip report through existing controls.
 
    - Brief: R165 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-154. **R166 — [UI/UX] Refresh /travel-expenses/[claimId]**
+155. **R166 — [UI/UX] Refresh /travel-expenses/[claimId]**
 
    - Parent: G1.
    - Blocked by: F3.
@@ -1257,15 +1255,15 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R166 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-155. **R167 — [UI/UX] Refresh /travel-expenses/finance**
+156. **R167 — [UI/UX] Refresh /travel-expenses/finance**
 
    - Parent: G1.
-   - Blocked by: F2, F3.
+   - Blocked by: H1.
    - Delivers: Let expense finance actors handle approved reports within approval-time employee/team snapshot scope, with separate read/settle/export capabilities. Record actual reimbursement where permitted; retain exports and payroll-payment confirmation as distinct workflows.
 
    - Brief: R167 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-156. **R168 — [UI/UX] Refresh /travel-expenses/reports/[reportId]**
+157. **R168 — [UI/UX] Refresh /travel-expenses/reports/[reportId]**
 
    - Parent: G1.
    - Blocked by: F3.
@@ -1273,7 +1271,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R168 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-157. **R169 — [UI/UX] Refresh /verify-2fa**
+158. **R169 — [UI/UX] Refresh /verify-2fa**
 
    - Parent: G3.
    - Blocked by: F3.
@@ -1281,7 +1279,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R169 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-158. **R170 — [UI/UX] Refresh /verify-email**
+159. **R170 — [UI/UX] Refresh /verify-email**
 
    - Parent: G3.
    - Blocked by: F1.
@@ -1289,7 +1287,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R170 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-159. **R171 — [UI/UX] Refresh /verify-email-pending**
+160. **R171 — [UI/UX] Refresh /verify-email-pending**
 
    - Parent: G3.
    - Blocked by: F1.
@@ -1297,7 +1295,7 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R171 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-160. **R172 — [UI/UX] Refresh /works-council**
+161. **R172 — [UI/UX] Refresh /works-council**
 
    - Parent: G1.
    - Blocked by: F2.
@@ -1305,10 +1303,8 @@ Use the repository publisher with dry runs for each correctly parented batch, ad
 
    - Brief: R172 in the canonical spec; includes composition, preserved capabilities and shared contracts.
 
-## Draft verification
+## Verification record
 
-On 14 November 2026, source enumeration matched all 172 unique page templates to 153 unique briefs and 19 destination-owned aliases. All briefs have the five agreed fields. All 160 proposed issue IDs are unique; group counts match the inventory and remain within the approved hierarchy. The 232 planned blocking edges, including the existing #1689 prerequisite, form an acyclic graph; all seven route handoffs are source-proven. Markdown and scratch publication data agree.
+The original approved draft matched 172 unique live page templates to 153 five-field briefs and 19 destination-owned aliases; 159 local links resolved. Independent reviews found no preservation or graph blockers after clarifying contract-only references and adding in-flight tenant/permission checks. The root/group manifests passed repository publisher dry runs.
 
-All 159 local document links across the six discovery/spec documents resolved. Root foundation and grouping manifests passed the repository publisher's dry run; page batches must receive actual group numbers and pass their own dry runs before publication. Independent reviews found no remaining concrete preservation or graph blockers after clarifying contract-only references and adding in-flight tenant/permission verification.
-
-This verifies the documentation and proposed rollout, not the future application changes. The user subsequently approved the concrete spec, test boundaries and breakdown. Native issue publication/read-back is the next step. No route code was changed and no subordinate issues were published in this phase.
+Publication exposed GitHub's additional blocking-fanout cap. The H1 factorization was checked for exact preservation of every original node's reachable prerequisites. Full native relationship/body/readiness verification and the issue-number index are recorded in the publication index after completion. This phase changes documentation and tracker representation, not application code, approved page compositions or domain behavior.
