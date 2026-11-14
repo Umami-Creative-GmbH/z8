@@ -6,6 +6,8 @@ The user reviewed the prototype and said: "i really like the design direction an
 
 ## Start here
 
+Read the [UI and UX language](../refs/ux-language.md) for the shared refresh rules. Preserve all existing capabilities, including sidebar collapse/expansion, shortcuts and saved preferences; controls missing from the prototype are not approved removals.
+
 1. Open the [approved prototype](assets/2026-11-14-dashboard-time-tracking/prototype.html) in a browser. Use its bottom bar to inspect both screens, and the moon button for dark mode.
 2. Inspect the [dashboard](assets/2026-11-14-dashboard-time-tracking/dashboard.png), [time tracking](assets/2026-11-14-dashboard-time-tracking/time-tracking.png), [dark theme](assets/2026-11-14-dashboard-time-tracking/time-tracking-dark.png), and mobile captures ([dashboard](assets/2026-11-14-dashboard-time-tracking/mobile-dashboard.png), [time tracking](assets/2026-11-14-dashboard-time-tracking/mobile-time-tracking.png)). The captures are visual references; the running app supplies all production data and behavior.
 3. Follow the repository's ticket, branch, implementation and validation workflow. Compare the current implementation with this brief before choosing component boundaries.
