@@ -193,6 +193,8 @@ import type {
 	PendingApprovalRequest,
 } from "./types";
 import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
+import type { DecisionRight } from "../decision-right";
+import { holdsApprovalManagement } from "./approval-management";
 import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
 import { isBoundTimeDecisionSignal } from "./work-period-approvals";
 
@@ -5042,28 +5044,6 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 	);
 }
 
-export async function completeTimeCorrectionDecisionAfterCommit<
-	T extends { postCommit: TimeCorrectionPostCommitEffects | null },
->(input: {
-	execute(): Promise<T>;
-	dispatch(effects: TimeCorrectionPostCommitEffects): Promise<void>;
-	onDispatchError?(error: unknown): void;
-}): Promise<T> {
-	const result = await input.execute();
-	if (
-		result.postCommit?.authority !== "legacy" ||
-		result.postCommit.terminal === null
-	) {
-		return result;
-	}
-	try {
-		await input.dispatch(result.postCommit);
-	} catch (error) {
-		input.onDispatchError?.(error);
-	}
-	return result;
-}
-
 export interface ExecuteTimeCorrectionDecisionInput {
 	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
 	/** Builds the runtime over the database it is handed: the borrowed work transaction. */
@@ -5089,19 +5069,14 @@ export interface ExecuteTimeCorrectionDecisionInput {
 		transactionBehavior: "existing",
 		workPeriodId: string,
 	): Promise<unknown>;
-	processOrdinary?(input: {
-		dbService: ApprovalDbService;
-		actor: CurrentApprover;
-		workPeriodId: string;
-		kind: "manual_time_submission" | "policy_clock_out";
-	}): Promise<unknown>;
 	captureLegacyState?: typeof captureTimeCorrectionLegacyApprovalState;
 	nowInstant?: () => Instant;
 	/**
-	 * Explicit organization approval management, checked by the trusted
-	 * caller on the decision's transaction. Absent means none (fail closed).
+	 * The time approval decision's one claimed right (Approvals ADR 0003). A
+	 * manager of approvals is verified from the database on the decision's
+	 * transaction; without it only the current approver decides.
 	 */
-	canManageOrganizationApproval?: (database: ApprovalDbService["db"]) => Promise<boolean>;
+	decisionRight?: DecisionRight;
 }
 
 function decisionFingerprint(reason: string | undefined): string {
@@ -5447,18 +5422,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 			if (kind === "manual_time_submission" || kind === "policy_clock_out") {
 				// The time approval decision routed this as a time correction: it
 				// classifies again and restarts under the right kind's gate.
-				if (!input.processOrdinary) throw new TimeApprovalKindChanged(kind);
-				return {
-					kind,
-					domainResult: await input.processOrdinary({
-						dbService,
-						actor,
-						workPeriodId: period.id,
-						kind,
-					}),
-					commandResult: undefined,
-					postCommit: null,
-				};
+				throw new TimeApprovalKindChanged(kind);
 			}
 
 			const authority = await timeCorrectionAuthority(scope, input.organizationId);
@@ -5529,9 +5493,14 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					entityId: period.id,
 					approvalRequestId: request.id,
 					actorEmployeeId: actor.id,
-					canManageOrganizationApproval: input.canManageOrganizationApproval
-						? () => input.canManageOrganizationApproval?.(transactionDb) ?? Promise.resolve(false)
-						: undefined,
+					canManageOrganizationApproval:
+						input.decisionRight?.as === "approval_manager"
+							? () =>
+									holdsApprovalManagement(transactionDb, {
+										organizationId: input.organizationId,
+										userId: actor.userId,
+									})
+							: undefined,
 				});
 				const stage =
 					await transactionDb.query.approvalChainStageInstance.findFirst({
