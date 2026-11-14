@@ -23,7 +23,7 @@ afterEach(cleanup);
 
 describe("NoEmployeeError (#1672)", () => {
 	it("tells a former employee who is a member again that a rehire is needed", async () => {
-		vi.mocked(getNoEmployeeReason).mockResolvedValue("former_employee");
+		vi.mocked(getNoEmployeeReason).mockResolvedValue({ success: true, data: "former_employee" });
 
 		render(<NoEmployeeError feature="view the calendar" />);
 
@@ -38,7 +38,7 @@ describe("NoEmployeeError (#1672)", () => {
 	});
 
 	it("keeps the profile-required message for anyone else", async () => {
-		vi.mocked(getNoEmployeeReason).mockResolvedValue(null);
+		vi.mocked(getNoEmployeeReason).mockResolvedValue({ success: true, data: null });
 
 		render(<NoEmployeeError feature="view the calendar" />);
 
@@ -46,6 +46,19 @@ describe("NoEmployeeError (#1672)", () => {
 		await vi.waitFor(() => expect(getNoEmployeeReason).toHaveBeenCalled());
 		expect(screen.getByText("Employee Profile Required")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Create Organization" })).toBeTruthy();
+	});
+
+	it("keeps the profile-required message when the action refuses", async () => {
+		vi.mocked(getNoEmployeeReason).mockResolvedValue({
+			success: false,
+			error: "Not authenticated",
+			code: "AuthenticationError",
+		});
+
+		render(<NoEmployeeError />);
+
+		await vi.waitFor(() => expect(getNoEmployeeReason).toHaveBeenCalled());
+		expect(screen.getByText("Employee Profile Required")).toBeTruthy();
 	});
 
 	it("keeps the profile-required message when the reason cannot be read", async () => {

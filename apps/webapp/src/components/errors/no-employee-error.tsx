@@ -21,8 +21,8 @@ function useNoEmployeeReason(): NoEmployeeReason {
 	useEffect(() => {
 		let current = true;
 		getNoEmployeeReason()
-			.then((resolved) => {
-				if (current) setReason(resolved);
+			.then((result) => {
+				if (current && result.success) setReason(result.data);
 			})
 			.catch(() => {
 				// The generic message stays.
@@ -34,6 +34,55 @@ function useNoEmployeeReason(): NoEmployeeReason {
 	return reason;
 }
 
+type NoEmployeeCopy = {
+	title: string;
+	description: string;
+	helpText: string;
+	emailSubject: string;
+	emailBody: string;
+};
+
+/** The texts for the reason, chosen once: a former employee (#1672) or anyone else. */
+function useNoEmployeeCopy(reason: NoEmployeeReason, feature: string): NoEmployeeCopy {
+	const { t } = useTranslate();
+	if (reason === "former_employee") {
+		return {
+			title: t("errors.noEmployee.formerEmployee.title", "Your employment here has ended"),
+			description: t(
+				"errors.noEmployee.formerEmployee.description",
+				"You are a member of this organization again, but your earlier employment ended. An administrator needs to rehire you before you can {feature}.",
+				{ feature },
+			),
+			helpText: t(
+				"errors.noEmployee.formerEmployee.helpText",
+				"Ask your administrator to rehire you. Until then, you cannot use this organization.",
+			),
+			emailSubject: t("errors.noEmployee.formerEmployee.emailSubject", "Rehire Request"),
+			emailBody: t(
+				"errors.noEmployee.formerEmployee.emailBody",
+				"Hi,\n\nI am a member of the organization again, but my earlier employment ended. Could you please rehire me so I can access the platform features?\n\nThank you!",
+			),
+		};
+	}
+	return {
+		title: t("errors.noEmployee.title", "Employee Profile Required"),
+		description: t(
+			"errors.noEmployee.description",
+			"You need an employee profile to {feature}. Please create an organization or contact your administrator.",
+			{ feature },
+		),
+		helpText: t(
+			"errors.noEmployee.helpText",
+			"If you were invited to an organization, ask your administrator to set up your employee profile.",
+		),
+		emailSubject: t("errors.noEmployee.emailSubject", "Employee Profile Setup Required"),
+		emailBody: t(
+			"errors.noEmployee.emailBody",
+			"Hi,\n\nI need an employee profile set up to access the platform features. Could you please assist me with this?\n\nThank you!",
+		),
+	};
+}
+
 export function NoEmployeeError({
 	feature = "access this feature",
 	showCreateOrg = true,
@@ -42,27 +91,15 @@ export function NoEmployeeError({
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
-	// A former employee whose membership came back but who was not rehired (#1672).
-	const formerEmployee = useNoEmployeeReason() === "former_employee";
+	const reason = useNoEmployeeReason();
+	const copy = useNoEmployeeCopy(reason, feature);
+	// A former employee needs a rehire, not an organization of their own.
+	const offerCreateOrg = showCreateOrg && reason !== "former_employee";
 
 	const handleContactAdmin = () => {
 		// Open mailto link for contacting support/admin
-		const subject = encodeURIComponent(
-			formerEmployee
-				? t("errors.noEmployee.formerEmployee.emailSubject", "Rehire Request")
-				: t("errors.noEmployee.emailSubject", "Employee Profile Setup Required"),
-		);
-		const body = encodeURIComponent(
-			formerEmployee
-				? t(
-						"errors.noEmployee.formerEmployee.emailBody",
-						"Hi,\n\nI am a member of the organization again, but my earlier employment ended. Could you please rehire me so I can access the platform features?\n\nThank you!",
-					)
-				: t(
-						"errors.noEmployee.emailBody",
-						"Hi,\n\nI need an employee profile set up to access the platform features. Could you please assist me with this?\n\nThank you!",
-					),
-		);
+		const subject = encodeURIComponent(copy.emailSubject);
+		const body = encodeURIComponent(copy.emailBody);
 		window.location.href = `mailto:?subject=${subject}&body=${body}`;
 	};
 
@@ -73,27 +110,11 @@ export function NoEmployeeError({
 					<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10">
 						<IconAlertCircle className="size-8 text-destructive" />
 					</div>
-					<CardTitle className="text-2xl">
-						{formerEmployee
-							? t("errors.noEmployee.formerEmployee.title", "Your employment here has ended")
-							: t("errors.noEmployee.title", "Employee Profile Required")}
-					</CardTitle>
-					<CardDescription className="text-base">
-						{formerEmployee
-							? t(
-									"errors.noEmployee.formerEmployee.description",
-									"You are a member of this organization again, but your earlier employment ended. An administrator needs to rehire you before you can {feature}.",
-									{ feature },
-								)
-							: t(
-									"errors.noEmployee.description",
-									"You need an employee profile to {feature}. Please create an organization or contact your administrator.",
-									{ feature },
-								)}
-					</CardDescription>
+					<CardTitle className="text-2xl">{copy.title}</CardTitle>
+					<CardDescription className="text-base">{copy.description}</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-3">
-					{showCreateOrg && !formerEmployee && (
+					{offerCreateOrg && (
 						<Button className="w-full" size="lg" onClick={() => setCreateDialogOpen(true)}>
 							<IconBuilding className="mr-2 size-5" />
 							{t("errors.noEmployee.createOrg", "Create Organization")}
@@ -103,17 +124,7 @@ export function NoEmployeeError({
 						<IconMail className="mr-2 size-5" />
 						{t("errors.noEmployee.contactAdmin", "Contact Administrator")}
 					</Button>
-					<p className="text-center text-sm text-muted-foreground">
-						{formerEmployee
-							? t(
-									"errors.noEmployee.formerEmployee.helpText",
-									"Ask your administrator to rehire you. Until then, you cannot use this organization.",
-								)
-							: t(
-									"errors.noEmployee.helpText",
-									"If you were invited to an organization, ask your administrator to set up your employee profile.",
-								)}
-					</p>
+					<p className="text-center text-sm text-muted-foreground">{copy.helpText}</p>
 				</CardContent>
 			</Card>
 
