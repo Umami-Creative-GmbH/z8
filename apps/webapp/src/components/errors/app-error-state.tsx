@@ -8,8 +8,15 @@ import {
 	IconSettings,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+} from "@/components/ui/card";
+import { pageSafeAreaPaddingClassName } from "@/components/ui/safe-area";
 import { Link, useRouter } from "@/navigation";
 
 type AppErrorStateProps = {
@@ -20,6 +27,10 @@ type AppErrorStateProps = {
 	descriptionDefault: string;
 	digest?: string;
 	onRetry?: () => void;
+	/** The admitting shell chooses recovery; public failures never assume a session. */
+	recovery?: "entry" | "workspace" | "admin";
+	headingLevel?: 1 | 2;
+	actions?: ReactNode;
 };
 
 export function AppErrorState({
@@ -30,70 +41,76 @@ export function AppErrorState({
 	descriptionDefault,
 	digest,
 	onRetry,
+	recovery = "entry",
+	headingLevel = 1,
+	actions,
 }: AppErrorStateProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const Heading = headingLevel === 1 ? "h1" : "h2";
 
 	return (
-		<div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10 sm:px-6">
-			<div
-				aria-hidden="true"
-				className="absolute inset-0 bg-[radial-gradient(circle_at_top,oklch(0.93_0.05_265/.55),transparent_45%)]"
-			/>
-			<div
-				aria-hidden="true"
-				className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent,oklch(0.96_0.01_260/.65))]"
-			/>
-
-			<Card className="relative w-full max-w-2xl border-border/70 bg-card/95 shadow-xl backdrop-blur-sm">
-				<CardHeader className="space-y-4 text-center">
-					<div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
-						<IconAlertTriangle aria-hidden="true" className="size-8" />
-					</div>
-					<p className="text-xs font-semibold uppercase tracking-[0.32em] text-muted-foreground">
+		<div
+			className={`flex min-h-full flex-1 items-center justify-center bg-background px-4 sm:px-6 ${pageSafeAreaPaddingClassName}`}
+		>
+			<Card className="my-6 w-full max-w-2xl shadow-none">
+				<CardHeader className="space-y-3">
+					<div className="flex items-center gap-2 text-sm text-muted-foreground">
+						<IconAlertTriangle aria-hidden="true" className="size-5 shrink-0" />
 						{variant === "not-found" ? "404" : t("common.error", "Error")}
-					</p>
-					<CardTitle className="text-balance text-3xl sm:text-4xl">
+					</div>
+					<Heading className="text-balance text-2xl font-semibold tracking-tight">
 						{t(titleKey, titleDefault)}
-					</CardTitle>
-					<CardDescription className="mx-auto max-w-xl text-base leading-7">
+					</Heading>
+					<CardDescription className="text-pretty text-sm leading-relaxed">
 						{t(descriptionKey, descriptionDefault)}
 					</CardDescription>
 				</CardHeader>
-
-				<CardContent className="space-y-6">
-					<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+				<CardContent className="space-y-4">
+					<div className="flex flex-wrap gap-2">
 						{variant === "error" && onRetry ? (
 							<Button onClick={onRetry}>
 								<IconRefresh aria-hidden="true" />
 								{t("common.retry", "Retry")}
 							</Button>
 						) : null}
-
-						<Button asChild>
-							<Link href="/">
-								<IconHome aria-hidden="true" />
-								{t("common.goToDashboard", "Go to Dashboard")}
-							</Link>
-						</Button>
-
-						<Button asChild variant="outline">
-							<Link href="/settings">
-								<IconSettings aria-hidden="true" />
-								{t("nav.settings", "Settings")}
-							</Link>
-						</Button>
-
+						{actions ??
+							(recovery === "workspace" ? (
+								<>
+									<Button asChild variant="outline">
+										<Link href="/">
+											<IconHome aria-hidden="true" />
+											{t("common.goToDashboard", "Go to Dashboard")}
+										</Link>
+									</Button>
+									<Button asChild variant="outline">
+										<Link href="/settings">
+											<IconSettings aria-hidden="true" />
+											{t("nav.settings", "Settings")}
+										</Link>
+									</Button>
+								</>
+							) : recovery === "admin" ? (
+								<Button asChild variant="outline">
+									<Link href="/platform-admin">
+										<IconHome aria-hidden="true" />
+										{t("admin:admin.layout.title", "Admin Console")}
+									</Link>
+								</Button>
+							) : (
+								<Button asChild variant="outline">
+									<Link href="/sign-in">{t("auth.sign-in", "Sign in")}</Link>
+								</Button>
+							))}
 						<Button onClick={() => router.back()} variant="ghost">
 							<IconArrowLeft aria-hidden="true" />
 							{t("common.back", "Back")}
 						</Button>
 					</div>
-
 					{digest ? (
-						<div className="rounded-xl border border-border/70 bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
+						<p className="break-words rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
 							{t("errors.unexpected.digest", "Reference: {digest}", { digest })}
-						</div>
+						</p>
 					) : null}
 				</CardContent>
 			</Card>

@@ -202,6 +202,14 @@ export function normalizeAppPath(pathname: string): string {
 	return segments.length === 0 ? "/" : `/${segments.join("/")}`;
 }
 
+/** Exact opt-ins only: adopt a page heading and update this list atomically.
+ * Descendants keep their shell title until their own page ticket converts them.
+ */
+export function appPageOwnsHeading(pathname: string): boolean {
+	const path = normalizeAppPath(pathname);
+	return path === "/" || path === "/time-tracking" || path === "/reports";
+}
+
 function routeMatches(pathname: string, href: string): boolean {
 	if (href === "/") return pathname === "/";
 	return pathname === href || pathname.startsWith(`${href}/`);

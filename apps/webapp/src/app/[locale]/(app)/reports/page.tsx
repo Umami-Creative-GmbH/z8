@@ -4,6 +4,7 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ReportsContainer } from "@/components/reports/reports-container";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -18,8 +19,11 @@ async function ReportsPageContent() {
 
 	if (!employee) {
 		return (
-			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("reports.feature", "generate reports")} />
+			<div className="@container/main flex flex-1 flex-col gap-6 p-4 lg:p-6">
+				<PageHeader title={t("reports.title", "Employee Reports")} />
+				<div className="flex flex-1 items-center justify-center">
+					<NoEmployeeError feature={t("reports.feature", "generate reports")} />
+				</div>
 			</div>
 		);
 	}
@@ -27,26 +31,22 @@ async function ReportsPageContent() {
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Page Header */}
-			<div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-start sm:justify-between lg:px-6">
-				<div>
-					<h1 className="text-3xl font-bold tracking-tight">
-						{t("reports.title", "Employee Reports")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"reports.description",
-							"Generate comprehensive work hour and absence reports with tax-relevant home office data",
-						)}
-					</p>
-				</div>
-				{/* Distance per vehicle (#1129): everyone sees at least their own driving. */}
-				<Button asChild variant="outline">
-					<Link href="/reports/vehicles">
-						<IconCar className="mr-2 size-4" aria-hidden="true" />
-						{t("reports.vehicles.title", "Distance per Vehicle")}
-					</Link>
-				</Button>
-			</div>
+			<PageHeader
+				className="px-4 lg:px-6"
+				title={t("reports.title", "Employee Reports")}
+				description={t(
+					"reports.description",
+					"Generate comprehensive work hour and absence reports with tax-relevant home office data",
+				)}
+				actions={
+					<Button asChild variant="outline">
+						<Link href="/reports/vehicles">
+							<IconCar className="mr-2 size-4" aria-hidden="true" />
+							{t("reports.vehicles.title", "Distance per Vehicle")}
+						</Link>
+					</Button>
+				}
+			/>
 
 			{/* Reports Container */}
 			<ReportsContainer currentEmployeeId={employee.id} />
