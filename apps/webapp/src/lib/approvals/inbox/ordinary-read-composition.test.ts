@@ -23,6 +23,14 @@ vi.mock("@/lib/approvals/presentation/time-review", async (importOriginal) => ({
 	prepareTimeReviewEvidence: vi.fn(async () => ({ status: "not_captured", held: false })),
 }));
 
+// Time approvals are decided by the time approval decision (#1676); this suite reads.
+vi.mock("@/lib/approvals/inbox/time-approval-decision", () => ({
+	decideInboxTimeApproval: vi.fn(async ({ request }: { request: { id: string } }) => ({
+		status: "decided",
+		success: { id: request.id, type: "time_entry", status: "approved" },
+	})),
+}));
+
 const dbMocks = vi.hoisted(() => ({
 	approvalRequests: vi.fn(),
 	chainStages: vi.fn(),

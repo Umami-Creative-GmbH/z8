@@ -1,22 +1,23 @@
 import { readFileSync } from "node:fs";
-import { Effect } from "effect";
+import { Effect, Exit } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ApprovalDbService } from "../server/types";
 
 const decisionMocks = vi.hoisted(() => ({
-	approveCorrection: vi.fn(() => Effect.void),
-	approveOrdinary: vi.fn(() => Effect.void),
+	decide: vi.fn(async () => ({
+		result: {
+			status: "decided",
+			kind: "time_correction",
+			workPeriodId: "period-1",
+			outcome: "approved",
+			replayed: false,
+		},
+	})),
 }));
 
-vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
-	approveTimeCorrectionWithCurrentApproverEffect:
-		decisionMocks.approveCorrection,
-	decideTimeCorrectionWithStableTargetEffect: decisionMocks.approveCorrection,
-}));
-
-vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
-	approveWorkPeriodWithCurrentApproverEffect: decisionMocks.approveOrdinary,
+vi.mock("@/lib/approvals/server/time-approval-decision", () => ({
+	decideTimeApprovalWithCause: decisionMocks.decide,
 }));
 
 import {
@@ -836,10 +837,6 @@ describe("shared time-entry approval presentation", () => {
 		});
 	});
 
-	it("dispatches correction decisions by stable inbox target", () => {
-		expect(source).toContain("decideTimeCorrectionWithStableTargetEffect");
-		expect(source).toContain("options.approvalRequestId");
-	});
 
 	it("scopes inbox work-period loading to the requested organization", () => {
 		expect(source).toContain(
@@ -1498,73 +1495,69 @@ describe("superseded correction history regression", () => {
 		expect(JSON.stringify(detail)).not.toContain("Foreign Secret");
 	});
 
-	it("defers subtype classification to the stable transaction boundary", async () => {
-		decisionMocks.approveCorrection.mockClear();
-		const { dbService } = createSupersededHistoryDbService();
-
-		await Effect.runPromise(
-			TimeCorrectionHandler.approve("period-1", "manager-1", {
+	describe("decisions (#1676)", () => {
+		it.each([
+			["approve", { kind: "approve" }],
+			["reject", { kind: "reject", reason: "No" }],
+		] as const)("translates a %s into one time approval decision under the claimed right", async (action, decision) => {
+			decisionMocks.decide.mockClear();
+			const { dbService } = createSupersededHistoryDbService();
+			const guard = vi.fn(async () => {});
+			const options = {
 				approvalRequestId: "approval-1",
-			}).pipe(Effect.provideService(DatabaseService, dbService)),
-		);
-		expect(decisionMocks.approveCorrection).toHaveBeenCalledWith(
-			dbService,
-			expect.objectContaining({ id: "manager-1" }),
-			"approval-1",
-			"approve",
-			undefined,
-			{ approvalRequestId: "approval-1" },
-		);
-	});
+				decisionRight: { as: "covering_deputy", forEmployeeId: "absent-1" } as const,
+				shortcutGuard: guard,
+			};
 
-	it.each([
-		["approve", "approved"],
-		["reject", "rejected"],
-	] as const)("defers a handler-visible %s status to transaction reload before %s", async (action, status) => {
-		decisionMocks.approveCorrection.mockClear();
-		const { approvalFindFirst, dbService, request } =
-			createSupersededHistoryDbService();
-		approvalFindFirst.mockResolvedValueOnce({ ...request, status });
+			await Effect.runPromise(
+				(action === "approve"
+					? TimeCorrectionHandler.approve("period-1", "manager-1", options)
+					: TimeCorrectionHandler.reject("period-1", "manager-1", "No", options)
+				).pipe(Effect.provideService(DatabaseService, dbService)),
+			);
 
-		const decision =
-			action === "approve"
-				? TimeCorrectionHandler.approve("period-1", "manager-1", {
-						approvalRequestId: "approval-1",
-					})
-				: TimeCorrectionHandler.reject("period-1", "manager-1", "No", {
-						approvalRequestId: "approval-1",
-					});
-		await Effect.runPromise(
-			decision.pipe(Effect.provideService(DatabaseService, dbService)),
-		);
-		expect(decisionMocks.approveCorrection).toHaveBeenCalledOnce();
-	});
-
-	it("keeps a later manual-entry chain stage actionable from the period marker", async () => {
-		decisionMocks.approveOrdinary.mockClear();
-		const { approvalFindFirst, dbService, period, request } =
-			createSupersededHistoryDbService();
-		period.pendingChanges = { isManualEntry: true } as never;
-		approvalFindFirst.mockResolvedValueOnce({
-			...request,
-			reason: null,
-			metadata: { approvalChain: { stageOrder: 2 } },
+			expect(decisionMocks.decide).toHaveBeenCalledExactlyOnceWith({
+				organizationId: "org-1",
+				approvalId: "approval-1",
+				actor: { employeeId: "manager-1", userId: "manager-user-1" },
+				right: { as: "covering_deputy", forEmployeeId: "absent-1" },
+				decision,
+				fastLaneGuard: guard,
+				database: dbService.db,
+			});
 		});
 
-		await Effect.runPromise(
-			TimeCorrectionHandler.approve("period-1", "manager-1", {
-				approvalRequestId: "approval-1",
-			}).pipe(Effect.provideService(DatabaseService, dbService)),
-		);
+		it("fails with a refusal's original error", async () => {
+			const refusal = new Error("Approval request is already approved");
+			decisionMocks.decide.mockResolvedValueOnce({
+				result: { status: "refused", reason: "already_decided" },
+				cause: refusal,
+			});
+			const { dbService } = createSupersededHistoryDbService();
 
-		expect(decisionMocks.approveOrdinary).not.toHaveBeenCalled();
-		expect(decisionMocks.approveCorrection).toHaveBeenCalledWith(
-			dbService,
-			expect.objectContaining({ id: "manager-1", organizationId: "org-1" }),
-			"approval-1",
-			"approve",
-			undefined,
-			{ approvalRequestId: "approval-1" },
-		);
+			const exit = await Effect.runPromiseExit(
+				TimeCorrectionHandler.approve("period-1", "manager-1", {
+					approvalRequestId: "approval-1",
+					decisionRight: { as: "approver" },
+				}).pipe(Effect.provideService(DatabaseService, dbService)),
+			);
+
+			expect(exit).toEqual(Exit.fail(refusal));
+		});
+
+		it("claims no right on the caller's behalf", async () => {
+			decisionMocks.decide.mockClear();
+			const { dbService } = createSupersededHistoryDbService();
+
+			const exit = await Effect.runPromiseExit(
+				TimeCorrectionHandler.approve("period-1", "manager-1", {
+					approvalRequestId: "approval-1",
+					allowOrganizationWideApprover: true,
+				}).pipe(Effect.provideService(DatabaseService, dbService)),
+			);
+
+			expect(Exit.isFailure(exit)).toBe(true);
+			expect(decisionMocks.decide).not.toHaveBeenCalled();
+		});
 	});
 });
