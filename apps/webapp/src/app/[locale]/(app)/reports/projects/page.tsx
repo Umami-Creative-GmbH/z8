@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ProjectReportsContainer } from "@/components/reports/projects/project-reports-container";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployeeProjectReportAccess } from "./actions";
@@ -41,25 +42,7 @@ async function ProjectReportsPageContent() {
 		);
 	}
 
-	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			{/* Page Header */}
-			<div className="px-4 lg:px-6">
-				<h2 className="text-3xl font-bold tracking-tight">
-					{t("reports.projects.page.title", "Project Reports")}
-				</h2>
-				<p className="text-muted-foreground">
-					{t(
-						"reports.projects.page.description",
-						"Analyze project hours, budget usage, and team contributions",
-					)}
-				</p>
-			</div>
-
-			{/* Reports Container */}
-			<ProjectReportsContainer />
-		</div>
-	);
+	return <ProjectReportsContainer />;
 }
 
 function ProjectReportsPageLoading() {
@@ -72,10 +55,6 @@ function ProjectReportsPageLoading() {
 			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
 			role="status"
 		>
-			<div className="space-y-3 px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-9 w-56" />
-				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
-			</div>
 			<div className="px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-96 w-full" />
 			</div>
@@ -83,10 +62,21 @@ function ProjectReportsPageLoading() {
 	);
 }
 
-export default function ProjectReportsPage() {
+export default async function ProjectReportsPage() {
+	const t = await getTranslate();
 	return (
-		<Suspense fallback={<ProjectReportsPageLoading />}>
-			<ProjectReportsPageContent />
-		</Suspense>
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<PageHeader
+				className="px-4 lg:px-6"
+				title={t("reports.projects.page.title", "Project Reports")}
+				description={t(
+					"reports.projects.page.description",
+					"Analyze project hours, budget usage, and team contributions",
+				)}
+			/>
+			<Suspense fallback={<ProjectReportsPageLoading />}>
+				<ProjectReportsPageContent />
+			</Suspense>
+		</div>
 	);
 }

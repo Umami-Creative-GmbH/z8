@@ -1,0 +1,33 @@
+{
+  "nativeTree": true,
+  "components": [
+    "199 6638 6479 Forget(ProjectPortfolioTable)",
+    "204 6660 6648 Forget(DataTable)",
+    "207 7224 7223 Forget(DataTablePagination)"
+  ],
+  "inspectSucceeded": true,
+  "inspectSections": [
+    "lifecycle",
+    "source",
+    "text"
+  ],
+  "rendersStartSucceeded": true,
+  "rendersStopSucceeded": true,
+  "renderSections": [
+    "lifecycle",
+    "report"
+  ],
+  "identityLimit": "Native tree calls returned different adapter fiber IDs; this is not proof of remounting or stability. DOM identity is verified separately.",
+  "nativeJsonRequired": true,
+  "inspectedPresentation": [
+    "  mobileLayout: \"scroll\"",
+    "  pinLastColumn: true",
+    "  rowClassName: \"group\""
+  ],
+  "profileHeader": [
+    "# Render Profile - 1.78s recording",
+    "# 1614 renders (782 mounts + 832 re-renders) across 200 components",
+    "# FPS: avg 57, min 32, max 58, drops (<30fps): 0"
+  ],
+  "profileLimit": "One brief dev-mode recording includes shell updates and instrumentation mounts; not an isolated performance benchmark."
+}
