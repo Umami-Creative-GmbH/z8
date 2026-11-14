@@ -24,6 +24,7 @@ import * as schema from "@/db/schema";
 import { TimeCorrectionHandler } from "@/lib/approvals/handlers/time-correction.handler";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { repairInboxDecisionSurcharges } from "@/lib/surcharges/inbox-decision-repair";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
@@ -4531,6 +4532,297 @@ describe(
 					surcharge_minutes: 240,
 				}),
 			]);
+		});
+
+		describe("repair of surcharges skipped by inbox decisions (#1690)", () => {
+			const tenants = [ids.organization, ids.foreignOrganization];
+
+			function repair(apply: boolean) {
+				return repairInboxDecisionSurcharges(database as never, {
+					organizationIds: tenants,
+					apply,
+				});
+			}
+
+			// The surcharge rows of both tenants, by period interval, without the
+			// per-run identity and calculation instant.
+			async function surchargeRows() {
+				return (
+					await pool.query(
+						`select calculation.organization_id, period.start_time, period.end_time,
+						 calculation.employee_id, calculation.surcharge_rule_id,
+						 calculation.surcharge_model_id, calculation.base_minutes,
+						 calculation.qualifying_minutes, calculation.surcharge_minutes,
+						 calculation.applied_percentage::text as applied_percentage,
+						 case when calculation.calculation_details like '{%'
+						   then calculation.calculation_details::jsonb - 'calculatedAt'
+						   else to_jsonb(calculation.calculation_details) end as details
+						 from surcharge_calculation calculation
+						 join work_period period on period.id = calculation.work_period_id
+						   and period.organization_id = calculation.organization_id
+						 where calculation.organization_id = any($1::text[])
+						 order by calculation.organization_id, period.start_time`,
+						[tenants],
+					)
+				).rows;
+			}
+
+			// Every surcharge row of both tenants exactly, its identity and instant included.
+			async function storedSurchargeRows() {
+				return (
+					await pool.query(
+						`select to_jsonb(calculation) as row from surcharge_calculation calculation
+						 where organization_id = any($1::text[]) order by id`,
+						[tenants],
+					)
+				).rows;
+			}
+
+			async function submitted(
+				kind: OrdinaryWorkPeriodApprovalKind,
+				mode: ApprovalWorkflowLifecycleMode,
+				split: boolean,
+			) {
+				await seed(kind, split, mode);
+				await seedMaintenanceState();
+				return (await submit(kind)).result.approvalRequestId;
+			}
+
+			function decision(action: "approve" | "reject") {
+				return action === "approve"
+					? ({ kind: "approve", reason: null } as const)
+					: ({ kind: "reject", reason: "Inbox rejection" } as const);
+			}
+
+			// A terminal decision whose after-commit surcharge maintenance never
+			// ran, as the approval inbox decided from 2026-07-24 until #1674.
+			async function decideSkippingMaintenance(
+				target: string,
+				action: "approve" | "reject",
+			) {
+				await pool.query(`create or replace function repair1690_skip_maintenance() returns trigger as $$
+			begin raise exception 'repair1690 skipped maintenance'; end;
+			$$ language plpgsql`);
+				await pool.query(
+					`create trigger repair1690_skip_maintenance
+					 before insert or delete on surcharge_calculation
+					 for each row execute function repair1690_skip_maintenance()`,
+				);
+				try {
+					const completed = await completeDecision(target, decision(action));
+					expect(completed.execution).toMatchObject({ status: "decided" });
+				} finally {
+					await pool.query(
+						"drop trigger if exists repair1690_skip_maintenance on surcharge_calculation",
+					);
+					await pool.query("drop function if exists repair1690_skip_maintenance()");
+				}
+			}
+
+			const affectedCases = [
+				{ kind: "manual_time_submission", mode: "legacy", split: false, action: "approve" },
+				{ kind: "manual_time_submission", mode: "canonical", split: false, action: "approve" },
+				{ kind: "policy_clock_out", mode: "legacy", split: true, action: "approve" },
+				{ kind: "policy_clock_out", mode: "canonical", split: true, action: "approve" },
+				{ kind: "policy_clock_out", mode: "shadow", split: false, action: "approve" },
+				{ kind: "manual_time_submission", mode: "legacy", split: false, action: "reject" },
+				{ kind: "manual_time_submission", mode: "canonical", split: false, action: "reject" },
+				{ kind: "policy_clock_out", mode: "legacy", split: true, action: "reject" },
+			] as const;
+
+			it.each(
+				affectedCases,
+			)("repairs a $action of a $kind (split=$split) in $mode mode to the rows its maintenance writes", async ({
+				kind,
+				mode,
+				split,
+				action,
+			}) => {
+				// The rows a decision with its maintenance leaves.
+				const maintained = await submitted(kind, mode, split);
+				const reference = await completeDecision(maintained, decision(action));
+				expect(reference.maintenanceErrors).toEqual([]);
+				const expected = await surchargeRows();
+
+				const skipped = await submitted(kind, mode, split);
+				await decideSkippingMaintenance(skipped, action);
+				const broken = await surchargeRows();
+				expect(broken).not.toEqual(expected);
+
+				const reports = await repair(true);
+
+				expect(reports).toEqual([
+					{
+						organizationId: ids.organization,
+						decided: 1,
+						approvedRepairs: action === "approve" ? 1 : 0,
+						rejectedRepairs: action === "reject" ? 1 : 0,
+						unchanged: 0,
+						skipped: [],
+						failed: [],
+					},
+				]);
+				expect(await surchargeRows()).toEqual(expected);
+			});
+
+			it("dry run reports the counts and changes nothing; a second repair changes nothing", async () => {
+				const target = await submitted("policy_clock_out", "legacy", true);
+				await decideSkippingMaintenance(target, "approve");
+				const before = await storedSurchargeRows();
+
+				const dryRun = await repair(false);
+
+				expect(dryRun).toEqual([
+					{
+						organizationId: ids.organization,
+						decided: 1,
+						approvedRepairs: 1,
+						rejectedRepairs: 0,
+						unchanged: 0,
+						skipped: [],
+						failed: [],
+					},
+				]);
+				expect(await storedSurchargeRows()).toEqual(before);
+
+				await repair(true);
+				const repaired = await storedSurchargeRows();
+				expect(repaired).not.toEqual(before);
+
+				const again = await repair(true);
+
+				expect(again).toEqual([
+					{
+						organizationId: ids.organization,
+						decided: 1,
+						approvedRepairs: 0,
+						rejectedRepairs: 0,
+						unchanged: 1,
+						skipped: [],
+						failed: [],
+					},
+				]);
+				expect(await storedSurchargeRows()).toEqual(repaired);
+			});
+
+			it("leaves a decision whose maintenance ran untouched", async () => {
+				const target = await submitted("manual_time_submission", "legacy", false);
+				expect((await completeDecision(target, decision("approve"))).maintenanceErrors).toEqual(
+					[],
+				);
+				const before = await storedSurchargeRows();
+
+				expect(await repair(true)).toEqual([
+					{
+						organizationId: ids.organization,
+						decided: 1,
+						approvedRepairs: 0,
+						rejectedRepairs: 0,
+						unchanged: 1,
+						skipped: [],
+						failed: [],
+					},
+				]);
+				expect(await storedSurchargeRows()).toEqual(before);
+			});
+
+			it("leaves a pending submission untouched", async () => {
+				await submitted("manual_time_submission", "canonical", false);
+				const before = await storedSurchargeRows();
+
+				expect(await repair(true)).toEqual([
+					{
+						organizationId: ids.organization,
+						decided: 0,
+						approvedRepairs: 0,
+						rejectedRepairs: 0,
+						unchanged: 0,
+						skipped: [],
+						failed: [],
+					},
+				]);
+				expect(await storedSurchargeRows()).toEqual(before);
+			});
+
+			it("leaves an organization with surcharges disabled untouched", async () => {
+				const target = await submitted("manual_time_submission", "legacy", false);
+				await decideSkippingMaintenance(target, "approve");
+				await pool.query("update organization set surcharges_enabled = false where id = $1", [
+					ids.organization,
+				]);
+				const before = await storedSurchargeRows();
+
+				expect(await repair(true)).toEqual([]);
+				expect(await storedSurchargeRows()).toEqual(before);
+			});
+
+			it("leaves a decision before 2026-07-24 untouched", async () => {
+				const target = await submitted("manual_time_submission", "canonical", false);
+				await decideSkippingMaintenance(target, "approve");
+				await pool.query(
+					`update time_record_approval_decision set created_at = '2026-07-23T23:59:59Z'
+					 where organization_id = $1 and record_id = $2`,
+					[ids.organization, ids.canonical],
+				);
+				const before = await storedSurchargeRows();
+
+				expect(await repair(true)).toEqual([
+					{
+						organizationId: ids.organization,
+						decided: 0,
+						approvedRepairs: 0,
+						rejectedRepairs: 0,
+						unchanged: 0,
+						skipped: [],
+						failed: [],
+					},
+				]);
+				expect(await storedSurchargeRows()).toEqual(before);
+			});
+
+			it("repairs only the organizations named and never another tenant's rows", async () => {
+				const target = await submitted("manual_time_submission", "legacy", false);
+				await decideSkippingMaintenance(target, "approve");
+				await pool.query("update organization set surcharges_enabled = true where id = $1", [
+					ids.foreignOrganization,
+				]);
+				const foreignBefore = (await storedSurchargeRows()).filter(
+					({ row }) => (row as { organization_id: string }).organization_id === ids.foreignOrganization,
+				);
+
+				const reports = await repairInboxDecisionSurcharges(database as never, {
+					organizationIds: [ids.foreignOrganization],
+					apply: true,
+				});
+
+				expect(reports).toEqual([
+					{
+						organizationId: ids.foreignOrganization,
+						decided: 0,
+						approvedRepairs: 0,
+						rejectedRepairs: 0,
+						unchanged: 0,
+						skipped: [],
+						failed: [],
+					},
+				]);
+				const after = await storedSurchargeRows();
+				expect(
+					after.filter(
+						({ row }) =>
+							(row as { organization_id: string }).organization_id === ids.foreignOrganization,
+					),
+				).toEqual(foreignBefore);
+				expect(
+					after.filter(
+						({ row }) => (row as { organization_id: string }).organization_id === ids.organization,
+					),
+				).toEqual([
+					expect.objectContaining({
+						row: expect.objectContaining({ id: ids.staleSurchargeCalculation }),
+					}),
+				]);
+			});
 		});
 	},
 );
