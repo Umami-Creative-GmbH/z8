@@ -1,8 +1,9 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { approvePendingMember } from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
 import { PendingMembersCard } from "./pending-members-card";
 
@@ -15,6 +16,14 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 vi.mock("@/stores/organization-settings-store", () => ({
 	useOrganizationTimezone: () => "Europe/Berlin",
 }));
@@ -82,5 +91,56 @@ describe("PendingMembersCard (#1668)", () => {
 		const codeRow = screen.getByText("Ken Code").closest("tr");
 		expect(within(codeRow as HTMLElement).getByText("Front desk")).toBeTruthy();
 		expect(within(codeRow as HTMLElement).getByText("Member")).toBeTruthy();
+	});
+});
+
+describe("PendingMembersCard approving a former employee (#1672)", () => {
+	it("tells the approver a rehire is needed and links to the employee, after the row is gone", async () => {
+		pendingMembers.value = [
+			pendingMember({
+				id: "member-former",
+				user: { id: "user-former", name: "Fran Former", email: "fran@example.test", image: null },
+			}),
+		];
+		vi.mocked(approvePendingMember).mockImplementation(async () => {
+			pendingMembers.value = [];
+			return {
+				success: true,
+				data: { success: true, rehireNeeded: { employeeId: "employee-former" } },
+			} as Awaited<ReturnType<typeof approvePendingMember>>;
+		});
+
+		renderCard();
+		fireEvent.click(await screen.findByRole("button", { name: "Approve Fran Former" }));
+
+		const notice = await screen.findByRole("status");
+		expect(notice.textContent).toContain("Fran Former is a former employee");
+		expect(within(notice).getByRole("link", { name: "Start rehire" }).getAttribute("href")).toBe(
+			"/settings/employees/employee-former",
+		);
+		await waitFor(() => expect(screen.queryByText("fran@example.test")).toBeNull());
+		expect(screen.getByRole("status")).toBeTruthy();
+	});
+
+	it("shows no rehire notice when the approval brings the person in", async () => {
+		pendingMembers.value = [
+			pendingMember({
+				id: "member-new",
+				user: { id: "user-new", name: "Nia New", email: "nia@example.test", image: null },
+			}),
+		];
+		vi.mocked(approvePendingMember).mockImplementation(async () => {
+			pendingMembers.value = [];
+			return {
+				success: true,
+				data: { success: true, rehireNeeded: null },
+			} as Awaited<ReturnType<typeof approvePendingMember>>;
+		});
+
+		renderCard();
+		fireEvent.click(await screen.findByRole("button", { name: "Approve Nia New" }));
+
+		await waitFor(() => expect(screen.queryByText("nia@example.test")).toBeNull());
+		expect(screen.queryByRole("status")).toBeNull();
 	});
 });

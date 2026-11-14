@@ -42,6 +42,10 @@ vi.mock("@/app/[locale]/(app)/create-organization-action", () => ({
 vi.mock("@/app/[locale]/(app)/organization-actions", () => ({
 	checkSlugAvailability: vi.fn(),
 }));
+// Why the viewer has no employee is a server action boundary too (#1672).
+vi.mock("@/components/errors/no-employee-reason-action", () => ({
+	getNoEmployeeReason: vi.fn(async () => null),
+}));
 afterEach(cleanup);
 
 function Labels() {
