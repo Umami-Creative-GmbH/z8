@@ -1,0 +1,141 @@
+{
+  "next": "16.4.6",
+  "bundler": "Turbopack",
+  "agentBrowser": "0.39.1",
+  "tools": [
+    "get_project_metadata",
+    "get_errors",
+    "get_page_metadata",
+    "get_logs",
+    "get_server_action_by_id",
+    "get_routes",
+    "get_request_insights",
+    "get_compilation_issues",
+    "compile_route"
+  ],
+  "routeCount": 318,
+  "project": "apps/webapp in this verification checkout",
+  "compilation": {
+    "issues": []
+  },
+  "errors": {
+    "configErrors": [],
+    "sessionErrors": []
+  },
+  "pageMetadata": {
+    "sessions": [
+      {
+        "url": "/en/sign-in",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(auth)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(auth)/sign-in/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      },
+      {
+        "url": "/en",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(app)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/(app)/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      }
+    ]
+  },
+  "react": {
+    "nativeCommands": "NOT PASSED: dashboard tree timed out; public page reports no renderer attached; clean restart also produced EOF",
+    "alternative": "agent-browser eval inspected actual React fiber ancestry; see react-consumer.json; delayed hydration state verified by unit/browser regressions"
+  }
+}

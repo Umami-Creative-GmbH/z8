@@ -219,7 +219,11 @@ async function prepare(directory) {
 			);
 		for (let attempt = 0; ; attempt++) {
 			try {
-				docker("exec", postgres, "pg_isready", "--username", "postgres");
+				// The image's temporary initialization server only accepts Unix sockets.
+				// Wait for the final TCP server before creating the fixture database.
+				docker(
+					"exec", postgres, "pg_isready", "--host", "127.0.0.1", "--username", "postgres",
+				);
 				break;
 			} catch {
 				if (attempt >= 59)

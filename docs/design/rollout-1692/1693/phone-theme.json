@@ -1,0 +1,36 @@
+{
+  "path": "/en/reports",
+  "headings": [
+    "Employee Reports"
+  ],
+  "location": "Reports",
+  "viewport": [
+    390,
+    844
+  ],
+  "width": 390,
+  "theme": "bprogress-busy dark",
+  "font": "16px",
+  "buttons": [
+    "Toggle Sidebar",
+    "Clock In",
+    "Notifications",
+    "More actions",
+    "Fixture Person 1",
+    "Period",
+    "Generate Report",
+    "Open Tanstack query devtools"
+  ],
+  "links": [
+    {
+      "label": "Skip to content",
+      "href": "#app-page-content"
+    },
+    {
+      "label": "Distance per Vehicle",
+      "href": "/en/reports/vehicles"
+    }
+  ],
+  "saved": "dark",
+  "focus": "More actions"
+}
