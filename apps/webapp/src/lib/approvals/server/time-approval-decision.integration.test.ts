@@ -1218,6 +1218,312 @@ describe("time approval decision (PostgreSQL)", () => {
 		});
 	});
 
+	describe("card presses", () => {
+		/** Telegram cards are actionable for every time kind. */
+		async function allowCards() {
+			for (const kind of TIME_KINDS) {
+				await admin.query(
+					`insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+					 values ($1, $2, 'telegram', 'actionable')`,
+					[ids.organization, kind],
+				);
+			}
+		}
+
+		/** The review binding a card carries: the exact approval, for one recipient. */
+		async function issueCard(
+			workPeriodId: string,
+			approvalId: string,
+			authority: Authority,
+			recipient: string = ids.approver,
+			actingFor?: string,
+		): Promise<string> {
+			if (authority === "canonical") {
+				const { rows } = await admin.query<{ id: string }>(
+					`insert into approval_review_binding
+					 (organization_id, authority, recipient_employee_id, workflow_id, stage_id, assignment_id,
+					  submitted_revision_id, acting_for_employee_id)
+					 select a.organization_id, 'canonical', $3, a.workflow_id, a.stage_id, a.id,
+					   (select r.id from approval_submitted_revision r
+					    where r.organization_id = a.organization_id and r.workflow_id = a.workflow_id
+					    order by r.revision desc limit 1), $4
+					 from approval_stage_assignment a where a.organization_id = $1 and a.id = $2
+					 returning id`,
+					[ids.organization, approvalId, recipient, actingFor ?? null],
+				);
+				return only(rows).id;
+			}
+			const { rows } = await admin.query<{ id: string }>(
+				`insert into approval_review_binding
+				 (organization_id, authority, recipient_employee_id, legacy_approval_request_id,
+				  submitted_revision_id, acting_for_employee_id)
+				 select $1, 'legacy', $3, $2,
+				   (select r.id from approval_submitted_revision r
+				    where r.organization_id = $1 and r.authority = 'legacy' and r.source_id = $4
+				    order by r.created_at desc, r.revision desc limit 1), $5
+				 returning id`,
+				[ids.organization, approvalId, recipient, workPeriodId, actingFor ?? null],
+			);
+			return only(rows).id;
+		}
+
+		function card(bindingId: string, invocationId: string, providerActorId = "1681001") {
+			return {
+				reviewedBindingId: bindingId,
+				invocation: {
+					identity: {
+						organizationId: ids.organization,
+						scheme: "telegram_callback_query" as const,
+						schemeVersion: 1 as const,
+						receiverScope: "telegram-bot:1681",
+						invocationId,
+					},
+					deliveryId: null,
+					providerActorId,
+				},
+			};
+		}
+
+		describe.each(["legacy", "canonical"] as const)("under %s authority", (authority) => {
+			const legacy = authority === "legacy";
+
+			it.each(TIME_KINDS)(
+				"the approver's card press decides a %s, returns its receipt, and its exact repeat replays it",
+				async (kind) => {
+					const { workPeriodId, approval } = await submitted(kind, authority);
+					await allowCards();
+					const bindingId = await issueCard(workPeriodId, approval.id, authority);
+					const press = card(bindingId, `t1681-${authority}-${kind}`);
+
+					const result = await decide(
+						actors.approver,
+						approval.id,
+						{ as: "approver" },
+						{ card: press },
+					);
+
+					expect(result).toMatchObject({
+						status: "decided",
+						kind,
+						workPeriodId,
+						outcome: "approved",
+						replayed: false,
+						receipt: { reviewedBindingId: bindingId },
+					});
+					expect(await approvalStatus(approval.id)).toBe("approved");
+					expect(decisionNotifications().map((entry) => entry.name)).toEqual(
+						legacy ? [DECISION_TRIGGERS[kind].approve] : [],
+					);
+					expect(harness.kicks).toHaveLength(legacy ? 1 : 0);
+					if (kind !== "time_correction")
+						expect(await surchargeCount(workPeriodId)).toBeGreaterThan(0);
+					harness.notifications.length = 0;
+					harness.kicks.length = 0;
+
+					const repeat = await decide(
+						actors.approver,
+						approval.id,
+						{ as: "approver" },
+						{ card: press },
+					);
+
+					expect(repeat).toMatchObject({
+						status: "decided",
+						kind,
+						workPeriodId,
+						outcome: "approved",
+						replayed: true,
+					});
+					expect(repeat.status === "decided" && repeat.receipt?.id).toBe(
+						result.status === "decided" && result.receipt?.id,
+					);
+					expect(decisionNotifications()).toEqual([]);
+					expect(harness.kicks).toEqual([]);
+				},
+			);
+
+			it.each(["eligible_manager", "approval_manager"] as const)(
+				"a card never conveys the %s right",
+				async (as) => {
+					const { workPeriodId, approval } = await submitted("manual_time_submission", authority);
+					await allowCards();
+					const bindingId = await issueCard(workPeriodId, approval.id, authority);
+
+					const result = await decide(actors.approver, approval.id, { as } as never, {
+						card: card(bindingId, `t1681-${authority}-${as}`),
+					});
+
+					expect(result).toEqual({ status: "refused", reason: "right_not_held" });
+					expect(await approvalStatus(approval.id)).toBe("pending");
+				},
+			);
+
+			it.each(TIME_KINDS)(
+				"a deputy card decides a %s only while its recipient covers, and records whom they acted for",
+				async (kind) => {
+					const { workPeriodId, approval } = await submitted(kind, authority);
+					await allowCards();
+					await seedCover();
+					const bindingId = await issueCard(
+						workPeriodId,
+						approval.id,
+						authority,
+						ids.deputy,
+						ids.approver,
+					);
+					const deputyRight = { as: "covering_deputy", forEmployeeId: ids.approver } as const;
+					// The absence ends before the press: the deputy no longer covers.
+					await admin.query("update absence_entry set end_date = $2 where id = $1", [
+						ids.coveringAbsence,
+						utcDay(-1),
+					]);
+
+					const uncovered = await decide(actors.deputy, approval.id, deputyRight, {
+						card: card(bindingId, `t1681-deputy-off-${authority}-${kind}`, "1681002"),
+					});
+
+					expect(uncovered).toMatchObject({ status: "refused" });
+					expect(await approvalStatus(approval.id)).toBe("pending");
+
+					await admin.query("update absence_entry set end_date = $2 where id = $1", [
+						ids.coveringAbsence,
+						utcDay(2),
+					]);
+					const covered = await decide(actors.deputy, approval.id, deputyRight, {
+						card: card(bindingId, `t1681-deputy-on-${authority}-${kind}`, "1681002"),
+					});
+
+					expect(covered).toMatchObject({ status: "decided", outcome: "approved" });
+					expect(await deputyRecords()).toEqual([
+						{
+							deputy_employee_id: ids.deputy,
+							acting_for_employee_id: ids.approver,
+							authority,
+							entity_id: workPeriodId,
+							decision: "approved",
+						},
+					]);
+				},
+			);
+
+			it.each(TIME_KINDS)(
+				"a press on a %s decided elsewhere after the card was sent decides nothing",
+				async (kind) => {
+					const { workPeriodId, approval } = await submitted(kind, authority);
+					await allowCards();
+					const bindingId = await issueCard(workPeriodId, approval.id, authority);
+					await decide(actors.admin, approval.id, { as: "approval_manager" });
+					harness.notifications.length = 0;
+					harness.kicks.length = 0;
+
+					const result = await decide(
+						actors.approver,
+						approval.id,
+						{ as: "approver" },
+						{
+							card: card(bindingId, `t1681-late-${authority}-${kind}`),
+							decision: { kind: "reject", reason: "Rejected via Telegram" },
+						},
+					);
+
+					expect(result).toMatchObject({ status: "refused" });
+					expect(await approvalStatus(approval.id)).toBe("approved");
+					expect(decisionNotifications()).toEqual([]);
+				},
+			);
+
+			it("a press for another approval than its binding names is a binding mismatch", async () => {
+				const { workPeriodId, approval } = await submitted("manual_time_submission", authority);
+				await allowCards();
+				const bindingId = await issueCard(workPeriodId, approval.id, authority);
+				const correctionPeriod = await submit("time_correction");
+				const other = await pendingApproval(correctionPeriod, authority);
+
+				const result = await decide(
+					actors.approver,
+					other.id,
+					{ as: "approver" },
+					{
+						card: card(bindingId, `t1681-mismatch-${authority}`),
+					},
+				);
+
+				expect(result).toEqual({ status: "refused", reason: "binding_mismatch" });
+				expect(await approvalStatus(other.id)).toBe("pending");
+			});
+
+			it("a press from a provider that is not admitted for the kind is not admitted", async () => {
+				const { workPeriodId, approval } = await submitted("policy_clock_out", authority);
+				await allowCards();
+				const bindingId = await issueCard(workPeriodId, approval.id, authority);
+				await admin.query(
+					`update approval_presentation_control set mode = 'review_only'
+					 where organization_id = $1 and workflow_type = 'policy_clock_out'`,
+					[ids.organization],
+				);
+
+				const result = await decide(
+					actors.approver,
+					approval.id,
+					{ as: "approver" },
+					{
+						card: card(bindingId, `t1681-paused-${authority}`),
+					},
+				);
+
+				expect(result).toEqual({ status: "refused", reason: "not_admitted" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+			});
+
+			it("the same invocation with another decision is an invocation conflict", async () => {
+				const { workPeriodId, approval } = await submitted("time_correction", authority);
+				await allowCards();
+				const bindingId = await issueCard(workPeriodId, approval.id, authority);
+				const press = card(bindingId, `t1681-conflict-${authority}`);
+				await decide(actors.approver, approval.id, { as: "approver" }, { card: press });
+
+				const result = await decide(
+					actors.approver,
+					approval.id,
+					{ as: "approver" },
+					{
+						card: press,
+						decision: { kind: "reject", reason: "Rejected via Telegram" },
+					},
+				);
+
+				expect(result).toEqual({ status: "refused", reason: "invocation_conflict" });
+				expect(await approvalStatus(approval.id)).toBe("approved");
+			});
+		});
+
+		it.each(TIME_KINDS)(
+			"after escalation reassigned a %s, its former approver's card is told so, even when they manage approvals",
+			async (kind) => {
+				const { workPeriodId, approval } = await submitted(kind, "legacy");
+				await allowCards();
+				const bindingId = await issueCard(workPeriodId, approval.id, "legacy");
+				await admin.query(
+					"update member set role = 'admin' where organization_id = $1 and user_id = $2",
+					[ids.organization, ids.approverUser],
+				);
+				await escalate(approval);
+
+				const result = await decide(
+					actors.approver,
+					approval.id,
+					{ as: "approver" },
+					{
+						card: card(bindingId, `t1681-reassigned-${kind}`),
+					},
+				);
+
+				expect(result).toEqual({ status: "refused", reason: "reassigned" });
+				expect(await approvalStatus(approval.id)).toBe("pending");
+			},
+		);
+	});
+
 	describe("after-commit work", () => {
 		it("a failing time correction notification is logged and changes neither the result nor the delivery kick", async () => {
 			const { approval } = await submitted("time_correction", "legacy");

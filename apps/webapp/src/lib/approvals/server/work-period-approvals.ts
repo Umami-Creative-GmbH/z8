@@ -140,6 +140,7 @@ import type {
 } from "./types";
 import type { WorkPeriodPostCommitDescriptor } from "./work-period-submission";
 import type { DecisionRight } from "../decision-right";
+import { holdsApprovalManagement } from "./approval-management";
 import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 
@@ -461,22 +462,17 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	approvalRequestId: string;
 	workPeriodId: string;
 	actor: CurrentApprover;
-	allowAnyApprover?: boolean;
-	allowOrganizationWideApprover?: boolean;
 	/**
 	 * The time approval decision's one claimed right (Approvals ADR 0003). When
 	 * set, the legacy mutation verifies exactly this right, a kind changed
 	 * since routing restarts the decision, and refusals reach the time approval
-	 * decision with their own type instead of the owner's generic error.
+	 * decision with their own type instead of the owner's generic error. A
+	 * manager of approvals is verified from the database on the decision's
+	 * transaction; without the right only the current approver decides.
 	 */
 	decisionRight?: DecisionRight;
 	/** The fast lane's guard, run inside the transaction once the kind is known. */
 	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
-	/**
-	 * Explicit organization approval management, checked by the trusted
-	 * caller on the decision's transaction. Absent means none (fail closed).
-	 */
-	canManageOrganizationApproval?: (database: ApprovalDbService["db"]) => Promise<boolean>;
 	decision:
 		| { kind: "approve"; reason: string | null }
 		| { kind: "reject"; reason: string };
@@ -968,9 +964,14 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			entityId: period.id,
 			approvalRequestId: input.approvalRequestId,
 			actorEmployeeId: actor.id,
-			canManageOrganizationApproval: input.canManageOrganizationApproval
-				? () => input.canManageOrganizationApproval?.(database) ?? Promise.resolve(false)
-				: undefined,
+			canManageOrganizationApproval:
+				input.decisionRight?.as === "approval_manager"
+					? () =>
+							holdsApprovalManagement(database, {
+								organizationId: input.organizationId,
+								userId: actor.userId,
+							})
+					: undefined,
 		});
 		// Fresh evidence checks run only after the established replay matching
 		// above found no committed operation.
@@ -1041,9 +1042,6 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 						input.decision.reason ?? undefined,
 						{
 							approvalRequestId: input.approvalRequestId,
-							allowAnyApprover: input.allowAnyApprover,
-							allowOrganizationWideApprover:
-								input.allowOrganizationWideApprover,
 							...(input.decisionRight ? { decisionRight: input.decisionRight } : {}),
 						},
 					).pipe(
