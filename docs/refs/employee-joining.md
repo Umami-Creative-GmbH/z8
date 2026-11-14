@@ -44,7 +44,7 @@ sign-ins (`lib/auth/sso-organization-provisioning.ts`) and kiosk-only employees
 | --- | --- | --- |
 | `joined` | The user has no employee in the organization | A new employee, team placement, first terms and personnel number from the draft, the organization-wide team permissions for an owner or admin membership |
 | `reactivated` | The employee was switched off and is back on the current roster after `reactivateOnReturn` | The draft's values (or the admin role for an owner or admin membership), placement, first terms, team permissions |
-| `already_current` | The employee is on the current roster | Nothing: not the role, the team or permissions |
+| `already_current` | The employee is on the current roster | Nothing: not the role, the team or permissions. A draft is discarded with the same audit entry (`employee.invitation_draft_not_applied`, reason `employee_already_current`) |
 | `membership_only` | A former employee whose departure took effect | Nothing else. The draft is discarded with an audit entry saying it was not applied. Only a rehire brings them back |
 
 The role rule: a new employee takes the draft's role when there is a draft, otherwise admin for an owner

@@ -213,8 +213,14 @@ export function recordDroppedPersonnelNumber(
 }
 
 /**
- * A former employee who stays off the current roster gets nothing of the draft
- * (spec #1664 decision 4): the entry says so, and the draft is discarded after commit.
+ * Why joining applied nothing of the draft: a former employee who stays off the
+ * current roster (spec #1664 decision 4), or an employee already on it (decision 5).
+ */
+export type DraftNotAppliedReason = "former_employee_needs_rehire" | "employee_already_current";
+
+/**
+ * An employee joining writes nothing of the draft for gets an entry saying so;
+ * the draft is discarded after commit.
  */
 export function recordDraftNotApplied(
 	tx: JoiningTransaction,
@@ -224,6 +230,7 @@ export function recordDraftNotApplied(
 		actorUserId: string;
 		employeeId: string;
 		draft: InvitationDraft;
+		reason: DraftNotAppliedReason;
 	},
 ) {
 	return audit.record(tx, {
@@ -234,7 +241,7 @@ export function recordDraftNotApplied(
 		targetId: input.draft.id,
 		employeeId: input.employeeId,
 		metadata: {
-			reason: "former_employee_needs_rehire",
+			reason: input.reason,
 			invitationId: input.draft.invitationId,
 			draftId: input.draft.id,
 		},

@@ -178,7 +178,7 @@ export async function joinOrganization(
 	const outcome = !existing
 		? await joinAsNewEmployee(context)
 		: (await isOnCurrentRoster(tx, existing))
-			? ({ kind: "already_current", employee: existing } as const)
+			? await joinAsCurrentEmployee(context, existing)
 			: await joinAsReturningEmployee(context, existing);
 
 	const draftCleanup: DraftCleanup | null = draft
@@ -328,6 +328,27 @@ async function joinAsNewEmployee(context: JoiningContext): Promise<JoiningOutcom
 	};
 }
 
+/**
+ * An employee on the current roster is left exactly as it is (spec #1664
+ * decision 5). A draft is not applied; the entry says so before it is discarded.
+ */
+async function joinAsCurrentEmployee(
+	context: JoiningContext,
+	existing: Employee,
+): Promise<JoiningOutcome> {
+	const { tx, audit, input, draft } = context;
+	if (draft) {
+		await recordDraftNotApplied(tx, audit, {
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId ?? input.userId,
+			employeeId: existing.id,
+			draft,
+			reason: "employee_already_current",
+		});
+	}
+	return { kind: "already_current", employee: existing };
+}
+
 async function joinAsReturningEmployee(
 	context: JoiningContext,
 	existing: Employee,
@@ -350,6 +371,7 @@ async function joinAsReturningEmployee(
 				actorUserId,
 				employeeId: existing.id,
 				draft,
+				reason: "former_employee_needs_rehire",
 			});
 		}
 		return { kind: "membership_only", employee: existing };

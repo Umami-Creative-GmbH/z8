@@ -345,10 +345,9 @@ describe("joining an organization (#1665)", () => {
 						: null,
 				);
 				if (draft) {
+					// A draft joining does not apply is recorded before it is deleted (decision 5).
 					expect(await notAppliedAudits(draft.draftId)).toEqual(
-						expected.kind === "membership_only"
-							? [{ performed_by: person.userId, employee_id: row?.id }]
-							: [],
+						expected.writes ? [] : [{ performed_by: person.userId, employee_id: row?.id }],
 					);
 					await joined.afterCommit.run();
 					// Applied or not, the accepted invitation's draft is consumed.
