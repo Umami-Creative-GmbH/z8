@@ -6,6 +6,11 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts analytics overview without adopting analytics descendants", () => {
+		expect(appPageOwnsHeading("/de/analytics")).toBe(true);
+		expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(false);
+		expect(appPageOwnsHeading("/en/calendar")).toBe(false);
+	});
 	it("adopts only the portfolio pilot title, leaving other reports and descendants with shell titles", () => {
 		expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);
 		expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);
