@@ -1422,7 +1422,7 @@ part of `test:approval-workflow-repository:integration`), driving the real
 `clockIn`/`clockOut`, `createManualTimeEntry`, `requestTimeCorrection`,
 `requestTimeEntryDeletion`, the historical policy clock-out submission,
 `sendApprovalMessageToManager`, the delivery owner, `handleTelegramUpdate`, the
-web approvals actions, `cancelMyTimeCorrectionRequest`,
+web decisions through `decideTimeApproval`, `cancelMyTimeCorrectionRequest`,
 `processDueEscalations`, `sendTelegramNotification`, `deleteApproval` and the
 pilot readiness report. Only the session, billing guard, notification fan-out,
 e-mail, work-balance marking, the vault, the post-commit fast path and the
@@ -1746,10 +1746,9 @@ so reason text stays in workflow events and legacy rows.
   `material_change`. While capture is active, a lifecycle without a revision is
   held (`evidence_required`). Legacy decisions refuse a supplied reviewed
   binding (`binding_mismatch`); canonical ones validate it since #325.
-- Holds surface as `ConflictError` with `conflictType: "approval_evidence"` on
-  the inbox (`decideTimeCorrectionWithStableTargetEffect` delegation), the
-  admin/bot path (`decideOrdinaryWorkPeriodWithStableTargetEffect`) and the API
-  routes. Integrity contradictions (`invariant`) stay errors.
+- Holds surface as the `evidence_required` refusal of the time approval
+  decision (`decideTimeApproval`), which the inbox and the API routes show as
+  `ConflictError` with `conflictType: "approval_evidence"`. Integrity contradictions (`invariant`) stay errors.
 - An evidence write failure rolls back the decision or submission completely.
 - A replayed submission (same submission identity, or a receipt replay in
   `closeActiveWork`) never recaptures.

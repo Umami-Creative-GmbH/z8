@@ -9,8 +9,10 @@ import type { ApprovalTriageContext, ApprovalTriageEvidence, ApprovalTriageReque
 import type { SQL } from "drizzle-orm";
 import type { Effect } from "effect";
 import type { ComponentType } from "react";
+import type { Clock } from "@/lib/datetime/temporal-core";
 import type { AnyAppError } from "@/lib/effect/errors";
 import type { DatabaseService } from "@/lib/effect/services/database.service";
+import type { DecisionRight } from "../decision-right";
 import type { ApprovalInboxLocalizedText } from "../inbox/types";
 
 // ============================================
@@ -301,6 +303,14 @@ export interface ApprovalActionOptions {
 	approvalRequestId?: string;
 	allowAnyApprover?: boolean;
 	allowOrganizationWideApprover?: boolean;
+	/**
+	 * The one decision right the time approval decision claimed (Approvals ADR
+	 * 0003). When set, the legacy owner verifies exactly this right and ignores
+	 * `allowAnyApprover` and `allowOrganizationWideApprover`.
+	 */
+	decisionRight?: DecisionRight;
+	/** The decision's clock; a covering deputy claim is judged at its now. */
+	clock?: Clock;
 	/** Opaque reviewed-view handle; a supporting decision owner revalidates it. */
 	reviewedBindingId?: string;
 	/** Expense reports (#604): missing-receipt exceptions the approver explicitly accepts. */

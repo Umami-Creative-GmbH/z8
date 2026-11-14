@@ -1,15 +1,17 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect, Exit } from "effect";
+import { Exit } from "effect";
 import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
-import { failureOfCause, typedFailureOfCause } from "@/lib/effect/cause-failure";
-import { ConflictError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
+import {
+	decideTimeApproval,
+	type TimeApprovalDecisionRefusalReason,
+} from "@/lib/approvals/server/time-approval-decision";
+import { isTimeApprovalAboutWorkPeriod } from "@/lib/approvals/server/time-approval-work-period";
+
+import { AuthorizationError, ConflictError } from "@/lib/effect/errors";
+import { type ServerActionResult, toServerActionResult } from "@/lib/effect/result";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
 import { updateWorkPeriodProject as updateWorkPeriodProjectAction } from "../actions";
 import { logger } from "./shared";
@@ -30,101 +32,74 @@ export async function approveWorkPeriod(input: {
 		return { success: false, error: "Employee profile not found" };
 	}
 	try {
-		const [selectedWorkPeriod] = await db
-			.select({
-				id: workPeriod.id,
-				organizationId: workPeriod.organizationId,
-				approvalStatus: workPeriod.approvalStatus,
-			})
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.organizationId, currentEmployee.organizationId),
-				),
-			)
-			.limit(1);
-
-		if (!selectedWorkPeriod) {
+		// The table shows one work period; an approval about another is refused here,
+		// because the decision itself finds the work period from the approval.
+		const aboutThisWorkPeriod = await isTimeApprovalAboutWorkPeriod(db, {
+			organizationId: currentEmployee.organizationId,
+			approvalId: approvalRequestId,
+			workPeriodId,
+		});
+		if (!aboutThisWorkPeriod) {
 			return { success: false, error: "Work period not found" };
 		}
 
-		const memberRecord = await db.query.member.findFirst({
-			where: and(
-				eq(authSchema.member.userId, session.user.id),
-				eq(authSchema.member.organizationId, selectedWorkPeriod.organizationId),
-			),
+		// Management is verified from the database inside the decision, as for the inbox.
+		const result = await decideTimeApproval({
+			organizationId: currentEmployee.organizationId,
+			approvalId: approvalRequestId,
+			actor: { employeeId: currentEmployee.id, userId: session.user.id },
+			right: { as: "approval_manager" },
+			decision: { kind: "approve" },
 		});
-
-		if (memberRecord?.role !== "admin" && memberRecord?.role !== "owner") {
-			return {
-				success: false,
-				error: "Only admins and owners can approve time entries",
-			};
+		if (result.status === "decided") {
+			return { success: true, data: { workPeriodId: result.workPeriodId } };
 		}
-
-		// A failed query becomes a defect, not a DatabaseError, so a domain error thrown
-		// inside one (an unresolved review or evidence conflict) reaches the owner's
-		// catch unwrapped and comes back as its ConflictError.
-		const dbService: ApprovalDbService = {
-			db,
-			query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
-		};
-		const exit = await Effect.runPromiseExit(
-			decideOrdinaryWorkPeriodWithStableTargetEffect(
-				dbService,
-				{
-					...currentEmployee,
-					user: {
-						id: session.user.id,
-						name: session.user.name,
-						email: session.user.email,
-						image: session.user.image ?? null,
-					},
-				},
-				{
-					approvalRequestId,
-					workPeriodId: selectedWorkPeriod.id,
-					decision: { kind: "approve", reason: null },
-				},
-				{
-					approvalRequestId,
-					allowOrganizationWideApprover: true,
-				},
-			),
-		);
-		if (Exit.isFailure(exit)) {
-			return approveWorkPeriodFailure(
-				failureOfCause(exit.cause),
-				typedFailureOfCause(exit.cause),
-				workPeriodId,
-			);
-		}
-
-		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
+		return approveWorkPeriodRefusal(result.reason, workPeriodId);
 	} catch (error) {
-		return approveWorkPeriodFailure(error, error, workPeriodId);
+		logger.error({ error, workPeriodId }, "Approve work period error");
+		return APPROVE_WORK_PERIOD_FAILED;
 	}
 }
 
-// Only a typed ConflictError reaches the caller; a defect is redacted even when it is one.
-function approveWorkPeriodFailure(
-	error: unknown,
-	typedFailure: unknown,
+const APPROVE_WORK_PERIOD_FAILED = {
+	success: false,
+	error: "Failed to approve work period. Please try again.",
+} as const;
+
+const APPROVE_WORK_PERIOD_CONFLICTS: Partial<Record<TimeApprovalDecisionRefusalReason, string>> = {
+	already_decided: "This approval has already been decided.",
+	changed: "This approval changed after it was loaded. Reload and try again.",
+	evidence_required:
+		"The evidence for this decision is incomplete. Review is required before a decision can be recorded.",
+	month_closed:
+		"The month of this entry is closed. It must be reopened before its work can change.",
+};
+
+// A missing right and a conflict reach the table as their error results; any
+// other refusal is redacted.
+function approveWorkPeriodRefusal(
+	reason: TimeApprovalDecisionRefusalReason,
 	workPeriodId: string,
 ): ServerActionResult<{ workPeriodId: string }> {
-	logger.error({ error, workPeriodId }, "Approve work period error");
-	if (typedFailure instanceof ConflictError) {
-		return {
-			success: false,
-			error: typedFailure.message,
-			code: typedFailure._tag,
-		};
+	if (reason === "right_not_held") {
+		return toServerActionResult(
+			Exit.fail(
+				new AuthorizationError({
+					message: "You need the right to manage approvals to approve time entries",
+					resource: "Approval",
+					action: "approve",
+				}),
+			),
+		);
 	}
-	return {
-		success: false,
-		error: "Failed to approve work period. Please try again.",
-	};
+	const conflict = APPROVE_WORK_PERIOD_CONFLICTS[reason];
+	if (conflict) {
+		return toServerActionResult(
+			Exit.fail(new ConflictError({ message: conflict, conflictType: "approval_decision" })),
+		);
+	}
+	logger.error({ reason, workPeriodId }, "Approve work period refused");
+	return APPROVE_WORK_PERIOD_FAILED;
 }
 
 export async function updateWorkPeriodNotes(

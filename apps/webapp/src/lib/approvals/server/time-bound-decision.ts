@@ -1,24 +1,9 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { member } from "@/db/auth-schema";
 import { approvalWorkflow, employee } from "@/db/schema";
-import { systemClock } from "@/lib/datetime/temporal-core";
-import {
-	AuthorizationError,
-	ConflictError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import { createLogger } from "@/lib/logger";
-import { kickApprovalDelivery } from "../delivery/kick";
-import { isDeputyCardAssignmentPending } from "../deputy/deputy-decision";
-import { TimeCorrectionApprovalAdapterError } from "../domain-adapters/time-correction.adapter";
-import { OrdinaryWorkPeriodApprovalAdapterError } from "../domain-adapters/work-period.adapter";
-import { ApprovalAssignmentReassignedError } from "../escalation/decision-authority";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	ApprovalInvocationNotAdmittedError,
-	BoundAssignmentNotCurrentError,
 	findCommittedInvocationDecision,
 	requireCanonicalInvocationDecision,
 	requireLegacyInvocationDecision,
@@ -31,34 +16,15 @@ import {
 	loadReviewBinding,
 } from "../evidence/store";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
-import type { ApprovalWorkflowDatabase } from "../workflow/repository";
-import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
+import { type BoundTimeInvocation, boundTimeInvocationCommand } from "./bound-time-invocation";
 import {
-	type BoundTimeInvocation,
-	type BoundTimeInvocationOutcome,
-	BoundTimeInvocationReplay,
-	boundTimeInvocationCommand,
-} from "./bound-time-invocation";
-import {
-	completeTimeCorrectionDecisionAfterCommit,
-	createLegacyTimeCorrectionDecisionProcessor,
-	deleteCancelledTimeCorrectionsInTransaction,
-	dispatchTimeCorrectionDecisionPostCommit,
-	executeTimeCorrectionDecisionInTransaction,
-	finalizeTimeCorrectionTerminalInTransaction,
-} from "./time-correction-approvals";
-import type { ApprovalAction, ApprovalDatabase, ApprovalDbService, CurrentApprover } from "./types";
-import {
-	completeOrdinaryWorkPeriodDecisionAfterCommit,
-	executeOrdinaryWorkPeriodDecisionInTransaction,
-	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
-	isOrdinaryWorkPeriodDecisionRefusal,
-	notifyWorkPeriodApprovalAfterCommit,
-	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-} from "./work-period-approvals";
-
-const logger = createLogger("BoundTimeDecision");
+	type CardDecisionRight,
+	decideTimeApproval,
+	type TimeApprovalDecisionReceipt,
+	type TimeApprovalDecisionRefusal,
+} from "./time-approval-decision";
+import type { ApprovalAction, ApprovalDatabase, CurrentApprover } from "./types";
 
 type BoundTimeRefusal =
 	| {
@@ -97,50 +63,6 @@ type BoundTimeDecisionInput = {
 	invocation: BoundTimeInvocation["invocation"];
 };
 
-/**
- * The owners' runtime for a card decision: only the current assignee (checked
- * by the engine first) may decide; a card never reaches management or
- * eligible-manager authority.
- */
-function boundTimeRuntime(
-	database: ApprovalWorkflowDatabase,
-	options: { deputyCard?: { actingForEmployeeId?: string; assignmentId: string } } = {},
-) {
-	return createProductionApprovalWorkflowRuntime({
-		db: database,
-		adapters: {
-			absence: {
-				clock: systemClock,
-				finalizeAbsenceTerminal: async () => {
-					throw new Error("Absence finalization is outside this boundary");
-				},
-				deleteCancelledAbsence: async () => {
-					throw new Error("Absence cancellation is outside this boundary");
-				},
-			},
-			timeCorrection: {
-				clock: systemClock,
-				finalizeTimeCorrectionTerminal: finalizeTimeCorrectionTerminalInTransaction,
-				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
-			},
-			ordinaryWorkPeriod: {
-				finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
-			},
-		},
-		canManageApproval: async ({ workflow, command }) => {
-			// A deputy card (#1017) goes on to the engine's covering-deputy grant.
-			if (
-				options.deputyCard &&
-				isDeputyCardAssignmentPending(options.deputyCard, workflow, command)
-			) {
-				return false;
-			}
-			throw new BoundAssignmentNotCurrentError();
-		},
-		clock: systemClock,
-	});
-}
-
 /** The approved organization member and active employee a card resolves to. */
 async function loadBoundActor(input: BoundTimeDecisionInput): Promise<CurrentApprover | null> {
 	const { database } = input;
@@ -172,48 +94,80 @@ async function loadBoundActor(input: BoundTimeDecisionInput): Promise<CurrentApp
 }
 
 /**
- * A reviewed-binding decision on a canonical manual time submission, policy
- * clock-out or time correction from an authenticated bot invocation (#325).
- * An exact committed invocation replays first, before any current state is
- * read. Otherwise the existing decision owner decides the exact bound
- * assignment under the invocation's own receipt: neither eligible-manager
- * fallback nor organization management is ever invoked from a card, and the
- * binding, current submitted revision and provider admission are revalidated
- * in the transaction that commits. Infrastructure errors propagate.
+ * The exact committed decision of this invocation, read before any current
+ * state; null when it never committed. A card's own failure is classified.
  */
-export async function decideBoundTimeInvocation(
+async function replayOf(
 	input: BoundTimeDecisionInput,
-): Promise<BoundTimeInvocationResult> {
-	const { database } = input;
+): Promise<
+	| { status: "decided"; replayed: true; evidence: TimeApprovalDecisionReceipt }
+	| BoundTimeRefusal
+	| null
+> {
 	const bound: BoundTimeInvocation = {
 		reviewedBindingId: input.bindingId,
 		invocation: input.invocation,
 	};
-	const command = boundTimeInvocationCommand({
-		bound,
-		actorEmployeeId: input.actorEmployeeId,
-		actorUserId: input.actorUserId,
-		action: input.action,
-		reason: input.reason ?? null,
-	});
 	try {
-		const committed = await findCommittedInvocationDecision(database, {
+		const committed = await findCommittedInvocationDecision(input.database, {
 			identity: input.invocation.identity,
-			command,
+			command: boundTimeInvocationCommand({
+				bound,
+				actorEmployeeId: input.actorEmployeeId,
+				actorUserId: input.actorUserId,
+				action: input.action,
+				reason: input.reason ?? null,
+			}),
 		});
-		if (committed) {
-			return {
-				status: "decided",
-				replayed: true,
-				evidence: requireCanonicalInvocationDecision(committed),
-			};
-		}
+		return committed ? { status: "decided", replayed: true, evidence: committed } : null;
 	} catch (error) {
-		return canonicalOutcome(classifyBoundTimeError(error));
+		return cardRefusalOfError(error);
 	}
+}
+
+/**
+ * The card press, decided by the time approval decision under the
+ * recipient's own right: as approver, or for a deputy card as covering deputy
+ * for the absent approver it names. The binding's exact approval is decided.
+ */
+async function pressCard(
+	input: BoundTimeDecisionInput,
+	binding: { approvalId: string; actingForEmployeeId?: string },
+) {
+	const right: CardDecisionRight = binding.actingForEmployeeId
+		? { as: "covering_deputy", forEmployeeId: binding.actingForEmployeeId }
+		: { as: "approver" };
+	return decideTimeApproval({
+		database: input.database,
+		organizationId: input.organizationId,
+		approvalId: binding.approvalId,
+		actor: { employeeId: input.actorEmployeeId, userId: input.actorUserId },
+		right,
+		decision:
+			input.action === "approve"
+				? { kind: "approve" }
+				: { kind: "reject", reason: input.reason ?? "" },
+		card: { reviewedBindingId: input.bindingId, invocation: input.invocation },
+	});
+}
+
+/**
+ * A reviewed-binding decision on a canonical manual time submission, policy
+ * clock-out or time correction from an authenticated bot invocation (#325).
+ * An exact committed invocation replays first, before any current state is
+ * read. Otherwise the time approval decision decides the exact bound
+ * assignment under the invocation's own receipt and the recipient's own right
+ * (#1681): a card never reaches eligible-manager or management rights.
+ * Infrastructure errors propagate.
+ */
+export async function decideBoundTimeInvocation(
+	input: BoundTimeDecisionInput,
+): Promise<BoundTimeInvocationResult> {
+	const replay = await replayOf(input);
+	if (replay) return canonicalOutcome(replay);
 	const [actor, binding] = await Promise.all([
 		loadBoundActor(input),
-		loadReviewBinding(database, {
+		loadReviewBinding(input.database, {
 			organizationId: input.organizationId,
 			bindingId: input.bindingId,
 		}),
@@ -221,11 +175,10 @@ export async function decideBoundTimeInvocation(
 	if (!actor || !binding || binding.recipientEmployeeId !== input.actorEmployeeId) {
 		return { status: "not_found" };
 	}
-	const [workflow] = await database
+	const [workflow] = await input.database
 		.select({
 			workflowType: approvalWorkflow.workflowType,
 			sourceType: approvalWorkflow.sourceType,
-			sourceId: approvalWorkflow.sourceId,
 		})
 		.from(approvalWorkflow)
 		.where(
@@ -242,79 +195,15 @@ export async function decideBoundTimeInvocation(
 	) {
 		return { status: "not_found" };
 	}
-	const reason = input.action === "reject" ? (input.reason ?? "") : null;
-	const createRuntime = (runtimeDatabase: ApprovalWorkflowDatabase) =>
-		boundTimeRuntime(runtimeDatabase, { deputyCard: binding });
-	try {
-		if (workflow.workflowType === "time_correction") {
-			const execution = await executeTimeCorrectionDecisionInTransaction({
-				createRuntime,
-				database: database as ApprovalDbService["db"],
-				bound,
-				organizationId: input.organizationId,
-				actorEmployeeId: input.actorEmployeeId,
-				actorUserId: input.actorUserId,
-				// The exact bound assignment; never re-selected from the request.
-				approvalRequestId: binding.assignmentId,
-				action: input.action,
-				...(input.reason === undefined ? {} : { reason: input.reason }),
-				processLegacy: async () => {
-					throw new ApprovalEvidenceError("binding_mismatch");
-				},
-				processOrdinary: async () => {
-					throw new ApprovalEvidenceError("binding_mismatch");
-				},
-			});
-			if (!("invocation" in execution) || !execution.invocation) {
-				throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
-			}
-			return {
-				status: "decided",
-				replayed: false,
-				evidence: requireCanonicalInvocationDecision(execution.invocation.evidence),
-			};
-		}
-		const dbService: ApprovalDbService = {
-			db: database as ApprovalDbService["db"],
-			query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
-		};
-		const execution = await completeOrdinaryWorkPeriodDecisionAfterCommit({
-			execute: () =>
-				executeOrdinaryWorkPeriodDecisionInTransaction({
-					dbService,
-					createRuntime,
-					bound,
-					organizationId: input.organizationId,
-					approvalRequestId: binding.assignmentId,
-					workPeriodId: workflow.sourceId,
-					actor,
-					decision:
-						input.action === "approve"
-							? { kind: "approve", reason: null }
-							: { kind: "reject", reason: reason ?? "" },
-				}),
-			// Canonical decisions dispatch through the workflow outbox.
-			dispatch: async () => {},
-			maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-			onDispatchError: () => {},
-			onMaintenanceError: (error) => {
-				logger.error(
-					{ error, organizationId: input.organizationId, workPeriodId: workflow.sourceId },
-					"Ordinary work-period maintenance after a bound decision failed",
-				);
-			},
-		});
-		if (!execution.invocation) {
-			throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
-		}
-		return {
-			status: "decided",
-			replayed: false,
-			evidence: requireCanonicalInvocationDecision(execution.invocation.evidence),
-		};
-	} catch (error) {
-		return canonicalOutcome(classifyBoundTimeError(error));
-	}
+	const result = await pressCard(input, {
+		approvalId: binding.assignmentId,
+		...(binding.actingForEmployeeId ? { actingForEmployeeId: binding.actingForEmployeeId } : {}),
+	});
+	return canonicalOutcome(
+		result.status === "decided"
+			? decidedCard(result.replayed, result.receipt)
+			: cardRefusal(result),
+	);
 }
 
 /**
@@ -322,46 +211,19 @@ export async function decideBoundTimeInvocation(
  * submission, policy clock-out or time correction from an authenticated bot
  * invocation (#432): the legacy counterpart of `decideBoundTimeInvocation`.
  * An exact committed invocation replays first, before any current state is
- * read. Otherwise the legacy branch of the kind's decision owner decides only
- * the exact bound legacy request, for its current approver, under the rollout
- * gate: neither eligible-manager fallback nor organization management is
- * reachable from a card, and a request escalation transferred (#439) refuses
- * its former holders. The after-commit effects are those of a web decision.
- * Infrastructure errors propagate.
+ * read. Otherwise the time approval decision decides only the exact bound
+ * legacy request, under the recipient's own right; a request escalation
+ * transferred (#439) refuses its former holders. The after-commit work is the
+ * time approval decision's. Infrastructure errors propagate.
  */
 export async function decideBoundLegacyTimeInvocation(
 	input: BoundTimeDecisionInput,
 ): Promise<BoundLegacyTimeInvocationResult> {
-	const { database } = input;
-	const bound: BoundTimeInvocation = {
-		reviewedBindingId: input.bindingId,
-		invocation: input.invocation,
-	};
-	const command = boundTimeInvocationCommand({
-		bound,
-		actorEmployeeId: input.actorEmployeeId,
-		actorUserId: input.actorUserId,
-		action: input.action,
-		reason: input.reason ?? null,
-	});
-	try {
-		const committed = await findCommittedInvocationDecision(database, {
-			identity: input.invocation.identity,
-			command,
-		});
-		if (committed) {
-			return {
-				status: "decided",
-				replayed: true,
-				evidence: requireLegacyInvocationDecision(committed),
-			};
-		}
-	} catch (error) {
-		return legacyOutcome(classifyBoundLegacyTimeError(error));
-	}
+	const replay = await replayOf(input);
+	if (replay) return legacyOutcome(replay);
 	const [actor, binding] = await Promise.all([
 		loadBoundActor(input),
-		loadLegacyReviewBinding(database, {
+		loadLegacyReviewBinding(input.database, {
 			organizationId: input.organizationId,
 			bindingId: input.bindingId,
 		}),
@@ -371,7 +233,7 @@ export async function decideBoundLegacyTimeInvocation(
 	}
 	// The revision survives ordinary cancellation, so it names the work period
 	// and the kind even after the pending request is gone.
-	const source = await loadLegacySubmittedRevisionSource(database, {
+	const source = await loadLegacySubmittedRevisionSource(input.database, {
 		organizationId: input.organizationId,
 		submittedRevisionId: binding.submittedRevisionId,
 	});
@@ -382,129 +244,28 @@ export async function decideBoundLegacyTimeInvocation(
 	) {
 		return { status: "not_found" };
 	}
-	const dbService: ApprovalDbService = {
-		db: database as ApprovalDbService["db"],
-		query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
-	};
-	// Only the exact request's current approver: no management authority.
-	const canManageOrganizationApproval = async () => false;
-	let outcome: BoundTimeInvocationOutcome | undefined;
-	let deliveryIntent = false;
-	try {
-		if (source.workflowType === "time_correction") {
-			const execution = await completeTimeCorrectionDecisionAfterCommit({
-				execute: () =>
-					executeTimeCorrectionDecisionInTransaction({
-						createRuntime: boundTimeRuntime,
-						database: dbService.db,
-						bound,
-						organizationId: input.organizationId,
-						actorEmployeeId: input.actorEmployeeId,
-						actorUserId: input.actorUserId,
-						// The exact bound legacy request; never re-selected.
-						approvalRequestId: binding.legacyApprovalRequestId,
-						action: input.action,
-						...(input.reason === undefined ? {} : { reason: input.reason }),
-						query: dbService.query,
-						canManageOrganizationApproval,
-						processLegacy: createLegacyTimeCorrectionDecisionProcessor({
-							approvalRequestId: binding.legacyApprovalRequestId,
-							action: input.action,
-							reason: input.reason,
-						}),
-						processOrdinary: async () => {
-							throw new ApprovalEvidenceError("binding_mismatch");
-						},
-					}),
-				// The same after-commit effects as a web decision (notifications,
-				// work-balance dirty mark); never on replay.
-				dispatch: (effects) =>
-					dispatchTimeCorrectionDecisionPostCommit({
-						dbService,
-						actor,
-						approvalRequestId: binding.legacyApprovalRequestId,
-						effects,
-						reason: input.reason,
-					}),
-				onDispatchError: (error) =>
-					logger.error(
-						{ error, organizationId: input.organizationId, workPeriodId: source.sourceId },
-						"Time correction card decision after-commit work failed",
-					),
-			});
-			outcome = "invocation" in execution ? execution.invocation : undefined;
-			deliveryIntent = "deliveryIntent" in execution && execution.deliveryIntent === true;
-		} else {
-			const execution = await completeOrdinaryWorkPeriodDecisionAfterCommit({
-				execute: () =>
-					executeOrdinaryWorkPeriodDecisionInTransaction({
-						dbService,
-						createRuntime: boundTimeRuntime,
-						bound,
-						organizationId: input.organizationId,
-						approvalRequestId: binding.legacyApprovalRequestId,
-						workPeriodId: source.sourceId,
-						actor,
-						canManageOrganizationApproval,
-						decision:
-							input.action === "approve"
-								? { kind: "approve", reason: null }
-								: { kind: "reject", reason: input.reason ?? "" },
-					}),
-				// The same after-commit effects as a web decision; never on replay.
-				dispatch: async (execution) => {
-					await Effect.runPromise(
-						// The bound request: a covering deputy's decision reads "(deputy for X)" (#1016).
-						notifyWorkPeriodApprovalAfterCommit(
-							execution.result,
-							actor,
-							dbService,
-							binding.legacyApprovalRequestId,
-						),
-					);
-				},
-				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-				onDispatchError: (error) => {
-					logger.error(
-						{ error, organizationId: input.organizationId, workPeriodId: source.sourceId },
-						"Ordinary work-period card decision after-commit work failed",
-					);
-				},
-				onMaintenanceError: (error) => {
-					logger.error(
-						{ error, organizationId: input.organizationId, workPeriodId: source.sourceId },
-						"Ordinary work-period maintenance after a bound decision failed",
-					);
-				},
-			});
-			outcome = execution.invocation;
-			deliveryIntent = execution.deliveryIntent === true;
-		}
-	} catch (error) {
-		return legacyOutcome(classifyBoundLegacyTimeError(error));
-	}
-	if (!outcome) {
-		throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
-	}
-	if (deliveryIntent) {
-		// The cycle's intent committed with the decision; this only runs the
-		// delivery owner sooner.
-		kickApprovalDelivery({ organizationId: input.organizationId });
-	}
-	return {
-		status: "decided",
-		replayed: outcome.replayed,
-		evidence: requireLegacyInvocationDecision(outcome.evidence),
-	};
+	const result = await pressCard(input, {
+		approvalId: binding.legacyApprovalRequestId,
+		...(binding.actingForEmployeeId ? { actingForEmployeeId: binding.actingForEmployeeId } : {}),
+	});
+	return legacyOutcome(
+		result.status === "decided"
+			? decidedCard(result.replayed, result.receipt)
+			: cardRefusal(result),
+	);
 }
 
 type ClassifiedBoundTimeResult =
-	| {
-			status: "decided";
-			replayed: boolean;
-			evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
-	  }
+	| { status: "decided"; replayed: boolean; evidence: TimeApprovalDecisionReceipt }
 	| BoundTimeRefusal;
+
+function decidedCard(
+	replayed: boolean,
+	receipt: TimeApprovalDecisionReceipt | undefined,
+): ClassifiedBoundTimeResult {
+	if (!receipt) throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
+	return { status: "decided", replayed, evidence: receipt };
+}
 
 function canonicalOutcome(result: ClassifiedBoundTimeResult): BoundTimeInvocationResult {
 	return result.status === "decided"
@@ -518,70 +279,48 @@ function legacyOutcome(result: ClassifiedBoundTimeResult): BoundLegacyTimeInvoca
 		: result;
 }
 
-function classifyBoundLegacyTimeError(error: unknown): ClassifiedBoundTimeResult {
-	// The legacy owners' own refusals arrive as their typed failures, which the
-	// legacy decision runs throw as themselves.
-	// No longer the approver, already decided or withdrawn, or no longer a
-	// classifiable time request: nothing is decided.
-	if (error instanceof AuthorizationError || error instanceof ValidationError) {
-		return { status: "review_required", reason: "stale" };
+/** What a card shows for a refused press: nothing was decided. */
+function cardRefusal(refusal: TimeApprovalDecisionRefusal): BoundTimeRefusal {
+	switch (refusal.reason) {
+		case "binding_mismatch":
+			return { status: "review_required", reason: "binding" };
+		case "not_admitted":
+			return { status: "review_required", reason: "not_admitted" };
+		case "invocation_conflict":
+			return { status: "conflict" };
+		case "reassigned":
+			// Escalation replaced the card's recipient (#326, #439).
+			return { status: "review_required", reason: "reassigned" };
+		case "evidence_required":
+			return { status: "review_required", reason: "evidence" };
+		case "changed":
+			// The submitted evidence found the work changed since it was submitted.
+			return refusal.detail?.kind === "evidence" && refusal.detail.code === "material_change"
+				? { status: "review_required", reason: "material_change" }
+				: { status: "review_required", reason: "stale" };
+		// Decided elsewhere, removed, no longer the recipient's, or otherwise no
+		// longer the reviewed request: a stale card.
+		case "not_found":
+		case "already_decided":
+		case "right_not_held":
+		case "own_request":
+		case "month_closed":
+		case "unclassified":
+		case "guard_failed":
+			return { status: "review_required", reason: "stale" };
 	}
-	return classifyBoundTimeError(error);
 }
 
-function classifyBoundTimeError(error: unknown): ClassifiedBoundTimeResult {
-	if (error instanceof BoundTimeInvocationReplay) {
-		return { status: "decided", replayed: true, evidence: error.evidence };
-	}
-	if (error instanceof BoundAssignmentNotCurrentError) {
-		return { status: "review_required", reason: "stale" };
-	}
-	if (error instanceof ApprovalAssignmentReassignedError) {
-		// Escalation replaced the card's recipient (#326, #439): nothing is decided.
-		return { status: "review_required", reason: "reassigned" };
-	}
+/** The exact-replay lookup's own refusals; anything else is a failure. */
+function cardRefusalOfError(error: unknown): BoundTimeRefusal {
 	if (error instanceof ApprovalInvocationNotAdmittedError) {
 		return { status: "review_required", reason: "not_admitted" };
 	}
-	if (error instanceof ApprovalEvidenceError) {
-		switch (error.code) {
-			case "invocation_mismatch":
-				return { status: "conflict" };
-			case "binding_mismatch":
-				return { status: "review_required", reason: "binding" };
-			case "material_change":
-				return { status: "review_required", reason: "material_change" };
-			case "evidence_required":
-			case "evidence_incomplete":
-				return { status: "review_required", reason: "evidence" };
-			case "invariant":
-				throw error;
-		}
+	if (error instanceof ApprovalEvidenceError && error.code === "invocation_mismatch") {
+		return { status: "conflict" };
 	}
-	if (error instanceof ApprovalTransitionEngineError) {
-		switch (error.code) {
-			case "idempotency_mismatch":
-				return { status: "conflict" };
-			case "forbidden":
-			case "version_conflict":
-				// A decided, replaced or reassigned assignment: nothing is decided.
-				return { status: "review_required", reason: "stale" };
-			default:
-				throw error;
-		}
-	}
-	// The owners' refusals of a request that is no longer the reviewed one
-	// (decided elsewhere, removed, or its scope changed) decide nothing.
-	// The adapters refuse a source that no longer matches its workflow before
-	// anything is written: a stale card, like any other.
-	if (
-		error instanceof ConflictError ||
-		error instanceof NotFoundError ||
-		error instanceof TimeCorrectionApprovalAdapterError ||
-		error instanceof OrdinaryWorkPeriodApprovalAdapterError ||
-		isOrdinaryWorkPeriodDecisionRefusal(error)
-	) {
-		return { status: "review_required", reason: "stale" };
+	if (error instanceof ApprovalTransitionEngineError && error.code === "idempotency_mismatch") {
+		return { status: "conflict" };
 	}
 	throw error;
 }

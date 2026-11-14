@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { approvalRequest, employee } from "@/db/schema";
@@ -18,18 +17,15 @@ import {
 	decideBoundLegacyTimeInvocation,
 	decideBoundTimeInvocation,
 } from "@/lib/approvals/server/time-bound-decision";
-import { loadApprovalInboxDecisionTarget } from "@/lib/approvals/inbox/decision-service";
 import {
 	decideBoundAbsenceInvocation,
 	decideBoundLegacyAbsenceInvocation,
 } from "@/lib/approvals/server/absence-approvals";
 import { decideBoundPeriodSubmissionInvocation } from "@/lib/approvals/server/period-submission-bound-decision";
 import { decideBoundLegacyTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-report-bound-decision";
+import { decideTimeApproval } from "@/lib/approvals/server/time-approval-decision";
 import type { ApprovalAction } from "@/lib/approvals/server/types";
-import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { runtime } from "@/lib/effect/runtime";
-import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { BotPlatform } from "./types";
 
 const platformNames: Record<BotPlatform, string> = {
@@ -54,30 +50,73 @@ export type BotApprovalAttemptResult =
 	| { status: "historical"; action: "approve" | "reject" };
 
 /**
- * All existing cards are unbound. Preserve supported historical semantic replay
- * under the existing ordinary-work owner, with a transaction-time no-mutation
- * guard. A fresh invocation never obtains authority from an old card.
+ * A press on an old unbound card (#1679). It only confirms a decision its
+ * approver already committed, through the time approval decision with
+ * `replayOnly`; anything else, a time correction included, needs review. A
+ * fresh decision never obtains authority from an old card. Deleted at cutover.
  */
 export async function attemptBotApproval(
 	input: BotApprovalAttemptInput,
 ): Promise<BotApprovalAttemptResult> {
-	const approval = await db.query.approvalRequest.findFirst({
-		where: and(
-			eq(approvalRequest.id, input.approvalId),
-			eq(approvalRequest.organizationId, input.organizationId),
-		),
-	});
-	if (!approval) return { status: "not_found" };
 	const actor = await db.query.employee.findFirst({
 		where: and(
 			eq(employee.id, input.actorEmployeeId),
 			eq(employee.organizationId, input.organizationId),
 			eq(employee.isActive, true),
 		),
-		with: { user: true },
+		columns: { id: true, userId: true },
 	});
-	if (!actor || approval.approverId !== actor.id)
-		return { status: "unauthorized" };
+	if (actor) {
+		// The decision loads and classifies the target itself, once; with
+		// `replayOnly` it never falls through to a fresh decision, and it refuses
+		// a time correction outright.
+		const result = await decideTimeApproval({
+			organizationId: input.organizationId,
+			approvalId: input.approvalId,
+			actor: { employeeId: actor.id, userId: actor.userId },
+			right: { as: "approver" },
+			decision:
+				input.action === "approve"
+					? { kind: "approve" }
+					: {
+							kind: "reject",
+							reason: `Rejected via ${platformNames[input.platform]}`,
+						},
+			replayOnly: true,
+		});
+		if (result.status === "decided") return { status: "historical", action: input.action };
+		switch (result.reason) {
+			case "not_found":
+				// Not a time approval, or not one this actor can be found for.
+				break;
+			case "right_not_held":
+			case "reassigned":
+			case "own_request":
+				return { status: "unauthorized" };
+			default:
+				return { status: "review_required" };
+		}
+	}
+	return otherApprovalAttempt(input, actor);
+}
+
+/**
+ * An old card for an approval the time approval decision did not find, such
+ * as another kind: its approver is sent to review it, anyone else is refused.
+ */
+async function otherApprovalAttempt(
+	input: BotApprovalAttemptInput,
+	actor: { id: string; userId: string } | undefined,
+): Promise<BotApprovalAttemptResult> {
+	const approval = await db.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.id, input.approvalId),
+			eq(approvalRequest.organizationId, input.organizationId),
+		),
+		columns: { approverId: true },
+	});
+	if (!approval) return { status: "not_found" };
+	if (!actor || approval.approverId !== actor.id) return { status: "unauthorized" };
 	const membership = await db.query.member.findFirst({
 		where: and(
 			eq(member.userId, actor.userId),
@@ -85,42 +124,7 @@ export async function attemptBotApproval(
 		),
 		columns: { id: true },
 	});
-	if (!membership) return { status: "unauthorized" };
-	const target = await loadApprovalInboxDecisionTarget(input);
-	if (target.approverId !== actor.id) return { status: "unauthorized" };
-	if (
-		target.entityType !== "time_entry" ||
-		(target.workflowKind !== "manual_time_submission" &&
-			target.workflowKind !== "policy_clock_out")
-	)
-		return { status: "review_required" };
-	// No first-read source facts are handed to rendering. The owner reloads the
-	// exact target and verifies committed matching; it cannot fall through to a
-	// fresh decision even if discovery raced with reassignment or source edits.
-	const verified = await runtime.runPromise(
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			return yield* decideOrdinaryWorkPeriodWithStableTargetEffect(
-				service,
-				actor,
-				{
-					approvalRequestId: target.id,
-					workPeriodId: target.entityId,
-					historicalOnly: true,
-					decision:
-						input.action === "approve"
-							? { kind: "approve", reason: null }
-							: {
-									kind: "reject",
-									reason: `Rejected via ${platformNames[input.platform]}`,
-								},
-				},
-			).pipe(Effect.result);
-		}),
-	);
-	return verified._tag === "Success"
-		? { status: "historical", action: input.action }
-		: { status: "review_required" };
+	return membership ? { status: "review_required" } : { status: "unauthorized" };
 }
 
 /**

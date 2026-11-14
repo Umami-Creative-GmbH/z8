@@ -11,6 +11,7 @@ import { Effect } from "effect";
 import type { Pool, PoolClient } from "pg";
 import {
 	afterAll,
+	afterEach,
 	beforeEach,
 	describe,
 	expect,
@@ -38,10 +39,10 @@ import { parseApprovalReviewTarget } from "../presentation/review-navigation";
 import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
+import { decideTimeApproval } from "./time-approval-decision";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
-	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "./work-period-approvals";
@@ -90,6 +91,54 @@ vi.mock("@/lib/auth", async (importOriginal) => {
 	};
 });
 
+// The inbox decision cases count the requester notifications and the logged
+// after-commit failures; every other case keeps the real behaviour.
+const inboxObservation = vi.hoisted(() => ({
+	active: false,
+	notifications: [] as Array<{ trigger: string; workPeriodId: unknown }>,
+	loggedErrors: [] as Array<{ component: string; message: unknown }>,
+}));
+
+vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
+	const original =
+		await importOriginal<typeof import("@/lib/notifications/triggers")>();
+	const observed = <Name extends keyof typeof original>(trigger: Name) =>
+		(async (params: { workPeriodId?: unknown }) => {
+			if (!inboxObservation.active) {
+				return (original[trigger] as (input: unknown) => unknown)(params);
+			}
+			inboxObservation.notifications.push({
+				trigger,
+				workPeriodId: params.workPeriodId,
+			});
+		}) as unknown as (typeof original)[Name];
+	return {
+		...original,
+		onManualEntryApproved: observed("onManualEntryApproved"),
+		onManualEntryRejected: observed("onManualEntryRejected"),
+		onClockOutApproved: observed("onClockOutApproved"),
+		onClockOutRejected: observed("onClockOutRejected"),
+	};
+});
+
+vi.mock("@/lib/logger", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/logger")>();
+	return {
+		...original,
+		createLogger: (component: string) => {
+			const child = original.createLogger(component);
+			const error = child.error.bind(child);
+			child.error = ((...args: unknown[]) => {
+				if (inboxObservation.active) {
+					inboxObservation.loggedErrors.push({ component, message: args[1] });
+				}
+				return (error as (...input: unknown[]) => void)(...args);
+			}) as typeof child.error;
+			return child;
+		},
+	};
+});
+
 const integrationSource = readFileSync(
 	join(
 		process.cwd(),
@@ -114,7 +163,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"completed-chain duplicate submission replays the prior result without effects",
 			"terminal prior history remains immutable while one new conflicting pending submission wins",
 			"stale same-organization source link fails generically and rolls back",
-			"approve versus reject leaves one coherent terminal graph and a generic conflict loser",
+			"approve versus reject leaves one coherent terminal graph and an already-decided loser",
 			"duplicate approve replays one coherent terminal graph",
 			"Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity",
 			"uses the submitted break snapshot after mutable policy deletion in %s mode",
@@ -465,6 +514,7 @@ describe(
 
 		function runtime(
 			borrowed: ApprovalWorkflowDatabase = database as unknown as ApprovalWorkflowDatabase,
+			clock: { nowInstant: () => typeof now } = { nowInstant: () => now },
 		) {
 			return createProductionApprovalWorkflowRuntime({
 				db: borrowed,
@@ -495,7 +545,7 @@ describe(
 				canManageApproval: async ({ organizationId, actorEmployeeId }) =>
 					organizationId === ids.organization &&
 					actorEmployeeId === ids.manager,
-				clock: { nowInstant: () => now },
+				clock,
 			});
 		}
 
@@ -816,8 +866,9 @@ describe(
 			kind: OrdinaryWorkPeriodApprovalKind,
 			submissionId = ids.submission,
 			applicationName?: string,
+			clock?: { nowInstant: () => typeof now },
 		) {
-			const productionRuntime = runtime();
+			const productionRuntime = runtime(undefined, clock);
 			return productionRuntime.repository.withTransaction(async (context) => {
 				if (applicationName) {
 					await context.dbService.db.execute(
@@ -851,15 +902,18 @@ describe(
 				| { kind: "approve"; reason: string | null }
 				| { kind: "reject"; reason: string },
 		) {
-			return executeOrdinaryWorkPeriodDecisionInTransaction({
-				dbService: dbService(database),
-				createRuntime: runtime,
+			// The manager is the configured approver of every stage here.
+			return decideTimeApproval({
 				organizationId: ids.organization,
-				approvalRequestId,
-				workPeriodId: ids.period,
-				actor: manager,
-				allowAnyApprover: true,
-				decision,
+				approvalId: approvalRequestId,
+				actor: { employeeId: manager.id, userId: manager.userId },
+				right: { as: "approver" },
+				decision:
+					decision.kind === "approve"
+						? { kind: "approve" }
+						: { kind: "reject", reason: decision.reason },
+				database: database as never,
+				clock: { nowInstant: () => now },
 			});
 		}
 
@@ -1101,19 +1155,25 @@ describe(
 				| { kind: "approve"; reason: string | null }
 				| { kind: "reject"; reason: string },
 		) {
-			let dispatches = 0;
-			const dispatchErrors: unknown[] = [];
-			const maintenanceErrors: unknown[] = [];
-			const execution = await completeOrdinaryWorkPeriodDecisionAfterCommit({
-				execute: () => decide(approvalRequestId, decision),
-				dispatch: async () => {
-					dispatches += 1;
-				},
-				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-				onDispatchError: (error) => dispatchErrors.push(error),
-				onMaintenanceError: (error) => maintenanceErrors.push(error),
-			});
-			return { execution, dispatches, dispatchErrors, maintenanceErrors };
+			// The time approval decision runs the after-commit work itself; its
+			// notifications and logged failures are observed.
+			const observing = inboxObservation.active;
+			inboxObservation.active = true;
+			inboxObservation.notifications = [];
+			inboxObservation.loggedErrors = [];
+			try {
+				const execution = await decide(approvalRequestId, decision);
+				const logged = (message: string) =>
+					inboxObservation.loggedErrors.filter((entry) => entry.message === message);
+				return {
+					execution,
+					dispatches: inboxObservation.notifications.length,
+					dispatchErrors: logged("Ordinary work-period decision after-commit work failed"),
+					maintenanceErrors: logged("Ordinary work-period maintenance after commit failed"),
+				};
+			} finally {
+				inboxObservation.active = observing;
+			}
 		}
 
 		async function assertSubmittedBreakSnapshotParity(
@@ -1436,12 +1496,7 @@ describe(
 				expect(periods.rows[1]?.id).not.toBe(ids.period);
 			}
 			const surchargePeriodIds = periods.rows.map(({ id }) => id).sort();
-			expect(
-				[
-					...(completed.execution.postCommit?.maintenance?.surchargePeriodIds ??
-						[]),
-				].sort(),
-			).toEqual(surchargePeriodIds);
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			const beforeReplay = await maintenanceSnapshot();
 			const calculations = beforeReplay.calculations.filter(
 				({ organization_id }) => organization_id === ids.organization,
@@ -1505,7 +1560,7 @@ describe(
 				kind: "approve",
 				reason: null,
 			});
-			expect(replay.execution.postCommit).toBeNull();
+			expect(replay.execution).toMatchObject({ status: "decided", replayed: true });
 			expect(replay.maintenanceErrors).toEqual([]);
 			expect(await maintenanceSnapshot()).toEqual(beforeReplay);
 		}
@@ -1557,12 +1612,7 @@ describe(
 				[ids.organization, ids.requester],
 			);
 			expect(periods.rows).toHaveLength(input.split ? 2 : 1);
-			expect(
-				[
-					...(completed.execution.postCommit?.maintenance?.surchargePeriodIds ??
-						[]),
-				].sort(),
-			).toEqual(periods.rows.map(({ id }) => id).sort());
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			const state = await maintenanceSnapshot();
 			const calculations = state.calculations.filter(
 				({ organization_id }) => organization_id === ids.organization,
@@ -1771,7 +1821,10 @@ describe(
 						? { kind: "approve", reason: null }
 						: { kind: "reject", reason: "Missing details" },
 				),
-			).resolves.toMatchObject({ result: { action } });
+			).resolves.toMatchObject({
+				status: "decided",
+				outcome: action === "approve" ? "approved" : "rejected",
+			});
 
 			const graph = await snapshot();
 			const expectedStatus = action === "approve" ? "approved" : "rejected";
@@ -1824,7 +1877,7 @@ describe(
 
 				await expect(
 					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
-				).resolves.toMatchObject({ result: { action: "approve" } });
+				).resolves.toMatchObject({ status: "decided", outcome: "approved" });
 				const decided = await snapshot();
 				const lateMirrored = await lateMirrorEvents();
 				expect(lateMirrored.length).toBeGreaterThan(0);
@@ -1838,7 +1891,7 @@ describe(
 				// The retry replays: no second late mirror or observed workflow.
 				await expect(
 					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
-				).resolves.toMatchObject({ result: { action: "approve" }, postCommit: null });
+				).resolves.toMatchObject({ status: "decided", outcome: "approved", replayed: true });
 				expect(await lateMirrorEvents()).toEqual(lateMirrored);
 				expect(await snapshot()).toEqual(decided);
 			},
@@ -1855,7 +1908,7 @@ describe(
 					kind: "approve",
 					reason: null,
 				}),
-			).resolves.toMatchObject({ result: { action: "approve" } });
+			).resolves.toMatchObject({ status: "decided", outcome: "approved" });
 			const graph = await snapshot();
 			const periods = graph.work_period as Array<Record<string, unknown>>;
 			const records = graph.time_record as Array<Record<string, unknown>>;
@@ -2337,8 +2390,8 @@ describe(
 				[ids.period, ids.organization],
 			);
 			const status = action === "approve" ? "approved" : "rejected";
-			expect(first.result.maintenance).toBeNull();
-			expect(replay.postCommit).toBeNull();
+			expect(first).toMatchObject({ status: "decided", outcome: status });
+			expect(replay).toMatchObject({ status: "decided", outcome: status, replayed: true });
 			expect(graph.rows).toEqual([
 				expect.objectContaining({
 					approval_status: status,
@@ -3138,30 +3191,22 @@ describe(
 			}
 		}
 
-		it("approve versus reject leaves one coherent terminal graph and a generic conflict loser", async () => {
+		it("approve versus reject leaves one coherent terminal graph and an already-decided loser", async () => {
 			const submitted = await submit("manual_time_submission");
 			const target = submitted.result.approvalRequestId;
-			const competing = await Promise.allSettled([
+			const competing = await Promise.all([
 				decide(target, { kind: "approve", reason: null }),
 				decide(target, { kind: "reject", reason: "reject" }),
 			]);
-			expect(
-				competing.filter(({ status }) => status === "fulfilled"),
-			).toHaveLength(1);
-			expect(
-				competing.filter(({ status }) => status === "rejected"),
-			).toHaveLength(1);
-			const winner = competing.find(({ status }) => status === "fulfilled");
-			const loser = competing.find(({ status }) => status === "rejected");
-			if (winner?.status !== "fulfilled" || loser?.status !== "rejected") {
+			const winners = competing.filter((result) => result.status === "decided");
+			const losers = competing.filter((result) => result.status === "refused");
+			expect(winners).toHaveLength(1);
+			expect(losers).toEqual([{ status: "refused", reason: "already_decided" }]);
+			const winner = winners[0];
+			if (winner?.status !== "decided") {
 				throw new Error("Task 11 terminal race did not produce one winner");
 			}
-			expect(loser.reason).toMatchObject({
-				message: "Ordinary work-period decision failed",
-			});
-			await assertTerminalGraph(
-				winner.value.result.action === "approve" ? "approved" : "rejected",
-			);
+			await assertTerminalGraph(winner.outcome === "approved" ? "approved" : "rejected");
 		});
 
 		it("duplicate approve replays one coherent terminal graph", async () => {
@@ -3195,7 +3240,10 @@ describe(
 					: { kind: "reject", reason: "Requester departed" },
 			);
 
-			expect(decided.result.action).toBe(action);
+			expect(decided).toMatchObject({
+				status: "decided",
+				outcome: action === "approve" ? "approved" : "rejected",
+			});
 			await expect(
 				pool.query<{ status: string; requester_employee_id: string }>(
 					`select status, requester_employee_id from approval_workflow
@@ -3417,7 +3465,7 @@ describe(
 			try {
 				await expect(
 					decide(target, { kind: "approve", reason: null }),
-				).rejects.toThrow("Ordinary work-period decision failed");
+				).rejects.toThrow();
 			} finally {
 				for (const table of triggerTables) {
 					await pool.query(
@@ -3511,7 +3559,7 @@ describe(
 				} else {
 					await expect(
 						decide(target ?? "", { kind: "approve", reason: null }),
-					).rejects.toThrow("Ordinary work-period decision failed");
+					).rejects.toThrow();
 				}
 			} finally {
 				await pool.query(`drop trigger if exists task11_zero_row on ${table}`);
@@ -3537,7 +3585,7 @@ describe(
 			try {
 				await expect(
 					decide(target, { kind: "approve", reason: null }),
-				).rejects.toThrow("Ordinary work-period decision failed");
+				).rejects.toThrow();
 			} finally {
 				await pool.query(
 					"drop trigger if exists task11_zero_decision_insert on time_record_approval_decision",
@@ -3714,12 +3762,15 @@ describe(
 
 				expect(completed.maintenanceErrors).toEqual([]);
 				expect(completed.dispatchErrors).toEqual([]);
-				expect(completed.execution.postCommit?.maintenance).toMatchObject({
-					organizationId: ids.organization,
-					employeeId: ids.requester,
-					dirtyFromDate: "2026-07-22",
-					decision: terminalCase.action === "approve" ? "approved" : "rejected",
+				expect(completed.execution).toMatchObject({
+					status: "decided",
+					outcome: terminalCase.action === "approve" ? "approved" : "rejected",
+					replayed: false,
 				});
+				// Canonical authority notifies through the workflow outbox, not after commit.
+				if (mode === "canonical" || mode === "complete") {
+					expect(completed.dispatches).toBe(0);
+				}
 				const ownedPeriods = await pool.query<{ id: string }>(
 					`select id from work_period
 					 where organization_id = $1 and employee_id = $2 order by id`,
@@ -3729,19 +3780,6 @@ describe(
 					terminalCase.action === "approve"
 						? ownedPeriods.rows.map(({ id }) => id).sort()
 						: [];
-				expect(
-					[
-						...(completed.execution.postCommit?.maintenance
-							?.surchargePeriodIds ?? []),
-					].sort(),
-				).toEqual(surchargePeriodIds);
-				expect(
-					completed.execution.postCommit?.maintenance?.staleSurchargePeriodIds,
-				).toEqual(terminalCase.action === "reject" ? [ids.period] : []);
-				if (mode === "canonical" || mode === "complete") {
-					expect(completed.execution.postCommit?.disposition).toBe("observe");
-					expect(completed.dispatches).toBe(0);
-				}
 
 				const state = await maintenanceSnapshot();
 				const localCalculations = state.calculations.filter(
@@ -3819,6 +3857,184 @@ describe(
 			}
 		});
 
+		describe("time approval inbox handler decision", () => {
+			// Submitted just after the work ended, so the handler's real clock decides later.
+			const submittedAt = parseInstant("2026-07-22T17:00:00Z");
+
+			beforeEach(() => {
+				inboxObservation.active = true;
+				inboxObservation.notifications = [];
+				inboxObservation.loggedErrors = [];
+			});
+
+			afterEach(() => {
+				inboxObservation.active = false;
+			});
+
+			async function submitForInbox(
+				kind: OrdinaryWorkPeriodApprovalKind,
+				mode: ApprovalWorkflowLifecycleMode,
+				withApprovalChain = false,
+			) {
+				await seed(kind, false, mode, false, withApprovalChain);
+				await seedMaintenanceState();
+				return (
+					await submit(kind, ids.submission, undefined, { nowInstant: () => submittedAt })
+				).result.approvalRequestId;
+			}
+
+			async function decideFromInbox(
+				approvalRequestId: string,
+				action: "approve" | "reject",
+			) {
+				const service = DatabaseService.of(dbService(database) as never);
+				// The manager is the approver; the handler decides under one claimed right (#1676).
+				const options = { approvalRequestId, decisionRight: { as: "approver" } as const };
+				await Effect.runPromise(
+					(action === "approve"
+						? TimeCorrectionHandler.approve(ids.period, ids.manager, options)
+						: TimeCorrectionHandler.reject(
+								ids.period,
+								ids.manager,
+								"Inbox rejection",
+								options,
+							)
+					).pipe(Effect.provideService(DatabaseService, service)),
+				);
+			}
+
+			async function localCalculations() {
+				return (await maintenanceSnapshot()).calculations
+					.filter(({ organization_id }) => organization_id === ids.organization)
+					.map(({ work_period_id, base_minutes, surcharge_minutes }) => ({
+						work_period_id,
+						base_minutes,
+						surcharge_minutes,
+					}));
+			}
+
+			it.each([
+				"legacy",
+				"canonical",
+			] as const)("approving a manual time submission runs surcharge maintenance once after commit under %s authority", async (mode) => {
+				const target = await submitForInbox("manual_time_submission", mode);
+
+				await decideFromInbox(target, "approve");
+
+				expect(
+					await pool.query(
+						"select approval_status from work_period where id = $1 and organization_id = $2",
+						[ids.period, ids.organization],
+					),
+				).toMatchObject({ rows: [{ approval_status: "approved" }] });
+				// The stale seeded calculation is replaced by exactly one fresh one.
+				expect(await localCalculations()).toEqual([
+					{ work_period_id: ids.period, base_minutes: 480, surcharge_minutes: 240 },
+				]);
+				expect(inboxObservation.loggedErrors).toEqual([]);
+				// Legacy authority notifies from this path; canonical authority notifies
+				// through the workflow outbox.
+				expect(inboxObservation.notifications).toEqual(
+					mode === "legacy"
+						? [{ trigger: "onManualEntryApproved", workPeriodId: ids.period }]
+						: [],
+				);
+			});
+
+			it.each([
+				"legacy",
+				"canonical",
+			] as const)("rejecting a manual time submission removes its stale surcharges after commit under %s authority", async (mode) => {
+				const target = await submitForInbox("manual_time_submission", mode);
+
+				await decideFromInbox(target, "reject");
+
+				expect(
+					await pool.query(
+						"select approval_status from work_period where id = $1 and organization_id = $2",
+						[ids.period, ids.organization],
+					),
+				).toMatchObject({ rows: [{ approval_status: "rejected" }] });
+				expect(await localCalculations()).toEqual([]);
+				expect(inboxObservation.loggedErrors).toEqual([]);
+				expect(inboxObservation.notifications).toEqual(
+					mode === "legacy"
+						? [{ trigger: "onManualEntryRejected", workPeriodId: ids.period }]
+						: [],
+				);
+			});
+
+			it("approving a policy clock-out runs surcharge maintenance after commit", async () => {
+				const target = await submitForInbox("policy_clock_out", "legacy");
+
+				await decideFromInbox(target, "approve");
+
+				expect(await localCalculations()).toEqual([
+					{ work_period_id: ids.period, base_minutes: 480, surcharge_minutes: 240 },
+				]);
+				expect(inboxObservation.notifications).toEqual([
+					{ trigger: "onClockOutApproved", workPeriodId: ids.period },
+				]);
+			});
+
+			it("a decision that only advances to the next stage runs no maintenance", async () => {
+				const target = await submitForInbox("manual_time_submission", "legacy", true);
+
+				await decideFromInbox(target, "approve");
+
+				expect(
+					await pool.query(
+						"select approval_status from work_period where id = $1 and organization_id = $2",
+						[ids.period, ids.organization],
+					),
+				).toMatchObject({ rows: [{ approval_status: "pending" }] });
+				expect(await localCalculations()).toEqual([
+					{ work_period_id: ids.period, base_minutes: 999, surcharge_minutes: 999 },
+				]);
+				expect(inboxObservation.notifications).toEqual([]);
+				expect(inboxObservation.loggedErrors).toEqual([]);
+			});
+
+			it("a failing maintenance run is logged without changing the decision or stopping the notification", async () => {
+				const target = await submitForInbox("manual_time_submission", "legacy");
+				await pool.query(`create or replace function inbox1674_fail_surcharge_delete() returns trigger as $$
+			begin raise exception 'inbox surcharge reconciliation failure'; end;
+			$$ language plpgsql`);
+				await pool.query(
+					`create trigger inbox1674_fail_surcharge_delete
+					 before delete on surcharge_calculation
+					 for each row execute function inbox1674_fail_surcharge_delete()`,
+				);
+				try {
+					await expect(decideFromInbox(target, "approve")).resolves.toBeUndefined();
+				} finally {
+					await pool.query(
+						"drop trigger if exists inbox1674_fail_surcharge_delete on surcharge_calculation",
+					);
+					await pool.query("drop function if exists inbox1674_fail_surcharge_delete()");
+				}
+
+				expect(
+					await pool.query(
+						"select approval_status from work_period where id = $1 and organization_id = $2",
+						[ids.period, ids.organization],
+					),
+				).toMatchObject({ rows: [{ approval_status: "approved" }] });
+				expect(await localCalculations()).toEqual([
+					{ work_period_id: ids.period, base_minutes: 999, surcharge_minutes: 999 },
+				]);
+				expect(inboxObservation.loggedErrors).toEqual([
+					{
+						component: "TimeApprovalDecision",
+						message: "Ordinary work-period maintenance after commit failed",
+					},
+				]);
+				expect(inboxObservation.notifications).toEqual([
+					{ trigger: "onManualEntryApproved", workPeriodId: ids.period },
+				]);
+			});
+		});
+
 		it("rolls back surcharge reconciliation atomically with terminal maintenance", async () => {
 			await seed("manual_time_submission", false, "canonical");
 			await seedMaintenanceState();
@@ -3833,7 +4049,7 @@ describe(
 					run: () =>
 						completeDecision(target, { kind: "approve", reason: null }),
 				}),
-			).rejects.toThrow("Ordinary work-period decision failed");
+			).rejects.toThrow();
 			expect(await maintenanceSnapshot()).toEqual(beforeRollback);
 			expect(
 				await pool.query(
@@ -3869,7 +4085,7 @@ describe(
 				);
 			}
 			expect(completed.maintenanceErrors).toHaveLength(1);
-			expect(completed.execution.result.action).toBe("approve");
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			expect(
 				await pool.query(
 					"select approval_status from work_period where id = $1 and organization_id = $2",
@@ -3909,7 +4125,7 @@ describe(
 				kind: "approve",
 				reason: null,
 			});
-			expect(replay.execution.postCommit).toBeNull();
+			expect(replay.execution).toMatchObject({ status: "decided", replayed: true });
 			expect(replay.dispatches).toBe(0);
 			expect(replay.maintenanceErrors).toEqual([]);
 			const afterReplay = await maintenanceSnapshot();
@@ -4032,27 +4248,29 @@ describe(
 						[ids.changedTeam, ids.requester, ids.organization],
 					);
 
-					const maintenanceErrors: unknown[] = [];
-					const completed = requesterAutoApproves
-						? await completeOrdinaryWorkPeriodDecisionAfterCommit({
-								execute: async () => submitted,
-								dispatch: async () => undefined,
-								maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-								onDispatchError: () => undefined,
-								onMaintenanceError: (error) => maintenanceErrors.push(error),
-							})
-						: (
-								await completeDecision(submitted.result.approvalRequestId, {
-									kind: "approve",
-									reason: null,
-								})
-							).execution;
-					expect(maintenanceErrors).toEqual([]);
-					expect(completed.postCommit?.maintenance).toMatchObject({
-						decision: "approved",
-						surchargePeriodIds: [ids.period],
-						surchargeSnapshot: snapshot,
-					});
+					if (requesterAutoApproves) {
+						const maintenanceErrors: unknown[] = [];
+						const completed = await completeOrdinaryWorkPeriodDecisionAfterCommit({
+							execute: async () => submitted,
+							dispatch: async () => undefined,
+							maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+							onDispatchError: () => undefined,
+							onMaintenanceError: (error) => maintenanceErrors.push(error),
+						});
+						expect(maintenanceErrors).toEqual([]);
+						expect(completed.postCommit?.maintenance).toMatchObject({
+							decision: "approved",
+							surchargePeriodIds: [ids.period],
+							surchargeSnapshot: snapshot,
+						});
+					} else {
+						const completed = await completeDecision(submitted.result.approvalRequestId, {
+							kind: "approve",
+							reason: null,
+						});
+						expect(completed.maintenanceErrors).toEqual([]);
+						expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
+					}
 					const current = await maintenanceSnapshot();
 					const calculations = current.calculations.filter(
 						({ organization_id }) => organization_id === ids.organization,
@@ -4255,7 +4473,7 @@ describe(
 				reason: null,
 			});
 
-			expect(completed.execution.result.action).toBe("approve");
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			expect(completed.maintenanceErrors).toEqual([]);
 			const state = await maintenanceSnapshot();
 			expect(
@@ -4299,7 +4517,7 @@ describe(
 				reason: null,
 			});
 
-			expect(completed.execution.result.action).toBe("approve");
+			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
 			expect(completed.maintenanceErrors).toEqual([]);
 			const state = await maintenanceSnapshot();
 			expect(

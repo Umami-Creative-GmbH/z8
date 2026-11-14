@@ -16,6 +16,8 @@ const {
 	timeEntryFindManyMock,
 	completeHandlerApproveMock,
 	loadOrdinaryCanonicalApprovalsMock,
+	employeeFindFirstMock,
+	decideTimeApprovalMock,
 } = vi.hoisted(() => ({
 	approvalRequestFindFirstMock: vi.fn(),
 	approvalRequestFindManyMock: vi.fn(),
@@ -25,6 +27,12 @@ const {
 	timeEntryFindManyMock: vi.fn(),
 	completeHandlerApproveMock: vi.fn(),
 	loadOrdinaryCanonicalApprovalsMock: vi.fn(),
+	employeeFindFirstMock: vi.fn(),
+	decideTimeApprovalMock: vi.fn(),
+}));
+
+vi.mock("@/lib/approvals/server/time-approval-decision", () => ({
+	decideTimeApproval: decideTimeApprovalMock,
 }));
 
 vi.mock("@/lib/approvals/inbox/ordinary-canonical-read", () => ({
@@ -57,6 +65,7 @@ vi.mock("@/db", () => ({
 			},
 			workPeriod: { findFirst: workPeriodFindFirstMock },
 			timeEntry: { findMany: timeEntryFindManyMock },
+			employee: { findFirst: employeeFindFirstMock },
 		},
 	},
 }));
@@ -162,6 +171,14 @@ describe("approval inbox decision service", () => {
 		completeHandlerApproveMock.mockClear();
 		completeHandlerApproveMock.mockReturnValue(Effect.void);
 		loadOrdinaryCanonicalApprovalsMock.mockReset().mockResolvedValue([]);
+		employeeFindFirstMock.mockReset().mockResolvedValue({ userId: "user-1" });
+		decideTimeApprovalMock.mockReset().mockResolvedValue({
+			status: "decided",
+			kind: "time_correction",
+			workPeriodId: "work-period-1",
+			outcome: "approved",
+			replayed: false,
+		});
 	});
 
 	it("classifies a compatibility absence for the transaction-bound shortcut guard", async () => {
@@ -248,10 +265,11 @@ describe("approval inbox decision service", () => {
 			type: "time_entry",
 			status: "approved",
 		});
-		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
-			"period-1",
-			"manager-1",
-			{ approvalRequestId: "assignment-1" },
+		expect(decideTimeApprovalMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalId: "assignment-1",
+				right: { as: "approver" },
+			}),
 		);
 		expect(loadOrdinaryCanonicalApprovalsMock).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -332,10 +350,11 @@ describe("approval inbox decision service", () => {
 			organizationId: "org-1",
 		});
 
-		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
-			"period-1",
-			"manager-1",
-			{ approvalRequestId: "assignment-1" },
+		expect(decideTimeApprovalMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalId: "assignment-1",
+				right: { as: "approver" },
+			}),
 		);
 	});
 
@@ -523,10 +542,11 @@ describe("approval inbox decision service", () => {
 		});
 
 		expect(result.failed).toEqual([]);
-		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
-			"period-1",
-			"manager-1",
-			{ approvalRequestId: "assignment-1" },
+		expect(decideTimeApprovalMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalId: "assignment-1",
+				right: { as: "approver" },
+			}),
 		);
 	});
 	it("returns the same generic not-found error for missing and inaccessible single IDs", async () => {
@@ -643,29 +663,6 @@ describe("approval inbox decision service", () => {
 		});
 		expect(approve).toHaveBeenCalledWith("absence-1", "manager-1", {
 			approvalRequestId: "approval-1",
-		});
-	});
-
-	it("passes the stable time-correction inbox request ID to the handler", async () => {
-		const approve = vi.fn(() => Effect.succeed(undefined));
-
-		await decideApprovalInboxItemFromRequest({
-			request: {
-				id: "time-request-1",
-				entityType: "time_entry",
-				entityId: "work-period-1",
-				organizationId: "org-1",
-				approverId: "manager-1",
-				requesterEmployeeId: "employee-1",
-				status: "pending",
-			},
-			actorEmployeeId: "manager-1",
-			action: "approve",
-			handler: { type: "time_entry", approve, reject: vi.fn() } as never,
-		});
-
-		expect(approve).toHaveBeenCalledWith("work-period-1", "manager-1", {
-			approvalRequestId: "time-request-1",
 		});
 	});
 
@@ -1287,8 +1284,16 @@ describe("approval inbox decision service", () => {
 					message: "You cannot decide your own request",
 				})),
 			);
-			expect(approve.mock.calls.map(([entityId]) => entityId)).toEqual(
-				kinds.map(({ entityId }) => `${entityId}-other`),
+			// Time approvals are decided by the time approval decision (#1676).
+			expect(approve.mock.calls.map(([entityId]) => entityId)).toEqual([
+				"absence-1-other",
+				"claim-1-other",
+			]);
+			expect(decideTimeApprovalMock).toHaveBeenCalledExactlyOnceWith(
+				expect.objectContaining({
+					approvalId: "other-time_entry",
+					right: { as: "approval_manager" },
+				}),
 			);
 		});
 	});
@@ -1570,4 +1575,267 @@ describe("approval inbox decision service", () => {
 			});
 		},
 	);
+
+	// A single refusal's translation loads the time correction owner module.
+	describe("time approvals (#1676)", { timeout: 30_000 }, () => {
+		const timeRequest = {
+			id: "time-request-1",
+			targetType: "compatibility_request" as const,
+			entityType: "time_entry",
+			entityId: "work-period-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requesterEmployeeId: "employee-1",
+			status: "pending" as const,
+			workflowKind: "manual_time_submission" as const,
+		};
+		const persistedTimeRequest = {
+			id: "time-request-1",
+			entityType: "time_entry",
+			entityId: "work-period-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requestedBy: "employee-1",
+			status: "pending",
+			metadata: { timeRequest: { kind: "manual_time_submission" } },
+		};
+		const refusal = (reason: string, detail?: unknown) => ({
+			status: "refused",
+			reason,
+			...(detail ? { detail } : {}),
+		});
+
+		it.each([
+			["approve", { kind: "approve" }],
+			["reject", { kind: "reject", reason: "Not what happened" }],
+		] as const)("decides a single %s through the time approval decision as approver", async (action, decision) => {
+			approvalRequestFindFirstMock.mockResolvedValue(persistedTimeRequest);
+			workPeriodFindFirstMock.mockResolvedValue({
+				pendingChanges: { isManualEntry: true },
+				clockInId: null,
+				clockOutId: null,
+			});
+			const input = {
+				approvalId: "time-request-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			};
+
+			const result =
+				action === "approve"
+					? await approveApprovalInboxItem(input)
+					: await rejectApprovalInboxItem({ ...input, reason: "  Not what happened " });
+
+			expect(result).toEqual({
+				id: "time-request-1",
+				type: "time_entry",
+				status: action === "approve" ? "approved" : "rejected",
+			});
+			expect(decideTimeApprovalMock).toHaveBeenCalledExactlyOnceWith({
+				organizationId: "org-1",
+				approvalId: "time-request-1",
+				actor: { employeeId: "manager-1", userId: "user-1" },
+				right: { as: "approver" },
+				decision,
+			});
+			expect(completeHandlerApproveMock).not.toHaveBeenCalled();
+		});
+
+		it.each([
+			["approve", { kind: "approve" }],
+			["reject", { kind: "reject", reason: "Not what happened" }],
+		] as const)("decides a bulk %s through the time approval decision with one claimed right", async (action, decision) => {
+			const approve = vi.fn(() => Effect.void);
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [
+					timeRequest,
+					{ ...timeRequest, id: "time-request-2", approverId: "absent-1" },
+				],
+				actorEmployeeId: "deputy-1",
+				action,
+				...(action === "reject" ? { reason: "Not what happened" } : {}),
+				eligibleApprovalScopes: [
+					{ requesterEmployeeId: "employee-1", eligibleApproverIds: ["manager-1", "deputy-1"] },
+				],
+				coveredApproverIds: ["absent-1"],
+				resolveHandler: () => ({ type: "time_entry", approve, reject: approve }) as never,
+			});
+
+			const status = action === "approve" ? "approved" : "rejected";
+			expect(result).toEqual({
+				succeeded: [
+					{ id: "time-request-1", type: "time_entry", status },
+					{ id: "time-request-2", type: "time_entry", status },
+				],
+				failed: [],
+			});
+			expect(decideTimeApprovalMock.mock.calls.map(([input]) => [input.approvalId, input.right])).toEqual([
+				["time-request-1", { as: "eligible_manager" }],
+				["time-request-2", { as: "covering_deputy", forEmployeeId: "absent-1" }],
+			]);
+			expect(decideTimeApprovalMock.mock.calls[0]?.[0]).toMatchObject({
+				actor: { employeeId: "deputy-1", userId: "user-1" },
+				decision,
+			});
+			expect(approve).not.toHaveBeenCalled();
+		});
+
+		it("claims manager of approvals for an organization-wide approver", async () => {
+			await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [timeRequest],
+				actorEmployeeId: "admin-1",
+				action: "approve",
+				includeAllApprovers: true,
+			});
+
+			expect(decideTimeApprovalMock.mock.calls[0]?.[0].right).toEqual({ as: "approval_manager" });
+		});
+
+		it("passes the fast-lane guard through as the decision's guard", async () => {
+			const context = {
+				organizationId: "org-1",
+				requestId: "time-request-1",
+				entityId: "work-period-1",
+				revision: "reviewed-revision",
+				scope: "web_inbox",
+			};
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [{ ...timeRequest, workflowKind: "time_correction" }],
+				actorEmployeeId: "manager-1",
+				action: "approve",
+				fastLane: {
+					group: "small_time_correction",
+					reviewedContexts: { "time-request-1": context },
+				},
+				loadCurrentFastLaneItem: async () => ({
+					id: "time-request-1",
+					type: "time_entry",
+					entityId: "work-period-1",
+					status: "pending",
+					triage: {
+						priority: "normal",
+						riskLevel: "low",
+						riskReasons: [],
+						fastLaneGroup: "small_time_correction",
+						isPayrollRelevant: false,
+						explanation: "",
+						requestKind: "time_correction",
+						context,
+					},
+					capabilities: {
+						canApprove: true,
+						canReject: true,
+						canBulkApprove: true,
+						requiresRejectReason: true,
+					},
+				}),
+			});
+
+			expect(result.failed).toEqual([]);
+			expect(decideTimeApprovalMock.mock.calls[0]?.[0].fastLaneGuard).toEqual(expect.any(Function));
+		});
+
+		it("fails a bulk item whose fast-lane guard refused it as stale", async () => {
+			decideTimeApprovalMock.mockResolvedValue(refusal("guard_failed"));
+
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [timeRequest],
+				actorEmployeeId: "manager-1",
+				action: "approve",
+			});
+
+			expect(result).toEqual({
+				succeeded: [],
+				failed: [
+					{
+						id: "time-request-1",
+						code: "stale",
+						message:
+							"This fast-lane assessment changed. Refresh or open the request for manual review.",
+					},
+				],
+			});
+		});
+
+		it("maps a bulk refusal by its reason", async () => {
+			decideTimeApprovalMock.mockResolvedValue(refusal("right_not_held"));
+
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [timeRequest],
+				actorEmployeeId: "manager-1",
+				action: "approve",
+			});
+
+			expect(result.failed).toEqual([
+				{
+					id: "time-request-1",
+					code: "forbidden",
+					message: "You are not authorized to decide this request",
+				},
+			]);
+		});
+
+		it("refuses an actor whose employee is gone as not found", async () => {
+			employeeFindFirstMock.mockResolvedValue(undefined);
+
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [timeRequest],
+				actorEmployeeId: "manager-1",
+				action: "approve",
+			});
+
+			expect(result.failed).toEqual([
+				{ id: "time-request-1", code: "not_found", message: "Approval not found" },
+			]);
+			expect(decideTimeApprovalMock).not.toHaveBeenCalled();
+		});
+
+		it("fails a bulk deputy's four-eyes refusal with its own words", async () => {
+			decideTimeApprovalMock.mockResolvedValue(
+				refusal("right_not_held", { kind: "deputy_four_eyes" }),
+			);
+
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [timeRequest],
+				actorEmployeeId: "manager-1",
+				action: "approve",
+			});
+
+			expect(result.failed).toEqual([
+				{
+					id: "time-request-1",
+					code: "forbidden",
+					message:
+						"You already decided an earlier stage of this request, so you cannot decide it as a deputy",
+				},
+			]);
+		});
+
+		it("throws a single refusal as the conflict its route translates, with its overlaps", async () => {
+			const overlaps = [
+				{ kind: "work_period", id: "wp-2", startAt: "2026-07-22T10:15:00Z", endAt: null },
+			];
+			decideTimeApprovalMock.mockResolvedValue(
+				refusal("changed", { kind: "work_overlap", overlaps }),
+			);
+			approvalRequestFindFirstMock.mockResolvedValue(persistedTimeRequest);
+			workPeriodFindFirstMock.mockResolvedValue({
+				pendingChanges: { isManualEntry: true },
+				clockInId: null,
+				clockOutId: null,
+			});
+
+			await expect(
+				approveApprovalInboxItem({
+					approvalId: "time-request-1",
+					actorEmployeeId: "manager-1",
+					organizationId: "org-1",
+				}),
+			).rejects.toMatchObject({
+				_tag: "ConflictError",
+				conflictType: "work_interval_occupied",
+				details: { overlaps },
+			});
+		});
+	});
 });
