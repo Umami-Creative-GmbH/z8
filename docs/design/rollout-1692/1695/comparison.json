@@ -1,0 +1,30 @@
+[
+  {
+    "version": "before",
+    "pilot": "ordinary",
+    "invalid": false,
+    "focused": "BODY",
+    "alert": null
+  },
+  {
+    "version": "before",
+    "pilot": "consequential",
+    "invalid": false,
+    "focused": "BUTTON",
+    "evidence": "Convert to Break?\n\nThis will permanently delete this work period. The gap will appear as a break in the calendar.\n\nJan 6, 2025\n09:00 - 17:00(8h)\nReason for deletion\n\nTime entries will be marked as deleted for audit purposes.\n\nCancel\nConvert to Break"
+  },
+  {
+    "version": "after",
+    "pilot": "ordinary",
+    "invalid": true,
+    "focused": "INPUT",
+    "alert": "Name is required"
+  },
+  {
+    "version": "after",
+    "pilot": "consequential",
+    "invalid": true,
+    "focused": "TEXTAREA",
+    "evidence": "Request deletion?\n\nThis will hide the time entry after manager approval. The audit history and time-entry chain will be preserved.\n\nJan 6, 2025\n09:00 - 17:00(8h)\nReason for deletion\n*\n\nReason is required\n\nTime entries will be marked as deleted for audit purposes.\n\nCancel\nDelete entry"
+  }
+]

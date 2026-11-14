@@ -1,0 +1,53 @@
+{
+  "tools": {
+    "next": "16.4.6 / Turbopack",
+    "agentBrowser": "0.39.1",
+    "session": "next-dev-loop-78bb0cf8ebba"
+  },
+  "mcp": {
+    "projectPath": "X:/t3-code/worktrees/z8/t3-aad57edb-8ed1183a16e66da7/apps/webapp",
+    "devServerUrl": "http://localhost:57227",
+    "routeFound": true,
+    "page": "app/[locale]/(app)/billing/suspended/page.tsx",
+    "compilation": {
+      "issues": []
+    },
+    "errors": {
+      "configErrors": [],
+      "sessionErrors": []
+    }
+  },
+  "nativeReact": {
+    "tree": "SuspendedBillingPage > SuspendedBillingContent > PageHeader; SiteHeader retained",
+    "inspect": "PageHeader #466\nprops:\n  scope: \"Performance small\"\n  title: \"Organization suspended\"\n  description: \"Access to this organization is paused until billing is updated.\"\nrendered by: SuspendedBillingContent > SuspendedBillingPage",
+    "reducedMotion": true
+  },
+  "disabledBillingNormalRoute": {
+    "path": "/en/absences",
+    "title": [
+      "Absences"
+    ]
+  },
+  "doctor": {
+    "baseline": "1 selected route file, no issues; numeric score unavailable",
+    "after": "5 changed TS/TSX files including untracked content component, no issues; supply-chain and numeric score disabled"
+  },
+  "tests": {
+    "suites": 10,
+    "tests": 136,
+    "result": "passed"
+  },
+  "typecheck": "Next typegen + application, workflow-contracts, smoke TypeScript passed",
+  "lint": "Biome on touched TS/TSX files passed",
+  "finalMerge": {
+    "integrationParent": "42d850d4aca30768a53a6d07b2838111e107fff6",
+    "suites": 10,
+    "tests": 137,
+    "typecheck": "Passed all three projects after merge",
+    "runtime": "One Organization suspended h1; 390px viewport and document width; expected name, description and link",
+    "compilation": { "issues": [] },
+    "errors": { "configErrors": [], "sessionErrors": [] },
+    "doctor": "Final committed-tree scope: 5 files, no issues; numeric score/supply-chain disabled",
+    "cleanup": "Ticket Preview/native inspector closed, verified Next child tree stopped, three owned services removed, port/container probes empty"
+  }
+}

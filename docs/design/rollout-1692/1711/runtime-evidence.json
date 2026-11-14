@@ -1,0 +1,332 @@
+{
+  "fixture": "Owned disposable PostgreSQL/Valkey/RustFS, Performance small; no production env/Phase/customer data. Real Better Auth public dummy test token sign-in.",
+  "before": {
+    "billingEnabled": false,
+    "actor": "small-admin",
+    "font": "16px",
+    "observations": {
+      "phone-light": {
+        "headings": [
+          "Billing & Subscription"
+        ],
+        "content": "Organization suspended\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\nGo to billing",
+        "width": 390,
+        "documentWidth": 390,
+        "theme": "light bprogress-busy"
+      },
+      "wide-dark": {
+        "headings": [
+          "Billing & Subscription"
+        ],
+        "content": "Organization suspended\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\nGo to billing",
+        "width": 2400,
+        "documentWidth": 2400,
+        "theme": "bprogress-busy dark"
+      }
+    },
+    "desktop": "before-desktop-light.png"
+  },
+  "after": {
+    "billingEnabled": false,
+    "actor": "small-admin",
+    "observations": {
+      "desktop-light": {
+        "headings": [
+          "Organization suspended"
+        ],
+        "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+        "links": [
+          {
+            "text": "Go to billing",
+            "href": "/en/settings/billing",
+            "box": {
+              "x": 665,
+              "y": 625.25,
+              "width": 110.828125,
+              "height": 44,
+              "top": 625.25,
+              "right": 775.828125,
+              "bottom": 669.25,
+              "left": 665
+            }
+          }
+        ],
+        "width": 1600,
+        "documentWidth": 1600,
+        "font": "16px",
+        "theme": "bprogress-busy light"
+      },
+      "phone-light": {
+        "headings": [
+          "Organization suspended"
+        ],
+        "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+        "links": [
+          {
+            "text": "Go to billing",
+            "href": "/en/settings/billing",
+            "box": {
+              "x": 41,
+              "y": 555.25,
+              "width": 308,
+              "height": 44,
+              "top": 555.25,
+              "right": 349,
+              "bottom": 599.25,
+              "left": 41
+            }
+          }
+        ],
+        "width": 390,
+        "documentWidth": 390,
+        "font": "16px",
+        "theme": "bprogress-busy light"
+      },
+      "wide-dark": {
+        "headings": [
+          "Organization suspended"
+        ],
+        "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+        "links": [
+          {
+            "text": "Go to billing",
+            "href": "/en/settings/billing",
+            "box": {
+              "x": 1065,
+              "y": 725.25,
+              "width": 110.828125,
+              "height": 44,
+              "top": 725.25,
+              "right": 1175.828125,
+              "bottom": 769.25,
+              "left": 1065
+            }
+          }
+        ],
+        "width": 2400,
+        "documentWidth": 2400,
+        "font": "16px",
+        "theme": "bprogress-busy dark"
+      },
+      "zoom-equivalent": {
+        "headings": [
+          "Organization suspended"
+        ],
+        "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+        "links": [
+          {
+            "text": "Go to billing",
+            "href": "/en/settings/billing",
+            "box": {
+              "x": 305,
+              "y": 375.25,
+              "width": 110.828125,
+              "height": 44,
+              "top": 375.25,
+              "right": 415.828125,
+              "bottom": 419.25,
+              "left": 305
+            }
+          }
+        ],
+        "width": 800,
+        "documentWidth": 800,
+        "font": "16px",
+        "theme": "bprogress-busy light"
+      }
+    }
+  },
+  "billingEnabledLayouts": {
+    "enabled-desktop-light": {
+      "headings": [
+        "Organization suspended"
+      ],
+      "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+      "links": [
+        {
+          "text": "Go to billing",
+          "href": "/en/settings/billing"
+        }
+      ],
+      "width": 1600,
+      "documentWidth": 1600,
+      "theme": "bprogress-busy light"
+    },
+    "enabled-phone-light": {
+      "headings": [
+        "Organization suspended"
+      ],
+      "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+      "links": [
+        {
+          "text": "Go to billing",
+          "href": "/en/settings/billing"
+        }
+      ],
+      "width": 390,
+      "documentWidth": 390,
+      "theme": "bprogress-busy light"
+    },
+    "enabled-wide-dark": {
+      "headings": [
+        "Organization suspended"
+      ],
+      "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+      "links": [
+        {
+          "text": "Go to billing",
+          "href": "/en/settings/billing"
+        }
+      ],
+      "width": 2400,
+      "documentWidth": 2400,
+      "theme": "bprogress-busy dark"
+    }
+  },
+  "billingVariants": {
+    "billingEnabled": true,
+    "actor": "small-restricted",
+    "syntheticSetup": "Guarded fixture-state.mjs changes subscription rows only; no provider workflow claimed.",
+    "observations": {
+      "trialing": {
+        "path": "/en/absences",
+        "text": "Missing vacation policy\n\nVacation policy configuration needs attention for 2026.\nPlease contact your administrator to configure vacation policies.",
+        "headings": [
+          "Absences"
+        ],
+        "billingLink": false
+      },
+      "expired": {
+        "path": "/en/billing/suspended",
+        "text": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nThis organization is suspended. Contact an organization admin to update billing.",
+        "headings": [
+          "Organization suspended"
+        ],
+        "billingLink": false
+      },
+      "active": {
+        "path": "/en/absences",
+        "text": "Missing vacation policy\n\nVacation policy configuration needs attention for 2026.\nPlease contact your administrator to configure vacation policies.",
+        "headings": [
+          "Absences"
+        ],
+        "billingLink": false
+      },
+      "canceled": {
+        "path": "/en/billing/suspended",
+        "text": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nThis organization is suspended. Contact an organization admin to update billing.",
+        "headings": [
+          "Organization suspended"
+        ],
+        "billingLink": false
+      },
+      "unpaid": {
+        "path": "/en/billing/suspended",
+        "text": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nThis organization is suspended. Contact an organization admin to update billing.",
+        "headings": [
+          "Organization suspended"
+        ],
+        "billingLink": false
+      },
+      "past_due": {
+        "path": "/en/billing/suspended",
+        "text": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nThis organization is suspended. Contact an organization admin to update billing.",
+        "headings": [
+          "Organization suspended"
+        ],
+        "billingLink": false
+      }
+    }
+  },
+  "roles": {
+    "billingEnabled": true,
+    "observations": {
+      "small-manager": {
+        "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nThis organization is suspended. Contact an organization admin to update billing.",
+        "links": [],
+        "path": "/en/billing/suspended"
+      },
+      "small-employee": {
+        "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nThis organization is suspended. Contact an organization admin to update billing.",
+        "links": [],
+        "path": "/en/billing/suspended"
+      },
+      "small-admin": {
+        "content": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+        "links": [
+          "/en/settings/billing"
+        ],
+        "path": "/en/billing/suspended"
+      }
+    },
+    "restricted": {
+      "path": "/en/billing/suspended",
+      "guidance": "Contact an organization admin",
+      "links": []
+    }
+  },
+  "authorizedRecovery": {
+    "result": "Actual page link navigated to /en/settings/billing; real subscription showed Past Due and payment failure. No Stripe identifiers/provider credentials configured, no provider action submitted."
+  },
+  "permissionLoss": {
+    "path": "/en/settings",
+    "content": "Account\nProfile Settings\nManage your personal information and preferences\nSecurity Settings\nManage your password, two-factor authentication, passkeys, and active sessions\nNotification Settings\nChoose how and when you want to be notified\nWellness Settings\nConfigure water reminders and hydration tracking during your work sessions\nPosition stamps\nWhether your position is recorded with your clock events, and your consent\nMy data\nDownload a copy of the personal data this organization keeps about you\nOrganization\nEmployees\nManage employees, members, and invites\nTeams\nOrganize employees into teams and manage team assignments\nLocations\nManage organization locations and subareas\nPolicies\nWork Policies\nManage work schedules, time limits, and break requirements for your organization\nAbsences\nConfigure organization holidays and time off\nTime Tracking\nWork Categories\nDefine work categories with time factors for effective time calculation\nScheduling\nSkills & Qualifications\nDescription\nIntegrations\nCalendar Sync\nConfigure calendar providers, ICS feeds, and sync settings for your organization\nData\nStatistics\nView statistics and metrics about your instance",
+    "links": [
+      "/en/settings/profile",
+      "/en/settings/security",
+      "/en/settings/notifications",
+      "/en/settings/wellness",
+      "/en/settings/position-stamps",
+      "/en/settings/my-data",
+      "/en/settings/employees",
+      "/en/settings/teams",
+      "/en/settings/locations",
+      "/en/settings/work-policies",
+      "/en/settings/vacation",
+      "/en/settings/work-categories",
+      "/en/settings/skills",
+      "/en/settings/calendar",
+      "/en/settings/statistics",
+      "/en/settings/profile",
+      "/en/settings/security",
+      "/en/settings/notifications",
+      "/en/settings/wellness",
+      "/en/settings/position-stamps",
+      "/en/settings/my-data",
+      "/en/settings/employees",
+      "/en/settings/teams",
+      "/en/settings/locations",
+      "/en/settings/work-policies",
+      "/en/settings/vacation",
+      "/en/settings/work-categories",
+      "/en/settings/skills",
+      "/en/settings/calendar",
+      "/en/settings/statistics",
+      "/en/settings/billing"
+    ]
+  },
+  "largeFont": {
+    "font": "18px",
+    "saved": "large",
+    "theme": "dark bprogress-busy",
+    "width": 390,
+    "documentWidth": 390,
+    "card": "Performance small\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nThis organization is suspended. Contact an organization admin to update billing.",
+    "source": "Large chosen through desktop account submenu, persisted after reload."
+  },
+  "longOrganization": {
+    "content": "Performance small – Internationale Organisation für Arbeitszeitverwaltung und Personalplanung mit einem sehr langen Organisationsnamen\nOrganization suspended\nAccess to this organization is paused until billing is updated.\n\nYour trial ended or subscription is no longer valid. Update billing to continue using Z8.\n\nGo to billing",
+    "width": 390,
+    "documentWidth": 390,
+    "heading": "Organization suspended",
+    "font": "18px",
+    "source": "Real organization update API returned 200; restored original name through same API, 200."
+  },
+  "keyboard": {
+    "focus": "Go to billing",
+    "href": "/en/settings/billing",
+    "visible": true,
+    "ring": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.549994 -0.0104668 -0.119526 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px"
+  },
+  "providerLimit": "Billing portal POST was rejected by automatic approval review because it could create an external provider session. No provider completion or mutation is claimed; no Stripe credentials/configured provider IDs were used."
+}

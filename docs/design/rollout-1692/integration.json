@@ -42,8 +42,10 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "bfacad421ffe77f50729ea5895c546698ef28383",
+                        "evidence":  "docs/design/rollout-1692/1695.md",
+                        "integrationVerification":  "36 unique suites / 260 tests, full types, nine-file Biome and reviewed Doctor warning; exact tree, 14 ancestry checks, all 138 prior rollout files, evidence and whitespace verified. Inspected 33+4 live runtime assertions, not rerun. F2 interfaces coexist; H1 compatibility checkpoint eligible. Final-review limits retained."
                     },
                     {
                         "id":  "H1",
@@ -52,8 +54,10 @@
                                           1694,
                                           1695
                                       ],
-                        "status":  "pending",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+                        "evidence":  "docs/design/rollout-1692/1853.md",
+                        "integrationVerification":  "Docs-only checkpoint verified: exact merge tree/parents; F2/F3 ledger and ancestry; unchanged prerequisites and all 75 joint consumers; 24 links/anchors and all 10,349 prior files preserved. Existing combined 36-suite/260-test and runtime evidence reused, not rerun. Compatible joint handoff released; final-review limits retained."
                     },
                     {
                         "id":  "R001",
@@ -62,7 +66,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -72,7 +76,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -184,8 +188,10 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+                        "evidence":  "docs/design/rollout-1692/1711.md",
+                        "integrationVerification":  "10 suites / 137 ticket tests and 9 suites / 43 shared compatibility tests passed; evidence, expected tree, 10 ancestry checks, prior paths, committed LF/Biome and whitespace verified. Local billing roles/states/runtime inherited from implementer. External provider completion unverified: automatic approval rejected portal POST as possible external session; catalog/build/device limits retained."
                     },
                     {
                         "id":  "R014",
