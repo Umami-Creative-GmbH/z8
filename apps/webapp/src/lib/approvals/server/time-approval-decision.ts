@@ -42,7 +42,6 @@ import { readReviewBindingAuthority } from "../authority/binding";
 import type { DecisionRight } from "../decision-right";
 import { kickApprovalDelivery } from "../delivery/kick";
 import { loadCover } from "../deputy/covering-store";
-import type { ApprovalActionOptions } from "../domain/types";
 import {
 	ApprovalAssignmentReassignedError,
 	eligibleManagerFallbackAllowed,
@@ -180,7 +179,7 @@ export async function decideTimeApproval(
 
 interface DecisionOutcome {
 	result: TimeApprovalDecisionResult;
-	/** A refusal's original error, for the temporary flag adapters only. */
+	/** A refusal's original error, for the inbox adapters that throw what their routes expect. */
 	cause?: unknown;
 }
 
@@ -698,8 +697,8 @@ function refusalOf(error: unknown): TimeApprovalDecisionRefusalReason | null {
 }
 
 /**
- * The decision with the original error of a refusal. Only the temporary flag
- * adapters read the cause, to throw what their callers expect.
+ * The decision with the original error of a refusal. Only the inbox adapter and
+ * the time entry handler read the cause, to throw what their routes expect.
  */
 export async function decideTimeApprovalWithCause(
 	input: TimeApprovalDecisionInput,
@@ -826,80 +825,4 @@ export async function decideTimeApprovalWithCause(
 		}
 	}
 	throw new Error("Time approval kind did not settle under the work transaction's guards");
-}
-
-/**
- * The temporary flag-to-right resolver of the two decision wrappers (#1675).
- * Own rights first: the target's current approver decides as approver; then
- * organization-wide approval claims manager of approvals; an eligible manager
- * claims that right; anyone else may only cover for the current approver.
- * Deleted with the wrappers (#1680).
- */
-export async function resolveDecisionRightFromFlags(
-	database: ApprovalDatabase,
-	input: {
-		organizationId: string;
-		approvalId: string;
-		actorEmployeeId: string;
-		options: ApprovalActionOptions | undefined;
-	},
-): Promise<DecisionRight> {
-	const target = await routeTimeApproval(database, input);
-	if (!target.found || target.currentApproverEmployeeId === input.actorEmployeeId) {
-		return { as: "approver" };
-	}
-	if (input.options?.allowOrganizationWideApprover) return { as: "approval_manager" };
-	if (input.options?.allowAnyApprover && target.legacyApprovalRequestId) {
-		const eligible = await isEligibleManagerForApprovalRequest({
-			db: database as never,
-			approvalRequestId: target.legacyApprovalRequestId,
-			managerEmployeeId: input.actorEmployeeId,
-			organizationId: input.organizationId,
-		});
-		if (eligible) return { as: "eligible_manager" };
-	}
-	return target.currentApproverEmployeeId
-		? { as: "covering_deputy", forEmployeeId: target.currentApproverEmployeeId }
-		: { as: "approver" };
-}
-
-/**
- * The two wrappers' common adapter: one right from today's flags, then the
- * time approval decision. A refusal comes back as its original error.
- */
-export async function decideTimeApprovalFromFlags(input: {
-	database: ApprovalDatabase;
-	actor: CurrentApprover;
-	approvalId: string;
-	decision: TimeApprovalDecisionInput["decision"];
-	options: ApprovalActionOptions | undefined;
-	/** The ordinary wrapper's caller named the work period; another one is refused. */
-	expectedWorkPeriodId?: string;
-	replayOnly?: boolean;
-}): Promise<DecisionOutcome> {
-	if (input.expectedWorkPeriodId !== undefined) {
-		const target = await routeTimeApproval(input.database, {
-			organizationId: input.actor.organizationId,
-			approvalId: input.approvalId,
-		});
-		if (!target.found || target.workPeriodId !== input.expectedWorkPeriodId) {
-			return refused("not_found", approvalNotFound());
-		}
-	}
-	const right = await resolveDecisionRightFromFlags(input.database, {
-		organizationId: input.actor.organizationId,
-		approvalId: input.approvalId,
-		actorEmployeeId: input.actor.id,
-		options: input.options,
-	});
-	return decideTimeApprovalWithCause({
-		organizationId: input.actor.organizationId,
-		approvalId: input.approvalId,
-		actor: { employeeId: input.actor.id, userId: input.actor.userId },
-		right,
-		decision: input.decision,
-		fastLaneGuard: input.options?.shortcutGuard,
-		replayOnly: input.replayOnly,
-		database: input.database,
-	});
 }

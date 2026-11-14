@@ -64,7 +64,6 @@ import {
 } from "../domain-adapters/legacy-write-coordinator";
 import {
 	ApprovalAssignmentReassignedError,
-	approvalReassignedConflict,
 	assertNotReplacedByEscalation,
 } from "../escalation/decision-authority";
 import {
@@ -101,7 +100,6 @@ import {
 import {
 	prepareLegacyWorkPeriodDecisionEvidence,
 	recordLegacyWorkPeriodDecisionEvidence,
-	translateWorkPeriodEvidenceError,
 	workPeriodReceiptKeyDigest,
 } from "../evidence/work-period-evidence";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
@@ -2389,72 +2387,6 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 	} catch (error) {
 		throw new AggregateError([error], "Ordinary work-period maintenance failed");
 	}
-}
-
-/**
- * Temporary adapter (#1675): resolves one decision right from today's flags,
- * own rights first, and decides through the time approval decision. A
- * refusal is thrown as the conflict this wrapper's callers expect. Deleted
- * with its last caller (#1680).
- */
-export function decideOrdinaryWorkPeriodWithStableTargetEffect(
-	dbService: ApprovalDbService,
-	currentEmployee: CurrentApprover,
-	input: {
-		historicalOnly?: boolean;
-		approvalRequestId: string;
-		workPeriodId: string;
-		decision:
-			| { kind: "approve"; reason: string | null }
-			| { kind: "reject"; reason: string };
-	},
-	options?: ApprovalActionOptions,
-) {
-	return Effect.tryPromise({
-		try: async () => {
-			if (
-				currentEmployee.organizationId.length === 0 ||
-				input.approvalRequestId.length === 0 ||
-				input.workPeriodId.length === 0 ||
-				(options?.approvalRequestId !== undefined &&
-					options.approvalRequestId !== input.approvalRequestId)
-			) {
-				throw new Error(ORDINARY_DECISION_ERROR);
-			}
-			const { decideTimeApprovalFromFlags } = await import("./time-approval-decision");
-			const { result, cause } = await decideTimeApprovalFromFlags({
-				database: dbService.db,
-				actor: currentEmployee,
-				approvalId: input.approvalRequestId,
-				decision:
-					input.decision.kind === "approve"
-						? { kind: "approve" }
-						: { kind: "reject", reason: input.decision.reason },
-				options,
-				expectedWorkPeriodId: input.workPeriodId,
-				replayOnly: input.historicalOnly,
-			});
-			if (result.status === "refused") throw cause;
-		},
-		catch: (error) => {
-			if (error instanceof ApprovalAssignmentReassignedError) {
-				return approvalReassignedConflict(error);
-			}
-			if (error instanceof ConflictError && error.conflictType === "approval_reassigned") {
-				return error;
-			}
-			const unresolvedReview = unresolvedWorkPeriodReviewFrom(error);
-			if (unresolvedReview) return unresolvedReview;
-			const evidenceConflict = translateWorkPeriodEvidenceError(error);
-			return evidenceConflict instanceof ConflictError &&
-				evidenceConflict.conflictType === "approval_evidence"
-				? evidenceConflict
-				: new ConflictError({
-						message: ORDINARY_DECISION_ERROR,
-						conflictType: "approval_decision",
-					});
-		},
-	});
 }
 
 export function finalizeAutoCompletedWorkPeriodApprovalEffect(

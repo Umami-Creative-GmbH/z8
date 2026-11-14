@@ -10,8 +10,8 @@
  * Real callers run against that database: the time submission actions
  * (`clockIn`/`clockOut`, `createManualTimeEntry`, `requestTimeCorrection`),
  * `processDueEscalations`, the escalation settings actions, the inbox
- * approve/reject routes with the real CASL abilities, the web approvals
- * actions, the requester's correction cancellation and approval maintenance,
+ * approve/reject routes with the real CASL abilities, web decisions through
+ * the time approval decision, the requester's correction cancellation and approval maintenance,
  * with the real write gate, legacy captures, shadow mirror, journal and
  * attention store. Only the request/session, billing, notification fan-out,
  * the Next cache and the delivery fast path are replaced. Live clock-outs
@@ -147,8 +147,8 @@ const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracki
 const { requestTimeCorrection } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions/corrections"
 );
-const { approveTimeCorrection: approveOnWeb } = await import(
-	"@/app/[locale]/(app)/approvals/actions"
+const { approve: approveOnWeb } = (await import("@/test/web-time-decision")).webTimeDecision(
+	harness,
 );
 const { cancelMyTimeCorrectionRequest } = await import("@/app/[locale]/(app)/my-requests/actions");
 await import("@/lib/approvals/init");
