@@ -167,7 +167,16 @@ async function signInToOrganization(
 		});
 	});
 	if (!joining) return null;
-	await joining.afterCommit.run();
+	// The sign-in committed; a failed after-commit step must not fail it. The
+	// hourly seat reconciliation is the safety net for the seat signal.
+	try {
+		await joining.afterCommit.run();
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: input.organizationId, userId: input.userId },
+			"Joining's after-commit step failed after an SSO sign-in",
+		);
+	}
 	return joining.outcome;
 }
 
