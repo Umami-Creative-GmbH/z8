@@ -38,6 +38,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
+import { readReviewBindingAuthority } from "../authority/binding";
 import type { DecisionRight } from "../decision-right";
 import { kickApprovalDelivery } from "../delivery/kick";
 import { loadCover } from "../deputy/covering-store";
@@ -48,6 +49,12 @@ import {
 } from "../escalation/decision-authority";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import { ApprovalInvocationNotAdmittedError } from "../evidence/invocation";
+import {
+	type DecisionEvidenceRecord,
+	type LegacyDecisionEvidenceRecord,
+	loadLegacyReviewBinding,
+	loadReviewBinding,
+} from "../evidence/store";
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { isOwnRequestDecisionRefusal } from "../policies/self-decision";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
@@ -58,6 +65,11 @@ import {
 } from "../workflow/runtime";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
 import { holdsApprovalManagement } from "./approval-management";
+import {
+	type BoundTimeInvocation,
+	type BoundTimeInvocationOutcome,
+	BoundTimeInvocationReplay,
+} from "./bound-time-invocation";
 import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
 import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
 import {
@@ -107,27 +119,57 @@ export type TimeApprovalDecisionResult =
 			/** `advanced`: the next stage is now pending. */
 			outcome: "approved" | "rejected" | "advanced";
 			replayed: boolean;
+			/** Card presses only: the decision evidence the press committed or replayed. */
+			receipt?: TimeApprovalDecisionReceipt;
 	  }
 	| { status: "refused"; reason: TimeApprovalDecisionRefusalReason };
 
-export interface TimeApprovalDecisionInput {
+/** A card's receipt: canonical evidence, or legacy evidence for a legacy binding. */
+export type TimeApprovalDecisionReceipt = DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
+
+/** A card press: the review binding the card carried and the provider invocation. */
+export type TimeApprovalCard = BoundTimeInvocation;
+
+/** The rights a card can convey (Approvals ADR 0003): never eligible-manager or management. */
+export type CardDecisionRight = Extract<DecisionRight, { as: "approver" | "covering_deputy" }>;
+
+interface TimeApprovalDecisionInputBase {
 	organizationId: string;
 	/** A legacy request id or a canonical assignment id; never a workflow id. */
 	approvalId: string;
 	actor: { employeeId: string; userId: string };
-	right: DecisionRight;
 	decision: { kind: "approve" } | { kind: "reject"; reason: string };
-	/** The fast lane's guard; refusing it gives `guard_failed`. */
-	fastLaneGuard?: (database: ApprovalDatabase) => Promise<void>;
-	/**
-	 * Confirms a decision that already committed and never makes a fresh one.
-	 * Only the unbound bot card uses it; it goes with that card at cutover.
-	 */
-	replayOnly?: boolean;
 	/** The database that opens the work transaction; defaults to the application database. */
 	database?: ApprovalDatabase;
 	clock?: Clock;
 }
+
+export type TimeApprovalDecisionInput = TimeApprovalDecisionInputBase &
+	(
+		| {
+				right: DecisionRight;
+				card?: undefined;
+				/** The fast lane's guard; refusing it gives `guard_failed`. */
+				fastLaneGuard?: (database: ApprovalDatabase) => Promise<void>;
+				/**
+				 * Confirms a decision that already committed and never makes a fresh one.
+				 * Only the unbound bot card uses it; it goes with that card at cutover.
+				 */
+				replayOnly?: boolean;
+		  }
+		| {
+				/** A card conveys only its recipient's right as approver or covering deputy. */
+				right: CardDecisionRight;
+				/**
+				 * The card's review binding and invocation. The kind comes from the
+				 * binding, never from classification; the decision runs under the
+				 * invocation's own receipt and an exact repeat replays it.
+				 */
+				card: TimeApprovalCard;
+				fastLaneGuard?: undefined;
+				replayOnly?: undefined;
+		  }
+	);
 
 /** One time approval decision; a refusal is a value. */
 export async function decideTimeApproval(
@@ -162,6 +204,8 @@ type RoutedTarget =
 async function routeTimeApproval(
 	database: ApprovalDatabase,
 	input: { organizationId: string; approvalId: string },
+	/** A card's kind, from its binding: a legacy request is then never classified. */
+	cardKind?: TimeApprovalWorkflowType,
 ): Promise<RoutedTarget> {
 	const request = await database.query.approvalRequest.findFirst({
 		where: and(
@@ -179,11 +223,13 @@ async function routeTimeApproval(
 			columns: { id: true, clockInId: true, clockOutId: true, pendingChanges: true },
 		});
 		if (!period) return { found: false };
-		const kind = await classifyPersistedTimeApprovalRequest(database, {
-			organizationId: input.organizationId,
-			request,
-			period,
-		});
+		const kind =
+			cardKind ??
+			(await classifyPersistedTimeApprovalRequest(database, {
+				organizationId: input.organizationId,
+				request,
+				period,
+			}));
 		return {
 			found: true,
 			kind,
@@ -345,16 +391,6 @@ function decisionDbService(database: ApprovalDatabase): ApprovalDbService {
 	};
 }
 
-function managementOf(right: DecisionRight, actor: CurrentApprover) {
-	return right.as === "approval_manager"
-		? (transaction: ApprovalDatabase) =>
-				holdsApprovalManagement(transaction, {
-					organizationId: actor.organizationId,
-					userId: actor.userId,
-				})
-		: undefined;
-}
-
 async function afterCommit(
 	name: string,
 	context: Record<string, unknown>,
@@ -386,8 +422,9 @@ async function decideTimeCorrection(
 		action,
 		reason,
 		shortcutGuard: input.fastLaneGuard,
+		bound: input.card,
 		nowInstant: () => clock.nowInstant(),
-		canManageOrganizationApproval: managementOf(input.right, actor),
+		decisionRight: input.right,
 		processLegacy: createLegacyTimeCorrectionDecisionProcessor({
 			approvalRequestId: input.approvalId,
 			action,
@@ -429,7 +466,73 @@ async function decideTimeCorrection(
 		workPeriodId,
 		outcome,
 		replayed: "replayed" in execution && execution.replayed === true,
+		...receiptOf(input, "invocation" in execution ? execution.invocation : undefined),
 	};
+}
+
+/** A card press's receipt; a card decision without one broke an invariant. */
+function receiptOf(
+	input: TimeApprovalDecisionInput,
+	invocation: BoundTimeInvocationOutcome | undefined,
+): { receipt?: TimeApprovalDecisionReceipt; replayed?: true } {
+	if (!input.card) return {};
+	if (!invocation) throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
+	return {
+		receipt: invocation.evidence,
+		...(invocation.replayed ? { replayed: true as const } : {}),
+	};
+}
+
+/**
+ * How far an already committed decision got, for a replayed card press: the
+ * approval's own status, or `advanced` while its time approval is still pending.
+ */
+async function committedOutcome(
+	database: ApprovalDatabase,
+	input: { organizationId: string; approvalId: string },
+): Promise<"approved" | "rejected" | "advanced"> {
+	const request = await database.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.id, input.approvalId),
+			eq(approvalRequest.organizationId, input.organizationId),
+			eq(approvalRequest.entityType, "time_entry"),
+		),
+		columns: { entityId: true, status: true },
+	});
+	if (request) {
+		const pending = await database.query.approvalRequest.findFirst({
+			where: and(
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, request.entityId),
+				eq(approvalRequest.status, "pending"),
+			),
+			columns: { id: true },
+		});
+		if (pending || (request.status !== "approved" && request.status !== "rejected")) {
+			return "advanced";
+		}
+		return request.status;
+	}
+	const assignment = await database.query.approvalStageAssignment.findFirst({
+		where: and(
+			eq(approvalStageAssignment.id, input.approvalId),
+			eq(approvalStageAssignment.organizationId, input.organizationId),
+		),
+		columns: { workflowId: true },
+	});
+	const workflow = assignment
+		? await database.query.approvalWorkflow.findFirst({
+				where: and(
+					eq(approvalWorkflow.id, assignment.workflowId),
+					eq(approvalWorkflow.organizationId, input.organizationId),
+				),
+				columns: { status: true },
+			})
+		: undefined;
+	return workflow?.status === "approved" || workflow?.status === "rejected"
+		? workflow.status
+		: "advanced";
 }
 
 async function decideOrdinary(
@@ -445,13 +548,13 @@ async function decideOrdinary(
 		historicalOnly: input.replayOnly,
 		dbService,
 		createRuntime: decisionRuntime(input.right, actor, clock),
+		bound: input.card,
 		organizationId: input.organizationId,
 		approvalRequestId: input.approvalId,
 		workPeriodId,
 		actor,
 		decisionRight: input.right,
 		shortcutGuard: input.fastLaneGuard,
-		canManageOrganizationApproval: managementOf(input.right, actor),
 		decision:
 			input.decision.kind === "approve"
 				? { kind: "approve", reason: null }
@@ -507,6 +610,7 @@ async function decideOrdinary(
 					? period.approvalStatus
 					: "advanced",
 			replayed: true,
+			...receiptOf(input, execution.invocation),
 		};
 	}
 	return {
@@ -515,6 +619,7 @@ async function decideOrdinary(
 		workPeriodId,
 		outcome: postCommit.event === "pending" ? "advanced" : postCommit.event,
 		replayed: false,
+		...receiptOf(input, execution.invocation),
 	};
 }
 
@@ -603,9 +708,45 @@ export async function decideTimeApprovalWithCause(
 	const clock = input.clock ?? systemClock;
 	const actor = await loadActor(database, input);
 	if (!actor) return refused("not_found", approvalNotFound());
+	let cardKind: TimeApprovalWorkflowType | undefined;
+	if (input.card) {
+		// A card conveys only its recipient's own right (Approvals ADR 0003).
+		const right: DecisionRight = input.right;
+		if (right.as !== "approver" && right.as !== "covering_deputy") {
+			return refused(
+				"right_not_held",
+				new AuthorizationError({ message: "A card decides only as approver or covering deputy" }),
+			);
+		}
+		// The card's kind is its binding's, never a classification.
+		const binding = await readReviewBindingAuthority(database, {
+			organizationId: input.organizationId,
+			bindingId: input.card.reviewedBindingId,
+		});
+		const bindingQuery = {
+			organizationId: input.organizationId,
+			bindingId: input.card.reviewedBindingId,
+		};
+		// The card decides exactly the approval its binding names.
+		const boundApprovalId =
+			binding?.authority === "legacy"
+				? (await loadLegacyReviewBinding(database, bindingQuery))?.legacyApprovalRequestId
+				: (await loadReviewBinding(database, bindingQuery))?.assignmentId;
+		if (
+			!binding?.kind ||
+			!isTimeApprovalWorkflowType(binding.kind) ||
+			boundApprovalId !== input.approvalId
+		) {
+			return refused("binding_mismatch", new ApprovalEvidenceError("binding_mismatch"));
+		}
+		cardKind = binding.kind;
+	}
 	for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
-		const target = await routeTimeApproval(database, input);
+		const target = await routeTimeApproval(database, input, cardKind);
 		if (!target.found) return refused("not_found", approvalNotFound());
+		if (cardKind && target.kind !== cardKind) {
+			return refused("binding_mismatch", new ApprovalEvidenceError("binding_mismatch"));
+		}
 		if (target.kind === "unclassified") {
 			return refused(
 				"unclassified",
@@ -643,7 +784,32 @@ export async function decideTimeApprovalWithCause(
 				),
 			};
 		} catch (error) {
-			if (error instanceof TimeApprovalKindChanged) continue;
+			if (error instanceof BoundTimeInvocationReplay) {
+				// The card's invocation had already committed: its original decision.
+				return {
+					result: {
+						status: "decided",
+						kind: target.kind,
+						workPeriodId: target.workPeriodId,
+						outcome: await committedOutcome(database, input),
+						replayed: true,
+						receipt: error.evidence,
+					},
+				};
+			}
+			if (error instanceof TimeApprovalKindChanged) {
+				// A card decides only the kind its binding names.
+				if (input.card) return refused("binding_mismatch", error);
+				continue;
+			}
+			if (
+				input.card &&
+				error instanceof ApprovalTransitionEngineError &&
+				error.code === "idempotency_mismatch"
+			) {
+				// The card's invocation is the receipt key: another command under it.
+				return refused("invocation_conflict", error);
+			}
 			const reason = refusalOf(error);
 			if (reason) return refused(reason, error);
 			const now = await routeTimeApproval(database, input);
