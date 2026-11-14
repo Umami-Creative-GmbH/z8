@@ -1,3 +1,4 @@
+export { teamOfOrganization } from "./invitation-draft";
 export {
 	type AfterJoining,
 	acquireJoiningLocks,
@@ -12,5 +13,4 @@ export {
 	runAfterJoiningCommitted,
 	type SeatSignal,
 } from "./joining";
-export { teamOfOrganization } from "./invitation-draft";
 export { joinMemberWithoutEmployee } from "./member-without-employee";

@@ -102,14 +102,12 @@ describe("who creates employee rows (#1671)", () => {
 		).toHaveLength(1);
 		expect(employeeInserts('adapter.create({ model: "employee", data })')).toHaveLength(1);
 		// Formatted across lines, as Biome writes a long chain.
-		expect(employeeInserts("await tx\n\t.insert(\n\t\temployee\n\t)\n\t.values(row);")).toHaveLength(
-			1,
-		);
+		expect(
+			employeeInserts("await tx\n\t.insert(\n\t\temployee\n\t)\n\t.values(row);"),
+		).toHaveLength(1);
 		expect(employeeInserts("await tx.insert(\r\n\temployee,\r\n).values(row);")).toHaveLength(1);
 		expect(employeeInserts("sql`INSERT INTO\n  employee (id) values (1)`")).toHaveLength(1);
-		expect(
-			employeeInserts('adapter.create({\n\tmodel: "employee",\n\tdata,\n})'),
-		).toHaveLength(1);
+		expect(employeeInserts('adapter.create({\n\tmodel: "employee",\n\tdata,\n})')).toHaveLength(1);
 
 		expect(employeeInserts("tx.insert(employeeManagers).values(row)")).toEqual([]);
 		expect(employeeInserts("insert into employee_departure (id) values ($1)")).toEqual([]);
