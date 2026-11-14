@@ -753,6 +753,30 @@ personnel file officer grants; an admin must grant them again. Nor does it
 revive a kiosk badge (issue a new one) or a kiosk fob (the employee registers
 it again at a kiosk).
 
+### A membership that needs a rehire
+
+A former employee whose departure took effect can regain an approved membership
+by accepting an invitation, redeeming an invite code, being approved as a
+pending member, or signing in through the organization's identity provider.
+Joining then keeps them off the current roster, and its outcome is
+`membership_only` (#1672). Who is told:
+
+- **The approver of a pending member** sees it on the pending members card,
+  with *Start rehire*, which links to the employee's page.
+- **The admin who sent the invitation** gets the `former_employee_needs_rehire`
+  notification. Without a recorded inviter, the organization's current owners
+  and admins get it.
+- **The organization's current owners and admins** get the same notification
+  for an invite code that needs no approval, a direct member add, and an SSO
+  sign-in that creates the membership. A later SSO sign-in with the kept
+  membership tells nobody again.
+- **The person** sees *Your employment here has ended* in place of the
+  employee-profile card, asking an administrator to rehire them.
+
+Joining sends the notification after the membership commits, as best effort,
+keyed by membership and recipient, so a retry sends nothing twice. The warning
+comes after the membership is granted, not before.
+
 ## Personnel file retention
 
 A departure starts the retention of the employee's documents (#870): a
