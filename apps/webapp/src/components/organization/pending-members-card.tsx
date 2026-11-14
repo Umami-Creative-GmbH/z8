@@ -60,6 +60,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { formatDateOnly } from "@/lib/datetime/format";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
 import {
@@ -100,7 +101,7 @@ function useRehireNotices(pendingMembers: PendingMember[]) {
 		setRehireNotices((notices) => notices.filter((notice) => notice.employeeId !== employeeId));
 	/** Called with the approved member before the pending list refetches without them. */
 	const addRehireNotice = (
-		rehireNeeded: { employeeId: string } | null | undefined,
+		rehireNeeded: { employeeId: string } | null,
 		memberId: string,
 	) => {
 		if (!rehireNeeded) return;
@@ -283,9 +284,9 @@ function PendingMembersTable({
 							)}
 						</TableCell>
 						<TableCell>
-							{member.role === "owner"
+							{hasOrganizationRole(member.role, "owner")
 								? t("settings.pendingMembers.roleOwner", "Owner")
-								: member.role === "admin"
+								: hasOrganizationRole(member.role, "admin")
 									? t("settings.pendingMembers.roleAdmin", "Admin")
 									: t("settings.pendingMembers.roleMember", "Member")}
 						</TableCell>

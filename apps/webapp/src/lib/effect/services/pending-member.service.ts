@@ -85,9 +85,9 @@ export interface ApprovalResult {
 	/**
 	 * Set when the approved person is a former employee whose departure took
 	 * effect: the membership stands, but only a rehire of this employee brings
-	 * them back (#1672).
+	 * them back (#1672). Null otherwise.
 	 */
-	rehireNeeded?: { employeeId: string } | null;
+	rehireNeeded: { employeeId: string } | null;
 }
 
 export class PendingMemberService extends Context.Service<
@@ -607,6 +607,7 @@ export const PendingMemberServiceLive = Layer.effect(
 						success: true,
 						member: result.pendingMember,
 						approval: result.rejection,
+						rehireNeeded: null,
 					};
 				}),
 

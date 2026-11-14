@@ -92,6 +92,21 @@ describe("PendingMembersCard (#1668)", () => {
 		expect(within(codeRow as HTMLElement).getByText("Front desk")).toBeTruthy();
 		expect(within(codeRow as HTMLElement).getByText("Member")).toBeTruthy();
 	});
+
+	it("labels a membership that holds several roles by its highest one", async () => {
+		pendingMembers.value = [
+			pendingMember({
+				id: "member-multi",
+				role: "admin,member",
+				user: { id: "user-multi", name: "Multi Role", email: "multi@example.test", image: null },
+			}),
+		];
+
+		renderCard();
+
+		const row = (await screen.findByText("Multi Role")).closest("tr");
+		expect(within(row as HTMLElement).getByText("Admin")).toBeTruthy();
+	});
 });
 
 describe("PendingMembersCard approving a former employee (#1672)", () => {
