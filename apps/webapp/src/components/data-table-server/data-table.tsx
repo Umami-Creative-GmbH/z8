@@ -7,6 +7,7 @@ import {
 	flexRender,
 	type OnChangeFn,
 	type PaginationState,
+	type ReactTable,
 	type RowData,
 	type RowSelectionState,
 	type SortingState,
@@ -116,6 +117,8 @@ interface DataTableProps<TData extends RowData> {
 	 */
 	pinLastColumn?: boolean;
 	mobileLayout?: "scroll" | "stacked";
+	/** Compose existing pagination/selection presentation with this table's actual state owner. */
+	children?: (table: ReactTable<DataTableFeatures, TData>) => React.ReactNode;
 }
 
 const PINNED_COLUMN_CLASS_NAME = "sticky right-0 bg-card";
@@ -142,6 +145,7 @@ export function DataTable<TData extends RowData>({
 	rowClassName,
 	pinLastColumn = false,
 	mobileLayout = "scroll",
+	children,
 }: DataTableProps<TData>) {
 	const { t } = useTranslate();
 
@@ -196,7 +200,7 @@ export function DataTable<TData extends RowData>({
 				className,
 			)}
 		>
-			<Table mobileLayout={mobileLayout}>
+			<Table mobileLayout={mobileLayout} aria-busy={isFetching || undefined}>
 				<TableHeader>
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow key={headerGroup.id}>
@@ -204,6 +208,15 @@ export function DataTable<TData extends RowData>({
 								<TableHead
 									key={header.id}
 									colSpan={header.colSpan}
+									aria-sort={
+										header.isPlaceholder || header.subHeaders.length > 0
+											? undefined
+											: header.column.getIsSorted() === "asc"
+												? "ascending"
+												: header.column.getIsSorted() === "desc"
+													? "descending"
+													: undefined
+									}
 									className={cn(
 										pinLastColumn &&
 											index === headerGroup.headers.length - 1 &&
@@ -268,6 +281,7 @@ export function DataTable<TData extends RowData>({
 					)}
 				</TableBody>
 			</Table>
+			{children ? <div className="border-t p-3">{children(table)}</div> : null}
 		</div>
 	);
 }

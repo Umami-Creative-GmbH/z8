@@ -1,0 +1,7 @@
+{
+  "pageSize": "Phone changed size from 20 to 10, read 5 remaining rows on page 2, returned to page 1",
+  "pending": "Real held bulk submission disabled the toolbar action",
+  "partial": "One of two selected records was concurrently deleted; real bulk result truthfully reported one deletion",
+  "initialCount": 15,
+  "remaining": 13
+}

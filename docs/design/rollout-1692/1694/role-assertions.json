@@ -1,0 +1,27 @@
+[
+  {
+    "actor": "small-admin",
+    "projectReportAdmitted": true,
+    "headingCount": 1
+  },
+  {
+    "actor": "small-manager",
+    "projectReportAdmitted": true,
+    "headingCount": 1
+  },
+  {
+    "actor": "small-manager",
+    "scopedHolidayReadOnly": true,
+    "rowMutationControls": 0
+  },
+  {
+    "actor": "small-employee",
+    "projectReportAdmitted": false,
+    "headingCount": 1
+  },
+  {
+    "actor": "small-restricted",
+    "projectReportAdmitted": false,
+    "headingCount": 1
+  }
+]
