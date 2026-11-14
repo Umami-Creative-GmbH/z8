@@ -21,10 +21,7 @@ const state = vi.hoisted(() => ({
 	},
 	resolve: vi.fn(),
 	track: vi.fn(),
-	history: vi.fn(),
-	workflowRuntime: vi.fn(),
-	legacyEvidence: vi.fn(),
-	freshDecision: vi.fn(),
+	decide: vi.fn(),
 	mutation: vi.fn(),
 	acknowledge: vi.fn(),
 	read: vi.fn(),
@@ -79,92 +76,12 @@ vi.mock("@/db", () => {
 		},
 	};
 });
-vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
-	decideOrdinaryWorkPeriodWithStableTargetEffect: state.history,
+// The unbound card is an adapter over the time approval decision (#1679); the
+// decision's replay-only behaviour is proven against PostgreSQL in
+// time-approval-decision.integration.test.ts. Here only the translation is.
+vi.mock("@/lib/approvals/server/time-approval-decision", () => ({
+	decideTimeApproval: state.decide,
 }));
-vi.mock("@/lib/approvals/workflow/runtime", () => ({
-	createProductionApprovalWorkflowRuntime: state.workflowRuntime,
-}));
-vi.mock("@/lib/approvals/domain-adapters/work-period-legacy-state", () => ({
-	loadOrdinaryWorkPeriodLegacyDecisionEvidence: state.legacyEvidence,
-}));
-// Mock databases cannot model the advisory locks or the decision's observation:
-// decisions run the real plan on the work transaction fake (real ledger,
-// recorded guards) over the database of the suite's approval context, routed to
-// the fixture's target. work-period-decision-transaction.test.ts and the
-// PostgreSQL suites prove the observed routing.
-const decisionRouting = vi.hoisted(() => ({
-	kind: "manual_time_submission" as
-		| "manual_time_submission"
-		| "policy_clock_out",
-	ownerEmployeeId: "requester",
-}));
-vi.mock(
-	"@/lib/approvals/server/work-period-decision-transaction",
-	async (importOriginal) => {
-		const actual =
-			await importOriginal<
-				typeof import("@/lib/approvals/server/work-period-decision-transaction")
-			>();
-		const { fakeWorkTransaction } = await import(
-			"@/lib/time-tracking/work-transaction/testing"
-		);
-		return {
-			...actual,
-			withWorkPeriodDecisionTransaction: (
-				...[input, createRuntime, operation]: Parameters<
-					typeof actual.withWorkPeriodDecisionTransaction
-				>
-			) =>
-				fakeWorkTransaction({
-					recordApprovalGate: true,
-					approvalDatabase: (context) =>
-						(context as { dbService: { db: object } }).dbService.db,
-				}).run(
-					{
-						...actual.workPeriodDecisionPlan(input, createRuntime),
-						route: async () => {
-							const target = { ...decisionRouting };
-							return {
-								users: [input.actorUserId],
-								employees: [target.ownerEmployeeId],
-								writeTargets: [target.ownerEmployeeId],
-								approvalGate: target.kind,
-								snapshot: { observation: "unobserved", target },
-							};
-						},
-					},
-					operation,
-				),
-		};
-	},
-);
-vi.mock(
-	"@/lib/approvals/domain-adapters/legacy-write-coordinator",
-	async (importOriginal) => {
-		const actual =
-			await importOriginal<
-				typeof import("@/lib/approvals/domain-adapters/legacy-write-coordinator")
-			>();
-		return {
-			...actual,
-			createLegacyApprovalWriteCoordinator: (
-				...args: Parameters<typeof actual.createLegacyApprovalWriteCoordinator>
-			) => {
-				const coordinator = actual.createLegacyApprovalWriteCoordinator(
-					...args,
-				);
-				return {
-					...coordinator,
-					execute: (...inputs: Parameters<typeof coordinator.execute>) => {
-						state.freshDecision();
-						return coordinator.execute(...inputs);
-					},
-				};
-			},
-		};
-	},
-);
 vi.mock("@/lib/bot-platform/command-registry", () => ({
 	executeCommand: vi.fn(),
 	getAllCommands: vi.fn(),
@@ -271,7 +188,6 @@ vi.mock("@/lib/teams/conversation-manager", () => ({
 	}),
 }));
 
-import { Effect } from "effect";
 import {
 	handleApprovalButtonClick as discordAction,
 	sendApprovalMessageToManager as sendDiscord,
@@ -356,8 +272,20 @@ const managerId = "10000000-0000-4000-8000-000000000001";
 // transformation competes with the full repository suite on cold runs.
 beforeAll(async () => {
 	await import("@/lib/bot-platform/approval-decision");
-	await vi.importActual("@/lib/approvals/server/work-period-approvals");
 }, 60_000);
+const platformNames = {
+	slack: "Slack",
+	telegram: "Telegram",
+	discord: "Discord",
+	teams: "Teams",
+} as const;
+const decided = {
+	status: "decided",
+	kind: "manual_time_submission",
+	workPeriodId: "period",
+	outcome: "approved",
+	replayed: true,
+} as const;
 const platformCases = [
 	{
 		platform: "slack",
@@ -488,9 +416,7 @@ beforeEach(() => {
 		status: "found",
 		user: { employeeId: managerId, userId: "user", organizationId: "org" },
 	});
-	state.history.mockImplementation(() =>
-		Effect.fail(new Error("No exact historical receipt")),
-	);
+	state.decide.mockResolvedValue({ status: "refused", reason: "changed" });
 	state.sends.slack.mockResolvedValue({ ts: "timestamp" });
 	state.sends.telegram.mockResolvedValue({ message_id: 20 });
 	state.sends.discord.mockResolvedValue({ id: "message" });
@@ -562,14 +488,48 @@ describe.each(platformCases)(
 					"https://org.z8.test/approvals/review/org/compatibility/approval",
 				);
 				expect(output).not.toMatch(/SECRET|successfully|resolvedAt/);
-				expect(state.history).toHaveBeenCalledWith(
-					expect.anything(),
-					expect.anything(),
-					expect.objectContaining({ historicalOnly: true }),
-				);
+				// Only a committed decision by the same approver can be confirmed.
+				expect(state.decide).toHaveBeenCalledExactlyOnceWith({
+					organizationId: "org",
+					approvalId: "approval",
+					actor: { employeeId: managerId, userId: "user" },
+					right: { as: "approver" },
+					decision:
+						action === "approve"
+							? { kind: "approve" }
+							: {
+									kind: "reject",
+									reason: `Rejected via ${platformNames[platform]}`,
+								},
+					replayOnly: true,
+				});
 				expect(state.track).not.toHaveBeenCalled();
 			},
 		);
+		it.each([
+			"right_not_held",
+			"reassigned",
+			"already_decided",
+			"unclassified",
+			"not_found",
+		] as const)(
+			"answers review required when the decision refuses as %s",
+			async (reason) => {
+				state.decide.mockResolvedValueOnce({ status: "refused", reason });
+				await act();
+				const output = JSON.stringify(state.replies[platform].mock.calls);
+				expect(output).toContain("No decision was made");
+				expect(output).not.toContain("previously recorded");
+			},
+		);
+		it("requires review without deciding when the approval is not a time approval", async () => {
+			state.rows.approvalRequest[0].entityType = "absence_entry";
+			await act();
+			expect(state.decide).not.toHaveBeenCalled();
+			expect(JSON.stringify(state.replies[platform].mock.calls)).toContain(
+				"No decision was made",
+			);
+		});
 		it("does not disclose to a former canonical assignee even if the compatibility representative is stale", async () => {
 			state.rows.approvalWorkflowStage = [
 				{
@@ -651,7 +611,10 @@ describe.each(platformCases)(
 			async (action) => {
 				state.rows.approvalRequest[0].status =
 					action === "approve" ? "approved" : "rejected";
-				state.history.mockReturnValue(Effect.void);
+				state.decide.mockResolvedValue({
+					...decided,
+					outcome: action === "approve" ? "approved" : "rejected",
+				});
 				await act(action);
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("previously recorded");
@@ -682,25 +645,9 @@ describe.each(platformCases)(
 				state.rows.approvalRequest[0].approverId = "someone-else";
 			if (condition === "removed membership") state.rows.member = [];
 			await act();
-			expect(state.history).not.toHaveBeenCalled();
+			expect(state.decide).not.toHaveBeenCalled();
 			expect(JSON.stringify(state.replies[platform].mock.calls)).not.toMatch(
 				/SECRET|previously recorded/,
-			);
-		});
-		it("requires fresh review for unclassified time requests rather than guessing a correction", async () => {
-			state.rows.approvalRequest[0].metadata = null;
-			await act();
-			expect(state.history).not.toHaveBeenCalled();
-			expect(JSON.stringify(state.replies[platform].mock.calls)).toContain(
-				"No decision was made",
-			);
-		});
-		it("never reuses an event ID when the requester-owned period is missing", async () => {
-			state.rows.workPeriod[0].employeeId = "someone-else";
-			await act();
-			expect(state.history).not.toHaveBeenCalled();
-			expect(JSON.stringify(state.replies[platform].mock.calls)).not.toContain(
-				"SECRET",
 			);
 		});
 		it("does not turn provider rejection into a decision or tracking success", async () => {
@@ -709,19 +656,19 @@ describe.each(platformCases)(
 			);
 			await send();
 			expect(state.track).not.toHaveBeenCalled();
-			expect(state.history).not.toHaveBeenCalled();
+			expect(state.decide).not.toHaveBeenCalled();
 		});
 		it.each(["reject", "false"])(
 			"preserves verified history when the historical reply transport returns %s",
 			async (failure) => {
-				state.history.mockReturnValue(Effect.void);
+				state.decide.mockResolvedValue(decided);
 				if (failure === "reject")
 					state.replies[platform].mockRejectedValueOnce(
 						new Error("Provider unavailable"),
 					);
 				else state.replies[platform].mockResolvedValueOnce(false);
 				await act().catch(() => undefined);
-				expect(state.history).toHaveBeenCalledOnce();
+				expect(state.decide).toHaveBeenCalledOnce();
 				expect(state.track).not.toHaveBeenCalled();
 				expect(state.rows.approvalRequest[0].status).toBe("pending");
 			},
@@ -784,6 +731,25 @@ describe("Telegram webhook dispatcher after review-only cutover", () => {
 		);
 		expect(state.track).not.toHaveBeenCalled();
 	});
+});
+
+it("loads the unbound card's approval once before confirming a decision", async () => {
+	state.decide.mockResolvedValue(decided);
+	const { attemptBotApproval } = await import(
+		"@/lib/bot-platform/approval-decision"
+	);
+	await expect(
+		attemptBotApproval({
+			approvalId: "approval",
+			actorEmployeeId: managerId,
+			organizationId: "org",
+			action: "approve",
+			platform: "telegram",
+		}),
+	).resolves.toEqual({ status: "historical", action: "approve" });
+	expect(
+		state.read.mock.calls.flat().filter((table) => table === "approvalRequest"),
+	).toHaveLength(1);
 });
 
 it("loads the new notice translations through the actual bot translator", async () => {
