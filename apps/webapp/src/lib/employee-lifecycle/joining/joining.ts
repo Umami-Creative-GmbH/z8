@@ -47,7 +47,11 @@ export type JoiningInput = {
 	 * (a direct member add) the draft is found by the user's email. Absent: no draft.
 	 */
 	invitation?: { id: string | null };
-	/** Who brought a former employee back; defaults to the joining user. */
+	/**
+	 * The admin who brought the person in or back, such as one creating a kiosk-only
+	 * employee. Recorded on the team placement and on a reactivation; a reactivation
+	 * defaults to the joining user.
+	 */
 	actorUserId?: string;
 };
 
@@ -226,7 +230,12 @@ async function joinAsNewEmployee(context: JoiningContext): Promise<JoiningOutcom
 		draft ? draft.teamId : (input.teamId ?? null),
 	);
 	const placed = teamId
-		? await placeArrivingEmployee(tx, { organizationId, employeeId: created.id, teamId })
+		? await placeArrivingEmployee(tx, {
+				organizationId,
+				employeeId: created.id,
+				teamId,
+				createdBy: input.actorUserId ?? null,
+			})
 		: null;
 	if (draft && dropped) {
 		await recordDroppedPersonnelNumber(tx, audit, {
@@ -308,7 +317,12 @@ async function joinAsReturningEmployee(
 	// The draft's team is a move: its old primary team's membership ends.
 	const teamId = draft ? await teamOfOrganization(tx, organizationId, draft.teamId) : null;
 	const placed = teamId
-		? await placeArrivingEmployee(tx, { organizationId, employeeId: reactivated.id, teamId })
+		? await placeArrivingEmployee(tx, {
+				organizationId,
+				employeeId: reactivated.id,
+				teamId,
+				createdBy: input.actorUserId ?? null,
+			})
 		: null;
 	const placedEmployee = placed ? { ...reactivated, teamId: placed.primaryTeamId } : reactivated;
 	if (draft && dropped) {
