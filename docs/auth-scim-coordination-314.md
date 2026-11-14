@@ -151,9 +151,11 @@ invitation's organization-creation flag, and billing seats.
   - The verified-domain path requires a verified email that maps to exactly one
     organization's verified provider.
 
-  For provider-bound logins, the employee and the membership now commit together. Previously
-  they were two separate commits. While the organization requires SSO approval, both SSO paths
-  write a pending membership and no employee; the pending-member approval lets the person in (#1668).
+  For both SSO logins, the membership and joining (`lib/employee-lifecycle/joining`, #1669)
+  commit together; the SSO file writes no employee itself. An existing approved membership joins
+  too, so a former employee who kept it is reactivated on sign-in, and the seat signal follows
+  the commit. While the organization requires SSO approval, both SSO paths write a pending
+  membership and no employee; the pending-member approval lets the person in (#1668).
   - The role is now read from `provisionUser`'s user info. For OIDC that is the same object the
     plugin used.
   - For SAML the plugin passed the raw attribute map. A raw attribute literally named
@@ -216,7 +218,7 @@ that key's `hashtextextended` value.
 | HTTP `/organization/leave` (bearer session) | Waits on the leaver's guard; same cleanup |
 | HTTP `/organization/accept-invitation` | Waits on the invitee's guard; provisioning runs after commit |
 | Provider-bound SSO provisioning | Waits on the user's guard; member (mapped `admin` role) and active employee commit together |
-| Verified-domain SSO membership | Waits on the user's guard; member created |
+| Verified-domain SSO membership | Waits on the user's guard; member and active employee commit together |
 | `auth.api.banUser` | Waits on the target's guard while their submission is in flight |
 | HTTP `/admin/set-role` | Waits on the target's guard |
 | SCIM deprovisioning replay (`reconcileSCIMProjection`) | Waits on the target's guard, then suspends the membership and deactivates the employee |
