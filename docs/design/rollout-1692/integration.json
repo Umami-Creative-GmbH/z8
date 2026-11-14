@@ -277,8 +277,10 @@
                         "blockedBy":  [
 
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+                        "evidence":  "docs/design/rollout-1692/1822.md",
+                        "integrationVerification":  "8 suites / 62 tests passed on merge; ancestry, exact tree preservation and diff --check passed. Live provider/device, Tolgee and full-build limits retained."
                     },
                     {
                         "id":  "R024",

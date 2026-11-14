@@ -21,12 +21,13 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 ## Current work
 
 - F1 #1693: claimed and implementing in an isolated worktree, based on the reconciled baseline.
-- R023 #1822 (`/init`): claimed and implementing independently; no native blockers.
+- R023 #1822 (`/init`): integrated and verified at `984436c44a2c44bbe99e22fb23c4dbb108534e83`; remains open pending final review. See [capabilities and evidence](1822.md).
 - F2/F3 and all remaining pages: await their verified prerequisites in `integration.json`.
 
 ## Verification
 
 - Initial merge: ancestry, byte-preservation and whitespace checks passed as described above.
+- #1822 integration merge `984436c44`: **8 suites, 62 tests passed** for init, activation, callback, SSO, security and translation behavior. Both parents and required base verified; the merged tree exactly matches the completed ticket tree. `git diff --check` passed. Implementer additionally passed full webapp types, focused lint, React Doctor and disposable runtime checks with four roles. Live identity providers/MFA/store devices, physical safe-area/zoom checks, remote catalog synchronization and full production build remain explicitly limited in [the ticket report](1822.md).
 - Fresh baseline component/consumer tests at `c0a959034`: **79 suites, 724 tests passed**, exit 0. Selection: dashboard and time-tracking component directories; section cards; app search/sidebar; main/team/user/secondary navigation; site header and timezone control; sidebar feedback/primitive; clock summary synchronization/offline clock; app layout content/shell/composition; time-tracking region data/composition. This is a fresh expanded selection, not a reconstruction of the historical 76-suite command.
 - Dependencies: locked packages installed from the offline pnpm store. The Windows `@posthog/cli` postinstall failed in `Expand-Archive`; rerunning with `--ignore-scripts` completed dependency links. This does not establish that the PostHog release CLI works.
 - Full production static generation and Tolgee synchronization remain outstanding from the baseline. Prior compile-mode success is not a completed full build.
