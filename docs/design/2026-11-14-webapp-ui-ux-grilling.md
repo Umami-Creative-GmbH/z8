@@ -20,6 +20,9 @@ The user answered “Yes to all” to the first three questions.
 6. **Single-spec issue hierarchy:** the user approved organizational grouping issues beneath the canonical spec, with route tickets nested beneath their group and explicitly referencing the same root spec. For this rollout, that is an explicit exception to the repository's direct-spec-child requirement. Groups organize execution; they are not separate specifications.
 7. **Redirect aliases:** the user approved covering the 19 redirect-only settings aliases in their destination-page tickets, with every alias explicitly listed and verified. Do not create separate visual-refactor tickets for those aliases. The planned page-ticket count is 153, before additional shared-pattern and organizational grouping issues.
 8. **Phone records adapt to the task:** ordinary lists prioritize identity, status, and useful actions, with secondary fields available through accessible details. Comparison-heavy reports and planners may use local horizontal scrolling. Every field and action remains available; whole-page horizontal overflow is not the adaptation.
+9. **Authentication and public shells:** apply the restrained surfaces, typography, spacing, and state treatment to sign-in, setup, onboarding, and shared/public screens, retaining purpose-built layouts, organization branding, and existing security flows.
+10. **Task-based form containers:** ordinary create/edit forms use a consistent side-panel pattern; short confirmations use dialogs; long or multistep tasks retain full-page/wizard layouts. Domain-specific reasons, acknowledgments, drafts, dismissal rules, validation, and recovery remain intact.
+11. **A composition brief for every page:** before ticket publication, each of the 153 pages gets its main task, primary action, scope, main record/form, and supporting context recorded. Route tickets receive concrete page direction alongside shared rules.
 
 ## Repository discovery
 
@@ -38,14 +41,16 @@ The route scan found 172 `page.tsx` templates: 153 persistent pages and 19 redir
 6. **Redirect-only aliases:** approved for coverage in destination-page tickets rather than separate visual-refactor tickets.
 7. **Dense phone records:** approved for task-appropriate adaptation: compact records plus accessible detail for ordinary lists, local scrolling for comparison-heavy records/planning, all information and actions retained.
 
-Further questions will be based on the completed inventory. Keep implementation details in the spec and tickets; add glossary terms only for genuine domain terminology, and ADRs only for consequential trade-offs that meet the repository's ADR criteria.
+The product-decision frontier is settled. Keep implementation details in the spec and tickets; add glossary terms only for genuine domain terminology, and ADRs only for consequential trade-offs that meet the repository's ADR criteria.
 
-## Open round: visual application and route briefs
+## Resolved round: visual application and route briefs
 
-8. **Authentication and public shells:** should the restrained surfaces, typography, spacing, and state treatment apply to sign-in, setup, onboarding, and shared/public screens, preserving their purpose-built layouts, organization branding and security flows? Recommendation: yes.
-9. **Create/edit containers:** should ordinary create/edit forms use a consistent side-panel pattern, short confirmations use dialogs, and long/multistep tasks retain full-page/wizard layouts? Recommendation: yes, with domain reasons, acknowledgments, drafts, dismissal rules and recovery intact.
-10. **Per-page composition briefs:** should each of the 153 pages get a compact brief before ticket publication, covering its main task, primary action, scope, main record/form and supporting context? Recommendation: yes, so route tickets combine shared rules with screen-specific direction.
+8. **Authentication and public shells:** approved, preserving purpose-built layouts, organization branding and security flows.
+9. **Create/edit containers:** approved as a small task-based family, with domain reasons, acknowledgments, drafts, dismissal rules and recovery intact.
+10. **Per-page composition briefs:** approved for all 153 pages before ticket publication.
 
 ## Phase boundary
 
-Continue `grill-with-docs` until the decisions and acceptance boundaries are clear. Confirm shared understanding, synthesize the spec with `to-spec`, then review the route-ticket breakdown with `to-tickets` before publishing the approved issues and verified native relationships. No route implementation tickets have been created during discovery.
+The [canonical draft spec](2026-11-14-webapp-ui-ux-spec.md) now combines the shared contract, testing boundaries and all 153 composition briefs. The [numbered breakdown](2026-11-14-webapp-ui-ux-ticket-breakdown.md) proposes three shared foundations, four organizational groups and 153 page tickets, including seven proven route-to-route presentation handoffs.
+
+Review this concrete result for shared understanding, testing seams, ticket granularity and blocking edges before finalizing the spec with `to-spec` and publishing via `to-tickets`. All Q1–Q10 product decisions remain approved; this review concerns the completed artifacts. No route implementation tickets have been created during discovery.
