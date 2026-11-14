@@ -45,9 +45,9 @@ async function ProjectReportsPageContent() {
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Page Header */}
 			<div className="px-4 lg:px-6">
-				<h1 className="text-3xl font-bold tracking-tight">
+				<h2 className="text-3xl font-bold tracking-tight">
 					{t("reports.projects.page.title", "Project Reports")}
-				</h1>
+				</h2>
 				<p className="text-muted-foreground">
 					{t(
 						"reports.projects.page.description",

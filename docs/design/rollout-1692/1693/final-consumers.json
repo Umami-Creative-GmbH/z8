@@ -1,0 +1,306 @@
+{
+  "checks": [
+    {
+      "check": "fixed unconverted Projects report",
+      "path": "/en/reports/projects",
+      "headings": [
+        "Project Reports"
+      ],
+      "location": "Project Reports",
+      "viewport": [
+        390,
+        844
+      ],
+      "width": 390,
+      "theme": "dark bprogress-busy",
+      "font": "18px",
+      "buttons": [
+        "Toggle Sidebar",
+        "Clock In",
+        "Notifications",
+        "More actions",
+        "Period",
+        "All Statuses",
+        "Generate Report",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        }
+      ]
+    },
+    {
+      "check": "phone drawer focused Escape dismissal",
+      "path": "/en/reports/projects",
+      "headings": [
+        "Project Reports"
+      ],
+      "location": "Project Reports",
+      "viewport": [
+        390,
+        844
+      ],
+      "width": 390,
+      "theme": "dark bprogress-busy",
+      "font": "18px",
+      "buttons": [
+        "Toggle Sidebar",
+        "Clock In",
+        "Notifications",
+        "More actions",
+        "Period",
+        "All Statuses",
+        "Generate Report",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        }
+      ],
+      "scroll": {
+        "client": 681,
+        "scroll": 977,
+        "top": 296
+      },
+      "dialogs": [],
+      "focus": "trigger"
+    },
+    {
+      "check": "restricted Projects admission",
+      "path": "/en/reports/projects",
+      "headings": [
+        "Project Reports"
+      ],
+      "location": "Project Reports",
+      "viewport": [
+        390,
+        844
+      ],
+      "width": 390,
+      "theme": "dark bprogress-busy",
+      "font": "18px",
+      "buttons": [
+        "Toggle Sidebar",
+        "Clock In",
+        "Notifications",
+        "More actions",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        }
+      ],
+      "denied": true
+    },
+    {
+      "check": "actual organization admin platform refusal redirect",
+      "path": "/en",
+      "headings": [
+        "Good day, Person."
+      ],
+      "location": "Dashboard",
+      "viewport": [
+        1600,
+        1000
+      ],
+      "width": 1600,
+      "theme": "dark bprogress-busy",
+      "font": "18px",
+      "buttons": [
+        "Switch Organization: Performance small",
+        "Search",
+        "Account: Person 0",
+        "Toggle Sidebar",
+        "Customize dashboard",
+        "Current timezone Europe/Berlin, 23:06, UTC+01:00",
+        "Clock In",
+        "Refresh data",
+        "Toggle theme",
+        "Notifications",
+        "Customize dashboard",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        },
+        {
+          "label": "Dashboard",
+          "href": "/en"
+        },
+        {
+          "label": "Time Tracking",
+          "href": "/en/time-tracking"
+        },
+        {
+          "label": "Calendar",
+          "href": "/en/calendar"
+        },
+        {
+          "label": "Absences",
+          "href": "/en/absences"
+        },
+        {
+          "label": "Travel Expenses",
+          "href": "/en/travel-expenses"
+        },
+        {
+          "label": "Finance",
+          "href": "/en/travel-expenses/finance"
+        },
+        {
+          "label": "My Requests",
+          "href": "/en/my-requests"
+        },
+        {
+          "label": "Reports",
+          "href": "/en/reports"
+        },
+        {
+          "label": "Org Explorer",
+          "href": "/en/organization"
+        },
+        {
+          "label": "Team",
+          "href": "/en/team"
+        },
+        {
+          "label": "Team Absences",
+          "href": "/en/team/absences"
+        },
+        {
+          "label": "Approvals",
+          "href": "/en/approvals/inbox"
+        },
+        {
+          "label": "Compliance",
+          "href": "/en/compliance"
+        },
+        {
+          "label": "Settings",
+          "href": "/en/settings"
+        },
+        {
+          "label": "Get Help",
+          "href": "https://docs.z8-time.app/docs"
+        },
+        {
+          "label": "Feedback",
+          "href": "https://github.com/Umami-Creative-GmbH/z8/issues"
+        },
+        {
+          "label": "Go to time tracking",
+          "href": "/en/time-tracking"
+        },
+        {
+          "label": "Teams",
+          "href": "/en/settings/teams"
+        },
+        {
+          "label": "Employees",
+          "href": "/en/settings/employees"
+        },
+        {
+          "label": "Open Brief",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nCritical",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nApprovals",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nClock-ins",
+          "href": "/en/today"
+        },
+        {
+          "label": "1\nRisks",
+          "href": "/en/today"
+        },
+        {
+          "label": "View Full Calendar",
+          "href": "/en/calendar"
+        },
+        {
+          "label": "Go to time tracking",
+          "href": "/en/time-tracking"
+        }
+      ]
+    },
+    {
+      "check": "unknown protected path redirects unauthenticated actor to sign-in",
+      "path": "/en/sign-in",
+      "headings": [
+        "Login to your account"
+      ],
+      "viewport": [
+        1600,
+        1000
+      ],
+      "width": 1600,
+      "theme": "dark bprogress-busy",
+      "font": "18px",
+      "buttons": [
+        "Toggle theme",
+        "Font size",
+        "Select language",
+        "Login",
+        "Login with Passkey",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "label": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Ffixture-nonexistent-route-1693"
+        },
+        {
+          "label": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "label": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "label": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "label": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "label": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "label": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ]
+    }
+  ]
+}

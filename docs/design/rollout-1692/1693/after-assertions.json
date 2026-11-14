@@ -1,0 +1,449 @@
+{
+  "source": "c3ba54450202a98b2f1b2cc61a5aa8a3b069e759",
+  "fixtureRole": "small-manager",
+  "sameRecords": true,
+  "rows": [
+    {
+      "consumer": "reports",
+      "path": "/en/reports",
+      "headings": [
+        "Employee Reports"
+      ],
+      "location": "Reports",
+      "viewport": [
+        1600,
+        1000
+      ],
+      "width": 1600,
+      "theme": "light bprogress-busy",
+      "font": "16px",
+      "buttons": [
+        "Switch Organization: Performance small",
+        "Search",
+        "Account: Person 1",
+        "Toggle Sidebar",
+        "Current timezone Europe/Berlin, 22:45, UTC+01:00",
+        "Clock In",
+        "Refresh data",
+        "Toggle theme",
+        "Notifications",
+        "Fixture Person 1",
+        "Period",
+        "Generate Report",
+        "Export PDF",
+        "Export Excel",
+        "Export CSV",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        },
+        {
+          "label": "Dashboard",
+          "href": "/en"
+        },
+        {
+          "label": "Time Tracking",
+          "href": "/en/time-tracking"
+        },
+        {
+          "label": "Calendar",
+          "href": "/en/calendar"
+        },
+        {
+          "label": "Absences",
+          "href": "/en/absences"
+        },
+        {
+          "label": "Travel Expenses",
+          "href": "/en/travel-expenses"
+        },
+        {
+          "label": "My Requests",
+          "href": "/en/my-requests"
+        },
+        {
+          "label": "Reports",
+          "href": "/en/reports"
+        },
+        {
+          "label": "Org Explorer",
+          "href": "/en/organization"
+        },
+        {
+          "label": "Team",
+          "href": "/en/team"
+        },
+        {
+          "label": "Team Absences",
+          "href": "/en/team/absences"
+        },
+        {
+          "label": "Approvals",
+          "href": "/en/approvals/inbox"
+        },
+        {
+          "label": "Settings",
+          "href": "/en/settings"
+        },
+        {
+          "label": "Get Help",
+          "href": "https://docs.z8-time.app/docs"
+        },
+        {
+          "label": "Feedback",
+          "href": "https://github.com/Umami-Creative-GmbH/z8/issues"
+        },
+        {
+          "label": "Distance per Vehicle",
+          "href": "/en/reports/vehicles"
+        }
+      ],
+      "workHours2088": true
+    },
+    {
+      "consumer": "dashboard",
+      "path": "/en",
+      "headings": [
+        "Good day, Person."
+      ],
+      "location": "Dashboard",
+      "viewport": [
+        1600,
+        1000
+      ],
+      "width": 1600,
+      "theme": "light bprogress-busy",
+      "font": "16px",
+      "buttons": [
+        "Switch Organization: Performance small",
+        "Search",
+        "Account: Person 1",
+        "Toggle Sidebar",
+        "Customize dashboard",
+        "Current timezone Europe/Berlin, 22:45, UTC+01:00",
+        "Clock In",
+        "Refresh data",
+        "Toggle theme",
+        "Notifications",
+        "Customize dashboard",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        },
+        {
+          "label": "Dashboard",
+          "href": "/en"
+        },
+        {
+          "label": "Time Tracking",
+          "href": "/en/time-tracking"
+        },
+        {
+          "label": "Calendar",
+          "href": "/en/calendar"
+        },
+        {
+          "label": "Absences",
+          "href": "/en/absences"
+        },
+        {
+          "label": "Travel Expenses",
+          "href": "/en/travel-expenses"
+        },
+        {
+          "label": "My Requests",
+          "href": "/en/my-requests"
+        },
+        {
+          "label": "Reports",
+          "href": "/en/reports"
+        },
+        {
+          "label": "Org Explorer",
+          "href": "/en/organization"
+        },
+        {
+          "label": "Team",
+          "href": "/en/team"
+        },
+        {
+          "label": "Team Absences",
+          "href": "/en/team/absences"
+        },
+        {
+          "label": "Approvals",
+          "href": "/en/approvals/inbox"
+        },
+        {
+          "label": "Settings",
+          "href": "/en/settings"
+        },
+        {
+          "label": "Get Help",
+          "href": "https://docs.z8-time.app/docs"
+        },
+        {
+          "label": "Feedback",
+          "href": "https://github.com/Umami-Creative-GmbH/z8/issues"
+        },
+        {
+          "label": "Go to time tracking",
+          "href": "/en/time-tracking"
+        },
+        {
+          "label": "Teams",
+          "href": "/en/settings/teams"
+        },
+        {
+          "label": "Employees",
+          "href": "/en/settings/employees"
+        },
+        {
+          "label": "Open Brief",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nCritical",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nApprovals",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nClock-ins",
+          "href": "/en/today"
+        },
+        {
+          "label": "1\nRisks",
+          "href": "/en/today"
+        },
+        {
+          "label": "View Full Calendar",
+          "href": "/en/calendar"
+        },
+        {
+          "label": "View All",
+          "href": "/en/settings/employees"
+        },
+        {
+          "label": "Person 3\n\n[synthetic email]",
+          "href": "/en/settings/employees/[id]"
+        },
+        {
+          "label": "Person 5\n\n[synthetic email]",
+          "href": "/en/settings/employees/[id]"
+        },
+        {
+          "label": "Person 7\n\n[synthetic email]",
+          "href": "/en/settings/employees/[id]"
+        },
+        {
+          "label": "Go to time tracking",
+          "href": "/en/time-tracking"
+        }
+      ]
+    },
+    {
+      "consumer": "phone utilities",
+      "path": "/en",
+      "headings": [
+        "Good day, Person."
+      ],
+      "location": "Dashboard",
+      "viewport": [
+        390,
+        844
+      ],
+      "width": 390,
+      "theme": "light bprogress-busy",
+      "font": "16px",
+      "buttons": [
+        "Toggle Sidebar",
+        "Clock In",
+        "Notifications",
+        "More actions",
+        "Customize dashboard",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Refresh",
+        "Open Tanstack query devtools",
+        "Customize dashboard",
+        "Saved timezone",
+        "Refresh data",
+        "Toggle theme"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        },
+        {
+          "label": "Go to time tracking",
+          "href": "/en/time-tracking"
+        },
+        {
+          "label": "Teams",
+          "href": "/en/settings/teams"
+        },
+        {
+          "label": "Employees",
+          "href": "/en/settings/employees"
+        },
+        {
+          "label": "Open Brief",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nCritical",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nApprovals",
+          "href": "/en/today"
+        },
+        {
+          "label": "0\nClock-ins",
+          "href": "/en/today"
+        },
+        {
+          "label": "1\nRisks",
+          "href": "/en/today"
+        },
+        {
+          "label": "View Full Calendar",
+          "href": "/en/calendar"
+        },
+        {
+          "label": "View All",
+          "href": "/en/settings/employees"
+        },
+        {
+          "label": "Person 3\n\n[synthetic email]\n\nFixture team 1\n\nClocked out\n\nlast activity 31.12.",
+          "href": "/en/settings/employees/[id]"
+        },
+        {
+          "label": "Person 5\n\n[synthetic email]\n\nFixture team 1\n\nClocked out\n\nlast activity 31.12.",
+          "href": "/en/settings/employees/[id]"
+        },
+        {
+          "label": "Person 7\n\n[synthetic email]\n\nFixture team 1\n\nClocked out\n\nlast activity 31.12.",
+          "href": "/en/settings/employees/[id]"
+        },
+        {
+          "label": "Go to time tracking",
+          "href": "/en/time-tracking"
+        }
+      ]
+    },
+    {
+      "consumer": "auth",
+      "path": "/en/sign-in",
+      "headings": [
+        "Login to your account"
+      ],
+      "viewport": [
+        1600,
+        1000
+      ],
+      "width": 1600,
+      "theme": "light bprogress-busy",
+      "font": "16px",
+      "buttons": [
+        "Toggle theme",
+        "Font size",
+        "Select language",
+        "Login",
+        "Login with Passkey",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "label": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Finit"
+        },
+        {
+          "label": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "label": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "label": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "label": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "label": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "label": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ]
+    },
+    {
+      "consumer": "licenses",
+      "path": "/en/licenses",
+      "headings": [
+        "Open Source Licenses"
+      ],
+      "viewport": [
+        1600,
+        1000
+      ],
+      "width": 1600,
+      "theme": "light",
+      "font": "16px",
+      "buttons": [
+        "Toggle theme",
+        "Font size",
+        "Select language",
+        "Package",
+        "License",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Back to login",
+          "href": "/en/sign-in"
+        },
+        {
+          "label": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ]
+    }
+  ]
+}

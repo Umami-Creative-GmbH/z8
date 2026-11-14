@@ -1,0 +1,56 @@
+{
+  "path": "/en/sign-in",
+  "headings": [
+    "Login to your account"
+  ],
+  "viewport": [
+    1600,
+    1000
+  ],
+  "width": 1600,
+  "theme": "light bprogress-busy",
+  "font": "16px",
+  "buttons": [
+    "Toggle theme",
+    "Font size",
+    "Select language",
+    "Login",
+    "Login with Passkey",
+    "Open Tanstack query devtools"
+  ],
+  "links": [
+    {
+      "label": "Forgot your password?",
+      "href": "/en/forgot-password"
+    },
+    {
+      "label": "Sign up",
+      "href": "/en/sign-up?callbackUrl=%2Finit"
+    },
+    {
+      "label": "Terms of Service",
+      "href": "https://www.z8-time.app/terms-app"
+    },
+    {
+      "label": "Privacy Policy",
+      "href": "https://www.z8-time.app/privacy-app"
+    },
+    {
+      "label": "Imprint",
+      "href": "https://www.z8-time.app/imprint"
+    },
+    {
+      "label": "T&Cs",
+      "href": "https://www.z8-time.app/agb"
+    },
+    {
+      "label": "Trust Center",
+      "href": "https://www.z8-time.app/trustcenter"
+    },
+    {
+      "label": "Open Source Licenses",
+      "href": "/en/licenses"
+    }
+  ],
+  "branding": "real fixture organization_branding row, existing organization name and configured blue; no logo supplied"
+}

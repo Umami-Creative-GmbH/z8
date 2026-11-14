@@ -1,0 +1,206 @@
+{
+  "fixture": "disposable",
+  "scope": "Performance small; Europe/Berlin; 2025 report records",
+  "checks": [
+    {
+      "check": "combined refresh retains real period and generated result",
+      "path": "/en/reports",
+      "headings": [
+        "Employee Reports"
+      ],
+      "location": "Reports",
+      "viewport": [
+        1600,
+        1000
+      ],
+      "width": 1600,
+      "theme": "dark bprogress-busy",
+      "font": "16px",
+      "buttons": [
+        "Switch Organization: Performance small",
+        "Search",
+        "Account: Person 1",
+        "Toggle Sidebar",
+        "Current timezone Europe/Berlin, 23:00, UTC+01:00",
+        "Clock In",
+        "Refresh data",
+        "Toggle theme",
+        "Notifications",
+        "Fixture Person 1",
+        "Period",
+        "Generate Report",
+        "Export PDF",
+        "Export Excel",
+        "Export CSV",
+        "Open Tanstack query devtools"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        },
+        {
+          "label": "Dashboard",
+          "href": "/en"
+        },
+        {
+          "label": "Time Tracking",
+          "href": "/en/time-tracking"
+        },
+        {
+          "label": "Calendar",
+          "href": "/en/calendar"
+        },
+        {
+          "label": "Absences",
+          "href": "/en/absences"
+        },
+        {
+          "label": "Travel Expenses",
+          "href": "/en/travel-expenses"
+        },
+        {
+          "label": "My Requests",
+          "href": "/en/my-requests"
+        },
+        {
+          "label": "Reports",
+          "href": "/en/reports"
+        },
+        {
+          "label": "Org Explorer",
+          "href": "/en/organization"
+        },
+        {
+          "label": "Team",
+          "href": "/en/team"
+        },
+        {
+          "label": "Team Absences",
+          "href": "/en/team/absences"
+        },
+        {
+          "label": "Approvals",
+          "href": "/en/approvals/inbox"
+        },
+        {
+          "label": "Settings",
+          "href": "/en/settings"
+        },
+        {
+          "label": "Get Help",
+          "href": "https://docs.z8-time.app/docs"
+        },
+        {
+          "label": "Feedback",
+          "href": "https://github.com/Umami-Creative-GmbH/z8/issues"
+        },
+        {
+          "label": "Distance per Vehicle",
+          "href": "/en/reports/vehicles"
+        }
+      ],
+      "hours": 2088
+    },
+    {
+      "check": "Ctrl+K opens real search",
+      "path": "/en/reports",
+      "headings": [
+        "Employee Reports"
+      ],
+      "location": "Reports",
+      "viewport": [
+        1600,
+        1000
+      ],
+      "width": 1600,
+      "theme": "dark bprogress-busy",
+      "font": "16px",
+      "buttons": [
+        "Switch Organization: Performance small",
+        "Search",
+        "Account: Person 1",
+        "Toggle Sidebar",
+        "Current timezone Europe/Berlin, 23:00, UTC+01:00",
+        "Clock In",
+        "Refresh data",
+        "Toggle theme",
+        "Notifications",
+        "Fixture Person 1",
+        "Period",
+        "Generate Report",
+        "Open Tanstack query devtools",
+        "Close"
+      ],
+      "links": [
+        {
+          "label": "Skip to content",
+          "href": "#app-page-content"
+        },
+        {
+          "label": "Dashboard",
+          "href": "/en"
+        },
+        {
+          "label": "Time Tracking",
+          "href": "/en/time-tracking"
+        },
+        {
+          "label": "Calendar",
+          "href": "/en/calendar"
+        },
+        {
+          "label": "Absences",
+          "href": "/en/absences"
+        },
+        {
+          "label": "Travel Expenses",
+          "href": "/en/travel-expenses"
+        },
+        {
+          "label": "My Requests",
+          "href": "/en/my-requests"
+        },
+        {
+          "label": "Reports",
+          "href": "/en/reports"
+        },
+        {
+          "label": "Org Explorer",
+          "href": "/en/organization"
+        },
+        {
+          "label": "Team",
+          "href": "/en/team"
+        },
+        {
+          "label": "Team Absences",
+          "href": "/en/team/absences"
+        },
+        {
+          "label": "Approvals",
+          "href": "/en/approvals/inbox"
+        },
+        {
+          "label": "Settings",
+          "href": "/en/settings"
+        },
+        {
+          "label": "Get Help",
+          "href": "https://docs.z8-time.app/docs"
+        },
+        {
+          "label": "Feedback",
+          "href": "https://github.com/Umami-Creative-GmbH/z8/issues"
+        },
+        {
+          "label": "Distance per Vehicle",
+          "href": "/en/reports/vehicles"
+        }
+      ],
+      "dialogs": [
+        "Search or run command\n\nSearch pages, people, teams, settings, or actions\n\nActions\nAdd manual time entry\nRecord hours for a past shift or correction\nRe"
+      ]
+    }
+  ]
+}
