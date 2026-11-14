@@ -151,6 +151,7 @@ export function DeleteWorkPeriodDialog({
 					className="grid gap-4"
 					onSubmit={(submitEvent) => {
 						submitEvent.preventDefault();
+						submitEvent.stopPropagation();
 						if (isDeleting) return;
 						void form.handleSubmit();
 					}}

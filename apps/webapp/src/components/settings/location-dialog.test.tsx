@@ -69,7 +69,9 @@ describe("location editing contract", () => {
 			"de",
 		);
 		await user.click(screen.getByRole("button", { name: "Create Location" }));
-		const pendingForm = screen.getByRole("button", { name: "Create Location" }).closest("form");
+		const pendingForm = screen
+			.getByRole("button", { name: "Create Location" })
+			.closest("form");
 		if (!pendingForm) throw new Error("Create action must submit its form");
 		fireEvent.submit(pendingForm);
 		await user.keyboard("{Escape}");

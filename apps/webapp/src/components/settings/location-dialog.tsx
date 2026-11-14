@@ -193,6 +193,7 @@ export function LocationDialog({
 					noValidate
 					onSubmit={(e) => {
 						e.preventDefault();
+						e.stopPropagation();
 						if (!isSubmitting) void form.handleSubmit();
 					}}
 					className="flex min-h-0 flex-1 flex-col"

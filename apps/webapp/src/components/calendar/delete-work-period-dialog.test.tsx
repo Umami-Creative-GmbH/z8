@@ -90,6 +90,29 @@ describe("DeleteWorkPeriodDialog", () => {
 		expect(screen.getByRole("button", { name: /Delete entry/i })).toBeTruthy();
 	});
 
+	it("does not submit a surrounding task when the portalled confirmation is submitted", async () => {
+		const user = userEvent.setup();
+		const surroundingSubmit = vi.fn((event: React.FormEvent) =>
+			event.preventDefault(),
+		);
+		render(
+			<form onSubmit={surroundingSubmit}>
+				<DeleteWorkPeriodDialog
+					event={workPeriodEvent}
+					open
+					onOpenChange={vi.fn()}
+					displayContext={displayContext}
+				/>
+			</form>,
+		);
+		await user.type(
+			screen.getByRole("textbox", { name: "Reason for deletion" }),
+			"Duplicate entry",
+		);
+		await user.click(screen.getByRole("button", { name: "Delete entry" }));
+		expect(surroundingSubmit).not.toHaveBeenCalled();
+	});
+
 	it("submits the deletion request with the entered reason", async () => {
 		const user = userEvent.setup();
 		const onDeleteComplete = vi.fn();
@@ -295,7 +318,9 @@ describe("DeleteWorkPeriodDialog", () => {
 			"Duplicate entry",
 		);
 		await user.click(screen.getByRole("button", { name: "Delete entry" }));
-		const pendingForm = screen.getByRole("button", { name: "Delete entry" }).closest("form");
+		const pendingForm = screen
+			.getByRole("button", { name: "Delete entry" })
+			.closest("form");
 		if (!pendingForm) throw new Error("Deletion action must submit its form");
 		fireEvent.submit(pendingForm);
 		await user.keyboard("{Escape}");
