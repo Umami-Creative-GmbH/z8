@@ -26,6 +26,7 @@ import {
 	deputyDecisionAuditMetadata,
 	recordDeputyDecision,
 } from "../deputy/deputy-decision-store";
+import type { DecisionRight } from "../decision-right";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	ApprovalAssignmentReassignedError,
@@ -43,6 +44,7 @@ import {
 	isOwnRequestDecision,
 	ownRequestDecisionError,
 } from "../policies/self-decision";
+import { holdsApprovalManagement } from "./approval-management";
 import type {
 	ApprovalAction,
 	ApprovalDbService,
@@ -335,6 +337,110 @@ function runAfterCommitBestEffort<T, R>(
 		);
 }
 
+function notAuthorizedToDecide(
+	currentEmployee: CurrentApprover,
+	entityType: ApprovalEntityType,
+	action: ApprovalAction,
+) {
+	return new AuthorizationError({
+		message: "You are not authorized to decide this request",
+		userId: currentEmployee.id,
+		resource: entityType,
+		action,
+	});
+}
+
+/**
+ * Verifies the one claimed decision right on the locked legacy request, in the
+ * decision's transaction (Approvals ADR 0003). It never falls back to another
+ * right; a covering deputy's own right wins, so it decides as the approver.
+ */
+function verifyLegacyDecisionRight(
+	dbService: ApprovalDbService,
+	approval: PendingApprovalRequest,
+	currentEmployee: CurrentApprover,
+	entityType: ApprovalEntityType,
+	action: ApprovalAction,
+	right: DecisionRight,
+): Effect.Effect<ActingFor | null, AnyAppError> {
+	const transferred = () =>
+		Effect.tryPromise({
+			try: () =>
+				wasLegacyRequestTransferred(dbService.db, {
+					organizationId: currentEmployee.organizationId,
+					approvalRequestId: approval.id,
+				}),
+			catch: (error) => error as AnyAppError,
+		});
+	const reassigned = () =>
+		Effect.fail(approvalReassignedConflict(new ApprovalAssignmentReassignedError()));
+	return Effect.gen(function* () {
+		switch (right.as) {
+			case "approver": {
+				if (approval.approverId === currentEmployee.id) return null;
+				if (yield* transferred()) return yield* reassigned();
+				return yield* Effect.fail(notAuthorizedToDecide(currentEmployee, entityType, action));
+			}
+			case "eligible_manager": {
+				const eligible = yield* Effect.tryPromise({
+					try: () =>
+						isEligibleManagerForApprovalRequest({
+							db: dbService.db,
+							approvalRequestId: approval.id,
+							managerEmployeeId: currentEmployee.id,
+							organizationId: currentEmployee.organizationId,
+						}),
+					catch: (error) => error as AnyAppError,
+				});
+				if (!eligible) {
+					return yield* Effect.fail(notAuthorizedToDecide(currentEmployee, entityType, action));
+				}
+				// Eligibility never bypasses an escalation replacement (#255 §4, #439).
+				if (yield* transferred()) return yield* reassigned();
+				return null;
+			}
+			case "approval_manager": {
+				const manages = yield* Effect.tryPromise({
+					try: () =>
+						holdsApprovalManagement(dbService.db, {
+							organizationId: currentEmployee.organizationId,
+							userId: currentEmployee.userId,
+						}),
+					catch: (error) => error as AnyAppError,
+				});
+				if (!manages) {
+					return yield* Effect.fail(notAuthorizedToDecide(currentEmployee, entityType, action));
+				}
+				return null;
+			}
+			case "covering_deputy": {
+				if (approval.approverId === currentEmployee.id) return null;
+				// The deputy right follows the named approver; a transfer away ends it.
+				if (approval.approverId !== right.forEmployeeId) return yield* reassigned();
+				return yield* dbService
+					.query("approvals.authorizeLegacyDeputyDecision", () =>
+						authorizeLegacyDeputyDecision(dbService.db, {
+							organizationId: currentEmployee.organizationId,
+							approvalRequestId: approval.id,
+							entityType,
+							approverEmployeeId: approval.approverId,
+							actorEmployeeId: currentEmployee.id,
+							action,
+							at: systemClock.nowInstant(),
+						}),
+					)
+					.pipe(
+						Effect.mapError((error) =>
+							error._tag === "DatabaseError" && error.cause instanceof AuthorizationError
+								? error.cause
+								: error,
+						),
+					);
+			}
+		}
+	});
+}
+
 function executeApprovalWithCurrentEmployee<T, R = never>(
 	dbService: ApprovalDbService,
 	currentEmployee: CurrentApprover,
@@ -366,7 +472,17 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 			options,
 		);
 		let actingFor: ActingFor | null = null;
-		if (
+		if (options?.decisionRight) {
+			// One claimed right, verified here and never exchanged (Approvals ADR 0003).
+			actingFor = yield* verifyLegacyDecisionRight(
+				dbService,
+				approval,
+				currentEmployee,
+				entityType,
+				action,
+				options.decisionRight,
+			);
+		} else if (
 			!options?.allowOrganizationWideApprover &&
 			approval.approverId !== currentEmployee.id
 		) {

@@ -12,7 +12,6 @@ import {
 	timeRecordApprovalDecision,
 	workPeriod,
 } from "@/db/schema";
-import { getAbility } from "@/lib/auth-helpers";
 import {
 	dateFromInstant,
 	instantFromDate,
@@ -28,7 +27,6 @@ import {
 	SurchargeService,
 	SurchargeServiceLive,
 } from "@/lib/effect/services/surcharge.service";
-import { createLogger } from "@/lib/logger";
 import {
 	onClockOutApproved,
 	onClockOutRejected,
@@ -59,7 +57,6 @@ import {
 } from "@/lib/time-tracking/work-transaction";
 import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
 import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
-import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	createLegacyApprovalWriteCoordinator,
@@ -69,7 +66,6 @@ import {
 	ApprovalAssignmentReassignedError,
 	approvalReassignedConflict,
 	assertNotReplacedByEscalation,
-	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
 import {
 	asDeputyDecider,
@@ -126,12 +122,11 @@ import {
 	ApprovalAuditLogger,
 	createApprovalAuditLogger,
 } from "../infrastructure/audit-logger";
-import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
-import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
+import type { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { fingerprintApprovalWorkflowCommand } from "../workflow/transition-engine";
 import { processApprovalWithCurrentEmployee } from "./shared";
@@ -146,6 +141,8 @@ import type {
 	PendingApprovalRequest,
 } from "./types";
 import type { WorkPeriodPostCommitDescriptor } from "./work-period-submission";
+import type { DecisionRight } from "../decision-right";
+import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 
 export type OrdinaryTimeApprovalKind = OrdinaryWorkPeriodApprovalKind;
@@ -169,7 +166,6 @@ export function isOrdinaryWorkPeriodDecisionRefusal(error: unknown): boolean {
 function unresolvedWorkPeriodReviewFrom(error: unknown): ConflictError | null {
 	return isUnresolvedWorkPeriodReview(error) ? error : null;
 }
-const logger = createLogger("WorkPeriodApprovals");
 
 function exactDecisionMetadata(value: unknown): {
 	kind: OrdinaryTimeApprovalKind;
@@ -450,20 +446,6 @@ export function isBoundTimeDecisionSignal(error: unknown): boolean {
 	);
 }
 
-/**
- * Explicit organization approval management for a time decision: the caller
- * asked for organization-wide approval (the inbox does for approval managers)
- * and the actor may manage approvals. Eligible-manager fallback is not
- * management.
- */
-export async function canManageOrganizationTimeApproval(
-	options: ApprovalActionOptions | undefined,
-): Promise<boolean> {
-	if (options?.allowOrganizationWideApprover !== true) return false;
-	const ability = await getAbility();
-	return ability?.cannot("manage", "Approval") === false;
-}
-
 export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	historicalOnly?: boolean;
 	/**
@@ -484,10 +466,19 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	allowAnyApprover?: boolean;
 	allowOrganizationWideApprover?: boolean;
 	/**
-	 * Explicit organization approval management, checked by the trusted
-	 * caller. Absent means none (fail closed).
+	 * The time approval decision's one claimed right (Approvals ADR 0003). When
+	 * set, the legacy mutation verifies exactly this right, a kind changed
+	 * since routing restarts the decision, and refusals reach the time approval
+	 * decision with their own type instead of the owner's generic error.
 	 */
-	canManageOrganizationApproval?: () => Promise<boolean>;
+	decisionRight?: DecisionRight;
+	/** The fast lane's guard, run inside the transaction once the kind is known. */
+	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
+	/**
+	 * Explicit organization approval management, checked by the trusted
+	 * caller on the decision's transaction. Absent means none (fail closed).
+	 */
+	canManageOrganizationApproval?: (database: ApprovalDbService["db"]) => Promise<boolean>;
 	decision:
 		| { kind: "approve"; reason: string | null }
 		| { kind: "reject"; reason: string };
@@ -516,6 +507,8 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 			(scope) => executeOrdinaryWorkPeriodDecisionAttempt(input, scope, runtime.current()),
 		);
 	} catch (error) {
+		// The time approval decision maps every refusal itself.
+		if (input.decisionRight) throw error;
 		// Evidence holds, contradictions and escalation revocation keep their
 		// meaning for the caller.
 		if (
@@ -841,12 +834,17 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 	// coordination instead of locking late (#303). The observation it routed
 	// from held under the guards, so these reads agree with it.
 	const routed = scope.route.snapshot.target;
+	if (input.decisionRight && routed?.kind !== metadata.kind) {
+		// Routed under another kind's gate: the time approval decision restarts.
+		throw new TimeApprovalKindChanged(metadata.kind);
+	}
 	if (
 		routed?.ownerEmployeeId !== period.employeeId ||
 		routed.kind !== metadata.kind
 	) {
 		throw new Error(ORDINARY_DECISION_ERROR);
 	}
+	if (input.shortcutGuard) await input.shortcutGuard(database);
 	// The kind's gate, acquired at rank 2 and pinned on the borrowed context.
 	const authority = await context.writeGate.acquire({
 		organizationId: input.organizationId,
@@ -972,7 +970,9 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			entityId: period.id,
 			approvalRequestId: input.approvalRequestId,
 			actorEmployeeId: actor.id,
-			canManageOrganizationApproval: input.canManageOrganizationApproval,
+			canManageOrganizationApproval: input.canManageOrganizationApproval
+				? () => input.canManageOrganizationApproval?.(database) ?? Promise.resolve(false)
+				: undefined,
 		});
 		// Fresh evidence checks run only after the established replay matching
 		// above found no committed operation.
@@ -1046,6 +1046,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 							allowAnyApprover: input.allowAnyApprover,
 							allowOrganizationWideApprover:
 								input.allowOrganizationWideApprover,
+							...(input.decisionRight ? { decisionRight: input.decisionRight } : {}),
 						},
 					).pipe(
 						Effect.provideService(
@@ -2392,6 +2393,12 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 	}
 }
 
+/**
+ * Temporary adapter (#1675): resolves one decision right from today's flags,
+ * own rights first, and decides through the time approval decision. A
+ * refusal is thrown as the conflict this wrapper's callers expect. Deleted
+ * with its last caller (#1680).
+ */
 export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 	dbService: ApprovalDbService,
 	currentEmployee: CurrentApprover,
@@ -2416,129 +2423,33 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 			) {
 				throw new Error(ORDINARY_DECISION_ERROR);
 			}
-			const createRuntime = (database: ApprovalWorkflowDatabase) =>
-				createProductionApprovalWorkflowRuntime({
-				db: database,
-				adapters: {
-					absence: {
-						clock: systemClock,
-						finalizeAbsenceTerminal: async () => {
-							throw new Error("Absence finalization is outside this boundary");
-						},
-						deleteCancelledAbsence: async () => {
-							throw new Error("Absence cancellation is outside this boundary");
-						},
-					},
-					timeCorrection: {
-						clock: systemClock,
-						finalizeTimeCorrectionTerminal: async () => {
-							throw new Error(
-								"Time correction finalization is outside this boundary",
-							);
-						},
-						deleteCancelledCorrections: async () => {
-							throw new Error(
-								"Time correction cancellation is outside this boundary",
-							);
-						},
-					},
-					ordinaryWorkPeriod: {
-						finalizeTerminal:
-							finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
-					},
-				},
-				canManageApproval: async (authorization) => {
-					if (
-						authorization.organizationId !== currentEmployee.organizationId ||
-						authorization.actorEmployeeId !== currentEmployee.id
-					) {
-						return false;
-					}
-					if (await canManageOrganizationTimeApproval(options)) return true;
-					const command = authorization.command;
-					if (command.type !== "approve" && command.type !== "reject") {
-						return false;
-					}
-					const stage = authorization.workflow.stages.find(
-						(candidate) =>
-							candidate.id === command.stageId &&
-							candidate.sequence === authorization.workflow.currentStageOrder &&
-							candidate.status === "pending",
-					);
-					if (!stage?.legacyApprovalRequestId) return false;
-					const eligible = await isEligibleManagerForApprovalRequest({
-						db: authorization.dbService.db as never,
-						approvalRequestId: stage.legacyApprovalRequestId,
-						managerEmployeeId: currentEmployee.id,
-						organizationId: authorization.organizationId,
-					});
-					// Eligible-manager status never bypasses an escalation replacement:
-					// the eligible manager is told the approval moved (#255 §4, #326).
-					if (eligible && !eligibleManagerFallbackAllowed(stage, command.assignmentId)) {
-						throw new ApprovalAssignmentReassignedError();
-					}
-					return eligible;
-				},
-				clock: systemClock,
+			const { decideTimeApprovalFromFlags } = await import("./time-approval-decision");
+			const { result, cause } = await decideTimeApprovalFromFlags({
+				database: dbService.db,
+				actor: currentEmployee,
+				approvalId: input.approvalRequestId,
+				decision:
+					input.decision.kind === "approve"
+						? { kind: "approve" }
+						: { kind: "reject", reason: input.decision.reason },
+				options,
+				expectedWorkPeriodId: input.workPeriodId,
+				replayOnly: input.historicalOnly,
 			});
-			const execution = await completeOrdinaryWorkPeriodDecisionAfterCommit({
-				execute: () =>
-					executeOrdinaryWorkPeriodDecisionInTransaction({
-						historicalOnly: input.historicalOnly,
-						dbService,
-						createRuntime,
-						organizationId: currentEmployee.organizationId,
-						approvalRequestId: input.approvalRequestId,
-						workPeriodId: input.workPeriodId,
-						actor: currentEmployee,
-						allowAnyApprover: options?.allowAnyApprover,
-						allowOrganizationWideApprover:
-							options?.allowOrganizationWideApprover,
-						canManageOrganizationApproval: () =>
-							canManageOrganizationTimeApproval(options),
-						decision: input.decision,
-					}),
-				dispatch: async (execution) => {
-					await Effect.runPromise(
-						notifyWorkPeriodApprovalAfterCommit(
-							execution.result,
-							currentEmployee,
-							dbService,
-							input.approvalRequestId,
-						),
-					);
-				},
-				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-				onDispatchError: (error) => {
-					logger.error(
-						{ error, approvalRequestId: input.approvalRequestId },
-						"Ordinary work-period decision after-commit work failed",
-					);
-				},
-				onMaintenanceError: (error) => {
-					logger.error(
-						{
-							error,
-							organizationId: currentEmployee.organizationId,
-							workflowTargetId: input.approvalRequestId,
-							workPeriodId: input.workPeriodId,
-						},
-						"Ordinary work-period maintenance after commit failed",
-					);
-				},
-			});
-			if (execution.deliveryIntent) {
-				// The legacy cycle's intent committed with the decision (#432); this
-				// only runs the delivery owner sooner.
-				kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
-			}
+			if (result.status === "refused") throw cause;
 		},
 		catch: (error) => {
 			if (error instanceof ApprovalAssignmentReassignedError) {
 				return approvalReassignedConflict(error);
 			}
+			if (error instanceof ConflictError && error.conflictType === "approval_reassigned") {
+				return error;
+			}
+			const unresolvedReview = unresolvedWorkPeriodReviewFrom(error);
+			if (unresolvedReview) return unresolvedReview;
 			const evidenceConflict = translateWorkPeriodEvidenceError(error);
-			return evidenceConflict instanceof ConflictError
+			return evidenceConflict instanceof ConflictError &&
+				evidenceConflict.conflictType === "approval_evidence"
 				? evidenceConflict
 				: new ConflictError({
 						message: ORDINARY_DECISION_ERROR,

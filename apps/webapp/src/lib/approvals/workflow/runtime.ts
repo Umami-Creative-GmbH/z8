@@ -68,6 +68,16 @@ function runtimeFailure(reason: string): never {
 	throw new Error(`Approval workflow runtime: ${reason}`);
 }
 
+const FORBIDDEN_COMMAND_ACTOR = "forbidden command actor";
+
+/** The authorization found no grant for the command's actor. */
+export function isForbiddenCommandActorFailure(error: unknown): boolean {
+	return (
+		error instanceof Error &&
+		error.message === `Approval workflow runtime: ${FORBIDDEN_COMMAND_ACTOR}`
+	);
+}
+
 function rows(result: unknown): unknown[] {
 	return typeof result === "object" &&
 		result !== null &&
@@ -312,7 +322,7 @@ export function createApprovalWorkflowAuthorization(input: {
 						})
 					: null;
 			if (deputyGrant) return deputyGrant;
-			return runtimeFailure("forbidden command actor");
+			return runtimeFailure(FORBIDDEN_COMMAND_ACTOR);
 		},
 	};
 }
@@ -623,6 +633,8 @@ export function createProductionApprovalWorkflowRuntime(input: {
 		typeof createApprovalWorkflowRuntime
 	>[0]["canManageApproval"];
 	clock?: Clock;
+	/** Defaults to covering read on the decision's transaction (#1016). */
+	deputyAuthority?: ApprovalDeputyAuthority;
 }): {
 	repository: ApprovalWorkflowRepository;
 	transitionEngine: ApprovalTransitionEngine;
@@ -683,5 +695,6 @@ export function createProductionApprovalWorkflowRuntime(input: {
 		}),
 		canManageApproval: input.canManageApproval,
 		clock: input.clock,
+		deputyAuthority: input.deputyAuthority,
 	});
 }
