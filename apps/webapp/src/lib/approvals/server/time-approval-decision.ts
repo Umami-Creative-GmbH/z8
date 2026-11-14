@@ -41,8 +41,6 @@ import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-re
 import { readReviewBindingAuthority } from "../authority/binding";
 import type { DecisionRight } from "../decision-right";
 import { kickApprovalDelivery } from "../delivery/kick";
-import { TimeCorrectionLegacyStateCaptureError } from "../domain-adapters/time-correction-legacy-state";
-import { OrdinaryWorkPeriodLegacyStateCaptureError } from "../domain-adapters/work-period-legacy-state";
 import { loadCover } from "../deputy/covering-store";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
@@ -656,15 +654,6 @@ function refusalOf(error: unknown): TimeApprovalDecisionRefusalReason | null {
 	if (monthClosedRefusalOf(error)) return "month_closed";
 	if (isUnresolvedWorkPeriodReview(error)) return "changed";
 	if (error instanceof ApprovalAssignmentReassignedError) return "reassigned";
-	// The verified legacy state no longer matches the live work: the reviewed
-	// request changed. A failed read stays a failure.
-	if (
-		(error instanceof OrdinaryWorkPeriodLegacyStateCaptureError ||
-			error instanceof TimeCorrectionLegacyStateCaptureError) &&
-		error.code === "capture_failed"
-	) {
-		return "changed";
-	}
 	if (error instanceof ApprovalInvocationNotAdmittedError) return "not_admitted";
 	if (error instanceof ApprovalEvidenceError) return evidenceRefusal(error.code);
 	if (error instanceof ApprovalTransitionEngineError) {

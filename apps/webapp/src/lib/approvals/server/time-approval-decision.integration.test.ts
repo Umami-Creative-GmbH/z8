@@ -1160,23 +1160,6 @@ describe("time approval decision (PostgreSQL)", () => {
 			expect(await periodStatus(workPeriodId)).toBe("pending");
 		});
 
-		it.each(["manual_time_submission", "policy_clock_out"] as const)(
-			"a legacy %s whose work changed in place after submission is refused as changed",
-			async (kind) => {
-				const { workPeriodId, approval } = await submitted(kind, "legacy");
-				await admin.query(
-					"update work_period set end_time = end_time + interval '1 minute' where id = $1",
-					[workPeriodId],
-				);
-
-				expect(await decide(actors.approver, approval.id, { as: "approver" })).toEqual({
-					status: "refused",
-					reason: "changed",
-				});
-				expect(await approvalStatus(approval.id)).toBe("pending");
-			},
-		);
-
 		it("a time correction whose work period no longer names its workflow is refused as changed", async () => {
 			const { workPeriodId, approval } = await submitted("time_correction", "canonical");
 			await admin.query(
