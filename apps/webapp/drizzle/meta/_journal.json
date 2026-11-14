@@ -2199,6 +2199,13 @@
       "when": 1811779200000,
       "tag": "0313_sso_unapproved_employee_to_pending_membership",
       "breakpoints": true
+    },
+    {
+      "idx": 314,
+      "version": "7",
+      "when": 1811865600000,
+      "tag": "0314_former_employee_needs_rehire",
+      "breakpoints": true
     }
   ]
 }

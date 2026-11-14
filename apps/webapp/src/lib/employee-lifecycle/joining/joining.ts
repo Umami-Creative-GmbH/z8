@@ -8,6 +8,9 @@ import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { AuditTrail } from "@/lib/audit-trail";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { createLogger } from "@/lib/logger";
+import { notifyFormerEmployeeNeedsRehire } from "@/lib/notifications/former-employee-needs-rehire";
+import { currentOrganizationAdminUserIds } from "@/lib/notifications/manager-notice-recipients";
 import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
 import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
@@ -31,6 +34,8 @@ import {
 export type { JoiningTransaction } from "./invitation-draft";
 
 type Employee = typeof employee.$inferSelect;
+
+const logger = createLogger("joining");
 
 /** A role as Better Auth stores it on the membership. */
 export type MembershipRole = string | string[] | null | undefined;
@@ -56,6 +61,27 @@ export type JoiningInput = {
 	 * defaults to the joining user.
 	 */
 	actorUserId?: string;
+	/**
+	 * Who is told, once the membership committed, when it brings back a former
+	 * employee who needs a rehire (`membership_only`, #1672): the named users,
+	 * such as the admin who sent the invitation, or the organization's current
+	 * owners and admins when nobody brought them in. Absent: nobody, such as an
+	 * approver who sees the outcome where they approved.
+	 */
+	rehireNotice?: RehireNoticeRecipients;
+};
+
+export type RehireNoticeRecipients =
+	| { to: "users"; userIds: readonly string[] }
+	| { to: "organization_admins" };
+
+/** The notice the after-commit step sends for a `membership_only` outcome. */
+export type RehireNotice = {
+	organizationId: string;
+	membershipId: string;
+	employeeId: string;
+	userId: string;
+	recipients: RehireNoticeRecipients;
 };
 
 /**
@@ -86,6 +112,8 @@ export type SeatSignal = {
 export type AfterJoining = {
 	seatSignal: SeatSignal;
 	draftCleanup: DraftCleanup | null;
+	/** Only for a `membership_only` outcome with recipients named in the input. */
+	rehireNotice: RehireNotice | null;
 	/** A repair of an older membership passes `seatSignal: false`: no seat changed now. */
 	run(options?: { seatSignal?: boolean }): Promise<void>;
 };
@@ -166,18 +194,57 @@ export async function joinOrganization(
 		userId,
 		change: "added",
 	};
+	const rehireNotice: RehireNotice | null =
+		outcome.kind === "membership_only" && input.rehireNotice
+			? {
+					organizationId,
+					membershipId: input.membership.id,
+					employeeId: outcome.employee.id,
+					userId,
+					recipients: input.rehireNotice,
+				}
+			: null;
 	return {
 		outcome,
 		afterCommit: {
 			seatSignal,
 			draftCleanup,
+			rehireNotice,
 			async run(options = {}) {
 				audit.forwardCommitted();
 				if (draftCleanup) await consumeInvitationDrafts(db, draftCleanup);
+				if (rehireNotice) await sendRehireNotice(rehireNotice);
 				if (options.seatSignal !== false) await syncBillingSeatsAfterMemberChange(seatSignal);
 			},
 		},
 	};
+}
+
+/** Best effort after commit: the notice never fails the step. */
+async function sendRehireNotice(notice: RehireNotice) {
+	try {
+		const recipientUserIds =
+			notice.recipients.to === "users"
+				? notice.recipients.userIds
+				: await currentOrganizationAdminUserIds(db, { organizationId: notice.organizationId });
+		if (recipientUserIds.length === 0) return;
+		const person = await db.query.user.findFirst({
+			where: eq(user.id, notice.userId),
+			columns: { name: true, email: true },
+		});
+		await notifyFormerEmployeeNeedsRehire({
+			organizationId: notice.organizationId,
+			membershipId: notice.membershipId,
+			employeeId: notice.employeeId,
+			name: person?.name || person?.email || notice.employeeId,
+			recipientUserIds,
+		});
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: notice.organizationId, employeeId: notice.employeeId },
+			"Could not tell admins that a former employee needs a rehire",
+		);
+	}
 }
 
 type JoiningContext = {

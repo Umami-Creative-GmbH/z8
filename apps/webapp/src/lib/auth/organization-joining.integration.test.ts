@@ -24,6 +24,7 @@ const harness = vi.hoisted(() => ({
 		userId: string;
 		memberCommitted: boolean;
 	}[],
+	notices: [] as unknown[],
 	// biome-ignore lint/suspicious/noExplicitAny: the admin pool, assigned below.
 	admin: null as any,
 }));
@@ -53,6 +54,14 @@ vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 			userId: signal.userId,
 			memberCommitted: rows.length > 0,
 		});
+	},
+}));
+
+vi.mock("@/lib/notifications/notification-service", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/notifications/notification-service")>()),
+	createNotification: async (params: unknown) => {
+		harness.notices.push(params);
+		return null;
 	},
 }));
 
@@ -169,6 +178,7 @@ describe("joining inside the auth transaction (#1666)", () => {
 		teamId = rows.find((row) => row.name === "Invitation team")?.id as string;
 		draftTeamId = rows.find((row) => row.name === "Draft team")?.id as string;
 		harness.seatSignals.length = 0;
+		harness.notices.length = 0;
 	}
 
 	async function invite(
@@ -238,6 +248,32 @@ describe("joining inside the auth transaction (#1666)", () => {
 			[invitationId],
 		);
 		return rows[0]?.status;
+	}
+
+	/** The invitee worked here before; their departure took effect (migration 0073). */
+	async function seedDepartedInvitee() {
+		const employeeId = randomUUID();
+		const employmentPeriodId = randomUUID();
+		await admin.query(
+			`insert into employee (id, user_id, organization_id, role, is_active, start_date, updated_at)
+			 values ($1, $2, $3, 'employee', false, '2025-01-01', now())`,
+			[employeeId, inviteeUser, organizationId],
+		);
+		await admin.query(
+			`insert into employee_employment_period
+			 (id, organization_id, employee_id, status, started_at, ended_at, start_provenance)
+			 values ($1, $2, $3, 'closed', '2025-01-01T08:00:00Z', '2026-01-07T08:00:00Z', 'recorded')`,
+			[employmentPeriodId, organizationId, employeeId],
+		);
+		await admin.query(
+			`insert into employee_departure
+			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+			  cutoff_at, created_by, request_id, request_fingerprint, revision, status, effective_at)
+			 values ($1, $2, $3, 'immediate', '2026-01-06', 'UTC', '2026-01-07T08:00:00Z', $4,
+			         gen_random_uuid(), 'test', 1, 'effective', '2026-01-07T08:00:00Z')`,
+			[organizationId, employeeId, employmentPeriodId, ownerUser],
+		);
+		return employeeId;
 	}
 
 	async function draftExists(draftId: string) {
@@ -327,6 +363,35 @@ describe("joining inside the auth transaction (#1666)", () => {
 			});
 			expect(await draftExists(draftId as string)).toBe(true);
 			expect(harness.seatSignals).toEqual([]);
+		});
+
+		it("tells the inviter when the invitee is a former employee who needs a rehire (#1672)", async () => {
+			const employeeId = await seedDepartedInvitee();
+			const { invitationId } = await invite("member");
+
+			const response = await accept(invitationId);
+
+			expect(response.status).toBe(200);
+			expect(await membersOf(organizationId, inviteeUser)).toHaveLength(1);
+			expect(await employeesOf(organizationId, inviteeUser)).toEqual([
+				expect.objectContaining({ is_active: false, team_id: null }),
+			]);
+			expect(harness.notices).toEqual([
+				expect.objectContaining({
+					userId: ownerUser,
+					organizationId,
+					type: "former_employee_needs_rehire",
+					entityId: employeeId,
+				}),
+			]);
+		});
+
+		it("tells nobody when the invitee joins as a new employee (#1672)", async () => {
+			const { invitationId } = await invite("member");
+
+			await accept(invitationId);
+
+			expect(harness.notices).toEqual([]);
 		});
 	});
 

@@ -111,6 +111,11 @@ export async function joinOnAcceptedInvitation(
 		membership: { id: member.id, role: member.role },
 		teamId: targetTeamId,
 		invitation: { id: invitation.id },
+		// The admin who sent the invitation learns when it brought back a former
+		// employee who needs a rehire (#1672); without an inviter, the admins do.
+		rehireNotice: invitationRecord?.inviterId
+			? { to: "users", userIds: [invitationRecord.inviterId] }
+			: { to: "organization_admins" },
 	});
 	return afterJoiningCommitted(() => joined.afterCommit.run(), {
 		organizationId: invitation.organizationId,
@@ -131,6 +136,9 @@ export async function joinOnAddedMember(
 		userId: user.id,
 		membership: { id: member.id, role: member.role },
 		invitation: { id: null },
+		// The hook does not name who added the member: the admins learn of a
+		// former employee who needs a rehire (#1672).
+		rehireNotice: { to: "organization_admins" },
 	});
 	return afterJoiningCommitted(() => joined.afterCommit.run(), {
 		organizationId: organization.id,

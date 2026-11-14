@@ -7,6 +7,8 @@ export {
 	type JoiningTransaction,
 	joinOrganization,
 	type MembershipRole,
+	type RehireNotice,
+	type RehireNoticeRecipients,
 	type SeatSignal,
 } from "./joining";
 export { joinMembersWithoutEmployee, joinMemberWithoutEmployee } from "./repairs";

@@ -10,6 +10,11 @@ import { sql } from "drizzle-orm";
 import type { PoolClient } from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
+const { createNotification } = vi.hoisted(() => ({ createNotification: vi.fn() }));
+vi.mock("@/lib/notifications/notification-service", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/notifications/notification-service")>()),
+	createNotification,
+}));
 vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	reconcileBillingSeatsForOrganization: async () => undefined,
 	syncBillingSeatsAfterMemberChange: async () => undefined,
@@ -501,6 +506,81 @@ describe("joining an organization (#1665)", () => {
 			identityHolder.release();
 			guardProbe.release();
 		}
+	});
+
+	describe("telling who brought them in that a rehire is needed (#1672)", () => {
+		function noticesSent() {
+			return createNotification.mock.calls.map(([params]) => params);
+		}
+
+		it("tells the named admin once the membership committed, linking to the employee", async () => {
+			createNotification.mockClear();
+			const person = await personIn("departed", "member");
+
+			const joined = await join(person, {
+				rehireNotice: { to: "users", userIds: [fixture.ownerUserId] },
+			});
+			expect(noticesSent()).toEqual([]);
+			await joined.afterCommit.run();
+
+			expect(noticesSent()).toEqual([
+				expect.objectContaining({
+					userId: fixture.ownerUserId,
+					organizationId: fixture.organizationId,
+					type: "former_employee_needs_rehire",
+					entityType: "employee",
+					entityId: person.employeeId,
+					actionUrl: `/settings/employees/${person.employeeId}`,
+				}),
+			]);
+		});
+
+		it("tells the organization's current owners and admins when nobody brought them in", async () => {
+			createNotification.mockClear();
+			const person = await personIn("departed", "member");
+
+			const joined = await join(person, { rehireNotice: { to: "organization_admins" } });
+			await joined.afterCommit.run();
+
+			const recipients = noticesSent().map((params) => params.userId);
+			expect(recipients).toContain(fixture.ownerUserId);
+			expect(recipients).not.toContain(person.userId);
+			expect(noticesSent()).toEqual(
+				recipients.map(() =>
+					expect.objectContaining({
+						type: "former_employee_needs_rehire",
+						entityId: person.employeeId,
+					}),
+				),
+			);
+		});
+
+		it.each([
+			"no employee",
+			"current",
+			"deactivated",
+			"follow-up pending",
+		] as const)("tells nobody when someone in state %s joins", async (state) => {
+			createNotification.mockClear();
+			const person = await personIn(state, "member");
+
+			const joined = await join(person, { rehireNotice: { to: "organization_admins" } });
+			await joined.afterCommit.run();
+
+			expect(joined.afterCommit.rehireNotice).toBeNull();
+			expect(noticesSent()).toEqual([]);
+		});
+
+		it("tells nobody when the caller names no one", async () => {
+			createNotification.mockClear();
+			const person = await personIn("departed", "member");
+
+			const joined = await join(person);
+			await joined.afterCommit.run();
+
+			expect(joined.outcome.kind).toBe("membership_only");
+			expect(noticesSent()).toEqual([]);
+		});
 	});
 
 	describe("repairs on read", () => {
