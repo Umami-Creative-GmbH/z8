@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect, Layer } from "effect";
@@ -23,40 +21,20 @@ const enterpriseIdentityMock = vi.hoisted(() => ({
 	assertRedemptionAllowed: vi.fn(async () => undefined),
 }));
 
-const billingMock = vi.hoisted(() => ({
-	sync: vi.fn(async () => undefined),
-}));
-
 vi.mock("@/lib/enterprise-identity/enforcement", () => ({
 	assertEnterpriseIdentityInviteCodeRedemptionAllowed:
 		enterpriseIdentityMock.assertRedemptionAllowed,
 }));
 
-vi.mock("@/lib/billing/seat-sync-trigger", () => ({
-	syncBillingSeatsAfterMemberChange: billingMock.sync,
-}));
-
-// Coming back is covered by reactivation.integration.test.ts and reactivation-paths.integration.test.ts (#1643).
-const reactivateOnReturn = vi.hoisted(() =>
-	vi.fn(async (_tx: unknown, _input: unknown, _audit: unknown) => ({
-		current: true,
-		reactivationRequestId: null,
+// What joining writes, and that redemption joins in its own transaction, is
+// covered by joining.integration.test.ts and reactivation-paths.integration.test.ts (#1667).
+const joinOrganization = vi.hoisted(() =>
+	vi.fn(async (_tx: unknown, _input: unknown) => ({
+		outcome: { kind: "joined" },
+		afterCommit: { run: async () => undefined },
 	})),
 );
-vi.mock("@/lib/employee-lifecycle/reactivation", () => ({ reactivateOnReturn }));
-/** The employee came back through the one call that switches them on (#1643). */
-const cameBack = (employeeId: string) =>
-	expect(reactivateOnReturn).toHaveBeenCalledWith(
-		expect.anything(),
-		{ organizationId: "org-1", employeeId, actorUserId: "user-1" },
-		expect.anything(),
-	);
-
-// The placement itself is covered by team-placement.integration.test.ts (#1594).
-const placeArrivingEmployee = vi.hoisted(() =>
-	vi.fn(async (_tx: unknown, _input: unknown) => undefined),
-);
-vi.mock("@/lib/organization/team-placement/team-placement", () => ({ placeArrivingEmployee }));
+vi.mock("@/lib/employee-lifecycle/joining", () => ({ joinOrganization }));
 
 function resetEnterpriseIdentityMock() {
 	enterpriseIdentityMock.assertRedemptionAllowed.mockReset();
@@ -75,14 +53,6 @@ function collectColumnNames(value: unknown): string[] {
 		? node.queryChunks.flatMap(collectColumnNames)
 		: [];
 	return [...ownName, ...chunkNames];
-}
-
-function deferred<T>() {
-	let resolve!: (value: T) => void;
-	const promise = new Promise<T>((resolvePromise) => {
-		resolve = resolvePromise;
-	});
-	return { promise, resolve };
 }
 
 function scopedCrudLayer() {
@@ -183,7 +153,7 @@ describe("InviteCodeService organization scoping", () => {
 describe("InviteCodeService.useCode", () => {
 	it("rejects an ambiguous cross-organization code without selecting a tenant", async () => {
 		resetEnterpriseIdentityMock();
-		billingMock.sync.mockClear();
+		joinOrganization.mockClear();
 		const fake = duplicatePendingCodeLayer();
 
 		const result = await Effect.runPromise(
@@ -210,12 +180,12 @@ describe("InviteCodeService.useCode", () => {
 		);
 		expect(fake.mockDb.transaction).not.toHaveBeenCalled();
 		expect(fake.insertedMembers).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 	});
 
 	it("returns durable membership rejection before enterprise denial", async () => {
 		resetEnterpriseIdentityMock();
-		billingMock.sync.mockClear();
+		joinOrganization.mockClear();
 		enterpriseIdentityMock.assertRedemptionAllowed.mockRejectedValue(
 			new Error("Domain blocked"),
 		);
@@ -246,7 +216,7 @@ describe("InviteCodeService.useCode", () => {
 			enterpriseIdentityMock.assertRedemptionAllowed,
 		).not.toHaveBeenCalled();
 		expect(fake.writes).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 		expect(collectColumnNames(fake.auditQueries[0])).toEqual(
 			expect.arrayContaining([
 				"organization_id",
@@ -263,187 +233,12 @@ describe("InviteCodeService.useCode", () => {
 		);
 	});
 
-	it("provisions an active employee on a valid no-approval invite target team", async () => {
-		resetEnterpriseIdentityMock();
-		placeArrivingEmployee.mockClear();
-		const insertedEmployees: unknown[] = [];
-		const inviteCodeRecord = {
-			id: "invite-1",
-			code: "JOIN-TEAM",
-			organizationId: "org-1",
-			defaultTeamId: "team-1",
-			requiresApproval: false,
-			status: "active",
-			expiresAt: null,
-			maxUses: null,
-			currentUses: 0,
-			organization: { id: "org-1", name: "Acme", slug: "acme" },
-		};
-		const memberRecord = { id: "member-1", role: "member", status: "approved" };
-		const transaction = vi.fn(
-			async (callback: (tx: unknown) => Promise<unknown>) => callback(mockDb),
-		);
-		const mockDb = {
-			query: {
-				inviteCode: {
-					findFirst: vi.fn(async () => inviteCodeRecord),
-					findMany: vi.fn(async () => [inviteCodeRecord]),
-				},
-				member: { findFirst: vi.fn(async () => null) },
-				auditLog: { findMany: vi.fn(async () => []) },
-				user: { findFirst: vi.fn(async () => ({ email: "ada@example.com" })) },
-				employee: { findFirst: vi.fn(async () => null) },
-				team: { findFirst: vi.fn(async () => ({ id: "team-1" })) },
-			},
-			insert: vi.fn((table) => ({
-				values: vi.fn((values) => {
-					if (table === employee) {
-						insertedEmployees.push(values);
-					}
-
-					return {
-						returning: vi.fn(async () => [memberRecord]),
-					};
-				}),
-			})),
-			update: vi.fn(() => ({
-				set: vi.fn(() => ({
-					where: vi.fn(() => ({
-						returning: vi.fn(async () => [{ id: "invite-1", currentUses: 1 }]),
-					})),
-				})),
-			})),
-			execute: vi.fn(async () => undefined),
-			transaction,
-		};
-		const layer = InviteCodeServiceLive.pipe(
-			Layer.provide(
-				Layer.succeed(
-					DatabaseService,
-					DatabaseService.of({
-						db: mockDb as never,
-						query: (_name, query) => Effect.promise(query) as never,
-					}),
-				),
-			),
-		);
-
-		const result = await Effect.runPromise(
-			Effect.gen(function* () {
-				const service = yield* InviteCodeService;
-
-				return yield* service.useCode({ code: "JOIN-TEAM", userId: "user-1" });
-			}).pipe(Effect.provide(layer)),
-		);
-
-		expect(result.status).toBe("approved");
-		expect(transaction).toHaveBeenCalledOnce();
-		expect(insertedEmployees).toEqual([
-			{
-				userId: "user-1",
-				organizationId: "org-1",
-				role: "employee",
-				isActive: true,
-			},
-		]);
-		// The code's team is a membership and the primary team (Organization ADR 0010).
-		expect(placeArrivingEmployee).toHaveBeenCalledWith(
-			mockDb,
-			expect.objectContaining({ organizationId: "org-1", teamId: "team-1" }),
-		);
-	});
-
-	it("keeps approval-required invite redemptions pending without provisioning an employee", async () => {
-		resetEnterpriseIdentityMock();
-		const insertedEmployees: unknown[] = [];
-		const insertedMembers: unknown[] = [];
-		const inviteCodeRecord = {
-			id: "invite-1",
-			code: "JOIN-TEAM",
-			organizationId: "org-1",
-			defaultTeamId: "team-1",
-			requiresApproval: true,
-			status: "active",
-			expiresAt: null,
-			maxUses: null,
-			currentUses: 0,
-			organization: { id: "org-1", name: "Acme", slug: "acme" },
-		};
-		const memberRecord = { id: "member-1", role: "member", status: "pending" };
-		const transaction = vi.fn(
-			async (callback: (tx: unknown) => Promise<unknown>) => callback(mockDb),
-		);
-		const mockDb = {
-			query: {
-				inviteCode: {
-					findFirst: vi.fn(async () => inviteCodeRecord),
-					findMany: vi.fn(async () => [inviteCodeRecord]),
-				},
-				member: { findFirst: vi.fn(async () => null) },
-				auditLog: { findMany: vi.fn(async () => []) },
-				user: { findFirst: vi.fn(async () => ({ email: "ada@example.com" })) },
-				employee: { findFirst: vi.fn(async () => null) },
-				team: { findFirst: vi.fn(async () => ({ id: "team-1" })) },
-			},
-			insert: vi.fn((table) => ({
-				values: vi.fn((values) => {
-					if (table === member) {
-						insertedMembers.push(values);
-					}
-					if (table === employee) {
-						insertedEmployees.push(values);
-					}
-
-					return {
-						returning: vi.fn(async () => [memberRecord]),
-					};
-				}),
-			})),
-			update: vi.fn(() => ({
-				set: vi.fn(() => ({
-					where: vi.fn(() => ({
-						returning: vi.fn(async () => [{ id: "invite-1", currentUses: 1 }]),
-					})),
-				})),
-			})),
-			execute: vi.fn(async () => undefined),
-			transaction,
-		};
-		const layer = InviteCodeServiceLive.pipe(
-			Layer.provide(
-				Layer.succeed(
-					DatabaseService,
-					DatabaseService.of({
-						db: mockDb as never,
-						query: (_name, query) => Effect.promise(query) as never,
-					}),
-				),
-			),
-		);
-
-		const result = await Effect.runPromise(
-			Effect.gen(function* () {
-				const service = yield* InviteCodeService;
-
-				return yield* service.useCode({ code: "JOIN-TEAM", userId: "user-1" });
-			}).pipe(Effect.provide(layer)),
-		);
-
-		expect(result.status).toBe("pending");
-		expect(insertedMembers).toEqual([
-			expect.objectContaining({
-				status: "pending",
-				inviteCodeId: "invite-1",
-			}),
-		]);
-		expect(insertedEmployees).toEqual([]);
-	});
 });
 
 describe("InviteCodeService transactional usability", () => {
 	beforeEach(() => {
 		resetEnterpriseIdentityMock();
-		billingMock.sync.mockClear();
+		joinOrganization.mockClear();
 	});
 
 	it("rejects a code paused after pre-validation using the locked current row", async () => {
@@ -478,7 +273,7 @@ describe("InviteCodeService transactional usability", () => {
 		expect(fake.usages).toEqual([]);
 		expect(fake.employees).toEqual([]);
 		expect(fake.lockedInvite.currentUses).toBe(0);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 		const lock = inviteLockQuery(fake.transactionStatements);
 		expect(lock?.sql.toLowerCase()).toContain("for update");
 		expect(lock?.params).toEqual(["invite-1", "org-1"]);
@@ -519,9 +314,8 @@ describe("InviteCodeService transactional usability", () => {
 		expect(fake.tx.query.inviteCode.findFirst).toHaveBeenCalledTimes(2);
 		expect(fake.members).toHaveLength(1);
 		expect(fake.usages).toHaveLength(1);
-		expect(fake.employees).toHaveLength(1);
 		expect(fake.lockedInvite.currentUses).toBe(1);
-		expect(billingMock.sync).toHaveBeenCalledOnce();
+		expect(joinOrganization).toHaveBeenCalledOnce();
 		expect(fake.incrementPredicates).toHaveLength(1);
 		expect(collectColumnNames(fake.incrementPredicates[0])).toEqual(
 			expect.arrayContaining([
@@ -532,19 +326,6 @@ describe("InviteCodeService transactional usability", () => {
 				"current_uses",
 			]),
 		);
-	});
-});
-
-describe("InviteCodeService billing seat sync", () => {
-	it("syncs billing seats after approved invite code member creation paths", () => {
-		const source = readFileSync(
-			join(process.cwd(), "src/lib/effect/services/invite-code.service.ts"),
-			"utf8",
-		);
-
-		expect(source).toContain("syncBillingSeatsAfterMemberChange");
-		expect(source).toContain("memberId: redemption.member.id");
-		expect(source).toContain('change: "added"');
 	});
 });
 
@@ -1244,7 +1025,7 @@ function inviteLockQuery(statements: SQL[]) {
 describe("InviteCodeService.processPendingInviteCode", () => {
 	beforeEach(() => {
 		resetEnterpriseIdentityMock();
-		billingMock.sync.mockClear();
+		joinOrganization.mockClear();
 	});
 
 	it("retains pending code and returns durable rejection before enterprise denial", async () => {
@@ -1276,7 +1057,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 			enterpriseIdentityMock.assertRedemptionAllowed,
 		).not.toHaveBeenCalled();
 		expect(fake.writes).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 	});
 
 	it("does not choose arbitrarily when the pending code exists in multiple organizations", async () => {
@@ -1295,7 +1076,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		);
 		expect(fake.mockDb.transaction).not.toHaveBeenCalled();
 		expect(fake.insertedMembers).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 	});
 
 	it("retains the pending code when its existing membership was rejected", async () => {
@@ -1323,7 +1104,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		expect(fake.mockDb.insert).not.toHaveBeenCalled();
 		expect(fake.mockDb.query.employee.findFirst).not.toHaveBeenCalled();
 		expect(fake.mockDb.query.team.findFirst).not.toHaveBeenCalled();
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 	});
 
 	it("rolls back lifecycle writes when clearing the pending code fails", async () => {
@@ -1349,7 +1130,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		expect(fake.usages).toEqual([]);
 		expect(fake.employees).toEqual([]);
 		expect(fake.inviteState.currentUses).toBe(0);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 		expect(fake.db.transaction).toHaveBeenCalledOnce();
 		expect(fake.rootUserUpdates).toEqual([]);
 		expect(fake.transactionUserUpdates).toEqual([{ pendingInviteCode: null }]);
@@ -1372,7 +1153,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		expect(fake.usages).toEqual([]);
 		expect(fake.employees).toEqual([]);
 		expect(fake.inviteState.currentUses).toBe(0);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 		expect(fake.db.transaction).toHaveBeenCalledOnce();
 		expect(fake.rootClearPredicates).toEqual([]);
 		expect(fake.transactionClearPredicates).toHaveLength(1);
@@ -1442,106 +1223,10 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		expect(fake.members).toEqual([]);
 		expect(fake.usages).toEqual([]);
 		expect(fake.employees).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 		expect(fake.rootClearPredicates).toEqual([]);
 		expect(fake.transactionClearPredicates).toHaveLength(1);
 		expectExactPendingCodeCas(fake);
-	});
-
-	it("provisions an active employee without a team when the invite target team is invalid", async () => {
-		placeArrivingEmployee.mockClear();
-		const insertedEmployees: unknown[] = [];
-		const userClears: unknown[] = [];
-		const inviteCodeRecord = {
-			id: "invite-1",
-			code: "JOIN-TEAM",
-			organizationId: "org-1",
-			defaultTeamId: "team-other-org",
-			requiresApproval: false,
-			status: "active",
-			expiresAt: null,
-			maxUses: null,
-			currentUses: 0,
-			organization: { id: "org-1", name: "Acme", slug: "acme" },
-		};
-		const memberRecord = { id: "member-1", role: "member", status: "approved" };
-		const transaction = vi.fn(
-			async (callback: (tx: unknown) => Promise<unknown>) => callback(mockDb),
-		);
-		const mockDb = {
-			query: {
-				user: {
-					findFirst: vi.fn(async () => ({
-						id: "user-1",
-						email: "ada@example.com",
-						pendingInviteCode: "JOIN-TEAM",
-					})),
-				},
-				inviteCode: {
-					findFirst: vi.fn(async () => inviteCodeRecord),
-					findMany: vi.fn(async () => [inviteCodeRecord]),
-				},
-				member: { findFirst: vi.fn(async () => null) },
-				auditLog: { findMany: vi.fn(async () => []) },
-				employee: { findFirst: vi.fn(async () => null) },
-				team: { findFirst: vi.fn(async () => null) },
-			},
-			insert: vi.fn((table) => ({
-				values: vi.fn((values) => {
-					if (table === employee) {
-						insertedEmployees.push(values);
-					}
-
-					return {
-						returning: vi.fn(async () => [memberRecord]),
-					};
-				}),
-			})),
-			update: vi.fn((table) => ({
-				set: vi.fn((values) => ({
-					where: vi.fn(() => {
-						if (table === user) userClears.push(values);
-						return {
-							returning: vi.fn(async () => [{ id: "user-1" }]),
-						};
-					}),
-				})),
-			})),
-			execute: vi.fn(async () => undefined),
-			transaction,
-		};
-		const layer = InviteCodeServiceLive.pipe(
-			Layer.provide(
-				Layer.succeed(
-					DatabaseService,
-					DatabaseService.of({
-						db: mockDb as never,
-						query: (_name, query) => Effect.promise(query) as never,
-					}),
-				),
-			),
-		);
-
-		const result = await Effect.runPromise(
-			Effect.gen(function* () {
-				const service = yield* InviteCodeService;
-
-				return yield* service.processPendingInviteCode("user-1");
-			}).pipe(Effect.provide(layer)),
-		);
-
-		expect(result?.status).toBe("approved");
-		expect(transaction).toHaveBeenCalledOnce();
-		expect(userClears).toEqual([{ pendingInviteCode: null }]);
-		expect(insertedEmployees).toEqual([
-			{
-				userId: "user-1",
-				organizationId: "org-1",
-				role: "employee",
-				isActive: true,
-			},
-		]);
-		expect(placeArrivingEmployee).not.toHaveBeenCalled();
 	});
 
 	it("rejects enterprise identity blocked pending invite codes before member or employee inserts", async () => {
@@ -1784,37 +1469,19 @@ describe("InviteCodeService rejection audit parsing", () => {
 	});
 });
 
-type ReactivationFakeOptions = {
-	existingMember?: { id: string; role: string; status: string } | null;
-	existingEmployee?: Record<string, unknown> | null;
-	defaultTeamId?: string | null;
-	teamIsValid?: boolean;
-	employeeFindFirst?: () => Promise<Record<string, unknown> | null>;
-	teamFindFirst?: () => Promise<{ id: string } | null>;
-};
-
-function reactivationLayer(options: ReactivationFakeOptions = {}) {
-	const employeeInserts: unknown[] = [];
-	const employeeUpdates: unknown[] = [];
-	const events: string[] = [];
+/** A no-approval code whose redeeming user already holds a rejected membership. */
+function rejectedMembershipLayer() {
 	const inviteCodeRecord = {
 		id: "invite-1",
 		code: "JOIN-TEAM",
 		organizationId: "org-1",
-		defaultTeamId: options.defaultTeamId ?? null,
+		defaultTeamId: null,
 		requiresApproval: false,
 		status: "active",
 		expiresAt: null,
 		maxUses: null,
 		currentUses: 0,
 		organization: { id: "org-1", name: "Acme", slug: "acme" },
-	};
-	const createdMember = {
-		id: "member-new",
-		userId: "user-1",
-		organizationId: "org-1",
-		role: "member",
-		status: "approved",
 	};
 	const mockDb = {
 		query: {
@@ -1823,59 +1490,23 @@ function reactivationLayer(options: ReactivationFakeOptions = {}) {
 				findMany: vi.fn(async () => [inviteCodeRecord]),
 			},
 			member: {
-				findFirst: vi.fn(async () => options.existingMember ?? null),
+				findFirst: vi.fn(async () => ({
+					id: "member-rejected",
+					role: "member",
+					status: "rejected",
+				})),
 			},
 			auditLog: { findMany: vi.fn(async () => []) },
 			user: {
 				findFirst: vi.fn(async () => ({ email: "ada@example.com" })),
 			},
-			employee: {
-				findFirst: vi.fn(async (query: { where: SQL }) => {
-					const existingEmployee = options.employeeFindFirst
-						? await options.employeeFindFirst()
-						: options.existingEmployee;
-					if (!existingEmployee) return null;
-					const compiled = new PgDialect().sqlToQuery(query.where);
-					return compiled.params.includes(existingEmployee.organizationId)
-						? existingEmployee
-						: null;
-				}),
-			},
-			team: {
-				findFirst: vi.fn(async () =>
-					options.teamFindFirst
-						? options.teamFindFirst()
-						: options.teamIsValid === false
-							? null
-							: { id: options.defaultTeamId },
-				),
-			},
 		},
-		execute: vi.fn(async () => {
-			events.push("identity-lock");
-		}),
-		insert: vi.fn((table) => ({
-			values: vi.fn((values) => {
-				if (table === employee) employeeInserts.push(values);
-				return { returning: vi.fn(async () => [createdMember]) };
-			}),
-		})),
-		update: vi.fn((table) => ({
-			set: vi.fn((values) => {
-				if (table === employee) employeeUpdates.push(values);
-				return {
-					where: vi.fn(() => ({
-						returning: vi.fn(async () => [{ id: "invite-1", currentUses: 1 }]),
-					})),
-				};
-			}),
-		})),
-		transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => {
-			events.push("transaction-start");
-			const result = await callback(mockDb);
-			events.push("transaction-commit");
-			return result;
-		}),
+		execute: vi.fn(async () => undefined),
+		insert: vi.fn(),
+		update: vi.fn(),
+		transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
+			callback(mockDb),
+		),
 	};
 	const layer = InviteCodeServiceLive.pipe(
 		Layer.provide(
@@ -1889,35 +1520,17 @@ function reactivationLayer(options: ReactivationFakeOptions = {}) {
 		),
 	);
 
-	return { employeeInserts, employeeUpdates, events, layer, mockDb };
+	return { layer, mockDb };
 }
 
-async function redeemNoApprovalCode(
-	layer: ReturnType<typeof reactivationLayer>["layer"],
-) {
-	return Effect.runPromise(
-		Effect.gen(function* () {
-			const service = yield* InviteCodeService;
-			return yield* service.useCode({ code: "JOIN-TEAM", userId: "user-1" });
-		}).pipe(Effect.provide(layer)),
-	);
-}
-
-describe("InviteCodeService preserved employee reactivation", () => {
+describe("InviteCodeService rejected membership reuse", () => {
 	beforeEach(() => {
-		reactivateOnReturn.mockClear();
 		resetEnterpriseIdentityMock();
-		billingMock.sync.mockClear();
+		joinOrganization.mockClear();
 	});
 
 	it("rejects reuse of an invite code for an existing rejected membership without side effects", async () => {
-		const fake = reactivationLayer({
-			existingMember: {
-				id: "member-rejected",
-				role: "member",
-				status: "rejected",
-			},
-		});
+		const fake = rejectedMembershipLayer();
 
 		const result = await Effect.runPromise(
 			Effect.result(
@@ -1941,178 +1554,7 @@ describe("InviteCodeService preserved employee reactivation", () => {
 		});
 		expect(fake.mockDb.insert).not.toHaveBeenCalled();
 		expect(fake.mockDb.update).not.toHaveBeenCalled();
-		expect(fake.mockDb.query.employee.findFirst).not.toHaveBeenCalled();
-		expect(fake.mockDb.query.team.findFirst).not.toHaveBeenCalled();
-		expect(fake.employeeInserts).toEqual([]);
-		expect(fake.employeeUpdates).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
-	});
-
-	it("starts employee and default-team reads together", async () => {
-		const employeeRead = deferred<Record<string, unknown> | null>();
-		const teamRead = deferred<{ id: string } | null>();
-		const employeeReadStarted = deferred<void>();
-		const employeeFindFirst = vi.fn(() => {
-			employeeReadStarted.resolve();
-			return employeeRead.promise;
-		});
-		const teamFindFirst = vi.fn(() => teamRead.promise);
-		const fake = reactivationLayer({
-			defaultTeamId: "team-1",
-			employeeFindFirst,
-			teamFindFirst,
-		});
-		const redemption = redeemNoApprovalCode(fake.layer);
-		let redemptionOutcome!: PromiseSettledResult<Awaited<typeof redemption>>;
-
-		try {
-			await employeeReadStarted.promise;
-			expect(teamFindFirst).toHaveBeenCalledOnce();
-		} finally {
-			employeeRead.resolve(null);
-			teamRead.resolve({ id: "team-1" });
-			[redemptionOutcome] = await Promise.allSettled([redemption]);
-		}
-
-		if (redemptionOutcome.status === "rejected") {
-			throw redemptionOutcome.reason;
-		}
-		expect(redemptionOutcome.value).toMatchObject({
-			status: "approved",
-		});
-	});
-
-	it.each([
-		["without an invite team", null],
-		["with a valid invite team", "team-1"],
-	] as const)(
-		"reactivates the same employee after membership removal %s and preserves HR fields",
-		async (_case, defaultTeamId) => {
-			placeArrivingEmployee.mockClear();
-			const fake = reactivationLayer({
-				defaultTeamId,
-				existingEmployee: {
-					id: "employee-preserved",
-					userId: "user-1",
-					organizationId: "org-1",
-					isActive: false,
-					teamId: "team-history",
-					role: "manager",
-					employeeNumber: "E-42",
-					position: "Historian",
-				},
-			});
-
-			await expect(redeemNoApprovalCode(fake.layer)).resolves.toMatchObject({
-				status: "approved",
-				memberId: "member-new",
-			});
-
-			expect(fake.mockDb.transaction).toHaveBeenCalledOnce();
-			expect(fake.events).toContain("identity-lock");
-			expect(fake.employeeInserts).toEqual([]);
-			cameBack("employee-preserved");
-			expect(fake.employeeUpdates).toEqual([]);
-			// The code's team is a move from team-history (Organization ADR 0010).
-			if (defaultTeamId) {
-				expect(placeArrivingEmployee).toHaveBeenCalledWith(fake.mockDb, {
-					organizationId: "org-1",
-					employeeId: "employee-preserved",
-					teamId: defaultTeamId,
-				});
-			} else expect(placeArrivingEmployee).not.toHaveBeenCalled();
-		},
-	);
-
-	it("reactivates an inactive employee behind an existing approved membership", async () => {
-		const fake = reactivationLayer({
-			existingMember: {
-				id: "member-existing",
-				role: "owner,admin",
-				status: "approved",
-			},
-			existingEmployee: {
-				id: "employee-preserved",
-				userId: "user-1",
-				organizationId: "org-1",
-				isActive: false,
-				teamId: "team-history",
-				role: "manager",
-			},
-		});
-
-		await expect(redeemNoApprovalCode(fake.layer)).resolves.toMatchObject({
-			status: "approved",
-			memberId: "member-existing",
-		});
-		cameBack("employee-preserved");
-		expect(fake.employeeUpdates).toEqual([]);
-		expect(fake.employeeInserts).toEqual([]);
-	});
-
-	it("keeps an active existing member idempotent", async () => {
-		const fake = reactivationLayer({
-			existingMember: {
-				id: "member-existing",
-				role: "member",
-				status: "approved",
-			},
-			existingEmployee: {
-				id: "employee-existing",
-				userId: "user-1",
-				organizationId: "org-1",
-				isActive: true,
-			},
-		});
-
-		await expect(redeemNoApprovalCode(fake.layer)).resolves.toMatchObject({
-			status: "approved",
-			memberId: "member-existing",
-		});
-		expect(fake.employeeUpdates).toEqual([]);
-		expect(fake.employeeInserts).toEqual([]);
-	});
-
-	it("uses complete Better Auth role tokens when provisioning an existing bootstrap admin", async () => {
-		const fake = reactivationLayer({
-			existingMember: {
-				id: "member-existing",
-				role: "member,admin",
-				status: "approved",
-			},
-			existingEmployee: null,
-		});
-
-		await expect(redeemNoApprovalCode(fake.layer)).resolves.toMatchObject({
-			status: "approved",
-			memberId: "member-existing",
-		});
-		expect(fake.employeeInserts).toEqual([
-			expect.objectContaining({ role: "admin", organizationId: "org-1" }),
-		]);
-	});
-
-	it("never reactivates a preserved employee from another organization", async () => {
-		const fake = reactivationLayer({
-			existingEmployee: {
-				id: "employee-other-org",
-				userId: "user-1",
-				organizationId: "org-other",
-				isActive: false,
-			},
-		});
-
-		await expect(redeemNoApprovalCode(fake.layer)).resolves.toMatchObject({
-			status: "approved",
-		});
-		expect(fake.employeeUpdates).toEqual([]);
-		expect(fake.employeeInserts).toEqual([
-			expect.objectContaining({
-				userId: "user-1",
-				organizationId: "org-1",
-				isActive: true,
-			}),
-		]);
+		expect(joinOrganization).not.toHaveBeenCalled();
 	});
 });
 
