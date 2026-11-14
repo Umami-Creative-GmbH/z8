@@ -107,6 +107,8 @@ export type TimeApprovalRefusalDetail =
 	| { kind: "work_overlap"; overlaps: CorrectionOverlap[] }
 	/** `changed`: an earlier request or changed work collides with the correction. */
 	| { kind: "work_collision" }
+	/** `changed`: another approval of the same work period is still pending. */
+	| { kind: "work_pending_review"; pending: "approval" | "time_correction" }
 	/** `changed`: the work needs review before it can change. */
 	| { kind: "work_review_required" }
 	/** `month_closed`: the closed month. */
@@ -333,7 +335,11 @@ function overlapsOf(details: Record<string, unknown> | undefined): CorrectionOve
 function refusalOf(error: unknown): Refusal | null {
 	const closed = monthClosedRefusalOf(error);
 	if (closed) return { reason: "month_closed", detail: { kind: "month_closed", month: closed.month } };
-	if (isUnresolvedWorkPeriodReview(error)) return { reason: "changed" };
+	if (isUnresolvedWorkPeriodReview(error)) {
+		const pending =
+			error.conflictType === "pending_time_correction_approval" ? "time_correction" : "approval";
+		return { reason: "changed", detail: { kind: "work_pending_review", pending } };
+	}
 	if (error instanceof ApprovalAssignmentReassignedError) return { reason: "reassigned" };
 	if (error instanceof ApprovalInvocationNotAdmittedError) return { reason: "not_admitted" };
 	if (error instanceof ApprovalEvidenceError) return evidenceRefusal(error.code);

@@ -224,6 +224,16 @@ function changedConflict(detail: Refusal["detail"]): ConflictError {
 					"This change conflicts with an earlier request or changed work. Please refresh and try again.",
 				conflictType: "completed_work_collision",
 			});
+		case "work_pending_review":
+			return detail.pending === "time_correction"
+				? new ConflictError({
+						message: "A time correction approval is already pending for this work period",
+						conflictType: "pending_time_correction_approval",
+					})
+				: new ConflictError({
+						message: "Another approval for this work period is still pending",
+						conflictType: "work_period_pending_approval",
+					});
 		case "work_review_required":
 			return new ConflictError({
 				message: "This work needs review before it can be changed",

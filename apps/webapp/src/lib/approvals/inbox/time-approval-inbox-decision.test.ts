@@ -47,6 +47,19 @@ describe("inboxErrorOfTimeRefusal", () => {
 		});
 	});
 
+	it("tells the route another approval of the work period is still pending", () => {
+		expect(
+			inboxErrorOfTimeRefusal({
+				reason: "changed",
+				detail: { kind: "work_pending_review", pending: "approval" },
+			}),
+		).toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "work_period_pending_approval",
+			message: "Another approval for this work period is still pending",
+		});
+	});
+
 	it.each([
 		["not_found", "NotFoundError"],
 		["already_decided", "ConflictError"],
