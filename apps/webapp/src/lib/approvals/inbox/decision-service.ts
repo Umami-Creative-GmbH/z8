@@ -36,6 +36,11 @@ import type { CanonicalInboxRead } from "./canonical-inbox-read";
 import { CANONICAL_INBOX_READS } from "./canonical-inbox-reads";
 import { createFastLaneDecisionGuard } from "./fast-lane-decision-guard";
 import {
+	decideInboxTimeApproval,
+	type InboxTimeApprovalDecision,
+	inboxErrorOfTimeRefusal,
+} from "./time-approval-decision";
+import {
 	type ApprovalFastLaneReview,
 	type FastLaneDecisionItem,
 	fastLaneDecisionItemOf,
@@ -109,7 +114,19 @@ export function canAttemptApprovalInboxDecisionTarget(input: {
  * actor and whoever decides: no self-decision, a decidable target and a
  * rejection reason. Returns the trimmed reason.
  */
-function assertDecisionAttempt({
+function assertDecisionAttempt(input: {
+	request: PersistedApprovalRequestForDecision;
+	actorEmployeeId: string;
+	action: InboxDecisionAction;
+	reason?: string;
+}): string | undefined {
+	const refusal = decisionAttemptRefusal(input);
+	if (refusal) throw refusal.cause;
+	return input.reason?.trim();
+}
+
+/** The pre-decision checks as a refusal: the error to throw and its bulk failure. */
+function decisionAttemptRefusal({
 	request,
 	actorEmployeeId,
 	action,
@@ -119,29 +136,86 @@ function assertDecisionAttempt({
 	actorEmployeeId: string;
 	action: InboxDecisionAction;
 	reason?: string;
-}): string | undefined {
+}): { cause: Error; failure: ApprovalInboxDecisionFailure } | null {
 	if (
 		isOwnRequestDecision({
 			requesterEmployeeId: request.requesterEmployeeId,
 			actorEmployeeId,
 		})
 	) {
-		throw ownRequestDecisionError({
+		const cause = ownRequestDecisionError({
 			actorEmployeeId,
 			resource: request.entityType,
 			action,
 		});
+		return {
+			cause,
+			failure: { id: request.id, code: "forbidden", message: cause.message },
+		};
 	}
 
 	if (!canAttemptApprovalInboxDecisionTarget(request)) {
-		throw new Error(`Request is already ${request.status}`);
+		const message = `Request is already ${request.status}`;
+		return {
+			cause: new Error(message),
+			failure: { id: request.id, code: "stale", message },
+		};
 	}
 
-	const trimmedReason = reason?.trim();
-	if (action === "reject" && !trimmedReason) {
-		throw new Error("Rejection reason is required");
+	if (action === "reject" && !reason?.trim()) {
+		const message = "Rejection reason is required";
+		return {
+			cause: new Error(message),
+			failure: { id: request.id, code: "validation_failed", message },
+		};
 	}
-	return trimmedReason;
+	return null;
+}
+
+/**
+ * A time approval (#1676) is decided by the time approval decision, never by
+ * the time_entry handler: the pre-checks, then one claimed right.
+ */
+async function decideTimeApprovalInboxItem({
+	request,
+	actorEmployeeId,
+	action,
+	reason,
+	shortcutGuard,
+	...visibility
+}: {
+	request: PersistedApprovalRequestForDecision;
+	actorEmployeeId: string;
+	action: InboxDecisionAction;
+	reason?: string;
+	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
+} & DecisionVisibilityInput): Promise<InboxTimeApprovalDecision> {
+	const refusal = decisionAttemptRefusal({
+		request,
+		actorEmployeeId,
+		action,
+		reason,
+	});
+	if (refusal) return { status: "refused", ...refusal };
+	return decideInboxTimeApproval({
+		request,
+		actorEmployeeId,
+		decision:
+			action === "approve"
+				? { kind: "approve" }
+				: { kind: "reject", reason: reason?.trim() ?? "" },
+		...visibility,
+		fastLaneGuard: shortcutGuard,
+	});
+}
+
+/** A single time approval decision: a refusal throws, translated for the route. */
+async function decideSingleTimeApprovalInboxItem(
+	input: Parameters<typeof decideTimeApprovalInboxItem>[0],
+): Promise<ApprovalInboxDecisionSuccess> {
+	const decision = await decideTimeApprovalInboxItem(input);
+	if (decision.status === "refused") throw await inboxErrorOfTimeRefusal(decision.cause);
+	return decision.success;
 }
 
 type CanonicalDecider = CanonicalInboxRead &
@@ -408,6 +482,37 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 				}
 			}
 
+			if (request.entityType === "time_entry") {
+				try {
+					const decision = await decideTimeApprovalInboxItem({
+						request,
+						actorEmployeeId,
+						action,
+						reason,
+						shortcutGuard,
+						includeAllApprovers,
+						eligibleApprovalScopes,
+						coveredApproverIds,
+					});
+					return decision.status === "decided"
+						? { status: "succeeded" as const, success: decision.success }
+						: { status: "failed" as const, failure: decision.failure };
+				} catch (error) {
+					logger.error(
+						{ error, approvalId: request.id },
+						"Approval inbox bulk time approval decision failed",
+					);
+					return {
+						status: "failed" as const,
+						failure: {
+							id: request.id,
+							code: "validation_failed",
+							message: "Approval decision failed",
+						},
+					};
+				}
+			}
+
 			const handler = resolveHandler(request.entityType);
 
 			if (
@@ -506,6 +611,16 @@ export async function approveApprovalInboxItem({
 			allowOrganizationWideApprover: includeAllApprovers === true,
 		});
 	}
+	if (request.entityType === "time_entry") {
+		return decideSingleTimeApprovalInboxItem({
+			request,
+			actorEmployeeId,
+			action: "approve",
+			includeAllApprovers,
+			eligibleApprovalScopes,
+			coveredApproverIds,
+		});
+	}
 	const handler = getSupportedInboxHandler(request.entityType);
 	if (!handler) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
@@ -557,6 +672,17 @@ export async function rejectApprovalInboxItem({
 			action: "reject",
 			reason,
 			allowOrganizationWideApprover: includeAllApprovers === true,
+		});
+	}
+	if (request.entityType === "time_entry") {
+		return decideSingleTimeApprovalInboxItem({
+			request,
+			actorEmployeeId,
+			action: "reject",
+			reason,
+			includeAllApprovers,
+			eligibleApprovalScopes,
+			coveredApproverIds,
 		});
 	}
 	const handler = getSupportedInboxHandler(request.entityType);

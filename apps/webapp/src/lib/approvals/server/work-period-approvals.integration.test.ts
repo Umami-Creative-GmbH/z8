@@ -3888,7 +3888,8 @@ describe(
 				action: "approve" | "reject",
 			) {
 				const service = DatabaseService.of(dbService(database) as never);
-				const options = { approvalRequestId };
+				// The manager is the approver; the handler decides under one claimed right (#1676).
+				const options = { approvalRequestId, decisionRight: { as: "approver" } as const };
 				await Effect.runPromise(
 					(action === "approve"
 						? TimeCorrectionHandler.approve(ids.period, ids.manager, options)

@@ -20,10 +20,11 @@ import {
 } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
+	ApprovalActionOptions,
 	ApprovalDetail,
 	ApprovalQueryParams,
 	ApprovalTimelineEvent,
@@ -48,6 +49,51 @@ import {
 	type TimeApprovalKind,
 } from "../time-request-kind";
 import { buildSLAInfo, fetchApprovals } from "./base-handler";
+
+/**
+ * The handler's decision is a translation (#1676): the caller's one claimed
+ * right and the decision go to the time approval decision, and a refusal fails
+ * with its original error. The approval inbox calls the decision directly.
+ */
+function decideTimeApprovalThroughHandler(
+	approverId: string,
+	decision: { kind: "approve" } | { kind: "reject"; reason: string },
+	options: ApprovalActionOptions | undefined,
+) {
+	return Effect.gen(function* () {
+		const approvalId = options?.approvalRequestId;
+		const right = options?.decisionRight;
+		if (!approvalId || !right) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "A stable approval target and one claimed decision right are required",
+					field: approvalId ? "decisionRight" : "approvalRequestId",
+				}),
+			);
+		}
+		const dbService = yield* DatabaseService;
+		const actor = yield* loadCurrentApproverById(dbService, approverId);
+		const refusal = yield* Effect.promise(async () => {
+			const { decideTimeApprovalWithCause } = await import(
+				"@/lib/approvals/server/time-approval-decision"
+			);
+			const { result, cause } = await decideTimeApprovalWithCause({
+				organizationId: actor.organizationId,
+				approvalId,
+				actor: { employeeId: actor.id, userId: actor.userId },
+				right,
+				decision,
+				fastLaneGuard: options.shortcutGuard,
+				database: dbService.db,
+			});
+			if (result.status !== "refused") return null;
+			const { inboxErrorOfTimeRefusal } = await import("../inbox/time-approval-decision");
+			// The owners' typed error, translated as the time correction wrapper did.
+			return { error: (await inboxErrorOfTimeRefusal(cause)) as AnyAppError };
+		});
+		if (refusal) return yield* Effect.fail(refusal.error);
+	});
+}
 
 function loadCurrentApproverById(
 	dbService: ApprovalDbService,
@@ -1203,59 +1249,10 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 			}),
 
 		approve: (_entityId, approverId, options) =>
-			Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-				const currentEmployee = yield* loadCurrentApproverById(dbService, approverId);
-				if (!options?.approvalRequestId) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: "A stable approval request target is required",
-							field: "approvalRequestId",
-						}),
-					);
-				}
-				const { decideTimeCorrectionWithStableTargetEffect } = yield* Effect.promise(
-					async () =>
-						import("@/lib/approvals/server/time-correction-approvals"),
-				);
-
-				yield* decideTimeCorrectionWithStableTargetEffect(
-					dbService,
-					currentEmployee,
-					options.approvalRequestId,
-					"approve",
-					undefined,
-					options,
-				);
-			}),
+			decideTimeApprovalThroughHandler(approverId, { kind: "approve" }, options),
 
 		reject: (_entityId, approverId, reason, options) =>
-			Effect.gen(function* () {
-				const dbService = yield* DatabaseService;
-				const currentEmployee = yield* loadCurrentApproverById(dbService, approverId);
-				if (!options?.approvalRequestId) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: "A stable approval request target is required",
-							field: "approvalRequestId",
-						}),
-					);
-				}
-				const { decideTimeCorrectionWithStableTargetEffect } = yield* Effect.promise(
-					async () =>
-						import("@/lib/approvals/server/time-correction-approvals"),
-				);
-
-				yield* decideTimeCorrectionWithStableTargetEffect(
-					dbService,
-					currentEmployee,
-					options.approvalRequestId,
-					"reject",
-					reason,
-					options,
-				);
-			}),
-
+			decideTimeApprovalThroughHandler(approverId, { kind: "reject", reason }, options),
 		calculatePriority: (_entity, createdAt) => {
 			// Priority based on age of request
 			const now = DateTime.now();
