@@ -502,6 +502,77 @@ export function evaluateSurchargeSnapshot(input: {
 	};
 }
 
+/** A completed work period with the clock entries that bound it. */
+export interface SurchargeWorkPeriodEvidence {
+	id: string;
+	startTime: Date;
+	endTime: Date | null;
+	clockIn: { timestamp: Date; timezone: string | null; utcOffsetMinutes: number } | null;
+	clockOut: { timestamp: Date; timezone: string | null; utcOffsetMinutes: number } | null;
+}
+
+/**
+ * The surcharge calculation row reconciliation writes for one approved period
+ * under a captured snapshot, or null when the snapshot credits no surcharge.
+ * Throws when the period's clock entries do not bound it with valid zones.
+ */
+export function snapshotSurchargeCalculationRow(input: {
+	organizationId: string;
+	employeeId: string;
+	period: SurchargeWorkPeriodEvidence;
+	snapshot: PolicyClockOutSurchargeSnapshot;
+	calculatedAt: Date;
+}): typeof surchargeCalculation.$inferInsert | null {
+	const { period, calculatedAt } = input;
+	if (
+		!period.endTime ||
+		!period.clockIn ||
+		!period.clockOut ||
+		period.clockIn.timestamp.getTime() !== period.startTime.getTime() ||
+		period.clockOut.timestamp.getTime() !== period.endTime.getTime() ||
+		!Number.isInteger(period.clockIn.utcOffsetMinutes) ||
+		!Number.isInteger(period.clockOut.utcOffsetMinutes) ||
+		!isValidIanaTimezone(period.clockIn.timezone) ||
+		!isValidIanaTimezone(period.clockOut.timezone)
+	) {
+		throw new Error("period timezone evidence mismatch");
+	}
+	const result = evaluateSurchargeSnapshot({
+		snapshot: input.snapshot,
+		start: {
+			instant: instantFromDate(period.clockIn.timestamp),
+			utcOffsetMinutes: period.clockIn.utcOffsetMinutes,
+			timezone: period.clockIn.timezone,
+		},
+		end: {
+			instant: instantFromDate(period.clockOut.timestamp),
+			utcOffsetMinutes: period.clockOut.utcOffsetMinutes,
+			timezone: period.clockOut.timezone,
+		},
+	});
+	if (result.surchargeMinutes === 0) return null;
+	const primaryRule = result.appliedRules[0];
+	return {
+		employeeId: input.employeeId,
+		organizationId: input.organizationId,
+		workPeriodId: period.id,
+		surchargeRuleId: null,
+		surchargeModelId: null,
+		calculationDate: calculatedAt,
+		baseMinutes: result.baseMinutes,
+		qualifyingMinutes: result.qualifyingMinutes,
+		surchargeMinutes: result.surchargeMinutes,
+		appliedPercentage: primaryRule?.percentage.toString() ?? "0",
+		calculationDetails: {
+			workPeriodStartTime: period.startTime.toISOString(),
+			workPeriodEndTime: period.endTime.toISOString(),
+			rulesApplied: result.appliedRules,
+			overlapPolicy: "max_wins",
+			calculatedAt: calculatedAt.toISOString(),
+		},
+	};
+}
+
 export async function reconcileSurchargeWorkPeriodsWithDatabase(
 	database: typeof db,
 	input: ReconcileSurchargeWorkPeriodsInput,
@@ -606,53 +677,15 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 			const calculatedAt = new Date();
 			const calculationRows: (typeof surchargeCalculation.$inferInsert)[] = [];
 			for (const period of periods) {
-				if (!targetIdSet.has(period.id) || !period.endTime) continue;
-				if (
-					!period.clockIn ||
-					!period.clockOut ||
-					period.clockIn.timestamp.getTime() !== period.startTime.getTime() ||
-					period.clockOut.timestamp.getTime() !== period.endTime.getTime() ||
-					!Number.isInteger(period.clockIn.utcOffsetMinutes) ||
-					!Number.isInteger(period.clockOut.utcOffsetMinutes) ||
-					!isValidIanaTimezone(period.clockIn.timezone) ||
-					!isValidIanaTimezone(period.clockOut.timezone)
-				) {
-					throw new Error("period timezone evidence mismatch");
-				}
-				const result = evaluateSurchargeSnapshot({
-					snapshot: input.surchargeSnapshot as PolicyClockOutSurchargeSnapshot,
-					start: {
-						instant: instantFromDate(period.clockIn.timestamp),
-						utcOffsetMinutes: period.clockIn.utcOffsetMinutes,
-						timezone: period.clockIn.timezone,
-					},
-					end: {
-						instant: instantFromDate(period.clockOut.timestamp),
-						utcOffsetMinutes: period.clockOut.utcOffsetMinutes,
-						timezone: period.clockOut.timezone,
-					},
-				});
-				if (result.surchargeMinutes === 0) continue;
-				const primaryRule = result.appliedRules[0];
-				calculationRows.push({
-					employeeId: input.employeeId,
+				if (!targetIdSet.has(period.id)) continue;
+				const row = snapshotSurchargeCalculationRow({
 					organizationId: input.organizationId,
-					workPeriodId: period.id,
-					surchargeRuleId: null,
-					surchargeModelId: null,
-					calculationDate: calculatedAt,
-					baseMinutes: result.baseMinutes,
-					qualifyingMinutes: result.qualifyingMinutes,
-					surchargeMinutes: result.surchargeMinutes,
-					appliedPercentage: primaryRule?.percentage.toString() ?? "0",
-					calculationDetails: {
-						workPeriodStartTime: period.startTime.toISOString(),
-						workPeriodEndTime: period.endTime.toISOString(),
-						rulesApplied: result.appliedRules,
-						overlapPolicy: "max_wins",
-						calculatedAt: calculatedAt.toISOString(),
-					},
+					employeeId: input.employeeId,
+					period,
+					snapshot: input.surchargeSnapshot as PolicyClockOutSurchargeSnapshot,
+					calculatedAt,
 				});
+				if (row) calculationRows.push(row);
 			}
 			if (calculationRows.length > 0) {
 				await tx.insert(surchargeCalculation).values(calculationRows);
