@@ -19,8 +19,11 @@
                         "blockedBy":  [
                                           1689
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated-pending-runtime",
+                        "verifiedCommit":  null,
+                        "integrationCommit":  "b31c497bb48c873153b731ea9f7b62c8c3e0e2fe",
+                        "evidence":  "docs/design/rollout-1692/1693.md",
+                        "integrationVerification":  "26 suites / 192 tests passed on merged branch including init; parent and implementation ancestry, baseline preservation and diff --check passed. Browser/fixture handoff acceptance remains pending; no verifiedCommit yet."
                     },
                     {
                         "id":  "F2",
