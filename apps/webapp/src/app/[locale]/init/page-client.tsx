@@ -1,15 +1,17 @@
 "use client";
 
-import { IconBuilding, IconCheck, IconLoader2 } from "@tabler/icons-react";
+import { IconArrowRight, IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useEffectEvent, useState } from "react";
 import {
-	Card,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+	type ReactNode,
+	Suspense,
+	useEffect,
+	useEffectEvent,
+	useRef,
+	useState,
+} from "react";
+import { Button } from "@/components/ui/button";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { activateOrganization as activateWorkspace } from "@/lib/enterprise-identity/organization-activation";
 import {
@@ -17,62 +19,106 @@ import {
 	saveLastOrganization,
 } from "@/lib/org-persistence";
 
-type Organization = {
-	id: string;
-	name: string;
-};
+type Organization = { id: string; name: string };
+type Status = "checking" | "selecting" | "activating" | "redirecting" | "error";
 
-type Status = "checking" | "selecting" | "activating" | "redirecting";
-
-function InitPageLoading() {
-	const { t } = useTranslate();
-	const loadingLabel = t("setup:init.checking", "Checking session...");
-
+function InitFrame({
+	title,
+	children,
+}: {
+	title: string;
+	children: ReactNode;
+}) {
 	return (
-		<div
-			className="flex min-h-screen items-center justify-center bg-background"
-			data-testid="init-page-loading"
-		>
-			<output
-				aria-busy="true"
-				aria-label={loadingLabel}
-				aria-live="polite"
-				className="flex flex-col items-center gap-4 text-sm text-muted-foreground"
-			>
-				<IconLoader2
-					className="size-8 animate-spin text-primary motion-reduce:animate-none"
-					aria-hidden="true"
-				/>
-				<span>{loadingLabel}</span>
-			</output>
-		</div>
+		<main className="flex min-h-svh items-center justify-center bg-background py-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
+			<section className="w-full min-w-0 max-w-lg" aria-labelledby="init-title">
+				<header className="mb-6 space-y-3">
+					<p className="text-sm font-semibold text-primary" translate="no">
+						Z8
+					</p>
+					<h1
+						id="init-title"
+						className="text-balance text-2xl font-semibold tracking-tight"
+					>
+						{title}
+					</h1>
+				</header>
+				{children}
+			</section>
+		</main>
 	);
 }
 
-/**
- * Transit page that ensures the user has an active organization before
- * redirecting to the dashboard. This page is outside the main app shell
- * so the organization context is fully established before loading the app.
- */
+function InitProgress({
+	status,
+	organizationName,
+}: {
+	status: Status;
+	organizationName?: string;
+}) {
+	const { t } = useTranslate();
+	const label =
+		status === "checking"
+			? t("setup:init.checking", "Checking session...")
+			: status === "activating"
+				? t("setup:init.activating", "Setting up your workspace...")
+				: t("setup:init.redirecting", "Redirecting...");
+
+	return (
+		<output
+			aria-label={organizationName ? `${label} ${organizationName}` : label}
+			aria-live="polite"
+			aria-atomic="true"
+			className="flex items-center gap-3 text-sm text-muted-foreground"
+		>
+			<IconLoader2
+				className="size-5 shrink-0 animate-spin text-primary motion-reduce:animate-none"
+				aria-hidden="true"
+			/>
+			<span className="min-w-0 [overflow-wrap:anywhere]">
+				{organizationName ? (
+					<span className="block font-medium text-foreground">
+						{organizationName}
+					</span>
+				) : null}
+				<span>{label}</span>
+			</span>
+		</output>
+	);
+}
+
+function InitPageLoading() {
+	const { t } = useTranslate();
+	return (
+		<InitFrame title={t("setup:init.title", "Open your workspace")}>
+			<InitProgress status="checking" />
+		</InitFrame>
+	);
+}
+
+/** Establish organization context before entering the authenticated workspace shell. */
 function InitPageContent() {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
-	const { get } = searchParams;
-	const getSearchParam = (key: string) => get.call(searchParams, key);
 	const redirectUrl = sanitizeCallbackUrl(
-		getSearchParam("callbackUrl"),
+		searchParams.get("callbackUrl"),
 		"/",
-		typeof window === "undefined" ? undefined : window.location.href,
+		typeof window === "undefined" ? undefined : location.href,
 	);
 	const [status, setStatus] = useState<Status>("checking");
 	const [organizations, setOrganizations] = useState<Organization[]>([]);
 	const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
-	const [isActivating, setIsActivating] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const activationPending = useRef(false);
+	const mounted = useRef(false);
+	const selectedButton = useRef<HTMLButtonElement>(null);
 
 	const activateOrganization = async (orgId: string, allowSso = true) => {
+		// State updates alone cannot prevent two events in the same render from submitting.
+		if (activationPending.current) return;
+		activationPending.current = true;
+		setSelectedOrg(orgId);
 		setStatus("activating");
-		setIsActivating(true);
 		setErrorMessage(null);
 		try {
 			const result = await activateWorkspace(
@@ -81,55 +127,71 @@ function InitPageContent() {
 				fetch,
 				allowSso,
 			);
+			if (!mounted.current) return;
 			if (result.kind === "sso" || result.kind === "mfa") {
-				window.location.assign(result.url);
+				setStatus("redirecting");
+				location.assign(result.url);
 				return;
 			}
 			saveLastOrganization(orgId);
 			setStatus("redirecting");
-			window.location.assign(redirectUrl);
+			location.assign(redirectUrl);
 		} catch (error) {
+			if (!mounted.current) return;
 			setErrorMessage(
 				error instanceof Error
 					? error.message
 					: t("organization.switchFailed", "Failed to switch organization"),
 			);
-			setIsActivating(false);
+			activationPending.current = false;
 			setStatus("selecting");
 		}
 	};
 
-	const initializeSession = useEffectEvent(async () => {
-		// Check current session state
+	const initializeSession = async () => {
+		const failSessionCheck = () => {
+			if (!mounted.current) return;
+			setErrorMessage(
+				t(
+					"setup:init.checkFailed",
+					"We couldn't check your organizations. Try again.",
+				),
+			);
+			setStatus("error");
+		};
 		const response = await fetch("/api/session/organization-status").catch(
-			(error) => {
-				console.error("Failed to initialize session:", error);
-				window.location.assign(redirectUrl);
+			() => {
+				failSessionCheck();
 				return null;
 			},
 		);
-		if (!response) {
-			return;
-		}
-
+		if (!response || !mounted.current) return;
 		if (!response.ok) {
-			// Not authenticated, redirect to login
-			window.location.assign("/sign-in");
+			if (response.status === 401 || response.status === 403)
+				location.assign("/sign-in");
+			else failSessionCheck();
 			return;
 		}
-
-		const data = await response.json().catch((error) => {
-			console.error("Failed to parse organization status:", error);
-			window.location.assign(redirectUrl);
+		const data = await response.json().catch(() => {
+			failSessionCheck();
 			return null;
 		});
-		if (!data) {
+		if (!mounted.current) return;
+		if (
+			!data ||
+			!Array.isArray(data.organizations) ||
+			data.organizations.some(
+				(org: Organization | null) =>
+					!org || typeof org.id !== "string" || typeof org.name !== "string",
+			)
+		) {
+			failSessionCheck();
 			return;
 		}
 
 		const { hasActiveOrganization, organizations: orgs } = data;
 		setOrganizations(orgs ?? []);
-		if (getSearchParam("ssoError")) {
+		if (searchParams.get("ssoError")) {
 			setErrorMessage(
 				t(
 					"organization.ssoFailed",
@@ -139,162 +201,147 @@ function InitPageContent() {
 			setStatus("selecting");
 			return;
 		}
-		const requestedOrg = getSearchParam("organizationId");
+		const requestedOrg = searchParams.get("organizationId");
 		if (
 			requestedOrg &&
 			orgs?.some((org: Organization) => org.id === requestedOrg)
 		) {
-			await activateOrganization(requestedOrg, !getSearchParam("ssoAttempt"));
+			await activateOrganization(requestedOrg, !searchParams.get("ssoAttempt"));
 			return;
 		}
-
-		// If already has an active org, go straight to dashboard
-		if (hasActiveOrganization) {
+		if (hasActiveOrganization || !orgs || orgs.length === 0) {
 			setStatus("redirecting");
-			window.location.assign(redirectUrl);
+			location.assign(redirectUrl);
 			return;
 		}
-
-		// No organizations at all, go to dashboard (will show appropriate state)
-		if (!orgs || orgs.length === 0) {
-			setStatus("redirecting");
-			window.location.assign(redirectUrl);
-			return;
-		}
-
-		// Try to restore the last used organization
 		const lastOrgId = getLastOrganization();
-
-		if (lastOrgId) {
-			// Check if it's still valid
-			const isValid = orgs.some((org: Organization) => org.id === lastOrgId);
-			if (isValid) {
-				// Auto-activate the last used org
-				await activateOrganization(lastOrgId);
-				return;
-			}
+		if (lastOrgId && orgs.some((org: Organization) => org.id === lastOrgId)) {
+			await activateOrganization(lastOrgId);
+			return;
 		}
-
-		// Only one org available - auto-activate it
 		if (orgs.length === 1) {
 			await activateOrganization(orgs[0].id);
 			return;
 		}
-
-		// Multiple orgs and no saved preference - show selection UI
-		setOrganizations(orgs);
 		setStatus("selecting");
-	});
-
-	const handleSelectOrganization = async (orgId: string) => {
-		setSelectedOrg(orgId);
-		await activateOrganization(orgId);
 	};
+	const initializeOnMount = useEffectEvent(initializeSession);
 
 	useEffect(() => {
-		void Promise.resolve().then(initializeSession);
+		mounted.current = true;
+		// React Strict Mode replays mount effects. Only the live effect starts initialization.
+		let cancelled = false;
+		void Promise.resolve().then(() => {
+			if (!cancelled) void initializeOnMount();
+		});
+		return () => {
+			cancelled = true;
+			mounted.current = false;
+		};
 	}, []);
 
-	// Show organization selection UI
-	if (status === "selecting") {
-		return (
-			<div
-				// The list can outgrow the screen; clear the notch and home indicator in the store app (#846).
-				className="flex min-h-screen items-center justify-center bg-background px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
-				data-testid="init-organization-picker"
-			>
-				<div className="w-full max-w-md space-y-6">
-					<div className="text-center space-y-2">
-						<h1 className="text-2xl font-semibold">
-							{t("setup:init.selectOrganization", "Select Organization")}
-						</h1>
-						<p className="text-muted-foreground">
-							{t(
-								"setup:init.selectOrganizationDescription",
-								"Choose which organization you want to work with",
-							)}
-						</p>
-					</div>
+	useEffect(() => {
+		if (errorMessage) selectedButton.current?.focus();
+	}, [errorMessage]);
 
-					<div className="space-y-3">
-						{errorMessage && (
-							<p role="alert" className="text-sm text-destructive">
-								{errorMessage}
+	const showPicker = status === "selecting" || selectedOrg !== null;
+	const pending = status !== "selecting";
+
+	return (
+		<InitFrame
+			title={
+				showPicker
+					? t("setup:init.selectOrganization", "Select Organization")
+					: t("setup:init.title", "Open your workspace")
+			}
+		>
+			{showPicker ? (
+				<div className="space-y-4" data-testid="init-organization-picker">
+					<p className="text-pretty text-muted-foreground">
+						{t(
+							"setup:init.selectOrganizationDescription",
+							"Choose which organization you want to work with",
+						)}
+					</p>
+					{errorMessage ? (
+						<p
+							role="alert"
+							className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+						>
+							{errorMessage}
+						</p>
+					) : null}
+					<ul
+						aria-labelledby="init-title"
+						aria-busy={pending}
+						className="max-h-[min(28rem,50svh)] scroll-py-1 divide-y overflow-y-auto overscroll-contain rounded-xl border bg-card text-card-foreground"
+					>
+						{organizations.map((org) => (
+							<li key={org.id}>
+								<button
+									type="button"
+									ref={selectedOrg === org.id ? selectedButton : undefined}
+									disabled={pending}
+									aria-describedby={
+										pending && selectedOrg === org.id
+											? "init-progress"
+											: undefined
+									}
+									onClick={() => void activateOrganization(org.id)}
+									className={`flex min-h-20 w-full touch-manipulation items-center gap-3 px-4 py-4 text-start transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-wait ${selectedOrg === org.id ? "bg-primary/5" : ""}`}
+								>
+									<span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+										<IconBuilding className="size-5" aria-hidden="true" />
+									</span>
+									<span className="min-w-0 flex-1 font-medium [overflow-wrap:anywhere]">
+										{org.name}
+									</span>
+									<IconArrowRight
+										className="size-4 shrink-0 text-muted-foreground"
+										aria-hidden="true"
+									/>
+								</button>
+							</li>
+						))}
+					</ul>
+					<div id="init-progress" className="min-h-6">
+						{pending ? (
+							<InitProgress
+								status={status}
+								organizationName={
+									organizations.find((org) => org.id === selectedOrg)?.name
+								}
+							/>
+						) : (
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"setup:init.selectionHint",
+									"Your workspace opens after selection.",
+								)}
 							</p>
 						)}
-						{organizations.map((org) => (
-							<Card
-								key={org.id}
-								role="button"
-								tabIndex={isActivating ? -1 : 0}
-								className={`cursor-pointer transition-all hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-									selectedOrg === org.id
-										? "border-primary ring-2 ring-primary/20"
-										: ""
-								} ${isActivating ? "pointer-events-none opacity-50" : ""}`}
-								onClick={() => handleSelectOrganization(org.id)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.preventDefault();
-										handleSelectOrganization(org.id);
-									}
-								}}
-							>
-								<CardHeader className="p-4">
-									<div className="flex items-center gap-3">
-										<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-											<IconBuilding className="size-5" aria-hidden="true" />
-										</div>
-										<div className="flex-1">
-											<CardTitle className="text-base">{org.name}</CardTitle>
-											<CardDescription className="text-xs">
-												{t("setup:init.clickToSelect", "Click to select")}
-											</CardDescription>
-										</div>
-										{selectedOrg === org.id && (
-											<IconCheck
-												className="size-5 text-primary"
-												aria-hidden="true"
-											/>
-										)}
-									</div>
-								</CardHeader>
-							</Card>
-						))}
 					</div>
-
-					{isActivating && (
-						<output
-							className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
-							aria-live="polite"
-						>
-							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-							{t("setup:init.activating", "Setting up your workspace...")}
-						</output>
-					)}
 				</div>
-			</div>
-		);
-	}
-
-	// Show loading state
-	return (
-		<div className="flex min-h-screen items-center justify-center bg-background">
-			<output className="flex flex-col items-center gap-4" aria-live="polite">
-				<IconLoader2
-					className="size-8 animate-spin text-primary"
-					aria-hidden="true"
-				/>
-				<p className="text-sm text-muted-foreground">
-					{status === "checking" &&
-						t("setup:init.checking", "Checking session...")}
-					{status === "activating" &&
-						t("setup:init.activating", "Setting up your workspace...")}
-					{status === "redirecting" &&
-						t("setup:init.redirecting", "Redirecting...")}
-				</p>
-			</output>
-		</div>
+			) : status === "error" ? (
+				<div className="space-y-4">
+					<p role="alert" className="text-sm text-destructive">
+						{errorMessage}
+					</p>
+					<Button
+						type="button"
+						onClick={() => {
+							setErrorMessage(null);
+							setStatus("checking");
+							void initializeSession();
+						}}
+					>
+						{t("setup:init.retry", "Try again")}
+					</Button>
+				</div>
+			) : (
+				<InitProgress status={status} />
+			)}
+		</InitFrame>
 	);
 }
 

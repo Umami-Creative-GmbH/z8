@@ -1,0 +1,45 @@
+[
+  {
+    "role": "small-admin",
+    "choices": 61,
+    "keyboardActivation": true,
+    "sessionMatchesPreference": true
+  },
+  {
+    "role": "small-manager",
+    "choices": 61,
+    "keyboardActivation": true,
+    "sessionMatchesPreference": true
+  },
+  {
+    "role": "small-employee",
+    "choices": 61,
+    "keyboardActivation": true,
+    "sessionMatchesPreference": true
+  },
+  {
+    "persistedFontTheme": {
+      "preference": "large",
+      "theme": "dark",
+      "pageWidth": 390,
+      "viewport": 390,
+      "choiceCount": 61
+    }
+  },
+  {
+    "zoom200": {
+      "width": 800,
+      "pageWidth": 800,
+      "choices": 61
+    }
+  },
+  {
+    "reducedMotion": "none"
+  },
+  {
+    "role": "small-restricted",
+    "choices": 61,
+    "keyboardActivation": true,
+    "sessionMatchesPreference": true
+  }
+]
