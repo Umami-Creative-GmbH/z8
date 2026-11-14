@@ -98,8 +98,10 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "416c04fc1b65f798422ddeecb8413249b064f715",
+                        "evidence":  "docs/design/rollout-1692/1702.md",
+                        "integrationVerification":  "26 unique suites / 124 fresh tests (16/78 analytics plus 10/46 compatibility), full types, five-file Biome, evidence/artifacts/whitespace and 19 ancestry checks passed. Exact tree/all 185 prior rollout files preserved. Prior PostgreSQL 2/18 and real runtime inherited. Transition diagnostics unclassified baseline/regression; phone fullPage heights differ; report limits retained."
                     },
                     {
                         "id":  "R005",
@@ -108,7 +110,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
