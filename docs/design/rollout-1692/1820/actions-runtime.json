@@ -1,0 +1,127 @@
+{
+    "results":  {
+                    "localeCallbacks":  {
+                                            "locale":  "de",
+                                            "destinations":  [
+                                                                 "/de/sign-up",
+                                                                 "/de/sign-in"
+                                                             ],
+                                            "returnToSameInvitation":  true
+                                        },
+                    "mismatchRefusal":  {
+                                            "status":  403
+                                        },
+                    "signOutRecovery":  {
+                                            "failedTransportRetainsSwitch":  true,
+                                            "realRetrySignedOut":  true,
+                                            "callbackPreserved":  true
+                                        },
+                    "lateRevocation":  {
+                                           "alert":  "Error\nInvitation not found",
+                                           "reviewRetained":  true
+                                       },
+                    "preferences":  {
+                                        "theme":  "dark",
+                                        "font":  "large",
+                                        "size":  "18px",
+                                        "width":  390,
+                                        "documentWidth":  390
+                                    },
+                    "keyboard":  {
+                                     "acceptReachable":  true,
+                                     "focusSamples":  [
+                                                          {
+                                                              "name":  "Toggle theme",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "Font size",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "English",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "Accept invitation",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "Terms of Service",
+                                                              "outline":  "auto"
+                                                          },
+                                                          {
+                                                              "name":  "Privacy Policy",
+                                                              "outline":  "auto"
+                                                          },
+                                                          {
+                                                              "name":  "Imprint",
+                                                              "outline":  "auto"
+                                                          },
+                                                          {
+                                                              "name":  "T\u0026Cs",
+                                                              "outline":  "auto"
+                                                          },
+                                                          {
+                                                              "name":  "Trust Center",
+                                                              "outline":  "auto"
+                                                          },
+                                                          {
+                                                              "name":  "Open Source Licenses",
+                                                              "outline":  "auto"
+                                                          },
+                                                          {
+                                                              "name":  "",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "[document]",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "Toggle theme",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "Font size",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "English",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "Accept invitation",
+                                                              "outline":  "none"
+                                                          },
+                                                          {
+                                                              "name":  "Terms of Service",
+                                                              "outline":  "auto"
+                                                          },
+                                                          {
+                                                              "name":  "Privacy Policy",
+                                                              "outline":  "auto"
+                                                          },
+                                                          {
+                                                              "name":  "Imprint",
+                                                              "outline":  "auto"
+                                                          }
+                                                      ]
+                                 },
+                    "acceptance":  {
+                                       "requestCount":  2,
+                                       "pendingDuplicatePrevented":  true,
+                                       "failedTransportRetainsRetry":  true,
+                                       "accepted":  true,
+                                       "handoffPath":  "/en/init",
+                                       "membershipVisibleThroughRealRead":  true
+                                   }
+                },
+    "errors":  [
+
+               ]
+}
