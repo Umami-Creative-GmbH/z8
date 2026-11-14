@@ -14,7 +14,6 @@ import { nanoid } from "nanoid";
 import { member, user } from "@/db/auth-schema";
 import {
 	auditLog,
-	employee,
 	type inviteCode as InviteCodeTable,
 	type inviteCodeUsage as InviteCodeUsageTable,
 	inviteCode,
@@ -24,13 +23,8 @@ import {
 } from "@/db/schema";
 import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
-import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
-import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
-import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
+import { type JoiningTransaction, joinOrganization } from "@/lib/employee-lifecycle/joining";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
-import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -303,86 +297,21 @@ export const InviteCodeServiceLive = Layer.effect(
 			return Boolean(clearedUser);
 		};
 
-		const resolveInviteCodeTargetTeamId = async (
-			dbClient: RedemptionDb,
-			organizationId: string,
-			targetTeamId: string | null | undefined,
-		) => {
-			if (!targetTeamId) return null;
-
-			const targetTeam = await dbClient.query.team.findFirst({
-				where: and(
-					eq(team.id, targetTeamId),
-					eq(team.organizationId, organizationId),
-				),
-			});
-
-			return targetTeam?.id ?? null;
-		};
-
-		const provisionEmployeeForInviteCode = async (
-			dbClient: RedemptionDb,
+		// An approved membership by code joins the organization (spec #1664): the
+		// code's team places a new or returning employee, the redeeming user is the actor.
+		const joinByInviteCode = (
+			tx: JoiningTransaction,
 			inviteCodeRecord: InviteCode,
 			userId: string,
-			memberRole: unknown,
-			audit: AuditTrail,
-		): Promise<void> => {
-			const [existingEmployee, targetTeamId] = await Promise.all([
-				dbClient.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, userId),
-						eq(employee.organizationId, inviteCodeRecord.organizationId),
-					),
-				}),
-				resolveInviteCodeTargetTeamId(
-					dbClient,
-					inviteCodeRecord.organizationId,
-					inviteCodeRecord.defaultTeamId,
-				),
-			]);
-
-			// The code's team is a membership and the primary team (Organization ADR 0010).
-			const placeInTargetTeam = async (employeeId: string) => {
-				if (!targetTeamId) return;
-				await placeArrivingEmployee(dbClient, {
-					organizationId: inviteCodeRecord.organizationId,
-					employeeId,
-					teamId: targetTeamId,
-				});
-			};
-
-			if (existingEmployee) {
-				if (!existingEmployee.isActive) {
-					// Coming back after a deactivation is a reactivation by the joining user (#1628).
-					await reactivateOnReturn(
-						dbClient as LifecycleClient,
-						{
-							organizationId: inviteCodeRecord.organizationId,
-							employeeId: existingEmployee.id,
-							actorUserId: userId,
-						},
-						audit,
-					);
-					await placeInTargetTeam(existingEmployee.id);
-				}
-				return;
-			}
-
-			const [created] = await dbClient
-				.insert(employee)
-				.values({
-					userId,
-					organizationId: inviteCodeRecord.organizationId,
-					role:
-						hasOrganizationRole(memberRole, "owner") ||
-						hasOrganizationRole(memberRole, "admin")
-							? "admin"
-							: "employee",
-					isActive: true,
-				})
-				.returning({ id: employee.id });
-			if (created) await placeInTargetTeam(created.id);
-		};
+			joinedMember: { id: string; role: string },
+		) =>
+			joinOrganization(tx, {
+				organizationId: inviteCodeRecord.organizationId,
+				userId,
+				membership: { id: joinedMember.id, role: joinedMember.role },
+				teamId: inviteCodeRecord.defaultTeamId,
+				actorUserId: userId,
+			});
 
 		const redeemInviteCodeInTransaction = async (
 			inviteCodeRecord: InviteCode,
@@ -392,9 +321,25 @@ export const InviteCodeServiceLive = Layer.effect(
 				userAgent?: string | null;
 				expectedPendingInviteCode?: string;
 			},
+		) => {
+			const redemption = await redeemInviteCodeTransaction(inviteCodeRecord, input);
+			// Joining's audit forwarding and seat signal run once the redemption committed.
+			if (redemption && "joining" in redemption && redemption.joining) {
+				await redemption.joining.afterCommit.run();
+			}
+			return redemption;
+		};
+
+		const redeemInviteCodeTransaction = async (
+			inviteCodeRecord: InviteCode,
+			input: {
+				userId: string;
+				ipAddress?: string | null;
+				userAgent?: string | null;
+				expectedPendingInviteCode?: string;
+			},
 		) =>
-			// A reactivation's audit entries are forwarded once the redemption committed.
-			withAuditTrail((audit) => dbService.db.transaction(async (tx) => {
+			dbService.db.transaction(async (tx) => {
 				const redemptionDb = tx as RedemptionDb;
 				// Redemption adds the user's membership and employee in the code's
 				// organization: the user's exclusive configuration/access guard comes
@@ -508,16 +453,12 @@ export const InviteCodeServiceLive = Layer.effect(
 				}
 
 				if (existingMember) {
-					if (!lockedInviteCode.requiresApproval && existingMember.status === "approved") {
-						await provisionEmployeeForInviteCode(
-							redemptionDb,
-							lockedInviteCode,
-							input.userId,
-							existingMember.role,
-							audit,
-						);
-					}
-					return { member: existingMember, created: false };
+					// A pending membership joins at approval, not here.
+					const joining =
+						!lockedInviteCode.requiresApproval && existingMember.status === "approved"
+							? await joinByInviteCode(tx, lockedInviteCode, input.userId, existingMember)
+							: null;
+					return { member: existingMember, created: false, joining };
 				}
 
 				const memberStatus = lockedInviteCode.requiresApproval
@@ -544,15 +485,9 @@ export const InviteCodeServiceLive = Layer.effect(
 					userAgent: input.userAgent,
 				});
 
-				if (!lockedInviteCode.requiresApproval) {
-					await provisionEmployeeForInviteCode(
-						redemptionDb,
-						lockedInviteCode,
-						input.userId,
-						createdMember.role,
-						audit,
-					);
-				}
+				const joining = lockedInviteCode.requiresApproval
+					? null
+					: await joinByInviteCode(tx, lockedInviteCode, input.userId, createdMember);
 
 				const [incrementedInviteCode] = await redemptionDb
 					.update(inviteCode)
@@ -576,8 +511,8 @@ export const InviteCodeServiceLive = Layer.effect(
 					throw new Error("Invite code changed before usage increment");
 				}
 
-				return { member: createdMember, created: true };
-			}));
+				return { member: createdMember, created: true, joining };
+			});
 
 		return InviteCodeService.of({
 			create: (input) =>
@@ -991,17 +926,6 @@ export const InviteCodeServiceLive = Layer.effect(
 					}
 					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
 
-					if (redemption.created && redemptionStatus === "approved") {
-						yield* Effect.promise(() =>
-							syncBillingSeatsAfterMemberChange({
-								organizationId: inviteCodeRecord.organizationId,
-								memberId: redemption.member.id,
-								userId: input.userId,
-								change: "added",
-							}),
-						);
-					}
-
 					return {
 						success: true,
 						memberId: redemption.member.id,
@@ -1225,17 +1149,6 @@ export const InviteCodeServiceLive = Layer.effect(
 						);
 					}
 					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
-
-					if (redemption.created && redemptionStatus === "approved") {
-						yield* Effect.promise(() =>
-							syncBillingSeatsAfterMemberChange({
-								organizationId: inviteCodeRecord.organizationId,
-								memberId: redemption.member.id,
-								userId,
-								change: "added",
-							}),
-						);
-					}
 
 					return {
 						success: true,

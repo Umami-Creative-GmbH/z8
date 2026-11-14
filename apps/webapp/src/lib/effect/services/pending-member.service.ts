@@ -3,7 +3,6 @@ import { Context, Effect, Layer } from "effect";
 import { member, user } from "@/db/auth-schema";
 import {
 	auditLog,
-	employee,
 	inviteCode,
 	inviteCodeUsage,
 	memberApproval,
@@ -15,11 +14,8 @@ import {
 	completeRemovedMemberCleanupPostCommit,
 	revokeRemovedMemberAccessInTransaction,
 } from "@/lib/auth/member-removal-cleanup";
-import { AuditTrail } from "@/lib/audit-trail";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
-import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
-import { reactivateOnReturn } from "@/lib/employee-lifecycle/reactivation";
-import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
+import { joinOrganization } from "@/lib/employee-lifecycle/joining";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
@@ -230,8 +226,6 @@ export const PendingMemberServiceLive = Layer.effect(
 			const approved = await withAuthorizationMutation(
 				{ organizationId: input.organizationId, userIds: [pendingMember.userId] },
 				async (tx) => {
-					// One trail per attempt: a restarted attempt's entries rolled back with it.
-					const audit = new AuditTrail();
 					const targetUser = await tx.query.user.findFirst({
 						where: eq(user.id, pendingMember.userId),
 						columns: { email: true },
@@ -267,68 +261,34 @@ export const PendingMemberServiceLive = Layer.effect(
 						.returning();
 					if (!approvedMember) return null;
 
-					const [[approval], existingEmployee] = await Promise.all([
-						tx
-							.insert(memberApproval)
-							.values({
-								memberId: input.memberId,
-								organizationId: input.organizationId,
-								status: "approved",
-								assignedTeamId: input.assignedTeamId,
-								approvedBy: input.approvedBy,
-								notes: input.notes,
-							})
-							.returning(),
-						tx.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, approvedMember.userId),
-								eq(employee.organizationId, input.organizationId),
-							),
-						}),
-					]);
-
-					// The assigned team is a membership and the primary team (Organization ADR 0010).
-					const placeInAssignedTeam = async (employeeId: string) => {
-						if (!input.assignedTeamId) return;
-						await placeArrivingEmployee(tx, {
+					const [approval] = await tx
+						.insert(memberApproval)
+						.values({
+							memberId: input.memberId,
 							organizationId: input.organizationId,
-							employeeId,
-							teamId: input.assignedTeamId,
-							createdBy: input.approvedBy,
-						});
-					};
+							status: "approved",
+							assignedTeamId: input.assignedTeamId,
+							approvedBy: input.approvedBy,
+							notes: input.notes,
+						})
+						.returning();
 
-					if (!existingEmployee) {
-						const [created] = await tx
-							.insert(employee)
-							.values({
-								userId: approvedMember.userId,
-								organizationId: input.organizationId,
-								role: "employee",
-								isActive: true,
-							})
-							.returning({ id: employee.id });
-						if (created) await placeInAssignedTeam(created.id);
-					} else if (!existingEmployee.isActive) {
-						// Coming back after a deactivation is a reactivation by the approving admin (#1628).
-						await reactivateOnReturn(
-							tx,
-							{
-								organizationId: input.organizationId,
-								employeeId: existingEmployee.id,
-								actorUserId: input.approvedBy,
-							},
-							audit,
-						);
-						await placeInAssignedTeam(existingEmployee.id);
-					}
+					// The approved membership joins the organization (spec #1664): the
+					// assigned team places a new or returning employee, the approver is the actor.
+					const joining = await joinOrganization(tx, {
+						organizationId: input.organizationId,
+						userId: approvedMember.userId,
+						membership: { id: approvedMember.id, role: approvedMember.role },
+						teamId: input.assignedTeamId,
+						actorUserId: input.approvedBy,
+					});
 
-					return { approval, audit };
+					return { approval, joining };
 				},
 				dbService.db,
 			);
-			// A reactivation's audit entries are forwarded once the approval committed.
-			approved?.audit.forwardCommitted();
+			// Joining's audit forwarding and seat signal run once the approval committed.
+			await approved?.joining.afterCommit.run();
 			return approved;
 		};
 
@@ -611,15 +571,6 @@ export const PendingMemberServiceLive = Layer.effect(
 					}
 					const { approval } = approved;
 
-					yield* Effect.promise(() =>
-						syncBillingSeatsAfterMemberChange({
-							organizationId: input.organizationId,
-							memberId: input.memberId,
-							userId: pendingMember.userId,
-							change: "added",
-						}),
-					);
-
 					return {
 						success: true,
 						member: pendingMember,
@@ -683,15 +634,6 @@ export const PendingMemberServiceLive = Layer.effect(
 							failed++;
 							continue;
 						}
-
-						yield* Effect.promise(() =>
-							syncBillingSeatsAfterMemberChange({
-								organizationId,
-								memberId,
-								userId: pendingMember.userId,
-								change: "added",
-							}),
-						);
 						approved++;
 					}
 

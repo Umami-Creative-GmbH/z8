@@ -11,10 +11,6 @@ import {
 	PendingMemberServiceLive,
 } from "./pending-member.service";
 
-const billingMock = vi.hoisted(() => ({
-	sync: vi.fn(async () => undefined),
-}));
-
 const removalCleanupMock = vi.hoisted(() => ({
 	complete: vi.fn(async () => undefined),
 	completePostCommit: vi.fn(async () => undefined),
@@ -24,17 +20,27 @@ const removalCleanupMock = vi.hoisted(() => ({
 	})),
 }));
 
-vi.mock("@/lib/billing/seat-sync-trigger", () => ({
-	syncBillingSeatsAfterMemberChange: billingMock.sync,
+// What joining writes is covered by joining.integration.test.ts, and that
+// approval joins in its own transaction by reactivation-paths.integration.test.ts (#1667).
+const joining = vi.hoisted(() => ({
+	events: [] as string[],
+	fails: false,
 }));
-
-// The placement itself is covered by team-placement.integration.test.ts (#1594).
-const placeArrivingEmployee = vi.hoisted(() =>
-	vi.fn(async (_tx: unknown, _input: unknown) => undefined),
+const joinOrganization = vi.hoisted(() =>
+	vi.fn(async (_tx: unknown, _input: unknown) => {
+		if (joining.fails) throw new Error("joining failed");
+		joining.events.push("joined");
+		return {
+			outcome: { kind: "joined" },
+			afterCommit: {
+				run: async () => {
+					joining.events.push("after-commit");
+				},
+			},
+		};
+	}),
 );
-vi.mock("@/lib/organization/team-placement/team-placement", () => ({
-	placeArrivingEmployee,
-}));
+vi.mock("@/lib/employee-lifecycle/joining", () => ({ joinOrganization }));
 
 vi.mock("@/lib/auth/member-removal-cleanup", () => ({
 	completeRemovedMemberCleanup: removalCleanupMock.complete,
@@ -43,20 +49,10 @@ vi.mock("@/lib/auth/member-removal-cleanup", () => ({
 		removalCleanupMock.revokeInTransaction,
 }));
 
-function deferred<T>() {
-	let resolve!: (value: T) => void;
-	const promise = new Promise<T>((resolvePromise) => {
-		resolve = resolvePromise;
-	});
-	return { promise, resolve };
-}
-
 type ApprovalFakeOptions = {
 	memberOrganizationId?: string;
 	transitionWins?: boolean;
-	provisioningFails?: boolean;
-	approvalInsertPromise?: Promise<void>;
-	employeeReadPromise?: Promise<void>;
+	joiningFails?: boolean;
 };
 
 function collectColumnNames(value: unknown): string[] {
@@ -97,9 +93,11 @@ function serviceLayer(db: unknown) {
 }
 
 function approvalLayer(options: ApprovalFakeOptions = {}) {
-	const events: string[] = [];
+	joining.events = [];
+	joining.fails = options.joiningFails ?? false;
+	joinOrganization.mockClear();
+	const events = joining.events;
 	const approvals: unknown[] = [];
-	const employees: unknown[] = [];
 	const memberUpdates: unknown[] = [];
 	const memberRecord = {
 		id: "member-1",
@@ -127,13 +125,6 @@ function approvalLayer(options: ApprovalFakeOptions = {}) {
 			inviteCodeUsage: { findFirst: vi.fn(async () => null) },
 			memberApproval: { findFirst: vi.fn(async () => null) },
 			team: { findFirst: vi.fn(async () => ({ id: "team-1" })) },
-			employee: {
-				findFirst: vi.fn(async () => {
-					events.push("employee-read-start");
-					await options.employeeReadPromise;
-					return null;
-				}),
-			},
 		},
 		execute: vi.fn(async () => {
 			events.push("identity-lock");
@@ -157,23 +148,9 @@ function approvalLayer(options: ApprovalFakeOptions = {}) {
 		})),
 		insert: vi.fn((table) => ({
 			values: vi.fn((values) => {
-				if (table === memberApproval) {
-					approvals.push(values);
-					return {
-						returning: vi.fn(async () => {
-							events.push("approval-insert-start");
-							await options.approvalInsertPromise;
-							return [{ id: "approval-1", ...values }];
-						}),
-					};
-				}
-				if (table === employee) {
-					if (options.provisioningFails)
-						throw new Error("employee insert failed");
-					employees.push(values);
-				}
+				if (table === memberApproval) approvals.push(values);
 				return {
-					returning: vi.fn(async () => [{ id: "employee-1", ...values }]),
+					returning: vi.fn(async () => [{ id: "approval-1", ...values }]),
 				};
 			}),
 		})),
@@ -188,7 +165,6 @@ function approvalLayer(options: ApprovalFakeOptions = {}) {
 	db.transaction = vi.fn(async (callback) => {
 		const snapshots = {
 			approvals: approvals.length,
-			employees: employees.length,
 			memberUpdates: memberUpdates.length,
 		};
 		events.push("transaction-start");
@@ -198,7 +174,6 @@ function approvalLayer(options: ApprovalFakeOptions = {}) {
 			return result;
 		} catch (error) {
 			approvals.length = snapshots.approvals;
-			employees.length = snapshots.employees;
 			memberUpdates.length = snapshots.memberUpdates;
 			events.push("transaction-rollback");
 			throw error;
@@ -207,7 +182,7 @@ function approvalLayer(options: ApprovalFakeOptions = {}) {
 
 	const layer = serviceLayer(db);
 
-	return { approvals, db, employees, events, layer, memberUpdates };
+	return { approvals, db, events, layer, memberUpdates, tx };
 }
 
 async function approveWith(layer: ReturnType<typeof approvalLayer>["layer"]) {
@@ -241,12 +216,7 @@ async function bulkApproveWith(
 }
 
 describe("PendingMemberService approval transactions", () => {
-	beforeEach(() => {
-		billingMock.sync.mockClear();
-		placeArrivingEmployee.mockClear();
-	});
-
-	it("atomically approves the member, records the audit, provisions the employee, then bills", async () => {
+	it("atomically approves the member, records the approval and joins, then runs joining's after-commit step", async () => {
 		const fake = approvalLayer();
 
 		await expect(approveWith(fake.layer)).resolves.toMatchObject({
@@ -262,69 +232,33 @@ describe("PendingMemberService approval transactions", () => {
 				status: "approved",
 			}),
 		]);
-		expect(fake.employees).toEqual([
-			expect.objectContaining({
-				userId: "user-1",
-				organizationId: "org-1",
-				isActive: true,
-			}),
-		]);
-		// The assigned team is a membership and the primary team (Organization ADR 0010).
-		expect(placeArrivingEmployee).toHaveBeenCalledWith(expect.anything(), {
+		expect(joinOrganization).toHaveBeenCalledWith(fake.tx, {
 			organizationId: "org-1",
-			employeeId: "employee-1",
+			userId: "user-1",
+			membership: { id: "member-1", role: "member" },
 			teamId: "team-1",
-			createdBy: "admin-1",
+			actorUserId: "admin-1",
 		});
 		expect(fake.events).toContain("identity-lock");
-		expect(fake.events.at(-1)).toBe("transaction-commit");
-		expect(billingMock.sync).toHaveBeenCalledWith({
-			organizationId: "org-1",
-			memberId: "member-1",
-			userId: "user-1",
-			change: "added",
-		});
+		expect(fake.events.slice(-3)).toEqual([
+			"joined",
+			"transaction-commit",
+			"after-commit",
+		]);
 	});
 
-	it("starts the approval insert and employee read together after winning the transition", async () => {
-		const approvalInsert = deferred<void>();
-		const employeeRead = deferred<void>();
-		const fake = approvalLayer({
-			approvalInsertPromise: approvalInsert.promise,
-			employeeReadPromise: employeeRead.promise,
-		});
-		const approval = approveWith(fake.layer);
-		let approvalOutcome!: PromiseSettledResult<Awaited<typeof approval>>;
-
-		try {
-			await vi.waitFor(() => {
-				expect(fake.events).toContain("approval-insert-start");
-			});
-			expect(fake.events).toContain("employee-read-start");
-		} finally {
-			approvalInsert.resolve();
-			employeeRead.resolve();
-			[approvalOutcome] = await Promise.allSettled([approval]);
-		}
-
-		if (approvalOutcome.status === "rejected") {
-			throw approvalOutcome.reason;
-		}
-		expect(approvalOutcome.value).toMatchObject({ success: true });
-	});
-
-	it("rolls back the member and approval when employee provisioning fails", async () => {
-		const fake = approvalLayer({ provisioningFails: true });
+	it("rolls back the member and approval when joining fails", async () => {
+		const fake = approvalLayer({ joiningFails: true });
 
 		await expect(approveWith(fake.layer)).rejects.toBeDefined();
 
 		expect(fake.events).toContain("transaction-rollback");
 		expect(fake.memberUpdates).toEqual([]);
 		expect(fake.approvals).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(fake.events).not.toContain("after-commit");
 	});
 
-	it("handles a lost pending-status race without audit, employee, or billing writes", async () => {
+	it("handles a lost pending-status race without approval or joining", async () => {
 		const fake = approvalLayer({ transitionWins: false });
 
 		const result = await Effect.runPromise(
@@ -345,8 +279,7 @@ describe("PendingMemberService approval transactions", () => {
 			failure: expect.any(ValidationError),
 		});
 		expect(fake.approvals).toEqual([]);
-		expect(fake.employees).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 	});
 
 	it("does not mutate a member from another organization", async () => {
@@ -357,11 +290,10 @@ describe("PendingMemberService approval transactions", () => {
 		expect(fake.db.transaction).not.toHaveBeenCalled();
 		expect(fake.memberUpdates).toEqual([]);
 		expect(fake.approvals).toEqual([]);
-		expect(fake.employees).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
+		expect(joinOrganization).not.toHaveBeenCalled();
 	});
 
-	it("uses the same atomic transition and post-commit billing for bulk approval", async () => {
+	it("uses the same atomic transition and after-commit step for bulk approval", async () => {
 		const fake = approvalLayer();
 		const result = await bulkApproveWith(fake.layer);
 
@@ -369,13 +301,16 @@ describe("PendingMemberService approval transactions", () => {
 		expect(fake.db.transaction).toHaveBeenCalledOnce();
 		expect(fake.memberUpdates).toEqual([{ status: "approved" }]);
 		expect(fake.approvals).toHaveLength(1);
-		expect(fake.employees).toHaveLength(1);
-		expect(billingMock.sync).toHaveBeenCalledOnce();
+		expect(fake.events.slice(-3)).toEqual([
+			"joined",
+			"transaction-commit",
+			"after-commit",
+		]);
 	});
 
 	it.each([
 		["a lost pending-status race", { transitionWins: false }],
-		["an employee provisioning rollback", { provisioningFails: true }],
+		["a joining rollback", { joiningFails: true }],
 		["a cross-organization member", { memberOrganizationId: "org-other" }],
 	] as const)(
 		"counts %s as a bulk failure without committed side effects",
@@ -387,8 +322,7 @@ describe("PendingMemberService approval transactions", () => {
 				failed: 1,
 			});
 			expect(fake.approvals).toEqual([]);
-			expect(fake.employees).toEqual([]);
-			expect(billingMock.sync).not.toHaveBeenCalled();
+			expect(fake.events).not.toContain("after-commit");
 		},
 	);
 });

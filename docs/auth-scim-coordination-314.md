@@ -131,13 +131,30 @@ before).
 action's retry path (`completeRemovedMemberCleanup`).
 
 Work queued after commit can still fail after the write has committed: billing
-reconciliation, secondary-storage session deletion, or provisioning. Better Auth then rethrows
-the error. As before this slice, the HTTP response is an error for a change that did commit.
+reconciliation or secondary-storage session deletion. Better Auth then rethrows the error. As
+before this slice, the HTTP response is an error for a change that did commit.
 `removeEmployeeAccessAction` detects the committed removal and retries the cleanup.
 
-Provisioning after a membership is added or accepted keeps its existing after-commit timing,
-now deferred with `queueAfterAuthTransactionCommit` (#359). That provisioning covers the employee, the
-invitation's organization-creation flag, and billing seats.
+### Joining is part of the membership (#1666)
+
+Since #1666 a membership that is added or accepted joins in the same transaction
+(Joining, `lib/employee-lifecycle/joining/`, spec #1664). `afterAddMember` (organization
+creation and a direct member add) and `afterAcceptInvitation` call
+`lib/auth/organization-joining-hooks.ts` on the captured auth transaction
+(`requireAuthTransaction`). For an accepted invitation that also writes the invitation's
+organization-creation flag. A failed joining rolls the membership back, so no commit holds a
+member of these paths without an employee, and the user gets a refusal for a change that did
+not commit.
+
+Joining runs on the captured transaction rather than the plain `db` client: a second
+connection would wait on the user guard that the auth transaction already holds. Joining
+takes the user guard and the employee identity lock itself; both are re-entrant inside the
+transaction that already holds them.
+
+Only joining's after-commit step waits for the commit (`queueAfterAuthTransactionCommit`):
+audit forwarding, the invitation draft clean-up and the seat signal. A failure there is
+logged and does not turn the committed change into an error response; the hourly seat
+reconciliation is the safety net.
 
 ## Behavior changes
 
@@ -173,9 +190,9 @@ invitation's organization-creation flag, and billing seats.
 - `auth.api.createOrganization` (onboarding): the creator's membership of a brand-new
   organization. No manual submission can be in flight in an organization that does not exist
   yet. Onboarding belongs to #318.
-- Employee provisioning after membership addition or acceptance
-  (now Joining, `lib/employee-lifecycle/joining/`, #1665) runs after commit in its own
-  transaction. It takes the user guard (#318); moving it into the auth transaction is #1664.
+- Employee provisioning after membership addition or acceptance is now Joining
+  (`lib/employee-lifecycle/joining/`, #1665). Since #1666 it runs inside the auth
+  transaction; see [Joining is part of the membership](#joining-is-part-of-the-membership-1666).
 - Platform-administration direct writes of `user.role`, `banned` and `banExpires`
   (`platform-admin.service.ts`) and user settings belong to #312.
 - Invitation creation, rejection and cancellation, and `updateOrganization` (other than
@@ -216,7 +233,7 @@ that key's `hashtextextended` value.
 | Removal whose in-transaction cleanup fails (trigger fault) | Whole removal rolls back; membership and active employee remain; no billing call |
 | HTTP `/organization/remove-member` (#359) | A failing in-transaction cleanup rolls the membership delete back (500) |
 | HTTP `/organization/leave` (bearer session) | Waits on the leaver's guard; same cleanup |
-| HTTP `/organization/accept-invitation` | Waits on the invitee's guard; provisioning runs after commit |
+| HTTP `/organization/accept-invitation` | Waits on the invitee's guard; since #1666 joining runs in the acceptance's transaction (`lib/auth/organization-joining.integration.test.ts`) |
 | Provider-bound SSO provisioning | Waits on the user's guard; member (mapped `admin` role) and active employee commit together |
 | Verified-domain SSO membership | Waits on the user's guard; member and active employee commit together |
 | `auth.api.banUser` | Waits on the target's guard while their submission is in flight |
@@ -377,8 +394,8 @@ and no write. `lib/auth.test.ts` pins the production composition.
 
 ## Remaining activation blockers
 
-1. Employee provisioning after membership addition or acceptance, invite-code joins,
-   onboarding, demo and cleanup writers (#318) do not yet participate.
+1. Invite-code joins, onboarding, demo and cleanup writers (#318) do not yet participate.
+   Joining after membership addition or acceptance runs in the auth transaction since #1666.
 2. ~~Platform-administration direct writes of global role and ban, and user settings (#312).~~
    They participate since #312; see [its evidence](user-configuration-access-312.md).
 3. Old deployed binaries write these facts without protection (#327). New guards cannot fence

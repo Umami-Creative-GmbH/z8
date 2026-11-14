@@ -8,11 +8,9 @@ import { admin } from "better-auth/plugins/admin";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import { twoFactor } from "better-auth/plugins/two-factor";
-import { and, eq } from "drizzle-orm";
-import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import { team } from "@/db/schema";
 import { env } from "@/env";
 import { accountBanPlugin } from "@/lib/auth/account-ban";
 import {
@@ -33,11 +31,11 @@ import {
 	captureAuthTransactions,
 	runCoordinatedAuthMutation,
 } from "@/lib/auth/auth-transaction";
-import {
-	normalizeInvitationEmail,
-	resolveAcceptedInvitationCanCreateOrganizations,
-} from "@/lib/auth/employee-invitation-draft";
 import { createGuardedAuthSecondaryStorage } from "@/lib/auth/guarded-secondary-storage";
+import {
+	joinOnAcceptedInvitation,
+	joinOnAddedMember,
+} from "@/lib/auth/organization-joining-hooks";
 import { rejectOrganizationSsoApprovalUpdate } from "@/lib/auth/organization-sso-approval-update-guard";
 import { rejectOrganizationTimezoneUpdate } from "@/lib/auth/organization-timezone-update-guard";
 import { passwordSetupVerification } from "@/lib/auth/password-setup-verification";
@@ -54,7 +52,6 @@ import {
 	getOrganizationPlatformOrigins,
 	getStaticTrustedOrigins,
 } from "@/lib/auth-domain-config";
-import { joinOrganization } from "@/lib/employee-lifecycle/joining";
 import {
 	enterpriseIdentityInvitationResendPlugin,
 	refuseInvitationOutsideEnterpriseIdentity,
@@ -102,38 +99,14 @@ import { createLogger } from "./logger";
 import { secondaryStorage } from "./redis";
 
 const logger = createLogger("Auth");
-const targetTeamIdSchema = z.uuid();
 const authSecondaryStorage =
 	createGuardedAuthSecondaryStorage(secondaryStorage);
-
-type InvitationTargetTeamLookupDb = Pick<typeof db, "query">;
 
 export {
 	completeRemovedMemberCleanup,
 	revokeRemovedMemberAccess,
 } from "@/lib/auth/member-removal-cleanup";
-
-export async function resolveInvitationTargetTeamId(
-	dbClient: InvitationTargetTeamLookupDb,
-	organizationId: string,
-	targetTeamId: string | null | undefined,
-) {
-	const targetTeamIdResult = targetTeamId
-		? targetTeamIdSchema.safeParse(targetTeamId)
-		: null;
-	if (!targetTeamIdResult?.success) {
-		return null;
-	}
-
-	const targetTeam = await dbClient.query.team.findFirst({
-		where: and(
-			eq(team.id, targetTeamIdResult.data),
-			eq(team.organizationId, organizationId),
-		),
-	});
-
-	return targetTeam?.id ?? null;
-}
+export { resolveInvitationTargetTeamId } from "@/lib/auth/organization-joining-hooks";
 
 function getAuthSecrets() {
 	const resolved = resolveAuthSecrets({
@@ -469,65 +442,10 @@ export const auth = betterAuth({
 				// skip this hook and are covered by the resend plugin below (#1024).
 				beforeCreateInvitation: refuseInvitationOutsideEnterpriseIdentity,
 
-				// Update user permissions when accepting invitation (after it commits)
-				afterAcceptInvitation: async ({ user, invitation, member }) => {
-					// Fetch the full invitation record to get custom invitation fields.
-					const invitationRecord = await db.query.invitation.findFirst({
-						where: and(
-							eq(schema.invitation.id, invitation.id),
-							eq(schema.invitation.organizationId, invitation.organizationId),
-						),
-					});
-					const [targetTeamId, canCreateOrganizations] = await Promise.all([
-						resolveInvitationTargetTeamId(
-							db,
-							invitation.organizationId,
-							invitationRecord?.targetTeamId,
-						),
-						resolveAcceptedInvitationCanCreateOrganizations(db, {
-							organizationId: invitation.organizationId,
-							normalizedEmail: normalizeInvitationEmail(invitation.email),
-							invitationCanCreateOrganizations:
-								invitationRecord?.canCreateOrganizations ?? false,
-						}),
-					]);
-
-					// Update user's organization creation permission based on invitation
-					await db
-						.update(schema.user)
-						.set({
-							canCreateOrganizations,
-							invitedVia: invitation.id,
-						})
-						.where(eq(schema.user.id, user.id));
-
-					// Joining runs in its own transaction after Better Auth's commit until it
-					// moves into the auth transaction (#1664). Its after-commit step sends the seat signal.
-					const joined = await db.transaction((tx) =>
-						joinOrganization(tx, {
-							organizationId: invitation.organizationId,
-							userId: user.id,
-							membership: { id: member.id, role: member.role },
-							teamId: targetTeamId,
-							invitation: { id: invitation.id },
-						}),
-					);
-					await joined.afterCommit.run();
-				},
-
-				// Create employee record when user is added to organization (after it commits)
-				afterAddMember: async ({ member, user, organization }) => {
-					// A direct add carries no invitation: its draft is found by the user's email.
-					const joined = await db.transaction((tx) =>
-						joinOrganization(tx, {
-							organizationId: organization.id,
-							userId: user.id,
-							membership: { id: member.id, role: member.role },
-							invitation: { id: null },
-						}),
-					);
-					await joined.afterCommit.run();
-				},
+				// Both join in the membership's auth transaction (#1666); their
+				// after-commit steps send the seat signal once it committed.
+				joinOnAcceptedInvitation,
+				joinOnAddedMember,
 			}),
 		}),
 		twoFactor({
