@@ -5830,9 +5830,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 
 /**
  * The unchanged legacy correction mutation of one exact legacy request, in the
- * decision owner's transaction. Without `allowAnyApprover` or
- * `allowOrganizationWideApprover` only the request's current approver decides
- * (the bound card path, #432).
+ * decision owner's transaction, under the one decision right the time
+ * approval decision claimed (`options.decisionRight`).
  */
 export function createLegacyTimeCorrectionDecisionProcessor(input: {
 	approvalRequestId: string;
