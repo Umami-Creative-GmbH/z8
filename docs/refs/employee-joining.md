@@ -61,6 +61,11 @@ draft, otherwise admin for an owner or admin membership, otherwise keeps the old
    reconciliation is the safety net).
 
 `run({ seatSignal: false })` skips the seat signal for an older membership, where no seat changed now.
+The backfill and the switch-route net (`joinMemberWithoutEmployee`) both pass it: the member already
+held the approved membership, and `countBillableSeats` already counts a member without an employee
+while `EMPLOYEE_OFFBOARDING_RELEASE_READY` is off, so creating the missing employee row changes no
+seat. Once the release requires an employee profile per seat, the hourly seat reconciliation picks up
+the difference.
 A failed after-commit step must not fail a committed sign-in or acceptance; callers log it.
 
 ## Locks
@@ -88,10 +93,19 @@ uncalled `employees.create` action are gone (#1671).
 ## Who may create an employee row
 
 `src/lib/employee-lifecycle/joining/employee-writers.test.ts` sweeps `src/` and `scripts/` and fails when
-a file outside the allowed writers inserts into `employee`: joining, rehire
-(`lib/employee-lifecycle/commands.ts`), SCIM (`lib/scim`, a second writer on purpose, Organization ADR
-0012), demo seeding (`lib/demo`) and the performance-test fixture. Each exemption carries its reason. A
-new path that gives a user a membership joins through `joinOrganization` instead of writing the row.
+a file outside the allowed writers inserts into `employee` (Drizzle `.insert(employee)`, raw SQL or the
+Better Auth adapter, also when the formatter splits the call across lines). Tests and their fixtures are
+not scanned. The allowed writers, each with its reason in the test:
+
+| Path | Why it may insert into `employee` |
+| --- | --- |
+| `src/lib/employee-lifecycle/joining/` | Joining owns what follows an approved membership. |
+| `src/lib/employee-lifecycle/commands.ts` | Rehire brings a former employee back on a new employment period; it is not joining. Kept on the list as #1671 asks, so a rehire that writes the row needs no new exemption. |
+| `src/lib/scim/` | SCIM is a second writer on purpose: the identity provider owns those employees (Organization ADR 0012). |
+| `src/lib/demo/` | Demo seeding writes a sample organization's employees without real memberships. |
+| `scripts/performance-fixture.ts` | Seeds a disposable performance-test database, never a tenant's data. |
+
+A new path that gives a user a membership joins through `joinOrganization` instead of writing the row.
 
 ## Tests
 

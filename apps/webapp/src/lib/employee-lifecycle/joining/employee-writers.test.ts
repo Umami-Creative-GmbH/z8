@@ -52,18 +52,22 @@ function employeeTableNames(source: string): string[] {
 	return names;
 }
 
-/** The lines of a source file that insert into `employee`, by Drizzle, raw SQL or the auth adapter. */
+/**
+ * The inserts into `employee` in a source file, by Drizzle, raw SQL or the auth
+ * adapter. Matched against the whole source, so a call that the formatter split
+ * across lines is found too (`\s` spans line breaks).
+ */
 function employeeInserts(source: string): string[] {
 	const tables = employeeTableNames(source).join("|");
 	const patterns = [
 		// Drizzle: `.insert(employee)`, `.insert(schema.employee)` or an alias.
-		new RegExp(String.raw`\.insert\(\s*(?:\w+\.)?(?:${tables})\s*\)`),
+		new RegExp(String.raw`\.insert\(\s*(?:\w+\.)?(?:${tables})\s*,?\s*\)`, "g"),
 		// Raw SQL: `insert into employee (...)`, not `employee_*` tables.
-		/\binsert\s+into\s+(?:public\.)?"?employee"?(?![\w"])/i,
+		/\binsert\s+into\s+(?:public\.)?"?employee"?(?![\w"])/gi,
 		// The Better Auth adapter (SCIM): a create for the employee model.
-		/\bcreate\w*\(\s*(?:\w+\s*,\s*)?(?:\{\s*model:\s*)?(?:"employee"|\w+\.employee\b)/,
+		/\bcreate\w*\(\s*(?:\w+\s*,\s*)?(?:\{\s*model:\s*)?(?:"employee"|\w+\.employee\b)/g,
 	];
-	return source.split(/\r?\n/).filter((line) => patterns.some((pattern) => pattern.test(line)));
+	return patterns.flatMap((pattern) => [...source.matchAll(pattern)].map((match) => match[0]));
 }
 
 function sourceFiles(directory: string): string[] {
@@ -97,6 +101,15 @@ describe("who creates employee rows (#1671)", () => {
 			employeeInserts("createUUIDRecord(database, SCIM_MODELS.employee, { userId })"),
 		).toHaveLength(1);
 		expect(employeeInserts('adapter.create({ model: "employee", data })')).toHaveLength(1);
+		// Formatted across lines, as Biome writes a long chain.
+		expect(employeeInserts("await tx\n\t.insert(\n\t\temployee\n\t)\n\t.values(row);")).toHaveLength(
+			1,
+		);
+		expect(employeeInserts("await tx.insert(\r\n\temployee,\r\n).values(row);")).toHaveLength(1);
+		expect(employeeInserts("sql`INSERT INTO\n  employee (id) values (1)`")).toHaveLength(1);
+		expect(
+			employeeInserts('adapter.create({\n\tmodel: "employee",\n\tdata,\n})'),
+		).toHaveLength(1);
 
 		expect(employeeInserts("tx.insert(employeeManagers).values(row)")).toEqual([]);
 		expect(employeeInserts("insert into employee_departure (id) values ($1)")).toEqual([]);
