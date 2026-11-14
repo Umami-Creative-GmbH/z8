@@ -19,11 +19,11 @@
                         "blockedBy":  [
                                           1689
                                       ],
-                        "status":  "integrated-pending-runtime",
-                        "verifiedCommit":  null,
+                        "status":  "integrated",
+                        "verifiedCommit":  "ac30ff285814644b08fc918eafa1013f3ecb7897",
                         "integrationCommit":  "b31c497bb48c873153b731ea9f7b62c8c3e0e2fe",
                         "evidence":  "docs/design/rollout-1692/1693.md",
-                        "integrationVerification":  "26 suites / 192 tests passed on merged branch including init; parent and implementation ancestry, baseline preservation and diff --check passed. Browser/fixture handoff acceptance remains pending; no verifiedCommit yet."
+                        "integrationVerification":  "27 suites / 194 tests plus 7 fixture guard/exit tests passed on final merge; exact tree and parent/implementation ancestry preserved. Live consumer/role/theme/font/drawer/refresh evidence supports F1 handoff. Native React DevTools, partial comparison, provider/device/catalog and full-build final-review limits retained in evidence."
                     },
                     {
                         "id":  "F2",
@@ -31,7 +31,7 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -40,7 +40,7 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -80,7 +80,7 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
