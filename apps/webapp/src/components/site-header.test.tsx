@@ -132,7 +132,7 @@ describe("SiteHeader", () => {
 
 		expect(screen.getByText("Employees")).toBeTruthy();
 		expect(screen.queryByText("Dashboard")).toBeNull();
-		expect(screen.queryByRole("heading")).toBeNull();
+		expect(screen.getByRole("heading", { name: "Employees" })).toBeTruthy();
 	});
 
 	it("truncates a long title so the header actions stay on a phone screen (#846)", () => {

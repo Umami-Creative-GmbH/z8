@@ -151,6 +151,7 @@ describe("Sidebar", () => {
 				.getByRole("button", { name: "Toggle Sidebar" })
 				.getAttribute("aria-expanded"),
 		).toBe("false");
+		await waitFor(() => expect(document.activeElement).toBe(trigger));
 	});
 	it("keeps the phone navigation clear of the status bar and home indicator with 44 px rows (#846)", () => {
 		render(

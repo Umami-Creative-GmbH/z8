@@ -91,7 +91,11 @@ export function NavUser({
 		return (
 			<SidebarMenu>
 				<SidebarMenuItem>
-					<SidebarMenuButton size="lg" disabled>
+					<SidebarMenuButton
+						size="lg"
+						disabled
+						aria-label={t("user.loadingAccount", "Loading account")}
+					>
 						<Skeleton className="size-8 rounded-lg" />
 						<div className="grid flex-1 gap-1.5 text-left text-sm leading-tight">
 							<Skeleton className="h-4 w-24" />

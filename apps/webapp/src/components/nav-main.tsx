@@ -34,12 +34,12 @@ export function NavMain({
 
 	return (
 		<SidebarGroup>
-			{label && (
-				<SidebarGroupLabel className="font-semibold uppercase tracking-wide">
-					{label}
-				</SidebarGroupLabel>
-			)}
 			<nav aria-label={typeof label === "string" ? label : undefined}>
+				{label && (
+					<SidebarGroupLabel className="font-semibold uppercase tracking-wide">
+						{label}
+					</SidebarGroupLabel>
+				)}
 				<SidebarGroupContent>
 					<SidebarMenu>
 						{items.map((item) => {

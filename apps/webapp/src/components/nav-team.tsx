@@ -31,10 +31,10 @@ export function NavTeam({
 
 	return (
 		<SidebarGroup>
-			<SidebarGroupLabel className="font-semibold uppercase tracking-wide">
-				{t("nav.team-organization-label", "Team & organization")}
-			</SidebarGroupLabel>
 			<nav aria-label={t("nav.team-organization-label", "Team & organization")}>
+				<SidebarGroupLabel className="font-semibold uppercase tracking-wide">
+					{t("nav.team-organization-label", "Team & organization")}
+				</SidebarGroupLabel>
 				<SidebarGroupContent>
 					<SidebarMenu>
 						{items.map((item) => {

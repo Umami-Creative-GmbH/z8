@@ -35,6 +35,7 @@ export function SiteHeader() {
 	const routeMetadata = resolveAppRouteMetadata(pathname);
 	const showWorkplaceScope =
 		isDashboardRoute || normalizedPath === "/time-tracking";
+	const RouteTitle = showWorkplaceScope ? "p" : "h1";
 	const moreActionsLabel = t("common.moreActions", "More actions");
 
 	return (
@@ -55,12 +56,12 @@ export function SiteHeader() {
 						</span>
 					</span>
 				) : null}
-				<p
+				<RouteTitle
 					className="min-w-0 flex-1 truncate font-medium text-sm"
 					data-slot="route-title"
 				>
 					{t(routeMetadata.titleKey, routeMetadata.titleDefault)}
-				</p>
+				</RouteTitle>
 				<div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
 					<div className="hidden items-center gap-2 sm:flex">
 						{isDashboardRoute ? <DashboardHeaderCustomize /> : null}

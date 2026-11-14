@@ -20,7 +20,9 @@ vi.mock("@/lib/query/use-time-clock", () => ({
 
 function summary(start?: string) {
 	const basis = buildTimeKpiBasis({
-		periods: start ? [{ startTime: new Date(start), endTime: null, surchargeMinutes: null }] : [],
+		periods: start
+			? [{ startTime: new Date(start), endTime: null, surchargeMinutes: null }]
+			: [],
 		timezone: "Europe/Berlin",
 		weekStartDay: "monday",
 		requiredMinutesByDate: {},

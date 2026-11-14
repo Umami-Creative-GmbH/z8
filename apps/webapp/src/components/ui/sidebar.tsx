@@ -217,6 +217,11 @@ function Sidebar({
 		return (
 			<Sheet onOpenChange={setOpenMobile} open={openMobile} {...props}>
 				<SheetContent
+					finalFocus={() =>
+						document.querySelector<HTMLButtonElement>(
+							'[data-sidebar="trigger"]',
+						)
+					}
 					className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
 					data-mobile="true"
 					data-sidebar="sidebar"
