@@ -54,8 +54,10 @@
                                           1694,
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+                        "evidence":  "docs/design/rollout-1692/1853.md",
+                        "integrationVerification":  "Docs-only checkpoint verified: exact merge tree/parents; F2/F3 ledger and ancestry; unchanged prerequisites and all 75 joint consumers; 24 links/anchors and all 10,349 prior files preserved. Existing combined 36-suite/260-test and runtime evidence reused, not rerun. Compatible joint handoff released; final-review limits retained."
                     },
                     {
                         "id":  "R001",
@@ -64,7 +66,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
