@@ -29,11 +29,19 @@ import { DatabaseService } from "./database.service";
 type MemberApproval = typeof memberApproval.$inferSelect;
 type ApprovalStatus = "pending" | "approved" | "rejected";
 
+/**
+ * How the person asked to join. A pending membership without an invite code
+ * comes from a sign-in through the organization's identity provider (#1668).
+ */
+export type PendingMemberSource = "invite_code" | "sso";
+
 export interface PendingMember {
 	id: string; // member ID
 	userId: string;
 	organizationId: string;
+	/** The organization role approval grants: the invite code's, or the identity provider's. */
 	role: string;
+	source: PendingMemberSource;
 	createdAt: Date;
 	user: {
 		id: string;
@@ -134,6 +142,10 @@ export class PendingMemberService extends Context.Service<
 	}
 >()("PendingMemberService") {}
 
+function pendingMemberSource(inviteCodeId: string | null | undefined): PendingMemberSource {
+	return inviteCodeId ? "invite_code" : "sso";
+}
+
 export const PendingMemberServiceLive = Layer.effect(
 	PendingMemberService,
 	Effect.gen(function* () {
@@ -186,6 +198,7 @@ export const PendingMemberServiceLive = Layer.effect(
 				userId: memberRecord.userId,
 				organizationId: memberRecord.organizationId,
 				role: memberRecord.role,
+				source: pendingMemberSource(usage?.inviteCode?.id ?? memberRecord.inviteCodeId),
 				createdAt: memberRecord.createdAt,
 				user: {
 					id: userRecord.id,
@@ -357,6 +370,7 @@ export const PendingMemberServiceLive = Layer.effect(
 					userId: memberRecord.userId,
 					organizationId: memberRecord.organizationId,
 					role: memberRecord.role,
+					source: pendingMemberSource(usage?.inviteCode?.id ?? memberRecord.inviteCodeId),
 					createdAt: memberRecord.createdAt,
 					user: {
 						id: userRecord.id,
@@ -385,16 +399,15 @@ export const PendingMemberServiceLive = Layer.effect(
 					})
 					.returning();
 
+				// An invite-code request is audited under its code; an SSO request,
+				// which has none, under the membership it asked for (#1668).
 				const inviteIdentity =
-					usage?.inviteCode?.id ?? memberRecord.inviteCodeId;
-				if (!inviteIdentity) {
-					throw new Error("Pending member invite identity not found");
-				}
+					usage?.inviteCode?.id ?? memberRecord.inviteCodeId ?? null;
 
 				await tx.insert(auditLog).values({
 					organizationId: input.organizationId,
 					entityType: "membership",
-					entityId: inviteIdentity,
+					entityId: inviteIdentity ?? memberRecord.id,
 					action: "reject",
 					performedBy: input.rejectedBy,
 					changes: JSON.stringify({
@@ -405,6 +418,7 @@ export const PendingMemberServiceLive = Layer.effect(
 						userId: memberRecord.userId,
 						inviteCodeId: inviteIdentity,
 						inviteCode: usage?.inviteCode?.code ?? null,
+						source: pendingMember.source,
 						notes: input.notes,
 					}),
 				});
@@ -449,60 +463,66 @@ export const PendingMemberServiceLive = Layer.effect(
 						if (query.status !== undefined && query.status !== "pending")
 							return [];
 
-						const pendingUsages = await dbService.db
+						// Every pending membership: an invite code's request carries its
+						// usage; an SSO sign-in's has none (#1668).
+						const pendingRows = await dbService.db
 							.select({
-								memberId: inviteCodeUsage.memberId,
-								userId: inviteCodeUsage.userId,
+								memberId: member.id,
+								userId: member.userId,
+								organizationId: member.organizationId,
+								role: member.role,
+								createdAt: member.createdAt,
+								memberInviteCodeId: member.inviteCodeId,
 								usedAt: inviteCodeUsage.usedAt,
-								member: {
-									organizationId: member.organizationId,
-									role: member.role,
-									createdAt: member.createdAt,
-								},
 								user: {
 									id: user.id,
 									name: user.name,
 									email: user.email,
 									image: user.image,
 								},
-								inviteCode: {
-									id: inviteCode.id,
-									code: inviteCode.code,
-									label: inviteCode.label,
-									defaultTeamId: inviteCode.defaultTeamId,
-								},
+								inviteCodeId: inviteCode.id,
+								inviteCodeCode: inviteCode.code,
+								inviteCodeLabel: inviteCode.label,
+								inviteCodeDefaultTeamId: inviteCode.defaultTeamId,
 							})
-							.from(inviteCodeUsage)
-							.innerJoin(member, eq(member.id, inviteCodeUsage.memberId))
-							.innerJoin(user, eq(user.id, inviteCodeUsage.userId))
-							.innerJoin(
+							.from(member)
+							.innerJoin(user, eq(user.id, member.userId))
+							.leftJoin(inviteCodeUsage, eq(inviteCodeUsage.memberId, member.id))
+							.leftJoin(
 								inviteCode,
-								eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
+								and(
+									eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
+									eq(inviteCode.organizationId, query.organizationId),
+								),
 							)
 							.where(
 								and(
 									eq(member.organizationId, query.organizationId),
 									eq(member.status, "pending"),
-									eq(inviteCode.organizationId, query.organizationId),
 								),
 							)
-							.orderBy(desc(inviteCodeUsage.usedAt));
+							.orderBy(desc(sql`coalesce(${inviteCodeUsage.usedAt}, ${member.createdAt})`));
 
-						return pendingUsages.map((usage) => ({
-							id: usage.memberId,
-							userId: usage.userId,
-							organizationId: usage.member.organizationId,
-							role: usage.member.role,
-							createdAt: usage.member.createdAt,
-							user: {
-								id: usage.user.id,
-								name: usage.user.name,
-								email: usage.user.email,
-								image: usage.user.image,
-							},
-							inviteCode: usage.inviteCode,
-							usedAt: usage.usedAt,
-						}));
+						return pendingRows.map(
+							(row): PendingMember => ({
+								id: row.memberId,
+								userId: row.userId,
+								organizationId: row.organizationId,
+								role: row.role,
+								source: pendingMemberSource(row.inviteCodeId ?? row.memberInviteCodeId),
+								createdAt: row.createdAt,
+								user: row.user,
+								inviteCode: row.inviteCodeId
+									? {
+											id: row.inviteCodeId,
+											code: row.inviteCodeCode ?? "",
+											label: row.inviteCodeLabel ?? "",
+											defaultTeamId: row.inviteCodeDefaultTeamId,
+										}
+									: null,
+								usedAt: row.usedAt ?? undefined,
+							}),
+						);
 					});
 
 					return pendingMembers;
@@ -663,18 +683,12 @@ export const PendingMemberServiceLive = Layer.effect(
 					const pendingCount = yield* dbService.query("countPendingMembers", async () => {
 						const [result] = await dbService.db
 							.select({ count: count() })
-							.from(inviteCodeUsage)
-							.innerJoin(member, eq(member.id, inviteCodeUsage.memberId))
-							.innerJoin(user, eq(user.id, inviteCodeUsage.userId))
-							.innerJoin(
-								inviteCode,
-								eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
-							)
+							.from(member)
+							.innerJoin(user, eq(user.id, member.userId))
 							.where(
 								and(
 									eq(member.organizationId, organizationId),
 									eq(member.status, "pending"),
-									eq(inviteCode.organizationId, organizationId),
 								),
 							)
 							.execute();

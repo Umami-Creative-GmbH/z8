@@ -51,8 +51,9 @@ export type JoiningInput = {
 	 */
 	invitation?: { id: string | null };
 	/**
-	 * Who brought the person in: the reactivation's actor (defaults to the
-	 * joining user) and the team membership's creator (else none).
+	 * The admin who brought the person in or back, such as one creating a kiosk-only
+	 * employee. Recorded on the team placement and on a reactivation; a reactivation
+	 * defaults to the joining user.
 	 */
 	actorUserId?: string;
 };
