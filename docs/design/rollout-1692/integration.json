@@ -1,0 +1,1586 @@
+﻿{
+    "spec":  1692,
+    "integrationBranch":  "ai/1692-app-wide-ui-refresh",
+    "pullRequest":  "https://github.com/Umami-Creative-GmbH/z8/pull/1854",
+    "devBase":  "2dd336ccf",
+    "approvedSpec":  "2d121072a",
+    "initialMerge":  "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+    "graphSource":  "docs/design/2026-11-14-webapp-ui-ux-publication.md",
+    "schedulingRule":  "A dependency is satisfied only by its verifiedCommit being an ancestor of the current integration tip. GitHub open status is retained for final review.",
+    "baseline":  {
+                     "issue":  1689,
+                     "verifiedCommit":  "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+                     "verification":  "All four baseline commits and both merge parents are ancestors; all 82 baseline paths and concurrent dev paths remain byte-identical. Prior runtime evidence inherited; fresh scoped tests tracked in README."
+                 },
+    "tickets":  [
+                    {
+                        "id":  "F1",
+                        "issue":  1693,
+                        "blockedBy":  [
+                                          1689
+                                      ],
+                        "status":  "implementing",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "F2",
+                        "issue":  1694,
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "F3",
+                        "issue":  1695,
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "H1",
+                        "issue":  1853,
+                        "blockedBy":  [
+                                          1694,
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R001",
+                        "issue":  1700,
+                        "route":  "/",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R002",
+                        "issue":  1701,
+                        "route":  "/absences",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R003",
+                        "issue":  1820,
+                        "route":  "/accept-invitation/[invitationId]",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R004",
+                        "issue":  1702,
+                        "route":  "/analytics",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R005",
+                        "issue":  1703,
+                        "route":  "/analytics/overtime-burn-down",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R006",
+                        "issue":  1704,
+                        "route":  "/analytics/team-performance",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R007",
+                        "issue":  1705,
+                        "route":  "/analytics/vacation-trends",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R008",
+                        "issue":  1706,
+                        "route":  "/analytics/work-hours",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R009",
+                        "issue":  1707,
+                        "route":  "/approvals",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R010",
+                        "issue":  1708,
+                        "route":  "/approvals/deputy-decisions/[absenceId]",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R011",
+                        "issue":  1709,
+                        "route":  "/approvals/inbox",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R012",
+                        "issue":  1710,
+                        "route":  "/approvals/review/[organizationId]/[kind]/[id]",
+                        "blockedBy":  [
+                                          1709
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R013",
+                        "issue":  1711,
+                        "route":  "/billing/suspended",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R014",
+                        "issue":  1712,
+                        "route":  "/calendar",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R015",
+                        "issue":  1713,
+                        "route":  "/calendar/[employeeId]",
+                        "blockedBy":  [
+                                          1712
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R016",
+                        "issue":  1714,
+                        "route":  "/compliance",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R017",
+                        "issue":  1715,
+                        "route":  "/driving-licence",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R018",
+                        "issue":  1716,
+                        "route":  "/driving-licence/checks/[employee]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R019",
+                        "issue":  1717,
+                        "route":  "/equipment",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R020",
+                        "issue":  1718,
+                        "route":  "/equipment/assignments/[assignmentId]",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R021",
+                        "issue":  1719,
+                        "route":  "/equipment/employees/[employeeId]",
+                        "blockedBy":  [
+                                          1717
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R022",
+                        "issue":  1821,
+                        "route":  "/forgot-password",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R023",
+                        "issue":  1822,
+                        "route":  "/init",
+                        "blockedBy":  [
+
+                                      ],
+                        "status":  "implementing",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R024",
+                        "issue":  1823,
+                        "route":  "/join/[code]",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R025",
+                        "issue":  1824,
+                        "route":  "/kiosk",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R026",
+                        "issue":  1825,
+                        "route":  "/licenses",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R027",
+                        "issue":  1826,
+                        "route":  "/mfa",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R028",
+                        "issue":  1720,
+                        "route":  "/my-documents",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R029",
+                        "issue":  1721,
+                        "route":  "/my-equipment",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R030",
+                        "issue":  1722,
+                        "route":  "/my-requests",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R031",
+                        "issue":  1723,
+                        "route":  "/notifications",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R032",
+                        "issue":  1827,
+                        "route":  "/onboarding/complete",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R033",
+                        "issue":  1828,
+                        "route":  "/onboarding/notifications",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R034",
+                        "issue":  1829,
+                        "route":  "/onboarding/organization",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R035",
+                        "issue":  1830,
+                        "route":  "/onboarding/profile",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R036",
+                        "issue":  1831,
+                        "route":  "/onboarding/vacation-policy",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R037",
+                        "issue":  1832,
+                        "route":  "/onboarding/welcome",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R038",
+                        "issue":  1833,
+                        "route":  "/onboarding/wellness",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R039",
+                        "issue":  1834,
+                        "route":  "/onboarding/work-schedule",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R040",
+                        "issue":  1835,
+                        "route":  "/onboarding/work-templates",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R041",
+                        "issue":  1724,
+                        "route":  "/organization",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R042",
+                        "issue":  1725,
+                        "route":  "/payroll",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R043",
+                        "issue":  1726,
+                        "route":  "/payroll/work-balances",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R044",
+                        "issue":  1727,
+                        "route":  "/payroll/work-balances/[employeeId]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R045",
+                        "issue":  1728,
+                        "route":  "/personnel-files",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R046",
+                        "issue":  1729,
+                        "route":  "/personnel-files/[employeeId]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R047",
+                        "issue":  1730,
+                        "route":  "/personnel-files/document-requests",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R048",
+                        "issue":  1731,
+                        "route":  "/personnel-files/due-for-deletion",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R049",
+                        "issue":  1732,
+                        "route":  "/personnel-files/payslip-batches",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R050",
+                        "issue":  1733,
+                        "route":  "/personnel-files/payslip-batches/[batchId]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R051",
+                        "issue":  1734,
+                        "route":  "/personnel-files/sick-leave",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R052",
+                        "issue":  1844,
+                        "route":  "/platform-admin",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R053",
+                        "issue":  1845,
+                        "route":  "/platform-admin/analytics",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R054",
+                        "issue":  1846,
+                        "route":  "/platform-admin/billing",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R055",
+                        "issue":  1847,
+                        "route":  "/platform-admin/diagnostics",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R056",
+                        "issue":  1848,
+                        "route":  "/platform-admin/organizations",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R057",
+                        "issue":  1849,
+                        "route":  "/platform-admin/settings",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R058",
+                        "issue":  1850,
+                        "route":  "/platform-admin/system-email-templates",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R059",
+                        "issue":  1851,
+                        "route":  "/platform-admin/users",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R060",
+                        "issue":  1852,
+                        "route":  "/platform-admin/worker-queue",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R061",
+                        "issue":  1735,
+                        "route":  "/reports",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R062",
+                        "issue":  1736,
+                        "route":  "/reports/projects",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R063",
+                        "issue":  1737,
+                        "route":  "/reports/vehicles",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R064",
+                        "issue":  1836,
+                        "route":  "/reset-password",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R065",
+                        "issue":  1738,
+                        "route":  "/scheduling",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R066",
+                        "issue":  1752,
+                        "route":  "/settings",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R068",
+                        "issue":  1753,
+                        "route":  "/settings/approval-policies",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R069",
+                        "issue":  1754,
+                        "route":  "/settings/audit-export",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R071",
+                        "issue":  1755,
+                        "route":  "/settings/avv",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R072",
+                        "issue":  1756,
+                        "route":  "/settings/billable-time",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R073",
+                        "issue":  1757,
+                        "route":  "/settings/billable-time/accounting",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R074",
+                        "issue":  1758,
+                        "route":  "/settings/billable-time/cost-rates",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R075",
+                        "issue":  1759,
+                        "route":  "/settings/billable-time/hand-off",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R076",
+                        "issue":  1760,
+                        "route":  "/settings/billable-time/rates",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R077",
+                        "issue":  1761,
+                        "route":  "/settings/billing",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R078",
+                        "issue":  1762,
+                        "route":  "/settings/calendar",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R080",
+                        "issue":  1763,
+                        "route":  "/settings/clocking",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R082",
+                        "issue":  1764,
+                        "route":  "/settings/closed-months",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R083",
+                        "issue":  1765,
+                        "route":  "/settings/compliance",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R084",
+                        "issue":  1766,
+                        "route":  "/settings/compliance/works-council",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R086",
+                        "issue":  1767,
+                        "route":  "/settings/custom-fields",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R087",
+                        "issue":  1768,
+                        "route":  "/settings/customers",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R088",
+                        "issue":  1769,
+                        "route":  "/settings/demo",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R090",
+                        "issue":  1770,
+                        "route":  "/settings/driving-licence",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R092",
+                        "issue":  1771,
+                        "route":  "/settings/employees",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R093",
+                        "issue":  1772,
+                        "route":  "/settings/employees/[employeeId]",
+                        "blockedBy":  [
+                                          1719,
+                                          1727,
+                                          1729
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R096",
+                        "issue":  1773,
+                        "route":  "/settings/enterprise/api-keys",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R097",
+                        "issue":  1774,
+                        "route":  "/settings/enterprise/api-keys/[keyId]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R100",
+                        "issue":  1775,
+                        "route":  "/settings/enterprise/domains",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R101",
+                        "issue":  1776,
+                        "route":  "/settings/enterprise/email",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R102",
+                        "issue":  1777,
+                        "route":  "/settings/enterprise/identity-setup",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R104",
+                        "issue":  1778,
+                        "route":  "/settings/equipment",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R105",
+                        "issue":  1779,
+                        "route":  "/settings/export",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R106",
+                        "issue":  1780,
+                        "route":  "/settings/export-operations",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R107",
+                        "issue":  1781,
+                        "route":  "/settings/export/history/[organizationId]",
+                        "blockedBy":  [
+                                          1779
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R109",
+                        "issue":  1782,
+                        "route":  "/settings/implementation-checklist",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R110",
+                        "issue":  1783,
+                        "route":  "/settings/import",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R111",
+                        "issue":  1784,
+                        "route":  "/settings/import/[batchId]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R112",
+                        "issue":  1785,
+                        "route":  "/settings/kiosks",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R113",
+                        "issue":  1786,
+                        "route":  "/settings/locations",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R114",
+                        "issue":  1787,
+                        "route":  "/settings/locations/[locationId]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R115",
+                        "issue":  1788,
+                        "route":  "/settings/my-data",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R116",
+                        "issue":  1789,
+                        "route":  "/settings/notification-channels",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R117",
+                        "issue":  1790,
+                        "route":  "/settings/notifications",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R118",
+                        "issue":  1791,
+                        "route":  "/settings/organization",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R120",
+                        "issue":  1792,
+                        "route":  "/settings/payroll-access",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R121",
+                        "issue":  1793,
+                        "route":  "/settings/payroll-export",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R122",
+                        "issue":  1794,
+                        "route":  "/settings/payroll-readiness",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R123",
+                        "issue":  1795,
+                        "route":  "/settings/permissions",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R124",
+                        "issue":  1796,
+                        "route":  "/settings/personnel-files",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R125",
+                        "issue":  1797,
+                        "route":  "/settings/position-capture",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R126",
+                        "issue":  1798,
+                        "route":  "/settings/position-stamps",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R127",
+                        "issue":  1799,
+                        "route":  "/settings/profile",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R128",
+                        "issue":  1800,
+                        "route":  "/settings/projects",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R129",
+                        "issue":  1801,
+                        "route":  "/settings/report-share-links",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R130",
+                        "issue":  1802,
+                        "route":  "/settings/roles",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R131",
+                        "issue":  1803,
+                        "route":  "/settings/scheduled-exports",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R132",
+                        "issue":  1804,
+                        "route":  "/settings/security",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R133",
+                        "issue":  1805,
+                        "route":  "/settings/shifts",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R134",
+                        "issue":  1806,
+                        "route":  "/settings/skills",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R136",
+                        "issue":  1807,
+                        "route":  "/settings/statistics",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R137",
+                        "issue":  1808,
+                        "route":  "/settings/surcharges",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R138",
+                        "issue":  1809,
+                        "route":  "/settings/teams",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R140",
+                        "issue":  1810,
+                        "route":  "/settings/teams/[teamId]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R142",
+                        "issue":  1811,
+                        "route":  "/settings/travel-expenses",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R143",
+                        "issue":  1812,
+                        "route":  "/settings/vacation",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R144",
+                        "issue":  1813,
+                        "route":  "/settings/vacation/employees",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R145",
+                        "issue":  1814,
+                        "route":  "/settings/vacation/employees/[employeeId]",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R147",
+                        "issue":  1815,
+                        "route":  "/settings/vehicles",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R149",
+                        "issue":  1816,
+                        "route":  "/settings/wellness",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R150",
+                        "issue":  1817,
+                        "route":  "/settings/work-categories",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R151",
+                        "issue":  1818,
+                        "route":  "/settings/work-diagnostics",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R152",
+                        "issue":  1819,
+                        "route":  "/settings/work-policies",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R153",
+                        "issue":  1837,
+                        "route":  "/setup",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R154",
+                        "issue":  1838,
+                        "route":  "/share/[token]",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R155",
+                        "issue":  1839,
+                        "route":  "/sign-in",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R156",
+                        "issue":  1840,
+                        "route":  "/sign-up",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R157",
+                        "issue":  1739,
+                        "route":  "/team",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R158",
+                        "issue":  1740,
+                        "route":  "/team/absences",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R159",
+                        "issue":  1741,
+                        "route":  "/team/driving",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R160",
+                        "issue":  1742,
+                        "route":  "/team/period-submissions",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R161",
+                        "issue":  1743,
+                        "route":  "/team/presence",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R162",
+                        "issue":  1744,
+                        "route":  "/team/presence/[locationId]",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R163",
+                        "issue":  1745,
+                        "route":  "/time-tracking",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R164",
+                        "issue":  1746,
+                        "route":  "/today",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R165",
+                        "issue":  1747,
+                        "route":  "/travel-expenses",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R166",
+                        "issue":  1748,
+                        "route":  "/travel-expenses/[claimId]",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R167",
+                        "issue":  1749,
+                        "route":  "/travel-expenses/finance",
+                        "blockedBy":  [
+                                          1853
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R168",
+                        "issue":  1750,
+                        "route":  "/travel-expenses/reports/[reportId]",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R169",
+                        "issue":  1841,
+                        "route":  "/verify-2fa",
+                        "blockedBy":  [
+                                          1695
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R170",
+                        "issue":  1842,
+                        "route":  "/verify-email",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R171",
+                        "issue":  1843,
+                        "route":  "/verify-email-pending",
+                        "blockedBy":  [
+                                          1693
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    },
+                    {
+                        "id":  "R172",
+                        "issue":  1751,
+                        "route":  "/works-council",
+                        "blockedBy":  [
+                                          1694
+                                      ],
+                        "status":  "pending",
+                        "verifiedCommit":  null
+                    }
+                ]
+}
