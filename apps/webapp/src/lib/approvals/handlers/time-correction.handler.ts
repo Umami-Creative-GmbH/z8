@@ -20,7 +20,7 @@ import {
 } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
-import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
@@ -53,9 +53,11 @@ import { buildSLAInfo, fetchApprovals } from "./base-handler";
 /**
  * The handler's decision is a translation (#1676): the caller's one claimed
  * right and the decision go to the time approval decision, and a refusal fails
- * with its original error. The approval inbox calls the decision directly.
+ * with the error the inbox routes translate. The approval inbox calls the
+ * decision directly.
  */
 function decideTimeApprovalThroughHandler(
+	workPeriodId: string,
 	approverId: string,
 	decision: { kind: "approve" } | { kind: "reject"; reason: string },
 	options: ApprovalActionOptions | undefined,
@@ -72,12 +74,10 @@ function decideTimeApprovalThroughHandler(
 			);
 		}
 		const dbService = yield* DatabaseService;
-		const actor = yield* loadCurrentApproverById(dbService, approverId);
-		const refusal = yield* Effect.promise(async () => {
-			const { decideTimeApprovalWithCause } = await import(
-				"@/lib/approvals/server/time-approval-decision"
-			);
-			const { result, cause } = await decideTimeApprovalWithCause({
+		const actor = yield* loadWorkPeriodApprover(dbService, approverId, workPeriodId);
+		const result = yield* dbService.query("approvals.decideTimeApproval", async () => {
+			const { decideTimeApproval } = await import("@/lib/approvals/server/time-approval-decision");
+			return decideTimeApproval({
 				organizationId: actor.organizationId,
 				approvalId,
 				actor: { employeeId: actor.id, userId: actor.userId },
@@ -86,23 +86,35 @@ function decideTimeApprovalThroughHandler(
 				fastLaneGuard: options.shortcutGuard,
 				database: dbService.db,
 			});
-			if (result.status !== "refused") return null;
-			const { inboxErrorOfTimeRefusal } = await import("../inbox/time-approval-decision");
-			// The owners' typed error, translated as the time correction wrapper did.
-			return { error: (await inboxErrorOfTimeRefusal(cause)) as AnyAppError };
 		});
-		if (refusal) return yield* Effect.fail(refusal.error);
+		if (result.status === "refused") {
+			const { inboxErrorOfTimeRefusal } = yield* Effect.promise(
+				() => import("../inbox/time-approval-inbox-decision"),
+			);
+			return yield* Effect.fail(inboxErrorOfTimeRefusal(result));
+		}
 	});
 }
 
-function loadCurrentApproverById(
+/** The active approver, within the organization of the work period decided. */
+function loadWorkPeriodApprover(
 	dbService: ApprovalDbService,
 	approverId: string,
+	workPeriodId: string,
 ) {
 	return dbService
 		.query("getApprovalActor", async () => {
+			const period = await dbService.db.query.workPeriod.findFirst({
+				where: eq(workPeriod.id, workPeriodId),
+				columns: { organizationId: true },
+			});
+			if (!period) return undefined;
 			return await dbService.db.query.employee.findFirst({
-				where: and(eq(employee.id, approverId), eq(employee.isActive, true)),
+				where: and(
+					eq(employee.id, approverId),
+					eq(employee.organizationId, period.organizationId),
+					eq(employee.isActive, true),
+				),
 				with: { user: true },
 			});
 		})
@@ -1248,11 +1260,11 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				} as ApprovalDetail<WorkPeriodWithRelations>;
 			}),
 
-		approve: (_entityId, approverId, options) =>
-			decideTimeApprovalThroughHandler(approverId, { kind: "approve" }, options),
+		approve: (entityId, approverId, options) =>
+			decideTimeApprovalThroughHandler(entityId, approverId, { kind: "approve" }, options),
 
-		reject: (_entityId, approverId, reason, options) =>
-			decideTimeApprovalThroughHandler(approverId, { kind: "reject", reason }, options),
+		reject: (entityId, approverId, reason, options) =>
+			decideTimeApprovalThroughHandler(entityId, approverId, { kind: "reject", reason }, options),
 		calculatePriority: (_entity, createdAt) => {
 			// Priority based on age of request
 			const now = DateTime.now();

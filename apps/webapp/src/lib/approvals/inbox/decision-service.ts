@@ -37,9 +37,8 @@ import { CANONICAL_INBOX_READS } from "./canonical-inbox-reads";
 import { createFastLaneDecisionGuard } from "./fast-lane-decision-guard";
 import {
 	decideInboxTimeApproval,
-	type InboxTimeApprovalDecision,
 	inboxErrorOfTimeRefusal,
-} from "./time-approval-decision";
+} from "./time-approval-inbox-decision";
 import {
 	type ApprovalFastLaneReview,
 	type FastLaneDecisionItem,
@@ -189,15 +188,19 @@ async function decideTimeApprovalInboxItem({
 	action: InboxDecisionAction;
 	reason?: string;
 	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
-} & DecisionVisibilityInput): Promise<InboxTimeApprovalDecision> {
+} & DecisionVisibilityInput): Promise<
+	| { status: "decided"; success: ApprovalInboxDecisionSuccess }
+	/** `error` is what a single decision throws to its route. */
+	| { status: "refused"; failure: ApprovalInboxDecisionFailure; error: unknown }
+> {
 	const refusal = decisionAttemptRefusal({
 		request,
 		actorEmployeeId,
 		action,
 		reason,
 	});
-	if (refusal) return { status: "refused", ...refusal };
-	return decideInboxTimeApproval({
+	if (refusal) return { status: "refused", failure: refusal.failure, error: refusal.cause };
+	const decision = await decideInboxTimeApproval({
 		request,
 		actorEmployeeId,
 		decision:
@@ -207,6 +210,13 @@ async function decideTimeApprovalInboxItem({
 		...visibility,
 		fastLaneGuard: shortcutGuard,
 	});
+	return decision.status === "decided"
+		? decision
+		: {
+				status: "refused",
+				failure: decision.failure,
+				error: inboxErrorOfTimeRefusal(decision.refusal),
+			};
 }
 
 /** A single time approval decision: a refusal throws, translated for the route. */
@@ -214,7 +224,7 @@ async function decideSingleTimeApprovalInboxItem(
 	input: Parameters<typeof decideTimeApprovalInboxItem>[0],
 ): Promise<ApprovalInboxDecisionSuccess> {
 	const decision = await decideTimeApprovalInboxItem(input);
-	if (decision.status === "refused") throw await inboxErrorOfTimeRefusal(decision.cause);
+	if (decision.status === "refused") throw decision.error;
 	return decision.success;
 }
 

@@ -200,7 +200,7 @@ import {
 	timeApprovalDecisionDbService,
 	timeApprovalDecisionRuntime,
 	timeApprovalReceiptOf,
-} from "./time-approval-decision-support";
+} from "./time-approval-decision/support";
 import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
 import { isBoundTimeDecisionSignal } from "./work-period-approvals";
 

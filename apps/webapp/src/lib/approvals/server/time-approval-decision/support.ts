@@ -10,28 +10,28 @@ import "server-only";
 import { Effect } from "effect";
 import type { Clock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import type { DecisionRight } from "../decision-right";
-import { loadCover } from "../deputy/covering-store";
+import type { DecisionRight } from "../../decision-right";
+import { loadCover } from "../../deputy/covering-store";
 import {
 	ApprovalAssignmentReassignedError,
 	eligibleManagerFallbackAllowed,
-} from "../escalation/decision-authority";
-import { ApprovalEvidenceError } from "../evidence/errors";
-import { eligibleManagerRight } from "../policies/eligible-manager-right";
-import type { ApprovalWorkflowDatabase } from "../workflow/repository";
-import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
-import { holdsApprovalManagement } from "./approval-management";
-import type { BoundTimeInvocationOutcome } from "./bound-time-invocation";
+} from "../../escalation/decision-authority";
+import { ApprovalEvidenceError } from "../../evidence/errors";
+import { eligibleManagerRight } from "../../policies/eligible-manager-right";
+import type { ApprovalWorkflowDatabase } from "../../workflow/repository";
+import { createProductionApprovalWorkflowRuntime } from "../../workflow/runtime";
+import { holdsApprovalManagement } from "../approval-management";
+import type { BoundTimeInvocationOutcome } from "../bound-time-invocation";
 import type {
 	TimeApprovalDecisionInput,
 	TimeApprovalDecisionReceipt,
-} from "./time-approval-decision";
+} from "./decision";
 import {
 	deleteCancelledTimeCorrectionsInTransaction,
 	finalizeTimeCorrectionTerminalInTransaction,
-} from "./time-correction-approvals";
-import type { ApprovalDatabase, ApprovalDbService } from "./types";
-import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
+} from "../time-correction-approvals";
+import type { ApprovalDatabase, ApprovalDbService } from "../types";
+import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "../work-period-approvals";
 
 const logger = createLogger("TimeApprovalDecision");
 

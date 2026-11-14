@@ -5,24 +5,23 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ApprovalDbService } from "../server/types";
 
 const decisionMocks = vi.hoisted(() => ({
-	decide: vi.fn(async () => ({
-		result: {
-			status: "decided",
-			kind: "time_correction",
-			workPeriodId: "period-1",
-			outcome: "approved",
-			replayed: false,
-		},
+	decide: vi.fn(async (): Promise<unknown> => ({
+		status: "decided",
+		kind: "time_correction",
+		workPeriodId: "period-1",
+		outcome: "approved",
+		replayed: false,
 	})),
+	routeError: { _tag: "ConflictError", message: "route error" },
 }));
 
 vi.mock("@/lib/approvals/server/time-approval-decision", () => ({
-	decideTimeApprovalWithCause: decisionMocks.decide,
+	decideTimeApproval: decisionMocks.decide,
 }));
 
 // The route translation of a refusal is the inbox adapter's; tested there.
-vi.mock("@/lib/approvals/inbox/time-approval-decision", () => ({
-	inboxErrorOfTimeRefusal: async (cause: unknown) => cause,
+vi.mock("@/lib/approvals/inbox/time-approval-inbox-decision", () => ({
+	inboxErrorOfTimeRefusal: () => decisionMocks.routeError,
 }));
 
 import {
@@ -39,7 +38,7 @@ const source = readFileSync(
 
 function handlerSection() {
 	const start = source.indexOf("getDetail: (entityId");
-	const end = source.indexOf("approve: (_entityId", start);
+	const end = source.indexOf("approve: (entityId", start);
 
 	expect(start).toBeGreaterThanOrEqual(0);
 	expect(end).toBeGreaterThan(start);
@@ -1532,12 +1531,8 @@ describe("superseded correction history regression", () => {
 			});
 		});
 
-		it("fails with a refusal's original error", async () => {
-			const refusal = new Error("Approval request is already approved");
-			decisionMocks.decide.mockResolvedValueOnce({
-				result: { status: "refused", reason: "already_decided" },
-				cause: refusal,
-			});
+		it("fails a refusal with the error the inbox routes translate", async () => {
+			decisionMocks.decide.mockResolvedValueOnce({ status: "refused", reason: "already_decided" });
 			const { dbService } = createSupersededHistoryDbService();
 
 			const exit = await Effect.runPromiseExit(
@@ -1547,7 +1542,7 @@ describe("superseded correction history regression", () => {
 				}).pipe(Effect.provideService(DatabaseService, dbService)),
 			);
 
-			expect(exit).toEqual(Exit.fail(refusal));
+			expect(exit).toEqual(Exit.fail(decisionMocks.routeError));
 		});
 
 		it("claims no right on the caller's behalf", async () => {

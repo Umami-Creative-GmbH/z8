@@ -152,7 +152,7 @@ import {
 	timeApprovalDecisionDbService,
 	timeApprovalDecisionRuntime,
 	timeApprovalReceiptOf,
-} from "./time-approval-decision-support";
+} from "./time-approval-decision/support";
 import { TimeApprovalKindChanged } from "./time-approval-kind-changed";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 

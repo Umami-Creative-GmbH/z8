@@ -1,37 +1,82 @@
 import { describe, expect, it } from "vitest";
-import { ConflictError, MonthClosedError } from "@/lib/effect/errors";
-import { ApprovalAssignmentReassignedError } from "../escalation/decision-authority";
-import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	inboxDecisionRight,
 	inboxErrorOfTimeRefusal,
 	inboxFailureOfTimeRefusal,
-} from "./time-approval-decision";
+} from "./time-approval-inbox-decision";
 
-// The first translation loads the time correction owner module.
-describe("inboxErrorOfTimeRefusal", { timeout: 30_000 }, () => {
-	it("gives the route a reassigned conflict for an escalation replacement", async () => {
-		await expect(
-			inboxErrorOfTimeRefusal(new ApprovalAssignmentReassignedError()),
-		).resolves.toMatchObject({ _tag: "ConflictError", conflictType: "approval_reassigned" });
-	});
-
-	it("gives the route the evidence conflict with its code", async () => {
-		await expect(
-			inboxErrorOfTimeRefusal(new ApprovalEvidenceError("material_change")),
-		).resolves.toMatchObject({
+describe("inboxErrorOfTimeRefusal", () => {
+	it("gives the route a reassigned conflict for an escalation replacement", () => {
+		expect(inboxErrorOfTimeRefusal({ reason: "reassigned" })).toMatchObject({
 			_tag: "ConflictError",
-			conflictType: "approval_evidence",
-			details: { code: "material_change" },
+			conflictType: "approval_reassigned",
 		});
 	});
 
-	it("passes an already typed refusal through", async () => {
-		const occupied = new ConflictError({
-			message: "occupied",
+	it.each(["material_change", "evidence_incomplete"] as const)(
+		"gives the route the evidence conflict with its code %s",
+		(code) => {
+			expect(
+				inboxErrorOfTimeRefusal({
+					reason: code === "material_change" ? "changed" : "evidence_required",
+					detail: { kind: "evidence", code },
+				}),
+			).toMatchObject({
+				_tag: "ConflictError",
+				conflictType: "approval_evidence",
+				details: { code },
+			});
+		},
+	);
+
+	it("gives the route the overlaps of an occupied interval", () => {
+		const overlaps = [
+			{
+				kind: "work_period" as const,
+				id: "wp-1",
+				startAt: "2026-07-22T10:15:00Z",
+				endAt: "2026-07-22T10:45:00Z",
+			},
+		];
+		expect(
+			inboxErrorOfTimeRefusal({ reason: "changed", detail: { kind: "work_overlap", overlaps } }),
+		).toMatchObject({
+			_tag: "ConflictError",
 			conflictType: "work_interval_occupied",
+			details: { overlaps },
 		});
-		await expect(inboxErrorOfTimeRefusal(occupied)).resolves.toBe(occupied);
+	});
+
+	it.each([
+		["not_found", "NotFoundError"],
+		["already_decided", "ConflictError"],
+		["right_not_held", "AuthorizationError"],
+		["own_request", "AuthorizationError"],
+		["changed", "ConflictError"],
+		["evidence_required", "ConflictError"],
+		["unclassified", "ValidationError"],
+		["guard_failed", "ConflictError"],
+	] as const)("gives the route the %s refusal as a %s", (reason, tag) => {
+		expect(inboxErrorOfTimeRefusal({ reason })).toMatchObject({ _tag: tag });
+	});
+
+	it("words a deputy's four-eyes refusal as such", () => {
+		expect(
+			inboxErrorOfTimeRefusal({ reason: "right_not_held", detail: { kind: "deputy_four_eyes" } }),
+		).toMatchObject({
+			_tag: "AuthorizationError",
+			message:
+				"You already decided an earlier stage of this request, so you cannot decide it as a deputy",
+		});
+	});
+
+	it("names the closed month", () => {
+		expect(
+			inboxErrorOfTimeRefusal({
+				reason: "month_closed",
+				detail: { kind: "month_closed", month: "2026-07" },
+			}),
+		).toMatchObject({ _tag: "MonthClosedError", month: "2026-07" });
 	});
 });
 
@@ -51,14 +96,15 @@ describe("inboxFailureOfTimeRefusal", () => {
 		["not_admitted", "stale"],
 		["invocation_conflict", "stale"],
 	] as const)("maps the refusal %s to the inbox failure %s", async (reason, code) => {
-		await expect(inboxFailureOfTimeRefusal("approval-1", reason, undefined)).resolves.toMatchObject(
-			{ id: "approval-1", code },
-		);
+		await expect(inboxFailureOfTimeRefusal("approval-1", { reason })).resolves.toMatchObject({
+			id: "approval-1",
+			code,
+		});
 	});
 
 	it("keeps the fast-lane wording for a changed fast-lane assessment", async () => {
 		await expect(
-			inboxFailureOfTimeRefusal("approval-1", "guard_failed", undefined),
+			inboxFailureOfTimeRefusal("approval-1", { reason: "guard_failed" }),
 		).resolves.toEqual({
 			id: "approval-1",
 			code: "stale",
@@ -66,16 +112,28 @@ describe("inboxFailureOfTimeRefusal", () => {
 		});
 	});
 
+	it("words a bulk deputy's four-eyes refusal as such, not as a missing right", async () => {
+		await expect(
+			inboxFailureOfTimeRefusal("approval-1", {
+				reason: "right_not_held",
+				detail: { kind: "deputy_four_eyes" },
+			}),
+		).resolves.toEqual({
+			id: "approval-1",
+			code: "forbidden",
+			message:
+				"You already decided an earlier stage of this request, so you cannot decide it as a deputy",
+		});
+	});
+
 	it("names the closed month", async () => {
-		const failure = await inboxFailureOfTimeRefusal(
-			"approval-1",
-			"month_closed",
-			new MonthClosedError({ message: "closed", month: "2026-07" }),
-		);
+		const failure = await inboxFailureOfTimeRefusal("approval-1", {
+			reason: "month_closed",
+			detail: { kind: "month_closed", month: "2026-07" },
+		});
 		expect(failure.message).toContain("July 2026");
 	});
 });
-
 const request = {
 	approverId: "approver-1",
 	requesterEmployeeId: "requester-1",

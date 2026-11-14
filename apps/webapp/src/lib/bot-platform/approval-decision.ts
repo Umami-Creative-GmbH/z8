@@ -58,14 +58,6 @@ export type BotApprovalAttemptResult =
 export async function attemptBotApproval(
 	input: BotApprovalAttemptInput,
 ): Promise<BotApprovalAttemptResult> {
-	const approval = await db.query.approvalRequest.findFirst({
-		where: and(
-			eq(approvalRequest.id, input.approvalId),
-			eq(approvalRequest.organizationId, input.organizationId),
-		),
-		columns: { id: true, approverId: true, entityType: true },
-	});
-	if (!approval) return { status: "not_found" };
 	const actor = await db.query.employee.findFirst({
 		where: and(
 			eq(employee.id, input.actorEmployeeId),
@@ -74,8 +66,57 @@ export async function attemptBotApproval(
 		),
 		columns: { id: true, userId: true },
 	});
-	if (!actor || approval.approverId !== actor.id)
-		return { status: "unauthorized" };
+	if (actor) {
+		// The decision loads and classifies the target itself, once; with
+		// `replayOnly` it never falls through to a fresh decision, and it refuses
+		// a time correction outright.
+		const result = await decideTimeApproval({
+			organizationId: input.organizationId,
+			approvalId: input.approvalId,
+			actor: { employeeId: actor.id, userId: actor.userId },
+			right: { as: "approver" },
+			decision:
+				input.action === "approve"
+					? { kind: "approve" }
+					: {
+							kind: "reject",
+							reason: `Rejected via ${platformNames[input.platform]}`,
+						},
+			replayOnly: true,
+		});
+		if (result.status === "decided") return { status: "historical", action: input.action };
+		switch (result.reason) {
+			case "not_found":
+				// Not a time approval, or not one this actor can be found for.
+				break;
+			case "right_not_held":
+			case "reassigned":
+			case "own_request":
+				return { status: "unauthorized" };
+			default:
+				return { status: "review_required" };
+		}
+	}
+	return otherApprovalAttempt(input, actor);
+}
+
+/**
+ * An old card for an approval the time approval decision did not find, such
+ * as another kind: its approver is sent to review it, anyone else is refused.
+ */
+async function otherApprovalAttempt(
+	input: BotApprovalAttemptInput,
+	actor: { id: string; userId: string } | undefined,
+): Promise<BotApprovalAttemptResult> {
+	const approval = await db.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.id, input.approvalId),
+			eq(approvalRequest.organizationId, input.organizationId),
+		),
+		columns: { approverId: true },
+	});
+	if (!approval) return { status: "not_found" };
+	if (!actor || approval.approverId !== actor.id) return { status: "unauthorized" };
 	const membership = await db.query.member.findFirst({
 		where: and(
 			eq(member.userId, actor.userId),
@@ -83,28 +124,7 @@ export async function attemptBotApproval(
 		),
 		columns: { id: true },
 	});
-	if (!membership) return { status: "unauthorized" };
-	if (approval.entityType !== "time_entry") return { status: "review_required" };
-	// The decision reloads the target under its guards and classifies it; with
-	// `replayOnly` it never falls through to a fresh decision, and it refuses a
-	// time correction outright.
-	const result = await decideTimeApproval({
-		organizationId: input.organizationId,
-		approvalId: approval.id,
-		actor: { employeeId: actor.id, userId: actor.userId },
-		right: { as: "approver" },
-		decision:
-			input.action === "approve"
-				? { kind: "approve" }
-				: {
-						kind: "reject",
-						reason: `Rejected via ${platformNames[input.platform]}`,
-					},
-		replayOnly: true,
-	});
-	return result.status === "decided"
-		? { status: "historical", action: input.action }
-		: { status: "review_required" };
+	return membership ? { status: "review_required" } : { status: "unauthorized" };
 }
 
 /**

@@ -95,7 +95,11 @@ export function decideDeputyRight(input: {
 	};
 }
 
-const FOUR_EYES_REFUSAL =
+/** The typed refusal of a deputy who already decided an earlier stage. */
+export const DEPUTY_FOUR_EYES_REFUSAL = "deputy_four_eyes";
+
+/** The four-eyes refusal's words, safe to show as is. */
+export const FOUR_EYES_REFUSAL =
 	"You already decided an earlier stage of this request, so you cannot decide it as a deputy";
 const NOT_AUTHORIZED = "You are not authorized to decide this request";
 
@@ -113,6 +117,7 @@ export function deputyDecisionRefusalError(
 		userId: input.actorEmployeeId,
 		resource: input.resource,
 		action: input.action,
+		refusal: reason === "four_eyes" ? DEPUTY_FOUR_EYES_REFUSAL : "deputy_not_covering",
 	});
 }
 

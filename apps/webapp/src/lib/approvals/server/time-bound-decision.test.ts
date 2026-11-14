@@ -154,6 +154,16 @@ describe("legacy time card adapter", () => {
 		expect(await press()).toEqual(outcome);
 	});
 
+	it("shows work the evidence found changed since submission as a material change", async () => {
+		mocks.decideTimeApproval.mockResolvedValue({
+			status: "refused",
+			reason: "changed",
+			detail: { kind: "evidence", code: "material_change" },
+		});
+
+		expect(await press()).toEqual({ status: "review_required", reason: "material_change" });
+	});
+
 	it("returns an exact committed invocation without deciding again", async () => {
 		mocks.findCommittedInvocationDecision.mockResolvedValue(legacyEvidence);
 

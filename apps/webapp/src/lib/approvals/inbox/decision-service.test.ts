@@ -32,7 +32,7 @@ const {
 }));
 
 vi.mock("@/lib/approvals/server/time-approval-decision", () => ({
-	decideTimeApprovalWithCause: decideTimeApprovalMock,
+	decideTimeApproval: decideTimeApprovalMock,
 }));
 
 vi.mock("@/lib/approvals/inbox/ordinary-canonical-read", () => ({
@@ -173,13 +173,11 @@ describe("approval inbox decision service", () => {
 		loadOrdinaryCanonicalApprovalsMock.mockReset().mockResolvedValue([]);
 		employeeFindFirstMock.mockReset().mockResolvedValue({ userId: "user-1" });
 		decideTimeApprovalMock.mockReset().mockResolvedValue({
-			result: {
-				status: "decided",
-				kind: "time_correction",
-				workPeriodId: "work-period-1",
-				outcome: "approved",
-				replayed: false,
-			},
+			status: "decided",
+			kind: "time_correction",
+			workPeriodId: "work-period-1",
+			outcome: "approved",
+			replayed: false,
 		});
 	});
 
@@ -1601,9 +1599,10 @@ describe("approval inbox decision service", () => {
 			status: "pending",
 			metadata: { timeRequest: { kind: "manual_time_submission" } },
 		};
-		const refusal = (reason: string, cause: unknown) => ({
-			result: { status: "refused", reason },
-			cause,
+		const refusal = (reason: string, detail?: unknown) => ({
+			status: "refused",
+			reason,
+			...(detail ? { detail } : {}),
 		});
 
 		it.each([
@@ -1737,7 +1736,7 @@ describe("approval inbox decision service", () => {
 		});
 
 		it("fails a bulk item whose fast-lane guard refused it as stale", async () => {
-			decideTimeApprovalMock.mockResolvedValue(refusal("guard_failed", new Error("guard")));
+			decideTimeApprovalMock.mockResolvedValue(refusal("guard_failed"));
 
 			const result = await bulkDecideApprovalInboxItemsFromRequests({
 				requests: [timeRequest],
@@ -1758,13 +1757,8 @@ describe("approval inbox decision service", () => {
 			});
 		});
 
-		it("maps a bulk refusal by its reason, never by the cause's words", async () => {
-			decideTimeApprovalMock.mockResolvedValue(
-				refusal(
-					"right_not_held",
-					new ConflictError({ message: "already processed", conflictType: "approval_status" }),
-				),
-			);
+		it("maps a bulk refusal by its reason", async () => {
+			decideTimeApprovalMock.mockResolvedValue(refusal("right_not_held"));
 
 			const result = await bulkDecideApprovalInboxItemsFromRequests({
 				requests: [timeRequest],
@@ -1796,12 +1790,34 @@ describe("approval inbox decision service", () => {
 			expect(decideTimeApprovalMock).not.toHaveBeenCalled();
 		});
 
-		it("throws a single refusal's original error for the route to translate", async () => {
-			const occupied = new ConflictError({
-				message: "occupied",
-				conflictType: "work_interval_occupied",
+		it("fails a bulk deputy's four-eyes refusal with its own words", async () => {
+			decideTimeApprovalMock.mockResolvedValue(
+				refusal("right_not_held", { kind: "deputy_four_eyes" }),
+			);
+
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [timeRequest],
+				actorEmployeeId: "manager-1",
+				action: "approve",
 			});
-			decideTimeApprovalMock.mockResolvedValue(refusal("changed", occupied));
+
+			expect(result.failed).toEqual([
+				{
+					id: "time-request-1",
+					code: "forbidden",
+					message:
+						"You already decided an earlier stage of this request, so you cannot decide it as a deputy",
+				},
+			]);
+		});
+
+		it("throws a single refusal as the conflict its route translates, with its overlaps", async () => {
+			const overlaps = [
+				{ kind: "work_period", id: "wp-2", startAt: "2026-07-22T10:15:00Z", endAt: null },
+			];
+			decideTimeApprovalMock.mockResolvedValue(
+				refusal("changed", { kind: "work_overlap", overlaps }),
+			);
 			approvalRequestFindFirstMock.mockResolvedValue(persistedTimeRequest);
 			workPeriodFindFirstMock.mockResolvedValue({
 				pendingChanges: { isManualEntry: true },
@@ -1815,7 +1831,11 @@ describe("approval inbox decision service", () => {
 					actorEmployeeId: "manager-1",
 					organizationId: "org-1",
 				}),
-			).rejects.toBe(occupied);
+			).rejects.toMatchObject({
+				_tag: "ConflictError",
+				conflictType: "work_interval_occupied",
+				details: { overlaps },
+			});
 		});
 	});
 });
