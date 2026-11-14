@@ -1578,7 +1578,8 @@ describe("approval inbox decision service", () => {
 		},
 	);
 
-	describe("time approvals (#1676)", () => {
+	// A single refusal's translation loads the time correction owner module.
+	describe("time approvals (#1676)", { timeout: 30_000 }, () => {
 		const timeRequest = {
 			id: "time-request-1",
 			targetType: "compatibility_request" as const,

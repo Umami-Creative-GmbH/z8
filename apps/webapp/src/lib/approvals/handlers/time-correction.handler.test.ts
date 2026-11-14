@@ -20,6 +20,11 @@ vi.mock("@/lib/approvals/server/time-approval-decision", () => ({
 	decideTimeApprovalWithCause: decisionMocks.decide,
 }));
 
+// The route translation of a refusal is the inbox adapter's; tested there.
+vi.mock("@/lib/approvals/inbox/time-approval-decision", () => ({
+	inboxErrorOfTimeRefusal: async (cause: unknown) => cause,
+}));
+
 import {
 	buildPendingCorrectionReview,
 	buildTimeApprovalReview,

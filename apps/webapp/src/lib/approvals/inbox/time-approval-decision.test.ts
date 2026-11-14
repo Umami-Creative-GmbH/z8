@@ -8,7 +8,8 @@ import {
 	inboxFailureOfTimeRefusal,
 } from "./time-approval-decision";
 
-describe("inboxErrorOfTimeRefusal", () => {
+// The first translation loads the time correction owner module.
+describe("inboxErrorOfTimeRefusal", { timeout: 30_000 }, () => {
 	it("gives the route a reassigned conflict for an escalation replacement", async () => {
 		await expect(
 			inboxErrorOfTimeRefusal(new ApprovalAssignmentReassignedError()),
