@@ -1,0 +1,27 @@
+{
+  "unit": {
+    "command": "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/ui/action-panel.test.tsx src/components/ui/alert-dialog.test.tsx src/components/ui/dialog.test.tsx src/components/ui/sheet.test.tsx src/components/ui/tanstack-form.test.tsx src/components/ui/form-control-wrappers.test.tsx src/components/settings/location-dialog.test.tsx src/components/calendar/delete-work-period-dialog.test.tsx src/components/calendar/calendar-view.test.tsx src/components/calendar/work-period-edit-dialog.test.tsx src/components/providers/view-refresh-provider.test.tsx 'src/app/[locale]/(app)/approvals/inbox/components/receipt-exception-acceptance.test.tsx' src/components/scheduling/scheduler/__tests__/publish-compliance-dialog-state.test.ts src/tolgee/extracted-key-defaults.test.ts src/components/data-table-server/data-table.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx src/components/data-table-server/data-table-pagination.test.tsx src/components/accept-invitation-form.test.tsx src/components/auth-form-wrapper.test.tsx src/components/site-header.test.tsx src/lib/navigation/route-metadata.test.ts",
+    "suites": 21,
+    "tests": 170,
+    "passed": true
+  },
+  "typecheck": {
+    "command": "CI=true pnpm --filter webapp typecheck",
+    "passed": true,
+    "projects": ["route generation", "application", "workflow-contracts", "smoke"]
+  },
+  "biome": { "changedTsTsxFiles": 9, "passed": true, "warnings": 0 },
+  "doctor": {
+    "command": "pnpm exec react-doctor apps/webapp --scope changed --base 382b8f5be837dad724d3a54274d3050b0104881f --include-untracked --no-supply-chain --no-telemetry --max-duration 90 --verbose",
+    "scannedFiles": 9,
+    "errors": 0,
+    "warnings": 1,
+    "rule": "react-doctor/tanstack-form-on-submit-requires-prevent-default",
+    "file": "src/components/calendar/delete-work-period-dialog.tsx",
+    "review": "False positive, high confidence: the handler prevents default and stops propagation before its guard. The real portal-isolation and native re-entry regressions pass; live form actions preserve the route. No suppression or configuration change.",
+    "numericScoreClaimed": false,
+    "supplyChainScanned": false
+  },
+  "runtime": { "mainAssertions": 33, "supplementaryReactResizeMotionAssertions": 4, "managerRequestReadBack": true, "nativeReactDevToolsPassed": false },
+  "fullStaticGenerationPassed": false
+}
