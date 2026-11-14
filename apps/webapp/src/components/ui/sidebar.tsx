@@ -217,6 +217,11 @@ function Sidebar({
 		return (
 			<Sheet onOpenChange={setOpenMobile} open={openMobile} {...props}>
 				<SheetContent
+					finalFocus={() =>
+						document.querySelector<HTMLButtonElement>(
+							'[data-sidebar="trigger"]',
+						)
+					}
 					className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
 					data-mobile="true"
 					data-sidebar="sidebar"
@@ -308,10 +313,11 @@ function SidebarTrigger({
 	...props
 }: React.ComponentProps<typeof Button>) {
 	const { t } = useTranslate();
-	const { toggleSidebar } = useSidebar();
+	const { toggleSidebar, isMobile, openMobile, open } = useSidebar();
 
 	return (
 		<Button
+			aria-expanded={isMobile ? openMobile : open}
 			className={cn("size-7", className)}
 			data-sidebar="trigger"
 			data-slot="sidebar-trigger"

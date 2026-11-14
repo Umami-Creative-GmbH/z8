@@ -16,6 +16,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { DashboardScope } from "./dashboard-types";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
 import { loadTrackedQuickStats } from "./quick-stats-tracking";
@@ -73,6 +74,27 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 			);
 
 		const now = currentTimestamp();
+		const balanceRead = yield* dbService
+			.query("dashboard.workBalance", () =>
+				getEmployeeWorkBalance(
+					{ organizationId, employeeId: currentEmployee.id },
+					dbService.db,
+				),
+			)
+			.pipe(
+				Effect.map((balance) => ({ balance, unavailable: false })),
+				Effect.catch(() =>
+					Effect.succeed({ balance: null, unavailable: true }),
+				),
+			);
+		const balance = balanceRead.balance;
+		const workBalanceUnavailable = balanceRead.unavailable;
+		const workBalance = balance
+			? {
+					balanceMinutes: balance.balanceMinutes,
+					computedAt: balance.computedAt.toISOString(),
+				}
+			: null;
 		const weekStartDay = yield* Effect.promise(() =>
 			getUserWeekStartDay(userId),
 		);
@@ -82,7 +104,8 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 			now,
 			weekStartDay,
 		});
-		if (trackedStats) return trackedStats;
+		if (trackedStats)
+			return { ...trackedStats, workBalance, workBalanceUnavailable };
 		const nowDT = DateTime.fromJSDate(now);
 		const { start: weekStartDateTime, end: weekEndDateTime } = getWeekBounds(
 			nowDT,
@@ -233,6 +256,8 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 		});
 
 		return {
+			workBalance,
+			workBalanceUnavailable,
 			thisWeek: {
 				actual: weekActual,
 				expected: weekExpected,

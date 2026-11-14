@@ -2,20 +2,21 @@
 
 import {
 	IconArrowRight,
-	IconBriefcase,
 	IconUserCheck,
 	IconUsers,
 	IconUsersGroup,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { EmployeeActivityText } from "@/components/employee-activity-text";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import type { ManagedEmployee } from "@/lib/effect/services/manager.service";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
-import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
+import type {
+	DashboardWidgetData,
+	DashboardWidgetSnapshot,
+} from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
@@ -30,54 +31,74 @@ type ManagedEmployeeCard = ManagedEmployee & {
 	breakStartedZone?: string | null;
 };
 
-function EmployeeCard({ employee }: { employee: ManagedEmployeeCard }) {
+function EmployeeRow({ employee }: { employee: ManagedEmployeeCard }) {
+	const { t } = useTranslate();
+	const status =
+		employee.clockStatus === "clocked-in"
+			? t("presence.clockedIn", "Clocked in")
+			: employee.clockStatus === "on-break"
+				? t("presence.onBreak", "On break")
+				: employee.clockStatus === "clocked-out"
+					? t("presence.clockedOut", "Clocked out")
+					: t("common.unknown", "Unknown");
+	const activity = (
+		<EmployeeActivityText
+			lastActivityAt={employee.lastActivityAt ?? null}
+			lastActivityUtcOffsetMinutes={
+				employee.lastActivityUtcOffsetMinutes ?? null
+			}
+			breakStartedAt={employee.breakStartedAt}
+			breakStartedZone={employee.breakStartedZone}
+		/>
+	);
 	return (
-		<Link
-			href={`/settings/employees/${employee.id}`}
-			className="group/employee flex items-center gap-3 rounded-xl border bg-card p-3 transition-[border-color,box-shadow] hover:shadow-md hover:border-primary/20"
-		>
-			{/* Avatar */}
-			<UserAvatar
-				image={employee.user.image}
-				seed={employee.user.id}
-				name={employee.user.name}
-				clockStatus={employee.clockStatus ?? "unknown"}
-				size="md"
-			/>
-
-			{/* Info */}
-			<div className="flex-1 min-w-0">
-				<div className="font-medium text-sm truncate group-hover/employee:text-primary transition-colors">
-					{employee.user.name}
-				</div>
-				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-					{employee.position ? (
-						<>
-							<IconBriefcase className="size-3" />
-							<span className="truncate">{employee.position}</span>
-						</>
-					) : (
-						<span className="truncate">{employee.user.email}</span>
-					)}
-				</div>
-				<EmployeeActivityText
-					lastActivityAt={employee.lastActivityAt ?? null}
-					lastActivityUtcOffsetMinutes={employee.lastActivityUtcOffsetMinutes ?? null}
-					breakStartedAt={employee.breakStartedAt}
-					breakStartedZone={employee.breakStartedZone}
-				/>
-			</div>
-
-			{/* Team Badge */}
-			{employee.team && (
-				<Badge variant="secondary" className="shrink-0 text-xs">
-					{employee.team.name}
-				</Badge>
-			)}
-
-			{/* Arrow */}
-			<IconArrowRight className="size-4 text-muted-foreground opacity-0 transition-[opacity,translate] group-hover/employee:opacity-100 group-hover/employee:translate-x-1" />
-		</Link>
+		<tr className="border-b last:border-b-0">
+			<td className="py-3 pr-3 align-top">
+				<Link
+					href={`/settings/employees/${employee.id}`}
+					className="group/employee flex min-h-11 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-ring"
+				>
+					<UserAvatar
+						image={employee.user.image}
+						seed={employee.user.id}
+						name={employee.user.name}
+						clockStatus={employee.clockStatus ?? "unknown"}
+						size="md"
+					/>
+					<div className="min-w-0 flex-1">
+						<div className="font-medium text-sm break-words group-hover/employee:text-primary transition-colors">
+							{employee.user.name}
+						</div>
+						<p className="text-sm text-muted-foreground break-all">
+							{employee.user.email}
+						</p>
+						{employee.position ? (
+							<p className="text-sm text-muted-foreground">
+								{employee.position}
+							</p>
+						) : null}
+						<div className="mt-1 space-y-1 text-sm text-muted-foreground sm:hidden">
+							{employee.team ? <p>{employee.team.name}</p> : null}
+							<p>{status}</p>
+							{activity}
+						</div>
+					</div>
+					<IconArrowRight
+						aria-hidden="true"
+						className="size-4 shrink-0 text-muted-foreground opacity-0 transition-[opacity,translate] group-hover/employee:opacity-100 group-hover/employee:translate-x-1 group-focus-visible/employee:opacity-100"
+					/>
+				</Link>
+			</td>
+			<td className="hidden px-3 py-3 align-middle text-sm text-muted-foreground sm:table-cell">
+				{employee.team?.name ?? "?"}
+			</td>
+			<td className="hidden px-3 py-3 align-middle text-sm text-muted-foreground sm:table-cell">
+				{status}
+			</td>
+			<td className="hidden py-3 pl-3 align-middle sm:table-cell">
+				{activity}
+			</td>
+		</tr>
 	);
 }
 
@@ -86,14 +107,14 @@ function EmptyState() {
 	return (
 		<div className="flex flex-col items-center justify-center py-8 text-center">
 			<div className="relative">
-				<div className="rounded-full bg-gradient-to-br from-slate-100 to-slate-200 p-4 dark:from-slate-800 dark:to-slate-900">
-					<IconUsersGroup className="size-8 text-slate-500" />
+				<div className="rounded-lg bg-muted p-2">
+					<IconUsersGroup className="size-5 text-muted-foreground" />
 				</div>
 			</div>
 			<p className="mt-4 text-sm font-medium">
 				{t("dashboard.managed-employees.no-reports", "No direct reports yet")}
 			</p>
-			<p className="mt-1 text-xs text-muted-foreground">
+			<p className="mt-1 text-sm text-muted-foreground">
 				{t(
 					"dashboard.managed-employees.no-reports-description",
 					"You'll see your team members here once assigned",
@@ -106,10 +127,15 @@ function EmptyState() {
 export function ManagedEmployeesWidget({
 	initialSnapshot,
 }: {
-	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["managed-employees"]>;
+	initialSnapshot?: DashboardWidgetSnapshot<
+		DashboardWidgetData["managed-employees"]
+	>;
 } = {}) {
 	const { t } = useTranslate();
-	const managedEmployeesQuery = useDashboardWidget("managed-employees", initialSnapshot);
+	const managedEmployeesQuery = useDashboardWidget(
+		"managed-employees",
+		initialSnapshot,
+	);
 	const employees = managedEmployeesQuery.data?.employees ?? [];
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
@@ -121,7 +147,8 @@ export function ManagedEmployeesWidget({
 			...employee,
 			clockStatus: presence.getStatus(employee.id),
 			lastActivityAt: activity?.lastActivityAt ?? null,
-			lastActivityUtcOffsetMinutes: activity?.lastActivityUtcOffsetMinutes ?? null,
+			lastActivityUtcOffsetMinutes:
+				activity?.lastActivityUtcOffsetMinutes ?? null,
 			...presence.getBreak(employee.id),
 		};
 	});
@@ -141,10 +168,17 @@ export function ManagedEmployeesWidget({
 				title={t("dashboard.managed-employees.title", "Your Team")}
 				description={
 					employees.length > 0
-						? t("dashboard.managed-employees.direct-reports", "{count} direct reports", {
-								count: employees.length,
-							})
-						: t("dashboard.managed-employees.people-you-manage", "People you manage")
+						? t(
+								"dashboard.managed-employees.direct-reports",
+								"{count} direct reports",
+								{
+									count: employees.length,
+								},
+							)
+						: t(
+								"dashboard.managed-employees.people-you-manage",
+								"People you manage",
+							)
 				}
 				icon={<IconUsers className="size-4 text-indigo-500" />}
 				loading={loading}
@@ -171,10 +205,44 @@ export function ManagedEmployeesWidget({
 				) : employees.length === 0 ? (
 					<EmptyState />
 				) : (
-					<div className="space-y-2">
-						{employeesWithPresence.slice(0, 4).map((emp) => (
-							<EmployeeCard key={emp.id} employee={emp} />
-						))}
+					<div className="space-y-3">
+						<div className="overflow-x-auto">
+							<table className="w-full text-left">
+								<caption className="sr-only">
+									{t("dashboard.managed-employees.title", "Your Team")}
+								</caption>
+								<thead className="border-y bg-muted/40 text-sm text-muted-foreground">
+									<tr>
+										<th scope="col" className="py-2 pr-3 font-medium">
+											{t("dashboard.refresh.employee", "Employee")}
+										</th>
+										<th
+											scope="col"
+											className="hidden px-3 py-2 font-medium sm:table-cell"
+										>
+											{t("dashboard.refresh.team", "Team")}
+										</th>
+										<th
+											scope="col"
+											className="hidden px-3 py-2 font-medium sm:table-cell"
+										>
+											{t("dashboard.refresh.status", "Status")}
+										</th>
+										<th
+											scope="col"
+											className="hidden py-2 pl-3 font-medium sm:table-cell"
+										>
+											{t("dashboard.refresh.activity", "Latest activity")}
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									{employeesWithPresence.slice(0, 4).map((emp) => (
+										<EmployeeRow key={emp.id} employee={emp} />
+									))}
+								</tbody>
+							</table>
+						</div>
 
 						{/* More indicator */}
 						{employees.length > 4 && (

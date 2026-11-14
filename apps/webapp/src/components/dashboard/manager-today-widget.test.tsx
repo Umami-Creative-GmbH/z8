@@ -23,6 +23,8 @@ const { readMock, context } = vi.hoisted(() => ({
 	},
 }));
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string, params?: Record<string, string>) =>
@@ -255,18 +257,54 @@ describe("ManagerTodayWidget", () => {
 	});
 	it("renders a failed server manager snapshot beside successful work hours and retries only the failed dataset", async () => {
 		const scope = { userId: "user-a", organizationId: "org-a" };
-		readMock.mockResolvedValue({ role: "manager", summary: { criticalIssues: 0, openApprovals: 1, attendanceExceptions: 0, absencesToday: 0, coverageRisks: 0, overtimeWarnings: 0, payrollIssues: 0 } });
-		render(<QueryClientProvider client={createTestQueryClient()}><ManagerTodayWidget initialSnapshot={{ scope, updatedAt: Date.now(), result: { success: false, error: "Fixture briefing failure" } }} /><QuickStatsWidget initialSnapshot={{ scope, updatedAt: Date.now(), result: { success: true, data: {
-			thisWeek: { actual: 4, expected: 40, expectedToDate: 4 }, thisMonth: { actual: 10, expected: 160, expectedToDate: 10 },
-		} } }} /></QueryClientProvider>);
+		readMock.mockResolvedValue({
+			role: "manager",
+			summary: {
+				criticalIssues: 0,
+				openApprovals: 1,
+				attendanceExceptions: 0,
+				absencesToday: 0,
+				coverageRisks: 0,
+				overtimeWarnings: 0,
+				payrollIssues: 0,
+			},
+		});
+		render(
+			<QueryClientProvider client={createTestQueryClient()}>
+				<ManagerTodayWidget
+					initialSnapshot={{
+						scope,
+						updatedAt: Date.now(),
+						result: { success: false, error: "Fixture briefing failure" },
+					}}
+				/>
+				<QuickStatsWidget
+					initialSnapshot={{
+						scope,
+						updatedAt: Date.now(),
+						result: {
+							success: true,
+							data: {
+								thisWeek: { actual: 4, expected: 40, expectedToDate: 4 },
+								thisMonth: { actual: 10, expected: 160, expectedToDate: 10 },
+							},
+						},
+					}}
+				/>
+			</QueryClientProvider>,
+		);
 		expect(screen.getByRole("alert")).toBeTruthy();
 		expect(screen.queryByTestId("manager-today-metrics")).toBeNull();
 		expect(screen.getByText("4.0h of 40.0h (10%)")).toBeTruthy();
 		expect(fetch).not.toHaveBeenCalled();
-		fireEvent.click(screen.getByRole("button", { name: "Retry Manager Today" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Retry Manager Today" }),
+		);
 		await screen.findByTestId("manager-today-metrics");
 		expect(fetch).toHaveBeenCalledTimes(1);
-		expect(vi.mocked(fetch).mock.calls[0][0]).toBe("/api/dashboard/widgets/manager-today");
+		expect(vi.mocked(fetch).mock.calls[0][0]).toBe(
+			"/api/dashboard/widgets/manager-today",
+		);
 		expect(screen.getByText("4.0h of 40.0h (10%)")).toBeTruthy();
 	});
 

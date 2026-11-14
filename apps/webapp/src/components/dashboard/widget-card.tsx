@@ -1,7 +1,13 @@
 import { IconLoader2, IconRefresh } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface WidgetCardProps {
@@ -32,19 +38,22 @@ export function WidgetCard({
 			size="icon"
 			onClick={onRefresh}
 			disabled={refreshing}
-			className="size-8"
+			className="size-9 text-muted-foreground"
 			aria-label={t("dashboard.widgets.refresh", "Refresh")}
 		>
 			<IconRefresh
-				className={cn("size-4", refreshing && "animate-spin motion-reduce:animate-none")}
+				className={cn(
+					"size-4",
+					refreshing && "animate-spin motion-reduce:animate-none",
+				)}
 			/>
 		</Button>
 	) : null;
 
 	if (loading) {
 		return (
-			<Card>
-				<CardHeader>
+			<Card className="gap-4 py-5 shadow-none">
+				<CardHeader className="px-5">
 					<CardTitle className="flex items-center gap-2">
 						{icon}
 						{title}
@@ -61,15 +70,18 @@ export function WidgetCard({
 	}
 
 	return (
-		<Card>
-			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
-						<CardTitle className="flex items-center gap-2">
-							{icon}
-							{title}
+		<Card className="gap-4 py-5 shadow-none">
+			<CardHeader className="px-5">
+				<div className="flex flex-wrap items-start justify-between gap-2">
+					<div className="min-w-0 flex-1">
+						<CardTitle>
+							<h2 className="text-base font-semibold">{title}</h2>
 						</CardTitle>
-						<CardDescription>{description}</CardDescription>
+						{description ? (
+							<CardDescription className="mt-1 text-sm">
+								{description}
+							</CardDescription>
+						) : null}
 					</div>
 					<div className="flex items-center gap-2">
 						{RefreshButton}
@@ -77,7 +89,7 @@ export function WidgetCard({
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent>{children}</CardContent>
+			<CardContent className="px-5">{children}</CardContent>
 		</Card>
 	);
 }

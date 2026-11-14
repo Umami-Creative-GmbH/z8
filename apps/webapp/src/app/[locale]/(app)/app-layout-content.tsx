@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
+import { AppSkipLink } from "@/components/app-skip-link";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OfflineBanner } from "@/components/offline";
@@ -68,7 +69,7 @@ interface AuthenticatedAppContentProps {
 
 function SiteHeaderLoading() {
 	return (
-		<header className="box-content flex h-(--header-height) shrink-0 items-center border-b bg-white dark:bg-background px-4 pt-[env(safe-area-inset-top)] lg:px-6">
+		<header className="box-content flex h-(--header-height) shrink-0 items-center border-b bg-card px-4 pt-[env(safe-area-inset-top)] lg:px-6">
 			<Skeleton className="h-5 w-40" />
 			<div className="ml-auto flex items-center gap-2">
 				<Skeleton className="size-8 rounded-md" />
@@ -176,13 +177,15 @@ export async function AuthenticatedAppContent({
 						<SidebarProvider
 							style={
 								{
-									"--sidebar-width": "calc(var(--spacing) * 72)",
-									"--header-height": "calc(var(--spacing) * 12)",
+									"--sidebar-width": "16rem",
+									"--sidebar-width-icon": "3.5rem",
+									"--header-height": "4rem",
 								} as React.CSSProperties
 							}
 						>
+							<AppSkipLink />
 							<ServerSidebarRegion
-								variant="inset"
+								variant="sidebar"
 								showWorksCouncilNav={Boolean(activeOrganizationId)}
 							/>
 							<SidebarInset>
@@ -208,6 +211,8 @@ export async function AuthenticatedAppContent({
 								{/* Keeps the end of each page above the home indicator when drawn edge to edge, and above the get-the-app banner while it shows (#847). */}
 								<div
 									className={`flex flex-1 flex-col min-h-0 overflow-y-auto ${appBannerScrollPaddingClassName}`}
+									id="app-page-content"
+									tabIndex={-1}
 								>
 									{children}
 								</div>

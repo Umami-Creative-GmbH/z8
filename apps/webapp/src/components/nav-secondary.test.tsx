@@ -7,12 +7,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { NavSecondary } from "./nav-secondary";
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 const { pathnameMock } = vi.hoisted(() => ({
 	pathnameMock: vi.fn(() => "/"),
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({ href, children, ...props }: React.ComponentProps<"a"> & { href: string }) => (
+	Link: ({
+		href,
+		children,
+		...props
+	}: React.ComponentProps<"a"> & { href: string }) => (
 		<a href={href} {...props}>
 			{children}
 		</a>
@@ -50,7 +58,9 @@ describe("NavSecondary", () => {
 		expect(helpLink.getAttribute("href")).toBe("https://docs.z8-time.app/docs");
 		expect(helpLink.getAttribute("target")).toBe("_blank");
 		expect(helpLink.getAttribute("rel")).toBe("noreferrer");
-		expect(helpLink.querySelector("[data-testid='external-link-icon']")).not.toBeNull();
+		expect(
+			helpLink.querySelector("[data-testid='external-link-icon']"),
+		).not.toBeNull();
 	});
 
 	it("marks matching internal secondary routes active", () => {
@@ -76,9 +86,15 @@ describe("NavSecondary", () => {
 			</SidebarProvider>,
 		);
 
-		expect(screen.getByRole("link", { name: "Settings" }).getAttribute("data-active")).toBe("true");
-		expect(screen.getByRole("link", { name: "Get Help" }).getAttribute("data-active")).toBe(
-			"false",
-		);
+		expect(
+			screen
+				.getByRole("link", { name: "Settings" })
+				.getAttribute("data-active"),
+		).toBe("true");
+		expect(
+			screen
+				.getByRole("link", { name: "Get Help" })
+				.getAttribute("data-active"),
+		).toBe("false");
 	});
 });

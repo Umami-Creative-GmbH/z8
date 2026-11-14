@@ -2,14 +2,23 @@
 
 import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import {
+	type ReactNode,
+	useEffect,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { CoveringForWidget } from "@/components/dashboard/covering-for-widget";
+import {
+	dashboardRegionWidgets,
+	usesDashboardRegions,
+} from "@/components/dashboard/dashboard-regions";
 import type { DashboardLayoutBootstrap } from "@/components/dashboard/dashboard-types";
 import { DeferredDashboardWidget } from "@/components/dashboard/deferred-dashboard-widget";
-
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { ManagerTodayWidget } from "@/components/dashboard/manager-today-widget";
 import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
+import { PersonalDay } from "@/components/dashboard/personal-day";
 import { PresenceStatusWidget } from "@/components/dashboard/presence-status-widget";
 import { QuickStatsWidget } from "@/components/dashboard/quick-stats-widget";
 import { RecentlyApprovedWidget } from "@/components/dashboard/recently-approved-widget";
@@ -56,7 +65,10 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"presence-status": PresenceStatusWidget,
 };
 
-const WIDGET_SKELETON_KEYS = Array.from({ length: 8 }, (_, index) => `widget-skeleton-${index}`);
+const WIDGET_SKELETON_KEYS = Array.from(
+	{ length: 8 },
+	(_, index) => `widget-skeleton-${index}`,
+);
 
 const subscribeToHydration = () => () => {};
 const getHydratedSnapshot = () => true;
@@ -109,7 +121,10 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 	return (
 		<div className="mx-4 rounded-xl border border-dashed bg-card p-8 text-center lg:mx-6">
 			<h2 className="font-semibold text-card-foreground text-lg">
-				{t("dashboard.customize.empty-title", "All dashboard widgets are hidden")}
+				{t(
+					"dashboard.customize.empty-title",
+					"All dashboard widgets are hidden",
+				)}
 			</h2>
 			<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 				{t(
@@ -124,21 +139,102 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 	);
 }
 
+function DashboardRegionLayout({
+	visibleWidgetOrder,
+	renderWidget,
+	personalDaySlot,
+}: {
+	visibleWidgetOrder: WidgetId[];
+	renderWidget: (id: WidgetId) => ReactNode;
+	personalDaySlot?: ReactNode;
+}) {
+	const { t } = useTranslate();
+	const region = (name: Parameters<typeof dashboardRegionWidgets>[1]) =>
+		dashboardRegionWidgets(visibleWidgetOrder, name).map(renderWidget);
+	const hasRegion = (name: Parameters<typeof dashboardRegionWidgets>[1]) =>
+		dashboardRegionWidgets(visibleWidgetOrder, name).length > 0;
+
+	return (
+		<>
+			{hasRegion("summary") ? (
+				<div
+					data-dashboard-region="summary"
+					className={
+						dashboardRegionWidgets(visibleWidgetOrder, "summary").length > 1
+							? "grid min-w-0 gap-4 @4xl/main:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] [&_[data-widget-id]]:mb-0"
+							: "min-w-0 [&_[data-widget-id]]:mb-0"
+					}
+				>
+					{region("summary")}
+				</div>
+			) : null}
+			<div className="grid min-w-0 items-start gap-6 @4xl/main:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)]">
+				<div className="min-w-0 space-y-6">
+					{hasRegion("attention") ? (
+						<section
+							aria-label={t("dashboard.refresh.attention", "Today at a glance")}
+							data-dashboard-region="attention"
+							className="overflow-hidden rounded-xl border bg-card [&_[data-widget-id]]:mb-0 [&_[data-widget-id]+[data-widget-id]]:border-t [&_[data-slot=card]]:rounded-none [&_[data-slot=card]]:border-0 [&_[data-slot=card]]:shadow-none"
+						>
+							{region("attention")}
+						</section>
+					) : null}
+					<div
+						data-dashboard-region="records"
+						className="min-w-0 space-y-6 [&_[data-widget-id]]:mb-0"
+					>
+						{region("records")}
+					</div>
+				</div>
+				<div
+					data-dashboard-region="personal"
+					className="min-w-0 space-y-6 [&_[data-widget-id]]:mb-0"
+				>
+					{visibleWidgetOrder.includes("quick-stats")
+						? (personalDaySlot ?? <PersonalDay />)
+						: null}
+					{region("personal")}
+				</div>
+			</div>
+			{hasRegion("utilities") ? (
+				<details
+					className="rounded-xl border bg-card"
+					data-dashboard-region="utilities"
+				>
+					<summary className="cursor-pointer rounded-xl px-5 py-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
+						{t(
+							"dashboard.refresh.utilities",
+							"More widgets · Work location, birthdays and hydration",
+						)}
+					</summary>
+					<div className="grid min-w-0 items-start gap-4 border-t p-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-3 [&_[data-widget-id]]:mb-0">
+						{region("utilities")}
+					</div>
+				</details>
+			) : null}
+		</>
+	);
+}
+
 function DashboardWidgetLayout({
 	visibleWidgetOrder,
 	onReorder,
 	resetOrder,
 	widgetSlots,
+	personalDaySlot,
 }: {
 	visibleWidgetOrder: WidgetId[];
 	onReorder: (newOrder: WidgetId[]) => void;
 	resetOrder: () => void;
 	widgetSlots?: Partial<Record<WidgetId, ReactNode>>;
+	personalDaySlot?: ReactNode;
 }) {
 	const renderedWidgets = useVisibleWidgets();
 	const fetchingDashboardWidgets = useIsFetching({ queryKey: ["dashboard"] });
 	const visibleWidgetKey = visibleWidgetOrder.join("|");
-	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(!visibleWidgetKey);
+	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(
+		!visibleWidgetKey,
+	);
 	const [checkedWidgetKey, setCheckedWidgetKey] = useState(visibleWidgetKey);
 
 	if (checkedWidgetKey !== visibleWidgetKey) {
@@ -149,7 +245,9 @@ function DashboardWidgetLayout({
 	const hasConfiguredWidgets = visibleWidgetOrder.length > 0;
 	const shouldShowEmptyState =
 		!hasConfiguredWidgets ||
-		(hasCheckedRenderedWidgets && fetchingDashboardWidgets === 0 && renderedWidgets.length === 0);
+		(hasCheckedRenderedWidgets &&
+			fetchingDashboardWidgets === 0 &&
+			renderedWidgets.length === 0);
 
 	useEffect(() => {
 		if (!visibleWidgetKey) {
@@ -165,25 +263,40 @@ function DashboardWidgetLayout({
 		};
 	}, [visibleWidgetKey]);
 
+	const renderWidget = (widgetId: WidgetId) => {
+		if (widgetSlots?.[widgetId])
+			return (
+				<div key={widgetId} className="contents">
+					{widgetSlots[widgetId]}
+				</div>
+			);
+		const WidgetComponent = WIDGET_COMPONENTS[widgetId];
+		return <WidgetComponent key={widgetId} />;
+	};
+	const grouped = usesDashboardRegions(visibleWidgetOrder);
+
 	return (
 		<>
 			{hasConfiguredWidgets ? (
-				<SortableWidgetGrid widgetOrder={visibleWidgetOrder} onReorder={onReorder}>
-					{visibleWidgetOrder.map((widgetId) => {
-						if (widgetSlots?.[widgetId]) {
-							return (
-								<div key={widgetId} className="contents">
-									{widgetSlots[widgetId]}
-								</div>
-							);
-						}
-						const WidgetComponent = WIDGET_COMPONENTS[widgetId];
-						if (!WidgetComponent) return null;
-						return <WidgetComponent key={widgetId} />;
-					})}
+				<SortableWidgetGrid
+					widgetOrder={visibleWidgetOrder}
+					onReorder={onReorder}
+					className={grouped ? "space-y-6 px-4 lg:px-6" : undefined}
+				>
+					{grouped ? (
+						<DashboardRegionLayout
+							visibleWidgetOrder={visibleWidgetOrder}
+							renderWidget={renderWidget}
+							personalDaySlot={personalDaySlot}
+						/>
+					) : (
+						visibleWidgetOrder.map(renderWidget)
+					)}
 				</SortableWidgetGrid>
 			) : null}
-			{shouldShowEmptyState ? <HiddenWidgetsEmptyState onReset={resetOrder} /> : null}
+			{shouldShowEmptyState ? (
+				<HiddenWidgetsEmptyState onReset={resetOrder} />
+			) : null}
 		</>
 	);
 }
@@ -191,11 +304,14 @@ function DashboardWidgetLayout({
 export function SectionCards({
 	initialLayout,
 	widgetSlots,
+	personalDaySlot,
 }: {
 	initialLayout?: DashboardLayoutBootstrap;
 	widgetSlots?: Partial<Record<WidgetId, ReactNode>>;
+	personalDaySlot?: ReactNode;
 } = {}) {
-	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } = useWidgetOrder(initialLayout);
+	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } =
+		useWidgetOrder(initialLayout);
 	const hasHydrated = useHasHydrated();
 
 	if ((!initialLayout && !hasHydrated) || isLoading) {
@@ -208,6 +324,7 @@ export function SectionCards({
 				onReorder={onReorder}
 				resetOrder={resetOrder}
 				visibleWidgetOrder={visibleWidgetOrder}
+				personalDaySlot={personalDaySlot}
 				widgetSlots={widgetSlots}
 			/>
 		</WidgetVisibilityProvider>
