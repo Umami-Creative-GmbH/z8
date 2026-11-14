@@ -32,12 +32,6 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { type WorkPeriodEntryTimes, workPeriodEntryTimesOf } from "@/lib/notifications/entry-times";
 import {
@@ -5908,41 +5902,6 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 	};
 }
 
-/**
- * Temporary adapter (#1675): resolves one decision right from today's flags,
- * own rights first, and decides through the time approval decision. A
- * refusal is thrown as the error this wrapper's callers expect. Deleted with
- * its last caller (#1680).
- */
-export function decideTimeCorrectionWithStableTargetEffect(
-	dbService: ApprovalDbService,
-	currentEmployee: CurrentApprover,
-	approvalRequestId: string,
-	action: "approve" | "reject",
-	reason?: string,
-	options?: ApprovalActionOptions,
-) {
-	return Effect.tryPromise({
-		try: async () => {
-			const { decideTimeApprovalFromFlags } = await import("./time-approval-decision");
-			const { result, cause } = await decideTimeApprovalFromFlags({
-				database: dbService.db,
-				actor: currentEmployee,
-				approvalId: approvalRequestId,
-				decision:
-					action === "approve" ? { kind: "approve" } : { kind: "reject", reason: reason ?? "" },
-				options,
-			});
-			if (result.status === "refused") {
-				throw translateCorrectionWorkError(
-					translateWorkPeriodEvidenceError(translateTimeCorrectionDecisionError(cause)),
-				);
-			}
-		},
-		catch: (error) => error as AnyAppError,
-	});
-}
-
 export function createTimeCorrectionApprovalWorkflow(
 	dbService: ApprovalDbService,
 	input: {
@@ -6546,94 +6505,6 @@ function handleRejectedTimeCorrection(
 				reason,
 				result,
 			),
-		),
-	);
-}
-
-export async function approveTimeCorrectionEffect(
-	approvalRequestId: string,
-): Promise<ServerActionResult<void>> {
-	return processAuthenticatedTimeCorrectionDecision(
-		approvalRequestId,
-		"approve",
-	);
-}
-
-export async function rejectTimeCorrectionEffect(
-	approvalRequestId: string,
-	reason: string,
-): Promise<ServerActionResult<void>> {
-	return processAuthenticatedTimeCorrectionDecision(
-		approvalRequestId,
-		"reject",
-		reason,
-	);
-}
-
-function authenticatedTimeCorrectionDecisionEffect(
-	approvalRequestId: string,
-	action: "approve" | "reject",
-	reason?: string,
-) {
-	return Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Active organization not found",
-					entityType: "organization",
-				}),
-			);
-		}
-		const currentEmployee = yield* dbService
-			.query("getTimeCorrectionApprovalActor", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
-					),
-					with: { user: true },
-				});
-			})
-			.pipe(
-				Effect.flatMap((actor) =>
-					actor &&
-					actor.organizationId === organizationId &&
-					actor.userId === session.user.id
-						? Effect.succeed(actor as CurrentApprover)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
-
-		yield* decideTimeCorrectionWithStableTargetEffect(
-			dbService as ApprovalDbService,
-			currentEmployee,
-			approvalRequestId,
-			action,
-			reason,
-		);
-	});
-}
-
-function processAuthenticatedTimeCorrectionDecision(
-	approvalRequestId: string,
-	action: "approve" | "reject",
-	reason?: string,
-): Promise<ServerActionResult<void>> {
-	return runServerActionSafe(
-		authenticatedTimeCorrectionDecisionEffect(
-			approvalRequestId,
-			action,
-			reason,
 		),
 	);
 }

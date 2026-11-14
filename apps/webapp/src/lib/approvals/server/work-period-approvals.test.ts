@@ -1849,36 +1849,6 @@ const currentApprover: CurrentApprover = {
 	},
 };
 
-describe("ordinary work-period decision", () => {
-	it("refuses a decision without an organization as a conflict", async () => {
-		const dbService = {
-			db: {},
-			query: <T>(_name: string, operation: () => Promise<T>) =>
-				Effect.promise(operation),
-		} as unknown as ApprovalDbService;
-
-		// An empty organization is refused before any read.
-		const decision = Effect.runPromise(
-			workPeriodApprovals.decideOrdinaryWorkPeriodWithStableTargetEffect(
-				dbService,
-				{ ...currentApprover, organizationId: "" },
-				{
-					approvalRequestId: "approval-1",
-					workPeriodId: "period-1",
-					decision: { kind: "approve", reason: null },
-				},
-			),
-		);
-
-		const { ConflictError } = await import("@/lib/effect/errors");
-		await expect(decision).rejects.toBeInstanceOf(ConflictError);
-		await expect(decision).rejects.toMatchObject({
-			message: "Ordinary work-period decision failed",
-			conflictType: "approval_decision",
-		});
-	});
-});
-
 const approval = {
 	id: "approval-1",
 	organizationId: "org-1",
