@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
 	revoke: vi.fn(),
 	postCommit: vi.fn(),
 	createRollouts: vi.fn(),
+	joinedOn: [] as unknown[],
+	failJoining: false,
 }));
 
 vi.mock("@/lib/authorization/authorization-mutation", () => ({
@@ -84,11 +86,20 @@ function hooks() {
 	return createCoordinatedOrganizationHooks({
 		beforeUpdateOrganization: vi.fn(),
 		beforeCreateInvitation: vi.fn(),
-		afterAcceptInvitation: vi.fn(async () => {
-			mocks.events.push("after-accept");
+		joinOnAcceptedInvitation: vi.fn(async (transaction: unknown) => {
+			mocks.events.push("join-accepted");
+			mocks.joinedOn.push(transaction);
+			return async () => {
+				mocks.events.push("after-accept");
+			};
 		}),
-		afterAddMember: vi.fn(async () => {
-			mocks.events.push("after-add");
+		joinOnAddedMember: vi.fn(async (transaction: unknown) => {
+			if (mocks.failJoining) throw new Error("joining failed");
+			mocks.events.push("join-added");
+			mocks.joinedOn.push(transaction);
+			return async () => {
+				mocks.events.push("after-add");
+			};
 		}),
 	});
 }
@@ -96,6 +107,8 @@ function hooks() {
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.events.length = 0;
+	mocks.joinedOn.length = 0;
+	mocks.failJoining = false;
 	mocks.revoke.mockImplementation(async () => {
 		mocks.events.push("revoke");
 		return { accessRestored: false, sessionTokens: ["token-1"] };
@@ -138,6 +151,8 @@ describe("coordinated organization hooks", () => {
 			{ organization: { name: "Org", slug: "org" }, user },
 		],
 		["afterCreateOrganization", { organization, member, user }],
+		["afterAddMember", { member, user, organization }],
+		["afterAcceptInvitation", { invitation: {}, member, user, organization }],
 	] as const)(
 		"fails closed when %s runs outside a coordinated transaction",
 		async (name, data) => {
@@ -280,7 +295,7 @@ describe("coordinated organization hooks", () => {
 		);
 	});
 
-	it("runs membership provisioning after the membership commits, as before", async () => {
+	it("joins in the membership's transaction and runs joining's after-commit step after the commit", async () => {
 		const auth = coordinatedAuth();
 		const organizationHooks = hooks();
 		await runCoordinatedAuthMutation(auth.context, async () => {
@@ -294,12 +309,28 @@ describe("coordinated organization hooks", () => {
 			mocks.events.push("membership-end");
 		});
 
+		expect(mocks.joinedOn).toEqual([auth.transaction, auth.transaction]);
 		expect(mocks.events).toEqual([
+			"join-added",
+			"join-accepted",
 			"membership-end",
 			"commit",
 			"after-add",
 			"after-accept",
 		]);
+	});
+
+	it("rolls the membership back when joining fails", async () => {
+		const auth = coordinatedAuth();
+		mocks.failJoining = true;
+
+		await expect(
+			runCoordinatedAuthMutation(auth.context, () =>
+				hooks().afterAddMember!({ member, user, organization }),
+			),
+		).rejects.toThrow("joining failed");
+		expect(auth.outcome).toEqual({ committed: 0, rolledBack: 1 });
+		expect(mocks.events).not.toContain("after-add");
 	});
 
 	it("rolls back the removal when in-transaction access revocation fails", async () => {
