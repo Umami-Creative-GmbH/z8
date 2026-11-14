@@ -20,6 +20,18 @@ vi.mock("@/components/dashboard/dashboard-reads", () => ({
 	readDashboardWidget: serverReads.widget,
 }));
 
+vi.mock("@/app/[locale]/(app)/time-tracking/read-time-kpis", () => ({
+	readTimeKpis: async () => null,
+}));
+vi.mock("@/lib/auth/render-context", () => ({
+	getRenderAuthContext: async () => ({ user: { name: "Ada Lovelace" } }),
+}));
+vi.mock("@/components/dashboard/dashboard-heading", () => ({
+	DashboardHeading: () => <div>Dashboard heading</div>,
+}));
+vi.mock("@/components/dashboard/personal-day", () => ({
+	PersonalDay: () => <div>Personal day</div>,
+}));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string>) =>
@@ -40,7 +52,9 @@ vi.mock("@/hooks/use-organization", () => ({
 }));
 
 vi.mock("@/components/dashboard/sortable-widget-grid", () => ({
-	SortableWidgetGrid: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	SortableWidgetGrid: ({ children }: { children: ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/dashboard-widget", () => ({
@@ -55,9 +69,11 @@ vi.mock("@/components/dashboard/actions", () => ({
 }));
 
 vi.mock("@/components/dashboard/birthday-reminders-widget", () => ({
-	BirthdayRemindersWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
-		<div>{initialSnapshot ? "Birthdays ready" : "hydrated widget"}</div>
-	),
+	BirthdayRemindersWidget: ({
+		initialSnapshot,
+	}: {
+		initialSnapshot?: unknown;
+	}) => <div>{initialSnapshot ? "Birthdays ready" : "hydrated widget"}</div>,
 }));
 
 vi.mock("@/components/dashboard/hydration-widget", () => ({
@@ -67,9 +83,11 @@ vi.mock("@/components/dashboard/hydration-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/managed-employees-widget", () => ({
-	ManagedEmployeesWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
-		<div>{initialSnapshot ? "Reports ready" : "hydrated widget"}</div>
-	),
+	ManagedEmployeesWidget: ({
+		initialSnapshot,
+	}: {
+		initialSnapshot?: unknown;
+	}) => <div>{initialSnapshot ? "Reports ready" : "hydrated widget"}</div>,
 }));
 
 vi.mock("@/components/dashboard/manager-today-widget", () => ({
@@ -79,15 +97,21 @@ vi.mock("@/components/dashboard/manager-today-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/pending-approvals-widget", () => ({
-	PendingApprovalsWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+	PendingApprovalsWidget: ({
+		initialSnapshot,
+	}: {
+		initialSnapshot?: unknown;
+	}) => (
 		<div>{initialSnapshot ? "Pending approvals ready" : "hydrated widget"}</div>
 	),
 }));
 
 vi.mock("@/components/dashboard/presence-status-widget", () => ({
-	PresenceStatusWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
-		<div>{initialSnapshot ? "Presence ready" : "hydrated widget"}</div>
-	),
+	PresenceStatusWidget: ({
+		initialSnapshot,
+	}: {
+		initialSnapshot?: unknown;
+	}) => <div>{initialSnapshot ? "Presence ready" : "hydrated widget"}</div>,
 }));
 
 vi.mock("@/components/dashboard/quick-stats-widget", () => ({
@@ -97,7 +121,11 @@ vi.mock("@/components/dashboard/quick-stats-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/recently-approved-widget", () => ({
-	RecentlyApprovedWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+	RecentlyApprovedWidget: ({
+		initialSnapshot,
+	}: {
+		initialSnapshot?: unknown;
+	}) => (
 		<div>{initialSnapshot ? "Recent approvals ready" : "hydrated widget"}</div>
 	),
 }));
@@ -109,21 +137,27 @@ vi.mock("@/components/dashboard/team-overview-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/upcoming-shifts-widget", () => ({
-	UpcomingShiftsWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
-		<div>{initialSnapshot ? "Shifts ready" : "hydrated widget"}</div>
-	),
+	UpcomingShiftsWidget: ({
+		initialSnapshot,
+	}: {
+		initialSnapshot?: unknown;
+	}) => <div>{initialSnapshot ? "Shifts ready" : "hydrated widget"}</div>,
 }));
 
 vi.mock("@/components/dashboard/upcoming-time-off-widget", () => ({
-	UpcomingTimeOffWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
-		<div>{initialSnapshot ? "Time off ready" : "hydrated widget"}</div>
-	),
+	UpcomingTimeOffWidget: ({
+		initialSnapshot,
+	}: {
+		initialSnapshot?: unknown;
+	}) => <div>{initialSnapshot ? "Time off ready" : "hydrated widget"}</div>,
 }));
 
 vi.mock("@/components/dashboard/vacation-balance-widget", () => ({
-	VacationBalanceWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
-		<div>{initialSnapshot ? "Vacation ready" : "hydrated widget"}</div>
-	),
+	VacationBalanceWidget: ({
+		initialSnapshot,
+	}: {
+		initialSnapshot?: unknown;
+	}) => <div>{initialSnapshot ? "Vacation ready" : "hydrated widget"}</div>,
 }));
 
 vi.mock("@/components/dashboard/whos-out-today-widget", () => ({
@@ -146,14 +180,54 @@ describe("SectionCards", () => {
 		["presence-status", "vacation-balance", "Vacation ready", "Presence ready"],
 		["upcoming-shifts", "covering-for", "Cover ready", "Shifts ready"],
 		["covering-for", "upcoming-shifts", "Shifts ready", "Cover ready"],
-		["whos-out-today", "upcoming-time-off", "Time off ready", "Out today ready"],
-		["upcoming-time-off", "whos-out-today", "Out today ready", "Time off ready"],
-		["manager-today", "quick-stats", "Work hours ready", "Manager summary ready"],
-		["quick-stats", "manager-today", "Manager summary ready", "Work hours ready"],
-		["managed-employees", "team-overview", "Organization ready", "Reports ready"],
-		["team-overview", "managed-employees", "Reports ready", "Organization ready"],
-		["pending-approvals", "recently-approved", "Recent approvals ready", "Pending approvals ready"],
-		["recently-approved", "pending-approvals", "Pending approvals ready", "Recent approvals ready"],
+		[
+			"whos-out-today",
+			"upcoming-time-off",
+			"Time off ready",
+			"Out today ready",
+		],
+		[
+			"upcoming-time-off",
+			"whos-out-today",
+			"Out today ready",
+			"Time off ready",
+		],
+		[
+			"manager-today",
+			"quick-stats",
+			"Work hours ready",
+			"Manager summary ready",
+		],
+		[
+			"quick-stats",
+			"manager-today",
+			"Manager summary ready",
+			"Work hours ready",
+		],
+		[
+			"managed-employees",
+			"team-overview",
+			"Organization ready",
+			"Reports ready",
+		],
+		[
+			"team-overview",
+			"managed-employees",
+			"Reports ready",
+			"Organization ready",
+		],
+		[
+			"pending-approvals",
+			"recently-approved",
+			"Recent approvals ready",
+			"Pending approvals ready",
+		],
+		[
+			"recently-approved",
+			"pending-approvals",
+			"Pending approvals ready",
+			"Recent approvals ready",
+		],
 	])(
 		"streams a completed sibling while %s is still pending",
 		async (heldId, readyId, readyContent, pendingContent) => {
@@ -164,7 +238,9 @@ describe("SectionCards", () => {
 					settings: {
 						dashboardWidgetOrder: {
 							order: [heldId, readyId],
-							hidden: DEFAULT_WIDGET_ORDER.filter((id) => id !== heldId && id !== readyId),
+							hidden: DEFAULT_WIDGET_ORDER.filter(
+								(id) => id !== heldId && id !== readyId,
+							),
 							version: 1,
 						},
 					},
@@ -211,7 +287,9 @@ describe("SectionCards", () => {
 							setTimeout(
 								() =>
 									reject(
-										new Error("Useful sibling did not stream while Manager Today was pending"),
+										new Error(
+											"Useful sibling did not stream while Manager Today was pending",
+										),
 									),
 								500,
 							),
@@ -236,7 +314,11 @@ describe("SectionCards", () => {
 		serverReads.layout.mockResolvedValue({
 			subject: {
 				...scope,
-				employee: { id: "employee-a", role: "manager", organizationId: "org-a" },
+				employee: {
+					id: "employee-a",
+					role: "manager",
+					organizationId: "org-a",
+				},
 			},
 			layout: {
 				scope,
@@ -258,13 +340,17 @@ describe("SectionCards", () => {
 		});
 		const content = await ServerSectionCards();
 		const stream = await renderToReadableStream(
-			<QueryClientProvider client={new QueryClient()}>{content}</QueryClientProvider>,
+			<QueryClientProvider client={new QueryClient()}>
+				{content}
+			</QueryClientProvider>,
 		);
 		const markup = await new Response(stream).text();
 		expect(markup).toContain("Work hours ready");
 		expect(markup).toContain("Load Hydration");
 		expect(markup).toContain("Load Upcoming Birthdays");
-		expect(serverReads.widget.mock.calls.map(([id]) => id)).toEqual(["quick-stats"]);
+		expect(serverReads.widget.mock.calls.map(([id]) => id)).toEqual([
+			"quick-stats",
+		]);
 	});
 	it("keeps an omitted optional widget unchecked until enabled through customization and unmounts it when hidden", async () => {
 		class Observer {
@@ -288,22 +374,32 @@ describe("SectionCards", () => {
 					initialLayout={{
 						scope: { userId: "user-a", organizationId: "org-a" },
 						updatedAt: seededAt,
-						settings: { dashboardWidgetOrder: { order: ["quick-stats"], version: 1 } },
+						settings: {
+							dashboardWidgetOrder: { order: ["quick-stats"], version: 1 },
+						},
 					}}
 					widgetSlots={{ "quick-stats": <p>Primary hours</p> }}
 				/>
 			</QueryClientProvider>,
 		);
 		expect(screen.queryByRole("region", { name: "Hydration" })).toBeNull();
-		fireEvent.pointerDown(screen.getByRole("button", { name: "Customize dashboard" }));
+		fireEvent.pointerDown(
+			screen.getByRole("button", { name: "Customize dashboard" }),
+		);
 		const item = screen.getByRole("menuitemcheckbox", { name: "Hydration" });
 		expect(item.getAttribute("aria-checked")).toBe("false");
 		fireEvent.click(item);
 		await screen.findByRole("button", { name: "Load Hydration" });
 		expect(screen.getByText("Primary hours")).toBeTruthy();
-		fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Hydration" }));
-		await waitFor(() => expect(screen.queryByRole("region", { name: "Hydration" })).toBeNull());
-		expect((screen.getByLabelText("Layout draft") as HTMLInputElement).value).toBe("Unsaved");
+		fireEvent.click(
+			screen.getByRole("menuitemcheckbox", { name: "Hydration" }),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("region", { name: "Hydration" })).toBeNull(),
+		);
+		expect(
+			(screen.getByLabelText("Layout draft") as HTMLInputElement).value,
+		).toBe("Unsaved");
 		expect(request).not.toHaveBeenCalled();
 		vi.unstubAllGlobals();
 	});

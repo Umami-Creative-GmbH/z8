@@ -104,7 +104,7 @@ export function ManagerTodayWidget({
 				refreshing={managerTodayQuery.refreshing}
 				onRefresh={managerTodayQuery.refetch}
 				action={
-					<Button variant="default" size="sm" asChild>
+					<Button variant="ghost" size="sm" asChild>
 						<Link href="/today">
 							{t("dashboard.manager-today.open", "Open Brief")}
 							<IconArrowRight className="ml-1 size-3" aria-hidden="true" />
@@ -127,24 +127,25 @@ export function ManagerTodayWidget({
 
 					{!hasError && (
 						<div
-							className="grid grid-cols-2 gap-2"
+							className="grid grid-cols-2 gap-2 sm:grid-cols-4"
 							data-testid="manager-today-metrics"
 						>
 							{metricItems.map((item) => (
-								<div
+								<Link
+									href="/today"
 									key={item.label}
 									className={cn(
-										"rounded-lg border bg-muted/25 px-3 py-2",
+										"rounded-lg border border-transparent px-3 py-2 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring",
 										item.value > 0 && item.activeClass,
 									)}
 								>
-									<div className="text-2xl font-semibold tabular-nums leading-none">
+									<div className="text-xl font-semibold tabular-nums leading-none">
 										{item.value}
 									</div>
-									<div className="mt-1 text-xs font-medium text-muted-foreground">
+									<div className="mt-1 text-sm font-medium text-muted-foreground">
 										{item.label}
 									</div>
-								</div>
+								</Link>
 							))}
 						</div>
 					)}

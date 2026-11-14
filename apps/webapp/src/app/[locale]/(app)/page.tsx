@@ -45,7 +45,7 @@ async function DashboardPageContent() {
 	}
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-2">
+		<div className="@container/main mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-2">
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<Suspense fallback={<SectionCardsSkeleton />}>
 					<ServerSectionCards />
@@ -62,7 +62,7 @@ function DashboardPageLoading() {
 				labelKey: "common.loadingRegions.dashboard",
 				labelDefault: "Loading dashboard",
 			}}
-			className="@container/main flex flex-1 flex-col gap-2"
+			className="@container/main mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-2"
 			role="status"
 		>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">

@@ -1,7 +1,17 @@
+import { unstable_rethrow } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
+import { readTimeKpis } from "@/app/[locale]/(app)/time-tracking/read-time-kpis";
 import { SectionCards } from "@/components/section-cards";
+import { getRenderAuthContext } from "@/lib/auth/render-context";
+import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import type { TimeKpiRead } from "@/lib/time-tracking/time-kpis";
 import { CoveringForWidget } from "./covering-for-widget";
-import { getRenderDashboardLayout, readDashboardWidget } from "./dashboard-reads";
+import { DashboardHeading } from "./dashboard-heading";
+import {
+	getRenderDashboardLayout,
+	readDashboardWidget,
+} from "./dashboard-reads";
+import type { DashboardSubject } from "./dashboard-types";
 import {
 	type DashboardWidgetData,
 	type DashboardWidgetSnapshot,
@@ -9,6 +19,25 @@ import {
 	type ServerWidgetId,
 } from "./dashboard-types";
 import { DeferredDashboardWidget } from "./deferred-dashboard-widget";
+import { PersonalDay } from "./personal-day";
+
+async function PersonalDaySlot({ subject }: { subject: DashboardSubject }) {
+	if (!subject.employee) return null;
+	let timeKpis: TimeKpiRead | null = null;
+	try {
+		timeKpis = await readTimeKpis(
+			{
+				organizationId: subject.organizationId,
+				employeeId: subject.employee.id,
+			},
+			subject.preferences?.timezone ?? "UTC",
+			subject.preferences?.weekStartDay ?? "monday",
+		);
+	} catch (error) {
+		unstable_rethrow(error);
+	}
+	return <PersonalDay timeKpis={timeKpis} />;
+}
 
 import { ManagedEmployeesWidget } from "./managed-employees-widget";
 import { ManagerTodayWidget } from "./manager-today-widget";
@@ -22,14 +51,20 @@ import { UpcomingTimeOffWidget } from "./upcoming-time-off-widget";
 import { VacationBalanceWidget } from "./vacation-balance-widget";
 import { WhosOutTodayWidget } from "./whos-out-today-widget";
 import { WidgetLoading } from "./widget-loading";
-import { isDeferredWidgetId, normalizeWidgetLayout, type WidgetId } from "./widget-registry";
+import {
+	isDeferredWidgetId,
+	normalizeWidgetLayout,
+	type WidgetId,
+} from "./widget-registry";
 
 async function WidgetSlot({
 	id,
 	snapshot,
 }: {
 	id: ServerWidgetId;
-	snapshot: Promise<DashboardWidgetSnapshot<DashboardWidgetData[ServerWidgetId]>>;
+	snapshot: Promise<
+		DashboardWidgetSnapshot<DashboardWidgetData[ServerWidgetId]>
+	>;
 }) {
 	const initialSnapshot = await snapshot;
 	switch (id) {
@@ -40,7 +75,9 @@ async function WidgetSlot({
 			return (
 				<VacationBalanceWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["vacation-balance"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["vacation-balance"]
+						>
 					}
 				/>
 			);
@@ -48,7 +85,9 @@ async function WidgetSlot({
 			return (
 				<PresenceStatusWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["presence-status"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["presence-status"]
+						>
 					}
 				/>
 			);
@@ -57,7 +96,9 @@ async function WidgetSlot({
 			return (
 				<UpcomingShiftsWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["upcoming-shifts"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["upcoming-shifts"]
+						>
 					}
 				/>
 			);
@@ -65,7 +106,9 @@ async function WidgetSlot({
 			return (
 				<CoveringForWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["covering-for"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["covering-for"]
+						>
 					}
 				/>
 			);
@@ -73,7 +116,9 @@ async function WidgetSlot({
 			return (
 				<WhosOutTodayWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["whos-out-today"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["whos-out-today"]
+						>
 					}
 				/>
 			);
@@ -81,7 +126,9 @@ async function WidgetSlot({
 			return (
 				<UpcomingTimeOffWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["upcoming-time-off"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["upcoming-time-off"]
+						>
 					}
 				/>
 			);
@@ -90,7 +137,9 @@ async function WidgetSlot({
 			return (
 				<ManagerTodayWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["manager-today"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["manager-today"]
+						>
 					}
 				/>
 			);
@@ -98,7 +147,9 @@ async function WidgetSlot({
 			return (
 				<QuickStatsWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["quick-stats"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["quick-stats"]
+						>
 					}
 				/>
 			);
@@ -106,7 +157,9 @@ async function WidgetSlot({
 			return (
 				<ManagedEmployeesWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["managed-employees"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["managed-employees"]
+						>
 					}
 				/>
 			);
@@ -114,7 +167,9 @@ async function WidgetSlot({
 			return (
 				<TeamOverviewWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["team-overview"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["team-overview"]
+						>
 					}
 				/>
 			);
@@ -122,7 +177,9 @@ async function WidgetSlot({
 			return (
 				<PendingApprovalsWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["pending-approvals"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["pending-approvals"]
+						>
 					}
 				/>
 			);
@@ -130,7 +187,9 @@ async function WidgetSlot({
 			return (
 				<RecentlyApprovedWidget
 					initialSnapshot={
-						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["recently-approved"]>
+						initialSnapshot as DashboardWidgetSnapshot<
+							DashboardWidgetData["recently-approved"]
+						>
 					}
 				/>
 			);
@@ -150,7 +209,12 @@ export async function ServerSectionCards() {
 		: null;
 	const hidden = new Set(layout.hidden);
 	for (const id of layout.order) {
-		if (hidden.has(id) || (available && !available.has(id)) || !isServerWidgetId(id)) continue;
+		if (
+			hidden.has(id) ||
+			(available && !available.has(id)) ||
+			!isServerWidgetId(id)
+		)
+			continue;
 		if (isDeferredWidgetId(id)) {
 			slots[id] = <DeferredDashboardWidget id={id} />;
 			continue;
@@ -163,5 +227,27 @@ export async function ServerSectionCards() {
 			</Suspense>
 		);
 	}
-	return <SectionCards initialLayout={bootstrap.layout} widgetSlots={slots} />;
+	const context = await getRenderAuthContext();
+	return (
+		<>
+			<DashboardHeading
+				name={context?.user.name ?? null}
+				date={plainDateAt(
+					systemClock.nowInstant(),
+					bootstrap.subject.preferences?.timezone ?? "UTC",
+				).toString()}
+			/>
+			<SectionCards
+				initialLayout={bootstrap.layout}
+				widgetSlots={slots}
+				personalDaySlot={
+					!hidden.has("quick-stats") && bootstrap.subject.employee ? (
+						<Suspense fallback={<PersonalDay />}>
+							<PersonalDaySlot subject={bootstrap.subject} />
+						</Suspense>
+					) : undefined
+				}
+			/>
+		</>
+	);
 }
