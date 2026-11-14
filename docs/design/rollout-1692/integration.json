@@ -31,8 +31,10 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "382b8f5be837dad724d3a54274d3050b0104881f",
+                        "evidence":  "docs/design/rollout-1692/1694.md",
+                        "integrationVerification":  "25 unique suites / 156 tests passed, exact tree and parent/base/F1/invitation ancestry verified; evidence JSON and diff --check passed. Real local/server record, selection/bulk/export/recovery/theme/role handoff demonstrated. Maintainability warning and broader final-review limits retained. H1 still awaits F3."
                     },
                     {
                         "id":  "F3",
@@ -40,8 +42,10 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "bfacad421ffe77f50729ea5895c546698ef28383",
+                        "evidence":  "docs/design/rollout-1692/1695.md",
+                        "integrationVerification":  "36 unique suites / 260 tests, full types, nine-file Biome and reviewed Doctor warning; exact tree, 14 ancestry checks, all 138 prior rollout files, evidence and whitespace verified. Inspected 33+4 live runtime assertions, not rerun. F2 interfaces coexist; H1 compatibility checkpoint eligible. Final-review limits retained."
                     },
                     {
                         "id":  "H1",
@@ -50,7 +54,7 @@
                                           1694,
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -92,7 +96,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

@@ -99,10 +99,10 @@ describe("SiteHeader", () => {
 	});
 
 	it("does not remove the shell heading from unconverted report subpages", () => {
-		pathname = "/en/reports/projects";
+		pathname = "/en/reports/vehicles";
 		render(<SiteHeader />);
 		expect(
-			screen.getByRole("heading", { level: 1, name: "Project Reports" }),
+			screen.getByRole("heading", { level: 1, name: "Distance per Vehicle" }),
 		).toBeTruthy();
 	});
 	it("shows header actions in the requested order on the dashboard route", () => {

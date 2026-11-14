@@ -38,5 +38,14 @@
     "result": "passed"
   },
   "typecheck": "Next typegen + application, workflow-contracts, smoke TypeScript passed",
-  "lint": "Biome on touched TS/TSX files passed"
+  "lint": "Biome on touched TS/TSX files passed",
+  "finalMerge": {
+    "integrationParent": "42d850d4aca30768a53a6d07b2838111e107fff6",
+    "suites": 10,
+    "tests": 137,
+    "typecheck": "Passed all three projects after merge",
+    "runtime": "One Organization suspended h1; 390px viewport and document width; expected name, description and link",
+    "compilation": { "issues": [] },
+    "errors": { "configErrors": [], "sessionErrors": [] }
+  }
 }

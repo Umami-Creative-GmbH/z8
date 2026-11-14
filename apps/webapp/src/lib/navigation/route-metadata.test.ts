@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
+import {
+	appPageOwnsHeading,
+	normalizeAppPath,
+	resolveAppRouteMetadata,
+} from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the portfolio pilot title, leaving other reports and descendants with shell titles", () => {
+		expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);
+		expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);
+		expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);
+	});
 	it.each([
 		["/en", "Dashboard"],
 		["/de/my-requests", "My Requests"],
