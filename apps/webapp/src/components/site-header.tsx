@@ -4,6 +4,7 @@ import {
 	IconAdjustmentsHorizontal,
 	IconClock,
 	IconDots,
+	IconPalette,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DashboardHeaderCustomize } from "@/components/dashboard/dashboard-header-customize";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/popover";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
+	appPageOwnsHeading,
 	normalizeAppPath,
 	resolveAppRouteMetadata,
 } from "@/lib/navigation/route-metadata";
@@ -35,7 +37,7 @@ export function SiteHeader() {
 	const routeMetadata = resolveAppRouteMetadata(pathname);
 	const showWorkplaceScope =
 		isDashboardRoute || normalizedPath === "/time-tracking";
-	const RouteTitle = showWorkplaceScope ? "p" : "h1";
+	const RouteTitle = appPageOwnsHeading(pathname) ? "p" : "h1";
 	const moreActionsLabel = t("common.moreActions", "More actions");
 
 	return (
@@ -125,6 +127,18 @@ export function SiteHeader() {
 							<HeaderRefreshButton className="min-h-11 w-full justify-start gap-3 px-3">
 								{t("common.refreshData", "Refresh data")}
 							</HeaderRefreshButton>
+							<ThemeToggle
+								trigger={
+									<Button
+										type="button"
+										variant="ghost"
+										className="min-h-11 w-full justify-start gap-3 px-3"
+									>
+										<IconPalette className="size-4" aria-hidden="true" />
+										{t("common:user.theme-toggle", "Toggle theme")}
+									</Button>
+								}
+							/>
 						</PopoverContent>
 					</Popover>
 				</div>

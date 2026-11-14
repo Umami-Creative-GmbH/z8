@@ -46,7 +46,7 @@ export function AuthFormWrapper({
 			style={customStyles}
 			{...props}
 		>
-			<Card className="relative w-full border-white/30 bg-white/20 shadow-xl shadow-black/5 backdrop-blur-[40px] sm:shadow-xl dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75 [&_[data-slot=input]]:bg-background/85 dark:[&_[data-slot=input]]:bg-background/80">
+			<Card className="relative w-full border-border bg-card shadow-sm">
 				<CardContent className="p-5 sm:p-8">
 					<form className="w-full" method="post" {...formProps}>
 						<div className="flex flex-col gap-6">
@@ -66,7 +66,7 @@ export function AuthFormWrapper({
 										</Link>
 									</Button>
 								) : null}
-								<div className="flex flex-1 flex-col items-center text-center">
+								<div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center break-words">
 									{branding?.logoUrl ? (
 										<div className="relative mb-2 h-12 w-32">
 											<Image
@@ -80,9 +80,13 @@ export function AuthFormWrapper({
 											/>
 										</div>
 									) : (
-										<h1 className="font-bold text-2xl">{appName}</h1>
+										<p className="font-semibold text-sm text-muted-foreground">
+											{appName}
+										</p>
 									)}
-									<p className="text-balance text-muted-foreground">{title}</p>
+									<h1 className="text-balance text-2xl font-semibold tracking-tight">
+										{title}
+									</h1>
 								</div>
 								{backHref ? <div className="w-10" /> : null}
 							</div>

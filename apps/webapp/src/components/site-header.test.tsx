@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { SiteHeader } from "./site-header";
+import { PageHeader } from "./ui/page-header";
 
 let pathname = "/";
 
@@ -38,7 +39,8 @@ vi.mock("@/components/notifications", () => ({
 }));
 
 vi.mock("@/components/theme-toggle", () => ({
-	ThemeToggle: () => <button type="button">Toggle theme</button>,
+	ThemeToggle: ({ trigger }: { trigger?: ReactElement }) =>
+		trigger ?? <button type="button">Toggle theme</button>,
 }));
 
 vi.mock("@/components/time-tracking/time-clock-popover", () => ({
@@ -55,6 +57,34 @@ vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
 }));
 
 describe("SiteHeader", () => {
+	it("hands the main title to a converted report page while retaining Calendar's shell title", () => {
+		pathname = "/de/reports";
+		const page = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Employee Reports" />
+			</>,
+		);
+		expect(
+			screen
+				.getAllByRole("heading", { level: 1 })
+				.map((heading) => heading.textContent),
+		).toEqual(["Employee Reports"]);
+		page.unmount();
+		pathname = "/de/calendar/employee-1";
+		render(<SiteHeader />);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Calendar" }),
+		).toBeTruthy();
+	});
+
+	it("does not remove the shell heading from unconverted report subpages", () => {
+		pathname = "/en/reports/projects";
+		render(<SiteHeader />);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Project Reports" }),
+		).toBeTruthy();
+	});
 	it("shows header actions in the requested order on the dashboard route", () => {
 		pathname = "/en";
 
@@ -88,6 +118,9 @@ describe("SiteHeader", () => {
 		).toBeTruthy();
 		expect(
 			within(panel).getByRole("button", { name: "Refresh data" }),
+		).toBeTruthy();
+		expect(
+			within(panel).getByRole("button", { name: "Toggle theme" }),
 		).toBeTruthy();
 		expect(
 			within(panel).queryByRole("button", { name: "Clock In" }),

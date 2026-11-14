@@ -19,6 +19,12 @@ export function LoadingRegion({
 }) {
 	const { t } = useTranslate();
 	return (
-		<Element aria-label={t(label.labelKey, label.labelDefault)} {...props} />
+		<Element
+			role={Element === "div" ? "status" : undefined}
+			aria-live="polite"
+			aria-busy="true"
+			aria-label={t(label.labelKey, label.labelDefault)}
+			{...props}
+		/>
 	);
 }
