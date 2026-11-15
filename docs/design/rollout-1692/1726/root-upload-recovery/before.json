@@ -1,0 +1,157 @@
+{
+  "phase": "before",
+  "source": {
+    "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+    "sha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3",
+    "canonicalSha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3"
+  },
+  "checks": [
+    {
+      "name": "held the actual successful server preview response with the original payload",
+      "status": 200
+    },
+    {
+      "name": "actual Next router leaves the pending upload route; this bypasses normal pending dialog dismissal"
+    },
+    {
+      "name": "released the produced preview without replacing its response",
+      "status": 200,
+      "bytes": 333,
+      "sha256": "9965c7540a18798aeb4f19bdd57e2705335a22e828483f01c50672971a316d8b"
+    },
+    {
+      "name": "actual Back reuses the same file control",
+      "pendingLock": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "before-directory.png",
+      "path": "/en/payroll/work-balances",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Work balances"
+      ],
+      "main": [
+        {
+          "x": 256,
+          "width": 1344
+        }
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "b477ecf6429c17b0ec62871ba75baf1bca90ceaef2690669d936e52aafa7c653"
+      },
+      "source": {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "sha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3",
+        "canonicalSha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3"
+      }
+    },
+    {
+      "name": "before-returned-dialog.png",
+      "path": "/en/payroll/work-balances",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Work balances"
+      ],
+      "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\n\nChoose a CSV (UTF-8) file. Check every row before setting opening balances.\n\nDownload template\n\nChecking the file…\n\nCancel\nSet 0 opening balances",
+      "fileDisabled": true,
+      "main": [
+        {
+          "x": 256,
+          "width": 1344
+        }
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "86ccb066b9c085760f272ccef70d8a9359741aeb5ebbc43ea6253f88f5eb9b32"
+      },
+      "source": {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "sha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3",
+        "canonicalSha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3"
+      }
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "path": "/en/payroll/work-balances",
+      "action": "7f88909c0ad6519147315c91e1e49a0503407cc670"
+    }
+  ],
+  "responses": [
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/my-equipment",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/my-equipment",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "path": "/en/my-equipment",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "POST"
+    }
+  ],
+  "sameInputRetained": true,
+  "baselinePendingLock": true,
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[{\"url\":\"/en/payroll/work-balances\",\"buildError\":null,\"runtimeErrors\":[{\"type\":\"console\",\"errorName\":\"AuthorizationError\",\"message\":\"Equipment access is not available.\",\"stack\":[{\"file\":\"src\\\\lib\\\\organization\\\\equipment\\\\access.ts\",\"methodName\":\"denied\",\"line\":68,\"column\":3},{\"file\":\"src\\\\lib\\\\organization\\\\equipment\\\\access.ts\",\"methodName\":\"equipmentAccess\",\"line\":82,\"column\":21},{\"file\":\"src\\\\lib\\\\organization\\\\equipment\\\\custody.ts\",\"methodName\":\"<anonymous>\",\"line\":1121,\"column\":18},{\"file\":\"..\\\\..\\\\node_modules\\\\.pnpm\\\\drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7\\\\node_modules\\\\src\\\\node-postgres\\\\session.ts\",\"methodName\":\"NodePgSession.transaction\",\"line\":259,\"column\":19},{\"file\":\"src\\\\lib\\\\effect\\\\services\\\\database.service.ts\",\"methodName\":\"<anonymous>\",\"line\":33,\"column\":21},{\"file\":\"src\\\\lib\\\\effect\\\\services\\\\database.service.ts\",\"methodName\":\"try\",\"line\":31,\"column\":11},{\"file\":\"src\\\\app\\\\[locale]\\\\(app)\\\\my-equipment\\\\page.tsx\",\"methodName\":\"PersonalEquipmentPage\",\"line\":37,\"column\":4}]}]}]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

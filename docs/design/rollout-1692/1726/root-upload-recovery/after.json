@@ -1,0 +1,284 @@
+{
+  "phase": "after",
+  "source": {
+    "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+    "sha256": "956eac6117a1a6458b3bc0448251e6b49199f551bcfa11d870ff2eed539dc57b",
+    "canonicalSha256": "dc04b3e0e148297ef3d1107ae1eeb5cbbbd6d8498d3173ba5fe1074636ec4fbd"
+  },
+  "checks": [
+    {
+      "name": "held the actual successful server preview response with the original payload",
+      "status": 200
+    },
+    {
+      "name": "actual Next router leaves the pending upload route; this bypasses normal pending dialog dismissal"
+    },
+    {
+      "name": "released the produced preview without replacing its response",
+      "status": 200,
+      "bytes": 333,
+      "sha256": "9965c7540a18798aeb4f19bdd57e2705335a22e828483f01c50672971a316d8b"
+    },
+    {
+      "name": "actual Back reuses the same file control",
+      "pendingLock": false
+    },
+    {
+      "name": "trusted pointer Retry reuses the retained file and sends exactly one real preview"
+    },
+    {
+      "name": "trusted pointer commit sends one command and stores the expected 150-minute opening balance"
+    }
+  ],
+  "captures": [
+    {
+      "name": "after-directory.png",
+      "path": "/en/payroll/work-balances",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Work balances"
+      ],
+      "main": [
+        {
+          "x": 256,
+          "width": 1344
+        }
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "941db193c93df97232c8b12b65cd0048e0a21ab8415980ecc4b81580d2128b58"
+      },
+      "source": {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "sha256": "956eac6117a1a6458b3bc0448251e6b49199f551bcfa11d870ff2eed539dc57b",
+        "canonicalSha256": "dc04b3e0e148297ef3d1107ae1eeb5cbbbd6d8498d3173ba5fe1074636ec4fbd"
+      }
+    },
+    {
+      "name": "after-returned-dialog.png",
+      "path": "/en/payroll/work-balances",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Work balances"
+      ],
+      "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\n\nChoose a CSV (UTF-8) file. Check every row before setting opening balances.\n\nDownload template\nCancel\nSet 0 opening balances\nClose",
+      "fileDisabled": false,
+      "main": [
+        {
+          "x": 256,
+          "width": 1344
+        }
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "d9e60b437480a53dc392d7703e9b3f4d39c5c211891e92f074f432c2db288024"
+      },
+      "source": {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "sha256": "956eac6117a1a6458b3bc0448251e6b49199f551bcfa11d870ff2eed539dc57b",
+        "canonicalSha256": "dc04b3e0e148297ef3d1107ae1eeb5cbbbd6d8498d3173ba5fe1074636ec4fbd"
+      }
+    },
+    {
+      "name": "after-retained-file-error.png",
+      "path": "/en/payroll/work-balances",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Work balances"
+      ],
+      "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\n\nChoose a CSV (UTF-8) file. Check every row before setting opening balances.\n\nDownload template\nNothing was saved\nThe work balance could not be updated. Try again.\nRetry\nCancel\nSet 0 opening balances\nClose",
+      "fileDisabled": false,
+      "main": [
+        {
+          "x": 256,
+          "width": 1344
+        }
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "8b3e5425638b556bec5180396260c6c94aaabef40d37aead0471848cd7e343ed"
+      },
+      "source": {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "sha256": "956eac6117a1a6458b3bc0448251e6b49199f551bcfa11d870ff2eed539dc57b",
+        "canonicalSha256": "dc04b3e0e148297ef3d1107ae1eeb5cbbbd6d8498d3173ba5fe1074636ec4fbd"
+      }
+    },
+    {
+      "name": "after-retry-ready.png",
+      "path": "/en/payroll/work-balances",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Work balances"
+      ],
+      "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\n\nChoose a CSV (UTF-8) file. Check every row before setting opening balances.\n\nDownload template\n\n1 row is ready; none replaces an opening balance in effect.\n\nRow\tEmployee\tDay\tBalance\tReason\tStatus\n\n2\n\t\nFixture Person 1\nR043-1\n\t\nMar 31, 2026\n\t\n+2:30h\n\t\nR043 root lifecycle carry forward\n\t\nReady\nCancel\nSet 1 opening balance\nClose",
+      "fileDisabled": false,
+      "main": [
+        {
+          "x": 256,
+          "width": 1344
+        }
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "2d5b2945b9415f789a9fd5463963d18a99993c24283244dcb8c63846338fc41c"
+      },
+      "source": {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "sha256": "956eac6117a1a6458b3bc0448251e6b49199f551bcfa11d870ff2eed539dc57b",
+        "canonicalSha256": "dc04b3e0e148297ef3d1107ae1eeb5cbbbd6d8498d3173ba5fe1074636ec4fbd"
+      }
+    },
+    {
+      "name": "after-committed.png",
+      "path": "/en/payroll/work-balances",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Work balances"
+      ],
+      "main": [
+        {
+          "x": 256,
+          "width": 1344
+        }
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "74dd47f5870d9bc8c4d41073577473655780b1bbe97e5485a1232c0ddfb52e52"
+      },
+      "source": {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "sha256": "956eac6117a1a6458b3bc0448251e6b49199f551bcfa11d870ff2eed539dc57b",
+        "canonicalSha256": "dc04b3e0e148297ef3d1107ae1eeb5cbbbd6d8498d3173ba5fe1074636ec4fbd"
+      }
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "path": "/en/payroll/work-balances",
+      "action": "7f88909c0ad6519147315c91e1e49a0503407cc670"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "action": "7f88909c0ad6519147315c91e1e49a0503407cc670"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "action": "7f88909c0ad6519147315c91e1e49a0503407cc670"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "action": "7fba7abd2a4305d4d685c7db99e6daa8ab0816b64b"
+    }
+  ],
+  "responses": [
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/my-equipment",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "path": "/en/my-equipment",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "POST"
+    }
+  ],
+  "sameInputRetained": true,
+  "readback": [
+    {
+      "employee_id": "2211a2e8-1973-4f85-ba3d-cbcdf5dee017",
+      "day": "2026-03-31",
+      "minutes": 150,
+      "reason": "R043 root lifecycle carry forward",
+      "cancelled": false
+    }
+  ],
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[{\"url\":\"/en/payroll/work-balances\",\"buildError\":null,\"runtimeErrors\":[{\"type\":\"console\",\"errorName\":\"AuthorizationError\",\"message\":\"Equipment access is not available.\",\"stack\":[{\"file\":\"src\\\\lib\\\\organization\\\\equipment\\\\access.ts\",\"methodName\":\"denied\",\"line\":68,\"column\":3},{\"file\":\"src\\\\lib\\\\organization\\\\equipment\\\\access.ts\",\"methodName\":\"equipmentAccess\",\"line\":82,\"column\":21},{\"file\":\"src\\\\lib\\\\organization\\\\equipment\\\\custody.ts\",\"methodName\":\"<anonymous>\",\"line\":1121,\"column\":18},{\"file\":\"..\\\\..\\\\node_modules\\\\.pnpm\\\\drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7\\\\node_modules\\\\src\\\\node-postgres\\\\session.ts\",\"methodName\":\"NodePgSession.transaction\",\"line\":259,\"column\":19},{\"file\":\"src\\\\lib\\\\effect\\\\services\\\\database.service.ts\",\"methodName\":\"<anonymous>\",\"line\":33,\"column\":21},{\"file\":\"src\\\\lib\\\\effect\\\\services\\\\database.service.ts\",\"methodName\":\"try\",\"line\":31,\"column\":11},{\"file\":\"src\\\\app\\\\[locale]\\\\(app)\\\\my-equipment\\\\page.tsx\",\"methodName\":\"PersonalEquipmentPage\",\"line\":37,\"column\":4}]}]}]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}
