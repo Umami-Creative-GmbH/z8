@@ -1,0 +1,11 @@
+{
+  "port": 54000,
+  "privateManifestsRemainIgnored": true,
+  "ownedProcessAndListenerAncestryVerified": true,
+  "ownedContainersRemoved": 3,
+  "checkout": "X:\\t3-code\\worktrees\\z8\\t3-119549b3-eaa8db194ebccd70",
+  "portStillListening": false,
+  "nextPid": 48252,
+  "ownedNativeSessionClosed": true,
+  "ownedPreviewClosed": true
+}

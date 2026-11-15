@@ -1,0 +1,91 @@
+{
+  "correctionCommit": "89c7f3816988b33496165e9ee63c839aede4a364",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx": "35752bc30e94e9d0b8429520128572c02f9b0b79b6de91adad6dbc81b1c6003e",
+    "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.tsx": "5f3fbb122d8a71a1ddc6e201643188627ade4c4bbca1e67a8d4a0a9e83e1369f",
+    "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts": "da9b13ec7940c3388ccd4e81bee18227d49fd481fdfcd56158b862386f03d733"
+  },
+  "units": {
+    "uniqueSuites": 50,
+    "passedTests": 576,
+    "failedTests": 0,
+    "exactOrganizationSelection": {
+      "suites": 19,
+      "tests": 238,
+      "contained": true
+    },
+    "client": {
+      "tests": 37,
+      "original": 34,
+      "new": 3
+    },
+    "command": "compatibility-commands.json",
+    "repeatedSelectionsNotAdditionalCoverage": true
+  },
+  "postgres": {
+    "suites": 1,
+    "passedTests": 18,
+    "command": [
+      "pnpm",
+      "--filter",
+      "webapp",
+      "exec",
+      "C:/Users/KaiHentschel/scoop/apps/git/current/usr/bin/bash.exe",
+      "../../.tmp/1724-root-checks/run-pg.sh"
+    ],
+    "migrationRecoveryPassed": true,
+    "ownedContainerRemoved": true,
+    "scope": "Unchanged production organization/current-roster/manager/team/search readers against official disposable PostgreSQL; fresh on correction source."
+  },
+  "types": {
+    "passed": true,
+    "command": "types-commands.json"
+  },
+  "doctor": {
+    "files": 11,
+    "diagnostics": 0,
+    "sourceRevision": "89c7f3816988b33496165e9ee63c839aede4a364",
+    "command": "doctor-commands.json"
+  },
+  "biome": {
+    "normalCRLFAll11": true,
+    "lintImportAll11": true,
+    "rawDefaultAll11": false,
+    "explicitWebappAll11": false,
+    "command": "biome-commands.json",
+    "qualification": "Accepted normal configuration with CRLF passes all 11 changed source files. Other complete-file profiles remain unpassed; no blanket waiver or rewrite."
+  },
+  "red": {
+    "lifecycle": {
+      "failed": 2,
+      "artifact": "lifecycle-red.json"
+    },
+    "oldCleanup": {
+      "failed": 1,
+      "artifact": "old-cleanup-red.json"
+    },
+    "progression": "Refresh green / cached Retry red is preserved separately; final assembled client selection has 37 passing cases."
+  },
+  "runtime": {
+    "beforeChecks": 6,
+    "afterChecks": 7,
+    "acceptedCaptures": 7,
+    "failedAttemptCaptures": 2,
+    "actualCachedBranchIdentityRetained": true,
+    "pageErrors": 0,
+    "scope": "Two owned client/loader files overlaid from exact pre-correction integration on current infrastructure; same disposable 200-person organization. Two manager-link edits are setup only, no roster/authorization alteration.",
+    "activation": "Selected-person modal prevents trusted header pointer input: Refresh uses synthetic DOM click on the actual mounted header control. Branch expansion, navigation and Retry use trusted browser pointer actions; history Back restores the same branch DOM node.",
+    "transport": "Actual Next action owner getOrgExplorerPeople resolved by connected MCP; hold/release one genuine request and abort one request. Both old and retry responses are actual successful server results, never stubbed.",
+    "captures": "Before has three captures. Final after reruns the same correction with one added scrolled record capture. Earlier complete after run repeated the same two behaviors and is not additional coverage.",
+    "preferences": "Phone dark/saved Large storage is fixture setup; measured 18px is not a fresh user preference-save journey or true zoom.",
+    "nativeReact": "No new usable native React tree or axe result claimed; worker native evidence remains inherited.",
+    "failedAttempt": "Both first versions timed out waiting for transient header aria-busy=true after Escape dismissed the panel. No product outcome inferred. Failed screenshots/JSON/script/log retained."
+  },
+  "limits": [
+    "Historical developer 2 Issues overlay remains despite final connected Next empty issue/error arrays; broader transitions are unresolved.",
+    "Phone captures retain the real failed-read toast and developer Rendering/Pets overlays. Top recovery capture does not show Person 199; separate scrolled restored-record capture does.",
+    "System fallback font stack is measured; no independent installed-face, physical-device, true-zoom, all-locale, exhaustive role/domain/accessibility or numeric performance certification.",
+    "Worker original 234 units/18 PG/25 runtime observations and native/Next evidence remain inherited, separate from fresh root totals.",
+    "Full production static generation, remote Tolgee, external providers and global acceptance remain open."
+  ]
+}

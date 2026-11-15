@@ -1,0 +1,907 @@
+{
+  "base": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+  "overlay": [
+    "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+    "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx",
+    "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "fixture": "generated disposable payroll fixture; no external delivery",
+  "role": "small-admin with all-employee payroll grant",
+  "organization": "perf-small-d39b40cca73b",
+  "captures": [
+    {
+      "name": "before-desktop-light",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "dpr": 1,
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "default",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 66,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "decodedBytes": 4800000
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-wide-dark-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 2200,
+        "height": 1100
+      },
+      "dpr": 1,
+      "documentWidth": 2200,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 66,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll",
+      "png": {
+        "width": 2200,
+        "height": 1100,
+        "decodedBytes": 7260000
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-phone-light-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 66,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-phone-light-saved18-totals",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 66,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-phone-dark-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 66,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-phone-dark-saved18-totals",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 66,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "after-desktop-light",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "dpr": 1,
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "default",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "decodedBytes": 4800000
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-wide-dark-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 2200,
+        "height": 1100
+      },
+      "dpr": 1,
+      "documentWidth": 2200,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 2200,
+        "height": 1100,
+        "decodedBytes": 7260000
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-light-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-light-saved18-totals",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-dark-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-dark-saved18-totals",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-team-panel",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "dpr": 1,
+      "documentWidth": 1600,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "decodedBytes": 4800000
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-drawer-closed",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-keyboard-report",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 66,
+      "totals": "Employees8Worked hours1344.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n3/1/2025 - 3/31/2025\n2025-03-01 to 2025-03-31\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n1344.00 h\nReady\n8\nBlockers\n0\nClosed months\nMarch 2025\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nMarch 2025\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nR042-6967b6f0\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 1\nR042-30171fd9\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 2\nR042-6b70c8ae\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 3\nR042-3ac4f22e\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 4\nR042-788a56ee\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 5\nR042-aa00ed5b\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 6\nR042-dad2d02f\n\tFixture team 0\tFixed\t168 h\tFixture home office: 8\tReady for payroll\n\nPerson 7\nR042-87b788b6\n\tFixture team 1\tFixed\t168 h\tFixture home office: 8\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\nBaseline export\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:58:45 UTC · 12345 / 1234567 · d7286f7b-4eaf-4847-8930-a5ccf7b6ec35 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:56:11 UTC · 12345 / 1234567 · 111f1bf2-f125-42aa-9ccd-285abded1d05 · Available\nDATEV Lohn & Gehalt · 2026-11-15 11:55:06 UTC · 12345 / 1234567 · 6294a65a-6972-4f7f-86d6-ef890e3f079e · Available\n\nAvailable\n\nExport job ID\n6177cadc-2f44-49b0-968f-382a50ab46b8\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nEvidence expires (UTC)\n2028-11-15 12:01:33 UTC\nComplete retained employee scope\n30171fd9-9692-466d-a18d-609a6b01f5ef\n3ac4f22e-4546-43b1-b46b-3d45aea313dd\n6967b6f0-c374-489a-bf5c-c79b178ce13a\n6b70c8ae-70cc-41b1-b91a-3b9cc4342e64\n788a56ee-502b-4b4e-95d7-9348c86a42cd\n87b788b6-03ef-4f2f-8a7b-8dce2b2fe30b\naa00ed5b-8cdc-48ca-969a-f306864fc42c\ndad2d02f-aa23-4e40-8ce5-1ca157e7e7ff\nRetained employee boundaries, filters and configuration\nActual supported exported rows\nExported personnel number\tExported wage code\tExported date\tExported hours\tExported note\tSource contributions\nR042-30171fd9\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-21\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-24\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-25\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-25\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-26\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t2000\t2025-03-26\t8.00\tFixture home office\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-27\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-28\t8.00\t\t\nSource contributions\n\nR042-30171fd9\t1000\t2025-03-31\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-03\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-04\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-04\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-05\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-05\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-06\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-07\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-10\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-11\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-11\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-12\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-12\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-13\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-14\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-17\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-18\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-18\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-19\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t2000\t2025-03-19\t8.00\tFixture home office\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-20\t8.00\t\t\nSource contributions\n\nR042-3ac4f22e\t1000\t2025-03-21\t8.00\t\t\nSource contributions\nPrevious exported rows\n\nRows 1–50 of 232\n\nNext exported rows\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\nComparison baseline\nDATEV Lohn & Gehalt · 2026-11-15 12:01:33 UTC · 12345 / 1234567 · 5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll format\nDATEV Lohn & Gehalt\nBaseline ID\n5b8dd57c-8e2c-4bb6-b05b-0102cf6d6836\nPayroll destination\n12345 / 1234567\nExport configuration ID\nb9a76636-151f-415a-892b-0fee7c7b42c2\nRetained period\n2025-03-01 – 2025-03-31\nCreated (UTC)\n2026-11-15 12:01:32 UTC\nCompleted (UTC)\n2026-11-15 12:01:33 UTC\nComplete retained employee scope\nEffective baseline filters\nPrepare comparison",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "59c974ce06966119fb20cd4036982f5a60f8f186",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+          "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+          "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+          "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+          "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "336cf9a29b3275226da8aa60cc8e362346089fc52350d51516126eac7594aa75",
+          "rawBlob": "7d92549352d2837cebf9826029013a25021dbc36",
+          "normalizedBlob": "d8ab8b24b040924a7e0cfbcaf76bb57cc8e4f907",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "matched comparison",
+      "actual": "same synthetic organization, actor, period and records; only four listed consumer files overlaid; baseline is not a full historical app"
+    },
+    {
+      "name": "global refresh retains custom draft",
+      "actual": true
+    },
+    {
+      "name": "scope panel first Escape and focus return",
+      "actual": "Specific teams"
+    },
+    {
+      "name": "current route phone first Escape and focus return",
+      "actual": true
+    },
+    {
+      "name": "phone employee comparison scrolls with keyboard",
+      "actual": true
+    }
+  ],
+  "errors": []
+}

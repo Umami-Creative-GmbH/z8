@@ -1,0 +1,14 @@
+Passed: held the manifest-identified getOrgExplorerPeople action for current-roster Person 199
+Passed: activated the actual header Refresh handler while the selected read remained held
+Passed: released an actual successful old read after mounted Refresh activation
+Passed: baseline strands the selected person after Refresh despite successful read
+Passed: real failed branch read retains the roster and exposes Retry
+Passed: baseline cached Retry discards real success and removes recovery
+Baseline runtime exit: 0
+Passed: held the manifest-identified getOrgExplorerPeople action for current-roster Person 199
+Passed: activated the actual header Refresh handler while the selected read remained held
+Passed: released an actual successful old read after mounted Refresh activation
+Passed: corrected Refresh resolves the same selected person and preserves the URL
+Passed: real failed branch read retains the roster and exposes Retry
+Passed: corrected cached Retry accepts real success and restores the expanded branch
+Corrected runtime exit: 0

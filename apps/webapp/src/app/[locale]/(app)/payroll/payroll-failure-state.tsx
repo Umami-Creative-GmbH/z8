@@ -2,18 +2,10 @@ import { IconScale } from "@tabler/icons-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
-export type PayrollFailureTranslator = (
-	key: string,
-	fallback: string,
-) => string;
+export type PayrollFailureTranslator = (key: string, fallback: string) => string;
 
 export function PayrollFailureState({
 	code,
@@ -35,11 +27,11 @@ export function PayrollFailureState({
 	 */
 	exportEntry?: ReactNode;
 }) {
-	const accessDenied =
-		code === "AuthenticationError" || code === "AuthorizationError";
+	const accessDenied = code === "AuthenticationError" || code === "AuthorizationError";
 	if (accessDenied && offerWorkBalances) {
 		return (
 			<div className="@container/main flex flex-1 flex-col items-center justify-center gap-6 p-6">
+				<PageHeader title={t("payroll.title", "Payroll")} />
 				<Card className="w-full max-w-md text-center">
 					<CardHeader>
 						<CardTitle>
@@ -76,10 +68,7 @@ export function PayrollFailureState({
 				"payroll.accessDenied.description",
 				"You do not have access to payroll data for the active organization.",
 			)
-		: t(
-				"payroll.unavailable.description",
-				"Payroll data could not be prepared safely.",
-			);
+		: t("payroll.unavailable.description", "Payroll data could not be prepared safely.");
 	const help = accessDenied
 		? t(
 				"payroll.accessDenied.help",
@@ -92,15 +81,16 @@ export function PayrollFailureState({
 
 	return (
 		<div className="@container/main flex flex-1 items-center justify-center p-6">
-			<Card className="max-w-md text-center">
-				<CardHeader>
-					<CardTitle>{title}</CardTitle>
-					<CardDescription>{description}</CardDescription>
-				</CardHeader>
-				<CardContent className="text-muted-foreground text-sm">
-					{help}
-				</CardContent>
-			</Card>
+			<div className="flex w-full max-w-md flex-col gap-6">
+				<PageHeader title={t("payroll.title", "Payroll")} />
+				<Card className="max-w-md text-center">
+					<CardHeader>
+						<CardTitle>{title}</CardTitle>
+						<CardDescription>{description}</CardDescription>
+					</CardHeader>
+					<CardContent className="text-muted-foreground text-sm">{help}</CardContent>
+				</Card>
+			</div>
 		</div>
 	);
 }

@@ -102,8 +102,7 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 		read: () => Promise<ServerActionResult<T>>,
 		accept: (data: T) => void,
 	) {
-		const version = generation.current;
-		await settleRead(key, async () => {
+		await settleRead(key, async (version) => {
 			const result = await read();
 			if (version !== generation.current) return;
 			if (!result.success) throw new Error("Roster read failed");
@@ -111,10 +110,13 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 		});
 	}
 
-	const settleRead = async (key: string, read: () => Promise<void>) => {
+	const settleRead = async (
+		key: string,
+		read: (version: number) => Promise<void>,
+	): Promise<void> => {
 		const version = generation.current;
 		try {
-			await read();
+			await read(version);
 			if (version !== generation.current) return;
 			setFailedLoads((current) => {
 				const next = new Map(current);
@@ -123,17 +125,22 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 			});
 		} catch {
 			if (version !== generation.current) return;
-			setFailedLoads((current) => new Map(current).set(key, read));
+			setFailedLoads((current) =>
+				new Map(current).set(key, () => settleRead(key, read)),
+			);
 			showFailure(undefined);
 		}
 	};
 
 	async function retryFailed() {
 		if (isRetrying) return;
+		const version = generation.current;
 		setIsRetrying(true);
 		await Promise.all(
-			[...failedLoads].map(([key, read]) => settleRead(key, read)),
-		).finally(() => setIsRetrying(false));
+			[...failedLoads.values()].map((retry) => retry()),
+		).finally(() => {
+			if (version === generation.current) setIsRetrying(false);
+		});
 	}
 
 	/**
@@ -212,9 +219,11 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 				.get(employeeId)
 				?.lineReportIds.filter((id) => !peopleRef.current.has(id)) ?? [];
 		if (summary.complete || missing.length === 0) return;
+		const version = generation.current;
 		setLoadingIds((current) => withIds(current, [employeeId]));
 		void loadPeople(missing).finally(() => {
-			setLoadingIds((current) => withoutIds(current, [employeeId]));
+			if (version === generation.current)
+				setLoadingIds((current) => withoutIds(current, [employeeId]));
 		});
 	}
 
@@ -224,6 +233,7 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 		const key = `team:${teamId}`;
 		if (summary.complete || offset === null || pendingPages.current.has(key))
 			return;
+		const version = generation.current;
 		pendingPages.current.add(key);
 		setLoadingTeamIds((current) => withIds(current, [teamId]));
 		await readPeople(
@@ -236,6 +246,7 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 				);
 			},
 		);
+		if (version !== generation.current) return;
 		pendingPages.current.delete(key);
 		setLoadingTeamIds((current) => withoutIds(current, [teamId]));
 	}
@@ -253,6 +264,7 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 		const key = `group:${group}`;
 		if (summary.complete || offset === null || pendingPages.current.has(key))
 			return;
+		const version = generation.current;
 		pendingPages.current.add(key);
 		setLoadingGroups((current) => withIds(current, [group]));
 		await readPeople(
@@ -265,20 +277,29 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 				);
 			},
 		);
+		if (version !== generation.current) return;
 		pendingPages.current.delete(key);
 		setLoadingGroups((current) => withoutIds(current, [group]));
 	}
 
 	useViewRefresh(async () => {
 		const version = ++generation.current;
+		const requestedIds = [...pendingLoads.current.keys()];
+		// URL-driven loads must not wait on requests retired by this refresh.
+		pendingLoads.current.clear();
+		pendingPages.current.clear();
+		setLoadingIds(new Set());
+		setLoadingTeamIds(new Set());
+		setLoadingGroups(new Set());
+		setIsRetrying(false);
 		setFailedLoads(new Map());
 		const result = await getOrgExplorerData();
 		if (version !== generation.current) return;
 		if (!result.success) throw new Error(result.error);
 		const fresh = toPeopleMap(result.data.people);
-		const stillShown = [...peopleRef.current.keys()].filter(
-			(id) => !fresh.has(id),
-		);
+		const stillShown = [
+			...new Set([...peopleRef.current.keys(), ...requestedIds]),
+		].filter((id) => !fresh.has(id));
 		if (!result.data.complete) {
 			// The batches are independent reads: load them side by side.
 			const chunks: string[][] = [];

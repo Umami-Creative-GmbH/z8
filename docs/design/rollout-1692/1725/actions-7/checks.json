@@ -1,0 +1,76 @@
+{
+  "checks": [
+    {
+      "name": "small-employee has no payroll controls",
+      "actual": true
+    },
+    {
+      "name": "small-restricted has no payroll controls",
+      "actual": true
+    },
+    {
+      "name": "small-manager with actual payroll grant admitted",
+      "actual": true
+    },
+    {
+      "name": "small-admin with actual payroll grant admitted",
+      "actual": true
+    },
+    {
+      "name": "eight employee rows from authorized reader",
+      "actual": 8
+    },
+    {
+      "name": "actual loaded rows",
+      "actual": [
+        "Person 0R042-6967b6f0Fixture team 0Fixed168 hFixture home office: 8Ready for payroll",
+        "Person 1R042-30171fd9Fixture team 1Fixed168 hFixture home office: 8Ready for payroll",
+        "Person 2R042-6b70c8aeFixture team 0Fixed168 hFixture home office: 8Ready for payroll",
+        "Person 3R042-3ac4f22eFixture team 1Fixed168 hFixture home office: 8Ready for payroll",
+        "Person 4R042-788a56eeFixture team 0Fixed168 hFixture home office: 8Ready for payroll",
+        "Person 5R042-aa00ed5bFixture team 1Fixed168 hFixture home office: 8Ready for payroll",
+        "Person 6R042-dad2d02fFixture team 0Fixed168 hFixture home office: 8Ready for payroll",
+        "Person 7R042-87b788b6Fixture team 1Fixed168 hFixture home office: 8Ready for payroll"
+      ]
+    },
+    {
+      "name": "PDF magic from actual downloaded bytes",
+      "actual": "%PDF-"
+    },
+    {
+      "name": "PDF creates no export job",
+      "actual": 3
+    },
+    {
+      "name": "duplicate pending export click creates one job",
+      "actual": 4
+    },
+    {
+      "name": "real job completed readback",
+      "actual": "completed"
+    },
+    {
+      "name": "file export result",
+      "actual": {
+        "status": "completed",
+        "file_name": "datev_lohn_2025-03_20261115_115845.csv",
+        "employee_count": 8
+      }
+    },
+    {
+      "name": "comparison never creates a delivery job",
+      "actual": 4
+    },
+    {
+      "name": "real reader recovery",
+      "actual": true
+    },
+    {
+      "name": "revoked scope retains recoverable filter panel",
+      "actual": true
+    }
+  ],
+  "errors": [],
+  "fixture": "disposable",
+  "organization": "perf-small-d39b40cca73b"
+}
