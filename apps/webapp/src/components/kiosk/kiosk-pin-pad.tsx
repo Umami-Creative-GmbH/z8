@@ -52,6 +52,8 @@ export function KioskPinPad({
 	}
 
 	const onKey = useEffectEvent((event: KeyboardEvent) => {
+		// A focused button owns Enter (Back, a digit or OK); do not also submit the PIN.
+		if (event.key === "Enter" && event.target instanceof Element && event.target.closest("button")) return;
 		if (/^\d$/.test(event.key)) press(event.key);
 		else if (event.key === "Backspace") setPin((current) => current.slice(0, -1));
 		else if (event.key === "Enter") submit();
@@ -68,7 +70,7 @@ export function KioskPinPad({
 	const keyClass = "h-16 text-3xl font-semibold [@media(min-height:860px)]:h-20";
 
 	return (
-		<div className="mx-auto flex w-full max-w-md flex-col gap-6">
+		<div className="mx-auto flex w-full max-w-md flex-col gap-5 rounded-xl border bg-card p-4 sm:p-6">
 			<Button variant="ghost" size="lg" className="h-14 self-start text-lg" onClick={onBack}>
 				<IconArrowLeft className="size-6" aria-hidden="true" />
 				{t("timeTracking.kiosk.pin.back", "Not you? Back")}

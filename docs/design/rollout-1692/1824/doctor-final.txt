@@ -1,0 +1,16 @@
+✔ Select projects › desktop, docs, marketing, webapp
+Scanning changes: feat/1824-kiosk → a9b472e5864f386d881604605d593cffc189d61a
+
+No changed source files in X:\t3-code\worktrees\z8\t3-dbeec437-4b86e5438cc205a1\apps\desktop, skipping.
+
+No changed source files in X:\t3-code\worktrees\z8\t3-dbeec437-4b86e5438cc205a1\apps\docs, skipping.
+
+No changed source files in X:\t3-code\worktrees\z8\t3-dbeec437-4b86e5438cc205a1\apps\marketing, skipping.
+
+✔ Scanned 17 files in 12.0s
+
+React Doctor — t3-dbeec437-4b86e5438cc205a1
+Score unavailable.
+
+✔ No issues found!
+  Full diagnostics written to C:\Users\KAIHEN~1\AppData\Local\Temp\react-doctor-58aeb273-fdad-4591-8033-b5877523c36a

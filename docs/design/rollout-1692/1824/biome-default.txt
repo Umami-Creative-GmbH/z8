@@ -1,0 +1,1713 @@
+src\components\kiosk\kiosk-app.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   /* @vitest-environment jsdom */
+      2   2 │   
+      3     │ - import·{·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";
+          3 │ + import·{
+          4 │ + → cleanup,
+          5 │ + → fireEvent,
+          6 │ + → render,
+          7 │ + → screen,
+          8 │ + → waitFor,
+          9 │ + }·from·"@testing-library/react";
+      4  10 │   import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+      5     │ - import·{·KIOSK_TOKEN_STORAGE_KEY,·type·KioskDeviceInfo·}·from·"@/lib/time-tracking/kiosk/protocol";
+         11 │ + import·{
+         12 │ + → KIOSK_TOKEN_STORAGE_KEY,
+         13 │ + → type·KioskDeviceInfo,
+         14 │ + }·from·"@/lib/time-tracking/kiosk/protocol";
+      6  15 │   import { KioskApp } from "./kiosk-app";
+      7  16 │   
+    ······· │ 
+      9  18 │     useTranslate: () => ({
+     10  19 │       t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+     11     │ - → → → fallback.replace(/\{(\w+)\}/g,·(_match,·name:·string)·=>·String(params?.[name]·??·"")),
+         20 │ + → → → fallback.replace(/\{(\w+)\}/g,·(_match,·name:·string)·=>
+         21 │ + → → → → String(params?.[name]·??·""),
+         22 │ + → → → ),
+     12  23 │     }),
+     13  24 │   }));
+    ······· │ 
+     71  82 │       render(<KioskApp />);
+     72  83 │   
+     73     │ - → → const·input·=·(await·screen.findByLabelText("Pairing·code"))·as·HTMLInputElement;
+         84 │ + → → const·input·=·(await·screen.findByLabelText(
+         85 │ + → → → "Pairing·code",
+         86 │ + → → ))·as·HTMLInputElement;
+     74  87 │       expect(input.value).toBe("ABCDE-FGHJK");
+     75  88 │       expect(window.location.search).toBe("");
+    ······· │ 
+     78  91 │       expect(await screen.findByText("Front door")).toBeTruthy();
+     79  92 │       expect(screen.getByText("Store")).toBeTruthy();
+     80     │ - → → expect(JSON.parse(String(calls[0].init?.body))).toEqual({·code:·"ABCDE-FGHJK"·});
+     81     │ - → → expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBe("z8k_device-token");
+         93 │ + → → expect(JSON.parse(String(calls[0].init?.body))).toEqual({
+         94 │ + → → → code:·"ABCDE-FGHJK",
+         95 │ + → → });
+         96 │ + → → expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBe(
+         97 │ + → → → "z8k_device-token",
+         98 │ + → → );
+     82  99 │       expect(window.localStorage.length).toBe(1);
+     83 100 │     });
+    ······· │ 
+    118 135 │     it("shows the who-is-in board on the home screen only when the kiosk's board is on (#863)", async () => {
+    119 136 │       window.localStorage.setItem(KIOSK_TOKEN_STORAGE_KEY, "z8k_device-token");
+    120     │ - → → const·board·=·{·enabled:·true,·entries:·[{·name:·"Anna·B.",·state:·"in"·}]·};
+        137 │ + → → const·board·=·{
+        138 │ + → → → enabled:·true,
+        139 │ + → → → entries:·[{·name:·"Anna·B.",·state:·"in"·}],
+        140 │ + → → };
+    121 141 │       const calls = stubFetch(({ url }) =>
+    122 142 │         url === "/api/kiosk/board"
+    ······· │ 
+    152 172 │   
+    153 173 │       expect(await screen.findByLabelText("Pairing code")).toBeTruthy();
+    154     │ - → → await·waitFor(()·=>·expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBeNull());
+        174 │ + → → await·waitFor(()·=>
+        175 │ + → → → expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBeNull(),
+        176 │ + → → );
+    155 177 │     });
+    156 178 │   
+    ······· │ 
+    166 188 │   
+    167 189 │       expect(await screen.findByText(/cannot reach the server/i)).toBeTruthy();
+    168     │ - → → expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBe("z8k_device-token");
+        190 │ + → → expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBe(
+        191 │ + → → → "z8k_device-token",
+        192 │ + → → );
+    169 193 │     });
+    170 194 │   });
+  
+
+src\components\kiosk\kiosk-app.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     16  16 │     retireKioskToken,
+     17  17 │   } from "@/lib/time-tracking/kiosk/offline-device";
+     18     │ - import·type·{·KioskDeviceInfo,·KioskOfflineContact·}·from·"@/lib/time-tracking/kiosk/protocol";
+         18 │ + import·type·{
+         19 │ + → KioskDeviceInfo,
+         20 │ + → KioskOfflineContact,
+         21 │ + }·from·"@/lib/time-tracking/kiosk/protocol";
+     19  22 │   import { KioskPairedScreen } from "./kiosk-paired-screen";
+     20  23 │   import { KioskPairingForm } from "./kiosk-pairing-form";
+    ······· │ 
+     61  64 │    * it is offline, and the commands keep their token for a later contact.
+     62  65 │    */
+     63     │ - async·function·screenFor(session:·KioskSession,·initialCode:·string):·Promise<KioskScreen>·{
+         66 │ + async·function·screenFor(
+         67 │ + → session:·KioskSession,
+         68 │ + → initialCode:·string,
+         69 │ + ):·Promise<KioskScreen>·{
+     64  70 │     switch (session.state) {
+     65  71 │       case "paired":
+    ······· │ 
+     75  81 │           await forgetKioskOfflineData();
+     76  82 │         } else {
+     77     │ - → → → → if·(!(await·retireKioskToken(session.staleToken)))·return·{·state:·"unreachable"·};
+         83 │ + → → → → if·(!(await·retireKioskToken(session.staleToken)))
+         84 │ + → → → → → return·{·state:·"unreachable"·};
+     78  85 │           forgetKioskToken();
+     79  86 │         }
+    ······· │ 
+    165 172 │           />
+    166 173 │         ) : null}
+    167     │ - → → → {screen.state·===·"unreachable"·?·<KioskUnreachable·onRetry={()·=>·void·retry()}·/>·:·null}
+        174 │ + → → → {screen.state·===·"unreachable"·?·(
+        175 │ + → → → → <KioskUnreachable·onRetry={()·=>·void·retry()}·/>
+        176 │ + → → → )·:·null}
+    168 177 │       </main>
+    169 178 │     );
+    ······· │ 
+    179 188 │         className="m-auto flex flex-col items-center gap-4 text-muted-foreground"
+    180 189 │       >
+    181     │ - → → → <IconLoader2·className="size-10·animate-spin·motion-reduce:animate-none"·aria-hidden="true"·/>
+        190 │ + → → → <IconLoader2
+        191 │ + → → → → className="size-10·animate-spin·motion-reduce:animate-none"
+        192 │ + → → → → aria-hidden="true"
+        193 │ + → → → />
+    182 194 │         <span>{label}</span>
+    183 195 │       </output>
+    ······· │ 
+    188 200 │     const { t } = useTranslate();
+    189 201 │     return (
+    190     │ - → → <div·className="m-auto·flex·max-w-md·flex-col·items-center·gap-6·text-center"·role="alert">
+    191     │ - → → → <IconWifiOff·className="size-14·text-muted-foreground"·aria-hidden="true"·/>
+        202 │ + → → <div
+        203 │ + → → → className="m-auto·flex·max-w-md·flex-col·items-center·gap-6·text-center"
+        204 │ + → → → role="alert"
+        205 │ + → → >
+        206 │ + → → → <IconWifiOff
+        207 │ + → → → → className="size-14·text-muted-foreground"
+        208 │ + → → → → aria-hidden="true"
+        209 │ + → → → />
+    192 210 │         <div className="space-y-2">
+    193 211 │           <h1 className="text-2xl font-semibold">
+  
+
+src\components\kiosk\kiosk-clocking.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   /* @vitest-environment jsdom */
+      2   2 │   
+      3     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";
+          3 │ + import·{
+          4 │ + → act,
+          5 │ + → cleanup,
+          6 │ + → fireEvent,
+          7 │ + → render,
+          8 │ + → screen,
+          9 │ + → within,
+         10 │ + }·from·"@testing-library/react";
+      4  11 │   import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+      5  12 │   import {
+    ······· │ 
+     14  21 │     useTranslate: () => ({
+     15  22 │       t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+     16     │ - → → → fallback.replace(/\{(\w+)\}/g,·(_match,·name:·string)·=>·String(params?.[name]·??·"")),
+         23 │ + → → → fallback.replace(/\{(\w+)\}/g,·(_match,·name:·string)·=>
+         24 │ + → → → → String(params?.[name]·??·""),
+         25 │ + → → → ),
+     17  26 │     }),
+     18  27 │   }));
+    ······· │ 
+     40  49 │   };
+     41  50 │   
+     42     │ - const·anna·=·{·id:·"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",·name:·"Anna·Berger"·};
+         51 │ + const·anna·=·{
+         52 │ + → id:·"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+         53 │ + → name:·"Anna·Berger",
+         54 │ + };
+     43  55 │   const ben = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Ben Özdemir" };
+     44  56 │   
+     45  57 │   const dayTotal = { date: "2026-10-10", timezone: "Europe/Berlin", minutes: 0 };
+     46  58 │   
+     47     │ - function·snapshot(state:·KioskEmployeeSnapshot["state"],·minutes·=·0):·KioskEmployeeSnapshot·{
+         59 │ + function·snapshot(
+         60 │ + → state:·KioskEmployeeSnapshot["state"],
+         61 │ + → minutes·=·0,
+         62 │ + ):·KioskEmployeeSnapshot·{
+     48  63 │     return { employee: anna, state, dayTotal: { ...dayTotal, minutes } };
+     49  64 │   }
+    ······· │ 
+     61  76 │       "fetch",
+     62  77 │       vi.fn(async (url: string, init?: RequestInit) => {
+     63     │ - → → → const·call·=·{·url,·init,·body:·init?.body·?·JSON.parse(String(init.body))·:·null·};
+         78 │ + → → → const·call·=·{
+         79 │ + → → → → url,
+         80 │ + → → → → init,
+         81 │ + → → → → body:·init?.body·?·JSON.parse(String(init.body))·:·null,
+         82 │ + → → → };
+     64  83 │         calls.push(call);
+     65  84 │         const route = routes[url];
+    ······· │ 
+    114 133 │       fireEvent.click(await openHome());
+    115 134 │       const back = await screen.findByRole("button", { name: "Not you? Back" });
+    116     │ - → → for·(const·digit·of·"2468")·fireEvent.click(screen.getByRole("button",·{·name:·digit·}));
+        135 │ + → → for·(const·digit·of·"2468")
+        136 │ + → → → fireEvent.click(screen.getByRole("button",·{·name:·digit·}));
+    117 137 │       back.focus();
+    118 138 │       fireEvent.keyDown(back, { key: "Enter" });
+    119     │ - → → expect(calls.some(call·=>·call.url·===·"/api/kiosk/employee-status")).toBe(false);
+        139 │ + → → expect(
+        140 │ + → → → calls.some((call)·=>·call.url·===·"/api/kiosk/employee-status"),
+        141 │ + → → ).toBe(false);
+    120 142 │       fireEvent.click(back);
+    121     │ - → → expect(await·screen.findByRole("button",·{·name:·/Anna·Berger/·})).toBeTruthy();
+        143 │ + → → expect(
+        144 │ + → → → await·screen.findByRole("button",·{·name:·/Anna·Berger/·}),
+        145 │ + → → ).toBeTruthy();
+    122 146 │     });
+    123 147 │   
+    ······· │ 
+    132 156 │       expect(header(listCall?.init, "x-kiosk-token")).toBe("z8k_device-token");
+    133 157 │   
+    134     │ - → → fireEvent.change(screen.getByRole("searchbox",·{·name:·"Find·your·name"·}),·{
+    135     │ - → → → target:·{·value:·"özd"·},
+    136     │ - → → });
+        158 │ + → → fireEvent.change(
+        159 │ + → → → screen.getByRole("searchbox",·{·name:·"Find·your·name"·}),
+        160 │ + → → → {
+        161 │ + → → → → target:·{·value:·"özd"·},
+        162 │ + → → → },
+        163 │ + → → );
+    137 164 │       expect(screen.queryByRole("button", { name: /Anna Berger/ })).toBeNull();
+    138 165 │       expect(screen.getByRole("button", { name: /Ben Özdemir/ })).toBeTruthy();
+    ······· │ 
+    158 185 │     it("clocks in after a verified PIN, confirms name, action and time, and returns home after about 10 seconds", async () => {
+    159 186 │       const clockedIn: KioskClockResult = {
+    160     │ - → → → ...snapshot({·status:·"clocked_in",·workPeriodId:·"wp-1",·since:·"2026-10-10T06:30:00Z"·}),
+        187 │ + → → → ...snapshot({
+        188 │ + → → → → status:·"clocked_in",
+        189 │ + → → → → workPeriodId:·"wp-1",
+        190 │ + → → → → since:·"2026-10-10T06:30:00Z",
+        191 │ + → → → }),
+    161 192 │         outcome: "executed",
+    162 193 │         action: "clock_in",
+    ······· │ 
+    165 196 │       const calls = stubFetch(
+    166 197 │         kioskRoutes({
+    167     │ - → → → → "/api/kiosk/employee-status":·()·=>·Response.json(snapshot({·status:·"clocked_out"·},·0)),
+        198 │ + → → → → "/api/kiosk/employee-status":·()·=>
+        199 │ + → → → → → Response.json(snapshot({·status:·"clocked_out"·},·0)),
+    168 200 │           "/api/kiosk/clock": () => Response.json(clockedIn),
+    169 201 │         }),
+    ······· │ 
+    171 203 │       fireEvent.click(await openHome());
+    172 204 │   
+    173     │ - → → expect(await·screen.findByRole("heading",·{·name:·"Anna·Berger"·})).toBeTruthy();
+        205 │ + → → expect(
+        206 │ + → → → await·screen.findByRole("heading",·{·name:·"Anna·Berger"·}),
+        207 │ + → → ).toBeTruthy();
+    174 208 │       await enterPin("2468");
+    175 209 │   
+    ······· │ 
+    178 212 │       expect(screen.queryByRole("button", { name: "Clock out" })).toBeNull();
+    179 213 │       expect(screen.queryByRole("button", { name: "Start break" })).toBeNull();
+    180     │ - → → expect(calls.find((call)·=>·call.url·===·"/api/kiosk/employee-status")?.body).toEqual({
+        214 │ + → → expect(
+        215 │ + → → → calls.find((call)·=>·call.url·===·"/api/kiosk/employee-status")?.body,
+        216 │ + → → ).toEqual({
+    181 217 │         employeeId: anna.id,
+    182 218 │         pin: "2468",
+    ······· │ 
+    191 227 │       expect(within(confirmation).getByText(/^8:30\sAM$/)).toBeTruthy();
+    192 228 │       const clockCall = calls.find((call) => call.url === "/api/kiosk/clock");
+    193     │ - → → expect(clockCall?.body).toMatchObject({·employeeId:·anna.id,·pin:·"2468",·action:·"clock_in"·});
+        229 │ + → → expect(clockCall?.body).toMatchObject({
+        230 │ + → → → employeeId:·anna.id,
+        231 │ + → → → pin:·"2468",
+        232 │ + → → → action:·"clock_in",
+        233 │ + → → });
+    194 234 │       expect(clockCall?.body?.operationId).toMatch(/^[0-9a-f-]{36}$/);
+    195 235 │       expect(header(clockCall?.init, "x-kiosk-token")).toBe("z8k_device-token");
+    ······· │ 
+    198 238 │         await vi.advanceTimersByTimeAsync(10_500);
+    199 239 │       });
+    200     │ - → → expect(await·screen.findByRole("searchbox",·{·name:·"Find·your·name"·})).toBeTruthy();
+        240 │ + → → expect(
+        241 │ + → → → await·screen.findByRole("searchbox",·{·name:·"Find·your·name"·}),
+        242 │ + → → ).toBeTruthy();
+    201 243 │       expect(screen.queryByText("Clocked in")).toBeNull();
+    202 244 │       expect(screen.queryByRole("heading", { name: "Anna Berger" })).toBeNull();
+    ······· │ 
+    226 268 │           "/api/kiosk/employee-status": () => Response.json(before),
+    227 269 │           "/api/kiosk/clock": () =>
+    228     │ - → → → → → Response.json({·...after,·outcome:·"executed",·action,·at·}·satisfies·KioskClockResult),
+        270 │ + → → → → → Response.json({
+        271 │ + → → → → → → ...after,
+        272 │ + → → → → → → outcome:·"executed",
+        273 │ + → → → → → → action,
+        274 │ + → → → → → → at,
+        275 │ + → → → → → }·satisfies·KioskClockResult),
+    229 276 │         }),
+    230 277 │       );
+    ······· │ 
+    236 283 │   
+    237 284 │     function clockActions(calls: Call[]) {
+    238     │ - → → return·calls.filter((call)·=>·call.url·===·"/api/kiosk/clock").map((call)·=>·call.body?.action);
+        285 │ + → → return·calls
+        286 │ + → → → .filter((call)·=>·call.url·===·"/api/kiosk/clock")
+        287 │ + → → → .map((call)·=>·call.body?.action);
+    239 288 │     }
+    240 289 │   
+  128 more lines truncated
+  
+
+src\components\kiosk\kiosk-confirmation.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";
+      2   2 │   
+      3     │ - import·{·IconAlertTriangle,·IconCircleCheck,·IconCloudUpload·}·from·"@tabler/icons-react";
+          3 │ + import·{
+          4 │ + → IconAlertTriangle,
+          5 │ + → IconCircleCheck,
+          6 │ + → IconCloudUpload,
+          7 │ + }·from·"@tabler/icons-react";
+      4   8 │   import { useTranslate } from "@tolgee/react";
+      5   9 │   import { type ReactNode, useEffect, useState } from "react";
+    ······· │ 
+     33  37 │         >
+     34  38 │           {children}
+     35     │ - → → → → <Button·size="lg"·className="mt-4·h-16·min-w-48·text-xl"·onClick={onHome}>
+         39 │ + → → → → <Button
+         40 │ + → → → → → size="lg"
+         41 │ + → → → → → className="mt-4·h-16·min-w-48·text-xl"
+         42 │ + → → → → → onClick={onHome}
+         43 │ + → → → → >
+     36  44 │             {t("timeTracking.kiosk.done.button", "Done")}
+     37  45 │           </Button>
+    ······· │ 
+     75  83 │   }: KioskConfirmationProps) {
+     76  84 │     const { t } = useTranslate();
+     77     │ - → const·[secondsLeft,·setSecondsLeft]·=·useState(()·=>·Math.ceil(returnsInMs·/·1000));
+         85 │ + → const·[secondsLeft,·setSecondsLeft]·=·useState(()·=>
+         86 │ + → → Math.ceil(returnsInMs·/·1000),
+         87 │ + → );
+     78  88 │   
+     79  89 │     // Counted from a deadline, so a throttled timer never lets the countdown drift from the return.
+    ······· │ 
+     81  91 │       const deadline = Date.now() + returnsInMs;
+     82  92 │       const timer = window.setInterval(
+     83     │ - → → → ()·=>·setSecondsLeft(Math.max(0,·Math.ceil((deadline·-·Date.now())·/·1000))),
+         93 │ + → → → ()·=>
+         94 │ + → → → → setSecondsLeft(Math.max(0,·Math.ceil((deadline·-·Date.now())·/·1000))),
+     84  95 │         250,
+     85  96 │       );
+    ······· │ 
+     93 104 │         footer={
+     94 105 │           <span className="text-muted-foreground">
+     95     │ - → → → → → {t("timeTracking.kiosk.done.returning",·"Back·to·the·start·in·{seconds}·s",·{
+     96     │ - → → → → → → seconds:·secondsLeft,
+     97     │ - → → → → → })}
+        106 │ + → → → → → {t(
+        107 │ + → → → → → → "timeTracking.kiosk.done.returning",
+        108 │ + → → → → → → "Back·to·the·start·in·{seconds}·s",
+        109 │ + → → → → → → {
+        110 │ + → → → → → → → seconds:·secondsLeft,
+        111 │ + → → → → → → },
+        112 │ + → → → → → )}
+     98 113 │           </span>
+     99 114 │         }
+    ······· │ 
+    113 128 │         <span className="text-2xl">{action}</span>
+    114 129 │         <span className="text-5xl font-semibold tabular-nums">{time}</span>
+    115     │ - → → → {note·?·<span·className="text-lg·text-muted-foreground">{note}</span>·:·null}
+        130 │ + → → → {note·?·(
+        131 │ + → → → → <span·className="text-lg·text-muted-foreground">{note}</span>
+        132 │ + → → → )·:·null}
+    116 133 │         {unconfirmed ? (
+    117     │ - → → → → <span·role="status"·className="text-lg·text-amber-900·dark:text-amber-200">
+        134 │ + → → → → <span
+        135 │ + → → → → → role="status"
+        136 │ + → → → → → className="text-lg·text-amber-900·dark:text-amber-200"
+        137 │ + → → → → >
+    118 138 │             {unconfirmed}
+    119 139 │           </span>
+  
+
+src\components\kiosk\kiosk-employee-panel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     12  12 │   import type { ComponentType, SVGProps } from "react";
+     13  13 │   import { Button } from "@/components/ui/button";
+     14     │ - import·{·formatKioskDuration,·formatKioskTime·}·from·"@/lib/time-tracking/kiosk/display";
+     15     │ - import·{·type·KioskAction,·kioskActionsFor·}·from·"@/lib/time-tracking/kiosk/kiosk-actions";
+         14 │ + import·{
+         15 │ + → formatKioskDuration,
+         16 │ + → formatKioskTime,
+         17 │ + }·from·"@/lib/time-tracking/kiosk/display";
+         18 │ + import·{
+         19 │ + → type·KioskAction,
+         20 │ + → kioskActionsFor,
+         21 │ + }·from·"@/lib/time-tracking/kiosk/kiosk-actions";
+     16  22 │   import type { KioskEmployeeSnapshot } from "@/lib/time-tracking/kiosk/protocol";
+     17  23 │   
+    ······· │ 
+     19  25 │   export type KioskPanelAction = KioskAction;
+     20  26 │   
+     21     │ - const·ACTION_ICONS:·Record<KioskPanelAction,·ComponentType<SVGProps<SVGSVGElement>>>·=·{
+         27 │ + const·ACTION_ICONS:·Record<
+         28 │ + → KioskPanelAction,
+         29 │ + → ComponentType<SVGProps<SVGSVGElement>>
+         30 │ + >·=·{
+     22  31 │     clock_in: IconLogin2,
+     23  32 │     start_break: IconClockPause,
+    ······· │ 
+     52  61 │    * state `asOf` the instant the server last told it, and never a day total.
+     53  62 │    */
+     54     │ - export·type·KioskPanelSnapshot·=·Pick<KioskEmployeeSnapshot,·"employee"·|·"state">·&
+         63 │ + export·type·KioskPanelSnapshot·=·Pick<
+         64 │ + → KioskEmployeeSnapshot,
+         65 │ + → "employee"·|·"state"
+         66 │ + >·&
+     55  67 │     (
+     56  68 │       | { dayTotal: KioskEmployeeSnapshot["dayTotal"]; asOf?: never }
+    ······· │ 
+    101 113 │             })
+    102 114 │           : t("timeTracking.kiosk.state.onBreak", "On break since {time}", {
+    103     │ - → → → → → → time:·formatKioskTime(state.breakSince,·state.breakZone·||·zone,·locale),
+        115 │ + → → → → → → time:·formatKioskTime(
+        116 │ + → → → → → → → state.breakSince,
+        117 │ + → → → → → → → state.breakZone·||·zone,
+        118 │ + → → → → → → → locale,
+        119 │ + → → → → → → ),
+    104 120 │             });
+    105 121 │   
+    ······· │ 
+    117 133 │         </Button>
+    118 134 │         <div className="space-y-3 text-center">
+    119     │ - → → → → <h1·className="text-3xl·font-semibold·break-words">{snapshot.employee.name}</h1>
+        135 │ + → → → → <h1·className="text-3xl·font-semibold·break-words">
+        136 │ + → → → → → {snapshot.employee.name}
+        137 │ + → → → → </h1>
+    120 138 │           <p className="text-2xl">{stateText}</p>
+    121 139 │           <p className="text-lg text-muted-foreground">
+    ······· │ 
+    125 143 │                 })
+    126 144 │               : t("timeTracking.kiosk.employee.today", "Today: {duration}", {
+    127     │ - → → → → → → → → duration:·formatKioskDuration(snapshot.dayTotal.minutes,·locale),
+        145 │ + → → → → → → → → duration:·formatKioskDuration(
+        146 │ + → → → → → → → → → snapshot.dayTotal.minutes,
+        147 │ + → → → → → → → → → locale,
+        148 │ + → → → → → → → → ),
+    128 149 │                 })}
+    129 150 │           </p>
+  
+
+src\components\kiosk\kiosk-home.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     18  18 │   import { cn } from "@/lib/utils";
+     19  19 │   import { useKioskHomeNoticeMessage } from "./kiosk-messages";
+     20     │ - import·{·type·KioskNameListOutcome,·KioskNamePicker,·useKioskNameList·}·from·"./kiosk-name-grid";
+         20 │ + import·{
+         21 │ + → type·KioskNameListOutcome,
+         22 │ + → KioskNamePicker,
+         23 │ + → useKioskNameList,
+         24 │ + }·from·"./kiosk-name-grid";
+     21  25 │   import type { KioskHomeNotice } from "./kiosk-turn-flow";
+     22  26 │   import { KioskWhoIsInBoard } from "./kiosk-who-is-in-board";
+    ······· │ 
+     32  36 │     kiosk: KioskDeviceInfo,
+     33  37 │   ): Promise<KioskNameListOutcome> {
+     34     │ - → const·result·=·await·kioskCall<KioskEmployeesResponse>(token,·"/api/kiosk/employees");
+         38 │ + → const·result·=·await·kioskCall<KioskEmployeesResponse>(
+         39 │ + → → token,
+         40 │ + → → "/api/kiosk/employees",
+         41 │ + → );
+     35  42 │     if (result.kind === "kiosk") return { state: "refused", code: result.code };
+     36  43 │     if (result.kind === "ok" && Array.isArray(result.body.employees)) {
+    ······· │ 
+     38  45 │       return { state: "ready", employees: result.body.employees };
+     39  46 │     }
+     40     │ - → const·cached·=·kiosk.offlineMode·?·await·readOfflineEmployees(kiosk.id)·:·null;
+         47 │ + → const·cached·=·kiosk.offlineMode
+         48 │ + → → ?·await·readOfflineEmployees(kiosk.id)
+         49 │ + → → :·null;
+     41  50 │     if (!cached) return { state: "failed" };
+     42  51 │     return {
+     43  52 │       state: "ready",
+     44     │ - → → employees:·cached.map((employee)·=>·({·id:·employee.id,·name:·employee.name·})),
+         53 │ + → → employees:·cached.map((employee)·=>·({
+         54 │ + → → → id:·employee.id,
+         55 │ + → → → name:·employee.name,
+         56 │ + → → })),
+     45  57 │     };
+     46  58 │   }
+    ······· │ 
+    143 155 │             </h1>
+    144 156 │             {onScanBadge ? (
+    145     │ - → → → → → → <Button·size="lg"·className="h-16·self-start·px-6·text-xl"·onClick={onScanBadge}>
+        157 │ + → → → → → → <Button
+        158 │ + → → → → → → → size="lg"
+        159 │ + → → → → → → → className="h-16·self-start·px-6·text-xl"
+        160 │ + → → → → → → → onClick={onScanBadge}
+        161 │ + → → → → → → >
+    146 162 │                 <IconCamera className="size-6" aria-hidden="true" />
+    147 163 │                 {t("timeTracking.kiosk.home.scanBadge", "Scan badge")}
+    ······· │ 
+    151 167 │               <p className="flex items-center gap-2 text-lg text-muted-foreground">
+    152 168 │                 <IconQrcode className="size-6 shrink-0" aria-hidden="true" />
+    153     │ - → → → → → → → {t("timeTracking.kiosk.home.scanHint",·"Or·scan·your·kiosk·badge·at·the·scanner.")}
+        169 │ + → → → → → → → {t(
+        170 │ + → → → → → → → → "timeTracking.kiosk.home.scanHint",
+        171 │ + → → → → → → → → "Or·scan·your·kiosk·badge·at·the·scanner.",
+        172 │ + → → → → → → → )}
+    154 173 │               </p>
+    155 174 │             ) : null}
+    ······· │ 
+    157 176 │               <p className="flex items-center gap-2 text-lg text-muted-foreground">
+    158 177 │                 <IconNfc className="size-6 shrink-0" aria-hidden="true" />
+    159     │ - → → → → → → → {t("timeTracking.kiosk.home.fobHint",·"Or·tap·your·fob·on·the·reader.")}
+        178 │ + → → → → → → → {t(
+        179 │ + → → → → → → → → "timeTracking.kiosk.home.fobHint",
+        180 │ + → → → → → → → → "Or·tap·your·fob·on·the·reader.",
+        181 │ + → → → → → → → )}
+    160 182 │               </p>
+    161 183 │             ) : null}
+  
+
+src\components\kiosk\kiosk-language.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconLanguage·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useLocale·}·from·"next-intl";␍
+      6     │ - import·{·useEffect,·useEffectEvent·}·from·"react";␍
+      7     │ - import·{␍
+      8     │ - → Select,␍
+      9     │ - → SelectContent,␍
+     10     │ - → SelectItem,␍
+     11     │ - → SelectTrigger,␍
+     12     │ - → SelectValue,␍
+     13     │ - }·from·"@/components/ui/select";␍
+     14     │ - import·{·LANGUAGE_CONFIG·}·from·"@/lib/language-config";␍
+     15     │ - import·{·usePathname,·useRouter·}·from·"@/navigation";␍
+     16     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+     17     │ - ␍
+     18     │ - /**␍
+     19     │ - ·*·The·kiosk·page's·language·(#862).·It·follows·the·organization's·default␍
+     20     │ - ·*·language.·Someone·at·the·kiosk·may·switch·to·another·one;·that·choice·holds␍
+     21     │ - ·*·until·the·kiosk·returns·home·after·an·employee's·turn,·so·the·next·person␍
+     22     │ - ·*·starts·in·the·organization's·language·again.·The·choice·is·remembered·for␍
+     23     │ - ·*·this·browser·tab·only,·because·a·language·change·reloads·the·page.␍
+     24     │ - ·*/␍
+     25     │ - const·LANGUAGE_CHOICE_KEY·=·"z8.kiosk.languageChoice";␍
+     26     │ - ␍
+     27     │ - function·readChoice():·string·|·null·{␍
+     28     │ - → try·{␍
+     29     │ - → → return·window.sessionStorage.getItem(LANGUAGE_CHOICE_KEY);␍
+     30     │ - → }·catch·{␍
+     31     │ - → → return·null;␍
+     32     │ - → }␍
+     33     │ - }␍
+     34     │ - ␍
+     35     │ - function·writeChoice(language:·string·|·null)·{␍
+     36     │ - → try·{␍
+     37     │ - → → if·(language)·window.sessionStorage.setItem(LANGUAGE_CHOICE_KEY,·language);␍
+     38     │ - → → else·window.sessionStorage.removeItem(LANGUAGE_CHOICE_KEY);␍
+     39     │ - → }·catch·{␍
+     40     │ - → → //·Without·storage·the·kiosk·simply·stays·in·the·organization's·language.␍
+     41     │ - → }␍
+     42     │ - }␍
+     43     │ - ␍
+     44     │ - export·function·useKioskLanguage(organizationLanguage:·string)·{␍
+     45     │ - → const·locale·=·useLocale();␍
+     46     │ - → const·router·=·useRouter();␍
+     47     │ - → const·pathname·=·usePathname();␍
+     48     │ - ␍
+     49     │ - → function·show(language:·string)·{␍
+     50     │ - → → if·(language·!==·locale)·router.replace(pathname,·{·locale:·language·});␍
+     51     │ - → }␍
+     52     │ - ␍
+     53     │ - → const·followOrganization·=·useEffectEvent(()·=>·{␍
+     54     │ - → → if·(!readChoice())·show(organizationLanguage);␍
+     55     │ - → });␍
+     56     │ - ␍
+     57     │ - → //·biome-ignore·lint/correctness/useExhaustiveDependencies:·follow·again·when·the·organization's·language·changes␍
+     58     │ - → useEffect(()·=>·{␍
+     59     │ - → → followOrganization();␍
+     60     │ - → },·[organizationLanguage]);␍
+     61     │ - ␍
+     62     │ - → return·{␍
+     63     │ - → → locale,␍
+     64     │ - → → /**·Someone·at·the·kiosk·picked·a·language.·*/␍
+     65     │ - → → choose(language:·string)·{␍
+     66     │ - → → → writeChoice(language·===·organizationLanguage·?·null·:·language);␍
+     67     │ - → → → show(language);␍
+     68     │ - → → },␍
+     69     │ - → → /**·The·kiosk·went·home·after·an·employee's·turn:·back·to·the·organization's·language.·*/␍
+     70     │ - → → reset()·{␍
+     71     │ - → → → if·(!readChoice())·return;␍
+     72     │ - → → → writeChoice(null);␍
+     73     │ - → → → show(organizationLanguage);␍
+     74     │ - → → },␍
+     75     │ - → };␍
+     76     │ - }␍
+     77     │ - ␍
+     78     │ - export·function·KioskLanguageSwitch({␍
+     79     │ - → locale,␍
+     80     │ - → disabled·=·false,␍
+     81     │ - → onChoose,␍
+     82     │ - }:·{␍
+     83     │ - → locale:·string;␍
+     84     │ - → /**·An·offline-mode·kiosk·without·a·connection·(#1291)·may·not·have·another·language's·page·cached.·*/␍
+     85     │ - → disabled?:·boolean;␍
+     86     │ - → onChoose:·(language:·string)·=>·void;␍
+     87     │ - })·{␍
+     88     │ - → const·{·t·}·=·useTranslate();␍
+     89     │ - → return·(␍
+     90     │ - → → <Select·value={locale}·onValueChange={onChoose}·disabled={disabled}>␍
+     91     │ - → → → <SelectTrigger␍
+     92     │ - → → → → aria-label={t("common.select-language",·"Select·language")}␍
+     93     │ - → → → → className="min-h-12·min-w-40·text-base"␍
+     94     │ - → → → >␍
+     95     │ - → → → → <IconLanguage·className="size-5"·aria-hidden="true"·/>␍
+     96     │ - → → → → <SelectValue·/>␍
+     97     │ - → → → </SelectTrigger>␍
+     98     │ - → → → <SelectContent>␍
+     99     │ - → → → → {ALL_LANGUAGES.map((language)·=>·(␍
+    100     │ - → → → → → <SelectItem·key={language}·value={language}·className="h-12·text-base">␍
+    101     │ - → → → → → → {LANGUAGE_CONFIG[language]?.name·??·language}␍
+    102     │ - → → → → → </SelectItem>␍
+    103     │ - → → → → ))}␍
+    104     │ - → → → </SelectContent>␍
+    105     │ - → → </Select>␍
+    106     │ - → );␍
+    107     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{·IconLanguage·}·from·"@tabler/icons-react";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·useLocale·}·from·"next-intl";
+          6 │ + import·{·useEffect,·useEffectEvent·}·from·"react";
+          7 │ + import·{
+          8 │ + → Select,
+          9 │ + → SelectContent,
+         10 │ + → SelectItem,
+         11 │ + → SelectTrigger,
+         12 │ + → SelectValue,
+         13 │ + }·from·"@/components/ui/select";
+         14 │ + import·{·LANGUAGE_CONFIG·}·from·"@/lib/language-config";
+         15 │ + import·{·usePathname,·useRouter·}·from·"@/navigation";
+         16 │ + import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";
+         17 │ + 
+         18 │ + /**
+         19 │ + ·*·The·kiosk·page's·language·(#862).·It·follows·the·organization's·default
+         20 │ + ·*·language.·Someone·at·the·kiosk·may·switch·to·another·one;·that·choice·holds
+         21 │ + ·*·until·the·kiosk·returns·home·after·an·employee's·turn,·so·the·next·person
+         22 │ + ·*·starts·in·the·organization's·language·again.·The·choice·is·remembered·for
+         23 │ + ·*·this·browser·tab·only,·because·a·language·change·reloads·the·page.
+         24 │ + ·*/
+         25 │ + const·LANGUAGE_CHOICE_KEY·=·"z8.kiosk.languageChoice";
+         26 │ + 
+         27 │ + function·readChoice():·string·|·null·{
+         28 │ + → try·{
+         29 │ + → → return·window.sessionStorage.getItem(LANGUAGE_CHOICE_KEY);
+         30 │ + → }·catch·{
+         31 │ + → → return·null;
+         32 │ + → }
+         33 │ + }
+         34 │ + 
+         35 │ + function·writeChoice(language:·string·|·null)·{
+         36 │ + → try·{
+         37 │ + → → if·(language)·window.sessionStorage.setItem(LANGUAGE_CHOICE_KEY,·language);
+         38 │ + → → else·window.sessionStorage.removeItem(LANGUAGE_CHOICE_KEY);
+         39 │ + → }·catch·{
+         40 │ + → → //·Without·storage·the·kiosk·simply·stays·in·the·organization's·language.
+         41 │ + → }
+         42 │ + }
+         43 │ + 
+  69 more lines truncated
+  
+
+src\components\kiosk\kiosk-offline-clocking.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      2   2 │   
+      3   3 │   import { webcrypto } from "node:crypto";
+      4     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";
+          4 │ + import·{
+          5 │ + → act,
+          6 │ + → cleanup,
+          7 │ + → fireEvent,
+          8 │ + → render,
+          9 │ + → screen,
+         10 │ + → waitFor,
+         11 │ + }·from·"@testing-library/react";
+      5  12 │   import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+      6  13 │   import { parseInstant } from "@/lib/datetime/temporal-core";
+    ······· │ 
+     21  28 │     useTranslate: () => ({
+     22  29 │       t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+     23     │ - → → → fallback.replace(/\{(\w+)\}/g,·(_match,·name:·string)·=>·String(params?.[name]·??·"")),
+         30 │ + → → → fallback.replace(/\{(\w+)\}/g,·(_match,·name:·string)·=>
+         31 │ + → → → → String(params?.[name]·??·""),
+         32 │ + → → → ),
+     24  33 │     }),
+     25  34 │   }));
+    ······· │ 
+     37  46 │   }));
+     38  47 │   vi.mock("@/lib/time-tracking/kiosk/offline-cache", async (importOriginal) => {
+     39     │ - → const·actual·=·await·importOriginal<typeof·import("@/lib/time-tracking/kiosk/offline-cache")>();
+         48 │ + → const·actual·=
+         49 │ + → → await·importOriginal<
+         50 │ + → → → typeof·import("@/lib/time-tracking/kiosk/offline-cache")
+         51 │ + → → >();
+     40  52 │     return {
+     41  53 │       ...actual,
+    ······· │ 
+     47  59 │   });
+     48  60 │   vi.mock("@/lib/time-tracking/kiosk/offline-queue", async (importOriginal) => {
+     49     │ - → const·actual·=·await·importOriginal<typeof·import("@/lib/time-tracking/kiosk/offline-queue")>();
+         61 │ + → const·actual·=
+         62 │ + → → await·importOriginal<
+         63 │ + → → → typeof·import("@/lib/time-tracking/kiosk/offline-queue")
+         64 │ + → → >();
+     50  65 │     return {
+     51  66 │       ...actual,
+    ······· │ 
+     66  81 │   }));
+     67  82 │   vi.mock("@/lib/time-tracking/kiosk/offline-clock", async (importOriginal) => {
+     68     │ - → const·actual·=·await·importOriginal<typeof·import("@/lib/time-tracking/kiosk/offline-clock")>();
+         83 │ + → const·actual·=
+         84 │ + → → await·importOriginal<
+         85 │ + → → → typeof·import("@/lib/time-tracking/kiosk/offline-clock")
+         86 │ + → → >();
+     69  87 │     return {
+     70  88 │       ...actual,
+     71  89 │       kioskOfflineClock: {
+     72     │ - → → → noteContact:·(serverTime:·string)·=>·clocks.current?.noteContact(serverTime),
+         90 │ + → → → noteContact:·(serverTime:·string)·=>
+         91 │ + → → → → clocks.current?.noteContact(serverTime),
+     73  92 │         now: () => {
+     74  93 │           if (!clocks.current) throw new Error("no clock");
+    ······· │ 
+    116 135 │   };
+    117 136 │   
+    118     │ - const·anna·=·{·id:·"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",·name:·"Anna·Berger"·};
+        137 │ + const·anna·=·{
+        138 │ + → id:·"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        139 │ + → name:·"Anna·Berger",
+        140 │ + };
+    119 141 │   const ben = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Ben Özdemir" };
+    120 142 │   const annaWork = "99999999-9999-4999-8999-999999999999";
+    ······· │ 
+    126 148 │       learnedAt: "2026-10-16T07:45:00Z",
+    127 149 │       states: {
+    128     │ - → → → [anna.id]:·{·status:·"clocked_in",·workPeriodId:·annaWork,·since:·"2026-10-16T06:30:00Z"·},
+        150 │ + → → → [anna.id]:·{
+        151 │ + → → → → status:·"clocked_in",
+        152 │ + → → → → workPeriodId:·annaWork,
+        153 │ + → → → → since:·"2026-10-16T06:30:00Z",
+        154 │ + → → → },
+    129 155 │         [ben.id]: { status: "clocked_out" },
+    130 156 │       },
+    ······· │ 
+    132 158 │         [ben.id]: {
+    133 159 │           mode: "asked",
+    134     │ - → → → → vehicles:·[{·id:·van,·name:·"Van",·licencePlate:·"B-ZE·8",·archived:·false·}],
+        160 │ + → → → → vehicles:·[
+        161 │ + → → → → → {·id:·van,·name:·"Van",·licencePlate:·"B-ZE·8",·archived:·false·},
+        162 │ + → → → → ],
+    135 163 │           suggestedVehicleIds: [],
+    136 164 │           lastEndKmByVehicleId: {},
+    ······· │ 
+    142 170 │   };
+    143 171 │   
+    144     │ - type·Call·=·{·method:·string;·url:·string;·token:·string·|·null;·body:·string·|·null·};
+        172 │ + type·Call·=·{
+        173 │ + → method:·string;
+        174 │ + → url:·string;
+        175 │ + → token:·string·|·null;
+        176 │ + → body:·string·|·null;
+        177 │ + };
+    145 178 │   type Route = (call: Call) => Response | Promise<Response>;
+    146 179 │   
+    ······· │ 
+    181 214 │   
+    182 215 │   async function enterPin(digits: string) {
+    183     │ - → for·(const·digit·of·digits)·fireEvent.click(screen.getByRole("button",·{·name:·digit·}));
+        216 │ + → for·(const·digit·of·digits)
+        217 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·digit·}));
+    184 218 │     fireEvent.click(screen.getByRole("button", { name: "OK" }));
+    185 219 │   }
+    ······· │ 
+    193 227 │     await screen.findByRole("button", { name: /Anna Berger/ });
+    194 228 │     await waitFor(() =>
+    195     │ - → → expect(stores.cache?.keys().sort()).toEqual(["contact",·"employees",·"kiosk"]),
+        229 │ + → → expect(stores.cache?.keys().sort()).toEqual([
+        230 │ + → → → "contact",
+        231 │ + → → → "employees",
+        232 │ + → → → "kiosk",
+        233 │ + → → ]),
+    196 234 │     );
+    197 235 │   }
+    ······· │ 
+    248 286 │       expect(await screen.findByText(/^Clocked in since 8:30\sAM$/)).toBeTruthy();
+    249 287 │       expect(screen.getByText(/^As of 9:45\sAM$/)).toBeTruthy();
+    250     │ - → → expect(screen.getByText(/saved·on·this·kiosk·and·not·yet·confirmed/)).toBeTruthy();
+        288 │ + → → expect(
+        289 │ + → → → screen.getByText(/saved·on·this·kiosk·and·not·yet·confirmed/),
+        290 │ + → → ).toBeTruthy();
+    251 291 │       expect(screen.queryByText(/Today:/)).toBeNull();
+    252 292 │   
+    ······· │ 
+    258 298 │       expect(await screen.findByText("Clocked out")).toBeTruthy();
+    259 299 │       expect(screen.getByText(/^10:00\sAM$/)).toBeTruthy();
+    260     │ - → → expect(screen.getByText(/Saved·on·this·kiosk,·not·yet·confirmed/)).toBeTruthy();
+        300 │ + → → expect(
+        301 │ + → → → screen.getByText(/Saved·on·this·kiosk,·not·yet·confirmed/),
+        302 │ + → → ).toBeTruthy();
+    261 303 │   
+    262 304 │       const [record] = await queued();
+    ······· │ 
+    275 317 │       // Nothing on the kiosk can check the PIN; only Z8 can open it.
+    276 318 │       expect(record?.body).not.toContain("2468");
+    277     │ - → → expect(JSON.stringify(await·stores.cache?.get("employees"))).not.toContain("2468");
+        319 │ + → → expect(JSON.stringify(await·stores.cache?.get("employees"))).not.toContain(
+        320 │ + → → → "2468",
+        321 │ + → → );
+    278 322 │       expect(
+    279 323 │         openSealedKioskPin(
+    280 324 │           submission.pin,
+    281     │ - → → → → {·kioskId:·kiosk.id,·employeeId:·anna.id,·operationId:·submission.command.operationId·},
+        325 │ + → → → → {
+        326 │ + → → → → → kioskId:·kiosk.id,
+        327 │ + → → → → → employeeId:·anna.id,
+        328 │ + → → → → → operationId:·submission.command.operationId,
+        329 │ + → → → → },
+    282 330 │           SECRET,
+    283 331 │         ),
+    ······· │ 
+    307 355 │       fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    308 356 │       fireEvent.click(await screen.findByRole("button", { name: /Ben Özdemir/ }));
+    309     │ - → → expect(await·screen.findByText("Clockings·awaiting·confirmation:·1")).toBeTruthy();
+        357 │ + → → expect(
+        358 │ + → → → await·screen.findByText("Clockings·awaiting·confirmation:·1"),
+        359 │ + → → ).toBeTruthy();
+    310 360 │       await enterPin("1357");
+    311     │ - → → expect(await·screen.findByText(/^Clocked·in·since·10:30\sAM$/)).toBeTruthy();
+  122 more lines truncated
+  
+
+src\components\kiosk\kiosk-paired-screen.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    206 206 │     function scanWithCamera() {
+    207 207 │       setFlow(
+    208     │ - → → → contact.online·?·{·step:·"camera"·}·:·{·step:·"home",·notice:·{·code:·"badge_offline"·}·},
+        208 │ + → → → contact.online
+        209 │ + → → → → ?·{·step:·"camera"·}
+        210 │ + → → → → :·{·step:·"home",·notice:·{·code:·"badge_offline"·}·},
+    209 211 │       );
+    210 212 │     }
+    ······· │ 
+    229 231 │       );
+    230 232 │       if (result.kind === "kiosk") return kioskRefused(result.code);
+    231     │ - → → const·checked·=·badgeCheckedFlow({·badge,·input,·result,·contactLost:·contact.contactLost·});
+        233 │ + → → const·checked·=·badgeCheckedFlow({
+        234 │ + → → → badge,
+        235 │ + → → → input,
+        236 │ + → → → result,
+        237 │ + → → → contactLost:·contact.contactLost,
+        238 │ + → → });
+    232 239 │       const held =
+    233     │ - → → → checked.step·===·"employee"·?·uncertain.pendingFor(checked.snapshot.employee.id)·:·undefined;
+        240 │ + → → → checked.step·===·"employee"
+        241 │ + → → → → ?·uncertain.pendingFor(checked.snapshot.employee.id)
+        242 │ + → → → → :·undefined;
+    234 243 │       if (held && checked.step === "employee") uncertain.hold(held, checked);
+    235 244 │       else show(checked);
+    ······· │ 
+    255 264 │       );
+    256 265 │       if (result.kind === "kiosk") return kioskRefused(result.code);
+    257     │ - → → const·checked·=·fobCheckedFlow({·serial,·result,·contactLost:·contact.contactLost·});
+        266 │ + → → const·checked·=·fobCheckedFlow({
+        267 │ + → → → serial,
+        268 │ + → → → result,
+        269 │ + → → → contactLost:·contact.contactLost,
+        270 │ + → → });
+    258 271 │       // Like a name pick: an employee whose action is unresolved gets no PIN pad (#1363).
+    259     │ - → → const·held·=·checked.step·===·"pin"·?·uncertain.pendingFor(checked.employee.id)·:·undefined;
+        272 │ + → → const·held·=
+        273 │ + → → → checked.step·===·"pin"
+        274 │ + → → → → ?·uncertain.pendingFor(checked.employee.id)
+        275 │ + → → → → :·undefined;
+    260 276 │       if (held) uncertain.hold(held);
+    261 277 │       else show(checked);
+    ······· │ 
+    273 289 │       );
+    274 290 │       if (result.kind === "kiosk") return kioskRefused(result.code);
+    275     │ - → → show(fobRegisteredFlow({·step:·sending,·result,·contactLost:·contact.contactLost·}));
+        291 │ + → → show(
+        292 │ + → → → fobRegisteredFlow({
+        293 │ + → → → → step:·sending,
+        294 │ + → → → → result,
+        295 │ + → → → → contactLost:·contact.contactLost,
+        296 │ + → → → }),
+        297 │ + → → );
+    276 298 │     }
+    277 299 │   
+    278     │ - → async·function·verifyPin(employee:·KioskEmployeeListing,·attempt:·number,·pin:·string)·{
+        300 │ + → async·function·verifyPin(
+        301 │ + → → employee:·KioskEmployeeListing,
+        302 │ + → → attempt:·number,
+        303 │ + → → pin:·string,
+        304 │ + → )·{
+    279 305 │       setFlow({ step: "pin", employee, attempt, busy: true, error: null });
+    280     │ - → → const·result·=·await·kioskPost<KioskEmployeeSnapshot>(token,·"/api/kiosk/employee-status",·{
+    281     │ - → → → employeeId:·employee.id,
+    282     │ - → → → pin,
+    283     │ - → → });
+        306 │ + → → const·result·=·await·kioskPost<KioskEmployeeSnapshot>(
+        307 │ + → → → token,
+        308 │ + → → → "/api/kiosk/employee-status",
+        309 │ + → → → {
+        310 │ + → → → → employeeId:·employee.id,
+        311 │ + → → → → pin,
+        312 │ + → → → },
+        313 │ + → → );
+    284 314 │       if (result.kind === "kiosk") return kioskRefused(result.code);
+    285 315 │       setFlow(
+    ······· │ 
+    337 367 │         return kioskRefused(result.code);
+    338 368 │       }
+    339     │ - → → const·acted·=·actedFlow({·proof,·snapshot,·action,·attempt,·vehicle,·attribution,·result·});
+        369 │ + → → const·acted·=·actedFlow({
+        370 │ + → → → proof,
+        371 │ + → → → snapshot,
+        372 │ + → → → action,
+        373 │ + → → → attempt,
+        374 │ + → → → vehicle,
+        375 │ + → → → attribution,
+        376 │ + → → → result,
+        377 │ + → → });
+    340 378 │       if (acted.step === "uncertain") uncertain.track(attempt);
+    341 379 │       else forgetUncertainAction(attempt.operationId);
+    ······· │ 
+    344 382 │   
+    345 383 │     /** An offline action (#1292): frozen and queued on this kiosk, confirmed by Z8 later. */
+    346     │ - → async·function·actOffline(turn:·OfflineTurn,·action:·KioskPanelAction,·vehicle?:·VehicleAnswer)·{
+        384 │ + → async·function·actOffline(
+        385 │ + → → turn:·OfflineTurn,
+        386 │ + → → action:·KioskPanelAction,
+        387 │ + → → vehicle?:·VehicleAnswer,
+        388 │ + → )·{
+    347 389 │       setFlow(actingOfflineFlow(turn, action, vehicle));
+    348 390 │       const failed = t(
+    ······· │ 
+    350 392 │         "This could not be saved on the kiosk. Nothing was recorded.",
+    351 393 │       );
+    352     │ - → → setFlow(await·queueOfflineAction({·token,·kiosk,·turn,·action,·vehicle,·failed·}));
+        394 │ + → → setFlow(
+        395 │ + → → → await·queueOfflineAction({·token,·kiosk,·turn,·action,·vehicle,·failed·}),
+        396 │ + → → );
+    353 397 │     }
+    354 398 │   
+    ······· │ 
+    389 433 │       const ask = attributionAskOf(action, snapshot.attribution);
+    390 434 │       if (ask) {
+    391     │ - → → → setFlow(attributionFlow(proof,·snapshot,·action,·{·ask,·values:·KEEP_ATTRIBUTION·}));
+        435 │ + → → → setFlow(
+        436 │ + → → → → attributionFlow(proof,·snapshot,·action,·{
+        437 │ + → → → → → ask,
+        438 │ + → → → → → values:·KEEP_ATTRIBUTION,
+        439 │ + → → → → }),
+        440 │ + → → → );
+    392 441 │         return;
+    393 442 │       }
+    ······· │ 
+    480 529 │             onKioskRefused={kioskRefused}
+    481 530 │             onRegisterFob={(step, pin) => void registerFob(step, pin)}
+    482     │ - → → → → → onVerifyPin={(employee,·attempt,·pin)·=>·void·verifyPin(employee,·attempt,·pin)}
+        531 │ + → → → → → onVerifyPin={(employee,·attempt,·pin)·=>
+        532 │ + → → → → → → void·verifyPin(employee,·attempt,·pin)
+        533 │ + → → → → → }
+    483 534 │             onChoose={choose}
+    484 535 │             onProceed={proceed}
+    ······· │ 
+    487 538 │             }
+    488 539 │             onChooseOffline={chooseOffline}
+    489     │ - → → → → → onActOffline={(turn,·action,·vehicle)·=>·void·actOffline(turn,·action,·vehicle)}
+        540 │ + → → → → → onActOffline={(turn,·action,·vehicle)·=>
+        541 │ + → → → → → → void·actOffline(turn,·action,·vehicle)
+        542 │ + → → → → → }
+    490 543 │           />
+    491 544 │         )}
+  
+
+src\components\kiosk\kiosk-pairing-form.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     14  14 │     TFormMessage,
+     15  15 │   } from "@/components/ui/tanstack-form";
+     16     │ - import·{·type·KioskPairingResult,·pairKioskDevice·}·from·"@/lib/time-tracking/kiosk/device";
+     17     │ - import·type·{·KioskDeviceInfo,·KioskOfflineContact·}·from·"@/lib/time-tracking/kiosk/protocol";
+         16 │ + import·{
+         17 │ + → type·KioskPairingResult,
+         18 │ + → pairKioskDevice,
+         19 │ + }·from·"@/lib/time-tracking/kiosk/device";
+         20 │ + import·type·{
+         21 │ + → KioskDeviceInfo,
+         22 │ + → KioskOfflineContact,
+         23 │ + }·from·"@/lib/time-tracking/kiosk/protocol";
+     18  24 │   
+     19  25 │   interface KioskPairingFormProps {
+     20  26 │     initialCode: string;
+     21     │ - → onPaired:·(token:·string,·kiosk:·KioskDeviceInfo,·offline?:·KioskOfflineContact)·=>·void;
+         27 │ + → onPaired:·(
+         28 │ + → → token:·string,
+         29 │ + → → kiosk:·KioskDeviceInfo,
+         30 │ + → → offline?:·KioskOfflineContact,
+         31 │ + → )·=>·void;
+     22  32 │   }
+     23  33 │   
+    ······· │ 
+     25  35 │   
+     26  36 │   /** Pairs an unpaired device with the code an admin issued in settings. */
+     27     │ - export·function·KioskPairingForm({·initialCode,·onPaired·}:·KioskPairingFormProps)·{
+         37 │ + export·function·KioskPairingForm({
+         38 │ + → initialCode,
+         39 │ + → onPaired,
+         40 │ + }:·KioskPairingFormProps)·{
+     28  41 │     const { t } = useTranslate();
+     29  42 │     const [failure, setFailure] = useState<PairingFailure | null>(null);
+    ······· │ 
+     75  88 │       <div className="m-auto w-full max-w-lg space-y-8 rounded-xl border bg-card p-6 sm:p-8">
+     76  89 │         <div className="space-y-3 text-center">
+     77     │ - → → → → <IconDeviceTablet·className="mx-auto·size-14·text-primary"·aria-hidden="true"·/>
+         90 │ + → → → → <IconDeviceTablet
+         91 │ + → → → → → className="mx-auto·size-14·text-primary"
+         92 │ + → → → → → aria-hidden="true"
+         93 │ + → → → → />
+     78  94 │           <h1 className="text-3xl font-semibold">
+     79  95 │             {t("timeTracking.kiosk.pairing.title", "Set up this kiosk")}
+  
+
+src\components\kiosk\kiosk-pin-pad.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     45  45 │     function press(digit: string) {
+     46  46 │       if (busy) return;
+     47     │ - → → setPin((current)·=>·(current.length·<·PIN_MAX_LENGTH·?·current·+·digit·:·current));
+         47 │ + → → setPin((current)·=>
+         48 │ + → → → current.length·<·PIN_MAX_LENGTH·?·current·+·digit·:·current,
+         49 │ + → → );
+     48  50 │     }
+     49  51 │   
+    ······· │ 
+     54  56 │     const onKey = useEffectEvent((event: KeyboardEvent) => {
+     55  57 │       // A focused button owns Enter (Back, a digit or OK); do not also submit the PIN.
+     56     │ - → → if·(event.key·===·"Enter"·&&·event.target·instanceof·Element·&&·event.target.closest("button"))·return;
+         58 │ + → → if·(
+         59 │ + → → → event.key·===·"Enter"·&&
+         60 │ + → → → event.target·instanceof·Element·&&
+         61 │ + → → → event.target.closest("button")
+         62 │ + → → )
+         63 │ + → → → return;
+     57  64 │       if (/^\d$/.test(event.key)) press(event.key);
+     58     │ - → → else·if·(event.key·===·"Backspace")·setPin((current)·=>·current.slice(0,·-1));
+         65 │ + → → else·if·(event.key·===·"Backspace")
+         66 │ + → → → setPin((current)·=>·current.slice(0,·-1));
+     59  67 │       else if (event.key === "Enter") submit();
+     60  68 │       else if (event.key === "Escape") onBack();
+    ······· │ 
+     68  76 │   
+     69  77 │     // Large keys, but the whole pad (with a message) still fits a landscape tablet screen.
+     70     │ - → const·keyClass·=·"h-16·text-3xl·font-semibold·[@media(min-height:860px)]:h-20";
+         78 │ + → const·keyClass·=
+         79 │ + → → "h-16·text-3xl·font-semibold·[@media(min-height:860px)]:h-20";
+     71  80 │   
+     72  81 │     return (
+     73  82 │       <div className="mx-auto flex w-full max-w-md flex-col gap-5 rounded-xl border bg-card p-4 sm:p-6">
+     74     │ - → → → <Button·variant="ghost"·size="lg"·className="h-14·self-start·text-lg"·onClick={onBack}>
+         83 │ + → → → <Button
+         84 │ + → → → → variant="ghost"
+         85 │ + → → → → size="lg"
+         86 │ + → → → → className="h-14·self-start·text-lg"
+         87 │ + → → → → onClick={onBack}
+         88 │ + → → → >
+     75  89 │           <IconArrowLeft className="size-6" aria-hidden="true" />
+     76  90 │           {t("timeTracking.kiosk.pin.back", "Not you? Back")}
+    ······· │ 
+     83  97 │         </div>
+     84  98 │         <output
+     85     │ - → → → → aria-label={t("timeTracking.kiosk.pin.entered",·"{count}·digits·entered",·{
+     86     │ - → → → → → count:·pin.length,
+     87     │ - → → → → })}
+         99 │ + → → → → aria-label={t(
+        100 │ + → → → → → "timeTracking.kiosk.pin.entered",
+        101 │ + → → → → → "{count}·digits·entered",
+        102 │ + → → → → → {
+        103 │ + → → → → → → count:·pin.length,
+        104 │ + → → → → → },
+        105 │ + → → → → )}
+     88 106 │           className="flex h-8 items-center justify-center gap-4"
+     89 107 │         >
+     90     │ - → → → → {Array.from({·length:·Math.max(PIN_MIN_LENGTH,·pin.length)·},·(_,·index)·=>·(
+     91     │ - → → → → → <span
+     92     │ - → → → → → → //·biome-ignore·lint/suspicious/noArrayIndexKey:·dots·are·positions,·not·items
+     93     │ - → → → → → → key={index}
+     94     │ - → → → → → → aria-hidden="true"
+     95     │ - → → → → → → className={cn(
+     96     │ - → → → → → → → "size-5·rounded-full·border-2·border-foreground",
+     97     │ - → → → → → → → index·<·pin.length·&&·"bg-foreground",
+     98     │ - → → → → → → )}
+     99     │ - → → → → → />
+    100     │ - → → → → ))}
+        108 │ + → → → → {Array.from(
+        109 │ + → → → → → {·length:·Math.max(PIN_MIN_LENGTH,·pin.length)·},
+        110 │ + → → → → → (_,·index)·=>·(
+        111 │ + → → → → → → <span
+        112 │ + → → → → → → → //·biome-ignore·lint/suspicious/noArrayIndexKey:·dots·are·positions,·not·items
+        113 │ + → → → → → → → key={index}
+        114 │ + → → → → → → → aria-hidden="true"
+        115 │ + → → → → → → → className={cn(
+        116 │ + → → → → → → → → "size-5·rounded-full·border-2·border-foreground",
+        117 │ + → → → → → → → → index·<·pin.length·&&·"bg-foreground",
+        118 │ + → → → → → → → )}
+        119 │ + → → → → → → />
+        120 │ + → → → → → ),
+        121 │ + → → → → )}
+    101 122 │         </output>
+    102 123 │         {error ? (
+    ······· │ 
+    129 150 │             <IconBackspace className="size-8" aria-hidden="true" />
+    130 151 │           </Button>
+    131     │ - → → → → <Button·variant="outline"·className={keyClass}·disabled={busy}·onClick={()·=>·press("0")}>
+        152 │ + → → → → <Button
+        153 │ + → → → → → variant="outline"
+        154 │ + → → → → → className={keyClass}
+        155 │ + → → → → → disabled={busy}
+        156 │ + → → → → → onClick={()·=>·press("0")}
+        157 │ + → → → → >
+    132 158 │             0
+    133 159 │           </Button>
+  
+
+src\components\kiosk\use-kiosk-uncertain-actions.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";
+      2   2 │   
+      3     │ - import·{·type·RefObject,·useEffect,·useEffectEvent,·useRef,·useState·}·from·"react";
+          3 │ + import·{
+          4 │ + → type·RefObject,
+          5 │ + → useEffect,
+          6 │ + → useEffectEvent,
+          7 │ + → useRef,
+          8 │ + → useState,
+          9 │ + }·from·"react";
+      4  10 │   import { kioskPost } from "@/lib/time-tracking/kiosk/device";
+      5  11 │   import type {
+    ······· │ 
+     21  27 │   
+     22  28 │   /** An action whose reply was lost (#1363), and whether Z8 could be asked about it yet. */
+     23     │ - type·PendingAction·=·{·attempt:·KioskUncertainAction;·check:·"checking"·|·"unavailable"·};
+         29 │ + type·PendingAction·=·{
+         30 │ + → attempt:·KioskUncertainAction;
+         31 │ + → check:·"checking"·|·"unavailable";
+         32 │ + };
+     24  33 │   
+     25  34 │   /**
+    ······· │ 
+     40  49 │     const { token, show, onKioskRefused } = input;
+     41  50 │     const [pending, setPending] = useState<PendingAction[]>(() =>
+     42     │ - → → readUncertainActions(input.kioskId).map((attempt)·=>·({·attempt,·check:·"checking"·})),
+         51 │ + → → readUncertainActions(input.kioskId).map((attempt)·=>·({
+         52 │ + → → → attempt,
+         53 │ + → → → check:·"checking",
+         54 │ + → → })),
+     43  55 │     );
+     44  56 │     const pendingNow = useRef(pending);
+    ······· │ 
+     49  61 │     /** The unresolved action of this employee, if any. */
+     50  62 │     function pendingFor(employeeId: string): PendingAction | undefined {
+     51     │ - → → return·pendingNow.current.find((entry)·=>·entry.attempt.employee.id·===·employeeId);
+         63 │ + → → return·pendingNow.current.find(
+         64 │ + → → → (entry)·=>·entry.attempt.employee.id·===·employeeId,
+         65 │ + → → );
+     52  66 │     }
+     53  67 │   
+    ······· │ 
+     55  69 │     function settle(operationId: string) {
+     56  70 │       forgetUncertainAction(operationId);
+     57     │ - → → setPending((entries)·=>·entries.filter((entry)·=>·entry.attempt.operationId·!==·operationId));
+         71 │ + → → setPending((entries)·=>
+         72 │ + → → → entries.filter((entry)·=>·entry.attempt.operationId·!==·operationId),
+         73 │ + → → );
+     58  74 │     }
+     59  75 │   
+    ······· │ 
+     63  79 │      * get no PIN pad and no action until it resolves.
+     64  80 │      */
+     65     │ - → function·hold(entry:·PendingAction,·badgeTurn?:·Extract<KioskFlow,·{·step:·"employee"·}>)·{
+         81 │ + → function·hold(
+         82 │ + → → entry:·PendingAction,
+         83 │ + → → badgeTurn?:·Extract<KioskFlow,·{·step:·"employee"·}>,
+         84 │ + → )·{
+     66  85 │       if (entry.attempt.resolved) settle(entry.attempt.operationId);
+     67  86 │       show(heldFlow(entry.attempt, entry.check, badgeTurn));
+    ······· │ 
+     71  90 │     function track(attempt: KioskUncertainAction) {
+     72  91 │       setPending((entries) => [
+     73     │ - → → → ...entries.filter((entry)·=>·entry.attempt.operationId·!==·attempt.operationId),
+         92 │ + → → → ...entries.filter(
+         93 │ + → → → → (entry)·=>·entry.attempt.operationId·!==·attempt.operationId,
+         94 │ + → → → ),
+     74  95 │         { attempt, check: "checking" },
+     75  96 │       ]);
+    ······· │ 
+     83 104 │      * recorded" simply frees them to act afresh.
+     84 105 │      */
+     85     │ - → const·checkUncertain·=·useEffectEvent(async·(attempt:·KioskUncertainAction)·=>·{
+     86     │ - → → const·result·=·await·kioskPost<KioskClockAttemptOutcome>(
+     87     │ - → → → token,
+     88     │ - → → → "/api/kiosk/clock/outcome",
+     89     │ - → → → {
+     90     │ - → → → → operationId:·attempt.operationId,
+     91     │ - → → → → employeeId:·attempt.employee.id,
+     92     │ - → → → → action:·attempt.request,
+     93     │ - → → → },
+     94     │ - → → → {·timeoutMs:·KIOSK_ACTION_TIMEOUT_MS·},
+     95     │ - → → );
+     96     │ - → → //·The·device·token·was·refused:·the·action·stays·unresolved·for·after·pairing·again.
+     97     │ - → → if·(result.kind·===·"kiosk")·return·onKioskRefused(result.code);
+     98     │ - → → const·current·=·input.shownFlow.current;
+     99     │ - → → const·onScreen·=
+    100     │ - → → → current.step·===·"uncertain"·&&·current.attempt.operationId·===·attempt.operationId;
+    101     │ - → → const·answer·=·result.kind·===·"ok"·?·result.body.outcome·:·null;
+    102     │ - → → if·(answer·!==·"committed"·&&·answer·!==·"not_recorded"·&&·answer·!==·"conflict")·{
+    103     │ - → → → //·Not·answered·yet:·ask·again·later.
+    104     │ - → → → setPending((entries)·=>
+    105     │ - → → → → entries.map((entry)·=>
+    106     │ - → → → → → entry.attempt.operationId·===·attempt.operationId
+    107     │ - → → → → → → ?·{·attempt:·entry.attempt,·check:·"unavailable"·}
+    108     │ - → → → → → → :·entry,
+    109     │ - → → → → ),
+    110     │ - → → → );
+    111     │ - → → → //·A·changed·screen·only:·an·unchanged·one·keeps·its·idle·timeout·running.
+    112     │ - → → → if·(onScreen·&&·current.check·===·"checking")·{
+    113     │ - → → → → show({·step:·"uncertain",·attempt,·check:·"unavailable"·});
+    114     │ - → → → }
+    115     │ - → → → return;
+    116     │ - → → }
+    117     │ - → → if·(onScreen)·{
+    118     │ - → → → settle(attempt.operationId);
+    119     │ - → → → show(resolvedFlow(attempt,·result));
+    120     │ - → → → return;
+    121     │ - → → }
+    122     │ - → → //·Kept,·across·reloads·too,·until·the·employee·identifies·again.
+    123     │ - → → const·resolved:·KioskUncertainAction·=·{
+    124     │ - → → → ...attempt,
+    125     │ - → → → resolved:
+    126     │ - → → → → result.kind·===·"ok"·&&·result.body.outcome·===·"committed"
+    127     │ - → → → → → ?·{·outcome:·"committed",·at:·result.body.at·}
+    128     │ - → → → → → :·{·outcome:·answer·===·"not_recorded"·?·"not_recorded"·:·"conflict"·},
+    129     │ - → → };
+    130     │ - → → rememberUncertainAction(resolved);
+    131     │ - → → setPending((entries)·=>
+    132     │ - → → → entries.map((entry)·=>
+    133     │ - → → → → entry.attempt.operationId·===·attempt.operationId
+    134     │ - → → → → → ?·{·attempt:·resolved,·check:·entry.check·}
+    135     │ - → → → → → :·entry,
+    136     │ - → → → ),
+    137     │ - → → );
+    138     │ - → });
+        106 │ + → const·checkUncertain·=·useEffectEvent(
+        107 │ + → → async·(attempt:·KioskUncertainAction)·=>·{
+        108 │ + → → → const·result·=·await·kioskPost<KioskClockAttemptOutcome>(
+        109 │ + → → → → token,
+        110 │ + → → → → "/api/kiosk/clock/outcome",
+        111 │ + → → → → {
+        112 │ + → → → → → operationId:·attempt.operationId,
+        113 │ + → → → → → employeeId:·attempt.employee.id,
+        114 │ + → → → → → action:·attempt.request,
+        115 │ + → → → → },
+        116 │ + → → → → {·timeoutMs:·KIOSK_ACTION_TIMEOUT_MS·},
+        117 │ + → → → );
+        118 │ + → → → //·The·device·token·was·refused:·the·action·stays·unresolved·for·after·pairing·again.
+        119 │ + → → → if·(result.kind·===·"kiosk")·return·onKioskRefused(result.code);
+        120 │ + → → → const·current·=·input.shownFlow.current;
+        121 │ + → → → const·onScreen·=
+        122 │ + → → → → current.step·===·"uncertain"·&&
+        123 │ + → → → → current.attempt.operationId·===·attempt.operationId;
+        124 │ + → → → const·answer·=·result.kind·===·"ok"·?·result.body.outcome·:·null;
+        125 │ + → → → if·(
+        126 │ + → → → → answer·!==·"committed"·&&
+        127 │ + → → → → answer·!==·"not_recorded"·&&
+        128 │ + → → → → answer·!==·"conflict"
+        129 │ + → → → )·{
+        130 │ + → → → → //·Not·answered·yet:·ask·again·later.
+        131 │ + → → → → setPending((entries)·=>
+        132 │ + → → → → → entries.map((entry)·=>
+        133 │ + → → → → → → entry.attempt.operationId·===·attempt.operationId
+        134 │ + → → → → → → → ?·{·attempt:·entry.attempt,·check:·"unavailable"·}
+        135 │ + → → → → → → → :·entry,
+        136 │ + → → → → → ),
+  54 more lines truncated
+  
+
+src\lib\time-tracking\kiosk\kiosk-enrolment.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     15   15 │   }));
+     16   16 │   
+     17      │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());
+          17 │ + vi.mock("next/headers",·async·()·=>
+          18 │ + → (await·import("@/test/integration-harness")).nextHeaders(),
+          19 │ + );
+     18   20 │   
+     19   21 │   vi.mock("next/server", async (importOriginal) =>
+    ········ │ 
+     50   52 │   const pairRoute = await import("@/app/api/kiosk/pair/route");
+     51   53 │   const sessionRoute = await import("@/app/api/kiosk/session/route");
+     52      │ - const·{·resolveKioskFromRequest,·resolveKioskFromToken,·KIOSK_TOKEN_HEADER·}·=·await·import(
+     53      │ - → "./authenticate"
+     54      │ - );
+          54 │ + const·{·resolveKioskFromRequest,·resolveKioskFromToken,·KIOSK_TOKEN_HEADER·}·=
+          55 │ + → await·import("./authenticate");
+     55   56 │   
+     56   57 │   const ids = {
+    ········ │ 
+     66   67 │     foreignLocation: "d8590000-0000-4000-8000-0000000000a3",
+     67   68 │   } as const;
+     68      │ - const·users·=·[ids.ownerUser,·ids.adminUser,·ids.managerUser,·ids.memberUser,·ids.foreignUser];
+          69 │ + const·users·=·[
+          70 │ + → ids.ownerUser,
+          71 │ + → ids.adminUser,
+          72 │ + → ids.managerUser,
+          73 │ + → ids.memberUser,
+          74 │ + → ids.foreignUser,
+          75 │ + ];
+     69   76 │   
+     70   77 │   describe("kiosk enrolment on PostgreSQL", () => {
+    ········ │ 
+    122  129 │          (gen_random_uuid(), $3, $5, 'manager', 'MGR-1', $6),
+    123  130 │          (gen_random_uuid(), $4, $5, 'employee', 'MEM-1', $6)`,
+    124      │ - → → → [ids.ownerUser,·ids.adminUser,·ids.managerUser,·ids.memberUser,·ids.organization,·timestamp],
+         131 │ + → → → [
+         132 │ + → → → → ids.ownerUser,
+         133 │ + → → → → ids.adminUser,
+         134 │ + → → → → ids.managerUser,
+         135 │ + → → → → ids.memberUser,
+         136 │ + → → → → ids.organization,
+         137 │ + → → → → timestamp,
+         138 │ + → → → ],
+    125  139 │       );
+    126  140 │       await pool.query(
+    ········ │ 
+    173  187 │         new Request("http://localhost/api/kiosk/pair", {
+    174  188 │           method: "POST",
+    175      │ - → → → → headers:·{·"content-type":·"application/json",·"x-forwarded-for":·freshClientIp()·},
+         189 │ + → → → → headers:·{
+         190 │ + → → → → → "content-type":·"application/json",
+         191 │ + → → → → → "x-forwarded-for":·freshClientIp(),
+         192 │ + → → → → },
+    176  193 │           body: JSON.stringify({ code }),
+    177  194 │         }),
+    ········ │ 
+    241  258 │       const created = await createdKiosk();
+    242  259 │       // The audit trail would keep the user; a retention purge or anonymization removes it first.
+    243      │ - → → await·pool.query("delete·from·audit_log·where·performed_by·=·$1",·[ids.adminUser]);
+    244      │ - → → await·pool.query("delete·from·employee·where·user_id·=·$1",·[ids.adminUser]);
+         260 │ + → → await·pool.query("delete·from·audit_log·where·performed_by·=·$1",·[
+         261 │ + → → → ids.adminUser,
+         262 │ + → → ]);
+         263 │ + → → await·pool.query("delete·from·employee·where·user_id·=·$1",·[
+         264 │ + → → → ids.adminUser,
+         265 │ + → → ]);
+    245  266 │       await pool.query("delete from member where user_id = $1", [ids.adminUser]);
+    246  267 │   
+    ········ │ 
+    314  335 │       const created = await createdKiosk();
+    315  336 │   
+    316      │ - → → const·response·=·await·pair(`·${created.pairingCode.toLowerCase().replace("-",·"·")}·`);
+         337 │ + → → const·response·=·await·pair(
+         338 │ + → → → `·${created.pairingCode.toLowerCase().replace("-",·"·")}·`,
+         339 │ + → → );
+    317  340 │   
+    318  341 │       expect(response.status).toBe(200);
+    ········ │ 
+    333  356 │       expect(wrong.status).toBe(401);
+    334  357 │       expect(malformed.status).toBe(400);
+    335      │ - → → expect((await·adminKiosks())[0]).toMatchObject({·status:·"awaiting_pairing"·});
+         358 │ + → → expect((await·adminKiosks())[0]).toMatchObject({
+         359 │ + → → → status:·"awaiting_pairing",
+         360 │ + → → });
+    336  361 │     });
+    337  362 │   
+    ········ │ 
+    359  384 │         reason: "unknown",
+    360  385 │       });
+    361      │ - → → expect(await·resolveKioskFromToken(null)).toEqual({·ok:·false,·reason:·"unknown"·});
+         386 │ + → → expect(await·resolveKioskFromToken(null)).toEqual({
+         387 │ + → → → ok:·false,
+         388 │ + → → → reason:·"unknown",
+         389 │ + → → });
+    362  390 │   
+    363  391 │       const response = await session();
+    ········ │ 
+    378  406 │       expect(response.status).toBe(401);
+    379  407 │       expect(await response.json()).toMatchObject({ code: "kiosk_revoked" });
+    380      │ - → → expect(await·resolveKioskFromToken(token)).toEqual({·ok:·false,·reason:·"revoked"·});
+         408 │ + → → expect(await·resolveKioskFromToken(token)).toEqual({
+         409 │ + → → → ok:·false,
+         410 │ + → → → reason:·"revoked",
+         411 │ + → → });
+    381  412 │       expect((await adminKiosks())[0]).toMatchObject({ status: "revoked" });
+    382  413 │       actAs(ids.adminUser);
+    383      │ - → → expect(await·admin.issueKioskPairingCodeAction({·kioskId:·created.kioskId·})).toMatchObject({
+         414 │ + → → expect(
+         415 │ + → → → await·admin.issueKioskPairingCodeAction({·kioskId:·created.kioskId·}),
+         416 │ + → → ).toMatchObject({
+    384  417 │         success: false,
+    385  418 │         refusal: "kiosk_revoked",
+    ········ │ 
+    392  425 │   
+    393  426 │       actAs(ids.adminUser);
+    394      │ - → → const·rotated·=·await·admin.issueKioskPairingCodeAction({·kioskId:·created.kioskId·});
+         427 │ + → → const·rotated·=·await·admin.issueKioskPairingCodeAction({
+         428 │ + → → → kioskId:·created.kioskId,
+         429 │ + → → });
+    395  430 │       if (!rotated.success) throw new Error(rotated.code);
+    396  431 │   
+    397      │ - → → expect(await·resolveKioskFromToken(oldToken)).toEqual({·ok:·false,·reason:·"unknown"·});
+    398      │ - → → expect((await·adminKiosks())[0]).toMatchObject({·status:·"awaiting_pairing"·});
+         432 │ + → → expect(await·resolveKioskFromToken(oldToken)).toEqual({
+         433 │ + → → → ok:·false,
+         434 │ + → → → reason:·"unknown",
+         435 │ + → → });
+         436 │ + → → expect((await·adminKiosks())[0]).toMatchObject({
+         437 │ + → → → status:·"awaiting_pairing",
+         438 │ + → → });
+    399  439 │       const newToken = await pairedToken(rotated.data.pairingCode);
+    400  440 │       expect(newToken).not.toBe(oldToken);
+    ········ │ 
+    406  446 │       const created = await createdKiosk();
+    407  447 │       const token = await pairedToken(created.pairingCode);
+    408      │ - → → await·pool.query("update·kiosk·set·last_seen_at·=·null·where·id·=·$1",·[created.kioskId]);
+         448 │ + → → await·pool.query("update·kiosk·set·last_seen_at·=·null·where·id·=·$1",·[
+         449 │ + → → → created.kioskId,
+         450 │ + → → ]);
+    409  451 │   
+    410  452 │       await session(token);
+    ········ │ 
+    413  455 │       expect(listed.status).toBe("paired");
+    414  456 │       expect(listed.lastSeenAt).toEqual(expect.any(String));
+    415      │ - → → expect(Date.now()·-·Date.parse(listed.lastSeenAt·??·"")).toBeLessThan(60_000);
+         457 │ + → → expect(Date.now()·-·Date.parse(listed.lastSeenAt·??·"")).toBeLessThan(
+         458 │ + → → → 60_000,
+         459 │ + → → );
+    416  460 │     });
+    417  461 │   
+    418  462 │     it("never creates a kiosk on, or moves one to, another organization's location", async () => {
+    419  463 │       const foreign = await createKiosk({ locationId: ids.foreignLocation });
+    420      │ - → → expect(foreign).toMatchObject({·success:·false,·refusal:·"location_not_found"·});
+         464 │ + → → expect(foreign).toMatchObject({
+         465 │ + → → → success:·false,
+         466 │ + → → → refusal:·"location_not_found",
+         467 │ + → → });
+    421  468 │   
+    422  469 │       const created = await createdKiosk();
+    ········ │ 
+    426  473 │         locationId: ids.foreignLocation,
+    427  474 │       });
+    428      │ - → → expect(moved).toMatchObject({·success:·false,·refusal:·"location_not_found"·});
+  389 more lines truncated
+  
+
+src\lib\time-tracking\kiosk\kiosk-store.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      3   3 │   import { and, asc, eq, gt, isNotNull, isNull } from "drizzle-orm";
+      4   4 │   import { organization } from "@/db/auth-schema";
+      5     │ - import·{·kiosk,·kioskRetiredToken,·location,·organizationNotificationSettings·}·from·"@/db/schema";
+          5 │ + import·{
+          6 │ + → kiosk,
+          7 │ + → kioskRetiredToken,
+          8 │ + → location,
+          9 │ + → organizationNotificationSettings,
+         10 │ + }·from·"@/db/schema";
+      6  11 │   import { AuditAction } from "@/lib/audit-logger";
+      7  12 │   import type { AuditTrail } from "@/lib/audit-trail";
+      8     │ - import·{·type·Clock,·dateFromInstant,·systemClock·}·from·"@/lib/datetime/temporal-core";
+         13 │ + import·{
+         14 │ + → type·Clock,
+         15 │ + → dateFromInstant,
+         16 │ + → systemClock,
+         17 │ + }·from·"@/lib/datetime/temporal-core";
+      9  18 │   import type { DatabaseClient } from "@/lib/effect/services/database.service";
+     10  19 │   import { parseIanaTimeZone } from "@/lib/timezone/validation";
+    ······· │ 
+     70  79 │     const name = typeof value === "string" ? value.trim() : "";
+     71  80 │     if (name.length === 0 || name.length > KIOSK_NAME_MAX_LENGTH) {
+     72     │ - → → throw·new·KioskSettingsRefusal("invalid_name",·"A·kiosk·name·has·1·to·100·characters.");
+         81 │ + → → throw·new·KioskSettingsRefusal(
+         82 │ + → → → "invalid_name",
+         83 │ + → → → "A·kiosk·name·has·1·to·100·characters.",
+         84 │ + → → );
+     73  85 │     }
+     74  86 │     return name;
+    ······· │ 
+     79  91 │       return parseIanaTimeZone(value);
+     80  92 │     } catch {
+     81     │ - → → throw·new·KioskSettingsRefusal("invalid_timezone",·"Choose·a·named·IANA·time·zone.");
+         93 │ + → → throw·new·KioskSettingsRefusal(
+         94 │ + → → → "invalid_timezone",
+         95 │ + → → → "Choose·a·named·IANA·time·zone.",
+         96 │ + → → );
+     82  97 │     }
+     83  98 │   }
+    ······· │ 
+    108 123 │   }
+    109 124 │   
+    110     │ - function·newPairingCode(clock:·Clock):·{·code:·string;·hash:·string;·expiresAt:·Date·}·{
+        125 │ + function·newPairingCode(clock:·Clock):·{
+        126 │ + → code:·string;
+        127 │ + → hash:·string;
+        128 │ + → expiresAt:·Date;
+        129 │ + }·{
+    111 130 │     const code = generatePairingCode();
+    112     │ - → const·expiresAt·=·dateFromInstant(clock.nowInstant().add({·milliseconds:·PAIRING_CODE_TTL_MS·}));
+    113     │ - → return·{·code:·formatPairingCode(code),·hash:·hashKioskSecret(code),·expiresAt·};
+        131 │ + → const·expiresAt·=·dateFromInstant(
+        132 │ + → → clock.nowInstant().add({·milliseconds:·PAIRING_CODE_TTL_MS·}),
+        133 │ + → );
+        134 │ + → return·{
+        135 │ + → → code:·formatPairingCode(code),
+        136 │ + → → hash:·hashKioskSecret(code),
+        137 │ + → → expiresAt,
+        138 │ + → };
+    114 139 │   }
+    115 140 │   
+    ······· │ 
+    141 166 │       .innerJoin(
+    142 167 │         location,
+    143     │ - → → → and(eq(location.id,·kiosk.locationId),·eq(location.organizationId,·kiosk.organizationId)),
+        168 │ + → → → and(
+        169 │ + → → → → eq(location.id,·kiosk.locationId),
+        170 │ + → → → → eq(location.organizationId,·kiosk.organizationId),
+        171 │ + → → → ),
+    144 172 │       )
+    145 173 │       .where(eq(kiosk.organizationId, organizationId))
+    ······· │ 
+    147 175 │     return rows.map(({ hasToken, ...row }) => ({
+    148 176 │       ...row,
+    149     │ - → → status:·row.revokedAt·?·"revoked"·:·hasToken·?·"paired"·:·"awaiting_pairing",
+        177 │ + → → status:·row.revokedAt
+        178 │ + → → → ?·"revoked"
+        179 │ + → → → :·hasToken
+        180 │ + → → → → ?·"paired"
+        181 │ + → → → → :·"awaiting_pairing",
+    150 182 │     }));
+    151 183 │   }
+    ······· │ 
+    160 192 │     const name = parseKioskName(input.name);
+    161 193 │     const timezone = parseKioskZone(input.timezone);
+    162     │ - → const·site·=·await·requireOrganizationLocation(tx,·input.organizationId,·input.locationId);
+        194 │ + → const·site·=·await·requireOrganizationLocation(
+        195 │ + → → tx,
+        196 │ + → → input.organizationId,
+        197 │ + → → input.locationId,
+        198 │ + → );
+    163 199 │     const pairing = newPairingCode(clock);
+    164 200 │   
+    ······· │ 
+    199 235 │     });
+    200 236 │   
+    201     │ - → return·{·kioskId:·created.id,·pairingCode:·pairing.code,·expiresAt:·pairing.expiresAt·};
+        237 │ + → return·{
+        238 │ + → → kioskId:·created.id,
+        239 │ + → → pairingCode:·pairing.code,
+        240 │ + → → expiresAt:·pairing.expiresAt,
+        241 │ + → };
+    202 242 │   }
+    203 243 │   
+    204     │ - async·function·lockManagedKiosk(tx:·KioskClient,·organizationId:·string,·kioskId:·string)·{
+        244 │ + async·function·lockManagedKiosk(
+        245 │ + → tx:·KioskClient,
+        246 │ + → organizationId:·string,
+        247 │ + → kioskId:·string,
+        248 │ + )·{
+    205 249 │     const [found] = await tx
+    206 250 │       .select({
+    ······· │ 
+    221 265 │       .for("update")
+    222 266 │       .limit(1);
+    223     │ - → if·(!found)·throw·new·KioskSettingsRefusal("kiosk_not_found",·"Kiosk·not·found.");
+    224     │ - → if·(found.revokedAt)·throw·new·KioskSettingsRefusal("kiosk_revoked",·"This·kiosk·is·revoked.");
+        267 │ + → if·(!found)
+        268 │ + → → throw·new·KioskSettingsRefusal("kiosk_not_found",·"Kiosk·not·found.");
+        269 │ + → if·(found.revokedAt)
+        270 │ + → → throw·new·KioskSettingsRefusal("kiosk_revoked",·"This·kiosk·is·revoked.");
+    225 271 │     return found;
+    226 272 │   }
+    ······· │ 
+    251 297 │     clock: Clock = systemClock,
+    252 298 │   ): Promise<void> {
+    253     │ - → const·current·=·await·lockManagedKiosk(tx,·input.organizationId,·input.kioskId);
+        299 │ + → const·current·=·await·lockManagedKiosk(
+        300 │ + → → tx,
+        301 │ + → → input.organizationId,
+        302 │ + → → input.kioskId,
+        303 │ + → );
+    254 304 │     const { change } = input;
+    255 305 │     const next = {
+    256     │ - → → name:·change.name·===·undefined·?·current.name·:·parseKioskName(change.name),
+    257     │ - → → timezone:·change.timezone·===·undefined·?·current.timezone·:·parseKioskZone(change.timezone),
+        306 │ + → → name:
+        307 │ + → → → change.name·===·undefined·?·current.name·:·parseKioskName(change.name),
+        308 │ + → → timezone:
+        309 │ + → → → change.timezone·===·undefined
+        310 │ + → → → → ?·current.timezone
+        311 │ + → → → → :·parseKioskZone(change.timezone),
+    258 312 │       locationId:
+    259 313 │         change.locationId === undefined
+    260 314 │           ? current.locationId
+    261     │ - → → → → :·(await·requireOrganizationLocation(tx,·input.organizationId,·change.locationId)).id,
+    262     │ - → → boardEnabled:·change.boardEnabled·===·undefined·?·current.boardEnabled·:·change.boardEnabled,
+        315 │ + → → → → :·(
+        316 │ + → → → → → → await·requireOrganizationLocation(
+        317 │ + → → → → → → → tx,
+        318 │ + → → → → → → → input.organizationId,
+        319 │ + → → → → → → → change.locationId,
+        320 │ + → → → → → → )
+        321 │ + → → → → → ).id,
+        322 │ + → → boardEnabled:
+        323 │ + → → → change.boardEnabled·===·undefined
+        324 │ + → → → → ?·current.boardEnabled
+        325 │ + → → → → :·change.boardEnabled,
+    263 326 │       offlineModeEnabled:
+  177 more lines truncated
+  
+
+src\lib\time-tracking\kiosk\protocol.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     14  14 │    *   again) or `kiosk_revoked` (show the revoked screen).
+     15  15 │    */
+     16     │ - import·type·{·WorkVehicleOption,·WorkVehicleUse·}·from·"../vehicle-use/work-vehicle-use";
+         16 │ + import·type·{
+         17 │ + → WorkVehicleOption,
+         18 │ + → WorkVehicleUse,
+         19 │ + }·from·"../vehicle-use/work-vehicle-use";
+     17  20 │   import type { KioskContactAnchor } from "./frozen-command";
+     18  21 │   import type { KioskSealingKey } from "./pin-seal";
+    ······· │ 
+    224 227 │   export type KioskClockRefusal =
+    225 228 │     | {
+    226     │ - → → → code:·KioskRefusalCode·|·"invalid_request"·|·"employee_not_assigned"·|·"wrong_pin"·|·"no_pin";
+        229 │ + → → → code:
+        230 │ + → → → → |·KioskRefusalCode
+        231 │ + → → → → |·"invalid_request"
+        232 │ + → → → → |·"employee_not_assigned"
+        233 │ + → → → → |·"wrong_pin"
+        234 │ + → → → → |·"no_pin";
+    227 235 │       }
+    228 236 │     | { code: "pin_locked"; lockedUntil: string }
+    ······· │ 
+    321 329 │   
+    322 330 │   /** `GET /api/kiosk/session`. */
+    323     │ - export·type·KioskSessionResponse·=·{·kiosk:·KioskDeviceInfo;·offline?:·KioskOfflineContact·};
+        331 │ + export·type·KioskSessionResponse·=·{
+        332 │ + → kiosk:·KioskDeviceInfo;
+        333 │ + → offline?:·KioskOfflineContact;
+        334 │ + };
+    324 335 │   
+    325 336 │   /** `POST /api/kiosk/pair`. */
+  
+
+Checked 17 files in 15ms. No fixes applied.
+Found 15 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-dbeec437-
+  │ 4b86e5438cc205a1\apps\webapp
+
