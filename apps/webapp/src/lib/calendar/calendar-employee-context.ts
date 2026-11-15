@@ -3,7 +3,12 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
-import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import {
+	asAppSubject,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "@/lib/authorization";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
@@ -11,6 +16,7 @@ import { todayCalendarDateKey } from "./date-keys";
 
 export interface CalendarEmployeeContext {
 	employeeId: string;
+	employeeName: string;
 	timezone: string;
 	initialDateKey: string;
 }
@@ -31,7 +37,9 @@ export async function resolveAuthorizedCalendarEmployeeContext({
 	currentEmployeeId,
 	requestedEmployeeId,
 	now = systemClock.nowInstant(),
-}: ResolveCalendarEmployeeContextInput): Promise<CalendarEmployeeContext | undefined> {
+}: ResolveCalendarEmployeeContextInput): Promise<
+	CalendarEmployeeContext | undefined
+> {
 	const currentEmployee = await db.query.employee.findFirst({
 		where: and(
 			eq(employee.id, currentEmployeeId),
@@ -48,6 +56,11 @@ export async function resolveAuthorizedCalendarEmployeeContext({
 			eq(employee.id, requestedEmployeeId ?? currentEmployee.id),
 			eq(employee.organizationId, organizationId),
 		),
+		with: {
+			user: {
+				columns: { firstName: true, lastName: true, name: true, email: true },
+			},
+		},
 	});
 	if (!targetEmployee) return undefined;
 
@@ -85,9 +98,15 @@ export async function resolveAuthorizedCalendarEmployeeContext({
 		return undefined;
 	}
 
-	const timezone = await getEffectiveTimezone(targetEmployee.userId, organizationId);
+	const timezone = await getEffectiveTimezone(
+		targetEmployee.userId,
+		organizationId,
+	);
 	return {
 		employeeId: targetEmployee.id,
+		employeeName: targetEmployee.user
+			? buildAuthUserDisplayName(targetEmployee.user)
+			: "",
 		timezone,
 		initialDateKey: todayCalendarDateKey(timezone, now),
 	};

@@ -38,6 +38,9 @@ describe("CalendarEmployeePage", () => {
 
 		expect(screen.getByRole("status").getAttribute("aria-busy")).toBe("true");
 		expect(screen.getByText("Kalender wird geladen")).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Calendar" }),
+		).toBeTruthy();
 	});
 
 	it("passes the raw requested date to the authorized employee calendar content", async () => {
@@ -45,7 +48,10 @@ describe("CalendarEmployeePage", () => {
 			params: Promise.resolve({ employeeId: "employee-1" }),
 			searchParams: Promise.resolve({ date: "06/12/2026" }),
 		});
-		const content = await page.props.children.type(page.props.children.props);
+		const boundary = page.props.children[1];
+		const content = await boundary.props.children.type(
+			boundary.props.children.props,
+		);
 
 		expect(content.props).toMatchObject({
 			selectedEmployeeId: "employee-1",

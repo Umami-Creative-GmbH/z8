@@ -1,0 +1,73 @@
+{
+  "checks": [
+    {
+      "name": "manager calendar states selected New York zone",
+      "passed": true
+    },
+    {
+      "name": "manager global clock retains Berlin zone",
+      "passed": true
+    },
+    {
+      "name": "captured Berlin endpoint offset remains on New York calendar",
+      "passed": true
+    },
+    {
+      "name": "authorized real reader uses selected employee zone",
+      "passed": true
+    },
+    {
+      "name": "selected colleague is never labeled My Calendar",
+      "passed": true
+    },
+    {
+      "name": "selected-person drag opens manual entry in selected employee zone",
+      "passed": true
+    },
+    {
+      "name": "large text preference survives calendar reload",
+      "passed": true
+    },
+    {
+      "name": "large text desktop fits",
+      "passed": true
+    },
+    {
+      "name": "sidebar collapse preserves calendar view",
+      "passed": true
+    },
+    {
+      "name": "sidebar collapse persists",
+      "passed": true
+    },
+    {
+      "name": "large text phone fits",
+      "passed": true
+    },
+    {
+      "name": "mobile navigation remains reachable",
+      "passed": true
+    },
+    {
+      "name": "mobile navigation Escape returns focus",
+      "passed": true
+    },
+    {
+      "name": "selected employee wide dark with saved large text fits",
+      "passed": true
+    },
+    {
+      "name": "selected wide scope retains colleague identity without personal label",
+      "passed": true
+    },
+    {
+      "name": "selected employee dark large-text reduced-motion phone fits",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "limits": [
+    "Drag opens the real manual form but does not submit new work.",
+    "No physical device, native browser zoom or exhaustive contrast certification."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "scope": "Actual selected Calendar in second owned fixture, presence/context only",
+  "tool": "agent-browser 0.39.1 structured React DevTools",
+  "components": [
+    "CalendarView",
+    "CalendarScope",
+    "CalendarViewContent",
+    "CalendarMainContent",
+    "CalendarControls"
+  ],
+  "session": "next-dev-loop-dc4f5ca06d09",
+  "sourceHead": "10673de8a632a7c31b2389bf905408277b99c5dd"
+}
