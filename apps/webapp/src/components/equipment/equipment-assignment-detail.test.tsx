@@ -389,7 +389,8 @@ describe("Handover history", () => {
 			exceptionId: waiver.id,
 			quantity: 1,
 		});
-		expect(api.toast.error).toHaveBeenCalled();
+		expect(await panel.findByRole("alert")).toBeTruthy();
+		expect(api.toast.error).not.toHaveBeenCalled();
 	});
 });
 
@@ -436,8 +437,8 @@ describe("Corrections", () => {
 			condition: "worn",
 			reason: "Signed agreement lists worn condition",
 		});
-		expect(api.toast.error).toHaveBeenCalledWith(
-			expect.stringContaining("Reload equipment"),
+		expect((await panel.findByRole("alert")).textContent).toContain(
+			"Reload equipment",
 		);
 		expect(panel.getByLabelText(/^Amendment reason/)).toHaveProperty(
 			"value",

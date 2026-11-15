@@ -137,7 +137,8 @@ it("records separate receipt and issuance evidence, new terms, and a stable requ
 	await user.click(
 		panel.getByRole("button", { name: "Confirm receipt and issuance" }),
 	);
-	await waitFor(() => expect(api.toast.error).toHaveBeenCalled());
+	expect(await panel.findByRole("alert")).toBeTruthy();
+	expect(api.toast.error).not.toHaveBeenCalled();
 	await user.click(
 		panel.getByRole("button", { name: "Confirm receipt and issuance" }),
 	);
@@ -260,10 +261,8 @@ it("keeps a stale transfer reviewable and uses a new identity after editing the 
 	await user.click(
 		panel.getByRole("button", { name: "Confirm receipt and issuance" }),
 	);
-	await waitFor(() =>
-		expect(api.toast.error).toHaveBeenCalledWith(
-			expect.stringContaining("This record changed."),
-		),
+	expect((await panel.findByRole("alert")).textContent).toContain(
+		"This record changed.",
 	);
 	await user.type(
 		receipt.getByLabelText("Notes (optional)"),
@@ -282,11 +281,19 @@ it("keeps a stale transfer reviewable and uses a new identity after editing the 
 it("hides transfer when receipt authority or an authorized current target is absent and keeps personal history read only", async () => {
 	const user = userEvent.setup();
 	const menuItems = async () => {
-		await user.click(screen.getByRole("button", { name: "Actions for L-02" }));
-		const items = within(await screen.findByRole("menu"))
+		const trigger = screen.getByRole("button", { name: "Actions for L-02" });
+		await user.click(trigger);
+		const menu = await screen.findByRole("menu");
+		await user.keyboard("{ArrowDown}");
+		await waitFor(() =>
+			expect(menu.contains(document.activeElement)).toBe(true),
+		);
+		const items = within(menu)
 			.getAllByRole("menuitem")
 			.map((item) => item.textContent);
 		await user.keyboard("{Escape}");
+		await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+		await waitFor(() => expect(document.activeElement).toBe(trigger));
 		return items;
 	};
 	const { rerender } = render(
