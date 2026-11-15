@@ -217,11 +217,26 @@ function CalendarScope({
 	const calendarTimezone = initialTimezone ?? "UTC";
 	const calendarDateKey =
 		initialDateKey ?? todayCalendarDateKey(calendarTimezone);
+	const routeEmployeeId =
+		initialSelectedEmployeeId ?? currentEmployeeId ?? null;
 	const [selection, setSelection] = useState<
-		(EmployeeSelectionOverride & { organizationId: string }) | null
+		| (EmployeeSelectionOverride & {
+				organizationId: string;
+				routeEmployeeId: string | null;
+		  })
+		| null
 	>(null);
 	const activeSelection =
 		selection?.organizationId === organizationId ? selection : null;
+	if (activeSelection && activeSelection.routeEmployeeId !== routeEmployeeId) {
+		// Acknowledge the chosen route without letting an older arrival win.
+		// Later Back/direct arrivals then belong to the route again.
+		setSelection(
+			activeSelection.id === routeEmployeeId
+				? null
+				: { ...activeSelection, routeEmployeeId },
+		);
+	}
 	const selectedEmployeeId =
 		activeSelection?.id ?? initialSelectedEmployeeId ?? currentEmployeeId;
 	const selectedEmployeeName = activeSelection
@@ -250,7 +265,7 @@ function CalendarScope({
 			initialSelectedEmployeeId={selectedEmployeeId ?? undefined}
 			initialEmployeeName={selectedEmployeeName ?? undefined}
 			onEmployeeSelectionChange={(next) =>
-				setSelection({ ...next, organizationId })
+				setSelection({ ...next, organizationId, routeEmployeeId })
 			}
 			navigationState={{
 				viewMode,
