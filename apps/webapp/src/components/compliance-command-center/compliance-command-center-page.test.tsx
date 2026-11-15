@@ -6,7 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComplianceCommandCenterData } from "@/lib/compliance-command-center/types";
 import { buildComplianceCommandCenterData } from "@/lib/compliance-command-center/view-model";
 import { appPageOwnsHeading } from "@/lib/navigation/route-metadata";
-import { ComplianceCommandCenterPage } from "./compliance-command-center-page";
+import {
+	ComplianceCommandCenterPage,
+	CompliancePageLoading,
+} from "./compliance-command-center-page";
 
 const refresh = vi.fn();
 const tolgeeTranslations = vi.hoisted(() => new Map<string, string>());
@@ -34,6 +37,18 @@ vi.mock("@/navigation", () => ({
 }));
 
 describe("ComplianceCommandCenterPage", () => {
+	it("announces loading without exposing findings or inventing zero counts", () => {
+		render(<CompliancePageLoading />);
+		expect(
+			screen
+				.getByRole("status", { name: "Loading compliance signals" })
+				.getAttribute("aria-busy"),
+		).toBe("true");
+		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+			"Compliance",
+		);
+		expect(screen.queryByText(/Rest-period violations:/)).toBeNull();
+	});
 	beforeEach(() => {
 		vi.useFakeTimers();
 		refresh.mockReset();
