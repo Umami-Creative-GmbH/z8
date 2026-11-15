@@ -2,7 +2,8 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render-with-translations";
 
@@ -34,7 +35,7 @@ function DesktopShell() {
 		<SidebarProvider>
 			<SidebarTrigger />
 			<Sidebar collapsible="icon">
-				<SidebarMenuButton asChild tooltip="Settings">
+				<SidebarMenuButton asChild tooltip="Settings navigation">
 					<a href="#settings" aria-label="Settings">
 						Settings
 					</a>
@@ -45,6 +46,25 @@ function DesktopShell() {
 }
 
 describe("Sidebar collapse preferences", () => {
+	it("keeps named tooltips available on the desktop icon rail", async () => {
+		viewport.isMobile = false;
+		const user = userEvent.setup();
+		render(<DesktopShell />);
+		const trigger = screen.getByRole("button", { name: "Toggle Sidebar" });
+		await user.click(trigger);
+		const link = screen.getByRole("link", { name: "Settings" });
+		await act(async () => link.focus());
+		expect((await screen.findByText("Settings navigation")).hidden).toBe(false);
+
+		fireEvent.keyDown(window, { key: "b", ctrlKey: true });
+
+		await waitFor(() =>
+			expect(screen.queryByText("Settings navigation")).toBeNull(),
+		);
+		expect(trigger.getAttribute("aria-expanded")).toBe("true");
+		expect(document.activeElement).toBe(link);
+	});
+
 	it("keeps a named icon rail, expands by keyboard, and restores the saved desktop preference", () => {
 		viewport.isMobile = false;
 		const first = render(<DesktopShell />);
@@ -132,6 +152,23 @@ function OpenMobileSidebar() {
 }
 
 describe("Sidebar", () => {
+	it("dismisses the phone drawer with one Escape after focusing a named navigation link", async () => {
+		const user = userEvent.setup();
+		render(<DesktopShell />);
+		const trigger = screen.getByRole("button", { name: "Toggle Sidebar" });
+		await user.click(trigger);
+		await screen.findByRole("dialog");
+		const link = screen.getByRole("link", { name: "Settings" });
+		await act(async () => link.focus());
+		expect(document.activeElement).toBe(link);
+
+		await user.keyboard("{Escape}");
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(trigger.getAttribute("aria-expanded")).toBe("false");
+		await waitFor(() => expect(document.activeElement).toBe(trigger));
+	});
+
 	it("dismisses the phone drawer with Escape", async () => {
 		render(
 			<SidebarProvider>
