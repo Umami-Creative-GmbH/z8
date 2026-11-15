@@ -20,7 +20,7 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 
 ## Current work
 
-- F1 #1693: current compatible handoff verified at `ccccad7a3512924e01941054f01283057dd62f00`, including the shared server-data Retry correction. Original live consumer handoff `ac30ff285814644b08fc918eafa1013f3ecb7897` remains inherited evidence. Its dependents may start; final-review limits remain explicit in the [consumer inventory and interfaces](1693.md).
+- F1 #1693: current compatible handoff verified at `b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5`, including shared server-data Retry and mobile navigation Escape corrections. Original live consumer handoff `ac30ff285814644b08fc918eafa1013f3ecb7897` remains inherited evidence. Its dependents may start; final-review limits remain explicit in the [consumer inventory and interfaces](1693.md).
 - F2 #1694 (records): handoff verified at `382b8f5be837dad724d3a54274d3050b0104881f`; F2-only dependents may start. See [compatible interfaces and real pilots](1694.md).
 - F3 #1695 (forms): handoff verified at `bfacad421ffe77f50729ea5895c546698ef28383`; F3-only dependents may start. See [interfaces, pilots and limits](1695.md).
 - H1 #1853: joint handoff verified at `26d1d8fd016d6daa0c9fe71e0f671571dd45c211`; its 75 joint consumers may now start from their own eligible frontier. See [compatibility evidence and limits](1853.md).
@@ -29,10 +29,12 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - R009 #1707 (legacy approvals): integrated and verified at `6fa8147fae492939056a76e83e327e520d921ae1`; both queues, decision owners and refusal drafts remain. See [fresh merger checks and retained acceptance limits](1707.md).
 - R010 #1708 (deputy decision history): integrated and verified at `3f86b1d7e17025e89f314638a042aa1eed378ed1`; retained history/rights and real local data-refetch recovery. See [fresh merged checks and shared-boundary finding](1708.md).
 - R011 #1709 (Unified Inbox): integrated and verified at `97ecd83ca05ad1bab75fee84beed57f23e74c007`; authorized submitted reasons and fresh-detail decision rights preserved. See [fresh combined verification and exact limits](1709.md).
-- R012 #1710 (canonical approval arrival/review): implementing from verified #1709 ancestry while its GitHub issue stays open.
+- R015 #1713 (selected-employee calendar) and R017 #1715 (driving licence): claimed for isolated implementation from verified Calendar/H1 ancestry; issues stay open.
 - R016 #1714 (compliance): integrated and verified at `0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10`; risk-first records, truthful coverage and authorized streaming. See [combined checks and exact quality/runtime limits](1714.md).
-- R014 #1712 (calendar): implementation committed, awaiting fresh merger review; no verified integration SHA yet.
-- Frontier counts: **19 integrated, one awaiting integration, one implementing, 136 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
+- R014 #1712 (calendar): integrated and verified at `cca1977df820ef288a7910a4f9d44b464d289b3b`; selected scope and original action owners remain. See [fresh checks and explicit runtime limits](1712.md).
+- R012 #1710 (canonical approval arrival/review): integrated and verified at `273320a9376b4deb60b57ba3882fc17b37ae308a`; canonical arrival, independent admission and fresh decision authority remain. See [merged checks and exact limits](1710.md).
+- R019 #1717 (equipment workspace): claimed for isolated implementation from verified H1 ancestry; issue stays open.
+- Frontier counts: **21 integrated, three implementing, 133 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
 - R002 #1701 (absences): integrated and verified at `a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc`; organization/year/zone, records and existing absence action owners preserved. See [capabilities and remaining checks](1701.md).
 - R005 #1703 (overtime burn-down): integrated and verified at `2bc30e88f63d9db3d547353f49077db0c0ee7805`; root corrected both Unassigned manager queries and active analytics navigation. See [capabilities, corrections and remaining checks](1703.md).
 - R001 #1700 (dashboard conformance): integrated and verified at `8eed0aa58bcae1dd19be7e6d7d78303208a3ddde`; approved composition/preferences preserved, no-organization heading and streamed clock hydration corrected. See [capabilities and remaining checks](1700.md).
@@ -43,6 +45,12 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - Remaining pages: select from eligible prerequisites in `integration.json`. Foundation readiness is verified; route-specific shared-output dependencies still apply.
 
 ## Verification
+
+- Shared F1 navigation correction `b6595389e`: a hidden link tooltip consumed the first Escape. One disabled prop on its existing root fixes the owner. The permanent assembled regression fails before correction; **10 suites /97 tests**, full types and two-file Biome/Doctor zero pass. Three matched historical-consumer phone cases (saved18px/normal and reduced motion;16px/expanded preference) now close and return focus with one trusted Escape; desktop icon-rail tooltip/focus and fresh Next probes pass. Seven PNGs fully decode; owned browser/Next/three fixture services cleaned. Exact tree equals tested feature tree; API/domain/current-route/native/build/catalog/device/provider/transition limits remain in [F1 proof](1693.md#root-correction-mobile-navigation-escape).
+
+- #1710 merge `273320a93`: **134 unique suites / 1,276 fresh tests** (58/699 exact +95/736 compatibility less19 files/159 cases), full combined types and seven-file Doctor zero. CRLF-aware Biome autodiscovery passes; an additional forced100-column config reports seven formatting-only files and is retained as unpassed. All20 prior verified ancestors/709 rollout paths/shared recovery wrappers and exactly seven source paths reviewed;15 PNGs fully decode with other artifacts checked. Root repairs the incoming duplicate #1714 report section/title only. PG4/14 and41 runtime assertions are inherited; [all stated limits](1710.md) remain.
+
+- #1712 merge `cca1977df`: **50 unique suites / 438 fresh tests**, full combined types, twelve-file Doctor zero and Biome zero errors/seven inherited warnings. Calendar/Compliance opt-ins, all678 prior rollout paths/six recovery files and19 verified ancestors preserved; exact43-path scope and artifact checks passed. Runtime40 assertions remain inherited; manual range demonstrates form opening, not a submitted entry. Drawer Escape/Profile/scope/revocation/build/catalog/device limits remain in [the report](1712.md). Verified ancestry releases1713 while the issue stays open.
 
 - #1714 merge `0ca17e611`: **153 unique suites / 1,518 fresh tests** (19/130 +143/1490 less9 files/102 cases), full combined types and ten-file Doctor zero. Incoming CRLF-aware Biome passes; an extra forced100-column webapp config reports9 formatting-only files, explicitly retained. Preserved all645 prior rollout/18 root correction paths and recorded ancestors;23 PNGs/6 JSON/3 scripts/28 links pass. Runtime35/23/Next is inherited; healthy live audit and native/catalog/build/provider/device/zoom/transition limits stay explicit. Translated coverage is overview/status/empty/footer; partial/recovery is English. [Report](1714.md).
 

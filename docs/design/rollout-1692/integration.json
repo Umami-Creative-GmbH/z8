@@ -20,12 +20,13 @@
                                           1689
                                       ],
                         "status":  "integrated",
-                        "verifiedCommit":  "ccccad7a3512924e01941054f01283057dd62f00",
+                        "verifiedCommit":  "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
                         "integrationCommit":  "b31c497bb48c873153b731ea9f7b62c8c3e0e2fe",
                         "evidence":  "docs/design/rollout-1692/1693.md",
-                        "integrationVerification":  "27 suites / 194 tests plus 7 fixture guard/exit tests passed on final merge; exact tree and parent/implementation ancestry preserved. Live consumer/role/theme/font/drawer/refresh evidence supports F1 handoff. Native React DevTools, partial comparison, provider/device/catalog and full-build final-review limits retained in evidence. Compatible shared-server recovery correction verified at ccccad7a3: four actual wrapper regressions red before/green after,7 suites/56 tests,full types and6-file Biome/Doctor zero. Historical real reader outage/restore changes0refetch/0rows/error to1GET/3rows/recovered; only4 caller APIs and fixtures change. Other3 wrappers assembled-only; original runtime/native/build/catalog/device/provider limits retained.",
+                        "integrationVerification":  "27 suites / 194 tests plus 7 fixture guard/exit tests passed on final merge; exact tree and parent/implementation ancestry preserved. Live consumer/role/theme/font/drawer/refresh evidence supports F1 handoff. Native React DevTools, partial comparison, provider/device/catalog and full-build final-review limits retained in evidence. Compatible shared-server recovery correction verified at ccccad7a3: four actual wrapper regressions red before/green after,7 suites/56 tests,full types and6-file Biome/Doctor zero. Historical real reader outage/restore changes0refetch/0rows/error to1GET/3rows/recovered; only4 caller APIs and fixtures change. Other3 wrappers assembled-only; original runtime/native/build/catalog/device/provider limits retained. Compatible shared navigation correction verified at b6595389e: hidden tooltip consumed firstEscape; one root disabled prop fixes owner. Permanent assembled regression red before/green after;10 suites/97 tests,full types,two-file Biome/Doctor zero. Three real historical-consumer phone pairs now close/focus with one Escape; desktop icon tooltip/focus and fresh Next probes pass. Seven PNGs fully decoded; owned services cleaned. Current-route/domain/native/build/catalog/device/provider/transition limits retained.",
                         "handoffCommit":  "ac30ff285814644b08fc918eafa1013f3ecb7897",
-                        "correctionCommit":  "6bdef571e61ea5c7b8a73821e77fc8c8824e3836"
+                        "correctionCommit":  "6bdef571e61ea5c7b8a73821e77fc8c8824e3836",
+                        "mobileEscapeCorrectionCommit":  "4b2b76a81133e36802e99636707a21282b7a1ce3"
                     },
                     {
                         "id":  "F2",
@@ -205,8 +206,11 @@
                         "blockedBy":  [
                                           1709
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "273320a9376b4deb60b57ba3882fc17b37ae308a",
+                        "implementationCommit":  "1ae48924f54510c35c5fd9be0bdb61e120da6baf",
+                        "evidence":  "docs/design/rollout-1692/1710.md",
+                        "integrationVerification":  "134 unique suites / 1276 fresh tests (58/699 exact +95/736 compatibility less19 repeated files/159 cases), full combined types, seven-file Doctor zero. CRLF-aware Biome autodiscovery passes seven files; additional forced100-column config reports seven formatting-only files and is not passed. Exact conflict-free tree, all20 prior verified ancestors,10915 prior paths/709 rollout paths, seven-source-path scope and artifacts verified. Root removes incoming1714 report duplication only. PostgreSQL4/14 and41 runtime assertions are inherited; domain/build/catalog/provider/device/zoom/transition limits retained."
                     },
                     {
                         "id":  "R013",
@@ -227,9 +231,11 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "ebf4c0ce8ca59fda5934b335824628f22dd5b0e6"
+                        "status":  "integrated",
+                        "verifiedCommit":  "cca1977df820ef288a7910a4f9d44b464d289b3b",
+                        "implementationCommit":  "ebf4c0ce8ca59fda5934b335824628f22dd5b0e6",
+                        "evidence":  "docs/design/rollout-1692/1712.md",
+                        "integrationVerification":  "Fresh50 unique suites/438 tests,full combined types,12-file Doctor zero/Biome zero errors+7 inherited warnings. Calendar/Compliance conflict additive;43paths,42incoming exact plus prior metadata+Calendar. All678 prior rollout/six recovery files/19verified ancestors preserved;10JSON/17PNG signatures/8targets/3scripts/whitespace pass. Runtime28+12 checks inherited; manual form opened not submitted; consequential-action/scope/revocation/large-text drawer/Profile/build/catalog/provider/device limits explicit."
                     },
                     {
                         "id":  "R015",
@@ -238,7 +244,7 @@
                         "blockedBy":  [
                                           1712
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -261,7 +267,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -281,7 +287,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

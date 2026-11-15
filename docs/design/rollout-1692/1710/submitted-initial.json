@@ -1,0 +1,15 @@
+{
+  "actor": "small-restricted",
+  "checks": [
+    {
+      "date": "2025-01-13",
+      "reason": "R011 owned duplicate record 2025-01-13\nSubmitted deletion evidence.",
+      "submitted": true
+    },
+    {
+      "date": "2025-01-20",
+      "reason": "R011 owned duplicate record 2025-01-20\nSubmitted deletion evidence.",
+      "submitted": true
+    }
+  ]
+}

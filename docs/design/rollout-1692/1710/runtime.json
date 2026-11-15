@@ -1,0 +1,139 @@
+{
+  "checks": [
+    {
+      "name": "signed-out arrival retains the exact review callback",
+      "passed": true
+    },
+    {
+      "name": "small-restricted arrival admission",
+      "passed": true
+    },
+    {
+      "name": "small-employee arrival admission",
+      "passed": true
+    },
+    {
+      "name": "small-admin arrival admission",
+      "passed": true
+    },
+    {
+      "name": "small-manager arrival admission",
+      "passed": true
+    },
+    {
+      "name": "ready arrival auto-opens authorized detail",
+      "passed": true
+    },
+    {
+      "name": "actual submitted reason reaches this consumer",
+      "passed": true
+    },
+    {
+      "name": "closed arrival has a working reopen control",
+      "passed": true
+    },
+    {
+      "name": "failed exact detail cannot inherit arrival decision authority",
+      "passed": true
+    },
+    {
+      "name": "failed exact detail withholds saved evidence",
+      "passed": true
+    },
+    {
+      "name": "exact-detail retry recovers through the real reader",
+      "passed": true
+    },
+    {
+      "name": "switch during detail read discards the prior detail workspace",
+      "passed": true
+    },
+    {
+      "name": "old target refuses in the new active organization",
+      "passed": true
+    },
+    {
+      "name": "arrival offers explicit organization reconciliation",
+      "passed": true
+    },
+    {
+      "name": "real init switch returns to the exact authorized review",
+      "passed": true
+    },
+    {
+      "name": "missing target is safely unavailable",
+      "passed": true
+    },
+    {
+      "name": "canonical kind never falls back to a compatibility request",
+      "passed": true
+    },
+    {
+      "name": "reassigned target uses the same safe unavailable copy",
+      "passed": true
+    },
+    {
+      "name": "revoked membership withholds approval facts",
+      "passed": true
+    },
+    {
+      "name": "infrastructure outage stays distinct from unavailable target",
+      "passed": true
+    },
+    {
+      "name": "route Retry refetches the restored server reader",
+      "passed": true
+    },
+    {
+      "name": "saved dark and large preferences survive review reload",
+      "passed": true
+    },
+    {
+      "name": "collapsed navigation persists on review",
+      "passed": true
+    },
+    {
+      "name": "saved large dark layout fits 390",
+      "passed": true
+    },
+    {
+      "name": "saved large dark layout fits 2400",
+      "passed": true
+    },
+    {
+      "name": "late role loss retains the rejection draft",
+      "passed": true
+    },
+    {
+      "name": "late role loss did not decide the request",
+      "passed": true
+    },
+    {
+      "name": "actual rejection returns to Inbox",
+      "passed": true
+    },
+    {
+      "name": "rejection status persisted",
+      "passed": true
+    },
+    {
+      "name": "actual approval returns to Inbox",
+      "passed": true
+    },
+    {
+      "name": "approval persisted",
+      "passed": true
+    },
+    {
+      "name": "removed request uses safe unavailable copy",
+      "passed": true
+    }
+  ],
+  "scope": "owned disposable small organization; two actual calendar deletion requests; preferences and decisions persisted; temporary roles/membership/assignment restored",
+  "comparison": "composition captures preceded all decisions",
+  "limits": [
+    "emulated viewports, not physical devices or true browser zoom",
+    "canonical positive arrival and held-evidence refusal are recorded separately; successful canonical decisions and covering variants remain domain integration coverage",
+    "Next development transition diagnostics are not a performance or production-build pass"
+  ]
+}

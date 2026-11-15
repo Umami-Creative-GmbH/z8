@@ -1,0 +1,31 @@
+{
+  "sourceCommit": "78d8c4af9764d159ca8dc12e772af3c835b77b3c",
+  "overlay": "four verified shared error handlers",
+  "selection": "licenses source route across configured locales",
+  "mode": "production selective Next build; not full application build",
+  "exitCode": 0,
+  "signal": null,
+  "stages": [
+    "compiling",
+    "compiled",
+    "typechecking",
+    "collecting",
+    "prerendering"
+  ],
+  "staticProgress": [
+    "Generating static pages using 2 workers (0/1) ..."
+  ],
+  "routeSelectionMessages": [
+    "⚠ `experimental.useTypeScriptCli` checks the complete TypeScript project; `--debug-build-paths` does not limit type checking."
+  ],
+  "compiledAppEntries": [
+    "/[locale]/(auth)/licenses/page",
+    "/_global-error/page",
+    "/_not-found/page"
+  ],
+  "emittedAppRoutes": 0,
+  "prerenderedPaths": [
+    "/_global-error"
+  ],
+  "interpretation": "Exit0 compiles the licenses module and complete TypeScript project, but emitted no app routes and prerendered only the global error. It does not exercise app locale prerendering or pass the full build. Selection/artifact mismatch remains unclassified."
+}
