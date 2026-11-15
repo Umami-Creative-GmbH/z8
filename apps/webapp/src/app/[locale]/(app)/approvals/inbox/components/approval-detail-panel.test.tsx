@@ -899,3 +899,25 @@ it("can retry the same rejection reason after a failed decision", async () => {
 		expect(mockState.rejectMutateAsync).toHaveBeenCalledTimes(2),
 	);
 });
+
+it("associates the required rejection reason error with its field", async () => {
+	mockState.detailUnavailable = false;
+	mockState.detailItem = null;
+	mockState.actions = { ...approvalItem.capabilities };
+	mockState.approveIsPending = false;
+	mockState.rejectIsPending = false;
+	render(
+		<ApprovalDetailPanel
+			approval={approvalItem}
+			open
+			onOpenChange={vi.fn()}
+			onActioned={vi.fn()}
+		/>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+	const input = screen.getByLabelText("Reason for rejection");
+	fireEvent.change(input, { target: { value: "   " } });
+	const error = await screen.findByText("A reason is required");
+	expect(input.getAttribute("aria-invalid")).toBe("true");
+	expect(input.getAttribute("aria-describedby")).toContain(error.id);
+});

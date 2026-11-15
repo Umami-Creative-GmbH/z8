@@ -3,7 +3,8 @@
 import { IconLoader2, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	TFormControl,
@@ -11,6 +12,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 
 /** The caller keeps the reason's lifetime and the current decision authority. */
@@ -31,17 +33,18 @@ export function ApprovalReasonForm({
 }) {
 	const { t } = useTranslate();
 	const submitting = useRef(false);
-	const defaults = useRef({ reason });
+	const [defaultValues] = useState(() => ({ reason }));
 	const form = useForm({
-		defaultValues: defaults.current,
+		defaultValues,
 		onSubmit: async () => {
 			if (!canReject || isPending || submitting.current) return;
 			submitting.current = true;
 			try {
 				await onConfirm();
-			} finally {
-				submitting.current = false;
+			} catch {
+				toast.error(t("approvals:approvals.rejectFailed", "Failed to reject"));
 			}
+			submitting.current = false;
 		},
 	});
 	return (
@@ -65,10 +68,10 @@ export function ApprovalReasonForm({
 			>
 				{(field) => (
 					<TFormItem>
-						<TFormLabel>
+						<TFormLabel hasError={fieldHasError(field)}>
 							{t("approvals:approvals.rejectionReason", "Reason for rejection")}
 						</TFormLabel>
-						<TFormControl>
+						<TFormControl hasError={fieldHasError(field)}>
 							<Textarea
 								name="reason"
 								autoComplete="off"

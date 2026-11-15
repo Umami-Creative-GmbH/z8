@@ -16,10 +16,3 @@ const approval=await api('/api/approvals/inbox/'+approved+'/approve',{});check('
 await go();await click('Select all','[role=checkbox]');const remaining=ids.slice(2);await api('/api/approvals/inbox/'+remaining[0]+'/reject',{reason:'R011 concurrent reviewer decision'});await click('Reject Selected (2)');await typeReason('R011 actual partial bulk');const bulkResponse=page.waitForResponse(r=>r.url().endsWith('/bulk-reject')&&r.request().method()==='POST');await click('Confirm Rejection');const bulk=await (await bulkResponse).json();check('mixed bulk returns one actual success and one stale failure',bulk.succeeded.length===1&&bulk.failed.length===1&&bulk.failed[0].code==='stale');await page.waitForFunction(()=>!document.querySelector('[role=dialog] textarea'));await shot('after-partial-bulk');check('bulk rejection reason persists',(await db.query('select rejection_reason from approval_request where id=$1 and organization_id=$2',[remaining[1],manager.organizationId])).rows[0]?.rejection_reason==='R011 actual partial bulk');
 await writeFile(join(out,'actions-runtime.json'),JSON.stringify({actor:'small-manager',scope:'unique owned disposable fixture; actual calendar submissions and real inbox decisions',checks,bulk,errors,reasonReadBack:detailText},null,2)+'\n');
 }catch(e){if(page)await page.screenshot({path:join(out,'action-failure.png'),fullPage:true});throw e;}finally{await browser.close();await db.end();}
-
-
-
-
-
-
-

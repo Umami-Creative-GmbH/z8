@@ -167,7 +167,7 @@ export function ApprovalInboxTable({
 											<div className="truncate font-medium text-sm">
 												{item.requester.name}
 											</div>
-											<div className="truncate text-muted-foreground text-xs">
+											<div className="break-all text-muted-foreground text-xs">
 												{item.requester.email}
 											</div>
 										</div>

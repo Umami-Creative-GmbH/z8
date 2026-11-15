@@ -11,6 +11,10 @@
     {
       "name": "four refusal/evidence fixture requests remain pending",
       "passed": true
+    },
+    {
+      "name": "authorized exact detail returns actual saved submitted reason",
+      "passed": true
     }
   ],
   "records": [

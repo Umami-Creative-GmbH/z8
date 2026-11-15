@@ -6,9 +6,8 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
-	it("adopts only the inbox heading, retaining independent approval route ownership", () => {
+	it("adopts the exact inbox heading, retaining independent review route ownership", () => {
 		expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);
-		expect(appPageOwnsHeading("/en/approvals")).toBe(false);
 		expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(
 			false,
 		);

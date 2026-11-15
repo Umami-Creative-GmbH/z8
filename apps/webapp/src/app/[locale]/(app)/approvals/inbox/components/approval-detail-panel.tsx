@@ -419,6 +419,37 @@ function useApprovalPanelDetail(approval: ApprovalInboxItem | null) {
 	};
 }
 
+function ApprovalEvidenceAvailability({
+	available,
+	isFetching,
+	refetch,
+}: {
+	available: boolean;
+	isFetching: boolean;
+	refetch: () => unknown;
+}) {
+	const { t } = useTranslate();
+	if (available) return null;
+	return (
+		<div role="status" className="space-y-2 rounded-md border p-4 text-sm">
+			<p>
+				{isFetching
+					? t(
+							"approvals:approvals.loadingDecisionEvidence",
+							"Loading decision rights and evidence…",
+						)
+					: t(
+							"approvals:approvals.detailUnavailableDecision",
+							"Decision rights and evidence are unavailable. Retry before deciding.",
+						)}
+			</p>
+			<Button variant="outline" disabled={isFetching} onClick={() => refetch()}>
+				{t("common.retry", "Retry")}
+			</Button>
+		</div>
+	);
+}
+
 export function ApprovalDetailPanel({
 	approval,
 	open,
@@ -564,31 +595,11 @@ export function ApprovalDetailPanel({
 					data-slot="approval-detail-body"
 					className="flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6"
 				>
-					{!available && (
-						<div
-							role="status"
-							className="space-y-2 rounded-md border p-4 text-sm"
-						>
-							<p>
-								{isFetching
-									? t(
-											"approvals:approvals.loadingDecisionEvidence",
-											"Loading decision rights and evidence…",
-										)
-									: t(
-											"approvals:approvals.detailUnavailableDecision",
-											"Decision rights and evidence are unavailable. Retry before deciding.",
-										)}
-							</p>
-							<Button
-								variant="outline"
-								disabled={isFetching}
-								onClick={() => refetch()}
-							>
-								{t("common.retry", "Retry")}
-							</Button>
-						</div>
-					)}
+					<ApprovalEvidenceAvailability
+						available={available}
+						isFetching={!!isFetching}
+						refetch={refetch}
+					/>
 					<div>
 						<SectionTitle>
 							{t("approvals:approvals.requester", "Requester")}
@@ -605,7 +616,7 @@ export function ApprovalDetailPanel({
 								<div className="truncate font-semibold">
 									{panelItem.requester.name}
 								</div>
-								<div className="truncate text-sm text-muted-foreground">
+								<div className="break-all text-sm text-muted-foreground">
 									{panelItem.requester.email}
 								</div>
 							</div>
