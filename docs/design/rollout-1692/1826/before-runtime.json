@@ -1,0 +1,154 @@
+{
+  "phase": "before",
+  "fixture": "disposable synthetic Performance small, small-admin, enforced MFA",
+  "source": {
+    "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+    "localAI": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+    "dirtyDiffSha256": "0c70a09c1470501629db456cfc724a72074bfc5105b7fd374497979c4244ee3e",
+    "files": {
+      "apps/webapp/src/app/[locale]/mfa/page.tsx": "95734f3e46b15c811846ebd6a44afd9e5fcbfa97be835411a874e66c460b5b58",
+      "apps/webapp/src/components/organization-mfa/verification.tsx": "24ac9c758a42b7d3db3aac13ddf656478f49361ed7069a0942ac6938f9e1bd00",
+      "apps/webapp/src/components/organization-mfa/sign-out.tsx": "2e05cfaa82355189f9513243bfcf700f2465dd23a59115f9003c3a81c192890f"
+    }
+  },
+  "captures": [
+    {
+      "filename": "before-desktop-light.png",
+      "source": {
+        "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+        "localAI": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+        "dirtyDiffSha256": "0c70a09c1470501629db456cfc724a72074bfc5105b7fd374497979c4244ee3e",
+        "files": {
+          "apps/webapp/src/app/[locale]/mfa/page.tsx": "95734f3e46b15c811846ebd6a44afd9e5fcbfa97be835411a874e66c460b5b58",
+          "apps/webapp/src/components/organization-mfa/verification.tsx": "24ac9c758a42b7d3db3aac13ddf656478f49361ed7069a0942ac6938f9e1bd00",
+          "apps/webapp/src/components/organization-mfa/sign-out.tsx": "2e05cfaa82355189f9513243bfcf700f2465dd23a59115f9003c3a81c192890f"
+        }
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "24px",
+      "inputFont": "14px",
+      "fontsStatus": "loaded",
+      "theme": "light bprogress-busy",
+      "fontPreference": "default",
+      "savedTheme": "light",
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1704
+      }
+    },
+    {
+      "filename": "before-phone-light.png",
+      "source": {
+        "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+        "localAI": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+        "dirtyDiffSha256": "0c70a09c1470501629db456cfc724a72074bfc5105b7fd374497979c4244ee3e",
+        "files": {
+          "apps/webapp/src/app/[locale]/mfa/page.tsx": "95734f3e46b15c811846ebd6a44afd9e5fcbfa97be835411a874e66c460b5b58",
+          "apps/webapp/src/components/organization-mfa/verification.tsx": "24ac9c758a42b7d3db3aac13ddf656478f49361ed7069a0942ac6938f9e1bd00",
+          "apps/webapp/src/components/organization-mfa/sign-out.tsx": "2e05cfaa82355189f9513243bfcf700f2465dd23a59115f9003c3a81c192890f"
+        }
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "24px",
+      "inputFont": "16px",
+      "fontsStatus": "loaded",
+      "theme": "light bprogress-busy",
+      "fontPreference": "default",
+      "savedTheme": "light",
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "pngDimensions": {
+        "width": 390,
+        "height": 2040
+      }
+    },
+    {
+      "filename": "before-wide-dark-large.png",
+      "source": {
+        "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+        "localAI": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+        "dirtyDiffSha256": "0c70a09c1470501629db456cfc724a72074bfc5105b7fd374497979c4244ee3e",
+        "files": {
+          "apps/webapp/src/app/[locale]/mfa/page.tsx": "95734f3e46b15c811846ebd6a44afd9e5fcbfa97be835411a874e66c460b5b58",
+          "apps/webapp/src/components/organization-mfa/verification.tsx": "24ac9c758a42b7d3db3aac13ddf656478f49361ed7069a0942ac6938f9e1bd00",
+          "apps/webapp/src/components/organization-mfa/sign-out.tsx": "2e05cfaa82355189f9513243bfcf700f2465dd23a59115f9003c3a81c192890f"
+        }
+      },
+      "cssViewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "27px",
+      "inputFont": "15.75px",
+      "fontsStatus": "loaded",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "savedTheme": "dark",
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "pngDimensions": {
+        "width": 2400,
+        "height": 1916
+      }
+    },
+    {
+      "filename": "before-phone-dark-large.png",
+      "source": {
+        "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+        "localAI": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+        "dirtyDiffSha256": "0c70a09c1470501629db456cfc724a72074bfc5105b7fd374497979c4244ee3e",
+        "files": {
+          "apps/webapp/src/app/[locale]/mfa/page.tsx": "95734f3e46b15c811846ebd6a44afd9e5fcbfa97be835411a874e66c460b5b58",
+          "apps/webapp/src/components/organization-mfa/verification.tsx": "24ac9c758a42b7d3db3aac13ddf656478f49361ed7069a0942ac6938f9e1bd00",
+          "apps/webapp/src/components/organization-mfa/sign-out.tsx": "2e05cfaa82355189f9513243bfcf700f2465dd23a59115f9003c3a81c192890f"
+        }
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "27px",
+      "inputFont": "18px",
+      "fontsStatus": "loaded",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "savedTheme": "dark",
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "pngDimensions": {
+        "width": 390,
+        "height": 2425
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "signed-in MFA has one main heading",
+      "passed": true
+    },
+    {
+      "name": "authoritative organization and enforcement visible",
+      "passed": true
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { IconArrowsUpDown, IconExternalLink, IconSearch } from "@tabler/icons-react";
+import { IconArrowsUpDown, IconExternalLink } from "@tabler/icons-react";
 import {
 	type ColumnDef,
 	type ColumnFiltersState,
@@ -20,9 +20,9 @@ import {
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	Table,
 	TableBody,
@@ -53,14 +53,6 @@ const licenseTableFeatures = tableFeatures({
 	},
 });
 
-function getLicenseBadgeVariant(license: string): "default" | "secondary" | "outline" {
-	const permissive = ["MIT", "ISC", "BSD", "Apache", "0BSD", "Unlicense", "CC0"];
-	if (permissive.some((p) => license.toUpperCase().includes(p.toUpperCase()))) {
-		return "secondary";
-	}
-	return "outline";
-}
-
 function normalizeRepoUrl(
 	repository?: string | { type?: string; url?: string; directory?: string },
 ): string | undefined {
@@ -76,8 +68,13 @@ function normalizeRepoUrl(
 
 export function LicenseTable({ licenses }: LicenseTableProps) {
 	const { t } = useTranslate();
-	const searchLabel = t("settings.licenses.searchPlaceholder", "Search packages or licenses…");
-	const columns = useMemo<ColumnDef<typeof licenseTableFeatures, LicenseInfo>[]>(
+	const searchLabel = t(
+		"settings.licenses.searchPlaceholder",
+		"Search packages or licenses…",
+	);
+	const columns = useMemo<
+		ColumnDef<typeof licenseTableFeatures, LicenseInfo>[]
+	>(
 		() => [
 			{
 				accessorKey: "name",
@@ -91,7 +88,14 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 						<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
 					</Button>
 				),
-				cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
+				cell: ({ row }) => (
+					<span
+						className="font-medium break-words [overflow-wrap:anywhere]"
+						translate="no"
+					>
+						{row.getValue("name")}
+					</span>
+				),
 			},
 			{
 				accessorKey: "license",
@@ -108,7 +112,10 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 				cell: ({ row }) => {
 					const license = row.getValue("license") as string;
 					return (
-						<Badge variant={getLicenseBadgeVariant(license)}>
+						<Badge
+							className="whitespace-normal break-words"
+							variant="secondary"
+						>
 							{license || t("settings.licenses.unknown", "Unknown")}
 						</Badge>
 					);
@@ -122,27 +129,27 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 					const repoUrl = normalizeRepoUrl(repository);
 
 					return (
-						<div className="flex gap-2">
+						<div className="flex flex-wrap gap-x-3 gap-y-1">
 							{repoUrl && (
 								<a
-									className="text-muted-foreground hover:text-foreground"
+									className="inline-flex min-h-9 items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring dark:text-foreground"
 									href={repoUrl}
 									rel="noopener noreferrer"
 									target="_blank"
 								>
 									<IconExternalLink aria-hidden="true" className="size-4" />
-									<span className="sr-only">{t("settings.licenses.repository", "Repository")}</span>
+									<span>{t("settings.licenses.repository", "Repository")}</span>
 								</a>
 							)}
 							{homepage && homepage !== repoUrl && (
 								<a
-									className="text-muted-foreground hover:text-foreground"
+									className="inline-flex min-h-9 items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring dark:text-foreground"
 									href={homepage}
 									rel="noopener noreferrer"
 									target="_blank"
 								>
 									<IconExternalLink aria-hidden="true" className="size-4" />
-									<span className="sr-only">{t("settings.licenses.homepage", "Homepage")}</span>
+									<span>{t("settings.licenses.homepage", "Homepage")}</span>
 								</a>
 							)}
 						</div>
@@ -152,7 +159,9 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 		],
 		[t],
 	);
-	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
+	const [sorting, setSorting] = useState<SortingState>([
+		{ id: "name", desc: false },
+	]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
 
@@ -183,50 +192,54 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 	})();
 
 	return (
-		<div className="flex h-full min-h-0 flex-col gap-4">
+		<div className="flex h-full min-h-0 min-w-0 flex-col gap-4">
 			<div className="shrink-0">
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<div className="relative max-w-sm flex-1">
-						<IconSearch
-							aria-hidden="true"
-							className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground"
-						/>
-						<Input
-							aria-label={searchLabel}
-							className="pl-9"
-							onChange={(e) => setGlobalFilter(e.target.value)}
-							placeholder={searchLabel}
-							value={globalFilter}
-						/>
-					</div>
-					<div className="flex gap-4 text-muted-foreground text-sm">
-						<span>
-							{t("settings.licenses.packagesCount", "{count} packages", {
-								count: stats.total,
-							})}
-						</span>
-						<span>
-							{t("settings.licenses.licenseTypesCount", "{count} license types", {
-								count: stats.uniqueLicenses,
-							})}
-						</span>
-					</div>
+				<DataTableToolbar
+					search={globalFilter}
+					onSearchChange={setGlobalFilter}
+					searchLabel={searchLabel}
+					searchPlaceholder={searchLabel}
+				/>
+				<div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm tabular-nums">
+					<span>
+						{t("settings.licenses.packagesCount", "{count} packages", {
+							count: stats.total,
+						})}
+					</span>
+					<span>
+						{t("settings.licenses.licenseTypesCount", "{count} license types", {
+							count: stats.uniqueLicenses,
+						})}
+					</span>
 				</div>
 			</div>
 
-			<div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background/60 dark:bg-background/35 [&_[data-slot=table-container]]:min-w-full">
-				<Table mobileLayout="stacked">
+			<div className="min-h-48 flex-1 overflow-auto rounded-lg border bg-background [&_[data-slot=table-container]]:min-w-full">
+				<Table
+					aria-label={t("info.licenses", "Open Source Licenses")}
+					mobileLayout="stacked"
+				>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
 								{headerGroup.headers.map((header) => (
 									<TableHead
 										key={header.id}
-										className="sticky top-0 z-10 bg-muted/95 py-2 backdrop-blur-sm"
+										aria-sort={
+											header.column.getIsSorted() === "asc"
+												? "ascending"
+												: header.column.getIsSorted() === "desc"
+													? "descending"
+													: undefined
+										}
+										className="sticky top-0 z-10 bg-muted py-2"
 									>
 										{header.isPlaceholder
 											? null
-											: flexRender(header.column.columnDef.header, header.getContext())}
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
 									</TableHead>
 								))}
 							</TableRow>
@@ -237,15 +250,24 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 							table.getRowModel().rows.map((row) => (
 								<TableRow key={row.id}>
 									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id}>
-											{flexRender(cell.column.columnDef.cell, cell.getContext())}
+										<TableCell
+											key={cell.id}
+											className="whitespace-normal [overflow-wrap:anywhere]"
+										>
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
 										</TableCell>
 									))}
 								</TableRow>
 							))
 						) : (
 							<TableRow>
-								<TableCell className="h-24 text-center" colSpan={columns.length}>
+								<TableCell
+									className="h-24 text-center"
+									colSpan={columns.length}
+								>
 									{t("settings.licenses.noPackages", "No packages found.")}
 								</TableCell>
 							</TableRow>

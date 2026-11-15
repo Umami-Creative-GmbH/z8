@@ -1,0 +1,170 @@
+{
+  "verifiedHead": "591da6b1f9d8f6b58f82bf11dd6221fce70a0c9d",
+  "localAI": "d234402863343a306a87d6faed7d195a76a6eeec",
+  "localAIAncestor": true,
+  "implementation": "27480ef17d3f83a285b5f90283326713202e4e70",
+  "localMerge": "591da6b1f9d8f6b58f82bf11dd6221fce70a0c9d",
+  "unit": {
+    "uniqueSuites": 15,
+    "tests": 53,
+    "passed": true,
+    "multiset": [
+      {
+        "file": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+        "tests": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/components/organization-mfa/requirements.test.tsx",
+        "tests": 2,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/components/organization-mfa/sign-out.test.tsx",
+        "tests": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/components/organization-mfa/verification.test.tsx",
+        "tests": 3,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/components/ui/page-header.test.tsx",
+        "tests": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/components/ui/tanstack-form.test.tsx",
+        "tests": 2,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+        "tests": 8,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/lib/organization-mfa/access.test.ts",
+        "tests": 14,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/lib/organization-mfa/authentication-plugin.test.ts",
+        "tests": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/lib/organization-mfa/notices.test.ts",
+        "tests": 2,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/lib/organization-mfa/passkey-freshness.test.ts",
+        "tests": 4,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/lib/organization-mfa/passkey.test.ts",
+        "tests": 2,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/lib/organization-mfa/policy.test.ts",
+        "tests": 3,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/auth/two-factor-enrollment-response.test.ts",
+        "tests": 8,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/auth/use-two-factor-setup-controller.test.ts",
+        "tests": 1,
+        "status": "passed"
+      }
+    ],
+    "command": "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/organization-mfa src/components/settings/auth/use-two-factor-setup-controller.test.ts src/components/settings/auth/two-factor-enrollment-response.test.ts src/lib/organization-mfa src/lib/auth/callback-url.test.ts src/tolgee/extracted-key-defaults.test.ts src/components/ui/page-header.test.tsx src/components/ui/tanstack-form.test.tsx --reporter=json --outputFile=../../.worktrees/1826-mfa-runtime-ready/final-unit-private.json"
+  },
+  "postgres": {
+    "uniqueSuites": 2,
+    "tests": 15,
+    "passed": true,
+    "multiset": [
+      {
+        "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+        "tests": 8,
+        "status": "passed"
+      },
+      {
+        "file": "apps/webapp/src/lib/organization-mfa/policy.integration.test.ts",
+        "tests": 7,
+        "status": "passed"
+      }
+    ],
+    "command": "pnpm --filter webapp exec vitest run --project integration --maxWorkers 1 src/lib/organization-mfa/authentication.integration.test.ts src/lib/organization-mfa/policy.integration.test.ts --reporter=json --outputFile=../../.worktrees/1826-mfa-runtime-ready/final-postgres-private.json",
+    "environment": "Generated owned disposable fixture connection env, APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test, NODE_ENV=test; actual repository integration-setup/database gate unchanged.",
+    "initialAttempts": "Standard pnpm test:integration wrapper could not start /bin/bash on Windows. Direct first attempt inherited NODE_ENV=production and hit real auth rate limits: 9 passed / 6 failed; corrected NODE_ENV=test passes 15/15 without any suite/policy changes."
+  },
+  "types": {
+    "command": "CI=true pnpm --filter webapp typecheck",
+    "passed": true,
+    "scope": "next typegen; application; workflow contracts; smoke; repeated on merged local AI"
+  },
+  "biome": {
+    "command": "pnpm --filter webapp exec biome check --error-on-warnings src/app/[locale]/mfa/page.tsx src/components/organization-mfa/verification.tsx src/components/organization-mfa/verification.test.tsx src/components/organization-mfa/sign-out.tsx src/components/organization-mfa/sign-out.test.tsx src/components/organization-mfa/requirements.tsx src/components/organization-mfa/requirements.test.tsx",
+    "files": 7,
+    "errors": 0,
+    "warnings": 0,
+    "scope": "Changed files only, actual repository configuration; not whole-repository lint/config pass."
+  },
+  "doctor": {
+    "command": "pnpm exec react-doctor apps/webapp --scope changed --base ai/1692-app-wide-ui-refresh --include-untracked --verbose --no-supply-chain --no-telemetry --no-score --max-duration 90",
+    "files": 7,
+    "errors": 0,
+    "warnings": 2,
+    "review": [
+      "native preventDefault/stopPropagation is explicit and real native submits pass; false positive",
+      "large multi-method verification owner is a reviewed maintainability warning; no new domain owner"
+    ],
+    "score": "disabled, no numeric health claim"
+  },
+  "runtime": {
+    "lifecycle": 19,
+    "scope": 5,
+    "responsive": 10,
+    "beforeCaptures": 4,
+    "afterCaptures": 4,
+    "totalPngs": 14,
+    "commands": [
+      "pnpm node scripts/performance/fixture.mjs prepare .worktrees/1826-mfa-runtime-ready",
+      "pnpm node .worktrees/1826-mfa-runtime-ready/runtime-helper.mjs dev . .worktrees/1826-mfa-runtime-ready",
+      "pnpm node .worktrees/1826-mfa-runtime-ready/runtime-helper.mjs auth . .worktrees/1826-mfa-runtime-ready small-admin small-manager small-employee small-restricted",
+      "pnpm node docs/design/rollout-1692/1826/verify-runtime.mjs .worktrees/1826-mfa-runtime-ready before",
+      "pnpm node docs/design/rollout-1692/1826/verify-actions.mjs .worktrees/1826-mfa-runtime-ready",
+      "pnpm node docs/design/rollout-1692/1826/verify-scope.mjs .worktrees/1826-mfa-runtime-ready",
+      "pnpm node docs/design/rollout-1692/1826/verify-runtime.mjs .worktrees/1826-mfa-runtime-ready after",
+      "pnpm node .worktrees/1826-mfa-runtime-ready/runtime-helper.mjs mcp . .worktrees/1826-mfa-runtime-ready"
+    ]
+  },
+  "setup": {
+    "commands": [
+      "pnpm install --offline --frozen-lockfile --ignore-scripts",
+      "pnpm --filter webapp i18n:metadata",
+      "pnpm --filter webapp generate-licenses"
+    ],
+    "allPnpmCommands": "pnpm_config_verify_deps_before_run=false",
+    "node": "26",
+    "next": "16.4.6",
+    "browser": "agent-browser 0.39.1 plus isolated Puppeteer Chrome fallback after two preview timeouts"
+  },
+  "inherited": "Original F1/F3 extensive foundation and root runtime evidence was read, not exhaustively rerun; only the exact listed relevant foundation consumers are fresh.",
+  "limits": [
+    "full production build/static generation",
+    "remote Tolgee synchronization and exhaustive long translations",
+    "external identity/provider/WebAuthn ceremonies and delivery",
+    "physical device/store safe-area and true browser zoom",
+    "global transition/session-hydration or exhaustive native React state/render certification"
+  ]
+}

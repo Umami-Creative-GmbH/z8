@@ -1,0 +1,191 @@
+{
+  "phase": "after",
+  "fixture": "disposable synthetic Performance small, small-admin, enforced MFA",
+  "source": {
+    "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+    "localAI": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+    "dirtyDiffSha256": "7a98ceab31e24417b54f2e0da079a2b1d56c16d2dfc56f394327bd956a615b0a",
+    "files": {
+      "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+      "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+      "apps/webapp/src/components/organization-mfa/verification.tsx": "610a1dcac0b41bb296696f7d3f3c16c73a6d4020b0d76444650758f186a94b87",
+      "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+    }
+  },
+  "captures": [
+    {
+      "filename": "after-desktop-light.png",
+      "source": {
+        "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+        "localAI": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+        "dirtyDiffSha256": "7a98ceab31e24417b54f2e0da079a2b1d56c16d2dfc56f394327bd956a615b0a",
+        "files": {
+          "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+          "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+          "apps/webapp/src/components/organization-mfa/verification.tsx": "610a1dcac0b41bb296696f7d3f3c16c73a6d4020b0d76444650758f186a94b87",
+          "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+        }
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "30px",
+      "inputFont": "14px",
+      "fontsStatus": "loaded",
+      "theme": "light bprogress-busy",
+      "fontPreference": "default",
+      "savedTheme": "light",
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1642
+      }
+    },
+    {
+      "filename": "after-phone-light.png",
+      "source": {
+        "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+        "localAI": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+        "dirtyDiffSha256": "7a98ceab31e24417b54f2e0da079a2b1d56c16d2dfc56f394327bd956a615b0a",
+        "files": {
+          "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+          "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+          "apps/webapp/src/components/organization-mfa/verification.tsx": "610a1dcac0b41bb296696f7d3f3c16c73a6d4020b0d76444650758f186a94b87",
+          "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+        }
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "24px",
+      "inputFont": "16px",
+      "fontsStatus": "loaded",
+      "theme": "light bprogress-busy",
+      "fontPreference": "default",
+      "savedTheme": "light",
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "pngDimensions": {
+        "width": 390,
+        "height": 1822
+      }
+    },
+    {
+      "filename": "after-wide-dark-large.png",
+      "source": {
+        "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+        "localAI": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+        "dirtyDiffSha256": "7a98ceab31e24417b54f2e0da079a2b1d56c16d2dfc56f394327bd956a615b0a",
+        "files": {
+          "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+          "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+          "apps/webapp/src/components/organization-mfa/verification.tsx": "610a1dcac0b41bb296696f7d3f3c16c73a6d4020b0d76444650758f186a94b87",
+          "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+        }
+      },
+      "cssViewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "33.75px",
+      "inputFont": "15.75px",
+      "fontsStatus": "loaded",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "savedTheme": "dark",
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "pngDimensions": {
+        "width": 2400,
+        "height": 1845
+      }
+    },
+    {
+      "filename": "after-phone-dark-large.png",
+      "source": {
+        "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+        "localAI": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+        "dirtyDiffSha256": "7a98ceab31e24417b54f2e0da079a2b1d56c16d2dfc56f394327bd956a615b0a",
+        "files": {
+          "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+          "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+          "apps/webapp/src/components/organization-mfa/verification.tsx": "610a1dcac0b41bb296696f7d3f3c16c73a6d4020b0d76444650758f186a94b87",
+          "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+        }
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "27px",
+      "inputFont": "18px",
+      "fontsStatus": "loaded",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "savedTheme": "dark",
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "pngDimensions": {
+        "width": 390,
+        "height": 2149
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "signed-in MFA has one main heading",
+      "passed": true
+    },
+    {
+      "name": "authoritative organization and enforcement visible",
+      "passed": true
+    },
+    {
+      "name": "desktop-light fits document width and loads saved root preferences",
+      "passed": true
+    },
+    {
+      "name": "phone-light fits document width and loads saved root preferences",
+      "passed": true
+    },
+    {
+      "name": "wide-dark-large fits document width and loads saved root preferences",
+      "passed": true
+    },
+    {
+      "name": "phone-dark-large fits document width and loads saved root preferences",
+      "passed": true
+    },
+    {
+      "name": "responsive resize retains the same mounted credential draft",
+      "passed": true
+    },
+    {
+      "name": "native keyboard reaches primary verification after its code field",
+      "passed": true
+    },
+    {
+      "name": "short phone retains reachable organization selection and sign-out",
+      "passed": true
+    },
+    {
+      "name": "reduced-motion preference is honored by the browser",
+      "passed": true
+    }
+  ]
+}

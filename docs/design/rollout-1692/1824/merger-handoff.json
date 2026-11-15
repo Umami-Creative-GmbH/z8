@@ -1,0 +1,830 @@
+{
+  "status": "Provisional exact native merge. No material source correctness or credential/timekeeping preservation blocker found in reviewed delta. Root owns raw-console whitespace/evidence qualifications and readiness.",
+  "merge": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+  "parents": [
+    "24a361e9888fd652df79f11da68262f7528a8bc7",
+    "335044a809b293d1342bdd858134ccf56f0d1d2f"
+  ],
+  "tree": "b0b42793a8ec36b1bd86a4923902c70194eae0fd",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "changedPaths": 101,
+  "verifiedLedgerAncestors": 29,
+  "preservation": {
+    "allIncomingChangedBlobs": true,
+    "priorRollout": 1256,
+    "unaffectedPrior": 11462,
+    "baselineAndRootCorrections": true,
+    "publishedJoinQualification": "65b74963b69e9536af5e862199fa43a8583473cc",
+    "kioskDeltaFrom": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+    "sharedAuthJoinSession": "All prior join/auth/session paths and API are byte-identical to first parent; kiosk production delta is13files +4tests."
+  },
+  "freshTests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 34,
+        "cases": 264,
+        "passed": 264,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 97,
+        "cases": 896,
+        "passed": 896,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 2,
+        "overlapCases": 16
+      }
+    ],
+    "uniqueFiles": 129,
+    "uniqueCases": 1144,
+    "method": "File path and full test name multisets; equal-name parameterized cases retain multiplicity; repeated runs do not add cases."
+  },
+  "freshChecks": {
+    "exact": [
+      {
+        "name": "exact",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/kiosk",
+          "src/lib/time-tracking/kiosk",
+          "src/tolgee/extracted-key-defaults.test.ts",
+          "src/components/join-organization-form.test.tsx",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1824-audit/exact.json"
+        ],
+        "startedAt": "2026-11-15T09:12:24.703Z",
+        "finishedAt": "2026-11-15T09:12:42.772Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1824-audit/exact.log"
+      }
+    ],
+    "compatibility": [
+      {
+        "name": "compatibility",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/reset-password-form.test.tsx",
+          "src/components/accept-invitation-form.test.tsx",
+          "src/components/login/store-app-sign-in-form.test.tsx",
+          "src/lib/auth/load-auth-page-client.test.ts",
+          "src/app/[locale]/init/page-client.test.tsx",
+          "src/app/[locale]/(auth)/accept-invitation/[invitationId]/page.test.tsx",
+          "src/components/auth-background-image.test.tsx",
+          "src/app/[locale]/(auth)/layout-background.test.tsx",
+          "src/app/[locale]/(auth)/cookie-consent-script.test.ts",
+          "src/components/calendar",
+          "src/hooks/use-calendar-data.test.tsx",
+          "src/hooks/use-calendar-employees.test.ts",
+          "src/lib/calendar",
+          "src/app/[locale]/(app)/calendar",
+          "src/app/api/calendar/events/route.test.ts",
+          "src/components/equipment/equipment-workspace.test.tsx",
+          "src/components/equipment/equipment-assignment-detail.test.tsx",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/ui/dialog.test.tsx",
+          "src/components/ui/alert-dialog.test.tsx",
+          "src/components/settings/location-dialog.test.tsx",
+          "src/components/ui/loading-region.test.tsx",
+          "src/components/ui/page-header.test.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/components/ui/sidebar.test.tsx",
+          "src/components/ui/tooltip.test.tsx",
+          "src/components/app-sidebar.test.tsx",
+          "src/components/nav-main.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/app/[locale]/(app)/app-layout-content.test.tsx",
+          "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+          "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+          "src/components/errors",
+          "src/components/providers/view-refresh-provider.test.tsx",
+          "src/components/providers/view-refresh-migrated.test.tsx",
+          "src/app/[locale]/(auth)/primary-fallbacks.test.tsx",
+          "src/components/login/login-form-content.test.tsx",
+          "src/components/auth-form-wrapper.test.tsx",
+          "src/components/time-tracking/manual-time-entry-dialog.test.tsx",
+          "src/components/join-organization-form.test.tsx",
+          "src/app/[locale]/(auth)/invite-code-actions.test.ts",
+          "src/lib/effect/services/invite-code.service.test.ts",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "src/components/forgot-password-form.test.tsx",
+          "src/components/ui/tanstack-form.test.tsx",
+          "src/components/auth-shell-controls.test.tsx",
+          "src/lib/employee-lifecycle/joining/employee-writers.test.ts",
+          "src/lib/auth/callback-url.test.ts",
+          "src/lib/time-tracking/timezone-capture.test.ts",
+          "src/components/settings/kiosks/kiosk-settings.test.tsx",
+          "src/components/settings/kiosk",
+          "src/lib/__tests__/kiosk-service-worker.test.ts",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1824-audit/compatibility.json"
+        ],
+        "startedAt": "2026-11-15T09:12:23.659Z",
+        "finishedAt": "2026-11-15T09:13:17.148Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1824-audit/compatibility.log"
+      }
+    ],
+    "types": [
+      {
+        "name": "types",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "typecheck"
+        ],
+        "startedAt": "2026-11-15T09:12:23.139Z",
+        "finishedAt": "2026-11-15T09:13:07.412Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1824-audit/types.log"
+      }
+    ],
+    "biome": [
+      {
+        "name": "biome-default",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "src/components/kiosk/kiosk-app.test.tsx",
+          "src/components/kiosk/kiosk-app.tsx",
+          "src/components/kiosk/kiosk-clocking.test.tsx",
+          "src/components/kiosk/kiosk-confirmation.tsx",
+          "src/components/kiosk/kiosk-device-header.tsx",
+          "src/components/kiosk/kiosk-employee-panel.tsx",
+          "src/components/kiosk/kiosk-home.tsx",
+          "src/components/kiosk/kiosk-language.tsx",
+          "src/components/kiosk/kiosk-offline-clocking.test.tsx",
+          "src/components/kiosk/kiosk-paired-screen.tsx",
+          "src/components/kiosk/kiosk-pairing-form.tsx",
+          "src/components/kiosk/kiosk-pin-pad.tsx",
+          "src/components/kiosk/kiosk-queue-status.tsx",
+          "src/components/kiosk/use-kiosk-uncertain-actions.ts",
+          "src/lib/time-tracking/kiosk/kiosk-enrolment.integration.test.ts",
+          "src/lib/time-tracking/kiosk/kiosk-store.ts",
+          "src/lib/time-tracking/kiosk/protocol.ts"
+        ],
+        "startedAt": "2026-11-15T09:12:23.657Z",
+        "finishedAt": "2026-11-15T09:12:24.231Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1824-audit/biome-default.log"
+      },
+      {
+        "name": "biome-current-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "src/components/kiosk/kiosk-app.test.tsx",
+          "src/components/kiosk/kiosk-app.tsx",
+          "src/components/kiosk/kiosk-clocking.test.tsx",
+          "src/components/kiosk/kiosk-confirmation.tsx",
+          "src/components/kiosk/kiosk-device-header.tsx",
+          "src/components/kiosk/kiosk-employee-panel.tsx",
+          "src/components/kiosk/kiosk-home.tsx",
+          "src/components/kiosk/kiosk-language.tsx",
+          "src/components/kiosk/kiosk-offline-clocking.test.tsx",
+          "src/components/kiosk/kiosk-paired-screen.tsx",
+          "src/components/kiosk/kiosk-pairing-form.tsx",
+          "src/components/kiosk/kiosk-pin-pad.tsx",
+          "src/components/kiosk/kiosk-queue-status.tsx",
+          "src/components/kiosk/use-kiosk-uncertain-actions.ts",
+          "src/lib/time-tracking/kiosk/kiosk-enrolment.integration.test.ts",
+          "src/lib/time-tracking/kiosk/kiosk-store.ts",
+          "src/lib/time-tracking/kiosk/protocol.ts"
+        ],
+        "startedAt": "2026-11-15T09:12:24.233Z",
+        "finishedAt": "2026-11-15T09:12:24.946Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1824-audit/biome-current-crlf.log"
+      },
+      {
+        "name": "biome-explicit-webapp",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "--error-on-warnings",
+          "src/components/kiosk/kiosk-app.test.tsx",
+          "src/components/kiosk/kiosk-app.tsx",
+          "src/components/kiosk/kiosk-clocking.test.tsx",
+          "src/components/kiosk/kiosk-confirmation.tsx",
+          "src/components/kiosk/kiosk-device-header.tsx",
+          "src/components/kiosk/kiosk-employee-panel.tsx",
+          "src/components/kiosk/kiosk-home.tsx",
+          "src/components/kiosk/kiosk-language.tsx",
+          "src/components/kiosk/kiosk-offline-clocking.test.tsx",
+          "src/components/kiosk/kiosk-paired-screen.tsx",
+          "src/components/kiosk/kiosk-pairing-form.tsx",
+          "src/components/kiosk/kiosk-pin-pad.tsx",
+          "src/components/kiosk/kiosk-queue-status.tsx",
+          "src/components/kiosk/use-kiosk-uncertain-actions.ts",
+          "src/lib/time-tracking/kiosk/kiosk-enrolment.integration.test.ts",
+          "src/lib/time-tracking/kiosk/kiosk-store.ts",
+          "src/lib/time-tracking/kiosk/protocol.ts"
+        ],
+        "startedAt": "2026-11-15T09:12:24.947Z",
+        "finishedAt": "2026-11-15T09:12:25.127Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1824-audit/biome-explicit-webapp.log"
+      },
+      {
+        "name": "biome-explicit-lint-import",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--formatter-enabled=false",
+          "--error-on-warnings",
+          "src/components/kiosk/kiosk-app.test.tsx",
+          "src/components/kiosk/kiosk-app.tsx",
+          "src/components/kiosk/kiosk-clocking.test.tsx",
+          "src/components/kiosk/kiosk-confirmation.tsx",
+          "src/components/kiosk/kiosk-device-header.tsx",
+          "src/components/kiosk/kiosk-employee-panel.tsx",
+          "src/components/kiosk/kiosk-home.tsx",
+          "src/components/kiosk/kiosk-language.tsx",
+          "src/components/kiosk/kiosk-offline-clocking.test.tsx",
+          "src/components/kiosk/kiosk-paired-screen.tsx",
+          "src/components/kiosk/kiosk-pairing-form.tsx",
+          "src/components/kiosk/kiosk-pin-pad.tsx",
+          "src/components/kiosk/kiosk-queue-status.tsx",
+          "src/components/kiosk/use-kiosk-uncertain-actions.ts",
+          "src/lib/time-tracking/kiosk/kiosk-enrolment.integration.test.ts",
+          "src/lib/time-tracking/kiosk/kiosk-store.ts",
+          "src/lib/time-tracking/kiosk/protocol.ts"
+        ],
+        "startedAt": "2026-11-15T09:12:25.128Z",
+        "finishedAt": "2026-11-15T09:12:25.455Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1824-audit/biome-explicit-lint-import.log"
+      }
+    ],
+    "doctor": [
+      {
+        "name": "doctor",
+        "command": [
+          "pnpm",
+          "exec",
+          "react-doctor",
+          "apps/webapp",
+          "--scope",
+          "changed",
+          "--base",
+          "24a361e9888fd652df79f11da68262f7528a8bc7",
+          "--verbose",
+          "--no-score",
+          "--no-supply-chain",
+          "--no-telemetry",
+          "--no-parallel"
+        ],
+        "startedAt": "2026-11-15T09:12:23.751Z",
+        "finishedAt": "2026-11-15T09:12:43.583Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1824-audit/doctor.log"
+      }
+    ]
+  },
+  "archives": {
+    "checks": [
+      {
+        "name": "r019-historical",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1717/verify-evidence.mjs"
+        ],
+        "output": "Verified matched scope/viewport/row/title evidence, retained raw hashes against captured source f043d581e481a984a54da81b967bf5e6cfdfcd5e, 24 core + 11 final variant assertions, retained historical messages, native tree and Next diagnostics. This does not constitute a fresh browser run."
+      },
+      {
+        "name": "r021-current",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1719/verify-evidence.mjs",
+          "--current-source"
+        ],
+        "output": "{\"matchedPairs\":3,\"retainedRows\":3,\"runtimeAssertions\":28,\"preferenceAssertions\":6,\"pinnedSource\":\"412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150\",\"currentSource\":true}"
+      },
+      {
+        "name": "equipment-recovery",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs"
+        ],
+        "output": "Verified six source-pinned observations, actual pointer/transport/readback, retained framework limit, contrast/bounds and clean final probes; fully decoded six PNGs. Artifact validation is not a fresh runtime run."
+      },
+      {
+        "name": "calendar-route-arrivals",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1713/root-route-arrivals/verify-evidence.mjs"
+        ],
+        "output": "Verified exact source pins, actual stale cached Back versus corrected same-instance Back/Forward and saved phone preferences,12 assertions,45/489 tests and five fully decoded captures. This archive check is not a fresh runtime run."
+      },
+      {
+        "name": "route-inventory",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/verify-route-inventory.mjs",
+          ".",
+          "HEAD",
+          ".tmp/merge1824-audit/route-inventory.json"
+        ],
+        "output": "{\"commit\":\"ebfb7d8e042f227855aee0ee5e831576db91aff3\",\"persistentPages\":153,\"redirectAliases\":19,\"sourcePageTemplates\":172,\"aliasTemplatesUnchangedFromInitialDev\":19,\"classification\":\"static source-template inventory only\"}"
+      }
+    ],
+    "classification": "Archive and static source inspection only; alias behavior and runtime are not exercised."
+  },
+  "securityAndFormat": {
+    "scannedTextFiles": 48,
+    "secretPatternHits": [],
+    "secretsReview": "Drivers read all issued device tokens/PINs/badges/accounts/cookies from private owned fixture files, write raw credentials only to private manifests, use loopback/disposable guards, and expose redacted device evidence in public artifacts. Synthetic sample codes and test PINs are not live credentials; consumed disposable pairing material is not a live secret. PNGs visually inspected for setup/PIN/phone/queue states.",
+    "formatting": [
+      {
+        "name": "biome-default",
+        "diagnostics": 17,
+        "categories": [
+          {
+            "path": "src/components/kiosk/kiosk-app.test.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-app.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-clocking.test.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-confirmation.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-device-header.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-employee-panel.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-home.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-language.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-offline-clocking.test.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-paired-screen.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-pairing-form.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-pin-pad.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-queue-status.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/use-kiosk-uncertain-actions.ts",
+            "category": "format"
+          },
+          {
+            "path": "src/lib/time-tracking/kiosk/kiosk-enrolment.integration.test.ts",
+            "category": "format"
+          },
+          {
+            "path": "src/lib/time-tracking/kiosk/kiosk-store.ts",
+            "category": "format"
+          },
+          {
+            "path": "src/lib/time-tracking/kiosk/protocol.ts",
+            "category": "format"
+          }
+        ],
+        "summary": "Found 17 errors."
+      },
+      {
+        "name": "biome-current-crlf",
+        "diagnostics": 15,
+        "categories": [
+          {
+            "path": "src/components/kiosk/kiosk-app.test.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-app.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-clocking.test.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-confirmation.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-employee-panel.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-home.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-language.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-offline-clocking.test.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-paired-screen.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-pairing-form.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-pin-pad.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/use-kiosk-uncertain-actions.ts",
+            "category": "format"
+          },
+          {
+            "path": "src/lib/time-tracking/kiosk/kiosk-enrolment.integration.test.ts",
+            "category": "format"
+          },
+          {
+            "path": "src/lib/time-tracking/kiosk/kiosk-store.ts",
+            "category": "format"
+          },
+          {
+            "path": "src/lib/time-tracking/kiosk/protocol.ts",
+            "category": "format"
+          }
+        ],
+        "summary": "Found 15 errors."
+      },
+      {
+        "name": "biome-explicit-webapp",
+        "diagnostics": 10,
+        "categories": [
+          {
+            "path": "src/components/kiosk/kiosk-app.test.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-clocking.test.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-device-header.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-home.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-paired-screen.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-pairing-form.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-pin-pad.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/kiosk-queue-status.tsx",
+            "category": "format"
+          },
+          {
+            "path": "src/components/kiosk/use-kiosk-uncertain-actions.ts",
+            "category": "format"
+          },
+          {
+            "path": "src/lib/time-tracking/kiosk/kiosk-store.ts",
+            "category": "format"
+          }
+        ],
+        "summary": "Found 10 errors."
+      },
+      {
+        "name": "biome-explicit-lint-import",
+        "diagnostics": 0,
+        "categories": [],
+        "summary": "No findings"
+      }
+    ],
+    "review": "Read-only security/performance/composition/accessibility review; no endpoint, auth-cookie/session, generated schema/catalog, dependency, SQL interpolation or business date implementation added. Existing standalone kiosk device-token storage is preserved under the accepted kiosk model, not newly introduced."
+  },
+  "whitespace": {
+    "checks": [
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check",
+          "HEAD^1",
+          "HEAD"
+        ],
+        "exitCode": 2,
+        "counts": {
+          "total": 230,
+          "trailingWhitespace": 215,
+          "blankAtEof": 15
+        },
+        "files": [
+          "docs/design/rollout-1692/1824/biome-default.txt",
+          "docs/design/rollout-1692/1824/biome.txt",
+          "docs/design/rollout-1692/1824/combined-unit.txt",
+          "docs/design/rollout-1692/1824/final-integration-unit.txt",
+          "docs/design/rollout-1692/1824/green-keyboard.txt",
+          "docs/design/rollout-1692/1824/green-pairing.txt",
+          "docs/design/rollout-1692/1824/green-queue.txt",
+          "docs/design/rollout-1692/1824/green-scope.txt",
+          "docs/design/rollout-1692/1824/red-keyboard.txt",
+          "docs/design/rollout-1692/1824/red-pairing.txt",
+          "docs/design/rollout-1692/1824/red-queue.txt",
+          "docs/design/rollout-1692/1824/red-scope.txt",
+          "docs/design/rollout-1692/1824/types.txt",
+          "docs/design/rollout-1692/1824/unit-final.txt",
+          "docs/design/rollout-1692/1824/unit.txt"
+        ]
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check",
+          "HEAD^2",
+          "HEAD"
+        ],
+        "exitCode": 0,
+        "counts": {
+          "total": 0,
+          "trailingWhitespace": 0,
+          "blankAtEof": 0
+        },
+        "files": []
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exitCode": 0,
+        "counts": {
+          "total": 0,
+          "trailingWhitespace": 0,
+          "blankAtEof": 0
+        },
+        "files": []
+      }
+    ],
+    "classification": "230 parent1 diagnostics exclusively raw terminal .txt evidence:215 diagnostic-layout trailing spaces and15blankEOF. No source/report whitespace error. Parent2 and working diff pass. Root may preserve with explicit raw-console qualification or deliberately normalize the logs; no mutation by merger."
+  },
+  "workingTreeClean": true,
+  "review": {
+    "scope": "13 production +4test paths, including protocol.ts/kiosk-store.ts/use-kiosk-uncertain-actions.ts and PostgreSQL enrollment assertion; approved R025/shared/Testing Decisions plus kiosk ADR0002/0011/0013/0014.",
+    "organization": "OrganizationName is added by existing authenticated readKioskDeviceInfo from organization joined through location.organizationId; existing authenticated organization/location WHERE filters and scoped feature queries remain. Protocol field is optional for older cached device descriptions. It adds display context without granting credential/employee/organization authority.",
+    "queue": "KioskQueueStatus only reads commands() filtered to kioskId and unresolved-count projection. It never sends/changes/retries/marks/settles records. commands() lists unconfirmed queue records and catches unreadable storage; no empty/unreadable state is labeled success. Notices now stay mounted across turns. Existing queue and96other library paths remain byte-identical.",
+    "uncertain": "Hook adds pending.filter(!resolved).length only. Existing operation identity persistence before online submission, per-employee duplicate hold, current shown-flow guard, status lookup without resend, committed/not_recorded/conflict and revoked-token handling remain unchanged.",
+    "captureAndSealing": "Read unchanged offlineTurnFlow/queueOfflineAction/frozen-command/queue/frozen-command-service owners: PIN sealed for kiosk+employee+operation, server contact anchor frozen, occurredAt/timezone/timeSource captured once at action, same serialized envelope bytes retained. Existing service takes command.timezone at command.occurredAt and server derives entry offset; no viewer-zone conversion or new Date/business logic introduced. Fresh pin-seal/contact-anchor/offline-command/offline-clock/offline-queue/timezone-capture and assembled queue/recovery tests pass.",
+    "orderingAndRevocation": "Existing queue persists uncertain before POST, performs status GET before any duplicate POST, blocks later same-employee commands while allowing others, preserves retryAfter and original token, and retires/refuses old-token commands under existing rules. Exact owner blobs plus fresh queue/credential/recovery unit contracts verify preservation; real database proof remains inherited, not freshly rerun.",
+    "credentialDistinctions": "Pairing device token and10char single-use code/URL-removal/session admission remain existing owners. Camera opt-in/denial/local decode and keyboard badge remain independent. Online badge proof still needs explicit action; fob only selects and requires PIN; offline PIN remains unconfirmed/sealed/current server proof on arrival. Physical hardware remains unpassed.",
+    "formsKeyboard": "Existing TanStack pairing form retains code/pending failure input, associates failure with field and focuses it. Enter on focused native button no longer also triggers global PIN submission; Back/digits/OK native ownership preserved. Existing attempt reset/pending controls/Tabler icons remain.",
+    "performanceComposition": "Persistent scope header and read-only queue summary are small composed consumers. Existing state/read/queue/action owners remain local; no new provider/remount/business controller introduced.5sec read-only IndexedDB poll cleans up and ignores unmounted results. All enabled/disabled board/scanner/fob/camera flow wiring remains.",
+    "quality": "Doctor17files/zero findings, score/supply-chain/telemetry disabled. Biome raw17format-only; CRLF-aware15format-only with exact same15file list as inherited baseline; explicitwebapp100column10format-only. Strict explicit lint/import17files passes. No source rewrite, configuration or suppression added.",
+    "webGuidelines": "Fetched https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md. Reviewed native controls, labels/errors/focus, safe areas, target measurements, wrapping, semantic headings, dark tokens/reduced motion and form/keyboard ownership. No new material UI blocker found in inspected delta; exhaustive screen-reader/contrast/long-locale/zoom/hardware acceptance unpassed."
+  },
+  "evidence": {
+    "decodedPng": 35,
+    "parsedJson": 13,
+    "syntaxCheckedDrivers": 10,
+    "relativeLinks": 56,
+    "sourcePinRecords": 206,
+    "finalCurrentPins": 35,
+    "layoutPairs": 4,
+    "additionalPinPairingPairs": 2,
+    "currentSourcePins": "All35after-final +35combined +35latest source pins match exact merged Git/current source with LF/CRLF normalization only. Before-final11substituted paths match a9baseline; new header/queue modules remain current on disk but unreferenced by baseline. Both sides are consumer-source comparison, not full historical integration execution.",
+    "historicalFindings": [
+      {
+        "phase": "after",
+        "issue": "Retained initial capture includes compiler page error for incorrect organization import, corrected before final matched source evidence.",
+        "errors": [
+          "./apps/webapp/src/lib/time-tracking/kiosk/kiosk-store.ts:4:1\nError: Export organization doesn't exist in target module\n  2 | ...\n  3 | ..., asc, eq, gt, isNotNull, isNull } from \"drizzle-orm\";\n> 4 | ...sk, kioskRetiredToken, location, organizationNotificationSettings, organization } from \"...\n    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  5 | ...itAction } from \"@/lib/audit-logger\";\n  6 | ...{ AuditTrail } from \"@/lib/audit-trail\";\n  7 | ...e Clock, dateFromInstant, systemClock } from \"@/lib/datetime/temporal-core\";\n\nThe export organization was not found in module [project]/apps/webapp/src/db/schema.ts [app-route] (ecmascript).\nDid you mean to import organizationDomain?\nAll exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.\n\nImport trace:\n  App Route:\n    ./apps/webapp/src/lib/time-tracking/kiosk/kiosk-store.ts\n    ./apps/webapp/src/app/api/kiosk/pair/route.ts\n\n\nObject.getCompilationErrors (file://X:\\t3-code\\worktrees\\z8\\t3-dbeec437-4b86e5438cc205a1\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\dev\\hot-reloader-turbopack.js:1566:37)\nDevBundlerService.getCompilationError (file://X:\\t3-code\\worktrees\\z8\\t3-dbeec437-4b86e5438cc205a1\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\lib\\dev-bundler-service.js:66:55)\nDevServer.getCompilationError (file://X:\\t3-code\\worktrees\\z8\\t3-dbeec437-4b86e5438cc205a1\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\dev\\next-dev-server.js:695:42)"
+        ]
+      },
+      {
+        "phase": "after",
+        "path": "apps/webapp/src/components/kiosk/kiosk-home.tsx",
+        "sha256": "a73b58bb43af6575566313a8662fe924187165bcfe3da502d34a4643e0e4de54",
+        "issue": "Historical dirty capture source hash has no matching committed feature blob; retained as earlier source only."
+      },
+      {
+        "phase": "after",
+        "path": "apps/webapp/src/components/kiosk/kiosk-paired-screen.tsx",
+        "sha256": "dd2c4d8f29992970ca1b48f495a252b15a0b51b0808f3ec5f5b0c21956371697",
+        "issue": "Historical dirty capture source hash has no matching committed feature blob; retained as earlier source only."
+      },
+      {
+        "phase": "after",
+        "path": "apps/webapp/src/components/kiosk/kiosk-pairing-form.tsx",
+        "sha256": "1c433b367e5b0006eb09abd6315aa5a47e28d2f15f8853b6495885c73b39e84e",
+        "issue": "Historical dirty capture source hash has no matching committed feature blob; retained as earlier source only."
+      },
+      {
+        "phase": "after",
+        "path": "apps/webapp/src/components/kiosk/kiosk-pin-pad.tsx",
+        "sha256": "7f6a4c5ac267fdaa34a76c0dd1812b6a1512300b026687223be882dac9ad8b34",
+        "issue": "Historical dirty capture source hash has no matching committed feature blob; retained as earlier source only."
+      },
+      {
+        "phase": "after",
+        "path": "apps/webapp/src/lib/time-tracking/kiosk/kiosk-store.ts",
+        "sha256": "f04f4653ee96b6c0a6e7bb307f14b006c6985bef7c474f783296d092bf00a6ed",
+        "issue": "Historical dirty capture source hash has no matching committed feature blob; retained as earlier source only."
+      }
+    ],
+    "missingFinalLf": [
+      "docs/design/rollout-1692/1824/accessibility-next.json",
+      "docs/design/rollout-1692/1824/action-observations.json",
+      "docs/design/rollout-1692/1824/after-captures.json",
+      "docs/design/rollout-1692/1824/after-final-captures.json",
+      "docs/design/rollout-1692/1824/before-captures.json",
+      "docs/design/rollout-1692/1824/before-final-captures.json",
+      "docs/design/rollout-1692/1824/biome-baseline.json",
+      "docs/design/rollout-1692/1824/combined-source-and-checks.json",
+      "docs/design/rollout-1692/1824/latest-integration.json",
+      "docs/design/rollout-1692/1824/next-initial.json",
+      "docs/design/rollout-1692/1824/offline-recovery.json",
+      "docs/design/rollout-1692/1824/restrictions.json",
+      "docs/design/rollout-1692/1824/runtime.json"
+    ],
+    "inspectedImages": [
+      "before-final-phone-light.png",
+      "after-final-phone-light.png",
+      "after-final-phone-large-dark.png",
+      "after-offline-uncertain-queue.png",
+      "after-final-pin.png"
+    ],
+    "fonts": "Computed default16px with system stack in paired metadata; saved Large independently measured18px/390width with language54px,Scan72px,employees90px; no true browser/OS zoom claim.",
+    "states": "Inspected actual synthetic device/location/organization scope, default and18pxdarkphone, PIN and visible unconfirmed queue. Captures retain development controls overlay; no unobstructed physical-device claim. Final paired metadata records one h1/system font/no CSS horizontal overflow at1600/390/1024/2400.",
+    "inherited": {
+      "actions": 10,
+      "layoutKeyboardIdle": 5,
+      "restrictions": 6,
+      "accessibilityLocaleNext": 3,
+      "offlineRecovery": {
+        "automaticPosts": 1,
+        "statusLookups": 2,
+        "explicitReplay": "replayed",
+        "singleClockIn": true
+      },
+      "postgres": {
+        "full": {
+          "files": 16,
+          "tests": 331,
+          "time": "08:31:23"
+        },
+        "affectedRepeat": {
+          "files": 2,
+          "tests": 39,
+          "time": "08:51:50"
+        },
+        "classification": "Overlapping kiosk contracts, not additive; all before final joining integration. No PostgreSQL run by merger."
+      },
+      "classification": "Archive/source inspection only. Browser/Next/PostgreSQL/provider runtime is inherited from recorded snapshots, not freshly executed by merger.",
+      "comparison": "Four same-scope final layout pairs plus PIN/pairing images; substitutes only 11 owned consumer/protocol/store files from a9b472. New header/queue modules remain on disk but baseline does not reference them; not full pre-integration execution. Earlier source snapshots remain separate.",
+      "fonts": "Computed default16px with system stack in paired metadata; saved Large independently measured18px/390width with language54px,Scan72px,employees90px; no true browser/OS zoom claim.",
+      "failedHarness": "First supplementary command was synthetic, unconfirmed and unsent in temporary browser; failed harness discarded it, not counted as app pass. Accepted repeat uses durable profile, frozen private checkpoint, real reload/contact, dropped server response and settled queue before close."
+    },
+    "limits": [
+      "Merger started no services,Next,browser,PostgreSQL,provider request or fixture mutation.",
+      "331full PG tests at08:31 and39affected repeat at08:51 overlap,not370unique or a new final-join/fullmatrix; browser/PG evidence predates final joining integration.",
+      "Action driver10completed assertions then hydration layout failure; layout/keyboard/idle5completed separately, finaltarget/focus/locale3separately. Earlier error snapshot andfiveunmatched dirty-source hashes remain historical only.",
+      "Failed temporary-browser unsent synthetic command was discarded by failed harness; accepted durable profile/checkpoint/reload queue settled before close. No customer/confirmed work deletion claim.",
+      "Usable native React tree,physical NFC/scanner/fob/camera,store wrappers/browser/OS zoom,exhaustive long translations,remote catalog sync,provider/billingPOST and full production static generation remain unpassed."
+    ]
+  },
+  "commands": {
+    "mergeTree": [
+      "git",
+      "merge-tree",
+      "--write-tree",
+      "24a361e9888fd652df79f11da68262f7528a8bc7",
+      "335044a809b293d1342bdd858134ccf56f0d1d2f"
+    ],
+    "merge": [
+      "git",
+      "merge",
+      "--no-ff",
+      "335044a809b293d1342bdd858134ccf56f0d1d2f",
+      "-m",
+      "merge: integrate R025 kiosk refresh (#1824)"
+    ],
+    "audit": [
+      "pnpm",
+      "node",
+      ".tmp/merge1824-audit/audit.mjs"
+    ],
+    "testSummary": [
+      "pnpm",
+      "node",
+      ".tmp/merge1824-audit/test-summary.mjs"
+    ],
+    "archives": [
+      "pnpm",
+      "node",
+      ".tmp/merge1824-audit/check-archives.mjs"
+    ],
+    "whitespace": [
+      "pnpm",
+      "node",
+      ".tmp/merge1824-audit/whitespace.mjs"
+    ],
+    "securityAndFormat": [
+      "pnpm",
+      "node",
+      ".tmp/merge1824-audit/security-and-format.mjs"
+    ],
+    "finalization": [
+      "pnpm",
+      "node",
+      ".tmp/merge1824-audit/finalize.mjs"
+    ],
+    "attempts": "Default sandbox Git object write andpnpm engine-lock opens denied before substantive execution; scoped elevated retries automatically approved. Initial archival script wrongly assumed every early capture had no errors; corrected audit preserves known initial import error and historical hashes. No app failure relabeled as pass."
+  },
+  "noOtherMutations": "Only authorized no-ff merge and ignored.tmp audit artifacts. No source/report/ledger/README/remote/tracker/PR/deployment edits, no dev merge, no external communication.",
+  "exclusiveOwnership": "RELEASED after writing this handoff. Root may resume checkout/package operations."
+}

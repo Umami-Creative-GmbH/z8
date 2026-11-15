@@ -1,0 +1,3 @@
+$ next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false && tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false && tsc --project tsconfig.smoke.json --noEmit --incremental false
+Generating route types...
+✓ Types generated successfully
