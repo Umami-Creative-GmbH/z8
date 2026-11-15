@@ -1,12 +1,12 @@
 {
-  "violations": [],
-  "scope": "Loaded 2025 work-hours main; daily numeric variance unavailable from service, employee records and daily chart loaded",
   "axeVersion": "4.12.1",
+  "violations": [],
+  "scope": "Loaded 2025 work-hours main after #1705 integration; original eight employees",
+  "incomplete": [],
   "counts": {
     "inapplicable": 58,
     "incomplete": 0,
     "passes": 30,
     "violations": 0
-  },
-  "incomplete": []
+  }
 }

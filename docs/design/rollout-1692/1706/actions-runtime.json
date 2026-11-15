@@ -3,27 +3,19 @@
     {
       "scope": "small-admin / 2025",
       "rows": [
-        "Person 0\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
         "Person 1\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
         "Person 2\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
-        "Person 3\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
         "Person 4\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
         "Person 5\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
         "Person 6\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
-        "Person 7\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk"
+        "Person 7\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 3\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 0\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk"
       ]
     },
     {
       "export": "CSV",
       "data": [
-        {
-          "employeeId": "496f93d0-6777-43a6-9df2-77452c2b6056",
-          "employeeName": "Person 0",
-          "totalHours": 2088,
-          "overtimeHours": 0,
-          "undertimeHours": 0,
-          "avgHoursPerWeek": 40
-        },
         {
           "employeeId": "e0711f47-8dbc-4d56-b18d-3613190f418f",
           "employeeName": "Person 1",
@@ -35,14 +27,6 @@
         {
           "employeeId": "d777e583-3d94-4238-9b26-a38d33666ec7",
           "employeeName": "Person 2",
-          "totalHours": 2088,
-          "overtimeHours": 0,
-          "undertimeHours": 0,
-          "avgHoursPerWeek": 40
-        },
-        {
-          "employeeId": "da70e361-1900-4b2e-9128-148d1b06bec3",
-          "employeeName": "Person 3",
           "totalHours": 2088,
           "overtimeHours": 0,
           "undertimeHours": 0,
@@ -75,6 +59,22 @@
         {
           "employeeId": "597cea5e-2b73-4f2f-86dd-f9a90d7af167",
           "employeeName": "Person 7",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "da70e361-1900-4b2e-9128-148d1b06bec3",
+          "employeeName": "Person 3",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "496f93d0-6777-43a6-9df2-77452c2b6056",
+          "employeeName": "Person 0",
           "totalHours": 2088,
           "overtimeHours": 0,
           "undertimeHours": 0,
@@ -110,14 +110,6 @@
       "export": "Excel",
       "data": [
         {
-          "employeeId": "496f93d0-6777-43a6-9df2-77452c2b6056",
-          "employeeName": "Person 0",
-          "totalHours": 2088,
-          "overtimeHours": 0,
-          "undertimeHours": 0,
-          "avgHoursPerWeek": 40
-        },
-        {
           "employeeId": "e0711f47-8dbc-4d56-b18d-3613190f418f",
           "employeeName": "Person 1",
           "totalHours": 2088,
@@ -128,14 +120,6 @@
         {
           "employeeId": "d777e583-3d94-4238-9b26-a38d33666ec7",
           "employeeName": "Person 2",
-          "totalHours": 2088,
-          "overtimeHours": 0,
-          "undertimeHours": 0,
-          "avgHoursPerWeek": 40
-        },
-        {
-          "employeeId": "da70e361-1900-4b2e-9128-148d1b06bec3",
-          "employeeName": "Person 3",
           "totalHours": 2088,
           "overtimeHours": 0,
           "undertimeHours": 0,
@@ -172,6 +156,22 @@
           "overtimeHours": 0,
           "undertimeHours": 0,
           "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "da70e361-1900-4b2e-9128-148d1b06bec3",
+          "employeeName": "Person 3",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "496f93d0-6777-43a6-9df2-77452c2b6056",
+          "employeeName": "Person 0",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
         }
       ],
       "headers": [
@@ -197,7 +197,7 @@
         }
       ],
       "filename": "work-hours-2024-12-31",
-      "bytes": 6758
+      "bytes": 6759
     },
     {
       "refresh": "Held real 2025 read retained rows/range, disabled export; abort exposed stale warning; real Retry recovered"
