@@ -1,0 +1,5 @@
+{
+  "exitCode": 2,
+  "qualification": "Raw diagnostic whitespace preserved without trimming; scoped source check is separate.",
+  "command": "git diff --cached --check"
+}

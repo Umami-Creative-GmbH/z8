@@ -1,0 +1,37 @@
+[
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\pnpm-lock.yaml",
+    "lastWriteTimeUtc": "2026-11-14T20:43:31.9543688Z",
+    "sha256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\package.json",
+    "lastWriteTimeUtc": "2026-11-14T20:43:31.9498459Z",
+    "sha256": "F281C18AC5A4B789E95CC9314145E2F1BB535AFF902FD2C4A20E08256F88C2B7"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\pnpm-workspace.yaml",
+    "lastWriteTimeUtc": "2026-11-14T20:43:31.9543688Z",
+    "sha256": "1AA995231F3055320FD3130345F21C4F6598232FE8981920F2AE6B860E376EA8"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.modules.yaml",
+    "lastWriteTimeUtc": "2026-11-15T02:13:05.3261316Z",
+    "sha256": "320FA9A173B4871D2CBD5E70795A00D01272D69ED39E99ABC08520A99AEE4D22"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\lock.yaml",
+    "lastWriteTimeUtc": "2026-11-15T02:13:05.3351986Z",
+    "sha256": "39E4CC0BF8792F5FC5F714C03FF83F31A579CED56F8FE9F27FEBCEDFC7E41F01"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm-workspace-state-v1.json",
+    "lastWriteTimeUtc": "2026-11-15T02:13:05.3419570Z",
+    "sha256": "C7B52F48829F6CCEB374520D9014C04B85074188F0FD28E09C5FDBE1B771553C"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\package.json",
+    "lastWriteTimeUtc": "2026-11-14T20:43:31.6326069Z",
+    "sha256": "59BBC67934476333747162B5ABCC7ADAC7A99DB758416C9B630A09EC92AC1CC9"
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "allRemoved": true,
+  "services": [
+    {
+      "container": "z8_perf_d9c14c81b642_postgres",
+      "ownershipLabel": "z8-performance-fixture-1450",
+      "removed": true
+    },
+    {
+      "container": "z8_perf_d9c14c81b642_redis",
+      "ownershipLabel": "z8-performance-fixture-1450",
+      "removed": true
+    },
+    {
+      "container": "z8_perf_d9c14c81b642_storage",
+      "ownershipLabel": "z8-performance-fixture-1450",
+      "removed": true
+    }
+  ]
+}
