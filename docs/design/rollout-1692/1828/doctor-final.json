@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "sourceRevision": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "sourceRevision": "898e02935a740f4c47c9b10e28551498779f4eea",
   "mode": "baseline",
   "baseline": {
     "baseRef": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
@@ -91,14 +91,14 @@
       "score": null,
       "skippedChecks": [],
       "analyzedFiles": [
-        "next.config.ts",
+        "src/app/[locale]/onboarding/notifications/actions.integration.test.ts",
         "src/app/[locale]/onboarding/notifications/page-client.tsx",
         "src/app/[locale]/onboarding/notifications/page.test.tsx"
       ],
       "analyzedFileCount": 3,
       "complete": true,
       "scannedFileCount": 3,
-      "elapsedMilliseconds": 11751.5784
+      "elapsedMilliseconds": 11532.8935
     }
   ],
   "diagnostics": [],
@@ -110,6 +110,6 @@
     "score": null,
     "scoreLabel": null
   },
-  "elapsedMilliseconds": 12656.772299999999,
+  "elapsedMilliseconds": 12723.8654,
   "error": null
 }
