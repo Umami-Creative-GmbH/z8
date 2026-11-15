@@ -1,0 +1,6 @@
+{
+  "component": "VacationTrends",
+  "inspection": "Forget(VacationTrends) #1436\nkey: \"perf-small-e8c803cb8ce9\"\nhooks:\n  Translate: undefined (2 sub)\n  Shallow: undefined (1 sub)\n  OrganizationSettingsStore: undefined (2 sub)\n  [10] Ref: false\n  [11] State: {start: Thu Jan 01 2026 00:00:00 GMT+0100 (Mitteleuropäische Normalzeit), end: Thu Dec 31 2026 23:59:59 GMT+0100 (Mitteleuropäische Normalzeit), startDate: \"2026-01-01\", endDate: \"2026-12-31\", timezone: \"Europe/Berlin\"}\n  [12] State: {data: {byEmployee: Array(8), byMonth: Array(0), employees…}, key: \"[1767222000000,1798757999999,\\\"Europe/Berlin\\\"]\", loading: false, refreshing: false, failed: false}\n  [13] Effect: VacationTrends[useEffect()]() {}\n  [14] Ref: 3\n  ViewRefresh: undefined (2 sub)\n  [16] Effect: VacationTrends[useEffect()]() {}\nrendered by: Forget(VacationTrendsPage) > ClientPageRoot",
+  "limitations": "Native tree/state inspection only; no render-count or performance improvement claim.",
+  "treeExcerpt": "188 1435 1434 Forget(VacationTrendsPage)\n189 1436 1435 Forget(VacationTrends) key=\"perf-small-e8c803cb8ce9\"\n191 1438 1437 Forget(VacationToolbar)\n191 1463 1437 Forget(VacationContent)\n192 1593 1463 Forget(VacationUtilizationCard)\n192 1625 1463 Forget(VacationBalanceCard)\n193 1842 1841 Forget(MonthlyUsageCard)\n193 1856 1841 Forget(PeakMonthsCard)"
+}

@@ -4,35 +4,17 @@
       "export": "CSV",
       "data": [
         {
-          "employeeId": "3fc8a267-13fd-42b2-a528-c2971d738246",
-          "employeeName": "Person 0",
-          "allocated": 0,
-          "taken": 52,
-          "remaining": -52,
-          "allowanceConfigured": false,
-          "utilizationRate": 0
-        },
-        {
           "employeeId": "9584e13e-d891-4b1f-9a6c-d520a725be25",
           "employeeName": "Person 1",
-          "allocated": 0,
+          "allocated": 28,
           "taken": 52,
-          "remaining": -52,
-          "allowanceConfigured": false,
-          "utilizationRate": 0
+          "remaining": -24,
+          "allowanceConfigured": true,
+          "utilizationRate": 185.71
         },
         {
           "employeeId": "dfe6841d-91cd-4776-a4d1-b819a4e61f64",
           "employeeName": "Person 2",
-          "allocated": 0,
-          "taken": 52,
-          "remaining": -52,
-          "allowanceConfigured": false,
-          "utilizationRate": 0
-        },
-        {
-          "employeeId": "72e5bc54-8cb7-4a49-a477-5debc5286c89",
-          "employeeName": "Person 3",
           "allocated": 0,
           "taken": 52,
           "remaining": -52,
@@ -74,6 +56,24 @@
           "remaining": -52,
           "allowanceConfigured": false,
           "utilizationRate": 0
+        },
+        {
+          "employeeId": "72e5bc54-8cb7-4a49-a477-5debc5286c89",
+          "employeeName": "Person 3",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "3fc8a267-13fd-42b2-a528-c2971d738246",
+          "employeeName": "Person 0",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": true,
+          "utilizationRate": 0
         }
       ],
       "headers": [
@@ -99,41 +99,23 @@
         }
       ],
       "filename": "vacation-trends-2024-12-31",
-      "bytes": 306
+      "bytes": 312
     },
     {
       "export": "Excel",
       "data": [
         {
-          "employeeId": "3fc8a267-13fd-42b2-a528-c2971d738246",
-          "employeeName": "Person 0",
-          "allocated": 0,
-          "taken": 52,
-          "remaining": -52,
-          "allowanceConfigured": false,
-          "utilizationRate": 0
-        },
-        {
           "employeeId": "9584e13e-d891-4b1f-9a6c-d520a725be25",
           "employeeName": "Person 1",
-          "allocated": 0,
+          "allocated": 28,
           "taken": 52,
-          "remaining": -52,
-          "allowanceConfigured": false,
-          "utilizationRate": 0
+          "remaining": -24,
+          "allowanceConfigured": true,
+          "utilizationRate": 185.71
         },
         {
           "employeeId": "dfe6841d-91cd-4776-a4d1-b819a4e61f64",
           "employeeName": "Person 2",
-          "allocated": 0,
-          "taken": 52,
-          "remaining": -52,
-          "allowanceConfigured": false,
-          "utilizationRate": 0
-        },
-        {
-          "employeeId": "72e5bc54-8cb7-4a49-a477-5debc5286c89",
-          "employeeName": "Person 3",
           "allocated": 0,
           "taken": 52,
           "remaining": -52,
@@ -175,6 +157,24 @@
           "remaining": -52,
           "allowanceConfigured": false,
           "utilizationRate": 0
+        },
+        {
+          "employeeId": "72e5bc54-8cb7-4a49-a477-5debc5286c89",
+          "employeeName": "Person 3",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "3fc8a267-13fd-42b2-a528-c2971d738246",
+          "employeeName": "Person 0",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": true,
+          "utilizationRate": 0
         }
       ],
       "headers": [
@@ -200,7 +200,7 @@
         }
       ],
       "filename": "vacation-trends-2024-12-31",
-      "bytes": 6764
+      "bytes": 6774
     },
     {
       "refresh": "Held genuine 2025 read retained employee records and selected period; aborted read showed retry; real retry recovered"
@@ -215,7 +215,7 @@
       "stickyIdentity": {
         "position": "sticky",
         "left": 46,
-        "text": "Person 0Allowance not configured"
+        "text": "Person 1"
       }
     },
     {

@@ -5,49 +5,14 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 
-const queries = vi.hoisted(() => [] as string[]);
-const statements = vi.hoisted(
-	() => [] as { text: string; params: unknown[] }[],
-);
-const caller = vi.hoisted(() => ({
-	userId: null as string | null,
-	organizationId: null as string | null,
-}));
 vi.mock("next/headers", async () =>
 	(await import("@/test/integration-harness")).nextHeaders(),
 );
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
-vi.mock("@/lib/auth", () => ({
-	auth: {
-		api: {
-			getSession: async () =>
-				caller.userId
-					? {
-							user: {
-								id: caller.userId,
-								email: "fixture@example.test",
-								role: "user",
-							},
-							session: {
-								id: "team-performance-fixture",
-								userId: caller.userId,
-								activeOrganizationId: caller.organizationId,
-							},
-						}
-					: null,
-		},
-	},
-}));
-vi.mock("@/db", async () =>
-	(await import("@/test/integration-database")).integrationDbModule({
-		logQuery: (text, params) => {
-			queries.push(text);
-			statements.push({ text, params });
-		},
-	}),
-);
+vi.mock("@/lib/auth", () => ({auth: {api: {getSession: async () => null}}}));
+vi.mock("@/db", async () => (await import("@/test/integration-database")).integrationDbModule());
 const { db } = await import("@/db");
 const { AnalyticsService } = await import(
 	"@/lib/effect/services/analytics.service"
