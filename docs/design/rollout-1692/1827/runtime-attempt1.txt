@@ -1,0 +1,35 @@
+Passed: desktop-light fits width and saved font
+Passed: phone-light fits width and saved font
+Passed: wide-dark-large fits width and saved font
+Passed: phone-dark-large fits width and saved font
+Passed: single semantic task heading
+Passed: real summary names current organization
+file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/assert.js:15
+        throw new Error(message);
+              ^
+
+Error: No element found for selector: a[href="/init"]
+    at assert (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/assert.js:15:15)
+    at CdpFrame.focus (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:775:17)
+    at async file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/docs/design/rollout-1692/1827/verify-runtime.mjs:44:3
+
+Node.js v26.9.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: after runtime
+
+1 !== 0
+
+    at run (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/docs/design/rollout-1692/1827/compare.mjs:9:206)
+    at file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/docs/design/rollout-1692/1827/compare.mjs:12:1 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.9.0

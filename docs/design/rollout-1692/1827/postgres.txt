@@ -1,0 +1,22 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90mX:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/apps/webapp[39m
+
+ [32m✓[39m [30m[45m integration [49m[39m src/lib/organization-mfa/authentication.integration.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 4701[2mms[22m[39m
+   [32m✓[39m real local MFA authentication and organization authorization [2m(8)[22m
+     [33m[2m✓[22m[39m rejects password-only/stale/unauthorized policy changes and accepts recent actual TOTP[33m 619[2mms[22m[39m
+     [33m[2m✓[22m[39m uses backup codes once for recovery only and allows an explicitly verified replacement[33m 1547[2mms[22m[39m
+     [33m[2m✓[22m[39m revokes evidence and remembered trust in the password mutation's transaction[33m 514[2mms[22m[39m
+     [33m[2m✓[22m[39m allows last-factor revocation and immediately denies protected access[33m 501[2mms[22m[39m
+     [33m[2m✓[22m[39m cannot resurrect proof when TOTP verification races a password change[33m 605[2mms[22m[39m
+     [33m[2m✓[22m[39m accepts fresh enrollment evidence from an aged session without refreshing the durable session[33m 339[2mms[22m[39m
+ [32m✓[39m [30m[45m integration [49m[39m src/lib/organization-mfa/policy.integration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1077[2mms[22m[39m
+ [32m✓[39m [30m[45m integration [49m[39m src/app/[locale]/onboarding/complete/actions.integration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 214[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m17 passed[39m[22m[90m (17)[39m
+[2m   Start at [22m 13:34:58
+[2m   Duration [22m 11.43s[2m (tests 54%, import 29%, transform 16%, setup 1%)[22m
+
