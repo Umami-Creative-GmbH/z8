@@ -1,0 +1,38 @@
+[
+  {
+    "mode": "before",
+    "layout": "desktop-light",
+    "width": 1600,
+    "height": 1000
+  },
+  {
+    "mode": "before",
+    "layout": "phone-light",
+    "width": 390,
+    "height": 1000
+  },
+  {
+    "mode": "before",
+    "layout": "wide-dark",
+    "width": 2400,
+    "height": 1200
+  },
+  {
+    "mode": "after",
+    "layout": "desktop-light",
+    "width": 1600,
+    "height": 1000
+  },
+  {
+    "mode": "after",
+    "layout": "phone-light",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "mode": "after",
+    "layout": "wide-dark",
+    "width": 2400,
+    "height": 1200
+  }
+]
