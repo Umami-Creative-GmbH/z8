@@ -1,0 +1,150 @@
+Toggle Sidebar
+
+Reports
+
+23:25
+UTC+01:00
+Clock In
+Toggle theme
+Employee Reports
+Generate comprehensive work hour and absence reports with tax-relevant home office data
+Distance per Vehicle
+Generate an employee report
+Employee
+Fixture Person 0
+Period
+Last Year
+Jan 1, 2025 - Dec 31, 2025
+Generate Report
+Person 0
+
+Jan 1, 2025 - Dec 31, 2025
+
+2025-01-01 – 2025-12-31
+
+Total Work Hours
+2088h
+
+261 work days
+
+Avg: 8h/day
+
+Home Office Days
+52
+
+416h worked from home
+
+Tax relevant
+
+Vacation Days
+0
+
+0 pending
+
+Total Absences
+52
+
+Sick: 0 days
+
+Other: 0 days
+
+Work Hours by Month
+Month	Hours	Days
+2025-01	184h	23
+2025-02	160h	20
+2025-03	168h	21
+2025-04	176h	22
+2025-05	176h	22
+2025-06	168h	21
+2025-07	184h	23
+2025-08	168h	21
+2025-09	176h	22
+2025-10	184h	23
+2025-11	160h	20
+2025-12	184h	23
+Total	2088h	261
+Absences by Category
+Category	Days
+Fixture home office	52
+Total	52
+Home Office Summary (Tax Relevant)
+
+Important for German tax purposes - shows home office days and hours worked
+
+Total Home Office Days
+
+52
+
+Total Hours Worked from Home
+
+416h
+
+Date-by-Date Breakdown
+Date	Hours Worked
+Jan 7, 2025	8h
+Jan 14, 2025	8h
+Jan 21, 2025	8h
+Jan 28, 2025	8h
+Feb 4, 2025	8h
+Feb 11, 2025	8h
+Feb 18, 2025	8h
+Feb 25, 2025	8h
+Mar 4, 2025	8h
+Mar 11, 2025	8h
+Mar 18, 2025	8h
+Mar 25, 2025	8h
+Apr 1, 2025	8h
+Apr 8, 2025	8h
+Apr 15, 2025	8h
+Apr 22, 2025	8h
+Apr 29, 2025	8h
+May 6, 2025	8h
+May 13, 2025	8h
+May 20, 2025	8h
+May 27, 2025	8h
+Jun 3, 2025	8h
+Jun 10, 2025	8h
+Jun 17, 2025	8h
+Jun 24, 2025	8h
+Jul 1, 2025	8h
+Jul 8, 2025	8h
+Jul 15, 2025	8h
+Jul 22, 2025	8h
+Jul 29, 2025	8h
+Aug 5, 2025	8h
+Aug 12, 2025	8h
+Aug 19, 2025	8h
+Aug 26, 2025	8h
+Sep 2, 2025	8h
+Sep 9, 2025	8h
+Sep 16, 2025	8h
+Sep 23, 2025	8h
+Sep 30, 2025	8h
+Oct 7, 2025	8h
+Oct 14, 2025	8h
+Oct 21, 2025	8h
+Oct 28, 2025	8h
+Nov 4, 2025	8h
+Nov 11, 2025	8h
+Nov 18, 2025	8h
+Nov 25, 2025	8h
+Dec 2, 2025	8h
+Dec 9, 2025	8h
+Dec 16, 2025	8h
+Dec 23, 2025	8h
+Dec 30, 2025	8h
+Total	416h
+Compliance Metrics
+Attendance Percentage
+83%
+Overtime
+0h
+Undertime
+0h
+Export Report
+
+Download this report in your preferred format
+
+Export PDF
+Export Excel
+Export CSV

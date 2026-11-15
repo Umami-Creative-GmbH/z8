@@ -1,0 +1,11 @@
+{
+  "base": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+  "scope": "small-admin / Performance small; exact eight consumer+hook source comparison under current shared infrastructure; current-month report from unmodified fixture; fresh default preferences",
+  "attempts": [
+    {
+      "phase": "runtime",
+      "status": "failed",
+      "message": "Waiting failed: 60000ms exceeded"
+    }
+  ]
+}

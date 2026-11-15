@@ -1,0 +1,3 @@
+[agent-browser] launched browser
+✗ Failed to read: Eine vorhandene Verbindung wurde vom Remotehost geschlossen. (os error 10054) (the command reached the daemon but no response came back; it may or may not have run, so it was not retried)
+[{"phase":"before","status":"failed"},{"phase":"after","status":"failed"}]
