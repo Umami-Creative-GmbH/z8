@@ -20,7 +20,7 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 
 ## Current work
 
-- F1 #1693: current compatible handoff verified at `ccccad7a3512924e01941054f01283057dd62f00`, including the shared server-data Retry correction. Original live consumer handoff `ac30ff285814644b08fc918eafa1013f3ecb7897` remains inherited evidence. Its dependents may start; final-review limits remain explicit in the [consumer inventory and interfaces](1693.md).
+- F1 #1693: current compatible handoff verified at `b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5`, including shared server-data Retry and mobile navigation Escape corrections. Original live consumer handoff `ac30ff285814644b08fc918eafa1013f3ecb7897` remains inherited evidence. Its dependents may start; final-review limits remain explicit in the [consumer inventory and interfaces](1693.md).
 - F2 #1694 (records): handoff verified at `382b8f5be837dad724d3a54274d3050b0104881f`; F2-only dependents may start. See [compatible interfaces and real pilots](1694.md).
 - F3 #1695 (forms): handoff verified at `bfacad421ffe77f50729ea5895c546698ef28383`; F3-only dependents may start. See [interfaces, pilots and limits](1695.md).
 - H1 #1853: joint handoff verified at `26d1d8fd016d6daa0c9fe71e0f671571dd45c211`; its 75 joint consumers may now start from their own eligible frontier. See [compatibility evidence and limits](1853.md).
@@ -45,6 +45,8 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - Remaining pages: select from eligible prerequisites in `integration.json`. Foundation readiness is verified; route-specific shared-output dependencies still apply.
 
 ## Verification
+
+- Shared F1 navigation correction `b6595389e`: a hidden link tooltip consumed the first Escape. One disabled prop on its existing root fixes the owner. The permanent assembled regression fails before correction; **10 suites /97 tests**, full types and two-file Biome/Doctor zero pass. Three matched historical-consumer phone cases (saved18px/normal and reduced motion;16px/expanded preference) now close and return focus with one trusted Escape; desktop icon-rail tooltip/focus and fresh Next probes pass. Seven PNGs fully decode; owned browser/Next/three fixture services cleaned. Exact tree equals tested feature tree; API/domain/current-route/native/build/catalog/device/provider/transition limits remain in [F1 proof](1693.md#root-correction-mobile-navigation-escape).
 
 - #1710 merge `273320a93`: **134 unique suites / 1,276 fresh tests** (58/699 exact +95/736 compatibility less19 files/159 cases), full combined types and seven-file Doctor zero. CRLF-aware Biome autodiscovery passes; an additional forced100-column config reports seven formatting-only files and is retained as unpassed. All20 prior verified ancestors/709 rollout paths/shared recovery wrappers and exactly seven source paths reviewed;15 PNGs fully decode with other artifacts checked. Root repairs the incoming duplicate #1714 report section/title only. PG4/14 and41 runtime assertions are inherited; [all stated limits](1710.md) remain.
 
