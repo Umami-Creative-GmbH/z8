@@ -1,0 +1,51 @@
+{
+  "integrationParent": "eaf8aa1ef97029cd4327ba7f2568383f63d2b40c",
+  "historicalConsumer": "78d8c4af9764d159ca8dc12e772af3c835b77b3c",
+  "red": {
+    "actualWrappers": 4,
+    "failures": 4
+  },
+  "unit": {
+    "suites": 7,
+    "tests": 56,
+    "exit": 0
+  },
+  "types": {
+    "application": true,
+    "workflowContracts": true,
+    "smoke": true,
+    "exit": 0
+  },
+  "biome": {
+    "files": 6,
+    "errors": 0,
+    "warnings": 0
+  },
+  "doctor": {
+    "files": 6,
+    "errors": 0,
+    "warnings": 0,
+    "score": "disabled"
+  },
+  "runtime": {
+    "before": {
+      "restoredRows": 3,
+      "refetches": 0,
+      "displayedRows": 0,
+      "errorVisible": true
+    },
+    "after": {
+      "restoredRows": 3,
+      "refetches": 1,
+      "displayedRows": 3,
+      "errorVisible": false
+    },
+    "boundary": "Original authorized historical R010 consumer, actual fixture table failure/restoration; only four shared handlers overlaid. Current R010 owns a separate unchanged retry boundary."
+  },
+  "limits": [
+    "Other three shared boundaries are assembled-wrapper checked, not separately live fault-injected.",
+    "Deliberate Next server fault remains in this diagnostic session; no clean global Next claim.",
+    "No new PostgreSQL-suite, full-build, provider, catalog, physical-device, true-zoom or native-React pass.",
+    "Owned Next/browser stopped; fixture services retained temporarily for separate build diagnosis."
+  ]
+}

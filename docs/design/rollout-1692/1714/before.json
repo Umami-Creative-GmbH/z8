@@ -1,0 +1,46 @@
+{
+  "headings": [
+    {
+      "level": "H1",
+      "text": "Compliance"
+    },
+    {
+      "level": "H1",
+      "text": "Critical compliance risks need attention"
+    },
+    {
+      "level": "H2",
+      "text": "Recent Critical Events"
+    }
+  ],
+  "links": [
+    {
+      "text": "Open Audit Export",
+      "href": "/en/settings/audit-export"
+    },
+    {
+      "text": "Open Compliance Settings",
+      "href": "/en/settings/compliance"
+    },
+    {
+      "text": "Open Audit Log",
+      "href": "/en/settings/enterprise/audit-log"
+    },
+    {
+      "text": "Inspect compliance",
+      "href": "/en/settings/compliance"
+    },
+    {
+      "text": "Inspect in Audit Log",
+      "href": "/en/settings/enterprise/audit-log"
+    }
+  ],
+  "text": "Toggle Sidebar\nCompliance\n04:17\nUTC+01:00\nClock In\nToggle theme\n\nCompliance overview\n\nCritical compliance risks need attention\ncritical\nAudit evidence is only partially ready\nWARNING\nSigning keys are not configured yet.\nRecent failed audit-pack jobs: 0\nRecent invalid verification attempts: 0\nNo successful audit pack has been recorded yet.\nOpen Audit Export\nWorkforce policy violations need review\nCRITICAL\nRest-period violations: 1\nOther policy violations: 0\nOvertime violations: 0\nPending exceptions: 0\nOpen Compliance Settings\nSensitive control changes need review\nCRITICAL\nRecent sensitive events: 1\nLatest sensitive action: permission.revoked\nOpen Audit Log\nRecent Critical Events\n\nRecent workforce policy findings\n\nRest: 1, Other policy: 0, Overtime: 0\n\nInspect compliance\n\nSensitive action: permission.revoked\n\npermission.revoked on employee\n\nInspect in Audit Log\n\nLast refreshed: 2026-11-15 03:17 UTC\n\n2026-11-15 03:17 UTC\nAudit evidence uses live audit-export configuration, audit-pack requests, and recent verification results.\nWorkforce compliance uses the last 7 days of work-policy violations and pending exception requests.\nAccess controls only summarize sensitive audit-log events that are already captured today.",
+  "width": 1600,
+  "viewport": 1600,
+  "phone": {
+    "width": 390,
+    "viewport": 390
+  },
+  "errors": []
+}
