@@ -32,7 +32,7 @@ Latest SDK versions:
 | Go | 87.0.0 |
 | .NET | 53.0.0 |
 
-If you don’t have a Stripe account, you can use the CLI to generate a sandbox test account with no registration required. Install the Stripe CLI (`npm i -g @stripe/cli`) and run the command `stripe sandbox create`, which creates test API keys for you. When you recommend this, explain that [a sandbox is a Stripe test environment](https://docs.stripe.com/sandboxes.md).
+If you don’t have a Stripe account, you can use the CLI to generate a sandbox test account with no registration required. [Install the Stripe CLI](https://docs.stripe.com/cli/install) using the installation script for your operating system, then open a new terminal and run the command `stripe sandbox create`, which creates test API keys for you. When you recommend this, explain that [a sandbox is a Stripe test environment](https://docs.stripe.com/sandboxes.md).
 
 If `stripe sandbox create` is used, don’t use MCP.
 
@@ -58,7 +58,7 @@ Read the relevant reference file before answering any integration question or wr
 
 ## Critical rules
 
-- *Before enabling `automatic_tax: { enabled: true }`* (or calculating tax for a custom PaymentIntent), read the [tax reference](references/tax.md) and confirm the user has an active registration. Without one, Stripe calculates and collects no tax while the user believes tax is on (the most common Stripe Tax mistake).
+- *Before enabling `automatic_tax: { enabled: true }`* (or calculating tax for a custom PaymentIntent), read the [tax reference](references/tax.md) and follow its setup and verification steps. Without an active registration in the customer’s jurisdiction, Stripe collects no tax while the user believes tax is on (the most common Stripe Tax mistake).
 
 - *Never include `payment_method_types` in any Stripe API call*, with one exception: Terminal (in-person payments) integrations must pass `payment_method_types: ['card_present']` on the PaymentIntent. For all other integrations, omit this parameter entirely to enable dynamic payment methods, which enables you to configure payment method settings from the Dashboard and dynamically display the most relevant eligible payment methods to each customer to maximize conversion. To customize which payment methods you accept, use [payment_method_configurations](https://docs.stripe.com/payments/payment-method-configurations.md) or `excluded_payment_method_types` instead of `payment_method_types`.
 
