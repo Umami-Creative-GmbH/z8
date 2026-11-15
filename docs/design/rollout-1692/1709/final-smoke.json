@@ -1,0 +1,26 @@
+{
+  "checks": [
+    {
+      "name": "final form retains sequential keyboard input",
+      "passed": true
+    },
+    {
+      "name": "final saved font is 18px",
+      "passed": true
+    },
+    {
+      "name": "after-phone-dark-large settled with no page overflow",
+      "passed": true
+    },
+    {
+      "name": "after-wide-dark-large settled with no page overflow",
+      "passed": true
+    },
+    {
+      "name": "full requester email wraps in final phone detail",
+      "passed": true
+    }
+  ],
+  "scope": "same owned fixture, four pending requests after actual decisions; final source after integration",
+  "transitionLimit": "Earlier immediate post-Escape phone capture retained separately as after-sprint-exit-transition.png. Settled screenshots do not certify exit animation behavior."
+}

@@ -1,10 +1,15 @@
-import type { ApprovalTriageRequestKind, ApprovalTriageReason, ApprovalTriageEvidence, ApprovalTriageContext } from "../triage-assessment";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { PerDiemDayLocation } from "@/lib/travel-expenses/per-diem";
 import type {
 	VehicleUseReviewValue,
 	WorkCategoryReviewValue,
 } from "../server/time-correction-review-metadata";
+import type {
+	ApprovalTriageContext,
+	ApprovalTriageEvidence,
+	ApprovalTriageReason,
+	ApprovalTriageRequestKind,
+} from "../triage-assessment";
 
 export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"absence_entry",
@@ -185,13 +190,17 @@ export type ApprovalInboxDetailSection =
 			titleAsEntered?: true;
 			rows: Array<{
 				label: string | ApprovalInboxLocalizedText;
-				value: string | ApprovalInboxLocalizedText | ApprovalInboxValue | ApprovalInboxDetailChange;
+				value:
+					| string
+					| ApprovalInboxLocalizedText
+					| ApprovalInboxValue
+					| ApprovalInboxDetailChange;
 				tone?: "default" | "warning" | "danger";
 				/** An in-app page the value links to (e.g. the report an adjustment corrects). */
 				href?: string;
 			}>;
 	  }
-	| { type: "text"; title: string; body: string }
+	| { type: "text"; title: string | ApprovalInboxLocalizedText; body: string }
 	| {
 			type: "timeline";
 			title: string | ApprovalInboxLocalizedText;
@@ -214,7 +223,11 @@ export type ApprovalInboxDetailSection =
 	| {
 			type: "receipt_exception_acceptance";
 			title: string | ApprovalInboxLocalizedText;
-			items: Array<{ itemId: string; label: string | ApprovalInboxLocalizedText; reason: string; }>;
+			items: Array<{
+				itemId: string;
+				label: string | ApprovalInboxLocalizedText;
+				reason: string;
+			}>;
 	  };
 
 export interface ApprovalInboxDetailResult {
@@ -260,7 +273,8 @@ export interface ApprovalInboxDecisionSuccess {
 
 export interface ApprovalInboxDecisionFailure {
 	id: string;
-	code: "stale"
+	code:
+		| "stale"
 		| "forbidden"
 		| "not_found"
 		| "unsupported"

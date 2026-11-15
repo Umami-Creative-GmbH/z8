@@ -1,0 +1,39 @@
+{
+  "checks": [
+    {
+      "name": "fresh boundary requests exist",
+      "passed": true
+    },
+    {
+      "name": "permission lost in flight refuses fresh server write",
+      "passed": true
+    },
+    {
+      "name": "permission refusal retains typed reason",
+      "passed": true
+    },
+    {
+      "name": "stale reassigned request refuses without alternate authority",
+      "passed": true
+    },
+    {
+      "name": "missing captured evidence holds both decisions",
+      "passed": true
+    },
+    {
+      "name": "held evidence decision is refused",
+      "passed": true
+    },
+    {
+      "name": "held detail is visibly unavailable for approval",
+      "passed": true
+    },
+    {
+      "name": "refusals did not decide the request",
+      "passed": true
+    }
+  ],
+  "staleStatus": 404,
+  "heldDecisionStatus": 409,
+  "permissionLossStatus": 403
+}
