@@ -151,9 +151,11 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "0d23a915a55950423a25436809686a39213bbadb"
+                        "status":  "integrated",
+                        "verifiedCommit":  "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+                        "implementationCommit":  "0d23a915a55950423a25436809686a39213bbadb",
+                        "evidence":  "docs/design/rollout-1692/1706.md",
+                        "integrationVerification":  "Fresh merge18/164 unique unit tests, seven-file Biome/Doctor zero, exact tree/preservation/evidence. Root bounded sticky identity after confirmed phone occlusion; four paired real browser comparisons at390/320 with saved18px, long names and nonzero2025 values fail before/pass after. Root4/38 tests, full types, one-file Biome/Doctor zero. Formula/export/authority unchanged; PG3/43 and broad runtime inherited. Source variance/transition/catalog/build/device/native/profile limits retained."
                     },
                     {
                         "id":  "R009",
@@ -173,8 +175,9 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "7f4e83507fb3c3222a990c79be8f58fb7c72c52d"
                     },
                     {
                         "id":  "R011",
@@ -183,8 +186,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "7c342d50640bee64aff85eced675db14659f3ac2"
                     },
                     {
                         "id":  "R012",
@@ -215,7 +219,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -235,7 +239,7 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
