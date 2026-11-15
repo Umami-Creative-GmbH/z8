@@ -1,0 +1,18 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Monthly/. Input:
+
+'Weekly'
+
+    at file:///X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d/docs/design/rollout-1692/1834/runtime.mjs:55:89 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'Weekly',
+  expected: /Monthly/,
+  operator: 'match',
+  diff: 'simple'
+}
+
+Node.js v26.9.0

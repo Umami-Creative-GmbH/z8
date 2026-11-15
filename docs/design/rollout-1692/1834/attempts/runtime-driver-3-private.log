@@ -1,0 +1,18 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+'05' !== '32.5'
+
+    at file:///X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d/docs/design/rollout-1692/1834/runtime.mjs:62:9 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '05',
+  expected: '32.5',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.9.0

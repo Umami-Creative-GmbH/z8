@@ -1,0 +1,394 @@
+{
+  "head": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+      "sha256": "26d67982df9a2d48dd347caaec4326b27fa70eb8ac8d02399660f46cde6e31c0"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+      "sha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+    }
+  ],
+  "baseline": "b4cef3a126fd16563cb0bbddfd5872a2aeb4e530 (only two route source files substituted, finally restored)",
+  "fixture": "owned disposable, small-admin and small-employee; same organization and fixture for matched images",
+  "observations": [
+    {
+      "capture": "before-desktop",
+      "width": 1600,
+      "scrollWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "fields": [
+        {
+          "name": "work-schedule-hours-per-week",
+          "disabled": false
+        },
+        {
+          "name": "work-schedule-classification",
+          "disabled": false
+        },
+        {
+          "name": "base-ui-_r_5_-hidden-input",
+          "disabled": false
+        }
+      ],
+      "actions": [
+        {
+          "text": "Weekly",
+          "disabled": false,
+          "rect": {
+            "x": 489,
+            "width": 622
+          }
+        },
+        {
+          "text": "Skip for now",
+          "disabled": false,
+          "rect": {
+            "x": 489,
+            "width": 306
+          }
+        },
+        {
+          "text": "Continue",
+          "disabled": false,
+          "rect": {
+            "x": 807,
+            "width": 304
+          }
+        }
+      ],
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+          "sha256": "56bdca47f85693805b5ad0a451589320ef32ce405baff95c9e6eb4f3358fecfe"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+          "sha256": "b2ac4f6916c5c56589be3ca4efb1b9af51a3b2185de92a63f2b55c0c70c0b5ba"
+        }
+      ]
+    },
+    {
+      "capture": "before-phone-dark",
+      "width": 390,
+      "scrollWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "fields": [
+        {
+          "name": "work-schedule-hours-per-week",
+          "disabled": false
+        },
+        {
+          "name": "work-schedule-classification",
+          "disabled": false
+        },
+        {
+          "name": "base-ui-_r_5_-hidden-input",
+          "disabled": false
+        }
+      ],
+      "actions": [
+        {
+          "text": "Weekly",
+          "disabled": false,
+          "rect": {
+            "x": 46,
+            "width": 298
+          }
+        },
+        {
+          "text": "Skip for now",
+          "disabled": false,
+          "rect": {
+            "x": 46,
+            "width": 143.25
+          }
+        },
+        {
+          "text": "Continue",
+          "disabled": false,
+          "rect": {
+            "x": 202.75,
+            "width": 141.25
+          }
+        }
+      ],
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+          "sha256": "56bdca47f85693805b5ad0a451589320ef32ce405baff95c9e6eb4f3358fecfe"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+          "sha256": "b2ac4f6916c5c56589be3ca4efb1b9af51a3b2185de92a63f2b55c0c70c0b5ba"
+        }
+      ]
+    },
+    {
+      "capture": "before-wide",
+      "width": 1920,
+      "scrollWidth": 1920,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "fields": [
+        {
+          "name": "work-schedule-hours-per-week",
+          "disabled": false
+        },
+        {
+          "name": "work-schedule-classification",
+          "disabled": false
+        },
+        {
+          "name": "base-ui-_r_5_-hidden-input",
+          "disabled": false
+        }
+      ],
+      "actions": [
+        {
+          "text": "Weekly",
+          "disabled": false,
+          "rect": {
+            "x": 649,
+            "width": 622
+          }
+        },
+        {
+          "text": "Skip for now",
+          "disabled": false,
+          "rect": {
+            "x": 649,
+            "width": 306
+          }
+        },
+        {
+          "text": "Continue",
+          "disabled": false,
+          "rect": {
+            "x": 967,
+            "width": 304
+          }
+        }
+      ],
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+          "sha256": "56bdca47f85693805b5ad0a451589320ef32ce405baff95c9e6eb4f3358fecfe"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+          "sha256": "b2ac4f6916c5c56589be3ca4efb1b9af51a3b2185de92a63f2b55c0c70c0b5ba"
+        }
+      ]
+    },
+    {
+      "capture": "after-desktop",
+      "width": 1600,
+      "scrollWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "fields": [
+        {
+          "name": "hoursPerWeek",
+          "disabled": false
+        },
+        {
+          "name": "work-schedule-classification",
+          "disabled": false
+        },
+        {
+          "name": "workClassification",
+          "disabled": false
+        }
+      ],
+      "actions": [
+        {
+          "text": "Weekly",
+          "disabled": false,
+          "rect": {
+            "x": 812,
+            "width": 339
+          }
+        },
+        {
+          "text": "Skip for now",
+          "disabled": false,
+          "rect": {
+            "x": 449,
+            "width": 346
+          }
+        },
+        {
+          "text": "Continue",
+          "disabled": false,
+          "rect": {
+            "x": 807,
+            "width": 344
+          }
+        }
+      ],
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+          "sha256": "26d67982df9a2d48dd347caaec4326b27fa70eb8ac8d02399660f46cde6e31c0"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+          "sha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+        }
+      ]
+    },
+    {
+      "capture": "after-phone-dark",
+      "width": 390,
+      "scrollWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "fields": [
+        {
+          "name": "hoursPerWeek",
+          "disabled": false
+        },
+        {
+          "name": "work-schedule-classification",
+          "disabled": false
+        },
+        {
+          "name": "workClassification",
+          "disabled": false
+        }
+      ],
+      "actions": [
+        {
+          "text": "Weekly",
+          "disabled": false,
+          "rect": {
+            "x": 46,
+            "width": 298
+          }
+        },
+        {
+          "text": "Skip for now",
+          "disabled": false,
+          "rect": {
+            "x": 46,
+            "width": 298
+          }
+        },
+        {
+          "text": "Continue",
+          "disabled": false,
+          "rect": {
+            "x": 46,
+            "width": 298
+          }
+        }
+      ],
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+          "sha256": "26d67982df9a2d48dd347caaec4326b27fa70eb8ac8d02399660f46cde6e31c0"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+          "sha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+        }
+      ]
+    },
+    {
+      "capture": "after-wide",
+      "width": 1920,
+      "scrollWidth": 1920,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "fields": [
+        {
+          "name": "hoursPerWeek",
+          "disabled": false
+        },
+        {
+          "name": "work-schedule-classification",
+          "disabled": false
+        },
+        {
+          "name": "workClassification",
+          "disabled": false
+        }
+      ],
+      "actions": [
+        {
+          "text": "Weekly",
+          "disabled": false,
+          "rect": {
+            "x": 972,
+            "width": 339
+          }
+        },
+        {
+          "text": "Skip for now",
+          "disabled": false,
+          "rect": {
+            "x": 609,
+            "width": 346
+          }
+        },
+        {
+          "text": "Continue",
+          "disabled": false,
+          "rect": {
+            "x": 967,
+            "width": 344
+          }
+        }
+      ],
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+          "sha256": "26d67982df9a2d48dd347caaec4326b27fa70eb8ac8d02399660f46cde6e31c0"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+          "sha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+        }
+      ]
+    },
+    {
+      "case": "real transport failure retains hours and classification",
+      "passed": true
+    },
+    {
+      "case": "actual admin save/retry and server next step",
+      "passed": true,
+      "readback": "vacation_policy",
+      "policyCountUnchanged": true,
+      "scheduleValuesPersisted": false
+    },
+    {
+      "case": "actual admin skip and returned next step",
+      "passed": true
+    },
+    {
+      "case": "actual employee automatic skip and persisted progression",
+      "passed": true
+    },
+    {
+      "case": "actual unavailable access uses wellness fallback",
+      "passed": true
+    }
+  ],
+  "initialProgressRows": 1,
+  "limits": [
+    "No schedule payload is persisted by inherited owner",
+    "Scope races are assembled-page checks, not a simulated server authorization fix",
+    "No physical device or true zoom or provider acceptance"
+  ]
+}

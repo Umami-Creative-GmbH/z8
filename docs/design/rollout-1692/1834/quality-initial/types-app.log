@@ -1,0 +1,1 @@
+src/app/[locale]/(auth)/licenses/page.tsx(7,22): error TS2307: Cannot find module '@/data/licenses.json' or its corresponding type declarations.

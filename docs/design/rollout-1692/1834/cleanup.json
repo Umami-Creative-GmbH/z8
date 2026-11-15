@@ -1,0 +1,47 @@
+{
+  "origin": "http://localhost:55653",
+  "repo": "X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d",
+  "port": 55653,
+  "processes": [
+    {
+      "ProcessId": 26248,
+      "ParentProcessId": 108224,
+      "CommandLine": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe X:\\t3-code\\worktrees\\z8\\t3-fdc2d97a-f605ff250f82822d\\apps\\webapp\\node_modules\\next\\dist\\bin\\next dev --turbopack --hostname localhost --port 55653"
+    },
+    {
+      "ProcessId": 55480,
+      "ParentProcessId": 26248,
+      "CommandLine": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe X:\\t3-code\\worktrees\\z8\\t3-fdc2d97a-f605ff250f82822d\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\lib\\start-server.js"
+    },
+    {
+      "ProcessId": 12128,
+      "ParentProcessId": 55480,
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-fdc2d97a-f605ff250f82822d\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_postcss_ts_077d6xz6291wq._.js 65287"
+    },
+    {
+      "ProcessId": 62800,
+      "ParentProcessId": 55480,
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-fdc2d97a-f605ff250f82822d\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 50315"
+    },
+    {
+      "ProcessId": 66400,
+      "ParentProcessId": 55480,
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-fdc2d97a-f605ff250f82822d\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 50318"
+    }
+  ],
+  "listeners": [
+    {
+      "OwningProcess": 55480,
+      "LocalPort": 55653
+    }
+  ],
+  "containers": [
+    "z8_perf_6f7c74ee6b63_postgres",
+    "z8_perf_6f7c74ee6b63_redis",
+    "z8_perf_6f7c74ee6b63_storage"
+  ],
+  "labelsVerified": true,
+  "nativeBrowserClosed": true,
+  "portClosed": true,
+  "servicesAbsent": true
+}

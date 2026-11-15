@@ -25,20 +25,22 @@ export function WorkScheduleHeading() {
 	const { t } = useTranslate();
 
 	return (
-		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
-			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
-				<IconClock className="size-8 text-primary" />
+		<header className="mb-6 flex items-start gap-4 text-start">
+			<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+				<IconClock aria-hidden="true" className="size-6 text-primary" />
 			</div>
-			<h1 className="mb-4 text-3xl font-bold tracking-tight">
-				{t("onboarding.workSchedule.title", "Set your work schedule")}
-			</h1>
-			<p className="text-muted-foreground">
-				{t(
-					"onboarding.workSchedule.subtitle",
-					"Define your working hours to help track time and manage absences accurately.",
-				)}
-			</p>
-		</div>
+			<div className="min-w-0 space-y-2">
+				<h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
+					{t("onboarding.workSchedule.title", "Set your work schedule")}
+				</h1>
+				<p className="text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
+					{t(
+						"onboarding.workSchedule.subtitle",
+						"Define your working hours to help track time and manage absences accurately.",
+					)}
+				</p>
+			</div>
+		</header>
 	);
 }
 
@@ -66,7 +68,13 @@ export function HoursPerWeekField({
 			</Label>
 			<Input
 				id="work-schedule-hours-per-week"
+				name="hoursPerWeek"
 				type="number"
+				step="any"
+				inputMode="decimal"
+				autoComplete="off"
+				aria-invalid={errors.length > 0}
+				aria-describedby={`work-schedule-hours-help${errors.length ? " work-schedule-hours-error" : ""}`}
 				min={0}
 				max={168}
 				placeholder={t("onboarding.workSchedule.hoursPerWeekPlaceholder", "40")}
@@ -75,14 +83,21 @@ export function HoursPerWeekField({
 				onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
 				onBlur={onBlur}
 			/>
-			<p className="text-sm text-muted-foreground">
+			<p
+				id="work-schedule-hours-help"
+				className="text-sm text-muted-foreground"
+			>
 				{t(
 					"onboarding.workSchedule.hoursPerWeekDesc",
 					"Typical full-time is 40 hours per week.",
 				)}
 			</p>
 			{errors.length > 0 && (
-				<p className="text-sm font-medium text-destructive">
+				<p
+					id="work-schedule-hours-error"
+					role="alert"
+					className="text-sm font-medium text-destructive"
+				>
 					{firstErrorMessage(errors)}
 				</p>
 			)}
@@ -109,11 +124,16 @@ export function WorkClassificationField({
 				{t("onboarding.workSchedule.classification", "Work Classification")}
 			</Label>
 			<Select
+				name="workClassification"
 				onValueChange={(next) => onChange(next as WorkClassification)}
 				value={value}
 				disabled={disabled}
 			>
-				<SelectTrigger id="work-schedule-classification" className="w-full">
+				<SelectTrigger
+					id="work-schedule-classification"
+					aria-describedby="work-schedule-classification-help"
+					className="w-full"
+				>
 					<SelectValue
 						placeholder={t(
 							"onboarding.workSchedule.selectClassification",
@@ -133,7 +153,10 @@ export function WorkClassificationField({
 					</SelectItem>
 				</SelectContent>
 			</Select>
-			<p className="text-sm text-muted-foreground">
+			<p
+				id="work-schedule-classification-help"
+				className="text-sm text-muted-foreground"
+			>
 				{t(
 					"onboarding.workSchedule.classificationDesc",
 					"How you want to track your working hours.",

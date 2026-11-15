@@ -1,0 +1,149 @@
+src\app\[locale]\onboarding\work-schedule\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    374 374 │     );␍
+    375 375 │   ␍
+    376     │ - → it.each([["save",·"organization"],·["skip",·"organization"],·["save",·"account"],·["skip",·"account"]])(␍
+    377     │ - → → "ignores·old·%s·refusals·across·%s·A·→·B·→·A",␍
+    378     │ - → → async·(kind,·scope)·=>·{␍
+    379     │ - → → → const·old·=·deferred<{·success:·false;·error:·string·}>();␍
+    380     │ - → → → mocks.checkIsAdmin.mockResolvedValue({·success:·true,·data:·true·});␍
+    381     │ - → → → const·action·=␍
+    382     │ - → → → → kind·===·"save"␍
+    383     │ - → → → → → ?·mocks.setWorkScheduleOnboarding␍
+    384     │ - → → → → → :·mocks.skipWorkScheduleSetup;␍
+    385     │ - → → → action.mockReturnValueOnce(old.promise);␍
+    386     │ - → → → const·view·=·render(<WorkSchedulePage·/>);␍
+    387     │ - → → → fireEvent.click(␍
+    388     │ - → → → → await·screen.findByRole("button",·{␍
+    389     │ - → → → → → name:·kind·===·"save"·?·"Continue"·:·"Skip·for·now",␍
+    390     │ - → → → → }),␍
+    391     │ - → → → );␍
+    392     │ - → → → await·waitFor(()·=>·expect(action).toHaveBeenCalledOnce());␍
+    393     │ - → → → if·(scope·===·"organization")·mocks.session.data.session.activeOrganizationId·=·"org-b";␍
+    394     │ - → → → else·mocks.session.data.user.id·=·"account-b";␍
+    395     │ - → → → view.rerender(<WorkSchedulePage·/>);␍
+    396     │ - → → → expect(await·screen.findByLabelText("Hours·per·Week")).toHaveProperty(␍
+    397     │ - → → → → "value",␍
+    398     │ - → → → → "40",␍
+    399     │ - → → → );␍
+    400     │ - → → → if·(scope·===·"organization")·mocks.session.data.session.activeOrganizationId·=·"org-a";␍
+    401     │ - → → → else·mocks.session.data.user.id·=·"account-a";␍
+    402     │ - → → → view.rerender(<WorkSchedulePage·/>);␍
+    403     │ - → → → fireEvent.change(await·screen.findByLabelText("Hours·per·Week"),·{␍
+    404     │ - → → → → target:·{·value:·"24"·},␍
+    405     │ - → → → });␍
+    406     │ - → → → await·act(async·()·=>␍
+    407     │ - → → → → old.resolve({·success:·false,·error:·"Old·organization·refusal"·}),␍
+    408     │ - → → → );␍
+    409     │ - → → → expect(screen.getByLabelText("Hours·per·Week")).toHaveProperty(␍
+    410     │ - → → → → "value",␍
+    411     │ - → → → → "24",␍
+    412     │ - → → → );␍
+    413     │ - → → → expect(mocks.toastError).not.toHaveBeenCalled();␍
+    414     │ - → → → expect(mocks.push).not.toHaveBeenCalled();␍
+    415     │ - → → → expect(screen.queryByRole("alert")).toBeNull();␍
+    416     │ - → → },␍
+    417     │ - → );␍
+        376 │ + → it.each([␍
+        377 │ + → → ["save",·"organization"],␍
+        378 │ + → → ["skip",·"organization"],␍
+        379 │ + → → ["save",·"account"],␍
+        380 │ + → → ["skip",·"account"],␍
+        381 │ + → ])("ignores·old·%s·refusals·across·%s·A·→·B·→·A",·async·(kind,·scope)·=>·{␍
+        382 │ + → → const·old·=·deferred<{·success:·false;·error:·string·}>();␍
+        383 │ + → → mocks.checkIsAdmin.mockResolvedValue({·success:·true,·data:·true·});␍
+        384 │ + → → const·action·=␍
+        385 │ + → → → kind·===·"save"␍
+        386 │ + → → → → ?·mocks.setWorkScheduleOnboarding␍
+        387 │ + → → → → :·mocks.skipWorkScheduleSetup;␍
+        388 │ + → → action.mockReturnValueOnce(old.promise);␍
+        389 │ + → → const·view·=·render(<WorkSchedulePage·/>);␍
+        390 │ + → → fireEvent.click(␍
+        391 │ + → → → await·screen.findByRole("button",·{␍
+        392 │ + → → → → name:·kind·===·"save"·?·"Continue"·:·"Skip·for·now",␍
+        393 │ + → → → }),␍
+        394 │ + → → );␍
+        395 │ + → → await·waitFor(()·=>·expect(action).toHaveBeenCalledOnce());␍
+        396 │ + → → if·(scope·===·"organization")␍
+        397 │ + → → → mocks.session.data.session.activeOrganizationId·=·"org-b";␍
+        398 │ + → → else·mocks.session.data.user.id·=·"account-b";␍
+        399 │ + → → view.rerender(<WorkSchedulePage·/>);␍
+        400 │ + → → expect(await·screen.findByLabelText("Hours·per·Week")).toHaveProperty(␍
+        401 │ + → → → "value",␍
+        402 │ + → → → "40",␍
+        403 │ + → → );␍
+        404 │ + → → if·(scope·===·"organization")␍
+        405 │ + → → → mocks.session.data.session.activeOrganizationId·=·"org-a";␍
+        406 │ + → → else·mocks.session.data.user.id·=·"account-a";␍
+        407 │ + → → view.rerender(<WorkSchedulePage·/>);␍
+        408 │ + → → fireEvent.change(await·screen.findByLabelText("Hours·per·Week"),·{␍
+        409 │ + → → → target:·{·value:·"24"·},␍
+        410 │ + → → });␍
+        411 │ + → → await·act(async·()·=>␍
+        412 │ + → → → old.resolve({·success:·false,·error:·"Old·organization·refusal"·}),␍
+        413 │ + → → );␍
+        414 │ + → → expect(screen.getByLabelText("Hours·per·Week")).toHaveProperty(␍
+        415 │ + → → → "value",␍
+        416 │ + → → → "24",␍
+        417 │ + → → );␍
+        418 │ + → → expect(mocks.toastError).not.toHaveBeenCalled();␍
+        419 │ + → → expect(mocks.push).not.toHaveBeenCalled();␍
+        420 │ + → → expect(screen.queryByRole("alert")).toBeNull();␍
+        421 │ + → });␍
+    418 422 │   ␍
+    419 423 │     it("keeps administrator checking named and excludes editable fields while held", async () => {␍
+    ······· │ 
+    421 425 │       mocks.checkIsAdmin.mockReturnValue(request.promise);␍
+    422 426 │       render(<WorkSchedulePage />);␍
+    423     │ - → → expect(screen.getByRole("status",·{·name:·"Checking·work·schedule·access"·})).toBeTruthy();␍
+        427 │ + → → expect(␍
+        428 │ + → → → screen.getByRole("status",·{·name:·"Checking·work·schedule·access"·}),␍
+        429 │ + → → ).toBeTruthy();␍
+    424 430 │       expect(screen.queryByLabelText("Hours per Week")).toBeNull();␍
+    425 431 │       await act(async () => request.resolve({ success: true, data: true }));␍
+    ······· │ 
+    428 434 │   ␍
+    429 435 │     it("falls back honestly when access is unavailable rather than treating it as non-admin success", async () => {␍
+    430     │ - → → mocks.checkIsAdmin.mockResolvedValue({·success:·false,·error:·"Unavailable"·});␍
+        436 │ + → → mocks.checkIsAdmin.mockResolvedValue({␍
+        437 │ + → → → success:·false,␍
+        438 │ + → → → error:·"Unavailable",␍
+        439 │ + → → });␍
+    431 440 │       render(<WorkSchedulePage />);␍
+    432     │ - → → await·waitFor(()·=>·expect(mocks.replace).toHaveBeenCalledWith("/onboarding/wellness"));␍
+        441 │ + → → await·waitFor(()·=>␍
+        442 │ + → → → expect(mocks.replace).toHaveBeenCalledWith("/onboarding/wellness"),␍
+        443 │ + → → );␍
+    433 444 │       expect(mocks.skipWorkScheduleSetup).not.toHaveBeenCalled();␍
+    434 445 │       expect(mocks.toastSuccess).not.toHaveBeenCalled();␍
+    435     │ - → → expect(mocks.toastError).toHaveBeenCalledWith("Work·schedule·access·could·not·be·checked.·Continuing·to·the·next·available·step.");␍
+        446 │ + → → expect(mocks.toastError).toHaveBeenCalledWith(␍
+        447 │ + → → → "Work·schedule·access·could·not·be·checked.·Continuing·to·the·next·available·step.",␍
+        448 │ + → → );␍
+    436 449 │     });␍
+    437 450 │   ␍
+    438 451 │     it("retains a rejected automatic skip for retry without falling through to wellness", async () => {␍
+    439 452 │       mocks.checkIsAdmin.mockResolvedValue({ success: true, data: false });␍
+    440     │ - → → mocks.skipWorkScheduleSetup.mockRejectedValue(new·Error("Private·transport·error"));␍
+        453 │ + → → mocks.skipWorkScheduleSetup.mockRejectedValue(␍
+        454 │ + → → → new·Error("Private·transport·error"),␍
+        455 │ + → → );␍
+    441 456 │       render(<WorkSchedulePage />);␍
+    442     │ - → → expect(await·screen.findByRole("alert")).toHaveProperty("textContent",·"Failed·to·skip·work·schedule·setup");␍
+        457 │ + → → expect(await·screen.findByRole("alert")).toHaveProperty(␍
+        458 │ + → → → "textContent",␍
+        459 │ + → → → "Failed·to·skip·work·schedule·setup",␍
+        460 │ + → → );␍
+    443 461 │       expect(mocks.replace).not.toHaveBeenCalled();␍
+    444 462 │     });␍
+  
+
+Checked 3 files in 8ms. No fixes applied.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

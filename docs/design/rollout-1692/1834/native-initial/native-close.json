@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"closed\":true,\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":false,\"engine\":\"chrome\",\"launchHash\":null},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"loaded\",\"reused\":false,\"saveStatus\":\"saved\"},\"restoreStatus\":\"loaded\",\"saveStatus\":\"saved\",\"statePath\":\"C:\\\\Users\\\\KaiHentschel\\\\.agent-browser\\\\sessions\\\\next-dev-loop-1834-t3-fdc2d97a-f605ff250f82822d-next-dev-loop-1834-t3-fdc2d97a-f605ff250f82822d.json\"},\"error\":null}\n",
+  "err": ""
+}
