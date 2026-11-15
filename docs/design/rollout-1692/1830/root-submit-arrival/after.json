@@ -1,0 +1,130 @@
+{
+  "phase": "after",
+  "source": {
+    "head": "587e567ed78461dd3b587c30fd4d51b8a1c07a03",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "sha256": "7dc573219bc5aeab6016fb187441b8cc20435ea2641d4824d0a8deb363d83b3c",
+    "canonicalSha256": "de922fed4f8ca595b170552e2f5408ff9dc4544a6967edba8bbe49ba170f2b5d"
+  },
+  "checks": [
+    "Enter submits through the actual action; one transport failure is recoverable",
+    "Transport failure retains both names",
+    "Failed transport made no profile/settings writes",
+    "Retry invokes exactly one pending real action",
+    "Pending Save/Enter cannot duplicate the action",
+    "Real retry persists the retained profile through the canonical owner",
+    "Time display/default product choice remain unchanged",
+    "Successful response preserves authoritative admin continuation",
+    "No browser exceptions"
+  ],
+  "captures": [
+    {
+      "name": "after-desktop.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Complete your profile"
+      ],
+      "alert": "Failed to update profileYour input is still here. Try again when you are ready.Retry save",
+      "firstName": "Retained",
+      "lastName": "Profile",
+      "sha256": "2a38b3f14939d11bf2b1320b95ac01a632610eafe9d1e122b315b87304cff165",
+      "source": {
+        "head": "587e567ed78461dd3b587c30fd4d51b8a1c07a03",
+        "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+        "sha256": "7dc573219bc5aeab6016fb187441b8cc20435ea2641d4824d0a8deb363d83b3c",
+        "canonicalSha256": "de922fed4f8ca595b170552e2f5408ff9dc4544a6967edba8bbe49ba170f2b5d"
+      }
+    },
+    {
+      "name": "after-phone.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "headings": [
+        "Complete your profile"
+      ],
+      "alert": "Failed to update profileYour input is still here. Try again when you are ready.Retry save",
+      "firstName": "Retained",
+      "lastName": "Profile",
+      "sha256": "18b1aff77eba2783e8fc7e8b83e46a0ac258deff0aad15125ae520c64677c407",
+      "source": {
+        "head": "587e567ed78461dd3b587c30fd4d51b8a1c07a03",
+        "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+        "sha256": "7dc573219bc5aeab6016fb187441b8cc20435ea2641d4824d0a8deb363d83b3c",
+        "canonicalSha256": "de922fed4f8ca595b170552e2f5408ff9dc4544a6967edba8bbe49ba170f2b5d"
+      }
+    }
+  ],
+  "errors": [],
+  "requests": {
+    "aborted": 1,
+    "held": 1,
+    "completed": [
+      200
+    ]
+  },
+  "qualification": "Real unchanged profile action and own-fixture PostgreSQL readback. These normal submission/recovery observations do not reproduce the microtask scope-arrival race, which is proven at the actual TanStack component seam. No cookie/state files are created, read or transferred.",
+  "authentication": {
+    "method": "normal BetterAuth endpoints in isolated ephemeral browser",
+    "signIn": 200,
+    "active": 200,
+    "cookieStateTransferred": false
+  },
+  "action": {
+    "id": "4078acd17f0c3928d768f73d21d01d9233e4a5ea7a",
+    "exportedName": "updateProfileOnboarding"
+  },
+  "next": {
+    "tools": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "results": [
+      {
+        "name": "get_compilation_issues",
+        "result": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "result": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  }
+}

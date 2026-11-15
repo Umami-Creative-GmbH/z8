@@ -1,0 +1,22 @@
+{
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "biome",
+    "check",
+    "--config-path=./biome.jsonc",
+    "--line-ending=crlf",
+    "src/app/[locale]/onboarding/profile/page-client.tsx",
+    "src/app/[locale]/onboarding/profile/page.test.tsx",
+    "src/app/[locale]/onboarding/profile/actions.test.ts",
+    "src/lib/validations/onboarding.ts"
+  ],
+  "exitCode": 0,
+  "env": {
+    "pnpm_config_verify_deps_before_run": "false"
+  }
+}
