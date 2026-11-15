@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { EquipmentLoading } from "@/components/equipment/equipment-loading";
+import { EquipmentRefreshButton } from "@/components/equipment/equipment-header-actions";
+import { EquipmentPersonalHeader } from "@/components/equipment/equipment-personal-header";
+import { EquipmentPersonalLoading } from "@/components/equipment/equipment-personal-loading";
 import { PersonalEquipment } from "@/components/equipment/equipment-workspace";
 import { getMyEquipment } from "@/lib/organization/equipment/actions";
 import { getTranslate } from "@/tolgee/server";
@@ -13,16 +15,17 @@ async function PersonalEquipmentContent() {
 			{result.success ? (
 				<PersonalEquipment data={result.data} />
 			) : (
-				<div className="space-y-2 px-4 lg:px-6">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.equipment.personal.title", "My equipment")}
-					</h1>
+				<div className="mx-auto w-full max-w-6xl space-y-4 px-4 lg:px-6">
+					<EquipmentPersonalHeader />
 					<p role="alert" className="text-sm text-destructive">
 						{t(
 							"settings.equipment.personal.failed",
 							"Your equipment could not be loaded. Reload the page to try again.",
 						)}
 					</p>
+					<EquipmentRefreshButton>
+						{t("settings.equipment.custody.reload", "Reload equipment")}
+					</EquipmentRefreshButton>
 				</div>
 			)}
 		</div>
@@ -30,7 +33,7 @@ async function PersonalEquipmentContent() {
 }
 export default function PersonalEquipmentPage() {
 	return (
-		<Suspense fallback={<EquipmentLoading variant="personal" />}>
+		<Suspense fallback={<EquipmentPersonalLoading />}>
 			<PersonalEquipmentContent />
 		</Suspense>
 	);

@@ -1,0 +1,150 @@
+{
+  "treeSuccess": true,
+  "components": [
+    "29 3065 3064 Suspense",
+    "53 3126 3125 Suspense",
+    "78 3153 3151 Suspense",
+    "99 3206 3205 Suspense",
+    "120 3230 3229 Suspense",
+    "129 3334 3301 Suspense",
+    "129 3553 3301 Suspense",
+    "129 3554 3301 Suspense",
+    "121 3685 3684 Suspense",
+    "121 3834 3684 Suspense",
+    "142 3866 3865 Prerender(PersonalEquipmentLayout)",
+    "144 3868 3867 Suspense",
+    "167 3892 3890 Prerender(PersonalEquipmentPage)",
+    "168 3893 3892 Suspense",
+    "169 3894 3893 Prerender(Server(PersonalEquipmentContent))",
+    "171 3896 3895 Forget(PersonalEquipment)",
+    "173 3898 3897 Forget(EquipmentPersonalHeader)",
+    "174 3899 3898 Forget(PageHeader)",
+    "174 3907 3906 Forget(PersonalGroup)",
+    "180 3917 3916 Forget(PersonalRow) key=\"2cf1e1ac-1f55-47c6-ab8e-11fb833c410e\"",
+    "181 3918 3917 Forget(Collapsible)",
+    "182 3919 3918 CollapsibleRoot",
+    "183 3920 3919 CollapsibleRootContext.Provider",
+    "185 3922 3921 Forget(CollapsibleTrigger)",
+    "186 3923 3922 CollapsibleTrigger",
+    "185 3949 3921 Forget(CollapsibleContent)",
+    "186 3950 3949 CollapsiblePanel",
+    "180 3951 3916 Forget(PersonalRow) key=\"3ded2850-931a-4800-a642-411a5b63a073\"",
+    "181 3952 3951 Forget(Collapsible)",
+    "182 3953 3952 CollapsibleRoot",
+    "183 3954 3953 CollapsibleRootContext.Provider",
+    "185 3956 3955 Forget(CollapsibleTrigger)",
+    "186 3957 3956 CollapsibleTrigger",
+    "185 3980 3955 Forget(CollapsibleContent)",
+    "186 3981 3980 CollapsiblePanel",
+    "174 3982 3906 Forget(PersonalGroup)",
+    "180 3992 3991 Forget(PersonalRow) key=\"2e60d6aa-221f-4f3a-9110-dac02ef490d0\"",
+    "181 3993 3992 Forget(Collapsible)",
+    "182 3994 3993 CollapsibleRoot",
+    "183 3995 3994 CollapsibleRootContext.Provider",
+    "185 3997 3996 Forget(CollapsibleTrigger)",
+    "186 3998 3997 CollapsibleTrigger",
+    "185 4020 3996 Forget(CollapsibleContent)",
+    "186 4021 4020 CollapsiblePanel",
+    "174 4022 3906 Forget(PersonalGroup)",
+    "180 4032 4031 Forget(PersonalRow) key=\"59253130-0143-4f58-b7cf-d946cdb72e80\"",
+    "181 4033 4032 Forget(Collapsible)",
+    "182 4034 4033 CollapsibleRoot",
+    "183 4035 4034 CollapsibleRootContext.Provider",
+    "185 4037 4036 Forget(CollapsibleTrigger)",
+    "186 4038 4037 CollapsibleTrigger",
+    "185 4060 4036 Forget(CollapsibleContent)",
+    "186 4061 4060 CollapsiblePanel",
+    "180 4062 4031 Forget(PersonalRow) key=\"697cb828-b223-4953-9472-54905c72b1b6\"",
+    "181 4063 4062 Forget(Collapsible)",
+    "182 4064 4063 CollapsibleRoot",
+    "183 4065 4064 CollapsibleRootContext.Provider",
+    "185 4067 4066 Forget(CollapsibleTrigger)",
+    "186 4068 4067 CollapsibleTrigger",
+    "185 4090 4066 Forget(CollapsibleContent)",
+    "186 4091 4090 CollapsiblePanel",
+    "180 4092 4031 Forget(PersonalRow) key=\"6fb498bd-f814-4f81-a108-106ada6b6ee8\"",
+    "181 4093 4092 Forget(Collapsible)",
+    "182 4094 4093 CollapsibleRoot",
+    "183 4095 4094 CollapsibleRootContext.Provider",
+    "185 4097 4096 Forget(CollapsibleTrigger)",
+    "186 4098 4097 CollapsibleTrigger",
+    "185 4120 4096 Forget(CollapsibleContent)",
+    "186 4121 4120 CollapsiblePanel",
+    "180 4122 4031 Forget(PersonalRow) key=\"9052cf4c-d11e-49b8-b6fa-aab3dad94f15\"",
+    "181 4123 4122 Forget(Collapsible)",
+    "182 4124 4123 CollapsibleRoot",
+    "183 4125 4124 CollapsibleRootContext.Provider",
+    "185 4127 4126 Forget(CollapsibleTrigger)",
+    "186 4128 4127 CollapsibleTrigger",
+    "185 4150 4126 Forget(CollapsibleContent)",
+    "186 4151 4150 CollapsiblePanel",
+    "168 4163 4162 Suspense"
+  ],
+  "a11ySuccess": true,
+  "axeVersion": "4.12.1",
+  "counts": {
+    "inapplicable": 51,
+    "incomplete": 0,
+    "passes": 38,
+    "violations": 1
+  },
+  "violations": [
+    {
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodeCount": 5,
+      "nodes": [
+        {
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.36 (foreground color: #697281, background color: #fbf0f4, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+          "html": "<span class=\"block truncate text-xs text-muted-foreground\">Fixture laptops</span>",
+          "target": [
+            ".bg-destructive\\/5 > .grid-cols-\\[minmax\\(0\\,1fr\\)_auto\\].hover\\:bg-muted\\/50.focus-visible\\:outline-2 > .\\[\\&_\\.truncate\\]\\:whitespace-normal.\\[\\&_\\.truncate\\]\\:wrap-anywhere.min-w-0 > .block.min-w-0 > .truncate.text-xs.block"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.36 (foreground color: #697281, background color: #fbf0f4, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+          "html": "<span class=\"text-muted-foreground\">1 issued</span>",
+          "target": [
+            ".bg-destructive\\/5 > .grid-cols-\\[minmax\\(0\\,1fr\\)_auto\\].hover\\:bg-muted\\/50.focus-visible\\:outline-2 > .tabular-nums.col-span-2.\\@4xl\\/main\\:col-span-1 > .text-muted-foreground"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.4 (foreground color: #e30019, background color: #fbf0f4, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+          "html": "<time datetime=\"2026-11-01\" class=\"tabular-nums\">Nov 1, 2026</time>",
+          "target": [
+            "time"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.36 (foreground color: #697281, background color: #fbf0f4, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+          "html": "<span class=\"text-xs text-muted-foreground\">14 days overdue</span>",
+          "target": [
+            ".inline-flex.flex-col > .text-xs.text-muted-foreground"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.36 (foreground color: #697281, background color: #fbf0f4, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+          "html": "<span class=\"hidden @4xl/main:inline\">Handover history</span>",
+          "target": [
+            ".bg-destructive\\/5 > .grid-cols-\\[minmax\\(0\\,1fr\\)_auto\\].hover\\:bg-muted\\/50.focus-visible\\:outline-2 > .col-start-2.row-start-1.\\@4xl\\/main\\:col-start-auto > .\\@4xl\\/main\\:inline.hidden"
+          ]
+        }
+      ],
+      "tags": [
+        "cat.color",
+        "wcag2aa",
+        "wcag143",
+        "TTv5",
+        "TT13.c",
+        "EN-301-549",
+        "EN-9.1.4.3",
+        "ACT",
+        "RGAAv4",
+        "RGAA-3.2.1"
+      ]
+    }
+  ],
+  "incomplete": []
+}

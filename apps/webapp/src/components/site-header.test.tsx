@@ -57,6 +57,24 @@ vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
 }));
 
 describe("SiteHeader", () => {
+	it("hands the personal equipment title to its page without adopting other destinations", () => {
+		pathname = "/en/my-equipment";
+		const page = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="My equipment" />
+			</>,
+		);
+		expect(
+			screen.getAllByRole("heading", { level: 1 }).map((n) => n.textContent),
+		).toEqual(["My equipment"]);
+		page.unmount();
+		pathname = "/en/my-equipment/other";
+		render(<SiteHeader />);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "My equipment" }),
+		).toBeTruthy();
+	});
 	it("hands the suspended recovery title to the page without opting descendants into heading ownership", () => {
 		pathname = "/de/billing/suspended";
 		const page = render(
