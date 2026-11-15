@@ -50,5 +50,12 @@
     "Original worker dependency-junction incident and later own-copy recovery remain unchanged. Earlier PG command metadata lacked the CLI dependency guard; the fresh root run includes both environment and explicit CLI guard and succeeds.",
     "Historical59 PNG/503 artifact checks include old/current worker and earlier snapshots with CRLF reconstruction/source qualifiers. Those do not become current runtime evidence. Root has four current-source PNGs.",
     "No new action/service/permission/date/calculation changes. No live account/org revocation, physical queued Activity timing, full production generation, remote catalog/provider/device/true-zoom or exhaustive transition acceptance claim."
-  ]
+  ],
+  "archiveCompression": {
+    "path": "merger-merge-preservation.json.gz",
+    "decodedSha256": "055d54816479c5dc058792f6b5d696cd79fe659cb6943c983b112b9f08034872",
+    "decodedBytes": 99774175,
+    "storedBytes": 4214126,
+    "qualification": "Root copied preservation manifest compressed losslessly after publication; original .tmp audit and earlier committed raw blob remain preserved. No history rewrite."
+  }
 }
