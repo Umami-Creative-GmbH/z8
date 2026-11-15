@@ -1,0 +1,12 @@
+{
+  "oldPeriod": {
+    "status": 200,
+    "downloadCount": 0,
+    "meaning": "Real held Last Year export completed after Current Month and return to Last Year; root generation guard discarded it"
+  },
+  "currentPeriod": {
+    "status": 200,
+    "downloadCount": 1,
+    "meaning": "Real current-period retry downloaded normally"
+  }
+}

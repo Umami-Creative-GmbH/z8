@@ -1,0 +1,19 @@
+{
+  "zeroWorkPeriod": {
+    "actor": "small-manager",
+    "rows": [
+      "Person 5\t0.0h\t0.0h\t+0.0h\t0h/wk",
+      "Person 7\t0.0h\t0.0h\t+0.0h\t0h/wk",
+      "Person 3\t0.0h\t0.0h\t+0.0h\t0h/wk"
+    ],
+    "meaning": "Existing active roster remains present with real zero hours in current month"
+  },
+  "emptyScope": {
+    "actor": "small-manager",
+    "removedAssignmentCount": 3,
+    "emptyPeriod": true,
+    "emptyVariance": true,
+    "tableAbsent": true,
+    "transport": "real authorized reads; no response substitution"
+  }
+}

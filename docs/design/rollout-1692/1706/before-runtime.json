@@ -1,0 +1,37 @@
+{
+  "mode": "before",
+  "scope": "same small-admin / Performance small / Last Year 2025; original synthetic fixture history; no data mutations",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Analytics",
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\n02:24\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nOvertime & Undertime Trend\nHours variance from expected work hours over time\n2025-01-21\n2025-02-11\n2025-03-04\n2025-03-25\n2025-04-15\n2025-05-06\n2025-05-27\n2025-06-17\n2025-07-08\n2025-07-29\n2025-08-19\n2025-09-09\n2025-09-30\n2025-10-21\n2025-11-11\n2025-12-02\n2025-12-31\n0\n1\n2\n3\n4\nDaily Work Hours\nActual vs expected work hours per day\n2025-01-21\n2025-02-11\n2025-03-04\n2025-03-25\n2025-04-15\n2025-05-06\n2025-05-27\n2025-06-17\n2025-07-08\n2025-07-29\n2025-08-19\n2025-09-09\n2025-09-30\n2025-10-21\n2025-11-11\n2025-12-02\n2025-12-31\nEmployee Work Hours\nTotal hours and variance from expected by employee\nEmployee\tTotal Hours\tExpected Hours\tVariance\tStatus\n\nPerson 0\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 1\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 2\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 3\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 4\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 5\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 6\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 7\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\nWork Hours Distribution\nEmployee work hours comparison (horizontal bar)\n0\n550\n1100\n1650\n2200\nPerson 0\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Analytics",
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\nMore actions\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nOvertime & Undertime Trend\nHours variance from expected work hours over time\n2025-01-20\n2025-05-01\n2025-08-12\n2025-12-31\n0\n1\n2\n3\n4\nDaily Work Hours\nActual vs expected work hours per day\n2025-01-20\n2025-05-01\n2025-08-12\n2025-12-31\nEmployee Work Hours\nTotal hours and variance from expected by employee\nEmployee\nTotal Hours\nExpected Hours\nVariance\nStatus\nPerson 0\n2088.0h\n2088.0h\n+0.0h\n40h/wk\nPerson 1\n2088.0h\n2088.0h\n+0.0h\n40h/wk\nPerson 2\n2088.0h\n2088.0h\n+0.0h\n40h/wk\nPerson 3\n2088.0h\n2088.0h\n+0.0h\n40h/wk\nPerson 4\n2088.0h\n2088.0h\n+0.0h\n40h/wk\nPerson 5\n2088.0h\n2088.0h\n+0.0h\n40h/wk\nPerson 6\n2088.0h\n2088.0h\n+0.0h\n40h/wk\nPerson 7\n2088.0h\n2088.0h\n+0.0h\n40h/wk\nWork Hours Distribution\nEmployee work hours comparison (horizontal bar)\n0\n550\n1100\n1650\n2200\nPerson 0\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Analytics",
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\n02:24\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nOvertime & Undertime Trend\nHours variance from expected work hours over time\n2025-01-07\n2025-01-20\n2025-01-31\n2025-02-13\n2025-02-26\n2025-03-11\n2025-03-24\n2025-04-04\n2025-04-17\n2025-04-30\n2025-05-13\n2025-05-26\n2025-06-06\n2025-06-19\n2025-07-02\n2025-07-15\n2025-07-28\n2025-08-08\n2025-08-21\n2025-09-03\n2025-09-16\n2025-09-29\n2025-10-10\n2025-10-23\n2025-11-05\n2025-11-18\n2025-12-01\n2025-12-12\n2025-12-31\n0\n1\n2\n3\n4\nDaily Work Hours\nActual vs expected work hours per day\n2025-01-07\n2025-01-20\n2025-01-31\n2025-02-13\n2025-02-26\n2025-03-11\n2025-03-24\n2025-04-04\n2025-04-17\n2025-04-30\n2025-05-13\n2025-05-26\n2025-06-06\n2025-06-19\n2025-07-02\n2025-07-15\n2025-07-28\n2025-08-08\n2025-08-21\n2025-09-03\n2025-09-16\n2025-09-29\n2025-10-10\n2025-10-23\n2025-11-05\n2025-11-18\n2025-12-01\n2025-12-12\n2025-12-31\nEmployee Work Hours\nTotal hours and variance from expected by employee\nEmployee\tTotal Hours\tExpected Hours\tVariance\tStatus\n\nPerson 0\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 1\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 2\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 3\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 4\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 5\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 6\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\n\n\nPerson 7\n\t\n2088.0h\n\t\n2088.0h\n\t\n+0.0h\n\t\n40h/wk\nWork Hours Distribution\nEmployee work hours comparison (horizontal bar)\n0\n550\n1100\n1650\n2200\nPerson 0\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7"
+    }
+  ],
+  "errors": []
+}

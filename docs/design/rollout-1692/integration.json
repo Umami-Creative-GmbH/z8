@@ -69,7 +69,7 @@
                         "status":  "integrated",
                         "verifiedCommit":  "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
                         "evidence":  "docs/design/rollout-1692/1700.md",
-                        "integrationVerification":  "38 suites / 213 fresh tests, exact tree/parents/base/foundation/analytics/billing ancestry, artifacts and whitespace passed. Approved composition/preferences and shared clock owners preserved; heading and streamed PersonalDay fixes only. Shared-header timezone behavior remains unverified; claimed R163 #1745 follows up. Leave/offline/billing/catalog/build/device/native-React limits retained."
+                        "integrationVerification":  "38 suites / 213 fresh tests, exact tree/parents/base/foundation/analytics/billing ancestry, artifacts and whitespace passed. Approved composition/preferences and shared clock owners preserved; heading and streamed PersonalDay fixes only. The historical shared-header timezone gap is controlled, corrected and verified under #1745 at f9769a743; see its report for retained limits. Leave/offline/billing/catalog/build/device/native-React limits retained."
                     },
                     {
                         "id":  "R002",
@@ -127,8 +127,10 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "f9769a74353ac6670c4a36401029faf805b2a899",
+                        "evidence":  "docs/design/rollout-1692/1704.md",
+                        "integrationVerification":  "Fresh merge 25/150 unit tests; root 6/46, four-file Doctor zero, real scope-round-trip export discard/current download and retained-data Retry. Three generic-any warnings, incoming controller warning and build/catalog/device/transition/native limits retained."
                     },
                     {
                         "id":  "R007",
@@ -137,8 +139,10 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "f9769a74353ac6670c4a36401029faf805b2a899",
+                        "evidence":  "docs/design/rollout-1692/1705.md",
+                        "integrationVerification":  "Fresh merge 20/159 unit tests, full types, eight-file Biome and ten-file Doctor zero. All prior heading/root corrections preserved. Pinned normalized broad-file diagnostics match baseline; 4/44 PostgreSQL and full runtime inherited. Fresh root normal vacation probe passes; remaining build/catalog/device/transition/contrast limits retained."
                     },
                     {
                         "id":  "R008",
@@ -147,8 +151,9 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "0d23a915a55950423a25436809686a39213bbadb"
                     },
                     {
                         "id":  "R009",
@@ -157,8 +162,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "ee0b441d9fbe6496421636d47bc03e48b820bdfe"
                     },
                     {
                         "id":  "R010",
@@ -167,7 +173,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -177,7 +183,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -1513,8 +1519,10 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "f9769a74353ac6670c4a36401029faf805b2a899",
+                        "evidence":  "docs/design/rollout-1692/1745.md",
+                        "integrationVerification":  "Fresh merge 56 unique suites/606 tests and full types; root lifetime correction 8/148, two-file Biome/Doctor zero. Real Berlin/New York Cancel/Continue/Update and duplicate checks persist UTC/+60/-300 offsets. Prior 3/83 PostgreSQL inherited. Dialog aria-hidden notices/native/DST/offline/phone/build/catalog/device limits retained; fresh normal contexts clean."
                     },
                     {
                         "id":  "R164",

@@ -35,5 +35,3 @@ try {
  await writeFile(join(out,`${mode}-runtime.json`),JSON.stringify(result,null,2)+'\n');
  console.log(JSON.stringify({mode,checks:checks.map(({main,...x})=>x),errors}));
 }finally{await browser.close();}
-
-
