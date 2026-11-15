@@ -1,0 +1,74 @@
+[
+  {
+    "name": "unit-final",
+    "command": "pnpm --config.verify-deps-before-run=false exec vitest run --project unit src/app/[locale]/onboarding src/components/onboarding src/lib/effect/services/onboarding.service.test.ts src/components/ui/tanstack-form.test.tsx src/components/ui/page-header.test.tsx src/components/ui/loading-region.test.tsx src/tolgee/extracted-key-defaults.test.ts --reporter=json --outputFile=X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\docs\\design\\rollout-1692\\1835\\unit-final.json",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\apps\\webapp",
+    "exit": 0,
+    "started": "2026-11-15T17:54:40.6275572+00:00",
+    "ended": "2026-11-15T17:54:44.8685671+00:00"
+  },
+  {
+    "name": "types-final",
+    "command": "pnpm --config.verify-deps-before-run=false run typecheck",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\apps\\webapp",
+    "exit": 0,
+    "started": "2026-11-15T17:54:44.8855484+00:00",
+    "ended": "2026-11-15T17:55:23.5243245+00:00"
+  },
+  {
+    "name": "biome-normal",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check src/app/[locale]/onboarding/work-templates/page-client.tsx src/app/[locale]/onboarding/work-templates/page.test.tsx src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\apps\\webapp",
+    "exit": 1,
+    "started": "2026-11-15T17:55:23.5277533+00:00",
+    "ended": "2026-11-15T17:55:23.7767260+00:00"
+  },
+  {
+    "name": "biome-normal-crlf",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check --line-ending=crlf src/app/[locale]/onboarding/work-templates/page-client.tsx src/app/[locale]/onboarding/work-templates/page.test.tsx src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\apps\\webapp",
+    "exit": 1,
+    "started": "2026-11-15T17:55:23.7785300+00:00",
+    "ended": "2026-11-15T17:55:24.0471757+00:00"
+  },
+  {
+    "name": "biome-explicit",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check --config-path=biome.jsonc src/app/[locale]/onboarding/work-templates/page-client.tsx src/app/[locale]/onboarding/work-templates/page.test.tsx src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\apps\\webapp",
+    "exit": 1,
+    "started": "2026-11-15T17:55:24.0487919+00:00",
+    "ended": "2026-11-15T17:55:24.4887106+00:00"
+  },
+  {
+    "name": "biome-explicit-crlf",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check --config-path=biome.jsonc --line-ending=crlf src/app/[locale]/onboarding/work-templates/page-client.tsx src/app/[locale]/onboarding/work-templates/page.test.tsx src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\apps\\webapp",
+    "exit": 0,
+    "started": "2026-11-15T17:55:24.4903537+00:00",
+    "ended": "2026-11-15T17:55:25.1679194+00:00"
+  },
+  {
+    "name": "biome-normal-lint",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check --formatter-enabled=false src/app/[locale]/onboarding/work-templates/page-client.tsx src/app/[locale]/onboarding/work-templates/page.test.tsx src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\apps\\webapp",
+    "exit": 0,
+    "started": "2026-11-15T17:55:25.1693652+00:00",
+    "ended": "2026-11-15T17:55:25.8611370+00:00"
+  },
+  {
+    "name": "biome-explicit-lint",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check --config-path=biome.jsonc --formatter-enabled=false src/app/[locale]/onboarding/work-templates/page-client.tsx src/app/[locale]/onboarding/work-templates/page.test.tsx src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85\\apps\\webapp",
+    "exit": 0,
+    "started": "2026-11-15T17:55:25.8625154+00:00",
+    "ended": "2026-11-15T17:55:26.1898382+00:00"
+  },
+  {
+    "name": "doctor-final",
+    "command": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --verbose --scope changed --base 3c7bc534edeb355d862c3f38759444658863af20 --include-untracked --json --no-parallel --no-telemetry --no-supply-chain --output-dir .tmp/1835/doctor-final",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-e6b2a943-63dbdfdd0a9cec85",
+    "exit": 0,
+    "started": "2026-11-15T17:55:26.1914564+00:00",
+    "ended": "2026-11-15T17:55:43.2128226+00:00"
+  }
+]

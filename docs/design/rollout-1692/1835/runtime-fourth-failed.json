@@ -1,0 +1,570 @@
+{
+  "classification": "actual work-template page and actions; matched exact baseline consumer overlay on current infrastructure",
+  "source": {
+    "head": "3c7bc534edeb355d862c3f38759444658863af20",
+    "files": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+        "rawSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+        "lfSha256": "c24c51727ae9b9425eea061ebf004c084e9921bb308f303d2a3a3845a6857ee9",
+        "crlfSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+        "gitBlob": "d90e2b080780f0524eb5bd87e51e7325742612cb"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+        "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+        "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+        "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+        "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+        "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+        "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+        "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+        "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+        "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+      },
+      {
+        "path": "apps/webapp/next.config.ts",
+        "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+        "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "desktop-light fits viewport with loaded font, one heading and seven day controls",
+      "passed": true
+    },
+    {
+      "name": "phone-light fits viewport with loaded font, one heading and seven day controls",
+      "passed": true
+    },
+    {
+      "name": "wide-dark-large fits viewport with loaded font, one heading and seven day controls",
+      "passed": true
+    },
+    {
+      "name": "phone-dark-large fits viewport with loaded font, one heading and seven day controls",
+      "passed": true
+    },
+    {
+      "name": "exact refreshed source restored after baseline overlay",
+      "passed": true
+    },
+    {
+      "name": "invalid name is focused",
+      "passed": true
+    },
+    {
+      "name": "weekly hour upper bound refused without a policy",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "filename": "before-desktop-light.png",
+      "phase": "before",
+      "source": {
+        "head": "3c7bc534edeb355d862c3f38759444658863af20",
+        "files": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+            "rawSha256": "95fd53713e5377643b105c7eb8ac0bd8592ff0a250cc7591a52122ebecd93123",
+            "lfSha256": "95fd53713e5377643b105c7eb8ac0bd8592ff0a250cc7591a52122ebecd93123",
+            "crlfSha256": "b2ce8e5b81b3eee5c2b3b91853b2a47a5b45e28ea48e9f9dbca554b68e953a08",
+            "gitBlob": "0f0e6f701be61c965c19913d5876e732676b11a7"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+            "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+            "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+            "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+            "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+            "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+          },
+          {
+            "path": "apps/webapp/next.config.ts",
+            "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+            "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+          }
+        ]
+      },
+      "actor": "small-admin",
+      "organizationId": "perf-small-3fec5be2cffa",
+      "width": 1600,
+      "height": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light",
+      "fontPreference": "default",
+      "visualScale": 1,
+      "h1": 1,
+      "checkboxes": 7,
+      "png": {
+        "width": 1600,
+        "height": 1273
+      }
+    },
+    {
+      "filename": "before-phone-light.png",
+      "phase": "before",
+      "source": {
+        "head": "3c7bc534edeb355d862c3f38759444658863af20",
+        "files": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+            "rawSha256": "95fd53713e5377643b105c7eb8ac0bd8592ff0a250cc7591a52122ebecd93123",
+            "lfSha256": "95fd53713e5377643b105c7eb8ac0bd8592ff0a250cc7591a52122ebecd93123",
+            "crlfSha256": "b2ce8e5b81b3eee5c2b3b91853b2a47a5b45e28ea48e9f9dbca554b68e953a08",
+            "gitBlob": "0f0e6f701be61c965c19913d5876e732676b11a7"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+            "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+            "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+            "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+            "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+            "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+          },
+          {
+            "path": "apps/webapp/next.config.ts",
+            "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+            "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+          }
+        ]
+      },
+      "actor": "small-admin",
+      "organizationId": "perf-small-3fec5be2cffa",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light",
+      "fontPreference": "default",
+      "visualScale": 1,
+      "h1": 1,
+      "checkboxes": 7,
+      "png": {
+        "width": 390,
+        "height": 1417
+      }
+    },
+    {
+      "filename": "before-wide-dark-large.png",
+      "phase": "before",
+      "source": {
+        "head": "3c7bc534edeb355d862c3f38759444658863af20",
+        "files": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+            "rawSha256": "95fd53713e5377643b105c7eb8ac0bd8592ff0a250cc7591a52122ebecd93123",
+            "lfSha256": "95fd53713e5377643b105c7eb8ac0bd8592ff0a250cc7591a52122ebecd93123",
+            "crlfSha256": "b2ce8e5b81b3eee5c2b3b91853b2a47a5b45e28ea48e9f9dbca554b68e953a08",
+            "gitBlob": "0f0e6f701be61c965c19913d5876e732676b11a7"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+            "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+            "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+            "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+            "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+            "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+          },
+          {
+            "path": "apps/webapp/next.config.ts",
+            "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+            "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+          }
+        ]
+      },
+      "actor": "small-admin",
+      "organizationId": "perf-small-3fec5be2cffa",
+      "width": 2400,
+      "height": 1200,
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "dark",
+      "fontPreference": "large",
+      "visualScale": 1,
+      "h1": 1,
+      "checkboxes": 7,
+      "png": {
+        "width": 2400,
+        "height": 1431
+      }
+    },
+    {
+      "filename": "before-phone-dark-large.png",
+      "phase": "before",
+      "source": {
+        "head": "3c7bc534edeb355d862c3f38759444658863af20",
+        "files": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+            "rawSha256": "95fd53713e5377643b105c7eb8ac0bd8592ff0a250cc7591a52122ebecd93123",
+            "lfSha256": "95fd53713e5377643b105c7eb8ac0bd8592ff0a250cc7591a52122ebecd93123",
+            "crlfSha256": "b2ce8e5b81b3eee5c2b3b91853b2a47a5b45e28ea48e9f9dbca554b68e953a08",
+            "gitBlob": "0f0e6f701be61c965c19913d5876e732676b11a7"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+            "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+            "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+            "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+            "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+            "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+          },
+          {
+            "path": "apps/webapp/next.config.ts",
+            "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+            "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+          }
+        ]
+      },
+      "actor": "small-admin",
+      "organizationId": "perf-small-3fec5be2cffa",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "dark",
+      "fontPreference": "large",
+      "visualScale": 1,
+      "h1": 1,
+      "checkboxes": 7,
+      "png": {
+        "width": 390,
+        "height": 1620
+      }
+    },
+    {
+      "filename": "after-desktop-light.png",
+      "phase": "after",
+      "source": {
+        "head": "3c7bc534edeb355d862c3f38759444658863af20",
+        "files": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+            "rawSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+            "lfSha256": "c24c51727ae9b9425eea061ebf004c084e9921bb308f303d2a3a3845a6857ee9",
+            "crlfSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+            "gitBlob": "d90e2b080780f0524eb5bd87e51e7325742612cb"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+            "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+            "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+            "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+            "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+            "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+          },
+          {
+            "path": "apps/webapp/next.config.ts",
+            "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+            "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+          }
+        ]
+      },
+      "actor": "small-admin",
+      "organizationId": "perf-small-3fec5be2cffa",
+      "width": 1600,
+      "height": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light",
+      "fontPreference": "default",
+      "visualScale": 1,
+      "h1": 1,
+      "checkboxes": 7,
+      "png": {
+        "width": 1600,
+        "height": 1132
+      }
+    },
+    {
+      "filename": "after-phone-light.png",
+      "phase": "after",
+      "source": {
+        "head": "3c7bc534edeb355d862c3f38759444658863af20",
+        "files": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+            "rawSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+            "lfSha256": "c24c51727ae9b9425eea061ebf004c084e9921bb308f303d2a3a3845a6857ee9",
+            "crlfSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+            "gitBlob": "d90e2b080780f0524eb5bd87e51e7325742612cb"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+            "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+            "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+            "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+            "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+            "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+          },
+          {
+            "path": "apps/webapp/next.config.ts",
+            "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+            "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+          }
+        ]
+      },
+      "actor": "small-admin",
+      "organizationId": "perf-small-3fec5be2cffa",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light",
+      "fontPreference": "default",
+      "visualScale": 1,
+      "h1": 1,
+      "checkboxes": 7,
+      "png": {
+        "width": 390,
+        "height": 1617
+      }
+    },
+    {
+      "filename": "after-wide-dark-large.png",
+      "phase": "after",
+      "source": {
+        "head": "3c7bc534edeb355d862c3f38759444658863af20",
+        "files": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+            "rawSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+            "lfSha256": "c24c51727ae9b9425eea061ebf004c084e9921bb308f303d2a3a3845a6857ee9",
+            "crlfSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+            "gitBlob": "d90e2b080780f0524eb5bd87e51e7325742612cb"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+            "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+            "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+            "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+            "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+            "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+          },
+          {
+            "path": "apps/webapp/next.config.ts",
+            "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+            "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+          }
+        ]
+      },
+      "actor": "small-admin",
+      "organizationId": "perf-small-3fec5be2cffa",
+      "width": 2400,
+      "height": 1200,
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "dark",
+      "fontPreference": "large",
+      "visualScale": 1,
+      "h1": 1,
+      "checkboxes": 7,
+      "png": {
+        "width": 2400,
+        "height": 1272
+      }
+    },
+    {
+      "filename": "after-phone-dark-large.png",
+      "phase": "after",
+      "source": {
+        "head": "3c7bc534edeb355d862c3f38759444658863af20",
+        "files": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+            "rawSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+            "lfSha256": "c24c51727ae9b9425eea061ebf004c084e9921bb308f303d2a3a3845a6857ee9",
+            "crlfSha256": "ceda941deffce57b41c1d07b58ee63b1fe169ad3124f8467df977964a42b5ac1",
+            "gitBlob": "d90e2b080780f0524eb5bd87e51e7325742612cb"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+            "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+            "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+            "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+            "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+            "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+            "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+            "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+          },
+          {
+            "path": "apps/webapp/next.config.ts",
+            "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+            "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+            "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+          }
+        ]
+      },
+      "actor": "small-admin",
+      "organizationId": "perf-small-3fec5be2cffa",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "dark",
+      "fontPreference": "large",
+      "visualScale": 1,
+      "h1": 1,
+      "checkboxes": 7,
+      "png": {
+        "width": 390,
+        "height": 1866
+      }
+    }
+  ],
+  "pageErrors": [],
+  "limitations": [
+    "Not full historical app execution",
+    "No real device or true browser zoom",
+    "Scope switch runtime and late authority scenarios qualified separately"
+  ],
+  "failure": "derived context follows actual fractional hours and selected days"
+}
