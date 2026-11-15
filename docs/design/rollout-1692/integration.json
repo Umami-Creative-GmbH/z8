@@ -498,8 +498,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "028b4c0a026419567874190ce20b019180c7f304"
                     },
                     {
                         "id":  "R034",
@@ -508,8 +509,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "301825c0bd096b5be74e7b545aee791da6bf418e"
                     },
                     {
                         "id":  "R035",
@@ -518,7 +520,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -528,7 +530,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -608,9 +610,13 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "28ea28fa4026d0798d218c6cf9de89317b99ed00"
+                        "status":  "integrated",
+                        "verifiedCommit":  "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+                        "implementationCommit":  "28ea28fa4026d0798d218c6cf9de89317b99ed00",
+                        "integrationCommit":  "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+                        "correctionCommit":  "4cb26d6e0408c33ee8f89ded3fcd1f73a2976292",
+                        "evidence":  "docs/design/rollout-1692/1726.md",
+                        "integrationVerification":  "Payroll work-balances #1726 is verified at `0012c8bb` after cached upload recovery and heading-test reconciliation. Fresh 107 unique files/1,141 tests, full types, nine-file explicit CRLF/lint profiles pass; Doctor zero errors/three reviewed warnings. Five new cases fail on the exact old component. Actual produced-preview response held across navigation/Back freezes the same baseline control; the correction unlocks it, one pointer Retry previews, and one pointer commit stores 150 minutes. Seven accepted/two failed PNG records decode; original clipped desktop pair, raw-log whitespace, formatter differences, non-target native tree and expected destination authorization diagnostics remain qualified. No server/domain/time/grant changes; original artifacts/all38 verified ancestors preserved. Build/catalog/provider/device/zoom/global limits remain open. Independent tree ca202f142274855554c06b23a3e220ee51388392; 12387 prior paths unchanged outside three source/test paths and qualified report, 100 original raw artifact paths unchanged. Source/prose/script whitespace passes; literal log whitespace fails and remains archived. Two-suite/18-case PG is inherited; fresh actual UI commit has scoped DB readback. Verified owned Next62511, private browsers and three label-owned services cleaned."
                     },
                     {
                         "id":  "R044",
