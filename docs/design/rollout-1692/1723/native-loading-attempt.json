@@ -1,0 +1,50 @@
+{
+  "native": {
+    "usableTree": true,
+    "success": true,
+    "componentLines": [
+      "169 623 622 Forget(NotificationsInbox)",
+      "170 624 623 Forget(ScopedNotificationsInbox) key=\"[null,null,\\\"perf-small-c406f3b656c6\\\",true]\"",
+      "172 626 625 Forget(PageHeader)",
+      "173 651 650 Forget(DataTableToolbar)",
+      "173 670 650 Forget(NotificationTimeline)",
+      "170 1390 623 Forget(ScopedNotificationsInbox) key=\"[\\\"perf-small-0-c406f3b656c6\\\",\\\"perf-small-c406f3b656c6\\\",\\\"perf-small-c406f3b656c6\\\",false]\"",
+      "172 1392 1391 Forget(PageHeader)",
+      "173 1417 1416 Forget(DataTableToolbar)",
+      "173 1436 1416 Forget(NotificationTimeline)",
+      "179 1514 1513 Forget(NotificationItem)",
+      "179 1555 1554 Forget(NotificationItem)",
+      "179 1596 1595 Forget(NotificationItem)",
+      "179 1634 1633 Forget(NotificationItem)"
+    ]
+  },
+  "commands": [
+    "agent-browser --session next-dev-loop-8ad063fb5b7f --restore react tree --json",
+    "agent-browser --session next-dev-loop-8ad063fb5b7f --restore a11y --selector main --json"
+  ],
+  "a11y": {
+    "axeVersion": "4.12.1",
+    "counts": {
+      "inapplicable": 85,
+      "incomplete": 0,
+      "passes": 3,
+      "violations": 0
+    },
+    "incomplete": [],
+    "lifecycle": {
+      "effectiveLaunch": {
+        "browserLaunched": true,
+        "engine": "chrome",
+        "launchHash": 4759075326389111361
+      },
+      "launched": false,
+      "relaunchedBrowser": false,
+      "restartedBackground": false,
+      "restoreStatus": "loaded",
+      "reused": true,
+      "saveStatus": "saved"
+    },
+    "url": "http://localhost:51375/en/notifications",
+    "violations": []
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "sourceCommit": null,
+  "sourceCommit": "9bf577c7817b98d39f1ebcd08c1cadd4b8610d01",
   "pngs": [
     {
       "name": "accepted-after-desktop-light.png",
@@ -200,5 +200,21 @@
       "fontSize": "18px"
     }
   ],
-  "sources": []
+  "sources": [
+    {
+      "path": "apps/webapp/src/components/notifications/notifications-inbox.tsx",
+      "matched": true,
+      "lineEndingTolerance": "LF/CRLF only"
+    },
+    {
+      "path": "apps/webapp/src/components/notifications/notification-item.tsx",
+      "matched": true,
+      "lineEndingTolerance": "LF/CRLF only"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "matched": true,
+      "lineEndingTolerance": "LF/CRLF only"
+    }
+  ]
 }
