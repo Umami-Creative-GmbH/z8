@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {createHash} from 'node:crypto';
+import puppeteer from 'puppeteer-core';
+import {repo,dir,runtime,fixture,pool} from '../1719/fixture.mjs';
+const out=join(repo,'docs/design/rollout-1692/1831'),auth=JSON.parse(await readFile(join(dir,'dev-auth-private.json'),'utf8')),a=fixture.actors['large-admin'];
+const result={setup:'default committed config; local-copy deps; final compiler-compatible source',sourceSha256:createHash('sha256').update(await readFile(join(repo,'apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx'))).digest('hex'),checks:[]};
+const check=(name,actual,expected=true)=>{assert.deepEqual(actual,expected,name);result.checks.push({name,actual});};
+const b=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+try{let c=await b.createBrowserContext();await c.setCookie(...auth['large-admin'].cookies);const p=await c.newPage();await p.goto(runtime.origin+'/en/onboarding/vacation-policy',{waitUntil:'networkidle2',timeout:120000});await p.waitForSelector('#vacation-policy-name');await p.focus('#vacation-policy-name');await p.keyboard.down('Control');await p.keyboard.press('A');await p.keyboard.up('Control');await p.keyboard.press('Backspace');await p.keyboard.press('Tab');await p.evaluate(()=>document.querySelector('form').requestSubmit());await p.waitForFunction(()=>document.activeElement?.id==='vacation-policy-name');check('final invalid submit returns focus after re-enabling',await p.$eval('#vacation-policy-name',e=>e.disabled),false);
+await p.keyboard.type('Final retained draft');await p.evaluate(()=>document.querySelector('form').requestSubmit());await p.waitForFunction(()=>document.querySelector('[data-sonner-toast][data-type=error]'));check('existing-company-default refusal retains final draft',await p.$eval('#vacation-policy-name',e=>e.value),'Final retained draft');
+await p.evaluate(()=>[...document.querySelectorAll('button')].find(e=>e.textContent==='Skip for now').click());await p.waitForFunction(()=>location.pathname.endsWith('/onboarding/work-templates'));check('final successful skip destination',new URL(p.url()).pathname,'/en/onboarding/work-templates');check('earlier default-config actual save remains persisted',(await pool.query('select count(*)::int as n from vacation_allowance where organization_id=$1',[a.organizationId])).rows[0].n,1);
+await c.close();c=await b.createBrowserContext();await c.setCookie(...auth['small-employee'].cookies);const denied=await c.newPage();await denied.goto(runtime.origin+'/en/onboarding/vacation-policy',{waitUntil:'networkidle2'});await denied.waitForFunction(()=>location.pathname.endsWith('/onboarding/notifications'));check('final default-config non-admin admission',await denied.$('#vacation-policy-name'),null);
+}finally{await writeFile(join(out,'final-runtime.json'),JSON.stringify(result,null,2)+'\n');await b.close();await pool.end();}

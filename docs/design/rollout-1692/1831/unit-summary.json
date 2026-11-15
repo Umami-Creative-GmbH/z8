@@ -1,0 +1,97 @@
+{
+  "uniqueFiles": 18,
+  "passed": 138,
+  "failed": 0,
+  "suites": [
+    {
+      "file": "apps/webapp/src/components/font-size-toggle.test.tsx",
+      "passed": 2,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "passed": 1,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/components/onboarding/progress-indicator.test.tsx",
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/components/ui/select.test.tsx",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/components/ui/tanstack-form.test.tsx",
+      "passed": 2,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/layout.test.tsx",
+      "passed": 2,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/run-onboarding-action.test.ts",
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/lib/effect/services/onboarding.service.test.ts",
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/organization/page.server.test.tsx",
+      "passed": 3,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+      "passed": 3,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+      "passed": 31,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+      "passed": 12,
+      "failed": 0
+    }
+  ]
+}

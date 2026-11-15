@@ -1,0 +1,21 @@
+- button "Toggle theme" [expanded=false, ref=e23]
+- button "Font size" [expanded=false, ref=e24]
+- combobox "Select language" [expanded=false, ref=e25]: English
+- navigation "Onboarding progress" [ref=e33]
+- heading "Set up vacation policy" [level=1, ref=e34]
+- textbox "Policy Name" [ref=e38]: Standard
+- spinbutton "Annual Vacation Days" [ref=e39]: 25
+- combobox "Accrual Type" [expanded=false, ref=e40]: Annual (all at once)
+- switch "Allow Carryover" [checked=true, ref=e41]
+- spinbutton "Max Carryover Days" [ref=e42]: 5
+- button "Skip for now" [ref=e36]
+- button "Save and continue" [ref=e37]
+- link "Terms of Service" [ref=e26]
+- link "Privacy Policy" [ref=e27]
+- link "Imprint" [ref=e28]
+- link "T&Cs" [ref=e29]
+- link "Trust Center" [ref=e30]
+- link "Open Source Licenses" [ref=e31]
+- region "Notifications alt+T" [ref=e22]
+- button "Open Tanstack query devtools" [ref=e32]
+- button "Open Next.js Dev Tools" [expanded=false, ref=e35]

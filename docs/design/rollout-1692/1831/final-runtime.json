@@ -1,0 +1,26 @@
+{
+  "setup": "default committed config; local-copy deps; final compiler-compatible source",
+  "sourceSha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+  "checks": [
+    {
+      "name": "final invalid submit returns focus after re-enabling",
+      "actual": false
+    },
+    {
+      "name": "existing-company-default refusal retains final draft",
+      "actual": "Final retained draft"
+    },
+    {
+      "name": "final successful skip destination",
+      "actual": "/en/onboarding/work-templates"
+    },
+    {
+      "name": "earlier default-config actual save remains persisted",
+      "actual": 1
+    },
+    {
+      "name": "final default-config non-admin admission",
+      "actual": null
+    }
+  ]
+}

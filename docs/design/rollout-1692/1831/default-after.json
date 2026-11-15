@@ -1,0 +1,33 @@
+{
+  "stage": "after",
+  "config": "default committed config; workspace-local copy dependencies; no resolver/compiler overlay",
+  "sourceSha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+  "configSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+  "scope": "second owned synthetic fixture, small-admin / Performance small",
+  "fields": [
+    {
+      "id": "vacation-policy-name",
+      "value": "Standard"
+    },
+    {
+      "id": "vacation-policy-annual-days",
+      "value": "25"
+    },
+    {
+      "id": "base-ui-_r_g_-hidden-input",
+      "value": "annual"
+    },
+    {
+      "id": "",
+      "value": "on"
+    },
+    {
+      "id": "vacation-policy-max-carryover",
+      "value": "5"
+    }
+  ],
+  "h1": [
+    "Set up vacation policy"
+  ],
+  "overflow": false
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "name": "next/package.json",
+    "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\package.json",
+    "workspaceLocal": true
+  },
+  {
+    "name": "react/package.json",
+    "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react\\package.json",
+    "workspaceLocal": true
+  },
+  {
+    "name": "@tanstack/react-form/package.json",
+    "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9\\node_modules\\.pnpm\\@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c\\node_modules\\@tanstack\\react-form\\package.json",
+    "workspaceLocal": true
+  },
+  {
+    "name": "typescript/package.json",
+    "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9\\node_modules\\.pnpm\\typescript@7.0.2\\node_modules\\typescript\\package.json",
+    "workspaceLocal": true
+  }
+]

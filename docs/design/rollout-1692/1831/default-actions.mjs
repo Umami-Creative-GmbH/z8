@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {createHash} from 'node:crypto';
+import puppeteer from 'puppeteer-core';
+import {repo,dir,runtime,fixture,pool} from '../1719/fixture.mjs';
+const out=join(repo,'docs/design/rollout-1692/1831'),auth=JSON.parse(await readFile(join(dir,'dev-auth-private.json'),'utf8')),a=fixture.actors['large-admin'];
+const result={setup:'default committed config, workspace-local copy deps, second owned fixture; large-admin/Performance large',checks:[],sourceSha256:createHash('sha256').update(await readFile(join(repo,'apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx'))).digest('hex')};
+const check=(name,actual,expected=true)=>{assert.deepEqual(actual,expected,name);result.checks.push({name,actual});console.log('Verified: '+name);};
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});let lock,fault=false;
+try{const c=await browser.createBrowserContext();await c.setCookie(...auth['large-admin'].cookies);const p=await c.newPage();await p.setViewport({width:1600,height:1000});const go=async()=>{await p.goto(runtime.origin+'/en/onboarding/vacation-policy',{waitUntil:'networkidle2',timeout:120000});await p.waitForSelector('#vacation-policy-name');};await go();
+const rows=async()=>(await pool.query('select name,default_annual_days,accrual_type,allow_carryover,max_carryover_days,carryover_expiry_months,is_company_default from vacation_allowance where organization_id=$1',[a.organizationId])).rows;
+check('new default-config organization has no policies',(await rows()).length,0);
+await pool.query("create function r036_default_refuse() returns trigger language plpgsql as $$ begin raise exception 'Synthetic default-config save refusal'; end $$");await pool.query('create trigger r036_default_refuse before insert on vacation_allowance for each row execute function r036_default_refuse()');fault=true;
+await p.evaluate(()=>document.querySelector('form').requestSubmit());await p.waitForFunction(()=>document.querySelector('[data-sonner-toast][data-type=error]'));
+check('actual refusal retains defaults',await p.$eval('#vacation-policy-name',e=>e.value),'Standard');check('refusal writes nothing',(await rows()).length,0);check('refusal does not navigate',new URL(p.url()).pathname,'/en/onboarding/vacation-policy');await p.screenshot({path:join(out,'default-save-refusal.png'),fullPage:true});
+await pool.query('drop trigger r036_default_refuse on vacation_allowance');await pool.query('drop function r036_default_refuse()');fault=false;
+lock=await pool.connect();await lock.query('begin');await lock.query('lock table vacation_allowance in access exclusive mode');let actionId,saves=0;p.on('request',req=>{const id=req.headers()['next-action'];if(req.method()==='POST'&&id){actionId??=id;if(actionId===id)saves++;}});
+await p.evaluate(()=>document.querySelector('form').requestSubmit());await p.waitForFunction(()=>document.querySelector('form[aria-busy=true]'));await p.evaluate(()=>{document.querySelector('form').requestSubmit();[...document.querySelectorAll('button')].find(e=>e.textContent==='Skip for now')?.click();});
+check('pending disables all fields',await p.$$eval('form input',els=>els.every(e=>e.disabled)));await p.screenshot({path:join(out,'default-pending.png'),fullPage:true});await lock.query('commit');lock.release();lock=null;
+await p.waitForFunction(()=>location.pathname.endsWith('/onboarding/work-templates'),{timeout:30000});check('one real save transport despite duplicates',saves,1);const saved=await rows();check('exactly one policy persisted',saved.length,1);check('default-config saved defaults',saved[0],{name:'Standard',default_annual_days:'25',accrual_type:'annual',allow_carryover:true,max_carryover_days:'5',carryover_expiry_months:3,is_company_default:true});
+await go();await p.evaluate(()=>[...document.querySelectorAll('button')].find(e=>e.textContent==='Skip for now').click());await p.waitForFunction(()=>location.pathname.endsWith('/onboarding/work-templates'),{timeout:30000});check('skip succeeds without another policy',(await rows()).length,1);
+}finally{if(lock){await lock.query('rollback');lock.release();}if(fault){await pool.query('drop trigger if exists r036_default_refuse on vacation_allowance');await pool.query('drop function if exists r036_default_refuse()');}await writeFile(join(out,'default-actions.json'),JSON.stringify(result,null,2)+'\n');await browser.close();await pool.end();}
