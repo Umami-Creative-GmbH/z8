@@ -41,4 +41,3 @@ try{
  for(const membership of memberships)await pool.query('insert into member select * from json_populate_record(null::member,$1::json)',[JSON.stringify(membership)]);
  await context?.close();await pool.end();await browser.disconnect();
 }
-
