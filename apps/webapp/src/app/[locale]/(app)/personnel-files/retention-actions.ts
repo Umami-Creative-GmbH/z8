@@ -38,13 +38,27 @@ function failure(error: unknown, fallback: string): { success: false; error: str
 	return { success: false, error: fallback };
 }
 
-export async function getDueForDeletionAction(): Promise<ServerActionResult<DueDocumentsResult>> {
+export type RetentionReviewScope = { userId: string; organizationId: string };
+
+export async function getDueForDeletionAction(
+	scope?: RetentionReviewScope,
+): Promise<ServerActionResult<DueDocumentsResult>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
 		if (current.status !== "resolved" || !managesAnyDocuments(current.access)) {
 			return { success: false, error: NOT_FOUND };
 		}
-		return { success: true, data: await listDueDocumentsWithDay(db, current.access) };
+		if (
+			scope &&
+			(scope.userId !== current.access.userId ||
+				scope.organizationId !== current.access.organizationId)
+		) {
+			return { success: false, error: NOT_FOUND };
+		}
+		return {
+			success: true,
+			data: await listDueDocumentsWithDay(db, current.access),
+		};
 	} catch (error) {
 		return failure(error, "Failed to load the documents due for deletion");
 	}
@@ -57,10 +71,18 @@ export async function getDueForDeletionAction(): Promise<ServerActionResult<DueD
  */
 export async function purgeDueDocumentsAction(input: {
 	documentIds: string[];
+	scope?: RetentionReviewScope;
 }): Promise<ServerActionResult<PurgeResult>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
 		if (current.status !== "resolved" || !managesAnyDocuments(current.access)) {
+			return { success: false, error: NOT_FOUND };
+		}
+		if (
+			input?.scope &&
+			(input.scope.userId !== current.access.userId ||
+				input.scope.organizationId !== current.access.organizationId)
+		) {
 			return { success: false, error: NOT_FOUND };
 		}
 		const documentIds = Array.isArray(input?.documentIds)

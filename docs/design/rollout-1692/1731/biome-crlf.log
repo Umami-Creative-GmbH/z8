@@ -1,0 +1,609 @@
+src\app\[locale]\(app)\personnel-files\due-for-deletion\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    32 32 │     render(await fallback.type(fallback.props));␍
+    33 33 │     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);␍
+    34    │ - → expect(screen.getByRole("heading",·{·level:·1,·name:·"Due·for·deletion"·})).toBeTruthy();␍
+       34 │ + → expect(␍
+       35 │ + → → screen.getByRole("heading",·{·level:·1,·name:·"Due·for·deletion"·}),␍
+       36 │ + → ).toBeTruthy();␍
+    35 37 │   });␍
+    36 38 │   it("retains the explanation and personnel files destination before the review", async () => {␍
+    ····· │ 
+    44 46 │     render(await child.type(child.props));␍
+    45 47 │     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);␍
+    46    │ - → expect(screen.getByRole("link",·{·name:·"Personnel·Files"·}).getAttribute("href")).toBe(␍
+    47    │ - → → "/personnel-files",␍
+    48    │ - → );␍
+       48 │ + → expect(␍
+       49 │ + → → screen.getByRole("link",·{·name:·"Personnel·Files"·}).getAttribute("href"),␍
+       50 │ + → ).toBe("/personnel-files");␍
+    49 51 │     expect(screen.getByText(/They stay until you confirm/)).toBeTruthy();␍
+    50 52 │   });␍
+    ····· │ 
+    60 62 │   it("adopts only this route and preserves prior opt-ins and staged relatives", () => {␍
+    61 63 │     expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(true);␍
+    62    │ - → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail")).toBe(false);␍
+       64 │ + → expect(␍
+       65 │ + → → appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail"),␍
+       66 │ + → ).toBe(false);␍
+    63 67 │     expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);␍
+    64 68 │     expect(appPageOwnsHeading("/en/personnel-files/requests")).toBe(false);␍
+  
+
+src\app\[locale]\(app)\personnel-files\due-for-deletion\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    19 19 │    */␍
+    20 20 │   async function DueForDeletionContent() {␍
+    21    │ - → const·[t,·current]·=·await·Promise.all([getTranslate(),·loadCurrentPersonnelFileAccess()]);␍
+    22    │ - → if·(current.status·!==·"resolved"·||·!managesAnyDocuments(current.access))·notFound();␍
+       21 │ + → const·[t,·current]·=·await·Promise.all([␍
+       22 │ + → → getTranslate(),␍
+       23 │ + → → loadCurrentPersonnelFileAccess(),␍
+       24 │ + → ]);␍
+       25 │ + → if·(current.status·!==·"resolved"·||·!managesAnyDocuments(current.access))␍
+       26 │ + → → notFound();␍
+    23 27 │   ␍
+    24 28 │     return (␍
+  
+
+src\app\[locale]\(app)\personnel-files\retention-actions.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     34  34 │   const MAX_PURGE_BATCH = 500;␍
+     35  35 │   ␍
+     36     │ - function·failure(error:·unknown,·fallback:·string):·{·success:·false;·error:·string·}·{␍
+         36 │ + function·failure(␍
+         37 │ + → error:·unknown,␍
+         38 │ + → fallback:·string,␍
+         39 │ + ):·{·success:·false;·error:·string·}·{␍
+     37  40 │     logger.error({ error }, fallback);␍
+     38  41 │     return { success: false, error: fallback };␍
+    ······· │ 
+    103 106 │           deleteObject: deletePersonnelDocumentObject,␍
+    104 107 │           only: { documentId, organizationId: current.access.organizationId },␍
+    105     │ - → → → }).catch((error)·=>·logger.error({·error·},·"Deferred·personnel·file·object·cleanup")),␍
+        108 │ + → → → }).catch((error)·=>␍
+        109 │ + → → → → logger.error({·error·},·"Deferred·personnel·file·object·cleanup"),␍
+        110 │ + → → → ),␍
+    106 111 │       );␍
+    107 112 │       revalidatePath("/personnel-files");␍
+  
+
+src\components\personnel-file\due-for-deletion-heading.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     7  7 │   export function DueForDeletionHeading() {␍
+     8  8 │     const { t } = useTranslate();␍
+     9    │ - → return·<PageHeader·title={t("settings.personnelFiles.due.title",·"Due·for·deletion")}·/>;␍
+        9 │ + → return·(␍
+       10 │ + → → <PageHeader␍
+       11 │ + → → → title={t("settings.personnelFiles.due.title",·"Due·for·deletion")}␍
+       12 │ + → → />␍
+       13 │ + → );␍
+    10 14 │   }␍
+    11 15 │   
+  
+
+src\components\personnel-file\due-for-deletion-list.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{·act,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+          3 │ + import·{␍
+          4 │ + → act,␍
+          5 │ + → fireEvent,␍
+          6 │ + → render,␍
+          7 │ + → screen,␍
+          8 │ + → waitFor,␍
+          9 │ + → within,␍
+         10 │ + }·from·"@testing-library/react";␍
+      4  11 │   import { Activity } from "react";␍
+      5  12 │   import { beforeEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     31  38 │     useTranslate: () => ({␍
+     32  39 │       t: (_key: string, fallback: string, params?: Record<string, unknown>) =>␍
+     33     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>·String(params?.[key]·??·match)),␍
+         40 │ + → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>␍
+         41 │ + → → → → String(params?.[key]·??·match),␍
+         42 │ + → → → ),␍
+     34  43 │     }),␍
+     35  44 │   }));␍
+    ······· │ 
+     79  88 │       ...rendered,␍
+     80  89 │       client,␍
+     81     │ - → → show:·(mode:·"visible"·|·"hidden"·=·"visible")·=>·rendered.rerender(tree(mode)),␍
+         90 │ + → → show:·(mode:·"visible"·|·"hidden"·=·"visible")·=>␍
+         91 │ + → → → rendered.rerender(tree(mode)),␍
+     82  92 │     };␍
+     83  93 │   }␍
+    ······· │ 
+    102 112 │     await screen.findByText(due.title);␍
+    103 113 │     fireEvent.click(screen.getAllByRole("checkbox")[1]);␍
+    104     │ - → fireEvent.click(screen.getByRole("button",·{·name:·/Purge|Review·selected/·}));␍
+        114 │ + → fireEvent.click(␍
+        115 │ + → → screen.getByRole("button",·{·name:·/Purge|Review·selected/·}),␍
+        116 │ + → );␍
+    105 117 │     const dialog = await screen.findByRole("alertdialog");␍
+    106 118 │     fireEvent.click(within(dialog).getByRole("button", { name: "Purge" }));␍
+    107 119 │     await waitFor(() =>␍
+    108     │ - → → expect(within(dialog).getByRole("alert").textContent).toContain("Permission·changed"),␍
+        120 │ + → → expect(within(dialog).getByRole("alert").textContent).toContain(␍
+        121 │ + → → → "Permission·changed",␍
+        122 │ + → → ),␍
+    109 123 │     );␍
+    110 124 │     expect(boundary.purge).toHaveBeenCalledWith({␍
+    ······· │ 
+    128 142 │       }),␍
+    129 143 │     );␍
+    130     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Review·selected·documents"·}));␍
+        144 │ + → fireEvent.click(␍
+        145 │ + → → screen.getByRole("button",·{·name:·"Review·selected·documents"·}),␍
+        146 │ + → );␍
+    131 147 │     return screen.findByRole("alertdialog");␍
+    132 148 │   }␍
+    ······· │ 
+    139 155 │     expect(within(list).getByText("Employment end unknown")).toBeTruthy();␍
+    140 156 │     expect(␍
+    141     │ - → → screen.getByRole("button",·{·name:·"Review·selected·documents"·}).hasAttribute("disabled"),␍
+        157 │ + → → screen␍
+        158 │ + → → → .getByRole("button",·{·name:·"Review·selected·documents"·})␍
+        159 │ + → → → .hasAttribute("disabled"),␍
+    142 160 │     ).toBe(true);␍
+    143     │ - → fireEvent.click(screen.getByRole("checkbox",·{·name:·"Select·due·documents·(up·to·500)"·}));␍
+    144     │ - → expect(within(list).getByRole("checkbox").getAttribute("aria-checked")).toBe("false");␍
+        161 │ + → fireEvent.click(␍
+        162 │ + → → screen.getByRole("checkbox",·{·name:·"Select·due·documents·(up·to·500)"·}),␍
+        163 │ + → );␍
+        164 │ + → expect(within(list).getByRole("checkbox").getAttribute("aria-checked")).toBe(␍
+        165 │ + → → "false",␍
+        166 │ + → );␍
+    145 167 │     fireEvent.click(within(list).getByRole("checkbox"));␍
+    146     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Review·selected·documents"·}));␍
+        168 │ + → fireEvent.click(␍
+        169 │ + → → screen.getByRole("button",·{·name:·"Review·selected·documents"·}),␍
+        170 │ + → );␍
+    147 171 │     const dialog = await screen.findByRole("alertdialog");␍
+    148 172 │     expect(within(dialog).getByText(/They are not known to be due/)).toBeTruthy();␍
+    ······· │ 
+    163 187 │     fireEvent.click(purge);␍
+    164 188 │     fireEvent.keyDown(dialog, { key: "Escape" });␍
+    165     │ - → expect(within(dialog).getByRole("button",·{·name:·"Cancel"·}).hasAttribute("disabled")).toBe(␍
+    166     │ - → → true,␍
+    167     │ - → );␍
+        189 │ + → expect(␍
+        190 │ + → → within(dialog)␍
+        191 │ + → → → .getByRole("button",·{·name:·"Cancel"·})␍
+        192 │ + → → → .hasAttribute("disabled"),␍
+        193 │ + → ).toBe(true);␍
+    168 194 │     expect(boundary.purge).toHaveBeenCalledTimes(1);␍
+    169     │ - → await·act(async·()·=>·command.resolve({·success:·false,·error:·"Try·again"·}));␍
+        195 │ + → await·act(async·()·=>␍
+        196 │ + → → command.resolve({·success:·false,·error:·"Try·again"·}),␍
+        197 │ + → );␍
+    170 198 │     fireEvent.click(within(dialog).getByRole("button", { name: "Retry purge" }));␍
+    171 199 │     await waitFor(() => expect(boundary.purge).toHaveBeenCalledTimes(2));␍
+    ······· │ 
+    196 224 │     mount();␍
+    197 225 │     await screen.findByRole("alert");␍
+    198     │ - → expect(screen.queryByText("No·documents·in·your·scope·are·due·for·deletion.")).toBeNull();␍
+        226 │ + → expect(␍
+        227 │ + → → screen.queryByText("No·documents·in·your·scope·are·due·for·deletion."),␍
+        228 │ + → ).toBeNull();␍
+    199 229 │     fireEvent.click(screen.getByRole("button", { name: "Retry" }));␍
+    200 230 │     await screen.findByText(due.title);␍
+    ······· │ 
+    258 288 │     fireEvent.click(within(dialog).getByRole("button", { name: "Purge" }));␍
+    259 289 │     view.show("hidden");␍
+    260     │ - → await·act(async·()·=>·command.resolve({·success:·false,·error:·"Old·hidden·failure"·}));␍
+        290 │ + → await·act(async·()·=>␍
+        291 │ + → → command.resolve({·success:·false,·error:·"Old·hidden·failure"·}),␍
+        292 │ + → );␍
+    261 293 │     view.show();␍
+    262 294 │     await screen.findByText(due.title);␍
+    ······· │ 
+    291 323 │       }),␍
+    292 324 │     );␍
+    293     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Review·selected·documents"·}));␍
+        325 │ + → fireEvent.click(␍
+        326 │ + → → screen.getByRole("button",·{·name:·"Review·selected·documents"·}),␍
+        327 │ + → );␍
+    294 328 │     const dialog = await screen.findByRole("alertdialog");␍
+    295 329 │     expect(within(dialog).getByText("Payslip 0")).toBeTruthy();␍
+  
+
+src\components\personnel-file\due-for-deletion-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{·IconExternalLink,·IconLoader2,·IconRefresh,·IconTrash·}·from·"@tabler/icons-react";␍
+          3 │ + import·{␍
+          4 │ + → IconExternalLink,␍
+          5 │ + → IconLoader2,␍
+          6 │ + → IconRefresh,␍
+          7 │ + → IconTrash,␍
+          8 │ + }·from·"@tabler/icons-react";␍
+      4   9 │   import { useQuery, useQueryClient } from "@tanstack/react-query";␍
+      5  10 │   import { useTranslate } from "@tolgee/react";␍
+    ······· │ 
+     39  44 │   import { Skeleton } from "@/components/ui/skeleton";␍
+     40  45 │   import { queryKeys } from "@/lib/query/keys";␍
+     41     │ - import·{·formatPayPeriod,·personnelDocumentUrl,·usePersonnelFileLabels·}·from·"./document-labels";␍
+         46 │ + import·{␍
+         47 │ + → formatPayPeriod,␍
+         48 │ + → personnelDocumentUrl,␍
+         49 │ + → usePersonnelFileLabels,␍
+         50 │ + }·from·"./document-labels";␍
+     42  51 │   ␍
+     43  52 │   type ReviewDocument = DueDocument | RetentionUnknownDocument;␍
+    ······· │ 
+     74  83 │           {document.employeeNumber ? (␍
+     75  84 │             <span className="text-muted-foreground">␍
+     76     │ - → → → → → → {t("settings.personnelFiles.due.employeeNumber",·"Personnel·no.·{number}",·{␍
+     77     │ - → → → → → → → number:·document.employeeNumber,␍
+     78     │ - → → → → → → })}␍
+         85 │ + → → → → → → {t(␍
+         86 │ + → → → → → → → "settings.personnelFiles.due.employeeNumber",␍
+         87 │ + → → → → → → → "Personnel·no.·{number}",␍
+         88 │ + → → → → → → → {␍
+         89 │ + → → → → → → → → number:·document.employeeNumber,␍
+         90 │ + → → → → → → → },␍
+         91 │ + → → → → → → )}␍
+     79  92 │             </span>␍
+     80  93 │           ) : null}␍
+     81     │ - → → → → <Badge·variant="secondary">{labels.categories[document.category]}</Badge>␍
+         94 │ + → → → → <Badge·variant="secondary">␍
+         95 │ + → → → → → {labels.categories[document.category]}␍
+         96 │ + → → → → </Badge>␍
+     82  97 │         </div>␍
+     83  98 │         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground tabular-nums">␍
+     84  99 │           <span>␍
+     85 100 │             {document.payPeriod␍
+     86     │ - → → → → → → ?·t("settings.personnelFiles.list.payPeriod",·"Pay·period·{period}",·{␍
+     87     │ - → → → → → → → → period:·formatPayPeriod(document.payPeriod,·locale),␍
+     88     │ - → → → → → → → })␍
+     89     │ - → → → → → → :·t("settings.personnelFiles.due.documentDate",·"Document·date·{date}",·{␍
+     90     │ - → → → → → → → → date:·formatDateOnly(document.documentDate,·locale),␍
+     91     │ - → → → → → → → })}␍
+        101 │ + → → → → → → ?·t(␍
+        102 │ + → → → → → → → → "settings.personnelFiles.list.payPeriod",␍
+        103 │ + → → → → → → → → "Pay·period·{period}",␍
+        104 │ + → → → → → → → → {␍
+        105 │ + → → → → → → → → → period:·formatPayPeriod(document.payPeriod,·locale),␍
+        106 │ + → → → → → → → → },␍
+        107 │ + → → → → → → → )␍
+        108 │ + → → → → → → :·t(␍
+        109 │ + → → → → → → → → "settings.personnelFiles.due.documentDate",␍
+        110 │ + → → → → → → → → "Document·date·{date}",␍
+        111 │ + → → → → → → → → {␍
+        112 │ + → → → → → → → → → date:·formatDateOnly(document.documentDate,·locale),␍
+        113 │ + → → → → → → → → },␍
+        114 │ + → → → → → → → )}␍
+     92 115 │           </span>␍
+     93 116 │           <span>␍
+     94     │ - → → → → → {t("settings.personnelFiles.due.retentionYears",·"Retention:·{years}·years",·{␍
+     95     │ - → → → → → → years:·document.retentionYears,␍
+     96     │ - → → → → → })}␍
+        117 │ + → → → → → {t(␍
+        118 │ + → → → → → → "settings.personnelFiles.due.retentionYears",␍
+        119 │ + → → → → → → "Retention:·{years}·years",␍
+        120 │ + → → → → → → {␍
+        121 │ + → → → → → → → years:·document.retentionYears,␍
+        122 │ + → → → → → → },␍
+        123 │ + → → → → → )}␍
+     97 124 │           </span>␍
+     98 125 │           {"dueOn" in document ? (␍
+     99 126 │             <>␍
+    100 127 │               <span>␍
+    101     │ - → → → → → → → {t("settings.personnelFiles.due.startDate",·"Retention·start·{date}",·{␍
+    102     │ - → → → → → → → → date:·formatDateOnly(document.retentionStart,·locale),␍
+    103     │ - → → → → → → → })}␍
+        128 │ + → → → → → → → {t(␍
+        129 │ + → → → → → → → → "settings.personnelFiles.due.startDate",␍
+        130 │ + → → → → → → → → "Retention·start·{date}",␍
+        131 │ + → → → → → → → → {␍
+        132 │ + → → → → → → → → → date:·formatDateOnly(document.retentionStart,·locale),␍
+        133 │ + → → → → → → → → },␍
+        134 │ + → → → → → → → )}␍
+    104 135 │               </span>␍
+    105 136 │               <span>␍
+    ······· │ 
+    111 142 │           ) : (␍
+    112 143 │             <span className="font-medium text-foreground">␍
+    113     │ - → → → → → → {t("settings.personnelFiles.due.unknownStartRow",·"Employment·end·unknown")}␍
+        144 │ + → → → → → → {t(␍
+        145 │ + → → → → → → → "settings.personnelFiles.due.unknownStartRow",␍
+        146 │ + → → → → → → → "Employment·end·unknown",␍
+        147 │ + → → → → → → )}␍
+    114 148 │             </span>␍
+    115 149 │           )}␍
+    ······· │ 
+    139 173 │       <div className="space-y-3">␍
+    140 174 │         <ul aria-label={label} className="divide-y rounded-lg border bg-card">␍
+    141     │ - → → → → {documents.slice(current·*·PAGE_SIZE,·(current·+·1)·*·PAGE_SIZE).map((document)·=>·(␍
+    142     │ - → → → → → <li·key={document.id}·className="flex·items-start·gap-3·p-4">␍
+    143     │ - → → → → → → <Checkbox␍
+    144     │ - → → → → → → → className="mt-1"␍
+    145     │ - → → → → → → → checked={selected.has(document.id)}␍
+    146     │ - → → → → → → → disabled={disabled·||·(!selected.has(document.id)·&&·selected.size·>=·MAX_SELECTION)}␍
+    147     │ - → → → → → → → aria-label={t(␍
+    148     │ - → → → → → → → → "settings.personnelFiles.due.selectDocument",␍
+    149     │ - → → → → → → → → "Select·{title}·for·{employee}",␍
+    150     │ - → → → → → → → → {·title:·document.title,·employee:·document.employeeName·},␍
+    151     │ - → → → → → → → )}␍
+    152     │ - → → → → → → → onCheckedChange={(checked)·=>·onToggle(document.id,·checked·===·true)}␍
+    153     │ - → → → → → → />␍
+    154     │ - → → → → → → <DocumentEvidence·document={document}·/>␍
+    155     │ - → → → → → → <OpenDocument·document={document}·/>␍
+    156     │ - → → → → → </li>␍
+    157     │ - → → → → ))}␍
+        175 │ + → → → → {documents␍
+        176 │ + → → → → → .slice(current·*·PAGE_SIZE,·(current·+·1)·*·PAGE_SIZE)␍
+        177 │ + → → → → → .map((document)·=>·(␍
+        178 │ + → → → → → → <li·key={document.id}·className="flex·items-start·gap-3·p-4">␍
+        179 │ + → → → → → → → <Checkbox␍
+        180 │ + → → → → → → → → className="mt-1"␍
+        181 │ + → → → → → → → → checked={selected.has(document.id)}␍
+        182 │ + → → → → → → → → disabled={␍
+        183 │ + → → → → → → → → → disabled·||␍
+        184 │ + → → → → → → → → → (!selected.has(document.id)·&&·selected.size·>=·MAX_SELECTION)␍
+        185 │ + → → → → → → → → }␍
+        186 │ + → → → → → → → → aria-label={t(␍
+        187 │ + → → → → → → → → → "settings.personnelFiles.due.selectDocument",␍
+        188 │ + → → → → → → → → → "Select·{title}·for·{employee}",␍
+        189 │ + → → → → → → → → → {·title:·document.title,·employee:·document.employeeName·},␍
+        190 │ + → → → → → → → → )}␍
+        191 │ + → → → → → → → → onCheckedChange={(checked)·=>␍
+        192 │ + → → → → → → → → → onToggle(document.id,·checked·===·true)␍
+        193 │ + → → → → → → → → }␍
+        194 │ + → → → → → → → />␍
+        195 │ + → → → → → → → <DocumentEvidence·document={document}·/>␍
+        196 │ + → → → → → → → <OpenDocument·document={document}·/>␍
+        197 │ + → → → → → → </li>␍
+        198 │ + → → → → → ))}␍
+    158 199 │         </ul>␍
+    159 200 │         {pages > 1 ? (␍
+    ······· │ 
+    267 308 │           {pending ? (␍
+    268 309 │             <p role="status" className="text-sm text-muted-foreground">␍
+    269     │ - → → → → → → {t("settings.personnelFiles.due.purging",·"Purging·selected·documents…")}␍
+        310 │ + → → → → → → {t(␍
+        311 │ + → → → → → → → "settings.personnelFiles.due.purging",␍
+  149 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+    171     │ - → → id:·`settings-${entry.id}`,␍
+    172     │ - → → href:·entry.href,␍
+    173     │ - → → titleKey:·entry.titleKey,␍
+    174     │ - → → titleDefault:·entry.titleDefault,␍
+    175     │ - → })),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+        171 │ + → → (entry)·=>·({␍
+        172 │ + → → → id:·`settings-${entry.id}`,␍
+        173 │ + → → → href:·entry.href,␍
+        174 │ + → → → titleKey:·entry.titleKey,␍
+        175 │ + → → → titleDefault:·entry.titleDefault,␍
+        176 │ + → → }),␍
+        177 │ + → ),␍
+    176 178 │     {␍
+    177 179 │       id: "settings",␍
+    ······· │ 
+    190 192 │   ␍
+    191 193 │   export function normalizeAppPath(pathname: string): string {␍
+    192     │ - → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+    193     │ - → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+        194 │ + → const·[firstSegment,·...remainingSegments]·=·pathname␍
+        195 │ + → → .split("/")␍
+        196 │ + → → .filter(Boolean);␍
+        197 │ + → const·segments·=·ALL_LANGUAGES.includes(␍
+        198 │ + → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+        199 │ + → )␍
+    194 200 │       ? remainingSegments␍
+    195 201 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    248 254 │       [...APP_ROUTE_METADATA]␍
+    249 255 │         .sort((left, right) => right.href.length - left.href.length)␍
+    250     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+        256 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+        257 │ + → → UNKNOWN_ROUTE_METADATA␍
+    251 258 │     );␍
+    252 259 │   }␍
+  
+
+src\lib\personnel-file\retention.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      8    8 │   ␍
+      9    9 │   import { Temporal } from "temporal-polyfill";␍
+     10      │ - import·{·afterAll,·beforeAll,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+          10 │ + import·{␍
+          11 │ + → afterAll,␍
+          12 │ + → beforeAll,␍
+          13 │ + → beforeEach,␍
+          14 │ + → describe,␍
+          15 │ + → expect,␍
+          16 │ + → it,␍
+          17 │ + → vi,␍
+          18 │ + }·from·"vitest";␍
+     11   19 │   import { integrationAdminPool } from "@/test/integration-database";␍
+     12   20 │   ␍
+    ········ │ 
+     23   31 │   }));␍
+     24   32 │   ␍
+     25      │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+          33 │ + vi.mock("next/headers",·async·()·=>␍
+          34 │ + → (await·import("@/test/integration-harness")).nextHeaders(),␍
+          35 │ + );␍
+     26   36 │   vi.mock("next/server", async (original) =>␍
+     27   37 │     (await import("@/test/integration-harness")).nextServer(original),␍
+    ········ │ 
+     59   69 │   }));␍
+     60   70 │   vi.mock("@/lib/storage/export-s3-client", () => ({␍
+     61      │ - → async·uploadPrivateObject(_organizationId:·string,·key:·string,·data:·Uint8Array)·{␍
+          71 │ + → async·uploadPrivateObject(␍
+          72 │ + → → _organizationId:·string,␍
+          73 │ + → → key:·string,␍
+          74 │ + → → data:·Uint8Array,␍
+          75 │ + → )·{␍
+     62   76 │       harness.objects.set(key, Buffer.from(data));␍
+     63   77 │       return { bucket: "t870-private", versionId: null };␍
+    ········ │ 
+     65   79 │     async readPrivateObject(input: { key: string }) {␍
+     66   80 │       const bytes = harness.objects.get(input.key);␍
+     67      │ - → → if·(!bytes)·throw·Object.assign(new·Error("NoSuchKey"),·{·name:·"NoSuchKey"·});␍
+          81 │ + → → if·(!bytes)␍
+          82 │ + → → → throw·Object.assign(new·Error("NoSuchKey"),·{·name:·"NoSuchKey"·});␍
+     68   83 │       return new Uint8Array(bytes);␍
+     69   84 │     },␍
+    ········ │ 
+     80   95 │   ␍
+     81   96 │   const { db } = await import("@/db");␍
+     82      │ - const·retentionActions·=·await·import("@/app/[locale]/(app)/personnel-files/retention-actions");␍
+          97 │ + const·retentionActions·=·await·import(␍
+          98 │ + → "@/app/[locale]/(app)/personnel-files/retention-actions"␍
+          99 │ + );␍
+     83  100 │   const settingsActions = await import(␍
+     84  101 │     "@/app/[locale]/(app)/settings/personnel-files/retention-actions"␍
+    ········ │ 
+     88  105 │   );␍
+     89  106 │   const { resolvePersonnelFileAccess } = await import("./access-store");␍
+     90      │ - const·{·listDueDocuments,·listDueDocumentsWithDay,·purgeDueDocuments,·loadRetentionPeriods·}·=␍
+     91      │ - → await·import("./retention-store");␍
+     92      │ - const·{·runPersonnelFileRetentionReminders·}·=·await·import("./retention-reminders");␍
+     93      │ - const·{·seedPersonnelFileOfficerGrant·}·=·await·import("./testing/officer-grant.test.fixture");␍
+         107 │ + const·{␍
+         108 │ + → listDueDocuments,␍
+         109 │ + → listDueDocumentsWithDay,␍
+         110 │ + → purgeDueDocuments,␍
+         111 │ + → loadRetentionPeriods,␍
+         112 │ + }·=·await·import("./retention-store");␍
+         113 │ + const·{·runPersonnelFileRetentionReminders·}·=·await·import(␍
+         114 │ + → "./retention-reminders"␍
+         115 │ + );␍
+         116 │ + const·{·seedPersonnelFileOfficerGrant·}·=·await·import(␍
+         117 │ + → "./testing/officer-grant.test.fixture"␍
+         118 │ + );␍
+     94  119 │   ␍
+     95  120 │   const ORG = "t870-org";␍
+    ········ │ 
+    130  155 │   /** An instant at a wall-clock time in Berlin. */␍
+    131  156 │   function berlin(dateTime: string) {␍
+    132      │ - → return·Temporal.PlainDateTime.from(dateTime).toZonedDateTime(BERLIN).toInstant();␍
+         157 │ + → return·Temporal.PlainDateTime.from(dateTime)␍
+         158 │ + → → .toZonedDateTime(BERLIN)␍
+         159 │ + → → .toInstant();␍
+    133  160 │   }␍
+    134  161 │   ␍
+    135  162 │   async function cleanup() {␍
+    136  163 │     await admin.query("delete from organization where id = $1", [ORG]);␍
+    137      │ - → await·admin.query("delete·from·personnel_file_upload·where·organization_id·=·$1",·[ORG]);␍
+         164 │ + → await·admin.query(␍
+         165 │ + → → "delete·from·personnel_file_upload·where·organization_id·=·$1",␍
+         166 │ + → → [ORG],␍
+         167 │ + → );␍
+    138  168 │     await admin.query('delete from "user" where id like $1', ["t870-%"]);␍
+    139  169 │   }␍
+    140  170 │   ␍
+    141      │ - async·function·seedPerson(name:·Person,·memberRole:·string,·teamId:·string·|·null·=·null)·{␍
+         171 │ + async·function·seedPerson(␍
+         172 │ + → name:·Person,␍
+         173 │ + → memberRole:·string,␍
+         174 │ + → teamId:·string·|·null·=·null,␍
+         175 │ + )·{␍
+    142  176 │     await admin.query(␍
+    143  177 │       'insert into "user" (id,name,email,created_at,updated_at) values ($1,$2,$3,now(),now())',␍
+    ········ │ 
+    166  200 │       [ORG, ids[name], berlin(`${started}T00:00`).toString(), cutoff.toString()],␍
+    167  201 │     );␍
+    168      │ - → await·admin.query("update·employee·set·is_active·=·false·where·id·=·$1",·[ids[name]]);␍
+         202 │ + → await·admin.query("update·employee·set·is_active·=·false·where·id·=·$1",·[␍
+         203 │ + → → ids[name],␍
+         204 │ + → ]);␍
+    169  205 │   }␍
+    170  206 │   ␍
+    ········ │ 
+    187  223 │     const payPeriod =␍
+    188  224 │       input.category === "payslip"␍
+    189      │ - → → → ?·[Number(input.documentDate.slice(0,·4)),·Number(input.documentDate.slice(5,·7))]␍
+         225 │ + → → → ?·[␍
+         226 │ + → → → → → Number(input.documentDate.slice(0,·4)),␍
+         227 │ + → → → → → Number(input.documentDate.slice(5,·7)),␍
+         228 │ + → → → → ]␍
+    190  229 │         : [null, null];␍
+    191  230 │     await admin.query(␍
+    ········ │ 
+    215  254 │   async function setPeriods(periods: Record<string, number | null>) {␍
+    216  255 │     signIn("owner");␍
+    217      │ - → const·result·=·await·settingsActions.savePersonnelFileRetentionSettingsAction({·periods·});␍
+         256 │ + → const·result·=·await·settingsActions.savePersonnelFileRetentionSettingsAction(␍
+         257 │ + → → {·periods·},␍
+         258 │ + → );␍
+    218  259 │     if (!result.success) throw new Error(result.error);␍
+    219  260 │   }␍
+    ········ │ 
+    281  322 │       [ORG, ids.eva],␍
+    282  323 │     );␍
+    283      │ - → await·admin.query("update·employee·set·is_active·=·false·where·id·=·any($1::uuid[])",·[␍
+    284      │ - → → [ids.eva,·ids.finn],␍
+    285      │ - → ]);␍
+         324 │ + → await·admin.query(␍
+         325 │ + → → "update·employee·set·is_active·=·false·where·id·=·any($1::uuid[])",␍
+         326 │ + → → [[ids.eva,·ids.finn]],␍
+         327 │ + → );␍
+    286  328 │   ␍
+    287  329 │     docs.anna2026 = await seedDocument("anna", {␍
+    ········ │ 
+    373  415 │   describe("retention settings", () => {␍
+    374  416 │     it("owners and admins set a period per category; empty means none", async () => {␍
+    375      │ - → → expect(await·loadRetentionPeriods(db,·ORG)).toEqual({·payslip:·6,·sick_note:·2·});␍
+         417 │ + → → expect(await·loadRetentionPeriods(db,·ORG)).toEqual({␍
+         418 │ + → → → payslip:·6,␍
+         419 │ + → → → sick_note:·2,␍
+         420 │ + → → });␍
+    376  421 │       signIn("owner");␍
+    377      │ - → → const·settings·=·await·settingsActions.getPersonnelFileRetentionSettingsAction();␍
+         422 │ + → → const·settings·=␍
+         423 │ + → → → await·settingsActions.getPersonnelFileRetentionSettingsAction();␍
+    378  424 │       expect(settings.success && settings.data.periods).toEqual({␍
+    379  425 │         contract: null,␍
+    ········ │ 
+    383  429 │         other: null,␍
+    384  430 │       });␍
+    385      │ - → → expect(settings.success·&&·settings.data.suggestions.payslip.years).toBeGreaterThan(0);␍
+         431 │ + → → expect(␍
+         432 │ + → → → settings.success·&&·settings.data.suggestions.payslip.years,␍
+         433 │ + → → ).toBeGreaterThan(0);␍
+    386  434 │     });␍
+    387  435 │   ␍
+  481 more lines truncated
+  
+
+Checked 8 files in 13ms. No fixes applied.
+Found 8 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-fd7b5280-
+  │ 0a9cc97a274c2847\apps\webapp
+

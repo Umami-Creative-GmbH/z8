@@ -1,0 +1,19 @@
+{
+  "remaining": [],
+  "exit": 0,
+  "label": "z8-performance-fixture-1450",
+  "listeners": [],
+  "containers": [
+    "z8_perf_975cd866b6ee_postgres",
+    "z8_perf_975cd866b6ee_redis",
+    "z8_perf_975cd866b6ee_storage"
+  ],
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "node",
+    "scripts/performance/fixture.mjs",
+    "cleanup",
+    ".tmp/1731-fixture"
+  ]
+}
