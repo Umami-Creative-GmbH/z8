@@ -1,0 +1,34 @@
+{
+    "desktop":  {
+                    "axeVersion":  "4.12.1",
+                    "incomplete":  [
+
+                                   ],
+                    "url":  "http://localhost:57290/en",
+                    "counts":  {
+                                   "inapplicable":  44,
+                                   "incomplete":  0,
+                                   "passes":  45,
+                                   "violations":  0
+                               },
+                    "violations":  [
+
+                                   ]
+                },
+    "phone":  {
+                  "axeVersion":  "4.12.1",
+                  "incomplete":  [
+
+                                 ],
+                  "url":  "http://localhost:57290/en",
+                  "counts":  {
+                                 "inapplicable":  44,
+                                 "incomplete":  0,
+                                 "passes":  45,
+                                 "violations":  0
+                             },
+                  "violations":  [
+
+                                 ]
+              }
+}

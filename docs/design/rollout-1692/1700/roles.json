@@ -1,0 +1,84 @@
+[
+  {
+    "actor": "small-admin",
+    "h1": [
+      "Good day, Person."
+    ],
+    "widgets": [
+      "quick-stats",
+      "team-overview",
+      "manager-today",
+      "pending-approvals",
+      "whos-out-today",
+      "managed-employees",
+      "vacation-balance",
+      "upcoming-time-off",
+      "recently-approved",
+      "birthday-reminders"
+    ],
+    "overflow": false,
+    "hasDay": true,
+    "unavailable": false,
+    "missingVacation": false
+  },
+  {
+    "actor": "small-manager",
+    "h1": [
+      "Good day, Person."
+    ],
+    "widgets": [
+      "quick-stats",
+      "team-overview",
+      "manager-today",
+      "pending-approvals",
+      "whos-out-today",
+      "managed-employees",
+      "vacation-balance",
+      "upcoming-time-off",
+      "recently-approved",
+      "birthday-reminders"
+    ],
+    "overflow": false,
+    "hasDay": true,
+    "unavailable": false,
+    "missingVacation": false
+  },
+  {
+    "actor": "small-employee",
+    "h1": [
+      "Good day, Person."
+    ],
+    "widgets": [
+      "quick-stats",
+      "pending-approvals",
+      "whos-out-today",
+      "vacation-balance",
+      "upcoming-time-off",
+      "recently-approved",
+      "birthday-reminders"
+    ],
+    "overflow": false,
+    "hasDay": true,
+    "unavailable": false,
+    "missingVacation": false
+  },
+  {
+    "actor": "small-restricted",
+    "h1": [
+      "Good day, Person."
+    ],
+    "widgets": [
+      "quick-stats",
+      "pending-approvals",
+      "whos-out-today",
+      "vacation-balance",
+      "upcoming-time-off",
+      "recently-approved",
+      "birthday-reminders"
+    ],
+    "overflow": false,
+    "hasDay": true,
+    "unavailable": false,
+    "missingVacation": false
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "width": 1600,
+    "scrollWidth": 1600,
+    "theme": "dark bprogress-busy",
+    "font": "large",
+    "rootFont": "18px"
+  },
+  {
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "dark bprogress-busy",
+    "font": "large",
+    "rootFont": "18px"
+  },
+  {
+    "width": 2560,
+    "scrollWidth": 2560,
+    "theme": "dark bprogress-busy",
+    "font": "large",
+    "rootFont": "18px"
+  }
+]
