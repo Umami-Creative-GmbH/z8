@@ -3,7 +3,9 @@
 import { useTranslate } from "@tolgee/react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useEffect, useEffectEvent } from "react";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { OrgExplorerLoadError } from "./org-explorer-load-error";
 import { PersonPanel } from "./org-explorer-person-panel";
 import {
 	type Highlight,
@@ -95,27 +97,48 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 	};
 
 	return (
-		<section className="flex flex-col gap-4">
-			<div className="flex flex-col gap-3 rounded-lg border bg-card p-3 text-card-foreground shadow-sm md:flex-row md:items-center md:justify-between">
-				<div className="flex flex-wrap items-center gap-2">
-					<ViewSwitch onChange={(view) => setUrl({ view })} view={url.view} />
-					<TeamFilter
-						onChange={(teamIds) => setUrl({ teamIds })}
-						selectedIds={url.teamIds}
-						teams={summary.teams}
-					/>
-				</div>
-				<div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"organization.explorer.employeeCount",
-							"{count, plural, one {# employee} other {# employees}}",
-							{ count: summary.employeeCount },
-						)}
-					</p>
-					<EmployeeSearch onSelect={(employeeId) => void reveal(employeeId)} />
-				</div>
+		<section
+			aria-label={t("organization.title", "Org Explorer")}
+			className="flex min-w-0 flex-col gap-4"
+		>
+			<div className="border-b pb-4">
+				<DataTableToolbar
+					filterControls={
+						<>
+							<ViewSwitch
+								onChange={(view) => setUrl({ view })}
+								view={url.view}
+							/>
+							<TeamFilter
+								onChange={(teamIds) => setUrl({ teamIds })}
+								selectedIds={url.teamIds}
+								teams={summary.teams}
+							/>
+						</>
+					}
+					actions={
+						<>
+							<p className="shrink-0 text-sm text-muted-foreground tabular-nums">
+								{t(
+									"organization.explorer.employeeCount",
+									"{count, plural, one {# employee} other {# employees}}",
+									{ count: summary.employeeCount },
+								)}
+							</p>
+							<EmployeeSearch
+								onSelect={(employeeId) => void reveal(employeeId)}
+							/>
+						</>
+					}
+				/>
 			</div>
+			{loader.hasFailedLoads &&
+			(!url.employeeId || peopleById.has(url.employeeId)) ? (
+				<OrgExplorerLoadError
+					retry={loader.retryFailed}
+					pending={loader.isRetrying}
+				/>
+			) : null}
 
 			{summary.complete ? null : (
 				<p className="rounded-md border border-dashed bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
@@ -156,6 +179,11 @@ function OrgExplorer({ initialData, canManage }: OrgExplorerClientProps) {
 				peopleById={peopleById}
 				side={isMobile ? "bottom" : "right"}
 				teamNamesById={teamNamesById}
+				loadError={
+					loader.hasFailedLoads
+						? { retry: loader.retryFailed, pending: loader.isRetrying }
+						: undefined
+				}
 			/>
 		</section>
 	);
