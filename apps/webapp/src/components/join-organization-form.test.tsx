@@ -1,7 +1,5 @@
 /* @vitest-environment jsdom */
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import {
 	act,
 	fireEvent,
@@ -15,21 +13,32 @@ import { JoinOrganizationForm } from "./join-organization-form";
 
 const mocks = vi.hoisted(() => ({
 	validateInviteCode: vi.fn(),
+	redeemInviteCode: vi.fn(),
+	session: null as {
+		user: { id: string; email: string };
+		session: { activeOrganizationId: string };
+	} | null,
 	push: vi.fn(),
-	translate: (_key: string, fallback: string) => fallback,
+	locale: "en",
+	translate: (
+		_key: string,
+		fallback: string,
+		values?: Record<string, string>,
+	) => fallback.replace(/\{(\w+)\}/g, (match, key) => values?.[key] ?? match),
 }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: mocks.translate }),
 }));
+vi.mock("next-intl", () => ({ useLocale: () => mocks.locale }));
 
 vi.mock("@/app/[locale]/(auth)/invite-code-actions", () => ({
-	redeemInviteCode: vi.fn(),
+	redeemInviteCode: mocks.redeemInviteCode,
 	validateInviteCode: mocks.validateInviteCode,
 }));
 
 vi.mock("@/lib/auth/use-auth-page-session", () => ({
-	useAuthPageSession: () => ({ data: null, isPending: false }),
+	useAuthPageSession: () => ({ data: mocks.session, isPending: false }),
 }));
 
 vi.mock("@/navigation", () => ({
@@ -39,45 +48,239 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push: mocks.push }),
 }));
 
-vi.mock("./auth-form-wrapper", () => ({
-	AuthFormWrapper: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-}));
+function joinForm() {
+	const form = screen.getByLabelText("Invite Code").closest("form");
+	if (!form) throw new Error("Join form missing");
+	return form;
+}
 
 function deferred<T>() {
 	let resolve!: (value: T) => void;
-	const promise = new Promise<T>((resolvePromise) => {
+	let reject!: (reason: Error) => void;
+	const promise = new Promise<T>((resolvePromise, rejectPromise) => {
 		resolve = resolvePromise;
+		reject = rejectPromise;
 	});
-	return { promise, resolve };
+	return { promise, resolve, reject };
 }
 
-describe("JoinOrganizationForm mobile UX", () => {
+describe("JoinOrganizationForm admission flow", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.session = null;
+		mocks.locale = "en";
 	});
 
-	it("stacks invite code validation controls on mobile", () => {
-		const source = readFileSync(
-			join(process.cwd(), "src/components/join-organization-form-body.tsx"),
-			"utf8",
-		);
-
-		expect(source).toContain("flex flex-col gap-2 sm:flex-row");
-		expect(source).toContain("font-mono uppercase tracking-[0.2em]");
-		expect(source).toContain("w-full sm:w-auto");
+	it("ignores initial validation after editing while it is in flight", async () => {
+		const request = deferred<{
+			success: true;
+			data: { valid: true; inviteCode: { organization: { name: string } } };
+		}>();
+		mocks.validateInviteCode.mockReturnValueOnce(request.promise);
+		render(<JoinOrganizationForm code="OLD-CODE" />);
+		const input = screen.getByLabelText("Invite Code");
+		expect(input).toHaveProperty("disabled", false);
+		fireEvent.change(input, { target: { value: "NEW-CODE" } });
+		await act(async () => {
+			request.resolve({
+				success: true,
+				data: {
+					valid: true,
+					inviteCode: { organization: { name: "Stale Organization" } },
+				},
+			});
+		});
+		expect(screen.queryByText("Stale Organization")).toBeNull();
+		expect(input).toHaveProperty("value", "NEW-CODE");
 	});
 
-	it("uses full-width status cards for terminal invite states", () => {
-		const source = readFileSync(
-			join(process.cwd(), "src/components/join-organization-form-body.tsx"),
-			"utf8",
-		);
+	it.each(["pending", "approved"] as const)(
+		"announces the server's %s result with a truthful continuation",
+		async (status) => {
+			mocks.session = {
+				user: { id: "synthetic-user", email: "join@example.test" },
+				session: { activeOrganizationId: "another-org" },
+			};
+			mocks.validateInviteCode.mockResolvedValue({
+				success: true,
+				data: {
+					valid: true,
+					inviteCode: { organization: { name: "Joining Organization" } },
+				},
+			});
+			mocks.redeemInviteCode.mockResolvedValue({
+				success: true,
+				data: { status, organizationName: "Joining Organization" },
+			});
+			render(<JoinOrganizationForm code="JOIN-CODE" />);
+			await screen.findByText("Joining with join@example.test");
+			await screen.findByText("Joining Organization");
+			fireEvent.submit(joinForm());
+			expect(
+				await screen.findByRole("heading", {
+					level: 1,
+					name:
+						status === "pending" ? "Join Request Sent" : "Joined Successfully",
+				}),
+			).toBeTruthy();
+			expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+			expect(
+				screen
+					.getByRole("link", {
+						name:
+							status === "pending"
+								? "Continue to your account"
+								: "Go to Dashboard",
+					})
+					.getAttribute("href"),
+			).toBe("/");
+			expect(
+				screen.queryByText(
+					"Continuing does not approve this request or grant access to this organization.",
+				) !== null,
+			).toBe(status === "pending");
+		},
+	);
 
-		expect(source).toContain("mx-auto w-full max-w-md");
-		expect(source).toContain(
-			'CardFooter className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center"',
+	it("prevents duplicate pending joins and retains input for a safe retry after transport failure", async () => {
+		mocks.session = {
+			user: { id: "synthetic-user", email: "join@example.test" },
+			session: { activeOrganizationId: "another-org" },
+		};
+		mocks.validateInviteCode.mockResolvedValue({
+			success: true,
+			data: {
+				valid: true,
+				inviteCode: { organization: { name: "Joining Organization" } },
+			},
+		});
+		const request = deferred<never>();
+		mocks.redeemInviteCode
+			.mockReturnValueOnce(request.promise)
+			.mockResolvedValueOnce({
+				success: false,
+				error: "This code has been revoked",
+			});
+		render(<JoinOrganizationForm code="JOIN-CODE" />);
+		await screen.findByText("Joining Organization");
+		const form = joinForm();
+		fireEvent.submit(form);
+		fireEvent.submit(form);
+		await waitFor(() =>
+			expect(mocks.redeemInviteCode).toHaveBeenCalledTimes(1),
+		);
+		expect(screen.getByLabelText("Invite Code")).toHaveProperty(
+			"disabled",
+			true,
+		);
+		// Reject through the transport boundary, not a fabricated success handler.
+		await act(async () => {
+			request.reject(new Error("private network detail"));
+		});
+		expect(
+			await screen.findByText(
+				"Could not confirm your membership. Try again with the same code.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByText("private network detail")).toBeNull();
+		expect(screen.getByLabelText("Invite Code")).toHaveProperty(
+			"value",
+			"JOIN-CODE",
+		);
+		fireEvent.submit(form);
+		expect(await screen.findByText("This code has been revoked")).toBeTruthy();
+	});
+
+	it("preserves the locale and safely encodes continuation and sign-up code", async () => {
+		mocks.locale = "de";
+		mocks.validateInviteCode.mockResolvedValue({
+			success: true,
+			data: {
+				valid: true,
+				inviteCode: { organization: { name: "Organization" } },
+			},
+		});
+		render(<JoinOrganizationForm code="JOIN-CODE" />);
+		await screen.findByText("Organization");
+		expect(
+			screen.getByRole("link", { name: "Sign in" }).getAttribute("href"),
+		).toBe("/sign-in?callbackUrl=%2Fde%2Fjoin%2FJOIN-CODE");
+		expect(
+			screen.getByRole("link", { name: "Sign up" }).getAttribute("href"),
+		).toBe("/sign-up?inviteCode=JOIN-CODE");
+	});
+
+	it.each(["account", "organization"])(
+		"does not present a late result in a changed %s scope",
+		async (scope) => {
+			mocks.session = {
+				user: { id: "synthetic-user", email: "join@example.test" },
+				session: { activeOrganizationId: "another-org" },
+			};
+			mocks.validateInviteCode.mockResolvedValue({
+				success: true,
+				data: {
+					valid: true,
+					inviteCode: { organization: { name: "Joining Organization" } },
+				},
+			});
+			const request = deferred<{
+				success: true;
+				data: { status: "approved"; organizationName: string };
+			}>();
+			mocks.redeemInviteCode.mockReturnValueOnce(request.promise);
+			const { rerender } = render(<JoinOrganizationForm code="JOIN-CODE" />);
+			await screen.findByText("Joining Organization");
+			fireEvent.submit(joinForm());
+			await waitFor(() =>
+				expect(mocks.redeemInviteCode).toHaveBeenCalledTimes(1),
+			);
+			mocks.session = {
+				user: {
+					id: scope === "account" ? "new-user" : "synthetic-user",
+					email: "join@example.test",
+				},
+				session: { activeOrganizationId: "new-org" },
+			};
+			rerender(<JoinOrganizationForm code="JOIN-CODE" />);
+			await act(async () => {
+				request.resolve({
+					success: true,
+					data: { status: "approved", organizationName: "Old Result" },
+				});
+			});
+			expect(screen.queryByText("Old Result")).toBeNull();
+			expect(
+				screen.queryByRole("heading", { name: "Joined Successfully" }),
+			).toBeNull();
+		},
+	);
+
+	it("lets a visitor edit and revalidate a URL code before signing in", async () => {
+		mocks.validateInviteCode.mockResolvedValue({
+			success: true,
+			data: {
+				valid: true,
+				inviteCode: { organization: { name: "Organization A" } },
+			},
+		});
+		render(<JoinOrganizationForm code="CODE-A" />);
+		await screen.findByText("Organization A");
+		fireEvent.change(screen.getByLabelText("Invite Code"), {
+			target: { value: "code-b" },
+		});
+		expect(screen.queryByText("Organization A")).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Sign in to Join" }),
+		).toHaveProperty("disabled", true);
+		fireEvent.click(screen.getByRole("button", { name: "Validate" }));
+		await screen.findByText("Organization A");
+		fireEvent.click(screen.getByRole("button", { name: "Sign in to Join" }));
+		expect(mocks.validateInviteCode).toHaveBeenLastCalledWith("CODE-B");
+		await waitFor(() =>
+			expect(mocks.push).toHaveBeenCalledWith(
+				"/sign-in?callbackUrl=%2Fen%2Fjoin%2FCODE-B",
+			),
 		);
 	});
 

@@ -1,0 +1,131 @@
+{
+  "phase": "before",
+  "source": {
+    "head": "a9b472e5864f386d881604605d593cffc189d61a",
+    "dirtySources": "apps/webapp/src/components/join-organization-form.test.tsx",
+    "sources": [
+      {
+        "path": "apps/webapp/src/components/join-organization-form.tsx",
+        "sha256": "5d377206929648612d24e7c9a1174f851e063153a13c94c282dff2ad933400c6"
+      },
+      {
+        "path": "apps/webapp/src/components/join-organization-form-body.tsx",
+        "sha256": "8db5ff84e372d3081e71abb55794b6266ab6d7f3e7903cef7112617c18a1fcd0"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(auth)/join/[code]/page.tsx",
+        "sha256": "75c057ca6e993d7f8862e42d9a9591a393aac3e4b2c152882e890afa3ba66c78"
+      }
+    ]
+  },
+  "syntheticFixture": "R024 owned disposable; same target organization and code in paired captures",
+  "codeMask": "Code glyphs masked only in PNG capture",
+  "checks": [
+    {
+      "name": "desktop-light fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 1600,
+        "documentWidth": 1600,
+        "fontPreference": null,
+        "theme": null,
+        "rootFont": "16px",
+        "bodyFont": "16px",
+        "headingFont": "24px",
+        "inputFont": "14px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "phone-light fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": null,
+        "theme": null,
+        "rootFont": "16px",
+        "bodyFont": "16px",
+        "headingFont": "24px",
+        "inputFont": "16px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "phone-dark-large fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "wide-dark-large fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 2400,
+        "documentWidth": 2400,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "15.75px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "keyboard fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BUTTON",
+          "name": null,
+          "outline": "none",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.549994 -0.0104668 -0.119526 / 0.429748) 0px 0px 0px 2.57849px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px"
+        }
+      }
+    }
+  ],
+  "pageErrors": []
+}
