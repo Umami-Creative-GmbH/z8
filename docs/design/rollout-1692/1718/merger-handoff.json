@@ -1,0 +1,258 @@
+{
+  "merge": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+  "parents": [
+    "e9eb33528b86c2995d428954e87f7aee304ce125",
+    "07d152106204c108639dfcc28590289f63f99268"
+  ],
+  "tree": "5d43360e9b7ed040feb405444d61a2331a1fa6c7",
+  "independentTreeMatched": true,
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "tests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 35,
+        "cases": 278,
+        "passed": 278,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "calendar-exact",
+        "files": 21,
+        "cases": 211,
+        "passed": 211,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 105,
+        "cases": 851,
+        "passed": 851,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 56,
+        "overlapCases": 489
+      }
+    ],
+    "uniqueFiles": 105,
+    "uniqueCases": 851,
+    "method": "File path and full test-name multisets; equal-name parameterized cases retain multiplicity; overlapping selections and repeated runs do not add cases."
+  },
+  "quality": {
+    "types": {
+      "passed": true,
+      "scope": [
+        "Next route generation",
+        "application",
+        "workflow contracts",
+        "smoke"
+      ],
+      "selectiveErrorExclusions": false
+    },
+    "biome": {
+      "changedFiles": 7,
+      "actualCheckoutCrlfAware": "passed",
+      "explicitWebappLintImport": "passed",
+      "rawDefault": {
+        "passed": false,
+        "formattingOnlyFiles": [
+          "src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx",
+          "src/components/equipment/equipment-assignment-detail.test.tsx",
+          "src/components/equipment/equipment-assignment-detail.tsx",
+          "src/components/equipment/equipment-loading.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "qualification": "Raw default requests LF; actual checkout has CRLF. Seven formatting errors retained; CRLF-aware check passes."
+      },
+      "explicitWebapp100ColumnFormatting": {
+        "passed": false,
+        "formattingOnlyFiles": [
+          "src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx",
+          "src/components/equipment/equipment-assignment-detail.test.tsx",
+          "src/components/equipment/equipment-assignment-detail.tsx",
+          "src/components/equipment/equipment-loading.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "qualification": "Seven formatting-only failures under explicit webapp profile retained; no formatting rewrite or waiver."
+      }
+    },
+    "doctor": {
+      "changedFiles": 7,
+      "diagnostics": 0,
+      "scope": "changed",
+      "base": "e9eb33528b86c2995d428954e87f7aee304ce125",
+      "telemetry": false,
+      "supplyChain": false,
+      "numericScoreClaimed": false
+    }
+  },
+  "preservation": {
+    "verifiedAncestors": 26,
+    "priorRolloutPathsUnchanged": 1067,
+    "unaffectedPriorPathsUnchanged": 11281,
+    "changedPaths": 78,
+    "nonCombinedIncomingPathsPreserved": 75,
+    "combinedPaths": [
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/components/equipment/equipment-routes.test.tsx"
+    ],
+    "combinedResolution": "Assignment+employee+Calendar exact heading ownership and tests retained. Equipment route tests preserve both incoming failure assertions and prior employee-route behavior. No source fix beyond legitimate merge conflict resolution."
+  },
+  "artifacts": {
+    "pngsFullyDecoded": 30,
+    "jsonParsed": 35,
+    "scriptsSyntaxChecked": 5,
+    "relativeLinksResolved": 31,
+    "sourcePinnedObservations": 30,
+    "sourceHashesPinnedToCapturedGitBlobs": 120,
+    "matchedPairs": [
+      {
+        "variant": "desktop-light",
+        "scope": "synthetic small-admin / Performance small / EQ-HELD",
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "rasterScale": 2
+      },
+      {
+        "variant": "phone-light",
+        "scope": "synthetic small-admin / Performance small / EQ-HELD",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "rasterScale": 2
+      },
+      {
+        "variant": "wide-dark",
+        "scope": "synthetic small-admin / Performance small / EQ-HELD",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "rasterScale": 2
+      }
+    ],
+    "captureHeads": [
+      "3d5d0bc242b38eb5c14d3c736b2d0ba65b9da111",
+      "5f54631fd969e79a2a8655a060b0ff747daf2d28"
+    ],
+    "archiveChecks": [
+      {
+        "name": "assignment-detail",
+        "exitCode": 0,
+        "output": "Verified 30 source-pinned observations, three matched pairs, action/readback/role/scope/pending/focus/preferences evidence and fully decoded 30 PNGs. This validates the archive, not a fresh runtime run."
+      },
+      {
+        "name": "r019-historical",
+        "exitCode": 0,
+        "output": "Verified matched scope/viewport/row/title evidence, retained raw hashes against captured source f043d581e481a984a54da81b967bf5e6cfdfcd5e, 24 core + 11 final variant assertions, retained historical messages, native tree and Next diagnostics. This does not constitute a fresh browser run."
+      },
+      {
+        "name": "r021-historical",
+        "exitCode": 0,
+        "output": "{\"matchedPairs\":3,\"retainedRows\":3,\"runtimeAssertions\":28,\"preferenceAssertions\":6,\"pinnedSource\":\"412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150\",\"currentSource\":false}"
+      },
+      {
+        "name": "equipment-recovery",
+        "exitCode": 0,
+        "output": "Verified six source-pinned observations, actual pointer/transport/readback, retained framework limit, contrast/bounds and clean final probes; fully decoded six PNGs. Artifact validation is not a fresh runtime run."
+      },
+      {
+        "name": "calendar-route-arrivals",
+        "exitCode": 0,
+        "output": "Verified exact source pins, actual stale cached Back versus corrected same-instance Back/Forward and saved phone preferences,12 assertions,45/489 tests and five fully decoded captures. This archive check is not a fresh runtime run."
+      },
+      {
+        "name": "route-inventory",
+        "exitCode": 0,
+        "output": "{\"commit\":\"e72110df71d0ffc8d7614fd45b6603f8a62eefcd\",\"persistentPages\":153,\"redirectAliases\":19,\"sourcePageTemplates\":172,\"aliasTemplatesUnchangedFromInitialDev\":19,\"classification\":\"static source-template inventory only\"}"
+      }
+    ],
+    "staticInventory": "172 source templates =153 persistent+19 unchanged redirect aliases; no alias runtime claim."
+  },
+  "diffChecks": [
+    {
+      "command": "git diff --check e9eb33528b86c2995d428954e87f7aee304ce125 e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "passed": true
+    },
+    {
+      "command": "git diff --check 07d152106204c108639dfcc28590289f63f99268 e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "passed": true
+    },
+    {
+      "command": "git diff --check",
+      "passed": true
+    },
+    {
+      "command": "git -C X:/t3-code/worktrees/z8/t3-e1a10a53-5fa49bcc7754621b diff --check d4f4859527122f39dfda456671d48de131bab51c 07d152106204c108639dfcc28590289f63f99268",
+      "passed": true
+    },
+    {
+      "command": "git -C X:/t3-code/worktrees/z8/t3-e1a10a53-5fa49bcc7754621b diff --check",
+      "passed": true
+    }
+  ],
+  "findings": {
+    "sourceBlockers": [],
+    "eof": [],
+    "provenance": [],
+    "formattingQualification": "Raw LF-default and explicit100-column profile each retain7 formatting-only failures. No blanket default/strict formatting acceptance. Historical R019/R021 strict-current-source is separately qualified after legitimate shared metadata opt-ins; pinned historical archives pass."
+  },
+  "freshVsInherited": {
+    "fresh": "Exact/native merge tree, parent/ancestry/path preservation;105 unique suites/851 tests with exact35/278 and21/211 included;full types;seven-file CRLF-aware Biome/lint-import and Doctor zero;PNG/JSON/script/link/source-pin/static-inventory archive checks.",
+    "inherited": "Implementer premerge10 PostgreSQL suites/129 tests;30 capture observations/three source comparisons with actual persisted receipt/amendment/loss/recovery/hold/pending/scope/preferences;native React tree and connected Next diagnostics. Root pointer and Calendar runtime archives inspected only."
+  },
+  "limits": [
+    "No fresh browser, PostgreSQL, provider login/session request, full production/static-generation build, remote Tolgee/global catalog, physical device/native zoom, numeric performance or exhaustive domain/locale/motion acceptance.",
+    "after-recovery-pending is a completed action and is not pending proof; accepted dedicated-client lock observations replace it. Organization switch is during a pending read, not a committed mutation.",
+    "Foreign-org feature-off browser observation combines restrictions; isolated feature admission is inherited PostgreSQL proof. Synthetic session fixtures do not prove provider/captcha/SSO/MFA/email acceptance.",
+    "Source-pinned observation JSON and PNGs are retained evidence; no missing raw Preview driver trace or fresh runtime provenance is invented. Before/after are four-file consumer-source comparisons in the same shell.",
+    "Next development Rendering layer can reappear after hover; earlier transition/hydration/cache/native/capture harness findings remain qualified in existing reports.",
+    "Fresh web guideline network fetch was omitted under the root no-remote grant; repository UX/accessibility rules, existing semantic primitives and the local React performance/composition guidance were reviewed."
+  ],
+  "commands": [
+    "git merge-tree --write-tree e9eb33528b86c2995d428954e87f7aee304ce125 07d152106204c108639dfcc28590289f63f99268",
+    "pnpm node .tmp/merge1718-audit/prepare-expected.mjs (isolated temporary index)",
+    "git merge --no-ff --no-commit 07d152106204c108639dfcc28590289f63f99268",
+    "pnpm node .tmp/merge1718-audit/resolve.mjs;git add two metadata files;git write-tree",
+    "git commit -m \"Merge #1718 equipment assignment detail UI refresh\"",
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 <exact incoming equipment/licence/shared/i18n selection> --reporter=default --reporter=json --outputFile=../../.tmp/merge1718-audit/exact.json",
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 <exact Calendar/header selection> --reporter=default --reporter=json --outputFile=../../.tmp/merge1718-audit/calendar-exact.json",
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 <compatibility-selection.txt entries> --reporter=default --reporter=json --outputFile=../../.tmp/merge1718-audit/compatibility.json",
+    "CI=true pnpm --filter webapp typecheck",
+    "pnpm --filter webapp exec biome check <seven changed source files>",
+    "pnpm --filter webapp exec biome check --line-ending=crlf <seven changed source files>",
+    "pnpm --filter webapp exec biome check --config-path=biome.jsonc --line-ending=crlf <seven changed source files>",
+    "pnpm --filter webapp exec biome check --config-path=biome.jsonc --formatter-enabled=false <seven changed source files>",
+    "pnpm exec react-doctor apps/webapp --scope changed --base e9eb33528b86c2995d428954e87f7aee304ce125 --verbose --no-score --no-supply-chain --no-telemetry --no-parallel",
+    "pnpm node .tmp/merge1718-audit/audit.mjs",
+    "pnpm node .tmp/merge1718-audit/check-archives.mjs",
+    "pnpm node .tmp/merge1718-audit/finalize.mjs"
+  ],
+  "unsuccessfulOperations": [
+    "Sandbox merge-tree object write denied; authorized escalation succeeded.",
+    "Sandbox pnpm engine-store lock denied before conflict-resolution script ran; authorized escalation succeeded.",
+    "Initial configuration probe used absent biome.json/biome.jsonc at root; actual explicit apps/webapp/biome.jsonc was then read and checked.",
+    "Audit finalizer initially tried to normalize its currently open output log (EBUSY); excluding that log fixed the audit-only harness without changing application source or rerunning acceptance."
+  ],
+  "packageManagerEnvironment": "pnpm only;pnpm_config_verify_deps_before_run=false;all Vitest runs maxWorkers2;explicitUTF8 archive notes/logs. No automatic approval-review rejection.",
+  "noServicesStarted": true,
+  "noTrackerWrites": true,
+  "noLedgerReportReadmeChanges": true,
+  "noPushOrPrChanges": true,
+  "noSourceFixes": true
+}
