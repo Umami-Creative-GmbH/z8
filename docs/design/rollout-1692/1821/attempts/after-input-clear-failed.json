@@ -1,0 +1,180 @@
+{
+  "source": {
+    "head": "d4f4859527122f39dfda456671d48de131bab51c",
+    "branch": "feat/1821-forgot-password",
+    "dirty": "M apps/webapp/src/components/forgot-password-form.test.tsx\n M apps/webapp/src/components/forgot-password-form.tsx",
+    "files": {
+      "apps/webapp/src/components/forgot-password-form.tsx": "be6f538df72d7a4e766e49e95d31a7741ca21356769d9c3072467cd5573963af",
+      "apps/webapp/src/components/auth-form-wrapper.tsx": "78be245be6ecc296b8012a41eb8a763c8d357250a6eabe0f90c9b5fedd735421"
+    }
+  },
+  "fixture": "owned synthetic performance small, signed out, local dev public dummy CAPTCHA",
+  "captures": [
+    {
+      "label": "desktop-light",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion d4f4859",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 1600,
+      "documentWidth": 1600,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "phone-light",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion d4f4859",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "wide-dark",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion d4f4859",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 2400,
+      "documentWidth": 2400,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "phone-dark-large",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion d4f4859",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "branded-desktop",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion d4f4859",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 1600,
+      "documentWidth": 1600,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "branded-phone",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion d4f4859",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "validation",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\n\nInvalid email address\n\nSend reset link\nRemember your password? Sign in\nVersion d4f4859",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "invalid",
+      "invalid": "true",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "pending",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSending reset link…\nSending reset link…\nRemember your password? Sign in\nVersion d4f4859",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "invalidunknown-reset@example.test",
+      "invalid": "false",
+      "busy": "true",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": ""
+    }
+  ],
+  "actions": [],
+  "errors": [],
+  "failure": {
+    "name": "AssertionError",
+    "message": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'invalidunknown-reset@example.test'\n- 'unknown-reset@example.test'\n"
+  }
+}
