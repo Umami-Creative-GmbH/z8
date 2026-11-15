@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "name": "small-manager category-ungranted route refused",
+      "passed": true
+    },
+    {
+      "name": "small-restricted category-ungranted route refused",
+      "passed": true
+    },
+    {
+      "name": "payslip-only officer admitted with explicit empty history",
+      "passed": true
+    },
+    {
+      "failure": "Missing HR-only"
+    }
+  ]
+}

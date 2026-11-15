@@ -1,0 +1,31 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/apps/webapp
+
+ ❯ |unit| src/tolgee/extracted-key-defaults.test.ts (1 test | 1 failed) 5010ms
+   ❯ extracted translation keys (1)
+     × all have a default English value 5009ms
+
+ Test Files  1 failed | 8 passed (9)
+      Tests  1 failed | 120 passed (121)
+   Start at  20:08:02
+   Duration  7.83s (tests 37%, transform 28%, import 20%, environment 11%, setup 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/tolgee/extracted-key-defaults.test.ts > extracted translation keys > all have a default English value
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/tolgee/extracted-key-defaults.test.ts:41:2
+     39|
+     40| describe("extracted translation keys", () => {
+     41|  it("all have a default English value", () => {
+       |  ^
+     42|   const offenders = [...extractedKeys()]
+     43|    .filter(([, { hasDefault }]) => !hasDefault)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

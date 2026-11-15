@@ -1,0 +1,147 @@
+{
+  "phase": "before",
+  "checks": [
+    {
+      "name": "desktop",
+      "path": "/en/personnel-files/payslip-batches",
+      "h1": [
+        "Z8",
+        "Payslip batches"
+      ],
+      "overflow": false,
+      "links": [
+        {
+          "text": "October 2026\n0 files\nNot confirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "September 2026\n0 files\nConfirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000002"
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "2026"
+        },
+        {
+          "tag": "BUTTON",
+          "value": "Shared"
+        },
+        {
+          "tag": "INPUT",
+          "value": "shared"
+        }
+      ],
+      "startCount": 1
+    },
+    {
+      "name": "phone",
+      "path": "/en/personnel-files/payslip-batches",
+      "h1": [
+        "Z8",
+        "Payslip batches"
+      ],
+      "overflow": false,
+      "links": [
+        {
+          "text": "October 2026\n0 files\nNot confirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "September 2026\n0 files\nConfirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000002"
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "2026"
+        },
+        {
+          "tag": "BUTTON",
+          "value": "Shared"
+        },
+        {
+          "tag": "INPUT",
+          "value": "shared"
+        }
+      ],
+      "startCount": 1
+    },
+    {
+      "name": "wide",
+      "path": "/en/personnel-files/payslip-batches",
+      "h1": [
+        "Z8",
+        "Payslip batches"
+      ],
+      "overflow": false,
+      "links": [
+        {
+          "text": "October 2026\n0 files\nNot confirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "September 2026\n0 files\nConfirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000002"
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "2026"
+        },
+        {
+          "tag": "BUTTON",
+          "value": "Shared"
+        },
+        {
+          "tag": "INPUT",
+          "value": "shared"
+        }
+      ],
+      "startCount": 1
+    }
+  ],
+  "native": {
+    "versions": [
+      "19.3.0-canary-278794d7-20261002",
+      "19.3.0-canary-278794d7-20261002",
+      "18.3.1"
+    ],
+    "components": [
+      "PayslipBatchStart",
+      "TFormItem",
+      "TFormLabel",
+      "TFormControl",
+      "TFormMessage",
+      "TFormDescription"
+    ]
+  },
+  "sourcePin": "d447420ec044e4cd7cdd45eb6af4ad9ff91360f3 consumer files restored exactly; optional compatible start guard already present"
+}

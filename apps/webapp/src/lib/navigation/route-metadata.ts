@@ -211,6 +211,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		/^\/payroll\/work-balances\/[^/]+$/.test(path) ||
 		path === "/" ||
 		path === "/time-tracking" ||
+		path === "/personnel-files/payslip-batches" ||
 		path === "/notifications" ||
 		path === "/absences" ||
 		path === "/my-requests" ||

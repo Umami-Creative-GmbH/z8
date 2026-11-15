@@ -1,0 +1,22 @@
+file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/util.js:241
+            throw new TimeoutError(`Timed out after waiting ${ms}ms`, { cause });
+                  ^
+
+TimeoutError: Timed out after waiting 30000ms
+    at file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/util.js:241:19
+    at file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1944:31
+    at OperatorSubscriber2._this._next (file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1001:9)
+    at Subscriber2.next (file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:704:12)
+    at AsyncAction2.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:2288:20)
+    at AsyncAction2._execute (file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1368:12)
+    at AsyncAction2.execute (file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1357:22)
+    at AsyncScheduler2.flush (file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1435:26)
+    at listOnTimeout (node:internal/timers:685:17)
+    at process.processTimers (node:internal/timers:618:7) {
+  [cause]: Error: Locator.click
+      at #click (file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/locators/locators.js:293:23)
+      at NodeLocator.click (file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/locators/locators.js:613:42)
+      at file:///X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/.tmp/1732/officer-save.mjs:4:129
+}
+
+Node.js v26.9.0

@@ -1,0 +1,2 @@
+Partial: Waiting for selector `[data-slot=sheet-content]` failed
+[{"name":"history reaches authorized confirmed September batch","passed":true},{"name":"real dark preference applied","passed":true},{"name":"dark persisted after reload","passed":true},{"name":"phone dark no document overflow","passed":true},{"failure":"Waiting for selector `[data-slot=sheet-content]` failed"}]

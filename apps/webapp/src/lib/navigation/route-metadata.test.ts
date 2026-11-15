@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts the payslip batch start heading without adopting batch detail", () => {
+		expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id")).toBe(false);
+	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
