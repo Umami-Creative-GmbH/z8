@@ -6,7 +6,7 @@ import {
 	IconFileText,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useDisplayContext } from "@/hooks/use-display-context";
@@ -23,6 +23,9 @@ import type { ReportData } from "@/lib/reports/types";
 
 interface ExportButtonsProps {
 	reportData: ReportData;
+	disabled?: boolean;
+	exportScope?: string;
+	isCurrent?: () => boolean;
 }
 
 type ExportFormat = "pdf" | "excel" | "csv";
@@ -31,12 +34,40 @@ function loadExcelExporter() {
 	return import("@/lib/reports/exporters/excel-exporter");
 }
 
-export function ExportButtons({ reportData }: ExportButtonsProps) {
+export function ExportButtons({
+	reportData,
+	disabled = false,
+	exportScope,
+	isCurrent,
+}: ExportButtonsProps) {
 	const { t } = useTranslate();
 	const displayContext = useDisplayContext();
 	const [loading, setLoading] = useState<ExportFormat | null>(null);
+	const arrival = useRef<symbol | null>(null);
+	const running = useRef(false);
+	// react-doctor-disable-next-line react-doctor/no-reset-all-state-on-prop-change -- Only pending export feedback resets when its snapshot or arrival retires, never a user draft.
+	useLayoutEffect(() => {
+		arrival.current = Symbol(
+			`${exportScope}:${reportData.employee.id}:${disabled}`,
+		);
+		running.current = false;
+		// react-doctor-disable-next-line react-hooks-js/set-state-in-effect -- A reconnected Activity or replacement report must release canceled export controls.
+		setLoading(null);
+		return () => {
+			arrival.current = null;
+		};
+	}, [reportData, disabled, exportScope]);
 
 	const handleExport = async (format: ExportFormat) => {
+		if (
+			disabled ||
+			running.current ||
+			!arrival.current ||
+			isCurrent?.() === false
+		)
+			return;
+		const owner = arrival.current;
+		running.current = true;
 		setLoading(format);
 		const generatedAt = systemClock.nowInstant().toString();
 
@@ -72,6 +103,8 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 			(value) => ({ ok: true as const, value }),
 			(error) => ({ ok: false as const, error }),
 		);
+		if (arrival.current !== owner || isCurrent?.() === false) return;
+		running.current = false;
 
 		if (!exportResult.ok) {
 			console.error("Export failed:", exportResult.error);
@@ -111,7 +144,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 		<div className="flex flex-wrap gap-2">
 			<Button
 				onClick={() => handleExport("pdf")}
-				disabled={loading !== null}
+				disabled={disabled || loading !== null}
 				variant="default"
 				size="lg"
 			>
@@ -123,7 +156,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 
 			<Button
 				onClick={() => handleExport("excel")}
-				disabled={loading !== null}
+				disabled={disabled || loading !== null}
 				variant="outline"
 				size="lg"
 			>
@@ -135,7 +168,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 
 			<Button
 				onClick={() => handleExport("csv")}
-				disabled={loading !== null}
+				disabled={disabled || loading !== null}
 				variant="outline"
 				size="lg"
 			>

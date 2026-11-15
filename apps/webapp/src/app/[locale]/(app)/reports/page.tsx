@@ -49,7 +49,11 @@ async function ReportsPageContent() {
 			/>
 
 			{/* Reports Container */}
-			<ReportsContainer currentEmployeeId={employee.id} />
+			<ReportsContainer
+				currentEmployeeId={employee.id}
+				organizationId={employee.organizationId}
+				userId={employee.userId}
+			/>
 		</div>
 	);
 }
