@@ -1,0 +1,292 @@
+{
+  "phase": "after",
+  "source": {
+    "head": "a9b472e5864f386d881604605d593cffc189d61a",
+    "dirtySources": "apps/webapp/src/app/[locale]/(auth)/join/[code]/page.tsx\napps/webapp/src/components/join-organization-form-body.tsx\napps/webapp/src/components/join-organization-form.test.tsx\napps/webapp/src/components/join-organization-form.tsx",
+    "sources": [
+      {
+        "path": "apps/webapp/src/components/join-organization-form.tsx",
+        "sha256": "cb6d6bdebc31daf518cea123e054c7dcc2c227e33e40888a98ae6aec37220acd"
+      },
+      {
+        "path": "apps/webapp/src/components/join-organization-form-body.tsx",
+        "sha256": "599d3db81b7e372ad18ec7f946edce2d84cdb857f4ccbe0cc2955491e022228d"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(auth)/join/[code]/page.tsx",
+        "sha256": "48b6a68983b0f6bfe2c4ff1c083d123232b6a11d788bc9fe4a109bf1f027dd43"
+      }
+    ]
+  },
+  "syntheticFixture": "R024 owned disposable; same target organization and code in paired captures",
+  "codeMask": "Code glyphs masked only in PNG capture",
+  "checks": [
+    {
+      "name": "desktop-light fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 1600,
+        "documentWidth": 1600,
+        "fontPreference": null,
+        "theme": null,
+        "rootFont": "16px",
+        "bodyFont": "16px",
+        "headingFont": "24px",
+        "inputFont": "14px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "phone-light fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": null,
+        "theme": null,
+        "rootFont": "16px",
+        "bodyFont": "16px",
+        "headingFont": "24px",
+        "inputFont": "16px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "phone-dark-large fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "wide-dark-large fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 2400,
+        "documentWidth": 2400,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "15.75px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "keyboard fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BUTTON",
+          "name": null,
+          "outline": "none",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.549994 -0.0104668 -0.119526 / 0.468314) 0px 0px 0px 2.80989px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px"
+        }
+      }
+    },
+    {
+      "name": "one main heading",
+      "passed": true
+    },
+    {
+      "name": "real sign-in continuation preserves locale/code",
+      "passed": true
+    },
+    {
+      "name": "German sign-in callback",
+      "passed": true
+    },
+    {
+      "name": "pending-action fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "pending disables code and join",
+      "passed": true
+    },
+    {
+      "name": "request-sent fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "pending persisted without employee",
+      "passed": true
+    },
+    {
+      "name": "pending cannot activate target organization",
+      "passed": true
+    },
+    {
+      "name": "pending continuation available",
+      "passed": true
+    },
+    {
+      "name": "approved fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 1600,
+        "documentWidth": 1600,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "approved membership joined exactly once",
+      "passed": true
+    },
+    {
+      "name": "existing approved membership is idempotent",
+      "passed": true
+    },
+    {
+      "name": "server-refusal fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "revoked code retains input",
+      "passed": true
+    },
+    {
+      "name": "refused join creates no membership",
+      "passed": true
+    },
+    {
+      "name": "real retry succeeds after authority restored",
+      "passed": true
+    },
+    {
+      "name": "existing admin membership remains admin",
+      "passed": true
+    },
+    {
+      "name": "session-refusal fits viewport",
+      "passed": true,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "fontPreference": "large",
+        "theme": "dark",
+        "rootFont": "18px",
+        "bodyFont": "18px",
+        "headingFont": "27px",
+        "inputFont": "18px",
+        "headingCount": 1,
+        "focus": {
+          "tag": "BODY",
+          "name": null,
+          "outline": "none",
+          "shadow": "none"
+        }
+      }
+    },
+    {
+      "name": "late signed-out join safely refused",
+      "passed": true
+    }
+  ],
+  "pageErrors": []
+}

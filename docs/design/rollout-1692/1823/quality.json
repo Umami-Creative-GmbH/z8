@@ -1,0 +1,122 @@
+{
+    "head":  "df015190f4420fda9f933f59200bcf4c5fd03bbe",
+    "latestLocalIntegration":  "bd548b0cdb00c71591f865609c1a6bac871c38e3",
+    "status":  "Implementation handoff; root merger owns readiness. Issue OPEN.",
+    "commands":  [
+                     {
+                         "command":  "pnpm install --frozen-lockfile --offline",
+                         "result":  "Dependencies restored; PostHog CLI Windows postinstall failed on ExtractToDirectory. No manifest/lock change; installed tools used."
+                     },
+                     {
+                         "command":  "pnpm --filter webapp generate-licenses",
+                         "result":  "passed; ignored generated output"
+                     },
+                     {
+                         "command":  "pnpm --filter webapp i18n:metadata",
+                         "result":  "passed; local metadata only, no remote pull"
+                     },
+                     {
+                         "command":  "CI=true pnpm --filter webapp typecheck",
+                         "result":  "passed after final LOCAL integration merge; next typegen and all 3 TypeScript projects"
+                     },
+                     {
+                         "command":  "pnpm --filter webapp exec vitest run --project unit src/components/join-organization-form.test.tsx \u0027src/app/[locale]/(auth)/invite-code-actions.test.ts\u0027 src/lib/effect/services/invite-code.service.test.ts src/components/ui/tanstack-form.test.tsx src/components/auth-shell-controls.test.tsx src/lib/employee-lifecycle/joining/employee-writers.test.ts src/tolgee/extracted-key-defaults.test.ts src/lib/auth/callback-url.test.ts src/lib/auth/use-auth-page-session.test.tsx src/components/forgot-password-form.test.tsx",
+                         "result":  "10 files, 73 tests passed"
+                     },
+                     {
+                         "command":  "pnpm --filter webapp exec biome check --error-on-warnings src/components/join-organization-form.tsx src/components/join-organization-form-body.tsx src/components/join-organization-form.test.tsx \u0027src/app/[locale]/(auth)/join/[code]/page.tsx\u0027 src/lib/auth/use-auth-page-session.ts src/lib/auth/use-auth-page-session.test.tsx",
+                         "result":  "6 files passed, no fixes/warnings. Default scoped check also passed; no full-repo format claim"
+                     },
+                     {
+                         "command":  "pnpm exec react-doctor --scope changed --base ai/1692-app-wide-ui-refresh --verbose --no-supply-chain --no-telemetry",
+                         "result":  "6 files; one reviewed asynchronous initial-validation effect advisory, no compiler error; no suppression/numeric-score claim"
+                     },
+                     {
+                         "command":  "pnpm node $env:TEMP/z8-1823-fixture-b-57f730706e273759/postgres-runner.mjs $env:TEMP/z8-1823-fixture-b-57f730706e273759",
+                         "result":  "Migration verifier + 3 files/78 tests passed twice on separate disposable databases. Reusable equivalent: docs/design/rollout-1692/1823/postgres.mjs"
+                     },
+                     {
+                         "command":  "pnpm exec tsx scripts/verify-approval-migration-recovery.ts",
+                         "context":  "apps/webapp, guarded private local database env",
+                         "result":  "passed; refuses custom schema, recovery/retry/anchor indexes/fresh chain"
+                     },
+                     {
+                         "command":  "pnpm exec vitest run --project integration src/lib/employee-lifecycle/joining/joining.integration.test.ts src/lib/employee-lifecycle/reactivation-paths.integration.test.ts src/lib/auth/organization-joining.integration.test.ts",
+                         "context":  "apps/webapp, same guarded private database env",
+                         "result":  "3 files/78 tests passed"
+                     },
+                     {
+                         "command":  "pnpm node scripts/performance/fixture.mjs prepare $env:TEMP/z8-1823-fixture-b-57f730706e273759",
+                         "result":  "passed after dependency restoration; failed first fixture cleaned its own services"
+                     },
+                     {
+                         "command":  "pnpm node $env:TEMP/z8-1823-fixture-b-57f730706e273759/runtime-helper.mjs dev \u003cthis-worktree\u003e $env:TEMP/z8-1823-fixture-b-57f730706e273759",
+                         "result":  "passed; helper privately copied from user pointer, awaits log open before Node26 spawn, verifies source root/service labels. Restarted only owned process for PLATFORM_DOMAIN=localhost branding fixture"
+                     },
+                     {
+                         "command":  "pnpm node $env:TEMP/z8-1823-fixture-b-57f730706e273759/runtime-helper.mjs auth \u003cthis-worktree\u003e $env:TEMP/z8-1823-fixture-b-57f730706e273759 small-admin small-manager small-employee small-restricted",
+                         "result":  "four real synthetic actors authenticated; credentials/cookies private"
+                     },
+                     {
+                         "command":  "pnpm exec agent-browser --session z8-1823-e07b21b52645 --restore --headed --enable react-devtools open http://localhost:59447/en/join/INVALID",
+                         "result":  "native browser loaded successfully. react tree returned Done without usable tree; not a React DevTools pass"
+                     },
+                     {
+                         "command":  "pnpm node docs/design/rollout-1692/1823/runtime.mjs \u003cprivate-fixture\u003e before",
+                         "result":  "Historical first driver version, actual prepared HEAD baseline. Reusable version now requires explicit verified baseline ref. 5 layout assertions passed"
+                     },
+                     {
+                         "command":  "pnpm node docs/design/rollout-1692/1823/runtime.mjs \u003cprivate-fixture\u003e after",
+                         "result":  "24 assertions, real mutations/refusals/readback, pageErrors=[]; requires fresh prepared actor memberships"
+                     },
+                     {
+                         "command":  "pnpm node docs/design/rollout-1692/1823/runtime.mjs \u003cprivate-fixture\u003e continuation",
+                         "result":  "15 assertions, actual UI sign-in + in-flight scope boundaries, pageErrors=[]; explicit visibility simulation qualification in report"
+                     },
+                     {
+                         "command":  "pnpm node docs/design/rollout-1692/1823/runtime.mjs \u003cprivate-fixture\u003e final",
+                         "result":  "5 final merged layout assertions; no dirty application sources"
+                     },
+                     {
+                         "command":  "pnpm node docs/design/rollout-1692/1823/runtime.mjs \u003cprivate-fixture\u003e branding",
+                         "result":  "9 assertions, stored brand resolved on real local organization hostname, computed primary rgb(37,99,235)"
+                     },
+                     {
+                         "command":  "pnpm node docs/design/rollout-1692/1823/runtime.mjs \u003cprivate-fixture\u003e readback",
+                         "result":  "5 layout checks and final canonical UTC persisted membership readback"
+                     },
+                     {
+                         "command":  "pnpm node $env:TEMP/z8-1823-fixture-b-57f730706e273759/runtime-helper.mjs mcp \u003cthis-worktree\u003e \u003cprivate-fixture\u003e",
+                         "result":  "tools/list and final connected compilation/errors clean"
+                     },
+                     {
+                         "command":  "pnpm node docs/design/rollout-1692/1823/verify-evidence.mjs",
+                         "result":  "40 PNG hashes/mappings, current application hash match and UTC membership counts verified"
+                     },
+                     {
+                         "command":  "pnpm exec agent-browser --session z8-1823-e07b21b52645 --restore close",
+                         "result":  "owned browser closed; private saved state outside Git"
+                     },
+                     {
+                         "command":  "taskkill /PID \u003cowned-dev-process-private.json.pid\u003e /T /F",
+                         "result":  "identity checked against exact worktree/next dev/port before stopping; no broad process kill"
+                     },
+                     {
+                         "command":  "pnpm node scripts/performance/fixture.mjs cleanup \u003cprivate-fixture\u003e",
+                         "result":  "three label-owned containers removed and verified absent; owned Next parent absent"
+                     }
+                 ],
+    "commonEnvironment":  "pnpm_config_verify_deps_before_run=false; explicit UTF8 for source/evidence reads and writes",
+    "inherited":  "F1/F3 primitive coverage; admission/lifecycle owners unchanged. Page-specific evidence above is fresh. Shared/root production/device/provider/catalog limits retained.",
+    "unavailable":  [
+                        "Full production static generation",
+                        "Remote Tolgee synchronization",
+                        "Physical devices/store wrappers",
+                        "True browser zoom",
+                        "Live external email/provider delivery",
+                        "Native React DevTools usable tree",
+                        "Exhaustive domain/translation/keyboard certification"
+                    ],
+    "finalDocumentationOnlyIntegrationAudit":  "Merged bd548b0cdb00c71591f865609c1a6bac871c38e3; application diff from df015190f4420fda9f933f59200bcf4c5fd03bbe empty. 73 tests, strict six-file Biome and capture/source verifier rerun after merge. Types/Doctor remain valid for identical application bytes."
+}
+
