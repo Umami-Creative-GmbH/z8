@@ -1,0 +1,375 @@
+{
+  "stage": "start",
+  "checks": [
+    {
+      "actor": "small-admin",
+      "dark": false,
+      "geometry": {
+        "width": 390,
+        "rows": [
+          {
+            "textWidth": 257.5,
+            "title": "Medical note\nSick note\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+            "actions": [
+              {
+                "name": "Open Medical note",
+                "x": 137,
+                "right": 177.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Download Medical note",
+                "x": 182,
+                "right": 222.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Link Medical note to sick leave",
+                "x": 227,
+                "right": 267.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Edit Medical note",
+                "x": 272,
+                "right": 312.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Delete Medical note",
+                "x": 317,
+                "right": 357.5,
+                "width": 40.5,
+                "height": 40.5
+              }
+            ]
+          },
+          {
+            "textWidth": 257.5,
+            "title": "Employment record\nOther\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+            "actions": [
+              {
+                "name": "Open Employment record",
+                "x": 182,
+                "right": 222.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Download Employment record",
+                "x": 227,
+                "right": 267.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Edit Employment record",
+                "x": 272,
+                "right": 312.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Delete Employment record",
+                "x": 317,
+                "right": 357.5,
+                "width": 40.5,
+                "height": 40.5
+              }
+            ]
+          },
+          {
+            "textWidth": 257.5,
+            "title": "Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes\nCertificate\nShared\n\nJan 15, 2026 · fixture.pdf (10 B)",
+            "actions": [
+              {
+                "name": "Open Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 137,
+                "right": 177.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Download Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 182,
+                "right": 222.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Choose the skill Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes proves",
+                "x": 227,
+                "right": 267.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Edit Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 272,
+                "right": 312.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Delete Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 317,
+                "right": 357.5,
+                "width": 40.5,
+                "height": 40.5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "actor": "small-admin",
+      "dark": true,
+      "geometry": {
+        "width": 390,
+        "rows": [
+          {
+            "textWidth": 257.5,
+            "title": "Medical note\nSick note\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+            "actions": [
+              {
+                "name": "Open Medical note",
+                "x": 137,
+                "right": 177.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Download Medical note",
+                "x": 182,
+                "right": 222.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Link Medical note to sick leave",
+                "x": 227,
+                "right": 267.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Edit Medical note",
+                "x": 272,
+                "right": 312.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Delete Medical note",
+                "x": 317,
+                "right": 357.5,
+                "width": 40.5,
+                "height": 40.5
+              }
+            ]
+          },
+          {
+            "textWidth": 257.5,
+            "title": "Employment record\nOther\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+            "actions": [
+              {
+                "name": "Open Employment record",
+                "x": 182,
+                "right": 222.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Download Employment record",
+                "x": 227,
+                "right": 267.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Edit Employment record",
+                "x": 272,
+                "right": 312.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Delete Employment record",
+                "x": 317,
+                "right": 357.5,
+                "width": 40.5,
+                "height": 40.5
+              }
+            ]
+          },
+          {
+            "textWidth": 257.5,
+            "title": "Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes\nCertificate\nShared\n\nJan 15, 2026 · fixture.pdf (10 B)",
+            "actions": [
+              {
+                "name": "Open Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 137,
+                "right": 177.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Download Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 182,
+                "right": 222.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Choose the skill Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes proves",
+                "x": 227,
+                "right": 267.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Edit Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 272,
+                "right": 312.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Delete Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 317,
+                "right": 357.5,
+                "width": 40.5,
+                "height": 40.5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "Officer phone drawer closes on first Escape after saved text preference.",
+    {
+      "actor": "small-employee",
+      "dark": false,
+      "geometry": {
+        "width": 390,
+        "rows": [
+          {
+            "textWidth": 257.5,
+            "title": "Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes\nCertificate\n\nJan 15, 2026 · fixture.pdf (10 B)",
+            "actions": [
+              {
+                "name": "Open Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 272,
+                "right": 312.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Download Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 317,
+                "right": 357.5,
+                "width": 40.5,
+                "height": 40.5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "actor": "small-employee",
+      "dark": true,
+      "geometry": {
+        "width": 390,
+        "rows": [
+          {
+            "textWidth": 257.5,
+            "title": "Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes\nCertificate\n\nJan 15, 2026 · fixture.pdf (10 B)",
+            "actions": [
+              {
+                "name": "Open Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 272,
+                "right": 312.5,
+                "width": 40.5,
+                "height": 40.5
+              },
+              {
+                "name": "Download Safety qualification for equipment handling and annual workplace inspection — valid across the organization with detailed authorization notes",
+                "x": 317,
+                "right": 357.5,
+                "width": 40.5,
+                "height": 40.5
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "captures": [
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\after-small-admin-saved18-light.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\after-small-admin-saved18-dark.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\after-small-employee-saved18-light.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "My Documents"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\after-small-employee-saved18-dark.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "My Documents"
+      ]
+    }
+  ],
+  "errors": [],
+  "source": [],
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675"
+}

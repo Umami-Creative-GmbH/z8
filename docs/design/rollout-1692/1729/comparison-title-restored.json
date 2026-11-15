@@ -1,0 +1,8 @@
+{
+  "stage": "start",
+  "checks": [
+    "Restored comparison seed title through public metadata edit."
+  ],
+  "errors": [],
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675"
+}

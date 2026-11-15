@@ -8,7 +8,13 @@ import { AbsenceSickNotesPanel } from "@/components/absences/sick-notes/absence-
 import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import { useSickLeaveLabels } from "./sick-leave-overview";
@@ -30,7 +36,11 @@ export function EmployeeSickLeaveCard({ employeeId }: { employeeId: string }) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.personnelFiles.sickNotes.cardTitle", "Sick leave")}</CardTitle>
+				<CardTitle>
+					<h2>
+						{t("settings.personnelFiles.sickNotes.cardTitle", "Sick leave")}
+					</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.personnelFiles.sickNotes.cardDescription",
@@ -45,9 +55,22 @@ export function EmployeeSickLeaveCard({ employeeId }: { employeeId: string }) {
 						<Skeleton className="h-12 w-full" />
 					</div>
 				) : query.isError ? (
-					<p role="alert" className="text-sm text-destructive">
-						{t("settings.personnelFiles.sickNotes.loadFailed", "The list could not be loaded.")}
-					</p>
+					<div role="alert" className="space-y-3 text-sm text-destructive">
+						<p>
+							{t(
+								"settings.personnelFiles.sickNotes.loadFailed",
+								"The list could not be loaded.",
+							)}
+						</p>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={query.isFetching}
+							onClick={() => void query.refetch()}
+						>
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
 				) : query.data.length === 0 ? (
 					<p className="text-sm text-muted-foreground">
 						{t(
@@ -58,7 +81,11 @@ export function EmployeeSickLeaveCard({ employeeId }: { employeeId: string }) {
 				) : (
 					<ul className="divide-y rounded-md border">
 						{query.data.map((absence) => {
-							const dateRange = formatAbsenceDateRange(absence.startDate, absence.endDate, locale);
+							const dateRange = formatAbsenceDateRange(
+								absence.startDate,
+								absence.endDate,
+								locale,
+							);
 							return (
 								<li
 									key={absence.id}
@@ -67,16 +94,27 @@ export function EmployeeSickLeaveCard({ employeeId }: { employeeId: string }) {
 									<div className="min-w-0 flex-1 space-y-1">
 										<div className="flex flex-wrap items-center gap-2">
 											<span className="font-medium">{dateRange}</span>
-											<Badge variant={absence.status === "approved" ? "outline" : "secondary"}>
+											<Badge
+												variant={
+													absence.status === "approved"
+														? "outline"
+														: "secondary"
+												}
+											>
 												{labels.statuses[absence.status]}
 											</Badge>
 											{absence.sickDetail ? (
-												<Badge variant="secondary">{labels.sickDetails[absence.sickDetail]}</Badge>
+												<Badge variant="secondary">
+													{labels.sickDetails[absence.sickDetail]}
+												</Badge>
 											) : null}
 										</div>
 										<p className="text-sm text-muted-foreground tabular-nums">
 											{absence.sickNoteCount === 0
-												? t("settings.personnelFiles.sickLeave.notes.none", "No note")
+												? t(
+														"settings.personnelFiles.sickLeave.notes.none",
+														"No note",
+													)
 												: t(
 														"settings.personnelFiles.sickLeave.notes.count",
 														"{count, plural, one {# note} other {# notes}}",

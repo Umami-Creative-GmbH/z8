@@ -1,0 +1,41 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/employee-file-workspace.test.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/employee-file-workspace.test.tsx [ src/components/personnel-file/employee-file-workspace.test.tsx ]
+Error: Failed to resolve import "./employee-file-workspace" from "src/components/personnel-file/employee-file-workspace.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/apps/webapp/src/components/personnel-file/employee-file-workspace.test.tsx:4:0
+  14 |  }, this) }));
+  15 |  const __vi_import_0__ = await import("@testing-library/react");
+  16 |  const __vi_import_1__ = await import("./employee-file-workspace");
+     |                                       ^
+  17 |  const __vi_import_2__ = await import("react/jsx-dev-runtime");
+  18 |  // @vitest-environment jsdom
+ ❯ TransformPluginContext._formatLog ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:8865:39
+ ❯ TransformPluginContext.error ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:8862:14
+ ❯ resolveId ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:26552:18
+ ❯ ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:26651:23
+ ❯ TransformPluginContext.transform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:26624:4
+ ❯ EnvironmentPluginContainer.transform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:8636:14
+ ❯ loadAndTransform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:20112:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  18:25:49
+   Duration  679ms (environment 88%, setup 6%, transform 5%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-c42af28b-
+  │ eda920ca028710b9\apps\webapp
+

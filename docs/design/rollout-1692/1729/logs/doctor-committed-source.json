@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 3,
+  "sourceRevision": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "mode": "baseline",
+  "baseline": {
+    "baseRef": "9847f784dfcdca922fd41936493ea07d4b896675",
+    "source": "base",
+    "matchedCount": 0,
+    "newCount": 1,
+    "fixedCount": 0,
+    "baseTotalCount": 0
+  },
+  "reactDetected": true,
+  "version": "0.9.22",
+  "ok": true,
+  "directory": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\apps\\webapp",
+  "diff": {
+    "baseBranch": "9847f784dfcdca922fd41936493ea07d4b896675",
+    "currentBranch": "feat/personnel-files-employee-hub",
+    "changedFileCount": 8,
+    "isCurrentChanges": false
+  },
+  "projects": [
+    {
+      "directory": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\apps\\webapp",
+      "packageRoot": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\apps\\webapp",
+      "sourceFilterConfigHash": "bccba9af786c396a5fb90c4b05d568dfa2361741e7b91c1c423877cbaa48bf12",
+      "framework": "nextjs",
+      "project": {
+        "rootDirectory": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\apps\\webapp",
+        "projectName": "webapp",
+        "reactVersion": "19.3.1",
+        "reactMajorVersion": 19,
+        "tailwindVersion": "^4.3.5",
+        "zodVersion": "^4.6.7",
+        "zodMajorVersion": 4,
+        "mobxVersion": null,
+        "mobxMajorVersion": null,
+        "hasMobxReact": false,
+        "mobxReactVersion": null,
+        "hasMobxReactLite": false,
+        "mobxReactLiteVersion": null,
+        "hasMobxStateTree": false,
+        "hasMobxReactObserver": false,
+        "zustandVersion": "^5.1.0",
+        "zustandMajorVersion": 5,
+        "framework": "nextjs",
+        "hasTypeScript": true,
+        "hasReactCompiler": true,
+        "hasReactCompilerLintPlugin": false,
+        "hasTanStackQuery": true,
+        "hasI18nLibrary": true,
+        "hasRadixUi": false,
+        "hasBaseUi": true,
+        "hasReactAriaComponents": false,
+        "hasTanstackTable": true,
+        "hasTanstackVirtual": true,
+        "hasTanstackForm": true,
+        "tanstackQueryVersion": "^5.107.1",
+        "styledComponentsVersion": null,
+        "valtioVersion": null,
+        "valtioMajorVersion": null,
+        "hasRemotion": false,
+        "remotionVersion": null,
+        "remotionMajorVersion": null,
+        "hasThree": false,
+        "threeVersion": null,
+        "threeRelease": null,
+        "hasReactThreeFiber": false,
+        "reactThreeFiberVersion": null,
+        "reactThreeFiberMajorVersion": null,
+        "hasSsrDependency": false,
+        "preactVersion": "11.2.0",
+        "preactMajorVersion": 11,
+        "hasReactNativeWorkspace": false,
+        "nextjsVersion": "16.4.6",
+        "nextjsMajorVersion": 16,
+        "reactRouterVersion": null,
+        "hasReactRouterFramework": false,
+        "expoVersion": null,
+        "shopifyFlashListVersion": null,
+        "shopifyFlashListMajorVersion": null,
+        "hasReanimated": false,
+        "reanimatedVersion": null,
+        "hasShadcnUi": true,
+        "isPreES2023Target": true,
+        "isStaticExport": false,
+        "sourceFileCount": 7038
+      },
+      "diagnostics": [
+        {
+          "filePath": "src/components/personnel-file/personnel-file-panel.tsx",
+          "plugin": "react-doctor",
+          "rule": "no-high-complexity-react-function",
+          "severity": "warning",
+          "title": "React function has high control-flow complexity",
+          "message": "`PersonnelFileRecords` has cyclomatic complexity 12, cognitive complexity 19, and maximum nesting depth 4, so its React logic is hard to understand and change. Extract independent branches into components or hooks.",
+          "help": "Extract independent render branches and state logic into focused components or hooks until the control flow is easy to follow.",
+          "line": 393,
+          "column": 1,
+          "offset": 10783,
+          "length": 2406,
+          "endLine": 476,
+          "category": "Maintainability",
+          "fingerprint": "5fa312f75e1a2e4a81685cde600e6a8bd3e2345c629a7b574c3d9f22dde90452",
+          "id": "src/components/personnel-file/personnel-file-panel.tsx::393:1::react-doctor/no-high-complexity-react-function::a3cebd101b69cab09cd4a6fa7117e541be739cb9b54603efde1cdfc019c26a0e",
+          "normalizedFilePath": "src/components/personnel-file/personnel-file-panel.tsx",
+          "tags": [
+            "react-jsx-only",
+            "test-noise"
+          ]
+        }
+      ],
+      "score": {
+        "score": 93,
+        "label": "Great",
+        "rules": {
+          "react-doctor/no-high-complexity-react-function": {
+            "priority": null,
+            "tier": "P3"
+          }
+        }
+      },
+      "skippedChecks": [],
+      "analyzedFiles": [
+        "src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+        "src/components/personnel-file/delete-document-dialog.tsx",
+        "src/components/personnel-file/document-list.tsx",
+        "src/components/personnel-file/document-requests-section.tsx",
+        "src/components/personnel-file/employee-sick-leave-card.tsx",
+        "src/components/personnel-file/personnel-file-panel.tsx",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "analyzedFileCount": 8,
+      "complete": true,
+      "scannedFileCount": 8,
+      "elapsedMilliseconds": 16217.8403
+    }
+  ],
+  "diagnostics": [
+    {
+      "filePath": "src/components/personnel-file/personnel-file-panel.tsx",
+      "plugin": "react-doctor",
+      "rule": "no-high-complexity-react-function",
+      "severity": "warning",
+      "title": "React function has high control-flow complexity",
+      "message": "`PersonnelFileRecords` has cyclomatic complexity 12, cognitive complexity 19, and maximum nesting depth 4, so its React logic is hard to understand and change. Extract independent branches into components or hooks.",
+      "help": "Extract independent render branches and state logic into focused components or hooks until the control flow is easy to follow.",
+      "line": 393,
+      "column": 1,
+      "offset": 10783,
+      "length": 2406,
+      "endLine": 476,
+      "category": "Maintainability",
+      "fingerprint": "5fa312f75e1a2e4a81685cde600e6a8bd3e2345c629a7b574c3d9f22dde90452",
+      "id": "src/components/personnel-file/personnel-file-panel.tsx::393:1::react-doctor/no-high-complexity-react-function::a3cebd101b69cab09cd4a6fa7117e541be739cb9b54603efde1cdfc019c26a0e",
+      "normalizedFilePath": "src/components/personnel-file/personnel-file-panel.tsx",
+      "tags": [
+        "react-jsx-only",
+        "test-noise"
+      ]
+    }
+  ],
+  "summary": {
+    "errorCount": 0,
+    "warningCount": 1,
+    "affectedFileCount": 1,
+    "totalDiagnosticCount": 1,
+    "score": 93,
+    "scoreLabel": "Great"
+  },
+  "elapsedMilliseconds": 16787.6924,
+  "error": null
+}

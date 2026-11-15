@@ -1,0 +1,69 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/delete-document-dialog.test.tsx (2 tests | 2 failed) 185ms
+   × retains the audit reason through rejected transport, guards pending dismissal/duplicates, and retries 88ms
+   × does not close a resumed task or announce late completion after Activity suspension 95ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/delete-document-dialog.test.tsx > retains the audit reason through rejected transport, guards pending dismissal/duplicates, and retries
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      false,
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/personnel-file/delete-document-dialog.test.tsx:22:21
+     20|  await waitFor(()=>expect(deleteEmployeeDocumentAction).toHaveBeenCall…
+     21|  fireEvent.click(screen.getByRole("button",{name:"Cancel"}));
+     22|  expect(closed).not.toHaveBeenCalled();
+       |                     ^
+     23|  fireEvent.submit(screen.getByRole("button",{name:"Delete"}).closest("…
+     24|  expect(deleteEmployeeDocumentAction).toHaveBeenCalledTimes(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |unit| src/components/personnel-file/delete-document-dialog.test.tsx > does not close a resumed task or announce late completion after Activity suspension
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array []
+
+
+Number of calls: 1
+
+ ❯ src/components/personnel-file/delete-document-dialog.test.tsx:47:22
+     45|  view.rerender(<Activity mode="visible"><DeleteDocumentDialog document…
+     46|  await act(async()=>finish({success:true,data:{documentId:"doc"}}));
+     47|  expect(deleted).not.toHaveBeenCalled();
+       |                      ^
+     48|  expect(closed).not.toHaveBeenCalled();
+     49| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  18:36:42
+   Duration  967ms (environment 47%, import 24%, tests 21%, transform 5%, setup 3%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-c42af28b-
+  │ eda920ca028710b9\apps\webapp
+
