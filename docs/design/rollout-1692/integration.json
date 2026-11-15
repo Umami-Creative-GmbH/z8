@@ -416,8 +416,12 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "40492f6233feecfac214813f28e2f1f26b3175b2",
+                        "integrationCommit":  "877b12279ec992cf282e0ba775ac4849579aef86",
+                        "correctionCommit":  "4255ef7d6565d103a4b0887812b751db5bd08ad9",
+                        "evidence":  "docs/design/rollout-1692/1826.md",
+                        "integrationVerification":  "Native merge877b1227:40unique suites/251tests,fulltypes,7-fileCRLFBiome/explicitlint,Doctor0errors2reviewedwarnings;31verified ancestors/1401rollout/11621unaffected paths and14PNG/11JSON/3scripts/25links/59pins preserved. Merger reproduces lateSSO after unmount and stale successfulTOTP after cached Activity return. Root correction4255ef7 binds requests to connected arrival identity, stages navigation/status/reset, guards stale errors/cleanup, preserves new action; social disableRedirect delegates guarded HTTP(S) navigation without provider/auth/session policy changes. Final41unique suites/257tests (16/59+29/191 less11/46+7/53),fulltypes,2-fileCRLFstrictBiome and Doctorzero new findings. Actual setup3+runtime7 checks: real heldHTTP200TOTP across org navigation causes0staleinit requests; actual invalidcode refusal after primary proof; new valid action1init/safe callback. Browser input remounted in both versions; failed baseline cached expectation retained, cachedActivity/SSO/social successful responses assembled-only. Root3PNG fullydecoded/current pins/Nextempty/anonymoussignin stable/cleanup pass. Original raw worker artifacts unchanged,8JSON missingLF retained. Worker34runtime/PG2-15/native/axe40-0-0 inherited; primary prerequisite screenshot qualified separately. Native root EOF/closeEOF,Previewfailed thenclosed; old dev output moved only afterverifiedstop. Fullbuild/catalog/provider/device/truezoom/globaltransition/wider limits retained."
                     },
                     {
                         "id":  "R028",
@@ -426,8 +430,12 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "ced095089163e69b232c2bce96a40cba800186d8",
+                        "integrationCommit":  "0a8247f6517714f2f51a74aa60f81914fa61771d",
+                        "evidenceCorrectionCommit":  "183cb120d5798a36ca19d4e11541107540e81658",
+                        "evidence":  "docs/design/rollout-1692/1720.md",
+                        "integrationVerification":  "Independent native merge0a8247f6 plus evidence qualification verified atced09508. Fresh68 unique suites/434 tests (46/269+62/414 less40/249; original45/263 subset plus6rootMFA cases),full combined types. Explicit100columnCRLF10consumers and12-filelint/import pass with1inherited suppressionwarning; raw12/CRLF8/navigation2 formattingfailures retained;Doctor9files0errors2reviewedwarnings, nofreshscore. All32verified ancestors,1455rollout/11674unaffected/84incoming paths, MFAcorrection andheadingoptins preserved.22PNGfullydecoded,25JSON/12scripts/46links/20pins validate. Canonical desktop/wide sidebar clipping exists before/after; operational captures align, no current runtime/cause established. Retain tooling overlap/transition limits and failed supplemental scope/read/locale repeat. Earlier scope/read report-attested; German content html.lang=en, not translatedUI pass. Root trims1action-driverblank; originalcaptures/JSON preserved; remaining158archive whitespace findings, appsourcecheckpass, wholecheckunpassed. PG6/112/actions21/variants17/native/axe/Next inherited, notrerun. Ownemployee/privacy/category/immediateupload/version/storage owners preserved; no source blocker. Fullbuild/Tolgee/provider/device/truezoom/globalacceptance obligations remain."
                     },
                     {
                         "id":  "R029",
@@ -436,8 +444,12 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+                        "integrationCommit":  "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+                        "evidenceCorrectionCommit":  "424fa42af3c0ef06f30b16c7ab9ed69b9386062b",
+                        "evidence":  "docs/design/rollout-1692/1721.md",
+                        "integrationVerification":  "Independent native mergefb6a2c18 plus report-only qualification verified ata068cdd9. Fresh59unique suites/418tests (25/198+50/386 less16/166 by fullName multisets); worker24/191 subset plusMFA6/documentsheading1 retained. Fulltypes,8-file Doctorzero,CRLF-awareBiome/explicitlint pass; raw8/explicit6formatting failures qualified.33verified ancestors,1532rollout/11757unaffected/70incoming paths and bothheadingoptins preserved.34PNGfull decode,19JSON/8scripts/11links/148pins/3pairs validate. Personal currentorg/user/employee/staffView=false and all handover/correction/exception/outstanding/calendardomain owners unchanged; no operational authority/source blocker. Runtime24assertions/20captures pre-workermerge, finalmatched/native/Next atb89c9e9c; all inherited, PG10/118 notrerun. Org-switchHTTP200/old-recordabsence ends in skeleton/fontsloading, no settleddestination pass. Matchedphone tail not leadcomposition; separate18px operational captures show obligations. Baselineonlydesktop/sidebarclipping, toolingoverlays and former/unassignedloginvsdomainrefusal boundaries retained. Native38passes/51inapplicable/0incomplete/0violations primaryview only. Current-parent/source whitespacepasses; incomingparent158prior documents archivefindings unchanged. Alloriginalrawartifacts/appsources unchanged by rootqualification. Fullbuild/Tolgee/device/truezoom/provider/alllocale/globalacceptance limits remain."
                     },
                     {
                         "id":  "R030",
@@ -446,7 +458,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "awaiting-integration",
                         "verifiedCommit":  null
                     },
                     {
@@ -456,7 +468,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -556,7 +568,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

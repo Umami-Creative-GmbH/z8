@@ -78,6 +78,21 @@ function renderPersonal(assignments: EquipmentAssignmentView[]) {
 	return render(<PersonalEquipment data={{ ...personal, assignments }} />);
 }
 
+it("leads with the remaining partial return before opening its evidence", async () => {
+	const user = userEvent.setup();
+	renderPersonal([{ ...partialAssignment, canReceive: false }]);
+	const row = screen.getByRole("button", { name: /Shirt size M/ });
+	expect(within(row).getByText("1 to return")).toBeTruthy();
+	expect(within(row).getByText("3 issued")).toBeTruthy();
+	expect(row.getAttribute("aria-expanded")).toBe("false");
+	row.focus();
+	await user.keyboard("{Enter}");
+	expect(row.getAttribute("aria-expanded")).toBe("true");
+	expect(await screen.findByText("Two shirts back")).toBeTruthy();
+	await user.keyboard(" ");
+	expect(row.getAttribute("aria-expanded")).toBe("false");
+});
+
 it("groups the employee's own equipment as to return, yours to keep, and returned and closed", () => {
 	renderPersonal([
 		own({

@@ -1,0 +1,8 @@
+{
+  "message": "Waiting failed: 30000ms exceeded",
+  "checks": [
+    {
+      "name": "real calendar time correction submitted under employee-specific fixture approval policy"
+    }
+  ]
+}

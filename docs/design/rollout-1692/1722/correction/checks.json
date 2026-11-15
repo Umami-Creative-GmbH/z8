@@ -1,0 +1,7 @@
+{
+  "checks": [
+    {
+      "name": "real calendar deletion request submitted"
+    }
+  ]
+}

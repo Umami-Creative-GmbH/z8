@@ -1,0 +1,267 @@
+{
+  "phase": "before",
+  "actor": "small-employee",
+  "organization": "Performance small",
+  "observations": [
+    {
+      "name": "desktop-light",
+      "identity": {
+        "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+        "hashes": {
+          "apps/webapp/src/components/equipment/equipment-personal.tsx": "a60f25cca5a82d2b97d666c9e3b5cf7219a46a2901b3ec32ffe83cb53c4d00d2",
+          "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "6aa5508c26d9e436ef46b0f59c9587f728add4e76402fa72f919bca70a27ffef",
+          "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "2a09e62366b1ec0b1440da536b7bbb95ca338ba67e70482b7d58850e04736699",
+          "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "b6cd64b5b6f489f508c1e296cd5c3cfeee63adcf0e2bd1c7fc5808bcda6a9c12",
+          "apps/webapp/src/lib/navigation/route-metadata.ts": "ff9144af8ac8aa2456a635a856e647f6cb745e14e32f1d968bd1e7793e88a3fe"
+        }
+      },
+      "text": "Toggle Sidebar\nMy equipment\n10:52\nUTC+01:00\nClock In\nToggle theme\nMy equipment\n\nEquipment issued to you, what to return and by when, and every recorded handover.\n\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 issued\nNov 1, 2026\n14 days overdue\nOverdue\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n3 issued\nNo deadline\nOutstanding return\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nNo deadline\nIssued to keep\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nNo deadline\nReturn obligation closed\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nNo deadline\nReturn obligation closed\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nNo deadline\nPhysically received\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nNo deadline\nReturn obligation closed\nShow handover history",
+      "headings": [
+        "My equipment",
+        "My equipment",
+        "To return",
+        "Yours to keep",
+        "Returned & closed"
+      ],
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "scrollWidth": 1600,
+      "dark": false,
+      "fontsStatus": "loaded",
+      "fonts": [
+        {
+          "text": "Toggle Sidebar",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "My equipment",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "10:52UTC+01:00",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "Clock In",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "Toggle theme",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "More actions",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "My equipment",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "24px"
+        }
+      ],
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "png": {
+        "width": 1600,
+        "height": 1000
+      }
+    },
+    {
+      "name": "phone-light",
+      "identity": {
+        "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+        "hashes": {
+          "apps/webapp/src/components/equipment/equipment-personal.tsx": "a60f25cca5a82d2b97d666c9e3b5cf7219a46a2901b3ec32ffe83cb53c4d00d2",
+          "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "6aa5508c26d9e436ef46b0f59c9587f728add4e76402fa72f919bca70a27ffef",
+          "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "2a09e62366b1ec0b1440da536b7bbb95ca338ba67e70482b7d58850e04736699",
+          "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "b6cd64b5b6f489f508c1e296cd5c3cfeee63adcf0e2bd1c7fc5808bcda6a9c12",
+          "apps/webapp/src/lib/navigation/route-metadata.ts": "ff9144af8ac8aa2456a635a856e647f6cb745e14e32f1d968bd1e7793e88a3fe"
+        }
+      },
+      "text": "Toggle Sidebar\nMy equipment\nMore actions\nMy equipment\n\nEquipment issued to you, what to return and by when, and every recorded handover.\n\nTo return\n2 items\nEQ-HELD\nFixture laptops\nNov 1, 2026\n14 days overdue\nOverdue\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\nNo deadline\nOutstanding return\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\nNo deadline\nIssued to keep\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\nNo deadline\nReturn obligation closed\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\nNo deadline\nReturn obligation closed\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\nNo deadline\nPhysically received\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\nNo deadline\nReturn obligation closed\nShow handover history",
+      "headings": [
+        "My equipment",
+        "My equipment",
+        "To return",
+        "Yours to keep",
+        "Returned & closed"
+      ],
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollWidth": 390,
+      "dark": false,
+      "fontsStatus": "loaded",
+      "fonts": [
+        {
+          "text": "Toggle Sidebar",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "My equipment",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "10:53UTC+01:00",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "Clock In",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "Toggle theme",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "More actions",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "My equipment",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "24px"
+        }
+      ],
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "png": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "wide-dark",
+      "identity": {
+        "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+        "hashes": {
+          "apps/webapp/src/components/equipment/equipment-personal.tsx": "a60f25cca5a82d2b97d666c9e3b5cf7219a46a2901b3ec32ffe83cb53c4d00d2",
+          "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "6aa5508c26d9e436ef46b0f59c9587f728add4e76402fa72f919bca70a27ffef",
+          "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "2a09e62366b1ec0b1440da536b7bbb95ca338ba67e70482b7d58850e04736699",
+          "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "b6cd64b5b6f489f508c1e296cd5c3cfeee63adcf0e2bd1c7fc5808bcda6a9c12",
+          "apps/webapp/src/lib/navigation/route-metadata.ts": "ff9144af8ac8aa2456a635a856e647f6cb745e14e32f1d968bd1e7793e88a3fe"
+        }
+      },
+      "text": "Toggle Sidebar\nMy equipment\n10:53\nUTC+01:00\nClock In\nToggle theme\nMy equipment\n\nEquipment issued to you, what to return and by when, and every recorded handover.\n\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 issued\nNov 1, 2026\n14 days overdue\nOverdue\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n3 issued\nNo deadline\nOutstanding return\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nNo deadline\nIssued to keep\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nNo deadline\nReturn obligation closed\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nNo deadline\nReturn obligation closed\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nNo deadline\nPhysically received\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nNo deadline\nReturn obligation closed\nShow handover history",
+      "headings": [
+        "My equipment",
+        "My equipment",
+        "To return",
+        "Yours to keep",
+        "Returned & closed"
+      ],
+      "cssViewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "scrollWidth": 1920,
+      "dark": true,
+      "fontsStatus": "loaded",
+      "fonts": [
+        {
+          "text": "Toggle Sidebar",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "My equipment",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "10:53UTC+01:00",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "Clock In",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "Toggle theme",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "More actions",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "14px"
+        },
+        {
+          "text": "My equipment",
+          "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "size": "24px"
+        }
+      ],
+      "devicePixelRatio": 1,
+      "visualScale": 1,
+      "png": {
+        "width": 1920,
+        "height": 1080
+      }
+    }
+  ],
+  "errors": [],
+  "failures": []
+}
