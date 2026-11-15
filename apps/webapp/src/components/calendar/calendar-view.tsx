@@ -9,6 +9,7 @@ import {
 	useEffect,
 	useRef,
 	useState,
+	useTransition,
 } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
@@ -217,11 +218,29 @@ function CalendarScope({
 	const calendarTimezone = initialTimezone ?? "UTC";
 	const calendarDateKey =
 		initialDateKey ?? todayCalendarDateKey(calendarTimezone);
+	const routeEmployeeId =
+		initialSelectedEmployeeId ?? currentEmployeeId ?? null;
 	const [selection, setSelection] = useState<
-		(EmployeeSelectionOverride & { organizationId: string }) | null
+		| (EmployeeSelectionOverride & {
+				organizationId: string;
+				routeEmployeeId: string | null;
+		  })
+		| null
 	>(null);
+	const [navigationPending, startNavigation] = useTransition();
 	const activeSelection =
-		selection?.organizationId === organizationId ? selection : null;
+		navigationPending && selection?.organizationId === organizationId
+			? selection
+			: null;
+	if (activeSelection && activeSelection.routeEmployeeId !== routeEmployeeId) {
+		// Acknowledge the chosen route without letting an older arrival win.
+		// Later Back/direct arrivals then belong to the route again.
+		setSelection(
+			activeSelection.id === routeEmployeeId
+				? null
+				: { ...activeSelection, routeEmployeeId },
+		);
+	}
 	const selectedEmployeeId =
 		activeSelection?.id ?? initialSelectedEmployeeId ?? currentEmployeeId;
 	const selectedEmployeeName = activeSelection
@@ -249,9 +268,12 @@ function CalendarScope({
 			currentEmployeeId={currentEmployeeId}
 			initialSelectedEmployeeId={selectedEmployeeId ?? undefined}
 			initialEmployeeName={selectedEmployeeName ?? undefined}
-			onEmployeeSelectionChange={(next) =>
-				setSelection({ ...next, organizationId })
-			}
+			onEmployeeSelectionChange={(next, navigate) => {
+				setSelection({ ...next, organizationId, routeEmployeeId });
+				startNavigation(async () => {
+					await navigate();
+				});
+			}}
 			navigationState={{
 				viewMode,
 				setViewMode,
@@ -267,7 +289,10 @@ function CalendarScope({
 }
 
 interface CalendarViewContentProps extends CalendarViewProps {
-	onEmployeeSelectionChange: (selection: EmployeeSelectionOverride) => void;
+	onEmployeeSelectionChange: (
+		selection: EmployeeSelectionOverride,
+		navigate: () => void | Promise<void>,
+	) => void;
 	navigationState: {
 		viewMode: ViewMode;
 		setViewMode: Dispatch<SetStateAction<ViewMode>>;
@@ -336,17 +361,18 @@ function useCalendarViewController({
 		employee?: SelectableEmployee,
 	) => {
 		const nextEmployeeId = employeeId ?? currentEmployeeId ?? null;
-		onEmployeeSelectionChange({
-			id: nextEmployeeId,
-			name: getEmployeeDisplayName(employee),
-		});
-
-		if (!employeeId || employeeId === currentEmployeeId) {
-			router.push("/calendar");
-			return;
-		}
-
-		router.push(`/calendar/${employeeId}`);
+		onEmployeeSelectionChange(
+			{
+				id: nextEmployeeId,
+				name: getEmployeeDisplayName(employee),
+			},
+			() =>
+				router.push(
+					!employeeId || employeeId === currentEmployeeId
+						? "/calendar"
+						: `/calendar/${employeeId}`,
+				),
+		);
 	};
 
 	// Fetch calendar events
