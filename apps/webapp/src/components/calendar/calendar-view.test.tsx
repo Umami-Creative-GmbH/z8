@@ -535,6 +535,11 @@ describe("CalendarView", () => {
 	it.each([
 		{ organizationId: "org-1", initialSelectedEmployeeId: "employee-3" },
 		{ organizationId: "org-2", initialSelectedEmployeeId: "employee-2" },
+		{
+			organizationId: "org-1",
+			initialSelectedEmployeeId: "employee-2",
+			currentEmployeeId: "another-viewer",
+		},
 	])(
 		"clears the previous record panel on a same-date same-zone scope arrival: %o",
 		(next) => {

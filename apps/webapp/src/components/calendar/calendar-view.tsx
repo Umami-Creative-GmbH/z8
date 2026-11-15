@@ -198,7 +198,7 @@ export function CalendarView(props: CalendarViewProps) {
 	const dateKey = props.initialDateKey ?? todayCalendarDateKey(timezone);
 	return (
 		<CalendarScope
-			key={`${props.organizationId}:${dateKey}:${timezone}`}
+			key={`${props.organizationId}:${props.currentEmployeeId}:${dateKey}:${timezone}`}
 			{...props}
 			initialDateKey={dateKey}
 			initialTimezone={timezone}
