@@ -162,7 +162,7 @@ function SetOpeningBalanceForm({
 					onSubmit={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
-						if (!request.pending()) void form.handleSubmit();
+						void form.handleSubmit();
 					}}
 				>
 					<DialogHeader>

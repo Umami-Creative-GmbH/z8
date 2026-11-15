@@ -10,8 +10,10 @@ const mocks = vi.hoisted(() => ({
 	opening: vi.fn(),
 	payout: vi.fn(),
 	cancel: vi.fn(),
+	saved: vi.fn(),
 	scope: { userId: "holder", activeOrganizationId: "org", isLoading: false },
 }));
+vi.mock("sonner", () => ({ toast: { success: mocks.saved, error: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions", () => ({
 	getEmployeeWorkBalanceSectionAction: mocks.read,
 	setOpeningBalanceAction: mocks.opening,
@@ -115,7 +117,7 @@ it("submits the reasoned opening replacement once, blocks pending dismissal and 
 	expect(
 		within(panel).getByText("The opening balance in effect is cancelled, with this reason."),
 	).toBeTruthy();
-	fireEvent.change(within(panel).getByRole("spinbutton", { name: "Hours" }), {
+	fireEvent.change(within(panel).getByRole("spinbutton", { name: /^Hours/ }), {
 		target: { value: "5" },
 	});
 	fireEvent.change(within(panel).getByRole("textbox", { name: /^Reason/ }), {
@@ -171,30 +173,37 @@ it("hides retained private records on permission refusal and keeps zero as an ac
 	expect(screen.queryByRole("button", { name: "Set opening balance" })).toBeNull();
 });
 
-it("does not reuse an abandoned A response after organization A→B→A", async () => {
-	let finish!: (value: unknown) => void;
-	mocks.read.mockImplementationOnce(
-		() =>
-			new Promise((resolve) => {
-				finish = resolve;
-			}),
-	);
-	const view = mount();
-	await waitFor(() => expect(mocks.read).toHaveBeenCalledTimes(1));
-	mocks.scope = { userId: "holder", activeOrganizationId: "foreign", isLoading: false };
-	const route = () => (
-		<QueryClientProvider client={view.client}>
-			<EmployeeBalanceWorkspace employee={employee} organizationId="org" userId="holder" />
-		</QueryClientProvider>
-	);
-	view.rerender(route());
-	mocks.read.mockResolvedValueOnce({ success: true, data: { ...data, adjustments: [] } });
-	mocks.scope = { userId: "holder", activeOrganizationId: "org", isLoading: false };
-	view.rerender(route());
-	await screen.findByText("No balance adjustments yet.");
-	await act(async () => finish({ success: true, data }));
-	expect(screen.queryByText("Imported balance evidence")).toBeNull();
-});
+it.each(["organization", "account"])(
+	"does not reuse an abandoned A response after %s A→B→A",
+	async (kind) => {
+		let finish!: (value: unknown) => void;
+		mocks.read.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		);
+		const view = mount();
+		await waitFor(() => expect(mocks.read).toHaveBeenCalledTimes(1));
+		mocks.scope = {
+			userId: kind === "account" ? "another-holder" : "holder",
+			activeOrganizationId: kind === "organization" ? "foreign" : "org",
+			isLoading: false,
+		};
+		const route = () => (
+			<QueryClientProvider client={view.client}>
+				<EmployeeBalanceWorkspace employee={employee} organizationId="org" userId="holder" />
+			</QueryClientProvider>
+		);
+		view.rerender(route());
+		mocks.read.mockResolvedValueOnce({ success: true, data: { ...data, adjustments: [] } });
+		mocks.scope = { userId: "holder", activeOrganizationId: "org", isLoading: false };
+		view.rerender(route());
+		await screen.findByText("No balance adjustments yet.");
+		await act(async () => finish({ success: true, data }));
+		expect(screen.queryByText("Imported balance evidence")).toBeNull();
+	},
+);
 
 it("discards a late read across Activity hide/reveal", async () => {
 	let finish!: (value: unknown) => void;
@@ -221,4 +230,47 @@ it("discards a late read across Activity hide/reveal", async () => {
 	await screen.findByText("No balance adjustments yet.");
 	expect(screen.queryByText("Imported balance evidence")).toBeNull();
 	client.clear();
+});
+
+it("does not complete an abandoned payout panel into a new account arrival", async () => {
+	mocks.read.mockResolvedValue({ success: true, data });
+	let finish!: (value: unknown) => void;
+	mocks.payout.mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const view = mount();
+	fireEvent.click(await screen.findByRole("button", { name: "Record overtime payout" }));
+	const panel = await screen.findByRole("dialog");
+	fireEvent.change(within(panel).getByRole("spinbutton", { name: /^Hours/ }), {
+		target: { value: "1" },
+	});
+	fireEvent.change(within(panel).getByRole("textbox", { name: /^Reason/ }), {
+		target: { value: "Abandoned wages record" },
+	});
+	const form = panel.querySelector("form");
+	if (!form) throw Error("Missing payout form");
+	fireEvent.submit(form);
+	await waitFor(() => expect(mocks.payout).toHaveBeenCalledTimes(1));
+	mocks.scope = { userId: "new-account", activeOrganizationId: "org", isLoading: false };
+	const route = () => (
+		<QueryClientProvider client={view.client}>
+			<EmployeeBalanceWorkspace employee={employee} organizationId="org" userId="holder" />
+		</QueryClientProvider>
+	);
+	view.rerender(route());
+	await act(async () => finish({ success: true, data: { adjustmentId: "saved-for-old-account" } }));
+	expect(mocks.saved).not.toHaveBeenCalled();
+	expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("keeps the authoritative read-only ledger without offering management commands", async () => {
+	mocks.read.mockResolvedValue({ success: true, data: { ...data, canManage: false } });
+	mount();
+	await screen.findByText("Imported balance evidence");
+	expect(screen.queryByRole("button", { name: "Set opening balance" })).toBeNull();
+	expect(screen.queryByRole("button", { name: "Record overtime payout" })).toBeNull();
+	expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
 });

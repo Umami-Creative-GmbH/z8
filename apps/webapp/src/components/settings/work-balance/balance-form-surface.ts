@@ -1,13 +1,8 @@
 "use client";
 
-import type { ComponentProps, ReactNode } from "react";
 import {
 	ActionPanel,
-	ActionPanelBody,
-	ActionPanelContent,
 	ActionPanelDescription,
-	ActionPanelFooter,
-	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import {
@@ -18,6 +13,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { BalancePanelContent, BalancePanelFooter, BalancePanelHeader } from "./balance-form-panel";
 
 /** Container composition only: existing form validation, values and commands stay with the form. */
 export const balanceDialogSurface = {
@@ -28,25 +24,12 @@ export const balanceDialogSurface = {
 	Description: DialogDescription,
 	Footer: DialogFooter,
 };
-function PanelContent({ children, ...props }: ComponentProps<typeof DialogContent>) {
-	return (
-		<ActionPanelContent {...props}>
-			<ActionPanelBody>{children}</ActionPanelBody>
-		</ActionPanelContent>
-	);
-}
-function PanelHeader({ children }: { children?: ReactNode }) {
-	return <ActionPanelHeader className="-mx-6 -mt-5 mb-1">{children}</ActionPanelHeader>;
-}
-function PanelFooter({ children }: { children?: ReactNode }) {
-	return <ActionPanelFooter className="-mx-6 -mb-5 mt-2">{children}</ActionPanelFooter>;
-}
 export const balancePanelSurface = {
 	Root: ActionPanel,
-	Content: PanelContent,
-	Header: PanelHeader,
+	Content: BalancePanelContent,
+	Header: BalancePanelHeader,
 	Title: ActionPanelTitle,
 	Description: ActionPanelDescription,
-	Footer: PanelFooter,
+	Footer: BalancePanelFooter,
 };
 export type BalanceFormSurface = typeof balanceDialogSurface;

@@ -1,6 +1,6 @@
 "use client";
 
-import { IconArrowLeft, IconCash, IconFlag, IconRefresh } from "@tabler/icons-react";
+import { IconArrowLeft, IconRefresh } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
@@ -33,6 +33,7 @@ import {
 } from "@/lib/work-balance/adjustments/types";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import { Link } from "@/navigation";
+import { EmployeeBalanceProjection } from "./employee-balance-projection";
 
 type Props = { employee: BalanceAdjustmentGrantEmployee; organizationId: string; userId: string };
 async function unwrap<T>(action: Promise<BalanceAdjustmentActionResult<T>>) {
@@ -42,6 +43,17 @@ async function unwrap<T>(action: Promise<BalanceAdjustmentActionResult<T>>) {
 		throw new BalanceAdjustmentActionError(failure.code, failure.details);
 	}
 	return result.data;
+}
+
+async function refreshAfter<T>(
+	action: Promise<BalanceAdjustmentActionResult<T>>,
+	refresh: () => Promise<unknown>,
+) {
+	try {
+		return await unwrap(action);
+	} finally {
+		await refresh();
+	}
 }
 
 /** The server admits the target through payroll coverage; display scope never authorizes a command. */
@@ -96,13 +108,11 @@ function EmployeeBalanceArrival({ employee, organizationId, userId }: Props) {
 	const balance = data?.balance;
 	const changed = async <T,>(action: () => Promise<BalanceAdjustmentActionResult<T>>) => {
 		if (!fresh || !canManage) throw new BalanceAdjustmentActionError("failed");
-		try {
-			return await unwrap(action());
-		} finally {
-			await client.invalidateQueries({
+		return refreshAfter(action(), () =>
+			client.invalidateQueries({
 				queryKey: [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employee.id],
-			});
-		}
+			}),
+		);
 	};
 
 	return (
@@ -144,92 +154,17 @@ function EmployeeBalanceArrival({ employee, organizationId, userId }: Props) {
 					</Button>
 				}
 			/>
-			{section.isError ? (
-				<div
-					role="alert"
-					className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 p-4"
-				>
-					<p className="text-sm">
-						{refused
-							? t(
-									"payroll.workBalances.accessChanged",
-									"This work balance is no longer available in your payroll scope.",
-								)
-							: data
-								? t(
-										"payroll.workBalances.stale",
-										"Could not refresh. Previously loaded records are shown; refresh before making changes.",
-									)
-								: t(
-										"settings.employees.workBalance.loadFailed",
-										"The work balance could not be loaded.",
-									)}
-					</p>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => void section.refetch()}
-						disabled={section.isFetching}
-						aria-label={t("payroll.workBalances.retry", "Retry work balance")}
-					>
-						{t("common.retry", "Retry")}
-					</Button>
-				</div>
-			) : null}
+			<EmployeeBalanceFeedback section={section} hasData={!!data} />
 			{section.isPending ? (
 				<p role="status">{t("settings.employees.workBalance.loading", "Loading work balance")}</p>
 			) : null}
 			{data ? (
 				<>
-					<section
-						aria-label={t("settings.employees.workBalance.current", "Current work balance")}
-						className="flex flex-wrap items-center justify-between gap-5 rounded-lg border bg-card p-5 sm:p-6"
-					>
-						<div className="space-y-1">
-							<h2 className="text-sm text-muted-foreground">
-								{t("settings.employees.workBalance.current", "Current work balance")}
-							</h2>
-							<p className="text-3xl font-semibold tabular-nums">
-								{balance
-									? formatSignedWorkBalance(balance.balanceMinutes)
-									: t("workBalance.notCalculated", "Not calculated yet")}
-							</p>
-							<p className="text-sm text-muted-foreground">
-								{balance
-									? t("settings.employees.workBalance.through", "Through {date}", {
-											date: label.day(balance.computedThroughDate),
-										})
-									: t(
-											"payroll.workBalances.projectionUnavailable",
-											"The balance projection is unavailable. Adjustment records remain below.",
-										)}
-							</p>
-							<p className="text-sm text-muted-foreground">{data.timezone}</p>
-						</div>
-						{canManage ? (
-							<div className="flex max-w-full flex-wrap gap-2">
-								<Button
-									type="button"
-									disabled={!fresh}
-									onClick={() => setTask("opening")}
-									className="h-auto min-h-9 whitespace-normal"
-								>
-									<IconFlag className="size-4 shrink-0" aria-hidden="true" />
-									{t("settings.employees.workBalance.setOpeningBalance", "Set opening balance")}
-								</Button>
-								<Button
-									type="button"
-									variant="outline"
-									disabled={!fresh}
-									onClick={() => setTask("payout")}
-									className="h-auto min-h-9 whitespace-normal"
-								>
-									<IconCash className="size-4 shrink-0" aria-hidden="true" />
-									{t("settings.employees.workBalance.recordPayout", "Record overtime payout")}
-								</Button>
-							</div>
-						) : null}
-					</section>
+					<EmployeeBalanceProjection
+						balance={balance ?? null}
+						timezone={data.timezone}
+						actions={canManage ? { enabled: fresh, open: setTask } : null}
+					/>
 					{section.isFetching ? (
 						<p role="status" className="text-sm text-muted-foreground">
 							{t("payroll.workBalances.refreshing", "Refreshing work balance…")}
@@ -292,5 +227,56 @@ function EmployeeBalanceArrival({ employee, organizationId, userId }: Props) {
 				</>
 			) : null}
 		</div>
+	);
+}
+function EmployeeBalanceFeedback({
+	section,
+	hasData,
+}: {
+	section: {
+		isError: boolean;
+		isFetching: boolean;
+		error: unknown;
+		refetch: () => Promise<unknown>;
+	};
+	hasData: boolean;
+}) {
+	const { t } = useTranslate();
+	const refused = isRefusal(section.error);
+	return (
+		<>
+			{section.isError ? (
+				<div
+					role="alert"
+					className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 p-4"
+				>
+					<p className="text-sm">
+						{refused
+							? t(
+									"payroll.workBalances.accessChanged",
+									"This work balance is no longer available in your payroll scope.",
+								)
+							: hasData
+								? t(
+										"payroll.workBalances.stale",
+										"Could not refresh. Previously loaded records are shown; refresh before making changes.",
+									)
+								: t(
+										"settings.employees.workBalance.loadFailed",
+										"The work balance could not be loaded.",
+									)}
+					</p>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => void section.refetch()}
+						disabled={section.isFetching}
+						aria-label={t("payroll.workBalances.retry", "Retry work balance")}
+					>
+						{t("common.retry", "Retry")}
+					</Button>
+				</div>
+			) : null}
+		</>
 	);
 }

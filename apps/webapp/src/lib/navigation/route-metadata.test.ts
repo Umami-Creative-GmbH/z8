@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 describe("route metadata", () => {
-	it("adopts payroll without adopting work-balance descendants", () => {
+	it("adopts payroll and the selected balance without adopting its independent directory", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(false);
-		expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(false);
+		expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);
+		expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);
 	});
 	it("adopts only the notification timeline heading, retaining settings and descendants", () => {
 		expect(appPageOwnsHeading("/de/notifications")).toBe(true);

@@ -51,7 +51,7 @@ beforeAll(async () => {
 	holder = await fixture.seedEmployee();
 	target = await fixture.seedEmployee({
 		isActive: false,
-		startDate: new Date(today.subtract({ days: 5 }).toString() + "T00:00:00Z"),
+		startDate: new Date(`${today.subtract({ days: 5 }).toString()}T00:00:00Z`),
 	});
 	uncovered = await fixture.seedEmployee();
 	foreign = await fixture.seedEmployee({ organizationId: await fixture.createOrganization() });
@@ -68,8 +68,8 @@ beforeAll(async () => {
 		clockIn = randomUUID(),
 		clockOut = randomUUID();
 	for (const [id, type, stamp] of [
-		[clockIn, "clock_in", day + "T10:00:00Z"],
-		[clockOut, "clock_out", day + "T12:00:00Z"],
+		[clockIn, "clock_in", `${day}T10:00:00Z`],
+		[clockOut, "clock_out", `${day}T12:00:00Z`],
 	])
 		await fixture.pool.query(
 			"insert into time_entry(id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values($1,$2,$3,$4,$5,120,'Europe/Berlin','user_setting',$7,$6)",
@@ -83,8 +83,8 @@ beforeAll(async () => {
 				fixture.organizationId,
 				clockIn,
 				clockOut,
-				day + "T10:00:00Z",
-				day + "T12:00:00Z",
+				`${day}T10:00:00Z`,
+				`${day}T12:00:00Z`,
 			],
 		),
 	);
