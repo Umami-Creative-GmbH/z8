@@ -1,0 +1,247 @@
+{
+  "observations": [
+    {
+      "scope": "small-admin / 2025",
+      "rows": [
+        "Person 0\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 1\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 2\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 3\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 4\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 5\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 6\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk",
+        "Person 7\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk"
+      ]
+    },
+    {
+      "export": "CSV",
+      "data": [
+        {
+          "employeeId": "496f93d0-6777-43a6-9df2-77452c2b6056",
+          "employeeName": "Person 0",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "e0711f47-8dbc-4d56-b18d-3613190f418f",
+          "employeeName": "Person 1",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "d777e583-3d94-4238-9b26-a38d33666ec7",
+          "employeeName": "Person 2",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "da70e361-1900-4b2e-9128-148d1b06bec3",
+          "employeeName": "Person 3",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "eb133da6-22d5-4852-94e6-de262c59d759",
+          "employeeName": "Person 4",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "a40d7e2f-ddfa-4471-987c-6f228e5e4b50",
+          "employeeName": "Person 5",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "2f5e53a9-9998-4299-959a-b378d4811294",
+          "employeeName": "Person 6",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "597cea5e-2b73-4f2f-86dd-f9a90d7af167",
+          "employeeName": "Person 7",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        }
+      ],
+      "headers": [
+        {
+          "key": "employeeName",
+          "label": "Employee"
+        },
+        {
+          "key": "totalHours",
+          "label": "Total Hours"
+        },
+        {
+          "key": "overtimeHours",
+          "label": "Overtime Hours"
+        },
+        {
+          "key": "undertimeHours",
+          "label": "Undertime Hours"
+        },
+        {
+          "key": "avgHoursPerWeek",
+          "label": "Avg Hours/Week"
+        }
+      ],
+      "filename": "work-hours-2024-12-31",
+      "bytes": 332
+    },
+    {
+      "export": "Excel",
+      "data": [
+        {
+          "employeeId": "496f93d0-6777-43a6-9df2-77452c2b6056",
+          "employeeName": "Person 0",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "e0711f47-8dbc-4d56-b18d-3613190f418f",
+          "employeeName": "Person 1",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "d777e583-3d94-4238-9b26-a38d33666ec7",
+          "employeeName": "Person 2",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "da70e361-1900-4b2e-9128-148d1b06bec3",
+          "employeeName": "Person 3",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "eb133da6-22d5-4852-94e6-de262c59d759",
+          "employeeName": "Person 4",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "a40d7e2f-ddfa-4471-987c-6f228e5e4b50",
+          "employeeName": "Person 5",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "2f5e53a9-9998-4299-959a-b378d4811294",
+          "employeeName": "Person 6",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        },
+        {
+          "employeeId": "597cea5e-2b73-4f2f-86dd-f9a90d7af167",
+          "employeeName": "Person 7",
+          "totalHours": 2088,
+          "overtimeHours": 0,
+          "undertimeHours": 0,
+          "avgHoursPerWeek": 40
+        }
+      ],
+      "headers": [
+        {
+          "key": "employeeName",
+          "label": "Employee"
+        },
+        {
+          "key": "totalHours",
+          "label": "Total Hours"
+        },
+        {
+          "key": "overtimeHours",
+          "label": "Overtime Hours"
+        },
+        {
+          "key": "undertimeHours",
+          "label": "Undertime Hours"
+        },
+        {
+          "key": "avgHoursPerWeek",
+          "label": "Avg Hours/Week"
+        }
+      ],
+      "filename": "work-hours-2024-12-31",
+      "bytes": 6758
+    },
+    {
+      "refresh": "Held real 2025 read retained rows/range, disabled export; abort exposed stale warning; real Retry recovered"
+    },
+    {
+      "periodFailure": "New failed period removed old comparison and export; retry used new period"
+    },
+    {
+      "preferences": "Real Dark/Large saved and retained (18px); reduced motion; Ctrl+B persisted collapse; phone drawer Escape; zoom-equivalent viewport",
+      "comparisonScroll": {
+        "width": 298,
+        "scrollWidth": 720,
+        "scrollLeft": 422,
+        "identityLeft": 46,
+        "regionLeft": 46
+      }
+    },
+    {
+      "actor": "small-manager",
+      "h1": [
+        "Work Hours"
+      ],
+      "restricted": false,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "actor": "small-employee",
+      "h1": [
+        "Work Hours"
+      ],
+      "restricted": true,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "actor": "small-restricted",
+      "h1": [
+        "Work Hours"
+      ],
+      "restricted": true,
+      "width": 390,
+      "documentWidth": 390
+    }
+  ],
+  "errors": []
+}

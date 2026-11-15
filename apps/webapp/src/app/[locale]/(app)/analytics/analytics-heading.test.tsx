@@ -28,7 +28,7 @@ it.each(["admitted", "pending", "restricted", "no employee"])(
 		expect(screen.getByText("Analytics")).toBeTruthy();
 	},
 );
-it.each(["/analytics", "/analytics/work-hours", "/analytics/vacation-trends"])(
+it.each(["/analytics", "/analytics/vacation-trends"])(
 	"retains staged parent heading at %s",
 	(pathname) => {
 		location.pathname = pathname;
@@ -55,5 +55,21 @@ it.each(["admitted", "pending", "restricted", "no employee"])(
 		expect(
 			screen.getAllByRole("heading", { level: 1 }).map((n) => n.textContent),
 		).toEqual(["Team Performance"]);
+	},
+);
+
+it.each(["admitted", "pending", "restricted", "no employee"])(
+	"names work hours in %s arrival",
+	(arrival) => {
+		location.pathname = "/de/analytics/work-hours";
+		render(
+			<AnalyticsHeading
+				title="Analytics"
+				description={arrival === "admitted" ? "Original context" : undefined}
+			/>,
+		);
+		expect(
+			screen.getAllByRole("heading", { level: 1 }).map((n) => n.textContent),
+		).toEqual(["Work Hours"]);
 	},
 );

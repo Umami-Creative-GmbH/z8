@@ -1,0 +1,34 @@
+{
+  "mode": "after",
+  "scope": "same small-admin / Performance small / Last Year 2025; original synthetic fixture history; no data mutations",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Work Hours"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n02:28\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nWork Hours\nTotal hours and variance from expected by employee\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nDaily Work Hours\nActual vs expected work hours per day\n2025-01-14\n2025-03-03\n2025-04-18\n2025-06-05\n2025-07-23\n2025-09-09\n2025-10-27\n2025-12-31\n0\n20\n40\n60\n80\nView daily hours\nOvertime & Undertime Trend\nHours variance from expected work hours over time\n\nDaily overtime and undertime hour values are unavailable from this report. Recorded daily status is shown below.\n\nView daily status\nEmployee Work Hours\nTotal hours and variance from expected by employee\nEmployee\tTotal Hours\tExpected Hours\tVariance\tStatus\nPerson 0\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 1\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 2\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 3\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 4\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 5\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 6\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 7\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nWork Hours Distribution\nEmployee work hours comparison (horizontal bar)\n0\n550\n1100\n1650\n2200\nPerson 0\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Work Hours"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\nMore actions\nAnalytics\nWork Hours\nTotal hours and variance from expected by employee\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nDaily Work Hours\nActual vs expected work hours per day\n2025-01-20\n2025-05-01\n2025-08-12\n2025-12-31\n0\n20\n40\n60\n80\nView daily hours\nOvertime & Undertime Trend\nHours variance from expected work hours over time\n\nDaily overtime and undertime hour values are unavailable from this report. Recorded daily status is shown below.\n\nView daily status\nEmployee Work Hours\nTotal hours and variance from expected by employee\nEmployee\tTotal Hours\tExpected Hours\tVariance\tStatus\nPerson 0\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 1\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 2\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 3\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 4\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 5\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 6\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 7\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nWork Hours Distribution\nEmployee work hours comparison (horizontal bar)\n0\n550\n1100\n1650\n2200\nPerson 0\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Work Hours"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n02:28\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nWork Hours\nTotal hours and variance from expected by employee\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nDaily Work Hours\nActual vs expected work hours per day\n2025-01-08\n2025-02-04\n2025-03-03\n2025-03-28\n2025-04-24\n2025-05-21\n2025-06-17\n2025-07-14\n2025-08-08\n2025-09-04\n2025-10-01\n2025-10-28\n2025-11-24\n2025-12-31\n0\n20\n40\n60\n80\nView daily hours\nOvertime & Undertime Trend\nHours variance from expected work hours over time\n\nDaily overtime and undertime hour values are unavailable from this report. Recorded daily status is shown below.\n\nView daily status\nEmployee Work Hours\nTotal hours and variance from expected by employee\nEmployee\tTotal Hours\tExpected Hours\tVariance\tStatus\nPerson 0\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 1\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 2\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 3\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 4\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 5\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 6\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nPerson 7\t2,088.0h\t2,088.0h\t+0.0h\t40h/wk\nWork Hours Distribution\nEmployee work hours comparison (horizontal bar)\n0\n550\n1100\n1650\n2200\nPerson 0\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7"
+    }
+  ],
+  "errors": []
+}
