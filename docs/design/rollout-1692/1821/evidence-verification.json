@@ -1,5 +1,5 @@
 {
-  "head": "d4f4859527122f39dfda456671d48de131bab51c",
+  "head": "670a6b1a762517393579651c96c0dc7098554b19",
   "sourceSha256": "601b425b564915a9b4634f0b11c26ebb161a80e82755292ecedb1ee75e2d7640",
   "paired": 6,
   "afterStates": 14,
@@ -31,60 +31,60 @@
       "sha256": "ee67711aae8beb262c6d60039ba6a5be8d626438ed84f99d7831533f19657e60"
     },
     {
-      "file": "after-desktop-light.png",
-      "sha256": "ce55650d35979f9a54dd83e2dac19b6499ef8a4cedaa9fe8e145e9c41236967d"
+      "file": "combined-desktop-light.png",
+      "sha256": "1707b4c6ccc18b4ea602abc3c9ba495c843177f1237f7f9fe9f8c4cb82a1f960"
     },
     {
-      "file": "after-phone-light.png",
-      "sha256": "76756838b9a2a03d0724bbab63989be1c20d4e3eb574c3e66199a335cd1c12f5"
+      "file": "combined-phone-light.png",
+      "sha256": "ebdcf003d4d56a054a70b2ef4b44c08d3a77ab7620a62618e7dc43235ccdeeb9"
     },
     {
-      "file": "after-wide-dark.png",
-      "sha256": "972048375744bc85d74d43dc514be5eb5fb8bb99df9177e85e5c3ea0c7112090"
+      "file": "combined-wide-dark.png",
+      "sha256": "9028e11ed1c8b6cfeb708fbe3756ce10b2e52a01aa9692efde38061c29ef1ee4"
     },
     {
-      "file": "after-phone-dark-large.png",
+      "file": "combined-phone-dark-large.png",
       "sha256": "c2d41e6230a29a7254ae950f1e5641d80b80ff02f8eb38850c1763a7dbc854ee"
     },
     {
-      "file": "after-branded-desktop.png",
-      "sha256": "688ff4d778afc7d69e1903df67ca2a35cdcd91b9caf4547e539cd97110fa3166"
+      "file": "combined-branded-desktop.png",
+      "sha256": "b4dd8401da225beec76e1638c80ea3f217e0572a2b95debb357fd38b15a4e667"
     },
     {
-      "file": "after-branded-phone.png",
-      "sha256": "a5270ba4f87fcc68556b5c2ef1260fe89ddd298795366b7b1a1526eb9cb16437"
+      "file": "combined-branded-phone.png",
+      "sha256": "042915a2513271c7518c92bb11a5f41d9c6b9e9300dcd76cc74061b14d4415a8"
     },
     {
-      "file": "after-saved-preferences.png",
-      "sha256": "45240ffbd62ef8a61f6f379a1d9f18463a09c3987bc53e878be76c09521afeca"
+      "file": "combined-saved-preferences.png",
+      "sha256": "d92637f25be01e76905fd7134b81aaa8ec0b572385bb1d4e2366abe0abeec61e"
     },
     {
-      "file": "after-keyboard-focus.png",
-      "sha256": "3527fe605d94b8a105f23eeb65c7765e6f307f65a4c2230c0934d12056fe5661"
+      "file": "combined-keyboard-focus.png",
+      "sha256": "529c71caf66afe574452d051ca1c8c4ccb85e5fd49f783a0b4442092a2fd3b72"
     },
     {
-      "file": "after-validation.png",
-      "sha256": "d93fe359682ba9ce6f5c41d22843791ba28f862d9010b7bde1e6e107f9bb25a3"
+      "file": "combined-validation.png",
+      "sha256": "eb0bf31decd3fe1ed2e1d7d114169a00d1082b0d8fd411fbb91904a2cdca1cc7"
     },
     {
-      "file": "after-pending.png",
-      "sha256": "5fdccacb2be8b548d9c41f550844182a0a9d564b6a718cc2298eadb36f3625a6"
+      "file": "combined-pending.png",
+      "sha256": "e833ba4198ac43d0eee2c3bab53096e024ecd52e033d05933d64c1153508f840"
     },
     {
-      "file": "after-transport-failure.png",
-      "sha256": "71f6191004e5cbc5e53f4683a11e94e9cd8d74c930cec51b334bea6350976941"
+      "file": "combined-transport-failure.png",
+      "sha256": "e5f4e5f9aef8cd01cf5eb44a506a29b4dd6845b730e38e119b0090edc9861e8b"
     },
     {
-      "file": "after-unknown-neutral.png",
-      "sha256": "80a88388ce02022962d2e5f552c0bb72654ef36ccd23483ba3ebfc24029420c5"
+      "file": "combined-unknown-neutral.png",
+      "sha256": "c9b2ffae9edd020ad9323c668fdab1cefdfc71ce22cd0ceb942f6bf5c87f4042"
     },
     {
-      "file": "after-known-neutral-de.png",
-      "sha256": "9b3295427fc31de317e431f20e3ef40a6bb31af7a2c71f7b92a9a0785418be62"
+      "file": "combined-known-neutral-de.png",
+      "sha256": "058483cc2b0055bd7655c12b8969ad4d6c2d4132e1f84aea309821419ca8898b"
     },
     {
-      "file": "after-server-captcha-failure.png",
-      "sha256": "3448c04c45abc29b0f8a3edbed1e3a674067de02c0e4dbe84a479d467e919bdb"
+      "file": "combined-server-captcha-failure.png",
+      "sha256": "8046b531654576b1cc7607dcf5cf2d7ba18669417284de25d46de3642aca53a2"
     }
   ]
 }

@@ -1,9 +1,6 @@
 {
-  "head": "d4f4859527122f39dfda456671d48de131bab51c",
-  "dirty": [
-    " M apps/webapp/src/components/forgot-password-form.test.tsx",
-    " M apps/webapp/src/components/forgot-password-form.tsx"
-  ],
+  "head": "670a6b1a762517393579651c96c0dc7098554b19",
+  "dirty": " M docs/design/rollout-1692/1821/quality.json",
   "results": [
     {
       "name": "get_compilation_issues",
