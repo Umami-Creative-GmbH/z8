@@ -209,13 +209,20 @@ export function ScheduleXCalendarWrapper({
 		return [];
 	})();
 
+	// Schedule-X retains its initial callbacks while React Query loads and replaces records.
+	const eventClickContext = useRef({ events: scheduleXEvents, onEventClick });
+	useLayoutEffect(() => {
+		eventClickContext.current = { events: scheduleXEvents, onEventClick };
+	}, [scheduleXEvents, onEventClick]);
+
 	// Handle event click - Schedule-X passes the event object
 	const handleEventClick = (event: { id: string }) => {
-		if (!onEventClick) return;
+		const current = eventClickContext.current;
+		if (!current.onEventClick) return;
 
-		const calendarEvent = resolveClickableCalendarEvent(scheduleXEvents, event);
+		const calendarEvent = resolveClickableCalendarEvent(current.events, event);
 		if (calendarEvent) {
-			onEventClick(calendarEvent);
+			current.onEventClick(calendarEvent);
 		}
 	};
 

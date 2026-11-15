@@ -4,7 +4,7 @@ import "temporal-polyfill/global";
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
 import { useRef, useSyncExternalStore } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -248,7 +248,9 @@ function DomLifecycleHarness({ onTimeRangeSelect }: { onTimeRangeSelect?: (range
 
 	return (
 		<div ref={containerRef} data-testid="dom-lifecycle-container">
+			<div className="sx__view-container" data-testid="calendar-time-scroller">
 			<div className="sx__time-grid-day" data-time-grid-date="2026-05-18" />
+			</div>
 			<div className="sx__event" data-testid="dom-lifecycle-event" />
 			<div className="sx__event-modal is-open" />
 		</div>
@@ -262,6 +264,40 @@ beforeEach(() => {
 });
 
 describe("ScheduleXCalendarWrapper header", () => {
+	it("opens records loaded after Schedule-X registered its initial click callback", () => {
+		const onEventClick = vi.fn();
+		const props = { events: EMPTY_CALENDAR_EVENTS, viewMode: "week" as const, onViewModeChange: vi.fn(), onEventClick };
+		const { rerender } = render(<ScheduleXCalendarWrapper {...props} />);
+		const firstCallback = useCalendarAppMock.mock.calls[0]?.[0].callbacks.onEventClick;
+		rerender(<ScheduleXCalendarWrapper {...props} events={[completedWorkPeriod]} />);
+		firstCallback({ id: completedWorkPeriod.id });
+		expect(onEventClick).toHaveBeenCalledWith(completedWorkPeriod);
+		onEventClick.mockClear();
+		rerender(<ScheduleXCalendarWrapper {...props} events={EMPTY_CALENDAR_EVENTS} />);
+		firstCallback({ id: completedWorkPeriod.id });
+		expect(onEventClick).not.toHaveBeenCalled();
+	});
+	it("centers current time inside the record without scrolling page scope or period controls", async () => {
+		const originalScroll = Object.getOwnPropertyDescriptor(Element.prototype, "scrollIntoView");
+		const scrollAncestors = vi.fn();
+		Object.defineProperty(Element.prototype, "scrollIntoView", { configurable: true, value: scrollAncestors });
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-18T12:00:00Z"));
+		try {
+			const { unmount } = render(<DomLifecycleHarness onTimeRangeSelect={vi.fn()} />);
+			const scroller = screen.getByTestId("calendar-time-scroller");
+			const scrollTo = vi.fn();
+			Object.defineProperty(scroller, "scrollTo", { value: scrollTo });
+			await act(async () => { await vi.advanceTimersByTimeAsync(150); });
+			expect(scrollTo).toHaveBeenCalled();
+			expect(scrollAncestors).not.toHaveBeenCalled();
+			unmount();
+		} finally {
+			vi.useRealTimers();
+			if (originalScroll) Object.defineProperty(Element.prototype, "scrollIntoView", originalScroll);
+			else Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+		}
+	});
 	it.each([false, true])("previews a snapped drag before release (reverse: %s)", (reverse) => {
 		const onSelect = vi.fn();
 		const { container, unmount } = render(<DomLifecycleHarness onTimeRangeSelect={onSelect} />);

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { CalendarPageHeader } from "@/components/calendar/calendar-page-header";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -67,8 +68,11 @@ function CalendarPageLoading() {
 
 export default function CalendarPage() {
 	return (
-		<Suspense fallback={<CalendarPageLoading />}>
-			<CalendarPageContent />
-		</Suspense>
+		<>
+			<CalendarPageHeader />
+			<Suspense fallback={<CalendarPageLoading />}>
+				<CalendarPageContent />
+			</Suspense>
+		</>
 	);
 }
