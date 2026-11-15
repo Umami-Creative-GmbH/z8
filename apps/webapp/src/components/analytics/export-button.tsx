@@ -48,9 +48,13 @@ export function ExportButton<T = any>({
 		null,
 	);
 	const mounted = useRef(true);
-	const current = useRef({ disabled, exportScope });
+	const current = useRef({ disabled, exportScope, generation: 0 });
 	useLayoutEffect(() => {
-		current.current = { disabled, exportScope };
+		current.current = {
+			disabled,
+			exportScope,
+			generation: current.current.generation + 1,
+		};
 	}, [disabled, exportScope]);
 	useEffect(() => {
 		mounted.current = true;
@@ -61,6 +65,7 @@ export function ExportButton<T = any>({
 
 	const handleExport = async (format: ExportFormat) => {
 		if (disabled || isExporting) return;
+		const generation = current.current.generation;
 		setIsExporting(true);
 		setExportingFormat(format);
 
@@ -96,6 +101,7 @@ export function ExportButton<T = any>({
 		if (!mounted.current) return;
 		if (
 			current.current.disabled ||
+			current.current.generation !== generation ||
 			current.current.exportScope !== exportScope
 		) {
 			setIsExporting(false);

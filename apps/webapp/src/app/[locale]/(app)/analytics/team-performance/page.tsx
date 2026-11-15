@@ -264,7 +264,9 @@ function TeamPerformance() {
 							variant="outline"
 							size="sm"
 							disabled={loading || refreshing}
-							onClick={() => void runAnalyticsLoad()}
+							onClick={() =>
+								void runAnalyticsLoad(Boolean(teamData)).catch(() => undefined)
+							}
 						>
 							{t("common.retry", "Retry")}
 						</Button>
