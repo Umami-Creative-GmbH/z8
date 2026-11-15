@@ -1,6 +1,6 @@
 Scanning changes: feat/onboarding-profile → 111dc9e50908ec7f8c478b97c5a96f809b696c0a
 
-  
+
 Agent guidance
   - Treat React Doctor diagnostics as starting hypotheses. Read the relevant code before confirming or suppressing each finding.
   - For each group, decide true positive, false positive, or needs-human-review, then assign high/medium/low confidence.
@@ -32,4 +32,3 @@ Score disabled by --no-score. Want something custom to your company? Contact us 
 
   GitHub: https://github.com/millionco/react-doctor
   Report issues and star the repository!
-
