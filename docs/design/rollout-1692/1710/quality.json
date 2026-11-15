@@ -4,6 +4,8 @@
   "initialIntegration": "eaf8aa1ef97029cd4327ba7f2568383f63d2b40c",
   "implementation": "5696a1c03f155d308591490d68973e3bb3975671",
   "mergedIntegration": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+  "finalIntegration": "0ab4366bcaafa60c57655b648416e1f91d5b3e31",
+  "finalIntegrationQualification": "Final integration changed only root's #1714 report, README and ledger; apps/webapp and packages are byte-identical to testedCodeHead. No owned ledger/README edits.",
   "testedCodeHead": "c7f4ca361fb7b13a27f69d4fa235234fad71593d",
   "dependency1709": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
   "unit": {
