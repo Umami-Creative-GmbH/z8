@@ -452,12 +452,13 @@ describe("Issuing equipment", () => {
 		);
 		await user.selectOptions(panel.getByLabelText("Condition"), "worn");
 		await user.type(panel.getByLabelText("Notes (optional)"), "With charger");
+		const retainedNotes = panel.getByLabelText("Notes (optional)");
 		await user.click(panel.getByRole("button", { name: "Record issuance" }));
-		await waitFor(() =>
-			expect(api.toast.error).toHaveBeenCalledWith(
-				"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
-			),
+		expect((await panel.findByRole("alert")).textContent).toBe(
+			"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
 		);
+		expect(api.toast.error).not.toHaveBeenCalled();
+		expect(panel.getByLabelText("Notes (optional)")).toBe(retainedNotes);
 		// An uncertain outcome keeps the panel open for an identical retry.
 		await user.click(panel.getByRole("button", { name: "Record issuance" }));
 		await waitFor(() => expect(api.change).toHaveBeenCalledTimes(2));
@@ -472,6 +473,10 @@ describe("Issuing equipment", () => {
 			explicitDeadline: null,
 		});
 		expect(api.refresh).not.toHaveBeenCalled();
+		await user.click(panel.getByRole("button", { name: "Cancel" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		const reopened = await openPanel(user, "Issue equipment");
+		expect(reopened.queryByRole("alert")).toBeNull();
 	});
 
 	it("issues a positive whole quantity without requiring an artificial individual identity", async () => {
