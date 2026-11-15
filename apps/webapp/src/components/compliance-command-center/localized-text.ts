@@ -7,6 +7,18 @@ type Translate = (
 ) => string;
 
 export const COMPLIANCE_COMMAND_CENTER_I18N = {
+	sectionAuditEvidence: {
+		key: "compliance.commandCenter.sections.auditEvidence.title",
+		default: "Audit evidence",
+	},
+	sectionWorkforceCompliance: {
+		key: "compliance.commandCenter.sections.workforceCompliance.title",
+		default: "Workforce compliance",
+	},
+	sectionAccessControls: {
+		key: "compliance.commandCenter.sections.accessControls.title",
+		default: "Access controls",
+	},
 	coverageAccessControls: {
 		key: "compliance.commandCenter.coverage.accessControls",
 		default:
@@ -196,10 +208,22 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.sections.workforceCompliance.headline.warning",
 		default: "Workforce compliance is drifting",
 	},
-	statusCritical: { key: "compliance.commandCenter.status.critical", default: "critical" },
-	statusHealthy: { key: "compliance.commandCenter.status.healthy", default: "healthy" },
-	statusUnavailable: { key: "compliance.commandCenter.status.unavailable", default: "unavailable" },
-	statusWarning: { key: "compliance.commandCenter.status.warning", default: "warning" },
+	statusCritical: {
+		key: "compliance.commandCenter.status.critical",
+		default: "critical",
+	},
+	statusHealthy: {
+		key: "compliance.commandCenter.status.healthy",
+		default: "healthy",
+	},
+	statusUnavailable: {
+		key: "compliance.commandCenter.status.unavailable",
+		default: "unavailable",
+	},
+	statusWarning: {
+		key: "compliance.commandCenter.status.warning",
+		default: "warning",
+	},
 	summaryCritical: {
 		key: "compliance.commandCenter.summary.critical",
 		default: "Critical compliance risks need attention",
@@ -219,7 +243,10 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 };
 
 const FALLBACKS = Object.fromEntries(
-	Object.values(COMPLIANCE_COMMAND_CENTER_I18N).map((entry) => [entry.key, entry.default]),
+	Object.values(COMPLIANCE_COMMAND_CENTER_I18N).map((entry) => [
+		entry.key,
+		entry.default,
+	]),
 );
 
 export const COMPLIANCE_STATUS_I18N = {
@@ -227,6 +254,13 @@ export const COMPLIANCE_STATUS_I18N = {
 	healthy: COMPLIANCE_COMMAND_CENTER_I18N.statusHealthy,
 	unavailable: COMPLIANCE_COMMAND_CENTER_I18N.statusUnavailable,
 	warning: COMPLIANCE_COMMAND_CENTER_I18N.statusWarning,
+};
+
+export const COMPLIANCE_SECTION_I18N = {
+	auditEvidence: COMPLIANCE_COMMAND_CENTER_I18N.sectionAuditEvidence,
+	workforceCompliance:
+		COMPLIANCE_COMMAND_CENTER_I18N.sectionWorkforceCompliance,
+	accessControls: COMPLIANCE_COMMAND_CENTER_I18N.sectionAccessControls,
 };
 
 export function renderComplianceText(t: Translate, text: ComplianceText) {
