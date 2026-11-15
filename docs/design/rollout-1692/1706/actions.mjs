@@ -51,4 +51,3 @@ try{
  const next=[];for(const name of ['get_project_metadata','get_routes','get_page_metadata','get_compilation_issues','get_errors'])next.push({name,result:await mcp(name)});await writeFile(join(out,'next-runtime.json'),JSON.stringify(next,null,2)+'\n');
  assert.deepEqual(errors,[]);await writeFile(join(out,'actions-runtime.json'),JSON.stringify({observations,errors},null,2)+'\n');console.log(JSON.stringify({observations,errors}));
 }finally{await browser.close();}
-
