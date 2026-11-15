@@ -139,4 +139,31 @@ describe("vacation onboarding public action authority", () => {
 			{ userId: "actor", values: { onboardingStep: "work_templates" } },
 		]);
 	});
+
+	it.each(["organization", "account"])(
+		"refuses a stale %s expectation before writes",
+		async (kind) => {
+			caller.role = "admin";
+			const expected = {
+				userId: kind === "account" ? "another-actor" : "actor",
+				organizationId: kind === "organization" ? "org-b" : "org-a",
+			};
+			expect(await createVacationPolicyOnboarding(values, expected)).toMatchObject({
+				success: false,
+			});
+			expect(await skipVacationPolicySetup(expected)).toMatchObject({ success: false });
+			expect(caller.policies).toEqual([]);
+			expect(caller.progress).toEqual([]);
+		},
+	);
+
+	it("admits a matching expectation without treating it as a permission grant", async () => {
+		const expected = { userId: "actor", organizationId: "org-a" };
+		expect(await createVacationPolicyOnboarding(values, expected)).toMatchObject({
+			success: false,
+		});
+		caller.role = "admin";
+		expect(await createVacationPolicyOnboarding(values, expected)).toMatchObject({ success: true });
+		expect(caller.policies).toHaveLength(1);
+	});
 });

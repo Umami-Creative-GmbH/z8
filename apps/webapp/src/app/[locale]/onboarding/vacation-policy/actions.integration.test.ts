@@ -110,12 +110,12 @@ describe("vacation onboarding authority on PostgreSQL", () => {
 		request.securityRefused = false;
 	}
 
-	async function snapshot(userId: string) {
+	async function snapshot(userId: string, organizationIds = [fixture.organizationId]) {
 		return {
 			policies: (
 				await fixture.pool.query(
-					"select * from vacation_allowance where organization_id=$1 order by id",
-					[fixture.organizationId],
+					"select * from vacation_allowance where organization_id=any($1::text[]) order by id",
+					[organizationIds],
 				)
 			).rows,
 			settings: (await fixture.pool.query("select * from user_settings where user_id=$1", [userId]))
@@ -155,6 +155,27 @@ describe("vacation onboarding authority on PostgreSQL", () => {
 		expect(await createVacationPolicyOnboarding(input)).toMatchObject({ success: false });
 		expect(await skipVacationPolicySetup()).toMatchObject({ success: false });
 		expect(await snapshot(actor.userId)).toEqual(before);
+	});
+
+	it("refuses an A draft after an authorized actor switches to B", async () => {
+		const actor = await fixture.seedEmployee({ role: "admin" });
+		const otherOrganization = await fixture.createOrganization();
+		await fixture.pool.query(
+			"insert into member(id,organization_id,user_id,role,status,created_at) values($1,$2,$3,'admin','approved',now())",
+			[randomUUID(), otherOrganization, actor.userId],
+		);
+		signIn(actor.userId);
+		expect(await checkIsAdmin()).toMatchObject({ success: true, data: true });
+		const expected = { userId: actor.userId, organizationId: fixture.organizationId };
+		request.organizationId = otherOrganization;
+		expect(await checkIsAdmin()).toMatchObject({ success: true, data: true });
+		const organizations = [fixture.organizationId, otherOrganization];
+		const before = await snapshot(actor.userId, organizations);
+		expect
+			.soft(await createVacationPolicyOnboarding(input, expected))
+			.toMatchObject({ success: false });
+		expect.soft(await skipVacationPolicySetup(expected)).toMatchObject({ success: false });
+		expect.soft(await snapshot(actor.userId, organizations)).toEqual(before);
 	});
 
 	it.each(["owner", "admin"] as const)("preserves %s creation and Skip semantics", async (role) => {

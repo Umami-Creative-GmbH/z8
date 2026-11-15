@@ -26,7 +26,10 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
-import type { OnboardingVacationPolicyFormValues } from "@/lib/validations/onboarding";
+import type {
+	OnboardingOrganizationExpectation,
+	OnboardingVacationPolicyFormValues,
+} from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import { checkIsAdmin, createVacationPolicyOnboarding, skipVacationPolicySetup } from "./actions";
@@ -367,8 +370,14 @@ function VacationPolicyForm({
 
 export default function VacationPolicyPage() {
 	const arrival = usePolicyArrival();
-	if (!arrival.ready) return <PolicyAccessLoading />;
-	return <VacationPolicyArrival key={arrival.key} epoch={arrival.epoch} />;
+	if (!arrival.ready || !arrival.expectation) return <PolicyAccessLoading />;
+	return (
+		<VacationPolicyArrival
+			key={arrival.key}
+			epoch={arrival.epoch}
+			expectation={arrival.expectation}
+		/>
+	);
 }
 
 function PolicyAccessLoading() {
@@ -392,7 +401,13 @@ function PolicyAccessLoading() {
 	);
 }
 
-function VacationPolicyArrival({ epoch }: { epoch: RefObject<number> }) {
+function VacationPolicyArrival({
+	epoch,
+	expectation,
+}: {
+	epoch: RefObject<number>;
+	expectation: OnboardingOrganizationExpectation;
+}) {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
@@ -455,7 +470,10 @@ function VacationPolicyArrival({ epoch }: { epoch: RefObject<number> }) {
 			);
 		};
 		await runOnboardingAction({
-			action: () => (value ? createVacationPolicyOnboarding(value) : skipVacationPolicySetup()),
+			action: () =>
+				value
+					? createVacationPolicyOnboarding(value, expectation)
+					: skipVacationPolicySetup(expectation),
 			onResult: (result) => {
 				if (!current()) return;
 				if (!result.success) {

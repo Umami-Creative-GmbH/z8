@@ -29,5 +29,11 @@ export function usePolicyArrival() {
 		key: `${scope}:${arrival}`,
 		epoch,
 		ready: !session.isPending && !!session.data?.user.id,
+		expectation: session.data?.user.id
+			? {
+					userId: session.data.user.id,
+					organizationId: session.data.session.activeOrganizationId ?? null,
+				}
+			: null,
 	};
 }

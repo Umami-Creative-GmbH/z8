@@ -38,6 +38,7 @@ import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
 	OnboardingNotificationsFormValues,
+	OnboardingOrganizationExpectation,
 	OnboardingProfileFormValues,
 	OnboardingStep,
 	OnboardingVacationPolicyFormValues,
@@ -124,8 +125,11 @@ export class OnboardingService extends Context.Service<
 		// Admin setup - Vacation Policy
 		readonly createVacationPolicy: (
 			data: OnboardingVacationPolicyFormValues,
+			expected?: OnboardingOrganizationExpectation,
 		) => Effect.Effect<void, AuthenticationError | AuthorizationError | DatabaseError>;
-		readonly skipVacationPolicySetup: () => Effect.Effect<
+		readonly skipVacationPolicySetup: (
+			expected?: OnboardingOrganizationExpectation,
+		) => Effect.Effect<
 			void,
 			AuthenticationError | AuthorizationError | DatabaseError
 		>;
@@ -196,13 +200,28 @@ export const OnboardingServiceLive = Layer.effect(
 				Effect.provideService(AuthService, authentication),
 				Effect.provideService(DatabaseService, dbService),
 			);
-		const requireVacationPolicyAdmin = () =>
+		const requireVacationPolicyAdmin = (expected?: OnboardingOrganizationExpectation) =>
 			Effect.gen(function* () {
 				const caller = yield* settingsCaller();
 				if (!meetsSettingsAccess(caller.settingsAccess, "orgAdmin")) {
 					return yield* Effect.fail(
 						new AuthorizationError({
 							message: "You do not have access to this setting",
+							resource: "vacation_policy",
+							action: "manage",
+							userId: caller.userId,
+						}),
+					);
+				}
+				if (
+					expected !== undefined &&
+					(!expected ||
+						expected.userId !== caller.userId ||
+						expected.organizationId !== caller.organizationId)
+				) {
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "The active account or organization changed. Please try again.",
 							resource: "vacation_policy",
 							action: "manage",
 							userId: caller.userId,
@@ -593,9 +612,9 @@ export const OnboardingServiceLive = Layer.effect(
 				}),
 
 			// Admin setup - Create vacation policy
-			createVacationPolicy: (data: OnboardingVacationPolicyFormValues) =>
+			createVacationPolicy: (data: OnboardingVacationPolicyFormValues, expected) =>
 				Effect.gen(function* () {
-					const caller = yield* requireVacationPolicyAdmin();
+					const caller = yield* requireVacationPolicyAdmin(expected);
 					const activeOrgId = caller.organizationId;
 
 					yield* dbService.query("createVacationPolicy", async () => {
@@ -632,9 +651,9 @@ export const OnboardingServiceLive = Layer.effect(
 				}),
 
 			// Skip vacation policy setup
-			skipVacationPolicySetup: () =>
+			skipVacationPolicySetup: (expected) =>
 				Effect.gen(function* () {
-					const caller = yield* requireVacationPolicyAdmin();
+					const caller = yield* requireVacationPolicyAdmin(expected);
 
 					yield* dbService.query("skipVacationPolicySetup", async () => {
 						await writeUserSettings(dbService.db, caller.userId, {

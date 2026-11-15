@@ -98,6 +98,30 @@ describe("VacationPolicyPage load effect", () => {
 		},
 	);
 
+	it.each(["save", "skip"])(
+		"sends the requesting account and organization with %s",
+		async (action) => {
+			mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+			mocks.createVacationPolicyOnboarding.mockResolvedValue({ success: true });
+			mocks.skipVacationPolicySetup.mockResolvedValue({ success: true });
+			render(<VacationPolicyPage />);
+			fireEvent.click(
+				await screen.findByRole("button", {
+					name: action === "save" ? "Save and continue" : "Skip for now",
+				}),
+			);
+			await waitFor(() => {
+				const command =
+					action === "save" ? mocks.createVacationPolicyOnboarding : mocks.skipVacationPolicySetup;
+				expect(command).toHaveBeenCalledOnce();
+				expect(command.mock.calls[0][action === "save" ? 1 : 0]).toEqual({
+					userId: "account-a",
+					organizationId: "org-a",
+				});
+			});
+		},
+	);
+
 	it("retires held saves through an organization A to B to A arrival", async () => {
 		const held = deferred<{ success: true }>();
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
@@ -344,13 +368,16 @@ describe("VacationPolicyPage load effect", () => {
 		fireEvent.click(continueButton);
 
 		await waitFor(() => {
-			expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledWith({
-				name: "Standard",
-				defaultAnnualDays: 25,
-				accrualType: "annual",
-				allowCarryover: true,
-				maxCarryoverDays: 7,
-			});
+			expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledWith(
+				{
+					name: "Standard",
+					defaultAnnualDays: 25,
+					accrualType: "annual",
+					allowCarryover: true,
+					maxCarryoverDays: 7,
+				},
+				{ userId: "account-a", organizationId: "org-a" },
+			);
 			expect(continueButton).toHaveProperty("disabled", true);
 			expect(carryoverSwitch).toHaveProperty("disabled", true);
 		});
