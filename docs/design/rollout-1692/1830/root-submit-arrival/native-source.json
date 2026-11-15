@@ -1,0 +1,7 @@
+{
+  "head": "587e567ed78461dd3b587c30fd4d51b8a1c07a03",
+  "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+  "canonicalSha256": "de922fed4f8ca595b170552e2f5408ff9dc4544a6967edba8bbe49ba170f2b5d",
+  "session": "next-dev-loop-1830-t3-36de3f4a-69b59b59b97cbc3d",
+  "qualification": "Fresh real loaded profile target. Private-stdin normal BetterAuth sign-in, no credential output, no cookie transfer or state/restore file. Transient documented no-restore session closes below. This does not retroactively pass the worker native attempt or reproduce queued-arrival timing."
+}

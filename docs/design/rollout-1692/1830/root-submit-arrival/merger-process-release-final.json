@@ -1,0 +1,14 @@
+{
+  "head": "25865312d95c68ec1eaed75363e953745f168802",
+  "tree": "9eceebe9741a320718642c13359d1030947598b9",
+  "parents": "1fb2263e97bf266522f1cf50be957889383701cd df375cecd17c6d28e2621ee630a8bc19edb91f09",
+  "status": [],
+  "ownedPackageOrRuntimeCandidates": [],
+  "remainingOwnedProcesses": 0,
+  "noBrowserOrDBOrNextStarted": true,
+  "artifactAuditPassed": true,
+  "missingRuntimeOwners": [],
+  "normalizedLogs": 7,
+  "lockSHA256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+  "release": "RELEASE all root checkout, package and runtime ownership after final tool completion"
+}
