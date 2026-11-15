@@ -1,0 +1,22 @@
+﻿[
+    {
+        "path":  "package.json",
+        "sha256":  "F281C18AC5A4B789E95CC9314145E2F1BB535AFF902FD2C4A20E08256F88C2B7"
+    },
+    {
+        "path":  "apps/webapp/package.json",
+        "sha256":  "59BBC67934476333747162B5ABCC7ADAC7A99DB758416C9B630A09EC92AC1CC9"
+    },
+    {
+        "path":  "pnpm-workspace.yaml",
+        "sha256":  "1AA995231F3055320FD3130345F21C4F6598232FE8981920F2AE6B860E376EA8"
+    },
+    {
+        "path":  "pnpm-lock.yaml",
+        "sha256":  "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799"
+    },
+    {
+        "path":  "apps/webapp/next.config.ts",
+        "sha256":  "D3A8ED855C1BEEE3174FEF4A6DFC9112F39AE2CE5BFA39FEB5250E55B0FC5D05"
+    }
+]

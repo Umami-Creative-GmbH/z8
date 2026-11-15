@@ -1,0 +1,44 @@
+src\app\[locale]\onboarding\welcome\page-client.tsx:135:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: attempt.
+  
+    133 │ 	}, [failureMessage, stepFailureMessage]);
+    134 │ 
+  > 135 │ 	useEffect(() => {
+        │ 	^^^^^^^^^
+    136 │ 		const current = { active: true, pending: false };
+    137 │ 		arrival.current = current;
+  
+  i This dependency can be removed from the list.
+  
+    172 │ 			current.active = false;
+    173 │ 		};
+  > 174 │ 	}, [attempt]);
+        │ 	    ^^^^^^^
+    175 │ 
+    176 │ 	const handleContinue = async () => {
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    174 │ → },·[attempt]);␍
+        │       -------   
+
+Skipped 1 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 2 files in 10ms. Fixed 2 files.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-394c4cda-
+  │ 6b16d8d73f89b377\apps\webapp
+

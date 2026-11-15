@@ -1,0 +1,90 @@
+{
+  "sourceHashes": {
+    "src/app/[locale]/onboarding/welcome/page-client.tsx": "1d7724773e0191e9cac108b0889cc8fc8d5ea6ab5abd2e14b134901620486836",
+    "src/app/[locale]/onboarding/welcome/page.tsx": "3d86d93f93d9f0d3c5351aaf4c469d3d7ae381f2ba2290c65f08dc620e12e4a1",
+    "src/app/[locale]/onboarding/welcome/page.test.tsx": "510ab234b4fd17e99f77dbe8f03434564cf953802f925fb53e05ed53ae06d5d1"
+  },
+  "commands": [
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "next",
+        "typegen"
+      ],
+      "exitCode": 0,
+      "stdout": "Generating route types...\n✓ Types generated successfully\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.workflow-contracts.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.smoke.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--line-ending=crlf",
+        "src/app/[locale]/onboarding/welcome/page-client.tsx",
+        "src/app/[locale]/onboarding/welcome/page.tsx",
+        "src/app/[locale]/onboarding/welcome/page.test.tsx"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "src\\app\\[locale]\\onboarding\\welcome\\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n  × Formatter would have printed the following content:\n  \n    180 180 │       mocks.session.isPending = true;␍\n    181 181 │       const view = render(<WelcomePage />);␍\n    182     │ - → → expect(screen.getByRole(\"status\").textContent).toContain(\"Waiting·for·your·session\");␍\n        182 │ + → → expect(screen.getByRole(\"status\").textContent).toContain(␍\n        183 │ + → → → \"Waiting·for·your·session\",␍\n        184 │ + → → );␍\n    183 185 │       expect(mocks.start).not.toHaveBeenCalled();␍\n    184 186 │       mocks.session.isPending = false;␍\n    185 187 │       view.rerender(<WelcomePage />);␍\n    186     │ - → → fireEvent.click(screen.getByRole(\"button\",·{name:\"Retry·session\"}));␍\n        188 │ + → → fireEvent.click(screen.getByRole(\"button\",·{·name:·\"Retry·session\"·}));␍\n    187 189 │       expect(mocks.session.refetch).toHaveBeenCalledOnce();␍\n    188 190 │       expect(mocks.start).not.toHaveBeenCalled();␍\n    189 191 │     });␍\n    190 192 │   ␍\n    191     │ - → it.each([\"initialize\",·\"summary\"])(\"recovers·a·rejected·%s·without·disclosing·transport·details\",·async·stage·=>·{␍\n    192     │ - → → (stage·===·\"initialize\"·?·mocks.start·:·mocks.summary).mockRejectedValueOnce(new·Error(\"private·diagnostics\"));␍\n    193     │ - → → render(<WelcomePage·/>);␍\n    194     │ - → → expect((await·screen.findByRole(\"alert\")).textContent).toContain(\"Setup·could·not·be·prepared\");␍\n    195     │ - → → expect(screen.queryByText(\"private·diagnostics\")).toBeNull();␍\n    196     │ - → → fireEvent.click(screen.getByRole(\"button\",{name:\"Retry·setup\"}));await·ready();␍\n    197     │ - → });␍\n        193 │ + → it.each([\"initialize\",·\"summary\"])(␍\n        194 │ + → → \"recovers·a·rejected·%s·without·disclosing·transport·details\",␍\n        195 │ + → → async·(stage)·=>·{␍\n        196 │ + → → → (stage·===·\"initialize\"␍\n        197 │ + → → → → ?·mocks.start␍\n        198 │ + → → → → :·mocks.summary␍\n        199 │ + → → → ).mockRejectedValueOnce(new·Error(\"private·diagnostics\"));␍\n        200 │ + → → → render(<WelcomePage·/>);␍\n        201 │ + → → → expect((await·screen.findByRole(\"alert\")).textContent).toContain(␍\n        202 │ + → → → → \"Setup·could·not·be·prepared\",␍\n        203 │ + → → → );␍\n        204 │ + → → → expect(screen.queryByText(\"private·diagnostics\")).toBeNull();␍\n        205 │ + → → → fireEvent.click(screen.getByRole(\"button\",·{·name:·\"Retry·setup\"·}));␍\n        206 │ + → → → await·ready();␍\n        207 │ + → → },␍\n        208 │ + → );␍\n    198 209 │   ␍\n    199     │ - → it.each([true,false])(\"retains·role-derived·progress·and·all·guidance·for·admin=%s\",·async·isAdmin·=>·{␍\n    200     │ - → → mocks.summary.mockResolvedValue({...joined,data:{...joined.data,isAdmin}});␍\n    201     │ - → → render(<WelcomePage·/>);await·ready();␍\n    202     │ - → → expect(screen.getByRole(\"heading\",{name:\"Time·Tracking\"})).toBeTruthy();␍\n    203     │ - → → expect(screen.getByRole(\"heading\",{name:\"Absence·Management\"})).toBeTruthy();␍\n    204     │ - → → expect(screen.getByRole(\"heading\",{name:\"Team·Collaboration\"})).toBeTruthy();␍\n    205     │ - → → expect(Boolean(screen.queryByText(\"Vacation\"))).toBe(isAdmin);␍\n    206     │ - → });␍\n        210 │ + → it.each([true,·false])(␍\n        211 │ + → → \"retains·role-derived·progress·and·all·guidance·for·admin=%s\",␍\n        212 │ + → → async·(isAdmin)·=>·{␍\n        213 │ + → → → mocks.summary.mockResolvedValue({␍\n        214 │ + → → → → ...joined,␍\n        215 │ + → → → → data:·{·...joined.data,·isAdmin·},␍\n        216 │ + → → → });␍\n        217 │ + → → → render(<WelcomePage·/>);␍\n        218 │ + → → → await·ready();␍\n        219 │ + → → → expect(␍\n        220 │ + → → → → screen.getByRole(\"heading\",·{·name:·\"Time·Tracking\"·}),␍\n        221 │ + → → → ).toBeTruthy();␍\n        222 │ + → → → expect(␍\n        223 │ + → → → → screen.getByRole(\"heading\",·{·name:·\"Absence·Management\"·}),␍\n        224 │ + → → → ).toBeTruthy();␍\n        225 │ + → → → expect(␍\n        226 │ + → → → → screen.getByRole(\"heading\",·{·name:·\"Team·Collaboration\"·}),␍\n        227 │ + → → → ).toBeTruthy();␍\n        228 │ + → → → expect(Boolean(screen.queryByText(\"Vacation\"))).toBe(isAdmin);␍\n        229 │ + → → },␍\n        230 │ + → );␍\n    207 231 │   ␍\n    208     │ - → describe.each([\"account\",·\"organization\"])(\"%s-only·scope·lifetime\",·scope·=>·{␍\n    209     │ - → → it.each([\"initialize\",·\"summary\",·\"step\"])(\"ignores·a·held·rejected·%s·after·A→B→A\",·async·stage·=>·{␍\n    210     │ - → → → const·held=deferred<unknown>();␍\n    211     │ - → → → (stage·===·\"initialize\"·?·mocks.start·:·stage·===·\"summary\"·?·mocks.summary·:·mocks.step).mockReturnValueOnce(held.promise);␍\n    212     │ - → → → const·view=render(<WelcomePage·/>);if(stage·===·\"step\")fireEvent.click(await·ready());␍\n    213     │ - → → → await·waitFor(()=>expect(stage·===·\"initialize\"·?·mocks.start·:·stage·===·\"summary\"·?·mocks.summary·:·mocks.step).toHaveBeenCalledOnce());␍\n    214     │ - → → → if(scope·===·\"account\")·mocks.session.data.user.id=\"account-b\";else·mocks.session.data.session.activeOrganizationId=\"org-b\";␍\n    215     │ - → → → view.rerender(<WelcomePage·/>);await·ready();␍\n    216     │ - → → → if(scope·===·\"account\")·mocks.session.data.user.id=\"account-a\";else·mocks.session.data.session.activeOrganizationId=\"org-a\";␍\n    217     │ - → → → view.rerender(<WelcomePage·/>);await·ready();␍\n    218     │ - → → → await·act(async()=>held.reject(new·Error(\"Obsolete·rejected·operation\")));␍\n    219     │ - → → → expect(screen.queryByRole(\"alert\")).toBeNull();expect(mocks.push).not.toHaveBeenCalled();␍\n    220     │ - → → → fireEvent.click(await·ready());await·waitFor(()=>expect(mocks.push).toHaveBeenCalledOnce());␍\n    221     │ - → → });␍\n    222     │ - → });␍\n        232 │ + → describe.each([\"account\",·\"organization\"])(␍\n        233 │ + → → \"%s-only·scope·lifetime\",␍\n        234 │ + → → (scope)·=>·{␍\n        235 │ + → → → it.each([\"initialize\",·\"summary\",·\"step\"])(␍\n        236 │ + → → → → \"ignores·a·held·rejected·%s·after·A→B→A\",␍\n        237 │ + → → → → async·(stage)·=>·{␍\n        238 │ + → → → → → const·held·=·deferred<unknown>();␍\n        239 │ + → → → → → (stage·===·\"initialize\"␍\n        240 │ + → → → → → → ?·mocks.start␍\n        241 │ + → → → → → → :·stage·===·\"summary\"␍\n        242 │ + → → → → → → → ?·mocks.summary␍\n        243 │ + → → → → → → → :·mocks.step␍\n        244 │ + → → → → → ).mockReturnValueOnce(held.promise);␍\n        245 │ + → → → → → const·view·=·render(<WelcomePage·/>);␍\n        246 │ + → → → → → if·(stage·===·\"step\")·fireEvent.click(await·ready());␍\n        247 │ + → → → → → await·waitFor(()·=>␍\n        248 │ + → → → → → → expect(␍\n        249 │ + → → → → → → → stage·===·\"initialize\"␍\n        250 │ + → → → → → → → → ?·mocks.start␍\n        251 │ + → → → → → → → → :·stage·===·\"summary\"␍\n        252 │ + → → → → → → → → → ?·mocks.summary␍\n        253 │ + → → → → → → → → → :·mocks.step,␍\n        254 │ + → → → → → → ).toHaveBeenCalledOnce(),␍\n        255 │ + → → → → → );␍\n        256 │ + → → → → → if·(scope·===·\"account\")·mocks.session.data.user.id·=·\"account-b\";␍\n        257 │ + → → → → → else·mocks.session.data.session.activeOrganizationId·=·\"org-b\";␍\n        258 │ + → → → → → view.rerender(<WelcomePage·/>);␍\n        259 │ + → → → → → await·ready();␍\n        260 │ + → → → → → if·(scope·===·\"account\")·mocks.session.data.user.id·=·\"account-a\";␍\n        261 │ + → → → → → else·mocks.session.data.session.activeOrganizationId·=·\"org-a\";␍\n        262 │ + → → → → → view.rerender(<WelcomePage·/>);␍\n        263 │ + → → → → → await·ready();␍\n        264 │ + → → → → → await·act(async·()·=>␍\n        265 │ + → → → → → → held.reject(new·Error(\"Obsolete·rejected·operation\")),␍\n        266 │ + → → → → → );␍\n        267 │ + → → → → → expect(screen.queryByRole(\"alert\")).toBeNull();␍\n        268 │ + → → → → → expect(mocks.push).not.toHaveBeenCalled();␍\n        269 │ + → → → → → fireEvent.click(await·ready());␍\n        270 │ + → → → → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledOnce());␍\n        271 │ + → → → → },␍\n        272 │ + → → → );␍\n        273 │ + → → },␍\n        274 │ + → );␍\n    223 275 │   ␍\n    224     │ - → it.each([\"initialize\",·\"summary\"])(\"does·not·continue·a·hidden·Activity's·obsolete·%s\",·async·stage·=>·{␍\n    225     │ - → → const·held=deferred<typeof·joined>();(stage·===·\"initialize\"·?·mocks.start·:·mocks.summary).mockReturnValueOnce(held.promise);␍\n    226     │ - → → const·view=render(<Activity·mode=\"visible\"><WelcomePage·/></Activity>);␍\n    227     │ - → → await·waitFor(()=>expect(stage·===·\"initialize\"·?·mocks.start·:·mocks.summary).toHaveBeenCalledOnce());␍\n    228     │ - → → view.rerender(<Activity·mode=\"hidden\"><WelcomePage·/></Activity>);␍\n    229     │ - → → await·act(async()=>held.resolve({...joined,data:{...joined.data,organizationName:\"Obsolete·Activity\"}}));␍\n    230     │ - → → if(stage·===·\"initialize\")expect(mocks.summary).not.toHaveBeenCalled();␍\n    231     │ - → → view.rerender(<Activity·mode=\"visible\"><WelcomePage·/></Activity>);await·ready();␍\n    232     │ - → → expect(screen.queryByText(/Obsolete·Activity/)).toBeNull();expect(mocks.push).not.toHaveBeenCalled();␍\n    233     │ - → });␍\n        276 │ + → it.each([\"initialize\",·\"summary\"])(␍\n        277 │ + → → \"does·not·continue·a·hidden·Activity's·obsolete·%s\",␍\n        278 │ + → → async·(stage)·=>·{␍\n        279 │ + → → → const·held·=·deferred<typeof·joined>();␍\n        280 │ + → → → (stage·===·\"initialize\"␍\n        281 │ + → → → → ?·mocks.start␍\n        282 │ + → → → → :·mocks.summary␍\n        283 │ + → → → ).mockReturnValueOnce(held.promise);␍\n        284 │ + → → → const·view·=·render(␍\n        285 │ + → → → → <Activity·mode=\"visible\">␍\n        286 │ + → → → → → <WelcomePage·/>␍\n        287 │ + → → → → </Activity>,␍\n  30 more lines truncated\n  \n\nChecked 3 files in 7ms. No fixes applied.\nFound 1 error.\ncheck ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n  × Some errors were emitted while running checks.\n  \n\nError: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL\n\n  × \"pnpm recursive exec\" failed in X:\\t3-code\\worktrees\\z8\\t3-394c4cda-\n  │ 6b16d8d73f89b377\\apps\\webapp\n\n"
+    }
+  ]
+}

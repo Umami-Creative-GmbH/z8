@@ -561,9 +561,13 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "5a96bbad942c4fd29deb31dbce77a08002d4011b"
+                        "status":  "integrated",
+                        "verifiedCommit":  "5646e7b320376d2605b80e231b6b828f4b35f670",
+                        "implementationCommit":  "5a96bbad942c4fd29deb31dbce77a08002d4011b",
+                        "integrationCommit":  "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+                        "correctionCommit":  "9894ea4e9718ea3188388d80a90d25cc51e10047",
+                        "evidence":  "docs/design/rollout-1692/1832.md",
+                        "integrationVerification":  "Onboarding welcome #1832 is verified at `5646e7b3` after correcting immediate Activity-return stale-summary continuation and pending-session continuation with retained identity. Both permanent public regressions fail before and pass after; a lifetime owns its fresh summary/retry generation, while unresolved session removes action controls. Final 180 unique unit files / 1,885 cases, fresh three-file PostgreSQL / 78 cases, full types, explicit two-file CRLF/lint and Doctor zero diagnostics/exceptions pass. Exact committed-source runtime passes nine real initialization/summary/step Retry, one-command and persisted-profile checks; four current desktop/phone captures, actual native WelcomeArrival/WelcomeFrame and clean connected Next arrays are pinned. Activity/session race proof remains assembled, not physical-browser timing. Normal transient sign-in uses no cookie/state transfer. Intermediate lint/dependency-tag and historical formatter/raw-archive/source provenance qualifications are retained. All 45 prior verified ancestors and original incoming artifacts survive. Root Next port49627, browsers and three labeled services are cleaned. Existing actions/services/permissions/time calculations remain unchanged; wider production/catalog/provider/device/zoom/transition limits stay open. Independent merge tree 0a3231fe2ee20ba96d5f4bf7d5094932bfa5b209; 13598 prior paths preserved outside two owned source/test files and qualified report, 145 original artifact paths byte-preserved."
                     },
                     {
                         "id":  "R038",
@@ -842,7 +846,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

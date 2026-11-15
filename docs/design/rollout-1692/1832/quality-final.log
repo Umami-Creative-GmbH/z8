@@ -1,0 +1,5 @@
+Passed: pnpm --config.verify-deps-before-run=false --filter webapp exec next typegen
+Passed: pnpm --config.verify-deps-before-run=false --filter webapp exec tsc -p tsconfig.json --noEmit --incremental false
+Passed: pnpm --config.verify-deps-before-run=false --filter webapp exec tsc -p tsconfig.workflow-contracts.json --noEmit --incremental false
+Passed: pnpm --config.verify-deps-before-run=false --filter webapp exec tsc -p tsconfig.smoke.json --noEmit --incremental false
+Passed: pnpm --config.verify-deps-before-run=false --filter webapp exec biome check --line-ending=crlf src/app/[locale]/onboarding/welcome/page-client.tsx src/app/[locale]/onboarding/welcome/page.tsx src/app/[locale]/onboarding/welcome/page.test.tsx

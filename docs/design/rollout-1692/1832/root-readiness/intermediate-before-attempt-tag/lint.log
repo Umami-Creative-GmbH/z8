@@ -1,0 +1,41 @@
+src\app\[locale]\onboarding\welcome\page-client.tsx:128:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  ! This hook specifies more dependencies than necessary: attempt.
+  
+    126 │ 	}, [failureMessage, stepFailureMessage]);
+    127 │ 
+  > 128 │ 	useEffect(() => {
+        │ 	^^^^^^^^^
+    129 │ 		const current: WelcomeLifetime = { active: true, pending: false, summary: null };
+    130 │ 		arrival.current = current;
+  
+  i This dependency can be removed from the list.
+  
+    165 │ 			current.active = false;
+    166 │ 		};
+  > 167 │ 	}, [attempt]);
+        │ 	    ^^^^^^^
+    168 │ 
+    169 │ 	const handleContinue = async () => {
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    167 │ → },·[attempt]);␍
+        │       -------   
+
+Checked 2 files in 8ms. No fixes applied.
+Found 1 warning.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some warnings were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+
