@@ -347,9 +347,13 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "6d974f25a15fc03bb7e44d5a08bf1995d3ec7548"
+                        "status":  "integrated",
+                        "verifiedCommit":  "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+                        "implementationCommit":  "6d974f25a15fc03bb7e44d5a08bf1995d3ec7548",
+                        "integrationCommit":  "19c6c2adccb4ed0c13ca0fbd5cb593fb4dc82d88",
+                        "evidenceCorrectionCommit":  "06528b416fe555b0f793131620aee9b36e335c73",
+                        "evidence":  "docs/design/rollout-1692/1821.md",
+                        "integrationVerification":  "Nativeindependentmerge19c6c2ad:95unique suites/913tests,exact19/240+compat76/673 disjoint withfull-name multiplicityretained. Fullcombinedtypes,two-fileactualCRLF Biome/explicitlint-import/Doctorzero. Explicitwebappformattingfailsbothchangedfiles,notrewritten. All27verifiedancestors,1141priorrollout/11360unaffected/55incomingpaths preserved;35PNG fullydecoded,14JSON/3drivers/11links andLF-to-CRLFcanonicalsourcepins validate. Rootreportqualificationpreservesallrawartifacts/appsource:claimed24pxactually16px,savedLarge18px,24/truezoomunverified;genericshadowassertionweak,PNGblueedgeinspectedwithoutindependentfocusmeasurement;14rawJSONlackfinalLF retained. Rootarchives/static172=153+19/bothparentandworktreewhitespacepass. Runtime14states/5actions/neutral/CAPTCHA400->200/oneverification/native/Next inherited,notrerun. Delivery/fullreset/customdomain/build/Tolgee/devices/zoom widerlimitsretained."
                     },
                     {
                         "id":  "R023",
@@ -390,7 +394,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
