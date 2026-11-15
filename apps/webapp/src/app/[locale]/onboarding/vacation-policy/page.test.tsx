@@ -1,11 +1,12 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { Activity, StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	session: { user: { id: "account-a" }, session: { activeOrganizationId: "org-a" } },
+	pending: false,
 	listeners: new Set<(value: unknown) => void>(),
 	checkIsAdmin: vi.fn(),
 	createVacationPolicyOnboarding: vi.fn(),
@@ -16,7 +17,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/auth-client", () => ({
-	useSession: () => ({ data: mocks.session, isPending: false }),
+	useSession: () => ({ data: mocks.session, isPending: mocks.pending }),
 	authClient: {
 		$store: {
 			atoms: {
@@ -71,11 +72,31 @@ function deferred<T>() {
 describe("VacationPolicyPage load effect", () => {
 	beforeEach(() => {
 		mocks.session = { user: { id: "account-a" }, session: { activeOrganizationId: "org-a" } };
+		mocks.pending = false;
 		vi.clearAllMocks();
 		mocks.checkIsAdmin.mockReset();
 		mocks.createVacationPolicyOnboarding.mockReset();
 		mocks.skipVacationPolicySetup.mockReset();
 	});
+
+	it.each(["pending-session", "held-access"])(
+		"keeps one task heading and no policy controls during %s",
+		async (boundary) => {
+			mocks.pending = boundary === "pending-session";
+			mocks.checkIsAdmin.mockReturnValue(new Promise(() => {}));
+			render(
+				<main>
+					<VacationPolicyPage />
+				</main>,
+			);
+			await act(async () => {});
+			const main = within(screen.getByRole("main"));
+			expect(main.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+			expect(main.getByRole("heading", { level: 1 }).textContent).toBe("Set up vacation policy");
+			expect(main.queryByLabelText("Policy Name")).toBeNull();
+			expect(main.queryByRole("button", { name: "Save and continue" })).toBeNull();
+		},
+	);
 
 	it("retires held saves through an organization A to B to A arrival", async () => {
 		const held = deferred<{ success: true }>();

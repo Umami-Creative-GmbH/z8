@@ -372,13 +372,23 @@ export default function VacationPolicyPage() {
 }
 
 function PolicyAccessLoading() {
+	const { t } = useTranslate();
 	return (
-		<LoadingRegion
-			className="flex min-h-[50vh] items-center justify-center"
-			label={{ labelKey: "common.loading", labelDefault: "Loading…" }}
-		>
-			<IconLoader2 aria-hidden="true" className="size-6 animate-spin motion-reduce:animate-none" />
-		</LoadingRegion>
+		<>
+			<ProgressIndicator currentStep="vacation_policy" />
+			<div className="mx-auto w-full max-w-2xl min-w-0">
+				<VacationPolicyHeader t={t} />
+				<LoadingRegion
+					className="flex min-h-[50vh] items-center justify-center"
+					label={{ labelKey: "common.loading", labelDefault: "Loading…" }}
+				>
+					<IconLoader2
+						aria-hidden="true"
+						className="size-6 animate-spin motion-reduce:animate-none"
+					/>
+				</LoadingRegion>
+			</div>
+		</>
 	);
 }
 
