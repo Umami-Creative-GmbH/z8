@@ -59,7 +59,7 @@ export function DrivingLicenceHistoryPanel({
 		),
 		queryFn: () => getDrivingLicenceHistoryAction({ employeeId, ...period }),
 	});
-	const data = query.data?.success ? query.data.data : null;
+	const data = !query.isError && query.data?.success ? query.data.data : null;
 	const selected = data?.canSupplement
 		? data.checks.find((check) => check.id === selectedCheckId)
 		: null;
@@ -166,12 +166,24 @@ export function DrivingLicenceHistoryPanel({
 						{t("drivingLicence.history.loading", "Loading history…")}
 					</p>
 				) : !data ? (
-					<p role="alert">
-						{t(
-							"drivingLicence.history.unavailable",
-							"History is unavailable. Check the period and your current access.",
-						)}
-					</p>
+					<div className="space-y-3">
+						<p role="alert">
+							{t(
+								"drivingLicence.history.unavailable",
+								"History is unavailable. Check the period and your current access.",
+							)}
+						</p>
+						<Button
+							variant="outline"
+							disabled={query.isFetching}
+							onClick={() => {
+								router.refresh();
+								void query.refetch();
+							}}
+						>
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
 				) : (
 					<>
 						<Button asChild variant="outline">

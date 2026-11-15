@@ -4,7 +4,13 @@ import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,12 +95,21 @@ export function OriginalDrivingCheckForm({
 				verifierConfirmed: value.verifierConfirmed,
 				failureScope: value.failureScope,
 				classes,
-			});
+			}).catch(() => ({
+				success: false as const,
+				error: t(
+					"drivingLicence.check.transportError",
+					"The check could not be recorded. Your input is kept; retry after checking your connection and responsibility.",
+				),
+			}));
 			if (!result.success) {
+				setError(result.error);
 				toast.error(result.error);
 				return;
 			}
-			toast.success(t("drivingLicence.check.recorded", "Original check recorded"));
+			toast.success(
+				t("drivingLicence.check.recorded", "Original check recorded"),
+			);
 			await onCompleted();
 			setCommandId(crypto.randomUUID());
 			form.reset();
@@ -120,180 +135,196 @@ export function OriginalDrivingCheckForm({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-		<form
-			className="space-y-6"
-			onSubmit={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
-				void form.handleSubmit();
-			}}
-		>
-			<fieldset className="grid gap-4 sm:grid-cols-2">
-				<legend className="mb-3 font-medium">
-					{t("drivingLicence.check.documentDates", "Original document dates")}
-				</legend>
-				<form.Field name="documentIssuedOn">
-					{(field) => (
-						<DocumentDateInput
-							label={t("drivingLicence.check.issueDate", "Document issue date")}
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={field.handleChange}
-						/>
-					)}
-				</form.Field>
-				<form.Field name="documentExpiresOn">
-					{(field) => (
-						<DocumentDateInput
-							label={t("drivingLicence.check.expiryDate", "Document expiry date")}
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={field.handleChange}
-						/>
-					)}
-				</form.Field>
-			</fieldset>
-			<fieldset className="space-y-3">
-				<legend className="mb-3 font-medium">
-					{t("drivingLicence.check.classes", "Classes actually inspected")}
-				</legend>
-				<form.Field name="selected">
-					{(selected) => {
-						const selectedCodes = new Set(selected.state.value);
-						return (
-							<form.Field name="classes">
-								{(classes) => (
-									<div className="space-y-3">
-										{classes.state.value.map((inspected, index) => (
-											<InspectionClassRow
-												key={inspected.code}
-												inspected={inspected}
-												chosen={selectedCodes.has(inspected.code)}
-												onSelect={(chosen) =>
-													selected.handleChange(
-														chosen
-															? [...selected.state.value, inspected.code]
-															: selected.state.value.filter(
-																	(code) => code !== inspected.code,
-																),
-													)
-												}
-												onChange={(values) =>
-													classes.handleChange(
-														classes.state.value.map((row, i) =>
-															i === index ? { ...row, ...values } : row,
-														),
-													)
-												}
-											/>
-										))}
-									</div>
-								)}
-							</form.Field>
-						);
+				<form
+					className="space-y-6"
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						void form.handleSubmit();
 					}}
-				</form.Field>
-			</fieldset>
-			<form.Field name="failureScope">
-				{(field) => (
-					<FailureScopeSelect value={field.state.value} onChange={field.handleChange} />
-				)}
-			</form.Field>
-			<fieldset className="space-y-3">
-				<legend className="mb-3 font-medium">
-					{t(
-						"drivingLicence.check.attestations",
-						"Personal inspection and declarations",
-					)}
-				</legend>
-				<form.Field name="originalInspected">
-					{(field) => (
-						<InspectionConfirmation
-							checked={field.state.value}
-							onChange={field.handleChange}
-							label={t(
-								"drivingLicence.check.original",
-								"I personally inspected the original driving licence in the employee's presence.",
+				>
+					<fieldset className="grid gap-4 sm:grid-cols-2">
+						<legend className="mb-3 font-medium">
+							{t(
+								"drivingLicence.check.documentDates",
+								"Original document dates",
 							)}
-						/>
-					)}
-				</form.Field>
-				<form.Field name="identityConfirmed">
-					{(field) => (
-						<InspectionConfirmation
-							checked={field.state.value}
-							onChange={field.handleChange}
-							label={t(
-								"drivingLicence.check.identity",
-								"I confirmed that the original document belongs to this employee.",
+						</legend>
+						<form.Field name="documentIssuedOn">
+							{(field) => (
+								<DocumentDateInput
+									name={field.name}
+									label={t(
+										"drivingLicence.check.issueDate",
+										"Document issue date",
+									)}
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={field.handleChange}
+								/>
 							)}
-						/>
-					)}
-				</form.Field>
-				<blockquote className="border-l-2 border-primary pl-3 text-sm">
-					{t(
-						"drivingLicence.declaration.text",
-						"I confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions.",
-					)}
-				</blockquote>
-				<form.Field name="employeeDeclaration">
-					{(field) => (
-						<InspectionConfirmation
-							checked={field.state.value}
-							onChange={field.handleChange}
-							label={t(
-								"drivingLicence.check.employeeDeclaration",
-								"The employee personally made the declaration shown above during this check; I attest that declaration.",
+						</form.Field>
+						<form.Field name="documentExpiresOn">
+							{(field) => (
+								<DocumentDateInput
+									name={field.name}
+									label={t(
+										"drivingLicence.check.expiryDate",
+										"Document expiry date",
+									)}
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={field.handleChange}
+								/>
 							)}
-						/>
-					)}
-				</form.Field>
-				<form.Field name="verifierConfirmed">
-					{(field) => (
-						<InspectionConfirmation
-							checked={field.state.value}
-							onChange={field.handleChange}
-							required
-							label={t(
-								"drivingLicence.check.verifier",
-								"I confirm that the recorded facts and individual class results reflect my inspection.",
+						</form.Field>
+					</fieldset>
+					<fieldset className="space-y-3">
+						<legend className="mb-3 font-medium">
+							{t("drivingLicence.check.classes", "Classes actually inspected")}
+						</legend>
+						<form.Field name="selected">
+							{(selected) => {
+								const selectedCodes = new Set(selected.state.value);
+								return (
+									<form.Field name="classes">
+										{(classes) => (
+											<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+												{classes.state.value.map((inspected, index) => (
+													<InspectionClassRow
+														key={inspected.code}
+														inspected={inspected}
+														chosen={selectedCodes.has(inspected.code)}
+														onSelect={(chosen) =>
+															selected.handleChange(
+																chosen
+																	? [...selected.state.value, inspected.code]
+																	: selected.state.value.filter(
+																			(code) => code !== inspected.code,
+																		),
+															)
+														}
+														onChange={(values) =>
+															classes.handleChange(
+																classes.state.value.map((row, i) =>
+																	i === index ? { ...row, ...values } : row,
+																),
+															)
+														}
+													/>
+												))}
+											</div>
+										)}
+									</form.Field>
+								);
+							}}
+						</form.Field>
+					</fieldset>
+					<form.Field name="failureScope">
+						{(field) => (
+							<FailureScopeSelect
+								value={field.state.value}
+								onChange={field.handleChange}
+							/>
+						)}
+					</form.Field>
+					<fieldset className="space-y-3">
+						<legend className="mb-3 font-medium">
+							{t(
+								"drivingLicence.check.attestations",
+								"Personal inspection and declarations",
 							)}
-						/>
+						</legend>
+						<form.Field name="originalInspected">
+							{(field) => (
+								<InspectionConfirmation
+									checked={field.state.value}
+									onChange={field.handleChange}
+									label={t(
+										"drivingLicence.check.original",
+										"I personally inspected the original driving licence in the employee's presence.",
+									)}
+								/>
+							)}
+						</form.Field>
+						<form.Field name="identityConfirmed">
+							{(field) => (
+								<InspectionConfirmation
+									checked={field.state.value}
+									onChange={field.handleChange}
+									label={t(
+										"drivingLicence.check.identity",
+										"I confirmed that the original document belongs to this employee.",
+									)}
+								/>
+							)}
+						</form.Field>
+						<blockquote className="border-l-2 border-primary pl-3 text-sm">
+							{t(
+								"drivingLicence.declaration.text",
+								"I confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions.",
+							)}
+						</blockquote>
+						<form.Field name="employeeDeclaration">
+							{(field) => (
+								<InspectionConfirmation
+									checked={field.state.value}
+									onChange={field.handleChange}
+									label={t(
+										"drivingLicence.check.employeeDeclaration",
+										"The employee personally made the declaration shown above during this check; I attest that declaration.",
+									)}
+								/>
+							)}
+						</form.Field>
+						<form.Field name="verifierConfirmed">
+							{(field) => (
+								<InspectionConfirmation
+									checked={field.state.value}
+									onChange={field.handleChange}
+									required
+									label={t(
+										"drivingLicence.check.verifier",
+										"I confirm that the recorded facts and individual class results reflect my inspection.",
+									)}
+								/>
+							)}
+						</form.Field>
+					</fieldset>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"drivingLicence.check.suspensionNotice",
+							"A successful recheck does not automatically reinstate a suspended authorization. A new check and an explicit reinstatement decision are required.",
+						)}
+					</p>
+					{error && (
+						<p role="alert" className="text-sm text-destructive">
+							{error}
+						</p>
 					)}
-				</form.Field>
-			</fieldset>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"drivingLicence.check.suspensionNotice",
-					"A successful recheck does not automatically reinstate a suspended authorization. A new check and an explicit reinstatement decision are required.",
-				)}
-			</p>
-			{error && (
-				<p role="alert" className="text-sm text-destructive">
-					{error}
-				</p>
-			)}
-			<form.Subscribe selector={(state) => state.isSubmitting}>
-				{(isSubmitting) => (
-					<Button type="submit" disabled={isSubmitting}>
-						{isSubmitting
-							? t("drivingLicence.check.saving", "Recording check…")
-							: t("drivingLicence.check.submit", "Record original check")}
-					</Button>
-				)}
-			</form.Subscribe>
-		</form>
+					<form.Subscribe selector={(state) => state.isSubmitting}>
+						{(isSubmitting) => (
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting
+									? t("drivingLicence.check.saving", "Recording check…")
+									: t("drivingLicence.check.submit", "Record original check")}
+							</Button>
+						)}
+					</form.Subscribe>
+				</form>
 			</CardContent>
 		</Card>
 	);
 }
 
 function DocumentDateInput({
+	name,
 	label,
 	value,
 	onBlur,
 	onChange,
 }: {
+	name: string;
 	label: string;
 	value: string;
 	onBlur: () => void;
@@ -304,6 +335,9 @@ function DocumentDateInput({
 			<TFormLabel>{label}</TFormLabel>
 			<TFormControl>
 				<Input
+					name={name}
+					autoComplete="off"
+					aria-describedby={undefined}
 					type="date"
 					required
 					value={value}
@@ -327,21 +361,33 @@ function FailureScopeSelect({
 	const scopes: { value: FailureScope; label: string }[] = [
 		{
 			value: "classes",
-			label: t("drivingLicence.check.scopeClasses", "Only the affected inspected classes"),
+			label: t(
+				"drivingLicence.check.scopeClasses",
+				"Only the affected inspected classes",
+			),
 		},
 		{
 			value: "document",
-			label: t("drivingLicence.check.scopeDocument", "Every authorization based on the document"),
+			label: t(
+				"drivingLicence.check.scopeDocument",
+				"Every authorization based on the document",
+			),
 		},
 		{
 			value: "person",
-			label: t("drivingLicence.check.scopePerson", "All driving authorization for the employee"),
+			label: t(
+				"drivingLicence.check.scopePerson",
+				"All driving authorization for the employee",
+			),
 		},
 	];
 	return (
 		<div className="flex flex-col gap-1.5">
 			<span id={id} className="text-sm font-medium">
-				{t("drivingLicence.check.failureScope", "Scope of an unsuccessful or inconclusive check")}
+				{t(
+					"drivingLicence.check.failureScope",
+					"Scope of an unsuccessful or inconclusive check",
+				)}
 			</span>
 			<Select
 				value={value}
@@ -379,12 +425,27 @@ function InspectionClassRow({
 	const { t } = useTranslate();
 	const id = useId();
 	const results: { value: CheckResult; label: string }[] = [
-		{ value: "successful", label: t("drivingLicence.result.successful", "Successful") },
-		{ value: "unsuccessful", label: t("drivingLicence.result.unsuccessful", "Unsuccessful") },
-		{ value: "inconclusive", label: t("drivingLicence.result.inconclusive", "Inconclusive") },
+		{
+			value: "successful",
+			label: t("drivingLicence.result.successful", "Successful"),
+		},
+		{
+			value: "unsuccessful",
+			label: t("drivingLicence.result.unsuccessful", "Unsuccessful"),
+		},
+		{
+			value: "inconclusive",
+			label: t("drivingLicence.result.inconclusive", "Inconclusive"),
+		},
 	];
 	return (
-		<div className="rounded-md border p-3">
+		<div
+			className={
+				chosen
+					? "col-span-full rounded-md border border-primary/30 bg-primary/5 p-3"
+					: "rounded-md border p-3"
+			}
+		>
 			<div className="flex items-center gap-2">
 				<Checkbox
 					id={`${id}-class`}
@@ -398,7 +459,9 @@ function InspectionClassRow({
 			{chosen && (
 				<div className="mt-3 grid gap-3 sm:grid-cols-3">
 					<div className="space-y-1 text-sm">
-						<span id={`${id}-result`}>{t("drivingLicence.check.result", "Result")}</span>
+						<span id={`${id}-result`}>
+							{t("drivingLicence.check.result", "Result")}
+						</span>
 						<Select
 							value={inspected.result}
 							items={results}
@@ -406,7 +469,10 @@ function InspectionClassRow({
 								if (value) onChange({ result: value as CheckResult });
 							}}
 						>
-							<SelectTrigger aria-labelledby={`${id}-result`} className="w-full">
+							<SelectTrigger
+								aria-labelledby={`${id}-result`}
+								className="w-full"
+							>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
