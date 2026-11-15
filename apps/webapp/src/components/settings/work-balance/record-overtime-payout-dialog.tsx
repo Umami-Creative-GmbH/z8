@@ -3,17 +3,10 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
 	TFormControl,
@@ -25,7 +18,13 @@ import {
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { payoutMinutes } from "@/lib/work-balance/adjustments/rules";
+import {
+	type BalanceFormSurface,
+	balanceDialogSurface,
+	balancePanelSurface,
+} from "./balance-form-surface";
 import { useBalanceAdjustmentErrorMessage } from "./use-balance-adjustment-error";
+import { useBalanceFormRequest } from "./use-balance-form-request";
 import { BalanceAdjustmentActionError } from "./use-employee-work-balance";
 
 type RecordOvertimePayoutValues = {
@@ -39,7 +38,8 @@ type RecordOvertimePayoutValues = {
  * Records an overtime payout for the employee (#993). The offboarding review
  * opens it for a final payout prefilled with the remaining balance (#1002).
  */
-export function RecordOvertimePayoutDialog({
+function RecordOvertimePayoutForm({
+	surface = balanceDialogSurface,
 	open,
 	onOpenChange,
 	today,
@@ -47,6 +47,7 @@ export function RecordOvertimePayoutDialog({
 	title,
 	onRecord,
 }: {
+	surface?: BalanceFormSurface;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	/** Today in the employee's timezone: the latest day a payout may have. */
@@ -63,6 +64,16 @@ export function RecordOvertimePayoutDialog({
 	}) => Promise<unknown>;
 }) {
 	const { t } = useTranslate();
+	const {
+		Root: Dialog,
+		Content: DialogContent,
+		Header: DialogHeader,
+		Title: DialogTitle,
+		Description: DialogDescription,
+		Footer: DialogFooter,
+	} = surface;
+	const request = useBalanceFormRequest();
+	const [failure, setFailure] = useState<string | null>(null);
 	const errorMessage = useBalanceAdjustmentErrorMessage();
 	const defaultValues: RecordOvertimePayoutValues = initial
 		? {
@@ -78,8 +89,14 @@ export function RecordOvertimePayoutDialog({
 				reason: "",
 			};
 	const form = useForm({
+		onSubmitInvalid: () => {
+			document.querySelector<HTMLElement>('[role="dialog"] [aria-invalid="true"]')?.focus();
+		},
 		defaultValues,
 		onSubmit: async ({ value }) => {
+			const token = request.begin();
+			if (!token) return;
+			setFailure(null);
 			try {
 				await onRecord({
 					day: value.day,
@@ -88,13 +105,17 @@ export function RecordOvertimePayoutDialog({
 					reason: value.reason,
 				});
 			} catch (error) {
-				toast.error(
+				if (!request.current(token)) return;
+				request.finish(token);
+				setFailure(
 					error instanceof BalanceAdjustmentActionError
 						? errorMessage(error.code, { closedMonth: error.closedMonth })
 						: errorMessage(null),
 				);
 				return;
 			}
+			if (!request.current(token)) return;
+			request.finish(token);
 			toast.success(t("settings.employees.workBalance.payoutRecorded", "Overtime payout recorded"));
 			form.reset(defaultValues);
 			onOpenChange(false);
@@ -102,6 +123,8 @@ export function RecordOvertimePayoutDialog({
 	});
 
 	function handleOpenChange(nextOpen: boolean) {
+		if (request.pending()) return;
+		if (!nextOpen) setFailure(null);
 		if (!nextOpen) form.reset(defaultValues);
 		onOpenChange(nextOpen);
 	}
@@ -110,7 +133,11 @@ export function RecordOvertimePayoutDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<form
-					className="grid gap-4"
+					className="grid min-w-0 gap-4"
+					noValidate
+					onInvalid={(event) => {
+						event.preventDefault();
+					}}
 					onSubmit={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
@@ -273,6 +300,11 @@ export function RecordOvertimePayoutDialog({
 						)}
 					</form.Field>
 
+					{failure ? (
+						<p role="alert" className="text-sm text-destructive">
+							{failure}
+						</p>
+					) : null}
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
@@ -281,7 +313,10 @@ export function RecordOvertimePayoutDialog({
 							{(isSubmitting: boolean) => (
 								<Button type="submit" disabled={isSubmitting}>
 									{isSubmitting ? (
-										<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+										<IconLoader2
+											className="size-4 animate-spin motion-reduce:animate-none"
+											aria-hidden="true"
+										/>
 									) : null}
 									{t("settings.employees.workBalance.recordPayoutSubmit", "Record payout")}
 								</Button>
@@ -292,4 +327,15 @@ export function RecordOvertimePayoutDialog({
 			</DialogContent>
 		</Dialog>
 	);
+}
+
+export function RecordOvertimePayoutDialog(
+	props: Omit<Parameters<typeof RecordOvertimePayoutForm>[0], "surface">,
+) {
+	return <RecordOvertimePayoutForm {...props} />;
+}
+export function RecordOvertimePayoutPanel(
+	props: Omit<Parameters<typeof RecordOvertimePayoutForm>[0], "surface">,
+) {
+	return <RecordOvertimePayoutForm {...props} surface={balancePanelSurface} />;
 }

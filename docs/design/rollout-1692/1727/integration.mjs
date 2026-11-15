@@ -1,0 +1,10 @@
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {join} from 'node:path';
+import {repo,runtime,pool} from './fixture.mjs';
+await pool.end();
+const inherited=Object.fromEntries(Object.entries(process.env).filter(([k])=>/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA|PNPM_HOME|NUMBER_OF_PROCESSORS|PROCESSOR_ARCHITECTURE)$/i.test(k)));
+const env={...inherited,...runtime.env,pnpm_config_verify_deps_before_run:'false',APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL:'approval-workflow-repository-test'};
+env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=runtime.env.DATABASE_URL??`postgresql://${encodeURIComponent(runtime.env.POSTGRES_USER)}:${encodeURIComponent(runtime.env.POSTGRES_PASSWORD)}@127.0.0.1:${runtime.env.POSTGRES_PORT}/${runtime.env.POSTGRES_DB}`;
+const child=spawn(process.env.npm_execpath,['--config.verifyDepsBeforeRun=false','exec','vitest','run','--project','integration',...process.argv.slice(3)],{cwd:join(repo,'apps/webapp'),env,stdio:'inherit',windowsHide:true});
+const [code]=await once(child,'exit');process.exitCode=code;

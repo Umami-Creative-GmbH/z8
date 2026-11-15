@@ -1,13 +1,11 @@
-import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
-import { Badge } from "@/components/ui/badge";
+import { EmployeeBalanceWorkspace } from "@/components/payroll/employee-balance-workspace";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
-import { Link } from "@/navigation";
-import { getTranslate } from "@/tolgee/server";
+
 import { loadPayrollWorkBalanceEmployees } from "../coverage";
 
 interface PayrollWorkBalancePageProps {
@@ -20,30 +18,18 @@ interface PayrollWorkBalancePageProps {
  * left. Not found for everyone else.
  */
 async function PayrollWorkBalanceContent({ params }: PayrollWorkBalancePageProps) {
-	const [t, { employeeId }] = await Promise.all([getTranslate(), params]);
+	const { employeeId } = await params;
 	if (!isCanonicalUuid(employeeId)) notFound();
 	const [employee] = (await loadPayrollWorkBalanceEmployees(employeeId)) ?? [];
-	if (!employee) notFound();
+	const auth = await getAuthContext();
+	if (!employee || !auth?.session.activeOrganizationId) notFound();
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<header className="space-y-2">
-				<Link
-					href="/payroll/work-balances"
-					className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-				>
-					<IconArrowLeft aria-hidden="true" className="size-4" />
-					{t("payroll.workBalances.back", "Work balances")}
-				</Link>
-				<div className="flex flex-wrap items-center gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">{employee.name}</h1>
-					{employee.isActive ? null : (
-						<Badge variant="secondary">{t("payroll.workBalances.former", "Former employee")}</Badge>
-					)}
-				</div>
-			</header>
-			<EmployeeWorkBalanceSection employeeId={employee.id} />
-		</div>
+		<EmployeeBalanceWorkspace
+			employee={employee}
+			organizationId={auth.session.activeOrganizationId}
+			userId={auth.user.id}
+		/>
 	);
 }
 

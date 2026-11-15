@@ -208,6 +208,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		/^\/approvals\/review\/[^/]+\/[^/]+\/[^/]+$/.test(path) ||
 		/^\/approvals\/deputy-decisions\/[^/]+$/.test(path) ||
 		/^\/calendar\/[^/]+$/.test(path) ||
+		/^\/payroll\/work-balances\/[^/]+$/.test(path) ||
 		path === "/" ||
 		path === "/time-tracking" ||
 		path === "/notifications" ||

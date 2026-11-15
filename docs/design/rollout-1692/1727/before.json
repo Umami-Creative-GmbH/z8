@@ -1,0 +1,313 @@
+{
+  "phase": "before",
+  "fixture": "disposable performance fixture; current member specific payroll grant; former target; no personnel/expense grant",
+  "scope": {
+    "organizationId": "perf-small-90eebfc4a221",
+    "userId": "perf-small-2-90eebfc4a221",
+    "employeeId": "13a2c846-0999-440b-ad8b-7a8081a177dc"
+  },
+  "snapshots": [
+    {
+      "name": "desktop-light",
+      "identity": {
+        "head": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+        "source": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+            "raw": "302073344b6203f45415ea8d7ee880455849a040e28c727024a6bb3c5f3803be",
+            "normalized": "6b36bd84bce720de2b049a39f000cd7ef110d719a114ff87491cd88ddf24d76c"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+            "absent": true
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/employee-work-balance-section.tsx",
+            "raw": "477ad7c9c7fe9e417f737abfd78cb0f7694de1358bc2154bd86486895fe2cae8",
+            "normalized": "29788118b8f4177ee950367a1a6e5af9d200ccf325ccf4d5a7268cf5307a5b07"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+            "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+            "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+            "raw": "2e3db3af0b88fd6f4e1955fe4052669f84e3309980226f7c379386aa6014f415",
+            "normalized": "d2148fa7b53b1a853f36c604a9d0edd8c006ece8d77e1295675b26abcfbc6ee5"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+            "raw": "2b1882de7d97869488520d086c4d6210ba79c1f5c1c2ec61548b34a8dd18ea4c",
+            "normalized": "8b5fd0fba2647da4911650d2172d20b770aa43561520e9929b16d358f9958cbf"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+            "raw": "f43eba4d19820bde0ba9405bc4c129ef4c0e3b3b213d8ec3541a534b06ee9553",
+            "normalized": "a24e1d81aa744cd6ebb4e8d135bdcd5a74a53334dae740a167d8febeb63c6188"
+          },
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+            "raw": "55fc41439dc9bf5d765c09782813105aa26364a09ce582b07267f8089e8c39ea",
+            "normalized": "029a64112a9f3f64b46d14bab8bc238bf01c07a2de3aecddeb78d6e70dd2942c"
+          }
+        ]
+      },
+      "observation": {
+        "text": "Toggle Sidebar\nPayroll\n14:01\nUTC+01:00\nClock In\nToggle theme\nWork balances\nFixture Person 1\nFormer employee\nWork balance\nCompleted work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.\nSet opening balance\nRecord overtime payout\n\nCurrent work balance\n\nNot calculated yet\n\nBalance adjustments\n\nNo balance adjustments yet.",
+        "headings": [
+          "Payroll",
+          "Fixture Person 1"
+        ],
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "dark": false,
+        "savedFont": null,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsStatus": "loaded",
+        "loadedFonts": [
+          "__nextjs-Geist"
+        ],
+        "devicePixelRatio": 1,
+        "visualScale": 1
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "decodedBytes": 4800000
+      }
+    },
+    {
+      "name": "phone-light",
+      "identity": {
+        "head": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+        "source": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+            "raw": "302073344b6203f45415ea8d7ee880455849a040e28c727024a6bb3c5f3803be",
+            "normalized": "6b36bd84bce720de2b049a39f000cd7ef110d719a114ff87491cd88ddf24d76c"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+            "absent": true
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/employee-work-balance-section.tsx",
+            "raw": "477ad7c9c7fe9e417f737abfd78cb0f7694de1358bc2154bd86486895fe2cae8",
+            "normalized": "29788118b8f4177ee950367a1a6e5af9d200ccf325ccf4d5a7268cf5307a5b07"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+            "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+            "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+            "raw": "2e3db3af0b88fd6f4e1955fe4052669f84e3309980226f7c379386aa6014f415",
+            "normalized": "d2148fa7b53b1a853f36c604a9d0edd8c006ece8d77e1295675b26abcfbc6ee5"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+            "raw": "2b1882de7d97869488520d086c4d6210ba79c1f5c1c2ec61548b34a8dd18ea4c",
+            "normalized": "8b5fd0fba2647da4911650d2172d20b770aa43561520e9929b16d358f9958cbf"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+            "raw": "f43eba4d19820bde0ba9405bc4c129ef4c0e3b3b213d8ec3541a534b06ee9553",
+            "normalized": "a24e1d81aa744cd6ebb4e8d135bdcd5a74a53334dae740a167d8febeb63c6188"
+          },
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+            "raw": "55fc41439dc9bf5d765c09782813105aa26364a09ce582b07267f8089e8c39ea",
+            "normalized": "029a64112a9f3f64b46d14bab8bc238bf01c07a2de3aecddeb78d6e70dd2942c"
+          }
+        ]
+      },
+      "observation": {
+        "text": "Toggle Sidebar\nPayroll\nMore actions\nWork balances\nFixture Person 1\nFormer employee\nWork balance\nCompleted work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.\nSet opening balance\nRecord overtime payout\n\nCurrent work balance\n\nNot calculated yet\n\nBalance adjustments\n\nNo balance adjustments yet.",
+        "headings": [
+          "Payroll",
+          "Fixture Person 1"
+        ],
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "scrollWidth": 390,
+        "dark": false,
+        "savedFont": null,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsStatus": "loaded",
+        "loadedFonts": [
+          "__nextjs-Geist"
+        ],
+        "devicePixelRatio": 1,
+        "visualScale": 1
+      },
+      "png": {
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "decodedBytes": 987480
+      }
+    },
+    {
+      "name": "wide-dark",
+      "identity": {
+        "head": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+        "source": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+            "raw": "302073344b6203f45415ea8d7ee880455849a040e28c727024a6bb3c5f3803be",
+            "normalized": "6b36bd84bce720de2b049a39f000cd7ef110d719a114ff87491cd88ddf24d76c"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+            "absent": true
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/employee-work-balance-section.tsx",
+            "raw": "477ad7c9c7fe9e417f737abfd78cb0f7694de1358bc2154bd86486895fe2cae8",
+            "normalized": "29788118b8f4177ee950367a1a6e5af9d200ccf325ccf4d5a7268cf5307a5b07"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+            "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+            "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+            "raw": "2e3db3af0b88fd6f4e1955fe4052669f84e3309980226f7c379386aa6014f415",
+            "normalized": "d2148fa7b53b1a853f36c604a9d0edd8c006ece8d77e1295675b26abcfbc6ee5"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+            "raw": "2b1882de7d97869488520d086c4d6210ba79c1f5c1c2ec61548b34a8dd18ea4c",
+            "normalized": "8b5fd0fba2647da4911650d2172d20b770aa43561520e9929b16d358f9958cbf"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+            "raw": "f43eba4d19820bde0ba9405bc4c129ef4c0e3b3b213d8ec3541a534b06ee9553",
+            "normalized": "a24e1d81aa744cd6ebb4e8d135bdcd5a74a53334dae740a167d8febeb63c6188"
+          },
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+            "raw": "55fc41439dc9bf5d765c09782813105aa26364a09ce582b07267f8089e8c39ea",
+            "normalized": "029a64112a9f3f64b46d14bab8bc238bf01c07a2de3aecddeb78d6e70dd2942c"
+          }
+        ]
+      },
+      "observation": {
+        "text": "Toggle Sidebar\nPayroll\n14:01\nUTC+01:00\nClock In\nToggle theme\nWork balances\nFixture Person 1\nFormer employee\nWork balance\nCompleted work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.\nSet opening balance\nRecord overtime payout\n\nCurrent work balance\n\nNot calculated yet\n\nBalance adjustments\n\nNo balance adjustments yet.",
+        "headings": [
+          "Payroll",
+          "Fixture Person 1"
+        ],
+        "cssViewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "scrollWidth": 1920,
+        "dark": true,
+        "savedFont": null,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsStatus": "loaded",
+        "loadedFonts": [
+          "__nextjs-Geist"
+        ],
+        "devicePixelRatio": 1,
+        "visualScale": 1
+      },
+      "png": {
+        "width": 1920,
+        "height": 1080,
+        "channels": 3,
+        "decodedBytes": 6220800
+      }
+    },
+    {
+      "name": "phone-dark-large",
+      "identity": {
+        "head": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+        "source": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+            "raw": "302073344b6203f45415ea8d7ee880455849a040e28c727024a6bb3c5f3803be",
+            "normalized": "6b36bd84bce720de2b049a39f000cd7ef110d719a114ff87491cd88ddf24d76c"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+            "absent": true
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/employee-work-balance-section.tsx",
+            "raw": "477ad7c9c7fe9e417f737abfd78cb0f7694de1358bc2154bd86486895fe2cae8",
+            "normalized": "29788118b8f4177ee950367a1a6e5af9d200ccf325ccf4d5a7268cf5307a5b07"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+            "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+            "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+            "raw": "2e3db3af0b88fd6f4e1955fe4052669f84e3309980226f7c379386aa6014f415",
+            "normalized": "d2148fa7b53b1a853f36c604a9d0edd8c006ece8d77e1295675b26abcfbc6ee5"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+            "raw": "2b1882de7d97869488520d086c4d6210ba79c1f5c1c2ec61548b34a8dd18ea4c",
+            "normalized": "8b5fd0fba2647da4911650d2172d20b770aa43561520e9929b16d358f9958cbf"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+            "raw": "f43eba4d19820bde0ba9405bc4c129ef4c0e3b3b213d8ec3541a534b06ee9553",
+            "normalized": "a24e1d81aa744cd6ebb4e8d135bdcd5a74a53334dae740a167d8febeb63c6188"
+          },
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+            "raw": "55fc41439dc9bf5d765c09782813105aa26364a09ce582b07267f8089e8c39ea",
+            "normalized": "029a64112a9f3f64b46d14bab8bc238bf01c07a2de3aecddeb78d6e70dd2942c"
+          }
+        ]
+      },
+      "observation": {
+        "text": "Toggle Sidebar\nPayroll\nMore actions\nWork balances\nFixture Person 1\nFormer employee\nWork balance\nCompleted work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.\nSet opening balance\nRecord overtime payout\n\nCurrent work balance\n\nNot calculated yet\n\nBalance adjustments\n\nNo balance adjustments yet.",
+        "headings": [
+          "Payroll",
+          "Fixture Person 1"
+        ],
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "scrollWidth": 390,
+        "dark": true,
+        "savedFont": "large",
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsStatus": "loaded",
+        "loadedFonts": [
+          "__nextjs-Geist"
+        ],
+        "devicePixelRatio": 1,
+        "visualScale": 1
+      },
+      "png": {
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "decodedBytes": 987480
+      }
+    }
+  ],
+  "errors": [],
+  "failures": []
+}

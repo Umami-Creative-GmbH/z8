@@ -1,0 +1,370 @@
+{
+  "identity": {
+    "head": "6f0d1079cb950c694699d71afd41628514bda495",
+    "integration": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+    "files": [
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+        "raw": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+        "normalized": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+        "raw": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e",
+        "normalized": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e"
+      },
+      {
+        "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+        "raw": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4",
+        "normalized": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4"
+      },
+      {
+        "file": "apps/webapp/src/components/payroll/employee-balance-projection.tsx",
+        "raw": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0",
+        "normalized": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+        "raw": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9",
+        "normalized": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+        "raw": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2",
+        "normalized": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+        "raw": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c",
+        "normalized": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/balance-form-panel.tsx",
+        "raw": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16",
+        "normalized": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/balance-form-surface.ts",
+        "raw": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc",
+        "normalized": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/use-balance-form-request.ts",
+        "raw": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934",
+        "normalized": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+        "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+        "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/work-balance-actions.ts",
+        "raw": "5fe9d5bb482bb1f3320b353cda32db76aef78676199cdebd9b7eaca000227e6e",
+        "normalized": "f7dad3aebc63aa988ab13a5868e8dd8ca25e104407f34d47eac64965b5debdd2"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/coverage.ts",
+        "raw": "2059589415f4ea05cf091d1a49626318ee27ac9615e5c1154638adf1d02fe031",
+        "normalized": "b5656bca1ebe06356d212f00ef4b1cf49327c1a39e35e91ad7ac238137ed71fd"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/store.ts",
+        "raw": "c490ccc7d2434b497c9383bb15f2e6e1a2d42f7ae63c8d7c164027e733f17128",
+        "normalized": "75112e8a7957febd8d98a0fa3d555e7907e09dd88c27a4c1c5a8eb185fa5acf7"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/authorization.ts",
+        "raw": "a537764cc7efaa39984ecb9114a120b52ece2fc68fc86be1d7c439c4bfa741e1",
+        "normalized": "f0ec3ff94819c3e9bfefcbe12afb7fc8de465d6e7673b2e6096de6e6f7ef091e"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/rules.ts",
+        "raw": "ca899221459df11a6ef2a169b0a4d4ec78228bcd2dcc1a4ab9525e1d8115c4fe",
+        "normalized": "41bb468729109c197fd61abb847901c5076e5da84596ed0d4613a703cd1d1b88"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/service.ts",
+        "raw": "b86599fc2556c0805e890e22d91713cdbf7b65721158a013d6160d50d42ff66a",
+        "normalized": "38f369a260bca1e83d7b38d72d057235b678db0bb91eca1477339e1e0530cc07"
+      },
+      {
+        "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "0805e45e76470d4920502e0223b95ea6376323563c2fbb8bf99517e6253ec3e7",
+        "normalized": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "one route-owned employee heading",
+      "actual": 1
+    },
+    {
+      "name": "covered former employee admitted",
+      "actual": true
+    },
+    {
+      "name": "opening uses actual contextual ActionPanel",
+      "actual": "action-panel-content"
+    },
+    {
+      "name": "real opening record readback",
+      "actual": true
+    },
+    {
+      "name": "replacement keeps original and cancellation evidence",
+      "actual": true
+    },
+    {
+      "name": "refused payout retains draft",
+      "actual": "R044 browser refused payout"
+    },
+    {
+      "name": "valid payout record settles",
+      "actual": true
+    },
+    {
+      "name": "cancellation retains actual payout evidence",
+      "actual": true
+    },
+    {
+      "name": "ledger survives real reload",
+      "actual": true
+    },
+    {
+      "name": "uncovered arrival not-found",
+      "actual": true
+    },
+    {
+      "name": "foreign arrival not-found",
+      "actual": true
+    },
+    {
+      "name": "malformed arrival not-found",
+      "actual": true
+    },
+    {
+      "name": "first Escape from current-route drawer restores trigger focus",
+      "actual": true
+    },
+    {
+      "name": "panel Escape restores payout trigger focus",
+      "actual": true
+    }
+  ],
+  "errors": [],
+  "failures": [],
+  "calendar": [
+    {
+      "day": "2026-10-26",
+      "label": "Monday, October 26th, 2026",
+      "text": "26"
+    },
+    {
+      "day": "2026-10-27",
+      "label": "Tuesday, October 27th, 2026",
+      "text": "27"
+    },
+    {
+      "day": "2026-10-28",
+      "label": "Wednesday, October 28th, 2026",
+      "text": "28"
+    },
+    {
+      "day": "2026-10-29",
+      "label": "Thursday, October 29th, 2026",
+      "text": "29"
+    },
+    {
+      "day": "2026-10-30",
+      "label": "Friday, October 30th, 2026",
+      "text": "30"
+    },
+    {
+      "day": "2026-10-31",
+      "label": "Saturday, October 31st, 2026",
+      "text": "31"
+    },
+    {
+      "day": "2026-11-01",
+      "label": "Sunday, November 1st, 2026",
+      "text": "1"
+    },
+    {
+      "day": "2026-11-02",
+      "label": "Monday, November 2nd, 2026",
+      "text": "2"
+    },
+    {
+      "day": "2026-11-03",
+      "label": "Tuesday, November 3rd, 2026",
+      "text": "3"
+    },
+    {
+      "day": "2026-11-04",
+      "label": "Wednesday, November 4th, 2026",
+      "text": "4"
+    },
+    {
+      "day": "2026-11-05",
+      "label": "Thursday, November 5th, 2026",
+      "text": "5"
+    },
+    {
+      "day": "2026-11-06",
+      "label": "Friday, November 6th, 2026",
+      "text": "6"
+    },
+    {
+      "day": "2026-11-07",
+      "label": "Saturday, November 7th, 2026",
+      "text": "7"
+    },
+    {
+      "day": "2026-11-08",
+      "label": "Sunday, November 8th, 2026",
+      "text": "8"
+    },
+    {
+      "day": "2026-11-09",
+      "label": "Monday, November 9th, 2026",
+      "text": "9"
+    },
+    {
+      "day": "2026-11-10",
+      "label": "Tuesday, November 10th, 2026",
+      "text": "10"
+    },
+    {
+      "day": "2026-11-11",
+      "label": "Wednesday, November 11th, 2026",
+      "text": "11"
+    },
+    {
+      "day": "2026-11-12",
+      "label": "Thursday, November 12th, 2026",
+      "text": "12"
+    },
+    {
+      "day": "2026-11-13",
+      "label": "Friday, November 13th, 2026",
+      "text": "13"
+    },
+    {
+      "day": "2026-11-14",
+      "label": "Saturday, November 14th, 2026",
+      "text": "14"
+    },
+    {
+      "day": "2026-11-15",
+      "label": "Today, Sunday, November 15th, 2026, selected",
+      "text": "15"
+    },
+    {
+      "day": "2026-11-16",
+      "label": "Monday, November 16th, 2026",
+      "text": "16"
+    },
+    {
+      "day": "2026-11-17",
+      "label": "Tuesday, November 17th, 2026",
+      "text": "17"
+    },
+    {
+      "day": "2026-11-18",
+      "label": "Wednesday, November 18th, 2026",
+      "text": "18"
+    },
+    {
+      "day": "2026-11-19",
+      "label": "Thursday, November 19th, 2026",
+      "text": "19"
+    },
+    {
+      "day": "2026-11-20",
+      "label": "Friday, November 20th, 2026",
+      "text": "20"
+    },
+    {
+      "day": "2026-11-21",
+      "label": "Saturday, November 21st, 2026",
+      "text": "21"
+    },
+    {
+      "day": "2026-11-22",
+      "label": "Sunday, November 22nd, 2026",
+      "text": "22"
+    },
+    {
+      "day": "2026-11-23",
+      "label": "Monday, November 23rd, 2026",
+      "text": "23"
+    },
+    {
+      "day": "2026-11-24",
+      "label": "Tuesday, November 24th, 2026",
+      "text": "24"
+    },
+    {
+      "day": "2026-11-25",
+      "label": "Wednesday, November 25th, 2026",
+      "text": "25"
+    },
+    {
+      "day": "2026-11-26",
+      "label": "Thursday, November 26th, 2026",
+      "text": "26"
+    },
+    {
+      "day": "2026-11-27",
+      "label": "Friday, November 27th, 2026",
+      "text": "27"
+    },
+    {
+      "day": "2026-11-28",
+      "label": "Saturday, November 28th, 2026",
+      "text": "28"
+    },
+    {
+      "day": "2026-11-29",
+      "label": "Sunday, November 29th, 2026",
+      "text": "29"
+    },
+    {
+      "day": "2026-11-30",
+      "label": "Monday, November 30th, 2026",
+      "text": "30"
+    },
+    {
+      "day": "2026-12-01",
+      "label": "Tuesday, December 1st, 2026",
+      "text": "1"
+    },
+    {
+      "day": "2026-12-02",
+      "label": "Wednesday, December 2nd, 2026",
+      "text": "2"
+    },
+    {
+      "day": "2026-12-03",
+      "label": "Thursday, December 3rd, 2026",
+      "text": "3"
+    },
+    {
+      "day": "2026-12-04",
+      "label": "Friday, December 4th, 2026",
+      "text": "4"
+    },
+    {
+      "day": "2026-12-05",
+      "label": "Saturday, December 5th, 2026",
+      "text": "5"
+    },
+    {
+      "day": "2026-12-06",
+      "label": "Sunday, December 6th, 2026",
+      "text": "6"
+    }
+  ]
+}

@@ -1,0 +1,248 @@
+{
+  "checks": [
+    {
+      "name": "one route-owned employee heading",
+      "actual": 1
+    },
+    {
+      "name": "covered former employee admitted",
+      "actual": true
+    },
+    {
+      "name": "opening uses actual contextual ActionPanel",
+      "actual": "action-panel-content"
+    },
+    {
+      "name": "real opening record readback",
+      "actual": true
+    },
+    {
+      "name": "replacement keeps original and cancellation evidence",
+      "actual": true
+    },
+    {
+      "name": "refused payout retains draft",
+      "actual": "R044 browser refused payout"
+    },
+    {
+      "name": "valid payout record settles",
+      "actual": true
+    }
+  ],
+  "errors": [],
+  "failures": [
+    "SyntaxError: Failed to execute 'querySelectorAll' on 'Document': 'main li:has(p::-p-text(R044 browser valid payout)) button' is not a valid selector."
+  ],
+  "calendar": [
+    {
+      "day": "2026-10-26",
+      "label": "Monday, October 26th, 2026",
+      "text": "26"
+    },
+    {
+      "day": "2026-10-27",
+      "label": "Tuesday, October 27th, 2026",
+      "text": "27"
+    },
+    {
+      "day": "2026-10-28",
+      "label": "Wednesday, October 28th, 2026",
+      "text": "28"
+    },
+    {
+      "day": "2026-10-29",
+      "label": "Thursday, October 29th, 2026",
+      "text": "29"
+    },
+    {
+      "day": "2026-10-30",
+      "label": "Friday, October 30th, 2026",
+      "text": "30"
+    },
+    {
+      "day": "2026-10-31",
+      "label": "Saturday, October 31st, 2026",
+      "text": "31"
+    },
+    {
+      "day": "2026-11-01",
+      "label": "Sunday, November 1st, 2026",
+      "text": "1"
+    },
+    {
+      "day": "2026-11-02",
+      "label": "Monday, November 2nd, 2026",
+      "text": "2"
+    },
+    {
+      "day": "2026-11-03",
+      "label": "Tuesday, November 3rd, 2026",
+      "text": "3"
+    },
+    {
+      "day": "2026-11-04",
+      "label": "Wednesday, November 4th, 2026",
+      "text": "4"
+    },
+    {
+      "day": "2026-11-05",
+      "label": "Thursday, November 5th, 2026",
+      "text": "5"
+    },
+    {
+      "day": "2026-11-06",
+      "label": "Friday, November 6th, 2026",
+      "text": "6"
+    },
+    {
+      "day": "2026-11-07",
+      "label": "Saturday, November 7th, 2026",
+      "text": "7"
+    },
+    {
+      "day": "2026-11-08",
+      "label": "Sunday, November 8th, 2026",
+      "text": "8"
+    },
+    {
+      "day": "2026-11-09",
+      "label": "Monday, November 9th, 2026",
+      "text": "9"
+    },
+    {
+      "day": "2026-11-10",
+      "label": "Tuesday, November 10th, 2026",
+      "text": "10"
+    },
+    {
+      "day": "2026-11-11",
+      "label": "Wednesday, November 11th, 2026",
+      "text": "11"
+    },
+    {
+      "day": "2026-11-12",
+      "label": "Thursday, November 12th, 2026",
+      "text": "12"
+    },
+    {
+      "day": "2026-11-13",
+      "label": "Friday, November 13th, 2026",
+      "text": "13"
+    },
+    {
+      "day": "2026-11-14",
+      "label": "Saturday, November 14th, 2026",
+      "text": "14"
+    },
+    {
+      "day": "2026-11-15",
+      "label": "Today, Sunday, November 15th, 2026, selected",
+      "text": "15"
+    },
+    {
+      "day": "2026-11-16",
+      "label": "Monday, November 16th, 2026",
+      "text": "16"
+    },
+    {
+      "day": "2026-11-17",
+      "label": "Tuesday, November 17th, 2026",
+      "text": "17"
+    },
+    {
+      "day": "2026-11-18",
+      "label": "Wednesday, November 18th, 2026",
+      "text": "18"
+    },
+    {
+      "day": "2026-11-19",
+      "label": "Thursday, November 19th, 2026",
+      "text": "19"
+    },
+    {
+      "day": "2026-11-20",
+      "label": "Friday, November 20th, 2026",
+      "text": "20"
+    },
+    {
+      "day": "2026-11-21",
+      "label": "Saturday, November 21st, 2026",
+      "text": "21"
+    },
+    {
+      "day": "2026-11-22",
+      "label": "Sunday, November 22nd, 2026",
+      "text": "22"
+    },
+    {
+      "day": "2026-11-23",
+      "label": "Monday, November 23rd, 2026",
+      "text": "23"
+    },
+    {
+      "day": "2026-11-24",
+      "label": "Tuesday, November 24th, 2026",
+      "text": "24"
+    },
+    {
+      "day": "2026-11-25",
+      "label": "Wednesday, November 25th, 2026",
+      "text": "25"
+    },
+    {
+      "day": "2026-11-26",
+      "label": "Thursday, November 26th, 2026",
+      "text": "26"
+    },
+    {
+      "day": "2026-11-27",
+      "label": "Friday, November 27th, 2026",
+      "text": "27"
+    },
+    {
+      "day": "2026-11-28",
+      "label": "Saturday, November 28th, 2026",
+      "text": "28"
+    },
+    {
+      "day": "2026-11-29",
+      "label": "Sunday, November 29th, 2026",
+      "text": "29"
+    },
+    {
+      "day": "2026-11-30",
+      "label": "Monday, November 30th, 2026",
+      "text": "30"
+    },
+    {
+      "day": "2026-12-01",
+      "label": "Tuesday, December 1st, 2026",
+      "text": "1"
+    },
+    {
+      "day": "2026-12-02",
+      "label": "Wednesday, December 2nd, 2026",
+      "text": "2"
+    },
+    {
+      "day": "2026-12-03",
+      "label": "Thursday, December 3rd, 2026",
+      "text": "3"
+    },
+    {
+      "day": "2026-12-04",
+      "label": "Friday, December 4th, 2026",
+      "text": "4"
+    },
+    {
+      "day": "2026-12-05",
+      "label": "Saturday, December 5th, 2026",
+      "text": "5"
+    },
+    {
+      "day": "2026-12-06",
+      "label": "Sunday, December 6th, 2026",
+      "text": "6"
+    }
+  ]
+}

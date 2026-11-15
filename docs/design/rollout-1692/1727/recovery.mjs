@@ -1,0 +1,36 @@
+import {sourceIdentity} from "./identity.mjs";
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {readFile,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import puppeteer from 'puppeteer-core';
+import {prepareFixtureBrowserContext,clickVisible,waitVisible} from '../../../../scripts/performance/journey-steps.mjs';
+import {repo,dir,runtime,pool} from './fixture.mjs';
+const scope=JSON.parse(await readFile(join(dir,'r044-scope.json'),'utf8')),out=join(repo,'docs/design/rollout-1692/1727');
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const evidence={identity:await sourceIdentity(),checks:[],errors:[],failures:[]};let renamed=false,grantOff=false,page,unavailableIntent;
+const check=(name,actual,expected=true)=>{assert.deepEqual(actual,expected,name);evidence.checks.push({name,actual});};
+const click=s=>clickVisible(page,s,20000),wait=s=>page.waitForFunction(s=>document.body.innerText.includes(s),{timeout:90000},s);
+const go=()=>page.goto(runtime.origin+'/en/payroll/work-balances/'+scope.target.employeeId,{waitUntil:'networkidle2',timeout:120000});
+const snap=name=>page.screenshot({path:join(out,name+'.png'),fullPage:false});
+try{
+ const context=await browser.createBrowserContext();await prepareFixtureBrowserContext(context,runtime.origin);await context.setCookie(...JSON.parse(await readFile(join(dir,'r044-auth-private.json'),'utf8')));page=await context.newPage();page.on('pageerror',e=>evidence.errors.push(e.message));await page.setViewport({width:1600,height:1000});await go();await wait('R044 browser cancellation evidence');
+ unavailableIntent=randomUUID();const {rows:[subject]}=await pool.query('select user_id from employee where id=$1 and organization_id=$2',[scope.target.employeeId,scope.holder.organizationId]);
+ await pool.query("insert into work_balance_rebuild_intent(id,organization_id,reason,user_id,requested_by,requested_at) values($1,$2,'user_timezone',$3,$4,now())",[unavailableIntent,scope.holder.organizationId,subject.user_id,scope.userId]);
+ await click('button[aria-label="Refresh work balance"]');await wait('Not calculated yet');check('real pending projection is unavailable, never zero',await page.evaluate(()=>document.querySelector('main')?.textContent.includes('R044 browser cancellation evidence')&&!document.querySelector('[aria-label="Current work balance"]')?.textContent.includes('0:00h')));await snap('after-projection-unavailable');
+ await pool.query('delete from work_balance_rebuild_intent where id=$1 and organization_id=$2',[unavailableIntent,scope.holder.organizationId]);unavailableIntent=null;await click('button[aria-label="Refresh work balance"]');await page.waitForFunction(()=>!document.querySelector('main')?.textContent.includes('Not calculated yet'));
+ await pool.query('alter table employee_work_balance rename to employee_work_balance_r044_unavailable');renamed=true;
+ await click('button[aria-label="Refresh work balance"]');await wait('Previously loaded records are shown');check('real projection failure preserves ledger',await page.evaluate(()=>document.querySelector('main')?.textContent.includes('R044 browser cancellation evidence')));check('stale create button disabled',await page.$eval('main button::-p-text(Set opening balance)',n=>n.disabled));await snap('after-stale-projection-failure');
+ await pool.query('alter table employee_work_balance_r044_unavailable rename to employee_work_balance');renamed=false;
+ await click('button[aria-label="Retry work balance"]');await page.waitForFunction(()=>!document.querySelector('main [role="alert"]'));await wait('R044 browser cancellation evidence');check('actual retry returns authoritative ledger',await page.$eval('main button::-p-text(Set opening balance)',n=>!n.disabled));await snap('after-projection-retry');
+ await click('main button::-p-text(Record overtime payout)');await click('[role="dialog"] button[type="submit"]');await page.waitForSelector('[role="dialog"] [aria-invalid="true"]');check('invalid submit focuses associated first error',await page.evaluate(()=>document.activeElement?.getAttribute('aria-invalid')==='true'));await snap('after-validation-focus');
+ const reason=await waitVisible(page,'[role="dialog"] textarea');await reason.focus();await reason.type('R044 late grant request');const hours=await waitVisible(page,'[role="dialog"] input[name="hours"]');await hours.focus();await hours.type('1');
+ await pool.query('update payroll_access_grant set is_active=false where id=$1',[scope.grant]);grantOff=true;
+ await click('[role="dialog"] button[type="submit"]');await wait('This work balance is no longer available');check('late grant loss hides ledger and panels',await page.evaluate(()=>!document.querySelector('main')?.textContent.includes('R044 browser cancellation evidence')&&!document.querySelector('[role="dialog"]')));await snap('after-grant-revoked');
+ await go();check('grant revoked actual arrival has no private ledger',await page.evaluate(()=>!document.querySelector('main')?.textContent.includes('R044 browser cancellation evidence')));
+ await pool.query('update payroll_access_grant set is_active=true where id=$1',[scope.grant]);grantOff=false;await go();await wait('R044 browser cancellation evidence');check('grant restoration returns real retained records',true);await snap('after-grant-restored');
+ const next=spawn(process.env.npm_execpath,['--config.verifyDepsBeforeRun=false','node',join(out,'next.mjs'),dir,'next-final'],{stdio:'inherit',windowsHide:true});const [nextCode]=await once(next,'exit');assert.equal(nextCode,0);
+}catch(e){evidence.failures.push(e.message);if(page)await snap('recovery-failed-attempt').catch(()=>{});throw e;}finally{if(unavailableIntent)await pool.query('delete from work_balance_rebuild_intent where id=$1 and organization_id=$2',[unavailableIntent,scope.holder.organizationId]);if(renamed)await pool.query('alter table employee_work_balance_r044_unavailable rename to employee_work_balance');if(grantOff)await pool.query('update payroll_access_grant set is_active=true where id=$1',[scope.grant]);await writeFile(join(out,'recovery.json'),JSON.stringify(evidence,null,2)+'\n');await browser.close();await pool.end();}
+console.log(`R044 real recovery: ${evidence.checks.length} assertions`);
