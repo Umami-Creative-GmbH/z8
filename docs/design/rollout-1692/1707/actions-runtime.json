@@ -1,0 +1,83 @@
+{
+  "checks": [
+    {
+      "name": "one page heading and default absence tab",
+      "passed": true
+    },
+    {
+      "name": "blank reason validation associated",
+      "passed": true
+    },
+    {
+      "name": "cancellation leaves request pending",
+      "passed": true
+    },
+    {
+      "name": "cancelled same-request draft retained",
+      "passed": true
+    },
+    {
+      "name": "pending decision locks confirmation",
+      "passed": true
+    },
+    {
+      "name": "pending Escape preserves panel",
+      "passed": true
+    },
+    {
+      "name": "server refusal retains reason",
+      "passed": true
+    },
+    {
+      "name": "real rejection persisted reason and assigned actor",
+      "passed": true
+    },
+    {
+      "name": "real approval persisted",
+      "passed": true
+    },
+    {
+      "name": "revoked decision right refused and reason retained",
+      "passed": true
+    },
+    {
+      "name": "refused request still pending",
+      "passed": true
+    },
+    {
+      "name": "metadata evidence and full correction reason visible",
+      "passed": true
+    },
+    {
+      "name": "correction dispatcher persisted rejection reason",
+      "passed": true
+    }
+  ],
+  "rejected": {
+    "status": "rejected",
+    "rejection_reason": "R009 coverage is required",
+    "request_status": "rejected",
+    "request_reason": "R009 coverage is required",
+    "approver_id": "b8f89e57-3416-4273-9449-a2d752af4f9c"
+  },
+  "bulkResult": {
+    "status": 200,
+    "body": {
+      "succeeded": [
+        {
+          "id": "55d9351c-d817-4792-8ed7-7c315d5f7662",
+          "type": "absence_entry",
+          "status": "approved"
+        }
+      ],
+      "failed": [
+        {
+          "id": "558f18ba-cba7-4b82-92d9-b6d35ec86188",
+          "code": "stale",
+          "message": "Request is already rejected"
+        }
+      ]
+    }
+  },
+  "errors": []
+}

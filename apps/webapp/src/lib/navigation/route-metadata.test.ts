@@ -6,6 +6,13 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the independent legacy approvals page", () => {
+		expect(appPageOwnsHeading("/de/approvals")).toBe(true);
+		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(false);
+		expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(
+			false,
+		);
+	});
 	it("adopts only refreshed analytics routes while retaining staged descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);
 		expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(

@@ -1,9 +1,9 @@
 "use client";
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useId, useRef, useState } from "react";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -14,7 +14,12 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ApprovalActionDialogProps {
@@ -36,54 +41,118 @@ export function ApprovalActionDialog({
 }: ApprovalActionDialogProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
-	const [rejectionReason, setRejectionReason] = useState("");
-
-	const handleConfirm = async () => {
-		if (action === "reject" && !rejectionReason.trim()) {
-			toast.error(
-				t("approvals:approvals.rejectionReasonRequired", "Please provide a reason for rejection"),
-			);
-			return;
-		}
-
-		setLoading(true);
-		const confirmed = await onConfirm(action === "reject" ? rejectionReason : undefined)
-			.then(() => true)
-			.catch(() => false);
-		if (confirmed) {
-			onOpenChange(false);
-			setRejectionReason("");
-		}
-		setLoading(false);
-	};
+	const pending = useRef(false);
+	const reasonInput = useRef<HTMLTextAreaElement>(null);
+	const [error, setError] = useState<string | null>(null);
+	const formId = useId();
+	const form = useForm({
+		defaultValues: { reason: "" },
+		onSubmitInvalid: () => reasonInput.current?.focus(),
+		onSubmit: async ({ value }) => {
+			if (pending.current) return;
+			pending.current = true;
+			setLoading(true);
+			setError(null);
+			try {
+				await onConfirm(action === "reject" ? value.reason : undefined);
+				onOpenChange(false);
+				form.reset();
+			} catch (failure) {
+				setError(
+					failure instanceof Error
+						? failure.message
+						: t(
+								"approvals:approvals.decisionFailed",
+								"The decision could not be saved. Try again.",
+							),
+				);
+			}
+			pending.current = false;
+			setLoading(false);
+		},
+	});
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent>
+		<ActionPanel
+			open={open}
+			onOpenChange={(nextOpen) => {
+				if (!pending.current) onOpenChange(nextOpen);
+			}}
+		>
+			<ActionPanelContent
+				showCloseButton={!loading}
+				onEscapeKeyDown={(event) => {
+					if (pending.current) event.preventDefault();
+				}}
+				onPointerDownOutside={(event) => {
+					if (pending.current) event.preventDefault();
+				}}
+			>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{title}</ActionPanelTitle>
 					<ActionPanelDescription>{description}</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<ActionPanelBody>
-					{action === "reject" && (
-						<div className="grid gap-2">
-							<Label htmlFor="reason">
-								{t("approvals:approvals.rejectionReasonRequiredLabel", "Reason for rejection *")}
-							</Label>
-							<Textarea
-								id="reason"
-								placeholder={t(
-									"approvals:approvals.rejectionReasonClearPlaceholder",
-									"Provide a clear reason for rejecting this request...",
+					<form
+						id={formId}
+						noValidate
+						aria-busy={loading}
+						onSubmit={(event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							if (!pending.current) void form.handleSubmit();
+						}}
+					>
+						{action === "reject" && (
+							<form.Field
+								name="reason"
+								validators={{
+									onSubmit: ({ value }) =>
+										action === "reject" && !value.trim()
+											? t(
+													"approvals:approvals.rejectionReasonRequired",
+													"Please provide a reason for rejection",
+												)
+											: undefined,
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={field.state.meta.errors.length > 0}>
+											{t(
+												"approvals:approvals.rejectionReasonRequiredLabel",
+												"Reason for rejection *",
+											)}
+										</TFormLabel>
+										<TFormControl hasError={field.state.meta.errors.length > 0}>
+											<Textarea
+												ref={reasonInput}
+												name={field.name}
+												autoComplete="off"
+												placeholder={t(
+													"approvals:approvals.rejectionReasonClearPlaceholder",
+													"Provide a clear reason for rejecting this request...",
+												)}
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												disabled={loading}
+												rows={4}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
 								)}
-								value={rejectionReason}
-								onChange={(e) => setRejectionReason(e.target.value)}
-								rows={4}
-								required
-							/>
-						</div>
-					)}
+							</form.Field>
+						)}
+						{error ? (
+							<p role="alert" className="mt-4 text-sm text-destructive">
+								{error}
+							</p>
+						) : null}
+					</form>
 
 					{action === "approve" && (
 						<p className="text-sm text-muted-foreground">
@@ -105,9 +174,9 @@ export function ApprovalActionDialog({
 						{t("common.cancel", "Cancel")}
 					</Button>
 					<Button
-						type="button"
+						type="submit"
+						form={formId}
 						variant={action === "approve" ? "default" : "destructive"}
-						onClick={handleConfirm}
 						disabled={loading}
 					>
 						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
