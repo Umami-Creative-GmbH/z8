@@ -1,0 +1,16 @@
+{
+  "mode": "policy",
+  "fixture": "new owned disposable services; synthetic account with no initial membership",
+  "checks": [],
+  "captures": [],
+  "pageErrors": [],
+  "limits": [
+    "Default committed Next config and fully workspace-local frozen/offline copy install",
+    "before replaces only organization consumer with actual HEAD bytes; shared historical shell/branding remains current",
+    "saved18px is not true zoom or physical-device certification"
+  ],
+  "failure": {
+    "name": "Error",
+    "message": "Waiting failed"
+  }
+}

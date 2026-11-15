@@ -16,15 +16,9 @@ import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { OrganizationTrackingSetupFields } from "@/components/organization/organization-tracking-setup-fields";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useSession } from "@/lib/auth-client";
 import {
 	generateSlug,
 	organizationSchema,
@@ -88,8 +82,8 @@ function OrganizationSetupHeader({
 	t: (key: string, defaultValue: string) => string;
 }) {
 	return (
-		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
-			<h1 className="mb-4 text-3xl font-bold tracking-tight">
+		<div className="mb-6 rounded-xl border bg-card p-6 text-card-foreground sm:p-8">
+			<h1 className="mb-3 text-2xl font-semibold tracking-tight sm:text-3xl">
 				{t("onboarding.organization.title", "Set up your organization")}
 			</h1>
 			<p className="text-muted-foreground">
@@ -119,12 +113,15 @@ function OrganizationSkipCard({
 	t: (key: string, defaultValue: string) => string;
 }) {
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
+		<section
+			aria-labelledby="organization-skip-title"
+			className="self-start rounded-xl border bg-card text-card-foreground"
+		>
+			<header className="space-y-2 border-b p-6">
+				<h2 id="organization-skip-title" className="font-semibold">
 					{t("onboarding.organization.skipTitle", "Waiting for an Invitation?")}
-				</CardTitle>
-				<CardDescription>
+				</h2>
+				<p className="text-sm leading-relaxed text-muted-foreground">
 					{canCreateOrganizations
 						? t(
 								"onboarding.organization.skipDescription",
@@ -134,9 +131,9 @@ function OrganizationSkipCard({
 								"onboarding.organization.disabledSkipDescription",
 								"You can continue by skipping this step while you wait for an invitation to an existing organization.",
 							)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
+				</p>
+			</header>
+			<div className="p-6">
 				<Button
 					variant="outline"
 					onClick={onSkip}
@@ -145,8 +142,8 @@ function OrganizationSkipCard({
 				>
 					{t("onboarding.organization.skip", "Skip for now")}
 				</Button>
-			</CardContent>
-		</Card>
+			</div>
+		</section>
 	);
 }
 
@@ -163,6 +160,7 @@ function CreateOrganizationCard({
 		checkingSlug: boolean;
 		loading: boolean;
 		slugErrorMessage: string | null;
+		slugAvailable: boolean;
 	};
 	setSlugError: (error: SlugError) => void;
 	t: TranslationFunction;
@@ -170,31 +168,35 @@ function CreateOrganizationCard({
 	const slugManuallyEdited = useRef(false);
 
 	return (
-		<Card className="border-primary/50">
-			<CardHeader>
+		<section
+			aria-labelledby="organization-create-title"
+			className="min-w-0 rounded-xl border bg-card text-card-foreground"
+		>
+			<header className="space-y-2 border-b p-6">
 				<div className="flex items-center gap-3">
 					<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-						<IconBuilding className="size-5 text-primary" />
+						<IconBuilding aria-hidden="true" className="size-5 text-primary" />
 					</div>
 					<div>
-						<CardTitle>
+						<h2 id="organization-create-title" className="font-semibold">
 							{t("onboarding.organization.createTitle", "Create Organization")}
-						</CardTitle>
-						<CardDescription>
+						</h2>
+						<p className="text-sm leading-relaxed text-muted-foreground">
 							{t(
 								"onboarding.organization.createDescription",
 								"Set up your own organization and invite your team",
 							)}
-						</CardDescription>
+						</p>
 					</div>
 				</div>
-			</CardHeader>
-			<CardContent>
+			</header>
+			<div className="p-6">
 				<form
+					aria-busy={status.loading}
 					action={() => {
 						void form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="space-y-6"
 				>
 					<form.Field
 						name="name"
@@ -224,20 +226,36 @@ function CreateOrganizationCard({
 								</Label>
 								<Input
 									id="organization-name"
+									name="name"
+									autoComplete="organization"
+									aria-invalid={field.state.meta.errors.length > 0}
+									aria-describedby={
+										field.state.meta.errors.length
+											? "organization-name-error"
+											: undefined
+									}
 									value={field.state.value}
 									onChange={(event) => {
 										const nextName = event.target.value;
 										field.handleChange(nextName);
 										if (nextName && !slugManuallyEdited.current) {
+											setSlugError(null);
 											form.setFieldValue("slug", generateSlug(nextName));
 										}
 									}}
 									onBlur={field.handleBlur}
-									placeholder={t("onboarding.organization.namePlaceholder", "Acme Inc.")}
+									placeholder={t(
+										"onboarding.organization.namePlaceholder",
+										"Acme Inc.",
+									)}
 									disabled={status.loading}
 								/>
 								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm font-medium text-destructive">
+									<p
+										id="organization-name-error"
+										role="alert"
+										className="text-sm font-medium text-destructive"
+									>
 										{getErrorMessage(field.state.meta.errors[0])}
 									</p>
 								)}
@@ -289,6 +307,14 @@ function CreateOrganizationCard({
 								<div className="relative">
 									<Input
 										id="organization-slug"
+										name="slug"
+										autoComplete="off"
+										spellCheck={false}
+										aria-invalid={
+											!!status.slugErrorMessage ||
+											field.state.meta.errors.length > 0
+										}
+										aria-describedby={`organization-slug-description organization-slug-status${status.slugErrorMessage ? " organization-slug-error" : ""}${field.state.meta.errors.length ? " organization-slug-validation" : ""}`}
 										value={field.state.value}
 										onChange={(event) => {
 											slugManuallyEdited.current = true;
@@ -296,7 +322,10 @@ function CreateOrganizationCard({
 											field.handleChange(event.target.value);
 										}}
 										onBlur={field.handleBlur}
-										placeholder={t("onboarding.organization.slugPlaceholder", "acme-inc")}
+										placeholder={t(
+											"onboarding.organization.slugPlaceholder",
+											"acme-inc",
+										)}
 										disabled={status.loading}
 									/>
 									{status.checkingSlug && (
@@ -305,19 +334,47 @@ function CreateOrganizationCard({
 										</div>
 									)}
 								</div>
-								<p className="text-sm text-muted-foreground">
+								<p
+									id="organization-slug-description"
+									className="text-sm text-muted-foreground"
+								>
 									{t(
 										"onboarding.organization.slugDescription",
 										"Used in URLs. Auto-generated from name.",
 									)}
 								</p>
+								<p
+									id="organization-slug-status"
+									role="status"
+									className="text-sm text-muted-foreground"
+								>
+									{status.checkingSlug
+										? t(
+												"onboarding.organization.checkingSlug",
+												"Checking availability…",
+											)
+										: status.slugAvailable
+											? t(
+													"onboarding.organization.slugAvailable",
+													"This slug is available.",
+												)
+											: ""}
+								</p>
 								{status.slugErrorMessage && (
-									<p className="text-sm font-medium text-destructive">
+									<p
+										id="organization-slug-error"
+										role="alert"
+										className="text-sm font-medium text-destructive"
+									>
 										{status.slugErrorMessage}
 									</p>
 								)}
 								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm font-medium text-destructive">
+									<p
+										id="organization-slug-validation"
+										role="alert"
+										className="text-sm font-medium text-destructive"
+									>
 										{getErrorMessage(field.state.meta.errors[0])}
 									</p>
 								)}
@@ -363,33 +420,86 @@ function CreateOrganizationCard({
 						</Button>
 					</div>
 				</form>
-			</CardContent>
-		</Card>
+			</div>
+		</section>
 	);
 }
 
-export default function OrganizationPageClient({
+export default function OrganizationPageClient(
+	props: OrganizationPageClientProps,
+) {
+	const { data } = useSession();
+	const operations = useRef(new Set<string>());
+	const [pendingScopes, setPendingScopes] = useState(new Set<string>());
+	// A different account or organization owns a different draft and request lifetime.
+	const scope = `${data?.user.id ?? "pending"}:${data?.session.id ?? ""}:${data?.session.activeOrganizationId ?? ""}`;
+	function setLoading(next: boolean) {
+		if (next) operations.current.add(scope);
+		else operations.current.delete(scope);
+		setPendingScopes(new Set(operations.current));
+	}
+	function acquireOperation() {
+		if (operations.current.has(scope)) return false;
+		setLoading(true);
+		return true;
+	}
+	return (
+		<OrganizationSetup
+			key={scope}
+			{...props}
+			loading={pendingScopes.has(scope)}
+			acquireOperation={acquireOperation}
+			setLoading={setLoading}
+		/>
+	);
+}
+
+function OrganizationSetup({
 	canCreateOrganizations,
 	trackingSuggestedAt,
-}: OrganizationPageClientProps) {
+	loading,
+	acquireOperation,
+	setLoading,
+}: OrganizationPageClientProps & {
+	loading: boolean;
+	acquireOperation: () => boolean;
+	setLoading: (next: boolean) => void;
+}) {
 	const { t } = useTranslate();
 	const { push, replace } = useRouter();
-	const [loading, setLoading] = useState(false);
 	const [checkingSlugFor, setCheckingSlugFor] = useState<string | null>(null);
+	const [availableSlug, setAvailableSlug] = useState<string | null>(null);
 	const [slugError, setSlugError] = useState<SlugError>(null);
 	const [checkingMembership, setCheckingMembership] = useState(true);
 	const slugRequestIdRef = useRef(0);
+	const lifetime = useRef<object | null>(null);
+	const [actionError, setActionError] = useState<string | null>(null);
+	function showActionError(message: string) {
+		setActionError(message);
+		toast.error(message);
+	}
+
+	useEffect(() => {
+		lifetime.current = {};
+		return () => {
+			lifetime.current = null;
+		};
+	}, []);
 
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
-			if (slugError?.slug === value.slug) {
+			if (!canCreateOrganizations || slugError?.slug === value.slug) {
 				return;
 			}
+			if (!acquireOperation()) return;
+			const requestLifetime = lifetime.current;
+			setActionError(null);
 
 			await runOnboardingAction({
 				action: () => createOrganizationOnboarding(value),
 				onResult: (result) => {
+					if (!requestLifetime || lifetime.current !== requestLifetime) return;
 					if (result.success) {
 						toast.success(
 							t(
@@ -400,15 +510,22 @@ export default function OrganizationPageClient({
 						push("/onboarding/profile");
 						return true;
 					} else {
-						toast.error(
+						showActionError(
 							result.error ||
-								t("onboarding.organization.createError", "Failed to create organization"),
+								t(
+									"onboarding.organization.createError",
+									"Failed to create organization",
+								),
 						);
 					}
 				},
 				onRejected: () => {
-					toast.error(
-						t("onboarding.organization.createError", "Failed to create organization"),
+					if (!requestLifetime || lifetime.current !== requestLifetime) return;
+					showActionError(
+						t(
+							"onboarding.organization.createError",
+							"Failed to create organization",
+						),
 					);
 				},
 				setLoading,
@@ -426,6 +543,15 @@ export default function OrganizationPageClient({
 			"This slug is already taken. Please choose a different one.",
 		),
 	);
+	const getSlugCheckError = useEffectEvent(() =>
+		t(
+			"onboarding.organization.slugCheckError",
+			"Could not check availability. Edit the slug to retry.",
+		),
+	);
+	const getSkipError = useEffectEvent(() =>
+		t("onboarding.organization.skipError", "Failed to skip organization setup"),
+	);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -438,13 +564,16 @@ export default function OrganizationPageClient({
 				}
 
 				if (summary.success && summary.data?.hasOrganization) {
-					await skipOrganizationSetup();
+					const result = await skipOrganizationSetup();
 					if (cancelled) {
 						return;
 					}
 
-					replace("/onboarding/profile");
-					return;
+					if (result.success) {
+						replace("/onboarding/profile");
+						return;
+					}
+					setActionError(result.error || getSkipError());
 				}
 
 				setCheckingMembership(false);
@@ -483,10 +612,11 @@ export default function OrganizationPageClient({
 					});
 				} else {
 					setSlugError(null);
+					setAvailableSlug(slug);
 				}
-			} catch (error) {
+			} catch {
 				if (slugRequestIdRef.current === requestId) {
-					console.error("Error checking slug availability:", error);
+					setSlugError({ slug, message: getSlugCheckError() });
 				}
 			}
 
@@ -504,14 +634,18 @@ export default function OrganizationPageClient({
 	}, [canCreateOrganizations, slug]);
 
 	async function handleSkip() {
+		if (!acquireOperation()) return;
+		const requestLifetime = lifetime.current;
+		setActionError(null);
 		await runOnboardingAction({
 			action: skipOrganizationSetup,
 			onResult: (result) => {
+				if (!requestLifetime || lifetime.current !== requestLifetime) return;
 				if (result.success) {
 					push("/onboarding/profile");
 					return true;
 				} else {
-					toast.error(
+					showActionError(
 						result.error ||
 							t(
 								"onboarding.organization.skipError",
@@ -521,7 +655,8 @@ export default function OrganizationPageClient({
 				}
 			},
 			onRejected: () => {
-				toast.error(
+				if (!requestLifetime || lifetime.current !== requestLifetime) return;
+				showActionError(
 					t(
 						"onboarding.organization.skipError",
 						"Failed to skip organization setup",
@@ -536,7 +671,14 @@ export default function OrganizationPageClient({
 		return (
 			<>
 				<ProgressIndicator currentStep="organization" />
-				<div className="mx-auto flex max-w-2xl justify-center py-12">
+				<div
+					role="status"
+					aria-label={t(
+						"onboarding.organization.checkingMembership",
+						"Checking organization membership",
+					)}
+					className="mx-auto flex max-w-2xl justify-center py-12"
+				>
 					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 				</div>
 			</>
@@ -547,19 +689,35 @@ export default function OrganizationPageClient({
 		<>
 			<ProgressIndicator currentStep="organization" />
 
-			<div className="mx-auto max-w-2xl">
+			<div className="mx-auto max-w-4xl">
 				<OrganizationSetupHeader
 					canCreateOrganizations={canCreateOrganizations}
 					t={t}
 				/>
 
-				<div className="space-y-6">
+				<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+					{actionError ? (
+						<p
+							role="alert"
+							className="rounded-lg border border-destructive/30 bg-background p-4 text-sm text-destructive lg:col-span-full"
+						>
+							{actionError}
+						</p>
+					) : null}
 					{canCreateOrganizations && (
 						<CreateOrganizationCard
 							trackingSuggestedAt={trackingSuggestedAt}
 							form={form}
-							status={{ checkingSlug, loading, slugErrorMessage }}
-							setSlugError={setSlugError}
+							status={{
+								checkingSlug,
+								loading,
+								slugErrorMessage,
+								slugAvailable: availableSlug === slug,
+							}}
+							setSlugError={(error) => {
+								setSlugError(error);
+								setAvailableSlug(null);
+							}}
 							t={t}
 						/>
 					)}

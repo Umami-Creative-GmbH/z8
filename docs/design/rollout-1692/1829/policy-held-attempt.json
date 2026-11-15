@@ -1,0 +1,8 @@
+{
+  "classification": "failed harness attempt, not an application refusal or acceptance",
+  "attempt": "Hold a real rendered Create request across an owned Next process restart, then release it against a disabled creation policy",
+  "observed": "The waiting marker was written; after restart the fresh server log contained summary calls but no delivered create action, and the harness did not settle",
+  "cleanup": "The harness failed with Waiting failed / Runtime.callFunctionOn protocol timeout and attempted browser.close; the subsequent exact-identity process search found zero matching live policy nodes. No global node/Chrome kill was used.",
+  "replacementEvidence": "denial-runtime.json separately tests an authenticated same-origin POST using the actual generated Next action manifest and verifies zero membership/employee writes; disabled-runtime.json tests the rendered disabled page and real Skip",
+  "limit": "The held-browser-across-process-restart scenario is unpassed"
+}
