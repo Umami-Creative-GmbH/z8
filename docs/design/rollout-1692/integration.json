@@ -232,10 +232,12 @@
                                           1853
                                       ],
                         "status":  "integrated",
-                        "verifiedCommit":  "cca1977df820ef288a7910a4f9d44b464d289b3b",
+                        "verifiedCommit":  "b9abdb440e847dadf1067cea54a7279c729fb607",
                         "implementationCommit":  "ebf4c0ce8ca59fda5934b335824628f22dd5b0e6",
                         "evidence":  "docs/design/rollout-1692/1712.md",
-                        "integrationVerification":  "Fresh50 unique suites/438 tests,full combined types,12-file Doctor zero/Biome zero errors+7 inherited warnings. Calendar/Compliance conflict additive;43paths,42incoming exact plus prior metadata+Calendar. All678 prior rollout/six recovery files/19verified ancestors preserved;10JSON/17PNG signatures/8targets/3scripts/whitespace pass. Runtime28+12 checks inherited; manual form opened not submitted; consequential-action/scope/revocation/large-text drawer/Profile/build/catalog/provider/device limits explicit."
+                        "integrationVerification":  "Fresh50 unique suites/438 tests,full combined types,12-file Doctor zero/Biome zero errors+7 inherited warnings. Calendar/Compliance conflict additive;43paths,42incoming exact plus prior metadata+Calendar. All678 prior rollout/six recovery files/19verified ancestors preserved;10JSON/17PNG signatures/8targets/3scripts/whitespace pass. Runtime28+12 checks inherited; manual form opened not submitted; consequential-action/scope/revocation/large-text drawer/Profile/build/catalog/provider/device limits explicit. Compatible shared CalendarView navigation correction verified at b9abdb440:override bounded to existing navigationtransition/acknowledgement,three red/green regressions,45/489 fulltypes two-fileBiomeDoctor0 and12real manager desktop/phone navigation checks. Actualoriginalcachedinstance Back corrected,other owners/interface unchanged. OriginalR014handoff/runtime limits retained;newproof selected-personnavigation,panelteardown assembled-only.",
+                        "handoffCommit":  "cca1977df820ef288a7910a4f9d44b464d289b3b",
+                        "arrivalCorrectionCommit":  "7fed18b191760826b1076de827ff9de27f026ea9"
                     },
                     {
                         "id":  "R015",
@@ -244,8 +246,13 @@
                         "blockedBy":  [
                                           1712
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "b9abdb440e847dadf1067cea54a7279c729fb607",
+                        "integrationCommit":  "d4f4859527122f39dfda456671d48de131bab51c",
+                        "implementationCommit":  "4d89533232f376eee4e9c2e8f92aa38845e30cd2",
+                        "correctionCommit":  "7fed18b191760826b1076de827ff9de27f026ea9",
+                        "evidence":  "docs/design/rollout-1692/1713.md",
+                        "integrationVerification":  "Native merge d4f485952 exact tree/no conflicts:54/463 exact is wholly contained in143 unique suites/1175 compatibility tests;full types,14-file CRLF Biome/Doctor zero. Default14CRLF and forced13format-only findings retained. All24 verified ancestors,934 prior rollout paths and concurrent owners preserved;34PNG fully decoded,18JSON/6scripts/24links. Inherited picker override finding fixed by7fed18b19:three permanent regressions fail exactpremerge;final45suites/489,fulltypes,two-file CRLF Biome/Doctor zero. Actual same-fixture cached Back before restores Person3 route but displays/queries5;final restores3 in originalcachedinstance.12desktop/Forward/saved18pxdarkphone assertions,reader200/zeroexceptions,clean connected Next/get_routes;five new PNGs fullydecoded/hashpinned. Panelteardown assembled-only after failedgridlocator;native10060/Previewtimeouts and priorinheritedPG/build/catalog/provider/device/zoom/transition/exhaustive limits retained. Exactrootmerge equals testedfeature."
                     },
                     {
                         "id":  "R016",
@@ -312,8 +319,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "07d152106204c108639dfcc28590289f63f99268"
                     },
                     {
                         "id":  "R021",
@@ -322,8 +330,9 @@
                         "blockedBy":  [
                                           1717
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "63d8a75d52a1c24dabfd8c2397b76fabf8310607"
                     },
                     {
                         "id":  "R022",
@@ -332,8 +341,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "6d974f25a15fc03bb7e44d5a08bf1995d3ec7548"
                     },
                     {
                         "id":  "R023",
@@ -354,7 +364,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

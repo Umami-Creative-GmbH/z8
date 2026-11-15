@@ -1,0 +1,256 @@
+{
+  "phase": "after",
+  "sourceCommit": "7fed18b191760826b1076de827ff9de27f026ea9",
+  "checkoutCommit": "7fed18b191760826b1076de827ff9de27f026ea9",
+  "sourceHash": "c4d8316a2da9abeaeee70ec0dbe35a0708303c4d766668b9d601bad4ba99bb45",
+  "sourceStatus": "",
+  "fixture": "Synthetic small-manager, unchanged roster/date zones and no work mutations",
+  "checks": [
+    {
+      "name": "real manager picker is available",
+      "passed": true
+    },
+    {
+      "name": "one Calendar heading",
+      "passed": true
+    },
+    {
+      "name": "picker route and rendered target agree",
+      "passed": true,
+      "details": {
+        "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+        "heading": "Fixture Person 5",
+        "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+        "scopeInstance": 2,
+        "timeOrigin": 1794729740273,
+        "dialogOpen": false,
+        "width": 1600,
+        "documentWidth": 1600,
+        "font": "16px",
+        "dark": false,
+        "h1": [
+          "Calendar"
+        ]
+      }
+    },
+    {
+      "name": "Back returns the prior target",
+      "passed": true,
+      "details": {
+        "path": "/en/calendar/0a185406-f736-4006-a9fd-1a74e81b1667",
+        "heading": "Fixture Person 3",
+        "employeeId": "0a185406-f736-4006-a9fd-1a74e81b1667",
+        "scopeInstance": 1,
+        "timeOrigin": 1794729740273,
+        "dialogOpen": false,
+        "width": 1600,
+        "documentWidth": 1600,
+        "font": "16px",
+        "dark": false,
+        "h1": [
+          "Calendar"
+        ]
+      }
+    },
+    {
+      "name": "Back stays in the same document",
+      "passed": true
+    },
+    {
+      "name": "Forward returns acknowledged target",
+      "passed": true
+    },
+    {
+      "name": "real saved dark and18px survive reload",
+      "passed": true
+    },
+    {
+      "name": "phone page fits",
+      "passed": true
+    },
+    {
+      "name": "phone picker chooses target",
+      "passed": true
+    },
+    {
+      "name": "phone Back follows route",
+      "passed": true
+    },
+    {
+      "name": "actual calendar reads stayed admitted",
+      "passed": true
+    },
+    {
+      "name": "no browser exceptions",
+      "passed": true
+    }
+  ],
+  "reads": [
+    {
+      "employeeId": "0a185406-f736-4006-a9fd-1a74e81b1667",
+      "status": 200,
+      "rangeStart": "2026-11-09",
+      "rangeEnd": "2026-11-15"
+    },
+    {
+      "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+      "status": 200,
+      "rangeStart": "2026-11-09",
+      "rangeEnd": "2026-11-15"
+    },
+    {
+      "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+      "status": 200,
+      "rangeStart": "2026-11-09",
+      "rangeEnd": "2026-11-15"
+    },
+    {
+      "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+      "status": 200,
+      "rangeStart": null,
+      "rangeEnd": null
+    },
+    {
+      "employeeId": "0a185406-f736-4006-a9fd-1a74e81b1667",
+      "status": 200,
+      "rangeStart": null,
+      "rangeEnd": null
+    }
+  ],
+  "errors": [],
+  "desktopInitial": {
+    "path": "/en/calendar/0a185406-f736-4006-a9fd-1a74e81b1667",
+    "heading": "Fixture Person 3",
+    "employeeId": "0a185406-f736-4006-a9fd-1a74e81b1667",
+    "scopeInstance": 1,
+    "timeOrigin": 1794729740273,
+    "dialogOpen": false,
+    "width": 1600,
+    "documentWidth": 1600,
+    "font": "16px",
+    "dark": false,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "desktopChosen": {
+    "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "heading": "Fixture Person 5",
+    "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "scopeInstance": 2,
+    "timeOrigin": 1794729740273,
+    "dialogOpen": false,
+    "width": 1600,
+    "documentWidth": 1600,
+    "font": "16px",
+    "dark": false,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "panelBoundary": "Record/manual reset is covered by the permanent assembled regressions. Real range attempts could not obtain the grid target; no successful browser panel-reset claim.",
+  "desktopBack": {
+    "path": "/en/calendar/0a185406-f736-4006-a9fd-1a74e81b1667",
+    "heading": "Fixture Person 3",
+    "employeeId": "0a185406-f736-4006-a9fd-1a74e81b1667",
+    "scopeInstance": 1,
+    "timeOrigin": 1794729740273,
+    "dialogOpen": false,
+    "width": 1600,
+    "documentWidth": 1600,
+    "font": "16px",
+    "dark": false,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "desktopForward": {
+    "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "heading": "Fixture Person 5",
+    "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "scopeInstance": 2,
+    "timeOrigin": 1794729740273,
+    "dialogOpen": false,
+    "width": 1600,
+    "documentWidth": 1600,
+    "font": "16px",
+    "dark": false,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "phoneInitial": {
+    "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "heading": "Fixture Person 5",
+    "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "scopeInstance": 1,
+    "timeOrigin": 1794729746789.6,
+    "dialogOpen": false,
+    "width": 390,
+    "documentWidth": 390,
+    "font": "18px",
+    "dark": true,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "phoneChosen": {
+    "path": "/en/calendar/0a185406-f736-4006-a9fd-1a74e81b1667",
+    "heading": "Fixture Person 3",
+    "employeeId": "0a185406-f736-4006-a9fd-1a74e81b1667",
+    "scopeInstance": 2,
+    "timeOrigin": 1794729746789.6,
+    "dialogOpen": false,
+    "width": 390,
+    "documentWidth": 390,
+    "font": "18px",
+    "dark": true,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "phoneBack": {
+    "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "heading": "Fixture Person 5",
+    "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "scopeInstance": 1,
+    "timeOrigin": 1794729746789.6,
+    "dialogOpen": false,
+    "width": 390,
+    "documentWidth": 390,
+    "font": "18px",
+    "dark": true,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "next": {
+    "tools": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "get_compilation_issues": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"issues\":[]}"
+        }
+      ]
+    },
+    "get_errors": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+        }
+      ]
+    }
+  }
+}
