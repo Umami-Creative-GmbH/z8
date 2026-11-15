@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { LicenseInfo } from "@/types/license";
@@ -16,6 +16,23 @@ const licenses: LicenseInfo[] = [
 ];
 
 describe("LicenseTable", () => {
+	it("announces the active package and license sort while preserving both directions", async () => {
+		const user = userEvent.setup();
+		render(<LicenseTable licenses={licenses} />);
+		const packageHeader = screen.getByRole("columnheader", { name: "Package" });
+		const licenseHeader = screen.getByRole("columnheader", { name: "License" });
+		expect(packageHeader.getAttribute("aria-sort")).toBe("ascending");
+		await user.click(within(packageHeader).getByRole("button"));
+		expect(packageHeader.getAttribute("aria-sort")).toBe("descending");
+		expect(screen.getAllByRole("row")[1].textContent).toContain("beta");
+		await user.click(within(licenseHeader).getByRole("button"));
+		expect(licenseHeader.getAttribute("aria-sort")).toBe("ascending");
+		expect(screen.getAllByRole("row")[1].textContent).toContain("beta");
+		await user.click(within(licenseHeader).getByRole("button"));
+		expect(licenseHeader.getAttribute("aria-sort")).toBe("descending");
+		expect(screen.getAllByRole("row")[1].textContent).toContain("alpha");
+	});
+
 	it.each([
 		["package name", "alpha", "alpha", "beta"],
 		["license", "Apache", "beta", "alpha"],

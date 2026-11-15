@@ -23,7 +23,7 @@ export default function LicensesPage(props: Props) {
 function LicensesPageLoading() {
 	return (
 		<div
-			className="flex h-[min(46rem,calc(100svh-9rem))] min-h-[min(34rem,calc(100svh-9rem))] w-full flex-col gap-5 overflow-hidden rounded-xl border border-white/30 bg-white/20 p-5 shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30"
+			className="flex h-[min(50rem,calc(100svh-9rem))] min-h-[38rem] w-full flex-col gap-5 rounded-xl border bg-card p-5 text-card-foreground shadow-sm sm:p-8"
 			aria-busy="true"
 			role="status"
 		>
@@ -46,7 +46,7 @@ async function LicensesPageContent({ params }: Props) {
 	}
 
 	return (
-		<div className="flex h-[min(46rem,calc(100svh-9rem))] min-h-[min(34rem,calc(100svh-9rem))] w-full flex-col overflow-hidden rounded-xl border border-white/30 bg-white/20 p-5 shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30">
+		<div className="flex h-[min(50rem,calc(100svh-9rem))] min-h-[38rem] w-full flex-col rounded-xl border bg-card p-5 text-card-foreground shadow-sm sm:p-8">
 			<InfoHeader
 				locale={locale}
 				titleDefault="Open Source Licenses"
