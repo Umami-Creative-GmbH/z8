@@ -1,0 +1,67 @@
+{
+  "mode": "before",
+  "scope": "small-manager / Performance small, original seeded pending requests; same fixture before mutations",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Approvals",
+        "Approvals"
+      ],
+      "main": "Toggle Sidebar\nApprovals\n02:34\nUTC+01:00\nClock In\nToggle theme\nApprovals\n\nReview and approve pending requests from your team\n\nTry the new Unified Inbox\nView all approval types in one place with filtering, bulk actions, and SLA tracking.\nOpen Inbox\nAbsence Requests\nTime Corrections\nAbsence Requests\nReview and approve time-off requests from your team members\nRefresh\nEmployee\tDates\tType\t\nDays\n\tNotes\t\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n8. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 7: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n5. Dez. 2026\n\t\nR009 review leave\n\t\n0 days\n\t\nR009 request 4: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n12. Dez. 2026\n\t\nR009 review leave\n\t\n0 days\n\t\nR009 request 11: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n4. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 3: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n7. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 6: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n13. Dez. 2026\n\t\nR009 review leave\n\t\n0 days\n\t\nR009 request 12: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n6. Dez. 2026\n\t\nR009 review leave\n\t\n0 days\n\t\nR009 request 5: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n10. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 9: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n3. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 2: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n2. Dez. 2026\n\t\nR009 review leave\n\t\n0.5 day\n\t\nR009 request 1: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject",
+      "tabs": [
+        {
+          "text": "Absence Requests",
+          "selected": "true"
+        },
+        {
+          "text": "Time Corrections",
+          "selected": "false"
+        }
+      ]
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Approvals",
+        "Approvals"
+      ],
+      "main": "Toggle Sidebar\nApprovals\nMore actions\nApprovals\n\nReview and approve pending requests from your team\n\nTry the new Unified Inbox\nView all approval types in one place with filtering, bulk actions, and SLA tracking.\nOpen Inbox\nAbsence Requests\nTime Corrections\nAbsence Requests\nReview and approve time-off requests from your team members\nRefresh\nEmployee\nDates\nType\nDays\nNotes\nPerson 2\nperf-small-2-a781dc91f493@example.test\n8. Dez. 2026\nR009 review leave\n1 day\nR009 request 7: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n5. Dez. 2026\nR009 review leave\n0 days\nR009 request 4: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n12. Dez. 2026\nR009 review leave\n0 days\nR009 request 11: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n4. Dez. 2026\nR009 review leave\n1 day\nR009 request 3: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n7. Dez. 2026\nR009 review leave\n1 day\nR009 request 6: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n13. Dez. 2026\nR009 review leave\n0 days\nR009 request 12: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n6. Dez. 2026\nR009 review leave\n0 days\nR009 request 5: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n10. Dez. 2026\nR009 review leave\n1 day\nR009 request 9: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n3. Dez. 2026\nR009 review leave\n1 day\nR009 request 2: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject\nPerson 2\nperf-small-2-a781dc91f493@example.test\n2. Dez. 2026\nR009 review leave\n0.5 day\nR009 request 1: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\nApprove\nReject",
+      "tabs": [
+        {
+          "text": "Absence Requests",
+          "selected": "true"
+        },
+        {
+          "text": "Time Corrections",
+          "selected": "false"
+        }
+      ]
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Approvals",
+        "Approvals"
+      ],
+      "main": "Toggle Sidebar\nApprovals\n02:34\nUTC+01:00\nClock In\nToggle theme\nApprovals\n\nReview and approve pending requests from your team\n\nTry the new Unified Inbox\nView all approval types in one place with filtering, bulk actions, and SLA tracking.\nOpen Inbox\nAbsence Requests\nTime Corrections\nAbsence Requests\nReview and approve time-off requests from your team members\nRefresh\nEmployee\tDates\tType\t\nDays\n\tNotes\t\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n8. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 7: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n5. Dez. 2026\n\t\nR009 review leave\n\t\n0 days\n\t\nR009 request 4: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n12. Dez. 2026\n\t\nR009 review leave\n\t\n0 days\n\t\nR009 request 11: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n4. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 3: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n7. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 6: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n13. Dez. 2026\n\t\nR009 review leave\n\t\n0 days\n\t\nR009 request 12: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n6. Dez. 2026\n\t\nR009 review leave\n\t\n0 days\n\t\nR009 request 5: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n10. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 9: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n3. Dez. 2026\n\t\nR009 review leave\n\t\n1 day\n\t\nR009 request 2: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject\n\n\nPerson 2\nperf-small-2-a781dc91f493@example.test\n\t\n2. Dez. 2026\n\t\nR009 review leave\n\t\n0.5 day\n\t\nR009 request 1: review the complete evidence, including coverage and the requested leave dates. This note must stay readable on a phone.\n\t\nApprove\nReject",
+      "tabs": [
+        {
+          "text": "Absence Requests",
+          "selected": "true"
+        },
+        {
+          "text": "Time Corrections",
+          "selected": "false"
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -17,19 +17,20 @@ import {
 } from "@/app/[locale]/(app)/approvals/actions";
 import {
 	DataTable,
+	DataTablePagination,
 	DataTableSkeleton,
 	DataTableToolbar,
 } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
+import { VehicleUseWarnings } from "@/components/time-tracking/vehicle-use-fields";
+import { vehicleUseText } from "@/components/time-tracking/vehicle-use-format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import type { WorkCategoryReviewValue } from "@/lib/approvals/server/time-correction-review-metadata";
 import { queryKeys } from "@/lib/query";
 import { dispatchApprovalDecision } from "@/lib/query/use-approval-inbox";
-import { VehicleUseWarnings } from "@/components/time-tracking/vehicle-use-fields";
-import { vehicleUseText } from "@/components/time-tracking/vehicle-use-format";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 import {
 	formatCorrectionApprovalDate,
@@ -59,12 +60,17 @@ function workCategoryLabel(value: WorkCategoryReviewValue, t: Translate) {
 			);
 }
 
-export function TimeCorrectionApprovalsTable() {
+export function TimeCorrectionApprovalsTable({
+	scope,
+}: {
+	scope?: { userId: string; organizationId: string };
+} = {}) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() || "en";
 	const timeFormat = useTimeFormat();
 	const correctionQueryKey = queryKeys.approvals.timeCorrections({
+		...scope,
 		locale,
 		timeFormat,
 	});
@@ -87,7 +93,7 @@ export function TimeCorrectionApprovalsTable() {
 	} = useQuery({
 		queryKey: correctionQueryKey,
 		queryFn: async () => {
-			const result = await getPendingApprovals(locale);
+			const result = await getPendingApprovals(locale, scope);
 			return result.timeCorrectionApprovals;
 		},
 	});
@@ -124,7 +130,7 @@ export function TimeCorrectionApprovalsTable() {
 						"Time correction approved",
 					),
 				);
-				queryClient.invalidateQueries({ queryKey: correctionQueryKey });
+				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
 			} else {
 				if (context?.previousApprovals) {
 					queryClient.setQueryData(
@@ -189,7 +195,7 @@ export function TimeCorrectionApprovalsTable() {
 						"Time correction rejected",
 					),
 				);
-				queryClient.invalidateQueries({ queryKey: correctionQueryKey });
+				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
 			} else {
 				if (context?.previousApprovals) {
 					queryClient.setQueryData(
@@ -234,19 +240,33 @@ export function TimeCorrectionApprovalsTable() {
 	const handleConfirm = async (reason?: string) => {
 		if (!selectedApproval) return;
 
-		setDialogOpen(false);
-
 		if (dialogAction === "approve") {
-			approveMutation.mutate({
+			const result = await approveMutation.mutateAsync({
 				approvalRequestId: selectedApproval.id,
 				workPeriodId: selectedApproval.workPeriod.id,
 			});
+			if (!result.success)
+				throw new Error(
+					result.error ||
+						t(
+							"approvals:approvals.approveFailed",
+							"Failed to approve time correction",
+						),
+				);
 		} else {
-			rejectMutation.mutate({
+			const result = await rejectMutation.mutateAsync({
 				approvalRequestId: selectedApproval.id,
 				workPeriodId: selectedApproval.workPeriod.id,
 				reason: reason!,
 			});
+			if (!result.success)
+				throw new Error(
+					result.error ||
+						t(
+							"approvals:approvals.rejectFailed",
+							"Failed to reject time correction",
+						),
+				);
 		}
 	};
 
@@ -275,7 +295,7 @@ export function TimeCorrectionApprovalsTable() {
 		return <DataTableSkeleton columnCount={6} rowCount={5} />;
 	}
 
-	if (isError) {
+	if (isError && !approvals) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
 				<p className="text-destructive">
@@ -292,8 +312,32 @@ export function TimeCorrectionApprovalsTable() {
 	return (
 		<>
 			<div className="space-y-4">
+				<p role="status" className="text-sm font-medium tabular-nums">
+					{t(
+						"approvals:approvals.pendingQueueCount",
+						"{count, plural, one {# pending request} other {# pending requests}}",
+						{ count: approvals?.length ?? 0 },
+					)}
+				</p>
+				{isError ? (
+					<div
+						role="alert"
+						className="flex flex-wrap items-center gap-3 rounded-md border p-3"
+					>
+						<p className="text-sm text-destructive">
+							{t("approvals:approvals.loadError", "Failed to load approvals")}
+						</p>
+						<Button variant="outline" onClick={() => refetch()}>
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
+				) : null}
 				<DataTableToolbar
 					search={search}
+					searchLabel={t(
+						"approvals:approvals.searchCorrections",
+						"Search time corrections",
+					)}
 					onSearchChange={setSearch}
 					searchPlaceholder={t(
 						"approvals:approvals.searchPlaceholder",
@@ -316,8 +360,10 @@ export function TimeCorrectionApprovalsTable() {
 					}
 				/>
 
-				<DataTable mobileLayout="stacked"
+				<DataTable
+					mobileLayout="stacked"
 					columns={columns}
+					getRowId={(approval) => approval.id}
 					data={filteredApprovals}
 					isFetching={isFetching}
 					emptyMessage={
@@ -331,11 +377,14 @@ export function TimeCorrectionApprovalsTable() {
 									"No pending time correction requests to review.",
 								)
 					}
-				/>
+				>
+					{(table) => <DataTablePagination table={table} />}
+				</DataTable>
 			</div>
 
 			{selectedApproval && (
 				<ApprovalActionDialog
+					key={`${selectedApproval.id}:${dialogAction}`}
 					open={dialogOpen}
 					onOpenChange={setDialogOpen}
 					action={dialogAction}
@@ -385,7 +434,7 @@ function buildTimeCorrectionColumns({
 						size="sm"
 						clockStatus="unknown"
 					/>
-					<div>
+					<div className="min-w-0 break-words">
 						<div className="font-medium">
 							{row.original.requester.user.name}
 						</div>
@@ -553,7 +602,8 @@ function buildTimeCorrectionColumns({
 									label: t("approvals:approvals.vehicleUse", "Vehicle use"),
 									value: vehicleUseText(
 										t,
-										row.original.workPeriod.metadataChanges.vehicleUse.requested,
+										row.original.workPeriod.metadataChanges.vehicleUse
+											.requested,
 										locale,
 									),
 								},
@@ -602,15 +652,16 @@ function buildTimeCorrectionColumns({
 			accessorKey: "reason",
 			header: t("approvals:approvals.reason", "Reason"),
 			cell: ({ row }) => (
-				<span className="max-w-[200px] truncate text-muted-foreground block">
+				<span className="block max-w-prose whitespace-normal break-words text-muted-foreground">
 					{row.original.reason || "—"}
 				</span>
 			),
 		},
 		{
 			id: "actions",
+			header: t("common.actions", "Actions"),
 			cell: ({ row }) => (
-				<div className="flex justify-end gap-2">
+				<div className="flex flex-wrap justify-end gap-2">
 					<Button
 						variant="outline"
 						size="sm"

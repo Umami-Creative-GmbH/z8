@@ -8,16 +8,27 @@ import {
 	type ApprovalWithAbsence,
 	getPendingApprovals,
 } from "@/app/[locale]/(app)/approvals/actions";
-import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
+import {
+	DataTable,
+	DataTablePagination,
+	DataTableSkeleton,
+	DataTableToolbar,
+} from "@/components/data-table-server";
 import { Button } from "@/components/ui/button";
 import { formatDateRange } from "@/lib/absences/date-utils";
 import { queryKeys } from "@/lib/query";
-import { buildAbsenceApprovalColumns, formatAbsenceDays } from "./absence-approval-columns";
+import {
+	buildAbsenceApprovalColumns,
+	formatAbsenceDays,
+} from "./absence-approval-columns";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 import { useAbsenceApprovalMutations } from "./use-absence-approval-mutations";
 
 // Filter approvals by search (client-side since typically small list)
-function filterApprovals(approvals: ApprovalWithAbsence[] | undefined, search: string) {
+function filterApprovals(
+	approvals: ApprovalWithAbsence[] | undefined,
+	search: string,
+) {
 	if (!approvals) return [];
 	if (!search) return approvals;
 
@@ -46,12 +57,19 @@ function AbsenceApprovalsLoadError({ onRetry }: { onRetry: () => void }) {
 	);
 }
 
-export function AbsenceApprovalsTable() {
+export function AbsenceApprovalsTable({
+	scope,
+}: {
+	scope?: { userId: string; organizationId: string };
+} = {}) {
 	const { t } = useTranslate();
 	const [search, setSearch] = useState("");
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const [dialogAction, setDialogAction] = useState<"approve" | "reject">("approve");
-	const [selectedApproval, setSelectedApproval] = useState<ApprovalWithAbsence | null>(null);
+	const [dialogAction, setDialogAction] = useState<"approve" | "reject">(
+		"approve",
+	);
+	const [selectedApproval, setSelectedApproval] =
+		useState<ApprovalWithAbsence | null>(null);
 
 	// Fetch approvals with React Query
 	const {
@@ -61,16 +79,20 @@ export function AbsenceApprovalsTable() {
 		isError,
 		refetch,
 	} = useQuery({
-		queryKey: queryKeys.approvals.absences(),
+		queryKey: queryKeys.approvals.absences(scope),
 		queryFn: async () => {
-			const result = await getPendingApprovals();
+			const result = await getPendingApprovals("en", scope);
 			return result.absenceApprovals;
 		},
 	});
 
-	const { approveMutation, rejectMutation } = useAbsenceApprovalMutations();
+	const { approveMutation, rejectMutation } =
+		useAbsenceApprovalMutations(scope);
 
-	const openDialog = (approval: ApprovalWithAbsence, action: "approve" | "reject") => {
+	const openDialog = (
+		approval: ApprovalWithAbsence,
+		action: "approve" | "reject",
+	) => {
 		setSelectedApproval(approval);
 		setDialogAction(action);
 		setDialogOpen(true);
@@ -79,12 +101,13 @@ export function AbsenceApprovalsTable() {
 	const handleConfirm = async (reason?: string) => {
 		if (!selectedApproval) return;
 
-		setDialogOpen(false);
-
 		if (dialogAction === "approve") {
-			approveMutation.mutate(selectedApproval.absence.id);
+			await approveMutation.mutateAsync(selectedApproval.absence.id);
 		} else {
-			rejectMutation.mutate({ absenceId: selectedApproval.absence.id, reason: reason! });
+			await rejectMutation.mutateAsync({
+				absenceId: selectedApproval.absence.id,
+				reason: reason!,
+			});
 		}
 	};
 
@@ -101,22 +124,43 @@ export function AbsenceApprovalsTable() {
 		return <DataTableSkeleton columnCount={6} rowCount={5} />;
 	}
 
-	if (isError) {
+	if (isError && !approvals) {
 		return <AbsenceApprovalsLoadError onRetry={() => refetch()} />;
 	}
 
 	return (
 		<>
 			<div className="space-y-4">
+				<p role="status" className="text-sm font-medium tabular-nums">
+					{t(
+						"approvals:approvals.pendingQueueCount",
+						"{count, plural, one {# pending request} other {# pending requests}}",
+						{ count: approvals?.length ?? 0 },
+					)}
+				</p>
+				{isError ? (
+					<div role="alert">
+						<AbsenceApprovalsLoadError onRetry={() => refetch()} />
+					</div>
+				) : null}
 				<DataTableToolbar
 					search={search}
+					searchLabel={t(
+						"approvals:approvals.searchAbsences",
+						"Search absence requests",
+					)}
 					onSearchChange={setSearch}
 					searchPlaceholder={t(
 						"approvals:approvals.searchPlaceholder",
 						"Search by name, email, or type...",
 					)}
 					actions={
-						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => refetch()}
+							disabled={isFetching}
+						>
 							{isFetching ? (
 								<IconLoader2 className="size-4 animate-spin" />
 							) : (
@@ -127,23 +171,31 @@ export function AbsenceApprovalsTable() {
 					}
 				/>
 
-				<DataTable mobileLayout="stacked"
+				<DataTable
+					mobileLayout="stacked"
 					columns={columns}
+					getRowId={(approval) => approval.id}
 					data={filteredApprovals}
 					isFetching={isFetching}
 					emptyMessage={
 						search
-							? t("approvals:approvals.noSearchResults", "No approvals match your search.")
+							? t(
+									"approvals:approvals.noSearchResults",
+									"No approvals match your search.",
+								)
 							: t(
 									"approvals:approvals.noAbsenceApprovals",
 									"No pending absence requests to review.",
 								)
 					}
-				/>
+				>
+					{(table) => <DataTablePagination table={table} />}
+				</DataTable>
 			</div>
 
 			{selectedApproval && (
 				<ApprovalActionDialog
+					key={`${selectedApproval.id}:${dialogAction}`}
 					open={dialogOpen}
 					onOpenChange={setDialogOpen}
 					action={dialogAction}

@@ -1,0 +1,161 @@
+{
+  "nextVersion": "16.4.6",
+  "bundler": "Turbopack",
+  "compilation": {
+    "issues": []
+  },
+  "errors": {
+    "configErrors": [],
+    "sessionErrors": []
+  },
+  "routeCount": 318,
+  "includesR010": true,
+  "pageMetadata": {
+    "sessions": [
+      {
+        "url": "/en/approvals/deputy-decisions/a90a1513-3522-4c06-8afb-902c553c391b",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(app)/approvals/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/(app)/approvals/deputy-decisions/[absenceId]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/approvals/deputy-decisions/[absenceId]/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      },
+      {
+        "url": "/en/approvals/deputy-decisions/a90a1513-3522-4c06-8afb-902c553c391b",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(app)/approvals/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/(app)/approvals/deputy-decisions/[absenceId]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/approvals/deputy-decisions/[absenceId]/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -19,13 +19,20 @@ export type {
 	BulkDecisionResult,
 	BulkDecisionSuccess,
 } from "@/lib/approvals/domain/types";
-export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/approvals/server/types";
+export type {
+	ApprovalWithAbsence,
+	ApprovalWithTimeCorrection,
+} from "@/lib/approvals/server/types";
 
-export async function approveAbsence(...args: Parameters<typeof approveAbsenceAction>) {
+export async function approveAbsence(
+	...args: Parameters<typeof approveAbsenceAction>
+) {
 	return approveAbsenceAction(...args);
 }
 
-export async function rejectAbsence(...args: Parameters<typeof rejectAbsenceAction>) {
+export async function rejectAbsence(
+	...args: Parameters<typeof rejectAbsenceAction>
+) {
 	return rejectAbsenceAction(...args);
 }
 
@@ -33,13 +40,28 @@ export async function getPendingApprovalCounts() {
 	return getPendingApprovalCountsAction();
 }
 
-export async function getPendingApprovals(locale = "en") {
+export async function getPendingApprovals(
+	locale = "en",
+	scope?: { userId: string; organizationId: string },
+) {
 	const currentEmployee = await getCurrentEmployeeAction();
+	if (
+		scope &&
+		(!currentEmployee ||
+			currentEmployee.userId !== scope.userId ||
+			currentEmployee.organizationId !== scope.organizationId ||
+			!["manager", "admin"].includes(currentEmployee.role))
+	) {
+		throw new Error("Approval scope changed. Refresh to continue.");
+	}
 	if (!currentEmployee) return getPendingApprovalsAction();
 
 	const [result, timezone, timeFormat] = await Promise.all([
 		getPendingApprovalsAction(),
-		getEffectiveTimezone(currentEmployee.userId, currentEmployee.organizationId),
+		getEffectiveTimezone(
+			currentEmployee.userId,
+			currentEmployee.organizationId,
+		),
 		getUserTimeFormat(currentEmployee.userId),
 	]);
 	const displayContext = { locale, timezone, timeFormat } as const;

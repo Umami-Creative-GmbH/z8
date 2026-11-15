@@ -208,10 +208,12 @@ export function normalizeAppPath(pathname: string): string {
 export function appPageOwnsHeading(pathname: string): boolean {
 	const path = normalizeAppPath(pathname);
 	return (
+		/^\/approvals\/deputy-decisions\/[^/]+$/.test(path) ||
 		path === "/" ||
 		path === "/time-tracking" ||
 		path === "/absences" ||
 		path === "/compliance" ||
+		path === "/approvals" ||
 		path === "/analytics" ||
 		path === "/analytics/overtime-burn-down" ||
 		path === "/analytics/team-performance" ||
