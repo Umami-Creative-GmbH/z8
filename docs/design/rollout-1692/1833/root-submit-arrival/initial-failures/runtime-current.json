@@ -1,0 +1,25 @@
+{
+  "head": "13b4c571e0716837b589438c3686eccc12f94de5",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+      "canonicalSha256": "342353ed99a17d622167bcd75bdb64d4fa931db8db3654a6c666aea96884eb56"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+      "canonicalSha256": "f5039da4a2ef72543c9366d98f9f6d1a43cc0c3c72d73d6870e77b060072eb1f"
+    }
+  ],
+  "checks": [
+    "Personal non-admin arrival retains the enabled reminder and moderate preset"
+  ],
+  "captures": [],
+  "errors": [],
+  "commands": {
+    "aborted": 0,
+    "held": 0,
+    "saveResponses": [],
+    "skipResponses": []
+  },
+  "qualification": "Current-source normal personal-preference continuity for a non-admin fixture actor, using actual generated Next actions and original held/aborted transport. Immediate pre-validation Activity race remains assembled-page proof. Current ready/pending captures are not historical before/after. Normal ephemeral sign-in, no cookie/state transfer or persistence."
+}

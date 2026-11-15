@@ -1,0 +1,26 @@
+{
+  "head": "5c0a304a4348dc3939099ca725834e2d6de2fbc3",
+  "source": [
+    {
+      "path": "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+      "canonicalSha256": "5b76976c9ac06dc04f0fe538ae5475cddf84e85f0b65d70657e3b8beac29b82e"
+    },
+    {
+      "path": "apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+      "canonicalSha256": "42184819c71c0c9e0831df63b821975070700fe067541877bc5e89cb0a7f9045"
+    }
+  ],
+  "checks": [],
+  "errors": [],
+  "commands": 0,
+  "qualification": "Real current Payroll UI with normal ephemeral sign-in in an owned generated fixture. Dismissal is held then aborted before transport, preserving server payroll state. Optional fixture clock-in uses the canonical public endpoint only if no dismissible row exists; no SQL identity/role/grant changes.",
+  "authorizationSetup": {
+    "canonicalPublicSettingsAction": true,
+    "createdOwnFixtureGrant": true
+  },
+  "clockSetup": {
+    "http": 200,
+    "success": true,
+    "code": null
+  }
+}

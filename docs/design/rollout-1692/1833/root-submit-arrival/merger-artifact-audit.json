@@ -1,0 +1,479 @@
+{
+  "head": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+  "tree": "3a16906c97341da319fa1bd3d0f277d73ffc2fce",
+  "parents": [
+    "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+    "aeb655393c1d02aeb9ef67b8a53e860f87b3403c"
+  ],
+  "checks": [
+    "exact parents",
+    "exact independent merge tree",
+    "incoming required merge base",
+    "exact115 incoming changed paths",
+    "all115 arriving Git blobs preserved",
+    "only two owned prior application paths change",
+    "46 verified ticket records retained",
+    "ledger and README byte-preserved",
+    "157-node159-edge graph unchanged",
+    "all172 source templates map once to153pages+19aliases",
+    "before matched capture source pin",
+    "after matched capture source pin",
+    "runtime and checkpoint pins equal current source",
+    "25 historical runtime assertions recorded passed",
+    "8 historical personal-scope assertions recorded passed",
+    "current personal action/service/shell/progress contracts preserved",
+    "nine incoming PNGs fully decode with CRC/filter validation",
+    "source diff whitespace passes"
+  ],
+  "pins": [
+    {
+      "phase": "before",
+      "recordedSHA256": "079b8da7bdf60c99c88f42d2e8665802c44130ffec9c1becd664c93ad70f51c1",
+      "rawSHA256": "079b8da7bdf60c99c88f42d2e8665802c44130ffec9c1becd664c93ad70f51c1",
+      "representation": "exact raw",
+      "ref": "111dc9e50908ec7f8c478b97c5a96f809b696c0a"
+    },
+    {
+      "phase": "after",
+      "recordedSHA256": "402bd3efc0758f4245ee046df7cdab8a937c78e37f473904a6e6f8a018e14bdb",
+      "rawSHA256": "402bd3efc0758f4245ee046df7cdab8a937c78e37f473904a6e6f8a018e14bdb",
+      "representation": "exact raw",
+      "ref": "01c1e9496f7aa68856548e709ce5b133c23f7d12"
+    }
+  ],
+  "pngs": [
+    {
+      "path": "docs/design/rollout-1692/1833/after-custom-desktop-light.png",
+      "sha256": "2add2c284a41f6a725c1f4fb6ce1daae8d1324944988d3d13fbcd28a21fee8e3",
+      "width": 1600,
+      "height": 1284,
+      "decodedBytes": 6163200
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/after-desktop-light.png",
+      "sha256": "77a1aedee8c7caf9011325c0fd570f481ceccb9703fa80f18c919cbbca5707db",
+      "width": 1600,
+      "height": 1202,
+      "decodedBytes": 5769600
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/after-pending.png",
+      "sha256": "a38df9c7640dc6ae4ddab7cd1edecce6eacfb6a03b346e9c9a0349a862263a2e",
+      "width": 1600,
+      "height": 1284,
+      "decodedBytes": 6163200
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/after-phone-large-dark.png",
+      "sha256": "aebf4dc8ee6d26d8ffc2513e03016d8cbf5c4a70c5ab735c5b6593e4e98277c9",
+      "width": 390,
+      "height": 1652,
+      "decodedBytes": 1932840
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/after-real-refusal.png",
+      "sha256": "cfc2929826617abbef32f903faafd19c83037f4b21efd2f02839f75769c3c244",
+      "width": 2400,
+      "height": 1522,
+      "decodedBytes": 10958400
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/after-transport-failure.png",
+      "sha256": "48393786adf87b83a380664d83e43f2b2ce32f69e4878fa9699894e35cb042a5",
+      "width": 1600,
+      "height": 1354,
+      "decodedBytes": 6499200
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/after-wide-large-dark.png",
+      "sha256": "cf7a0801f7772b2faad3eb10f3726ec01c8b53abac47a5f4f8dd46f62a6c979f",
+      "width": 2400,
+      "height": 1443,
+      "decodedBytes": 10389600
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/before-desktop-light.png",
+      "sha256": "e7ccb196405489005166993e6e59b20dd4e169d9ffc2d1d193aec344e2e3454e",
+      "width": 1600,
+      "height": 1183,
+      "decodedBytes": 5678400
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/saved-settings-readback.png",
+      "sha256": "bcb99c4843c797018828be5833d54f81b3220c9a6c95752a200593af2c4f8429",
+      "width": 1600,
+      "height": 1000,
+      "decodedBytes": 4800000
+    }
+  ],
+  "links": [
+    "1833/logs/red-duplicate.log",
+    "1833/logs/green-duplicate.log",
+    "1833/logs/red-scope.log",
+    "1833/logs/green-scope.log",
+    "1833/logs/red-inline.log",
+    "1833/logs/green-inline.log",
+    "1833/logs/red-account-pending.log",
+    "1833/logs/green-account-pending.log",
+    "1833/logs/red-return-navigation.log",
+    "1833/logs/green-return-navigation.log",
+    "1833/runtime-assertions.json",
+    "1833/personal-scope-runtime.json",
+    "1833/logs/postgres-integration.log",
+    "1833/next-runtime.json",
+    "1833/capture-provenance.json",
+    "1833/before-desktop-light.png",
+    "1833/after-desktop-light.png",
+    "1833/after-custom-desktop-light.png",
+    "1833/after-pending.png",
+    "1833/after-transport-failure.png",
+    "1833/after-real-refusal.png",
+    "1833/saved-settings-readback.png",
+    "1833/after-phone-large-dark.png",
+    "1833/after-wide-large-dark.png",
+    "1833/logs/regressions-final.log",
+    "1833/logs/typecheck-final.log",
+    "1833/logs/typecheck.log",
+    "1833/logs/biome-pass.log",
+    "1833/logs/doctor-source-final.log",
+    "1833/topology-corrected.json",
+    "1833/logs/merged-typecheck.log",
+    "1833/logs/checkpoint-regressions.log",
+    "1833/logs/checkpoint-biome.log",
+    "1833/logs/merged-doctor.log",
+    "1833/logs/merged-runtime-retry.log",
+    "1833/logs/merged-personal-scope.log",
+    "1833/logs/merged-mcp.log",
+    "1833/logs/merged-auth.log",
+    "1833/logs/merged-runtime.log",
+    "1833/merged-runtime-failed.json",
+    "1833/teardown.json",
+    "1833/final-checkpoint.json",
+    "1833/logs/final-383c64-regressions.log",
+    "1833/logs/final-383c64-types.log",
+    "1833/logs/final-383c64-biome.log",
+    "1833/logs/final-383c64-doctor.log",
+    "1833/logs/final-383c64-topology.log",
+    "1833/logs/final-383c64-teardown.log"
+  ],
+  "qualifications": [
+    "Confirmed queued pre-dispatch Activity-return Save is a blocking current-source defect; no source correction or live fixture was attempted by this merger.",
+    "All historical runtime/PG/native outcomes are inherited. 25+8 browser assertions and98PG tests predate383c64; final worker static checks target383c64; root merge01c1e949 adds no fresh browser/PG/native pass.",
+    "Historical runtime scripts load previously acquired cookies. Current user restriction forbids reusing that mechanism; future runtime requires normal isolated transient sign-in without cookie/state transfer or restore.",
+    "Native authenticated React introspection was unpassed in incoming evidence.",
+    "Full build, Tolgee cadence synchronization, providers, physical devices, true zoom, long translations and global transitions remain open.",
+    "Raw logs and archive whitespace are preserved; source whitespace is evaluated separately."
+  ],
+  "preservation": {
+    "priorPaths": 13730,
+    "unchangedPriorPaths": 13728,
+    "changedPriorPaths": [
+      "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx"
+    ],
+    "arrivingPaths": 115,
+    "manifest": "preservation-manifest.json",
+    "manifestSHA256": "58f4d10c47dde8011de4a61bd9cbb1f262f31b2b87c9c0172f39dbb25dc0aed1"
+  },
+  "ancestors": [
+    {
+      "issue": 1693,
+      "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "ancestor": true
+    },
+    {
+      "issue": 1694,
+      "commit": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "ancestor": true
+    },
+    {
+      "issue": 1695,
+      "commit": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "ancestor": true
+    },
+    {
+      "issue": 1853,
+      "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    },
+    {
+      "issue": 1700,
+      "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "ancestor": true
+    },
+    {
+      "issue": 1701,
+      "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "ancestor": true
+    },
+    {
+      "issue": 1820,
+      "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "ancestor": true
+    },
+    {
+      "issue": 1702,
+      "commit": "416c04fc1b65f798422ddeecb8413249b064f715",
+      "ancestor": true
+    },
+    {
+      "issue": 1703,
+      "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "ancestor": true
+    },
+    {
+      "issue": 1704,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1705,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1706,
+      "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "ancestor": true
+    },
+    {
+      "issue": 1707,
+      "commit": "6fa8147fae492939056a76e83e327e520d921ae1",
+      "ancestor": true
+    },
+    {
+      "issue": 1708,
+      "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "ancestor": true
+    },
+    {
+      "issue": 1709,
+      "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "ancestor": true
+    },
+    {
+      "issue": 1710,
+      "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "ancestor": true
+    },
+    {
+      "issue": 1711,
+      "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "ancestor": true
+    },
+    {
+      "issue": 1712,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1713,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1714,
+      "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "ancestor": true
+    },
+    {
+      "issue": 1715,
+      "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "ancestor": true
+    },
+    {
+      "issue": 1716,
+      "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "ancestor": true
+    },
+    {
+      "issue": 1717,
+      "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "ancestor": true
+    },
+    {
+      "issue": 1718,
+      "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "ancestor": true
+    },
+    {
+      "issue": 1719,
+      "commit": "a9b472e5864f386d881604605d593cffc189d61a",
+      "ancestor": true
+    },
+    {
+      "issue": 1821,
+      "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1822,
+      "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "ancestor": true
+    },
+    {
+      "issue": 1823,
+      "commit": "65b74963b69e9536af5e862199fa43a8583473cc",
+      "ancestor": true
+    },
+    {
+      "issue": 1824,
+      "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "ancestor": true
+    },
+    {
+      "issue": 1825,
+      "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "ancestor": true
+    },
+    {
+      "issue": 1826,
+      "commit": "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "ancestor": true
+    },
+    {
+      "issue": 1720,
+      "commit": "ced095089163e69b232c2bce96a40cba800186d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1721,
+      "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "ancestor": true
+    },
+    {
+      "issue": 1722,
+      "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "ancestor": true
+    },
+    {
+      "issue": 1723,
+      "commit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "ancestor": true
+    },
+    {
+      "issue": 1827,
+      "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "ancestor": true
+    },
+    {
+      "issue": 1828,
+      "commit": "752c500833e751df9988a3b2434d240124b89a51",
+      "ancestor": true
+    },
+    {
+      "issue": 1829,
+      "commit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "ancestor": true
+    },
+    {
+      "issue": 1830,
+      "commit": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+      "ancestor": true
+    },
+    {
+      "issue": 1831,
+      "commit": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+      "ancestor": true
+    },
+    {
+      "issue": 1832,
+      "commit": "5646e7b320376d2605b80e231b6b828f4b35f670",
+      "ancestor": true
+    },
+    {
+      "issue": 1724,
+      "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "ancestor": true
+    },
+    {
+      "issue": 1725,
+      "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "ancestor": true
+    },
+    {
+      "issue": 1726,
+      "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "ancestor": true
+    },
+    {
+      "issue": 1727,
+      "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "ancestor": true
+    },
+    {
+      "issue": 1745,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    }
+  ],
+  "graph": {
+    "nodes": 157,
+    "edges": 159,
+    "pages": 153
+  },
+  "currentSource": {
+    "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+    "blob": "14338efc7ff89c565c2abe404c18877f2cb383cb",
+    "sha256": "402bd3efc0758f4245ee046df7cdab8a937c78e37f473904a6e6f8a018e14bdb"
+  },
+  "jsons": [
+    "docs/design/rollout-1692/1833/capture-provenance.json",
+    "docs/design/rollout-1692/1833/final-checkpoint.json",
+    "docs/design/rollout-1692/1833/merged-runtime-failed.json",
+    "docs/design/rollout-1692/1833/next-runtime.json",
+    "docs/design/rollout-1692/1833/personal-scope-runtime.json",
+    "docs/design/rollout-1692/1833/runtime-assertions.json",
+    "docs/design/rollout-1692/1833/runtime-attempt-2-assertions.json",
+    "docs/design/rollout-1692/1833/teardown.json",
+    "docs/design/rollout-1692/1833/topology-corrected.json"
+  ],
+  "scripts": [
+    "docs/design/rollout-1692/1833/verify-captures.mjs",
+    "docs/design/rollout-1692/1833/verify-personal-scope.mjs",
+    "docs/design/rollout-1692/1833/verify-runtime.mjs"
+  ],
+  "historicalTopologyKeys": [
+    "root",
+    "physicalParents",
+    "lockSHA256",
+    "localPackageLinks",
+    "links"
+  ],
+  "sourceWhitespace": {
+    "argv": [
+      "git",
+      "diff",
+      "--check",
+      "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+      "HEAD",
+      "--",
+      "apps/webapp/src/app/[locale]/onboarding/wellness"
+    ],
+    "exitCode": 0
+  },
+  "archiveWhitespace": {
+    "argv": [
+      "git",
+      "diff",
+      "--check",
+      "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+      "HEAD"
+    ],
+    "exitCode": 2
+  },
+  "literalAudit": {
+    "cookieTransfer": [
+      "verify-runtime.mjs",
+      "verify-captures.mjs",
+      "verify-personal-scope.mjs"
+    ],
+    "captureSubstitution": [
+      "verify-captures.mjs"
+    ],
+    "newCadenceHasStaticDefault": true,
+    "liveRuntimeRerunAfter383c64": false,
+    "finalWorkerTypesLog": "next typegen + application/workflow/smoke tsc stages; no complete shell argv in raw output",
+    "currentCommands": "Every new package command is separately recorded with environment false plus CLI false; historical guard claims remain report-attested when raw logs omit full argv."
+  }
+}
