@@ -1,0 +1,580 @@
+{
+  "head": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+  "tree": "3a16906c97341da319fa1bd3d0f277d73ffc2fce",
+  "parents": [
+    "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+    "aeb655393c1d02aeb9ef67b8a53e860f87b3403c"
+  ],
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+      "blob": "14338efc7ff89c565c2abe404c18877f2cb383cb",
+      "sha256": "402bd3efc0758f4245ee046df7cdab8a937c78e37f473904a6e6f8a018e14bdb",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+      "blob": "75a6c2c423b618e627a28e72c51105a25df8a311",
+      "sha256": "a3373fdd8d8954851ce584fafdd5475f1e7e9aed2d7d1aff7e3c5608cf7322fb",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+      "blob": "30748feda06bb39785d4b18b5fd19b8f45fa8132",
+      "sha256": "7dc573219bc5aeab6016fb187441b8cc20435ea2641d4824d0a8deb363d83b3c",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx",
+      "blob": "86aec75ea149d8c2b820ab65e1f6addd2bb42fc6",
+      "sha256": "75e025ffe12ad4708675dbba879b536d2d65ea4a034da5a992881223c3839309",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "blob": "e8862e33fdbdf549964e6cb6e4b8e34f2b1147e8",
+      "sha256": "967973698559e8dcb2fc8851c10011019279111cb2020d9c19c74905728518a5",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "blob": "4ec2a1ffe6efcbf95b0c9c0c3c4e98f6639d59ad",
+      "sha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/run-onboarding-action.ts",
+      "blob": "1527ce57cc02420626bfd9f00e43b06991bce15b",
+      "sha256": "df4094035a6e83bee0de2ffd25b9fe40304dbbcd9690ccd5cab398f547997d01",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+      "newline": "physical CRLF"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "blob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "newline": "physical LF"
+    }
+  ],
+  "runs": [
+    {
+      "name": "exact-unit",
+      "physicalFiles": 23,
+      "assertions": 316,
+      "passed": 316,
+      "failed": 0,
+      "success": true
+    },
+    {
+      "name": "compatibility-unit",
+      "physicalFiles": 176,
+      "assertions": 1860,
+      "passed": 1860,
+      "failed": 0,
+      "success": true
+    },
+    {
+      "name": "public-probes",
+      "physicalFiles": 1,
+      "assertions": 12,
+      "passed": 11,
+      "failed": 1,
+      "success": false
+    }
+  ],
+  "repeatedNames": [
+    {
+      "run": "compatibility-unit",
+      "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/app-sidebar.test.tsx",
+      "name": "app sidebar compliance navigation hides Personnel Files navigation from the personnel file access resolver (flag true, #866)",
+      "occurrences": 2
+    },
+    {
+      "run": "compatibility-unit",
+      "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/app-sidebar.test.tsx",
+      "name": "app sidebar compliance navigation hides Finance navigation from the finance actor's read access (#753)",
+      "occurrences": 2
+    },
+    {
+      "run": "compatibility-unit",
+      "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/organization/employee-lifecycle-actions.test.tsx",
+      "name": "EmployeeLifecycleActions mutations keeps non-allowlisted secret-bearing server failures generic",
+      "occurrences": 2
+    },
+    {
+      "run": "compatibility-unit",
+      "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/organization/employee-lifecycle-error.test.ts",
+      "name": "EmployeeLifecycleActionError does not expose unknown code/message combinations",
+      "occurrences": 2
+    },
+    {
+      "run": "compatibility-unit",
+      "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/payroll/actions.dismiss-blocker.test.ts",
+      "name": "dismissPayrollBlockerAction rejects invalid blocker input before database access",
+      "occurrences": 2
+    }
+  ],
+  "deduplication": "Physical realpath normalized for Windows case, full test name and same-name per-file occurrence. Exact and broad selections run whole files without name filters; overlapping assertions count once. Parameter repetitions retain occurrence ordinal.",
+  "uniqueFiles": 177,
+  "uniqueCases": 1872,
+  "uniquePassed": 1871,
+  "uniqueFailed": 1,
+  "failed": [
+    {
+      "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1833-audit/wellness-public.test.tsx",
+      "name": "Independent wellness public contract discards a Save queued before Activity-return and accepts a fresh action",
+      "occurrence": 1,
+      "status": "failed",
+      "failureMessages": [
+        "AssertionError: expected \"vi.fn()\" to not be called at all, but actually been called 1 times\n\nReceived:\n\n  1st vi.fn() call:\n\n    Array [\n      Object {\n        \"enableWaterReminder\": true,\n        \"waterReminderDailyGoal\": 20,\n        \"waterReminderIntervalMinutes\": 45,\n        \"waterReminderPreset\": \"moderate\",\n      },\n    ]\n\n\nNumber of calls: 1\n\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1928:51)\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/chai@6.3.0/node_modules/chai/index.js:1737:25)\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1833-audit/wellness-public.test.tsx:38:20\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "file": "artifacts-command.json",
+      "name": "artifacts",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "node",
+        ".tmp/merge1833-audit/verify-artifacts.mjs"
+      ],
+      "started": "2026-11-15T22:49:53.8024486Z",
+      "exitCode": 0
+    },
+    {
+      "file": "biome-discovery-crlf-command.json",
+      "name": "biome-discovery-crlf",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--line-ending=crlf",
+        "src/app/[locale]/onboarding/wellness/page-client.tsx",
+        "src/app/[locale]/onboarding/wellness/page.test.tsx"
+      ],
+      "started": "2026-11-15T22:48:53.5575808Z",
+      "exitCode": 1
+    },
+    {
+      "file": "biome-explicit-crlf-command.json",
+      "name": "biome-explicit-crlf",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--config-path=biome.jsonc",
+        "--line-width=100",
+        "--line-ending=crlf",
+        "src/app/[locale]/onboarding/wellness/page-client.tsx",
+        "src/app/[locale]/onboarding/wellness/page.test.tsx"
+      ],
+      "started": "2026-11-15T22:48:52.1701061Z",
+      "exitCode": 0
+    },
+    {
+      "file": "biome-explicit-lint-command.json",
+      "name": "biome-explicit-lint",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--config-path=biome.jsonc",
+        "--formatter-enabled=false",
+        "src/app/[locale]/onboarding/wellness/page-client.tsx",
+        "src/app/[locale]/onboarding/wellness/page.test.tsx"
+      ],
+      "started": "2026-11-15T22:48:52.5068346Z",
+      "exitCode": 0
+    },
+    {
+      "file": "compatibility-unit-command.json",
+      "name": "compatibility-unit",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "--maxWorkers",
+        "1",
+        "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+        "src/app/[locale]/(app)/app-layout-content.test.tsx",
+        "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+        "src/app/[locale]/(app)/my-requests/actions.test.ts",
+        "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+        "src/app/[locale]/(app)/organization",
+        "src/app/[locale]/(app)/payroll",
+        "src/app/[locale]/(app)/settings/employees/work-balance-actions.test.ts",
+        "src/app/[locale]/(auth)/layout.test.tsx",
+        "src/app/[locale]/init/page-client.test.tsx",
+        "src/app/[locale]/onboarding",
+        "src/app/api/notifications/route.test.ts",
+        "src/app/api/tenant-mutation-scope.test.ts",
+        "src/components/app-sidebar.test.tsx",
+        "src/components/auth-shell-controls.test.tsx",
+        "src/components/data-table-server",
+        "src/components/data-table-server/data-table-toolbar.test.tsx",
+        "src/components/equipment/equipment-personal.test.tsx",
+        "src/components/equipment/equipment-routes.test.tsx",
+        "src/components/font-size-preference.test.tsx",
+        "src/components/font-size-toggle.test.tsx",
+        "src/components/nav-main.test.tsx",
+        "src/components/notifications",
+        "src/components/onboarding",
+        "src/components/onboarding/progress-indicator.test.tsx",
+        "src/components/organization",
+        "src/components/organization-mfa",
+        "src/components/organization-mfa/verification-lifetime.test.tsx",
+        "src/components/payroll",
+        "src/components/personnel-file/my-documents.test.tsx",
+        "src/components/providers/organization-context-provider.test.tsx",
+        "src/components/providers/view-refresh-migrated.test.tsx",
+        "src/components/providers/view-refresh-provider.test.tsx",
+        "src/components/settings/employee-offboarding",
+        "src/components/settings/work-balance",
+        "src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx",
+        "src/components/shared-pathname-boundaries-source.test.ts",
+        "src/components/sidebar-feedback.test.tsx",
+        "src/components/site-header.test.tsx",
+        "src/components/theme-provider.test.tsx",
+        "src/components/ui/action-panel.test.tsx",
+        "src/components/ui/dialog.test.tsx",
+        "src/components/ui/page-header.test.tsx",
+        "src/components/ui/sheet.test.tsx",
+        "src/components/ui/sidebar.test.tsx",
+        "src/components/ui/sidebar-hydration.test.tsx",
+        "src/components/ui/table.test.tsx",
+        "src/components/ui/tanstack-form.test.tsx",
+        "src/hooks/use-notifications.test.ts",
+        "src/lib/async/map-concurrently.test.ts",
+        "src/lib/auth/organization-session-revocation.test.ts",
+        "src/lib/auth/request-session.test.ts",
+        "src/lib/auth/use-auth-page-session.test.tsx",
+        "src/lib/datetime/birthday.test.ts",
+        "src/lib/datetime/calendar-date.test.ts",
+        "src/lib/effect/services/auth.service.test.ts",
+        "src/lib/effect/services/onboarding.service.test.ts",
+        "src/lib/employee-lifecycle/final-payout.test.ts",
+        "src/lib/employee-lifecycle/joining/employee-writers.test.ts",
+        "src/lib/enterprise-identity/session-sso.test.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/notifications/__tests__",
+        "src/lib/notifications/localized-notification.test.ts",
+        "src/lib/notifications/recipient-display-context.test.ts",
+        "src/lib/notifications/recipient-locale.test.ts",
+        "src/lib/organization/creation-policy.test.ts",
+        "src/lib/organization-mfa/authentication-plugin.test.ts",
+        "src/lib/payroll-access",
+        "src/lib/payroll-collection/payroll-work-collection.test.ts",
+        "src/lib/payroll-export/__tests__/calendar-boundaries.test.ts",
+        "src/lib/payroll-export/__tests__/data-fetcher.canonical.test.ts",
+        "src/lib/payroll-export/comparison-csv.test.ts",
+        "src/lib/payroll-export/comparison-explanations.test.ts",
+        "src/lib/payroll-export/comparison-model.test.ts",
+        "src/lib/payroll-export/comparison-validation.test.ts",
+        "src/lib/payroll-export/export-service.formats.test.ts",
+        "src/lib/payroll-export/format-registry.test.ts",
+        "src/lib/payroll-export/formatters/datev-output-evidence.test.ts",
+        "src/lib/payroll-export/formatters/expense-lines.test.ts",
+        "src/lib/payroll-export/formatters/lexware-output-evidence.test.ts",
+        "src/lib/payroll-export/formatters/overtime-payouts.test.ts",
+        "src/lib/payroll-export/formatters/sage-output-evidence.test.ts",
+        "src/lib/payroll-readiness/get-payroll-readiness.test.ts",
+        "src/lib/payroll-readiness/personnel-identifier-clashes.test.ts",
+        "src/lib/payroll-workspace",
+        "src/lib/self-service-requests",
+        "src/lib/time-tracking/closed-months/calendar-day.test.ts",
+        "src/lib/time-tracking/closed-months/close-scope.test.ts",
+        "src/lib/time-tracking/closed-months/permissions.test.ts",
+        "src/lib/time-tracking/closed-months/rules.test.ts",
+        "src/lib/travel-expenses/__tests__/payroll-lines.test.ts",
+        "src/lib/travel-expenses/__tests__/payroll-run-classification.test.ts",
+        "src/lib/user-preferences",
+        "src/lib/validations/onboarding.test.ts",
+        "src/lib/work-balance",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "--reporter=json",
+        "--outputFile",
+        "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1833-audit\\compatibility-unit.json"
+      ],
+      "started": "2026-11-15T22:47:44.1816024Z",
+      "exitCode": 0
+    },
+    {
+      "file": "doctor-command.json",
+      "name": "doctor",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "react-doctor",
+        "apps/webapp",
+        "--scope",
+        "changed",
+        "--base",
+        "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+        "--verbose",
+        "--no-supply-chain",
+        "--no-telemetry",
+        "--no-score",
+        "--json",
+        "--json-out",
+        "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1833-audit\\doctor.json",
+        "--max-duration",
+        "90"
+      ],
+      "started": "2026-11-15T22:49:38.6005900Z",
+      "exitCode": 0
+    },
+    {
+      "file": "exact-unit-command.json",
+      "name": "exact-unit",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "--maxWorkers",
+        "1",
+        "src/app/[locale]/onboarding",
+        "src/components/onboarding/progress-indicator.test.tsx",
+        "src/components/ui/tanstack-form.test.tsx",
+        "src/lib/effect/services/onboarding.service.test.ts",
+        "src/lib/user-preferences",
+        "src/lib/validations/onboarding.test.ts",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "--reporter=json",
+        "--outputFile",
+        "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1833-audit\\exact-unit.json"
+      ],
+      "started": "2026-11-15T22:45:24.7661257Z",
+      "exitCode": 0
+    },
+    {
+      "file": "public-probes-command.json",
+      "name": "public-probes",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "../../.tmp/merge1833-audit/vitest.config.ts",
+        "--project",
+        "audit",
+        "--maxWorkers",
+        "1",
+        "--reporter=json",
+        "--outputFile",
+        "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1833-audit\\public-probes.json"
+      ],
+      "started": "2026-11-15T22:44:23.0709205Z",
+      "exitCode": 1
+    },
+    {
+      "file": "types-command.json",
+      "name": "types",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+      "sourceHead": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "env": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "typecheck"
+      ],
+      "started": "2026-11-15T22:49:08.4608111Z",
+      "exitCode": 0
+    }
+  ],
+  "pnpmGuards": [
+    {
+      "command": "artifacts-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "command": "biome-discovery-crlf-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "command": "biome-explicit-crlf-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "command": "biome-explicit-lint-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "command": "compatibility-unit-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "command": "doctor-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "command": "exact-unit-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "command": "public-probes-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "command": "types-command.json",
+      "environmentFalse": true,
+      "cliFalse": true
+    }
+  ],
+  "doctor": {
+    "version": "0.9.22",
+    "sourceRevision": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+    "baseRef": "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+    "analyzedFiles": [
+      "src/app/[locale]/onboarding/wellness/page-client.tsx",
+      "src/app/[locale]/onboarding/wellness/page.test.tsx"
+    ],
+    "errors": 0,
+    "warnings": 0,
+    "complete": true,
+    "skippedChecks": []
+  },
+  "preservation": {
+    "priorPaths": 13730,
+    "unchangedPriorPaths": 13728,
+    "changedPriorPaths": [
+      "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx"
+    ],
+    "arrivingPaths": 115,
+    "manifest": "preservation-manifest.json",
+    "manifestSHA256": "58f4d10c47dde8011de4a61bd9cbb1f262f31b2b87c9c0172f39dbb25dc0aed1"
+  },
+  "artifactSummary": {
+    "checks": 18,
+    "verifiedAncestors": 46,
+    "pngs": 9,
+    "jsons": 9,
+    "scripts": 3,
+    "links": 48,
+    "sourceWhitespace": 0,
+    "archiveWhitespace": 2,
+    "full": "artifact-audit.json",
+    "manifestBytes": 3533195
+  },
+  "acceptance": "BLOCKED: one confirmed pre-dispatch Activity-return Save requires root-owned submission-arrival metadata correction. Current native merge is provisional, not a verifiedCommit.",
+  "runtimeProvenance": {
+    "freshRuntime": false,
+    "freshPostgres": false,
+    "freshNative": false,
+    "reason": "No runtime fixture was started while confirmed source blocker remained. Incoming25+8browser/98PG/Next evidence remains pinned before383c64; final worker static checks target383c64. Root46prior verified ticket outcomes are ancestry preservation, not reruns."
+  },
+  "reviews": {
+    "react": "Stable top-level form/header/settings components; page-lifetime per-account draft/write owner separated from per-arrival continuation. A pre-validation Save activation is not bound to its arrival: confirmed public defect. No new fetch waterfall or global business controller.",
+    "composition": "One real form and one h1 in ready/pending states; controls remain explicit and per-account drafts do not authorize workspace access. Canonical actions/services, root profile/welcome/policy fixes and shell/progress ownership stay byte-preserved.",
+    "webGuidelines": {
+      "source": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+      "review": "Fresh primary guidelines reviewed: labels, real keyboard-capable controls, semantic headings, announced retained errors and pending status, wrapping phone actions, token surfaces and global reduced-motion handling. Historical layout screenshots inspected; no fresh browser/a11y acceptance implied."
+    }
+  },
+  "qualifications": [
+    "Confirmed queued pre-dispatch Activity-return Save is a blocking current-source defect; no source correction or live fixture was attempted by this merger.",
+    "All historical runtime/PG/native outcomes are inherited. 25+8 browser assertions and98PG tests predate383c64; final worker static checks target383c64; root merge01c1e949 adds no fresh browser/PG/native pass.",
+    "Historical runtime scripts load previously acquired cookies. Current user restriction forbids reusing that mechanism; future runtime requires normal isolated transient sign-in without cookie/state transfer or restore.",
+    "Native authenticated React introspection was unpassed in incoming evidence.",
+    "Full build, Tolgee cadence synchronization, providers, physical devices, true zoom, long translations and global transitions remain open.",
+    "Raw logs and archive whitespace are preserved; source whitespace is evaluated separately."
+  ]
+}

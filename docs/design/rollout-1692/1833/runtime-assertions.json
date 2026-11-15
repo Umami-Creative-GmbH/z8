@@ -1,0 +1,127 @@
+{
+  "kind": "real local Next / Better Auth / disposable PostgreSQL; transport interception only holds or aborts real requests, never substitutes data",
+  "checks": [
+    {
+      "name": "one task heading; enable switch leads the form",
+      "passed": true
+    },
+    {
+      "name": "custom inherits moderate 45",
+      "passed": true
+    },
+    {
+      "name": "interval minimum 15",
+      "passed": true
+    },
+    {
+      "name": "interval maximum 120",
+      "passed": true
+    },
+    {
+      "name": "custom inherits light 60",
+      "passed": true
+    },
+    {
+      "name": "custom inherits active 30",
+      "passed": true
+    },
+    {
+      "name": "interval step 5",
+      "passed": true
+    },
+    {
+      "name": "goal maximum 20",
+      "passed": true
+    },
+    {
+      "name": "disabled hides the preference controls",
+      "passed": true
+    },
+    {
+      "name": "reenabling preserves custom interval and goal",
+      "passed": true
+    },
+    {
+      "name": "preset Escape restores trigger focus",
+      "passed": true
+    },
+    {
+      "name": "pending disables switch preset sliders and both actions",
+      "passed": true
+    },
+    {
+      "name": "native reactivation keeps one actual request",
+      "passed": true
+    },
+    {
+      "name": "aborted transport retains custom input",
+      "passed": true
+    },
+    {
+      "name": "real save continues to notifications",
+      "passed": true
+    },
+    {
+      "name": "real settings readback retains custom interval 35 and goal 20",
+      "passed": true
+    },
+    {
+      "name": "real skip preserves saved personal interval",
+      "passed": true
+    },
+    {
+      "name": "disabled save readback disables reminder interval",
+      "passed": true
+    },
+    {
+      "name": "actual dark and large preferences survive reload",
+      "passed": true
+    },
+    {
+      "name": "390 phone large dark has no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "name": "wide layout stays bounded",
+      "passed": true
+    },
+    {
+      "name": "reduced motion preference supported",
+      "passed": true
+    },
+    {
+      "name": "real session sign-out accepted",
+      "passed": true
+    },
+    {
+      "name": "actual unauthenticated action refuses and retains custom draft",
+      "passed": true
+    },
+    {
+      "name": "restricted employee can reach personal preference controls",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "pageSourceSHA256": "402bd3efc0758f4245ee046df7cdab8a937c78e37f473904a6e6f8a018e14bdb",
+  "bounds": {
+    "origin": "http://localhost:50761",
+    "next": "16.4.6 Turbopack, default local root/config/dependencies",
+    "viewportSizes": [
+      [
+        1600,
+        1000
+      ],
+      [
+        390,
+        844
+      ],
+      [
+        2400,
+        1200
+      ]
+    ],
+    "fixture": "own generated disposable 8/200-person organizations; small-admin and small-restricted actors"
+  },
+  "browser": "Chrome/157.0.8103.52"
+}

@@ -1,0 +1,43 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-d7b19cbd-602e451f63c096f8/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/wellness/page.test.tsx (16 tests | 2 failed) 1384ms
+   ❯ WellnessPage (16)
+     × keeps account drafts separate and ignores late save after an account round trip 27ms
+     × keeps account drafts separate and ignores late skip after an account round trip 17ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/wellness/page.test.tsx > WellnessPage > keeps account drafts separate and ignores late save after an account round trip
+AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times
+ ❯ src/app/[locale]/onboarding/wellness/page.test.tsx:219:44
+    217|    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    218|    await act(async () => {});
+    219|    expect(configureWellnessOnboardingMock).toHaveBeenCalledTimes(actio…
+       |                                            ^
+    220|    await act(async () =>
+    221|     request.resolve({ success: false, error: "Old refusal" }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/wellness/page.test.tsx > WellnessPage > keeps account drafts separate and ignores late skip after an account round trip
+AssertionError: expected "vi.fn()" to be called +0 times, but got 1 times
+ ❯ src/app/[locale]/onboarding/wellness/page.test.tsx:219:44
+    217|    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    218|    await act(async () => {});
+    219|    expect(configureWellnessOnboardingMock).toHaveBeenCalledTimes(actio…
+       |                                            ^
+    220|    await act(async () =>
+    221|     request.resolve({ success: false, error: "Old refusal" }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 14 passed (16)
+   Start at  16:29:55
+   Duration  2.33s (tests 67%, environment 15%, import 14%, transform 2%, setup 1%)
+

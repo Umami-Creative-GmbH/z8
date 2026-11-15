@@ -1,0 +1,72 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-d7b19cbd-602e451f63c096f8/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/wellness/page.test.tsx (6 tests | 1 failed) 341ms
+   ❯ WellnessPage (6)
+     × prevents native save activation while skip is held 78ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/wellness/page.test.tsx > WellnessPage > prevents native save activation while skip is held
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "enableWaterReminder": true,
+        "waterReminderDailyGoal": 8,
+        "waterReminderIntervalMinutes": 45,
+        "waterReminderPreset": "moderate",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/[locale]/onboarding/wellness/page.test.tsx:81:47
+     79|   fireEvent.submit(screen.getByRole("button", { name: "Continue" }).cl…
+     80|   await act(async () => {});
+     81|   expect(configureWellnessOnboardingMock).not.toHaveBeenCalled();
+       |                                               ^
+     82|   await act(async () => request.resolve({ success: true }));
+     83|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'success')
+ ❯ onResult src/app/[locale]/onboarding/wellness/page-client.tsx:115:17
+    113|     action: () => configureWellnessOnboarding(value),
+    114|     onResult: (result) => {
+    115|      if (result.success) {
+       |                 ^
+    116|       if (value.enableWaterReminder) {
+    117|        toast.success(
+ ❯ runOnboardingAction src/app/[locale]/onboarding/run-onboarding-action.ts:26:18
+ ❯ Object.onSubmit src/app/[locale]/onboarding/wellness/page-client.tsx:112:4
+ ❯ FormApi._handleSubmit ../../node_modules/.pnpm/@tanstack+form-core@1.33.5/node_modules/@tanstack/form-core/dist/esm/FormApi.js:566:9
+
+This error originated in "src/app/[locale]/onboarding/wellness/page.test.tsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "prevents native save activation while skip is held". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+     Errors  1 error
+   Start at  16:20:06
+   Duration  1.27s (environment 32%, tests 29%, import 28%, transform 8%, setup 3%)
+

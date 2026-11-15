@@ -1,0 +1,37 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-d7b19cbd-602e451f63c096f8/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/wellness/page.test.tsx (33 tests | 1 failed) 1612ms
+   ❯ WellnessPage (33)
+     × allows returning to the personal step after completed navigation 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/wellness/page.test.tsx > WellnessPage > allows returning to the personal step after completed navigation
+AssertionError: expected <button …(4)>…(1)</button> to have property "disabled" with value false
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/app/[locale]/onboarding/wellness/page.test.tsx:418:60
+    416|   view.rerender(<Activity mode="hidden"><WellnessPage /></Activity>);
+    417|   view.rerender(<Activity mode="visible"><WellnessPage /></Activity>);
+    418|   expect(screen.getByRole("button", { name: "Continue" })).toHavePrope…
+       |                                                            ^
+    419|  });
+    420|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 32 passed (33)
+   Start at  16:40:45
+   Duration  2.45s (tests 69%, environment 14%, import 13%, transform 3%, setup 1%)
+

@@ -1,0 +1,5 @@
+warning: in the working copy of 'docs/design/rollout-1692/1833/runtime-assertions.json', LF will be replaced by CRLF the next time Git touches it
+Merge made by the 'ort' strategy.
+ docs/design/rollout-1692/README.md        |  9 ++++++---
+ docs/design/rollout-1692/integration.json | 29 ++++++++++++++++++-----------
+ 2 files changed, 24 insertions(+), 14 deletions(-)

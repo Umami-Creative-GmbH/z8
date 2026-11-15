@@ -576,9 +576,14 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "aeb655393c1d02aeb9ef67b8a53e860f87b3403c"
+                        "status":  "integrated",
+                        "verifiedCommit":  "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+                        "implementationCommit":  "aeb655393c1d02aeb9ef67b8a53e860f87b3403c",
+                        "integrationCommit":  "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+                        "correctionCommit":  "13b4c571e0716837b589438c3686eccc12f94de5",
+                        "combinedCorrectionCommit":  "5c0a304a4348dc3939099ca725834e2d6de2fbc3",
+                        "evidence":  "docs/design/rollout-1692/1833.md",
+                        "integrationVerification":  "Wellness #1833 is verified at `0e5c9c31` after binding Continue to its activation arrival before TanStack dispatch. The permanent old queued Activity Save fails before and passes after; retained goal20 and fresh Continue remain. Two broad runs also exposed a native-disabled Payroll focus timing defect; controlled public refusal/removal reds and a deliberate-focus-move control now pass after separate isolated focus correction. Final177 unique unit files/1,876 cases, fresh2-file/98-test PostgreSQL, full types, explicit4-file CRLF/lint and Doctor zero pass. Exact wellness13b source passes nine real non-admin personal Save/retry/one-command/Skip/disabled/readback checks with four current PNGs and native WellnessStep/Header; both wellness blobs are unchanged in combined5c. Fresh admitted Payroll native tree/Next diagnostics pass, but live dismissal/focus remains unpassed because the configured fixture exposed zero eligible rows. Original two failed broad runs, harness failures and complete snapshot distinctions are retained. No server action, permission, calculation or date change; normal transient sign-in/no cookie-state transfer. Both root fixtures, six labeled services, browsers and ports49211/63245 are cleaned. Build/catalog/provider/device/zoom/global limits remain. Independent tree 9b68d16881d21ad0450ad0b1234f5af09428a16b; all46 prior verified ancestors, 13837 prior paths outside four source/test files/two qualified reports, and 112 original incoming artifact paths preserved."
                     },
                     {
                         "id":  "R039",
@@ -630,7 +635,11 @@
                         "integrationCommit":  "37e46ce8bea19e69e112d11186e0c271d77e9738",
                         "correctionCommit":  "6bded15a8d0221b670d4957275aa738eae06202c",
                         "evidence":  "docs/design/rollout-1692/1725.md",
-                        "integrationVerification":  "Payroll #1725 is verified at `807fcc63` after organization/actor/covered-roster lifetime correction. Fresh 94 unique suites/1,027 tests, full types and 11-file Doctor zero pass; accepted six-file explicit/two-file normal formatters and all-11 explicit lint pass, with remaining profiles/import findings retained. PostgreSQL combined49pass/1fail/1skip plus fresh isolated grant7/7 gives50 distinct passing cases/1skip, not a green combined run. Actual B props leave baseline A8 rows stale; correction shows B1 and returns A8, preserves draft through completed header Refresh and downloads PDF without a job. Late effects are assembled-only. Five accepted/five failed PNGs decode with pins; final Next clear, large-fixture legacy absence-backfill stack overflow remains. Original raw archives and all37 verified ancestors preserved; build/catalog/provider/device/zoom/global limits remain open. Independent tree6fe328d2016a35a97d4424c3165e6108fad6523a. 12213 prior paths and 128 original raw ticket artifact paths unchanged outside seven source/test edits and appended report. Root introduces required organizationId in the read projection only; no query/grant/calculation/UTC/delivery owner changed. Both PG containers, verified Next49196 and three browser-fixture containers cleaned. Automatic review rejected credential-output command; user approved private-file Chromium alternative, which passed without returning credentials."
+                        "integrationVerification":  "Payroll #1725 is verified at `807fcc63` after organization/actor/covered-roster lifetime correction. Fresh 94 unique suites/1,027 tests, full types and 11-file Doctor zero pass; accepted six-file explicit/two-file normal formatters and all-11 explicit lint pass, with remaining profiles/import findings retained. PostgreSQL combined49pass/1fail/1skip plus fresh isolated grant7/7 gives50 distinct passing cases/1skip, not a green combined run. Actual B props leave baseline A8 rows stale; correction shows B1 and returns A8, preserves draft through completed header Refresh and downloads PDF without a job. Late effects are assembled-only. Five accepted/five failed PNGs decode with pins; final Next clear, large-fixture legacy absence-backfill stack overflow remains. Original raw archives and all37 verified ancestors preserved; build/catalog/provider/device/zoom/global limits remain open. Independent tree6fe328d2016a35a97d4424c3165e6108fad6523a. 12213 prior paths and 128 original raw ticket artifact paths unchanged outside seven source/test edits and appended report. Root introduces required organizationId in the read projection only; no query/grant/calculation/UTC/delivery owner changed. Both PG containers, verified Next49196 and three browser-fixture containers cleaned. Automatic review rejected credential-output command; user approved private-file Chromium alternative, which passed without returning credentials.",
+                        "focusCorrectionCommit":  "014166f8331c34f5be4c027b6b164615c7505ad7",
+                        "focusCompatibilityCommit":  "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+                        "focusEvidence":  "docs/design/rollout-1692/1725.md#root-pending-clear-focus-correction",
+                        "focusVerification":  "Three permanent pending-native-focus controls plus all72 Payroll component cases and final177/1876 combined selection pass. Actual admitted native Payroll/Next checked; live dismissal/focus unpassed with zero eligible fixture rows. Existing verifiedCommit and original domain/runtime limits retained."
                     },
                     {
                         "id":  "R043",
@@ -836,8 +845,9 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "7fc82645ae809bf4ee28d3c5edc32766703fc0cc"
                     },
                     {
                         "id":  "R062",
@@ -856,7 +866,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

@@ -1,0 +1,15 @@
+{
+  "ownedNextIdentityVerified": true,
+  "ownedNextStopped": true,
+  "portClosed": true,
+  "ports": [
+    49211,
+    63245
+  ],
+  "fixtureGenerations": 2,
+  "ownedContainers": 6,
+  "remainingOwnedContainers": 0,
+  "puppeteerBrowsersClosed": true,
+  "nativeBrowserClosed": true,
+  "credentialStateTransferred": false
+}

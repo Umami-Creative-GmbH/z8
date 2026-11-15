@@ -1,0 +1,64 @@
+{
+  "sourceCommit": "5c0a304a4348dc3939099ca725834e2d6de2fbc3",
+  "wellnessCorrection": "13b4c571e0716837b589438c3686eccc12f94de5",
+  "payrollFocusCorrection": "014166f8331c34f5be4c027b6b164615c7505ad7",
+  "base": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx": "342353ed99a17d622167bcd75bdb64d4fa931db8db3654a6c666aea96884eb56",
+    "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx": "f5039da4a2ef72543c9366d98f9f6d1a43cc0c3c72d73d6870e77b060072eb1f",
+    "apps/webapp/src/components/payroll/payroll-workspace.test.tsx": "42184819c71c0c9e0831df63b821975070700fe067541877bc5e89cb0a7f9045",
+    "apps/webapp/src/components/payroll/payroll-workspace.tsx": "5b76976c9ac06dc04f0fe538ae5475cddf84e85f0b65d70657e3b8beac29b82e"
+  },
+  "runs": [
+    {
+      "name": "compatibility",
+      "files": 176,
+      "passed": 1864
+    },
+    {
+      "name": "independent",
+      "files": 1,
+      "passed": 12
+    },
+    {
+      "name": "focused",
+      "files": 1,
+      "passed": 36
+    },
+    {
+      "name": "payroll-fixed",
+      "files": 1,
+      "passed": 72
+    }
+  ],
+  "unitFiles": 177,
+  "unitCases": 1876,
+  "postgres": {
+    "files": 2,
+    "passed": 98
+  },
+  "doctor": {
+    "scannedRevision": "13b4c571e0716837b589438c3686eccc12f94de5",
+    "commandSourcePinsExactlyMatch": "5c0a304a4348dc3939099ca725834e2d6de2fbc3",
+    "errors": 0,
+    "warnings": 0,
+    "exceptions": 0
+  },
+  "runtime": {
+    "sourceCommit": "13b4c571e0716837b589438c3686eccc12f94de5",
+    "checks": 9,
+    "captures": 4,
+    "payrollNativeSource": "5c0a304a4348dc3939099ca725834e2d6de2fbc3",
+    "payrollLiveDismissal": "unpassed: no eligible fixture row observed",
+    "qualification": "Personal Save/Skip continuity for a real non-admin generated actor at13b; both wellness source blobs remain identical in final combined5c. Actual request abort/hold, keyboard slider/pointer retry and canonical readback. Pre-validation Activity race remains assembled proof; captures are current ready/pending, not historical comparison. Fresh native WellnessStep/WellnessHeader at13b; admitted PayrollWorkspace and connected diagnostics at5c. Normal ephemeral sign-in, no cookie/state transfer/restore/persistence."
+  },
+  "qualifications": [
+    "The permanent queued Continue/Activity regression fails on incoming source and passes after event-arrival metadata capture. Existing real TanStack form action and personal draft/permission/service/settings owners remain.",
+    "Two broad runs exposed the unchanged Payroll focus failure although isolated/whole suite passed. A deterministic public pending-native-disable/two-frame regression proved missing refusal recovery, and a companion removal case also failed. Separate dedicated focus correction and three permanent cases now pass with the full combined run; no assertion weakening, calculation/action/permission change.",
+    "First browser attempt failed its ARIA target/value assertion before any Save transport or writes. Harness correction selects the native range input, reads its value and waits for settlement. Failed log/partial result retained; no product root-cause or exact initial driver-byte claim.",
+    "Doctor records provisional HEAD while the correction was dirty; command canonical source pins equal the committed correction. No suppression, action, service, factory, permission or business-date/calculation change.",
+    "Explicit webapp100-columnCRLF formatting/lint pass; ordinary profile and raw archive whitespace qualifications remain distinct. Original nine PNG/48-link/source-pin worker audit is historical, not current-source runtime.",
+    "Fresh PG2/98 uses sanctioned request/auth boundaries and real owned PostgreSQL. Additional Payroll browser attempts initially lacked an independent fixture grant; canonical authorized public settings actions then created it, and public clock-in succeeded, but no eligible dismissal row was observed. No SQL identity/grant workaround. Actual admitted Payroll native tree/Next are verified; live dismissal/focus remains unpassed. No live revocation, no-org browser or physical queued-Activity race claim.",
+    "Historical worker25+8 browser and98PG observations remain on their actual earlier snapshots. Full static generation, remote Tolgee, provider/device/truezoom/exhaustive locale/accessibility/transition acceptance remain unpassed."
+  ]
+}

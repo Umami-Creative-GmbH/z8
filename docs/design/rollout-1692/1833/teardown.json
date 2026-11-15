@@ -1,0 +1,23 @@
+{
+  "ownedNextPortClosed": [
+    {
+      "host": "127.0.0.1",
+      "port": 50761,
+      "closed": true
+    },
+    {
+      "host": "::1",
+      "port": 50761,
+      "closed": true
+    }
+  ],
+  "exactOwnedContainersRemoved": [
+    "z8_perf_c36eb1b364d7_postgres",
+    "z8_perf_c36eb1b364d7_redis",
+    "z8_perf_c36eb1b364d7_storage"
+  ],
+  "ownershipLabel": "z8-performance-fixture-1450",
+  "nativeBrowser": "worktree-scoped session explicitly closed",
+  "privatePuppeteer": "all capture/acceptance/Next probes close their isolated browsers in finally",
+  "privateManifestsRetained": true
+}

@@ -1,0 +1,7 @@
+src/app/[locale]/onboarding
+src/components/onboarding/progress-indicator.test.tsx
+src/components/ui/tanstack-form.test.tsx
+src/lib/effect/services/onboarding.service.test.ts
+src/lib/user-preferences
+src/lib/validations/onboarding.test.ts
+src/tolgee/extracted-key-defaults.test.ts

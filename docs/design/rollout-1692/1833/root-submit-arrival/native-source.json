@@ -1,0 +1,15 @@
+{
+  "head": "13b4c571e0716837b589438c3686eccc12f94de5",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+      "canonicalSha256": "342353ed99a17d622167bcd75bdb64d4fa931db8db3654a6c666aea96884eb56"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+      "canonicalSha256": "f5039da4a2ef72543c9366d98f9f6d1a43cc0c3c72d73d6870e77b060072eb1f"
+    }
+  ],
+  "session": "next-dev-loop-1833-t3-36de3f4a-69b59b59b97cbc3d",
+  "qualification": "Actual settled WellnessStep/WellnessHeader tree after normal private-stdin fixture sign-in in a transient session. No cookie/state file transferred, restored or saved. Activity/retained-session readiness race proof remains assembled-page evidence."
+}
