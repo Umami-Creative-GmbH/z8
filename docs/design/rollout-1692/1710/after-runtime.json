@@ -1,0 +1,36 @@
+{
+  "mode": "after",
+  "actor": "small-manager",
+  "scope": "same two actual submitted deletions; no decisions between captures",
+  "target": "20b1d966-1d00-4776-9843-9d34f5686af7",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Approval review"
+      ],
+      "main": "Toggle Sidebar\n\nApprovals\n\n04:58\nUTC+01:00\nClock In\nToggle theme\n2\nApproval review\n8h on Jan 13, 2025\nShow details\nOpen Inbox"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Approval review"
+      ],
+      "main": "Toggle Sidebar\n\nApprovals\n\n2\nMore actions\nApproval review\n8h on Jan 13, 2025\nShow details\nOpen Inbox"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Approval review"
+      ],
+      "main": "Toggle Sidebar\n\nApprovals\n\n04:58\nUTC+01:00\nClock In\nToggle theme\n2\nApproval review\n8h on Jan 13, 2025\nShow details\nOpen Inbox"
+    }
+  ],
+  "errors": []
+}

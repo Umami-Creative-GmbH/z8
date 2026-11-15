@@ -1,0 +1,89 @@
+{
+  "checks": [
+    {
+      "name": "signed-out arrival retains the exact review callback",
+      "passed": true
+    },
+    {
+      "name": "small-restricted arrival admission",
+      "passed": true
+    },
+    {
+      "name": "small-employee arrival admission",
+      "passed": true
+    },
+    {
+      "name": "small-admin arrival admission",
+      "passed": true
+    },
+    {
+      "name": "small-manager arrival admission",
+      "passed": true
+    },
+    {
+      "name": "ready arrival auto-opens authorized detail",
+      "passed": true
+    },
+    {
+      "name": "actual submitted reason reaches this consumer",
+      "passed": true
+    },
+    {
+      "name": "closed arrival has a working reopen control",
+      "passed": true
+    },
+    {
+      "name": "failed exact detail cannot inherit arrival decision authority",
+      "passed": true
+    },
+    {
+      "name": "failed exact detail withholds saved evidence",
+      "passed": true
+    },
+    {
+      "name": "exact-detail retry recovers through the real reader",
+      "passed": true
+    },
+    {
+      "name": "switch during detail read discards the prior detail workspace",
+      "passed": true
+    },
+    {
+      "name": "old target refuses in the new active organization",
+      "passed": true
+    },
+    {
+      "name": "arrival offers explicit organization reconciliation",
+      "passed": true
+    },
+    {
+      "name": "real init switch returns to the exact authorized review",
+      "passed": true
+    },
+    {
+      "name": "missing target is safely unavailable",
+      "passed": true
+    },
+    {
+      "name": "canonical kind never falls back to a compatibility request",
+      "passed": true
+    },
+    {
+      "name": "reassigned target uses the same safe unavailable copy",
+      "passed": true
+    },
+    {
+      "name": "revoked membership withholds approval facts",
+      "passed": true
+    },
+    {
+      "name": "infrastructure outage stays distinct from unavailable target",
+      "passed": true
+    },
+    {
+      "name": "route Retry refetches the restored server reader",
+      "passed": true
+    }
+  ],
+  "error": "TimeoutError: Waiting failed: 45000ms exceeded"
+}
