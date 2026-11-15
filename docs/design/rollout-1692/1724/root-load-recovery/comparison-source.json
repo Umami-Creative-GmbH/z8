@@ -1,0 +1,16 @@
+{
+  "baselineCommit": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+  "scope": "Two owned client/loader sources only; all other integrated code remains current",
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+      "beforeSha256": "73d94a1217232ac007ad429ea9d6874dfe2a9da96e998786d68e3085ab6a4a05",
+      "afterSha256": "a4795e759bfaa136f2296d2a5c11cd6fae452139a36aa8d2ef6e9f6c3558519f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+      "beforeSha256": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f",
+      "afterSha256": "170b3ff288e4b888fa202722a5aa286772ce7e546f316feab221789ef8e82452"
+    }
+  ]
+}

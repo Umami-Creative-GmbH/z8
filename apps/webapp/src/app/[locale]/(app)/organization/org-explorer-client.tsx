@@ -226,8 +226,12 @@ function useOrgExplorerUrlLoads(
 		? loader.peopleById.get(url.employeeId)
 		: undefined;
 	const loadSelected = useEffectEvent(
-		(employeeId: string | null, person: OrgExplorerPerson | undefined) => {
-			if (!employeeId) return;
+		(
+			employeeId: string | null,
+			person: OrgExplorerPerson | undefined,
+			summary: OrgExplorerPeopleLoader["summary"],
+		) => {
+			if (!employeeId || summary.complete) return;
 			void loader.loadPeople(
 				person ? [...person.managerIds, ...person.reportIds] : [employeeId],
 				{
@@ -236,16 +240,22 @@ function useOrgExplorerUrlLoads(
 			);
 		},
 	);
+	// Refresh replaces the summary even when the selected person is still absent.
 	useEffect(
-		() => loadSelected(url.employeeId, selected),
-		[url.employeeId, selected],
+		() => loadSelected(url.employeeId, selected, loader.summary),
+		[url.employeeId, selected, loader.summary],
 	);
 
 	const filterKey = url.teamIds.join(",");
-	const loadFilteredTeams = useEffectEvent((key: string) => {
-		if (key) loader.loadTeamsStarted(key.split(","));
-	});
-	useEffect(() => loadFilteredTeams(filterKey), [filterKey]);
+	const loadFilteredTeams = useEffectEvent(
+		(key: string, summary: OrgExplorerPeopleLoader["summary"]) => {
+			if (key && !summary.complete) loader.loadTeamsStarted(key.split(","));
+		},
+	);
+	useEffect(
+		() => loadFilteredTeams(filterKey, loader.summary),
+		[filterKey, loader.summary],
+	);
 }
 
 /** An id that is not on the current roster opens nothing. */
