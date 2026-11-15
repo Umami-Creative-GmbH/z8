@@ -1,0 +1,6 @@
+{
+  "message": "Error: failed to find element matching selector \"button[aria-label=\"Toggle Sidebar\"]\"",
+  "checks": [],
+  "captures": [],
+  "errors": []
+}
