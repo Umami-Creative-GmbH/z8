@@ -14,7 +14,10 @@ import type { DataTableFeatures } from "@/components/data-table-server/data-tabl
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { formatDateRange } from "@/lib/absences/date-utils";
-import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
+import {
+	getSickDetailLabel,
+	getSickDetailLabelKey,
+} from "@/lib/absences/sick-details";
 import { personnelFilePath } from "@/lib/personnel-file/paths";
 import { Link } from "@/navigation";
 
@@ -28,7 +31,11 @@ export function formatAbsenceDays(days: number): string {
 	return `${days} days`;
 }
 
-function RequesterCell({ requester }: { requester: ApprovalWithAbsence["requester"] }) {
+function RequesterCell({
+	requester,
+}: {
+	requester: ApprovalWithAbsence["requester"];
+}) {
 	return (
 		<div className="flex items-center gap-3">
 			<UserAvatar
@@ -38,9 +45,11 @@ function RequesterCell({ requester }: { requester: ApprovalWithAbsence["requeste
 				size="sm"
 				clockStatus="unknown"
 			/>
-			<div>
+			<div className="min-w-0 break-words">
 				<div className="font-medium">{requester.user.name}</div>
-				<div className="text-xs text-muted-foreground">{requester.user.email}</div>
+				<div className="text-xs text-muted-foreground">
+					{requester.user.email}
+				</div>
 			</div>
 		</div>
 	);
@@ -80,7 +89,10 @@ function DeputyNote({ deputy }: { deputy: NonNullable<Absence["deputy"]> }) {
 			<span className="font-medium">{deputy.name}</span>
 			{!deputy.canDecideApprovals && (
 				<span className="block text-amber-600 dark:text-amber-400">
-					{t("approvals:approvals.deputy.contactOnly", "Contact only: cannot decide approvals")}
+					{t(
+						"approvals:approvals.deputy.contactOnly",
+						"Contact only: cannot decide approvals",
+					)}
 				</span>
 			)}
 		</span>
@@ -99,7 +111,10 @@ function AbsenceTypeCell({ absence }: { absence: Absence }) {
 			/>
 			{absence.category.type === "sick" && absence.sickDetail && (
 				<span className="text-muted-foreground text-xs">
-					{t(getSickDetailLabelKey(absence.sickDetail), getSickDetailLabel(absence.sickDetail))}
+					{t(
+						getSickDetailLabelKey(absence.sickDetail),
+						getSickDetailLabel(absence.sickDetail),
+					)}
 				</span>
 			)}
 			<SickNotesIndicator absence={absence} />
@@ -124,12 +139,22 @@ function ApprovalActionsCell({
 	const { t } = useTranslate();
 
 	return (
-		<div className="flex justify-end gap-2">
-			<Button variant="outline" size="sm" onClick={() => onApprove(approval)} disabled={disabled}>
+		<div className="flex flex-wrap justify-end gap-2">
+			<Button
+				variant="outline"
+				size="sm"
+				onClick={() => onApprove(approval)}
+				disabled={disabled}
+			>
 				<IconCheck className="mr-1 size-4" />
 				{t("approvals:approvals.approve", "Approve")}
 			</Button>
-			<Button variant="outline" size="sm" onClick={() => onReject(approval)} disabled={disabled}>
+			<Button
+				variant="outline"
+				size="sm"
+				onClick={() => onReject(approval)}
+				disabled={disabled}
+			>
 				<IconX className="mr-1 size-4" />
 				{t("approvals:approvals.reject", "Reject")}
 			</Button>
@@ -149,7 +174,10 @@ export function buildAbsenceApprovalColumns({
 	actionsDisabled,
 	onApprove,
 	onReject,
-}: AbsenceApprovalColumnsInput): ColumnDef<DataTableFeatures, ApprovalWithAbsence>[] {
+}: AbsenceApprovalColumnsInput): ColumnDef<
+	DataTableFeatures,
+	ApprovalWithAbsence
+>[] {
 	return [
 		{
 			accessorKey: "requester",
@@ -161,7 +189,10 @@ export function buildAbsenceApprovalColumns({
 			header: t("approvals:approvals.dates", "Dates"),
 			cell: ({ row }) => (
 				<span className="font-medium">
-					{formatDateRange(row.original.absence.startDate, row.original.absence.endDate)}
+					{formatDateRange(
+						row.original.absence.startDate,
+						row.original.absence.endDate,
+					)}
 				</span>
 			),
 		},
@@ -172,7 +203,11 @@ export function buildAbsenceApprovalColumns({
 		},
 		{
 			accessorKey: "days",
-			header: () => <div className="text-right">{t("approvals:approvals.days", "Days")}</div>,
+			header: () => (
+				<div className="text-right">
+					{t("approvals:approvals.days", "Days")}
+				</div>
+			),
 			cell: ({ row }) => {
 				return (
 					<div className="text-right tabular-nums">
@@ -185,13 +220,14 @@ export function buildAbsenceApprovalColumns({
 			accessorKey: "notes",
 			header: t("approvals:approvals.notes", "Notes"),
 			cell: ({ row }) => (
-				<span className="max-w-[200px] truncate text-muted-foreground block">
+				<span className="block max-w-prose whitespace-normal break-words text-muted-foreground">
 					{row.original.absence.notes || "—"}
 				</span>
 			),
 		},
 		{
 			id: "actions",
+			header: t("common.actions", "Actions"),
 			cell: ({ row }) => (
 				<ApprovalActionsCell
 					approval={row.original}

@@ -6,6 +6,13 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the independent legacy approvals page", () => {
+		expect(appPageOwnsHeading("/de/approvals")).toBe(true);
+		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(false);
+		expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(
+			false,
+		);
+	});
 	it("adopts the exact vacation route while retaining staged descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);
 		expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(
