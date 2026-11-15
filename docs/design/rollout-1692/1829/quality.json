@@ -1,0 +1,90 @@
+{
+  "sourceHashes": {
+    "src/app/[locale]/onboarding/organization/organization-page-client.tsx": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "src/app/[locale]/onboarding/organization/page.tsx": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "src/app/[locale]/onboarding/organization/page.test.tsx": "bd6208bed5f20092ac626258c7f6f4bf189bcec266dd11e045fc6eeada009aad"
+  },
+  "commands": [
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "next",
+        "typegen"
+      ],
+      "exitCode": 0,
+      "stdout": "Generating route types...\n✓ Types generated successfully\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.workflow-contracts.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.smoke.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--line-ending=crlf",
+        "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "src/app/[locale]/onboarding/organization/page.tsx",
+        "src/app/[locale]/onboarding/organization/page.test.tsx"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "Checked 3 files in 10ms. No fixes applied.\n"
+    }
+  ]
+}

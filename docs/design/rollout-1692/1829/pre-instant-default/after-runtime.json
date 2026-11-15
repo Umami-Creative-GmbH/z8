@@ -1,0 +1,322 @@
+{
+  "mode": "after",
+  "fixture": "new owned disposable services; synthetic account with no initial membership",
+  "checks": [
+    {
+      "name": "keyboard moves name to slug",
+      "passed": true
+    },
+    {
+      "name": "no browser page errors",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "after-desktop-light.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "dirty": "M apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx\n M apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+        "hashes": {
+          "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+          "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+          "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+        }
+      },
+      "role": "fresh account; no membership",
+      "scope": "onboarding account",
+      "png": {
+        "width": 1600,
+        "height": 1044
+      },
+      "pathname": "/en/onboarding/organization",
+      "width": 1600,
+      "height": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "dark": false,
+      "storedFont": null,
+      "heading": [
+        "Set up your organization"
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "id": "organization-name",
+          "value": ""
+        },
+        {
+          "name": "slug",
+          "id": "organization-slug",
+          "value": ""
+        },
+        {
+          "name": "",
+          "id": "_r_a_-timezone",
+          "value": "Coordinated Universal Time (UTC)"
+        },
+        {
+          "name": "trackingStartDate",
+          "id": "_r_a_-date",
+          "value": "2026-11-15"
+        }
+      ],
+      "branding": [
+        {
+          "alt": "",
+          "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Frohit-choudhari-_E6sXQHsgQc-unsplash.2_lhssf6u7k_2.webp&w=3840&q=75&dpl=19862ee6586b4e07831c6f5a8b7e06d0f698cedd"
+        }
+      ]
+    },
+    {
+      "name": "after-wide-dark.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "dirty": "M apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx\n M apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+        "hashes": {
+          "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+          "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+          "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+        }
+      },
+      "role": "fresh account; no membership",
+      "scope": "onboarding account",
+      "png": {
+        "width": 2400,
+        "height": 1200
+      },
+      "pathname": "/en/onboarding/organization",
+      "width": 2400,
+      "height": 1200,
+      "documentWidth": 2400,
+      "rootFont": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "dark": true,
+      "storedFont": null,
+      "heading": [
+        "Set up your organization"
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "id": "organization-name",
+          "value": ""
+        },
+        {
+          "name": "slug",
+          "id": "organization-slug",
+          "value": ""
+        },
+        {
+          "name": "",
+          "id": "_r_6_-timezone",
+          "value": "Coordinated Universal Time (UTC)"
+        },
+        {
+          "name": "trackingStartDate",
+          "id": "_r_6_-date",
+          "value": "2026-11-15"
+        }
+      ],
+      "branding": [
+        {
+          "alt": "",
+          "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fa-chosen-soul-sJ_nxQIAUvg-unsplash.00tnody-jqz11.webp&w=3840&q=75&dpl=19862ee6586b4e07831c6f5a8b7e06d0f698cedd"
+        }
+      ]
+    },
+    {
+      "name": "after-phone-light.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "dirty": "M apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx\n M apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+        "hashes": {
+          "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+          "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+          "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+        }
+      },
+      "role": "fresh account; no membership",
+      "scope": "onboarding account",
+      "png": {
+        "width": 390,
+        "height": 1391
+      },
+      "pathname": "/en/onboarding/organization",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "dark": false,
+      "storedFont": null,
+      "heading": [
+        "Set up your organization"
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "id": "organization-name",
+          "value": ""
+        },
+        {
+          "name": "slug",
+          "id": "organization-slug",
+          "value": ""
+        },
+        {
+          "name": "",
+          "id": "_r_6_-timezone",
+          "value": "Coordinated Universal Time (UTC)"
+        },
+        {
+          "name": "trackingStartDate",
+          "id": "_r_6_-date",
+          "value": "2026-11-15"
+        }
+      ],
+      "branding": [
+        {
+          "alt": "",
+          "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fvimal-s-J69ERsG93hI-unsplash.1kyhxaq-92c3s.webp&w=3840&q=75&dpl=19862ee6586b4e07831c6f5a8b7e06d0f698cedd"
+        }
+      ]
+    },
+    {
+      "name": "after-phone-dark-large.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "dirty": "M apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx\n M apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+        "hashes": {
+          "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+          "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+          "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+        }
+      },
+      "role": "fresh account; no membership",
+      "scope": "onboarding account",
+      "png": {
+        "width": 390,
+        "height": 1612
+      },
+      "pathname": "/en/onboarding/organization",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "dark": true,
+      "storedFont": "large",
+      "heading": [
+        "Set up your organization"
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "id": "organization-name",
+          "value": ""
+        },
+        {
+          "name": "slug",
+          "id": "organization-slug",
+          "value": ""
+        },
+        {
+          "name": "",
+          "id": "_r_6_-timezone",
+          "value": "Coordinated Universal Time (UTC)"
+        },
+        {
+          "name": "trackingStartDate",
+          "id": "_r_6_-date",
+          "value": "2026-11-15"
+        }
+      ],
+      "branding": [
+        {
+          "alt": "",
+          "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fvimal-s-J69ERsG93hI-unsplash.1kyhxaq-92c3s.webp&w=3840&q=75&dpl=19862ee6586b4e07831c6f5a8b7e06d0f698cedd"
+        }
+      ]
+    },
+    {
+      "name": "after-keyboard.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "dirty": "M apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx\n M apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+        "hashes": {
+          "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+          "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+          "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+        }
+      },
+      "role": "fresh account; no membership",
+      "scope": "onboarding account",
+      "png": {
+        "width": 1600,
+        "height": 1124
+      },
+      "pathname": "/en/onboarding/organization",
+      "width": 1600,
+      "height": 1000,
+      "documentWidth": 1600,
+      "rootFont": "18px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "dark": true,
+      "storedFont": "large",
+      "heading": [
+        "Set up your organization"
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "id": "organization-name",
+          "value": ""
+        },
+        {
+          "name": "slug",
+          "id": "organization-slug",
+          "value": ""
+        },
+        {
+          "name": "",
+          "id": "_r_6_-timezone",
+          "value": "Coordinated Universal Time (UTC)"
+        },
+        {
+          "name": "trackingStartDate",
+          "id": "_r_6_-date",
+          "value": "2026-11-15"
+        }
+      ],
+      "branding": [
+        {
+          "alt": "",
+          "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fvimal-s-J69ERsG93hI-unsplash.1kyhxaq-92c3s.webp&w=3840&q=75&dpl=19862ee6586b4e07831c6f5a8b7e06d0f698cedd"
+        }
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "limits": [
+    "Default committed Next config and fully workspace-local frozen/offline copy install",
+    "before replaces only organization consumer with actual HEAD bytes; shared historical shell/branding remains current",
+    "saved18px is not true zoom or physical-device certification"
+  ]
+}
