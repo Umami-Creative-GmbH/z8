@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
 	appPageOwnsHeading,
 	normalizeAppPath,
@@ -6,12 +6,15 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
-	it("adopts only overtime burn-down while retaining other staged analytics descendants", () => {
+	it("adopts only refreshed analytics routes while retaining staged descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);
 		expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(
 			false,
 		);
-		expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(false);
+		expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);
+		expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(
+			false,
+		);
 	});
 	it("adopts analytics overview without adopting analytics descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics")).toBe(true);
