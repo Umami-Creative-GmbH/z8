@@ -22,10 +22,15 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh: vi.fn() }),
 	Link: ({ children, ...props }: React.ComponentProps<"a">) => (
 		<a {...props}>{children}</a>
 	),
 }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("./equipment-workspace", () => ({
 	EquipmentOverview: ({ query }: { query: unknown }) => (
 		<p>Equipment overview {JSON.stringify(query)}</p>
@@ -96,6 +101,17 @@ it("reads the whole scope for the overview and hands the URL filters to the list
 			former: "only",
 		}).replaceAll('"', "&quot;"),
 	);
+});
+
+it("keeps an unavailable overview distinct from zero holdings and offers a real read retry", async () => {
+	api.overview.mockResolvedValue({ success: false, code: "DatabaseError" });
+	const html = await content(
+		OverviewPage({ searchParams: Promise.resolve({ overdue: "true" }) }),
+	);
+	expect(html).toContain('aria-label="Reload equipment"');
+	expect(html).toContain("Equipment could not be loaded.");
+	expect(html).not.toContain("Nothing issued yet");
+	expect(html.match(/<h1\b/g)).toHaveLength(1);
 });
 
 it("opens the overview on outstanding returns without parameters and refuses the staff route when its read denies access", async () => {

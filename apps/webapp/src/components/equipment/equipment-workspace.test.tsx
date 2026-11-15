@@ -92,6 +92,48 @@ async function openHistorical(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("Equipment overview", () => {
+	it("names the authorized summary scope and keeps partial outstanding returns distinct from overdue", async () => {
+		const user = userEvent.setup();
+		overview(
+			{
+				...view,
+				assignments: [
+					heldAssignment,
+					{
+						...partialAssignment,
+						id: "partial",
+						overdue: false,
+						effectiveDeadline: null,
+					},
+				],
+			},
+			{ ...query, holderId: ids.alex, typeId: ids.laptopType, former: "hide" },
+		);
+		expect(screen.getByText("Your authorized equipment records")).toBeTruthy();
+		expect(screen.getByText(/Nov 5, 2026.*Europe\/Berlin/)).toBeTruthy();
+		const summary = within(
+			screen.getByRole("region", {
+				name: "Returns and readiness in your scope",
+			}),
+		);
+		expect(
+			summary.getByRole("button", { name: "Show outstanding returns" })
+				.textContent,
+		).toContain("2");
+		expect(
+			summary.getByRole("button", { name: "Show overdue returns" }).textContent,
+		).toContain("1");
+		await user.click(
+			summary.getByRole("button", { name: "Show overdue returns" }),
+		);
+		expect(api.replace).toHaveBeenCalledWith(
+			`/equipment?holderId=${ids.alex}&typeId=${ids.laptopType}&overdue=true&former=false`,
+			{ scroll: false },
+		);
+		expect(
+			screen.getByRole("link", { name: "L-02" }).getAttribute("href"),
+		).toContain("back=");
+	});
 	it("shows the header, key figures and the outstanding assignments table", () => {
 		overview({
 			...view,

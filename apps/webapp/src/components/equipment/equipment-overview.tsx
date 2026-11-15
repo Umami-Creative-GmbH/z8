@@ -21,7 +21,6 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
-import { KpiCard, type KpiTone } from "@/components/ui/kpi-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { EquipmentView } from "@/lib/organization/equipment/contracts";
@@ -45,31 +44,11 @@ import {
 	type EquipmentListQuery,
 	equipmentListHref,
 } from "./equipment-list-state";
+import { EquipmentOverviewHeader } from "./equipment-overview-header";
 import { issuanceAvailability, useEquipmentPanels } from "./equipment-panels";
 import { EquipmentReadiness } from "./equipment-readiness";
 
 type Tab = "assignments" | "items";
-
-/** The page heading and its actions, shared by the overview's states. */
-function OverviewHeader({ actions }: { actions: ReactNode }) {
-	const { t } = useTranslate();
-	return (
-		<div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-start sm:justify-between lg:px-6">
-			<div className="min-w-0 space-y-1">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.equipment.title", "Equipment")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.equipment.overview.description",
-						"Who holds each item, what must come back, and every recorded handover.",
-					)}
-				</p>
-			</div>
-			<div className="flex flex-wrap items-center gap-2">{actions}</div>
-		</div>
-	);
-}
 
 /** Not set up yet: owners and admins can do it, officers are told who can. */
 function SetupEmpty({ canAdminister }: { canAdminister: boolean }) {
@@ -127,33 +106,44 @@ function FilterKpi({
 	actionLabel: string;
 	icon: ReactNode;
 	value: number;
-	tone: KpiTone;
+	tone: "neutral" | "critical" | "warning" | "info";
 	caption: string;
 	onSelect: () => void;
 }) {
+	const locale = useLocale();
 	return (
-		<div
+		<button
+			type="button"
+			aria-pressed={active}
+			aria-label={actionLabel}
 			className={cn(
-				"group relative rounded-xl",
-				active && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+				"flex min-w-0 flex-col items-start gap-2 p-4 text-left hover:bg-muted/50 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring lg:p-5",
+				active && "bg-primary/5",
 			)}
+			onClick={onSelect}
 		>
-			<KpiCard
-				label={label}
-				icon={icon}
-				value={value}
-				tone={tone}
-				caption={caption}
-				className="h-full transition-colors group-hover:border-primary/40"
-			/>
-			<button
-				type="button"
-				aria-pressed={active}
-				aria-label={actionLabel}
-				className="absolute inset-0 rounded-xl focus-visible:outline-2 focus-visible:outline-ring"
-				onClick={onSelect}
-			/>
-		</div>
+			<span className="flex items-center gap-2 text-sm font-medium break-words">
+				<span
+					aria-hidden="true"
+					className={cn(
+						"[&_svg]:size-4 shrink-0",
+						tone === "critical" ? "text-destructive" : "text-muted-foreground",
+					)}
+				>
+					{icon}
+				</span>
+				{label}
+			</span>
+			<span
+				className={cn(
+					"text-2xl font-semibold tabular-nums",
+					tone === "critical" && "text-destructive",
+				)}
+			>
+				{value.toLocaleString(locale)}
+			</span>
+			<span className="text-sm text-muted-foreground">{caption}</span>
+		</button>
 	);
 }
 
@@ -183,9 +173,13 @@ function OverviewKpis({
 	const date = (value: string) =>
 		parsePlainDate(value).toLocaleString(locale, { dateStyle: "medium" });
 	return (
-		<div
+		<section
+			aria-label={t(
+				"settings.equipment.overview.summaryScope",
+				"Returns and readiness in your scope",
+			)}
 			className={cn(
-				"grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2",
+				"mx-4 grid grid-cols-1 overflow-hidden rounded-xl border bg-card text-card-foreground [&>button+button]:border-t lg:mx-6 @sm/main:grid-cols-2 @sm/main:[&>button+button]:border-l",
 				showReady ? "@5xl/main:grid-cols-4" : "@5xl/main:grid-cols-3",
 			)}
 		>
@@ -268,7 +262,7 @@ function OverviewKpis({
 					onSelect={onShowReady}
 				/>
 			) : null}
-		</div>
+		</section>
 	);
 }
 
@@ -330,7 +324,10 @@ export function EquipmentOverview({
 	if (notSetUp && !data.assignments.length)
 		return (
 			<>
-				<OverviewHeader actions={<EquipmentRefreshButton />} />
+				<EquipmentOverviewHeader
+					calendar={data}
+					actions={<EquipmentRefreshButton />}
+				/>
 				<SetupEmpty canAdminister={data.canAdminister} />
 			</>
 		);
@@ -355,7 +352,7 @@ export function EquipmentOverview({
 	);
 	return (
 		<>
-			<OverviewHeader actions={actions} />
+			<EquipmentOverviewHeader calendar={data} actions={actions} />
 			{data.canManage && !canIssue ? (
 				<p className="px-4 text-sm text-muted-foreground lg:px-6">
 					{t(
