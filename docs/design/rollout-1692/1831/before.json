@@ -1,0 +1,33 @@
+{
+  "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "sourceSha256": "ab674ed8e26a71cb3a370dc6b9f20544df9641fc97984c9308843ce60000799e",
+  "scope": "owned small-admin, Performance small",
+  "overlaySha256": "c06caaf5f92e3d89ee7a4b44e991d7d4092bc75ef5ea54b9c4f232c0a7c92eba",
+  "url": "/en/onboarding/vacation-policy",
+  "fields": [
+    {
+      "id": "base-ui-_R_dl5red9etb_-hidden-input",
+      "value": "en"
+    },
+    {
+      "id": "vacation-policy-name",
+      "value": "Standard"
+    },
+    {
+      "id": "vacation-policy-annual-days",
+      "value": "25"
+    },
+    {
+      "id": "base-ui-_r_5_-hidden-input",
+      "value": "annual"
+    },
+    {
+      "id": "",
+      "value": "on"
+    },
+    {
+      "id": "vacation-policy-max-carryover",
+      "value": "5"
+    }
+  ]
+}

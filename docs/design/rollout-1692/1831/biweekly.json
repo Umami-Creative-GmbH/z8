@@ -1,0 +1,31 @@
+{
+  "scope": "second new owned fixture, small-admin / Performance small; no pre-existing policy",
+  "checks": [
+    {
+      "name": "new organization starts without policies",
+      "actual": 0
+    },
+    {
+      "name": "one actual save action under duplicate native submit and skip",
+      "actual": 1
+    },
+    {
+      "name": "one real biweekly policy inserted",
+      "actual": 1
+    },
+    {
+      "name": "biweekly without carryover persisted",
+      "actual": [
+        "Standard",
+        "25",
+        "biweekly",
+        false,
+        "5",
+        null,
+        true,
+        true
+      ]
+    }
+  ],
+  "allActionTransports": 1
+}
