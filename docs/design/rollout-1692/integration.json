@@ -290,8 +290,13 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "a82dffeb4e56b91194ed0243f677c3d1933f4de0",
+                        "integrationCommit":  "4d28de653613e84311c2af36b4f91d5766d1d9a0",
+                        "implementationCommit":  "f043d581e481a984a54da81b967bf5e6cfdfcd5e",
+                        "evidenceCorrectionCommit":  "4d42a191caa3f530ebc66c596058d4cc90b43154",
+                        "evidence":  "docs/design/rollout-1692/1717.md",
+                        "integrationVerification":  "137 unique suites/1025 fresh tests includes exact34/267 with parameterized-case multiplicity retained;full combined types,ten-file actual-rootCRLF Biome and Doctor zero. Extra forced100-column and stdin config checks retain ten formatting-only failures. Independent tree equals incoming;all22 prior verified ancestors,824 rollout paths and11030 unaffected paths preserved.32 PNGs fully decoded/10JSON/7scripts/13links/three matched pairs checked. Raw artifact verifier fails before correction; pinned captured Git blobs accept only exact LF/CRLF encodings of retained hashes, and separate current canonical check passes; no app source changes in correction. PG6/47 and35 runtime observations/current-routeEscape/native/Next inherited. Toast interception/baseline inferred pending root hit-test; earlier menu/stackless transition/build/catalog/provider/device/zoom limits retained."
                     },
                     {
                         "id":  "R020",
@@ -310,7 +315,7 @@
                         "blockedBy":  [
                                           1717
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
