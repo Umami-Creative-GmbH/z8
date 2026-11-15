@@ -28,9 +28,9 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - R008 #1706 (work hours): integrated and verified at `62f92f0447a35b30b9806bca0a480f03a8f3c896`; root corrected the pinned employee column covering phone status values. See [paired real-browser regression and limits](1706.md).
 - R009 #1707 (legacy approvals): integrated and verified at `6fa8147fae492939056a76e83e327e520d921ae1`; both queues, decision owners and refusal drafts remain. See [fresh merger checks and retained acceptance limits](1707.md).
 - R010 #1708 (deputy decision history): integrated and verified at `3f86b1d7e17025e89f314638a042aa1eed378ed1`; retained history/rights and real local data-refetch recovery. See [fresh merged checks and shared-boundary finding](1708.md).
-- R011 #1709 (Unified Inbox): implementation committed, awaiting fresh merger review; no verified integration SHA yet.
-- R014 #1712 (calendar) and R016 #1714 (compliance): implementing in isolated worktrees based on the verified foundation frontier.
-- Frontier counts: **17 integrated, one awaiting integration, two implementing, 137 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
+- R011 #1709 (Unified Inbox): integrated and verified at `97ecd83ca05ad1bab75fee84beed57f23e74c007`; authorized submitted reasons and fresh-detail decision rights preserved. See [fresh combined verification and exact limits](1709.md).
+- R012 #1710 (canonical approval arrival/review), R014 #1712 (calendar) and R016 #1714 (compliance): implementing in isolated worktrees. #1710 is released by verified #1709 ancestry while its GitHub issue stays open.
+- Frontier counts: **18 integrated, none awaiting integration, three implementing, 136 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
 - R002 #1701 (absences): integrated and verified at `a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc`; organization/year/zone, records and existing absence action owners preserved. See [capabilities and remaining checks](1701.md).
 - R005 #1703 (overtime burn-down): integrated and verified at `2bc30e88f63d9db3d547353f49077db0c0ee7805`; root corrected both Unassigned manager queries and active analytics navigation. See [capabilities, corrections and remaining checks](1703.md).
 - R001 #1700 (dashboard conformance): integrated and verified at `8eed0aa58bcae1dd19be7e6d7d78303208a3ddde`; approved composition/preferences preserved, no-organization heading and streamed clock hydration corrected. See [capabilities and remaining checks](1700.md).
@@ -41,6 +41,8 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - Remaining pages: select from eligible prerequisites in `integration.json`. Foundation readiness is verified; route-specific shared-output dependencies still apply.
 
 ## Verification
+
+- #1709 merge `97ecd83ca`: **79 unique suites / 981 fresh tests**, full combined types, ten-file Biome zero findings, Doctor zero errors/one controller warning. Exact52/663 plus compatibility34/375, seven repeated files/57 cases removed. Unchanged compatibility passed after one concurrent five-second extraction timeout. Both heading conflict additions,49 incoming non-conflict/95 root-only files preserved; submitted-reason scope and fresh-detail refusal reviewed. Twelve JSON/eight scripts/20 PNGs/three matched pairs checked. PG2/6 and browser/native are inherited; final ARIA patch lacks exact runtime certification and other limits remain in [the report](1709.md). Verified dependency releases #1710.
 
 - #1708 merge `3f86b1d7e`: **34 unique suites / 374 fresh tests**, full combined types, seven-file Biome and scoped/explicit Doctor zero findings. Both #1707/#1708 heading tests, all572 prior rollout paths/66 root-exclusive files and actual local retry owner survive. Four matched pairs/16 PNGs and other artifacts checked; one incoming blank EOF corrected. PostgreSQL3/21 and real browser/native evidence are inherited. Wider shared error wrappers still use reset instead of refetching retry and require root correction; other limits remain in [the report](1708.md).
 

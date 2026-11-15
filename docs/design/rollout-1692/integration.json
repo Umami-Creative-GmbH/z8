@@ -190,9 +190,11 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "7c342d50640bee64aff85eced675db14659f3ac2"
+                        "status":  "integrated",
+                        "verifiedCommit":  "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+                        "implementationCommit":  "7c342d50640bee64aff85eced675db14659f3ac2",
+                        "evidence":  "docs/design/rollout-1692/1709.md",
+                        "integrationVerification":  "Fresh79 unique suites/981 tests (52/663 +34/375 less7files/57cases), full combined types, ten-file Biome zero; Doctor zero errors/one controller warning. Unchanged compatibility passed alone after one concurrent5s extraction timeout. Both heading additions,49 incoming non-conflict/95 root-only paths and decision owners preserved. Authorized scoped reason/exact detail/refusal reviewed;12JSON/8scripts/20PNG/3matched pairs pass. PG2/6 and actual runtime inherited; final ARIA patch exact DOM unverified. Catalog/build/device/provider/transition/covering/six-kind/R012 limits retained."
                     },
                     {
                         "id":  "R012",
@@ -201,7 +203,7 @@
                         "blockedBy":  [
                                           1709
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
