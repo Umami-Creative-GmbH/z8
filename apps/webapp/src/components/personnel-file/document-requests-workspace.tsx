@@ -36,32 +36,10 @@ export function DocumentRequestsWorkspace({
 	snapshot: DocumentRequestsSnapshot | null;
 }) {
 	const { t } = useTranslate();
-	const context = useOrganization();
-	const session = useSession();
+	const { matches, settled } = useRequestScope(userId, organizationId, employeeId);
 	const { refresh } = useRouter();
-	const [retained, setRetained] = useState({ source: snapshot, filterKey, snapshot });
-	if (retained.source !== snapshot || retained.filterKey !== filterKey) {
-		setRetained({
-			source: snapshot,
-			filterKey,
-			snapshot: snapshot ?? (retained.filterKey === filterKey ? retained.snapshot : null),
-		});
-	}
-	const data = snapshot ?? (retained.filterKey === filterKey ? retained.snapshot : null);
-	const matches =
-		!session.isPending &&
-		!context.isLoading &&
-		session.data?.user.id === userId &&
-		session.data.session.activeOrganizationId === organizationId &&
-		context.userId === userId &&
-		context.activeOrganizationId === organizationId &&
-		context.employeeId === employeeId;
-	const current = useRequestArrival(
-		snapshot,
-		matches,
-		!session.isPending && !context.isLoading,
-		refresh,
-	);
+	const data = useRetainedRequestSnapshot(snapshot, filterKey);
+	const current = useRequestArrival(snapshot, matches, settled, refresh);
 
 	return (
 		<div className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
@@ -179,4 +157,34 @@ function DocumentRequestsReadFailure({ hasRetained }: { hasRetained: boolean }) 
 			</AlertDescription>
 		</Alert>
 	);
+}
+
+function useRequestScope(userId: string, organizationId: string, employeeId: string | null) {
+	const context = useOrganization();
+	const session = useSession();
+	const settled = !session.isPending && !context.isLoading;
+	return {
+		settled,
+		matches:
+			settled &&
+			session.data?.user.id === userId &&
+			session.data.session.activeOrganizationId === organizationId &&
+			context.userId === userId &&
+			context.activeOrganizationId === organizationId &&
+			context.employeeId === employeeId,
+	};
+}
+
+function useRetainedRequestSnapshot(snapshot: DocumentRequestsSnapshot | null, filterKey: string) {
+	const [retained, setRetained] = useState({ source: snapshot, filterKey, snapshot });
+	if (retained.source !== snapshot || retained.filterKey !== filterKey) {
+		setRetained({
+			source: snapshot,
+			filterKey,
+			snapshot: snapshot ?? (retained.filterKey === filterKey ? retained.snapshot : null),
+		});
+	}
+	const data = snapshot ?? (retained.filterKey === filterKey ? retained.snapshot : null);
+
+	return data;
 }
