@@ -29,12 +29,13 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - R009 #1707 (legacy approvals): integrated and verified at `6fa8147fae492939056a76e83e327e520d921ae1`; both queues, decision owners and refusal drafts remain. See [fresh merger checks and retained acceptance limits](1707.md).
 - R010 #1708 (deputy decision history): integrated and verified at `3f86b1d7e17025e89f314638a042aa1eed378ed1`; retained history/rights and real local data-refetch recovery. See [fresh merged checks and shared-boundary finding](1708.md).
 - R011 #1709 (Unified Inbox): integrated and verified at `97ecd83ca05ad1bab75fee84beed57f23e74c007`; authorized submitted reasons and fresh-detail decision rights preserved. See [fresh combined verification and exact limits](1709.md).
-- R015 #1713 (selected-employee calendar) and R017 #1715 (driving licence): claimed for isolated implementation from verified Calendar/H1 ancestry; issues stay open.
+- R015 #1713 (selected-employee calendar) and R018 #1716 (selected-employee licence check): claimed for isolated implementation from verified Calendar/H1 ancestry; issues stay open.
+- R017 #1715 (driving licence): integrated and verified at `ad51efc8e2d39e062c8486b4ead15732c67acb30`; independent grants, evidence and explicit reinstatement remain. See [merged checks and qualified current-route evidence](1715.md).
 - R016 #1714 (compliance): integrated and verified at `0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10`; risk-first records, truthful coverage and authorized streaming. See [combined checks and exact quality/runtime limits](1714.md).
 - R014 #1712 (calendar): integrated and verified at `cca1977df820ef288a7910a4f9d44b464d289b3b`; selected scope and original action owners remain. See [fresh checks and explicit runtime limits](1712.md).
 - R012 #1710 (canonical approval arrival/review): integrated and verified at `273320a9376b4deb60b57ba3882fc17b37ae308a`; canonical arrival, independent admission and fresh decision authority remain. See [merged checks and exact limits](1710.md).
 - R019 #1717 (equipment workspace): claimed for isolated implementation from verified H1 ancestry; issue stays open.
-- Frontier counts: **21 integrated, three implementing, 133 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
+- Frontier counts: **22 integrated, three implementing, 132 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
 - R002 #1701 (absences): integrated and verified at `a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc`; organization/year/zone, records and existing absence action owners preserved. See [capabilities and remaining checks](1701.md).
 - R005 #1703 (overtime burn-down): integrated and verified at `2bc30e88f63d9db3d547353f49077db0c0ee7805`; root corrected both Unassigned manager queries and active analytics navigation. See [capabilities, corrections and remaining checks](1703.md).
 - R001 #1700 (dashboard conformance): integrated and verified at `8eed0aa58bcae1dd19be7e6d7d78303208a3ddde`; approved composition/preferences preserved, no-organization heading and streamed clock hydration corrected. See [capabilities and remaining checks](1700.md).
@@ -45,6 +46,10 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - Remaining pages: select from eligible prerequisites in `integration.json`. Foundation readiness is verified; route-specific shared-output dependencies still apply.
 
 ## Verification
+
+- #1715 merge `ad51efc8e`: **126 unique suites /973 fresh tests** (31/215 exact+99/791 compatibility less10 files/75 cases+6/42 root fixes), full combined types and14-file Doctor zero. Normal ten-file Biome/four legacy lint-import checks pass; extra forced config has ten formatting-only differences and is unpassed. All21 prior verified ancestors/753 rollout paths and10,954 unaffected paths preserved;48 PNGs fully decode with other artifacts/seven pairs checked. Current-route three Escape variants/native/axe31-0-0/Next and PG6/59 are inspected inherited evidence. [Exact limits](1715.md).
+
+- Static route inventory at `ad51efc8e`: all **172 source page templates** map exactly once to the approved **153 persistent pages+19 aliases**; every alias destination matches its owning ledger issue. All19 alias templates remain byte-identical to initial dev. [Inventory](route-inventory.json) and [reproducer](verify-route-inventory.mjs). This is source coverage only; locale/query/access runtime contracts still belong to destination-ticket acceptance and final verification.
 
 - Shared F1 navigation correction `b6595389e`: a hidden link tooltip consumed the first Escape. One disabled prop on its existing root fixes the owner. The permanent assembled regression fails before correction; **10 suites /97 tests**, full types and two-file Biome/Doctor zero pass. Three matched historical-consumer phone cases (saved18px/normal and reduced motion;16px/expanded preference) now close and return focus with one trusted Escape; desktop icon-rail tooltip/focus and fresh Next probes pass. Seven PNGs fully decode; owned browser/Next/three fixture services cleaned. Exact tree equals tested feature tree; API/domain/current-route/native/build/catalog/device/provider/transition limits remain in [F1 proof](1693.md#root-correction-mobile-navigation-escape).
 
