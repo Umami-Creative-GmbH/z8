@@ -1,9 +1,21 @@
 "use client";
 
-import { IconLink, IconPaperclip, IconTrash, IconUnlink } from "@tabler/icons-react";
+import {
+	IconLink,
+	IconPaperclip,
+	IconTrash,
+	IconUnlink,
+} from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import {
+	useEffectEvent,
+	useId,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { listAbsenceSickNotesAction } from "@/app/[locale]/(app)/absences/sick-note-actions";
 import type { EmployeeDocumentView } from "@/app/[locale]/(app)/personnel-files/actions";
@@ -12,6 +24,7 @@ import { DeleteDocumentDialog } from "@/components/personnel-file/delete-documen
 import { DocumentList } from "@/components/personnel-file/document-list";
 import { LinkExistingSickNoteDialog } from "@/components/personnel-file/sick-note-links";
 import { useAppLocale } from "@/components/providers/app-locale-provider";
+import { useOrganization } from "@/components/providers/organization-context-provider";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -25,7 +38,77 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import { queryKeys } from "@/lib/query/keys";
-import { AttachSickNoteDialog, type SickNoteAbsenceTarget } from "./attach-sick-note-dialog";
+import {
+	AttachSickNoteDialog,
+	type SickNoteAbsenceTarget,
+} from "./attach-sick-note-dialog";
+
+function useSickNoteOpening(
+	absenceId: string,
+	open: boolean,
+	onRetire: () => void,
+) {
+	const queryClient = useQueryClient();
+	const retire = useEffectEvent(onRetire);
+	const current = useOrganization();
+	const [owner] = useState(() => ({
+		userId: current.userId,
+		organizationId: current.activeOrganizationId,
+	}));
+	const inScope =
+		Boolean(owner.userId && owner.organizationId) &&
+		current.userId === owner.userId &&
+		current.activeOrganizationId === owner.organizationId;
+	const openingId = useId();
+	const [arrival, setArrival] = useState(0);
+	const lifetime = useRef({ live: false, arrival: 0 });
+	const queryKey = useMemo(
+		() => [
+			...queryKeys.personnelFile.absenceSickNotes(absenceId),
+			owner,
+			openingId,
+			arrival,
+		],
+		[absenceId, owner, openingId, arrival],
+	);
+
+	useLayoutEffect(() => {
+		const activation = {
+			live: open && inScope,
+			arrival: lifetime.current.arrival + 1,
+		};
+		lifetime.current = activation;
+		setArrival(activation.arrival);
+		retire();
+		return () => {
+			activation.live = false;
+			retire();
+		};
+	}, [open, inScope]);
+
+	useLayoutEffect(
+		() => () => {
+			void queryClient.cancelQueries({ queryKey, exact: true });
+			queryClient.removeQueries({ queryKey, exact: true });
+		},
+		[queryClient, queryKey],
+	);
+
+	const query = useQuery({
+		queryKey,
+		queryFn: async ({ signal }) => {
+			const result = await listAbsenceSickNotesAction(absenceId);
+			if (signal.aborted)
+				throw new DOMException("Retired note read", "AbortError");
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: open && inScope && arrival > 0,
+		gcTime: 0,
+	});
+
+	return { query, inScope, arrival, lifetime };
+}
 
 /**
  * The sick notes of one absence (#982) for a viewer who may open them: the
@@ -55,55 +138,96 @@ export function AbsenceSickNotesPanel({
 	const { t } = useTranslate();
 	const locale = useAppLocale();
 	const queryClient = useQueryClient();
+	const pendingUnlink = useRef<symbol | null>(null);
 	const [attaching, setAttaching] = useState(false);
 	const [deleting, setDeleting] = useState<EmployeeDocumentView | null>(null);
 	const [linking, setLinking] = useState(false);
 	const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
-
-	const query = useQuery({
-		queryKey: queryKeys.personnelFile.absenceSickNotes(absence.id),
-		queryFn: async () => {
-			const result = await listAbsenceSickNotesAction(absence.id);
-			if (!result.success) throw new Error(result.error);
-			return result.data;
+	const { query, inScope, arrival, lifetime } = useSickNoteOpening(
+		absence.id,
+		open,
+		() => {
+			setAttaching(false);
+			setDeleting(null);
+			setLinking(false);
+			setUnlinkingId(null);
 		},
-		enabled: open,
-	});
+	);
 
 	function refresh() {
 		void queryClient.invalidateQueries({
-			queryKey: manage ? queryKeys.personnelFile.all : queryKeys.personnelFile.sickNotesAll(),
+			queryKey: manage
+				? queryKeys.personnelFile.all
+				: queryKeys.personnelFile.sickNotesAll(),
 		});
-		onChanged();
+		if (lifetime.current.live && lifetime.current.arrival === arrival)
+			onChanged();
 	}
 
 	async function unlink(document: EmployeeDocumentView) {
+		if (pendingUnlink.current || !lifetime.current.live) return;
+		const command = Symbol();
+		pendingUnlink.current = command;
+		const activation = lifetime.current;
 		setUnlinkingId(document.id);
 		// Promise#finally rather than try/finally: the React Compiler cannot
 		// compile try statements without a catch clause.
 		await unlinkSickNoteAction({ documentId: document.id })
 			.then((result) => {
+				if (result.success) {
+					// An accepted write still invalidates its original record after the UI retires.
+					void queryClient.invalidateQueries({
+						queryKey: manage
+							? queryKeys.personnelFile.all
+							: queryKeys.personnelFile.sickNotesAll(),
+					});
+				}
+				if (!activation.live) return;
 				if (!result.success) {
 					toast.error(
 						result.error ||
-							t("absences.sickNotes.panel.unlinkFailed", "The sick note could not be unlinked."),
+							t(
+								"absences.sickNotes.panel.unlinkFailed",
+								"The sick note could not be unlinked.",
+							),
 					);
 					return;
 				}
-				toast.success(t("absences.sickNotes.panel.unlinked", "Sick note unlinked"));
+				toast.success(
+					t("absences.sickNotes.panel.unlinked", "Sick note unlinked"),
+				);
 				refresh();
 			})
-			.finally(() => setUnlinkingId(null));
+			.catch(() => {
+				if (activation.live)
+					toast.error(
+						t(
+							"absences.sickNotes.panel.unlinkFailed",
+							"The sick note could not be unlinked.",
+						),
+					);
+			})
+			.finally(() => {
+				if (pendingUnlink.current === command) pendingUnlink.current = null;
+				if (activation.live) setUnlinkingId(null);
+			});
 	}
 
-	const dateRange = formatAbsenceDateRange(absence.startDate, absence.endDate, locale);
+	const dateRange = formatAbsenceDateRange(
+		absence.startDate,
+		absence.endDate,
+		locale,
+	);
+	if (!inScope) return null;
 
 	return (
 		<>
 			<ActionPanel open={open} onOpenChange={onOpenChange}>
 				<ActionPanelContent>
 					<ActionPanelHeader>
-						<ActionPanelTitle>{t("absences.sickNotes.panel.title", "Sick notes")}</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("absences.sickNotes.panel.title", "Sick notes")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{t(
 								"absences.sickNotes.panel.description",
@@ -120,12 +244,28 @@ export function AbsenceSickNotesPanel({
 								<Skeleton className="h-16 w-full" />
 							</div>
 						) : query.isError ? (
-							<p role="alert" className="text-sm text-destructive">
-								{t("absences.sickNotes.panel.loadFailed", "The sick notes could not be loaded.")}
-							</p>
+							<div className="space-y-3">
+								<p role="alert" className="text-sm text-destructive">
+									{t(
+										"absences.sickNotes.panel.loadFailed",
+										"The sick notes could not be loaded.",
+									)}
+								</p>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={query.isFetching}
+									onClick={() => void query.refetch()}
+								>
+									{t("common.retry", "Retry")}
+								</Button>
+							</div>
 						) : query.data.length === 0 ? (
 							<p className="text-sm text-muted-foreground">
-								{t("absences.sickNotes.panel.empty", "No sick notes you can open.")}
+								{t(
+									"absences.sickNotes.panel.empty",
+									"No sick notes you can open.",
+								)}
 							</p>
 						) : (
 							<DocumentList
@@ -138,26 +278,38 @@ export function AbsenceSickNotesPanel({
 												type="button"
 												variant="ghost"
 												size="icon"
-												disabled={unlinkingId === document.id}
+												disabled={unlinkingId !== null}
 												onClick={() => void unlink(document)}
-												aria-label={t("absences.sickNotes.panel.unlink", "Unlink {title}", {
-													title: document.title,
-												})}
+												aria-label={t(
+													"absences.sickNotes.panel.unlink",
+													"Unlink {title}",
+													{
+														title: document.title,
+													},
+												)}
 											>
 												<IconUnlink aria-hidden="true" className="size-4" />
 											</Button>
 										) : null}
-										{query.data.find((note) => note.id === document.id)?.canDelete ? (
+										{query.data.find((note) => note.id === document.id)
+											?.canDelete ? (
 											<Button
 												type="button"
 												variant="ghost"
 												size="icon"
 												onClick={() => setDeleting(document)}
-												aria-label={t("absences.sickNotes.panel.delete", "Delete {title}", {
-													title: document.title,
-												})}
+												aria-label={t(
+													"absences.sickNotes.panel.delete",
+													"Delete {title}",
+													{
+														title: document.title,
+													},
+												)}
 											>
-												<IconTrash aria-hidden="true" className="size-4 text-destructive" />
+												<IconTrash
+													aria-hidden="true"
+													className="size-4 text-destructive"
+												/>
 											</Button>
 										) : null}
 									</>
@@ -166,11 +318,19 @@ export function AbsenceSickNotesPanel({
 						)}
 					</ActionPanelBody>
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
 							{t("common.close", "Close")}
 						</Button>
 						{manage ? (
-							<Button type="button" variant="outline" onClick={() => setLinking(true)}>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setLinking(true)}
+							>
 								<IconLink aria-hidden="true" className="size-4" />
 								{t("absences.sickNotes.panel.linkExisting", "Link sick note")}
 							</Button>
