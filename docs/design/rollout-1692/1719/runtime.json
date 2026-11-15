@@ -1,0 +1,126 @@
+{
+  "checks": [
+    {
+      "name": "one selected employee heading",
+      "actual": [
+        "Fixture Person 2"
+      ]
+    },
+    {
+      "name": "initial partial quantity and organization calendar",
+      "actual": true
+    },
+    {
+      "name": "keyboard overdue filter retains one record",
+      "actual": 1
+    },
+    {
+      "name": "summary counts do not follow filter",
+      "actual": "Outstanding returns2"
+    },
+    {
+      "name": "keyboard sort announces ascending",
+      "actual": "Item"
+    },
+    {
+      "name": "detail retains employee back destination",
+      "actual": "/en/equipment/employees/424291ff-d3e0-4991-8b70-b9f177c15406"
+    },
+    {
+      "name": "holder is prefilled and locked",
+      "actual": {
+        "value": "424291ff-d3e0-4991-8b70-b9f177c15406",
+        "disabled": true
+      }
+    },
+    {
+      "name": "failed action retains entered quantity",
+      "actual": "3"
+    },
+    {
+      "name": "real issue persists",
+      "actual": 3
+    },
+    {
+      "name": "real partial receipt retains two of three",
+      "actual": true
+    },
+    {
+      "name": "access loss refuses without clearing draft",
+      "actual": "Refused R021 draft"
+    },
+    {
+      "name": "refused issue creates no extra assignment",
+      "actual": 3
+    },
+    {
+      "name": "former keeps existing-holding action and no new issuance",
+      "actual": true
+    },
+    {
+      "name": "former return stays former and history remains",
+      "actual": true
+    },
+    {
+      "name": "receipt did not reactivate employee",
+      "actual": false
+    },
+    {
+      "name": "read failure has retry and one heading",
+      "actual": [
+        "Employee equipment"
+      ]
+    },
+    {
+      "name": "retry restores actual employee records",
+      "actual": 3
+    },
+    {
+      "name": "small-manager cannot read holder records",
+      "actual": true
+    },
+    {
+      "name": "self holder retains read-only employee history",
+      "actual": true
+    },
+    {
+      "name": "self history links reach guarded detail",
+      "actual": true
+    },
+    {
+      "name": "small-manager cannot read holder records",
+      "actual": true
+    },
+    {
+      "name": "small-restricted cannot read holder records",
+      "actual": true
+    },
+    {
+      "name": "large-admin cannot read holder records",
+      "actual": true
+    },
+    {
+      "name": "scoped officer independently enters employee route",
+      "actual": true
+    },
+    {
+      "name": "scoped officer cannot enter uncovered employee",
+      "actual": true
+    },
+    {
+      "name": "revocation removes direct-route admission",
+      "actual": true
+    },
+    {
+      "name": "missing policy preserves holdings and removes issue",
+      "actual": true
+    },
+    {
+      "name": "streaming keeps one employee task heading",
+      "actual": [
+        "Employee equipment"
+      ]
+    }
+  ],
+  "errors": []
+}

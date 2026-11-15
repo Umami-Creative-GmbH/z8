@@ -1,0 +1,26 @@
+{
+  "tool": "agent-browser 0.39.1 --enable react-devtools",
+  "components": [
+    {
+      "name": "EmployeeEquipment",
+      "present": true
+    },
+    {
+      "name": "EquipmentEmployeeHeader",
+      "present": true
+    },
+    {
+      "name": "PageHeader",
+      "present": true
+    },
+    {
+      "name": "EquipmentAssignmentsCard",
+      "present": true
+    },
+    {
+      "name": "ActionPanel",
+      "present": true
+    }
+  ],
+  "limit": "Actual authorized native tree; no accepted numeric render/performance benchmark"
+}
