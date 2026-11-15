@@ -1,0 +1,15 @@
+{
+  "head": "511ecaaacf5a4d864f0968dec3537172023beb63",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+      "canonicalSha256": "fbbe31f4f3ac0a1a34a35b1d568284984f86a13cbd02879eb50091d5809b4d97"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+      "canonicalSha256": "21cc8c0c5d0a41f97794f266262db9c58ae052e40c93ba9ad358f1ec30df0713"
+    }
+  ],
+  "session": "next-dev-loop-1829-t3-36de3f4a-69b59b59b97cbc3d",
+  "qualification": "Actual pending owner tree; native eval delays delivery of the unchanged real summary Response after HTTP200. No response/authority value is mocked. Separate Puppeteer check holds the unmodified actual request before transport."
+}

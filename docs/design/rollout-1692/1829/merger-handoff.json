@@ -1,0 +1,1041 @@
+{
+  "status": "MERGED_ONE_SOURCE_CORRECTION_REQUIRED",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "8a13b755220124c4ea1d3fd1ccacb770aae31241",
+  "incoming": "301825c0bd096b5be74e7b545aee791da6bf418e",
+  "merge": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "parents": [
+    "8a13b755220124c4ea1d3fd1ccacb770aae31241",
+    "301825c0bd096b5be74e7b545aee791da6bf418e"
+  ],
+  "tree": "2df0695c469d05fb5cc1162555da4a7a6ed1819e",
+  "clean": true,
+  "findings": [
+    {
+      "priority": "P2",
+      "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+      "line": 670,
+      "problem": "The membership-checking branch has zero semantic main headings, leaving the full persistent onboarding step untitled until the summary request settles.",
+      "spec": "Canonical shared visual/page grammar requires one semantic main heading per persistent page.",
+      "proof": ".tmp/merge1829-audit/arrival-races.test.tsx:24; adversarial-unit.json: expected1 actual0 while labeled checking status and no creation controls are confirmed.",
+      "owner": "Root; merger left source untouched."
+    }
+  ],
+  "nativeMerge": {
+    "command": [
+      "git",
+      "merge",
+      "--no-ff",
+      "301825c0bd096b5be74e7b545aee791da6bf418e",
+      "-m",
+      "Merge #1829 organization onboarding into UI refresh integration"
+    ],
+    "independentCommand": [
+      "git",
+      "merge-tree",
+      "--write-tree",
+      "8a13b755220124c4ea1d3fd1ccacb770aae31241",
+      "301825c0bd096b5be74e7b545aee791da6bf418e"
+    ],
+    "independentTreeMatches": true,
+    "conflicts": 0
+  },
+  "tests": {
+    "runs": [
+      {
+        "name": "exact-unit",
+        "physicalFiles": 37,
+        "cases": 368,
+        "passed": 368,
+        "failed": 0,
+        "skipped": 0,
+        "overlapCasesWithEarlierRuns": 0
+      },
+      {
+        "name": "compatibility-unit",
+        "physicalFiles": 167,
+        "cases": 1687,
+        "passed": 1686,
+        "failed": 1,
+        "skipped": 0,
+        "overlapCasesWithEarlierRuns": 368
+      },
+      {
+        "name": "translation-retry",
+        "physicalFiles": 1,
+        "cases": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "overlapCasesWithEarlierRuns": 1
+      },
+      {
+        "name": "adversarial-unit",
+        "physicalFiles": 1,
+        "cases": 8,
+        "passed": 7,
+        "failed": 1,
+        "skipped": 0,
+        "overlapCasesWithEarlierRuns": 0
+      },
+      {
+        "name": "preservation-unit",
+        "physicalFiles": 3,
+        "cases": 25,
+        "passed": 25,
+        "failed": 0,
+        "skipped": 0,
+        "overlapCasesWithEarlierRuns": 0
+      }
+    ],
+    "unique": {
+      "physicalFiles": 171,
+      "cases": 1720,
+      "passed": 1719,
+      "failed": 1,
+      "skipped": 0
+    },
+    "failures": [
+      {
+        "key": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1829-audit/arrival-races.test.tsx\u0000Independent public onboarding arrival and response probes retains exactly one task heading while membership detection is held\u00000",
+        "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1829-audit/arrival-races.test.tsx",
+        "name": "Independent public onboarding arrival and response probes retains exactly one task heading while membership detection is held",
+        "occurrence": 0,
+        "status": "failed",
+        "failureMessages": [
+          "AssertionError: expected [] to have a length of 1 but got +0\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1861:20)\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/chai@6.3.0/node_modules/chai/index.js:1737:25)\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1829-audit/arrival-races.test.tsx:24:54\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20"
+        ]
+      }
+    ],
+    "deduplication": "Canonical realpath + fullName + occurrence multiplicity within the physical file. Later unchanged extractor rerun replaces its timed-out observation; all initial failures remain in their raw JSON.",
+    "newIndependentProbes": 8
+  },
+  "types": {
+    "passed": true,
+    "profiles": [
+      "next typegen",
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ],
+    "log": ".tmp/merge1829-audit/types.log"
+  },
+  "quality": {
+    "profiles": [
+      {
+        "name": "biome-crlf",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-default",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-explicit",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-explicit-crlf",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-explicit-lint",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-lint-import",
+        "exitCode": 0
+      }
+    ],
+    "doctor": {
+      "version": "0.9.22",
+      "sourceRevision": "9847f784dfcdca922fd41936493ea07d4b896675",
+      "changedFiles": 3,
+      "errors": 0,
+      "warnings": 0,
+      "score": null
+    },
+    "lineEndings": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "crlf": 735,
+        "bareLF": 0
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+        "crlf": 677,
+        "bareLF": 0
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+        "crlf": 26,
+        "bareLF": 0
+      }
+    ],
+    "qualification": "Ordinary CRLF and ordinary/explicit lint-import profiles pass; ordinary default and explicit webapp100-column formatter checks fail all3files. No source formatting or suppression changes."
+  },
+  "preservation": {
+    "unaffectedPaths": 12888,
+    "priorRolloutPaths": 2640,
+    "incomingRawPaths": 105,
+    "verifiedTicketAncestors": 42,
+    "baselineAncestor": true,
+    "root1828CorrectionAndProofAncestors": true,
+    "allIncomingBlobsMatch": true,
+    "headingOptInsUnchanged": true,
+    "authoritativeOwners": [
+      "apps/webapp/src/app/[locale]/onboarding/organization/actions.ts",
+      "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "apps/webapp/src/lib/auth/organization-joining-hooks.ts",
+      "apps/webapp/src/lib/organization/creation-policy.server.ts",
+      "apps/webapp/src/lib/organization/creation-policy.ts",
+      "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "sourcePageTemplates": 172,
+    "persistentPages": 153,
+    "aliases": 19,
+    "graphNodes": 157,
+    "graphEdges": 159
+  },
+  "artifacts": {
+    "decodedPNGs": 61,
+    "parsedJSON": 35,
+    "syntaxCheckedMJS": 7,
+    "documentLinks": 0,
+    "defaultPairs": 13,
+    "defaultMatrixPairs": 12,
+    "keyboardPairs": 1,
+    "allCaptureSourcePins": 270,
+    "matchedCaptureSourcePins": 245,
+    "unmatchedPins": [
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+        "capture": "actions-slug-available.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+        "capture": "actions-tracking-boundary.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+        "capture": "actions-creation-pending.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-desktop-light.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-desktop-light.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-wide-dark.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-wide-dark.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-phone-light.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-phone-light.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-phone-dark-large.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "5e556ff4c7d31792a37b21141473ad16426476ce09c51cca5f35af796bde7e2c",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-phone-dark-large.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-keyboard.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "5e556ff4c7d31792a37b21141473ad16426476ce09c51cca5f35af796bde7e2c",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-keyboard.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-desktop-light.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-wide-dark.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-phone-light.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-phone-dark-large.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-keyboard.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\denial-runtime.json",
+        "capture": "denial-policy-refusal-readback.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "364377ab66a3106a6213d8abb487773202b865713ed685c7234e8467f279fd1e",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\disabled-runtime.json",
+        "capture": "disabled-creation-disabled.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "364377ab66a3106a6213d8abb487773202b865713ed685c7234e8467f279fd1e",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-desktop-light.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-wide-dark.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-phone-light.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-phone-dark-large.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-keyboard.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      }
+    ],
+    "finalOwnedMatches": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a",
+        "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+        "blob": "25ca035071da40526be4f082e4738f227e78dc27",
+        "sha256": "bd6208bed5f20092ac626258c7f6f4bf189bcec266dd11e045fc6eeada009aad"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+        "blob": "26896bb0e441b42192da745f697352a496bd9f00",
+        "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca"
+      }
+    ],
+    "recordedUnitFiles": 37,
+    "recordedUnitTests": 349,
+    "recordedPGFiles": 3,
+    "recordedPGTests": 78,
+    "recordedRuntimeAssertions": 23,
+    "powershellSyntax": {
+      "path": "docs/design/rollout-1692/1829/stop.ps1",
+      "parserErrors": [],
+      "passed": true
+    }
+  },
+  "dependencies": {
+    "lockSHA256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "physicalRoots": [
+      "node_modules",
+      "apps/webapp/node_modules",
+      "node_modules/.pnpm"
+    ],
+    "verifiedLocalLeafLinks": 158,
+    "noInstallOrRepair": true
+  },
+  "reviews": {
+    "skills": [
+      "vercel-react-best-practices",
+      "vercel-composition-patterns",
+      "web-design-guidelines",
+      "react-doctor",
+      "tdd approved assembled public seams"
+    ],
+    "guidelines": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "sourceScope": "Exactly organization client/page/test; all four existing payload fields/validation/destinations/creation policy/organization-local tracking meaning and existing joining are retained.",
+    "pendingHeading": "One material shared-heading finding remains and is intentionally not fixed.",
+    "timekeeping": "Page-local instant=false permits blocking validation; pre-existing connection()/systemClock own per-request creation policy/date. Existing Temporal organization tracking field and server tracking setup owner retain explicit-zone meaning. No auth/guard/shared shell/date-policy change.",
+    "otherNotes": [
+      "Decorative spinner aria-hidden and automatic first-invalid focus are minor inherited guideline gaps, not independently established new regressions.",
+      "No extra permissions/timezone writes inferred from client account/session/org lifetime identity."
+    ]
+  },
+  "evidence": {
+    "fresh": "Merged-tree exact and broad compatibility suites,8independent public probes,full types,6Biome profiles,Doctor0,read-only PNG/JSON/script/link/Git-source-pin/dependency/preservation audit.",
+    "inherited": "Worker3PostgreSQL suites78tests; real creation/readback, existing member, skip/disabled policy, generated Next action transport refusal, actual serialized slug ABA,24matrixcaptures+keyboard,contrast and clean connected MCP.",
+    "sourceProvenance": [
+      "Fresh archive/source/dependency preservation audit; browser/Next/PostgreSQL/native/contrast observations remain inherited.",
+      "All retained capture source hashes are compared with actual Git blobs allowing only canonical LF/CRLF; temporary config pins and earlier dirty-source pins may remain unmatched and are listed, not promoted.",
+      "Default before/after substitutes only organization consumer source; request-time declaration and shared shell are current. Random shared background images can differ across requests; full-page PNG heights differ with layout.",
+      "Held browser Create across restart remains unpassed; separate generated Next action policy transport refusal is not a replacement pass.",
+      "Private fixture values unavailable after cleanup; worker exact secret-value exclusion remains inherited, no fresh exact-value exclusion claim.",
+      "No optional prior1726/1727 archive verifier rerun; independent preservation only."
+    ],
+    "captureViews": [
+      "after-phone-dark-large.png",
+      "after-desktop-light-default.png"
+    ],
+    "native": "R034 native React tree remains unpassed; root R033 native success does not certify this page.",
+    "privacy": "Private fixture unavailable after cleanup; exact secret-value exclusion inherited only. No secrets printed or provider/customer/Phase calls."
+  },
+  "commands": {
+    "records": [
+      {
+        "name": "adversarial-unit",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--config",
+          "../../.tmp/merge1829-audit/vitest.config.ts",
+          "--project",
+          "audit",
+          "--maxWorkers",
+          "1",
+          "--reporter=json",
+          "--outputFile",
+          "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\adversarial-unit.json"
+        ],
+        "started": "2026-11-15T18:05:38.6526221Z",
+        "exitCode": 1
+      },
+      {
+        "name": "archive",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "node",
+          ".tmp/merge1829-audit/verify-artifacts.mjs"
+        ],
+        "started": "2026-11-15T18:08:03.1452914Z",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-crlf",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "--line-ending=crlf",
+          "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+          "src/app/[locale]/onboarding/organization/page.tsx",
+          "src/app/[locale]/onboarding/organization/page.test.tsx"
+        ],
+        "started": "2026-11-15T18:07:18.9179698Z",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-default",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+          "src/app/[locale]/onboarding/organization/page.tsx",
+          "src/app/[locale]/onboarding/organization/page.test.tsx"
+        ],
+        "started": "2026-11-15T18:07:17.0739076Z",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-explicit",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "--config-path=biome.jsonc",
+          "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+          "src/app/[locale]/onboarding/organization/page.tsx",
+          "src/app/[locale]/onboarding/organization/page.test.tsx"
+        ],
+        "started": "2026-11-15T18:07:19.5707646Z",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-explicit-crlf",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+          "src/app/[locale]/onboarding/organization/page.tsx",
+          "src/app/[locale]/onboarding/organization/page.test.tsx"
+        ],
+        "started": "2026-11-15T18:07:19.9577223Z",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-explicit-lint",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "--config-path=biome.jsonc",
+          "--formatter-enabled=false",
+          "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+          "src/app/[locale]/onboarding/organization/page.tsx",
+          "src/app/[locale]/onboarding/organization/page.test.tsx"
+        ],
+        "started": "2026-11-15T18:07:21.2863696Z",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-lint-import",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "--formatter-enabled=false",
+          "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+          "src/app/[locale]/onboarding/organization/page.tsx",
+          "src/app/[locale]/onboarding/organization/page.test.tsx"
+        ],
+        "started": "2026-11-15T18:07:20.5748481Z",
+        "exitCode": 0
+      },
+      {
+        "name": "compatibility-unit",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "--maxWorkers",
+          "2",
+          "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+          "src/app/[locale]/(app)/app-layout-content.test.tsx",
+          "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+          "src/app/[locale]/(app)/my-requests/actions.test.ts",
+          "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+          "src/app/[locale]/(app)/organization",
+          "src/app/[locale]/(app)/payroll",
+          "src/app/[locale]/(app)/settings/employees/work-balance-actions.test.ts",
+          "src/app/[locale]/(auth)/layout.test.tsx",
+          "src/app/[locale]/init/page-client.test.tsx",
+          "src/app/[locale]/onboarding",
+          "src/app/api/notifications/route.test.ts",
+          "src/app/api/tenant-mutation-scope.test.ts",
+          "src/components/app-sidebar.test.tsx",
+          "src/components/auth-shell-controls.test.tsx",
+          "src/components/data-table-server",
+          "src/components/data-table-server/data-table-toolbar.test.tsx",
+          "src/components/equipment/equipment-personal.test.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/components/font-size-preference.test.tsx",
+          "src/components/font-size-toggle.test.tsx",
+          "src/components/nav-main.test.tsx",
+          "src/components/notifications",
+          "src/components/onboarding",
+          "src/components/organization",
+          "src/components/organization-mfa",
+          "src/components/organization-mfa/verification-lifetime.test.tsx",
+          "src/components/payroll",
+          "src/components/personnel-file/my-documents.test.tsx",
+          "src/components/providers/organization-context-provider.test.tsx",
+          "src/components/providers/view-refresh-migrated.test.tsx",
+          "src/components/providers/view-refresh-provider.test.tsx",
+          "src/components/settings/employee-offboarding",
+          "src/components/settings/work-balance",
+          "src/components/shared-pathname-boundaries-source.test.ts",
+          "src/components/sidebar-feedback.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/components/theme-provider.test.tsx",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/ui/dialog.test.tsx",
+          "src/components/ui/page-header.test.tsx",
+          "src/components/ui/sheet.test.tsx",
+          "src/components/ui/sidebar.test.tsx",
+          "src/components/ui/sidebar-hydration.test.tsx",
+          "src/components/ui/table.test.tsx",
+          "src/components/ui/tanstack-form.test.tsx",
+          "src/hooks/use-notifications.test.ts",
+          "src/lib/async/map-concurrently.test.ts",
+          "src/lib/auth/organization-session-revocation.test.ts",
+          "src/lib/auth/request-session.test.ts",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "src/lib/effect/services/auth.service.test.ts",
+          "src/lib/effect/services/onboarding.service.test.ts",
+          "src/lib/employee-lifecycle/final-payout.test.ts",
+          "src/lib/employee-lifecycle/joining/employee-writers.test.ts",
+          "src/lib/enterprise-identity/session-sso.test.ts",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/lib/notifications/__tests__",
+          "src/lib/notifications/localized-notification.test.ts",
+          "src/lib/notifications/recipient-display-context.test.ts",
+          "src/lib/notifications/recipient-locale.test.ts",
+          "src/lib/organization/creation-policy.test.ts",
+          "src/lib/organization-mfa/authentication-plugin.test.ts",
+          "src/lib/payroll-access",
+          "src/lib/payroll-collection/payroll-work-collection.test.ts",
+          "src/lib/payroll-export/__tests__/calendar-boundaries.test.ts",
+          "src/lib/payroll-export/__tests__/data-fetcher.canonical.test.ts",
+          "src/lib/payroll-export/comparison-csv.test.ts",
+          "src/lib/payroll-export/comparison-explanations.test.ts",
+          "src/lib/payroll-export/comparison-model.test.ts",
+          "src/lib/payroll-export/comparison-validation.test.ts",
+          "src/lib/payroll-export/export-service.formats.test.ts",
+          "src/lib/payroll-export/format-registry.test.ts",
+          "src/lib/payroll-export/formatters/datev-output-evidence.test.ts",
+          "src/lib/payroll-export/formatters/expense-lines.test.ts",
+          "src/lib/payroll-export/formatters/lexware-output-evidence.test.ts",
+          "src/lib/payroll-export/formatters/overtime-payouts.test.ts",
+          "src/lib/payroll-export/formatters/sage-output-evidence.test.ts",
+          "src/lib/payroll-readiness/get-payroll-readiness.test.ts",
+          "src/lib/payroll-readiness/personnel-identifier-clashes.test.ts",
+          "src/lib/payroll-workspace",
+          "src/lib/self-service-requests",
+          "src/lib/time-tracking/closed-months/calendar-day.test.ts",
+          "src/lib/time-tracking/closed-months/close-scope.test.ts",
+          "src/lib/time-tracking/closed-months/permissions.test.ts",
+          "src/lib/time-tracking/closed-months/rules.test.ts",
+          "src/lib/travel-expenses/__tests__/payroll-lines.test.ts",
+          "src/lib/travel-expenses/__tests__/payroll-run-classification.test.ts",
+          "src/lib/work-balance",
+          "src/tolgee/extracted-key-defaults.test.ts",
+          "--reporter=json",
+          "--outputFile=",
+          "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\compatibility-unit.json"
+        ],
+        "started": "2026-11-15T18:02:27.3620979Z",
+        "exitCode": 1
+      },
+      {
+        "name": "doctor",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "exec",
+          "react-doctor",
+          "apps/webapp",
+          "--scope",
+          "changed",
+          "--base",
+          "8a13b755220124c4ea1d3fd1ccacb770aae31241",
+          "--verbose",
+          "--no-supply-chain",
+          "--no-telemetry",
+          "--no-score",
+          "--json",
+          "--json-out",
+          "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\doctor.json",
+          "--max-duration",
+          "90"
+        ],
+        "started": "2026-11-15T18:07:22.089009Z",
+        "exitCode": 0
+      },
+      {
+        "name": "exact-unit",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "--maxWorkers",
+          "2",
+          "src/components/onboarding/progress-indicator.test.tsx",
+          "src/components/organization-mfa/requirements.test.tsx",
+          "src/components/organization-mfa/sign-out.test.tsx",
+          "src/components/organization-mfa/verification-lifetime.test.tsx",
+          "src/components/organization-mfa/verification.test.tsx",
+          "src/components/organization/deactivation-preview-dialog.test.tsx",
+          "src/components/organization/employee-lifecycle-actions.test.tsx",
+          "src/components/organization/employee-lifecycle-error.test.ts",
+          "src/components/organization/employee-lifecycle-i18n.test.ts",
+          "src/components/organization/invite-code-management.test.tsx",
+          "src/components/organization/invite-member-dialog.test.tsx",
+          "src/components/organization/members-table.test.tsx",
+          "src/components/organization/organization-auto-clock-out-card.test.tsx",
+          "src/components/organization/organization-clocking-reminders-card.test.tsx",
+          "src/components/organization/organization-danger-zone-card.test.tsx",
+          "src/components/organization/organization-details-card.test.tsx",
+          "src/components/organization/organization-feature-state.test.ts",
+          "src/components/organization/organization-features-card.driving-licence.test.tsx",
+          "src/components/organization/organization-features-card.test.tsx",
+          "src/components/organization/organization-language-card.test.tsx",
+          "src/components/organization/organization-logo.test.tsx",
+          "src/components/organization/organization-period-submissions-card.test.tsx",
+          "src/components/organization/organization-profile-card.test.tsx",
+          "src/components/organization/organization-timezone-card.test.tsx",
+          "src/components/organization/organization-tracking-card.test.tsx",
+          "src/components/organization/pending-members-card.render.test.tsx",
+          "src/components/organization/pending-members-card.test.tsx",
+          "src/components/organization/reactivation-checklist.test.tsx",
+          "src/components/organization/team-members-dialog.test.tsx",
+          "src/components/ui/tanstack-form.test.tsx",
+          "src/lib/organization/creation-policy.test.ts",
+          "src/app/[locale]/onboarding/run-onboarding-action.test.ts",
+          "src/lib/effect/services/onboarding.service.test.ts",
+          "src/lib/employee-lifecycle/joining/employee-writers.test.ts",
+          "src/app/[locale]/onboarding/notifications/page.test.tsx",
+          "src/app/[locale]/onboarding/organization/page.server.test.tsx",
+          "src/app/[locale]/onboarding/organization/page.test.tsx",
+          "--reporter=json",
+          "--outputFile=",
+          "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\exact-unit.json"
+        ],
+        "started": "2026-11-15T18:01:01.811467Z",
+        "exitCode": 0
+      },
+      {
+        "name": "exact-unit",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "--maxWorkers",
+          "2",
+          "src/components/onboarding/progress-indicator.test.tsx",
+          "src/components/organization-mfa/requirements.test.tsx",
+          "src/components/organization-mfa/sign-out.test.tsx",
+          "src/components/organization-mfa/verification-lifetime.test.tsx",
+          "src/components/organization-mfa/verification.test.tsx",
+          "src/components/organization/deactivation-preview-dialog.test.tsx",
+          "src/components/organization/employee-lifecycle-actions.test.tsx",
+          "src/components/organization/employee-lifecycle-error.test.ts",
+          "src/components/organization/employee-lifecycle-i18n.test.ts",
+          "src/components/organization/invite-code-management.test.tsx",
+          "src/components/organization/invite-member-dialog.test.tsx",
+          "src/components/organization/members-table.test.tsx",
+          "src/components/organization/organization-auto-clock-out-card.test.tsx",
+          "src/components/organization/organization-clocking-reminders-card.test.tsx",
+          "src/components/organization/organization-danger-zone-card.test.tsx",
+          "src/components/organization/organization-details-card.test.tsx",
+          "src/components/organization/organization-feature-state.test.ts",
+          "src/components/organization/organization-features-card.driving-licence.test.tsx",
+          "src/components/organization/organization-features-card.test.tsx",
+          "src/components/organization/organization-language-card.test.tsx",
+          "src/components/organization/organization-logo.test.tsx",
+          "src/components/organization/organization-period-submissions-card.test.tsx",
+          "src/components/organization/organization-profile-card.test.tsx",
+          "src/components/organization/organization-timezone-card.test.tsx",
+          "src/components/organization/organization-tracking-card.test.tsx",
+          "src/components/organization/pending-members-card.render.test.tsx",
+          "src/components/organization/pending-members-card.test.tsx",
+          "src/components/organization/reactivation-checklist.test.tsx",
+          "src/components/organization/team-members-dialog.test.tsx",
+          "src/components/ui/tanstack-form.test.tsx",
+          "src/lib/organization/creation-policy.test.ts",
+          "src/app/[locale]/onboarding/run-onboarding-action.test.ts",
+          "src/lib/effect/services/onboarding.service.test.ts",
+          "src/lib/employee-lifecycle/joining/employee-writers.test.ts",
+          "src/app/[locale]/onboarding/notifications/page.test.tsx",
+          "src/app/[locale]/onboarding/organization/page.server.test.tsx",
+          "src/app/[locale]/onboarding/organization/page.test.tsx",
+          "--reporter=json",
+          "--outputFile=",
+          "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\exact-unit.json"
+        ],
+        "started": "2026-11-15T18:00:14.2867408Z",
+        "exitCode": 1
+      },
+      {
+        "name": "preservation-unit",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--config",
+          "../../.tmp/merge1829-audit/vitest-preservation.config.mts",
+          "--project",
+          "preservation",
+          "--maxWorkers",
+          "1",
+          "--reporter=json",
+          "--outputFile",
+          "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\preservation-unit.json"
+        ],
+        "started": "2026-11-15T18:13:51.6444033Z",
+        "exitCode": 0
+      },
+      {
+        "name": "summary",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "node",
+          ".tmp/merge1829-audit/summarize.mjs"
+        ],
+        "started": "2026-11-15T18:10:54.4168897Z",
+        "exitCode": 0
+      },
+      {
+        "name": "translation-retry",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "--maxWorkers",
+          "1",
+          "src/tolgee/extracted-key-defaults.test.ts",
+          "--reporter=json",
+          "--outputFile",
+          "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\translation-retry.json"
+        ],
+        "started": "2026-11-15T18:07:14.7985878Z",
+        "exitCode": 0
+      },
+      {
+        "name": "types",
+        "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+        "env": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "--filter",
+          "webapp",
+          "typecheck"
+        ],
+        "started": "2026-11-15T18:05:55.093049Z",
+        "exitCode": 0
+      }
+    ],
+    "runner": ".tmp/merge1829-audit/run-checks.ps1",
+    "archive": ".tmp/merge1829-audit/verify-artifacts.mjs",
+    "summary": ".tmp/merge1829-audit/summarize.mjs"
+  },
+  "attempts": [
+    "Initial independent merge-tree denied shared Git object write; same authorized operation succeeded through escalation.",
+    "Direct execution of own PowerShell runner was blocked by host execution policy; explicit process-local Bypass ran only inspected merger script.",
+    "Ordinary guarded pnpm engine-store operation-lock access denied; retained failed log/command then normal authorized escalation ran exact tests without install/repair.",
+    "Broad compatibility test: only existing full-source translation extraction exceeded5s; unchanged singleton rerun passed with same default timeout.",
+    "Expected independent public heading regression failed; no source/test expectation was weakened.",
+    "Ordinary and explicit formatting failures retained; lint-import and ordinary CRLF checks pass.",
+    "Sandbox process inventory was denied; normal authorized escalation inspected matching tool PIDs without printing command lines or terminating anything."
+  ],
+  "limits": [
+    "Material pending-membership main-heading finding remains for root correction before verifiedCommit.",
+    "Held rendered Create across a Next restart remains timedout/unpassed; separate generated transport refusal is distinct evidence.",
+    "Native React, full production static generation/build, remote Tolgee catalog synchronization, provider/delivery, all roles/locales, physical device/store wrapper, true zoom and global transition acceptance remain open.",
+    "Activity/account/session/org races here are assembled seam evidence; no actual browser/native lifetime certification.",
+    "Default captures compare organization consumer with current shell/request-time declaration; broad-root attempts remain provisional and narrow additional-root plugin-resolution failure remains retained.",
+    "No services/PG/browser/native/dev started, no optional earlier rejected verifier reruns, no source fixes/report/raw/README/ledger/tracker/push/PR/dev merge/deploy."
+  ],
+  "ownership": {
+    "ownedServicesStarted": 0,
+    "ownedPackageProcessesRemaining": 0,
+    "finalProcessRecord": ".tmp/merge1829-audit/process-release-final.json",
+    "release": "RELEASED checkout mutation/package/runtime ownership to root; no owned processes or services remain"
+  },
+  "whitespace": {
+    "incomingFirstParentDiffExit": 0,
+    "incomingAll108PathsWhitespaceClean": true,
+    "secondParentDiffExit": 2,
+    "priorRootVsIncomingDiffExit": 2,
+    "secondParentDiagnosticsIdenticalToPriorRoot": true,
+    "onlyNativeMerge": true,
+    "sourceFixes": 0,
+    "trackedEdits": 0
+  },
+  "freshCorrectionCompatibility": {
+    "latest1828PermanentHeading": "passed",
+    "latest1727PublicLoadingAndActivity": "9 passed",
+    "latest1726PublicUploadRecovery": "7 passed",
+    "prior1827PublicLifetimes": "9 passed"
+  }
+}
