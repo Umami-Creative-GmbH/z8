@@ -1,0 +1,18 @@
+{
+  "phase": "before",
+  "source": {
+    "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+    "sha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3",
+    "canonicalSha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3"
+  },
+  "checks": [],
+  "captures": [],
+  "errors": [
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering."
+  ],
+  "requests": [],
+  "failure": "Navigation timeout of 120000 ms exceeded"
+}

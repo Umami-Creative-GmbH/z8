@@ -1,0 +1,292 @@
+{
+  "sourceCommit": "4cb26d6e0408c33ee8f89ded3fcd1f73a2976292",
+  "provisionalMerge": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "sourcePins": {
+    "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx": "dc04b3e0e148297ef3d1107ae1eeb5cbbbd6d8498d3173ba5fe1074636ec4fbd",
+    "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx": "4638a3748cc768f3d90d1f5bb427ce5a289965783cf6ef4c544f3dec22e6da48",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts": "1fed46477f75648b41baf4e4b5b625d1eb6e49af3b38d0cc7758c8c3649a3d84"
+  },
+  "units": {
+    "selections": [
+      {
+        "name": "exact-unit.json",
+        "files": 13,
+        "tests": 139,
+        "startedAt": "2026-11-15T15:11:25.464Z"
+      },
+      {
+        "name": "compatibility-unit.json",
+        "files": 106,
+        "tests": 1134,
+        "startedAt": "2026-11-15T15:11:31.181Z"
+      },
+      {
+        "name": "adversarial-unit.json",
+        "files": 1,
+        "tests": 7,
+        "startedAt": "2026-11-15T15:12:10.688Z"
+      }
+    ],
+    "uniqueFiles": 107,
+    "uniqueTests": 1141
+  },
+  "commands": [
+    {
+      "name": "exact",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "--maxWorkers",
+        "2",
+        "src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+        "src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx",
+        "src/lib/work-balance/adjustments/opening-balance-csv.test.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/components/ui/page-header.test.tsx",
+        "src/components/site-header.test.tsx",
+        "src/components/ui/dialog.test.tsx",
+        "src/lib/payroll-access",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+        "src/components/notifications/notifications-inbox.test.tsx",
+        "src/components/notifications/notifications-inbox.contract.test.tsx",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1726-root-checks/exact-unit.json"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "compatibility",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "--maxWorkers",
+        "2",
+        "src/components/payroll",
+        "src/app/[locale]/(app)/payroll",
+        "src/lib/payroll-workspace",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/components/providers/view-refresh-provider.test.tsx",
+        "src/components/ui/table.test.tsx",
+        "src/components/ui/action-panel.test.tsx",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "src/app/[locale]/(app)/organization",
+        "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+        "src/components/ui/page-header.test.tsx",
+        "src/components/ui/sheet.test.tsx",
+        "src/components/data-table-server/data-table-toolbar.test.tsx",
+        "src/lib/async/map-concurrently.test.ts",
+        "src/components/app-sidebar.test.tsx",
+        "src/components/site-header.test.tsx",
+        "src/components/ui/sidebar.test.tsx",
+        "src/components/font-size-preference.test.tsx",
+        "src/components/font-size-toggle.test.tsx",
+        "src/components/providers/view-refresh-migrated.test.tsx",
+        "src/components/notifications",
+        "src/hooks/use-notifications.test.ts",
+        "src/app/api/notifications/route.test.ts",
+        "src/lib/notifications/localized-notification.test.ts",
+        "src/lib/notifications/recipient-locale.test.ts",
+        "src/lib/notifications/recipient-display-context.test.ts",
+        "src/lib/notifications/__tests__",
+        "src/components/data-table-server",
+        "src/components/personnel-file/my-documents.test.tsx",
+        "src/app/[locale]/(app)/my-requests/actions.test.ts",
+        "src/lib/self-service-requests",
+        "src/app/api/tenant-mutation-scope.test.ts",
+        "src/components/equipment/equipment-personal.test.tsx",
+        "src/components/equipment/equipment-routes.test.tsx",
+        "src/components/organization-mfa/verification-lifetime.test.tsx",
+        "src/components/ui/sidebar-hydration.test.tsx",
+        "src/components/nav-main.test.tsx",
+        "src/components/sidebar-feedback.test.tsx",
+        "src/app/[locale]/(app)/app-layout-content.test.tsx",
+        "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+        "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+        "src/components/shared-pathname-boundaries-source.test.ts",
+        "src/components/theme-provider.test.tsx",
+        "src/lib/payroll-access",
+        "src/lib/payroll-export/format-registry.test.ts",
+        "src/lib/payroll-export/export-service.formats.test.ts",
+        "src/lib/payroll-export/__tests__/calendar-boundaries.test.ts",
+        "src/lib/payroll-export/__tests__/data-fetcher.canonical.test.ts",
+        "src/lib/payroll-export/comparison-model.test.ts",
+        "src/lib/payroll-export/comparison-explanations.test.ts",
+        "src/lib/payroll-export/comparison-validation.test.ts",
+        "src/lib/payroll-export/comparison-csv.test.ts",
+        "src/lib/payroll-export/formatters/expense-lines.test.ts",
+        "src/lib/payroll-export/formatters/overtime-payouts.test.ts",
+        "src/lib/payroll-export/formatters/datev-output-evidence.test.ts",
+        "src/lib/payroll-export/formatters/lexware-output-evidence.test.ts",
+        "src/lib/payroll-export/formatters/sage-output-evidence.test.ts",
+        "src/lib/payroll-collection/payroll-work-collection.test.ts",
+        "src/lib/payroll-readiness/get-payroll-readiness.test.ts",
+        "src/lib/payroll-readiness/personnel-identifier-clashes.test.ts",
+        "src/lib/time-tracking/closed-months/rules.test.ts",
+        "src/lib/time-tracking/closed-months/calendar-day.test.ts",
+        "src/lib/time-tracking/closed-months/permissions.test.ts",
+        "src/lib/time-tracking/closed-months/close-scope.test.ts",
+        "src/lib/travel-expenses/__tests__/payroll-run-classification.test.ts",
+        "src/lib/travel-expenses/__tests__/payroll-lines.test.ts",
+        "src/components/settings/work-balance",
+        "src/lib/work-balance",
+        "src/components/providers/organization-context-provider.test.tsx",
+        "src/components/ui/dialog.test.tsx",
+        "src/components/ui/tanstack-form.test.tsx",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1726-root-checks/compatibility-unit.json"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "adversarial",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "../../.tmp/merge1726-audit/vitest.config.mts",
+        "--project",
+        "audit",
+        "--maxWorkers",
+        "2",
+        "--reporter=default",
+        "--reporter=json",
+        "--outputFile=X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1726-root-checks/adversarial-unit.json"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "types": {
+    "command": "pnpm --filter webapp typecheck",
+    "exitCode": 0,
+    "profiles": [
+      "next typegen",
+      "application",
+      "workflow contracts",
+      "smoke"
+    ]
+  },
+  "biome": {
+    "originalEightFileExplicitWebappCRLF": 0,
+    "rootThreeFileExplicitWebappCRLF": 0,
+    "uniqueFiles": 9,
+    "ordinaryLintImport": 0,
+    "explicitLintImport": 0,
+    "defaultFormat": 1,
+    "ordinaryCRLFFormat": 1,
+    "headingTestOrdinaryFormat": 1,
+    "qualification": "Only documented explicit webapp CRLF and lint profiles pass; retain all ordinary/default formatting failures."
+  },
+  "doctor": {
+    "errors": 0,
+    "warnings": 3,
+    "scannedFiles": 9,
+    "initialWarnings": 4,
+    "qualification": "Static translated header extraction removed the new size warning; inherited complexity and two native-form detector warnings remain. No suppression or numeric-score claim."
+  },
+  "tdd": {
+    "permanentAddedCases": 5,
+    "oldComponent": {
+      "passed": 4,
+      "failed": 5
+    },
+    "firstRedFailures": 1,
+    "returnedPreviewRedFailures": 1,
+    "commitRedFailures": 2,
+    "cacheRefreshRedFailures": 1
+  },
+  "runtime": {
+    "baselineChecks": 4,
+    "finalChecks": 6,
+    "acceptedCaptures": 7,
+    "baselineFrozen": true,
+    "finalUnlocked": true,
+    "controlledPayloadIdentical": true,
+    "browserExceptions": 0,
+    "realRetryRequests": 1,
+    "realCommitRequests": 1,
+    "readbackMinutes": 150,
+    "qualification": "Single upload consumer overlay only, current infrastructure and identical fixture. Programmatic actual Next router departure bypasses normal pending dialog dismissal; actual browser Back preserves the exact input. Commit while hidden / returned-before-completion / late cache refresh remain assembled-only. Next compilation issues empty; destination equipment authorization refusal appears identically in both runs, so no clear-runtime-diagnostics claim."
+  },
+  "native": {
+    "freshTargetTree": false,
+    "qualification": "Both CLI opens restored sign-in, including after documented private state load. Tree success is the authentication tree; upload/directory owners are absent. Never count it as target React acceptance; original worker tree remains inherited."
+  },
+  "postgres": {
+    "freshOfficialSuite": false,
+    "inheritedSuites": 2,
+    "inheritedTests": 18,
+    "qualification": "Domain/action/query sources unchanged; root additionally used actual UI commit and independent scoped database readback."
+  },
+  "reviews": {
+    "webInterfaceGuidelines": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "outcome": "Reviewed current form semantics, focus, pending/inline feedback, reduced motion and private static-header composition; no new interface or domain permission. Maintain original inventory and raw evidence qualifications."
+  },
+  "cleanup": {
+    "port": 62511,
+    "portClosed": true,
+    "ownedNextIdentityVerified": true,
+    "nativeBrowserClosed": true,
+    "stoppedPids": [
+      79456,
+      99928,
+      5656,
+      52772,
+      47028,
+      104008,
+      108204,
+      100496,
+      108904,
+      107184,
+      19960,
+      108620,
+      50560,
+      8088,
+      2380,
+      26564,
+      106616,
+      111788,
+      102668,
+      63776,
+      3248,
+      88336,
+      99548,
+      94144
+    ],
+    "ownedNextStopped": true,
+    "remainingOwnedContainers": 0,
+    "ownedContainers": 3,
+    "puppetBrowsersClosed": true
+  },
+  "limits": [
+    "full production static generation",
+    "remote Tolgee synchronization",
+    "provider and physical-device flows",
+    "true browser/OS zoom",
+    "exhaustive role/domain/locale/accessibility matrix",
+    "global Next transition certification",
+    "native target React inspection",
+    "unknown cause of historical clipped desktop comparison"
+  ],
+  "whitespace": {
+    "fullArchiveExitCode": 2,
+    "qualification": "Literal diagnostic log padding and blank EOF lines remain unchanged; no full archive whitespace pass is claimed.",
+    "sourceProseScripts": "pass"
+  }
+}

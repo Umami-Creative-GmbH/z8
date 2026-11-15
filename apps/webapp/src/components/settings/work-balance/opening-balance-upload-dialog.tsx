@@ -4,7 +4,7 @@ import { IconDownload, IconFileUpload, IconLoader2, IconUpload } from "@tabler/i
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	commitOpeningBalanceUploadAction,
@@ -79,6 +79,23 @@ export function OpeningBalanceUploadDialog() {
 	return <ScopedOpeningBalanceUploadDialog key={JSON.stringify([userId, activeOrganizationId])} />;
 }
 
+function OpeningBalanceUploadHeader() {
+	const { t } = useTranslate();
+	return (
+		<DialogHeader>
+			<DialogTitle>
+				{t("settings.employees.workBalance.upload.title", "Upload opening balances")}
+			</DialogTitle>
+			<DialogDescription>
+				{t(
+					"settings.employees.workBalance.upload.description",
+					"Set the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.",
+				)}
+			</DialogDescription>
+		</DialogHeader>
+	);
+}
+
 function ScopedOpeningBalanceUploadDialog() {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -90,13 +107,19 @@ function ScopedOpeningBalanceUploadDialog() {
 	const [error, setError] = useState<string | null>(null);
 	const busy = useRef(false);
 	const alive = useRef(true);
-	useEffect(() => {
+	const generation = useRef(0);
+	useLayoutEffect(() => {
 		alive.current = true;
 		return () => {
 			alive.current = false;
+			generation.current += 1;
 		};
 	}, []);
 	const form = useForm({ defaultValues: { file: null as File | null }, onSubmit: handleCommit });
+
+	function isCurrent(startedGeneration: number) {
+		return alive.current && generation.current === startedGeneration;
+	}
 
 	function handleOpenChange(nextOpen: boolean) {
 		if (busy.current) return;
@@ -111,7 +134,9 @@ function ScopedOpeningBalanceUploadDialog() {
 	async function run(
 		kind: "preview" | "commit",
 		csv: string,
+		startedGeneration: number,
 	): Promise<OpeningBalanceUploadOutcome | null> {
+		if (!isCurrent(startedGeneration)) return null;
 		setPending(kind);
 		setError(null);
 		const action =
@@ -119,7 +144,7 @@ function ScopedOpeningBalanceUploadDialog() {
 		const result: BalanceAdjustmentActionResult<OpeningBalanceUploadOutcome> | null = await action({
 			csv,
 		}).catch(() => null);
-		if (!alive.current) return null;
+		if (!isCurrent(startedGeneration)) return null;
 		if (!result?.success) {
 			const failure = result ? balanceAdjustmentFailureOf(result) : null;
 			setError(
@@ -131,13 +156,14 @@ function ScopedOpeningBalanceUploadDialog() {
 	}
 
 	function finishPending() {
-		if (!alive.current) return;
+		// Activity preserves state while hiding the page; release the lock there too.
 		busy.current = false;
 		setPending(null);
 	}
 
 	function handleFile(file: File | undefined) {
-		if (!file || busy.current) return;
+		if (!file || busy.current || !alive.current) return;
+		const startedGeneration = generation.current;
 		busy.current = true;
 		setPending("preview");
 		setError(null);
@@ -145,7 +171,7 @@ function ScopedOpeningBalanceUploadDialog() {
 		form.setFieldValue("file", file);
 		return (async () => {
 			const csv = await file.text().catch(() => null);
-			if (!alive.current) return;
+			if (!isCurrent(startedGeneration)) return;
 			if (csv === null) {
 				setUpload({ csv: "", outcome: { status: "unreadable" }, refused: false });
 				return;
@@ -158,17 +184,18 @@ function ScopedOpeningBalanceUploadDialog() {
 				});
 				return;
 			}
-			const outcome = await run("preview", csv);
-			if (!alive.current) return;
+			const outcome = await run("preview", csv, startedGeneration);
+			if (!isCurrent(startedGeneration)) return;
 			setUpload(outcome ? { csv, outcome, refused: false } : null);
 		})().finally(finishPending);
 	}
 
 	function handleCommit() {
-		if (upload?.outcome.status !== "ready" || busy.current) return;
+		if (upload?.outcome.status !== "ready" || busy.current || !alive.current) return;
+		const startedGeneration = generation.current;
 		busy.current = true;
 		return (async () => {
-			const outcome = await run("commit", upload.csv);
+			const outcome = await run("commit", upload.csv, startedGeneration);
 			if (!outcome) return;
 			if (outcome.status === "committed") {
 				toast.success(
@@ -179,12 +206,17 @@ function ScopedOpeningBalanceUploadDialog() {
 					),
 				);
 				await queryClient.invalidateQueries({ queryKey: EMPLOYEE_WORK_BALANCE_QUERY_KEY });
+				if (!isCurrent(startedGeneration)) return;
 				setUpload(null);
 				setOpen(false);
 				return;
 			}
 			setUpload({ csv: upload.csv, outcome, refused: true });
-		})().finally(finishPending);
+		})().finally(() => {
+			// A retired commit may have written successfully. Recheck before another submission.
+			if (!isCurrent(startedGeneration)) setUpload(null);
+			finishPending();
+		});
 	}
 
 	const outcome = upload?.outcome;
@@ -220,17 +252,7 @@ function ScopedOpeningBalanceUploadDialog() {
 						await form.handleSubmit();
 					}}
 				>
-					<DialogHeader>
-						<DialogTitle>
-							{t("settings.employees.workBalance.upload.title", "Upload opening balances")}
-						</DialogTitle>
-						<DialogDescription>
-							{t(
-								"settings.employees.workBalance.upload.description",
-								"Set the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.",
-							)}
-						</DialogDescription>
-					</DialogHeader>
+					<OpeningBalanceUploadHeader />
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end">
 						<form.Field name="file">

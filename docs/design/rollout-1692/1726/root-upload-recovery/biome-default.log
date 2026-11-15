@@ -1,0 +1,1228 @@
+src\app\[locale]\(app)\payroll\work-balances\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - //·@vitest-environment·jsdom␍
+     2    │ - import·{·render,·screen·}·from·"@testing-library/react";␍
+     3    │ - import·type·{·ReactNode·}·from·"react";␍
+     4    │ - import·{·expect,·it,·vi·}·from·"vitest";␍
+     5    │ - import·{·appPageOwnsHeading·}·from·"@/lib/navigation/route-metadata";␍
+     6    │ - import·Page·from·"./page";␍
+     7    │ - import·{·WorkBalancesView·}·from·"./work-balances-view";␍
+     8    │ - ␍
+     9    │ - const·scope·=·vi.hoisted(()·=>·({·userId:·"actor",·activeOrganizationId:·"A"·}));␍
+    10    │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({␍
+    11    │ - → useOrganization:·()·=>·scope,␍
+    12    │ - }));␍
+    13    │ - ␍
+    14    │ - vi.mock("@/tolgee/server",·()·=>·({␍
+    15    │ - → getTranslate:·async·()·=>·(_key:·string,·fallback:·string)·=>·fallback,␍
+    16    │ - }));␍
+    17    │ - vi.mock("@tolgee/react",·()·=>·({␍
+    18    │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+    19    │ - }));␍
+    20    │ - vi.mock("./coverage",·()·=>·({·loadPayrollWorkBalanceEmployees:·async·()·=>·[]·}));␍
+    21    │ - vi.mock("@/lib/auth-helpers",·()·=>·({·getAuthContext:·vi.fn()·}));␍
+    22    │ - vi.mock("@/navigation",·()·=>·({␍
+    23    │ - → Link:·({·children,·...props·}:·{·children:·ReactNode;·href:·string·})·=>·(␍
+    24    │ - → → <a·{...props}>{children}</a>␍
+    25    │ - → ),␍
+    26    │ - }));␍
+    27    │ - vi.mock("@/components/settings/work-balance/opening-balance-upload-dialog",·()·=>·({␍
+    28    │ - → OpeningBalanceUploadDialog:·()·=>·<button·type="button">Upload·opening·balances</button>,␍
+    29    │ - }));␍
+    30    │ - ␍
+    31    │ - it("keeps·the·task·heading·during·a·pending·directory·read·and·adopts·only·this·route",·()·=>·{␍
+    32    │ - → render(Page().props.fallback);␍
+    33    │ - → expect(screen.getByRole("heading",·{·level:·1,·name:·"Work·balances"·})).toBeTruthy();␍
+    34    │ - → expect(appPageOwnsHeading("/de/payroll/work-balances")).toBe(true);␍
+    35    │ - → expect(appPageOwnsHeading("/en/payroll/work-balances/employee")).toBe(false);␍
+    36    │ - });␍
+    37    │ - ␍
+    38    │ - it("preserves·complete·employee·identity,·former·status·and·destinations,·hiding·a·mismatched·server·arrival",·()·=>·{␍
+    39    │ - → const·employees·=·[␍
+    40    │ - → → {␍
+    41    │ - → → → id:·"former",␍
+    42    │ - → → → name:·"A·long·former·employee·identity",␍
+    43    │ - → → → employeeNumber:·"A-1",␍
+    44    │ - → → → isActive:·false,␍
+    45    │ - → → },␍
+    46    │ - → ];␍
+    47    │ - → const·view·=·render(<WorkBalancesView·employees={employees}·userId="actor"·organizationId="A"·/>);␍
+    48    │ - → expect(␍
+    49    │ - → → screen␍
+    50    │ - → → → .getByRole("link",·{␍
+    51    │ - → → → → name:·/A·long·former·employee·identity.*A-1.*Former·employee.*Open·employee·balance/,␍
+    52    │ - → → → })␍
+    53    │ - → → → .getAttribute("href"),␍
+    54    │ - → ).toBe("/payroll/work-balances/former");␍
+    55    │ - → expect(screen.getByRole("link",·{·name:·"Payroll"·}).getAttribute("href")).toBe("/payroll");␍
+    56    │ - → expect(screen.getByRole("button",·{·name:·"Upload·opening·balances"·})).toBeTruthy();␍
+    57    │ - → scope.activeOrganizationId·=·"B";␍
+    58    │ - → view.rerender(<WorkBalancesView·employees={employees}·userId="actor"·organizationId="A"·/>);␍
+    59    │ - → expect(screen.queryByText("A·long·former·employee·identity")).toBeNull();␍
+    60    │ - → scope.activeOrganizationId·=·"A";␍
+    61    │ - → view.rerender(<WorkBalancesView·employees={[]}·userId="actor"·organizationId="A"·/>);␍
+    62    │ - → expect(screen.getByText("No·employees·are·in·your·payroll·access·scope·yet.")).toBeTruthy();␍
+    63    │ - → expect(screen.queryByRole("button",·{·name:·"Upload·opening·balances"·})).toBeNull();␍
+    64    │ - });␍
+        1 │ + //·@vitest-environment·jsdom
+        2 │ + import·{·render,·screen·}·from·"@testing-library/react";
+        3 │ + import·type·{·ReactNode·}·from·"react";
+        4 │ + import·{·expect,·it,·vi·}·from·"vitest";
+        5 │ + import·{·appPageOwnsHeading·}·from·"@/lib/navigation/route-metadata";
+        6 │ + import·Page·from·"./page";
+        7 │ + import·{·WorkBalancesView·}·from·"./work-balances-view";
+        8 │ + 
+        9 │ + const·scope·=·vi.hoisted(()·=>·({
+       10 │ + → userId:·"actor",
+       11 │ + → activeOrganizationId:·"A",
+       12 │ + }));
+       13 │ + vi.mock("@/components/providers/organization-context-provider",·()·=>·({
+       14 │ + → useOrganization:·()·=>·scope,
+       15 │ + }));
+       16 │ + 
+       17 │ + vi.mock("@/tolgee/server",·()·=>·({
+       18 │ + → getTranslate:·async·()·=>·(_key:·string,·fallback:·string)·=>·fallback,
+       19 │ + }));
+       20 │ + vi.mock("@tolgee/react",·()·=>·({
+       21 │ + → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),
+       22 │ + }));
+       23 │ + vi.mock("./coverage",·()·=>·({
+       24 │ + → loadPayrollWorkBalanceEmployees:·async·()·=>·[],
+       25 │ + }));
+       26 │ + vi.mock("@/lib/auth-helpers",·()·=>·({·getAuthContext:·vi.fn()·}));
+       27 │ + vi.mock("@/navigation",·()·=>·({
+       28 │ + → Link:·({·children,·...props·}:·{·children:·ReactNode;·href:·string·})·=>·(
+       29 │ + → → <a·{...props}>{children}</a>
+       30 │ + → ),
+       31 │ + }));
+       32 │ + vi.mock(
+       33 │ + → "@/components/settings/work-balance/opening-balance-upload-dialog",
+       34 │ + → ()·=>·({
+       35 │ + → → OpeningBalanceUploadDialog:·()·=>·(
+       36 │ + → → → <button·type="button">Upload·opening·balances</button>
+       37 │ + → → ),
+       38 │ + → }),
+       39 │ + );
+       40 │ + 
+       41 │ + it("keeps·the·task·heading·during·a·pending·directory·read·and·adopts·only·this·route",·()·=>·{
+       42 │ + → render(Page().props.fallback);
+       43 │ + → expect(
+       44 │ + → → screen.getByRole("heading",·{·level:·1,·name:·"Work·balances"·}),
+       45 │ + → ).toBeTruthy();
+       46 │ + → expect(appPageOwnsHeading("/de/payroll/work-balances")).toBe(true);
+       47 │ + → expect(appPageOwnsHeading("/en/payroll/work-balances/employee")).toBe(false);
+       48 │ + });
+       49 │ + 
+       50 │ + it("preserves·complete·employee·identity,·former·status·and·destinations,·hiding·a·mismatched·server·arrival",·()·=>·{
+       51 │ + → const·employees·=·[
+       52 │ + → → {
+       53 │ + → → → id:·"former",
+       54 │ + → → → name:·"A·long·former·employee·identity",
+       55 │ + → → → employeeNumber:·"A-1",
+       56 │ + → → → isActive:·false,
+       57 │ + → → },
+       58 │ + → ];
+       59 │ + → const·view·=·render(
+       60 │ + → → <WorkBalancesView
+       61 │ + → → → employees={employees}
+       62 │ + → → → userId="actor"
+       63 │ + → → → organizationId="A"
+       64 │ + → → />,
+       65 │ + → );
+       66 │ + → expect(
+       67 │ + → → screen
+       68 │ + → → → .getByRole("link",·{
+       69 │ + → → → → name:·/A·long·former·employee·identity.*A-1.*Former·employee.*Open·employee·balance/,
+       70 │ + → → → })
+       71 │ + → → → .getAttribute("href"),
+       72 │ + → ).toBe("/payroll/work-balances/former");
+       73 │ + → expect(
+       74 │ + → → screen.getByRole("link",·{·name:·"Payroll"·}).getAttribute("href"),
+       75 │ + → ).toBe("/payroll");
+       76 │ + → expect(
+       77 │ + → → screen.getByRole("button",·{·name:·"Upload·opening·balances"·}),
+       78 │ + → ).toBeTruthy();
+       79 │ + → scope.activeOrganizationId·=·"B";
+       80 │ + → view.rerender(
+       81 │ + → → <WorkBalancesView
+       82 │ + → → → employees={employees}
+       83 │ + → → → userId="actor"
+       84 │ + → → → organizationId="A"
+       85 │ + → → />,
+       86 │ + → );
+  13 more lines truncated
+  
+
+src\app\[locale]\(app)\payroll\work-balances\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·notFound·}·from·"next/navigation";␍
+     2    │ - import·{·Suspense·}·from·"react";␍
+     3    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     4    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     5    │ - import·{·getAuthContext·}·from·"@/lib/auth-helpers";␍
+     6    │ - import·{·loadPayrollWorkBalanceEmployees·}·from·"./coverage";␍
+     7    │ - import·{·WorkBalancesHeader,·WorkBalancesView·}·from·"./work-balances-view";␍
+     8    │ - ␍
+     9    │ - /**␍
+    10    │ - ·*·Work·balances·in·the·payroll·area·(#995):·the·employees·the·payroll·access␍
+    11    │ - ·*·grant·covers,·including·those·who·have·left,·each·opening·their·Work·balance␍
+    12    │ - ·*·section·to·record·or·cancel·overtime·payouts.·Not·found·without·an·active␍
+    13    │ - ·*·grant;·owners·and·admins·record·payouts·on·the·employee·settings·page.␍
+    14    │ - ·*/␍
+    15    │ - async·function·PayrollWorkBalancesContent()·{␍
+    16    │ - → const·[auth,·employees]·=·await·Promise.all([␍
+    17    │ - → → getAuthContext(),␍
+    18    │ - → → loadPayrollWorkBalanceEmployees(),␍
+    19    │ - → ]);␍
+    20    │ - → const·organizationId·=·auth?.session.activeOrganizationId;␍
+    21    │ - → if·(!auth·||·!organizationId·||·!employees)·notFound();␍
+    22    │ - ␍
+    23    │ - → return·(␍
+    24    │ - → → <WorkBalancesView·employees={employees}·userId={auth.user.id}·organizationId={organizationId}·/>␍
+    25    │ - → );␍
+    26    │ - }␍
+    27    │ - ␍
+    28    │ - function·PayrollWorkBalancesLoading()·{␍
+    29    │ - → return·(␍
+    30    │ - → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6">␍
+    31    │ - → → → <WorkBalancesHeader·/>␍
+    32    │ - → → → <LoadingRegion␍
+    33    │ - → → → → label={{␍
+    34    │ - → → → → → labelKey:·"payroll.workBalances.loading",␍
+    35    │ - → → → → → labelDefault:·"Loading·work·balances",␍
+    36    │ - → → → → }}␍
+    37    │ - → → → → className="space-y-4"␍
+    38    │ - → → → → role="status"␍
+    39    │ - → → → >␍
+    40    │ - → → → → <Skeleton·aria-hidden="true"·className="h-16·w-full"·/>␍
+    41    │ - → → → → <Skeleton·aria-hidden="true"·className="h-16·w-full"·/>␍
+    42    │ - → → → </LoadingRegion>␍
+    43    │ - → → </div>␍
+    44    │ - → );␍
+    45    │ - }␍
+    46    │ - ␍
+    47    │ - export·default·function·PayrollWorkBalancesPage()·{␍
+    48    │ - → return·(␍
+    49    │ - → → <Suspense·fallback={<PayrollWorkBalancesLoading·/>}>␍
+    50    │ - → → → <PayrollWorkBalancesContent·/>␍
+    51    │ - → → </Suspense>␍
+    52    │ - → );␍
+    53    │ - }␍
+        1 │ + import·{·notFound·}·from·"next/navigation";
+        2 │ + import·{·Suspense·}·from·"react";
+        3 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+        4 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+        5 │ + import·{·getAuthContext·}·from·"@/lib/auth-helpers";
+        6 │ + import·{·loadPayrollWorkBalanceEmployees·}·from·"./coverage";
+        7 │ + import·{·WorkBalancesHeader,·WorkBalancesView·}·from·"./work-balances-view";
+        8 │ + 
+        9 │ + /**
+       10 │ + ·*·Work·balances·in·the·payroll·area·(#995):·the·employees·the·payroll·access
+       11 │ + ·*·grant·covers,·including·those·who·have·left,·each·opening·their·Work·balance
+       12 │ + ·*·section·to·record·or·cancel·overtime·payouts.·Not·found·without·an·active
+       13 │ + ·*·grant;·owners·and·admins·record·payouts·on·the·employee·settings·page.
+       14 │ + ·*/
+       15 │ + async·function·PayrollWorkBalancesContent()·{
+       16 │ + → const·[auth,·employees]·=·await·Promise.all([
+       17 │ + → → getAuthContext(),
+       18 │ + → → loadPayrollWorkBalanceEmployees(),
+       19 │ + → ]);
+       20 │ + → const·organizationId·=·auth?.session.activeOrganizationId;
+       21 │ + → if·(!auth·||·!organizationId·||·!employees)·notFound();
+       22 │ + 
+       23 │ + → return·(
+       24 │ + → → <WorkBalancesView
+       25 │ + → → → employees={employees}
+       26 │ + → → → userId={auth.user.id}
+       27 │ + → → → organizationId={organizationId}
+       28 │ + → → />
+       29 │ + → );
+       30 │ + }
+       31 │ + 
+       32 │ + function·PayrollWorkBalancesLoading()·{
+       33 │ + → return·(
+       34 │ + → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6">
+       35 │ + → → → <WorkBalancesHeader·/>
+       36 │ + → → → <LoadingRegion
+       37 │ + → → → → label={{
+       38 │ + → → → → → labelKey:·"payroll.workBalances.loading",
+       39 │ + → → → → → labelDefault:·"Loading·work·balances",
+       40 │ + → → → → }}
+       41 │ + → → → → className="space-y-4"
+       42 │ + → → → → role="status"
+       43 │ + → → → >
+       44 │ + → → → → <Skeleton·aria-hidden="true"·className="h-16·w-full"·/>
+       45 │ + → → → → <Skeleton·aria-hidden="true"·className="h-16·w-full"·/>
+       46 │ + → → → </LoadingRegion>
+       47 │ + → → </div>
+       48 │ + → );
+       49 │ + }
+       50 │ + 
+       51 │ + export·default·function·PayrollWorkBalancesPage()·{
+       52 │ + → return·(
+       53 │ + → → <Suspense·fallback={<PayrollWorkBalancesLoading·/>}>
+       54 │ + → → → <PayrollWorkBalancesContent·/>
+       55 │ + → → </Suspense>
+       56 │ + → );
+       57 │ + }
+    54 58 │   
+  
+
+src\app\[locale]\(app)\payroll\work-balances\work-balances-view.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1     │ - "use·client";␍
+     2     │ - ␍
+     3     │ - import·{·IconArrowLeft,·IconArrowRight·}·from·"@tabler/icons-react";␍
+     4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     5     │ - import·type·{·ReactNode·}·from·"react";␍
+     6     │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";␍
+     7     │ - import·{·OpeningBalanceUploadDialog·}·from·"@/components/settings/work-balance/opening-balance-upload-dialog";␍
+     8     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+     9     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+    10     │ - import·type·{·BalanceAdjustmentGrantEmployee·}·from·"@/lib/payroll-access/adjustment-coverage";␍
+    11     │ - import·{·Link·}·from·"@/navigation";␍
+    12     │ - ␍
+    13     │ - export·function·WorkBalancesHeader({·actions·}:·{·actions?:·ReactNode·})·{␍
+    14     │ - → const·{·t·}·=·useTranslate();␍
+    15     │ - → return·(␍
+    16     │ - → → <PageHeader␍
+    17     │ - → → → title={t("payroll.workBalances.title",·"Work·balances")}␍
+    18     │ - → → → scope={␍
+    19     │ - → → → → <Link␍
+    20     │ - → → → → → href="/payroll"␍
+    21     │ - → → → → → className="inline-flex·items-center·gap-2·rounded-sm·hover:text-foreground·focus-visible:outline-2·focus-visible:outline-ring"␍
+    22     │ - → → → → >␍
+    23     │ - → → → → → <IconArrowLeft·aria-hidden="true"·className="size-4"·/>␍
+    24     │ - → → → → → {t("payroll.workBalances.backToPayroll",·"Payroll")}␍
+    25     │ - → → → → </Link>␍
+    26     │ - → → → }␍
+    27     │ - → → → description={t(␍
+    28     │ - → → → → "payroll.workBalances.description",␍
+    29     │ - → → → → "Record·and·cancel·overtime·payouts·for·the·employees·your·payroll·access·covers,·including·employees·who·have·left.",␍
+    30     │ - → → → )}␍
+    31     │ - → → → actions={actions}␍
+    32     │ - → → />␍
+    33     │ - → );␍
+    34     │ - }␍
+    35     │ - ␍
+    36     │ - /**·Display·scope·only;·the·server·grant·reader·and·actions·retain·all·authority.·*/␍
+    37     │ - export·function·WorkBalancesView({␍
+    38     │ - → employees,␍
+    39     │ - → userId,␍
+    40     │ - → organizationId,␍
+    41     │ - }:·{␍
+    42     │ - → employees:·BalanceAdjustmentGrantEmployee[];␍
+    43     │ - → userId:·string;␍
+    44     │ - → organizationId:·string;␍
+    45     │ - })·{␍
+    46     │ - → const·current·=·useOrganization();␍
+    47     │ - → const·{·t·}·=·useTranslate();␍
+    48     │ - → if·(current.userId·!==·userId·||·current.activeOrganizationId·!==·organizationId)·return·null;␍
+    49     │ - → return·(␍
+    50     │ - → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6">␍
+    51     │ - → → → <WorkBalancesHeader␍
+    52     │ - → → → → actions={employees.length·>·0·?·<OpeningBalanceUploadDialog·/>·:·undefined}␍
+    53     │ - → → → />␍
+    54     │ - → → → {employees.length·===·0·?·(␍
+    55     │ - → → → → <p·className="text-sm·text-muted-foreground">␍
+    56     │ - → → → → → {t("payroll.workBalances.empty",·"No·employees·are·in·your·payroll·access·scope·yet.")}␍
+    57     │ - → → → → </p>␍
+    58     │ - → → → )·:·(␍
+    59     │ - → → → → <ul·className="divide-y·rounded-lg·border·bg-card">␍
+    60     │ - → → → → → {employees.map((employee)·=>·(␍
+    61     │ - → → → → → → <li·key={employee.id}>␍
+    62     │ - → → → → → → → <Link␍
+    63     │ - → → → → → → → → href={`/payroll/work-balances/${employee.id}`}␍
+    64     │ - → → → → → → → → className="flex·min-w-0·flex-wrap·items-center·gap-x-6·gap-y-3·px-4·py-4·hover:bg-muted/50·focus-visible:outline-2·focus-visible:-outline-offset-2·focus-visible:outline-ring"␍
+    65     │ - → → → → → → → >␍
+    66     │ - → → → → → → → → <span·className="min-w-0·flex-[1_1_16rem]·space-y-1·break-words">␍
+    67     │ - → → → → → → → → → <span·className="block·font-medium">{employee.name}</span>␍
+    68     │ - → → → → → → → → → {employee.employeeNumber·?·(␍
+    69     │ - → → → → → → → → → → <span·className="block·text-sm·text-muted-foreground·tabular-nums">␍
+    70     │ - → → → → → → → → → → → {employee.employeeNumber}␍
+    71     │ - → → → → → → → → → → </span>␍
+    72     │ - → → → → → → → → → )·:·null}␍
+    73     │ - → → → → → → → → </span>␍
+    74     │ - → → → → → → → → {employee.isActive·?·null·:·(␍
+    75     │ - → → → → → → → → → <Badge·variant="secondary">␍
+    76     │ - → → → → → → → → → → {t("payroll.workBalances.former",·"Former·employee")}␍
+    77     │ - → → → → → → → → → </Badge>␍
+    78     │ - → → → → → → → → )}␍
+    79     │ - → → → → → → → → <span·className="inline-flex·items-center·gap-2·text-sm·text-foreground">␍
+    80     │ - → → → → → → → → → {t("payroll.workBalances.openEmployee",·"Open·employee·balance")}␍
+    81     │ - → → → → → → → → → <IconArrowRight·aria-hidden="true"·className="size-4·shrink-0"·/>␍
+    82     │ - → → → → → → → → </span>␍
+    83     │ - → → → → → → → </Link>␍
+    84     │ - → → → → → → </li>␍
+    85     │ - → → → → → ))}␍
+    86     │ - → → → → </ul>␍
+    87     │ - → → → )}␍
+    88     │ - → → </div>␍
+    89     │ - → );␍
+    90     │ - }␍
+         1 │ + "use·client";
+         2 │ + 
+         3 │ + import·{·IconArrowLeft,·IconArrowRight·}·from·"@tabler/icons-react";
+         4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+         5 │ + import·type·{·ReactNode·}·from·"react";
+         6 │ + import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";
+         7 │ + import·{·OpeningBalanceUploadDialog·}·from·"@/components/settings/work-balance/opening-balance-upload-dialog";
+         8 │ + import·{·Badge·}·from·"@/components/ui/badge";
+         9 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        10 │ + import·type·{·BalanceAdjustmentGrantEmployee·}·from·"@/lib/payroll-access/adjustment-coverage";
+        11 │ + import·{·Link·}·from·"@/navigation";
+        12 │ + 
+        13 │ + export·function·WorkBalancesHeader({·actions·}:·{·actions?:·ReactNode·})·{
+        14 │ + → const·{·t·}·=·useTranslate();
+        15 │ + → return·(
+        16 │ + → → <PageHeader
+        17 │ + → → → title={t("payroll.workBalances.title",·"Work·balances")}
+        18 │ + → → → scope={
+        19 │ + → → → → <Link
+        20 │ + → → → → → href="/payroll"
+        21 │ + → → → → → className="inline-flex·items-center·gap-2·rounded-sm·hover:text-foreground·focus-visible:outline-2·focus-visible:outline-ring"
+        22 │ + → → → → >
+        23 │ + → → → → → <IconArrowLeft·aria-hidden="true"·className="size-4"·/>
+        24 │ + → → → → → {t("payroll.workBalances.backToPayroll",·"Payroll")}
+        25 │ + → → → → </Link>
+        26 │ + → → → }
+        27 │ + → → → description={t(
+        28 │ + → → → → "payroll.workBalances.description",
+        29 │ + → → → → "Record·and·cancel·overtime·payouts·for·the·employees·your·payroll·access·covers,·including·employees·who·have·left.",
+        30 │ + → → → )}
+        31 │ + → → → actions={actions}
+        32 │ + → → />
+        33 │ + → );
+        34 │ + }
+        35 │ + 
+        36 │ + /**·Display·scope·only;·the·server·grant·reader·and·actions·retain·all·authority.·*/
+        37 │ + export·function·WorkBalancesView({
+        38 │ + → employees,
+        39 │ + → userId,
+        40 │ + → organizationId,
+        41 │ + }:·{
+        42 │ + → employees:·BalanceAdjustmentGrantEmployee[];
+        43 │ + → userId:·string;
+        44 │ + → organizationId:·string;
+        45 │ + })·{
+        46 │ + → const·current·=·useOrganization();
+        47 │ + → const·{·t·}·=·useTranslate();
+        48 │ + → if·(
+        49 │ + → → current.userId·!==·userId·||
+        50 │ + → → current.activeOrganizationId·!==·organizationId
+        51 │ + → )
+        52 │ + → → return·null;
+        53 │ + → return·(
+        54 │ + → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6">
+        55 │ + → → → <WorkBalancesHeader
+        56 │ + → → → → actions={
+        57 │ + → → → → → employees.length·>·0·?·<OpeningBalanceUploadDialog·/>·:·undefined
+        58 │ + → → → → }
+        59 │ + → → → />
+        60 │ + → → → {employees.length·===·0·?·(
+  46 more lines truncated
+  
+
+src\components\settings\work-balance\opening-balance-upload-dialog.test.tsx format ━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom␍
+      2     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      3     │ - import·userEvent·from·"@testing-library/user-event";␍
+      4     │ - import·{·Activity·}·from·"react";␍
+      5     │ - import·{·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·{·OpeningBalanceUploadDialog·}·from·"./opening-balance-upload-dialog";␍
+      7     │ - ␍
+      8     │ - const·harness·=·vi.hoisted(()·=>·({␍
+      9     │ - → preview:·vi.fn(),␍
+     10     │ - → commit:·vi.fn(),␍
+     11     │ - → invalidate:·vi.fn(),␍
+     12     │ - → error:·vi.fn(),␍
+     13     │ - → success:·vi.fn(),␍
+     14     │ - → scope:·{·userId:·"actor",·activeOrganizationId:·"A"·},␍
+     15     │ - }));␍
+     16     │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({␍
+     17     │ - → useOrganization:·()·=>·harness.scope,␍
+     18     │ - }));␍
+     19     │ - vi.mock("@tanstack/react-query",·()·=>·({␍
+     20     │ - → useQueryClient:·()·=>·({·invalidateQueries:·harness.invalidate·}),␍
+     21     │ - }));␍
+     22     │ - vi.mock("@/app/[locale]/(app)/settings/employees/opening-balance-upload-actions",·()·=>·({␍
+     23     │ - → previewOpeningBalanceUploadAction:·harness.preview,␍
+     24     │ - → commitOpeningBalanceUploadAction:·harness.commit,␍
+     25     │ - }));␍
+     26     │ - vi.mock("./use-employee-work-balance",·()·=>·({·EMPLOYEE_WORK_BALANCE_QUERY_KEY:·["balance"]·}));␍
+     27     │ - vi.mock("@/hooks/use-display-context",·()·=>·({␍
+     28     │ - → useDisplayContext:·()·=>·({·locale:·"en-GB",·timezone:·"UTC"·}),␍
+     29     │ - }));␍
+     30     │ - vi.mock("sonner",·()·=>·({·toast:·{·error:·harness.error,·success:·harness.success·}·}));␍
+     31     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     32     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     33     │ - → useTolgee:·()·=>·({·getLanguage:·()·=>·"en"·}),␍
+     34     │ - }));␍
+     35     │ - const·row·=·{␍
+     36     │ - → row:·2,␍
+     37     │ - → employeeNumber:·"EMP-1",␍
+     38     │ - → employee:·{·id:·"employee",·name:·"Covered·former·employee",·isActive:·false·},␍
+     39     │ - → day:·"2026-03-31",␍
+     40     │ - → minutes:·150,␍
+     41     │ - → reason:·"Carry·forward",␍
+     42     │ - → errors:·[],␍
+     43     │ - → replaces:·{·day:·"2026-02-28",·minutes:·60·},␍
+     44     │ - };␍
+     45     │ - const·ready·=·{·success:·true,·data:·{·status:·"ready",·rows:·[row]·}·};␍
+     46     │ - function·file(read:·()·=>·Promise<string>)·{␍
+     47     │ - → const·f·=·new·File(["csv"],·"balances.csv",·{·type:·"text/csv"·});␍
+     48     │ - → Object.defineProperty(f,·"text",·{·value:·read·});␍
+     49     │ - → return·f;␍
+     50     │ - }␍
+     51     │ - async·function·open()·{␍
+     52     │ - → const·user·=·userEvent.setup();␍
+     53     │ - → await·user.click(screen.getByRole("button",·{·name:·"Upload·opening·balances"·}));␍
+     54     │ - → return·user;␍
+     55     │ - }␍
+     56     │ - beforeEach(()·=>·{␍
+     57     │ - → vi.clearAllMocks();␍
+     58     │ - → harness.scope·=·{·userId:·"actor",·activeOrganizationId:·"A"·};␍
+     59     │ - → harness.preview.mockResolvedValue(ready);␍
+     60     │ - → harness.commit.mockResolvedValue({·success:·false,·refusal:·"not_permitted"·});␍
+     61     │ - → harness.invalidate.mockResolvedValue(undefined);␍
+     62     │ - });␍
+     63     │ - ␍
+     64     │ - it("unlocks·a·discarded·preview·that·finishes·while·its·cached·view·is·hidden",·async·()·=>·{␍
+     65     │ - → let·finish!:·(value:·unknown)·=>·void;␍
+     66     │ - → harness.preview.mockImplementation(␍
+     67     │ - → → ()·=>␍
+     68     │ - → → → new·Promise((resolve)·=>·{␍
+     69     │ - → → → → finish·=·resolve;␍
+     70     │ - → → → }),␍
+     71     │ - → );␍
+     72     │ - → const·content·=·<OpeningBalanceUploadDialog·/>;␍
+     73     │ - → const·view·=·render(<Activity·mode="visible">{content}</Activity>);␍
+     74     │ - → await·open();␍
+     75     │ - → fireEvent.change(screen.getByLabelText("CSV·file"),·{␍
+     76     │ - → → target:·{·files:·[file(async·()·=>·"CSV")]·},␍
+     77     │ - → });␍
+     78     │ - → await·waitFor(()·=>·expect(harness.preview).toHaveBeenCalledTimes(1));␍
+     79     │ - → view.rerender(<Activity·mode="hidden">{content}</Activity>);␍
+     80     │ - → await·act(async·()·=>·finish(ready));␍
+     81     │ - → view.rerender(<Activity·mode="visible">{content}</Activity>);␍
+     82     │ - → await·waitFor(()·=>␍
+     83     │ - → → expect((screen.getByLabelText("CSV·file")·as·HTMLInputElement).disabled).toBe(false),␍
+     84     │ - → );␍
+     85     │ - → expect(screen.queryByText("Covered·former·employee")).toBeNull();␍
+     86     │ - → await·userEvent.setup().click(screen.getByRole("button",·{·name:·"Cancel"·}));␍
+     87     │ - → expect(screen.queryByRole("dialog")).toBeNull();␍
+     88     │ - });␍
+     89     │ - ␍
+     90     │ - it("discards·a·preview·from·an·earlier·cached·visit·and·accepts·a·fresh·file·after·it·settles",·async·()·=>·{␍
+     91     │ - → let·finish!:·(value:·unknown)·=>·void;␍
+     92     │ - → harness.preview.mockImplementationOnce(␍
+     93     │ - → → ()·=>␍
+     94     │ - → → → new·Promise((resolve)·=>·{␍
+     95     │ - → → → → finish·=·resolve;␍
+     96     │ - → → → }),␍
+     97     │ - → );␍
+     98     │ - → const·content·=·<OpeningBalanceUploadDialog·/>;␍
+     99     │ - → const·view·=·render(<Activity·mode="visible">{content}</Activity>);␍
+    100     │ - → await·open();␍
+    101     │ - → fireEvent.change(screen.getByLabelText("CSV·file"),·{␍
+    102     │ - → → target:·{·files:·[file(async·()·=>·"OLD·CSV")]·},␍
+    103     │ - → });␍
+    104     │ - → await·waitFor(()·=>·expect(harness.preview).toHaveBeenCalledTimes(1));␍
+    105     │ - → view.rerender(<Activity·mode="hidden">{content}</Activity>);␍
+    106     │ - → view.rerender(<Activity·mode="visible">{content}</Activity>);␍
+    107     │ - → expect((screen.getByLabelText("CSV·file")·as·HTMLInputElement).disabled).toBe(true);␍
+    108     │ - → fireEvent.change(screen.getByLabelText("CSV·file"),·{␍
+    109     │ - → → target:·{·files:·[file(async·()·=>·"BLOCKED·CSV")]·},␍
+    110     │ - → });␍
+    111     │ - → expect(harness.preview).toHaveBeenCalledTimes(1);␍
+    112     │ - → await·act(async·()·=>·finish(ready));␍
+    113     │ - → expect(screen.queryByText("Covered·former·employee")).toBeNull();␍
+    114     │ - → expect((screen.getByLabelText("CSV·file")·as·HTMLInputElement).disabled).toBe(false);␍
+    115     │ - → fireEvent.change(screen.getByLabelText("CSV·file"),·{␍
+    116     │ - → → target:·{·files:·[file(async·()·=>·"FRESH·CSV")]·},␍
+    117     │ - → });␍
+    118     │ - → await·screen.findByText("Covered·former·employee");␍
+    119     │ - → expect(harness.preview).toHaveBeenNthCalledWith(2,·{·csv:·"FRESH·CSV"·});␍
+    120     │ - });␍
+    121     │ - ␍
+    122     │ - it.each([false,·true])(␍
+    123     │ - → "requires·a·fresh·preview·after·a·commit·crosses·cached·navigation·(return·before·completion:·%s)",␍
+    124     │ - → async·(returnBeforeCompletion)·=>·{␍
+    125     │ - → → let·finish!:·(value:·unknown)·=>·void;␍
+    126     │ - → → const·committed·=·{␍
+    127     │ - → → → success:·true,␍
+    128     │ - → → → data:·{·status:·"committed",·rows:·[row],·created:·1·},␍
+    129     │ - → → };␍
+    130     │ - → → harness.commit␍
+    131     │ - → → → .mockImplementationOnce(␍
+    132     │ - → → → → ()·=>␍
+    133     │ - → → → → → new·Promise((resolve)·=>·{␍
+    134     │ - → → → → → → finish·=·resolve;␍
+    135     │ - → → → → → }),␍
+    136     │ - → → → )␍
+    137     │ - → → → .mockResolvedValue(committed);␍
+    138     │ - → → const·content·=·<OpeningBalanceUploadDialog·/>;␍
+    139     │ - → → const·view·=·render(<Activity·mode="visible">{content}</Activity>);␍
+    140     │ - → → await·open();␍
+    141     │ - → → fireEvent.change(screen.getByLabelText("CSV·file"),·{␍
+    142     │ - → → → target:·{·files:·[file(async·()·=>·"OLD·CSV")]·},␍
+    143     │ - → → });␍
+    144     │ - → → await·screen.findByText("Covered·former·employee");␍
+    145     │ - → → fireEvent.submit(screen.getByLabelText("CSV·file").closest("form")·as·HTMLFormElement);␍
+    146     │ - → → await·waitFor(()·=>·expect(harness.commit).toHaveBeenCalledTimes(1));␍
+    147     │ - → → view.rerender(<Activity·mode="hidden">{content}</Activity>);␍
+    148     │ - → → if·(returnBeforeCompletion)·{␍
+    149     │ - → → → view.rerender(<Activity·mode="visible">{content}</Activity>);␍
+    150     │ - → → → expect((screen.getByLabelText("CSV·file")·as·HTMLInputElement).disabled).toBe(true);␍
+  538 more lines truncated
+  
+
+src\components\settings\work-balance\opening-balance-upload-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconDownload,·IconFileUpload,·IconLoader2,·IconUpload·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useForm·}·from·"@tanstack/react-form";␍
+      5     │ - import·{·useQueryClient·}·from·"@tanstack/react-query";␍
+      6     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      7     │ - import·{·useLayoutEffect,·useRef,·useState·}·from·"react";␍
+      8     │ - import·{·toast·}·from·"sonner";␍
+      9     │ - import·{␍
+     10     │ - → commitOpeningBalanceUploadAction,␍
+     11     │ - → previewOpeningBalanceUploadAction,␍
+     12     │ - }·from·"@/app/[locale]/(app)/settings/employees/opening-balance-upload-actions";␍
+     13     │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";␍
+     14     │ - import·{·Alert,·AlertDescription,·AlertTitle·}·from·"@/components/ui/alert";␍
+     15     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     16     │ - import·{␍
+     17     │ - → Dialog,␍
+     18     │ - → DialogContent,␍
+     19     │ - → DialogDescription,␍
+     20     │ - → DialogFooter,␍
+     21     │ - → DialogHeader,␍
+     22     │ - → DialogTitle,␍
+     23     │ - → DialogTrigger,␍
+     24     │ - }·from·"@/components/ui/dialog";␍
+     25     │ - import·{·Input·}·from·"@/components/ui/input";␍
+     26     │ - import·{␍
+     27     │ - → TFormControl,␍
+     28     │ - → TFormDescription,␍
+     29     │ - → TFormItem,␍
+     30     │ - → TFormLabel,␍
+     31     │ - }·from·"@/components/ui/tanstack-form";␍
+     32     │ - import·{␍
+     33     │ - → MAX_OPENING_BALANCE_UPLOAD_CHARACTERS,␍
+     34     │ - → openingBalanceCsvTemplate,␍
+     35     │ - }·from·"@/lib/work-balance/adjustments/opening-balance-csv";␍
+     36     │ - import·{␍
+     37     │ - → type·BalanceAdjustmentActionResult,␍
+     38     │ - → balanceAdjustmentFailureOf,␍
+     39     │ - → type·OpeningBalanceUploadOutcome,␍
+     40     │ - }·from·"@/lib/work-balance/adjustments/types";␍
+     41     │ - import·{·OpeningBalanceUploadTable·}·from·"./opening-balance-upload-table";␍
+     42     │ - import·{·useBalanceAdjustmentErrorMessage·}·from·"./use-balance-adjustment-error";␍
+     43     │ - import·{·EMPLOYEE_WORK_BALANCE_QUERY_KEY·}·from·"./use-employee-work-balance";␍
+     44     │ - import·{·useOpeningBalanceUploadMessages·}·from·"./use-opening-balance-upload-messages";␍
+     45     │ - ␍
+     46     │ - type·Upload·=·{␍
+     47     │ - → csv:·string;␍
+     48     │ - → outcome:·OpeningBalanceUploadOutcome·|·{·status:·"unreadable"·};␍
+     49     │ - → /**·True·once·a·commit·was·refused:·nothing·was·saved.·*/␍
+     50     │ - → refused:·boolean;␍
+     51     │ - };␍
+     52     │ - ␍
+     53     │ - const·TEMPLATE_FILE_NAME·=·"opening-balances-template.csv";␍
+     54     │ - ␍
+     55     │ - function·downloadTemplate()·{␍
+     56     │ - → //·The·byte·order·mark·makes·spreadsheets·read·the·file·as·UTF-8;·the·upload·ignores·it.␍
+     57     │ - → const·blob·=·new·Blob([`�${openingBalanceCsvTemplate()}`],·{␍
+     58     │ - → → type:·"text/csv;charset=utf-8",␍
+     59     │ - → });␍
+     60     │ - → const·url·=·URL.createObjectURL(blob);␍
+     61     │ - → const·anchor·=·document.createElement("a");␍
+     62     │ - → anchor.href·=·url;␍
+     63     │ - → anchor.download·=·TEMPLATE_FILE_NAME;␍
+     64     │ - → document.body.appendChild(anchor);␍
+     65     │ - → anchor.click();␍
+     66     │ - → anchor.remove();␍
+     67     │ - → URL.revokeObjectURL(url);␍
+     68     │ - }␍
+     69     │ - ␍
+     70     │ - /**␍
+     71     │ - ·*·Uploads·opening·balances·for·many·employees·at·once·(#999):·a·CSV·file·is␍
+     72     │ - ·*·previewed·with·every·row's·errors,·and·committed·only·when·no·row·has·one;␍
+     73     │ - ·*·the·commit·writes·all·rows·or·none.·Owners·and·admins·reach·it·from·the␍
+     74     │ - ·*·employee·list,·payroll·grant·holders·from·the·payroll·Work·balances·page.␍
+     75     │ - ·*/␍
+     76     │ - export·function·OpeningBalanceUploadDialog()·{␍
+     77     │ - → const·{·userId,·activeOrganizationId·}·=·useOrganization();␍
+     78     │ - → if·(!userId·||·!activeOrganizationId)·return·null;␍
+     79     │ - → return·<ScopedOpeningBalanceUploadDialog·key={JSON.stringify([userId,·activeOrganizationId])}·/>;␍
+     80     │ - }␍
+     81     │ - ␍
+     82     │ - function·OpeningBalanceUploadHeader()·{␍
+     83     │ - → const·{·t·}·=·useTranslate();␍
+     84     │ - → return·(␍
+     85     │ - → → <DialogHeader>␍
+     86     │ - → → → <DialogTitle>␍
+     87     │ - → → → → {t("settings.employees.workBalance.upload.title",·"Upload·opening·balances")}␍
+     88     │ - → → → </DialogTitle>␍
+     89     │ - → → → <DialogDescription>␍
+     90     │ - → → → → {t(␍
+     91     │ - → → → → → "settings.employees.workBalance.upload.description",␍
+     92     │ - → → → → → "Set·the·opening·balance·of·many·employees·from·a·CSV·file·with·the·columns·employee_number,·day·(YYYY-MM-DD·or·DD.MM.YYYY),·balance·(hours·and·minutes·such·as·12:30·or·-4:15)·and·reason.·Each·opening·balance·replaces·the·employee's·work·balance·up·to·and·including·its·day,·and·cancels·the·one·in·effect.·Nothing·is·saved·while·any·row·has·an·error.",␍
+     93     │ - → → → → )}␍
+     94     │ - → → → </DialogDescription>␍
+     95     │ - → → </DialogHeader>␍
+     96     │ - → );␍
+     97     │ - }␍
+     98     │ - ␍
+     99     │ - function·ScopedOpeningBalanceUploadDialog()·{␍
+    100     │ - → const·{·t·}·=·useTranslate();␍
+    101     │ - → const·queryClient·=·useQueryClient();␍
+    102     │ - → const·actionError·=·useBalanceAdjustmentErrorMessage();␍
+    103     │ - → const·{·fileError·}·=·useOpeningBalanceUploadMessages();␍
+    104     │ - → const·[open,·setOpen]·=·useState(false);␍
+    105     │ - → const·[upload,·setUpload]·=·useState<Upload·|·null>(null);␍
+    106     │ - → const·[pending,·setPending]·=·useState<"preview"·|·"commit"·|·null>(null);␍
+    107     │ - → const·[error,·setError]·=·useState<string·|·null>(null);␍
+    108     │ - → const·busy·=·useRef(false);␍
+    109     │ - → const·alive·=·useRef(true);␍
+    110     │ - → const·generation·=·useRef(0);␍
+    111     │ - → useLayoutEffect(()·=>·{␍
+    112     │ - → → alive.current·=·true;␍
+    113     │ - → → return·()·=>·{␍
+    114     │ - → → → alive.current·=·false;␍
+    115     │ - → → → generation.current·+=·1;␍
+    116     │ - → → };␍
+    117     │ - → },·[]);␍
+    118     │ - → const·form·=·useForm({·defaultValues:·{·file:·null·as·File·|·null·},·onSubmit:·handleCommit·});␍
+    119     │ - ␍
+    120     │ - → function·isCurrent(startedGeneration:·number)·{␍
+    121     │ - → → return·alive.current·&&·generation.current·===·startedGeneration;␍
+    122     │ - → }␍
+    123     │ - ␍
+    124     │ - → function·handleOpenChange(nextOpen:·boolean)·{␍
+    125     │ - → → if·(busy.current)·return;␍
+    126     │ - → → if·(!nextOpen)·{␍
+    127     │ - → → → setUpload(null);␍
+    128     │ - → → → setError(null);␍
+    129     │ - → → → form.reset();␍
+    130     │ - → → }␍
+    131     │ - → → setOpen(nextOpen);␍
+    132     │ - → }␍
+    133     │ - ␍
+    134     │ - → async·function·run(␍
+    135     │ - → → kind:·"preview"·|·"commit",␍
+    136     │ - → → csv:·string,␍
+    137     │ - → → startedGeneration:·number,␍
+    138     │ - → ):·Promise<OpeningBalanceUploadOutcome·|·null>·{␍
+    139     │ - → → if·(!isCurrent(startedGeneration))·return·null;␍
+    140     │ - → → setPending(kind);␍
+    141     │ - → → setError(null);␍
+    142     │ - → → const·action·=␍
+    143     │ - → → → kind·===·"preview"·?·previewOpeningBalanceUploadAction·:·commitOpeningBalanceUploadAction;␍
+    144     │ - → → const·result:·BalanceAdjustmentActionResult<OpeningBalanceUploadOutcome>·|·null·=·await·action({␍
+    145     │ - → → → csv,␍
+    146     │ - → → }).catch(()·=>·null);␍
+    147     │ - → → if·(!isCurrent(startedGeneration))·return·null;␍
+    148     │ - → → if·(!result?.success)·{␍
+    149     │ - → → → const·failure·=·result·?·balanceAdjustmentFailureOf(result)·:·null;␍
+    150     │ - → → → setError(␍
+  702 more lines truncated
+  
+
+src\components\settings\work-balance\opening-balance-upload-table.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconAlertCircle,·IconCircleCheck·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+      6     │ - import·{␍
+      7     │ - → Table,␍
+      8     │ - → TableBody,␍
+      9     │ - → TableCell,␍
+     10     │ - → TableHead,␍
+     11     │ - → TableHeader,␍
+     12     │ - → TableRow,␍
+     13     │ - }·from·"@/components/ui/table";␍
+     14     │ - import·{·useDisplayContext·}·from·"@/hooks/use-display-context";␍
+     15     │ - import·{·parsePlainDate·}·from·"@/lib/datetime/temporal-core";␍
+     16     │ - import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";␍
+     17     │ - import·type·{·OpeningBalanceUploadRow·}·from·"@/lib/work-balance/adjustments/types";␍
+     18     │ - import·{·formatSignedWorkBalance·}·from·"@/lib/work-balance/format";␍
+     19     │ - import·{·useOpeningBalanceUploadMessages·}·from·"./use-opening-balance-upload-messages";␍
+     20     │ - ␍
+     21     │ - /**·The·rows·of·a·bulk·opening·balance·upload·with·each·row's·errors·(#999).·*/␍
+     22     │ - export·function·OpeningBalanceUploadTable({·rows·}:·{·rows:·OpeningBalanceUploadRow[]·})·{␍
+     23     │ - → const·{·t·}·=·useTranslate();␍
+     24     │ - → const·displayContext·=·useDisplayContext();␍
+     25     │ - → const·{·rowError·}·=·useOpeningBalanceUploadMessages();␍
+     26     │ - → const·formatDay·=·(day:·string)·=>␍
+     27     │ - → → formatPlainDate(parsePlainDate(day),·displayContext.locale,·"dateMedium");␍
+     28     │ - ␍
+     29     │ - → return·(␍
+     30     │ - → → <div·className="max-h-[50vh]·overflow-auto·rounded-md·border">␍
+     31     │ - → → → <Table·mobileLayout="stacked">␍
+     32     │ - → → → → <TableHeader·className="sticky·top-0·bg-background">␍
+     33     │ - → → → → → <TableRow>␍
+     34     │ - → → → → → → <TableHead·className="w-14·text-right">␍
+     35     │ - → → → → → → → {t("settings.employees.workBalance.upload.columns.row",·"Row")}␍
+     36     │ - → → → → → → </TableHead>␍
+     37     │ - → → → → → → <TableHead>␍
+     38     │ - → → → → → → → {t("settings.employees.workBalance.upload.columns.employee",·"Employee")}␍
+     39     │ - → → → → → → </TableHead>␍
+     40     │ - → → → → → → <TableHead>{t("settings.employees.workBalance.upload.columns.day",·"Day")}</TableHead>␍
+     41     │ - → → → → → → <TableHead·className="text-right">␍
+     42     │ - → → → → → → → {t("settings.employees.workBalance.upload.columns.balance",·"Balance")}␍
+     43     │ - → → → → → → </TableHead>␍
+     44     │ - → → → → → → <TableHead>␍
+     45     │ - → → → → → → → {t("settings.employees.workBalance.upload.columns.reason",·"Reason")}␍
+     46     │ - → → → → → → </TableHead>␍
+     47     │ - → → → → → → <TableHead>␍
+     48     │ - → → → → → → → {t("settings.employees.workBalance.upload.columns.status",·"Status")}␍
+     49     │ - → → → → → → </TableHead>␍
+     50     │ - → → → → → </TableRow>␍
+     51     │ - → → → → </TableHeader>␍
+     52     │ - → → → → <TableBody>␍
+     53     │ - → → → → → {rows.map((row)·=>·(␍
+     54     │ - → → → → → → <TableRow␍
+     55     │ - → → → → → → → key={row.row}␍
+     56     │ - → → → → → → → className={row.errors.length·>·0·?·"bg-destructive/5"·:·undefined}␍
+     57     │ - → → → → → → >␍
+     58     │ - → → → → → → → <TableCell·className="text-right·tabular-nums·text-muted-foreground">␍
+     59     │ - → → → → → → → → {row.row}␍
+     60     │ - → → → → → → → </TableCell>␍
+     61     │ - → → → → → → → <TableCell>␍
+     62     │ - → → → → → → → → <span·className="block·font-medium">{row.employee?.name·??·"—"}</span>␍
+     63     │ - → → → → → → → → <span·className="flex·items-center·gap-2·text-muted-foreground·text-xs·tabular-nums">␍
+     64     │ - → → → → → → → → → {row.employeeNumber}␍
+     65     │ - → → → → → → → → → {row.employee·&&·!row.employee.isActive·?·(␍
+     66     │ - → → → → → → → → → → <Badge·variant="secondary">␍
+     67     │ - → → → → → → → → → → → {t("settings.employees.workBalance.upload.former",·"Former·employee")}␍
+     68     │ - → → → → → → → → → → </Badge>␍
+     69     │ - → → → → → → → → → )·:·null}␍
+     70     │ - → → → → → → → → </span>␍
+     71     │ - → → → → → → → </TableCell>␍
+     72     │ - → → → → → → → <TableCell·className="whitespace-nowrap">␍
+     73     │ - → → → → → → → → {row.day·?·formatDay(row.day)·:·"—"}␍
+     74     │ - → → → → → → → </TableCell>␍
+     75     │ - → → → → → → → <TableCell·className="text-right·tabular-nums">␍
+     76     │ - → → → → → → → → {row.minutes·===·null·?·"—"·:·formatSignedWorkBalance(row.minutes)}␍
+     77     │ - → → → → → → → </TableCell>␍
+     78     │ - → → → → → → → <TableCell·className="max-w-96·whitespace-normal·break-words">{row.reason}</TableCell>␍
+     79     │ - → → → → → → → <TableCell·className="min-w-56">␍
+     80     │ - → → → → → → → → {row.errors.length·>·0·?·(␍
+     81     │ - → → → → → → → → → <ul·className="space-y-1·text-destructive·text-sm">␍
+     82     │ - → → → → → → → → → → {row.errors.map((error)·=>·(␍
+     83     │ - → → → → → → → → → → → <li·key={error.code}·className="flex·gap-1.5">␍
+     84     │ - → → → → → → → → → → → → <IconAlertCircle·aria-hidden="true"·className="mt-0.5·size-4·shrink-0"·/>␍
+     85     │ - → → → → → → → → → → → → <span>␍
+     86     │ - → → → → → → → → → → → → → {rowError(error.code)}␍
+     87     │ - → → → → → → → → → → → → → {error.conflictingPayouts?.length·?·(␍
+     88     │ - → → → → → → → → → → → → → → <span·className="block·tabular-nums">␍
+     89     │ - → → → → → → → → → → → → → → → {error.conflictingPayouts␍
+     90     │ - → → → → → → → → → → → → → → → → .map(␍
+     91     │ - → → → → → → → → → → → → → → → → → (payout)·=>␍
+     92     │ - → → → → → → → → → → → → → → → → → → `${formatDay(payout.day)}:·${formatSignedWorkBalance(payout.minutes)}`,␍
+     93     │ - → → → → → → → → → → → → → → → → )␍
+     94     │ - → → → → → → → → → → → → → → → → .join(",·")}␍
+     95     │ - → → → → → → → → → → → → → → </span>␍
+     96     │ - → → → → → → → → → → → → → )·:·null}␍
+     97     │ - → → → → → → → → → → → → </span>␍
+     98     │ - → → → → → → → → → → → </li>␍
+     99     │ - → → → → → → → → → → ))}␍
+    100     │ - → → → → → → → → → </ul>␍
+    101     │ - → → → → → → → → )·:·(␍
+    102     │ - → → → → → → → → → <span·className="flex·gap-1.5·text-sm">␍
+    103     │ - → → → → → → → → → → <IconCircleCheck␍
+    104     │ - → → → → → → → → → → → aria-hidden="true"␍
+    105     │ - → → → → → → → → → → → className="mt-0.5·size-4·shrink-0·text-primary"␍
+    106     │ - → → → → → → → → → → />␍
+    107     │ - → → → → → → → → → → {row.replaces␍
+    108     │ - → → → → → → → → → → → ?·t(␍
+    109     │ - → → → → → → → → → → → → → "settings.employees.workBalance.upload.replaces",␍
+    110     │ - → → → → → → → → → → → → → "Replaces·the·opening·balance·of·{balance}·on·{day}",␍
+    111     │ - → → → → → → → → → → → → → {␍
+    112     │ - → → → → → → → → → → → → → → balance:·formatSignedWorkBalance(row.replaces.minutes),␍
+    113     │ - → → → → → → → → → → → → → → day:·formatDay(row.replaces.day),␍
+    114     │ - → → → → → → → → → → → → → },␍
+    115     │ - → → → → → → → → → → → → )␍
+    116     │ - → → → → → → → → → → → :·t("settings.employees.workBalance.upload.ready",·"Ready")}␍
+    117     │ - → → → → → → → → → </span>␍
+    118     │ - → → → → → → → → )}␍
+    119     │ - → → → → → → → </TableCell>␍
+    120     │ - → → → → → → </TableRow>␍
+    121     │ - → → → → → ))}␍
+    122     │ - → → → → </TableBody>␍
+    123     │ - → → → </Table>␍
+    124     │ - → → </div>␍
+    125     │ - → );␍
+    126     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{·IconAlertCircle,·IconCircleCheck·}·from·"@tabler/icons-react";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·Badge·}·from·"@/components/ui/badge";
+          6 │ + import·{
+          7 │ + → Table,
+          8 │ + → TableBody,
+          9 │ + → TableCell,
+         10 │ + → TableHead,
+         11 │ + → TableHeader,
+         12 │ + → TableRow,
+         13 │ + }·from·"@/components/ui/table";
+         14 │ + import·{·useDisplayContext·}·from·"@/hooks/use-display-context";
+         15 │ + import·{·parsePlainDate·}·from·"@/lib/datetime/temporal-core";
+         16 │ + import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";
+         17 │ + import·type·{·OpeningBalanceUploadRow·}·from·"@/lib/work-balance/adjustments/types";
+         18 │ + import·{·formatSignedWorkBalance·}·from·"@/lib/work-balance/format";
+         19 │ + import·{·useOpeningBalanceUploadMessages·}·from·"./use-opening-balance-upload-messages";
+         20 │ + 
+         21 │ + /**·The·rows·of·a·bulk·opening·balance·upload·with·each·row's·errors·(#999).·*/
+         22 │ + export·function·OpeningBalanceUploadTable({
+         23 │ + → rows,
+         24 │ + }:·{
+  138 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";␍
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+      3     │ - ␍
+      4     │ - export·type·AppRouteMetadata·=·{␍
+      5     │ - → id:·string;␍
+      6     │ - → href:·string;␍
+      7     │ - → titleKey:·string;␍
+      8     │ - → titleDefault:·string;␍
+      9     │ - };␍
+     10     │ - ␍
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[␍
+     12     │ - → {␍
+     13     │ - → → id:·"dashboard",␍
+     14     │ - → → href:·"/",␍
+     15     │ - → → titleKey:·"nav.dashboard",␍
+     16     │ - → → titleDefault:·"Dashboard",␍
+     17     │ - → },␍
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},␍
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment␍
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.␍
+     21     │ - → {␍
+     22     │ - → → id:·"equipment",␍
+     23     │ - → → href:·"/equipment",␍
+     24     │ - → → titleKey:·"nav.equipment",␍
+     25     │ - → → titleDefault:·"Equipment",␍
+     26     │ - → },␍
+     27     │ - → {␍
+     28     │ - → → id:·"my-equipment",␍
+     29     │ - → → href:·"/my-equipment",␍
+     30     │ - → → titleKey:·"nav.my-equipment",␍
+     31     │ - → → titleDefault:·"My·equipment",␍
+     32     │ - → },␍
+     33     │ - → {␍
+     34     │ - → → id:·"notifications",␍
+     35     │ - → → href:·"/notifications",␍
+     36     │ - → → titleKey:·"notifications.title",␍
+     37     │ - → → titleDefault:·"Notifications",␍
+     38     │ - → },␍
+     39     │ - → {␍
+     40     │ - → → id:·"calendar",␍
+     41     │ - → → href:·"/calendar",␍
+     42     │ - → → titleKey:·"nav.calendar",␍
+     43     │ - → → titleDefault:·"Calendar",␍
+     44     │ - → },␍
+     45     │ - → {␍
+     46     │ - → → id:·"time-tracking",␍
+     47     │ - → → href:·"/time-tracking",␍
+     48     │ - → → titleKey:·"nav.time-tracking",␍
+     49     │ - → → titleDefault:·"Time·Tracking",␍
+     50     │ - → },␍
+     51     │ - → {␍
+     52     │ - → → id:·"my-requests",␍
+     53     │ - → → href:·"/my-requests",␍
+     54     │ - → → titleKey:·"nav.my-requests",␍
+     55     │ - → → titleDefault:·"My·Requests",␍
+     56     │ - → },␍
+     57     │ - → {␍
+     58     │ - → → id:·"org-explorer",␍
+     59     │ - → → href:·"/organization",␍
+     60     │ - → → titleKey:·"nav.org-explorer",␍
+     61     │ - → → titleDefault:·"Org·Explorer",␍
+     62     │ - → },␍
+     63     │ - → {␍
+     64     │ - → → id:·"absences",␍
+     65     │ - → → href:·"/absences",␍
+     66     │ - → → titleKey:·"nav.absences",␍
+     67     │ - → → titleDefault:·"Absences",␍
+     68     │ - → },␍
+     69     │ - → {␍
+     70     │ - → → id:·"travel-expenses",␍
+     71     │ - → → href:·"/travel-expenses",␍
+     72     │ - → → titleKey:·"nav.travel-expenses",␍
+     73     │ - → → titleDefault:·"Travel·Expenses",␍
+     74     │ - → },␍
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this␍
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.␍
+     77     │ - → {␍
+     78     │ - → → id:·"driving-licence",␍
+     79     │ - → → href:·"/driving-licence",␍
+     80     │ - → → titleKey:·"drivingLicence.myTitle",␍
+     81     │ - → → titleDefault:·"My·driving·authorization",␍
+     82     │ - → },␍
+     83     │ - → {␍
+     84     │ - → → id:·"reports-projects",␍
+     85     │ - → → href:·"/reports/projects",␍
+     86     │ - → → titleKey:·"reports.projects.title",␍
+     87     │ - → → titleDefault:·"Project·Reports",␍
+     88     │ - → },␍
+     89     │ - → {␍
+     90     │ - → → id:·"reports-vehicles",␍
+     91     │ - → → href:·"/reports/vehicles",␍
+     92     │ - → → titleKey:·"reports.vehicles.title",␍
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",␍
+     94     │ - → },␍
+     95     │ - → {␍
+     96     │ - → → id:·"reports",␍
+     97     │ - → → href:·"/reports",␍
+     98     │ - → → titleKey:·"nav.reports",␍
+     99     │ - → → titleDefault:·"Reports",␍
+    100     │ - → },␍
+    101     │ - → {␍
+    102     │ - → → id:·"team-absences",␍
+    103     │ - → → href:·"/team/absences",␍
+    104     │ - → → titleKey:·"nav.teamAbsences",␍
+    105     │ - → → titleDefault:·"Team·Absences",␍
+    106     │ - → },␍
+    107     │ - → {␍
+    108     │ - → → id:·"team-presence",␍
+    109     │ - → → href:·"/team/presence",␍
+    110     │ - → → titleKey:·"nav.teamPresence",␍
+    111     │ - → → titleDefault:·"Who·Is·In",␍
+    112     │ - → },␍
+    113     │ - → {␍
+    114     │ - → → id:·"team-period-submissions",␍
+    115     │ - → → href:·"/team/period-submissions",␍
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",␍
+    117     │ - → → titleDefault:·"Period·Submissions",␍
+    118     │ - → },␍
+    119     │ - → {␍
+    120     │ - → → id:·"team-driving",␍
+    121     │ - → → href:·"/team/driving",␍
+    122     │ - → → titleKey:·"nav.teamDriving",␍
+    123     │ - → → titleDefault:·"Driving·Details",␍
+    124     │ - → },␍
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},␍
+    126     │ - → {␍
+    127     │ - → → id:·"approvals",␍
+    128     │ - → → href:·"/approvals",␍
+    129     │ - → → titleKey:·"nav.approvals",␍
+    130     │ - → → titleDefault:·"Approvals",␍
+    131     │ - → },␍
+    132     │ - → {␍
+    133     │ - → → id:·"analytics",␍
+    134     │ - → → href:·"/analytics",␍
+    135     │ - → → titleKey:·"nav.analytics",␍
+    136     │ - → → titleDefault:·"Analytics",␍
+    137     │ - → },␍
+    138     │ - → {␍
+    139     │ - → → id:·"payroll",␍
+    140     │ - → → href:·"/payroll",␍
+    141     │ - → → titleKey:·"nav.payroll",␍
+    142     │ - → → titleDefault:·"Payroll",␍
+    143     │ - → },␍
+    144     │ - → {␍
+    145     │ - → → id:·"scheduling",␍
+    146     │ - → → href:·"/scheduling",␍
+    147     │ - → → titleKey:·"nav.scheduling",␍
+    148     │ - → → titleDefault:·"Scheduling",␍
+    149     │ - → },␍
+    150     │ - → {␍
+  358 more lines truncated
+  
+
+src\lib\work-balance\adjustments\payroll-grant-adjustments.integration.test.ts format ━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /**␍
+      2     │ - ·*·#995:·holders·of·an·active·payroll·access·grant·record·and·cancel·overtime␍
+      3     │ - ·*·payouts·for·the·employees·their·grant·covers,·including·covered·employees␍
+      4     │ - ·*·who·have·left,·through·the·same·server·actions·as·owners·and·admins,·and␍
+      5     │ - ·*·find·them·on·their·grant-scoped·payroll·page.·Only·the·session·is·mocked.␍
+      6     │ - ·*/␍
+      7     │ - ␍
+      8     │ - import·{·randomUUID·}·from·"node:crypto";␍
+      9     │ - import·{·afterAll,·beforeAll,·describe,·expect,·it,·vi·}·from·"vitest";␍
+     10     │ - import·{·plainDateAt,·systemClock·}·from·"@/lib/datetime/temporal-core";␍
+     11     │ - import·{␍
+     12     │ - → createLifecycleDatabaseFixture,␍
+     13     │ - → type·LifecycleDatabaseFixture,␍
+     14     │ - → type·SeededEmployee,␍
+     15     │ - }·from·"@/lib/employee-lifecycle/testing/database.test.fixture";␍
+     16     │ - import·{·withCanonicalRecords·}·from·"@/lib/time-tracking/work-records/__tests__/historical-work";␍
+     17     │ - ␍
+     18     │ - const·harness·=·vi.hoisted(()·=>·({␍
+     19     │ - → userId:·null·as·string·|·null,␍
+     20     │ - → organizationId:·null·as·string·|·null,␍
+     21     │ - }));␍
+     22     │ - ␍
+     23     │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+     24     │ - ␍
+     25     │ - vi.mock("next/server",·async·(importOriginal)·=>␍
+     26     │ - → (await·import("@/test/integration-harness")).nextServer(importOriginal),␍
+     27     │ - );␍
+     28     │ - ␍
+     29     │ - vi.mock("next/cache",·async·(importOriginal)·=>␍
+     30     │ - → (await·import("@/test/integration-harness")).nextCache(importOriginal),␍
+     31     │ - );␍
+     32     │ - ␍
+     33     │ - vi.mock("@/lib/auth",·()·=>·({␍
+     34     │ - → auth:·{␍
+     35     │ - → → api:·{␍
+     36     │ - → → → getSession:·async·()·=>␍
+     37     │ - → → → → harness.userId␍
+     38     │ - → → → → → ?·{␍
+     39     │ - → → → → → → → user:·{·id:·harness.userId,·role:·"user"·},␍
+     40     │ - → → → → → → → session:·{␍
+     41     │ - → → → → → → → → id:·`t995-session-${harness.userId}`,␍
+     42     │ - → → → → → → → → userId:·harness.userId,␍
+     43     │ - → → → → → → → → activeOrganizationId:·harness.organizationId,␍
+     44     │ - → → → → → → → },␍
+     45     │ - → → → → → → }␍
+     46     │ - → → → → → :·null,␍
+     47     │ - → → },␍
+     48     │ - → },␍
+     49     │ - }));␍
+     50     │ - ␍
+     51     │ - vi.mock("@/lib/billing/guard",·async·()·=>␍
+     52     │ - → (await·import("@/test/integration-harness")).billingGuard(),␍
+     53     │ - );␍
+     54     │ - ␍
+     55     │ - const·actions·=·await·import("@/app/[locale]/(app)/settings/employees/work-balance-actions");␍
+     56     │ - const·workBalance·=·await·import("@/lib/work-balance/service");␍
+     57     │ - const·{·listBalanceAdjustmentGrantEmployees·}·=·await·import(␍
+     58     │ - → "@/lib/payroll-access/adjustment-coverage"␍
+     59     │ - );␍
+     60     │ - const·{·resolvePayrollAccessibleEmployeeIds·}·=·await·import("@/lib/payroll-access/permissions");␍
+     61     │ - ␍
+     62     │ - const·today·=·plainDateAt(systemClock.nowInstant(),·"UTC");␍
+     63     │ - const·workDay·=·today.subtract({·days:·3·});␍
+     64     │ - const·payoutDay·=·today.subtract({·days:·2·});␍
+     65     │ - ␍
+     66     │ - describe("overtime·payouts·by·payroll·grant·holders·on·PostgreSQL",·()·=>·{␍
+     67     │ - → vi.setConfig({·testTimeout:·120_000,·hookTimeout:·120_000·});␍
+     68     │ - ␍
+     69     │ - → let·fixture:·LifecycleDatabaseFixture;␍
+     70     │ - → let·organizationId:·string;␍
+     71     │ - → let·otherOrganizationId:·string;␍
+     72     │ - → let·teamId:·string;␍
+     73     │ - → /**·Holds·a·"specific"·grant:·`direct`·directly,·and·team·`teamId`.·*/␍
+     74     │ - → let·specificHolder:·SeededEmployee;␍
+     75     │ - → let·specificGrantId:·string;␍
+     76     │ - → let·allHolder:·SeededEmployee;␍
+     77     │ - → let·allGrantId:·string;␍
+     78     │ - → let·deactivatedHolder:·SeededEmployee;␍
+     79     │ - → let·departedHolder:·SeededEmployee;␍
+     80     │ - → let·manager:·SeededEmployee;␍
+     81     │ - → let·member:·SeededEmployee;␍
+     82     │ - → let·foreignHolder:·SeededEmployee;␍
+     83     │ - → let·direct:·SeededEmployee;␍
+     84     │ - → let·viaTeamColumn:·SeededEmployee;␍
+     85     │ - → let·viaTeamMembership:·SeededEmployee;␍
+     86     │ - → let·outsider:·SeededEmployee;␍
+     87     │ - → let·leftDirect:·SeededEmployee;␍
+     88     │ - → let·leftViaTeam:·SeededEmployee;␍
+     89     │ - → let·leftOutsider:·SeededEmployee;␍
+     90     │ - ␍
+     91     │ - → beforeAll(async·()·=>·{␍
+     92     │ - → → fixture·=·await·createLifecycleDatabaseFixture();␍
+     93     │ - → → organizationId·=·fixture.organizationId;␍
+     94     │ - → → otherOrganizationId·=·await·fixture.createOrganization();␍
+     95     │ - → → await·fixture.pool.query(`update·organization·set·timezone·=·'UTC'·where·id·=·any($1)`,·[␍
+     96     │ - → → → [organizationId,·otherOrganizationId],␍
+     97     │ - → → ]);␍
+     98     │ - → → teamId·=·randomUUID();␍
+     99     │ - → → await·fixture.pool.query(␍
+    100     │ - → → → `insert·into·team·(id,·organization_id,·name,·updated_at)·values·($1,·$2,·'T995·team',·now())`,␍
+    101     │ - → → → [teamId,·organizationId],␍
+    102     │ - → → );␍
+    103     │ - ␍
+    104     │ - → → const·startDate·=·new·Date(`${today.subtract({·days:·7·}).toString()}T00:00:00Z`);␍
+    105     │ - → → const·seedWorker·=·async·(isActive·=·true)·=>·{␍
+    106     │ - → → → const·seeded·=·await·fixture.seedEmployee({·isActive,·startDate·});␍
+    107     │ - → → → await·seedCompletedWork(seeded.employeeId);␍
+    108     │ - → → → await·workBalance.refreshEmployeeWorkBalanceFromPeriods({␍
+    109     │ - → → → → employeeId:·seeded.employeeId,␍
+    110     │ - → → → → organizationId,␍
+    111     │ - → → → → forceFullRebuild:·true,␍
+    112     │ - → → → });␍
+    113     │ - → → → return·seeded;␍
+    114     │ - → → };␍
+    115     │ - → → direct·=·await·seedWorker();␍
+    116     │ - → → viaTeamColumn·=·await·seedWorker();␍
+    117     │ - → → viaTeamMembership·=·await·seedWorker();␍
+    118     │ - → → outsider·=·await·seedWorker();␍
+    119     │ - → → leftDirect·=·await·seedWorker(false);␍
+    120     │ - → → leftViaTeam·=·await·seedWorker(false);␍
+    121     │ - → → leftOutsider·=·await·seedWorker(false);␍
+    122     │ - → → await·fixture.pool.query(`update·employee·set·team_id·=·$1·where·id·=·any($2)`,·[␍
+    123     │ - → → → teamId,␍
+    124     │ - → → → [viaTeamColumn.employeeId,·leftViaTeam.employeeId],␍
+    125     │ - → → ]);␍
+    126     │ - → → await·fixture.pool.query(␍
+    127     │ - → → → `insert·into·team_membership·(organization_id,·team_id,·employee_id)·values·($1,·$2,·$3)`,␍
+    128     │ - → → → [organizationId,·teamId,·viaTeamMembership.employeeId],␍
+    129     │ - → → );␍
+    130     │ - ␍
+    131     │ - → → //·Both·holders·worked·too,·and·the·"specific"·one·is·assigned·to·their·own·grant.␍
+    132     │ - → → specificHolder·=·await·seedWorker();␍
+    133     │ - → → specificGrantId·=·await·seedGrant(specificHolder,·"specific",·{␍
+    134     │ - → → → employeeIds:·[direct.employeeId,·leftDirect.employeeId,·specificHolder.employeeId],␍
+    135     │ - → → → teamIds:·[teamId],␍
+    136     │ - → → });␍
+    137     │ - → → allHolder·=·await·seedWorker();␍
+    138     │ - → → allGrantId·=·await·seedGrant(allHolder,·"all");␍
+    139     │ - → → deactivatedHolder·=·await·fixture.seedEmployee();␍
+    140     │ - → → await·seedGrant(deactivatedHolder,·"all",·{·isActive:·false·});␍
+    141     │ - → → departedHolder·=·await·fixture.seedEmployee({·isActive:·false·});␍
+    142     │ - → → await·seedGrant(departedHolder,·"all");␍
+    143     │ - ␍
+    144     │ - → → manager·=·await·fixture.seedEmployee();␍
+    145     │ - → → await·fixture.pool.query(`update·employee·set·role·=·'manager'·where·id·=·$1`,·[␍
+    146     │ - → → → manager.employeeId,␍
+    147     │ - → → ]);␍
+    148     │ - → → await·fixture.pool.query(␍
+    149     │ - → → → `insert·into·employee_managers·(employee_id,·manager_id,·is_primary,·assigned_by)␍
+    150     │ - → → → ·values·($1,·$2,·true,·$3)`,␍
+  1062 more lines truncated
+  
+
+Checked 8 files in 9ms. No fixes applied.
+Found 8 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

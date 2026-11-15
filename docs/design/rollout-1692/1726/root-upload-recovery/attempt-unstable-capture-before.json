@@ -1,0 +1,36 @@
+{
+  "phase": "before",
+  "source": {
+    "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+    "sha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3",
+    "canonicalSha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3"
+  },
+  "checks": [],
+  "captures": [],
+  "errors": [],
+  "requests": [],
+  "responses": [
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/payroll/work-balances",
+      "status": 200,
+      "method": "GET"
+    }
+  ],
+  "failure": "Execution context was destroyed, most likely because of a navigation.",
+  "failurePage": {
+    "path": "/en/payroll/work-balances",
+    "title": "z8 - time app",
+    "visibleText": ""
+  },
+  "captureFailure": "Execution context was destroyed, most likely because of a navigation."
+}

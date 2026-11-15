@@ -1,0 +1,15 @@
+file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:468
+        throw new Error('Execution context was destroyed, most likely because of a navigation.');
+              ^
+
+Error: Execution context was destroyed, most likely because of a navigation.
+    at rewriteError (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:468:15)
+    at async #evaluate (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:400:60)
+    at async ExecutionContext.evaluate (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:288:16)
+    at async IsolatedWorld.evaluate (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/IsolatedWorld.js:104:16)
+    at async CdpFrame.evaluate (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:364:20)
+    at async CdpPage.evaluate (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:837:20)
+    at async capture (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1726-root-checks/runtime.mjs:47:23)
+    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1726-root-checks/runtime.mjs:62:3
+
+Node.js v26.9.0

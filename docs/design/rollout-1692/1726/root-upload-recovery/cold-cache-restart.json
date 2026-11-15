@@ -1,0 +1,15 @@
+{
+  "portClosed": true,
+  "cacheSource": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\.next",
+  "reason": "Isolate repeated reloads with a fresh owned development cache; no application/config change",
+  "stoppedPids": [
+    102944,
+    4168,
+    19196,
+    84420,
+    70200,
+    51892
+  ],
+  "cacheBackup": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1726-root-checks\\next-cache-prior-8f8b4553b51c4049bdaf987e5af5c769",
+  "port": 62511
+}
