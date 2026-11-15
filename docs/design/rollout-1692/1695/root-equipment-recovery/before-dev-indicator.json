@@ -1,0 +1,167 @@
+{
+  "sourceCommit": "f780ef50207e9415c16a87d44c769b94602cc528",
+  "sourceHashes": {
+    "src/components/ui/sonner.tsx": "2b237901cf808e4b7d80302cc32179cfef1da42b89ebba4a358ece85878bcae0",
+    "src/components/ui/sonner-glass.css": "acce3911e8f47cf57480ef3ddb69fa1e5c964c10241e582d43831a1fbbc66837",
+    "src/components/ui/action-panel.tsx": "2bdd43bb77119a01410c1a84827b73af1a2015a5df566b7173d64a1a61b84f73",
+    "src/components/ui/sheet.tsx": "4bb2c4344ef1c961d4790c8045760e5f6e2f2af688d3ca5bb630081ac278df39",
+    "src/components/equipment/equipment-panels.tsx": "9ab0f58e765fc99f6726e93233583914f3a595ede0fcb033a67c93e0c956026b",
+    "src/components/equipment/equipment-handovers.tsx": "5b2283960642b6bbd1487ff04bc925c155cc491b932895fc26c4d70e6f8385b5"
+  },
+  "fixture": "Owned synthetic small-admin equipment scope",
+  "initialAssignments": 0,
+  "errors": [],
+  "navigations": [
+    "/en/equipment",
+    "/en/equipment"
+  ],
+  "beforePointer": {
+    "point": {
+      "x": 1509.265625,
+      "y": 966
+    },
+    "button": {
+      "tag": "BUTTON",
+      "slot": "button",
+      "role": null,
+      "toast": false,
+      "text": "Record issuance",
+      "disabled": false
+    },
+    "buttonAtPoint": false,
+    "hitChain": [
+      {
+        "tag": "NEXTJS-PORTAL",
+        "slot": null,
+        "role": null,
+        "toast": false,
+        "text": "",
+        "disabled": null
+      },
+      {
+        "tag": "DIV",
+        "slot": null,
+        "role": null,
+        "toast": false,
+        "text": "Rendering...",
+        "disabled": null
+      }
+    ],
+    "toasts": [
+      {
+        "tag": "LI",
+        "slot": null,
+        "role": null,
+        "toast": true,
+        "text": "The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
+        "disabled": null,
+        "rect": {
+          "x": 1220,
+          "y": 883.5,
+          "width": 356,
+          "height": 92.5
+        },
+        "closeButtons": 0
+      }
+    ],
+    "dialogOpen": true
+  },
+  "hover": {
+    "point": {
+      "x": 1509.265625,
+      "y": 966
+    },
+    "button": {
+      "tag": "BUTTON",
+      "slot": "button",
+      "role": null,
+      "toast": false,
+      "text": "Record issuance",
+      "disabled": false
+    },
+    "buttonAtPoint": false,
+    "hitChain": [
+      {
+        "tag": "NEXTJS-PORTAL",
+        "slot": null,
+        "role": null,
+        "toast": false,
+        "text": "",
+        "disabled": null
+      },
+      {
+        "tag": "DIV",
+        "slot": null,
+        "role": null,
+        "toast": false,
+        "text": "Rendering...",
+        "disabled": null
+      }
+    ],
+    "toasts": [
+      {
+        "tag": "LI",
+        "slot": null,
+        "role": null,
+        "toast": true,
+        "text": "The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
+        "disabled": null,
+        "rect": {
+          "x": 1220,
+          "y": 883.5,
+          "width": 356,
+          "height": 92.5
+        },
+        "closeButtons": 0
+      }
+    ],
+    "dialogOpen": true
+  },
+  "afterPointer": {
+    "point": {
+      "x": 1509.265625,
+      "y": 966
+    },
+    "button": {
+      "tag": "BUTTON",
+      "slot": "button",
+      "role": null,
+      "toast": false,
+      "text": "Record issuance",
+      "disabled": false
+    },
+    "buttonAtPoint": false,
+    "hitChain": [
+      {
+        "tag": "LI",
+        "slot": null,
+        "role": null,
+        "toast": true,
+        "text": "The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
+        "disabled": null
+      }
+    ],
+    "toasts": [
+      {
+        "tag": "LI",
+        "slot": null,
+        "role": null,
+        "toast": true,
+        "text": "The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
+        "disabled": null,
+        "rect": {
+          "x": 1220,
+          "y": 883.5,
+          "width": 356,
+          "height": 92.5
+        },
+        "closeButtons": 0
+      }
+    ],
+    "dialogOpen": true
+  },
+  "pointerCommandRequests": 0,
+  "finalAssignments": 0,
+  "dialogAfterSettled": true,
+  "failure": "AssertionError [ERR_ASSERTION]: Pointer retry must reach the unchanged equipment form\n\n0 !== 1\n"
+}
