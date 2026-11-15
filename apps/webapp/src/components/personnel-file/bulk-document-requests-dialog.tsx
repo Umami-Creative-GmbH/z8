@@ -3,7 +3,7 @@
 import { IconLoader2, IconUsersPlus } from "@tabler/icons-react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createDocumentRequestsInBulkAction } from "@/app/[locale]/(app)/personnel-files/document-request-actions";
 import { EmployeeMultiSelect } from "@/components/employee-select";
@@ -86,6 +86,16 @@ export function BulkDocumentRequestsDialog({
 	const labels = usePersonnelFileLabels();
 	const errorMessage = useDocumentRequestErrorMessage();
 	const [summary, setSummary] = useState<DocumentRequestBulkSummary | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const arrival = useRef<symbol | null>(null);
+	const running = useRef<symbol | null>(null);
+	const formElement = useRef<HTMLFormElement>(null);
+	useLayoutEffect(() => {
+		arrival.current = Symbol("bulk request arrival");
+		return () => {
+			arrival.current = null;
+		};
+	}, []);
 	const categories = DOCUMENT_REQUEST_CATEGORIES.filter(
 		(category) => options[category].employees.length > 0 || options[category].teams.length > 0,
 	);
@@ -102,29 +112,55 @@ export function BulkDocumentRequestsDialog({
 
 	const form = useForm({
 		defaultValues,
+		onSubmitInvalid: () =>
+			formElement.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
 		onSubmit: async ({ value }) => {
-			const result = await createDocumentRequestsInBulkAction({
+			if (running.current || !arrival.current) return;
+			const owner = arrival.current;
+			running.current = owner;
+			setError(null);
+			const outcome = await createDocumentRequestsInBulkAction({
 				category: value.category,
 				teamIds: value.teamIds,
 				employeeIds: value.employeeIds,
 				title: value.title,
 				note: value.note,
 				deadline: value.deadline,
-			});
+			}).then(
+				(result) => ({ kind: "result", result }) as const,
+				() => ({ kind: "transport" }) as const,
+			);
+			if (running.current === owner) running.current = null;
+			if (arrival.current !== owner) return;
+			if (outcome.kind === "transport") {
+				setError(
+					t(
+						"settings.personnelFiles.requests.bulk.failed",
+						"The outcome could not be confirmed. Your entries are kept. Retry; employees with an identical active request will be skipped.",
+					),
+				);
+				return;
+			}
+			const { result } = outcome;
 			if (!result.success) {
-				toast.error(errorMessage(result));
+				const message = errorMessage(result);
+				setError(message);
+				toast.error(message);
 				return;
 			}
 			setSummary(result.data);
 			onCreated();
 		},
 	});
+	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
 	const category = useStore(form.store, (state) => state.values.category);
 	const offered = options[category];
 
 	function close() {
+		if (form.state.isSubmitting || running.current) return;
 		form.reset(defaultValues);
 		setSummary(null);
+		setError(null);
 		onOpenChange(false);
 	}
 
@@ -139,7 +175,7 @@ export function BulkDocumentRequestsDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
-			<ActionPanelContent>
+			<ActionPanelContent showCloseButton={!isSubmitting}>
 				{summary ? (
 					<div className="flex min-h-0 flex-1 flex-col">
 						<ActionPanelHeader>
@@ -158,6 +194,7 @@ export function BulkDocumentRequestsDialog({
 					</div>
 				) : (
 					<form
+						ref={formElement}
 						className="flex min-h-0 flex-1 flex-col"
 						action={() => {
 							void form.handleSubmit();
@@ -180,184 +217,202 @@ export function BulkDocumentRequestsDialog({
 								)}
 							</ActionPanelDescription>
 						</ActionPanelHeader>
-						<ActionPanelBody className="space-y-5">
-							{categories.length > 1 ? (
-								<form.Field name="category">
+						<ActionPanelBody>
+							{error ? (
+								<p role="alert" className="mb-4 text-sm text-destructive">
+									{error}
+								</p>
+							) : null}
+							<fieldset
+								disabled={isSubmitting}
+								className="min-w-0 space-y-5"
+								aria-busy={isSubmitting}
+							>
+								{categories.length > 1 ? (
+									<form.Field name="category">
+										{(field) => (
+											<TFormItem>
+												<TFormLabel required>
+													{t("settings.personnelFiles.form.category", "Category")}
+												</TFormLabel>
+												<Select
+													value={field.state.value}
+													onValueChange={(value) =>
+														changeCategory(value as DocumentRequestCategory)
+													}
+												>
+													<TFormControl>
+														<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+															<SelectValue />
+														</SelectTrigger>
+													</TFormControl>
+													<SelectContent>
+														{categories.map((option) => (
+															<SelectItem key={option} value={option}>
+																{labels.categories[option]}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</TFormItem>
+										)}
+									</form.Field>
+								) : null}
+								<form.Field name="teamIds">
+									{(field) => (
+										<fieldset className="space-y-3">
+											<legend className="text-sm font-medium">
+												{t("settings.personnelFiles.requests.bulk.teams", "Teams")}
+											</legend>
+											<p className="text-muted-foreground text-sm">
+												{t(
+													"settings.personnelFiles.requests.bulk.teamsHint",
+													"Everyone currently in the team, as far as you cover them.",
+												)}
+											</p>
+											{offered.teams.length === 0 ? (
+												<p className="text-muted-foreground text-sm">
+													{t(
+														"settings.personnelFiles.requests.bulk.noTeams",
+														"No teams to choose from.",
+													)}
+												</p>
+											) : (
+												<TeamSwitches
+													teams={offered.teams}
+													teamIds={field.state.value}
+													onTeamIdsChange={(teamIds) => field.handleChange(teamIds)}
+													disabled={false}
+													testIdPrefix="bulk-document-request-team"
+												/>
+											)}
+										</fieldset>
+									)}
+								</form.Field>
+								<form.Field
+									name="employeeIds"
+									validators={{
+										onSubmit: ({ value, fieldApi }) =>
+											value.length > 0 || fieldApi.form.getFieldValue("teamIds").length > 0
+												? undefined
+												: t(
+														"settings.personnelFiles.requests.error.noRecipients",
+														"Choose at least one employee or team.",
+													),
+									}}
+								>
 									{(field) => (
 										<TFormItem>
-											<TFormLabel required>
-												{t("settings.personnelFiles.form.category", "Category")}
-											</TFormLabel>
-											<Select
+											<EmployeeMultiSelect
+												label={t("settings.personnelFiles.requests.bulk.employees", "Employees")}
+												placeholder={t(
+													"settings.personnelFiles.requests.bulk.selectEmployees",
+													"Select employees",
+												)}
 												value={field.state.value}
-												onValueChange={(value) => changeCategory(value as DocumentRequestCategory)}
-											>
-												<TFormControl>
-													<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-														<SelectValue />
-													</SelectTrigger>
-												</TFormControl>
-												<SelectContent>
-													{categories.map((option) => (
-														<SelectItem key={option} value={option}>
-															{labels.categories[option]}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
+												onChange={(employeeIds) => field.handleChange(employeeIds)}
+												employees={offered.employees.map((person) =>
+													toSelectableEmployee({ ...person, email: "" }, { isActive: true }),
+												)}
+												error={
+													typeof field.state.meta.errors[0] === "string"
+														? field.state.meta.errors[0]
+														: undefined
+												}
+											/>
 										</TFormItem>
 									)}
 								</form.Field>
-							) : null}
-							<form.Field name="teamIds">
-								{(field) => (
-									<fieldset className="space-y-3">
-										<legend className="text-sm font-medium">
-											{t("settings.personnelFiles.requests.bulk.teams", "Teams")}
-										</legend>
-										<p className="text-muted-foreground text-sm">
-											{t(
-												"settings.personnelFiles.requests.bulk.teamsHint",
-												"Everyone currently in the team, as far as you cover them.",
-											)}
-										</p>
-										{offered.teams.length === 0 ? (
-											<p className="text-muted-foreground text-sm">
+								<form.Field
+									name="title"
+									validators={{
+										onSubmit: ({ value }) =>
+											value.trim()
+												? undefined
+												: required(t("settings.personnelFiles.form.title", "Title")),
+									}}
+								>
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)} required>
+												{t("settings.personnelFiles.form.title", "Title")}
+											</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<Input
+													name={field.name}
+													autoComplete="off"
+													value={field.state.value}
+													maxLength={DOCUMENT_REQUEST_TITLE_MAX_LENGTH}
+													onChange={(event) => field.handleChange(event.target.value)}
+													onBlur={field.handleBlur}
+												/>
+											</TFormControl>
+											<TFormDescription>
 												{t(
-													"settings.personnelFiles.requests.bulk.noTeams",
-													"No teams to choose from.",
+													"settings.personnelFiles.requests.create.titleHint",
+													"What the employee should upload, such as a renewed first aid certificate.",
 												)}
-											</p>
-										) : (
-											<TeamSwitches
-												teams={offered.teams}
-												teamIds={field.state.value}
-												onTeamIdsChange={(teamIds) => field.handleChange(teamIds)}
-												disabled={false}
-												testIdPrefix="bulk-document-request-team"
-											/>
-										)}
-									</fieldset>
-								)}
-							</form.Field>
-							<form.Field
-								name="employeeIds"
-								validators={{
-									onSubmit: ({ value, fieldApi }) =>
-										value.length > 0 || fieldApi.form.getFieldValue("teamIds").length > 0
-											? undefined
-											: t(
-													"settings.personnelFiles.requests.error.noRecipients",
-													"Choose at least one employee or team.",
-												),
-								}}
-							>
-								{(field) => (
-									<TFormItem>
-										<EmployeeMultiSelect
-											label={t("settings.personnelFiles.requests.bulk.employees", "Employees")}
-											placeholder={t(
-												"settings.personnelFiles.requests.bulk.selectEmployees",
-												"Select employees",
-											)}
-											value={field.state.value}
-											onChange={(employeeIds) => field.handleChange(employeeIds)}
-											employees={offered.employees.map((person) =>
-												toSelectableEmployee({ ...person, email: "" }, { isActive: true }),
-											)}
-											error={
-												typeof field.state.meta.errors[0] === "string"
-													? field.state.meta.errors[0]
-													: undefined
-											}
-										/>
-									</TFormItem>
-								)}
-							</form.Field>
-							<form.Field
-								name="title"
-								validators={{
-									onSubmit: ({ value }) =>
-										value.trim()
-											? undefined
-											: required(t("settings.personnelFiles.form.title", "Title")),
-								}}
-							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)} required>
-											{t("settings.personnelFiles.form.title", "Title")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												value={field.state.value}
-												maxLength={DOCUMENT_REQUEST_TITLE_MAX_LENGTH}
-												onChange={(event) => field.handleChange(event.target.value)}
-												onBlur={field.handleBlur}
-											/>
-										</TFormControl>
-										<TFormDescription>
-											{t(
-												"settings.personnelFiles.requests.create.titleHint",
-												"What the employee should upload, such as a renewed first aid certificate.",
-											)}
-										</TFormDescription>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
-							<form.Field name="note">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel>
-											{t("settings.personnelFiles.requests.create.note", "Note (optional)")}
-										</TFormLabel>
-										<TFormControl>
-											<Textarea
-												value={field.state.value}
-												maxLength={DOCUMENT_REQUEST_TEXT_MAX_LENGTH}
-												onChange={(event) => field.handleChange(event.target.value)}
-												onBlur={field.handleBlur}
-											/>
-										</TFormControl>
-									</TFormItem>
-								)}
-							</form.Field>
-							<form.Field
-								name="deadline"
-								validators={{
-									onSubmit: ({ value }) =>
-										value
-											? undefined
-											: required(t("settings.personnelFiles.requests.create.deadline", "Deadline")),
-								}}
-							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)} required>
-											{t("settings.personnelFiles.requests.create.deadline", "Deadline")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<DatePicker
-												value={field.state.value}
-												onChange={(value) => field.handleChange(value)}
-												min={today}
-												required
-											/>
-										</TFormControl>
-										<TFormDescription>
-											{t(
-												"settings.personnelFiles.requests.create.deadlineHint",
-												"The day by which the employee should submit. After it, the request is overdue.",
-											)}
-										</TFormDescription>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
+											</TFormDescription>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+								<form.Field name="note">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel>
+												{t("settings.personnelFiles.requests.create.note", "Note (optional)")}
+											</TFormLabel>
+											<TFormControl>
+												<Textarea
+													name={field.name}
+													value={field.state.value}
+													maxLength={DOCUMENT_REQUEST_TEXT_MAX_LENGTH}
+													onChange={(event) => field.handleChange(event.target.value)}
+													onBlur={field.handleBlur}
+												/>
+											</TFormControl>
+										</TFormItem>
+									)}
+								</form.Field>
+								<form.Field
+									name="deadline"
+									validators={{
+										onSubmit: ({ value }) =>
+											value
+												? undefined
+												: required(
+														t("settings.personnelFiles.requests.create.deadline", "Deadline"),
+													),
+									}}
+								>
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)} required>
+												{t("settings.personnelFiles.requests.create.deadline", "Deadline")}
+											</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<DatePicker
+													value={field.state.value}
+													onChange={(value) => field.handleChange(value)}
+													min={today}
+													required
+												/>
+											</TFormControl>
+											<TFormDescription>
+												{t(
+													"settings.personnelFiles.requests.create.deadlineHint",
+													"The day by which the employee should submit. After it, the request is overdue.",
+												)}
+											</TFormDescription>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+							</fieldset>
 						</ActionPanelBody>
 						<ActionPanelFooter>
-							<Button type="button" variant="outline" onClick={close}>
+							<Button type="button" variant="outline" disabled={isSubmitting} onClick={close}>
 								{t("common.cancel", "Cancel")}
 							</Button>
 							<form.Subscribe selector={(state) => state.isSubmitting}>

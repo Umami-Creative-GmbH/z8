@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts the request queue without adopting its independent descendants", () => {
+		expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);
+	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);

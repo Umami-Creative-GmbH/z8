@@ -4,6 +4,7 @@ import { IconAlertTriangle, IconChevronLeft, IconChevronRight } from "@tabler/ic
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useId, useTransition } from "react";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +38,8 @@ export interface DocumentRequestsOverviewProps {
 	today: string;
 	/** The organization's timezone: history times are shown in it. */
 	timezone: string;
+	/** Retained records after a failed read are useful context, not current decision targets. */
+	decisionsAvailable?: boolean;
 }
 
 /**
@@ -52,6 +55,7 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 	const [isPending, startTransition] = useTransition();
 	const labels = useDocumentRequestLabels();
 	const statusId = useId();
+	const titleId = useId();
 	const { filters } = props;
 	const { page } = filters;
 
@@ -75,42 +79,58 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 	}
 
 	return (
-		<div className="flex flex-col gap-4" aria-busy={isPending}>
-			<div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
-				<div className="flex min-w-48 flex-col gap-1.5">
-					<span id={statusId} className="text-sm font-medium">
-						{t("settings.personnelFiles.requests.page.filters.status", "Status")}
-					</span>
-					<Select
-						value={filters.status}
-						onValueChange={(status) =>
-							update({ status: status === DEFAULT_STATUS ? null : status })
-						}
-						disabled={isPending}
-					>
-						<SelectTrigger aria-labelledby={statusId} className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{DOCUMENT_REQUEST_STATUS_FILTERS.map((status) => (
-								<SelectItem key={status} value={status}>
-									{statusLabels[status]}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<Button
-					type="button"
-					variant={filters.overdue ? "default" : "outline"}
-					aria-pressed={filters.overdue}
-					disabled={isPending}
-					onClick={() => update({ overdue: filters.overdue ? null : "1" })}
-				>
-					<IconAlertTriangle aria-hidden="true" className="size-4" />
-					{t("settings.personnelFiles.requests.page.filters.overdue", "Only overdue")}
-				</Button>
+		<section className="min-w-0 space-y-4" aria-labelledby={titleId} aria-busy={isPending}>
+			<div className="flex flex-wrap items-baseline justify-between gap-2">
+				<h2 id={titleId} className="text-lg font-semibold">
+					{t("settings.personnelFiles.requests.page.records", "Request records")}
+				</h2>
+				<p className="text-sm text-muted-foreground tabular-nums">
+					{t(
+						"settings.personnelFiles.requests.page.pageRecords",
+						"{count, plural, one {# request on this page} other {# requests on this page}}",
+						{ count: props.rows.length },
+					)}
+				</p>
 			</div>
+			<DataTableToolbar
+				filterControls={
+					<div className="flex min-w-0 flex-wrap items-end gap-3">
+						<div className="flex min-w-48 flex-col gap-1.5">
+							<span id={statusId} className="text-sm font-medium">
+								{t("settings.personnelFiles.requests.page.filters.status", "Status")}
+							</span>
+							<Select
+								value={filters.status}
+								onValueChange={(status) =>
+									update({ status: status === DEFAULT_STATUS ? null : status })
+								}
+								disabled={isPending}
+							>
+								<SelectTrigger aria-labelledby={statusId} className="w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{DOCUMENT_REQUEST_STATUS_FILTERS.map((status) => (
+										<SelectItem key={status} value={status}>
+											{statusLabels[status]}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<Button
+							type="button"
+							variant={filters.overdue ? "default" : "outline"}
+							aria-pressed={filters.overdue}
+							disabled={isPending}
+							onClick={() => update({ overdue: filters.overdue ? null : "1" })}
+						>
+							<IconAlertTriangle aria-hidden="true" className="size-4" />
+							{t("settings.personnelFiles.requests.page.filters.overdue", "Only overdue")}
+						</Button>
+					</div>
+				}
+			/>
 
 			{props.rows.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
@@ -131,6 +151,24 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 							>
 								{request.employeeName}
 							</Link>
+							{request.employeeNumber ? (
+								<span className="text-muted-foreground tabular-nums">
+									{t(
+										"settings.personnelFiles.requests.page.employeeNumber",
+										"Personnel no. {number}",
+										{ number: request.employeeNumber },
+									)}
+								</span>
+							) : null}
+							{request.overdue ? (
+								<Badge variant="outline">{labels.statuses[request.status]}</Badge>
+							) : null}
+							{request.status === "open" &&
+							request.history.some((event) => event.kind === "returned") ? (
+								<Badge variant="outline">
+									{t("settings.personnelFiles.requests.page.returned", "Returned for resubmission")}
+								</Badge>
+							) : null}
 							{request.isFormer ? (
 								<Badge variant="secondary">
 									{t("settings.personnelFiles.area.former", "Former employee")}
@@ -138,18 +176,25 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 							) : null}
 						</div>
 					)}
-					actions={(request) => (
-						<DocumentRequestOfficerActions
-							request={request}
-							today={props.today}
-							onChanged={refresh}
-						/>
-					)}
+					actions={
+						props.decisionsAvailable === false
+							? undefined
+							: (request) => (
+									<DocumentRequestOfficerActions
+										request={request}
+										today={props.today}
+										onChanged={refresh}
+									/>
+								)
+					}
 				/>
 			)}
 
 			{props.pageCount > 1 ? (
-				<div className="flex flex-wrap items-center justify-end gap-2 text-sm">
+				<nav
+					aria-label={t("settings.personnelFiles.requests.page.pages", "Request pages")}
+					className="flex flex-wrap items-center justify-end gap-2 border-t pt-4 text-sm"
+				>
 					<span className="tabular-nums">
 						{t("settings.personnelFiles.requests.page.pagination", "Page {page} of {pageCount}", {
 							page,
@@ -176,8 +221,8 @@ export function DocumentRequestsOverview(props: DocumentRequestsOverviewProps) {
 					>
 						<IconChevronRight aria-hidden="true" className="size-4" />
 					</Button>
-				</div>
+				</nav>
 			) : null}
-		</div>
+		</section>
 	);
 }

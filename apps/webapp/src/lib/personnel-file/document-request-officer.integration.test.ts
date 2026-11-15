@@ -285,6 +285,21 @@ describe("the officer Document requests page (#1403)", () => {
 			expect(first).toMatchObject({ total: 3, page: 1, pageCount: 1 });
 			expect(first.rows).toHaveLength(3);
 		});
+
+		it("keeps every request reachable across real server pages and clamps the final page", async () => {
+			for (let index = 1; index <= 12; index++) {
+				await create("admin", { employeeId: ids.ben, title: `R047 page ${index}` });
+			}
+			const first = await listAs("admin", { pageSize: "10" });
+			const second = await listAs("admin", { pageSize: "10", page: "2" });
+			expect(first).toMatchObject({ total: 12, page: 1, pageCount: 2 });
+			expect(first.rows).toHaveLength(10);
+			expect(second.rows).toHaveLength(2);
+			expect(new Set([...first.rows, ...second.rows].map((row) => row.id)).size).toBe(12);
+			expect(
+				(await listAs("admin", { pageSize: "10", page: "99" })).rows.map((row) => row.id),
+			).toEqual(second.rows.map((row) => row.id));
+		});
 	});
 
 	describe("filters", () => {
