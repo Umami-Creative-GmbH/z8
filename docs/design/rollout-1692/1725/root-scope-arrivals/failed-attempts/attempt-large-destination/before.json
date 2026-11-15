@@ -1,0 +1,24 @@
+{
+  "phase": "before",
+  "sourceCommit": "6bded15a8d0221b670d4957275aa738eae06202c",
+  "scope": "Real same-user authorized organization change through Better Auth endpoint, followed by actual Next router.refresh without a full navigation. Router call is synthetic; server props and data are genuine.",
+  "checks": [
+    {
+      "name": "actual A payroll admission shows eight granted employees",
+      "passed": true
+    },
+    {
+      "name": "real Better Auth organization switch accepts the same user in B",
+      "passed": true
+    }
+  ],
+  "captures": [],
+  "pageErrors": [],
+  "rsc": [
+    {
+      "status": 200,
+      "containsExpectedOrganization": true
+    }
+  ],
+  "failure": "Waiting failed: 45000ms exceeded"
+}

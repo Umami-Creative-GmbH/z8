@@ -1,0 +1,15 @@
+[
+  {
+    "name": "types",
+    "command": [
+      "pnpm",
+      "--filter",
+      "webapp",
+      "typecheck"
+    ],
+    "startedAt": "2026-11-15T13:40:20.982Z",
+    "finishedAt": "2026-11-15T13:41:05.123Z",
+    "exitCode": 0,
+    "log": ".tmp/1725-root-checks/types.log"
+  }
+]
