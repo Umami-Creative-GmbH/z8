@@ -1,0 +1,17 @@
+{
+  "treeLines": [
+    "123 751 750 Prerender(Server(SecurityVerification))",
+    "126 755 753 Server(PageHeader)",
+    "125 761 752 Forget(MfaRequirements)",
+    "125 774 752 Forget(MfaVerification)",
+    "127 779 775 Forget(VerificationField)",
+    "129 807 806 Forget(VerificationField)",
+    "127 834 831 Forget(TwoFactorSetup)",
+    "128 894 893 Forget(PasskeyManagement)",
+    "129 922 920 Forget(VerificationField)",
+    "126 946 941 Forget(MfaSignOut)"
+  ],
+  "success": true,
+  "tool": "agent-browser 0.39.1 react tree --json",
+  "limitation": "Usable native component-tree evidence; no exhaustive props, hook-state or render-count certification."
+}

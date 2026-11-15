@@ -402,8 +402,12 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+                        "integrationCommit":  "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+                        "evidenceCorrectionCommit":  "11c5c2c22568eb7126f8a06bfff00b359104320b",
+                        "evidence":  "docs/design/rollout-1692/1825.md",
+                        "integrationVerification":  "Independent native merge006aff632 plus evidence-only qualification verified at254ccef5. Fresh33 unique suites/140 tests (15/46+23/101 less5/7 by full-name multisets),full combined types,four-file Doctor zero,CRLF-aware Biome and strict lint/import pass. Default4 and explicit3 formatting findings retained. All30 prior verified ancestors,1344rollout/11564unaffected paths/19aliases and all58incoming paths preserved.38PNGdecoded,9JSON/3scripts/17links/76capture pins/12 labelled CSS-scope pairs validate. Last-record PNGs show first records; before/final duplicate link-focus hashes. Action logs separately report zustand visible; root qualifies images without app/raw artifact changes. Runtime9da645441 inherited despite source equality; two-consumer baseline only. Fonts16/18 measured,family unrecorded,CSS/PNG dimensions differ. Native selected tree usable,a11y zero evaluated rules inconclusive. Unknown assembled-only; actual125packages/12licenses/zeroUnknown.8JSON+2TXT lackLF preserved. No DB suite appropriate to static report; fullbuild/catalog/device/truezoom/provider/alllocale/wider limits remain unpassed."
                     },
                     {
                         "id":  "R027",
@@ -432,7 +436,7 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

@@ -1,0 +1,25 @@
+{
+  "classification": "real fixture memberships, actual client navigation, held actual transport and authoritative auth refusal",
+  "checks": [
+    {
+      "name": "organization change discards old credential draft and names the new selected scope",
+      "passed": true
+    },
+    {
+      "name": "late previous-scope completion cannot redirect or restore its draft",
+      "passed": true
+    },
+    {
+      "name": "organization switch retains callback for downstream guarded activation",
+      "passed": true
+    },
+    {
+      "name": "fresh different-account response discards the previous account draft",
+      "passed": true
+    },
+    {
+      "name": "changed account cannot read the former account-only organization",
+      "passed": true
+    }
+  ]
+}
