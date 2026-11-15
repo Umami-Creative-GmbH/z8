@@ -61,7 +61,7 @@ function useSickNoteOpening(
 		current.activeOrganizationId === owner.organizationId;
 	const openingId = useId();
 	const [arrival, setArrival] = useState(0);
-	const lifetime = useRef({ live: false, arrival: 0 });
+	const lifetime = useRef({ live: false, arrival: 0, absenceId });
 	const queryKey = useMemo(
 		() => [
 			...queryKeys.personnelFile.absenceSickNotes(absenceId),
@@ -76,6 +76,7 @@ function useSickNoteOpening(
 		const activation = {
 			live: open && inScope,
 			arrival: lifetime.current.arrival + 1,
+			absenceId,
 		};
 		lifetime.current = activation;
 		setArrival(activation.arrival);
@@ -84,7 +85,7 @@ function useSickNoteOpening(
 			activation.live = false;
 			retire();
 		};
-	}, [open, inScope]);
+	}, [open, inScope, absenceId]);
 
 	useLayoutEffect(
 		() => () => {

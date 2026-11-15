@@ -1,0 +1,293 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9b0f468b-151f714db384cc36/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/sick-leave-overview.test.tsx (10 tests | 1 failed) 1438ms
+   ❯ SickLeaveOverview (10)
+     × retires an in-flight note read across Activity hide and reveal 1076ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/sick-leave-overview.test.tsx > SickLeaveOverview > retires an in-flight note read across Activity hide and reveal
+TestingLibraryElementError: Unable to find role="alert"
+
+Ignored nodes: comments, script, style
+<body>
+  <div
+    aria-hidden="true"
+    data-base-ui-inert=""
+  >
+    <div
+      aria-busy="false"
+      class="flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card"
+      style=""
+    >
+      <section
+        aria-label="Filters"
+        class="grid gap-4 border-b p-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_c_"
+          >
+            From
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-labelledby="_r_c_"
+            aria-required="true"
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+            data-base-ui-click-trigger=""
+            data-slot="popover-trigger"
+            id="base-ui-_r_e_"
+            tabindex="0"
+            type="button"
+          >
+            <svg
+              class="tabler-icon tabler-icon-calendar size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+              />
+              <path
+                d="M16 3v4"
+              />
+              <path
+                d="M8 3v4"
+              />
+              <path
+                d="M4 11h16"
+              />
+            </svg>
+            10 Jul 2026
+          </button>
+        </div>
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_f_"
+          >
+            To
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-labelledby="_r_f_"
+            aria-required="true"
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+            data-base-ui-click-trigger=""
+            data-slot="popover-trigger"
+            id="base-ui-_r_h_"
+            tabindex="0"
+            type="button"
+          >
+            <svg
+              class="tabler-icon tabler-icon-calendar size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+              />
+              <path
+                d="M16 3v4"
+              />
+              <path
+                d="M8 3v4"
+              />
+              <path
+                d="M4 11h16"
+              />
+            </svg>
+            10 Oct 2026
+          </button>
+        </div>
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_i_"
+          >
+            Employee
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="listbox"
+            aria-labelledby="_r_i_"
+            c...
+
+Ignored nodes: comments, script, style
+<body>
+  <div
+    aria-hidden="true"
+    data-base-ui-inert=""
+  >
+    <div
+      aria-busy="false"
+      class="flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card"
+      style=""
+    >
+      <section
+        aria-label="Filters"
+        class="grid gap-4 border-b p-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_c_"
+          >
+            From
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-labelledby="_r_c_"
+            aria-required="true"
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+            data-base-ui-click-trigger=""
+            data-slot="popover-trigger"
+            id="base-ui-_r_e_"
+            tabindex="0"
+            type="button"
+          >
+            <svg
+              class="tabler-icon tabler-icon-calendar size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+              />
+              <path
+                d="M16 3v4"
+              />
+              <path
+                d="M8 3v4"
+              />
+              <path
+                d="M4 11h16"
+              />
+            </svg>
+            10 Jul 2026
+          </button>
+        </div>
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_f_"
+          >
+            To
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-labelledby="_r_f_"
+            aria-required="true"
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+            data-base-ui-click-trigger=""
+            data-slot="popover-trigger"
+            id="base-ui-_r_h_"
+            tabindex="0"
+            type="button"
+          >
+            <svg
+              class="tabler-icon tabler-icon-calendar size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+              />
+              <path
+                d="M16 3v4"
+              />
+              <path
+                d="M8 3v4"
+              />
+              <path
+                d="M4 11h16"
+              />
+            </svg>
+            10 Oct 2026
+          </button>
+        </div>
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_i_"
+          >
+            Employee
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="listbox"
+            aria-labelledby="_r_i_"
+            c...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/personnel-file/sick-leave-overview.test.tsx:221:23
+    219|   });
+    220|   view.rerender(content("visible"));
+    221|   expect(await screen.findByRole("alert")).toHaveProperty(
+       |                       ^
+    222|    "textContent",
+    223|    "The sick notes could not be loaded.",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 18 passed (19)
+      Tests  1 failed | 140 passed (141)
+   Start at  21:11:45
+   Duration  5.84s (environment 40%, import 39%, tests 12%, transform 5%, setup 3%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-9b0f468b-
+  │ 151f714db384cc36\apps\webapp
+

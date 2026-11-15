@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
@@ -11,6 +12,7 @@ import {
 import { Activity, type ReactNode } from "react";
 import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AbsenceSickNotesPanel } from "@/components/absences/sick-notes/absence-sick-notes-panel";
 import {
 	parseSickLeaveOverviewParams,
 	type SickLeaveOverviewRow,
@@ -19,6 +21,8 @@ import { SickLeaveOverview } from "./sick-leave-overview";
 
 const navigation = vi.hoisted(() => ({ push: vi.fn(), search: "" }));
 const noteActions = vi.hoisted(() => ({ list: vi.fn(), unlink: vi.fn() }));
+const feedback = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock("sonner", () => ({ toast: feedback }));
 vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({
 	listAbsenceSickNotesAction: noteActions.list,
 }));
@@ -111,6 +115,75 @@ function renderOverview(
 }
 
 describe("SickLeaveOverview", () => {
+	it.each(["hidden", "target"] as const)(
+		"retires an accepted unlink completion across %s and reads afresh",
+		async (change) => {
+			const client = new QueryClient({
+				defaultOptions: { queries: { retry: false } },
+			});
+			const onChanged = vi.fn();
+			let settle: (value: unknown) => void = () => undefined;
+			noteActions.list
+				.mockReset()
+				.mockResolvedValueOnce({
+					success: true,
+					data: [
+						{
+							id: "note-a",
+							employeeId: row({}).employeeId,
+							category: "sick_note",
+							title: "Current note",
+							documentDate: "2026-09-01",
+							visibility: "hr_only",
+							fileName: "note.pdf",
+							mimeType: "application/pdf",
+							sizeBytes: 10,
+							createdAt: "2026-09-01T00:00:00Z",
+							absence: null,
+						},
+					],
+				})
+				.mockResolvedValue({ success: true, data: [] });
+			noteActions.unlink.mockImplementation(
+				() =>
+					new Promise((resolve) => {
+						settle = resolve;
+					}),
+			);
+			const content = (mode: "visible" | "hidden", absenceId = "a1") => (
+				<QueryClientProvider client={client}>
+					<Activity mode={mode}>
+						<AbsenceSickNotesPanel
+							absence={{
+								id: absenceId,
+								employeeId: row({}).employeeId,
+								startDate: "2026-09-01",
+								endDate: "2026-09-02",
+							}}
+							open
+							onOpenChange={vi.fn()}
+							canAttach={false}
+							manage
+							onChanged={onChanged}
+						/>
+					</Activity>
+				</QueryClientProvider>
+			);
+			const view = render(content("visible"));
+			fireEvent.click(await screen.findByRole("button", { name: /^Unlink/ }));
+			const nextTarget = change === "target" ? "a2" : "a1";
+			view.rerender(
+				content(change === "hidden" ? "hidden" : "visible", nextTarget),
+			);
+			await act(async () => settle({ success: true, data: undefined }));
+			view.rerender(content("visible", nextTarget));
+			expect(
+				await screen.findByText("No sick notes you can open."),
+			).toBeTruthy();
+			expect(onChanged).not.toHaveBeenCalled();
+			expect(feedback.success).not.toHaveBeenCalled();
+		},
+	);
 	it("retires an in-flight note read across Activity hide and reveal", async () => {
 		const client = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
@@ -277,6 +350,8 @@ describe("SickLeaveOverview", () => {
 		).toBeTruthy();
 	});
 	beforeEach(() => {
+		noteActions.list.mockReset();
+		noteActions.unlink.mockReset();
 		navigation.search = "";
 		scope.userId = "officer";
 		scope.activeOrganizationId = "organization";

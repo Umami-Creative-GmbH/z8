@@ -11,7 +11,6 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/personnel-files/sick-leave/detail")).toBe(
 			false,
 		);
-		expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);
 	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);

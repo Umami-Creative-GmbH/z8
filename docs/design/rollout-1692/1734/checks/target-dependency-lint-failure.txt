@@ -1,0 +1,41 @@
+src\components\absences\sick-notes\absence-sick-notes-panel.tsx:75:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: absenceId.
+  
+    73 │ 	);
+    74 │ 
+  > 75 │ 	useLayoutEffect(() => {
+       │ 	^^^^^^^^^^^^^^^
+    76 │ 		const activation = {
+    77 │ 			live: open && inScope,
+  
+  i Outer scope values aren't valid dependencies because mutating them doesn't re-render the component.
+  
+    85 │ 			retire();
+    86 │ 		};
+  > 87 │ 	}, [open, inScope, absenceId]);
+       │ 	                   ^^^^^^^^^
+    88 │ 
+    89 │ 	useLayoutEffect(
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    87 │ → },·[open,·inScope,·absenceId]);
+       │                    -----------   
+
+Checked 1 file in 7ms. No fixes applied.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-9b0f468b-
+  │ 151f714db384cc36\apps\webapp
+
