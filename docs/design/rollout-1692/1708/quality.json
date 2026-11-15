@@ -1,0 +1,16 @@
+{
+  "implementation": "8d98afea2ac1d42ab3f14c736878850d22f9c354",
+  "includedIntegrationAncestor": "dd0bfa85a48072a07ac3a3f272251b4440d692a5",
+  "merge": "66968dd5e5fbbce48d7efbf510ef026b12d2060d",
+  "branch": "feat/1708-deputy-decisions",
+  "preMergeUnit": { "suites": 12, "tests": 99, "passed": true },
+  "postMergeUnit": { "suites": 14, "tests": 127, "passed": true, "command": "The exact unit command in 1708.md plus analytics-heading.test.tsx and analytics/work-hours/page.test.tsx" },
+  "postgresql": { "suites": 3, "tests": 21, "passed": true, "rerunAfterMerge": false, "seams": ["cover-summaries.integration.test.ts", "deputy-decisions.integration.test.ts", "covering-store.integration.test.ts"], "command": "pnpm node .tmp/run-integration.mjs; launches pnpm exec vitest run --project integration --maxWorkers 1 with these three paths from apps/webapp and the guarded generated disposable fixture env" },
+  "fullTypes": { "command": "pnpm --filter webapp typecheck", "passedAfterMerge": true, "projects": ["next typegen", "tsconfig.typecheck.json", "tsconfig.workflow-contracts.json", "tsconfig.smoke.json"] },
+  "biome": { "ownedTypeScriptFiles": 7, "passedAfterMerge": true, "command": "pnpm --filter webapp exec biome check <five route TS files>; pnpm --filter webapp exec biome check --line-ending=crlf src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts", "qualification": "Post-merge default check flagged only the two Git-converted CRLF navigation files. CRLF-aware checks passed without rewriting concurrent content." },
+  "doctor": { "ownedTypeScriptFiles": 7, "passedAfterMerge": true, "findings": 0, "command": "pnpm exec react-doctor <seven owned TS paths> --verbose --no-score --no-supply-chain", "numericScore": null, "supplyChain": "not run" },
+  "evidence": { "command": "pnpm node docs/design/rollout-1692/1708/verify-evidence.mjs", "passed": true, "matchedCapturePairs": 4, "scriptSyntaxChecks": 2 },
+  "issue": { "number": 1708, "stateAtHandoff": "OPEN", "assignee": "KaiSoellch" },
+  "cleanup": { "nextPidVerifiedAndStopped": 108268, "ownedContainersRemoved": 3, "ownedBrowsersClosed": true, "heldReadReleased": true },
+  "limits": ["Full production static generation not rerun", "Remote catalog sync not run; existing keys reused", "Physical store/mobile devices and true browser zoom not run", "No exhaustive screen-reader or axe/contrast certification", "No live external providers or rejected billing-portal POST", "No benchmark claim from React dev instrumentation", "Other route Next transition diagnostics remain unresolved by this ticket", "Queued #1707 not included unless it becomes part of a later integration merge"]
+}

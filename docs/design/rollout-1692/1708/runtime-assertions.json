@@ -129,6 +129,8 @@
     "drawer": "Phone drawer opened; a subsequent native Escape closed it and returned focus to Toggle Sidebar. Earlier immediate/first Escape probes did not close it; no blanket keyboard-tool reliability claim.",
     "return": "Focused actual Back to inbox and pressed Enter; subsequent tool observed /en/approvals/inbox. The immediate pathname sample was still the source route."
   },
+  "acceptedFinalRowReachability": {"lastBottom":819,"viewport":844,"scroll":156,"width":390,"documentWidth":390},
+  "postMergeRead": { "heading": "Decided by your deputy", "h1Count": 1, "rows": 3, "mobile": "stacked", "documentWidth": 390, "viewport": 390 },
   "limits": [
     "Physical devices and true browser zoom not run",
     "Remote catalog sync and full production static generation not run",
