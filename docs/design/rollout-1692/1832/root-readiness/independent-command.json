@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--config",
+    "../../.tmp/merge1832-audit/vitest.config.ts",
+    "--project",
+    "audit",
+    "--maxWorkers",
+    "1",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1832-root-checks\\independent.json"
+  ],
+  "exitCode": 0,
+  "sourceHead": "9894ea4e9718ea3188388d80a90d25cc51e10047",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx": "187243892f5d45474a77ae01a8c538248826805c7d833e42b64668c99cfb5a54",
+    "apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx": "4c3e1351f60e51308a5be45053d2a582f66063d0a78890a6cbfcedc6a636d7f5"
+  }
+}

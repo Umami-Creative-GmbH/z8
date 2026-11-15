@@ -15,19 +15,9 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import type { OnboardingSummary } from "@/lib/effect/services/onboarding.service";
 import { useRouter } from "@/navigation";
-import {
-	getOnboardingSummary,
-	startOnboarding,
-	updateOnboardingStep,
-} from "./actions";
+import { getOnboardingSummary, startOnboarding, updateOnboardingStep } from "./actions";
 
-function WelcomeFrame({
-	children,
-	isAdmin = false,
-}: {
-	children: ReactNode;
-	isAdmin?: boolean;
-}) {
+function WelcomeFrame({ children, isAdmin = false }: { children: ReactNode; isAdmin?: boolean }) {
 	const { t } = useTranslate();
 	return (
 		<section className="mx-auto max-w-3xl rounded-xl border bg-card text-card-foreground shadow-sm">
@@ -47,10 +37,7 @@ function WelcomeFrame({
 			</header>
 			<ul className="divide-y border-y px-6 sm:px-8">
 				<li className="flex gap-4 py-5">
-					<IconClock
-						aria-hidden="true"
-						className="mt-0.5 size-5 shrink-0 text-primary"
-					/>
+					<IconClock aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
 					<div className="min-w-0">
 						<h2 className="font-medium">
 							{t("onboarding.welcome.features.timeTracking", "Time Tracking")}
@@ -64,10 +51,7 @@ function WelcomeFrame({
 					</div>
 				</li>
 				<li className="flex gap-4 py-5">
-					<IconBriefcase
-						aria-hidden="true"
-						className="mt-0.5 size-5 shrink-0 text-primary"
-					/>
+					<IconBriefcase aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
 					<div className="min-w-0">
 						<h2 className="font-medium">
 							{t("onboarding.welcome.features.absences", "Absence Management")}
@@ -81,10 +65,7 @@ function WelcomeFrame({
 					</div>
 				</li>
 				<li className="flex gap-4 py-5">
-					<IconUsers
-						aria-hidden="true"
-						className="mt-0.5 size-5 shrink-0 text-primary"
-					/>
+					<IconUsers aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
 					<div className="min-w-0">
 						<h2 className="font-medium">
 							{t("onboarding.welcome.features.team", "Team Collaboration")}
@@ -112,6 +93,13 @@ type Continuation =
 	| { status: "idle" | "pending" | "continuing" }
 	| { status: "failed"; error: string };
 
+type WelcomeLifetime = {
+	active: boolean;
+	pending: boolean;
+	summary: OnboardingSummary | null;
+	attempt: number;
+};
+
 function WelcomeArrival() {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -122,10 +110,9 @@ function WelcomeArrival() {
 	const [continuation, setContinuation] = useState<Continuation>({
 		status: "idle",
 	});
-	const pending =
-		continuation.status === "pending" || continuation.status === "continuing";
+	const pending = continuation.status === "pending" || continuation.status === "continuing";
 	const initialized = useRef(false);
-	const arrival = useRef<{ active: boolean; pending: boolean } | null>(null);
+	const arrival = useRef<WelcomeLifetime | null>(null);
 	const failureMessage = t(
 		"onboarding.welcome.prepareError",
 		"Setup could not be prepared. Please try again.",
@@ -140,7 +127,7 @@ function WelcomeArrival() {
 	}, [failureMessage, stepFailureMessage]);
 
 	useEffect(() => {
-		const current = { active: true, pending: false, attempt };
+		const current: WelcomeLifetime = { active: true, pending: false, summary: null, attempt };
 		arrival.current = current;
 		const prepare = async () => {
 			// StrictMode cleanup invalidates replay before it issues a write.
@@ -164,6 +151,7 @@ function WelcomeArrival() {
 					setPreparation({ status: "failed", error: summary.error });
 					return;
 				}
+				current.summary = summary.data;
 				setPreparation({ status: "ready", summary: summary.data });
 			} catch {
 				if (current.active)
@@ -181,23 +169,23 @@ function WelcomeArrival() {
 
 	const handleContinue = async () => {
 		const current = arrival.current;
-		if (!current?.active || current.pending || preparation.status !== "ready")
+		if (
+			!current?.active ||
+			!current.summary ||
+			current.pending ||
+			current.attempt !== attempt ||
+			preparation.status !== "ready"
+		)
 			return;
 		current.pending = true;
 		setContinuation({ status: "pending" });
-		const step = preparation.summary.hasOrganization
-			? "profile"
-			: "organization";
+		const step = current.summary.hasOrganization ? "profile" : "organization";
 		try {
 			const result = await updateOnboardingStep(step);
 			if (!current.active) return;
 			if (result.success) {
 				setContinuation({ status: "continuing" });
-				router.push(
-					step === "profile"
-						? "/onboarding/profile"
-						: "/onboarding/organization",
-				);
+				router.push(step === "profile" ? "/onboarding/profile" : "/onboarding/organization");
 				return;
 			}
 			current.pending = false;
@@ -213,14 +201,9 @@ function WelcomeArrival() {
 	};
 
 	return (
-		<WelcomeFrame
-			isAdmin={preparation.status === "ready" && preparation.summary.isAdmin}
-		>
+		<WelcomeFrame isAdmin={preparation.status === "ready" && preparation.summary.isAdmin}>
 			{preparation.status === "preparing" && (
-				<p
-					role="status"
-					className="flex items-center gap-2 text-sm text-muted-foreground"
-				>
+				<p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
 					<IconLoader2
 						aria-hidden="true"
 						className="size-4 animate-spin motion-reduce:animate-none"
@@ -242,10 +225,7 @@ function WelcomeArrival() {
 				<>
 					{preparation.summary.hasOrganization && (
 						<div className="flex gap-3 text-sm">
-							<IconBuilding
-								aria-hidden="true"
-								className="size-5 shrink-0 text-primary"
-							/>
+							<IconBuilding aria-hidden="true" className="size-5 shrink-0 text-primary" />
 							<p className="min-w-0 break-words">
 								{preparation.summary.organizationName
 									? t(
@@ -291,16 +271,11 @@ function WelcomeArrival() {
 export function WelcomePageClient() {
 	const { data: session, isPending, refetch } = useSession();
 	const { t } = useTranslate();
-	if (!session?.user.id)
+	if (isPending || !session?.user.id)
 		return (
 			<WelcomeFrame>
 				{isPending ? (
-					<p role="status">
-						{t(
-							"onboarding.welcome.sessionPending",
-							"Waiting for your session…",
-						)}
-					</p>
+					<p role="status">{t("onboarding.welcome.sessionPending", "Waiting for your session…")}</p>
 				) : (
 					<>
 						<Alert variant="destructive">
@@ -321,10 +296,7 @@ export function WelcomePageClient() {
 	// The key resets only this page's arrival on account/org changes, including A→B→A.
 	return (
 		<WelcomeArrival
-			key={JSON.stringify([
-				session.user.id,
-				session.session.activeOrganizationId ?? null,
-			])}
+			key={JSON.stringify([session.user.id, session.session.activeOrganizationId ?? null])}
 		/>
 	);
 }

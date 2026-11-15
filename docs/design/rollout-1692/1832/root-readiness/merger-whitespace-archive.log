@@ -1,0 +1,59 @@
+docs/design/rollout-1692/1832/archive-whitespace.log:2: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:4: trailing whitespace.
+++    134 │ 
+docs/design/rollout-1692/1832/archive-whitespace.log:6: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:8: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:10: trailing whitespace.
+++    175 │ 
+docs/design/rollout-1692/1832/archive-whitespace.log:12: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:14: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:16: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:18: trailing whitespace.
+++        │       -------   
+docs/design/rollout-1692/1832/archive-whitespace.log:20: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:24: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:26: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/archive-whitespace.log:28: trailing whitespace.
+++  
+docs/design/rollout-1692/1832/biome-format.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1832/biome-format.log:6: trailing whitespace.
++    134 │ 
+docs/design/rollout-1692/1832/biome-format.log:11: trailing whitespace.
++  
+docs/design/rollout-1692/1832/biome-format.log:13: trailing whitespace.
++  
+docs/design/rollout-1692/1832/biome-format.log:18: trailing whitespace.
++    175 │ 
+docs/design/rollout-1692/1832/biome-format.log:20: trailing whitespace.
++  
+docs/design/rollout-1692/1832/biome-format.log:24: trailing whitespace.
++  
+docs/design/rollout-1692/1832/biome-format.log:26: trailing whitespace.
++  
+docs/design/rollout-1692/1832/biome-format.log:28: trailing whitespace.
++        │       -------   
+docs/design/rollout-1692/1832/biome-format.log:38: trailing whitespace.
++  
+docs/design/rollout-1692/1832/biome-format.log:44: new blank line at EOF.
+docs/design/rollout-1692/1832/green-summary.log:12: new blank line at EOF.
+docs/design/rollout-1692/1832/quality-initial.log:8: trailing whitespace.
++  
+docs/design/rollout-1692/1832/quality-initial.log:160: trailing whitespace.
++  
+docs/design/rollout-1692/1832/quality-initial.log:167: trailing whitespace.
++  
+docs/design/rollout-1692/1832/quality-initial.log:173: new blank line at EOF.
+docs/design/rollout-1692/1832/red-summary.log:47: new blank line at EOF.
+docs/design/rollout-1692/1832/types-initial.log:10: new blank line at EOF.
+docs/design/rollout-1692/1832/unit-expanded.log:12: new blank line at EOF.
+docs/design/rollout-1692/1832/unit-lifecycle.log:12: new blank line at EOF.
