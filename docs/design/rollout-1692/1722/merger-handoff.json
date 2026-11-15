@@ -1,0 +1,609 @@
+{
+  "status": "Native merge locally complete and clean; root owns material correction-source investigation/readiness/qualification",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "71e1315007ad220d5351d4690fc5095a207fff4a",
+  "incoming": "dfb3c97d4c97cea46d0aa30b86e4e336ba1d6050",
+  "merge": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+  "parents": [
+    "71e1315007ad220d5351d4690fc5095a207fff4a",
+    "dfb3c97d4c97cea46d0aa30b86e4e336ba1d6050"
+  ],
+  "tree": "15450d7293e1c3c8cddc86e6748fa1ac3876765f",
+  "independentTreeMatches": true,
+  "clean": true,
+  "exclusiveOwnership": "RELEASE",
+  "tests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 11,
+        "cases": 140,
+        "passed": 140,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 48,
+        "cases": 1086,
+        "passed": 1086,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 11,
+        "overlapCases": 140
+      }
+    ],
+    "uniqueFiles": 48,
+    "uniqueCases": 1086,
+    "method": "Normalized absolute file path plus fullName multiset, retaining parameterized duplicates. Every overlapping file must have identical fullName multiplicity. Repeated runs do not add coverage.",
+    "sourceContractChallenge": {
+      "passed": 1,
+      "failed": 1,
+      "countsExcludedFromGreenRegressionTotals": true,
+      "expectedRed": true,
+      "finding": ".tmp/merge1722-audit/source-contract-finding.json"
+    }
+  },
+  "types": {
+    "passed": true,
+    "scope": "Full next typegen,application tsconfig.typecheck,workflow-contracts and smoke, fresh merged source"
+  },
+  "biome": {
+    "changedFiles": 5,
+    "rawDefault": {
+      "passed": false,
+      "profile": "Discovered LF formatting; no blanket default pass"
+    },
+    "automaticCRLF": {
+      "passed": false,
+      "profile": "Discovery profile differs from explicitly selected webapp line-width configuration"
+    },
+    "explicitWebappCRLF": {
+      "passed": true
+    },
+    "explicitLintImports": {
+      "passed": true
+    },
+    "noFixesApplied": true
+  },
+  "doctor": {
+    "files": 5,
+    "errors": 0,
+    "warnings": 0,
+    "complete": true,
+    "score": null,
+    "noSuppressionsOrConfigEdits": true
+  },
+  "preservation": {
+    "priorVerifiedAncestors": 34,
+    "priorRolloutPathsUnchanged": 1598,
+    "unaffectedPriorPathsUnchanged": 11826,
+    "incomingChangedPathsMatch": 97,
+    "noDeletion": true,
+    "sourcePaths": [
+      "apps/webapp/src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
+      "apps/webapp/src/app/[locale]/(app)/my-requests/page.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "allOtherSourcesUnchanged": true,
+    "priorMfaCalendarEquipmentDocumentsRootFixesAndBothHeadingOptinsPreserved": true
+  },
+  "artifacts": {
+    "jsons": 32,
+    "scripts": 9,
+    "pngs": 50,
+    "links": 24,
+    "sourcePinChecks": 35,
+    "unmeasuredCssViewportsKeptNull": 39,
+    "pairs": [
+      {
+        "before": "before-desktop-light",
+        "after": "after-desktop-light",
+        "css": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "16px",
+        "rows": 114,
+        "summary": "Pending\n\n2\n\nRequired fixes\n\n2\n\nRecent decisions\n\n54\n\nTotal loaded\n\n56"
+      },
+      {
+        "before": "before-wide-dark-saved18",
+        "after": "after-wide-dark-saved18",
+        "css": {
+          "width": 2200,
+          "height": 1100
+        },
+        "font": "18px",
+        "rows": 114,
+        "summary": "Pending\n\n2\n\nRequired fixes\n\n2\n\nRecent decisions\n\n54\n\nTotal loaded\n\n56"
+      },
+      {
+        "before": "before-phone-dark-saved18",
+        "after": "after-phone-dark-saved18",
+        "css": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "rows": 114,
+        "summary": "Pending\n\n2\n\nRequired fixes\n\n2\n\nRecent decisions\n\n54\n\nTotal loaded\n\n56"
+      },
+      {
+        "before": "before-phone-filters",
+        "after": "after-phone-filters",
+        "css": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "rows": 114,
+        "summary": "Pending\n\n2\n\nRequired fixes\n\n2\n\nRecent decisions\n\n54\n\nTotal loaded\n\n56"
+      }
+    ]
+  },
+  "archives": {
+    "checks": [
+      {
+        "name": "approval-review-archive",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1710/verify-evidence.mjs"
+        ],
+        "output": "{\"json\":8,\"png\":15,\"matchedArrivalPairs\":3,\"detailPair\":1,\"runtimeAssertions\":32,\"canonicalAssertions\":9}"
+      },
+      {
+        "name": "equipment-recovery",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs"
+        ],
+        "output": "Verified six source-pinned observations, actual pointer/transport/readback, retained framework limit, contrast/bounds and clean final probes; fully decoded six PNGs. Artifact validation is not a fresh runtime run."
+      },
+      {
+        "name": "calendar-route-arrivals",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1713/root-route-arrivals/verify-evidence.mjs"
+        ],
+        "output": "Verified exact source pins, actual stale cached Back versus corrected same-instance Back/Forward and saved phone preferences,12 assertions,45/489 tests and five fully decoded captures. This archive check is not a fresh runtime run."
+      },
+      {
+        "name": "mfa-continuations-preservation",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1826/root-continuations/verify-evidence.mjs",
+          "--current-source"
+        ],
+        "output": "Verified MFA lifetime/social red cases,41/257 final tests,actual held-success/current-action/invalid-code observations,source pins,three fully decoded captures and cleanup. Cached Activity is assembled-only; this archive check is not a new runtime run."
+      },
+      {
+        "name": "route-inventory",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/verify-route-inventory.mjs",
+          ".",
+          "HEAD",
+          ".tmp/merge1722-audit/route-inventory.json"
+        ],
+        "output": "{\"commit\":\"05c66b101e16b98d678a66bf2256f0e875eb9b73\",\"persistentPages\":153,\"redirectAliases\":19,\"sourcePageTemplates\":172,\"aliasTemplatesUnchangedFromInitialDev\":19,\"classification\":\"static source-template inventory only\"}"
+      }
+    ],
+    "classification": "Read-only archive/static source inspection only. No fresh browser/PG/Next/nativeReact/services/provider/alias-behavior claim. Raw source-writing 1720/1721 verification drivers deliberately not executed; prior tracked evidence bytes checked by preservation audit."
+  },
+  "whitespace": [
+    {
+      "ref": "71e1315007ad220d5351d4690fc5095a207fff4a",
+      "exitCode": 0,
+      "diagnosticLines": 0
+    },
+    {
+      "ref": "dfb3c97d4c97cea46d0aa30b86e4e336ba1d6050",
+      "exitCode": 0,
+      "diagnosticLines": 0
+    }
+  ],
+  "sourceContractFinding": {
+    "classification": "Material pre-existing reader/writer contract mismatch; root/domain owner must investigate or explicitly retain before full R030/root acceptance. No R030 presentation regression asserted; no production fix made.",
+    "evidence": [
+      {
+        "file": "apps/webapp/src/lib/approvals/server/time-correction-approvals.ts",
+        "line": 837,
+        "detail": "insertTimeCorrectionSourceEntry writes pending type=correction rows with isSuperseded=true,supersededById=null (values at860-863)."
+      },
+      {
+        "file": "apps/webapp/src/lib/approvals/server/time-correction-submission.ts",
+        "line": 849,
+        "detail": "Existing production submission inserts endpoint via that writer; loop1525,metadata endpoint IDs1557/1563."
+      },
+      {
+        "file": "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts",
+        "line": 381,
+        "detail": "Verified endpoint evidence is filtered to type=correction AND isSuperseded=false, then scoped to organization/employee and work-period endpoints."
+      },
+      {
+        "file": "apps/webapp/src/lib/approvals/time-request-kind.ts",
+        "line": 244,
+        "detail": "A correction marker naming endpoint IDs requires matching verified relational evidence for each endpoint, otherwise unclassified."
+      },
+      {
+        "file": "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts",
+        "line": 298,
+        "detail": "Unclassified legacy/compatibility corrections are omitted. Canonical complete mode follows a separate strict context/display parser; authority and deduplication stay unchanged."
+      },
+      {
+        "file": "apps/webapp/src/lib/time-tracking/period-submissions/submission-blockers.ts",
+        "line": 142,
+        "detail": "Readiness reuses listing helper; unlisted corrections link to the timeline rather than promising My Requests."
+      }
+    ],
+    "challenge": {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "../../.tmp/merge1722-audit/source-contract.config.mjs",
+        "--maxWorkers=1",
+        "--reporter=json",
+        "--outputFile=X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1722-audit/source-contract.json"
+      ],
+      "suite": "source-contract.test.ts",
+      "scope": "Real production getSelfServiceRequests, classifier and contract normalization; predicate-honoring fake database, legacy authority. No PostgreSQL or live writer action.",
+      "failed": 1,
+      "passed": 1,
+      "red": "Pending own endpoint row matching the writer shape returns [] instead of pending cancel/view.",
+      "control": "The identical endpoint with isSuperseded=false is listed; foreign requester is still excluded.",
+      "harnessQualification": "Initial two-red runs were harness failures: app drizzle resolved separately from root audit mock. Explicit app-package alias fixes resolution; initial JSON/logs retained. Initial root-relative output file was moved into workspace/source-contract-first.json."
+    },
+    "unchangedDomainPaths": [
+      "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts",
+      "apps/webapp/src/lib/approvals/server/time-correction-cancellation.ts",
+      "apps/webapp/src/lib/approvals/server/time-correction-submission.ts",
+      "apps/webapp/src/lib/approvals/server/time-correction-approvals.ts",
+      "apps/webapp/src/lib/approvals/time-request-kind.ts",
+      "apps/webapp/src/app/[locale]/(app)/my-requests/actions.ts"
+    ],
+    "liveCauseQualification": "The static seam and assembled challenge plausibly explain the two live missing arrivals, but archived artifacts contain no exact source-row metadata/endpoint/rollout snapshot, and fixture is gone. No claim that exact archived failure predicate was observed in PostgreSQL. Successful current correction cancellation remains UNVERIFIED.",
+    "rootNextStep": "Root/domain owner should add a source integration regression seeded by actual submitTimeCorrection (edit/delete), inspect pending vs finalized evidence and cancellation replay/readiness under each authority, then correct the verified-evidence seam without admitting foreign, malformed, ordinary/manual/policy kinds. Separate successful live cancellation/readback still needed. No contract broadening to manufacture a pass."
+  },
+  "runtime": {
+    "freshByMerger": false,
+    "finalCaptureSourceHead": "5815a21a731224ee1af45d6b9407da8aaf55e592",
+    "finalSourcePinsMatchCurrent": true,
+    "comparison": "Only three consumer files substituted from 877b122 baseline; other integrated infrastructure retained. Four matched pairs and 56 loaded/114 rendered appearances, no action between captures. Same-scope data guaranteed by reviewed driver/checks; no private credentials inspected.",
+    "actions": "11 recorded preceding observations; full actions.mjs failed final correction-success assertion. Separate cancellation-proof, roles and final comparison completed. No full-driver pass claimed.",
+    "cancellation": "Absence source deletion/readback established by worker. Successful current time-correction cancellation UNVERIFIED: metadata seed refused; real delete/edit submit success then focused arrival timeout.",
+    "preferences": "Existing storage keys seeded then reload/computed 18px/font/theme observed; matrix does not certify preference UI save paths.",
+    "native": "Inherited usable component tree/inspection and axe4.12.1 content14+whole44 passing rules,0violation/0incomplete closed menu. Earlier shared open menu contrast4.39 plus incomplete retained.",
+    "postgres": "Worker2suites/67tests predates final presentation-only extraction/format and merges; not rerun.",
+    "limits": [
+      "No fresh services/browser/PG/Next/nativeReact/provider by merger.",
+      "Saved18px is not true zoom. No full build/static generation/catalog/device/screen-reader/transition certification.",
+      "Held mutation dispatch tests current authority then reload; no already-produced held reads or no-reload scope detection certification.",
+      "Initial no-employee/full failed reader and exhaustive canonical/feature variants not all live tested."
+    ]
+  },
+  "visualReview": {
+    "fourMatchedPairContactSheetsInspected": true,
+    "observations": [
+      "Desktop and wide task/scope/count/filter/actions visible without source clipping in supplied current captures; wide reading width intentional.",
+      "Saved18px phone summary moves from four vertical cards to2x2 strip; labels/counts and filters wrap within390px.",
+      "Phone-filters pair uses changed composition/positional scroll: baseline begins Needs attention, refreshed begins Find requests; not a comparison of identical corresponding content at top edge.",
+      "Developer/pet overlays remain in lower-right and obscure part of phone Fix in supplied images; no unqualified full-record/physical-device/zoom/screen-reader acceptance."
+    ],
+    "nativeProvenance": "native.json contains aggregate counts/tree names but no independent Git/source pins; exact current-source35pins belong to final captures and absence-readback. Native current-source identity remains implementer provenance, not a new independently pinned merger observation."
+  },
+  "findings": [
+    "Material pre-existing reader/writer contract mismatch; root/domain owner must investigate or explicitly retain before full R030/root acceptance. No R030 presentation regression asserted; no production fix made."
+  ],
+  "blockers": [
+    "Successful current live time-correction cancellation remains unverified. Concrete existing pending-evidence mismatch reproduced assembled; root/domain follow-up required or explicit qualification before full acceptance."
+  ],
+  "limitations": [
+    "No fresh services/browser/PG/Next/nativeReact/provider by merger.",
+    "Saved18px is not true zoom. No full build/static generation/catalog/device/screen-reader/transition certification.",
+    "Held mutation dispatch tests current authority then reload; no already-produced held reads or no-reload scope detection certification.",
+    "Initial no-employee/full failed reader and exhaustive canonical/feature variants not all live tested."
+  ],
+  "inheritedFailureLogs": [
+    {
+      "original": "X:/t3-code/worktrees/z8/t3-248f3a03-cc6c153578a943d9/.tmp/1722/latest-combined-unit.txt",
+      "saved": ".tmp/merge1722-audit/worker-overlap-failed.log",
+      "sha256": "32aff689c487b8e83084fddd8d4dd3dbd3e229add6ca75aa62d40de58bbebc74"
+    },
+    {
+      "original": "X:/t3-code/worktrees/z8/t3-248f3a03-cc6c153578a943d9/.tmp/1722/latest-combined-unit-after-restore.txt",
+      "saved": ".tmp/merge1722-audit/worker-restored-passed.log",
+      "sha256": "865cf07d580b66c51141d1a0a54415ade69d6f593d1eabe4a4c7e1e1147e41f5"
+    }
+  ],
+  "commands": {
+    "mergeTree": [
+      "git",
+      "merge-tree",
+      "--write-tree",
+      "71e1315007ad220d5351d4690fc5095a207fff4a",
+      "dfb3c97d4c97cea46d0aa30b86e4e336ba1d6050"
+    ],
+    "merge": [
+      "git",
+      "merge",
+      "--no-ff",
+      "dfb3c97d4c97cea46d0aa30b86e4e336ba1d6050",
+      "-m",
+      "merge: integrate #1722 personal requests presentation"
+    ],
+    "validation": {
+      "exact": [
+        {
+          "name": "exact",
+          "command": [
+            "pnpm",
+            "--filter",
+            "webapp",
+            "exec",
+            "vitest",
+            "run",
+            "--project",
+            "unit",
+            "src/app/[locale]/(app)/my-requests",
+            "src/lib/self-service-requests",
+            "src/lib/navigation/route-metadata.test.ts",
+            "src/components/ui/page-header.test.tsx",
+            "src/components/site-header.test.tsx",
+            "src/components/ui/alert-dialog.test.tsx",
+            "src/components/personnel-file/my-documents.test.tsx",
+            "src/components/organization-mfa/verification-lifetime.test.tsx",
+            "src/components/equipment/equipment-personal.test.tsx",
+            "src/components/equipment/equipment-routes.test.tsx",
+            "--maxWorkers=2",
+            "--reporter=json",
+            "--outputFile=../../.tmp/merge1722-audit/exact.json"
+          ],
+          "startedAt": "2026-11-15T11:07:21.334Z",
+          "finishedAt": "2026-11-15T11:07:33.438Z",
+          "exitCode": 0,
+          "log": ".tmp/merge1722-audit/exact.log"
+        }
+      ],
+      "compatibility": [
+        {
+          "name": "compatibility",
+          "command": [
+            "pnpm",
+            "--filter",
+            "webapp",
+            "exec",
+            "vitest",
+            "run",
+            "--project",
+            "unit",
+            "src/app/[locale]/(app)/my-requests",
+            "src/lib/self-service-requests",
+            "src/lib/navigation/route-metadata.test.ts",
+            "src/components/ui/page-header.test.tsx",
+            "src/components/site-header.test.tsx",
+            "src/components/ui/alert-dialog.test.tsx",
+            "src/components/personnel-file/my-documents.test.tsx",
+            "src/components/organization-mfa/verification-lifetime.test.tsx",
+            "src/components/equipment/equipment-personal.test.tsx",
+            "src/components/equipment/equipment-routes.test.tsx",
+            "src/lib/approvals/server/time-correction-cancellation.test.ts",
+            "src/lib/approvals/server/time-correction-approvals.test.ts",
+            "src/lib/approvals/server/time-correction-review-metadata.test.ts",
+            "src/lib/approvals/server/time-correction-revision.test.ts",
+            "src/lib/approvals/server/time-correction-on-behalf.test.ts",
+            "src/lib/approvals/domain-adapters/time-correction-contract.test.ts",
+            "src/lib/approvals/domain-adapters/time-correction-legacy-state.test.ts",
+            "src/lib/approvals/time-request-kind.test.ts",
+            "src/lib/approvals/authority/resolution.test.ts",
+            "src/lib/approvals/authority/gate.test.ts",
+            "src/lib/approvals/authority/authority-source-guard.test.ts",
+            "src/lib/time-tracking/period-submissions/blocker-navigation.test.ts",
+            "src/lib/time-tracking/period-submissions/employee-period-view.test.ts",
+            "src/lib/time-tracking/period-submissions/submission-gaps.test.ts",
+            "src/components/time-tracking/period-blocker-focus.test.tsx",
+            "src/components/time-tracking/period-submissions-card.test.tsx",
+            "src/app/api/tenant-mutation-scope.test.ts",
+            "src/components/ui/action-panel.test.tsx",
+            "src/components/ui/dialog.test.tsx",
+            "src/components/ui/sheet.test.tsx",
+            "src/components/ui/tanstack-form.test.tsx",
+            "src/components/ui/form-control-wrappers.test.tsx",
+            "src/components/ui/loading-region.test.tsx",
+            "src/components/ui/sidebar.test.tsx",
+            "src/components/ui/sidebar-hydration.test.tsx",
+            "src/components/app-sidebar.test.tsx",
+            "src/components/nav-main.test.tsx",
+            "src/components/sidebar-feedback.test.tsx",
+            "src/app/[locale]/(app)/app-layout-content.test.tsx",
+            "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+            "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+            "src/components/shared-pathname-boundaries-source.test.ts",
+            "src/components/providers/view-refresh-provider.test.tsx",
+            "src/components/providers/view-refresh-migrated.test.tsx",
+            "src/components/font-size-preference.test.tsx",
+            "src/components/theme-provider.test.tsx",
+            "src/tolgee/extracted-key-defaults.test.ts",
+            "--maxWorkers=2",
+            "--reporter=json",
+            "--outputFile=../../.tmp/merge1722-audit/compatibility.json"
+          ],
+          "startedAt": "2026-11-15T11:07:58.540Z",
+          "finishedAt": "2026-11-15T11:08:25.117Z",
+          "exitCode": 0,
+          "log": ".tmp/merge1722-audit/compatibility.log"
+        }
+      ],
+      "types": [
+        {
+          "name": "types",
+          "command": [
+            "pnpm",
+            "--filter",
+            "webapp",
+            "typecheck"
+          ],
+          "startedAt": "2026-11-15T11:07:20.348Z",
+          "finishedAt": "2026-11-15T11:08:10.952Z",
+          "exitCode": 0,
+          "log": ".tmp/merge1722-audit/types.log"
+        }
+      ],
+      "biome": [
+        {
+          "name": "biome-default",
+          "command": [
+            "pnpm",
+            "--filter",
+            "webapp",
+            "exec",
+            "biome",
+            "check",
+            "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+            "src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
+            "src/app/[locale]/(app)/my-requests/page.tsx",
+            "src/lib/navigation/route-metadata.test.ts",
+            "src/lib/navigation/route-metadata.ts"
+          ],
+          "startedAt": "2026-11-15T11:07:22.712Z",
+          "finishedAt": "2026-11-15T11:07:23.573Z",
+          "exitCode": 1,
+          "log": ".tmp/merge1722-audit/biome-default.log"
+        },
+        {
+          "name": "biome-crlf",
+          "command": [
+            "pnpm",
+            "--filter",
+            "webapp",
+            "exec",
+            "biome",
+            "check",
+            "--line-ending=crlf",
+            "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+            "src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
+            "src/app/[locale]/(app)/my-requests/page.tsx",
+            "src/lib/navigation/route-metadata.test.ts",
+            "src/lib/navigation/route-metadata.ts"
+          ],
+          "startedAt": "2026-11-15T11:07:23.575Z",
+          "finishedAt": "2026-11-15T11:07:23.978Z",
+          "exitCode": 1,
+          "log": ".tmp/merge1722-audit/biome-crlf.log"
+        },
+        {
+          "name": "biome-explicit-webapp",
+          "command": [
+            "pnpm",
+            "--filter",
+            "webapp",
+            "exec",
+            "biome",
+            "check",
+            "--config-path=biome.jsonc",
+            "--line-ending=crlf",
+            "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+            "src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
+            "src/app/[locale]/(app)/my-requests/page.tsx",
+            "src/lib/navigation/route-metadata.test.ts",
+            "src/lib/navigation/route-metadata.ts"
+          ],
+          "startedAt": "2026-11-15T11:07:23.994Z",
+          "finishedAt": "2026-11-15T11:07:24.348Z",
+          "exitCode": 0,
+          "log": ".tmp/merge1722-audit/biome-explicit-webapp.log"
+        },
+        {
+          "name": "biome-explicit-lint-import",
+          "command": [
+            "pnpm",
+            "--filter",
+            "webapp",
+            "exec",
+            "biome",
+            "check",
+            "--config-path=biome.jsonc",
+            "--line-ending=crlf",
+            "--formatter-enabled=false",
+            "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+            "src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
+            "src/app/[locale]/(app)/my-requests/page.tsx",
+            "src/lib/navigation/route-metadata.test.ts",
+            "src/lib/navigation/route-metadata.ts"
+          ],
+          "startedAt": "2026-11-15T11:07:24.349Z",
+          "finishedAt": "2026-11-15T11:07:24.662Z",
+          "exitCode": 0,
+          "log": ".tmp/merge1722-audit/biome-explicit-lint-import.log"
+        }
+      ],
+      "doctor": [
+        {
+          "name": "doctor",
+          "command": [
+            "pnpm",
+            "exec",
+            "react-doctor",
+            "--project",
+            "webapp",
+            "--scope",
+            "changed",
+            "--base",
+            "71e1315007ad220d5351d4690fc5095a207fff4a",
+            "--verbose",
+            "--no-score",
+            "--no-supply-chain",
+            "--no-telemetry",
+            "--json",
+            "--json-out",
+            ".tmp/merge1722-audit/doctor.json"
+          ],
+          "startedAt": "2026-11-15T11:07:20.658Z",
+          "finishedAt": "2026-11-15T11:07:44.865Z",
+          "exitCode": 0,
+          "log": ".tmp/merge1722-audit/doctor.log"
+        }
+      ]
+    },
+    "artifactAudit": [
+      "pnpm",
+      "node",
+      ".tmp/merge1722-audit/audit.mjs"
+    ],
+    "archiveAudit": [
+      "pnpm",
+      "node",
+      ".tmp/merge1722-audit/check-archives.mjs"
+    ],
+    "testSummary": [
+      "pnpm",
+      "node",
+      ".tmp/merge1722-audit/test-summary.mjs"
+    ],
+    "finalization": [
+      "pnpm",
+      "node",
+      ".tmp/merge1722-audit/finalize.mjs"
+    ]
+  },
+  "prohibitedActionsNotTaken": "No source/report/ledger/README/raw artifact edits,service/browser/PG/provider/tracker/remote/devmerge/deploy; no package install or dependency changes."
+}

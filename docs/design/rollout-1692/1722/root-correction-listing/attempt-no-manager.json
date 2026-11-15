@@ -1,0 +1,19 @@
+{
+  "checks": [
+    {
+      "name": "disposable employee-specific approval policy is fixture setup, not a product action",
+      "passed": true
+    }
+  ],
+  "captures": [],
+  "pageErrors": [],
+  "sourceCommit": "8ba550c282727aec4548a217daa673b38137c883",
+  "comparison": "Only the owned server reader is replaced with exact 05c66 source; all other integrated code stays current.",
+  "reader": {
+    "path": "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts",
+    "beforeCommit": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+    "beforeSha256": "23f6a400b104823b3f87b9eccd1c036a55a7cb40a76705bb6590d8c5c3ffcd27",
+    "afterSha256": "787070718b966a832b394f6b4e0a361d997ca475921748a15f69e0d6397fcce3"
+  },
+  "failure": "The expression evaluated to a falsy value:\n\n  assert.ok(/\"success\":true/.test(await(await submitted).text()))\n"
+}
