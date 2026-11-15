@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
 	appPageOwnsHeading,
 	normalizeAppPath,
@@ -22,9 +22,10 @@ describe("route metadata", () => {
 			false,
 		);
 	});
-	it("adopts analytics overview without adopting analytics descendants", () => {
+	it("adopts refreshed analytics without adopting unconverted descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics")).toBe(true);
-		expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(false);
+		expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);
+		expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/calendar")).toBe(false);
 	});
 	it("adopts only the portfolio pilot title, leaving other reports and descendants with shell titles", () => {

@@ -1,0 +1,22 @@
+{
+  "ticket": 1706,
+  "route": "/analytics/work-hours",
+  "branch": "feat/1706-work-hours",
+  "initialBase": "aeb40cb1d95d574724ee5a68d7402e6ee0757b43",
+  "testedIntegration": "f9769a74353ac6670c4a36401029faf805b2a899",
+  "integrationMerge": "e6e21f6c8e07fb11156f4382b31ca23561775def",
+  "unit": {"suites": 17, "tests": 137, "exitCode": 0, "routeTests": 11},
+  "postgres": {"suites": 3, "tests": 43, "exitCode": 0, "afterIntegration": true},
+  "types": {"fullWebapp": true, "workflowContracts": true, "smoke": true},
+  "biome": {"files": 7, "errors": 0, "warnings": 0, "exitCode": 0},
+  "doctor": {"files": 7, "findings": 0, "exitCode": 0, "numericScore": "disabled", "supplyChain": "disabled"},
+  "liveAfterIntegration": ["real CSV/XLSX parsed", "read pending/failure/retry", "admin/manager admission and employee/restricted refusal", "saved Dark/Large 18px", "phone comparison scroll and pinned identity", "Ctrl+B persistence and mobile Escape", "obsolete A-to-B-to-A export discarded", "custom-period export failure/retry and parsed CSV", "Berlin boundaries in Los Angeles browser", "261 daily values via keyboard disclosure", "soft Overview-to-Work-Hours navigation", "native React tree and inspect", "connected Next compilation/errors empty", "axe main: 30 passes, 0 violations, 0 incomplete"],
+  "liveBeforeIntegrationOnly": ["authority loss", "organization switch during held read", "empty manager scope", "missing employee global admission"],
+  "knownLimits": ["numeric daily variance absent from service; show explicit unavailable and authoritative flags", "Next instant-navigation diagnostic baseline/regression classification unresolved", "remote Tolgee sync and exhaustive long translations unavailable", "full production static generation/build not rerun", "no local no-employee panel live certification", "phone before/after PNG heights differ", "no physical device or true browser zoom", "no provider/SSO/billing-on matrix"],
+  "cleanup": {"nextPid": 82540, "listenerPid": 68072, "port": 62266, "verifiedProcessAncestry": true, "ownedBrowserAndSessionClosed": true, "fixtureOwnedContainersRemoved": 3},
+  "issueState": "OPEN",
+  "assignee": "KaiSoellch",
+  "push": false,
+  "childPR": false,
+  "deployment": false
+}

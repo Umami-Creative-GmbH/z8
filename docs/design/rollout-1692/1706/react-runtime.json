@@ -1,0 +1,17 @@
+{
+  "inspectSuccess": true,
+  "inspect": "Forget(WorkHours) #707\nkey: \"perf-small-21ab038faf7d\"\nhooks:\n  Translate: undefined (2 sub)\n  Shallow: undefined (1 sub)\n  OrganizationSettingsStore: undefined (2 sub)\n  [10] Ref: false\n  [11] State: {start: Sun Nov 01 2026 00:00:00 GMT+0100 (Mitteleuropäische Normalzeit), end: Mon Nov 30 2026 23:59:59 GMT+0100 (Mitteleuropäische Normalzeit), startDate: \"2026-11-01\", endDate: \"2026-11-30\", timezone: \"Europe/Berlin\"}\n  [12] Reducer: {data: {byEmployee: Array(8), distribution: Array(0), summ…}, requestKey: \"[1793487600000,1796079599999,\\\"Europe/Berlin\\\"]\", loading: false, refreshing: false, failed: false}\n  [13] Effect: WorkHours.useEffect() {}\n  [14] Ref: 3\n  [15] Callback: WorkHours.useCallback[runAnalyticsLoad]() {}\n  ViewRefresh: undefined (2 sub)\n  [17] Effect: WorkHours.useEffect() {}\nrendered by: Forget(WorkHoursPage) > ClientPageRoot",
+  "tree": [
+    "154 589 588 Forget(AnalyticsHeading)",
+    "188 706 705 Forget(WorkHoursPage)",
+    "189 707 706 Forget(WorkHours) key=\"perf-small-21ab038faf7d\"",
+    "191 709 708 Forget(WorkHoursControls)",
+    "192 710 709 Forget(DataTableToolbar)",
+    "195 715 714 Forget(ExportButton)",
+    "192 1415 1414 Forget(DailyWorkHoursCard)",
+    "192 1428 1414 Forget(VarianceTrendCard)",
+    "191 1441 708 Forget(EmployeeWorkHoursCard)",
+    "191 1596 708 Forget(WorkHoursDistributionCard)"
+  ],
+  "treeSuccess": true
+}
