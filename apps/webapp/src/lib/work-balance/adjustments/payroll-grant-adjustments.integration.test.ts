@@ -466,6 +466,47 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 		).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 
+	it("rechecks current approved membership and revocation for directory reads rather than trusting prior coverage", async () => {
+		expect(
+			await listBalanceAdjustmentGrantEmployees(fixture.db, {
+				organizationId,
+				actorUserId: fixture.ownerUserId,
+			}),
+		).toBeNull();
+		const reader = () =>
+			listBalanceAdjustmentGrantEmployees(fixture.db, {
+				organizationId,
+				actorUserId: specificHolder.userId,
+			});
+		expect((await reader())?.employees.map((row) => row.id)).toContain(leftDirect.employeeId);
+		try {
+			await fixture.pool.query(
+				"update member set status='pending' where organization_id=$1 and user_id=$2",
+				[organizationId, specificHolder.userId],
+			);
+			expect(await reader()).toBeNull();
+			await fixture.pool.query(
+				"update member set status='approved' where organization_id=$1 and user_id=$2",
+				[organizationId, specificHolder.userId],
+			);
+			expect((await reader())?.employees.map((row) => row.id)).toContain(leftDirect.employeeId);
+			await fixture.pool.query(
+				"update payroll_access_grant set is_active=false where organization_id=$1 and id=$2",
+				[organizationId, specificGrantId],
+			);
+			expect(await reader()).toBeNull();
+		} finally {
+			await fixture.pool.query(
+				"update member set status='approved' where organization_id=$1 and user_id=$2",
+				[organizationId, specificHolder.userId],
+			);
+			await fixture.pool.query(
+				"update payroll_access_grant set is_active=true where organization_id=$1 and id=$2",
+				[organizationId, specificGrantId],
+			);
+		}
+	});
+
 	it("lists the employees a grant covers for payouts, including those who have left, never the holder", async () => {
 		const specific = await listBalanceAdjustmentGrantEmployees(fixture.db, {
 			organizationId,

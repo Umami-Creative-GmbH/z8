@@ -1,0 +1,169 @@
+[
+  {
+    "name": "revoked-open-preview",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+        "text": "Fixture Person 4\nR043-1\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/188f07d4-0c94-4802-bcca-b3f5983561a0",
+        "text": "Fixture Person 5\nR043-2\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/2f4087a4-b9f5-4e33-9b3b-33002d5ae379",
+        "text": "Fixture Person 0\nR043-3\nFormer employee\nOpen employee balance"
+      }
+    ],
+    "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\nDownload template\nNothing was saved\nOnly organization owners and admins, and payroll staff for the employees their payroll access covers, can record or cancel balance adjustments.\n\n1 row is ready; 1 replaces an opening balance in effect.\n\nRow\tEmployee\tDay\tBalance\tReason\tStatus\n\n2\n\t\nFixture Person 4\nR043-1\n\t\nMar 31, 2026\n\t\n+4:00h\n\t\nRefused then retried\n\t\nReplaces the opening balance of +3:00h on Mar 31, 2026\nCancel\nSet 1 opening balance\nClose",
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "60ce2f622ce89dd9f06fc32c97b5865be7d2c1b1fc639bbf2d860b026eca16a3"
+    }
+  },
+  {
+    "name": "settled-B",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/065a28b1-9eee-405c-9416-dc45ddc91657",
+        "text": "Fixture Person 3\nB-R043\nOpen employee balance"
+      }
+    ],
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "d9376815968a4ee76fbf9ec6fe680e4cda9df1271ff909ecc6f842978b440b83"
+    }
+  },
+  {
+    "name": "settled-return-A",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+        "text": "Fixture Person 4\nR043-1\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/188f07d4-0c94-4802-bcca-b3f5983561a0",
+        "text": "Fixture Person 5\nR043-2\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/2f4087a4-b9f5-4e33-9b3b-33002d5ae379",
+        "text": "Fixture Person 0\nR043-3\nFormer employee\nOpen employee balance"
+      }
+    ],
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "4f9e85b45dbdd8c4175922ca13c4f136423ddd6838031a70cd62def38a814f10"
+    }
+  },
+  {
+    "name": "small-manager-denied",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Page not found"
+    ],
+    "records": [],
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "037161d3a657933f8a9914b545b90a4501ad547f12ba9350d3ca6142b7db8fac"
+    }
+  },
+  {
+    "name": "small-restricted-denied",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Page not found"
+    ],
+    "records": [],
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "8aec0e66fca9ff6e15c41dfa17a2fc1f17f5662d2bf0dae7c77dcca4b977a11d"
+    }
+  }
+]

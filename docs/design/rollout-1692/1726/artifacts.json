@@ -1,0 +1,209 @@
+{
+  "head": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+  "jsonFiles": 21,
+  "images": [
+    {
+      "path": "actions\\committed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "actions\\employee-readback.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "actions\\one-error-blocked.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "actions\\phone-drawer-closed.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "channels": 3
+    },
+    {
+      "path": "actions\\ready-two.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "actions\\replacement-preview.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "comparison\\after-desktop-light.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "comparison\\after-phone-dark-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "channels": 3
+    },
+    {
+      "path": "comparison\\after-phone-preview.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "channels": 3
+    },
+    {
+      "path": "comparison\\after-wide-dark-saved18.png",
+      "decodedWidth": 2560,
+      "decodedHeight": 1200,
+      "channels": 3
+    },
+    {
+      "path": "comparison\\before-desktop-light.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "comparison\\before-phone-dark-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "channels": 3
+    },
+    {
+      "path": "comparison\\before-phone-preview.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "channels": 3
+    },
+    {
+      "path": "comparison\\before-wide-dark-saved18.png",
+      "decodedWidth": 2560,
+      "decodedHeight": 1200,
+      "channels": 3
+    },
+    {
+      "path": "recovery\\empty-grant.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "recovery\\failed-preview-retained-file.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "recovery\\retried-preview.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "saved-ui-preferences.png",
+      "decodedWidth": 1264,
+      "decodedHeight": 625,
+      "channels": 3
+    },
+    {
+      "path": "scope\\failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "scope\\revoked-open-preview.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "scope\\settled-B.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "scope\\settled-return-A.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "scope\\small-manager-denied.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    },
+    {
+      "path": "scope\\small-restricted-denied.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "channels": 3
+    }
+  ],
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.tsx",
+      "sha256": "080cdb186c00c6c01d01d5659712f026639e4a4c03d71c3005ebcef18add877b",
+      "rawBlob": "f0a08fc79ed497392f388383b0b68d0b035305cf"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+      "sha256": "924205303947a744d5d80798302bd392e069bdb9699e6c52abad121ee759e174",
+      "rawBlob": "e1fc208d48ac8605cc0d396ea7f00f320783912f"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-table.tsx",
+      "sha256": "f37fcc6a5d0f01d11179b7fc66a5320eb0ab07934c5e7a60f1fac71472810714",
+      "rawBlob": "fd8aa669cf4c07ea5f815195c5b567ff237d20c7"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "109761a664873985d24e12465ae3d7094ad213df9ccbbf8418100cf981838c28",
+      "rawBlob": "65981ed793f9a1c17e6bcfc1e68f68e8f1e83d6c"
+    },
+    {
+      "path": "apps/webapp/src/lib/work-balance/adjustments/payroll-grant-adjustments.integration.test.ts",
+      "sha256": "e88010e00da7d29e6f640ef95e8bb8202cd1e2938d276c2c086c9ae17a8f2704",
+      "rawBlob": "a3875316a4faa11a2fa4f689f7123a7a288f2307"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/work-balances-view.tsx",
+      "sha256": "2410d806a36867a8289eda7e439466f184d563faca95ba676207b6cdc6dff99a",
+      "rawBlob": "fe2cb65eb21a2173e51422d8ffbdbc5f8b5cac23"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/coverage.ts",
+      "sha256": "2059589415f4ea05cf091d1a49626318ee27ac9615e5c1154638adf1d02fe031",
+      "rawBlob": "adb8a992e9bec2f85b441de242f65a488002775b"
+    },
+    {
+      "path": "apps/webapp/src/lib/payroll-access/adjustment-coverage.ts",
+      "sha256": "72b089ccffd089b3aceb69b19d1a690b48aa5448926a55c87eaff0622812b4a7",
+      "rawBlob": "7d4b85a5d1413299eac66c450e4a2da4e28d264f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/opening-balance-upload-actions.ts",
+      "sha256": "52f7d68fd69df105319b25a90320b41cb34152f410c903986484cde7f7b94cb8",
+      "rawBlob": "c31acf350e5adbdbc0d31a7f5ac383faf0201236"
+    },
+    {
+      "path": "apps/webapp/src/lib/work-balance/adjustments/opening-balance-upload.ts",
+      "sha256": "3a021fe25706f0892c6082b27aea7994d8c74047bbdd4b34e2bee8ea3a29f684",
+      "rawBlob": "4b9d22926a7e29db5e13b9c7b045bab97b63dbe3"
+    }
+  ],
+  "comparisonScope": "Before/after only four exact baseline consumer sources; new WorkBalancesView used only after. Infrastructure remains integration baseline. PNGs fully decoded via sharp; matched CSS dimensions checked.",
+  "knownCaptureQualifications": [
+    "Shared desktop sidebar clips left content in the matched directory captures; preserved as observed, not certified healthy.",
+    "Development Next/TanStack tooling overlays remain in images.",
+    "Scope capture top-level actor/org labels were initially constant; checks and actual records establish B-R043 and denied roles. See scope-context.json corrections.",
+    "Saved UI preference screenshot has decoded PNG dimensions; CLI viewport was not independently measured for that single image."
+  ]
+}

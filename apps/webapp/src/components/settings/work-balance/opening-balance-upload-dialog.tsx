@@ -1,14 +1,16 @@
 "use client";
 
 import { IconDownload, IconFileUpload, IconLoader2, IconUpload } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useId, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	commitOpeningBalanceUploadAction,
 	previewOpeningBalanceUploadAction,
 } from "@/app/[locale]/(app)/settings/employees/opening-balance-upload-actions";
+import { useOrganization } from "@/components/providers/organization-context-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +20,10 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
 import {
 	MAX_OPENING_BALANCE_UPLOAD_CHARACTERS,
 	openingBalanceCsvTemplate,
@@ -66,18 +69,37 @@ function downloadTemplate() {
  * employee list, payroll grant holders from the payroll Work balances page.
  */
 export function OpeningBalanceUploadDialog() {
+	const { userId, activeOrganizationId } = useOrganization();
+	if (!userId || !activeOrganizationId) return null;
+	return <ScopedOpeningBalanceUploadDialog key={JSON.stringify([userId, activeOrganizationId])} />;
+}
+
+function ScopedOpeningBalanceUploadDialog() {
 	const { t } = useTranslate();
-	const inputId = useId();
 	const queryClient = useQueryClient();
 	const actionError = useBalanceAdjustmentErrorMessage();
 	const { fileError } = useOpeningBalanceUploadMessages();
 	const [open, setOpen] = useState(false);
 	const [upload, setUpload] = useState<Upload | null>(null);
 	const [pending, setPending] = useState<"preview" | "commit" | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const busy = useRef(false);
+	const alive = useRef(true);
+	useEffect(() => {
+		alive.current = true;
+		return () => {
+			alive.current = false;
+		};
+	}, []);
+	const form = useForm({ defaultValues: { file: null as File | null }, onSubmit: handleCommit });
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (pending) return;
-		if (!nextOpen) setUpload(null);
+		if (busy.current) return;
+		if (!nextOpen) {
+			setUpload(null);
+			setError(null);
+			form.reset();
+		}
 		setOpen(nextOpen);
 	}
 
@@ -86,15 +108,16 @@ export function OpeningBalanceUploadDialog() {
 		csv: string,
 	): Promise<OpeningBalanceUploadOutcome | null> {
 		setPending(kind);
+		setError(null);
 		const action =
 			kind === "preview" ? previewOpeningBalanceUploadAction : commitOpeningBalanceUploadAction;
 		const result: BalanceAdjustmentActionResult<OpeningBalanceUploadOutcome> | null = await action({
 			csv,
 		}).catch(() => null);
-		setPending(null);
+		if (!alive.current) return null;
 		if (!result?.success) {
 			const failure = result ? balanceAdjustmentFailureOf(result) : null;
-			toast.error(
+			setError(
 				actionError(failure?.code ?? null, { closedMonth: failure?.details.closedMonth ?? null }),
 			);
 			return null;
@@ -102,43 +125,61 @@ export function OpeningBalanceUploadDialog() {
 		return result.data;
 	}
 
-	async function handleFile(file: File | undefined) {
-		if (!file) return;
-		const csv = await file.text().catch(() => null);
-		if (csv === null) {
-			setUpload({ csv: "", outcome: { status: "unreadable" }, refused: false });
-			return;
-		}
-		if (csv.length > MAX_OPENING_BALANCE_UPLOAD_CHARACTERS) {
-			setUpload({
-				csv,
-				outcome: { status: "invalid_file", code: "file_too_large" },
-				refused: false,
-			});
-			return;
-		}
-		const outcome = await run("preview", csv);
-		setUpload(outcome ? { csv, outcome, refused: false } : null);
+	function finishPending() {
+		if (!alive.current) return;
+		busy.current = false;
+		setPending(null);
 	}
 
-	async function handleCommit() {
-		if (!upload) return;
-		const outcome = await run("commit", upload.csv);
-		if (!outcome) return;
-		if (outcome.status === "committed") {
-			toast.success(
-				t(
-					"settings.employees.workBalance.upload.committed",
-					"{count, plural, one {# opening balance set} other {# opening balances set}}",
-					{ count: outcome.created },
-				),
-			);
-			await queryClient.invalidateQueries({ queryKey: EMPLOYEE_WORK_BALANCE_QUERY_KEY });
-			setUpload(null);
-			setOpen(false);
-			return;
-		}
-		setUpload({ csv: upload.csv, outcome, refused: true });
+	function handleFile(file: File | undefined) {
+		if (!file || busy.current) return;
+		busy.current = true;
+		setPending("preview");
+		setError(null);
+		setUpload(null);
+		form.setFieldValue("file", file);
+		return (async () => {
+			const csv = await file.text().catch(() => null);
+			if (!alive.current) return;
+			if (csv === null) {
+				setUpload({ csv: "", outcome: { status: "unreadable" }, refused: false });
+				return;
+			}
+			if (csv.length > MAX_OPENING_BALANCE_UPLOAD_CHARACTERS) {
+				setUpload({
+					csv,
+					outcome: { status: "invalid_file", code: "file_too_large" },
+					refused: false,
+				});
+				return;
+			}
+			const outcome = await run("preview", csv);
+			if (!alive.current) return;
+			setUpload(outcome ? { csv, outcome, refused: false } : null);
+		})().finally(finishPending);
+	}
+
+	function handleCommit() {
+		if (upload?.outcome.status !== "ready" || busy.current) return;
+		busy.current = true;
+		return (async () => {
+			const outcome = await run("commit", upload.csv);
+			if (!outcome) return;
+			if (outcome.status === "committed") {
+				toast.success(
+					t(
+						"settings.employees.workBalance.upload.committed",
+						"{count, plural, one {# opening balance set} other {# opening balances set}}",
+						{ count: outcome.created },
+					),
+				);
+				await queryClient.invalidateQueries({ queryKey: EMPLOYEE_WORK_BALANCE_QUERY_KEY });
+				setUpload(null);
+				setOpen(false);
+				return;
+			}
+			setUpload({ csv: upload.csv, outcome, refused: true });
+		})().finally(finishPending);
 	}
 
 	const outcome = upload?.outcome;
@@ -147,13 +188,33 @@ export function OpeningBalanceUploadDialog() {
 	const replacing = rows.filter((row) => row.replaces && row.errors.length === 0).length;
 
 	return (
-		<>
-			<Button type="button" variant="outline" onClick={() => setOpen(true)}>
-				<IconUpload aria-hidden="true" className="size-4" />
-				{t("settings.employees.workBalance.upload.open", "Upload opening balances")}
-			</Button>
-			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogContent className="sm:max-w-5xl">
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			<DialogTrigger asChild>
+				<Button type="button" variant="outline">
+					<IconUpload aria-hidden="true" className="size-4" />
+					{t("settings.employees.workBalance.upload.open", "Upload opening balances")}
+				</Button>
+			</DialogTrigger>
+			<DialogContent
+				className="overscroll-contain sm:max-w-5xl"
+				showCloseButton={!pending}
+				onEscapeKeyDown={(event) => {
+					if (busy.current) event.preventDefault();
+				}}
+				onInteractOutside={(event) => {
+					if (busy.current) event.preventDefault();
+				}}
+			>
+				<form
+					className="grid min-w-0 gap-4"
+					aria-busy={pending !== null}
+					onSubmit={async (event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						if (busy.current) return;
+						await form.handleSubmit();
+					}}
+				>
 					<DialogHeader>
 						<DialogTitle>
 							{t("settings.employees.workBalance.upload.title", "Upload opening balances")}
@@ -167,31 +228,59 @@ export function OpeningBalanceUploadDialog() {
 					</DialogHeader>
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-						<div className="grid flex-1 gap-2">
-							<Label htmlFor={inputId}>
-								{t("settings.employees.workBalance.upload.file", "CSV file")}
-							</Label>
-							<Input
-								id={inputId}
-								type="file"
-								accept=".csv,text/csv"
-								disabled={pending !== null}
-								onChange={(event) => {
-									const file = event.target.files?.[0];
-									event.target.value = "";
-									void handleFile(file);
-								}}
-							/>
-						</div>
+						<form.Field name="file">
+							{(field) => (
+								<TFormItem className="min-w-0 flex-1">
+									<TFormLabel>
+										{t("settings.employees.workBalance.upload.file", "CSV file")}
+									</TFormLabel>
+									<TFormControl>
+										<Input
+											type="file"
+											accept=".csv,text/csv"
+											name="file"
+											onBlur={field.handleBlur}
+											disabled={pending !== null}
+											onChange={(event) => {
+												const file = event.target.files?.[0];
+												event.target.value = "";
+												void handleFile(file);
+											}}
+										/>
+									</TFormControl>
+								</TFormItem>
+							)}
+						</form.Field>
 						<Button type="button" variant="ghost" onClick={downloadTemplate}>
 							<IconDownload aria-hidden="true" className="size-4" />
 							{t("settings.employees.workBalance.upload.template", "Download template")}
 						</Button>
 					</div>
+					{error ? (
+						<Alert variant="destructive">
+							<AlertTitle>
+								{t("settings.employees.workBalance.upload.refusedTitle", "Nothing was saved")}
+							</AlertTitle>
+							<AlertDescription>{error}</AlertDescription>
+							{!upload ? (
+								<Button
+									type="button"
+									variant="outline"
+									disabled={pending !== null}
+									onClick={() => void handleFile(form.getFieldValue("file") ?? undefined)}
+								>
+									{t("common.retry", "Retry")}
+								</Button>
+							) : null}
+						</Alert>
+					) : null}
 
 					{pending === "preview" ? (
 						<p className="flex items-center gap-2 text-muted-foreground text-sm" role="status">
-							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+							<IconLoader2
+								aria-hidden="true"
+								className="size-4 animate-spin motion-reduce:animate-none"
+							/>
 							{t("settings.employees.workBalance.upload.checking", "Checking the file…")}
 						</p>
 					) : null}
@@ -251,11 +340,7 @@ export function OpeningBalanceUploadDialog() {
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button
-							type="button"
-							disabled={outcome?.status !== "ready" || pending !== null}
-							onClick={() => void handleCommit()}
-						>
+						<Button type="submit" disabled={outcome?.status !== "ready" || pending !== null}>
 							{pending === "commit" ? (
 								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 							) : (
@@ -268,8 +353,8 @@ export function OpeningBalanceUploadDialog() {
 							)}
 						</Button>
 					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</>
+				</form>
+			</DialogContent>
+		</Dialog>
 	);
 }
