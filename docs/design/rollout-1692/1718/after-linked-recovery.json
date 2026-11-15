@@ -1,0 +1,64 @@
+{
+  "identity": {
+    "head": "3d5d0bc242b38eb5c14d3c736b2d0ba65b9da111",
+    "branch": "fix/1718-equipment-panel",
+    "override": null,
+    "hashes": {
+      "apps/webapp/src/components/equipment/equipment-assignment-detail.tsx": "4554940be313de4b1eaeff09e0f19015eb7462c38638746b9e182beb2ec2d587",
+      "apps/webapp/src/components/equipment/equipment-loading.tsx": "4500b564074e4a95a00870581a19e1c7e3e225d7195f5f37544ef435b74f34c6",
+      "apps/webapp/src/lib/navigation/route-metadata.ts": "236eccf9c74c8ca3acac5eaae867d844ce0d55514702906133a4ad7ededb2da7",
+      "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx": "b6e15bade1407edb1266f6f97da0bac1a350d438274d3131782ac7d108815b0d"
+    }
+  },
+  "observation": {
+    "scope": "synthetic small-admin / Performance small / EQ-HELD",
+    "url": "/en/equipment/assignments/c8b19ffa-2655-4738-bde7-f991c69870ef?back=%2Fequipment%3Foverdue%3Dtrue",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "dark": false,
+    "font": "16px",
+    "sidebar": null,
+    "headings": [
+      "Fixture shirts"
+    ],
+    "record": "Back to equipment\nFixture Person 2\nPhysically received\nFixture shirts\n\nFixture shirts · Quantity\n\nAs of Nov 15, 2026 (Europe/Berlin)\n\nIssued quantity\n3\nPhysically received quantity\n3\nOutstanding quantity\n0\nAgreed return terms\nReturn required\nEffective return deadline\nNo deadline\nLatest recorded condition\nUnknown\nLost quantity\n1\nReturn-waived quantity\n0\nRecovered quantity\n1\n\nRecovered quantities are included in physical receipts. Lost and waived totals reflect effective decisions; original decisions remain in amendment history.\n\nCorrect a record\nHandover history\n\nPhysical recovery\n\nNov 15, 2026\n\nQuantity: 1 · Unknown\n\nLinked decision: R020 remaining shirt missing after move\n\nRecorded by Person 0 · Nov 15, 2026, 8:26 AM Europe/Berlin\n\nLost · Quantity: 1\n\nNov 15, 2026\n\nR020 remaining shirt missing after move\n\nRecovered quantity: 1\n\nRecorded by Person 0 · Nov 15, 2026, 8:23 AM Europe/Berlin\n\nPhysical receipt\n\nOct 10, 2026\n\nQuantity: 2 · Worn\n\nRecorded by Removed account · Nov 15, 2026, 8:09 AM Europe/Berlin\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 3 · Good\n\nRecorded by Removed account · Nov 15, 2026, 8:09 AM Europe/Berlin\n\nRecord retention\nRetained\n\nClosed personal history follows the organization’s configured retention policy.\n\nLatest activity\nNov 15, 2026, 8:26 AM\nEligible for cleanup from\nNov 16, 2028, 12:00 AM\nCase hold\nNone\n\nEurope/Berlin\n\nPlace case hold",
+    "holder": {
+      "x": 58,
+      "y": -430.5,
+      "width": 101.8828125,
+      "height": 20,
+      "bottom": -410.5,
+      "right": 159.8828125
+    },
+    "receipt": null,
+    "history": {
+      "x": 41,
+      "y": 294.5,
+      "width": 125.7890625,
+      "height": 16,
+      "bottom": 310.5,
+      "right": 166.7890625
+    },
+    "buttons": [
+      {
+        "text": "",
+        "label": "Reload equipment",
+        "disabled": false
+      },
+      {
+        "text": "Correct a record",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Place case hold",
+        "label": null,
+        "disabled": false
+      }
+    ],
+    "alerts": []
+  }
+}

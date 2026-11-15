@@ -1,0 +1,32 @@
+[
+  {
+    "type": "Fixture laptops",
+    "identifier": "EQ-HELD",
+    "quantity": 1,
+    "received_quantity": 1,
+    "lost_quantity": 0,
+    "waived_quantity": 0,
+    "revision": 5,
+    "status": "unavailable",
+    "in_custody": false,
+    "handovers": 2,
+    "amendments": 1,
+    "holds_placed": 1,
+    "holds_released": 1
+  },
+  {
+    "type": "Fixture shirts",
+    "identifier": null,
+    "quantity": 3,
+    "received_quantity": 3,
+    "lost_quantity": 1,
+    "waived_quantity": 0,
+    "revision": 4,
+    "status": null,
+    "in_custody": null,
+    "handovers": 3,
+    "amendments": 0,
+    "holds_placed": 0,
+    "holds_released": 0
+  }
+]
