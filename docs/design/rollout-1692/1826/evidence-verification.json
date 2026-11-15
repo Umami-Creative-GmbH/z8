@@ -1,0 +1,107 @@
+{
+  "verifiedHead": "591da6b1f9d8f6b58f82bf11dd6221fce70a0c9d",
+  "localAI": "d234402863343a306a87d6faed7d195a76a6eeec",
+  "localAIAncestor": true,
+  "sourceFilesMatchFinalAfterCaptures": true,
+  "domainAuthPolicyAndGeneratedCatalogDiff": [],
+  "images": [
+    {
+      "file": "after-desktop-light.png",
+      "width": 1600,
+      "height": 1642,
+      "fullyDecoded": true,
+      "sha256": "e27dbe45e519f86aaf0632c3dee22f77290501f8e0604cb4fef5ee28068e85b1"
+    },
+    {
+      "file": "after-phone-dark-large.png",
+      "width": 390,
+      "height": 2149,
+      "fullyDecoded": true,
+      "sha256": "6b62d696f13937ca6b57a405a6bfaba376192e4bc0d1c58873e1c2b5900bd9ce"
+    },
+    {
+      "file": "after-phone-light.png",
+      "width": 390,
+      "height": 1822,
+      "fullyDecoded": true,
+      "sha256": "e38baf56b8d017ebbd8015acc4106f8245830c9cfe3ddb1b36f35be88a5f7c97"
+    },
+    {
+      "file": "after-wide-dark-large.png",
+      "width": 2400,
+      "height": 1845,
+      "fullyDecoded": true,
+      "sha256": "74ffa88b80e5cff4700a33088f1d1d27f0ee926b6115a221e5ff33d90bb58fbd"
+    },
+    {
+      "file": "before-desktop-light.png",
+      "width": 1600,
+      "height": 1704,
+      "fullyDecoded": true,
+      "sha256": "0393323a20b135795d9a61cc1e46aa860e03e070db33c5d14bf40ec5017957c1"
+    },
+    {
+      "file": "before-phone-dark-large.png",
+      "width": 390,
+      "height": 2425,
+      "fullyDecoded": true,
+      "sha256": "0579fe124f9b2d55ceb4146ae4c5ff37655dedccb35d928ab34de764fba31c83"
+    },
+    {
+      "file": "before-phone-light.png",
+      "width": 390,
+      "height": 2040,
+      "fullyDecoded": true,
+      "sha256": "0a91db5d581523cf8b68bf8b21eb51e13fbabefbc3fea60a27e4ed60357aab3a"
+    },
+    {
+      "file": "before-wide-dark-large.png",
+      "width": 2400,
+      "height": 1916,
+      "fullyDecoded": true,
+      "sha256": "8997dc7fedb6d23dbc29ca4d74eba60b05dabc5fa1727ff776e1592ae0eee946"
+    },
+    {
+      "file": "state-enrolled-readback.png",
+      "width": 1600,
+      "height": 1642,
+      "fullyDecoded": true,
+      "sha256": "b4514e78305872c74f4405ab8c0a4ced460b8603cc13974e09793ab0cc411ca9"
+    },
+    {
+      "file": "state-grace-window.png",
+      "width": 1600,
+      "height": 1642,
+      "fullyDecoded": true,
+      "sha256": "dce91804a2cf43688e7db8ef66114d9ca787d156bed386ed4d9e7c23497bece9"
+    },
+    {
+      "file": "state-last-factor-revoked.png",
+      "width": 1600,
+      "height": 1642,
+      "fullyDecoded": true,
+      "sha256": "5f15e206ffc3ef810b8e384d04d09f527d5161eedf624b695ce8535b94cfeb8f"
+    },
+    {
+      "file": "state-recovery-only.png",
+      "width": 1600,
+      "height": 2052,
+      "fullyDecoded": true,
+      "sha256": "49e1add6c3ed1ae7d86914f9b6d574527f3d0e52683d7c77efc0ce3de0b838c1"
+    },
+    {
+      "file": "state-verification-pending.png",
+      "width": 1600,
+      "height": 1642,
+      "fullyDecoded": true,
+      "sha256": "22cf5bcc91284db0360c5085fbd0bb155559e0227155aa54656f0e6e4f07f6fe"
+    },
+    {
+      "file": "state-verification-refused.png",
+      "width": 1600,
+      "height": 1682,
+      "fullyDecoded": true,
+      "sha256": "4fbbcca5636da9b27003b1f836e15b127b7c74fc551f496f156407708f049c51"
+    }
+  ]
+}
