@@ -1,7 +1,15 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
@@ -83,6 +91,27 @@ describe("PersonalDay", () => {
 			isOffline: false,
 		});
 		vi.clearAllMocks();
+	});
+	it("hydrates when the shared clock resolves before the streamed personal day arrives", async () => {
+		state.clock.isPending = true;
+		const container = document.createElement("div");
+		container.innerHTML = renderToString(<PersonalDay timeKpis={null} />);
+		document.body.append(container);
+		state.clock.isPending = false;
+		const errors: unknown[] = [];
+		let root: ReturnType<typeof hydrateRoot> | undefined;
+		try {
+			await act(async () => {
+				root = hydrateRoot(container, <PersonalDay timeKpis={null} />, {
+					onRecoverableError: (error) => errors.push(error),
+				});
+			});
+			expect(container.textContent).toContain("Not clocked in");
+			expect(errors).toEqual([]);
+		} finally {
+			await act(async () => root?.unmount());
+			container.remove();
+		}
 	});
 	it("keeps unknown totals distinct from zero and exposes the real time-tracking destination", () => {
 		render(<PersonalDay timeKpis={null} />);

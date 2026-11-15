@@ -1,0 +1,13 @@
+{
+  "scopeMismatch": {
+    "status": 409,
+    "body": {
+      "error": "Dashboard context changed. Refresh to continue."
+    }
+  },
+  "heldRealMutation": true,
+  "authorityWithdrawnBeforeRelease": true,
+  "responseShowsRefusal": true,
+  "preferenceUnchanged": true,
+  "visibleFailure": "Toggle theme\nFont size\nEnglish\n\nz8\n\nLogin to your account\nEmail\nPassword\nLogin\nForgot your password?\nOr continue with\nLogin with Passkey\nDon't have an account? Sign up\nVersion 6e0efe8\nTerms of Service\n·\nPrivacy Policy\n·\nImprint\n·\nT&Cs\n·\nTrust Center\n·\nOpen Source Licenses"
+}
