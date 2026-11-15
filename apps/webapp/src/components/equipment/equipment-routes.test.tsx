@@ -191,6 +191,9 @@ describe("assignment page", () => {
 
 	it("shows a load failure without pretending the assignment is missing", async () => {
 		api.assignment.mockResolvedValue({ success: false, code: "DatabaseError" });
-		expect(await content(page())).toContain("Equipment could not be loaded.");
+		const html = await content(page());
+		expect(html).toContain("Equipment could not be loaded.");
+		expect(html).toContain('aria-label="Reload equipment"');
+		expect(html.match(/<h1\b/g)).toHaveLength(1);
 	});
 });

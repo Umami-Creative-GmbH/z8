@@ -1,0 +1,21 @@
+{
+  "identity": {
+    "head": "5f54631fd969e79a2a8655a060b0ff747daf2d28",
+    "branch": "fix/1718-equipment-panel",
+    "override": null,
+    "hashes": {
+      "apps/webapp/src/components/equipment/equipment-assignment-detail.tsx": "4554940be313de4b1eaeff09e0f19015eb7462c38638746b9e182beb2ec2d587",
+      "apps/webapp/src/components/equipment/equipment-loading.tsx": "4500b564074e4a95a00870581a19e1c7e3e225d7195f5f37544ef435b74f34c6",
+      "apps/webapp/src/lib/navigation/route-metadata.ts": "6fefe7e2366b8820027dbc1e8853bfff925f281fc633edce0cb6083ae60464b6",
+      "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx": "b6e15bade1407edb1266f6f97da0bac1a350d438274d3131782ac7d108815b0d"
+    }
+  },
+  "observation": {
+    "url": "/en/equipment/assignments/1632e9f1-9b63-421e-bb6e-0b0f2fc1520a",
+    "headings": [
+      "Page not found"
+    ],
+    "text": "Toggle Sidebar\n\nEquipment\n\nMore actions\n404\nPage not found\nThe page may have moved, the link may be outdated, or the address may be incorrect.\nGo to Dashboard\nSettings\nBack",
+    "dialogs": 0
+  }
+}

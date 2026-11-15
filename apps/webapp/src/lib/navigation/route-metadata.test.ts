@@ -6,9 +6,16 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
-	it("keeps equipment detail and settings heading adoption independent", () => {
+	it("adopts equipment overview and exact assignment headings, keeping other descendants independent", () => {
 		expect(appPageOwnsHeading("/de/equipment")).toBe(true);
-		expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(false);
+		expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);
+		expect(
+			appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),
+		).toBe(true);
+		expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);
+		expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(
+			false,
+		);
 		expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);
 	});

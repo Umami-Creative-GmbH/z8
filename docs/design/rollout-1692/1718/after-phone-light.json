@@ -1,0 +1,86 @@
+{
+  "identity": {
+    "head": "3d5d0bc242b38eb5c14d3c736b2d0ba65b9da111",
+    "branch": "fix/1718-equipment-panel",
+    "override": null,
+    "hashes": {
+      "apps/webapp/src/components/equipment/equipment-assignment-detail.tsx": "4554940be313de4b1eaeff09e0f19015eb7462c38638746b9e182beb2ec2d587",
+      "apps/webapp/src/components/equipment/equipment-loading.tsx": "4500b564074e4a95a00870581a19e1c7e3e225d7195f5f37544ef435b74f34c6",
+      "apps/webapp/src/lib/navigation/route-metadata.ts": "236eccf9c74c8ca3acac5eaae867d844ce0d55514702906133a4ad7ededb2da7",
+      "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx": "b6e15bade1407edb1266f6f97da0bac1a350d438274d3131782ac7d108815b0d"
+    }
+  },
+  "observation": {
+    "scope": "synthetic small-admin / Performance small / EQ-HELD",
+    "url": "/en/equipment/assignments/1632e9f1-9b63-421e-bb6e-0b0f2fc1520a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "dark": false,
+    "font": "16px",
+    "sidebar": null,
+    "headings": [
+      "EQ-HELD"
+    ],
+    "record": "Back to equipment\nFixture Person 2\nOverdue\nEQ-HELD\n\nFixture laptops · Serial SERIAL-EQ-HELD\n\nAs of Nov 15, 2026 (Europe/Berlin)\n\nIssued quantity\n1\nPhysically received quantity\n0\nOutstanding quantity\n1\nAgreed return terms\nReturn required\nEffective return deadline\nNov 1, 2026\n14 days overdue\nExplicit return deadline\nNov 1, 2026\nLatest recorded condition\nGood\nRecord receipt\nClose return\nTransfer\nCorrect a record\nHandover history\n\nReturn deadline passed\n\nNov 1, 2026\nThe return is outstanding after its effective deadline.\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 1 · Good\n\nSynthetic baseline holding\n\nRecorded by Removed account · Nov 15, 2026, 8:09 AM Europe/Berlin\n\nRecord retention\nOutstanding\n\nProtected while a required return remains outstanding.\n\nLatest activity\nNov 15, 2026, 8:09 AM\nCase hold\nNone\n\nEurope/Berlin\n\nPlace case hold",
+    "holder": {
+      "x": 58,
+      "y": 143,
+      "width": 101.8828125,
+      "height": 20,
+      "bottom": 163,
+      "right": 159.8828125
+    },
+    "receipt": {
+      "x": 16,
+      "y": 611,
+      "width": 139.7421875,
+      "height": 36,
+      "bottom": 647,
+      "right": 155.7421875
+    },
+    "history": {
+      "x": 41,
+      "y": 740,
+      "width": 125.7890625,
+      "height": 16,
+      "bottom": 756,
+      "right": 166.7890625
+    },
+    "buttons": [
+      {
+        "text": "",
+        "label": "Reload equipment",
+        "disabled": false
+      },
+      {
+        "text": "Record receipt",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Close return",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Transfer",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Correct a record",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Place case hold",
+        "label": null,
+        "disabled": false
+      }
+    ],
+    "alerts": []
+  }
+}

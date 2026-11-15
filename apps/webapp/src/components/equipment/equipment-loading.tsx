@@ -1,5 +1,7 @@
 "use client";
+import { useTranslate } from "@tolgee/react";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EquipmentOverviewHeader } from "./equipment-overview-header";
 
@@ -23,6 +25,7 @@ export function EquipmentLoading({
 }: {
 	variant: "overview" | "detail" | "employee" | "personal";
 }) {
+	const { t } = useTranslate();
 	return (
 		<LoadingRegion
 			label={{
@@ -39,6 +42,11 @@ export function EquipmentLoading({
 			) : null}
 			{variant === "overview" ? (
 				<EquipmentOverviewHeader />
+			) : variant === "detail" ? (
+				<PageHeader
+					className="px-4 lg:px-6"
+					title={t("settings.equipment.title", "Equipment")}
+				/>
 			) : (
 				<HeaderSkeleton />
 			)}
