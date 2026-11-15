@@ -29,10 +29,11 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - R009 #1707 (legacy approvals): integrated and verified at `6fa8147fae492939056a76e83e327e520d921ae1`; both queues, decision owners and refusal drafts remain. See [fresh merger checks and retained acceptance limits](1707.md).
 - R010 #1708 (deputy decision history): integrated and verified at `3f86b1d7e17025e89f314638a042aa1eed378ed1`; retained history/rights and real local data-refetch recovery. See [fresh merged checks and shared-boundary finding](1708.md).
 - R011 #1709 (Unified Inbox): integrated and verified at `97ecd83ca05ad1bab75fee84beed57f23e74c007`; authorized submitted reasons and fresh-detail decision rights preserved. See [fresh combined verification and exact limits](1709.md).
-- R012 #1710 (canonical approval arrival/review): implementing from verified #1709 ancestry while its GitHub issue stays open.
+- R015 #1713 (selected-employee calendar) and R017 #1715 (driving licence): claimed for isolated implementation from verified Calendar/H1 ancestry; issues stay open.
 - R016 #1714 (compliance): integrated and verified at `0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10`; risk-first records, truthful coverage and authorized streaming. See [combined checks and exact quality/runtime limits](1714.md).
-- R014 #1712 (calendar): implementation committed, awaiting fresh merger review; no verified integration SHA yet.
-- Frontier counts: **19 integrated, one awaiting integration, one implementing, 136 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
+- R014 #1712 (calendar): integrated and verified at `cca1977df820ef288a7910a4f9d44b464d289b3b`; selected scope and original action owners remain. See [fresh checks and explicit runtime limits](1712.md).
+- R012 #1710 (canonical approval arrival/review): implementation committed, awaiting fresh merger review; no verified integration SHA yet.
+- Frontier counts: **20 integrated, one awaiting integration, two implementing, 134 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
 - R002 #1701 (absences): integrated and verified at `a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc`; organization/year/zone, records and existing absence action owners preserved. See [capabilities and remaining checks](1701.md).
 - R005 #1703 (overtime burn-down): integrated and verified at `2bc30e88f63d9db3d547353f49077db0c0ee7805`; root corrected both Unassigned manager queries and active analytics navigation. See [capabilities, corrections and remaining checks](1703.md).
 - R001 #1700 (dashboard conformance): integrated and verified at `8eed0aa58bcae1dd19be7e6d7d78303208a3ddde`; approved composition/preferences preserved, no-organization heading and streamed clock hydration corrected. See [capabilities and remaining checks](1700.md).
@@ -43,6 +44,8 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - Remaining pages: select from eligible prerequisites in `integration.json`. Foundation readiness is verified; route-specific shared-output dependencies still apply.
 
 ## Verification
+
+- #1712 merge `cca1977df`: **50 unique suites / 438 fresh tests**, full combined types, twelve-file Doctor zero and Biome zero errors/seven inherited warnings. Calendar/Compliance opt-ins, all678 prior rollout paths/six recovery files and19 verified ancestors preserved; exact43-path scope and artifact checks passed. Runtime40 assertions remain inherited; manual range demonstrates form opening, not a submitted entry. Drawer Escape/Profile/scope/revocation/build/catalog/device limits remain in [the report](1712.md). Verified ancestry releases1713 while the issue stays open.
 
 - #1714 merge `0ca17e611`: **153 unique suites / 1,518 fresh tests** (19/130 +143/1490 less9 files/102 cases), full combined types and ten-file Doctor zero. Incoming CRLF-aware Biome passes; an extra forced100-column webapp config reports9 formatting-only files, explicitly retained. Preserved all645 prior rollout/18 root correction paths and recorded ancestors;23 PNGs/6 JSON/3 scripts/28 links pass. Runtime35/23/Next is inherited; healthy live audit and native/catalog/build/provider/device/zoom/transition limits stay explicit. Translated coverage is overview/status/empty/footer; partial/recovery is English. [Report](1714.md).
 

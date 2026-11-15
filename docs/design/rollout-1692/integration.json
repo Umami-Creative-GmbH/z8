@@ -205,8 +205,9 @@
                         "blockedBy":  [
                                           1709
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "1ae48924f54510c35c5fd9be0bdb61e120da6baf"
                     },
                     {
                         "id":  "R013",
@@ -227,9 +228,11 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "ebf4c0ce8ca59fda5934b335824628f22dd5b0e6"
+                        "status":  "integrated",
+                        "verifiedCommit":  "cca1977df820ef288a7910a4f9d44b464d289b3b",
+                        "implementationCommit":  "ebf4c0ce8ca59fda5934b335824628f22dd5b0e6",
+                        "evidence":  "docs/design/rollout-1692/1712.md",
+                        "integrationVerification":  "Fresh50 unique suites/438 tests,full combined types,12-file Doctor zero/Biome zero errors+7 inherited warnings. Calendar/Compliance conflict additive;43paths,42incoming exact plus prior metadata+Calendar. All678 prior rollout/six recovery files/19verified ancestors preserved;10JSON/17PNG signatures/8targets/3scripts/whitespace pass. Runtime28+12 checks inherited; manual form opened not submitted; consequential-action/scope/revocation/large-text drawer/Profile/build/catalog/provider/device limits explicit."
                     },
                     {
                         "id":  "R015",
@@ -238,7 +241,7 @@
                         "blockedBy":  [
                                           1712
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -261,7 +264,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
