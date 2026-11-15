@@ -388,8 +388,12 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+                        "integrationCommit":  "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+                        "evidenceCorrectionCommit":  "e1dddc1dcaff1216f2ef5bf8d16ad25a46191ed6",
+                        "evidence":  "docs/design/rollout-1692/1824.md",
+                        "integrationVerification":  "Independent native merge ebfb7d8e and evidence-only qualification verified at fe2bed7c. Fresh129 unique suites/1144 tests (34/264+97/896 less2/16 by full-name multisets),full combined types,17-file Doctor zero and strict lint/import pass. Formatting remains unpassed:17raw,15CRLF baseline-matching file list,10explicit-webapp files. All29 prior verified ancestors,1256rollout/11462unaffected paths and shared join/session bytes preserved. Organization name is scoped optional display data; queue summary and unresolved counts read existing owners only; frozen capture/offset/sealing/status-before-replay/per-employee/revocation owner bytes preserved.35PNGfullydecoded,13JSON/10scripts/56links and35final+combined/latest pins pass. Early compiler error/five unmatched dirty pins historical only. Raw terminal whitespace230 (215trailing+15EOF) and13JSON missingLF preserved; whole-change whitespace not passed. PG16/331 and2/39 overlap and predate finaljoin; browser/Next inherited, failed discarded unsent synthetic command retained as harness failure. Accepted durable queue settled; native tree/hardware/zoom/build/catalog/provider/wider limits remain unpassed. All original raw artifacts byte-identical; app source unchanged by root qualification."
                     },
                     {
                         "id":  "R026",
@@ -418,7 +422,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
