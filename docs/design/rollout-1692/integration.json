@@ -248,9 +248,11 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "c58300c73830f6d3f74a877667ce458ca7a49206"
+                        "status":  "integrated",
+                        "verifiedCommit":  "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+                        "implementationCommit":  "c58300c73830f6d3f74a877667ce458ca7a49206",
+                        "evidence":  "docs/design/rollout-1692/1714.md",
+                        "integrationVerification":  "Fresh153 unique suites/1518 tests (19/130+143/1490 less9files/102cases),full combined types and10-file Doctor zero. Incoming CRLF-aware default Biome passes; extra forced100-column config reports9 formatting-only files including prior shared metadata, explicitly retained. Exact tree/parents,10844 unaffected paths/645 prior rollout/18 root recovery paths/18 verified ancestors,23PNG/6JSON/3scripts/28links preserved. Runtime35assertions/23captures/Next inherited; all-clear assembled-only, translated partial/recovery not certified; native/catalog/build/provider/device/zoom/transition limits retained."
                     },
                     {
                         "id":  "R017",
