@@ -1,0 +1,91 @@
+{
+  "phase": "after",
+  "fixture": "new disposable synthetic small-admin / Performance small",
+  "source": {
+    "head": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+    "localAI": "11671b30d78f9bc12be6f991ed4638218cc75777",
+    "files": {
+      "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+      "apps/webapp/src/app/[locale]/onboarding/profile/actions.ts": "6c5fba4af8af1f3d850edeaf0f03519c939ec6dafb160f5b3b58dcb40800bda1",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+      "apps/webapp/src/components/onboarding/progress-indicator.tsx": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+      "apps/webapp/src/lib/validations/onboarding.ts": "e02f2606635fd058415c5cfe108d044e16342956bcf40ecf2f11e8f7d5f932e3"
+    }
+  },
+  "captures": [
+    {
+      "name": "desktop",
+      "width": 1600,
+      "height": 1000,
+      "dark": false,
+      "font": 16,
+      "viewport": 1600,
+      "body": 1600,
+      "h1": 1
+    },
+    {
+      "name": "wide",
+      "width": 2400,
+      "height": 1200,
+      "dark": false,
+      "font": 16,
+      "viewport": 2400,
+      "body": 2400,
+      "h1": 1
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "dark": false,
+      "font": 16,
+      "viewport": 390,
+      "body": 390,
+      "h1": 1
+    },
+    {
+      "name": "phone-dark-large",
+      "width": 390,
+      "height": 844,
+      "dark": true,
+      "font": 18,
+      "viewport": 390,
+      "body": 390,
+      "h1": 1
+    },
+    {
+      "name": "desktop-dark-large",
+      "width": 1600,
+      "height": 1000,
+      "dark": true,
+      "font": 18,
+      "viewport": 1600,
+      "body": 1600,
+      "h1": 1
+    }
+  ],
+  "errors": [],
+  "backgroundSha256": "5861cf0ea2ab9bd1841997fe648028bd404bc7ce68dc2d13d778ea9d92ba4b44",
+  "calendar": {
+    "left": 43,
+    "right": 370.234375,
+    "width": 327.234375,
+    "viewport": 390
+  },
+  "focusReturn": true,
+  "savedShellPreferences": {
+    "dark": true,
+    "font": "large",
+    "pixels": "18px"
+  },
+  "calendar320": {
+    "left": 35,
+    "right": 314
+  },
+  "germanAndReducedMotion": {
+    "language": "de",
+    "reduced": true,
+    "overflow": false,
+    "firstLabel": "Vorname"
+  }
+}

@@ -1,0 +1,3 @@
+✗ Evaluation error: Error: React DevTools hook not installed - relaunch with --enable react-devtools
+    at <anonymous>:4:20
+    at <anonymous>:107:3
