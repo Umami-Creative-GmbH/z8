@@ -1,0 +1,21 @@
+{
+  "cacheMoved": false,
+  "ownedNextIdentityVerified": true,
+  "port": 65378,
+  "portClosed": true,
+  "stoppedPids": [
+    97268,
+    106624,
+    67080,
+    62076
+  ],
+  "ownedNextStopped": true,
+  "filteredProcessInventory": true,
+  "fixtureGenerations": 2,
+  "ownedContainers": 6,
+  "remainingOwnedContainers": 0,
+  "puppeteerBrowsersClosed": true,
+  "nativeBrowserClosed": true,
+  "credentialStateTransferred": false,
+  "fixtureCleanupLog": "fixture-final-cleanup.log"
+}

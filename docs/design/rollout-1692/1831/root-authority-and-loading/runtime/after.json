@@ -1,0 +1,101 @@
+{
+  "phase": "after",
+  "head": "0e73859dd1f78ea5f89f139dca34fae9489b6971",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "sha256": "967973698559e8dcb2fc8851c10011019279111cb2020d9c19c74905728518a5",
+      "canonicalSha256": "1f89982636c3666ac0d19020104db084e12529c6b8fe1a0547cbec86dca6418d"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "sha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024",
+      "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98"
+    }
+  ],
+  "checks": [
+    "Actual organization admission read is held",
+    "Pending title is absent before and safe/present after correction",
+    "Unchanged HTTP200 admission reveals the normal form",
+    "Admitted form retains exactly one task heading",
+    "Failed real transport retains policy draft and writes nothing",
+    "One pending Save prevents duplicate commands",
+    "Authorized actual Save creates exactly one policy",
+    "Existing accrual/carryover/proration defaults remain intact",
+    "Existing progress and continuation remain"
+  ],
+  "captures": [
+    {
+      "name": "after-desktop.png",
+      "path": "/en/onboarding/vacation-policy",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Set up vacation policy"
+      ],
+      "policyControls": 0,
+      "sha256": "acf255990b92f09318b45d0889acd69580b39da95d0fad838a7f7b3b5802a289",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+          "sha256": "967973698559e8dcb2fc8851c10011019279111cb2020d9c19c74905728518a5",
+          "canonicalSha256": "1f89982636c3666ac0d19020104db084e12529c6b8fe1a0547cbec86dca6418d"
+        },
+        {
+          "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+          "sha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024",
+          "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98"
+        }
+      ]
+    },
+    {
+      "name": "after-phone.png",
+      "path": "/en/onboarding/vacation-policy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "headings": [
+        "Set up vacation policy"
+      ],
+      "policyControls": 0,
+      "sha256": "534810993ca8ee2c55d9ab65c67b4db63775dd2a63b1c04b501da8ae99442da8",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+          "sha256": "967973698559e8dcb2fc8851c10011019279111cb2020d9c19c74905728518a5",
+          "canonicalSha256": "1f89982636c3666ac0d19020104db084e12529c6b8fe1a0547cbec86dca6418d"
+        },
+        {
+          "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+          "sha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024",
+          "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "admissionResponses": [
+    200,
+    200
+  ],
+  "commands": {
+    "aborted": 1,
+    "held": 1,
+    "completed": [
+      200
+    ]
+  },
+  "qualification": "Pending-heading comparison restores only the exact old client over the corrected server and current shared infrastructure. Public old-service security regression is separate real-PostgreSQL evidence. No browser credential state is transferred or saved.",
+  "actions": {
+    "checkIsAdmin": "00aa482560ba4c8c2f31cc009bcaa4feb5cd31d8f9",
+    "createVacationPolicyOnboarding": "60057375641fe8bbc0869d2c69fcf8097fc4443176",
+    "skipVacationPolicySetup": "40a91b416a103a2cb3f2353ab4d12ebe4283946fcb"
+  }
+}

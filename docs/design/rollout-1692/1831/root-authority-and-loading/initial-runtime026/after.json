@@ -1,0 +1,151 @@
+{
+  "phase": "after",
+  "head": "026f9e6df16d0964795582e0a6766f1c113c208b",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "sha256": "fb30eef3cacd2b66c65183cd13851294a7810215a5589c7e35e610f84827d0db",
+      "canonicalSha256": "0a10e84db2d0875a31fd17bcd4adb5c8f148f23379f91dd7abaa2f44d6279069"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "sha256": "396d1fbd443713a92b3562612fb2a0969c9deed17d82eada9c5047df1c5ad7fc",
+      "canonicalSha256": "65fedd953334b29191039ad97b745277a1ab9414a592fbbc897cb966761858ff"
+    }
+  ],
+  "checks": [
+    "Actual organization admission read is held",
+    "Pending title is absent before and safe/present after correction",
+    "Unchanged HTTP200 admission reveals the normal form",
+    "Admitted form retains exactly one task heading",
+    "Failed real transport retains policy draft and writes nothing",
+    "One pending Save prevents duplicate commands",
+    "Authorized actual Save creates exactly one policy",
+    "Existing accrual/carryover/proration defaults remain intact",
+    "Existing progress and continuation remain",
+    "Real member page admission is refused without policy controls",
+    "Both real direct member commands return typed authority refusal",
+    "Refused member commands make no policy or progress writes",
+    "No browser exceptions"
+  ],
+  "captures": [
+    {
+      "name": "after-desktop.png",
+      "path": "/en/onboarding/vacation-policy",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Set up vacation policy"
+      ],
+      "policyControls": 0,
+      "sha256": "b89db4d4e02d1c833101a050fcc4c3c3ca1bd5d31a8152521738e144e550f614",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+          "sha256": "fb30eef3cacd2b66c65183cd13851294a7810215a5589c7e35e610f84827d0db",
+          "canonicalSha256": "0a10e84db2d0875a31fd17bcd4adb5c8f148f23379f91dd7abaa2f44d6279069"
+        },
+        {
+          "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+          "sha256": "396d1fbd443713a92b3562612fb2a0969c9deed17d82eada9c5047df1c5ad7fc",
+          "canonicalSha256": "65fedd953334b29191039ad97b745277a1ab9414a592fbbc897cb966761858ff"
+        }
+      ]
+    },
+    {
+      "name": "after-phone.png",
+      "path": "/en/onboarding/vacation-policy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "headings": [
+        "Set up vacation policy"
+      ],
+      "policyControls": 0,
+      "sha256": "b95387d06d255000dfd3819b843a9dfb6011c461f9b38d2ccd484de52fef4d9b",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+          "sha256": "fb30eef3cacd2b66c65183cd13851294a7810215a5589c7e35e610f84827d0db",
+          "canonicalSha256": "0a10e84db2d0875a31fd17bcd4adb5c8f148f23379f91dd7abaa2f44d6279069"
+        },
+        {
+          "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+          "sha256": "396d1fbd443713a92b3562612fb2a0969c9deed17d82eada9c5047df1c5ad7fc",
+          "canonicalSha256": "65fedd953334b29191039ad97b745277a1ab9414a592fbbc897cb966761858ff"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "admissionResponses": [
+    200,
+    200
+  ],
+  "commands": {
+    "aborted": 1,
+    "held": 1,
+    "completed": [
+      200
+    ]
+  },
+  "qualification": "Pending-heading comparison restores only the exact old client over the corrected server and current shared infrastructure. Public old-service security regression is separate real-PostgreSQL evidence. No browser credential state is transferred or saved.",
+  "actions": {
+    "checkIsAdmin": "00aa482560ba4c8c2f31cc009bcaa4feb5cd31d8f9",
+    "createVacationPolicyOnboarding": "40057375641fe8bbc0869d2c69fcf8097fc4443176",
+    "skipVacationPolicySetup": "00a91b416a103a2cb3f2353ab4d12ebe4283946fcb"
+  },
+  "restrictedActions": [
+    {
+      "name": "createVacationPolicyOnboarding",
+      "http": 200,
+      "success": false,
+      "code": "AuthorizationError"
+    },
+    {
+      "name": "skipVacationPolicySetup",
+      "http": 200,
+      "success": false,
+      "code": "AuthorizationError"
+    }
+  ],
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

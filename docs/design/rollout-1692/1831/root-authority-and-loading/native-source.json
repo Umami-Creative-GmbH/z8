@@ -1,0 +1,15 @@
+{
+  "head": "0e73859dd1f78ea5f89f139dca34fae9489b6971",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "canonicalSha256": "1f89982636c3666ac0d19020104db084e12529c6b8fe1a0547cbec86dca6418d"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98"
+    }
+  ],
+  "session": "next-dev-loop-1831-t3-36de3f4a-69b59b59b97cbc3d",
+  "qualification": "Fresh actual pending owner. Disclosed fetch wrapper delays delivery of unchanged real HTTP200 admission Response; no authorization/body mocked. Separate Chromium comparison holds the original request before transport. Transient native session uses private-stdin normal authentication; no cookie/state transfer or restore file."
+}
