@@ -1,0 +1,34 @@
+Relevant auth/session/MFA/init/callback/shared-form/enrollment compatibility. Passkey/sign-out covered by exact MFA files. Calendar/equipment archives are preservation-only; unchanged workflows are not rerun.
+src/app/[locale]/init/page-client.test.tsx
+src/lib/auth/request-session.test.ts
+src/lib/auth/use-auth-page-session.test.tsx
+src/lib/auth/load-auth-page-client.test.ts
+src/lib/auth/organization-session-revocation.test.ts
+src/lib/auth/organization-sso-approval-update-guard.test.ts
+src/lib/auth/auth-mutation-coordination.test.ts
+src/components/settings/auth/session-management.test.tsx
+src/components/settings/auth/social-accounts.test.tsx
+src/components/settings/auth/password-change-form.test.tsx
+src/components/settings/auth/use-two-factor-setup-controller.test.ts
+src/components/settings/auth/two-factor-enrollment-response.test.ts
+src/components/ui/tanstack-form.test.tsx
+src/components/ui/action-panel.test.tsx
+src/components/ui/alert-dialog.test.tsx
+src/components/ui/loading-region.test.tsx
+src/components/ui/page-header.test.tsx
+src/lib/auth/callback-url.test.ts
+src/lib/organization-mfa
+src/tolgee/route-boundary.test.tsx
+src/tolgee/route-boundary.ssr.test.tsx
+src/tolgee/route-boundary.hydration.test.tsx
+src/components/font-size-preference.test.tsx
+src/components/theme-provider.test.tsx
+
+Additional narrow downstream admission selection (disjoint):
+src/app/api/organizations/switch/route.test.ts
+src/app/api/organizations/sso/route.test.ts
+src/app/api/organizations/nonactive-sso-access.test.ts
+src/app/api/session/organization-status/route.test.ts
+src/lib/auth-helpers.test.ts
+src/lib/enterprise-identity/session-sso.test.ts
+src/lib/enterprise-identity/session-sso-store.test.ts

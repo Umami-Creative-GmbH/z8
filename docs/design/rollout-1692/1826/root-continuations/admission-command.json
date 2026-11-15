@@ -1,0 +1,23 @@
+{
+  "command": [
+    "pnpm",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "src/app/api/organizations/switch/route.test.ts",
+    "src/app/api/organizations/sso/route.test.ts",
+    "src/app/api/organizations/nonactive-sso-access.test.ts",
+    "src/app/api/session/organization-status/route.test.ts",
+    "src/lib/auth-helpers.test.ts",
+    "src/lib/enterprise-identity/session-sso.test.ts",
+    "src/lib/enterprise-identity/session-sso-store.test.ts",
+    "--maxWorkers=2",
+    "--reporter=json",
+    "--outputFile=../../.tmp/1826-root-checks/admission.json"
+  ],
+  "exitCode": 0
+}

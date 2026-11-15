@@ -1,0 +1,15 @@
+{
+  "classification": "fresh Next diagnostics with connected actual MFA page",
+  "pageErrors": [],
+  "get_compilation_issues": {
+    "issues": []
+  },
+  "get_errors": {
+    "configErrors": [],
+    "sessionErrors": []
+  },
+  "routes": {
+    "succeeded": true,
+    "mfaListed": true
+  }
+}
