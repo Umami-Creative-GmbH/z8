@@ -614,8 +614,7 @@ function ProfileStep({ scope, ready }: { scope: string | null; ready: boolean })
 				<ProfileHeader t={t} />
 				<form
 					ref={formElement}
-					onSubmit={(event) => {
-						event.preventDefault();
+					action={() => {
 						void form.handleSubmit({ generation: lifetime.current });
 					}}
 					className="space-y-8 pt-6"
