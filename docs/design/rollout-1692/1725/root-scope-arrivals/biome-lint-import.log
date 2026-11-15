@@ -1,0 +1,98 @@
+src\components\payroll\payroll-workspace.tsx:1782:6 lint/a11y/useSemanticElements ━━━━━━━━━━━━━━━━━━
+
+  × The elements with this role can be changed to the following elements:
+    <section>
+
+    1780 │ 			<CardContent>
+    1781 │ 				<div
+  > 1782 │ 					role="region"
+         │ 					^^^^^^^^^^^^^
+    1783 │ 					aria-label={t("payroll.employeeTotals.title", "Employee totals")}
+    1784 │ 					// biome-ignore lint/a11y/noNoninteractiveTabindex: Named comparison region needs keyboard scrolling.
+
+  i For examples and more information, see WAI-ARIA Roles
+
+  i Replace with one of these elements:
+
+  - <section>
+
+
+src\components\payroll\payroll-workspace.tsx:1868:4 lint/a11y/useSemanticElements ━━━━━━━━━━━━━━━━━━
+
+  × The elements with this role can be changed to the following elements:
+    <fieldset>
+
+    1866 │ 	return (
+    1867 │ 		<div
+  > 1868 │ 			role="group"
+         │ 			^^^^^^^^^^^^
+    1869 │ 			aria-label={label}
+    1870 │ 			className={[
+
+  i For examples and more information, see WAI-ARIA Roles
+
+  i Replace with one of these elements:
+
+  - <fieldset>
+
+
+src\lib\payroll-workspace\summary.test.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━━━━━
+
+  × Sort these imports.
+
+   > 1 │ import { DateTime } from "luxon";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   > 2 │ import { Temporal } from "temporal-polyfill";
+   > 3 │ import { describe, expect, it } from "vitest";
+   > 4 │ import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
+        ...
+  > 15 │ import { workPeriodsFromCollectedInput } from "@/lib/payroll-export/collected-work";
+  > 16 │ import { isDismissiblePayrollBlockerType } from "./blocker-dismissals";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    17 │ import type { PayrollSummaryWorkRow } from "./types";
+    18 │
+
+  i Safe fix: Organize imports and exports (Biome)
+
+      2   2 │   import { Temporal } from "temporal-polyfill";␍
+      3   3 │   import { describe, expect, it } from "vitest";␍
+      4     │ - import·{·filterDismissedPayrollBlockers·}·from·"./blocker-dismissals";␍
+      5     │ - import·{␍
+      6     │ - → buildPayrollSummaryFromRows,␍
+      7     │ - → buildOffboardingClockRepairBlockers,␍
+      8     │ - → buildPendingAbsenceBlockers,␍
+      9     │ - → calculatePayrollWorkedMinutes,␍
+     10     │ - → filterMissingClockOutBlockers,␍
+     11     │ - → filterPendingTimeApprovalBlockers,␍
+     12     │ - → payrollBlockersFromCollection,␍
+     13     │ - }·from·"./summary";␍
+     14     │ - import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+     15     │ - import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+     16     │ - import·{·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+          4 │ + import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+          5 │ + import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+          6 │ + import·{·filterDismissedPayrollBlockers,·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+          7 │ + import·{␍
+          8 │ + → buildOffboardingClockRepairBlockers,␍
+          9 │ + → buildPayrollSummaryFromRows,␍
+         10 │ + → buildPendingAbsenceBlockers,␍
+         11 │ + → calculatePayrollWorkedMinutes,␍
+         12 │ + → filterMissingClockOutBlockers,␍
+         13 │ + → filterPendingTimeApprovalBlockers,␍
+         14 │ + → payrollBlockersFromCollection,␍
+         15 │ + }·from·"./summary";␍
+     17  16 │   import type { PayrollSummaryWorkRow } from "./types";␍
+     18  17 │   ␍
+
+
+Checked 11 files in 28ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp

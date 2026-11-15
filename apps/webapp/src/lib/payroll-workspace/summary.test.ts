@@ -36,6 +36,7 @@ function workRow(
 describe("buildPayrollSummaryFromRows", () => {
 	it("returns total worked hours per employee", () => {
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -65,6 +66,7 @@ describe("buildPayrollSummaryFromRows", () => {
 
 	it("groups absence days by employee and category", () => {
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -133,6 +135,7 @@ describe("buildPayrollSummaryFromRows", () => {
 
 	it("includes a same-day half-day absence in details and category totals", () => {
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -177,6 +180,7 @@ describe("buildPayrollSummaryFromRows", () => {
 
 	it("classifies timed partial absences and counts each as half a day", () => {
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -258,6 +262,7 @@ describe("buildPayrollSummaryFromRows", () => {
 
 	it("sorts employees with identical names by id", () => {
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -291,6 +296,7 @@ describe("buildPayrollSummaryFromRows", () => {
 
 	it("keeps blockers as warnings and marks affected employees", () => {
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -346,6 +352,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			[{ blockerType: "missing_clock_out", sourceId: "source-1" }],
 		);
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -503,6 +510,7 @@ describe("calculatePayrollWorkedMinutes", () => {
 describe("buildPayrollSummaryFromRows work allocation blockers", () => {
 	it("marks the employee as blocked and counts the unresolved work", () => {
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -863,6 +871,7 @@ describe("workspace under scoped collection (#322)", () => {
 
 	it("credits exactly the minutes the export formats", () => {
 		const summary = buildPayrollSummaryFromRows({
+			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),

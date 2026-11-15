@@ -69,8 +69,9 @@ describe("getPayrollWorkspaceSummary canonical cutover", () => {
 	it("never runs the organization-wide backfill under scoped collection", async () => {
 		mockState.isPayrollWorkCollectionActive.mockResolvedValue(true);
 
-		await getPayrollWorkspaceSummary(request);
+		const summary = await getPayrollWorkspaceSummary(request);
 
+		expect(summary.organizationId).toBe("org-1");
 		expect(mockState.assertCanonicalAbsencesReady).toHaveBeenCalledWith("org-1");
 		expect(mockState.assertCanonicalCutoverReady).not.toHaveBeenCalled();
 	});

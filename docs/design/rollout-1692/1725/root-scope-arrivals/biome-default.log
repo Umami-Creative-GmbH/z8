@@ -1,0 +1,1825 @@
+src\app\[locale]\(app)\payroll\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+     1    │ - import·{·DateTime·}·from·"luxon";␍
+     2    │ - import·{·connection·}·from·"next/server";␍
+     3    │ - import·{·Suspense·}·from·"react";␍
+     4    │ - import·{·FormerEmployeesExportCard·}·from·"@/components/payroll/former-employees-export-card";␍
+     5    │ - import·{·PayrollWorkspace·}·from·"@/components/payroll/payroll-workspace";␍
+     6    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     7    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     8    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     9    │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+    10    │ - import·{␍
+    11    │ - → getConfiguredPayrollExportFormatsAction,␍
+    12    │ - → getPayrollWorkspaceSummaryAction,␍
+    13    │ - }·from·"./actions";␍
+    14    │ - import·{·PayrollFailureState·}·from·"./payroll-failure-state";␍
+    15    │ - import·{·loadPayrollWorkBalanceEmployees·}·from·"./work-balances/coverage";␍
+    16    │ - ␍
+    17    │ - async·function·PayrollPageContent()·{␍
+    18    │ - → //·The·current·payroll·period·must·be·resolved·per·request.␍
+    19    │ - → await·connection();␍
+    20    │ - → const·now·=·DateTime.utc();␍
+    21    │ - → const·start·=·now.startOf("month");␍
+    22    │ - → const·end·=·now.endOf("month");␍
+    23    │ - → const·initialRequest·=·{␍
+    24    │ - → → startDate:·start.toISODate()·??·"",␍
+    25    │ - → → endDate:·end.toISODate()·??·"",␍
+    26    │ - → → label:·start.toFormat("LLLL·yyyy"),␍
+    27    │ - → };␍
+    28    │ - ␍
+    29    │ - → const·[t,·summaryResult,·formatsResult]·=·await·Promise.all([␍
+    30    │ - → → getTranslate(),␍
+    31    │ - → → getPayrollWorkspaceSummaryAction(initialRequest),␍
+    32    │ - → → getConfiguredPayrollExportFormatsAction(),␍
+    33    │ - → ]);␍
+    34    │ - ␍
+    35    │ - → if·(!summaryResult.success)·{␍
+    36    │ - → → //·A·grant·whose·active·employees·are·gone·still·covers·the·employees·who␍
+    37    │ - → → //·have·left·for·their·overtime·payouts·(#995).␍
+    38    │ - → → const·offerWorkBalances·=␍
+    39    │ - → → → summaryResult.code·===·"AuthorizationError"·&&␍
+    40    │ - → → → ((await·loadPayrollWorkBalanceEmployees())?.length·??·0)·>·0;␍
+    41    │ - → → return·(␍
+    42    │ - → → → <PayrollFailureState␍
+    43    │ - → → → → code={summaryResult.code}␍
+    44    │ - → → → → t={t}␍
+    45    │ - → → → → offerWorkBalances={offerWorkBalances}␍
+    46    │ - → → → → exportEntry={␍
+    47    │ - → → → → → //·Their·last·months·can·still·be·exported·(#1001).␍
+    48    │ - → → → → → <FormerEmployeesExportCard␍
+    49    │ - → → → → → → initialMonth={start.toFormat("yyyy-MM")}␍
+    50    │ - → → → → → → exportFormats={formatsResult.success·?·formatsResult.data·:·[]}␍
+    51    │ - → → → → → />␍
+    52    │ - → → → → }␍
+    53    │ - → → → />␍
+    54    │ - → → );␍
+    55    │ - → }␍
+    56    │ - ␍
+    57    │ - → return·(␍
+    58    │ - → → <PayrollWorkspace␍
+    59    │ - → → → initialSummary={summaryResult.data}␍
+    60    │ - → → → exportFormats={formatsResult.success·?·formatsResult.data·:·[]}␍
+    61    │ - → → />␍
+    62    │ - → );␍
+    63    │ - }␍
+    64    │ - ␍
+    65    │ - async·function·PayrollPageLoading()·{␍
+    66    │ - → const·t·=·await·getTranslate();␍
+    67    │ - → return·(␍
+    68    │ - → → <LoadingRegion␍
+    69    │ - → → → className="@container/main·flex·flex-1·flex-col·gap-6·p-4·md:p-6"␍
+    70    │ - → → → role="status"␍
+    71    │ - → → → label={{␍
+    72    │ - → → → → labelKey:·"common.loadingRegions.payrollWorkspace",␍
+    73    │ - → → → → labelDefault:·"Loading·payroll·workspace",␍
+    74    │ - → → → }}␍
+    75    │ - → → >␍
+    76    │ - → → → <PageHeader·title={t("payroll.title",·"Payroll")}·/>␍
+    77    │ - → → → <div·className="grid·gap-4·md:grid-cols-3">␍
+    78    │ - → → → → <Skeleton·aria-hidden="true"·className="h-28·w-full"·/>␍
+    79    │ - → → → → <Skeleton·aria-hidden="true"·className="h-28·w-full"·/>␍
+    80    │ - → → → → <Skeleton·aria-hidden="true"·className="h-28·w-full"·/>␍
+    81    │ - → → → </div>␍
+    82    │ - → → → <Skeleton·aria-hidden="true"·className="h-80·w-full"·/>␍
+    83    │ - → → </LoadingRegion>␍
+    84    │ - → );␍
+    85    │ - }␍
+    86    │ - ␍
+    87    │ - export·default·function·PayrollPage()·{␍
+    88    │ - → return·(␍
+    89    │ - → → <Suspense·fallback={<PayrollPageLoading·/>}>␍
+    90    │ - → → → <PayrollPageContent·/>␍
+    91    │ - → → </Suspense>␍
+    92    │ - → );␍
+    93    │ - }␍
+        1 │ + import·{·DateTime·}·from·"luxon";
+        2 │ + import·{·connection·}·from·"next/server";
+        3 │ + import·{·Suspense·}·from·"react";
+        4 │ + import·{·FormerEmployeesExportCard·}·from·"@/components/payroll/former-employees-export-card";
+        5 │ + import·{·PayrollWorkspace·}·from·"@/components/payroll/payroll-workspace";
+        6 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+        7 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        8 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+        9 │ + import·{·getTranslate·}·from·"@/tolgee/server";
+       10 │ + import·{
+       11 │ + → getConfiguredPayrollExportFormatsAction,
+       12 │ + → getPayrollWorkspaceSummaryAction,
+       13 │ + }·from·"./actions";
+       14 │ + import·{·PayrollFailureState·}·from·"./payroll-failure-state";
+       15 │ + import·{·loadPayrollWorkBalanceEmployees·}·from·"./work-balances/coverage";
+       16 │ +
+       17 │ + async·function·PayrollPageContent()·{
+       18 │ + → //·The·current·payroll·period·must·be·resolved·per·request.
+       19 │ + → await·connection();
+       20 │ + → const·now·=·DateTime.utc();
+       21 │ + → const·start·=·now.startOf("month");
+       22 │ + → const·end·=·now.endOf("month");
+       23 │ + → const·initialRequest·=·{
+       24 │ + → → startDate:·start.toISODate()·??·"",
+       25 │ + → → endDate:·end.toISODate()·??·"",
+       26 │ + → → label:·start.toFormat("LLLL·yyyy"),
+       27 │ + → };
+       28 │ +
+       29 │ + → const·[t,·summaryResult,·formatsResult]·=·await·Promise.all([
+       30 │ + → → getTranslate(),
+       31 │ + → → getPayrollWorkspaceSummaryAction(initialRequest),
+       32 │ + → → getConfiguredPayrollExportFormatsAction(),
+       33 │ + → ]);
+       34 │ +
+       35 │ + → if·(!summaryResult.success)·{
+       36 │ + → → //·A·grant·whose·active·employees·are·gone·still·covers·the·employees·who
+       37 │ + → → //·have·left·for·their·overtime·payouts·(#995).
+       38 │ + → → const·offerWorkBalances·=
+       39 │ + → → → summaryResult.code·===·"AuthorizationError"·&&
+       40 │ + → → → ((await·loadPayrollWorkBalanceEmployees())?.length·??·0)·>·0;
+       41 │ + → → return·(
+       42 │ + → → → <PayrollFailureState
+       43 │ + → → → → code={summaryResult.code}
+       44 │ + → → → → t={t}
+       45 │ + → → → → offerWorkBalances={offerWorkBalances}
+       46 │ + → → → → exportEntry={
+       47 │ + → → → → → //·Their·last·months·can·still·be·exported·(#1001).
+       48 │ + → → → → → <FormerEmployeesExportCard
+       49 │ + → → → → → → initialMonth={start.toFormat("yyyy-MM")}
+       50 │ + → → → → → → exportFormats={formatsResult.success·?·formatsResult.data·:·[]}
+       51 │ + → → → → → />
+       52 │ + → → → → }
+       53 │ + → → → />
+       54 │ + → → );
+       55 │ + → }
+       56 │ +
+       57 │ + → return·(
+  37 more lines truncated
+
+
+src\app\[locale]\(app)\payroll\payroll-failure-state.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+     1     │ - import·{·IconScale·}·from·"@tabler/icons-react";␍
+     2     │ - import·Link·from·"next/link";␍
+     3     │ - import·type·{·ReactNode·}·from·"react";␍
+     4     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     5     │ - import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+     6     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     7     │ - ␍
+     8     │ - export·type·PayrollFailureTranslator·=·(key:·string,·fallback:·string)·=>·string;␍
+     9     │ - ␍
+    10     │ - export·function·PayrollFailureState({␍
+    11     │ - → code,␍
+    12     │ - → t,␍
+    13     │ - → offerWorkBalances·=·false,␍
+    14     │ - → exportEntry,␍
+    15     │ - }:·{␍
+    16     │ - → code?:·string;␍
+    17     │ - → t:·PayrollFailureTranslator;␍
+    18     │ - → /**␍
+    19     │ - → ·*·The·payroll·access·covers·only·employees·who·have·left·(#995):·instead␍
+    20     │ - → ·*·of·a·dead·end,·point·to·the·Work·balances·page,·where·payroll·still␍
+    21     │ - → ·*·records·their·overtime·payouts.␍
+    22     │ - → ·*/␍
+    23     │ - → offerWorkBalances?:·boolean;␍
+    24     │ - → /**␍
+    25     │ - → ·*·Beside·the·Work·balances·link:·the·export·of·a·period·in·which·one·of␍
+    26     │ - → ·*·those·employees·was·still·employed·(#1001).␍
+    27     │ - → ·*/␍
+    28     │ - → exportEntry?:·ReactNode;␍
+    29     │ - })·{␍
+    30     │ - → const·accessDenied·=·code·===·"AuthenticationError"·||·code·===·"AuthorizationError";␍
+    31     │ - → if·(accessDenied·&&·offerWorkBalances)·{␍
+    32     │ - → → return·(␍
+    33     │ - → → → <div·className="@container/main·flex·flex-1·flex-col·items-center·justify-center·gap-6·p-6">␍
+    34     │ - → → → → <PageHeader·title={t("payroll.title",·"Payroll")}·/>␍
+    35     │ - → → → → <Card·className="w-full·max-w-md·text-center">␍
+    36     │ - → → → → → <CardHeader>␍
+    37     │ - → → → → → → <CardTitle>␍
+    38     │ - → → → → → → → {t(␍
+    39     │ - → → → → → → → → "payroll.onlyFormerEmployees.title",␍
+    40     │ - → → → → → → → → "Only·employees·who·have·left·are·in·your·payroll·access",␍
+    41     │ - → → → → → → → )}␍
+    42     │ - → → → → → → </CardTitle>␍
+    43     │ - → → → → → → <CardDescription>␍
+    44     │ - → → → → → → → {t(␍
+    45     │ - → → → → → → → → "payroll.onlyFormerEmployees.description",␍
+    46     │ - → → → → → → → → "You·can·still·record·and·cancel·their·overtime·payouts,·and·export·below·the·months·in·which·they·were·employed.",␍
+    47     │ - → → → → → → → )}␍
+    48     │ - → → → → → → </CardDescription>␍
+    49     │ - → → → → → </CardHeader>␍
+    50     │ - → → → → → <CardContent>␍
+    51     │ - → → → → → → <Button·asChild>␍
+    52     │ - → → → → → → → <Link·href="/payroll/work-balances">␍
+    53     │ - → → → → → → → → <IconScale·aria-hidden="true"·className="size-4"·/>␍
+    54     │ - → → → → → → → → {t("payroll.workBalances.open",·"Work·balances")}␍
+    55     │ - → → → → → → → </Link>␍
+    56     │ - → → → → → → </Button>␍
+    57     │ - → → → → → </CardContent>␍
+    58     │ - → → → → </Card>␍
+    59     │ - → → → → {exportEntry}␍
+    60     │ - → → → </div>␍
+    61     │ - → → );␍
+    62     │ - → }␍
+    63     │ - → const·title·=·accessDenied␍
+    64     │ - → → ?·t("payroll.accessDenied.title",·"No·payroll·access")␍
+    65     │ - → → :·t("payroll.unavailable.title",·"Payroll·temporarily·unavailable");␍
+    66     │ - → const·description·=·accessDenied␍
+    67     │ - → → ?·t(␍
+    68     │ - → → → → "payroll.accessDenied.description",␍
+    69     │ - → → → → "You·do·not·have·access·to·payroll·data·for·the·active·organization.",␍
+    70     │ - → → → )␍
+    71     │ - → → :·t("payroll.unavailable.description",·"Payroll·data·could·not·be·prepared·safely.");␍
+    72     │ - → const·help·=·accessDenied␍
+    73     │ - → → ?·t(␍
+    74     │ - → → → → "payroll.accessDenied.help",␍
+    75     │ - → → → → "Ask·an·organization·administrator·to·assign·payroll·access·if·you·need·this·workspace.",␍
+    76     │ - → → → )␍
+    77     │ - → → :·t(␍
+    78     │ - → → → → "payroll.unavailable.help",␍
+    79     │ - → → → → "Please·try·again·later.·If·the·problem·continues,·contact·an·organization·administrator.",␍
+    80     │ - → → → );␍
+    81     │ - ␍
+    82     │ - → return·(␍
+    83     │ - → → <div·className="@container/main·flex·flex-1·items-center·justify-center·p-6">␍
+    84     │ - → → → <div·className="flex·w-full·max-w-md·flex-col·gap-6">␍
+    85     │ - → → → → <PageHeader·title={t("payroll.title",·"Payroll")}·/>␍
+    86     │ - → → → → <Card·className="max-w-md·text-center">␍
+    87     │ - → → → → → <CardHeader>␍
+    88     │ - → → → → → → <CardTitle>{title}</CardTitle>␍
+    89     │ - → → → → → → <CardDescription>{description}</CardDescription>␍
+    90     │ - → → → → → </CardHeader>␍
+    91     │ - → → → → → <CardContent·className="text-muted-foreground·text-sm">{help}</CardContent>␍
+    92     │ - → → → → </Card>␍
+    93     │ - → → → </div>␍
+    94     │ - → → </div>␍
+    95     │ - → );␍
+    96     │ - }␍
+         1 │ + import·{·IconScale·}·from·"@tabler/icons-react";
+         2 │ + import·Link·from·"next/link";
+         3 │ + import·type·{·ReactNode·}·from·"react";
+         4 │ + import·{·Button·}·from·"@/components/ui/button";
+         5 │ + import·{
+         6 │ + → Card,
+         7 │ + → CardContent,
+         8 │ + → CardDescription,
+         9 │ + → CardHeader,
+        10 │ + → CardTitle,
+        11 │ + }·from·"@/components/ui/card";
+        12 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        13 │ +
+        14 │ + export·type·PayrollFailureTranslator·=·(
+        15 │ + → key:·string,
+        16 │ + → fallback:·string,
+        17 │ + )·=>·string;
+        18 │ +
+        19 │ + export·function·PayrollFailureState({
+        20 │ + → code,
+        21 │ + → t,
+        22 │ + → offerWorkBalances·=·false,
+        23 │ + → exportEntry,
+        24 │ + }:·{
+        25 │ + → code?:·string;
+        26 │ + → t:·PayrollFailureTranslator;
+        27 │ + → /**
+        28 │ + → ·*·The·payroll·access·covers·only·employees·who·have·left·(#995):·instead
+        29 │ + → ·*·of·a·dead·end,·point·to·the·Work·balances·page,·where·payroll·still
+        30 │ + → ·*·records·their·overtime·payouts.
+        31 │ + → ·*/
+        32 │ + → offerWorkBalances?:·boolean;
+        33 │ + → /**
+        34 │ + → ·*·Beside·the·Work·balances·link:·the·export·of·a·period·in·which·one·of
+        35 │ + → ·*·those·employees·was·still·employed·(#1001).
+        36 │ + → ·*/
+        37 │ + → exportEntry?:·ReactNode;
+        38 │ + })·{
+        39 │ + → const·accessDenied·=
+        40 │ + → → code·===·"AuthenticationError"·||·code·===·"AuthorizationError";
+        41 │ + → if·(accessDenied·&&·offerWorkBalances)·{
+        42 │ + → → return·(
+        43 │ + → → → <div·className="@container/main·flex·flex-1·flex-col·items-center·justify-center·gap-6·p-6">
+        44 │ + → → → → <PageHeader·title={t("payroll.title",·"Payroll")}·/>
+        45 │ + → → → → <Card·className="w-full·max-w-md·text-center">
+        46 │ + → → → → → <CardHeader>
+        47 │ + → → → → → → <CardTitle>
+        48 │ + → → → → → → → {t(
+        49 │ + → → → → → → → → "payroll.onlyFormerEmployees.title",
+        50 │ + → → → → → → → → "Only·employees·who·have·left·are·in·your·payroll·access",
+        51 │ + → → → → → → → )}
+        52 │ + → → → → → → </CardTitle>
+        53 │ + → → → → → → <CardDescription>
+        54 │ + → → → → → → → {t(
+  58 more lines truncated
+
+
+src\components\payroll\payroll-workspace.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+       1      │ - //·@vitest-environment·jsdom␍
+       2      │ - ␍
+       3      │ - import·{·act,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+       4      │ - import·{·Activity·}·from·"react";␍
+       5      │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+       6      │ - import·{·payrollBlockerIdentity·}·from·"@/lib/payroll-workspace/blocker-identity";␍
+       7      │ - import·type·{·PayrollBlockerType,·PayrollWorkspaceSummary·}·from·"@/lib/payroll-workspace/types";␍
+       8      │ - import·{·PayrollWorkspace·}·from·"./payroll-workspace";␍
+       9      │ - ␍
+      10      │ - const·actionMocks·=·vi.hoisted(()·=>·({␍
+      11      │ - → dismissPayrollBlockerAction:·vi.fn(),␍
+      12      │ - → exportPayrollPdfAction:·vi.fn(),␍
+      13      │ - → getPayrollWorkspaceSummaryAction:·vi.fn(),␍
+      14      │ - → startScopedPayrollExportAction:·vi.fn(),␍
+      15      │ - }));␍
+      16      │ - ␍
+      17      │ - const·toastMocks·=·vi.hoisted(()·=>·({·error:·vi.fn(),·success:·vi.fn()·}));␍
+      18      │ - ␍
+      19      │ - let·translateOverrides:·Record<string,·string>·=·{};␍
+      20      │ - let·activeLocale·=·"en";␍
+      21      │ - ␍
+      22      │ - vi.mock("@tolgee/react",·()·=>·({␍
+      23      │ - → useTranslate:·()·=>·({␍
+      24      │ - → → t:·(key:·string,·fallback:·string,·params?:·Record<string,·string·|·number>)·=>·{␍
+      25      │ - → → → const·template·=·translateOverrides[key]·??·fallback;␍
+      26      │ - ␍
+      27      │ - → → → return·Object.entries(params·??·{}).reduce(␍
+      28      │ - → → → → (message,·[paramKey,·value])·=>·message.replaceAll(`{${paramKey}}`,·String(value)),␍
+      29      │ - → → → → template,␍
+      30      │ - → → → );␍
+      31      │ - → → },␍
+      32      │ - → }),␍
+      33      │ - }));␍
+      34      │ - vi.mock("next-intl",·()·=>·({␍
+      35      │ - → useLocale:·()·=>·activeLocale,␍
+      36      │ - }));␍
+      37      │ - vi.mock("sonner",·()·=>·({·toast:·toastMocks·}));␍
+      38      │ - vi.mock("@tanstack/react-query",·()·=>·({␍
+      39      │ - → useQueryClient:·()·=>·({·invalidateQueries:·async·()·=>·undefined·}),␍
+      40      │ - }));␍
+      41      │ - vi.mock("./payroll-runs-card",·()·=>·({·PayrollRunsCard:·()·=>·null·}));␍
+      42      │ - vi.mock("./payroll-baselines-card",·()·=>·({␍
+      43      │ - → PayrollBaselinesCard:·()·=>·null,␍
+      44      │ - }));␍
+      45      │ - vi.mock("./payroll-comparison-card",·()·=>·({␍
+      46      │ - → PayrollComparisonCard:·(props:·unknown)·=>·(␍
+      47      │ - → → <output·aria-label="Comparison·selection">{JSON.stringify(props)}</output>␍
+      48      │ - → ),␍
+      49      │ - }));␍
+      50      │ - vi.mock("@/components/closed-months/month-closure-strip",·()·=>·({␍
+      51      │ - → MonthClosureStrip:·()·=>·null,␍
+      52      │ - }));␍
+      53      │ - vi.mock("@/components/closed-months/unclosed-months-notice",·()·=>·({␍
+      54      │ - → UnclosedMonthsNotice:·()·=>·null,␍
+      55      │ - }));␍
+      56      │ - vi.mock("./payroll-run-readiness-card",·()·=>·({␍
+      57      │ - → PayrollRunReadinessCard:·()·=>·null,␍
+      58      │ - }));␍
+      59      │ - vi.mock("./overtime-payout-readiness-alert",·()·=>·({␍
+      60      │ - → OvertimePayoutReadinessAlert:·()·=>·null,␍
+      61      │ - }));␍
+      62      │ - vi.mock("@/app/[locale]/(app)/payroll/actions",·()·=>·({␍
+      63      │ - → dismissPayrollBlockerAction:·actionMocks.dismissPayrollBlockerAction,␍
+      64      │ - → exportPayrollPdfAction:·actionMocks.exportPayrollPdfAction,␍
+      65      │ - → getPayrollWorkspaceSummaryAction:·actionMocks.getPayrollWorkspaceSummaryAction,␍
+      66      │ - → startScopedPayrollExportAction:·actionMocks.startScopedPayrollExportAction,␍
+      67      │ - }));␍
+      68      │ - ␍
+      69      │ - const·baseSummary:·PayrollWorkspaceSummary·=·{␍
+      70      │ - → organizationId:·"organization-a",␍
+      71      │ - → organizationName:·"Acme·GmbH",␍
+      72      │ - → period:·{·start:·"2026-06-01",·end:·"2026-06-30",·label:·"June·2026"·},␍
+      73      │ - → generatedAt:·"2026-06-30T12:00:00.000Z",␍
+      74      │ - → generatedBy:·{·id:·"payroll-1",·name:·"Payroll·User"·},␍
+      75      │ - → totals:·{·employeeCount:·2,·totalWorkedHours:·8,·blockerCount:·2·},␍
+      76      │ - → employees:·[␍
+      77      │ - → → {␍
+      78      │ - → → → id:·"employee-1",␍
+      79      │ - → → → name:·"Ada·Lovelace",␍
+      80      │ - → → → employeeNumber:·"E-1",␍
+      81      │ - → → → teamName:·"Ops",␍
+      82      │ - → → → contractType:·"hourly",␍
+      83      │ - → → → workedHours:·8,␍
+      84      │ - → → → absenceDaysByCategory:·[],␍
+      85      │ - → → → hasBlockers:·true,␍
+      86      │ - → → },␍
+      87      │ - → → {␍
+      88      │ - → → → id:·"employee-2",␍
+      89      │ - → → → name:·"Grace·Hopper",␍
+      90      │ - → → → employeeNumber:·"E-2",␍
+      91      │ - → → → teamName:·"Engineering",␍
+      92      │ - → → → contractType:·"fixed",␍
+      93      │ - → → → workedHours:·0,␍
+      94      │ - → → → absenceDaysByCategory:·[],␍
+      95      │ - → → → hasBlockers:·false,␍
+      96      │ - → → },␍
+      97      │ - → ],␍
+      98      │ - → absenceDetails:·[],␍
+      99      │ - → blockers:·[␍
+     100      │ - → → {␍
+     101      │ - → → → id:·"blocker-1",␍
+     102      │ - → → → employeeId:·"employee-1",␍
+     103      │ - → → → type:·"missing_clock_out",␍
+     104      │ - → → → label:·"Missing·clock-out",␍
+     105      │ - → → → date:·"2026-06-03",␍
+     106      │ - → → → time:·"09:00",␍
+     107      │ - → → },␍
+     108      │ - → → {␍
+     109      │ - → → → id:·"blocker-2",␍
+     110      │ - → → → employeeId:·"employee-1",␍
+     111      │ - → → → type:·"pending_absence",␍
+     112      │ - → → → label:·"Pending·absence·approval",␍
+     113      │ - → → → date:·"2026-06-04",␍
+     114      │ - → → → time:·null,␍
+     115      │ - → → },␍
+     116      │ - → ],␍
+     117      │ - };␍
+     118      │ - ␍
+     119      │ - function·buildSummary(overrides:·Partial<PayrollWorkspaceSummary>·=·{}):·PayrollWorkspaceSummary·{␍
+     120      │ - → return·{␍
+     121      │ - → → ...baseSummary,␍
+     122      │ - → → ...overrides,␍
+     123      │ - → → period:·overrides.period·??·baseSummary.period,␍
+     124      │ - → → totals:·overrides.totals·??·baseSummary.totals,␍
+     125      │ - → → employees:·overrides.employees·??·baseSummary.employees,␍
+     126      │ - → → absenceDetails:·overrides.absenceDetails·??·baseSummary.absenceDetails,␍
+     127      │ - → → blockers:·overrides.blockers·??·baseSummary.blockers,␍
+     128      │ - → };␍
+     129      │ - }␍
+     130      │ - ␍
+     131      │ - function·blockerSelector(type:·PayrollBlockerType,·id:·string)·{␍
+     132      │ - → return·`[data-payroll-blocker-key="${payrollBlockerIdentity({·id,·type·})}"]`;␍
+     133      │ - }␍
+     134      │ - ␍
+     135      │ - function·expandPayrollBlockers(name:·string·|·RegExp·=·/payroll·blockers·need·review/)·{␍
+     136      │ - → const·region·=·screen.getByRole("region",·{·name·});␍
+     137      │ - → const·trigger·=·within(region).getByRole("button",·{·name·});␍
+     138      │ - → if·(trigger.getAttribute("aria-expanded")·===·"false")·fireEvent.click(trigger);␍
+     139      │ - → return·region;␍
+     140      │ - }␍
+     141      │ - ␍
+     142      │ - const·summary·=·buildSummary();␍
+     143      │ - ␍
+     144      │ - function·arrivingScope(scope:·"organization"·|·"actor"·|·"coverage")·{␍
+     145      │ - → return·buildSummary({␍
+     146      │ - → → organizationId:·scope·===·"organization"·?·"organization-b"·:·baseSummary.organizationId,␍
+     147      │ - → → generatedBy:␍
+     148      │ - → → → scope·===·"actor"·?·{·id:·"other-actor",·name:·"Other·actor"·}·:·baseSummary.generatedBy,␍
+     149      │ - → → employees:·scope·===·"coverage"·?·[baseSummary.employees[1]]·:·baseSummary.employees,␍
+     150      │ - → });␍
+  5162 more lines truncated
+
+
+src\components\payroll\payroll-workspace.tsx:1782:6 lint/a11y/useSemanticElements ━━━━━━━━━━━━━━━━━━
+
+  × The elements with this role can be changed to the following elements:
+    <section>
+
+    1780 │ 			<CardContent>
+    1781 │ 				<div
+  > 1782 │ 					role="region"
+         │ 					^^^^^^^^^^^^^
+    1783 │ 					aria-label={t("payroll.employeeTotals.title", "Employee totals")}
+    1784 │ 					// biome-ignore lint/a11y/noNoninteractiveTabindex: Named comparison region needs keyboard scrolling.
+
+  i For examples and more information, see WAI-ARIA Roles
+
+  i Replace with one of these elements:
+
+  - <section>
+
+
+src\components\payroll\payroll-workspace.tsx:1868:4 lint/a11y/useSemanticElements ━━━━━━━━━━━━━━━━━━
+
+  × The elements with this role can be changed to the following elements:
+    <fieldset>
+
+    1866 │ 	return (
+    1867 │ 		<div
+  > 1868 │ 			role="group"
+         │ 			^^^^^^^^^^^^
+    1869 │ 			aria-label={label}
+    1870 │ 			className={[
+
+  i For examples and more information, see WAI-ARIA Roles
+
+  i Replace with one of these elements:
+
+  - <fieldset>
+
+
+src\components\payroll\payroll-workspace.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+       1      │ - "use·client";␍
+       2      │ - ␍
+       3      │ - import·{␍
+       4      │ - → IconAlertTriangle,␍
+       5      │ - → IconCalendarWeek,␍
+       6      │ - → IconChevronDown,␍
+       7      │ - → IconChevronLeft,␍
+       8      │ - → IconChevronRight,␍
+       9      │ - → IconDownload,␍
+      10      │ - → IconFileExport,␍
+      11      │ - → IconLoader2,␍
+      12      │ - → IconRefresh,␍
+      13      │ - → IconScale,␍
+      14      │ - → IconUsers,␍
+      15      │ - }·from·"@tabler/icons-react";␍
+      16      │ - import·{·useQueryClient·}·from·"@tanstack/react-query";␍
+      17      │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      18      │ - import·{·DateTime·}·from·"luxon";␍
+      19      │ - import·Link·from·"next/link";␍
+      20      │ - import·{·useLocale·}·from·"next-intl";␍
+      21      │ - import·type·React·from·"react";␍
+      22      │ - import·{·useEffect,·useReducer,·useRef,·useState,·useTransition·}·from·"react";␍
+      23      │ - import·{·toast·}·from·"sonner";␍
+      24      │ - import·{·Temporal·}·from·"temporal-polyfill";␍
+      25      │ - import·{␍
+      26      │ - → dismissPayrollBlockerAction,␍
+      27      │ - → exportPayrollPdfAction,␍
+      28      │ - → getPayrollWorkspaceSummaryAction,␍
+      29      │ - → type·PayrollExportFormatOption,␍
+      30      │ - → startScopedPayrollExportAction,␍
+      31      │ - }·from·"@/app/[locale]/(app)/payroll/actions";␍
+      32      │ - import·{·MonthClosureStrip·}·from·"@/components/closed-months/month-closure-strip";␍
+      33      │ - import·{·UnclosedMonthsNotice·}·from·"@/components/closed-months/unclosed-months-notice";␍
+      34      │ - import·{·useViewRefresh·}·from·"@/components/providers/view-refresh-provider";␍
+      35      │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+      36      │ - import·{·Button·}·from·"@/components/ui/button";␍
+      37      │ - import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+      38      │ - import·{·Checkbox·}·from·"@/components/ui/checkbox";␍
+      39      │ - import·{·Collapsible,·CollapsibleContent,·CollapsibleTrigger·}·from·"@/components/ui/collapsible";␍
+      40      │ - import·{·Input·}·from·"@/components/ui/input";␍
+      41      │ - import·{·Label·}·from·"@/components/ui/label";␍
+      42      │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+      43      │ - import·{␍
+      44      │ - → Select,␍
+      45      │ - → SelectContent,␍
+      46      │ - → SelectItem,␍
+      47      │ - → SelectTrigger,␍
+      48      │ - → SelectValue,␍
+      49      │ - }·from·"@/components/ui/select";␍
+      50      │ - import·{␍
+      51      │ - → Sheet,␍
+      52      │ - → SheetClose,␍
+      53      │ - → SheetContent,␍
+      54      │ - → SheetDescription,␍
+      55      │ - → SheetFooter,␍
+      56      │ - → SheetHeader,␍
+      57      │ - → SheetTitle,␍
+      58      │ - → SheetTrigger,␍
+      59      │ - }·from·"@/components/ui/sheet";␍
+      60      │ - import·{␍
+      61      │ - → Table,␍
+      62      │ - → TableBody,␍
+      63      │ - → TableCell,␍
+      64      │ - → TableHead,␍
+      65      │ - → TableHeader,␍
+      66      │ - → TableRow,␍
+      67      │ - }·from·"@/components/ui/table";␍
+      68      │ - import·{·isSupportedPayrollFormat·}·from·"@/lib/payroll-export/supported-format";␍
+      69      │ - import·{␍
+      70      │ - → type·DismissiblePayrollBlocker,␍
+      71      │ - → isDismissiblePayrollBlocker,␍
+      72      │ - }·from·"@/lib/payroll-workspace/blocker-dismissals";␍
+      73      │ - import·{␍
+      74      │ - → type·PayrollBlockerIdentity,␍
+      75      │ - → payrollBlockerIdentity,␍
+      76      │ - }·from·"@/lib/payroll-workspace/blocker-identity";␍
+      77      │ - import·type·{·PayrollDateRangeMode,·PayrollWorkspaceSummary·}·from·"@/lib/payroll-workspace/types";␍
+      78      │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+      79      │ - import·{·monthsOfDateRange·}·from·"@/lib/time-tracking/closed-months/month-label";␍
+      80      │ - import·{·OvertimePayoutReadinessAlert·}·from·"./overtime-payout-readiness-alert";␍
+      81      │ - import·{·PayrollBaselinesCard·}·from·"./payroll-baselines-card";␍
+      82      │ - import·{·PayrollComparisonCard·}·from·"./payroll-comparison-card";␍
+      83      │ - import·{·PayrollRunReadinessCard·}·from·"./payroll-run-readiness-card";␍
+      84      │ - import·{·PayrollRunsCard·}·from·"./payroll-runs-card";␍
+      85      │ - ␍
+      86      │ - type·PayrollTranslate·=·ReturnType<typeof·useTranslate>["t"];␍
+      87      │ - ␍
+      88      │ - interface·PayrollWorkspaceProps·{␍
+      89      │ - → initialSummary:·PayrollWorkspaceSummary;␍
+      90      │ - → exportFormats:·PayrollExportFormatOption[];␍
+      91      │ - }␍
+      92      │ - ␍
+      93      │ - interface·PayrollPeriodRequest·{␍
+      94      │ - → startDate:·string;␍
+      95      │ - → endDate:·string;␍
+      96      │ - → label:·string;␍
+      97      │ - → employeeIds?:·string[];␍
+      98      │ - }␍
+      99      │ - ␍
+     100      │ - interface·PayrollWorkspaceState·{␍
+     101      │ - → summary:·PayrollWorkspaceSummary;␍
+     102      │ - → dateMode:·PayrollDateRangeMode;␍
+     103      │ - → startDate:·string;␍
+     104      │ - → endDate:·string;␍
+     105      │ - → selectedEmployeeIds:·string[];␍
+     106      │ - → selectedTeamNames:·string[];␍
+     107      │ - → formatId:·string;␍
+     108      │ - }␍
+     109      │ - ␍
+     110      │ - type·PayrollWorkspaceAction·=␍
+     111      │ - → |·{·type:·"summaryRefreshed";·summary:·PayrollWorkspaceSummary·}␍
+     112      │ - → |·{·type:·"summaryDataRefreshed";·summary:·PayrollWorkspaceSummary·}␍
+     113      │ - → |·{·type:·"dateModeChanged";·dateMode:·PayrollDateRangeMode·}␍
+     114      │ - → |·{·type:·"startDateChanged";·value:·string·}␍
+     115      │ - → |·{·type:·"endDateChanged";·value:·string·}␍
+     116      │ - → |·{·type:·"employeeFilterChanged";·employeeIds:·string[]·}␍
+     117      │ - → |·{·type:·"teamFilterChanged";·teamNames:·string[]·}␍
+     118      │ - → |·{·type:·"formatChanged";·formatId:·string·};␍
+     119      │ - ␍
+     120      │ - type·SummaryLoadResult·=␍
+     121      │ - → |·{·status:·"applied";·summary:·PayrollWorkspaceSummary·}␍
+     122      │ - → |·{·status:·"failed"·|·"stale"·|·"unmounted"·};␍
+     123      │ - ␍
+     124      │ - interface·BlockerFocusRequest·{␍
+     125      │ - → id:·number;␍
+     126      │ - → targetBlockerKey:·PayrollBlockerIdentity·|·null;␍
+     127      │ - }␍
+     128      │ - ␍
+     129      │ - function·payrollWorkspaceReducer(␍
+     130      │ - → state:·PayrollWorkspaceState,␍
+     131      │ - → action:·PayrollWorkspaceAction,␍
+     132      │ - ):·PayrollWorkspaceState·{␍
+     133      │ - → switch·(action.type)·{␍
+     134      │ - → → case·"summaryDataRefreshed":␍
+     135      │ - → → → return·{·...state,·summary:·action.summary·};␍
+     136      │ - → → case·"summaryRefreshed":␍
+     137      │ - → → → return·{␍
+     138      │ - → → → → ...state,␍
+     139      │ - → → → → summary:·action.summary,␍
+     140      │ - → → → → startDate:·action.summary.period.start,␍
+     141      │ - → → → → endDate:·action.summary.period.end,␍
+     142      │ - → → → };␍
+     143      │ - → → case·"dateModeChanged":␍
+     144      │ - → → → return·{·...state,·dateMode:·action.dateMode·};␍
+     145      │ - → → case·"startDateChanged":␍
+     146      │ - → → → return·{·...state,·startDate:·action.value·};␍
+     147      │ - → → case·"endDateChanged":␍
+     148      │ - → → → return·{·...state,·endDate:·action.value·};␍
+     149      │ - → → case·"employeeFilterChanged":␍
+     150      │ - → → → return·{·...state,·selectedEmployeeIds:·action.employeeIds·};␍
+  4087 more lines truncated
+
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1     │ - import·{·describe,·expect,·it·}·from·"vitest";␍
+      2     │ - import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      3     │ - ␍
+      4     │ - describe("route·metadata",·()·=>·{␍
+      5     │ - → it("adopts·payroll·without·adopting·work-balance·descendants",·()·=>·{␍
+      6     │ - → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+      7     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(false);␍
+      8     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(false);␍
+      9     │ - → });␍
+     10     │ - → it("adopts·only·the·notification·timeline·heading,·retaining·settings·and·descendants",·()·=>·{␍
+     11     │ - → → expect(appPageOwnsHeading("/de/notifications")).toBe(true);␍
+     12     │ - → → expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);␍
+     13     │ - → → expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);␍
+     14     │ - → });␍
+     15     │ - → it("adopts·only·the·personal·requests·page·heading",·()·=>·{␍
+     16     │ - → → expect(appPageOwnsHeading("/de/my-requests")).toBe(true);␍
+     17     │ - → → expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);␍
+     18     │ - → });␍
+     19     │ - → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{␍
+     20     │ - → → expect(appPageOwnsHeading("/de/my-documents")).toBe(true);␍
+     21     │ - → → expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);␍
+     22     │ - → → expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);␍
+     23     │ - → });␍
+     24     │ - → it("adopts·equipment·overview·and·exact·assignment·headings,·keeping·other·descendants·independent",·()·=>·{␍
+     25     │ - → → expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     26     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     27     │ - → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     28     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     29     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     30     │ - → → expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     31     │ - → → expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+     32     │ - → });␍
+     33     │ - → it("adopts·the·employee·equipment·record·heading·without·adopting·its·collection",·()·=>·{␍
+     34     │ - → → expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);␍
+     35     │ - → → expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);␍
+     36     │ - → });␍
+     37     │ - → it("adopts·the·licence·workspace·and·employee·check·while·retaining·other·descendants·and·settings·headings",·()·=>·{␍
+     38     │ - → → expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     39     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+     40     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+     41     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     42     │ - → → expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+     43     │ - → });␍
+     44     │ - → it("retains·independent·approvals·page·headings",·()·=>·{␍
+     45     │ - → → expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     46     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     47     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+     48     │ - → });␍
+     49     │ - → it("adopts·only·the·deputy·history·record,·preserving·other·approval·headings",·()·=>·{␍
+     50     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+     51     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+     52     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     53     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     54     │ - → });␍
+     55     │ - → it("adopts·the·exact·inbox·heading,·retaining·independent·review·route·ownership",·()·=>·{␍
+     56     │ - → → expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     57     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+     58     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+     59     │ - → });␍
+     60     │ - → it("adopts·only·the·complete·review·arrival·route",·()·=>·{␍
+     61     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+     62     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+     63     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+     64     │ - → });␍
+     65     │ - → it("adopts·the·exact·vacation·route·while·retaining·staged·descendants",·()·=>·{␍
+     66     │ - → → expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+     67     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+     68     │ - → });␍
+     69     │ - → it("adopts·only·refreshed·analytics·routes·while·retaining·staged·descendants",·()·=>·{␍
+     70     │ - → → expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+     71     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+     72     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+     73     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+     74     │ - → });␍
+     75     │ - → it("adopts·refreshed·analytics·without·adopting·unconverted·descendants",·()·=>·{␍
+     76     │ - → → expect(appPageOwnsHeading("/de/analytics")).toBe(true);␍
+     77     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);␍
+     78     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);␍
+     79     │ - → → expect(appPageOwnsHeading("/en/calendar")).toBe(true);␍
+     80     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);␍
+     81     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);␍
+     82     │ - → });␍
+     83     │ - → it("adopts·only·the·portfolio·pilot·title,·leaving·other·reports·and·descendants·with·shell·titles",·()·=>·{␍
+     84     │ - → → expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);␍
+     85     │ - → → expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);␍
+     86     │ - → → expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);␍
+     87     │ - → });␍
+     88     │ - → it.each([␍
+     89     │ - → → ["/en",·"Dashboard"],␍
+     90     │ - → → ["/de/my-requests",·"My·Requests"],␍
+     91     │ - → → ["/en/organization",·"Org·Explorer"],␍
+     92     │ - → → ["/en/payroll",·"Payroll"],␍
+     93     │ - → → ["/en/scheduling",·"Scheduling"],␍
+     94     │ - → → ["/en/approvals/inbox",·"Approvals"],␍
+     95     │ - → → ["/en/compliance",·"Compliance"],␍
+     96     │ - → → ["/en/works-council",·"Works·Council"],␍
+     97     │ - → → ["/en/team/absences",·"Team·Absences"],␍
+     98     │ - → → ["/en/team/driving",·"Driving·Details"],␍
+     99     │ - → → ["/en/driving-licence",·"My·driving·authorization"],␍
+    100     │ - → → ["/en/driving-licence/checks/employee-1",·"My·driving·authorization"],␍
+    101     │ - → → ["/en/reports/projects",·"Project·Reports"],␍
+    102     │ - → → ["/en/reports/vehicles",·"Distance·per·Vehicle"],␍
+    103     │ - → → ["/en/settings/employees/employee-1",·"Employees"],␍
+    104     │ - → → ["/en/settings/locations/location-1",·"Locations"],␍
+    105     │ - → → ["/en/equipment",·"Equipment"],␍
+    106     │ - → → ["/en/equipment/employees/employee-1",·"Equipment"],␍
+    107     │ - → → ["/en/equipment/assignments/assignment-1",·"Equipment"],␍
+    108     │ - → → ["/de/my-equipment",·"My·equipment"],␍
+    109     │ - → → ["/en/settings/equipment",·"Settings"],␍
+    110     │ - → ])("resolves·%s",·(pathname,·title)·=>·{␍
+    111     │ - → → expect(resolveAppRouteMetadata(pathname).titleDefault).toBe(title);␍
+    112     │ - → });␍
+    113     │ - ␍
+    114     │ - → it("matches·route·prefixes·only·at·path-segment·boundaries",·()·=>·{␍
+    115     │ - → → expect(resolveAppRouteMetadata("/en/teamwork").titleDefault).toBe("Z8");␍
+    116     │ - → });␍
+    117     │ - ␍
+    118     │ - → it("normalizes·locale·and·trailing·slash·segments",·()·=>·{␍
+    119     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    120     │ - → });␍
+    121     │ - });␍
+          1 │ + import·{·describe,·expect,·it·}·from·"vitest";
+          2 │ + import·{
+          3 │ + → appPageOwnsHeading,
+          4 │ + → normalizeAppPath,
+          5 │ + → resolveAppRouteMetadata,
+          6 │ + }·from·"./route-metadata";
+          7 │ +
+          8 │ + describe("route·metadata",·()·=>·{
+          9 │ + → it("adopts·payroll·without·adopting·work-balance·descendants",·()·=>·{
+         10 │ + → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);
+         11 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(false);
+         12 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(
+         13 │ + → → → false,
+         14 │ + → → );
+         15 │ + → });
+         16 │ + → it("adopts·only·the·notification·timeline·heading,·retaining·settings·and·descendants",·()·=>·{
+         17 │ + → → expect(appPageOwnsHeading("/de/notifications")).toBe(true);
+         18 │ + → → expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);
+         19 │ + → → expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);
+         20 │ + → });
+         21 │ + → it("adopts·only·the·personal·requests·page·heading",·()·=>·{
+         22 │ + → → expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
+         23 │ + → → expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);
+         24 │ + → });
+         25 │ + → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{
+         26 │ + → → expect(appPageOwnsHeading("/de/my-documents")).toBe(true);
+         27 │ + → → expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);
+         28 │ + → → expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);
+         29 │ + → });
+  129 more lines truncated
+
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";␍
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+      3     │ - ␍
+      4     │ - export·type·AppRouteMetadata·=·{␍
+      5     │ - → id:·string;␍
+      6     │ - → href:·string;␍
+      7     │ - → titleKey:·string;␍
+      8     │ - → titleDefault:·string;␍
+      9     │ - };␍
+     10     │ - ␍
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[␍
+     12     │ - → {␍
+     13     │ - → → id:·"dashboard",␍
+     14     │ - → → href:·"/",␍
+     15     │ - → → titleKey:·"nav.dashboard",␍
+     16     │ - → → titleDefault:·"Dashboard",␍
+     17     │ - → },␍
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},␍
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment␍
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.␍
+     21     │ - → {␍
+     22     │ - → → id:·"equipment",␍
+     23     │ - → → href:·"/equipment",␍
+     24     │ - → → titleKey:·"nav.equipment",␍
+     25     │ - → → titleDefault:·"Equipment",␍
+     26     │ - → },␍
+     27     │ - → {␍
+     28     │ - → → id:·"my-equipment",␍
+     29     │ - → → href:·"/my-equipment",␍
+     30     │ - → → titleKey:·"nav.my-equipment",␍
+     31     │ - → → titleDefault:·"My·equipment",␍
+     32     │ - → },␍
+     33     │ - → {␍
+     34     │ - → → id:·"notifications",␍
+     35     │ - → → href:·"/notifications",␍
+     36     │ - → → titleKey:·"notifications.title",␍
+     37     │ - → → titleDefault:·"Notifications",␍
+     38     │ - → },␍
+     39     │ - → {␍
+     40     │ - → → id:·"calendar",␍
+     41     │ - → → href:·"/calendar",␍
+     42     │ - → → titleKey:·"nav.calendar",␍
+     43     │ - → → titleDefault:·"Calendar",␍
+     44     │ - → },␍
+     45     │ - → {␍
+     46     │ - → → id:·"time-tracking",␍
+     47     │ - → → href:·"/time-tracking",␍
+     48     │ - → → titleKey:·"nav.time-tracking",␍
+     49     │ - → → titleDefault:·"Time·Tracking",␍
+     50     │ - → },␍
+     51     │ - → {␍
+     52     │ - → → id:·"my-requests",␍
+     53     │ - → → href:·"/my-requests",␍
+     54     │ - → → titleKey:·"nav.my-requests",␍
+     55     │ - → → titleDefault:·"My·Requests",␍
+     56     │ - → },␍
+     57     │ - → {␍
+     58     │ - → → id:·"org-explorer",␍
+     59     │ - → → href:·"/organization",␍
+     60     │ - → → titleKey:·"nav.org-explorer",␍
+     61     │ - → → titleDefault:·"Org·Explorer",␍
+     62     │ - → },␍
+     63     │ - → {␍
+     64     │ - → → id:·"absences",␍
+     65     │ - → → href:·"/absences",␍
+     66     │ - → → titleKey:·"nav.absences",␍
+     67     │ - → → titleDefault:·"Absences",␍
+     68     │ - → },␍
+     69     │ - → {␍
+     70     │ - → → id:·"travel-expenses",␍
+     71     │ - → → href:·"/travel-expenses",␍
+     72     │ - → → titleKey:·"nav.travel-expenses",␍
+     73     │ - → → titleDefault:·"Travel·Expenses",␍
+     74     │ - → },␍
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this␍
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.␍
+     77     │ - → {␍
+     78     │ - → → id:·"driving-licence",␍
+     79     │ - → → href:·"/driving-licence",␍
+     80     │ - → → titleKey:·"drivingLicence.myTitle",␍
+     81     │ - → → titleDefault:·"My·driving·authorization",␍
+     82     │ - → },␍
+     83     │ - → {␍
+     84     │ - → → id:·"reports-projects",␍
+     85     │ - → → href:·"/reports/projects",␍
+     86     │ - → → titleKey:·"reports.projects.title",␍
+     87     │ - → → titleDefault:·"Project·Reports",␍
+     88     │ - → },␍
+     89     │ - → {␍
+     90     │ - → → id:·"reports-vehicles",␍
+     91     │ - → → href:·"/reports/vehicles",␍
+     92     │ - → → titleKey:·"reports.vehicles.title",␍
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",␍
+     94     │ - → },␍
+     95     │ - → {␍
+     96     │ - → → id:·"reports",␍
+     97     │ - → → href:·"/reports",␍
+     98     │ - → → titleKey:·"nav.reports",␍
+     99     │ - → → titleDefault:·"Reports",␍
+    100     │ - → },␍
+    101     │ - → {␍
+    102     │ - → → id:·"team-absences",␍
+    103     │ - → → href:·"/team/absences",␍
+    104     │ - → → titleKey:·"nav.teamAbsences",␍
+    105     │ - → → titleDefault:·"Team·Absences",␍
+    106     │ - → },␍
+    107     │ - → {␍
+    108     │ - → → id:·"team-presence",␍
+    109     │ - → → href:·"/team/presence",␍
+    110     │ - → → titleKey:·"nav.teamPresence",␍
+    111     │ - → → titleDefault:·"Who·Is·In",␍
+    112     │ - → },␍
+    113     │ - → {␍
+    114     │ - → → id:·"team-period-submissions",␍
+    115     │ - → → href:·"/team/period-submissions",␍
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",␍
+    117     │ - → → titleDefault:·"Period·Submissions",␍
+    118     │ - → },␍
+    119     │ - → {␍
+    120     │ - → → id:·"team-driving",␍
+    121     │ - → → href:·"/team/driving",␍
+    122     │ - → → titleKey:·"nav.teamDriving",␍
+    123     │ - → → titleDefault:·"Driving·Details",␍
+    124     │ - → },␍
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},␍
+    126     │ - → {␍
+    127     │ - → → id:·"approvals",␍
+    128     │ - → → href:·"/approvals",␍
+    129     │ - → → titleKey:·"nav.approvals",␍
+    130     │ - → → titleDefault:·"Approvals",␍
+    131     │ - → },␍
+    132     │ - → {␍
+    133     │ - → → id:·"analytics",␍
+    134     │ - → → href:·"/analytics",␍
+    135     │ - → → titleKey:·"nav.analytics",␍
+    136     │ - → → titleDefault:·"Analytics",␍
+    137     │ - → },␍
+    138     │ - → {␍
+    139     │ - → → id:·"payroll",␍
+    140     │ - → → href:·"/payroll",␍
+    141     │ - → → titleKey:·"nav.payroll",␍
+    142     │ - → → titleDefault:·"Payroll",␍
+    143     │ - → },␍
+    144     │ - → {␍
+    145     │ - → → id:·"scheduling",␍
+    146     │ - → → href:·"/scheduling",␍
+    147     │ - → → titleKey:·"nav.scheduling",␍
+    148     │ - → → titleDefault:·"Scheduling",␍
+    149     │ - → },␍
+    150     │ - → {␍
+  356 more lines truncated
+
+
+src\lib\payroll-workspace\pdf-exporter.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1     │ - import·{·describe,·expect,·it,·vi·}·from·"vitest";␍
+      2     │ - import·{␍
+      3     │ - → buildPayrollAbsenceSections,␍
+      4     │ - → exportPayrollSummaryToPDF,␍
+      5     │ - → flattenPayrollAbsenceSections,␍
+      6     │ - → generatePayrollPDFFilename,␍
+      7     │ - }·from·"./pdf-exporter";␍
+      8     │ - import·type·{·PayrollWorkspaceSummary·}·from·"./types";␍
+      9     │ - ␍
+     10     │ - function·countPDFPages(pdf:·Uint8Array):·number·{␍
+     11     │ - → return·(␍
+     12     │ - → → Buffer.from(pdf)␍
+     13     │ - → → → .toString("latin1")␍
+     14     │ - → → → .match(/\/Type·\/Page\b/g)?.length·??·0␍
+     15     │ - → );␍
+     16     │ - }␍
+     17     │ - ␍
+     18     │ - const·summary:·PayrollWorkspaceSummary·=·{␍
+     19     │ - → organizationId:·"organization-a",␍
+     20     │ - → organizationName:·"Acme·GmbH",␍
+     21     │ - → period:·{·start:·"2026-06-01",·end:·"2026-06-30",·label:·"June·2026"·},␍
+     22     │ - → generatedAt:·"2026-06-30T12:00:00.000Z",␍
+     23     │ - → generatedBy:·{·id:·"payroll-1",·name:·"Payroll·User"·},␍
+     24     │ - → totals:·{·employeeCount:·1,·totalWorkedHours:·12.5,·blockerCount:·1·},␍
+     25     │ - → employees:·[␍
+     26     │ - → → {␍
+     27     │ - → → → id:·"employee-1",␍
+     28     │ - → → → name:·"Ada·Lovelace",␍
+     29     │ - → → → employeeNumber:·"E-1",␍
+     30     │ - → → → teamName:·"Ops",␍
+     31     │ - → → → contractType:·"hourly",␍
+     32     │ - → → → workedHours:·12.5,␍
+     33     │ - → → → absenceDaysByCategory:·[␍
+     34     │ - → → → → {·categoryId:·"sick",·categoryName:·"Sick",·days:·1·},␍
+     35     │ - → → → → {·categoryId:·"vacation",·categoryName:·"Vacation",·days:·0.5·},␍
+     36     │ - → → → ],␍
+     37     │ - → → → hasBlockers:·true,␍
+     38     │ - → → },␍
+     39     │ - → ],␍
+     40     │ - → absenceDetails:·[␍
+     41     │ - → → {␍
+     42     │ - → → → employeeId:·"employee-1",␍
+     43     │ - → → → categoryId:·"vacation",␍
+     44     │ - → → → categoryName:·"Vacation",␍
+     45     │ - → → → date:·"2026-06-08",␍
+     46     │ - → → → period:·"am",␍
+     47     │ - → → },␍
+     48     │ - → → {␍
+     49     │ - → → → employeeId:·"employee-1",␍
+     50     │ - → → → categoryId:·"sick",␍
+     51     │ - → → → categoryName:·"Sick",␍
+     52     │ - → → → date:·"2026-06-03",␍
+     53     │ - → → → period:·"full_day",␍
+     54     │ - → → },␍
+     55     │ - → ],␍
+     56     │ - → blockers:·[␍
+     57     │ - → → {␍
+     58     │ - → → → id:·"blocker-1",␍
+     59     │ - → → → employeeId:·"employee-1",␍
+     60     │ - → → → type:·"missing_clock_out",␍
+     61     │ - → → → label:·"Missing·clock-out",␍
+     62     │ - → → → date:·"2026-06-03",␍
+     63     │ - → → → time:·"09:00",␍
+     64     │ - → → },␍
+     65     │ - → ],␍
+     66     │ - };␍
+     67     │ - ␍
+     68     │ - describe("payroll·PDF·exporter",·()·=>·{␍
+     69     │ - → it("sorts·employee·sections·and·same-date·absence·rows·in·audit·order",·()·=>·{␍
+     70     │ - → → const·orderingSummary:·PayrollWorkspaceSummary·=·{␍
+     71     │ - → → → ...summary,␍
+     72     │ - → → → employees:·[␍
+     73     │ - → → → → {␍
+     74     │ - → → → → → ...summary.employees[0],␍
+     75     │ - → → → → → id:·"employee-2",␍
+     76     │ - → → → → → name:·"Grace·Hopper",␍
+     77     │ - → → → → → employeeNumber:·"E-2",␍
+     78     │ - → → → → },␍
+     79     │ - → → → → summary.employees[0],␍
+     80     │ - → → → ],␍
+     81     │ - → → → absenceDetails:·[␍
+     82     │ - → → → → {␍
+     83     │ - → → → → → employeeId:·"employee-2",␍
+     84     │ - → → → → → categoryId:·"sick",␍
+     85     │ - → → → → → categoryName:·"Sick",␍
+     86     │ - → → → → → date:·"2026-06-04",␍
+     87     │ - → → → → → period:·"full_day",␍
+     88     │ - → → → → },␍
+     89     │ - → → → → {␍
+     90     │ - → → → → → employeeId:·"employee-1",␍
+     91     │ - → → → → → categoryId:·"vacation",␍
+     92     │ - → → → → → categoryName:·"Vacation",␍
+     93     │ - → → → → → date:·"2026-06-03",␍
+     94     │ - → → → → → period:·"full_day",␍
+     95     │ - → → → → },␍
+     96     │ - → → → → {␍
+     97     │ - → → → → → employeeId:·"employee-1",␍
+     98     │ - → → → → → categoryId:·"sick-b",␍
+     99     │ - → → → → → categoryName:·"Sick",␍
+    100     │ - → → → → → date:·"2026-06-03",␍
+    101     │ - → → → → → period:·"am",␍
+    102     │ - → → → → },␍
+    103     │ - → → → → {␍
+    104     │ - → → → → → employeeId:·"employee-1",␍
+    105     │ - → → → → → categoryId:·"sick-a",␍
+    106     │ - → → → → → categoryName:·"Sick",␍
+    107     │ - → → → → → date:·"2026-06-03",␍
+    108     │ - → → → → → period:·"pm",␍
+    109     │ - → → → → },␍
+    110     │ - → → → ],␍
+    111     │ - → → };␍
+    112     │ - ␍
+    113     │ - → → expect(buildPayrollAbsenceSections(orderingSummary)).toEqual([␍
+    114     │ - → → → {␍
+    115     │ - → → → → employeeId:·"employee-1",␍
+    116     │ - → → → → employeeName:·"Ada·Lovelace",␍
+    117     │ - → → → → employeeNumber:·"E-1",␍
+    118     │ - → → → → rows:·[␍
+    119     │ - → → → → → {·date:·"2026-06-03",·categoryName:·"Sick",·periodLabel:·"AM"·},␍
+    120     │ - → → → → → {·date:·"2026-06-03",·categoryName:·"Sick",·periodLabel:·"PM"·},␍
+    121     │ - → → → → → {␍
+    122     │ - → → → → → → date:·"2026-06-03",␍
+    123     │ - → → → → → → categoryName:·"Vacation",␍
+    124     │ - → → → → → → periodLabel:·"Full·day",␍
+    125     │ - → → → → → },␍
+    126     │ - → → → → ],␍
+    127     │ - → → → },␍
+    128     │ - → → → {␍
+    129     │ - → → → → employeeId:·"employee-2",␍
+    130     │ - → → → → employeeName:·"Grace·Hopper",␍
+    131     │ - → → → → employeeNumber:·"E-2",␍
+    132     │ - → → → → rows:·[␍
+    133     │ - → → → → → {·date:·"2026-06-04",·categoryName:·"Sick",·periodLabel:·"Full·day"·},␍
+    134     │ - → → → → ],␍
+    135     │ - → → → },␍
+    136     │ - → → ]);␍
+    137     │ - → });␍
+    138     │ - ␍
+    139     │ - → it("uses·the·visible·period·before·category·id·as·an·absence·row·sort·key",·()·=>·{␍
+    140     │ - → → const·sameCategorySummary:·PayrollWorkspaceSummary·=·{␍
+    141     │ - → → → ...summary,␍
+    142     │ - → → → absenceDetails:·[␍
+    143     │ - → → → → {␍
+    144     │ - → → → → → employeeId:·"employee-1",␍
+    145     │ - → → → → → categoryId:·"sick",␍
+    146     │ - → → → → → categoryName:·"Sick",␍
+    147     │ - → → → → → date:·"2026-06-03",␍
+    148     │ - → → → → → period:·"pm",␍
+    149     │ - → → → → },␍
+    150     │ - → → → → {␍
+  689 more lines truncated
+
+
+src\lib\payroll-workspace\summary.cutover.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+     1    │ - import·{·DateTime·}·from·"luxon";␍
+     2    │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+     3    │ - ␍
+     4    │ - const·mockState·=·vi.hoisted(()·=>·({␍
+     5    │ - → assertCanonicalCutoverReady:·vi.fn(),␍
+     6    │ - → assertCanonicalAbsencesReady:·vi.fn(),␍
+     7    │ - → isPayrollWorkCollectionActive:·vi.fn(),␍
+     8    │ - → readPayrollWorkCollection:·vi.fn(),␍
+     9    │ - → select:·vi.fn(),␍
+    10    │ - }));␍
+    11    │ - ␍
+    12    │ - vi.mock("@/db",·()·=>·({␍
+    13    │ - → db:·{␍
+    14    │ - → → select:·mockState.select,␍
+    15    │ - → },␍
+    16    │ - }));␍
+    17    │ - ␍
+    18    │ - vi.mock("@/lib/time-record/migration/cutover-state",·()·=>·({␍
+    19    │ - → assertCanonicalCutoverReady:·mockState.assertCanonicalCutoverReady,␍
+    20    │ - → assertCanonicalAbsencesReady:·mockState.assertCanonicalAbsencesReady,␍
+    21    │ - }));␍
+    22    │ - ␍
+    23    │ - vi.mock("@/lib/payroll-collection/payroll-work-collection-reader",·()·=>·({␍
+    24    │ - → isPayrollWorkCollectionActive:·mockState.isPayrollWorkCollectionActive,␍
+    25    │ - → readPayrollWorkCollection:·mockState.readPayrollWorkCollection,␍
+    26    │ - }));␍
+    27    │ - ␍
+    28    │ - const·{·getPayrollWorkspaceSummary·}·=·await·import("./summary");␍
+    29    │ - ␍
+    30    │ - const·request·=·{␍
+    31    │ - → organizationId:·"org-1",␍
+    32    │ - → allowedEmployeeIds:·[],␍
+    33    │ - → period:·{␍
+    34    │ - → → start:·DateTime.fromISO("2026-06-01",·{·zone:·"utc"·}),␍
+    35    │ - → → end:·DateTime.fromISO("2026-06-30",·{·zone:·"utc"·}),␍
+    36    │ - → → label:·"June·2026",␍
+    37    │ - → },␍
+    38    │ - → generatedBy:·{·id:·"payroll-1",·name:·"Payroll·User"·},␍
+    39    │ - };␍
+    40    │ - ␍
+    41    │ - describe("getPayrollWorkspaceSummary·canonical·cutover",·()·=>·{␍
+    42    │ - → beforeEach(()·=>·{␍
+    43    │ - → → vi.clearAllMocks();␍
+    44    │ - → → mockState.isPayrollWorkCollectionActive.mockResolvedValue(false);␍
+    45    │ - → → mockState.select.mockReturnValue({␍
+    46    │ - → → → from:·()·=>·({␍
+    47    │ - → → → → where:·()·=>·({␍
+    48    │ - → → → → → limit:·async·()·=>·[{·name:·"Acme·GmbH"·}],␍
+    49    │ - → → → → }),␍
+    50    │ - → → → }),␍
+    51    │ - → → });␍
+    52    │ - → });␍
+    53    │ - ␍
+    54    │ - → it("does·not·calculate·payroll·totals·from·an·incomplete·canonical·dataset",·async·()·=>·{␍
+    55    │ - → → mockState.assertCanonicalCutoverReady.mockRejectedValue(␍
+    56    │ - → → → new·Error(␍
+    57    │ - → → → → "Canonical·time-record·backfill·is·incomplete·for·organization·org-1",␍
+    58    │ - → → → ),␍
+    59    │ - → → );␍
+    60    │ - ␍
+    61    │ - → → await·expect(getPayrollWorkspaceSummary(request)).rejects.toThrow(␍
+    62    │ - → → → "Canonical·time-record·backfill·is·incomplete·for·organization·org-1",␍
+    63    │ - → → );␍
+    64    │ - ␍
+    65    │ - → → expect(mockState.assertCanonicalCutoverReady).toHaveBeenCalledWith("org-1");␍
+    66    │ - → → expect(mockState.select).not.toHaveBeenCalled();␍
+    67    │ - → });␍
+    68    │ - ␍
+    69    │ - → it("never·runs·the·organization-wide·backfill·under·scoped·collection",·async·()·=>·{␍
+    70    │ - → → mockState.isPayrollWorkCollectionActive.mockResolvedValue(true);␍
+    71    │ - ␍
+    72    │ - → → const·summary·=·await·getPayrollWorkspaceSummary(request);␍
+    73    │ - ␍
+    74    │ - → → expect(summary.organizationId).toBe("org-1");␍
+    75    │ - → → expect(mockState.assertCanonicalAbsencesReady).toHaveBeenCalledWith("org-1");␍
+    76    │ - → → expect(mockState.assertCanonicalCutoverReady).not.toHaveBeenCalled();␍
+    77    │ - → });␍
+    78    │ - });␍
+        1 │ + import·{·DateTime·}·from·"luxon";
+        2 │ + import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";
+        3 │ +
+        4 │ + const·mockState·=·vi.hoisted(()·=>·({
+        5 │ + → assertCanonicalCutoverReady:·vi.fn(),
+        6 │ + → assertCanonicalAbsencesReady:·vi.fn(),
+        7 │ + → isPayrollWorkCollectionActive:·vi.fn(),
+        8 │ + → readPayrollWorkCollection:·vi.fn(),
+        9 │ + → select:·vi.fn(),
+       10 │ + }));
+       11 │ +
+       12 │ + vi.mock("@/db",·()·=>·({
+       13 │ + → db:·{
+       14 │ + → → select:·mockState.select,
+       15 │ + → },
+       16 │ + }));
+       17 │ +
+       18 │ + vi.mock("@/lib/time-record/migration/cutover-state",·()·=>·({
+       19 │ + → assertCanonicalCutoverReady:·mockState.assertCanonicalCutoverReady,
+       20 │ + → assertCanonicalAbsencesReady:·mockState.assertCanonicalAbsencesReady,
+       21 │ + }));
+       22 │ +
+       23 │ + vi.mock("@/lib/payroll-collection/payroll-work-collection-reader",·()·=>·({
+       24 │ + → isPayrollWorkCollectionActive:·mockState.isPayrollWorkCollectionActive,
+       25 │ + → readPayrollWorkCollection:·mockState.readPayrollWorkCollection,
+       26 │ + }));
+       27 │ +
+       28 │ + const·{·getPayrollWorkspaceSummary·}·=·await·import("./summary");
+       29 │ +
+       30 │ + const·request·=·{
+       31 │ + → organizationId:·"org-1",
+       32 │ + → allowedEmployeeIds:·[],
+       33 │ + → period:·{
+       34 │ + → → start:·DateTime.fromISO("2026-06-01",·{·zone:·"utc"·}),
+       35 │ + → → end:·DateTime.fromISO("2026-06-30",·{·zone:·"utc"·}),
+       36 │ + → → label:·"June·2026",
+       37 │ + → },
+       38 │ + → generatedBy:·{·id:·"payroll-1",·name:·"Payroll·User"·},
+       39 │ + };
+       40 │ +
+       41 │ + describe("getPayrollWorkspaceSummary·canonical·cutover",·()·=>·{
+       42 │ + → beforeEach(()·=>·{
+       43 │ + → → vi.clearAllMocks();
+       44 │ + → → mockState.isPayrollWorkCollectionActive.mockResolvedValue(false);
+       45 │ + → → mockState.select.mockReturnValue({
+       46 │ + → → → from:·()·=>·({
+       47 │ + → → → → where:·()·=>·({
+       48 │ + → → → → → limit:·async·()·=>·[{·name:·"Acme·GmbH"·}],
+       49 │ + → → → → }),
+       50 │ + → → → }),
+       51 │ + → → });
+       52 │ + → });
+       53 │ +
+       54 │ + → it("does·not·calculate·payroll·totals·from·an·incomplete·canonical·dataset",·async·()·=>·{
+       55 │ + → → mockState.assertCanonicalCutoverReady.mockRejectedValue(
+       56 │ + → → → new·Error(
+       57 │ + → → → → "Canonical·time-record·backfill·is·incomplete·for·organization·org-1",
+       58 │ + → → → ),
+       59 │ + → → );
+       60 │ +
+       61 │ + → → await·expect(getPayrollWorkspaceSummary(request)).rejects.toThrow(
+       62 │ + → → → "Canonical·time-record·backfill·is·incomplete·for·organization·org-1",
+       63 │ + → → );
+       64 │ +
+       65 │ + → → expect(mockState.assertCanonicalCutoverReady).toHaveBeenCalledWith("org-1");
+       66 │ + → → expect(mockState.select).not.toHaveBeenCalled();
+       67 │ + → });
+       68 │ +
+       69 │ + → it("never·runs·the·organization-wide·backfill·under·scoped·collection",·async·()·=>·{
+       70 │ + → → mockState.isPayrollWorkCollectionActive.mockResolvedValue(true);
+       71 │ +
+       72 │ + → → const·summary·=·await·getPayrollWorkspaceSummary(request);
+  9 more lines truncated
+
+
+src\lib\payroll-workspace\summary.test.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━━━━━
+
+  × Sort these imports.
+
+   > 1 │ import { DateTime } from "luxon";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   > 2 │ import { Temporal } from "temporal-polyfill";
+   > 3 │ import { describe, expect, it } from "vitest";
+   > 4 │ import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
+        ...
+  > 15 │ import { workPeriodsFromCollectedInput } from "@/lib/payroll-export/collected-work";
+  > 16 │ import { isDismissiblePayrollBlockerType } from "./blocker-dismissals";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    17 │ import type { PayrollSummaryWorkRow } from "./types";
+    18 │
+
+  i Safe fix: Organize imports and exports (Biome)
+
+      2   2 │   import { Temporal } from "temporal-polyfill";␍
+      3   3 │   import { describe, expect, it } from "vitest";␍
+      4     │ - import·{·filterDismissedPayrollBlockers·}·from·"./blocker-dismissals";␍
+      5     │ - import·{␍
+      6     │ - → buildPayrollSummaryFromRows,␍
+      7     │ - → buildOffboardingClockRepairBlockers,␍
+      8     │ - → buildPendingAbsenceBlockers,␍
+      9     │ - → calculatePayrollWorkedMinutes,␍
+     10     │ - → filterMissingClockOutBlockers,␍
+     11     │ - → filterPendingTimeApprovalBlockers,␍
+     12     │ - → payrollBlockersFromCollection,␍
+     13     │ - }·from·"./summary";␍
+     14     │ - import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+     15     │ - import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+     16     │ - import·{·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+          4 │ + import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+          5 │ + import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+          6 │ + import·{·filterDismissedPayrollBlockers,·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+          7 │ + import·{␍
+          8 │ + → buildOffboardingClockRepairBlockers,␍
+          9 │ + → buildPayrollSummaryFromRows,␍
+         10 │ + → buildPendingAbsenceBlockers,␍
+         11 │ + → calculatePayrollWorkedMinutes,␍
+         12 │ + → filterMissingClockOutBlockers,␍
+         13 │ + → filterPendingTimeApprovalBlockers,␍
+         14 │ + → payrollBlockersFromCollection,␍
+         15 │ + }·from·"./summary";␍
+     17  16 │   import type { PayrollSummaryWorkRow } from "./types";␍
+     18  17 │   ␍
+
+
+src\lib\payroll-workspace\summary.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1     │ - import·{·DateTime·}·from·"luxon";␍
+      2     │ - import·{·Temporal·}·from·"temporal-polyfill";␍
+      3     │ - import·{·describe,·expect,·it·}·from·"vitest";␍
+      4     │ - import·{·filterDismissedPayrollBlockers·}·from·"./blocker-dismissals";␍
+      5     │ - import·{␍
+      6     │ - → buildPayrollSummaryFromRows,␍
+      7     │ - → buildOffboardingClockRepairBlockers,␍
+      8     │ - → buildPendingAbsenceBlockers,␍
+      9     │ - → calculatePayrollWorkedMinutes,␍
+     10     │ - → filterMissingClockOutBlockers,␍
+     11     │ - → filterPendingTimeApprovalBlockers,␍
+     12     │ - → payrollBlockersFromCollection,␍
+     13     │ - }·from·"./summary";␍
+     14     │ - import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+     15     │ - import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+     16     │ - import·{·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+     17     │ - import·type·{·PayrollSummaryWorkRow·}·from·"./types";␍
+     18     │ - ␍
+     19     │ - function·workRow(␍
+     20     │ - → startAt:·string,␍
+     21     │ - → endAt:·string,␍
+     22     │ - → durationMinutes:·number·|·null,␍
+     23     │ - → overrides:·Partial<PayrollSummaryWorkRow>·=·{},␍
+     24     │ - ):·PayrollSummaryWorkRow·{␍
+     25     │ - → return·{␍
+     26     │ - → → id:·`record-${startAt}`,␍
+     27     │ - → → employeeId:·"employee-1",␍
+     28     │ - → → timezone:·"UTC",␍
+     29     │ - → → startAt:·Temporal.Instant.from(startAt),␍
+     30     │ - → → endAt:·Temporal.Instant.from(endAt),␍
+     31     │ - → → durationMinutes,␍
+     32     │ - → → ...overrides,␍
+     33     │ - → };␍
+     34     │ - }␍
+     35     │ - ␍
+     36     │ - describe("buildPayrollSummaryFromRows",·()·=>·{␍
+     37     │ - → it("returns·total·worked·hours·per·employee",·()·=>·{␍
+     38     │ - → → const·summary·=·buildPayrollSummaryFromRows({␍
+     39     │ - → → → organizationId:·"organization-a",␍
+     40     │ - → → → organizationName:·"Acme·GmbH",␍
+     41     │ - → → → period:·{·start:·"2026-06-01",·end:·"2026-06-30",·label:·"June·2026"·},␍
+     42     │ - → → → generatedAt:·DateTime.fromISO("2026-06-30T12:00:00Z"),␍
+     43     │ - → → → generatedBy:·{·id:·"payroll-1",·name:·"Payroll·User"·},␍
+     44     │ - → → → employees:·[␍
+     45     │ - → → → → {␍
+     46     │ - → → → → → id:·"employee-1",␍
+     47     │ - → → → → → name:·"Ada·Lovelace",␍
+     48     │ - → → → → → employeeNumber:·"E-1",␍
+     49     │ - → → → → → teamName:·"Ops",␍
+     50     │ - → → → → → contractType:·"hourly",␍
+     51     │ - → → → → },␍
+     52     │ - → → → ],␍
+     53     │ - → → → workRows:·[␍
+     54     │ - → → → → workRow("2026-06-10T08:00:00Z",·"2026-06-10T10:00:00Z",·120),␍
+     55     │ - → → → → workRow("2026-06-11T08:00:00Z",·"2026-06-11T08:45:00Z",·45),␍
+     56     │ - → → → ],␍
+     57     │ - → → → absenceRows:·[],␍
+     58     │ - → → → blockers:·[],␍
+     59     │ - → → });␍
+     60     │ - ␍
+     61     │ - → → expect(summary.totals.totalWorkedHours).toBe(2.75);␍
+     62     │ - → → expect(summary.employees[0]?.workedHours).toBe(2.75);␍
+     63     │ - → → expect(summary.generatedAt).toBe("2026-06-30T12:00:00.000Z");␍
+     64     │ - → → expect(summary.absenceDetails).toEqual([]);␍
+     65     │ - → });␍
+     66     │ - ␍
+     67     │ - → it("groups·absence·days·by·employee·and·category",·()·=>·{␍
+     68     │ - → → const·summary·=·buildPayrollSummaryFromRows({␍
+     69     │ - → → → organizationId:·"organization-a",␍
+     70     │ - → → → organizationName:·"Acme·GmbH",␍
+     71     │ - → → → period:·{·start:·"2026-06-01",·end:·"2026-06-30",·label:·"June·2026"·},␍
+     72     │ - → → → generatedAt:·DateTime.fromISO("2026-06-30T12:00:00Z"),␍
+     73     │ - → → → generatedBy:·{·id:·"payroll-1",·name:·"Payroll·User"·},␍
+     74     │ - → → → employees:·[␍
+     75     │ - → → → → {␍
+     76     │ - → → → → → id:·"employee-1",␍
+     77     │ - → → → → → name:·"Ada·Lovelace",␍
+     78     │ - → → → → → employeeNumber:·"E-1",␍
+     79     │ - → → → → → teamName:·"Ops",␍
+     80     │ - → → → → → contractType:·"fixed",␍
+     81     │ - → → → → },␍
+     82     │ - → → → ],␍
+     83     │ - → → → workRows:·[],␍
+     84     │ - → → → absenceRows:·[␍
+     85     │ - → → → → {␍
+     86     │ - → → → → → employeeId:·"employee-1",␍
+     87     │ - → → → → → categoryId:·"sick",␍
+     88     │ - → → → → → categoryName:·"Sick",␍
+     89     │ - → → → → → startDate:·"2026-06-12",␍
+     90     │ - → → → → → endDate:·"2026-06-12",␍
+     91     │ - → → → → → startPeriod:·"full_day",␍
+     92     │ - → → → → → endPeriod:·"full_day",␍
+     93     │ - → → → → },␍
+     94     │ - → → → → {␍
+     95     │ - → → → → → employeeId:·"employee-1",␍
+     96     │ - → → → → → categoryId:·"vacation",␍
+     97     │ - → → → → → categoryName:·"Vacation",␍
+     98     │ - → → → → → startDate:·"2026-06-10",␍
+     99     │ - → → → → → endDate:·"2026-06-11",␍
+    100     │ - → → → → → startPeriod:·"full_day",␍
+    101     │ - → → → → → endPeriod:·"full_day",␍
+    102     │ - → → → → },␍
+    103     │ - → → → ],␍
+    104     │ - → → → blockers:·[],␍
+    105     │ - → → });␍
+    106     │ - ␍
+    107     │ - → → expect(summary.employees[0]?.absenceDaysByCategory).toEqual([␍
+    108     │ - → → → {·categoryId:·"sick",·categoryName:·"Sick",·days:·1·},␍
+    109     │ - → → → {·categoryId:·"vacation",·categoryName:·"Vacation",·days:·2·},␍
+    110     │ - → → ]);␍
+    111     │ - → → expect(summary.absenceDetails).toEqual([␍
+    112     │ - → → → {␍
+    113     │ - → → → → employeeId:·"employee-1",␍
+    114     │ - → → → → categoryId:·"vacation",␍
+    115     │ - → → → → categoryName:·"Vacation",␍
+    116     │ - → → → → date:·"2026-06-10",␍
+    117     │ - → → → → period:·"full_day",␍
+    118     │ - → → → },␍
+    119     │ - → → → {␍
+    120     │ - → → → → employeeId:·"employee-1",␍
+    121     │ - → → → → categoryId:·"vacation",␍
+    122     │ - → → → → categoryName:·"Vacation",␍
+    123     │ - → → → → date:·"2026-06-11",␍
+    124     │ - → → → → period:·"full_day",␍
+    125     │ - → → → },␍
+    126     │ - → → → {␍
+    127     │ - → → → → employeeId:·"employee-1",␍
+    128     │ - → → → → categoryId:·"sick",␍
+    129     │ - → → → → categoryName:·"Sick",␍
+    130     │ - → → → → date:·"2026-06-12",␍
+    131     │ - → → → → period:·"full_day",␍
+    132     │ - → → → },␍
+    133     │ - → → ]);␍
+    134     │ - → });␍
+    135     │ - ␍
+    136     │ - → it("includes·a·same-day·half-day·absence·in·details·and·category·totals",·()·=>·{␍
+    137     │ - → → const·summary·=·buildPayrollSummaryFromRows({␍
+    138     │ - → → → organizationId:·"organization-a",␍
+    139     │ - → → → organizationName:·"Acme·GmbH",␍
+    140     │ - → → → period:·{·start:·"2026-06-01",·end:·"2026-06-30",·label:·"June·2026"·},␍
+    141     │ - → → → generatedAt:·DateTime.fromISO("2026-06-30T12:00:00Z"),␍
+    142     │ - → → → generatedBy:·{·id:·"payroll-1",·name:·"Payroll·User"·},␍
+    143     │ - → → → employees:·[␍
+    144     │ - → → → → {␍
+    145     │ - → → → → → id:·"employee-1",␍
+    146     │ - → → → → → name:·"Ada·Lovelace",␍
+    147     │ - → → → → → employeeNumber:·"E-1",␍
+    148     │ - → → → → → teamName:·"Ops",␍
+    149     │ - → → → → → contractType:·"fixed",␍
+    150     │ - → → → → },␍
+  1717 more lines truncated
+
+
+src\lib\payroll-workspace\summary.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1      │ - import·{·createHash·}·from·"node:crypto";␍
+      2      │ - import·{·and,·eq,·gte,·inArray,·isNotNull,·isNull,·lte,·or·}·from·"drizzle-orm";␍
+      3      │ - import·{·DateTime·}·from·"luxon";␍
+      4      │ - import·{·Temporal·}·from·"temporal-polyfill";␍
+      5      │ - import·{·organization,·user·}·from·"@/db/auth-schema";␍
+      6      │ - import·{␍
+      7      │ - → absenceCategory,␍
+      8      │ - → absenceEntry,␍
+      9      │ - → approvalRequest,␍
+     10      │ - → employee,␍
+     11      │ - → payrollExportConfig,␍
+     12      │ - → team,␍
+     13      │ - → timeRecord,␍
+     14      │ - → timeRecordAbsence,␍
+     15      │ - → userSettings,␍
+     16      │ - }·from·"@/db/schema";␍
+     17      │ - import·{·type·Instant,·instantFromDate,·parsePlainDate·}·from·"@/lib/datetime/temporal-core";␍
+     18      │ - import·{␍
+     19      │ - → findOpenDepartureClockRepairs,␍
+     20      │ - → type·OpenDepartureClockRepair,␍
+     21      │ - }·from·"@/lib/employee-lifecycle/reviews";␍
+     22      │ - import·{·loadCurrentContractTypes·}·from·"@/lib/employment-history/load-terms-in-force";␍
+     23      │ - import·{␍
+     24      │ - → allocateProtectedMinutes,␍
+     25      │ - → employeePayrollWindow,␍
+     26      │ - }·from·"@/lib/payroll-allocation/protected-minutes";␍
+     27      │ - import·{␍
+     28      │ - → type·CollectedPayrollWork,␍
+     29      │ - → missingPersonnelIdentifierBlockers,␍
+     30      │ - → type·PayrollWorkBlocker,␍
+     31      │ - → type·PayrollWorkBlockerKind,␍
+     32      │ - → type·PayrollWorkCollection,␍
+     33      │ - }·from·"@/lib/payroll-collection/payroll-work-collection";␍
+     34      │ - import·{␍
+     35      │ - → isPayrollWorkCollectionActive,␍
+     36      │ - → readPayrollWorkCollection,␍
+     37      │ - }·from·"@/lib/payroll-collection/payroll-work-collection-reader";␍
+     38      │ - import·{·buildPayrollQueryEnvelope·}·from·"@/lib/payroll-export/calendar-boundaries";␍
+     39      │ - import·{·payrollIdentifierCustomFieldId·}·from·"@/lib/payroll-export/personnel-identifier";␍
+     40      │ - import·{·readPersonnelIdentifierValues·}·from·"@/lib/payroll-export/personnel-identifier-store";␍
+     41      │ - import·{␍
+     42      │ - → assertCanonicalAbsencesReady,␍
+     43      │ - → assertCanonicalCutoverReady,␍
+     44      │ - }·from·"@/lib/time-record/migration/cutover-state";␍
+     45      │ - import·{·resolveEffectiveTimezone·}·from·"@/lib/timezone/effective-timezone";␍
+     46      │ - import·{␍
+     47      │ - → classifyPayrollRunCandidates,␍
+     48      │ - → exportIsPayrollRun,␍
+     49      │ - }·from·"@/lib/travel-expenses/payroll-run";␍
+     50      │ - import·{·buildPayrollAbsenceDetails,·payrollAbsenceDetailDays·}·from·"./absence-details";␍
+     51      │ - import·{·filterDismissedPayrollBlockerCandidates·}·from·"./blocker-dismissal-loader";␍
+     52      │ - import·type·{␍
+     53      │ - → PayrollBlocker,␍
+     54      │ - → PayrollPeriod,␍
+     55      │ - → PayrollSummaryAbsenceRow,␍
+     56      │ - → PayrollSummaryEmployeeSource,␍
+     57      │ - → PayrollSummaryWorkRow,␍
+     58      │ - → PayrollWorkspaceSummary,␍
+     59      │ - }·from·"./types";␍
+     60      │ - ␍
+     61      │ - type·PayrollDateTimePeriod·=·{·start:·DateTime;·end:·DateTime·};␍
+     62      │ - ␍
+     63      │ - export·interface·PendingTimeApprovalBlockerRow·{␍
+     64      │ - → id:·string;␍
+     65      │ - → organizationId:·string;␍
+     66      │ - → requestedBy:·string;␍
+     67      │ - → status:·string;␍
+     68      │ - → entityType:·string;␍
+     69      │ - → canonicalRecordId:·string·|·null;␍
+     70      │ - → recordId:·string·|·null;␍
+     71      │ - → recordOrganizationId:·string·|·null;␍
+     72      │ - → employeeId:·string;␍
+     73      │ - → startAt:·DateTime;␍
+     74      │ - → endAt:·DateTime·|·null;␍
+     75      │ - }␍
+     76      │ - ␍
+     77      │ - export·interface·MissingClockOutBlockerRow·{␍
+     78      │ - → id:·string;␍
+     79      │ - → employeeId:·string;␍
+     80      │ - → startAt:·DateTime;␍
+     81      │ - }␍
+     82      │ - ␍
+     83      │ - export·function·buildPayrollSummaryFromRows(input:·{␍
+     84      │ - → organizationId:·string;␍
+     85      │ - → organizationName:·string;␍
+     86      │ - → period:·PayrollPeriod;␍
+     87      │ - → generatedAt:·DateTime;␍
+     88      │ - → generatedBy:·{·id:·string;·name:·string·};␍
+     89      │ - → employees:·PayrollSummaryEmployeeSource[];␍
+     90      │ - → workRows:·PayrollSummaryWorkRow[];␍
+     91      │ - → /**·Work·credited·by·scoped·collection·(#322);·replaces·`workRows`·when·present.·*/␍
+     92      │ - → collectedWork?:·readonly·Pick<CollectedPayrollWork,·"employeeId"·|·"minutes">[];␍
+     93      │ - → absenceRows:·PayrollSummaryAbsenceRow[];␍
+     94      │ - → blockers:·PayrollBlocker[];␍
+     95      │ - }):·PayrollWorkspaceSummary·{␍
+     96      │ - → const·{·workedMinutesByEmployee,·blockers:·workBlockers·}·=·input.collectedWork␍
+     97      │ - → → ?·{·workedMinutesByEmployee:·sumCollectedMinutes(input.collectedWork),·blockers:·[]·}␍
+     98      │ - → → :·calculatePayrollWorkedMinutes(input.workRows,·input.period);␍
+     99      │ - → const·blockers·=·[...workBlockers,·...input.blockers];␍
+    100      │ - → const·absenceDetails·=·buildPayrollAbsenceDetails(input.absenceRows,·input.period);␍
+    101      │ - ␍
+    102      │ - → const·absenceDaysByEmployee·=·new·Map<␍
+    103      │ - → → string,␍
+    104      │ - → → Map<string,·{·categoryId:·string;·categoryName:·string;·days:·number·}>␍
+    105      │ - → >();␍
+    106      │ - → for·(const·detail·of·absenceDetails)·{␍
+    107      │ - → → const·employeeAbsences·=·absenceDaysByEmployee.get(detail.employeeId)·??·new·Map();␍
+    108      │ - → → const·existing·=·employeeAbsences.get(detail.categoryId);␍
+    109      │ - → → employeeAbsences.set(detail.categoryId,·{␍
+    110      │ - → → → categoryId:·detail.categoryId,␍
+    111      │ - → → → categoryName:·detail.categoryName,␍
+    112      │ - → → → days:·(existing?.days·??·0)·+·payrollAbsenceDetailDays(detail.period),␍
+    113      │ - → → });␍
+    114      │ - → → absenceDaysByEmployee.set(detail.employeeId,·employeeAbsences);␍
+    115      │ - → }␍
+    116      │ - ␍
+    117      │ - → const·employeesWithBlockers·=·new·Set(blockers.map((blocker)·=>·blocker.employeeId));␍
+    118      │ - → const·employees·=·input.employees␍
+    119      │ - → → .map((employeeRow)·=>·{␍
+    120      │ - → → → const·workedHours·=·roundHours((workedMinutesByEmployee.get(employeeRow.id)·??·0)·/·60);␍
+    121      │ - → → → const·absenceDaysByCategory·=·[...(absenceDaysByEmployee.get(employeeRow.id)?.values()·??·[])]␍
+    122      │ - → → → → .map((absence)·=>·({·...absence,·days:·roundDays(absence.days)·}))␍
+    123      │ - → → → → .sort((a,·b)·=>·a.categoryName.localeCompare(b.categoryName));␍
+    124      │ - ␍
+    125      │ - → → → return·{␍
+    126      │ - → → → → ...employeeRow,␍
+    127      │ - → → → → workedHours,␍
+    128      │ - → → → → absenceDaysByCategory,␍
+    129      │ - → → → → hasBlockers:·employeesWithBlockers.has(employeeRow.id),␍
+    130      │ - → → → };␍
+    131      │ - → → })␍
+    132      │ - → → .sort((a,·b)·=>·a.name.localeCompare(b.name)·||·a.id.localeCompare(b.id));␍
+    133      │ - ␍
+    134      │ - → return·{␍
+    135      │ - → → organizationId:·input.organizationId,␍
+    136      │ - → → organizationName:·input.organizationName,␍
+    137      │ - → → period:·input.period,␍
+    138      │ - → → generatedAt:·input.generatedAt.toUTC().toISO()·??·input.generatedAt.toISO()·??·"",␍
+    139      │ - → → generatedBy:·input.generatedBy,␍
+    140      │ - → → totals:·{␍
+    141      │ - → → → employeeCount:·employees.length,␍
+    142      │ - → → → totalWorkedHours:·roundHours(␍
+    143      │ - → → → → employees.reduce((total,·employeeRow)·=>·total·+·employeeRow.workedHours,·0),␍
+    144      │ - → → → ),␍
+    145      │ - → → → blockerCount:·blockers.length,␍
+    146      │ - → → },␍
+    147      │ - → → employees,␍
+    148      │ - → → absenceDetails,␍
+    149      │ - → → blockers,␍
+    150      │ - → };␍
+  1825 more lines truncated
+
+
+src\lib\payroll-workspace\types.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1     │ - import·type·{·Instant·}·from·"@/lib/datetime/temporal-core";␍
+      2     │ - ␍
+      3     │ - export·type·PayrollDayPeriod·=·"full_day"·|·"am"·|·"pm";␍
+      4     │ - ␍
+      5     │ - export·type·PayrollAbsenceDetailPeriod·=·PayrollDayPeriod·|·"partial_day";␍
+      6     │ - ␍
+      7     │ - export·type·PayrollDateRangeMode·=·"month"·|·"week"·|·"custom";␍
+      8     │ - ␍
+      9     │ - export·interface·PayrollPeriod·{␍
+     10     │ - → start:·string;␍
+     11     │ - → end:·string;␍
+     12     │ - → label:·string;␍
+     13     │ - }␍
+     14     │ - ␍
+     15     │ - export·interface·PayrollSummaryEmployeeSource·{␍
+     16     │ - → id:·string;␍
+     17     │ - → name:·string;␍
+     18     │ - → employeeNumber:·string·|·null;␍
+     19     │ - → teamName:·string·|·null;␍
+     20     │ - → contractType:·"fixed"·|·"hourly";␍
+     21     │ - }␍
+     22     │ - ␍
+     23     │ - export·interface·PayrollSummaryWorkRow·{␍
+     24     │ - → id:·string;␍
+     25     │ - → employeeId:·string;␍
+     26     │ - → /**·Effective·employee·timezone·that·defines·the·employee-local·payroll·window.·*/␍
+     27     │ - → timezone:·string;␍
+     28     │ - → startAt:·Instant;␍
+     29     │ - → endAt:·Instant;␍
+     30     │ - → durationMinutes:·number·|·null;␍
+     31     │ - }␍
+     32     │ - ␍
+     33     │ - export·interface·PayrollSummaryAbsenceRangeRow·{␍
+     34     │ - → employeeId:·string;␍
+     35     │ - → categoryId:·string;␍
+     36     │ - → categoryName:·string;␍
+     37     │ - → startDate:·string;␍
+     38     │ - → endDate:·string;␍
+     39     │ - → startPeriod:·PayrollDayPeriod;␍
+     40     │ - → endPeriod:·PayrollDayPeriod;␍
+     41     │ - → startTime?:·string;␍
+     42     │ - → endTime?:·string;␍
+     43     │ - }␍
+     44     │ - ␍
+     45     │ - export·type·PayrollSummaryAbsenceRow·=·PayrollSummaryAbsenceRangeRow;␍
+     46     │ - ␍
+     47     │ - export·interface·PayrollAbsenceDetail·{␍
+     48     │ - → employeeId:·string;␍
+     49     │ - → categoryId:·string;␍
+     50     │ - → categoryName:·string;␍
+     51     │ - → date:·string;␍
+     52     │ - → period:·PayrollAbsenceDetailPeriod;␍
+     53     │ - }␍
+     54     │ - ␍
+     55     │ - export·type·DismissiblePayrollBlockerType·=␍
+     56     │ - → |·"missing_clock_out"␍
+     57     │ - → |·"pending_absence"␍
+     58     │ - → |·"pending_time_correction";␍
+     59     │ - ␍
+     60     │ - /**␍
+     61     │ - ·*·`unresolved_work_minutes`·marks·completed·work·whose·payroll·credit·cannot·be·allocated·to·the␍
+     62     │ - ·*·period.·`offboarding_clock_repair`·marks·a·departure·whose·running·timer·could·not·be·closed␍
+     63     │ - ·*·safely.·Under·scoped·payroll·collection·(#322),·`open_work`,·`pending_work_approval`,␍
+     64     │ - ·*·`pending_work_correction`·and·`uncertain_historical_work`·mark·work·an·export·cannot·omit.␍
+     65     │ - ·*·`missing_identifier`·marks·work·of·an·employee·without·a·value·for·the·configured·custom·field␍
+     66     │ - ·*·identifier·(#821).·All·of·them·block·exports,·so·they·cannot·be·cleared·as·false·positives.␍
+     67     │ - ·*/␍
+     68     │ - export·type·PayrollBlockerType·=␍
+     69     │ - → |·DismissiblePayrollBlockerType␍
+     70     │ - → |·"unresolved_work_minutes"␍
+     71     │ - → |·"offboarding_clock_repair"␍
+     72     │ - → |·"open_work"␍
+     73     │ - → |·"pending_work_approval"␍
+     74     │ - → |·"pending_work_correction"␍
+     75     │ - → |·"uncertain_historical_work"␍
+     76     │ - → |·"missing_identifier";␍
+     77     │ - ␍
+     78     │ - export·interface·PayrollBlocker·{␍
+     79     │ - → id:·string;␍
+     80     │ - → employeeId:·string;␍
+     81     │ - → type:·PayrollBlockerType;␍
+     82     │ - → label:·string;␍
+     83     │ - → date:·string·|·null;␍
+     84     │ - → time:·string·|·null;␍
+     85     │ - }␍
+     86     │ - ␍
+     87     │ - export·interface·PayrollAbsenceDaysByCategory·{␍
+     88     │ - → categoryId:·string;␍
+     89     │ - → categoryName:·string;␍
+     90     │ - → days:·number;␍
+     91     │ - }␍
+     92     │ - ␍
+     93     │ - export·interface·PayrollEmployeeSummary·extends·PayrollSummaryEmployeeSource·{␍
+     94     │ - → workedHours:·number;␍
+     95     │ - → absenceDaysByCategory:·PayrollAbsenceDaysByCategory[];␍
+     96     │ - → hasBlockers:·boolean;␍
+     97     │ - }␍
+     98     │ - ␍
+     99     │ - export·interface·PayrollWorkspaceSummary·{␍
+    100     │ - → organizationId:·string;␍
+    101     │ - → organizationName:·string;␍
+    102     │ - → period:·PayrollPeriod;␍
+    103     │ - → generatedAt:·string;␍
+    104     │ - → generatedBy:·{·id:·string;·name:·string·};␍
+    105     │ - → totals:·{␍
+    106     │ - → → employeeCount:·number;␍
+    107     │ - → → totalWorkedHours:·number;␍
+    108     │ - → → blockerCount:·number;␍
+    109     │ - → };␍
+    110     │ - → employees:·PayrollEmployeeSummary[];␍
+    111     │ - → absenceDetails:·PayrollAbsenceDetail[];␍
+    112     │ - → blockers:·PayrollBlocker[];␍
+    113     │ - }␍
+          1 │ + import·type·{·Instant·}·from·"@/lib/datetime/temporal-core";
+          2 │ +
+          3 │ + export·type·PayrollDayPeriod·=·"full_day"·|·"am"·|·"pm";
+          4 │ +
+          5 │ + export·type·PayrollAbsenceDetailPeriod·=·PayrollDayPeriod·|·"partial_day";
+          6 │ +
+          7 │ + export·type·PayrollDateRangeMode·=·"month"·|·"week"·|·"custom";
+          8 │ +
+          9 │ + export·interface·PayrollPeriod·{
+         10 │ + → start:·string;
+         11 │ + → end:·string;
+         12 │ + → label:·string;
+         13 │ + }
+         14 │ +
+         15 │ + export·interface·PayrollSummaryEmployeeSource·{
+         16 │ + → id:·string;
+         17 │ + → name:·string;
+         18 │ + → employeeNumber:·string·|·null;
+         19 │ + → teamName:·string·|·null;
+         20 │ + → contractType:·"fixed"·|·"hourly";
+         21 │ + }
+         22 │ +
+         23 │ + export·interface·PayrollSummaryWorkRow·{
+         24 │ + → id:·string;
+         25 │ + → employeeId:·string;
+         26 │ + → /**·Effective·employee·timezone·that·defines·the·employee-local·payroll·window.·*/
+         27 │ + → timezone:·string;
+         28 │ + → startAt:·Instant;
+         29 │ + → endAt:·Instant;
+         30 │ + → durationMinutes:·number·|·null;
+         31 │ + }
+         32 │ +
+         33 │ + export·interface·PayrollSummaryAbsenceRangeRow·{
+         34 │ + → employeeId:·string;
+         35 │ + → categoryId:·string;
+         36 │ + → categoryName:·string;
+         37 │ + → startDate:·string;
+  77 more lines truncated
+
+
+Checked 11 files in 40ms. No fixes applied.
+Found 14 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp

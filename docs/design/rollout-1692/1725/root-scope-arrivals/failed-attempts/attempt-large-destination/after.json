@@ -1,0 +1,10 @@
+{
+  "phase": "after",
+  "sourceCommit": "6bded15a8d0221b670d4957275aa738eae06202c",
+  "scope": "Real same-user authorized organization change through Better Auth endpoint, followed by actual Next router.refresh without a full navigation. Router call is synthetic; server props and data are genuine.",
+  "checks": [],
+  "captures": [],
+  "pageErrors": [],
+  "rsc": [],
+  "failure": "Waiting for selector `#payroll-export-target` failed"
+}

@@ -1,0 +1,208 @@
+{
+  "status": "MERGED_CONDITIONAL_NOT_VERIFIED_PENDING_ROOT_SCOPE_ARRIVAL_CORRECTION_AND_EVIDENCE_QUALIFICATION",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "e64f66f144b59917d9fc975710df5ff98093cce6",
+  "incoming": "165681372d1950bdb846eb43774dd2d4b429f6f8",
+  "merge": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+  "parents": [
+    "e64f66f144b59917d9fc975710df5ff98093cce6",
+    "165681372d1950bdb846eb43774dd2d4b429f6f8"
+  ],
+  "tree": "143bd1c0422800ec4784ffee81cfe8fe33e4a329",
+  "independentTreeMatches": true,
+  "clean": true,
+  "exclusiveOwnership": "RELEASE",
+  "rootNext": "Root owns scope-arrival source correction/permanent regressions and qualification of phone capture framing. Merger changed no tracked source/report/ledger/README/raw evidence beyond the authorized native merge; no verifiedCommit or readiness claim. Root may now use checkout/package processes.",
+  "tests": {
+    "selections": [
+      {
+        "name": "exact-initial",
+        "files": 24,
+        "cases": 269,
+        "passed": 268,
+        "failed": 1,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 94,
+        "cases": 1016,
+        "passed": 1016,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 24,
+        "overlapCases": 269
+      },
+      {
+        "name": "exact-rerun",
+        "files": 24,
+        "cases": 269,
+        "passed": 269,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 24,
+        "overlapCases": 269
+      }
+    ],
+    "uniqueFiles": 94,
+    "uniqueCases": 1016,
+    "method": "Normalized absolute file path plus fullName multiset, retaining parameterized duplicate names. Exact24/269 is contained in compatibility94/1016. Initial failures and repeated runs do not add unique coverage.",
+    "initialFocusFailureRetained": true,
+    "isolatedPass": true,
+    "sourceAudit": {
+      "passed": 3,
+      "failed": 4,
+      "copiedNonSelectedCases": 58,
+      "findings": [
+        {
+          "priority": "P2",
+          "file": "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+          "line": 629,
+          "finding": "A new authorized initialSummary on the mounted route does not replace A's organization header/rows. A held A period summary subsequently overwrites the visible workspace despite the B arrival.",
+          "requirement": "Canonical spec Testing Decisions, runtime acceptance item2: stale records/action targets must not appear current when organization/authority changes in flight; R042 selected organization/period/scope remains authoritative.",
+          "reproductions": [
+            "root audit adopts a newly authorized server snapshot without showing the old scope",
+            "root audit refuses an older held summary after a new server scope arrives"
+          ]
+        },
+        {
+          "priority": "P2",
+          "file": "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+          "line": 480,
+          "finding": "The [] lifetime cleanup guards only disconnects. A held export result still emits Payroll export completed and a held PDF still creates a download after new authorized server props arrive without unmount/Activity cleanup.",
+          "requirement": "Canonical spec records/exports retain existing scoped datasets and failure/retry lifecycles; runtime item2 requires safe in-flight scope arrival. R042 preserves separate PDF and configured export for the selected organization period and employee/team scope.",
+          "reproductions": [
+            "root audit suppresses an old export result after a new server scope arrives",
+            "root audit suppresses an old PDF download after a new server scope arrives"
+          ]
+        }
+      ],
+      "qualification": "Ignored assembled tests only, not fresh live organization/account switching; same-instance RSC server props arrive with new authorized scope. Normal organization switch uses full reload."
+    }
+  },
+  "types": {
+    "passed": true,
+    "scope": [
+      "next typegen",
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ],
+    "freshOnMerge": true
+  },
+  "biome": {
+    "sixChangedFiles": true,
+    "default": false,
+    "normalCRLF": false,
+    "explicitWebappCRLF": true,
+    "ordinaryLintImport": false,
+    "ordinaryDiagnostics": [
+      "useSemanticElements at payroll-workspace.tsx:1771 named report region",
+      "useSemanticElements at payroll-workspace.tsx:1857 summary group"
+    ],
+    "formattingWrites": false
+  },
+  "doctor": {
+    "version": "0.9.22",
+    "changedFiles": 6,
+    "complete": true,
+    "diagnostics": 0,
+    "remoteScore": false,
+    "supplyChain": false
+  },
+  "preservation": {
+    "verifiedAncestors": 38,
+    "ticketVerifiedAncestors": 37,
+    "baselinePaths": 12092,
+    "priorRolloutPathsUnchanged": 1856,
+    "unaffectedPriorPathsUnchanged": 12086,
+    "incomingUnalteredPaths": 135,
+    "changedSourceFiles": [
+      "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx",
+      "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx",
+      "apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+      "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "noDeletions": true,
+    "allRootCorrectionsAndRawArchivesUnchanged": true,
+    "ledgerAndReadmeUnchanged": true,
+    "headingOptins": [
+      "/organization",
+      "/notifications",
+      "/payroll"
+    ]
+  },
+  "artifacts": {
+    "pngs": 79,
+    "jsons": 28,
+    "scripts": 9,
+    "reportLinks": 27,
+    "acceptedCaptures": 15,
+    "acceptedCaptureRecordsNotPairs": true,
+    "captureSourceHead": "59c974ce06966119fb20cd4036982f5a60f8f186",
+    "fullyDecoded": true
+  },
+  "sourceReview": {
+    "standardsFindings": 1,
+    "specFindings": 2,
+    "acceptance": "BLOCKED_PENDING_ROOT_SCOPE_ARRIVAL_CORRECTION_AND_EVIDENCE_QUALIFICATION",
+    "evidenceQualification": "Phone before-totals does not visibly show Employee totals and phone top pair scroll framing differs. Preserve original pixels and measured DOM scope; do not claim a matched complete visual pair."
+  },
+  "resources": {
+    "servicesStarted": false,
+    "browserStarted": false,
+    "postgresStarted": false,
+    "ownedPackageProcesses": "All started commands completed; final process check recorded in release.json",
+    "remoteWrites": false,
+    "trackerWrites": false,
+    "sourceFixes": false,
+    "reportLedgerReadmeEdits": false,
+    "rawEvidenceEdits": false
+  },
+  "inheritedAndGlobalLimits": {
+    "freshByMerger": false,
+    "scopeLifecycle": "Held action dispatch with current B cookies, safe refusal, B sign-in, A reauthentication; not continuous cached A-B-A or already-produced late download.",
+    "actions8Partial": true,
+    "nativeReactSeparateFromDOM": true,
+    "accessibility": {
+      "acceptedNative": {
+        "inapplicable": 38,
+        "incomplete": 0,
+        "passes": 21,
+        "violations": 0
+      },
+      "laterProbe": {
+        "passes": 19,
+        "inapplicable": 40,
+        "violations": 0,
+        "incomplete": 0
+      },
+      "scopedOnly": true,
+      "discardedOverlayAudit": true
+    },
+    "postgres": "Inherited5 suites50pass1skipped before later merges; no fresh PostgreSQL.",
+    "limits": [
+      "Source-pinned matrix precedes organization heading and final formatting; consumer hashes use only CRLF/LF normalization, no broad whitespace waiver.",
+      "No fresh live browser/nativeReact/Next/PostgreSQL/services by merger.",
+      "Production static generation, remote Tolgee, provider delivery/payment, devices/store wrapper, true zoom, screenreader/exhaustive a11y/locale/transition/performance and shared-shell findings remain open.",
+      "Many supporting actions and all retained-evidence variants are preserved/test-covered, not all freshly exercised live.",
+      "1724 source correction and its exact archived runtime/source proof preserved; no reclassification of global shared-shell acceptance."
+    ]
+  },
+  "files": {
+    "audit": ".tmp/merge1725-audit/audit.json",
+    "testSummary": ".tmp/merge1725-audit/test-summary.json",
+    "compatibilitySelection": ".tmp/merge1725-audit/compatibility-selection.txt",
+    "sourceReview": ".tmp/merge1725-audit/source-review.json",
+    "reproduction": ".tmp/merge1725-audit/source-contract.test.tsx",
+    "reproductionConfig": ".tmp/merge1725-audit/source-contract.config.mjs",
+    "reproductionResults": ".tmp/merge1725-audit/source-contract.json",
+    "artifactArchives": ".tmp/merge1725-audit/archive-checks.json",
+    "merge": ".tmp/merge1725-audit/merge.json",
+    "release": ".tmp/merge1725-audit/release.json"
+  }
+}
