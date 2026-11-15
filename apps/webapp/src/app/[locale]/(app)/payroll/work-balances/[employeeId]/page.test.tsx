@@ -6,6 +6,9 @@ import { appPageOwnsHeading } from "@/lib/navigation/route-metadata";
 import Page from "./page";
 
 const mocks = vi.hoisted(() => ({ coverage: vi.fn(), auth: vi.fn() }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
 vi.mock("../coverage", () => ({ loadPayrollWorkBalanceEmployees: mocks.coverage }));
 vi.mock("@/lib/auth-helpers", () => ({ getAuthContext: mocks.auth }));
 vi.mock("next/navigation", () => ({
@@ -31,6 +34,13 @@ vi.mock("@/components/payroll/employee-balance-workspace", () => ({
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+});
+
+it("keeps a safe task heading while the actual employee route is waiting for admission", () => {
+	render(Page({ params: Promise.resolve({ employeeId: "employee" }) }).props.fallback);
+	expect(screen.getByRole("heading", { level: 1, name: "Work balance" })).toBeTruthy();
+	expect(screen.getByRole("status", { name: "Loading the work balance" })).toBeTruthy();
+	expect(screen.queryAllByRole("heading", { level: 1 })).toHaveLength(1);
 });
 
 async function content(employeeId: string) {
