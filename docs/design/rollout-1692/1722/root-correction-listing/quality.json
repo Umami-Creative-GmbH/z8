@@ -1,0 +1,97 @@
+{
+  "correctionCommit": "8ba550c282727aec4548a217daa673b38137c883",
+  "sourcePins": {
+    "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts": "0a407d3407f41500419fc27aabf891a0d36b2fd08b31b1d5af6c4c2f8236f914",
+    "apps/webapp/src/lib/self-service-requests/__tests__/get-self-service-requests.test.ts": "03494caecca5b26dd05df2f19b045beb29853ffd37481a20c2916b2e296c16a2",
+    "apps/webapp/src/lib/approvals/server/time-approval-decision.integration.test.ts": "2e6e0e0c1816f1a30ee23fb5da1f0513881cc8107e7c872523d49f6b2e4e59ee"
+  },
+  "unit": {
+    "files": 48,
+    "tests": 1086,
+    "passed": true,
+    "repeatedNativeSelectionNotAdditionalCoverage": true,
+    "command": "unit-command.json"
+  },
+  "postgres": {
+    "files": 1,
+    "tests": 35,
+    "skippedExistingTests": 217,
+    "passed": true,
+    "command": [
+      "pnpm",
+      "--filter",
+      "webapp",
+      "exec",
+      "C:/Users/KaiHentschel/scoop/apps/git/current/usr/bin/bash.exe",
+      "../../.tmp/1722-root-checks/run-pg.sh",
+      "verified-matrix"
+    ],
+    "migrationRecoveryPassed": true,
+    "ownedContainerRemoved": true,
+    "scope": "Production clocking, correction/deletion actions, public listing/readiness and cancellation; active append fixture across legacy/shadow/canonical/complete lifecycles. No database suites mocked."
+  },
+  "types": {
+    "passed": true,
+    "command": "types-command.json"
+  },
+  "doctor": {
+    "passed": true,
+    "files": 8,
+    "diagnostics": 0,
+    "command": "doctor-command.json"
+  },
+  "biome": {
+    "explicitLintImport": {
+      "passed": true,
+      "files": 3,
+      "log": "final-lint-import.log"
+    },
+    "formatting": {
+      "explicit100ColumnCRLF": {
+        "passed": false,
+        "files": 3,
+        "log": "final-explicit-format.log"
+      },
+      "normalCRLF": {
+        "passed": false,
+        "files": 3,
+        "log": "final-normal-format.log"
+      },
+      "qualification": "Both complete-file format checks remain unpassed. An intermediate whole-file format was removed outside the owned edits; no blanket formatting pass or waiver."
+    }
+  },
+  "runtime": {
+    "namedChecks": 9,
+    "fixtureSetupChecks": 1,
+    "behaviorChecks": 8,
+    "captures": 3,
+    "failedAttemptCaptures": 2,
+    "pageErrors": 0,
+    "scope": "One actual legacy, non-adopted correction; baseline reader overlay only. Same pending request continues in a new isolated context after translated-label harness failure.",
+    "qualification": "Non-adopted fixture cancellation deletes pending correction entries. The strict relational reader consequently omits its legacy tombstone; this does not certify retained Cancelled history. Adopted history is verified by PostgreSQL cases.",
+    "initialRefusal": "Fresh fixture had no manager; actual refusal retained. Manager and change-policy prerequisites are disposable setup. A native input setter/input+change events set18:15; submit/cancel are actual pointer controls and native confirmations.",
+    "nativeReact": "No new usable native React tree claimed; worker native evidence remains inherited. DOM, screenshots, Doctor and connected Next probes are distinct."
+  },
+  "red": {
+    "pending": {
+      "failed": 1,
+      "passed": 0,
+      "skipped": 217,
+      "artifact": "legacy-red-exact.json"
+    },
+    "canonical": {
+      "failed": 4,
+      "passed": 23,
+      "skipped": 217,
+      "artifact": "canonical-red.json"
+    },
+    "qualification": "Earlier loose shell argument quoting selected nine extra passing requester cases and omitted JSON options. An intermediate matrix also had four fixture FK/cleanup errors; only the corrected exact red artifacts and final matrix substantiate the source findings."
+  },
+  "limits": [
+    "Legacy non-adopted cancellation deletes endpoint evidence; its old strict relational tombstone remains unlisted. Successful cancellation/readiness removal is live; retained history is PostgreSQL-verified in adopted fixtures.",
+    "Original worker failed correction attempts lack source/rollout snapshots, so their exact live cause remains inference. Root independently reproduces this reader defect with a different real pending correction.",
+    "Earlier anonymous root route NEXT_REDIRECT/instant validation diagnostics persist as historical findings; final connected probes do not erase them.",
+    "No fresh PostgreSQL full-suite run, build/static generation, remote Tolgee, provider, native React introspection, physical-device, true zoom, exhaustive role/domain/locale/accessibility or global-transition certification."
+  ],
+  "consoleLogs": "Published root console logs remove only line-end whitespace/trailing blank lines; original private logs remain ignored. JSON,PNG and all worker raw artifacts are unchanged."
+}
