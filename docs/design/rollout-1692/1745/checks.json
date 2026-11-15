@@ -66,7 +66,7 @@
       "symptom": "Server loading button differed from client ready div when the shared clock query was already populated."
     }
   },
-  "types": "Full webapp/application/workflow-contract/smoke typecheck passed before integration; final integrated result in report.",
+  "types": "Full application/workflow-contract/smoke checks passed before and after integration",
   "biome": "Explicit webapp biome.jsonc; four changed TypeScript files passed.",
   "doctor": {
     "errors": 0,
@@ -82,5 +82,14 @@
   "nativeReact": {
     "result": "No React renderer attached - the page has not booted React yet",
     "scope": "Actual protected tab, agent-browser 0.39.1 with React DevTools; no native React inspection/performance pass claimed."
+  },
+  "integrated": {
+    "integration": "3ba37fa2cc800f4c123d2013ea752a6f5f60d8c9",
+    "merge": "fe50b11e214575d64e8795f119decc718fb16e02",
+    "unitFiles": 40,
+    "unitTests": 491,
+    "unitFailures": 0,
+    "types": "Full webapp/application/workflow-contract/smoke typecheck passed",
+    "runtime": "Fresh authenticated context: no page or console errors; Next issues/configErrors/sessionErrors empty"
   }
 }
