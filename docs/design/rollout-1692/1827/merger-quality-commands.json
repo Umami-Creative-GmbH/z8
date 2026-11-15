@@ -1,0 +1,135 @@
+[
+    {
+        "name":  "biome-default",
+        "command":  [
+                        "pnpm",
+                        "--config.verify-deps-before-run=false",
+                        "--filter",
+                        "webapp",
+                        "exec",
+                        "biome",
+                        "check",
+                        "--error-on-warnings",
+                        "src/app/[locale]/onboarding/complete/actions.integration.test.ts",
+                        "src/app/[locale]/onboarding/complete/page-client.tsx",
+                        "src/app/[locale]/onboarding/complete/page.test.tsx"
+                    ],
+        "exitCode":  1
+    },
+    {
+        "name":  "biome-crlf",
+        "command":  [
+                        "pnpm",
+                        "--config.verify-deps-before-run=false",
+                        "--filter",
+                        "webapp",
+                        "exec",
+                        "biome",
+                        "check",
+                        "--error-on-warnings",
+                        "--line-ending=crlf",
+                        "src/app/[locale]/onboarding/complete/actions.integration.test.ts",
+                        "src/app/[locale]/onboarding/complete/page-client.tsx",
+                        "src/app/[locale]/onboarding/complete/page.test.tsx"
+                    ],
+        "exitCode":  1
+    },
+    {
+        "name":  "biome-explicit",
+        "command":  [
+                        "pnpm",
+                        "--config.verify-deps-before-run=false",
+                        "--filter",
+                        "webapp",
+                        "exec",
+                        "biome",
+                        "check",
+                        "--error-on-warnings",
+                        "--config-path=biome.jsonc",
+                        "src/app/[locale]/onboarding/complete/actions.integration.test.ts",
+                        "src/app/[locale]/onboarding/complete/page-client.tsx",
+                        "src/app/[locale]/onboarding/complete/page.test.tsx"
+                    ],
+        "exitCode":  1
+    },
+    {
+        "name":  "biome-explicit-crlf",
+        "command":  [
+                        "pnpm",
+                        "--config.verify-deps-before-run=false",
+                        "--filter",
+                        "webapp",
+                        "exec",
+                        "biome",
+                        "check",
+                        "--error-on-warnings",
+                        "--config-path=biome.jsonc",
+                        "--line-ending=crlf",
+                        "src/app/[locale]/onboarding/complete/actions.integration.test.ts",
+                        "src/app/[locale]/onboarding/complete/page-client.tsx",
+                        "src/app/[locale]/onboarding/complete/page.test.tsx"
+                    ],
+        "exitCode":  0
+    },
+    {
+        "name":  "biome-lint-import",
+        "command":  [
+                        "pnpm",
+                        "--config.verify-deps-before-run=false",
+                        "--filter",
+                        "webapp",
+                        "exec",
+                        "biome",
+                        "check",
+                        "--error-on-warnings",
+                        "--formatter-enabled=false",
+                        "src/app/[locale]/onboarding/complete/actions.integration.test.ts",
+                        "src/app/[locale]/onboarding/complete/page-client.tsx",
+                        "src/app/[locale]/onboarding/complete/page.test.tsx"
+                    ],
+        "exitCode":  1
+    },
+    {
+        "name":  "biome-explicit-lint",
+        "command":  [
+                        "pnpm",
+                        "--config.verify-deps-before-run=false",
+                        "--filter",
+                        "webapp",
+                        "exec",
+                        "biome",
+                        "check",
+                        "--error-on-warnings",
+                        "--config-path=biome.jsonc",
+                        "--formatter-enabled=false",
+                        "src/app/[locale]/onboarding/complete/actions.integration.test.ts",
+                        "src/app/[locale]/onboarding/complete/page-client.tsx",
+                        "src/app/[locale]/onboarding/complete/page.test.tsx"
+                    ],
+        "exitCode":  0
+    },
+    {
+        "name":  "doctor",
+        "command":  [
+                        "pnpm",
+                        "--config.verify-deps-before-run=false",
+                        "exec",
+                        "react-doctor",
+                        "apps/webapp",
+                        "--scope",
+                        "changed",
+                        "--base",
+                        "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+                        "--verbose",
+                        "--no-supply-chain",
+                        "--no-telemetry",
+                        "--no-score",
+                        "--json",
+                        "--json-out",
+                        ".tmp/merge1827-audit/doctor.json",
+                        "--max-duration",
+                        "90"
+                    ],
+        "exitCode":  0
+    }
+]

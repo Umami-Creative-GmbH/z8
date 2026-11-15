@@ -1,0 +1,18 @@
+{
+  "verified": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+  "base": "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+  "incoming": "274170732c4bcd42a1ee48103f458f0d3722149b",
+  "tree": "dbe10052bf9cbb9e5d31621aad1d1b1bc9048cc4",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/complete/actions.integration.test.ts": "28ef5d16b7376a9727cbc32c86732fd1dc7ebd7e5f1d938bf997a2e116590878",
+    "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx": "1ebbb35e32115ca64341f7a54672abd71b3946cbc4e4d34ff199499b68f55b82",
+    "apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx": "6cb7fd12a4303e88d942ac850c0a559b2adfa904fd59e7a2557f207dc092acd2"
+  },
+  "uniqueFiles": 143,
+  "uniqueTests": 1400,
+  "priorVerifiedAncestors": 40,
+  "preservedPriorPaths": 12627,
+  "priorRolloutPaths": 2380,
+  "originalRawPaths": 90,
+  "qualification": "Fresh merger tests/types/static quality/archive audit. Runtime/PG/native evidence inherited, no new services. Optional prior root archive reruns rejected and unexecuted; independent preservation audit passed."
+}
