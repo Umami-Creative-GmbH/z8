@@ -1,0 +1,385 @@
+src\app\[locale]\onboarding\organization\organization-page-client.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconBuilding,·IconLoader2·}·from·"@tabler/icons-react";␍
+      4     │ - import·{␍
+      5     │ - → type·FormAsyncValidateOrFn,␍
+      6     │ - → type·FormValidateOrFn,␍
+      7     │ - → type·ReactFormExtendedApi,␍
+      8     │ - → useForm,␍
+      9     │ - }·from·"@tanstack/react-form";␍
+     10     │ - import·{·useStore·}·from·"@tanstack/react-store";␍
+     11     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     12     │ - import·{·useEffect,·useEffectEvent,·useRef,·useState·}·from·"react";␍
+     13     │ - import·{·toast·}·from·"sonner";␍
+     14     │ - import·{·z·}·from·"zod";␍
+     15     │ - import·{·checkSlugAvailability·}·from·"@/app/[locale]/(app)/organization-actions";␍
+     16     │ - import·{·ProgressIndicator·}·from·"@/components/onboarding/progress-indicator";␍
+     17     │ - import·{·OrganizationTrackingSetupFields·}·from·"@/components/organization/organization-tracking-setup-fields";␍
+     18     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     19     │ - import·{·Input·}·from·"@/components/ui/input";␍
+     20     │ - import·{·Label·}·from·"@/components/ui/label";␍
+     21     │ - import·{·useSession·}·from·"@/lib/auth-client";␍
+     22     │ - import·{␍
+     23     │ - → generateSlug,␍
+     24     │ - → organizationSchema,␍
+     25     │ - }·from·"@/lib/validations/organization";␍
+     26     │ - import·{·useRouter·}·from·"@/navigation";␍
+     27     │ - import·{·runOnboardingAction·}·from·"../run-onboarding-action";␍
+     28     │ - import·{␍
+     29     │ - → createOrganizationOnboarding,␍
+     30     │ - → getOnboardingSummary,␍
+     31     │ - → skipOrganizationSetup,␍
+     32     │ - }·from·"./actions";␍
+     33     │ - ␍
+     34     │ - const·defaultValues·=·{␍
+     35     │ - → timezone:·"UTC",␍
+     36     │ - → trackingStartDate:·"",␍
+     37     │ - → name:·"",␍
+     38     │ - → slug:·"",␍
+     39     │ - };␍
+     40     │ - ␍
+     41     │ - type·OrganizationValues·=·typeof·defaultValues;␍
+     42     │ - type·OrganizationForm·=·ReactFormExtendedApi<␍
+     43     │ - → OrganizationValues,␍
+     44     │ - → FormValidateOrFn<OrganizationValues>·|·undefined,␍
+     45     │ - → FormValidateOrFn<OrganizationValues>·|·undefined,␍
+     46     │ - → FormAsyncValidateOrFn<OrganizationValues>·|·undefined,␍
+     47     │ - → FormValidateOrFn<OrganizationValues>·|·undefined,␍
+     48     │ - → FormAsyncValidateOrFn<OrganizationValues>·|·undefined,␍
+     49     │ - → FormValidateOrFn<OrganizationValues>·|·undefined,␍
+     50     │ - → FormAsyncValidateOrFn<OrganizationValues>·|·undefined,␍
+     51     │ - → FormValidateOrFn<OrganizationValues>·|·undefined,␍
+     52     │ - → FormAsyncValidateOrFn<OrganizationValues>·|·undefined,␍
+     53     │ - → FormAsyncValidateOrFn<OrganizationValues>·|·undefined,␍
+     54     │ - → unknown␍
+     55     │ - >;␍
+     56     │ - type·TranslationFunction·=·ReturnType<typeof·useTranslate>["t"];␍
+     57     │ - type·SlugError·=·{·slug:·string;·message:·string·}·|·null;␍
+     58     │ - ␍
+     59     │ - function·getErrorMessage(error:·unknown)·{␍
+     60     │ - → if·(typeof·error·===·"string")·return·error;␍
+     61     │ - → if·(␍
+     62     │ - → → typeof·error·===·"object"·&&␍
+     63     │ - → → error·!==·null·&&␍
+     64     │ - → → "message"·in·error·&&␍
+     65     │ - → → typeof·error.message·===·"string"␍
+     66     │ - → )·{␍
+     67     │ - → → return·error.message;␍
+     68     │ - → }␍
+     69     │ - → return·undefined;␍
+     70     │ - }␍
+     71     │ - ␍
+     72     │ - type·OrganizationPageClientProps·=·{␍
+     73     │ - → canCreateOrganizations:·boolean;␍
+     74     │ - → trackingSuggestedAt?:·string;␍
+     75     │ - };␍
+     76     │ - ␍
+     77     │ - function·OrganizationSetupHeader({␍
+     78     │ - → canCreateOrganizations,␍
+     79     │ - → t,␍
+     80     │ - }:·{␍
+     81     │ - → canCreateOrganizations:·boolean;␍
+     82     │ - → t:·(key:·string,·defaultValue:·string)·=>·string;␍
+     83     │ - })·{␍
+     84     │ - → return·(␍
+     85     │ - → → <div·className="mb-6·rounded-xl·border·bg-card·p-6·text-card-foreground·sm:p-8">␍
+     86     │ - → → → <h1·className="mb-3·text-2xl·font-semibold·tracking-tight·sm:text-3xl">␍
+     87     │ - → → → → {t("onboarding.organization.title",·"Set·up·your·organization")}␍
+     88     │ - → → → </h1>␍
+     89     │ - → → → <p·className="text-muted-foreground">␍
+     90     │ - → → → → {canCreateOrganizations␍
+     91     │ - → → → → → ?·t(␍
+     92     │ - → → → → → → → "onboarding.organization.subtitle",␍
+     93     │ - → → → → → → → "Create·your·organization·to·unlock·all·features,·or·skip·if·you're·waiting·for·an·invitation.",␍
+     94     │ - → → → → → → )␍
+     95     │ - → → → → → :·t(␍
+     96     │ - → → → → → → → "onboarding.organization.disabledSubtitle",␍
+     97     │ - → → → → → → → "Organization·creation·is·disabled·for·this·deployment.",␍
+     98     │ - → → → → → → )}␍
+     99     │ - → → → </p>␍
+    100     │ - → → </div>␍
+    101     │ - → );␍
+    102     │ - }␍
+    103     │ - ␍
+    104     │ - function·OrganizationSkipCard({␍
+    105     │ - → canCreateOrganizations,␍
+    106     │ - → loading,␍
+    107     │ - → onSkip,␍
+    108     │ - → t,␍
+    109     │ - }:·{␍
+    110     │ - → canCreateOrganizations:·boolean;␍
+    111     │ - → loading:·boolean;␍
+    112     │ - → onSkip:·()·=>·void;␍
+    113     │ - → t:·(key:·string,·defaultValue:·string)·=>·string;␍
+    114     │ - })·{␍
+    115     │ - → return·(␍
+    116     │ - → → <section␍
+    117     │ - → → → aria-labelledby="organization-skip-title"␍
+    118     │ - → → → className="self-start·rounded-xl·border·bg-card·text-card-foreground"␍
+    119     │ - → → >␍
+    120     │ - → → → <header·className="space-y-2·border-b·p-6">␍
+    121     │ - → → → → <h2·id="organization-skip-title"·className="font-semibold">␍
+    122     │ - → → → → → {t("onboarding.organization.skipTitle",·"Waiting·for·an·Invitation?")}␍
+    123     │ - → → → → </h2>␍
+    124     │ - → → → → <p·className="text-sm·leading-relaxed·text-muted-foreground">␍
+    125     │ - → → → → → {canCreateOrganizations␍
+    126     │ - → → → → → → ?·t(␍
+    127     │ - → → → → → → → → "onboarding.organization.skipDescription",␍
+    128     │ - → → → → → → → → "If·your·administrator·will·invite·you·to·an·organization,·you·can·skip·this·step·for·now.",␍
+    129     │ - → → → → → → → )␍
+    130     │ - → → → → → → :·t(␍
+    131     │ - → → → → → → → → "onboarding.organization.disabledSkipDescription",␍
+    132     │ - → → → → → → → → "You·can·continue·by·skipping·this·step·while·you·wait·for·an·invitation·to·an·existing·organization.",␍
+    133     │ - → → → → → → → )}␍
+    134     │ - → → → → </p>␍
+    135     │ - → → → </header>␍
+    136     │ - → → → <div·className="p-6">␍
+    137     │ - → → → → <Button␍
+    138     │ - → → → → → variant="outline"␍
+    139     │ - → → → → → onClick={onSkip}␍
+    140     │ - → → → → → disabled={loading}␍
+    141     │ - → → → → → className="w-full"␍
+    142     │ - → → → → >␍
+    143     │ - → → → → → {t("onboarding.organization.skip",·"Skip·for·now")}␍
+    144     │ - → → → → </Button>␍
+    145     │ - → → → </div>␍
+    146     │ - → → </section>␍
+    147     │ - → );␍
+    148     │ - }␍
+    149     │ - ␍
+    150     │ - function·CreateOrganizationCard({␍
+  1333 more lines truncated
+  
+
+src\app\[locale]\onboarding\organization\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{␍
+      4     │ - → act,␍
+      5     │ - → fireEvent,␍
+      6     │ - → render,␍
+      7     │ - → screen,␍
+      8     │ - → waitFor,␍
+      9     │ - }·from·"@testing-library/react";␍
+     10     │ - import·{·Activity,·StrictMode·}·from·"react";␍
+     11     │ - import·{·afterEach,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+     12     │ - ␍
+     13     │ - const·{␍
+     14     │ - → getOnboardingSummaryMock,␍
+     15     │ - → createOrganizationOnboardingMock,␍
+     16     │ - → checkSlugAvailabilityMock,␍
+     17     │ - → pushMock,␍
+     18     │ - → replaceMock,␍
+     19     │ - → skipOrganizationSetupMock,␍
+     20     │ - → toastErrorMock,␍
+     21     │ - → toastSuccessMock,␍
+     22     │ - → sessionState,␍
+     23     │ - }·=·vi.hoisted(()·=>·({␍
+     24     │ - → createOrganizationOnboardingMock:·vi.fn(),␍
+     25     │ - → checkSlugAvailabilityMock:·vi.fn(),␍
+     26     │ - → getOnboardingSummaryMock:·vi.fn(),␍
+     27     │ - → pushMock:·vi.fn(),␍
+     28     │ - → replaceMock:·vi.fn(),␍
+     29     │ - → skipOrganizationSetupMock:·vi.fn(),␍
+     30     │ - → toastErrorMock:·vi.fn(),␍
+     31     │ - → toastSuccessMock:·vi.fn(),␍
+     32     │ - → sessionState:·{·account:·"a",·organization:·""·},␍
+     33     │ - }));␍
+     34     │ - ␍
+     35     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     36     │ - → useTranslate:·()·=>·({␍
+     37     │ - → → t:·(_key:·string,·fallback?:·string)·=>·fallback·??·_key,␍
+     38     │ - → }),␍
+     39     │ - }));␍
+     40     │ - ␍
+     41     │ - vi.mock("sonner",·()·=>·({␍
+     42     │ - → toast:·{␍
+     43     │ - → → success:·toastSuccessMock,␍
+     44     │ - → → error:·toastErrorMock,␍
+     45     │ - → },␍
+     46     │ - }));␍
+     47     │ - ␍
+     48     │ - vi.mock("@/app/[locale]/(app)/organization-actions",·()·=>·({␍
+     49     │ - → checkSlugAvailability:·checkSlugAvailabilityMock,␍
+     50     │ - }));␍
+     51     │ - ␍
+     52     │ - vi.mock("@/navigation",·()·=>·({␍
+     53     │ - → useRouter:·()·=>·({·push:·pushMock,·replace:·replaceMock·}),␍
+     54     │ - }));␍
+     55     │ - ␍
+     56     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     57     │ - → useSession:·()·=>·({␍
+     58     │ - → → data:·{␍
+     59     │ - → → → user:·{·id:·sessionState.account·},␍
+     60     │ - → → → session:·{␍
+     61     │ - → → → → id:·sessionState.account,␍
+     62     │ - → → → → activeOrganizationId:·sessionState.organization,␍
+     63     │ - → → → },␍
+     64     │ - → → },␍
+     65     │ - → }),␍
+     66     │ - }));␍
+     67     │ - ␍
+     68     │ - vi.mock("@/components/onboarding/progress-indicator",·()·=>·({␍
+     69     │ - → ProgressIndicator:·()·=>·null,␍
+     70     │ - }));␍
+     71     │ - ␍
+     72     │ - vi.mock("./actions",·()·=>·({␍
+     73     │ - → createOrganizationOnboarding:·createOrganizationOnboardingMock,␍
+     74     │ - → getOnboardingSummary:·getOnboardingSummaryMock,␍
+     75     │ - → skipOrganizationSetup:·skipOrganizationSetupMock,␍
+     76     │ - }));␍
+     77     │ - ␍
+     78     │ - import·OrganizationPageClient·from·"./organization-page-client";␍
+     79     │ - ␍
+     80     │ - function·deferred<T>()·{␍
+     81     │ - → let·resolve!:·(value:·T)·=>·void;␍
+     82     │ - → let·reject!:·(reason:·unknown)·=>·void;␍
+     83     │ - → const·promise·=·new·Promise<T>((resolvePromise,·rejectPromise)·=>·{␍
+     84     │ - → → resolve·=·resolvePromise;␍
+     85     │ - → → reject·=·rejectPromise;␍
+     86     │ - → });␍
+     87     │ - → return·{·promise,·reject,·resolve·};␍
+     88     │ - }␍
+     89     │ - ␍
+     90     │ - describe("OrganizationPageClient",·()·=>·{␍
+     91     │ - → beforeEach(()·=>·{␍
+     92     │ - → → vi.clearAllMocks();␍
+     93     │ - → → sessionState.account·=·"a";␍
+     94     │ - → → sessionState.organization·=·"";␍
+     95     │ - → → getOnboardingSummaryMock.mockReset();␍
+     96     │ - → → skipOrganizationSetupMock.mockReset();␍
+     97     │ - → → createOrganizationOnboardingMock.mockReset();␍
+     98     │ - → → checkSlugAvailabilityMock.mockReset();␍
+     99     │ - → → checkSlugAvailabilityMock.mockResolvedValue(true);␍
+    100     │ - → });␍
+    101     │ - ␍
+    102     │ - → afterEach(()·=>·{␍
+    103     │ - → → vi.useRealTimers();␍
+    104     │ - → });␍
+    105     │ - ␍
+    106     │ - → it("keeps·one·organization·task·heading·while·a·membership·read·settles",·async·()·=>·{␍
+    107     │ - → → const·summary·=·deferred<{␍
+    108     │ - → → → success:·true;␍
+    109     │ - → → → data:·{·hasOrganization:·false·};␍
+    110     │ - → → }>();␍
+    111     │ - → → getOnboardingSummaryMock.mockReturnValue(summary.promise);␍
+    112     │ - → → render(<OrganizationPageClient·canCreateOrganizations·/>);␍
+    113     │ - ␍
+    114     │ - → → expect(␍
+    115     │ - → → → screen.getByRole("status",·{·name:·"Checking·organization·membership"·}),␍
+    116     │ - → → ).toBeTruthy();␍
+    117     │ - → → expect(screen.getAllByRole("heading",·{·level:·1·})).toHaveLength(1);␍
+    118     │ - → → expect(␍
+    119     │ - → → → screen.getByRole("heading",·{␍
+    120     │ - → → → → level:·1,␍
+    121     │ - → → → → name:·"Set·up·your·organization",␍
+    122     │ - → → → }),␍
+    123     │ - → → ).toBeTruthy();␍
+    124     │ - → → expect(␍
+    125     │ - → → → screen.queryByRole("button",·{·name:·"Create·Organization"·}),␍
+    126     │ - → → ).toBeNull();␍
+    127     │ - → → expect(skipOrganizationSetupMock).not.toHaveBeenCalled();␍
+    128     │ - ␍
+    129     │ - → → await·act(async·()·=>␍
+    130     │ - → → → summary.resolve({·success:·true,·data:·{·hasOrganization:·false·}·}),␍
+    131     │ - → → );␍
+    132     │ - ␍
+    133     │ - → → expect(screen.getAllByRole("heading",·{·level:·1·})).toHaveLength(1);␍
+    134     │ - → → expect(␍
+    135     │ - → → → screen.getByRole("heading",·{␍
+    136     │ - → → → → level:·1,␍
+    137     │ - → → → → name:·"Set·up·your·organization",␍
+    138     │ - → → → }),␍
+    139     │ - → → ).toBeTruthy();␍
+    140     │ - → → expect(␍
+    141     │ - → → → screen.getByRole("button",·{·name:·"Create·Organization"·}),␍
+    142     │ - → → ).toBeTruthy();␍
+    143     │ - → });␍
+    144     │ - ␍
+    145     │ - → it("keeps·existing·members·on·this·step·when·the·automatic·skip·is·refused",·async·()·=>·{␍
+    146     │ - → → getOnboardingSummaryMock.mockResolvedValue({␍
+    147     │ - → → → success:·true,␍
+    148     │ - → → → data:·{·hasOrganization:·true·},␍
+    149     │ - → → });␍
+    150     │ - → → skipOrganizationSetupMock.mockResolvedValue({␍
+  1283 more lines truncated
+  
+
+src\app\[locale]\onboarding\organization\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·type·{·Metadata·}·from·"next";␍
+     2    │ - import·{·connection·}·from·"next/server";␍
+     3    │ - import·{·systemClock·}·from·"@/lib/datetime/temporal-core";␍
+     4    │ - import·{·isOrganizationCreationDisabled·}·from·"@/lib/organization/creation-policy.server";␍
+     5    │ - import·OrganizationPageClient·from·"./organization-page-client";␍
+     6    │ - ␍
+     7    │ - export·const·metadata:·Metadata·=·{␍
+     8    │ - → title:·"Organization·setup·|·Z8",␍
+     9    │ - → description:␍
+    10    │ - → → "Create·or·connect·your·organization·during·Z8·workspace·onboarding.",␍
+    11    │ - };␍
+    12    │ - ␍
+    13    │ - //·This·step·deliberately·reads·the·creation·policy·and·current-date·suggestion·per·request.␍
+    14    │ - export·const·instant·=·false;␍
+    15    │ - ␍
+    16    │ - export·default·async·function·OrganizationPage()·{␍
+    17    │ - → //·The·onboarding·tracking·suggestion·must·use·the·current·request·time.␍
+    18    │ - → await·connection();␍
+    19    │ - → const·trackingSuggestedAt·=·systemClock.nowInstant().toString();␍
+    20    │ - → return·(␍
+    21    │ - → → <OrganizationPageClient␍
+    22    │ - → → → canCreateOrganizations={!isOrganizationCreationDisabled()}␍
+    23    │ - → → → trackingSuggestedAt={trackingSuggestedAt}␍
+    24    │ - → → />␍
+    25    │ - → );␍
+    26    │ - }␍
+        1 │ + import·type·{·Metadata·}·from·"next";
+        2 │ + import·{·connection·}·from·"next/server";
+        3 │ + import·{·systemClock·}·from·"@/lib/datetime/temporal-core";
+        4 │ + import·{·isOrganizationCreationDisabled·}·from·"@/lib/organization/creation-policy.server";
+        5 │ + import·OrganizationPageClient·from·"./organization-page-client";
+        6 │ + 
+        7 │ + export·const·metadata:·Metadata·=·{
+        8 │ + → title:·"Organization·setup·|·Z8",
+        9 │ + → description:
+       10 │ + → → "Create·or·connect·your·organization·during·Z8·workspace·onboarding.",
+       11 │ + };
+       12 │ + 
+       13 │ + //·This·step·deliberately·reads·the·creation·policy·and·current-date·suggestion·per·request.
+       14 │ + export·const·instant·=·false;
+       15 │ + 
+       16 │ + export·default·async·function·OrganizationPage()·{
+       17 │ + → //·The·onboarding·tracking·suggestion·must·use·the·current·request·time.
+       18 │ + → await·connection();
+       19 │ + → const·trackingSuggestedAt·=·systemClock.nowInstant().toString();
+       20 │ + → return·(
+       21 │ + → → <OrganizationPageClient
+       22 │ + → → → canCreateOrganizations={!isOrganizationCreationDisabled()}
+       23 │ + → → → trackingSuggestedAt={trackingSuggestedAt}
+       24 │ + → → />
+       25 │ + → );
+       26 │ + }
+    27 27 │   
+  
+
+Checked 3 files in 10ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

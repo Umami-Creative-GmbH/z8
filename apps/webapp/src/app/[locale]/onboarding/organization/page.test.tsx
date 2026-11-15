@@ -103,6 +103,45 @@ describe("OrganizationPageClient", () => {
 		vi.useRealTimers();
 	});
 
+	it("keeps one organization task heading while a membership read settles", async () => {
+		const summary = deferred<{
+			success: true;
+			data: { hasOrganization: false };
+		}>();
+		getOnboardingSummaryMock.mockReturnValue(summary.promise);
+		render(<OrganizationPageClient canCreateOrganizations />);
+
+		expect(
+			screen.getByRole("status", { name: "Checking organization membership" }),
+		).toBeTruthy();
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(
+			screen.getByRole("heading", {
+				level: 1,
+				name: "Set up your organization",
+			}),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "Create Organization" }),
+		).toBeNull();
+		expect(skipOrganizationSetupMock).not.toHaveBeenCalled();
+
+		await act(async () =>
+			summary.resolve({ success: true, data: { hasOrganization: false } }),
+		);
+
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(
+			screen.getByRole("heading", {
+				level: 1,
+				name: "Set up your organization",
+			}),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Create Organization" }),
+		).toBeTruthy();
+	});
+
 	it("keeps existing members on this step when the automatic skip is refused", async () => {
 		getOnboardingSummaryMock.mockResolvedValue({
 			success: true,

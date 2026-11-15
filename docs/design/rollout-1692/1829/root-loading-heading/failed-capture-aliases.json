@@ -1,0 +1,8 @@
+{
+  "report": "before-attempt-destination-heading.json",
+  "aliases": {
+    "before-pending-desktop.png": "before-attempt-destination-pending-desktop.png",
+    "before-pending-phone.png": "before-attempt-destination-pending-phone.png"
+  },
+  "qualification": "Raw failed metadata retains its original names; bytes were preserved under these aliases before accepted captures reused the original names."
+}

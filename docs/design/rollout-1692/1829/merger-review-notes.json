@@ -1,0 +1,38 @@
+{
+  "findings": [
+    {
+      "priority": "P2",
+      "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+      "line": 670,
+      "problem": "The membership-checking branch has zero semantic main headings, leaving the full persistent onboarding step untitled until the summary request settles.",
+      "spec": "Canonical shared visual/page grammar requires one semantic main heading per persistent page.",
+      "proof": ".tmp/merge1829-audit/arrival-races.test.tsx:24; adversarial-unit.json: expected1 actual0 while labeled checking status and no creation controls are confirmed.",
+      "owner": "Root; merger left source untouched."
+    }
+  ],
+  "reviews": {
+    "skills": [
+      "vercel-react-best-practices",
+      "vercel-composition-patterns",
+      "web-design-guidelines",
+      "react-doctor",
+      "tdd approved assembled public seams"
+    ],
+    "guidelines": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "sourceScope": "Exactly organization client/page/test; all four existing payload fields/validation/destinations/creation policy/organization-local tracking meaning and existing joining are retained.",
+    "pendingHeading": "One material shared-heading finding remains and is intentionally not fixed.",
+    "timekeeping": "Page-local instant=false permits blocking validation; pre-existing connection()/systemClock own per-request creation policy/date. Existing Temporal organization tracking field and server tracking setup owner retain explicit-zone meaning. No auth/guard/shared shell/date-policy change.",
+    "otherNotes": [
+      "Decorative spinner aria-hidden and automatic first-invalid focus are minor inherited guideline gaps, not independently established new regressions.",
+      "No extra permissions/timezone writes inferred from client account/session/org lifetime identity."
+    ]
+  },
+  "limits": [
+    "Material pending-membership main-heading finding remains for root correction before verifiedCommit.",
+    "Held rendered Create across a Next restart remains timedout/unpassed; separate generated transport refusal is distinct evidence.",
+    "Native React, full production static generation/build, remote Tolgee catalog synchronization, provider/delivery, all roles/locales, physical device/store wrapper, true zoom and global transition acceptance remain open.",
+    "Activity/account/session/org races here are assembled seam evidence; no actual browser/native lifetime certification.",
+    "Default captures compare organization consumer with current shell/request-time declaration; broad-root attempts remain provisional and narrow additional-root plugin-resolution failure remains retained.",
+    "No services/PG/browser/native/dev started, no optional earlier rejected verifier reruns, no source fixes/report/raw/README/ledger/tracker/push/PR/dev merge/deploy."
+  ]
+}

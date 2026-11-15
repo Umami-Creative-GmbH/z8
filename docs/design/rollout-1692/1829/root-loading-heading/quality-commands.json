@@ -1,0 +1,117 @@
+[
+  {
+    "name": "ordinary-crlf",
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--error-on-warnings",
+      "--line-ending=crlf",
+      "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+      "src/app/[locale]/onboarding/organization/page.tsx",
+      "src/app/[locale]/onboarding/organization/page.test.tsx"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "ordinary-lint",
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--error-on-warnings",
+      "--formatter-enabled=false",
+      "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+      "src/app/[locale]/onboarding/organization/page.tsx",
+      "src/app/[locale]/onboarding/organization/page.test.tsx"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "explicit-lint",
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--error-on-warnings",
+      "--config-path=biome.jsonc",
+      "--formatter-enabled=false",
+      "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+      "src/app/[locale]/onboarding/organization/page.tsx",
+      "src/app/[locale]/onboarding/organization/page.test.tsx"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "default",
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--error-on-warnings",
+      "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+      "src/app/[locale]/onboarding/organization/page.tsx",
+      "src/app/[locale]/onboarding/organization/page.test.tsx"
+    ],
+    "exitCode": 1
+  },
+  {
+    "name": "explicit-crlf",
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--error-on-warnings",
+      "--config-path=biome.jsonc",
+      "--line-ending=crlf",
+      "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+      "src/app/[locale]/onboarding/organization/page.tsx",
+      "src/app/[locale]/onboarding/organization/page.test.tsx"
+    ],
+    "exitCode": 1
+  },
+  {
+    "name": "doctor",
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "exec",
+      "react-doctor",
+      "apps/webapp",
+      "--scope",
+      "changed",
+      "--base",
+      "8a13b755220124c4ea1d3fd1ccacb770aae31241",
+      "--verbose",
+      "--no-supply-chain",
+      "--no-telemetry",
+      "--no-score",
+      "--max-duration",
+      "90",
+      "--json",
+      "--json-out",
+      "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1829-root-checks\\doctor.json"
+    ],
+    "exitCode": 0
+  }
+]
