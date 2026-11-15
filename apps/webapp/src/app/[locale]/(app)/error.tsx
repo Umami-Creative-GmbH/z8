@@ -7,10 +7,10 @@ import { usePathname } from "@/navigation";
 
 export default function WorkspaceError({
 	error,
-	reset,
+	retry,
 }: {
 	error: Error & { digest?: string };
-	reset: () => void;
+	retry: () => void;
 }) {
 	const pathname = usePathname();
 	useEffect(() => {
@@ -26,7 +26,7 @@ export default function WorkspaceError({
 			descriptionKey="errors.unexpected.description"
 			descriptionDefault="We couldn't load this page right now. Please try again or return to a safe place in the app."
 			digest={error.digest}
-			onRetry={reset}
+			onRetry={retry}
 		/>
 	);
 }

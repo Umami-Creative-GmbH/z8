@@ -9,10 +9,10 @@ import { Link } from "@/navigation";
 
 export default function SettingsError({
 	error,
-	reset,
+	retry,
 }: {
 	error: Error & { digest?: string };
-	reset: () => void;
+	retry: () => void;
 }) {
 	const { t } = useTranslate();
 	useEffect(() => {
@@ -27,7 +27,7 @@ export default function SettingsError({
 			descriptionKey="settings.error.description"
 			descriptionDefault="An error occurred while loading the settings page. This might be a temporary issue."
 			digest={error.digest}
-			onRetry={reset}
+			onRetry={retry}
 			actions={
 				<Button asChild variant="outline">
 					<Link href="/settings">
