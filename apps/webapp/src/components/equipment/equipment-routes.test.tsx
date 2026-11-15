@@ -159,6 +159,19 @@ it("opens the personal route through self-history only and refuses departed acce
 	await expect(element.type()).rejects.toThrow("not_found");
 });
 
+it("keeps personal read failure distinct from empty equipment and offers retry with a named streaming heading", async () => {
+	api.personal.mockResolvedValue({ success: false, code: "DatabaseError" });
+	const page = PersonalPage();
+	const html = await content(page);
+	expect(html).toContain('aria-label="Reload equipment"');
+	expect(html).toContain("Your equipment could not be loaded.");
+	expect(html).not.toContain("No equipment recorded");
+	expect(html.match(/<h1\b/g)).toHaveLength(1);
+	const loading = renderToStaticMarkup(page.props.fallback);
+	expect(loading).toContain("My equipment");
+	expect(loading.match(/<h1\b/g)).toHaveLength(1);
+});
+
 describe("assignment page", () => {
 	const page = (back?: string) =>
 		AssignmentPage({

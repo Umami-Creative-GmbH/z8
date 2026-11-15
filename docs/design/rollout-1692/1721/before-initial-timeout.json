@@ -1,0 +1,10 @@
+{
+  "phase": "before",
+  "actor": "small-employee",
+  "organization": "Performance small",
+  "observations": [],
+  "errors": [],
+  "failures": [
+    "Waiting failed: 120000ms exceeded"
+  ]
+}

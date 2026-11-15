@@ -1,0 +1,712 @@
+{
+  "checks": [
+    {
+      "name": "personal arrival has one heading",
+      "actual": [
+        "My equipment"
+      ]
+    },
+    {
+      "name": "seven personal histories remain",
+      "actual": 7
+    },
+    {
+      "name": "no operational buttons even in expanded evidence",
+      "actual": true
+    },
+    {
+      "name": "partial return is 1 outstanding, 3 issued, 2 received",
+      "actual": [
+        "3",
+        "2",
+        "1"
+      ]
+    },
+    {
+      "name": "recovery remains linked and distinct",
+      "actual": true
+    },
+    {
+      "name": "original and amended evidence accessible",
+      "actual": true
+    },
+    {
+      "name": "last record visible in viewport",
+      "actual": true
+    },
+    {
+      "name": "failure is not empty",
+      "actual": true
+    },
+    {
+      "name": "actual retry restores all seven records",
+      "actual": 7
+    },
+    {
+      "name": "sidebar collapse persisted",
+      "actual": "false"
+    },
+    {
+      "name": "actual saved large font/dark after reload",
+      "actual": {
+        "saved": "large",
+        "font": "18px",
+        "dark": true
+      }
+    },
+    {
+      "name": "phone quantities visible before history",
+      "actual": true
+    },
+    {
+      "name": "first Escape closes current-route drawer and returns focus",
+      "actual": true
+    },
+    {
+      "name": "keyboard disclosure with reduced motion remains available",
+      "actual": "true"
+    },
+    {
+      "name": "large phone has no page overflow",
+      "actual": true
+    },
+    {
+      "name": "small-manager personal page contains no other employee records",
+      "actual": true
+    },
+    {
+      "name": "small-restricted personal page contains no other employee records",
+      "actual": true
+    },
+    {
+      "name": "small-admin personal page contains no other employee records",
+      "actual": true
+    },
+    {
+      "name": "foreign feature-off organization has no personal equipment",
+      "actual": true
+    },
+    {
+      "name": "former employee personal arrival does not expose retained staff records",
+      "actual": true
+    },
+    {
+      "name": "unassigned membership never falls back to whole-org holdings",
+      "actual": true
+    }
+  ],
+  "errors": [],
+  "failures": [
+    "read is actually blocked in PostgreSQL\n\nfalse !== true\n"
+  ],
+  "snapshots": [
+    {
+      "name": "after-partial-evidence",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nIssued quantity\n3\nPhysically received quantity\n2\nOutstanding quantity\n1\nHandover history\n\nPhysical receipt\n\nOct 10, 2026\n\nQuantity: 2 · Worn\n\nRecorded by Removed account · Nov 15, 2026, 10:46 AM Europe/Berlin\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 3 · Good\n\nRecorded by Removed account · Nov 15, 2026, 10:46 AM Europe/Berlin\n\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nPhysically received\nNo deadline\nHandover history\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<button type=\"button\" tabindex=\"0\" aria-expanded=\"true\" data-slot=\"collapsible-trigger\" class=\"group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 @4xl/main:grid-cols-[minmax(0,1fr)_9rem_10rem_10rem_auto]\" data-panel-open=\"\" aria-controls=\"base-ui-_R_2j9bn9erud5red9etb_\"><span class=\"min-w-0 [&amp;_.truncate]:whitespace-normal [&amp;_.truncate]:wrap-any"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-lost-kit",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nPhysically received\nNo deadline\nHandover history\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nIssued quantity\n3\nPhysically received quantity\n0\nOutstanding quantity\n0\nLost quantity\n3\nReturn-waived quantity\n0\nRecovered quantity\n0\n\nRecovered quantities are included in physical receipts. Lost and waived totals reflect effective decisions; original decisions remain in amendment history.\n\nHandover history\n\nLost · Quantity: 3\n\nOct 2, 2026\n\nR029 reasoned decision\n\nRecovered quantity: 0\n\nRecorded by Person 0 · Oct 2, 2026, 12:00 PM Europe/Berlin\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 3 · Good\n\nR029 original handover\n\nRecorded by Person 0 · Oct 1, 2026, 12:00 PM Europe/Berlin",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<button type=\"button\" tabindex=\"0\" aria-expanded=\"true\" data-slot=\"collapsible-trigger\" class=\"group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 @4xl/main:grid-cols-[minmax(0,1fr)_9rem_10rem_10rem_auto]\" data-panel-open=\"\" aria-controls=\"base-ui-_R_4n9bn9erud5red9etb_\"><span class=\"min-w-0 [&amp;_.truncate]:whitespace-normal [&amp;_.truncate]:wrap-any"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-waived-kit",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nIssued quantity\n3\nPhysically received quantity\n0\nOutstanding quantity\n0\nLost quantity\n0\nReturn-waived quantity\n3\nRecovered quantity\n0\n\nRecovered quantities are included in physical receipts. Lost and waived totals reflect effective decisions; original decisions remain in amendment history.\n\nHandover history\n\nReturn waived · Quantity: 3\n\nOct 2, 2026\n\nR029 reasoned decision\n\nPhysically received after waiver: 0\n\nRecorded by Person 0 · Oct 2, 2026, 12:00 PM Europe/Berlin\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 3 · Good\n\nR029 original handover\n\nRecorded by Person 0 · Oct 1, 2026, 12:00 PM Europe/Berlin\n\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nPhysically received\nNo deadline\nHandover history\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<button type=\"button\" tabindex=\"0\" aria-expanded=\"true\" data-slot=\"collapsible-trigger\" class=\"group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 @4xl/main:grid-cols-[minmax(0,1fr)_9rem_10rem_10rem_auto]\" data-panel-open=\"\" aria-controls=\"base-ui-_R_2n9bn9erud5red9etb_\"><span class=\"min-w-0 [&amp;_.truncate]:whitespace-normal [&amp;_.truncate]:wrap-any"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-recovered-kit",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nIssued quantity\n3\nPhysically received quantity\n1\nOutstanding quantity\n0\nLost quantity\n3\nReturn-waived quantity\n0\nRecovered quantity\n1\n\nRecovered quantities are included in physical receipts. Lost and waived totals reflect effective decisions; original decisions remain in amendment history.\n\nHandover history\n\nPhysical recovery\n\nOct 3, 2026\n\nQuantity: 1 · Worn\n\nLinked decision: R029 reasoned decision\n\nR029 physical evidence\n\nRecorded by Person 0 · Oct 3, 2026, 12:00 PM Europe/Berlin\n\nLost · Quantity: 3\n\nOct 2, 2026\n\nR029 reasoned decision\n\nRecovered quantity: 1\n\nRecorded by Person 0 · Oct 2, 2026, 12:00 PM Europe/Berlin\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 3 · Good\n\nR029 original handover\n\nRecorded by Person 0 · Oct 1, 2026, 12:00 PM Europe/Berlin\n\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nPhysically received\nNo deadline\nHandover history\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<button type=\"button\" tabindex=\"0\" aria-expanded=\"true\" data-slot=\"collapsible-trigger\" class=\"group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 @4xl/main:grid-cols-[minmax(0,1fr)_9rem_10rem_10rem_auto]\" data-panel-open=\"\" aria-controls=\"base-ui-_R_1n9bn9erud5red9etb_\"><span class=\"min-w-0 [&amp;_.truncate]:whitespace-normal [&amp;_.truncate]:wrap-any"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-received-kit",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nPhysically received\nNo deadline\nHandover history\nShow handover history\nIssued quantity\n3\nPhysically received quantity\n3\nOutstanding quantity\n0\nHandover history\n\nPhysical receipt\n\nOct 3, 2026\n\nQuantity: 3 · Worn\n\nR029 physical evidence\n\nRecorded by Person 0 · Oct 3, 2026, 12:00 PM Europe/Berlin\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 3 · Good\n\nR029 original handover\n\nRecorded by Person 0 · Oct 1, 2026, 12:00 PM Europe/Berlin\n\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<button type=\"button\" tabindex=\"0\" aria-expanded=\"true\" data-slot=\"collapsible-trigger\" class=\"group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 @4xl/main:grid-cols-[minmax(0,1fr)_9rem_10rem_10rem_auto]\" data-panel-open=\"\" aria-controls=\"base-ui-_R_3n9bn9erud5red9etb_\"><span class=\"min-w-0 [&amp;_.truncate]:whitespace-normal [&amp;_.truncate]:wrap-any"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-personal-gloves",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nIssued quantity\n3\nPhysically received quantity\n0\nOutstanding quantity\n0\nHandover history\n\nIssuance\nAmended\n\nOct 1, 2026\n\nQuantity: 3 · Worn\n\nR029 effective handover\n\nRecorded by Person 0 · Oct 1, 2026, 12:00 PM Europe/Berlin\n\nOriginal records and amendments\n\nR029 signed amendment\n\nPerson 0 · Oct 4, 2026, 12:00 PM · Europe/Berlin\n\nOriginal records and amendments\nField\tPreviously recorded\tAmended values\nNotes (optional)\tR029 original handover\tR029 effective handover\nQuantity\t3\t3\nCondition\tGood\tWorn\nActual handover date\tOct 1, 2026\tOct 1, 2026\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nPhysically received\nNo deadline\nHandover history\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<summary class=\"cursor-pointer text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring\">Original records and amendments</summary>"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-last-record",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nReturned & closed\n4 items\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<button type=\"button\" tabindex=\"0\" aria-expanded=\"false\" data-slot=\"collapsible-trigger\" class=\"group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 @4xl/main:grid-cols-[minmax(0,1fr)_9rem_10rem_10rem_auto]\"><span class=\"min-w-0 [&amp;_.truncate]:whitespace-normal [&amp;_.truncate]:wrap-anywhere\"><span class=\"block min-w-0\"><span class=\"block truncate fo"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-read-failure",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\n\nYour equipment could not be loaded. Reload the page to try again.\n\nReload equipment",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar\" data-slot=\"sidebar-wrapper\" style=\"--sidebar-width:16rem;--sidebar-width-icon:3.5rem;--header-height:4rem\"><a href=\"#app-page-content\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:sh"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-retry",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nPhysically received\nNo deadline\nHandover history\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div hidden=\"\"></div><div class=\"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar\" data-slot=\"sidebar-wrapper\" style=\"--sidebar-width:16rem;--sidebar-width-icon:3.5rem;--header-height:4rem\"><a href=\"#app-page-content\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:shadow-md focus:out"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-saved-large-dark",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\nMore actions\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nShow handover history\nReturned & closed\n4 items",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "scrollWidth": 390,
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": true,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar\" data-slot=\"sidebar-wrapper\" style=\"--sidebar-width:16rem;--sidebar-width-icon:3.5rem;--header-height:4rem\"><a href=\"#app-page-content\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:sh"
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-first-escape",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\nMore actions\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nShow handover history\nReturned & closed\n4 items",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "scrollWidth": 390,
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": true,
+        "active": "<button class=\"relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-inva"
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-phone-evidence-reduced",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\nMore actions\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nShow handover history\nIssued quantity\n3\nPhysically received quantity\n2\nOutstanding quantity\n1\nHandover history\n\nPhysical receipt\n\nOct 10, 2026\n\nQuantity: 2 · Worn\n\nRecorded by Removed account · Nov 15, 2026, 10:46 AM Europe/Berlin\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 3 · Good\n\nRecorded by Removed account · Nov 15, 2026, 10:46 AM Europe/Berlin\n\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nShow handover history\nReturned & closed\n4 items",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "scrollWidth": 390,
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": true,
+        "active": "<button type=\"button\" tabindex=\"0\" aria-expanded=\"true\" data-slot=\"collapsible-trigger\" class=\"group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 @4xl/main:grid-cols-[minmax(0,1fr)_9rem_10rem_10rem_auto]\" data-panel-open=\"\" aria-controls=\"base-ui-_R_2j9bn9erud5red9etb_\"><span class=\"min-w-0 [&amp;_.truncate]:whitespace-normal [&amp;_.truncate]:wrap-any"
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-small-manager-empty",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:05\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nNo equipment recorded\nEquipment issued to you appears here with its return deadline and handover history.",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar\" data-slot=\"sidebar-wrapper\" style=\"--sidebar-width:16rem;--sidebar-width-icon:3.5rem;--header-height:4rem\"><a href=\"#app-page-content\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:sh"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-small-restricted-empty",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:06\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nNo equipment recorded\nEquipment issued to you appears here with its return deadline and handover history.",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar\" data-slot=\"sidebar-wrapper\" style=\"--sidebar-width:16rem;--sidebar-width-icon:3.5rem;--header-height:4rem\"><a href=\"#app-page-content\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:sh"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-small-admin-empty",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:06\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nNo equipment recorded\nEquipment issued to you appears here with its return deadline and handover history.",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar\" data-slot=\"sidebar-wrapper\" style=\"--sidebar-width:16rem;--sidebar-width-icon:3.5rem;--header-height:4rem\"><a href=\"#app-page-content\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:sh"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-foreign-feature-off",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:06\nUTC+01:00\nClock In\nToggle theme\n404\nPage not found\nThe page may have moved, the link may be outdated, or the address may be incorrect.\nGo to Dashboard\nSettings\nBack",
+        "headings": [
+          "Page not found"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar\" data-slot=\"sidebar-wrapper\" style=\"--sidebar-width:16rem;--sidebar-width-icon:3.5rem;--header-height:4rem\"><a href=\"#app-page-content\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:sh"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-former-denied",
+      "observation": {
+        "url": "/en/sign-in",
+        "text": "z8\n\nLogin to your account\nEmail\nPassword\nLogin\nForgot your password?\nOr continue with\nLogin with Passkey\nDon't have an account? Sign up\nVersion 006aff6",
+        "headings": [
+          "Login to your account"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"relative min-h-svh overflow-x-hidden bg-background\"><img alt=\"\" decoding=\"async\" data-nimg=\"fill\" class=\"absolute inset-0 size-full object-cover\" sizes=\"(min-aspect-ratio: 2560/1440) 100vw, 178vh\" srcset=\"/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fa-chosen-soul-sJ_nxQIAUvg-unsplash.00tnody-jqz11.webp&amp;w=640&amp;q=75&amp;dpl=006aff63207b4c4eedfc4e3544fcc61fc2dbccbf 640w, /_next/image?url="
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "after-unassigned",
+      "observation": {
+        "url": "/en/sign-in",
+        "text": "z8\n\nLogin to your account\nEmail\nPassword\nLogin\nForgot your password?\nOr continue with\nLogin with Passkey\nDon't have an account? Sign up\nVersion 006aff6",
+        "headings": [
+          "Login to your account"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"relative min-h-svh overflow-x-hidden bg-background\"><img alt=\"\" decoding=\"async\" data-nimg=\"fill\" class=\"absolute inset-0 size-full object-cover\" sizes=\"(min-aspect-ratio: 2560/1707) 100vw, 150vh\" srcset=\"/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fphilip-oroni-2KBQdhqHpOM-unsplash.3i67nwm2r28uh.webp&amp;w=640&amp;q=75&amp;dpl=006aff63207b4c4eedfc4e3544fcc61fc2dbccbf 640w, /_next/image?url=%"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    },
+    {
+      "name": "runtime-harness-failure",
+      "observation": {
+        "url": "/en/my-equipment",
+        "text": "Toggle Sidebar\n\nMy equipment\n\n11:06\nUTC+01:00\nClock In\nToggle theme\nAs of Nov 15, 2026 (Europe/Berlin)\nMy equipment\nEquipment issued to you, what to return and by when, and every recorded handover.\nTo return\n2 items\nEQ-HELD\nFixture laptops\n1 to return\n1 issued\nOverdue\nNov 1, 2026\n14 days overdue\nHandover history\nShow handover history\nFixture shirts\nQuantity · Fixture shirts\n1 to return\n3 issued\nOutstanding return\nNo deadline\nHandover history\nShow handover history\nYours to keep\n1 item\nR029 Personal gloves\nQuantity · R029 Personal gloves\n3 issued\nIssued to keep\nNo deadline\nHandover history\nShow handover history\nReturned & closed\n4 items\nR029 Recovered kit\nQuantity · R029 Recovered kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Waived kit\nQuantity · R029 Waived kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history\nR029 Received kit\nQuantity · R029 Received kit\n3 issued\nPhysically received\nNo deadline\nHandover history\nShow handover history\nR029 Lost kit\nQuantity · R029 Lost kit\n3 issued\nReturn obligation closed\nNo deadline\nHandover history\nShow handover history",
+        "headings": [
+          "My equipment"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar\" data-slot=\"sidebar-wrapper\" style=\"--sidebar-width:16rem;--sidebar-width-icon:3.5rem;--header-height:4rem\"><a href=\"#app-page-content\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:sh"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    }
+  ]
+}

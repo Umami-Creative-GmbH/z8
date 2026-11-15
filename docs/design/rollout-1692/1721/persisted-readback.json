@@ -1,0 +1,82 @@
+{
+  "scope": "own employee in Performance small, organization-filtered SQL evidence; presentation still uses the public authorized reader",
+  "rows": [
+    {
+      "item": "EQ-HELD",
+      "quantity": 1,
+      "received_quantity": 0,
+      "lost_quantity": 0,
+      "waived_quantity": 0,
+      "exception_received_quantity": 0,
+      "return_required": true,
+      "handovers": 1,
+      "amendments": 0
+    },
+    {
+      "item": "Fixture shirts",
+      "quantity": 3,
+      "received_quantity": 2,
+      "lost_quantity": 0,
+      "waived_quantity": 0,
+      "exception_received_quantity": 0,
+      "return_required": true,
+      "handovers": 2,
+      "amendments": 0
+    },
+    {
+      "item": "R029 Lost kit",
+      "quantity": 3,
+      "received_quantity": 0,
+      "lost_quantity": 3,
+      "waived_quantity": 0,
+      "exception_received_quantity": 0,
+      "return_required": true,
+      "handovers": 1,
+      "amendments": 0
+    },
+    {
+      "item": "R029 Personal gloves",
+      "quantity": 3,
+      "received_quantity": 0,
+      "lost_quantity": 0,
+      "waived_quantity": 0,
+      "exception_received_quantity": 0,
+      "return_required": false,
+      "handovers": 1,
+      "amendments": 1
+    },
+    {
+      "item": "R029 Received kit",
+      "quantity": 3,
+      "received_quantity": 3,
+      "lost_quantity": 0,
+      "waived_quantity": 0,
+      "exception_received_quantity": 0,
+      "return_required": true,
+      "handovers": 2,
+      "amendments": 0
+    },
+    {
+      "item": "R029 Recovered kit",
+      "quantity": 3,
+      "received_quantity": 1,
+      "lost_quantity": 3,
+      "waived_quantity": 0,
+      "exception_received_quantity": 1,
+      "return_required": true,
+      "handovers": 2,
+      "amendments": 0
+    },
+    {
+      "item": "R029 Waived kit",
+      "quantity": 3,
+      "received_quantity": 0,
+      "lost_quantity": 0,
+      "waived_quantity": 3,
+      "exception_received_quantity": 0,
+      "return_required": true,
+      "handovers": 1,
+      "amendments": 0
+    }
+  ]
+}

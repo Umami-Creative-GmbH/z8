@@ -214,6 +214,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		path === "/my-requests" ||
 		path === "/my-documents" ||
 		path === "/equipment" ||
+		path === "/my-equipment" ||
 		path === "/compliance" ||
 		path === "/driving-licence" ||
 		path === "/calendar" ||
