@@ -5,9 +5,20 @@ import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+} from "@/components/ui/tanstack-form";
 import { useSession } from "@/lib/auth-client";
 import type { DrivingLicenceHistoryPeriod } from "@/lib/organization/driving-licence/history";
 import { getDrivingLicenceHistoryAction } from "@/lib/organization/driving-licence/history-actions";
@@ -15,7 +26,11 @@ import { queryKeys } from "@/lib/query";
 import { DrivingStatusLabel } from "./check-evidence";
 import { DrivingLicenceHistoryTimeline } from "./history-timeline";
 import { DrivingCheckSupplementForm } from "./supplement-form";
-export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string }) {
+export function DrivingLicenceHistoryPanel({
+	employeeId,
+}: {
+	employeeId: string;
+}) {
 	const { t } = useTranslate();
 	const titleId = useId();
 	const router = useRouter();
@@ -36,7 +51,12 @@ export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string 
 		},
 	});
 	const query = useQuery({
-		queryKey: queryKeys.drivingLicence.history(organizationId, userId, employeeId, period),
+		queryKey: queryKeys.drivingLicence.history(
+			organizationId,
+			userId,
+			employeeId,
+			period,
+		),
 		queryFn: () => getDrivingLicenceHistoryAction({ employeeId, ...period }),
 	});
 	const data = query.data?.success ? query.data.data : null;
@@ -49,10 +69,18 @@ export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string 
 			queryKey: queryKeys.drivingLicence.status,
 		});
 		await queryClient.invalidateQueries({
-			queryKey: queryKeys.drivingLicence.historyAll(organizationId, userId, employeeId),
+			queryKey: queryKeys.drivingLicence.historyAll(
+				organizationId,
+				userId,
+				employeeId,
+			),
 		});
 		await queryClient.invalidateQueries({
-			queryKey: queryKeys.drivingLicence.record(organizationId, userId, employeeId),
+			queryKey: queryKeys.drivingLicence.record(
+				organizationId,
+				userId,
+				employeeId,
+			),
 		});
 		await queryClient.invalidateQueries({
 			queryKey: queryKeys.drivingLicence.worklistAll(organizationId, userId),
@@ -64,7 +92,10 @@ export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string 
 			<CardHeader>
 				<CardTitle>
 					<h2 id={titleId} className="text-lg font-semibold">
-						{t("drivingLicence.history.title", "Check and authorization history")}
+						{t(
+							"drivingLicence.history.title",
+							"Check and authorization history",
+						)}
 					</h2>
 				</CardTitle>
 				<CardDescription>
@@ -85,7 +116,9 @@ export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string 
 					<form.Field name="from">
 						{(field) => (
 							<TFormItem>
-								<TFormLabel>{t("drivingLicence.history.from", "From date (UTC)")}</TFormLabel>
+								<TFormLabel>
+									{t("drivingLicence.history.from", "From date (UTC)")}
+								</TFormLabel>
 								<TFormControl>
 									<DatePicker
 										value={field.state.value || null}
@@ -93,13 +126,21 @@ export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string 
 										onChange={(value) => field.handleChange(value)}
 									/>
 								</TFormControl>
+								<TFormDescription>
+									{t(
+										"drivingLicence.history.fromHelp",
+										"Period starts at 00:00 UTC.",
+									)}
+								</TFormDescription>
 							</TFormItem>
 						)}
 					</form.Field>
 					<form.Field name="to">
 						{(field) => (
 							<TFormItem>
-								<TFormLabel>{t("drivingLicence.history.to", "Before date (UTC)")}</TFormLabel>
+								<TFormLabel>
+									{t("drivingLicence.history.to", "Before date (UTC)")}
+								</TFormLabel>
 								<TFormControl>
 									<DatePicker
 										value={field.state.value || null}
@@ -107,6 +148,12 @@ export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string 
 										onChange={(value) => field.handleChange(value)}
 									/>
 								</TFormControl>
+								<TFormDescription>
+									{t(
+										"drivingLicence.history.toHelp",
+										"Period ends before 00:00 UTC on this date.",
+									)}
+								</TFormDescription>
 							</TFormItem>
 						)}
 					</form.Field>
@@ -115,7 +162,9 @@ export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string 
 					</Button>
 				</form>
 				{query.isPending ? (
-					<p role="status">{t("drivingLicence.history.loading", "Loading history…")}</p>
+					<p role="status">
+						{t("drivingLicence.history.loading", "Loading history…")}
+					</p>
 				) : !data ? (
 					<p role="alert">
 						{t(
@@ -129,7 +178,10 @@ export function DrivingLicenceHistoryPanel({ employeeId }: { employeeId: string 
 							<a
 								href={`/api/driving-licence/evidence?${new URLSearchParams({ employeeId, ...period }).toString()}`}
 							>
-								{t("drivingLicence.history.downloadPdf", "Download evidence PDF")}
+								{t(
+									"drivingLicence.history.downloadPdf",
+									"Download evidence PDF",
+								)}
 							</a>
 						</Button>
 						<p className="font-medium">
