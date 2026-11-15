@@ -26,7 +26,9 @@ import {
 } from "./join-organization-form-body";
 
 export function JoinOrganizationForm({ code }: { code?: string }) {
-	const { data: session, isPending } = useAuthPageSession();
+	const { data: session, isPending } = useAuthPageSession({
+		refetchOnWindowFocus: true,
+	});
 	const activeOrganizationId =
 		session &&
 		"activeOrganizationId" in session.session &&

@@ -1,0 +1,56 @@
+{
+  "source": {
+    "head": "1b2508717f5e42b12124c0b3845cc920741380e4",
+    "dirtySources": "apps/webapp/src/components/join-organization-form.tsx\napps/webapp/src/lib/auth/use-auth-page-session.test.tsx\napps/webapp/src/lib/auth/use-auth-page-session.ts",
+    "dirtySourceHashes": [
+      {
+        "path": "apps/webapp/src/components/join-organization-form.tsx",
+        "sha256": "a1ee50869adb3f785fdadc514f5c8b92942d67557e290a72962914fb6217b2d0"
+      },
+      {
+        "path": "apps/webapp/src/lib/auth/use-auth-page-session.test.tsx",
+        "sha256": "1cdbadb785a2f57fd81b2847de4a2a2df0536519e4119f316f477852d678d735"
+      },
+      {
+        "path": "apps/webapp/src/lib/auth/use-auth-page-session.ts",
+        "sha256": "d8f28350ff180581ca8ea5e21fbfa6134ffb145c9b0395f58f1a4be600e9911d"
+      }
+    ],
+    "sources": [
+      {
+        "path": "apps/webapp/src/components/join-organization-form.tsx",
+        "sha256": "a1ee50869adb3f785fdadc514f5c8b92942d67557e290a72962914fb6217b2d0"
+      },
+      {
+        "path": "apps/webapp/src/components/join-organization-form-body.tsx",
+        "sha256": "599d3db81b7e372ad18ec7f946edce2d84cdb857f4ccbe0cc2955491e022228d"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(auth)/join/[code]/page.tsx",
+        "sha256": "48b6a68983b0f6bfe2c4ff1c083d123232b6a11d788bc9fe4a109bf1f027dd43"
+      },
+      {
+        "path": "apps/webapp/src/lib/auth/use-auth-page-session.ts",
+        "sha256": "d8f28350ff180581ca8ea5e21fbfa6134ffb145c9b0395f58f1a4be600e9911d"
+      }
+    ]
+  },
+  "readback": [
+    {
+      "syntheticActor": "small-restricted",
+      "target": "Performance large",
+      "status": "pending",
+      "membershipCreatedAt": "2026-11-15T07:27:56.849Z",
+      "employees": 0,
+      "codeUses": 1
+    },
+    {
+      "syntheticActor": "small-employee",
+      "target": "Performance large",
+      "status": "approved",
+      "membershipCreatedAt": "2026-11-15T07:28:01.247Z",
+      "employees": 1,
+      "codeUses": 1
+    }
+  ]
+}

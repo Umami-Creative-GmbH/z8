@@ -1,5 +1,5 @@
 /**
- * pnpm node docs/design/rollout-1692/1823/runtime.mjs <private-fixture> <before|after>
+ * pnpm node docs/design/rollout-1692/1823/runtime.mjs <private-fixture> <before|after|final|continuation> [baseline-ref]
  * Requires this checkout's owned runtime and isolated native agent-browser session.
  * Codes, auth cookies, logs and manifests remain private. Captures mask only code
  * glyphs; application reads/actions and state are real. Never targets other services.
@@ -10,8 +10,8 @@ import { createHash, randomBytes } from "node:crypto";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
-const repo = process.cwd(), [directory, phase] = process.argv.slice(2);
-assert(["before", "after", "final"].includes(phase));
+const repo = process.cwd(), [directory, phase, baselineRef] = process.argv.slice(2);
+assert(["before", "after", "final", "continuation"].includes(phase));
 const output = join(repo, "docs/design/rollout-1692/1823");
 await mkdir(output, { recursive: true });
 const read = async name => JSON.parse(await readFile(join(directory, name), "utf8"));
@@ -48,29 +48,34 @@ catch (error) {
   }
   await writeFile(join(directory, "join-private.json"), JSON.stringify(codes), { mode: 0o600 });
 }
-const sourcePaths = ["apps/webapp/src/components/join-organization-form.tsx", "apps/webapp/src/components/join-organization-form-body.tsx", "apps/webapp/src/app/[locale]/(auth)/join/[code]/page.tsx"];
+const sourcePaths = ["apps/webapp/src/components/join-organization-form.tsx", "apps/webapp/src/components/join-organization-form-body.tsx", "apps/webapp/src/app/[locale]/(auth)/join/[code]/page.tsx", "apps/webapp/src/lib/auth/use-auth-page-session.ts"];
 const originals = new Map();
 const save = (name, value) => writeFile(join(output, name), JSON.stringify(value, null, 2) + "\n", "utf8");
-let browser;
+let browser, context;
 const checks = [];
-const check = (name, value, details) => { assert.ok(value, name); checks.push({ name, passed: true, ...details }); };
+const check = (name, value, details) => { assert.ok(value, name); checks.push({ name, passed: true, ...details }); console.log("Checked: "+name); };
 try {
   if (phase === "before") {
+    assert.ok(baselineRef,"A verified Git baseline ref is required for a reusable before run");
+    git("merge-base","--is-ancestor",baselineRef,"HEAD");
     for (const path of sourcePaths) {
       originals.set(path, await readFile(join(repo, path), "utf8"));
-      const baseline = execFileSync("git", ["show", "HEAD:" + path], { cwd: repo, encoding: "utf8", windowsHide: true });
+      const baseline = execFileSync("git", ["show", baselineRef + ":" + path], { cwd: repo, encoding: "utf8", windowsHide: true });
       await writeFile(join(repo, path), baseline, "utf8");
     }
   }
   const sources = [];
   for (const path of sourcePaths) sources.push({ path, sha256: createHash("sha256").update(await readFile(join(repo, path))).digest("hex") });
-  const source = { head: git("rev-parse", "HEAD"), dirtySources: git("diff", "--name-only", "--", "apps/webapp/src"), sources };
+  const dirtySources = git("diff", "--name-only", "--", "apps/webapp/src");
+  const dirtySourceHashes = await Promise.all(dirtySources.split(/\r?\n/).filter(Boolean).map(async path => ({path, sha256:createHash("sha256").update(await readFile(join(repo,path))).digest("hex")})));
+  const source = { head: git("rev-parse", "HEAD"), overrideFrom: phase === "before" ? git("rev-parse",baselineRef) : null, dirtySources, dirtySourceHashes, sources };
   const session = execFileSync(process.env.npm_execpath, ["exec", "agent-browser", "session", "id", "--scope", "worktree", "--prefix", "z8-1823"], { cwd: repo, encoding: "utf8", windowsHide: true }).trim();
   const native = execFileSync(process.env.npm_execpath, ["exec", "agent-browser", "--session", session, "--restore", "get", "cdp-url"], { cwd: repo, encoding: "utf8", windowsHide: true });
   const endpoint = native.match(/ws:\/\/127\.0\.0\.1:\d+\/devtools\/browser\/[a-z0-9-]+/)[0];
   browser = await require("puppeteer-core").connect({ browserWSEndpoint: endpoint });
-  const context = await browser.createBrowserContext();
+  context = await browser.createBrowserContext();
   const page = await context.newPage();
+  await page.bringToFront();
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
   const waitText = text => page.waitForFunction(text => document.body.innerText.includes(text), {}, text);
@@ -78,6 +83,11 @@ try {
     const element = await page.waitForSelector(`::-p-aria(${text}[role="button"])`);
     await element.click();
   };
+  const auth = await read("dev-auth-private.json");
+  async function actor(label) {
+    await context.deleteCookie(...await context.cookies());
+    await context.setCookie(...auth[label].cookies);
+  }
   const goto = async (key, locale = "en") => {
     await page.goto(new URL(`/${locale}/join/${codes[key].code}`, runtime.origin).href, { waitUntil: "networkidle0", timeout: 90000 });
     await page.waitForFunction(() => !!document.querySelector("input[name=code]") && !document.body.innerText.includes("Validating code..."));
@@ -123,11 +133,6 @@ try {
     const localizedLink = await page.$eval('a[href*="callbackUrl"]', el => el.getAttribute("href"));
     check("German sign-in callback", new URL(localizedLink, runtime.origin).searchParams.get("callbackUrl") === "/de/join/" + codes.pending.code);
     // Return to English for shared role and status assertions.
-    const auth = await read("dev-auth-private.json");
-    async function actor(label) {
-      await context.deleteCookie(...await context.cookies());
-      await context.setCookie(...auth[label].cookies);
-    }
     await actor("small-restricted");
     await goto("pending");
     const pendingRequest = new Promise(resolveRequest => {
@@ -193,12 +198,86 @@ try {
     await capture("session-refusal", 390, 844);
     check("late signed-out join safely refused", await page.$eval('input[name="code"]', el => !el.disabled));
   }
+  if (phase === "continuation") {
+    await button("Sign in to Join");
+    await page.waitForSelector('input[name="email"]');
+    await page.type('input[name="email"]', fixture.actors["small-restricted"].email);
+    await page.type('input[name="password"]', fixture.actors["small-restricted"].password);
+    await page.waitForFunction(() => [...document.querySelectorAll("button")].some(el => el.innerText === "Login" && !el.disabled));
+    await button("Login");
+    await page.waitForFunction(() => location.pathname.includes("/init") || location.pathname.includes("/join/"));
+    if (new URL(page.url()).pathname.includes("/init")) {
+      await page.waitForFunction(() => location.pathname.includes("/join/") || [...document.querySelectorAll("button")].some(el => el.innerText.includes("Performance small")));
+      if (new URL(page.url()).pathname.includes("/init")) {
+        const choice = await page.waitForSelector('::-p-text(Performance small)');
+        await choice.click();
+      }
+    }
+    await page.waitForFunction(() => location.pathname.includes("/join/"));
+    await waitText(fixture.actors["small-restricted"].email);
+    check("actual sign-in and init return to invitation", new URL(page.url()).pathname === "/en/join/" + codes.pending.code);
+    check("sign-in continuation did not approve pending membership", (await pool.query("select status from member where user_id=$1 and organization_id=$2", [fixture.actors["small-restricted"].userId,codes.pending.organizationId])).rows[0].status === "pending");
+    await capture("returned-from-sign-in",390,844);
+    for (const scope of ["organization", "account"]) {
+      await actor("small-employee");
+      const restored = await page.evaluate(async id => (await fetch("/api/organizations/switch",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({organizationId:id})})).status, fixture.actors["small-employee"].organizationId);
+      check("restored synthetic scope before "+scope+" test",restored===200);
+      await goto("member");
+      await page.setRequestInterception(true);
+      let release;
+      const held = new Promise(resolveRequest => { release=resolveRequest; });
+      const intercept = request => {
+        if(request.method()==="POST" && request.headers()["next-action"]) {
+          page.off("request",intercept);
+          page.on("request",request=>request.continue());
+          release(request);
+        } else request.continue();
+      };
+      page.on("request",intercept);
+      await button("Join Organization");
+      const request = await held;
+      await waitText("Joining...");
+      if(scope==="organization") {
+        const switched = await page.evaluate(async id => (await fetch("/api/organizations/switch",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({organizationId:id})})).status,codes.approved.organizationId);
+        check("real organization switch succeeds during held join",switched===200);
+      } else await actor("small-admin");
+      await page.bringToFront();
+      // This automation browser keeps all pages visible. Simulate the browser's
+      // hidden/visible notification pair; the session reads and switches are real.
+      await page.evaluate(()=>{
+        Object.defineProperty(document,"visibilityState",{configurable:true,value:"hidden"});
+        window.dispatchEvent(new Event("visibilitychange"));
+        delete document.visibilityState;
+        window.dispatchEvent(new Event("visibilitychange"));
+      });
+      await page.waitForFunction(()=>!document.querySelector('input[name="code"]').disabled);
+      if(scope==="account") await waitText(fixture.actors["small-admin"].email);
+      const actionId = request.headers()["next-action"];
+      const response = page.waitForResponse(response=>response.request().method()==="POST" && response.request().headers()["next-action"]===actionId);
+      await request.continue();
+      await response;
+      await page.waitForFunction(()=>document.querySelector("h1")?.innerText==="Join Organization");
+      check(scope+" switch drops old join outcome", await page.$eval("h1",el=>el.innerText==="Join Organization"));
+      await page.setRequestInterception(false);
+      page.removeAllListeners("request");
+      await capture("inflight-"+scope+"-switch",390,844);
+    }
+    const readback=[];
+    for(const [label,kind] of [["small-restricted","pending"],["small-employee","approved"]]) {
+      const result=await pool.query('select m.status,m.created_at as "membershipCreatedAt",(select count(*)::int from employee e where e.organization_id=m.organization_id and e.user_id=m.user_id) as employees,(select count(*)::int from invite_code_usage u where u.member_id=m.id) as "codeUses" from member m where m.user_id=$1 and m.organization_id=$2',[fixture.actors[label].userId,codes[kind].organizationId]);
+      readback.push({syntheticActor:label,target:"Performance large",...result.rows[0]});
+    }
+    await save("membership-readback.json",{source,readback});
+  }
   await save(phase + "-runtime.json", { phase, source, syntheticFixture: "R024 owned disposable; same target organization and code in paired captures", codeMask: "Code glyphs masked only in PNG capture", checks, pageErrors: errors });
   await context.close();
+  context = null;
   browser.disconnect();
 } finally {
+  if (context) await context.close();
   if (browser?.connected) browser.disconnect();
   for (const [path, value] of originals) await writeFile(join(repo, path), value, "utf8");
   await pool.end();
 }
 console.log(phase + ": " + checks.length + " runtime assertions passed.");
+

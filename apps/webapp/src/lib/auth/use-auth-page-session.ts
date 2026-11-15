@@ -13,14 +13,18 @@ async function fetchAuthPageSession() {
  * The current session for signed-out pages, read once through the lazily loaded
  * auth page client. Unlike `useSession` from `@/lib/auth-client`, it does not put
  * the app's Better Auth client (and its organization/admin plugins) into the page.
- * These pages navigate away after signing in or out, so a one-off read is enough.
+ * Short-lived forms use a one-off read. Joining stays open while membership is
+ * requested, so it opts into refreshing account/scope when the user returns.
  */
-export function useAuthPageSession() {
+export function useAuthPageSession(options?: {
+	refetchOnWindowFocus: boolean;
+}) {
 	const { data, isPending } = useQuery({
 		queryKey: ["auth-page-session"],
 		queryFn: fetchAuthPageSession,
 		staleTime: 0,
 		gcTime: 0,
+		refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
 	});
 	return { data: data ?? null, isPending };
 }
