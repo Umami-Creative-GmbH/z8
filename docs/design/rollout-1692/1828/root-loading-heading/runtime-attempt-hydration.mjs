@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {resolve,join} from 'node:path';
+import puppeteer from 'puppeteer-core';
+const[fixtureInput,phase]=process.argv.slice(2),dir=resolve(fixtureInput),out=resolve('.tmp/1828-root-checks/runtime');assert.ok(['before','after'].includes(phase));await mkdir(out,{recursive:true});
+const json=async name=>JSON.parse(await readFile(join(dir,name),'utf8'));
+const r=await json('runtime-private.json'),f=await json('fixture-private.json'),s=await json('services.json'),auth=await json('dev-auth-private.json');
+assert.equal(f.kind,'disposable');assert.equal(new URL(r.origin).hostname,'localhost');assert.equal(r.env.POSTGRES_HOST,'127.0.0.1');assert.match(r.env.POSTGRES_DB,/^approval_workflow_repository_test_perf_[a-f0-9]{12}$/);assert.equal(s.label,'z8-performance-fixture-1450');for(const c of s.containers)assert.equal(execFileSync('docker',['inspect','--format','{{ index .Config.Labels "z8.agent-owned" }}',c],{encoding:'utf8',windowsHide:true}).trim(),s.label);
+const sha=bytes=>createHash('sha256').update(bytes).digest('hex'),file='apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx',bytes=await readFile(file);
+const result={phase,source:{path:file,sha256:sha(bytes),canonicalSha256:sha(bytes.toString('utf8').replaceAll('\r\n','\n'))},checks:[],captures:[],sessionResponses:[],errors:[],heldSessionRequests:0,navigations:[]};
+const warm=await fetch(r.origin+'/en/onboarding/notifications',{signal:AbortSignal.timeout(90000)});assert.equal(warm.status,200);await warm.arrayBuffer();
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});let release=false,held=[];
+try{
+ const context=await browser.createBrowserContext();await context.setCookie(...auth['small-admin'].cookies);await context.setPermission(r.origin,{permission:{name:'notifications'},state:'denied'});
+ const page=await context.newPage();page.setDefaultTimeout(45000);page.on('pageerror',e=>result.errors.push(e.message));page.on('framenavigated',frame=>{if(frame===page.mainFrame())result.navigations.push(new URL(frame.url()).pathname);});await page.setViewport({width:1600,height:1000});await page.emulateMediaFeatures([{name:'prefers-color-scheme',value:'light'}]);await page.setRequestInterception(true);
+ page.on('request',request=>{if(new URL(request.url()).pathname==='/api/auth/get-session'&&!release){held.push(request);result.heldSessionRequests++;return;}void request.continue();});
+ page.on('response',response=>{if(new URL(response.url()).pathname==='/api/auth/get-session')result.sessionResponses.push({status:response.status()});});
+ const headings=()=>page.evaluate(()=>[...document.querySelectorAll('main h1')].filter(n=>n.checkVisibility()).map(n=>n.textContent.trim()));
+ const capture=async name=>{await page.evaluate(()=>document.fonts.ready);const observed=await page.evaluate(()=>({path:location.pathname,viewport:{width:innerWidth,height:innerHeight},documentWidth:document.documentElement.scrollWidth,font:getComputedStyle(document.documentElement).fontSize,fontStatus:document.fonts.status,h1:[...document.querySelectorAll('main h1')].filter(n=>n.checkVisibility()).map(n=>n.textContent.trim()),switches:[...document.querySelectorAll('main [role=switch]')].filter(n=>n.checkVisibility()).length}));const filename=phase+'-'+name+'.png',png=Buffer.from(await page.screenshot({path:join(out,filename)}));result.captures.push({name:filename,...observed,png:{width:png.readUInt32BE(16),height:png.readUInt32BE(20),sha256:sha(png)},source:result.source});};
+ await page.goto(r.origin+'/en/onboarding/notifications',{waitUntil:'domcontentloaded',timeout:90000});await page.waitForSelector('main [role=status][aria-label="Loading your notification setup"]');await page.waitForFunction(()=>document.readyState==='complete');
+ await page.waitForFunction(()=>Boolean(globalThis.next));assert.ok(result.heldSessionRequests>=1,'Actual client session request must be held');
+ assert.deepEqual(await headings(),phase==='before'?[]:['Set up notifications']);assert.equal(await page.$$eval('main [role=switch]',nodes=>nodes.length),0);result.checks.push({name:'Actual account session request is held while the route retains its safe task heading',headings:await headings(),noPreferenceControls:true,heldSessionRequests:result.heldSessionRequests});await capture('pending-desktop');
+ await page.setViewport({width:390,height:844});await capture('pending-phone');assert.deepEqual(await headings(),phase==='before'?[]:['Set up notifications']);
+ release=true;await Promise.all(held.map(request=>request.continue()));held=[];await page.waitForSelector('main [role=switch]');assert.deepEqual(await headings(),['Set up notifications']);assert.ok(result.sessionResponses.some(response=>response.status===200));result.checks.push({name:'Releasing the unchanged real session read reveals the existing preference form with one task heading',headings:await headings(),sessionHTTP200:true});await capture('settled-phone');
+ const rpc=async(method,params)=>{const response=await fetch(r.origin+'/_next/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(30000)});assert.equal(response.ok,true);const raw=await response.text();if(response.headers.get('content-type')?.includes('text/event-stream'))return raw.split(/\r?\n/).filter(line=>line.startsWith('data: ')).map(line=>JSON.parse(line.slice(6))).find(e=>e.id===1);return JSON.parse(raw);};
+ result.tools=await rpc('tools/list',{});result.next=[];for(const name of ['get_compilation_issues','get_errors'])result.next.push({name,result:await rpc('tools/call',{name,arguments:{}})});
+ assert.deepEqual(result.errors,[]);
+}catch(error){result.failure=error.message;throw error;}finally{release=true;await Promise.allSettled(held.map(request=>request.continue()));await browser.close();await writeFile(join(out,phase+'.json'),JSON.stringify(result,null,2)+'\n');}
+console.log(JSON.stringify({phase,checks:result.checks.length,captures:result.captures.length,heldSessionRequests:result.heldSessionRequests}));

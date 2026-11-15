@@ -1,0 +1,483 @@
+src\app\[locale]\onboarding\notifications\actions.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·afterAll,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      2     │ - import·{·integrationAdminPool·}·from·"@/test/integration-database";␍
+      3     │ - ␍
+      4     │ - const·actor·=·vi.hoisted(()·=>·({␍
+      5     │ - → userId:·"r033-account-a",␍
+      6     │ - → signedIn:·true,␍
+      7     │ - → mfa:·false,␍
+      8     │ - → sso:·false,␍
+      9     │ - }));␍
+     10     │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+     11     │ - vi.mock("next/server",·async·(original)·=>␍
+     12     │ - → (await·import("@/test/integration-harness")).nextServer(original),␍
+     13     │ - );␍
+     14     │ - vi.mock("@/lib/auth",·()·=>·({␍
+     15     │ - → auth:·{␍
+     16     │ - → → api:·{␍
+     17     │ - → → → getSession:·async·()·=>␍
+     18     │ - → → → → actor.signedIn␍
+     19     │ - → → → → → ?·{␍
+     20     │ - → → → → → → → user:·{·id:·actor.userId,·role:·"user"·},␍
+     21     │ - → → → → → → → session:·{·id:·"r033-session",·userId:·actor.userId,·activeOrganizationId:·null·},␍
+     22     │ - → → → → → → → mfaRequired:·actor.mfa,␍
+     23     │ - → → → → → → → ssoRequired:·actor.sso,␍
+     24     │ - → → → → → → }␍
+     25     │ - → → → → → :·null,␍
+     26     │ - → → },␍
+     27     │ - → },␍
+     28     │ - }));␍
+     29     │ - const·{·configureNotificationsOnboarding,·skipNotificationsSetup·}·=·await·import("./actions");␍
+     30     │ - const·pool·=·integrationAdminPool();␍
+     31     │ - const·values·=·{␍
+     32     │ - → enablePush:·false,␍
+     33     │ - → enableEmail:·true,␍
+     34     │ - → notifyApprovals:·false,␍
+     35     │ - → notifyStatusUpdates:·true,␍
+     36     │ - → notifyTeamChanges:·false,␍
+     37     │ - };␍
+     38     │ - const·read·=·async·(userId·=·actor.userId)·=>␍
+     39     │ - → (␍
+     40     │ - → → await·pool.query(␍
+     41     │ - → → → "SELECT·notification_type,·channel,·enabled·FROM·notification_preference·WHERE·user_id=$1·ORDER·BY·notification_type::text,·channel::text",␍
+     42     │ - → → → [userId],␍
+     43     │ - → → )␍
+     44     │ - → ).rows;␍
+     45     │ - ␍
+     46     │ - describe("notification·onboarding·actions·on·disposable·PostgreSQL",·()·=>·{␍
+     47     │ - → beforeEach(async·()·=>·{␍
+     48     │ - → → actor.userId·=·"r033-account-a";␍
+     49     │ - → → actor.signedIn·=·true;␍
+     50     │ - → → actor.mfa·=·false;␍
+     51     │ - → → actor.sso·=·false;␍
+     52     │ - → → await·pool.query('DELETE·FROM·"user"·WHERE·id·IN·($1,$2)',·[␍
+     53     │ - → → → "r033-account-a",␍
+     54     │ - → → → "r033-account-b",␍
+     55     │ - → → ]);␍
+     56     │ - → → await·pool.query(␍
+     57     │ - → → → 'INSERT·INTO·"user"·(id,name,email,email_verified,created_at,updated_at)·VALUES·($1,$1,$2,true,now(),now()),($3,$3,$4,true,now(),now())',␍
+     58     │ - → → → ["r033-account-a",·"r033-a@example.test",·"r033-account-b",·"r033-b@example.test"],␍
+     59     │ - → → );␍
+     60     │ - → });␍
+     61     │ - → afterAll(async·()·=>·{␍
+     62     │ - → → await·pool.query('DELETE·FROM·"user"·WHERE·id·IN·($1,$2)',·[␍
+     63     │ - → → → "r033-account-a",␍
+     64     │ - → → → "r033-account-b",␍
+     65     │ - → → ]);␍
+     66     │ - → });␍
+     67     │ - → it("persists·every·channel/topic·value·for·the·authenticated·account·and·supports·updating",·async·()·=>·{␍
+     68     │ - → → expect((await·configureNotificationsOnboarding(values)).success).toBe(true);␍
+     69     │ - → → expect(await·read()).toEqual([␍
+     70     │ - → → → {·notification_type:·"approval_request_approved",·channel:·"email",·enabled:·true·},␍
+     71     │ - → → → {·notification_type:·"approval_request_approved",·channel:·"in_app",·enabled:·true·},␍
+     72     │ - → → → {·notification_type:·"approval_request_approved",·channel:·"push",·enabled:·false·},␍
+     73     │ - → → → {·notification_type:·"approval_request_rejected",·channel:·"email",·enabled:·true·},␍
+     74     │ - → → → {·notification_type:·"approval_request_rejected",·channel:·"in_app",·enabled:·true·},␍
+     75     │ - → → → {·notification_type:·"approval_request_rejected",·channel:·"push",·enabled:·false·},␍
+     76     │ - → → → {·notification_type:·"approval_request_submitted",·channel:·"email",·enabled:·false·},␍
+     77     │ - → → → {·notification_type:·"approval_request_submitted",·channel:·"in_app",·enabled:·false·},␍
+     78     │ - → → → {·notification_type:·"approval_request_submitted",·channel:·"push",·enabled:·false·},␍
+     79     │ - → → → {·notification_type:·"team_member_added",·channel:·"email",·enabled:·false·},␍
+     80     │ - → → → {·notification_type:·"team_member_added",·channel:·"in_app",·enabled:·false·},␍
+     81     │ - → → → {·notification_type:·"team_member_added",·channel:·"push",·enabled:·false·},␍
+     82     │ - → → → {·notification_type:·"team_member_removed",·channel:·"email",·enabled:·false·},␍
+     83     │ - → → → {·notification_type:·"team_member_removed",·channel:·"in_app",·enabled:·false·},␍
+     84     │ - → → → {·notification_type:·"team_member_removed",·channel:·"push",·enabled:·false·},␍
+     85     │ - → → ]);␍
+     86     │ - → → expect(␍
+     87     │ - → → → (␍
+     88     │ - → → → → await·pool.query("SELECT·onboarding_step·FROM·user_settings·WHERE·user_id=$1",·[␍
+     89     │ - → → → → → actor.userId,␍
+     90     │ - → → → → ])␍
+     91     │ - → → → ).rows,␍
+     92     │ - → → ).toEqual([{·onboarding_step:·"complete"·}]);␍
+     93     │ - → → expect(await·read("r033-account-b")).toEqual([]);␍
+     94     │ - → → expect(␍
+     95     │ - → → → (await·configureNotificationsOnboarding({·...values,·enablePush:·true,·enableEmail:·false·}))␍
+     96     │ - → → → → .success,␍
+     97     │ - → → ).toBe(true);␍
+     98     │ - → → const·rows·=·await·read();␍
+     99     │ - → → expect(rows).toHaveLength(15);␍
+    100     │ - → → expect(rows.filter((row)·=>·row.channel·===·"email").every((row)·=>·!row.enabled)).toBe(true);␍
+    101     │ - → → expect(rows.filter((row)·=>·row.channel·===·"push"·&&·row.enabled)).toHaveLength(2);␍
+    102     │ - → → expect(␍
+    103     │ - → → → (␍
+    104     │ - → → → → await·pool.query("SELECT·count(*)::int·AS·n·FROM·push_subscription·WHERE·user_id=$1",·[␍
+    105     │ - → → → → → actor.userId,␍
+    106     │ - → → → → ])␍
+    107     │ - → → → ).rows[0].n,␍
+    108     │ - → → ).toBe(0);␍
+    109     │ - → → expect(␍
+    110     │ - → → → (await·pool.query("SELECT·count(*)::int·AS·n·FROM·member·WHERE·user_id=$1",·[actor.userId]))␍
+    111     │ - → → → → .rows[0].n,␍
+    112     │ - → → ).toBe(0);␍
+    113     │ - → });␍
+    114     │ - → it("skip·preserves·stored·preferences·and·uses·the·current·account·on·every·invocation",·async·()·=>·{␍
+    115     │ - → → await·configureNotificationsOnboarding(values);␍
+    116     │ - → → const·before·=·await·read();␍
+    117     │ - → → expect((await·skipNotificationsSetup()).success).toBe(true);␍
+    118     │ - → → expect(await·read()).toEqual(before);␍
+    119     │ - → → actor.userId·=·"r033-account-b";␍
+    120     │ - → → expect((await·skipNotificationsSetup()).success).toBe(true);␍
+    121     │ - → → expect(await·read()).toEqual([]);␍
+    122     │ - → → expect(await·read("r033-account-a")).toEqual(before);␍
+    123     │ - → });␍
+    124     │ - → it.each(["signed-out",·"mfa",·"sso"])(␍
+    125     │ - → → "refuses·%s·for·save·and·skip·without·writing",␍
+    126     │ - → → async·(refusal)·=>·{␍
+    127     │ - → → → actor.signedIn·=·refusal·!==·"signed-out";␍
+    128     │ - → → → actor.mfa·=·refusal·===·"mfa";␍
+    129     │ - → → → actor.sso·=·refusal·===·"sso";␍
+    130     │ - → → → expect(await·configureNotificationsOnboarding(values)).toEqual(␍
+    131     │ - → → → → expect.objectContaining({·success:·false,·code:·"AuthenticationError"·}),␍
+    132     │ - → → → );␍
+    133     │ - → → → expect(await·skipNotificationsSetup()).toEqual(␍
+    134     │ - → → → → expect.objectContaining({·success:·false,·code:·"AuthenticationError"·}),␍
+    135     │ - → → → );␍
+    136     │ - → → → expect(await·read()).toEqual([]);␍
+    137     │ - → → },␍
+    138     │ - → );␍
+    139     │ - });␍
+          1 │ + import·{·afterAll,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";
+          2 │ + import·{·integrationAdminPool·}·from·"@/test/integration-database";
+          3 │ + 
+          4 │ + const·actor·=·vi.hoisted(()·=>·({
+          5 │ + → userId:·"r033-account-a",
+          6 │ + → signedIn:·true,
+          7 │ + → mfa:·false,
+          8 │ + → sso:·false,
+          9 │ + }));
+         10 │ + vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());
+         11 │ + vi.mock("next/server",·async·(original)·=>
+  129 more lines truncated
+  
+
+src\app\[locale]\onboarding\notifications\page-client.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconBell,·IconLoader2,·IconMail·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useForm·}·from·"@tanstack/react-form";␍
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      6     │ - import·{·useLayoutEffect,·useRef,·useState·}·from·"react";␍
+      7     │ - import·{·ProgressIndicator·}·from·"@/components/onboarding/progress-indicator";␍
+      8     │ - import·{·Button·}·from·"@/components/ui/button";␍
+      9     │ - import·{·Card,·CardContent,·CardHeader·}·from·"@/components/ui/card";␍
+     10     │ - import·{·Label·}·from·"@/components/ui/label";␍
+     11     │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     12     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     13     │ - import·{·Switch·}·from·"@/components/ui/switch";␍
+     14     │ - import·{·usePushNotifications·}·from·"@/hooks/use-push-notifications";␍
+     15     │ - import·{·useSession·}·from·"@/lib/auth-client";␍
+     16     │ - import·{·Link,·useRouter·}·from·"@/navigation";␍
+     17     │ - import·{·configureNotificationsOnboarding,·skipNotificationsSetup·}·from·"./actions";␍
+     18     │ - ␍
+     19     │ - const·defaultValues·=·{␍
+     20     │ - → enablePush:·false,␍
+     21     │ - → enableEmail:·true,␍
+     22     │ - → notifyApprovals:·true,␍
+     23     │ - → notifyStatusUpdates:·true,␍
+     24     │ - → notifyTeamChanges:·true,␍
+     25     │ - };␍
+     26     │ - type·Pending·=·"save"·|·"skip"·|·"push"·|·null;␍
+     27     │ - ␍
+     28     │ - function·PreferenceToggle({␍
+     29     │ - → id,␍
+     30     │ - → label,␍
+     31     │ - → description,␍
+     32     │ - → value,␍
+     33     │ - → onChange,␍
+     34     │ - → disabled,␍
+     35     │ - }:·{␍
+     36     │ - → id:·string;␍
+     37     │ - → label:·string;␍
+     38     │ - → description:·string;␍
+     39     │ - → value:·boolean;␍
+     40     │ - → onChange:·(value:·boolean)·=>·void;␍
+     41     │ - → disabled:·boolean;␍
+     42     │ - })·{␍
+     43     │ - → return·(␍
+     44     │ - → → <div·className="flex·items-center·justify-between·gap-4·border-b·py-4·last:border-0">␍
+     45     │ - → → → <div·className="min-w-0·space-y-1">␍
+     46     │ - → → → → <Label·htmlFor={id}·className="text-sm·leading-snug">␍
+     47     │ - → → → → → {label}␍
+     48     │ - → → → → </Label>␍
+     49     │ - → → → → <p·id={`${id}-description`}·className="text-sm·text-muted-foreground">␍
+     50     │ - → → → → → {description}␍
+     51     │ - → → → → </p>␍
+     52     │ - → → → </div>␍
+     53     │ - → → → <Switch␍
+     54     │ - → → → → id={id}␍
+     55     │ - → → → → checked={value}␍
+     56     │ - → → → → onCheckedChange={onChange}␍
+     57     │ - → → → → disabled={disabled}␍
+     58     │ - → → → → aria-describedby={`${id}-description`}␍
+     59     │ - → → → />␍
+     60     │ - → → </div>␍
+     61     │ - → );␍
+     62     │ - }␍
+     63     │ - ␍
+     64     │ - export·default·function·NotificationsPage()·{␍
+     65     │ - → const·{·t·}·=·useTranslate();␍
+     66     │ - → const·{·data:·session,·isPending·}·=·useSession();␍
+     67     │ - → if·(isPending)␍
+     68     │ - → → return·(␍
+     69     │ - → → → <LoadingRegion␍
+     70     │ - → → → → role="status"␍
+     71     │ - → → → → label={{␍
+     72     │ - → → → → → labelKey:·"onboarding.notifications.loading",␍
+     73     │ - → → → → → labelDefault:·"Loading·your·notification·setup",␍
+     74     │ - → → → → }}␍
+     75     │ - → → → />␍
+     76     │ - → → );␍
+     77     │ - → if·(!session?.user.id)␍
+     78     │ - → → return·(␍
+     79     │ - → → → <Card·className="mx-auto·max-w-2xl">␍
+     80     │ - → → → → <CardContent·className="space-y-4·pt-6">␍
+     81     │ - → → → → → <h1·className="text-2xl·font-semibold">␍
+     82     │ - → → → → → → {t("onboarding.notifications.title",·"Set·up·notifications")}␍
+     83     │ - → → → → → </h1>␍
+     84     │ - → → → → → <p·role="alert">␍
+     85     │ - → → → → → → {t(␍
+     86     │ - → → → → → → → "onboarding.notifications.sessionUnavailable",␍
+     87     │ - → → → → → → → "Your·session·is·unavailable.·Sign·in·to·continue·notification·setup.",␍
+     88     │ - → → → → → → )}␍
+     89     │ - → → → → → </p>␍
+     90     │ - → → → → → <Button·asChild>␍
+     91     │ - → → → → → → <Link·href="/sign-in">{t("common.signIn",·"Sign·in")}</Link>␍
+     92     │ - → → → → → </Button>␍
+     93     │ - → → → → </CardContent>␍
+     94     │ - → → → </Card>␍
+     95     │ - → → );␍
+     96     │ - → return·(␍
+     97     │ - → → <NotificationSetup␍
+     98     │ - → → → key={session.user.id}␍
+     99     │ - → → → organizationId={session.session.activeOrganizationId·??·null}␍
+    100     │ - → → />␍
+    101     │ - → );␍
+    102     │ - }␍
+    103     │ - ␍
+    104     │ - function·useNotificationActions(organizationId:·string·|·null)·{␍
+    105     │ - → const·[pending,·setPending]·=·useState<Pending>(null);␍
+    106     │ - → const·[error,·setError]·=·useState<string·|·null>(null);␍
+    107     │ - → const·[pushFeedback,·setPushFeedback]·=·useState<{·error:·boolean;·message:·string·}·|·null>(␍
+    108     │ - → → null,␍
+    109     │ - → );␍
+    110     │ - → const·arrival·=·useRef<symbol·|·null>(null);␍
+    111     │ - → const·running·=·useRef<symbol·|·null>(null);␍
+    112     │ - → //·Every·connected·arrival·owns·its·completions,·including·cached·Activity·returns.␍
+    113     │ - → //·Preferences·belong·to·the·user;·an·organization·change·invalidates·work,·not·their·draft.␍
+    114     │ - → //·react-doctor-disable-next-line·react-doctor/no-reset-all-state-on-prop-change·--·Only·transient·action·state·resets;·TanStack·preference·drafts·survive·organization·changes·and·Activity·reconnects.␍
+    115     │ - → useLayoutEffect(()·=>·{␍
+    116     │ - → → arrival.current·=·Symbol(organizationId·??·"notification·setup·arrival");␍
+    117     │ - → → running.current·=·null;␍
+    118     │ - → → //·react-doctor-disable-next-line·react-hooks-js/set-state-in-effect·--·A·reconnected·Activity·must·render·usable·controls·after·invalidating·the·prior·arrival.␍
+    119     │ - → → setPending(null);␍
+    120     │ - → → setError(null);␍
+    121     │ - → → setPushFeedback(null);␍
+    122     │ - → → return·()·=>·{␍
+    123     │ - → → → arrival.current·=·null;␍
+    124     │ - → → };␍
+    125     │ - → },·[organizationId]);␍
+    126     │ - ␍
+    127     │ - → function·begin(kind:·Exclude<Pending,·null>)·{␍
+    128     │ - → → if·(running.current·||·!arrival.current)·return·null;␍
+    129     │ - → → const·owner·=·arrival.current;␍
+    130     │ - → → running.current·=·owner;␍
+    131     │ - → → setPending(kind);␍
+    132     │ - → → return·owner;␍
+    133     │ - → }␍
+    134     │ - → function·isCurrent(owner:·symbol)·{␍
+    135     │ - → → return·arrival.current·===·owner;␍
+    136     │ - → }␍
+    137     │ - → function·finish(owner:·symbol)·{␍
+    138     │ - → → if·(isCurrent(owner))·{␍
+    139     │ - → → → running.current·=·null;␍
+    140     │ - → → → setPending(null);␍
+    141     │ - → → }␍
+    142     │ - → }␍
+    143     │ - → return·{␍
+    144     │ - → → isCurrent,␍
+    145     │ - → → finish,␍
+    146     │ - → → pending,␍
+    147     │ - → → error,␍
+    148     │ - → → setError,␍
+    149     │ - → → pushFeedback,␍
+    150     │ - → → setPushFeedback,␍
+  881 more lines truncated
+  
+
+src\app\[locale]\onboarding\notifications\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·{·Activity·}·from·"react";␍
+      5     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - ␍
+      7     │ - const·mocks·=·vi.hoisted(()·=>·({␍
+      8     │ - → configureNotificationsOnboarding:·vi.fn(),␍
+      9     │ - → push:·vi.fn(),␍
+     10     │ - → skipNotificationsSetup:·vi.fn(),␍
+     11     │ - → toastError:·vi.fn(),␍
+     12     │ - → toastSuccess:·vi.fn(),␍
+     13     │ - → usePushNotifications:·vi.fn(),␍
+     14     │ - → requestPermission:·vi.fn(),␍
+     15     │ - → useSession:·vi.fn(),␍
+     16     │ - }));␍
+     17     │ - ␍
+     18     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     19     │ - → useTranslate:·()·=>·({␍
+     20     │ - → → t:·(_key:·string,·fallback?:·string)·=>·fallback·??·_key,␍
+     21     │ - → }),␍
+     22     │ - }));␍
+     23     │ - ␍
+     24     │ - vi.mock("sonner",·()·=>·({␍
+     25     │ - → toast:·{·error:·mocks.toastError,·success:·mocks.toastSuccess·},␍
+     26     │ - }));␍
+     27     │ - ␍
+     28     │ - vi.mock("@/hooks/use-push-notifications",·()·=>·({␍
+     29     │ - → usePushNotifications:·mocks.usePushNotifications,␍
+     30     │ - }));␍
+     31     │ - ␍
+     32     │ - vi.mock("@/navigation",·()·=>·({␍
+     33     │ - → useRouter:·()·=>·({·push:·mocks.push·}),␍
+     34     │ - → Link:·({·children,·href·}:·{·children:·import("react").ReactNode;·href:·string·})·=>·(␍
+     35     │ - → → <a·href={href}>{children}</a>␍
+     36     │ - → ),␍
+     37     │ - }));␍
+     38     │ - ␍
+     39     │ - vi.mock("@/components/onboarding/progress-indicator",·()·=>·({␍
+     40     │ - → ProgressIndicator:·()·=>·null,␍
+     41     │ - }));␍
+     42     │ - ␍
+     43     │ - vi.mock("./actions",·()·=>·({␍
+     44     │ - → configureNotificationsOnboarding:·mocks.configureNotificationsOnboarding,␍
+     45     │ - → skipNotificationsSetup:·mocks.skipNotificationsSetup,␍
+     46     │ - }));␍
+     47     │ - ␍
+     48     │ - vi.mock("@/lib/auth-client",·()·=>·({·useSession:·mocks.useSession·}));␍
+     49     │ - ␍
+     50     │ - import·NotificationsPage·from·"./page-client";␍
+     51     │ - ␍
+     52     │ - function·deferred<T>()·{␍
+     53     │ - → let·reject!:·(reason:·unknown)·=>·void;␍
+     54     │ - → let·resolve!:·(value:·T)·=>·void;␍
+     55     │ - → const·promise·=·new·Promise<T>((resolvePromise,·rejectPromise)·=>·{␍
+     56     │ - → → resolve·=·resolvePromise;␍
+     57     │ - → → reject·=·rejectPromise;␍
+     58     │ - → });␍
+     59     │ - → return·{·promise,·reject,·resolve·};␍
+     60     │ - }␍
+     61     │ - ␍
+     62     │ - describe("NotificationsPage·busy·state",·()·=>·{␍
+     63     │ - → beforeEach(()·=>·{␍
+     64     │ - → → vi.clearAllMocks();␍
+     65     │ - → → mocks.useSession.mockReturnValue({␍
+     66     │ - → → → data:·{·user:·{·id:·"account-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     67     │ - → → → isPending:·false,␍
+     68     │ - → → });␍
+     69     │ - → → mocks.usePushNotifications.mockReturnValue({␍
+     70     │ - → → → isLoading:·false,␍
+     71     │ - → → → isSupported:·false,␍
+     72     │ - → → → permission:·"default",␍
+     73     │ - → → → requestPermission:·mocks.requestPermission,␍
+     74     │ - → → });␍
+     75     │ - → });␍
+     76     │ - ␍
+     77     │ - → it.each(["default",·"denied"])(␍
+     78     │ - → → "never·stores·a·%s·permission·response·as·push·consent",␍
+     79     │ - → → async·(permission)·=>·{␍
+     80     │ - → → → mocks.usePushNotifications.mockReturnValue({␍
+     81     │ - → → → → isSupported:·true,␍
+     82     │ - → → → → isLoading:·false,␍
+     83     │ - → → → → permission:·"default",␍
+     84     │ - → → → → requestPermission:·mocks.requestPermission,␍
+     85     │ - → → → });␍
+     86     │ - → → → mocks.requestPermission.mockResolvedValue(permission);␍
+     87     │ - → → → mocks.configureNotificationsOnboarding.mockResolvedValue({·success:·true·});␍
+     88     │ - → → → render(<NotificationsPage·/>);␍
+     89     │ - → → → fireEvent.click(screen.getByRole("button",·{·name:·/^(Enable|Request·permission)$/·}));␍
+     90     │ - → → → await·waitFor(()·=>·expect(mocks.requestPermission).toHaveBeenCalledOnce());␍
+     91     │ - → → → fireEvent.click(␍
+     92     │ - → → → → screen.getByRole("button",·{·name:·/^(Continue|Save·preferences·and·continue)$/·}),␍
+     93     │ - → → → );␍
+     94     │ - → → → await·waitFor(()·=>␍
+     95     │ - → → → → expect(mocks.configureNotificationsOnboarding).toHaveBeenCalledWith(␍
+     96     │ - → → → → → expect.objectContaining({·enablePush:·false·}),␍
+     97     │ - → → → → ),␍
+     98     │ - → → → );␍
+     99     │ - → → },␍
+    100     │ - → );␍
+    101     │ - → it("shows·granted·push·permission·as·a·disabled·Enabled·button",·()·=>·{␍
+    102     │ - → → mocks.usePushNotifications.mockReturnValue({␍
+    103     │ - → → → isLoading:·false,␍
+    104     │ - → → → isSupported:·true,␍
+    105     │ - → → → permission:·"granted",␍
+    106     │ - → → → requestPermission:·mocks.requestPermission,␍
+    107     │ - → → });␍
+    108     │ - → → render(<NotificationsPage·/>);␍
+    109     │ - ␍
+    110     │ - → → const·enabled·=·screen.getByRole("button",·{·name:·"Permission·allowed"·});␍
+    111     │ - → → expect(enabled).toHaveProperty("disabled",·true);␍
+    112     │ - → → fireEvent.click(enabled);␍
+    113     │ - → → expect(mocks.requestPermission).not.toHaveBeenCalled();␍
+    114     │ - → → expect(screen.queryByRole("button",·{·name:·"Request·permission"·})).toBeNull();␍
+    115     │ - → });␍
+    116     │ - ␍
+    117     │ - → it("keeps·the·Enable·action·available·before·permission·is·granted",·async·()·=>·{␍
+    118     │ - → → mocks.usePushNotifications.mockReturnValue({␍
+    119     │ - → → → isLoading:·false,␍
+    120     │ - → → → isSupported:·true,␍
+    121     │ - → → → permission:·"default",␍
+    122     │ - → → → requestPermission:·mocks.requestPermission,␍
+    123     │ - → → });␍
+    124     │ - → → mocks.requestPermission.mockResolvedValue("granted");␍
+    125     │ - → → render(<NotificationsPage·/>);␍
+    126     │ - ␍
+    127     │ - → → const·enable·=·screen.getByRole("button",·{·name:·"Request·permission"·});␍
+    128     │ - → → expect(enable).toHaveProperty("disabled",·false);␍
+    129     │ - → → fireEvent.click(enable);␍
+    130     │ - → → await·waitFor(()·=>·expect(mocks.requestPermission).toHaveBeenCalledOnce());␍
+    131     │ - → });␍
+    132     │ - ␍
+    133     │ - → it("keeps·submit·disabled·after·successful·configuration·navigation",·async·()·=>·{␍
+    134     │ - → → mocks.configureNotificationsOnboarding.mockResolvedValue({·success:·true·});␍
+    135     │ - → → render(<NotificationsPage·/>);␍
+    136     │ - ␍
+    137     │ - → → const·continueButton·=·screen.getByRole("button",·{·name:·"Save·preferences·and·continue"·});␍
+    138     │ - → → fireEvent.click(continueButton);␍
+    139     │ - ␍
+    140     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledWith("/onboarding/complete"));␍
+    141     │ - → → expect(mocks.push).toHaveBeenCalledOnce();␍
+    142     │ - → → expect(continueButton).toHaveProperty("disabled",·true);␍
+    143     │ - → });␍
+    144     │ - ␍
+    145     │ - → it("submits·the·exact·notification·preference·values",·async·()·=>·{␍
+    146     │ - → → mocks.configureNotificationsOnboarding.mockResolvedValue({·success:·true·});␍
+    147     │ - → → render(<NotificationsPage·/>);␍
+    148     │ - ␍
+    149     │ - → → fireEvent.click(screen.getByRole("switch",·{·name:·"Email·Notifications"·}));␍
+    150     │ - → → fireEvent.click(screen.getByRole("switch",·{·name:·"Approval·requests"·}));␍
+  851 more lines truncated
+  
+
+Checked 3 files in 8ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+
