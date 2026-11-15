@@ -1,0 +1,27 @@
+{
+  "excludedOtherWorkerProcesses": [
+    {
+      "ProcessId": 38564,
+      "ParentProcessId": 96644,
+      "Name": "pnpm.exe",
+      "CommandLine": "\"C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\\\..\\global\\v11\\160c4-18e69eb3e9f70c48-0\\node_modules\\pnpm\\pnpm.exe\"   --config.verify-deps-before-run=false node X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1725-root-runtime-helper.mjs dev X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d .tmp/1834/fixture"
+    },
+    {
+      "ProcessId": 38452,
+      "ParentProcessId": 38564,
+      "Name": "pnpm.exe",
+      "CommandLine": "\"C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\package-manager-store\\v11\\links\\@\\pnpm\\12.16.1\\6c9a58b7993869b11fe8475664e98da88ac738dfe315f849b208c4fcd3713254\\node_modules\\pnpm\\pnpm.exe\" --config.verify-deps-before-run=false node X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1725-root-runtime-helper.mjs dev X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d .tmp/1834/fixture"
+    },
+    {
+      "ProcessId": 97160,
+      "ParentProcessId": 38452,
+      "Name": "node.exe",
+      "CommandLine": "\"C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe\" X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1725-root-runtime-helper.mjs dev X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d .tmp/1834/fixture"
+    }
+  ],
+  "count": 0,
+  "ownedPackageProcesses": [],
+  "checkedAt": "2026-11-15T17:11:36.3561834+00:00",
+  "servicesStarted": 0,
+  "qualification": "Only exact package names and this audit path establish ownership. Shared helper processes serving another checkout remain untouched."
+}

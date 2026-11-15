@@ -1,0 +1,637 @@
+{
+  "passed": true,
+  "base": "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+  "incoming": "274170732c4bcd42a1ee48103f458f0d3722149b",
+  "merge": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+  "tree": "dbe10052bf9cbb9e5d31621aad1d1b1bc9048cc4",
+  "parents": [
+    "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+    "274170732c4bcd42a1ee48103f458f0d3722149b"
+  ],
+  "independentMergeTreeMatches": true,
+  "sourcePaths": [
+    "apps/webapp/src/app/[locale]/onboarding/complete/actions.integration.test.ts",
+    "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx"
+  ],
+  "changedPaths": 94,
+  "preservation": {
+    "unaffectedPaths": 12627,
+    "priorRolloutPaths": 2380,
+    "incomingRawPaths": 91,
+    "verifiedTicketAncestors": 40,
+    "baselineAncestor": true,
+    "root1726And1727Corrections": true,
+    "authoritativeOwners": 5,
+    "allIncomingBlobsMatch": true,
+    "noHeadingOptInRemoval": true
+  },
+  "artifacts": {
+    "decodedPNGs": 22,
+    "parsedJSON": 19,
+    "syntaxCheckedScripts": 9,
+    "finalCapturePins": 54,
+    "beforeCapturePins": 30,
+    "independentSourceFiles": 6,
+    "documentLinks": 34,
+    "contrastSamples": 8,
+    "minimumRecordedContrast": 4.77115358635208,
+    "recordedLiveAssertions": 18,
+    "nativeTargetAndBlob": true,
+    "initialNativeRestoreReachedSignIn": true,
+    "stdinAuthRecorded": true,
+    "recordedPGSuites": 3,
+    "recordedPGTests": 17
+  },
+  "sourcePins": [
+    {
+      "phase": "before",
+      "capture": "before-desktop-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+      "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+    },
+    {
+      "phase": "before",
+      "capture": "before-desktop-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "before",
+      "capture": "before-desktop-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "before",
+      "capture": "before-desktop-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "before",
+      "capture": "before-desktop-light.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "before",
+      "capture": "before-desktop-light.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+      "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-light.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-light.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "before",
+      "capture": "before-wide-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+      "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+    },
+    {
+      "phase": "before",
+      "capture": "before-wide-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "before",
+      "capture": "before-wide-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "before",
+      "capture": "before-wide-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "before",
+      "capture": "before-wide-dark-large.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "before",
+      "capture": "before-wide-dark-large.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+      "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-dark-large.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "before",
+      "capture": "before-phone-dark-large.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "before",
+      "capture": "before-keyboard-focus.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+      "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+    },
+    {
+      "phase": "before",
+      "capture": "before-keyboard-focus.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "before",
+      "capture": "before-keyboard-focus.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "before",
+      "capture": "before-keyboard-focus.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "before",
+      "capture": "before-keyboard-focus.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "before",
+      "capture": "before-keyboard-focus.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-desktop-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-desktop-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-desktop-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-desktop-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-desktop-light.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-desktop-light.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-light.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-light.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-light.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-wide-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-wide-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-wide-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-wide-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-wide-dark-large.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-wide-dark-large.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-dark-large.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-dark-large.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-phone-dark-large.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-keyboard-focus.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-keyboard-focus.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-keyboard-focus.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-keyboard-focus.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-keyboard-focus.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-keyboard-focus.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-pending.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-pending.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-pending.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-pending.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-pending.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-pending.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-failed.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-failed.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-failed.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-failed.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-failed.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-completion-failed.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-summary-failed.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-summary-failed.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-summary-failed.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-summary-failed.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-summary-failed.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-summary-failed.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    },
+    {
+      "phase": "after",
+      "capture": "after-employee.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+      "blob": "ec175fb5736873b8d0e65d29197a6f85622d1bd8",
+      "sha256": "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-employee.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx",
+      "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+      "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+    },
+    {
+      "phase": "after",
+      "capture": "after-employee.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts",
+      "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+      "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+    },
+    {
+      "phase": "after",
+      "capture": "after-employee.png",
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+    },
+    {
+      "phase": "after",
+      "capture": "after-employee.png",
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+    },
+    {
+      "phase": "after",
+      "capture": "after-employee.png",
+      "path": "apps/webapp/src/app/globals.css",
+      "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+      "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+    }
+  ],
+  "qualification": "Archive/source audit freshly executed; browser/PG/native/Next/contrast observations are inherited, not rerun. Private fixture values unavailable after cleanup: no fresh exact-value exclusion claim. No auth or authority-domain mutation performed."
+}

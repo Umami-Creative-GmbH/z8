@@ -487,9 +487,12 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "274170732c4bcd42a1ee48103f458f0d3722149b"
+                        "status":  "integrated",
+                        "verifiedCommit":  "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+                        "implementationCommit":  "274170732c4bcd42a1ee48103f458f0d3722149b",
+                        "integrationCommit":  "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+                        "evidence":  "docs/design/rollout-1692/1827.md",
+                        "integrationVerification":  "Onboarding completion #1827 is verified at `e873311b`:143 unique files/1400 tests, full types, three-file explicit webapp CRLF/lint pass; Doctor zero errors/three reviewed warnings. Nine new lifetime probes plus nine current #1727 probes pass. Personal completion stays separate from workspace/security authority; summary retry and init continuation retain their owners. All40 prior verified ancestors and2380 rollout paths preserved;22 PNGs/19 JSON/nine scripts/84 source pins audited. Worker3PG/17 and18 browser assertions/native target remain inherited. Ordinary-profile and archive-whitespace limits retained; no new services/install. Optional prior root archive-verifier reruns and SQL membership scenario were auto-review rejected and stayed unexecuted; independent preservation passed. Production/catalog/provider/device/zoom/global limits remain open. Independent tree dbe10052bf9cbb9e5d31621aad1d1b1bc9048cc4. Original worker artifact blobs preserved; fresh runtime not claimed."
                     },
                     {
                         "id":  "R033",
