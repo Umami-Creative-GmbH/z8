@@ -1,0 +1,29 @@
+{
+  "scope": "same disposable small organization; independent personal actors; each synthetic policy/schedule/access alteration restored in finally",
+  "results": [
+    {
+      "name": "small-admin admits personal scope without employee peer records",
+      "passed": true
+    },
+    {
+      "name": "small-manager admits personal scope without employee peer records",
+      "passed": true
+    },
+    {
+      "name": "small-restricted admits personal scope without employee peer records",
+      "passed": true
+    },
+    {
+      "name": "missing policy does not become zero balance or hide records",
+      "passed": true
+    },
+    {
+      "name": "zero-working-day setup is distinct from missing policy and empty calendar",
+      "passed": true
+    },
+    {
+      "name": "inactive employee loses session and cannot see personal records",
+      "passed": true
+    }
+  ]
+}

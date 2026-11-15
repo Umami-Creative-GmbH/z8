@@ -2,16 +2,34 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
-import { useEffect, useReducer, useRef, useState, useCallback } from "react";
+import { useLocale } from "next-intl";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { useShallow } from "zustand/react/shallow";
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
-import { ExportButton, type ExportData } from "@/components/analytics/export-button";
+import {
+	ExportButton,
+	type ExportData,
+} from "@/components/analytics/export-button";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	Select,
 	SelectContent,
@@ -28,23 +46,40 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
-import type { DateRange, OvertimeBurnDownData, TrendDirection } from "@/lib/analytics/types";
+import type {
+	DateRange,
+	OvertimeBurnDownData,
+	TrendDirection,
+} from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getOvertimeBurnDownData } from "../actions";
 import {
 	ALL_FILTER_VALUE,
 	type BreakdownDimension,
+	type FilterChoice,
+	type FilterChoices,
 	overtimeBurnDownInitialState,
 	overtimeBurnDownReducer,
 } from "./state";
 
-const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
-const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), {
 	ssr: false,
 });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), {
+	ssr: false,
+});
+const CartesianGrid = dynamic(
+	() => import("recharts").then((mod) => mod.CartesianGrid),
+	{
+		ssr: false,
+	},
+);
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+	ssr: false,
+});
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), {
+	ssr: false,
+});
 
 type TFunction = ReturnType<typeof useTranslate>["t"];
 type BreakdownRow = OvertimeBurnDownData["byTeam"][number];
@@ -60,31 +95,22 @@ function formatTrendDirection(
 	trendDirection: TrendDirection,
 	t: ReturnType<typeof useTranslate>["t"],
 ): string {
-	if (trendDirection === "up") return t("analytics.overtimeBurnDown.trend.up", "Up");
-	if (trendDirection === "down") return t("analytics.overtimeBurnDown.trend.down", "Down");
+	if (trendDirection === "up")
+		return t("analytics.overtimeBurnDown.trend.up", "Up");
+	if (trendDirection === "down")
+		return t("analytics.overtimeBurnDown.trend.down", "Down");
 	return t("analytics.overtimeBurnDown.trend.flat", "Flat");
 }
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
-		left.start.getTime() === right.start.getTime() && left.end.getTime() === right.end.getTime()
+		left.start.getTime() === right.start.getTime() &&
+		left.end.getTime() === right.end.getTime()
 	);
 }
 
-function PageHeader({ t }: { t: TFunction }) {
-	return (
-		<div className="space-y-1">
-			<h1 className="text-2xl font-semibold tracking-tight">
-				{t("analytics.overtimeBurnDown.title", "Overtime Burn-Down")}
-			</h1>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"analytics.overtimeBurnDown.description",
-					"Track weekly overtime reduction across teams.",
-				)}
-			</p>
-		</div>
-	);
+function formatHours(hours: number, locale: string) {
+	return `${Number(hours.toFixed(1)).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h`;
 }
 
 function AnalyticsToolbar({
@@ -104,94 +130,131 @@ function AnalyticsToolbar({
 	t: TFunction;
 	dateRange: DateRange | null;
 	onDateRangeChange: (range: DateRange) => void;
-	data: OvertimeBurnDownData | null;
+	data: FilterChoices | null;
 	teamId: string;
 	costCenterId: string;
 	managerId: string;
 	breakdownDimension: BreakdownDimension;
-	onFilterChange: (name: "teamId" | "costCenterId" | "managerId", value: string) => void;
+	onFilterChange: (
+		name: "teamId" | "costCenterId" | "managerId",
+		value: string,
+	) => void;
 	onBreakdownChange: (value: BreakdownDimension) => void;
 	exportData: ExportData<ExportRow>;
 	exportDisabled: boolean;
 }) {
 	return (
-		<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-			{dateRange ? (
-				<AnalyticsDateRangePicker value={dateRange} onChange={onDateRangeChange} />
-			) : (
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"analytics.common.loadingOrganizationSettings",
-						"Loading organization settings before enabling presets.",
-					)}
-				</p>
-			)}
-			<div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">
-				<div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2 lg:grid-cols-4">
-					<FilterSelect
-						label={t("analytics.common.team", "Team")}
-						ariaLabel={t("analytics.overtimeBurnDown.filters.teamLabel", "Team filter")}
-						placeholder={t("analytics.overtimeBurnDown.filters.allTeams", "All teams")}
-						allLabel={t("analytics.overtimeBurnDown.filters.allTeams", "All teams")}
-						value={teamId}
-						rows={data?.byTeam ?? []}
-						onValueChange={(value) => onFilterChange("teamId", value)}
-					/>
-					<FilterSelect
-						label={t("analytics.overtimeBurnDown.costCenter", "Cost Center")}
-						ariaLabel={t(
-							"analytics.overtimeBurnDown.filters.costCenterLabel",
-							"Cost center filter",
-						)}
-						placeholder={t("analytics.overtimeBurnDown.filters.allCostCenters", "All cost centers")}
-						allLabel={t("analytics.overtimeBurnDown.filters.allCostCenters", "All cost centers")}
-						value={costCenterId}
-						rows={data?.byCostCenter ?? []}
-						onValueChange={(value) => onFilterChange("costCenterId", value)}
-					/>
-					<FilterSelect
-						label={t("analytics.overtimeBurnDown.manager", "Manager")}
-						ariaLabel={t("analytics.overtimeBurnDown.filters.managerLabel", "Manager filter")}
-						placeholder={t("analytics.overtimeBurnDown.filters.allManagers", "All managers")}
-						allLabel={t("analytics.overtimeBurnDown.filters.allManagers", "All managers")}
-						value={managerId}
-						rows={data?.byManager ?? []}
-						onValueChange={(value) => onFilterChange("managerId", value)}
-					/>
-					<div className="space-y-1">
-						<p className="text-xs text-muted-foreground">
-							{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}
+		<DataTableToolbar
+			filterControls={
+				<div className="grid min-w-0 w-full gap-4">
+					{dateRange ? (
+						<AnalyticsDateRangePicker
+							value={dateRange}
+							onChange={onDateRangeChange}
+						/>
+					) : (
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"analytics.common.loadingOrganizationSettings",
+								"Loading organization settings before enabling presets.",
+							)}
 						</p>
-						<Select
-							value={breakdownDimension}
-							onValueChange={(value) => onBreakdownChange(value as BreakdownDimension)}
-						>
-							<SelectTrigger
-								className="w-full sm:w-[160px]"
-								aria-label={t(
-									"analytics.overtimeBurnDown.filters.breakdownLabel",
-									"Breakdown dimension",
-								)}
+					)}
+					<div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+						<FilterSelect
+							label={t("analytics.common.team", "Team")}
+							ariaLabel={t(
+								"analytics.overtimeBurnDown.filters.teamLabel",
+								"Team filter",
+							)}
+							placeholder={t(
+								"analytics.overtimeBurnDown.filters.allTeams",
+								"All teams",
+							)}
+							allLabel={t(
+								"analytics.overtimeBurnDown.filters.allTeams",
+								"All teams",
+							)}
+							value={teamId}
+							rows={data?.byTeam ?? []}
+							onValueChange={(value) => onFilterChange("teamId", value)}
+						/>
+						<FilterSelect
+							label={t("analytics.overtimeBurnDown.costCenter", "Cost Center")}
+							ariaLabel={t(
+								"analytics.overtimeBurnDown.filters.costCenterLabel",
+								"Cost center filter",
+							)}
+							placeholder={t(
+								"analytics.overtimeBurnDown.filters.allCostCenters",
+								"All cost centers",
+							)}
+							allLabel={t(
+								"analytics.overtimeBurnDown.filters.allCostCenters",
+								"All cost centers",
+							)}
+							value={costCenterId}
+							rows={data?.byCostCenter ?? []}
+							onValueChange={(value) => onFilterChange("costCenterId", value)}
+						/>
+						<FilterSelect
+							label={t("analytics.overtimeBurnDown.manager", "Manager")}
+							ariaLabel={t(
+								"analytics.overtimeBurnDown.filters.managerLabel",
+								"Manager filter",
+							)}
+							placeholder={t(
+								"analytics.overtimeBurnDown.filters.allManagers",
+								"All managers",
+							)}
+							allLabel={t(
+								"analytics.overtimeBurnDown.filters.allManagers",
+								"All managers",
+							)}
+							value={managerId}
+							rows={data?.byManager ?? []}
+							onValueChange={(value) => onFilterChange("managerId", value)}
+						/>
+						<div className="min-w-0 space-y-2">
+							<p className="text-sm text-muted-foreground">
+								{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}
+							</p>
+							<Select
+								value={breakdownDimension}
+								onValueChange={(value) =>
+									onBreakdownChange(value as BreakdownDimension)
+								}
 							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="team">
-									{t("analytics.overtimeBurnDown.byTeam", "By Team")}
-								</SelectItem>
-								<SelectItem value="costCenter">
-									{t("analytics.overtimeBurnDown.byCostCenter", "By Cost Center")}
-								</SelectItem>
-								<SelectItem value="manager">
-									{t("analytics.overtimeBurnDown.byManager", "By Manager")}
-								</SelectItem>
-							</SelectContent>
-						</Select>
+								<SelectTrigger
+									className="w-full min-w-0"
+									aria-label={t(
+										"analytics.overtimeBurnDown.filters.breakdownLabel",
+										"Breakdown dimension",
+									)}
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="team">
+										{t("analytics.overtimeBurnDown.byTeam", "By Team")}
+									</SelectItem>
+									<SelectItem value="costCenter">
+										{t(
+											"analytics.overtimeBurnDown.byCostCenter",
+											"By Cost Center",
+										)}
+									</SelectItem>
+									<SelectItem value="manager">
+										{t("analytics.overtimeBurnDown.byManager", "By Manager")}
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
 				</div>
-				<ExportButton data={exportData} disabled={exportDisabled} />
-			</div>
-		</div>
+			}
+			actions={<ExportButton data={exportData} disabled={exportDisabled} />}
+		/>
 	);
 }
 
@@ -209,14 +272,14 @@ function FilterSelect({
 	placeholder: string;
 	allLabel: string;
 	value: string;
-	rows: BreakdownRow[];
+	rows: FilterChoice[];
 	onValueChange: (value: string) => void;
 }) {
 	return (
-		<div className="space-y-1">
-			<p className="text-xs text-muted-foreground">{label}</p>
+		<div className="min-w-0 space-y-2">
+			<p className="text-sm text-muted-foreground">{label}</p>
 			<Select value={value} onValueChange={onValueChange}>
-				<SelectTrigger className="w-full sm:w-[160px]" aria-label={ariaLabel}>
+				<SelectTrigger className="w-full min-w-0" aria-label={ariaLabel}>
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
 				<SelectContent>
@@ -234,18 +297,37 @@ function FilterSelect({
 
 function LoadingState() {
 	return (
-		<div className="flex items-center justify-center py-12">
-			<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-		</div>
+		<LoadingRegion
+			className="flex items-center justify-center py-12"
+			label={{
+				labelKey: "analytics.overtimeBurnDown.loading",
+				labelDefault: "Loading overtime data",
+			}}
+		>
+			<IconLoader2
+				aria-hidden="true"
+				className="size-6 animate-spin text-muted-foreground motion-reduce:animate-none"
+			/>
+		</LoadingRegion>
 	);
 }
 
-function SummaryCards({ summary, t }: { summary: OvertimeBurnDownData["summary"]; t: TFunction }) {
+function SummaryCards({
+	summary,
+	t,
+}: {
+	summary: OvertimeBurnDownData["summary"];
+	t: TFunction;
+}) {
+	const locale = useLocale();
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<dl className="grid divide-y rounded-xl border bg-card sm:grid-cols-2 sm:divide-y-0 xl:grid-cols-4">
 			<SummaryCard
-				title={t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime")}
-				value={`${summary.currentOvertimeHours.toFixed(1)}h`}
+				title={t(
+					"analytics.overtimeBurnDown.currentOvertime",
+					"Current Overtime",
+				)}
+				value={formatHours(summary.currentOvertimeHours, locale)}
 				description={t(
 					"analytics.overtimeBurnDown.selectedRangeDescription",
 					"For selected date range and filters",
@@ -253,29 +335,35 @@ function SummaryCards({ summary, t }: { summary: OvertimeBurnDownData["summary"]
 			/>
 			<SummaryCard
 				title={t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week")}
-				value={`${summary.wowDeltaHours > 0 ? "+" : ""}${summary.wowDeltaHours.toFixed(1)}h`}
+				value={`${summary.wowDeltaHours > 0 ? "+" : ""}${formatHours(summary.wowDeltaHours, locale)}`}
 				description={t(
 					"analytics.overtimeBurnDown.previousPeriodDescription",
 					"Compared with previous period",
 				)}
 			/>
 			<SummaryCard
-				title={t("analytics.overtimeBurnDown.improvingGroups", "Improving Groups")}
-				value={String(summary.improvingGroups)}
+				title={t(
+					"analytics.overtimeBurnDown.improvingGroups",
+					"Improving Groups",
+				)}
+				value={summary.improvingGroups.toLocaleString(locale)}
 				description={t(
 					"analytics.overtimeBurnDown.improvingGroupsDescription",
 					"Groups with decreasing overtime",
 				)}
 			/>
 			<SummaryCard
-				title={t("analytics.overtimeBurnDown.trendDirection", "Trend Direction")}
+				title={t(
+					"analytics.overtimeBurnDown.trendDirection",
+					"Trend Direction",
+				)}
 				value={formatTrendDirection(summary.trendDirection, t)}
 				description={t(
 					"analytics.overtimeBurnDown.trendDirectionDescription",
 					"Overall overtime trajectory",
 				)}
 			/>
-		</div>
+		</dl>
 	);
 }
 
@@ -289,24 +377,32 @@ function SummaryCard({
 	description: string;
 }) {
 	return (
-		<Card>
-			<CardHeader className="space-y-0 pb-2">
-				<CardTitle className="text-sm font-medium">{title}</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<div className="text-2xl font-semibold">{value}</div>
-				<p className="text-xs text-muted-foreground">{description}</p>
-			</CardContent>
-		</Card>
+		<div className="min-w-0 space-y-2 p-5 sm:border-r last:border-r-0">
+			<dt className="text-sm text-muted-foreground">{title}</dt>
+			<dd className="text-2xl font-semibold tabular-nums">{value}</dd>
+			<dd className="text-sm text-muted-foreground">{description}</dd>
+		</div>
 	);
 }
 
-function WeeklyTrendCard({ data, t }: { data: OvertimeBurnDownData | null; t: TFunction }) {
+function WeeklyTrendCard({
+	data,
+	t,
+}: {
+	data: OvertimeBurnDownData | null;
+	t: TFunction;
+}) {
+	const locale = useLocale();
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("analytics.overtimeBurnDown.weeklyTrend.title", "Weekly Burn-Down Trend")}
+					<h2>
+						{t(
+							"analytics.overtimeBurnDown.weeklyTrend.title",
+							"Weekly Burn-Down Trend",
+						)}
+					</h2>
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -317,35 +413,78 @@ function WeeklyTrendCard({ data, t }: { data: OvertimeBurnDownData | null; t: TF
 			</CardHeader>
 			<CardContent>
 				{(data?.weeklySeries.length ?? 0) > 0 ? (
-					<ChartContainer
-						config={{
-							overtimeHours: {
-								label: t("analytics.common.overtimeHours", "Overtime Hours"),
-								color: "hsl(var(--chart-1))",
-							},
-						}}
-						className="h-[320px]"
-					>
-						<BarChart data={data?.weeklySeries ?? []}>
-							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis
-								dataKey="weekStart"
-								tickLine={false}
-								tickMargin={10}
-								axisLine={false}
-								tickFormatter={(value: string) => DateTime.fromISO(value).toFormat("LLL dd")}
-							/>
-							<YAxis tickLine={false} axisLine={false} />
-							<ChartTooltip
-								content={<ChartTooltipContent />}
-								labelFormatter={(value) => DateTime.fromISO(String(value)).toFormat("DDD")}
-							/>
-							<Bar dataKey="overtimeHours" fill="var(--color-overtimeHours)" radius={4} />
-						</BarChart>
-					</ChartContainer>
+					<>
+						<ChartContainer
+							config={{
+								overtimeHours: {
+									label: t("analytics.common.overtimeHours", "Overtime Hours"),
+									color: "var(--chart-1)",
+								},
+							}}
+							className="h-[320px] w-full"
+						>
+							<BarChart data={data?.weeklySeries ?? []}>
+								<CartesianGrid strokeDasharray="3 3" />
+								<XAxis
+									dataKey="weekStart"
+									tickLine={false}
+									tickMargin={10}
+									axisLine={false}
+									tickFormatter={(value: string) =>
+										Temporal.PlainDate.from(value).toLocaleString(locale, {
+											month: "short",
+											day: "2-digit",
+										})
+									}
+								/>
+								<YAxis tickLine={false} axisLine={false} />
+								<ChartTooltip
+									content={<ChartTooltipContent />}
+									labelFormatter={(value) =>
+										Temporal.PlainDate.from(String(value)).toLocaleString(
+											locale,
+											{ dateStyle: "medium" },
+										)
+									}
+								/>
+								<Bar
+									dataKey="overtimeHours"
+									fill="var(--color-overtimeHours)"
+									radius={4}
+								/>
+							</BarChart>
+						</ChartContainer>
+						<details className="mt-4 text-sm">
+							<summary className="cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
+								{t(
+									"analytics.overtimeBurnDown.chartValues",
+									"View weekly values",
+								)}
+							</summary>
+							<ul className="mt-3 divide-y">
+								{data?.weeklySeries.map((week) => (
+									<li
+										key={week.weekStart}
+										className="flex flex-wrap justify-between gap-2 py-2 tabular-nums"
+									>
+										<span>
+											{Temporal.PlainDate.from(week.weekStart).toLocaleString(
+												locale,
+												{ dateStyle: "medium" },
+											)}
+										</span>
+										<span>{formatHours(week.overtimeHours, locale)}</span>
+									</li>
+								))}
+							</ul>
+						</details>
+					</>
 				) : (
 					<div className="flex h-[320px] items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-						{t("analytics.overtimeBurnDown.weeklyTrend.empty", "No trend data available yet")}
+						{t(
+							"analytics.overtimeBurnDown.weeklyTrend.empty",
+							"No trend data available yet",
+						)}
 					</div>
 				)}
 			</CardContent>
@@ -362,10 +501,13 @@ function BreakdownCard({
 	breakdownLabel: string;
 	t: TFunction;
 }) {
+	const locale = useLocale();
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}</CardTitle>
+				<CardTitle>
+					<h2>{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"analytics.overtimeBurnDown.breakdownDescription",
@@ -378,46 +520,69 @@ function BreakdownCard({
 			</CardHeader>
 			<CardContent>
 				{rows.length > 0 ? (
-					<Table mobileLayout="stacked">
+					<Table
+						mobileLayout="scroll"
+						className="tabular-nums"
+						aria-label={t("analytics.overtimeBurnDown.breakdown", "Breakdown")}
+					>
 						<TableHeader>
 							<TableRow>
 								<TableHead>{breakdownLabel}</TableHead>
 								<TableHead className="text-right">
-									{t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime")}
+									{t(
+										"analytics.overtimeBurnDown.currentOvertime",
+										"Current Overtime",
+									)}
 								</TableHead>
 								<TableHead className="text-right">
-									{t("analytics.overtimeBurnDown.previousOvertime", "Previous Overtime")}
+									{t(
+										"analytics.overtimeBurnDown.previousOvertime",
+										"Previous Overtime",
+									)}
 								</TableHead>
 								<TableHead className="text-right">
-									{t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week")}
+									{t(
+										"analytics.overtimeBurnDown.weekOverWeek",
+										"Week-over-Week",
+									)}
 								</TableHead>
 								<TableHead>
-									{t("analytics.overtimeBurnDown.trendDirection", "Trend Direction")}
+									{t(
+										"analytics.overtimeBurnDown.trendDirection",
+										"Trend Direction",
+									)}
 								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{rows.map((row) => (
 								<TableRow key={row.id}>
-									<TableCell className="font-medium">{row.label}</TableCell>
-									<TableCell className="text-right">
-										{row.currentOvertimeHours.toFixed(1)}h
+									<TableCell className="min-w-40 max-w-72 whitespace-normal break-words font-medium">
+										{row.label}
 									</TableCell>
 									<TableCell className="text-right">
-										{row.previousOvertimeHours.toFixed(1)}h
+										{formatHours(row.currentOvertimeHours, locale)}
+									</TableCell>
+									<TableCell className="text-right">
+										{formatHours(row.previousOvertimeHours, locale)}
 									</TableCell>
 									<TableCell className="text-right">
 										{row.wowDeltaHours > 0 ? "+" : ""}
-										{row.wowDeltaHours.toFixed(1)}h
+										{formatHours(row.wowDeltaHours, locale)}
 									</TableCell>
-									<TableCell>{formatTrendDirection(row.trendDirection, t)}</TableCell>
+									<TableCell>
+										{formatTrendDirection(row.trendDirection, t)}
+									</TableCell>
 								</TableRow>
 							))}
 						</TableBody>
 					</Table>
 				) : (
 					<div className="flex h-[240px] items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-						{t("analytics.overtimeBurnDown.breakdownEmpty", "No breakdown data available yet")}
+						{t(
+							"analytics.overtimeBurnDown.breakdownEmpty",
+							"No breakdown data available yet",
+						)}
 					</div>
 				)}
 			</CardContent>
@@ -425,7 +590,73 @@ function BreakdownCard({
 	);
 }
 
+function buildOvertimeExport(
+	selectedBreakdownRows: BreakdownRow[],
+	breakdownLabel: string,
+	breakdownDimension: BreakdownDimension,
+	dateRange: DateRange | null,
+	timezone: string,
+	t: TFunction,
+): ExportData<ExportRow> {
+	const rows = selectedBreakdownRows.map((row) => ({
+		dimension: row.label,
+		currentOvertime: row.currentOvertimeHours,
+		previousOvertime: row.previousOvertimeHours,
+		weekOverWeek: row.wowDeltaHours,
+		trendDirection: formatTrendDirection(row.trendDirection, t),
+	}));
+
+	return {
+		data: rows,
+		headers: [
+			{ key: "dimension" as const, label: breakdownLabel },
+			{
+				key: "currentOvertime" as const,
+				label: t(
+					"analytics.overtimeBurnDown.currentOvertime",
+					"Current Overtime",
+				),
+			},
+			{
+				key: "previousOvertime" as const,
+				label: t(
+					"analytics.overtimeBurnDown.previousOvertime",
+					"Previous Overtime",
+				),
+			},
+			{
+				key: "weekOverWeek" as const,
+				label: t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week"),
+			},
+			{
+				key: "trendDirection" as const,
+				label: t(
+					"analytics.overtimeBurnDown.trendDirection",
+					"Trend Direction",
+				),
+			},
+		],
+		filename:
+			"overtime-burndown-" +
+			breakdownDimension +
+			"-" +
+			(dateRange
+				? Temporal.Instant.fromEpochMilliseconds(dateRange.start.getTime())
+						.toZonedDateTimeISO(timezone)
+						.toPlainDate()
+						.toString()
+				: "pending"),
+	};
+}
+
 export default function OvertimeBurnDownPage() {
+	const organizationId = useOrganizationSettings(
+		(state) => state.organizationId,
+	);
+	return <OvertimeBurnDown key={organizationId ?? "pending"} />;
+}
+
+function OvertimeBurnDown() {
 	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
@@ -435,15 +666,36 @@ export default function OvertimeBurnDownPage() {
 	);
 	const hasUserChangedRange = useRef(false);
 	const [dateRange, setDateRange] = useState<DateRange | null>(null);
-	const [state, dispatch] = useReducer(overtimeBurnDownReducer, overtimeBurnDownInitialState);
-	const { loading, data, teamId, costCenterId, managerId, breakdownDimension } = state;
+	const [state, dispatch] = useReducer(
+		overtimeBurnDownReducer,
+		overtimeBurnDownInitialState,
+	);
+	const {
+		loading,
+		refreshing,
+		failed,
+		teamId,
+		costCenterId,
+		managerId,
+		breakdownDimension,
+	} = state;
+	const requestKey = JSON.stringify([
+		dateRange?.start.getTime(),
+		dateRange?.end.getTime(),
+		teamId,
+		costCenterId,
+		managerId,
+	]);
+	const data = state.requestKey === requestKey ? state.data : null;
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
 			return;
 		}
 
-		const nextDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
+		const nextDateRange = getAnalyticsDateRangeForPreset("current_month", {
+			timezone,
+		});
 		setDateRange((currentDateRange) =>
 			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
 				? currentDateRange
@@ -456,7 +708,10 @@ export default function OvertimeBurnDownPage() {
 		setDateRange(range);
 	};
 
-	const handleFilterChange = (name: "teamId" | "costCenterId" | "managerId", value: string) => {
+	const handleFilterChange = (
+		name: "teamId" | "costCenterId" | "managerId",
+		value: string,
+	) => {
 		dispatch({ type: "filterChanged", name, value });
 	};
 
@@ -467,74 +722,102 @@ export default function OvertimeBurnDownPage() {
 				return;
 			}
 
-			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
-			if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
-			return;
-		}
+			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset(
+				"current_month",
+				{ timezone },
+			);
+			if (
+				!hasUserChangedRange.current &&
+				!areDateRangesEqual(dateRange, expectedDefaultDateRange)
+			) {
+				return;
+			}
 
 			const range = dateRange;
 			const generation = ++refreshGeneration.current;
 			const isLatest = () => generation === refreshGeneration.current;
 
 			async function loadData() {
-				if (!background) dispatch({ type: "loadingStarted" });
+				dispatch({ type: "loadingStarted", background });
 				try {
 					const filters: {
-					teamId?: string;
-					costCenterId?: string;
-					managerId?: string;
-				} = {};
+						teamId?: string;
+						costCenterId?: string;
+						managerId?: string;
+					} = {};
 
 					if (teamId !== ALL_FILTER_VALUE) {
-					filters.teamId = teamId;
-				}
+						filters.teamId = teamId;
+					}
 
 					if (costCenterId !== ALL_FILTER_VALUE) {
-					filters.costCenterId = costCenterId;
-				}
+						filters.costCenterId = costCenterId;
+					}
 
 					if (managerId !== ALL_FILTER_VALUE) {
-					filters.managerId = managerId;
-				}
+						filters.managerId = managerId;
+					}
 
 					const result = await getOvertimeBurnDownData(
-					range,
-					Object.keys(filters).length > 0 ? filters : undefined,
-				);
+						range,
+						Object.keys(filters).length > 0 ? filters : undefined,
+					);
 
 					if (!isLatest()) {
 						return;
 					}
 
 					if (result.success && result.data) {
-					dispatch({ type: "dataLoaded", data: result.data });
-					return;
-				}
+						dispatch({ type: "dataLoaded", data: result.data, requestKey });
+						return true;
+					}
 
-					if (!background) dispatch({ type: "dataLoadFailed" });
+					dispatch({
+						type: "dataLoadFailed",
+						background,
+						refused: [
+							"AuthenticationError",
+							"AuthorizationError",
+							"NotFoundError",
+							"BillingError",
+						].includes(result.success ? "" : (result.code ?? "")),
+					});
 					toast.error(
 						t(
 							"analytics.overtimeBurnDown.errors.loadData",
 							"Failed to load overtime burn-down data",
 						),
 					);
+					return false;
 				} catch (error) {
 					console.error("Failed to load overtime burn-down data:", error);
 					if (isLatest()) {
-						if (!background) dispatch({ type: "dataLoadFailed" });
+						dispatch({ type: "dataLoadFailed", background });
 						toast.error(
-						t(
-							"analytics.overtimeBurnDown.errors.loadData",
-							"Failed to load overtime burn-down data",
-						),
-					);
+							t(
+								"analytics.overtimeBurnDown.errors.loadData",
+								"Failed to load overtime burn-down data",
+							),
+						);
 					}
+					return false;
 				}
 			}
 
-			await loadData();
+			const succeeded = await loadData();
+			if (succeeded === false && background)
+				throw new Error("Overtime analytics refresh failed");
 		},
-		[dateRange, teamId, costCenterId, managerId, isHydrated, timezone, t],
+		[
+			dateRange,
+			teamId,
+			costCenterId,
+			managerId,
+			isHydrated,
+			timezone,
+			t,
+			requestKey,
+		],
 	);
 	useViewRefresh(() => runAnalyticsLoad(true));
 	useEffect(() => {
@@ -547,13 +830,6 @@ export default function OvertimeBurnDownPage() {
 			refreshGeneration.current += 1;
 		};
 	}, [runAnalyticsLoad]);
-
-	const summary = data?.summary ?? {
-		currentOvertimeHours: 0,
-		wowDeltaHours: 0,
-		improvingGroups: 0,
-		trendDirection: "flat" as const,
-	};
 
 	const selectedBreakdownRows = (() => {
 		if (!data) {
@@ -578,70 +854,76 @@ export default function OvertimeBurnDownPage() {
 				? t("analytics.overtimeBurnDown.costCenter", "Cost Center")
 				: t("analytics.overtimeBurnDown.manager", "Manager");
 
-	const exportData: ExportData<ExportRow> = (() => {
-		const rows = selectedBreakdownRows.map((row) => ({
-			dimension: row.label,
-			currentOvertime: row.currentOvertimeHours,
-			previousOvertime: row.previousOvertimeHours,
-			weekOverWeek: row.wowDeltaHours,
-			trendDirection: formatTrendDirection(row.trendDirection, t),
-		}));
-
-		return {
-			data: rows,
-			headers: [
-				{ key: "dimension" as const, label: breakdownLabel },
-				{
-					key: "currentOvertime" as const,
-					label: t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime"),
-				},
-				{
-					key: "previousOvertime" as const,
-					label: t("analytics.overtimeBurnDown.previousOvertime", "Previous Overtime"),
-				},
-				{
-					key: "weekOverWeek" as const,
-					label: t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week"),
-				},
-				{
-					key: "trendDirection" as const,
-					label: t("analytics.overtimeBurnDown.trendDirection", "Trend Direction"),
-				},
-			],
-			filename:
-				"overtime-burndown-" +
-				breakdownDimension +
-				"-" +
-				(dateRange ? DateTime.fromJSDate(dateRange.start).toFormat("yyyy-MM-dd") : "pending"),
-		};
-	})();
+	const exportData = buildOvertimeExport(
+		selectedBreakdownRows,
+		breakdownLabel,
+		breakdownDimension,
+		dateRange,
+		timezone,
+		t,
+	);
 
 	return (
-		<div className="space-y-6 px-4 lg:px-6">
-			<PageHeader t={t} />
-
+		<div className="min-w-0 space-y-6 px-4 lg:px-6">
 			<AnalyticsToolbar
 				t={t}
 				dateRange={dateRange}
 				onDateRangeChange={handleDateRangeChange}
-				data={data}
+				data={state.choices}
 				teamId={teamId}
 				costCenterId={costCenterId}
 				managerId={managerId}
 				breakdownDimension={breakdownDimension}
 				onFilterChange={handleFilterChange}
-				onBreakdownChange={(value) => dispatch({ type: "breakdownChanged", value })}
+				onBreakdownChange={(value) =>
+					dispatch({ type: "breakdownChanged", value })
+				}
 				exportData={exportData}
-				exportDisabled={loading || selectedBreakdownRows.length === 0 || !dateRange}
+				exportDisabled={
+					loading || !data || selectedBreakdownRows.length === 0 || !dateRange
+				}
 			/>
 
 			{loading && <LoadingState />}
+			{refreshing && (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t(
+						"analytics.overtimeBurnDown.refreshing",
+						"Refreshing overtime data",
+					)}
+				</p>
+			)}
+			{failed && (
+				<Alert variant="destructive">
+					<AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+						<span>
+							{t(
+								"analytics.overtimeBurnDown.errors.retryDescription",
+								"Overtime data could not be loaded. Retry the selected period and filters.",
+							)}
+						</span>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() =>
+								void runAnalyticsLoad(Boolean(data)).catch(() => {})
+							}
+						>
+							{t("common.retry", "Retry")}
+						</Button>
+					</AlertDescription>
+				</Alert>
+			)}
 
-			{!loading && (
+			{!loading && data && (
 				<>
-					<SummaryCards summary={summary} t={t} />
+					<SummaryCards summary={data.summary} t={t} />
 					<WeeklyTrendCard data={data} t={t} />
-					<BreakdownCard rows={selectedBreakdownRows} breakdownLabel={breakdownLabel} t={t} />
+					<BreakdownCard
+						rows={selectedBreakdownRows}
+						breakdownLabel={breakdownLabel}
+						t={t}
+					/>
 				</>
 			)}
 		</div>

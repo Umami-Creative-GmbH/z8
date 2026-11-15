@@ -1,0 +1,57 @@
+{
+  "scope": "synthetic small-employee, own absence records, organization Europe/Berlin, 2026",
+  "h1": [
+    "Absences",
+    "Absences"
+  ],
+  "rows": [
+    "5. Dez. 2026R002 Vacation0 daysPendingR002 history 12Change deputyCancel absence",
+    "5. Nov. 2026R002 Vacation1 dayRejectedR002 history 11",
+    "5. Okt. 2026R002 Vacation1 dayApprovedR002 history 10Request changeRequest cancellation",
+    "5. Sept. 2026R002 Vacation0 daysApprovedR002 history 9Request changeRequest cancellation",
+    "5. Aug. 2026R002 Vacation1 dayApprovedR002 history 8Request changeRequest cancellation",
+    "5. Juli 2026R002 Vacation0 daysApprovedR002 history 7Request changeRequest cancellation",
+    "5. Juni 2026R002 Vacation1 dayApprovedR002 history 6Request changeRequest cancellation",
+    "5. Mai 2026R002 Vacation1 dayApprovedR002 history 5Request changeRequest cancellation",
+    "5. Apr. 2026R002 Vacation0 daysApprovedR002 history 4Request changeRequest cancellation",
+    "5. März 2026R002 Vacation1 dayApprovedR002 history 3Request changeRequest cancellation"
+  ],
+  "buttons": [
+    "Performance smallMember",
+    "SearchCtrl+K",
+    "Person 2perf-small-2-431fe052aa2d@example.test",
+    "Toggle Sidebar",
+    "00:50UTC+01:00",
+    "Clock In",
+    "Refresh data",
+    "Toggle theme",
+    "Notifications",
+    "Calendar",
+    "Table",
+    "Add absence",
+    "Change deputy",
+    "Cancel absence",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Open Tanstack query devtools"
+  ],
+  "errors": [],
+  "phone": {
+    "width": 390,
+    "document": 390
+  }
+}

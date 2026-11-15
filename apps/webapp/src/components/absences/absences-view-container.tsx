@@ -43,7 +43,9 @@ export function AbsencesViewContainer({
 	const { t } = useTranslate();
 	const [activeView, setActiveView] = useState<ViewType>("calendar");
 	const [requestDialogOpen, setRequestDialogOpen] = useState(false);
-	const [prefilledDate, setPrefilledDate] = useState<string | undefined>(undefined);
+	const [prefilledDate, setPrefilledDate] = useState<string | undefined>(
+		undefined,
+	);
 	const [calendarData, setCalendarData] = useState(() => ({
 		sourceAbsences: absences,
 		sourceHolidays: holidays,
@@ -53,8 +55,15 @@ export function AbsencesViewContainer({
 	const latestRequestedYearRef = useRef(currentYear);
 	const yearRequestId = useRef(0);
 	const [selectedYear, setSelectedYear] = useState(currentYear);
+	const [yearLoad, setYearLoad] = useState<{
+		year: number;
+		status: "pending" | "failed";
+	} | null>(null);
 
-	if (calendarData.sourceAbsences !== absences || calendarData.sourceHolidays !== holidays) {
+	if (
+		calendarData.sourceAbsences !== absences ||
+		calendarData.sourceHolidays !== holidays
+	) {
 		setCalendarData({
 			sourceAbsences: absences,
 			sourceHolidays: holidays,
@@ -88,22 +97,34 @@ export function AbsencesViewContainer({
 	};
 
 	const reloadYearData = async (year: number, reportFailure = false) => {
+		const sourceAbsences = absences;
+		const sourceHolidays = holidays;
 		const requestId = ++yearRequestId.current;
 		latestRequestedYearRef.current = year;
+		setYearLoad({ year, status: "pending" });
 		try {
 			const data = await getAbsenceCalendarYearData(year);
 			const isLatestRequest =
-				latestRequestedYearRef.current === year && requestId === yearRequestId.current;
+				latestRequestedYearRef.current === year &&
+				requestId === yearRequestId.current;
 			if (!isLatestRequest) {
 				return;
 			}
-			setCalendarData((current) => ({
-				...current,
-				absences: data.absences,
-				holidays: data.holidays,
-			}));
+			setCalendarData((current) => {
+				// RSC refresh may already have delivered a newer current-year snapshot.
+				if (
+					year === currentYear &&
+					(current.sourceAbsences !== sourceAbsences ||
+						current.sourceHolidays !== sourceHolidays)
+				)
+					return current;
+				return { ...current, absences: data.absences, holidays: data.holidays };
+			});
+			setSelectedYear(year);
+			setYearLoad(null);
 		} catch (error) {
-			console.error("Failed to load absence calendar year data", error);
+			if (requestId !== yearRequestId.current) return;
+			setYearLoad({ year, status: "failed" });
 			if (reportFailure) throw error;
 		}
 	};
@@ -111,7 +132,6 @@ export function AbsencesViewContainer({
 	useViewRefresh(() => reloadYearData(latestRequestedYearRef.current, true));
 
 	const handleYearChange = (year: number) => {
-		setSelectedYear(year);
 		void reloadYearData(year);
 	};
 
@@ -120,30 +140,62 @@ export function AbsencesViewContainer({
 	};
 
 	return (
-		<div className="space-y-4">
-			<Tabs value={activeView} onValueChange={(v) => setActiveView(v as ViewType)}>
+		<div className="min-w-0 space-y-4">
+			<Tabs
+				value={activeView}
+				onValueChange={(v) => setActiveView(v as ViewType)}
+			>
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<TabsList>
 						<TabsTrigger value="calendar" className="gap-2">
-							<IconCalendar className="size-4" />
+							<IconCalendar className="size-4" aria-hidden="true" />
 							{t("absences.view.calendar", "Calendar")}
 						</TabsTrigger>
 						<TabsTrigger value="table" className="gap-2">
-							<IconTable className="size-4" />
+							<IconTable className="size-4" aria-hidden="true" />
 							{t("absences.view.table", "Table")}
 						</TabsTrigger>
 					</TabsList>
 					<Button className="w-full gap-2 sm:w-auto" onClick={handleAddAbsence}>
-						<IconPlus className="size-4" />
+						<IconPlus className="size-4" aria-hidden="true" />
 						{t("absences.addAbsence", "Add absence")}
 					</Button>
 				</div>
+				{yearLoad ? (
+					<div
+						role={yearLoad.status === "failed" ? "alert" : "status"}
+						className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm"
+					>
+						{yearLoad.status === "failed"
+							? t(
+									"absences.year.loadFailed",
+									"Could not load {year}. Still showing {loadedYear}.",
+									{ year: yearLoad.year, loadedYear: selectedYear },
+								)
+							: t(
+									"absences.year.loading",
+									"Loading {year}… Still showing {loadedYear}.",
+									{ year: yearLoad.year, loadedYear: selectedYear },
+								)}
+						{yearLoad.status === "failed" ? (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => void reloadYearData(yearLoad.year)}
+							>
+								{t("common.retry", "Retry")}
+							</Button>
+						) : null}
+					</div>
+				) : null}
 
 				<TabsContent value="calendar" className="mt-4">
 					<AbsenceYearCalendar
 						absences={calendarAbsences}
 						holidays={calendarHolidays}
 						initialYear={selectedYear}
+						year={selectedYear}
+						currentDate={currentDate}
 						onDayClick={handleDayClick}
 						onYearChange={handleYearChange}
 					/>
@@ -152,10 +204,14 @@ export function AbsencesViewContainer({
 				<TabsContent value="table" className="mt-4">
 					<div className="mb-4">
 						<h2 className="text-lg font-semibold">
-							{t("absences.table.title", "Your Absence Requests")}
+							{t("absences.table.title", "Your Absence Requests")} ·{" "}
+							{selectedYear}
 						</h2>
 						<p className="text-sm text-muted-foreground">
-							{t("absences.table.subtitle", "Recent and upcoming absence requests")}
+							{t(
+								"absences.table.subtitle",
+								"Recent and upcoming absence requests",
+							)}
 						</p>
 					</div>
 					<AbsenceEntriesTable

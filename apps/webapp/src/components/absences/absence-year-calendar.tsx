@@ -3,9 +3,15 @@
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { Temporal } from "temporal-polyfill";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toCalendarEvents } from "@/lib/absences/absence-calendar-adapter";
 import type { AbsenceWithCategory, Holiday } from "@/lib/absences/types";
 import type { CalendarEvent } from "@/lib/calendar/types";
@@ -16,6 +22,8 @@ interface AbsenceYearCalendarProps {
 	absences: AbsenceWithCategory[];
 	holidays: Holiday[];
 	initialYear?: number;
+	year?: number;
+	currentDate: string;
 	onDayClick?: (date: Date) => void;
 	onYearChange?: (year: number) => void;
 }
@@ -30,7 +38,11 @@ function getDaysInMonth(year: number, month: number): Date[] {
 	return days;
 }
 
-function getFirstDayOfMonth(year: number, month: number, weekStartDay: WeekStartDay): number {
+function getFirstDayOfMonth(
+	year: number,
+	month: number,
+	weekStartDay: WeekStartDay,
+): number {
 	const day = new Date(year, month, 1).getDay();
 	return weekStartDay === "monday" ? (day + 6) % 7 : day;
 }
@@ -50,6 +62,7 @@ const MiniMonth = function MiniMonth({
 	weekStartDay,
 	eventsByDate,
 	onDayClick,
+	currentDate,
 }: {
 	year: number;
 	month: number;
@@ -58,11 +71,12 @@ const MiniMonth = function MiniMonth({
 	weekStartDay: WeekStartDay;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	onDayClick?: (date: Date) => void;
+	currentDate: string;
 }) {
 	const days = getDaysInMonth(year, month);
 	const firstDay = getFirstDayOfMonth(year, month, weekStartDay);
-	const today = new Date();
-	const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+	const today = Temporal.PlainDate.from(currentDate);
+	const isCurrentMonth = today.year === year && today.month === month + 1;
 
 	// Create padding for days before the first day of the month
 	const paddingDays = Array.from({ length: firstDay }, (_, dayOffset) =>
@@ -76,7 +90,7 @@ const MiniMonth = function MiniMonth({
 			{/* Weekday headers */}
 			<div className="grid grid-cols-7 gap-0.5 text-center mb-1">
 				{weekdays.map((day) => (
-					<div key={day} className="text-[10px] text-muted-foreground font-medium">
+					<div key={day} className="text-xs text-muted-foreground font-medium">
 						{day}
 					</div>
 				))}
@@ -93,7 +107,7 @@ const MiniMonth = function MiniMonth({
 				{days.map((date) => {
 					const dateKey = formatDateKey(date);
 					const dayEvents = eventsByDate.get(dateKey) || [];
-					const isToday = isCurrentMonth && date.getDate() === today.getDate();
+					const isToday = isCurrentMonth && date.getDate() === today.day;
 					const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
 					// Determine event type to show
@@ -126,8 +140,8 @@ const MiniMonth = function MiniMonth({
 							type="button"
 							onClick={() => onDayClick?.(date)}
 							className={cn(
-								"aspect-square flex flex-col items-center justify-center text-[10px] rounded-sm relative",
-								"hover:bg-accent transition-colors",
+								"aspect-square flex flex-col items-center justify-center text-xs rounded-sm relative outline-none focus-visible:ring-2 focus-visible:ring-ring",
+								"hover:bg-accent transition-colors motion-reduce:transition-none",
 								isToday && "ring-1 ring-primary font-bold",
 								isWeekend && "text-muted-foreground",
 								bgClass,
@@ -163,12 +177,16 @@ export function AbsenceYearCalendar({
 	absences,
 	holidays,
 	initialYear,
+	year: controlledYear,
+	currentDate,
 	onDayClick,
 	onYearChange,
 }: AbsenceYearCalendarProps) {
 	const { t } = useTranslate();
 	const weekStartDay = useWeekStartDay();
-	const [year, setYear] = useState(() => initialYear ?? new Date().getFullYear());
+	const todayYear = Temporal.PlainDate.from(currentDate).year;
+	const [internalYear, setYear] = useState(() => initialYear ?? todayYear);
+	const year = controlledYear ?? internalYear;
 
 	// Memoize translated month names to avoid recreating on every render
 	const MONTHS = [
@@ -197,7 +215,9 @@ export function AbsenceYearCalendar({
 			t("common.weekdays.fr", "Fr"),
 			t("common.weekdays.sa", "Sa"),
 		];
-		return weekStartDay === "monday" ? [...sundayFirst.slice(1), sundayFirst[0]] : sundayFirst;
+		return weekStartDay === "monday"
+			? [...sundayFirst.slice(1), sundayFirst[0]]
+			: sundayFirst;
 	})();
 
 	// Transform data to CalendarEvent format
@@ -219,14 +239,14 @@ export function AbsenceYearCalendar({
 	})();
 
 	const handleYearChange = (newYear: number) => {
-		setYear(newYear);
+		if (controlledYear === undefined) setYear(newYear);
 		onYearChange?.(newYear);
 	};
 
 	return (
 		<div className="flex flex-col h-full">
 			{/* Year navigation header */}
-			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
+			<div className="flex flex-wrap items-center justify-between gap-3 pb-3 mb-3">
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
@@ -247,13 +267,12 @@ export function AbsenceYearCalendar({
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={() => handleYearChange(new Date().getFullYear())}
+						onClick={() => handleYearChange(todayYear)}
 					>
 						{t("common.today", "Today")}
 					</Button>
 				</div>
 				<h2 className="text-lg font-semibold">{year}</h2>
-				<div className="w-[160px]" /> {/* Spacer for centering */}
 			</div>
 
 			{/* Absences-specific legend */}
@@ -278,7 +297,7 @@ export function AbsenceYearCalendar({
 
 			{/* 12 month grid */}
 			<TooltipProvider delayDuration={150}>
-				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 flex-1 overflow-auto">
+				<div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 flex-1 min-w-0">
 					{MONTHS.map((monthName, monthIndex) => (
 						<MiniMonth
 							key={monthName}
@@ -289,6 +308,7 @@ export function AbsenceYearCalendar({
 							weekStartDay={weekStartDay}
 							eventsByDate={eventsByDate}
 							onDayClick={onDayClick}
+							currentDate={currentDate}
 						/>
 					))}
 				</div>

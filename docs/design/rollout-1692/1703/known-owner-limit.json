@@ -1,0 +1,13 @@
+{
+  "control": "Manager filter: Unassigned",
+  "rootResolution": {
+    "status": "Resolved by root follow-up; final verified integration SHA is in integration.json",
+    "change": "Both the fresh authenticated visibility query and overtime service handle the sentinel as no manager assignment, retaining tenant/team/role predicates.",
+    "evidence": "Three real PostgreSQL range suites / 43 tests, including the authenticated action regression; unassigned-manager-fixed.json and unassigned-manager-fixed.png record the successful actual UI action and connected diagnostics.",
+    "historicalBoundary": "The observations and unchanged-owner boundary below describe the incoming ticket before the root correction. Transition validation remains unresolved."
+  },
+  "observed": "Real getOvertimeBurnDownData read returns DatabaseError: PostgreSQL invalid input syntax for type uuid: unassigned. The refreshed route exposes unavailable/retry, retaining the selected range/filter. Selecting All managers or an assigned manager recovers through a genuine successful read.",
+  "owner": "apps/webapp/src/lib/effect/services/analytics.service.ts, getOvertimeBurnDown managerPredicate",
+  "boundary": "Service/action/calculation/export files are byte-identical to required integration base 551b94f0d22e755217929ac4aa4b56cba5650056. This presentation ticket does not alter sentinel filtering or claim this option succeeds.",
+  "nextTransition": "During guarded revocation/missing-profile/org-switch checks, Next logged instant-unrendered-segment and instant validation prevented messages. The inspected cause chain included NEXT_REDIRECT in requireAppSession at app-layout-content.tsx:94. Final connected probes were clean. Baseline versus regression and complete transition validation remain unresolved; no instant=false opt-out or weakened guard was introduced."
+}

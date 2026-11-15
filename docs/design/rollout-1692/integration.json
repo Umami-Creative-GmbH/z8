@@ -78,8 +78,10 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+                        "evidence":  "docs/design/rollout-1692/1701.md",
+                        "integrationVerification":  "27 unique suites / 193 fresh tests (24/176 affected plus 3/17 dashboard), eleven-file Biome, exact tree/parents, eleven ancestry and artifact/preservation checks passed. All 254 prior rollout files and 61 ticket paths preserved. Historical 186 not reproduced; types/Doctor/runtime inherited with later full integration types passed. Upload/revocation/policy/catalog/build/device limits retained."
                     },
                     {
                         "id":  "R003",
@@ -112,8 +114,11 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+                        "integrationCommit":  "6ae6409a4c4649e93a97f07ebb16e0c412c870de",
+                        "evidence":  "docs/design/rollout-1692/1703.md",
+                        "integrationVerification":  "Initial merge 26 unique suites / 137 unit tests, full types/Biome/evidence/expected tree/preservation passed. Root fixed both authenticated visibility and service Unassigned manager queries and route-controlled analytics tabs: 14/75 unit, 3/43 PostgreSQL, full types, Doctor zero findings, targeted Biome, real authorized UI/action/soft-navigation and connected Next probes passed; exact tested fix tree preserved. Existing formatting/import/four lint findings baseline-compared. Owned runtime cleaned; native React timeout and transition/nonzero/catalog/build/device limits retained."
                     },
                     {
                         "id":  "R006",
@@ -122,7 +127,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -132,7 +137,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

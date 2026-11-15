@@ -1,6 +1,13 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AbsenceYearCalendar } from "./absence-year-calendar";
@@ -37,8 +44,17 @@ vi.mock("./absence-entries-table", () => ({
 }));
 
 vi.mock("./request-absence-dialog", () => ({
-	RequestAbsenceDialog: ({ open, onSuccess }: { open?: boolean; onSuccess?: () => void }) => (
-		<div data-testid="request-absence-dialog" data-open={open ? "true" : "false"}>
+	RequestAbsenceDialog: ({
+		open,
+		onSuccess,
+	}: {
+		open?: boolean;
+		onSuccess?: () => void;
+	}) => (
+		<div
+			data-testid="request-absence-dialog"
+			data-open={open ? "true" : "false"}
+		>
 			<button type="button" onClick={onSuccess}>
 				Simulate request success
 			</button>
@@ -67,6 +83,75 @@ describe("AbsencesViewContainer", () => {
 	beforeEach(() => {
 		mockGetAbsenceCalendarYearData.mockReset();
 	});
+	it("keeps a newer server snapshot when an older current-year refresh finishes", async () => {
+		let finish: (value: { absences: []; holidays: [] }) => void = () => {};
+		mockGetAbsenceCalendarYearData.mockReturnValue(
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+		);
+		const props = {
+			absences: [],
+			holidays: [],
+			categories,
+			currentYear: 2026,
+			currentDate: "2026-05-20",
+			organizationId: "org-1",
+		};
+		const { rerender } = render(<AbsencesViewContainer {...props} />);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Simulate request success" }),
+		);
+		rerender(
+			<AbsencesViewContainer
+				{...props}
+				holidays={[
+					{
+						id: "new",
+						name: "New holiday",
+						startDate: new Date(2026, 4, 21),
+						endDate: new Date(2026, 4, 21),
+						categoryId: "public",
+					},
+				]}
+			/>,
+		);
+		await act(async () => {
+			finish({ absences: [], holidays: [] });
+		});
+		expect(getCalendarDay("May", "21").className).toContain("bg-amber-100");
+	});
+	it("retains the last loaded year when another year's read fails and offers retry", async () => {
+		mockGetAbsenceCalendarYearData.mockRejectedValueOnce(
+			new Error("Unavailable"),
+		);
+		render(
+			<AbsencesViewContainer
+				absences={[]}
+				holidays={[]}
+				categories={categories}
+				currentYear={2026}
+				currentDate="2026-05-20"
+				organizationId="org-1"
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next year" }));
+		expect(await screen.findByRole("alert")).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "2026", level: 2 }),
+		).toBeTruthy();
+		mockGetAbsenceCalendarYearData.mockResolvedValueOnce({
+			absences: [],
+			holidays: [],
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		await waitFor(() =>
+			expect(
+				screen.getByRole("heading", { name: "2027", level: 2 }),
+			).toBeTruthy(),
+		);
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
 
 	it("shows a primary add absence action in the view header", () => {
 		render(
@@ -83,11 +168,15 @@ describe("AbsencesViewContainer", () => {
 		const button = screen.getByRole("button", { name: "Add absence" });
 
 		expect(button).toBeTruthy();
-		expect(screen.getByTestId("request-absence-dialog").getAttribute("data-open")).toBe("false");
+		expect(
+			screen.getByTestId("request-absence-dialog").getAttribute("data-open"),
+		).toBe("false");
 
 		fireEvent.click(button);
 
-		expect(screen.getByTestId("request-absence-dialog").getAttribute("data-open")).toBe("true");
+		expect(
+			screen.getByTestId("request-absence-dialog").getAttribute("data-open"),
+		).toBe("true");
 	});
 
 	it("loads holidays for the selected calendar year", async () => {
@@ -121,7 +210,9 @@ describe("AbsencesViewContainer", () => {
 			expect(mockGetAbsenceCalendarYearData).toHaveBeenCalledWith(2027);
 		});
 		await waitFor(() => {
-			expect(getCalendarDay("January", "6").className).toContain("bg-amber-100");
+			expect(getCalendarDay("January", "6").className).toContain(
+				"bg-amber-100",
+			);
 		});
 	});
 
@@ -149,12 +240,16 @@ describe("AbsencesViewContainer", () => {
 		const { rerender } = render(<AbsencesViewContainer {...props} />);
 		fireEvent.click(screen.getByRole("button", { name: "Next year" }));
 		await waitFor(() =>
-			expect(getCalendarDay("January", "6").className).toContain("bg-amber-100"),
+			expect(getCalendarDay("January", "6").className).toContain(
+				"bg-amber-100",
+			),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Add absence" }));
 		rerender(<AbsencesViewContainer {...props} absences={[]} holidays={[]} />);
 		expect(getCalendarDay("January", "6").className).toContain("bg-amber-100");
-		expect(screen.getByTestId("request-absence-dialog").getAttribute("data-open")).toBe("true");
+		expect(
+			screen.getByTestId("request-absence-dialog").getAttribute("data-open"),
+		).toBe("true");
 	});
 
 	it("reloads absence data after a request succeeds", async () => {
@@ -182,9 +277,13 @@ describe("AbsencesViewContainer", () => {
 			/>,
 		);
 
-		expect(getCalendarDay("May", "20").className).not.toContain("bg-yellow-100");
+		expect(getCalendarDay("May", "20").className).not.toContain(
+			"bg-yellow-100",
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Simulate request success" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Simulate request success" }),
+		);
 
 		await waitFor(() => {
 			expect(mockGetAbsenceCalendarYearData).toHaveBeenCalledWith(2026);
@@ -196,12 +295,18 @@ describe("AbsencesViewContainer", () => {
 });
 
 describe("AbsenceYearCalendar", () => {
-	it("uses a six-column desktop grid so the year fits in two rows", () => {
-		render(<AbsenceYearCalendar absences={[]} holidays={[]} initialYear={2026} />);
+	it("keeps all twelve months and day request controls available", () => {
+		render(
+			<AbsenceYearCalendar
+				absences={[]}
+				holidays={[]}
+				initialYear={2026}
+				currentDate="2026-05-20"
+			/>,
+		);
 
-		const monthGrid = screen.getByText("January").parentElement?.parentElement;
-
-		expect(monthGrid?.className).toContain("lg:grid-cols-6");
-		expect(monthGrid?.className).not.toContain("lg:grid-cols-4");
+		expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(12);
+		expect(getCalendarDay("January", "1")).toBeTruthy();
+		expect(getCalendarDay("December", "31")).toBeTruthy();
 	});
 });
