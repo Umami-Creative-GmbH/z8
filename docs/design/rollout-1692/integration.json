@@ -501,9 +501,13 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "028b4c0a026419567874190ce20b019180c7f304"
+                        "status":  "integrated",
+                        "verifiedCommit":  "752c500833e751df9988a3b2434d240124b89a51",
+                        "implementationCommit":  "028b4c0a026419567874190ce20b019180c7f304",
+                        "integrationCommit":  "3c7bc534edeb355d862c3f38759444658863af20",
+                        "correctionCommit":  "bfbfe29c5685e2de8e981ba76fd833bf48e782bf",
+                        "evidence":  "docs/design/rollout-1692/1828.md",
+                        "integrationVerification":  "Onboarding notifications #1828 is verified at `752c5008` after the pending-account task-heading fix. Fresh43 unique files/349 tests, full types,three-file explicit webapp CRLF/lint and Doctor zero findings pass. Permanent public regression red before/green after. Actual one held session GET per phase shows baseline0 versus fixed1 heading on desktop/phone, then HTTP200 reveals the unchanged form. Six decoded source-pinned PNGs, actual native NotificationSetup and clean accepted Next probes; four earlier failed development-reload/harness runs retained. No consent, preference/default, device enrollment or domain-owner changes. All41 prior verified ancestors and58 original raw artifact paths preserved. Original18PG/earlier runtime remain inherited. Historical/config pins, ordinary formatting/raw whitespace and build/catalog/provider/device/zoom/global obligations stay qualified; all owned root services cleaned. Independent tree b516260f42617ee245a13ef1b40ee366a7c9b743; 12809 prior paths byte-identical outside two source/test paths and qualified report. Historical reload cause remains unresolved; accepted comparison uses fresh processes with unchanged config/cache. Native loaded target is fresh; held-scope/Activity and granted-permission paths remain unpassed."
                     },
                     {
                         "id":  "R034",
@@ -556,8 +560,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "aeb655393c1d02aeb9ef67b8a53e860f87b3403c"
                     },
                     {
                         "id":  "R039",
@@ -566,8 +571,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "f38255ab9ee57f37e72cd76368855d3c3233abee"
                     },
                     {
                         "id":  "R040",
@@ -576,7 +582,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -646,7 +652,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
