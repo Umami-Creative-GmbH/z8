@@ -1,0 +1,12 @@
+﻿import {readFile,writeFile,readdir} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+const root=resolve(process.argv[2]),out=join(root,'docs/design/rollout-1692/1828');
+const files=['apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx','apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx','apps/webapp/src/app/[locale]/onboarding/notifications/actions.integration.test.ts'];
+const pins=Object.fromEntries(await Promise.all(files.map(async f=>[f,{sha256:createHash('sha256').update(await readFile(join(root,f))).digest('hex'),gitBlob:execFileSync('git',['hash-object',f],{cwd:root,encoding:'utf8'}).trim()}])));
+const unit=JSON.parse(await readFile(join(out,'unit-final.json'),'utf8')),pg=JSON.parse(await readFile(join(out,'postgres.json'),'utf8')),runtime=JSON.parse(await readFile(join(out,'after-runtime.json'),'utf8')),actions=JSON.parse(await readFile(join(out,'actions-runtime.json'),'utf8'));
+if(runtime.captures.some(c=>c.source.files[files[0]]!==pins[files[0]].sha256)||actions.captures.some(c=>c.source.pageSha256!==pins[files[0]].sha256))throw Error('Final capture source mismatch');
+const count=report=>({files:report.testResults.length,tests:report.numTotalTests,passed:report.numPassedTests,failed:report.numFailedTests});
+await writeFile(join(out,'source-and-counts.json'),JSON.stringify({head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),localAI:execFileSync('git',['rev-parse','ai/1692-app-wide-ui-refresh'],{cwd:root,encoding:'utf8'}).trim(),pins,unit:count(unit),postgres:count(pg),runtime:{presentationAssertions:runtime.checks.length,actionAssertions:actions.checks.length,actualPermissionRequest:actions.actualPermissionRequest,finalPageErrors:actions.pageErrors},sourceQualified:true},null,2)+'\n');
+console.log('Final capture identities and check counts verified.');

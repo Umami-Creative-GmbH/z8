@@ -1,0 +1,759 @@
+{
+  "phase": "after",
+  "fixture": "synthetic disposable Performance small; small-admin",
+  "source": {
+    "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+    "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+    "files": {
+      "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+      "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+      "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+      "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+      "apps/webapp/src/app/[locale]/onboarding/glass-panels.css": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+      "apps/webapp/src/components/onboarding/progress-indicator.tsx": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+      "apps/webapp/next.config.ts": "cdf64ec0e2a1b6b58d81b60d1c4405b2c5d033e86456bffd07bad2a4815383e1"
+    }
+  },
+  "captures": [
+    {
+      "filename": "after-desktop-light.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+          "apps/webapp/src/app/[locale]/onboarding/glass-panels.css": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+          "apps/webapp/next.config.ts": "cdf64ec0e2a1b6b58d81b60d1c4405b2c5d033e86456bffd07bad2a4815383e1"
+        }
+      },
+      "width": 1600,
+      "height": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy",
+      "fontPreference": "default",
+      "visualScale": 1,
+      "permission": "denied",
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1442
+      },
+      "contrast": [
+        {
+          "tag": "H1",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 3,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H2",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H2",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-enable-push-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-enable-email-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-approvals-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-status-updates-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-team-changes-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "filename": "after-phone-light.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+          "apps/webapp/src/app/[locale]/onboarding/glass-panels.css": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+          "apps/webapp/next.config.ts": "cdf64ec0e2a1b6b58d81b60d1c4405b2c5d033e86456bffd07bad2a4815383e1"
+        }
+      },
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy",
+      "fontPreference": "default",
+      "visualScale": 1,
+      "permission": "denied",
+      "pngDimensions": {
+        "width": 390,
+        "height": 1638
+      },
+      "contrast": [
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H1",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 3,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H2",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H2",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-enable-push-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-enable-email-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-approvals-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-status-updates-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 19.114022259689076,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-team-changes-description",
+          "ratio": 8.859073375056019,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "filename": "after-wide-dark-large.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+          "apps/webapp/src/app/[locale]/onboarding/glass-panels.css": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+          "apps/webapp/next.config.ts": "cdf64ec0e2a1b6b58d81b60d1c4405b2c5d033e86456bffd07bad2a4815383e1"
+        }
+      },
+      "width": 2400,
+      "height": 1200,
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "visualScale": 1,
+      "permission": "denied",
+      "pngDimensions": {
+        "width": 2400,
+        "height": 1621
+      },
+      "contrast": [
+        {
+          "tag": "H1",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 3,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H2",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H2",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-enable-push-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-enable-email-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-approvals-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-status-updates-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-team-changes-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "filename": "after-phone-dark-large.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+          "apps/webapp/src/app/[locale]/onboarding/glass-panels.css": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+          "apps/webapp/next.config.ts": "cdf64ec0e2a1b6b58d81b60d1c4405b2c5d033e86456bffd07bad2a4815383e1"
+        }
+      },
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "visualScale": 1,
+      "permission": "denied",
+      "pngDimensions": {
+        "width": 390,
+        "height": 1976
+      },
+      "contrast": [
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H1",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 3,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H2",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "H2",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-enable-push-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-enable-email-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-approvals-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-status-updates-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "LABEL",
+          "id": "",
+          "ratio": 17.487261507234752,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        },
+        {
+          "tag": "P",
+          "id": "notification-team-changes-description",
+          "ratio": 10.139465264796122,
+          "minimum": 4.5,
+          "opaqueBackground": true,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "desktop-light rendered text contrast on opaque surfaces",
+      "passed": true
+    },
+    {
+      "name": "desktop-light fits width, uses saved preferences and actual denied permission",
+      "passed": true
+    },
+    {
+      "name": "phone-light rendered text contrast on opaque surfaces",
+      "passed": true
+    },
+    {
+      "name": "phone-light fits width, uses saved preferences and actual denied permission",
+      "passed": true
+    },
+    {
+      "name": "wide-dark-large rendered text contrast on opaque surfaces",
+      "passed": true
+    },
+    {
+      "name": "wide-dark-large fits width, uses saved preferences and actual denied permission",
+      "passed": true
+    },
+    {
+      "name": "phone-dark-large rendered text contrast on opaque surfaces",
+      "passed": true
+    },
+    {
+      "name": "phone-dark-large fits width, uses saved preferences and actual denied permission",
+      "passed": true
+    },
+    {
+      "name": "denied browser permission has truthful blocked context",
+      "passed": true
+    },
+    {
+      "name": "keyboard advances to topic switch",
+      "passed": true
+    },
+    {
+      "name": "reduced motion remains available",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

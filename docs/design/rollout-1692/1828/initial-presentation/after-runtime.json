@@ -1,0 +1,160 @@
+{
+  "phase": "after",
+  "fixture": "synthetic disposable Performance small; small-admin",
+  "source": {
+    "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+    "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+    "files": {
+      "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "e87fb164ff6872395f7ccc2a58c0cb3305a6ee4235594f714f65b9afda07ed8b",
+      "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+      "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+      "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b"
+    }
+  },
+  "captures": [
+    {
+      "filename": "after-desktop-light.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "e87fb164ff6872395f7ccc2a58c0cb3305a6ee4235594f714f65b9afda07ed8b",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b"
+        }
+      },
+      "width": 1600,
+      "height": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy",
+      "fontPreference": "default",
+      "visualScale": 1,
+      "permission": "denied",
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1392
+      }
+    },
+    {
+      "filename": "after-phone-light.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "e87fb164ff6872395f7ccc2a58c0cb3305a6ee4235594f714f65b9afda07ed8b",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b"
+        }
+      },
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy",
+      "fontPreference": "default",
+      "visualScale": 1,
+      "permission": "denied",
+      "pngDimensions": {
+        "width": 390,
+        "height": 1588
+      }
+    },
+    {
+      "filename": "after-wide-dark-large.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "e87fb164ff6872395f7ccc2a58c0cb3305a6ee4235594f714f65b9afda07ed8b",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b"
+        }
+      },
+      "width": 2400,
+      "height": 1200,
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "visualScale": 1,
+      "permission": "denied",
+      "pngDimensions": {
+        "width": 2400,
+        "height": 1565
+      }
+    },
+    {
+      "filename": "after-phone-dark-large.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "e87fb164ff6872395f7ccc2a58c0cb3305a6ee4235594f714f65b9afda07ed8b",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+          "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/hooks/use-push-notifications.ts": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b"
+        }
+      },
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "visualScale": 1,
+      "permission": "denied",
+      "pngDimensions": {
+        "width": 390,
+        "height": 1920
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "desktop-light fits width, uses saved preferences and actual denied permission",
+      "passed": true
+    },
+    {
+      "name": "phone-light fits width, uses saved preferences and actual denied permission",
+      "passed": true
+    },
+    {
+      "name": "wide-dark-large fits width, uses saved preferences and actual denied permission",
+      "passed": true
+    },
+    {
+      "name": "phone-dark-large fits width, uses saved preferences and actual denied permission",
+      "passed": true
+    },
+    {
+      "name": "denied browser permission has truthful blocked context",
+      "passed": true
+    },
+    {
+      "name": "keyboard advances to topic switch",
+      "passed": true
+    },
+    {
+      "name": "reduced motion remains available",
+      "passed": true
+    }
+  ],
+  "errors": []
+}
