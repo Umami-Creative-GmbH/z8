@@ -28,11 +28,11 @@ vi.mock("@/components/settings/work-balance/opening-balance-upload-dialog", () =
 	OpeningBalanceUploadDialog: () => <button type="button">Upload opening balances</button>,
 }));
 
-it("keeps the task heading during a pending directory read and adopts only this route", () => {
+it("keeps the pending directory heading and retains the independently adopted employee heading", () => {
 	render(Page().props.fallback);
 	expect(screen.getByRole("heading", { level: 1, name: "Work balances" })).toBeTruthy();
 	expect(appPageOwnsHeading("/de/payroll/work-balances")).toBe(true);
-	expect(appPageOwnsHeading("/en/payroll/work-balances/employee")).toBe(false);
+	expect(appPageOwnsHeading("/en/payroll/work-balances/employee")).toBe(true);
 });
 
 it("preserves complete employee identity, former status and destinations, hiding a mismatched server arrival", () => {

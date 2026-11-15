@@ -76,6 +76,21 @@ afterEach(() => {
 	mocks.scope = { userId: "holder", activeOrganizationId: "org", isLoading: false };
 });
 
+it.each([
+	{ userId: "holder", activeOrganizationId: "org", isLoading: true },
+	{ userId: "holder", activeOrganizationId: "different-org", isLoading: false },
+	{ userId: "different-holder", activeOrganizationId: "org", isLoading: false },
+])("keeps a safe task heading without stale identity during scope arrival %j", (scope) => {
+	mocks.scope = scope;
+	const view = mount();
+	expect(screen.getByRole("heading", { level: 1, name: "Work balance" })).toBeTruthy();
+	expect(screen.queryAllByRole("heading", { level: 1 })).toHaveLength(1);
+	expect(screen.getByRole("status").textContent).toContain("Loading the current payroll scope");
+	expect(screen.queryByText(employee.name)).toBeNull();
+	expect(mocks.read).not.toHaveBeenCalled();
+	view.client.clear();
+});
+
 it("keeps unavailable projection distinct from zero and retains full ledger on failed refresh with retry", async () => {
 	mocks.read.mockResolvedValueOnce({ success: true, data });
 	const view = mount();
