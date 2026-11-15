@@ -28,7 +28,7 @@ export function OpeningBalanceUploadTable({ rows }: { rows: OpeningBalanceUpload
 
 	return (
 		<div className="max-h-[50vh] overflow-auto rounded-md border">
-			<Table>
+			<Table mobileLayout="stacked">
 				<TableHeader className="sticky top-0 bg-background">
 					<TableRow>
 						<TableHead className="w-14 text-right">
@@ -75,9 +75,7 @@ export function OpeningBalanceUploadTable({ rows }: { rows: OpeningBalanceUpload
 							<TableCell className="text-right tabular-nums">
 								{row.minutes === null ? "—" : formatSignedWorkBalance(row.minutes)}
 							</TableCell>
-							<TableCell className="max-w-56 truncate" title={row.reason}>
-								{row.reason}
-							</TableCell>
+							<TableCell className="max-w-96 whitespace-normal break-words">{row.reason}</TableCell>
 							<TableCell className="min-w-56">
 								{row.errors.length > 0 ? (
 									<ul className="space-y-1 text-destructive text-sm">
@@ -104,7 +102,7 @@ export function OpeningBalanceUploadTable({ rows }: { rows: OpeningBalanceUpload
 									<span className="flex gap-1.5 text-sm">
 										<IconCircleCheck
 											aria-hidden="true"
-											className="mt-0.5 size-4 shrink-0 text-emerald-600"
+											className="mt-0.5 size-4 shrink-0 text-primary"
 										/>
 										{row.replaces
 											? t(
