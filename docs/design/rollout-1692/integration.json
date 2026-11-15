@@ -416,8 +416,12 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "40492f6233feecfac214813f28e2f1f26b3175b2",
+                        "integrationCommit":  "877b12279ec992cf282e0ba775ac4849579aef86",
+                        "correctionCommit":  "4255ef7d6565d103a4b0887812b751db5bd08ad9",
+                        "evidence":  "docs/design/rollout-1692/1826.md",
+                        "integrationVerification":  "Native merge877b1227:40unique suites/251tests,fulltypes,7-fileCRLFBiome/explicitlint,Doctor0errors2reviewedwarnings;31verified ancestors/1401rollout/11621unaffected paths and14PNG/11JSON/3scripts/25links/59pins preserved. Merger reproduces lateSSO after unmount and stale successfulTOTP after cached Activity return. Root correction4255ef7 binds requests to connected arrival identity, stages navigation/status/reset, guards stale errors/cleanup, preserves new action; social disableRedirect delegates guarded HTTP(S) navigation without provider/auth/session policy changes. Final41unique suites/257tests (16/59+29/191 less11/46+7/53),fulltypes,2-fileCRLFstrictBiome and Doctorzero new findings. Actual setup3+runtime7 checks: real heldHTTP200TOTP across org navigation causes0staleinit requests; actual invalidcode refusal after primary proof; new valid action1init/safe callback. Browser input remounted in both versions; failed baseline cached expectation retained, cachedActivity/SSO/social successful responses assembled-only. Root3PNG fullydecoded/current pins/Nextempty/anonymoussignin stable/cleanup pass. Original raw worker artifacts unchanged,8JSON missingLF retained. Worker34runtime/PG2-15/native/axe40-0-0 inherited; primary prerequisite screenshot qualified separately. Native root EOF/closeEOF,Previewfailed thenclosed; old dev output moved only afterverifiedstop. Fullbuild/catalog/provider/device/truezoom/globaltransition/wider limits retained."
                     },
                     {
                         "id":  "R028",
@@ -426,7 +430,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
+                        "status":  "awaiting-integration",
                         "verifiedCommit":  null
                     },
                     {
@@ -436,7 +440,7 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "implementing",
+                        "status":  "awaiting-integration",
                         "verifiedCommit":  null
                     },
                     {
@@ -446,7 +450,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -456,7 +460,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
