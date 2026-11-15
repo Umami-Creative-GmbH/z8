@@ -1,0 +1,44 @@
+✔ Select projects › desktop, docs, marketing, webapp
+Scanning changes: feat/payslip-batch-workspace → 63a5e6ff43e6541473a927da0a651686bfd33afe
+
+No changed source files in X:\t3-code\worktrees\z8\t3-9592eb70-1d830c19755b58c9\apps\desktop, skipping.
+
+No changed source files in X:\t3-code\worktrees\z8\t3-9592eb70-1d830c19755b58c9\apps\docs, skipping.
+
+No changed source files in X:\t3-code\worktrees\z8\t3-9592eb70-1d830c19755b58c9\apps\marketing, skipping.
+
+✔ Scanned 6 files in 19.1s
+
+React Doctor — t3-9592eb70-1d830c19755b58c9
+Score unavailable.
+
+7 issues
+Maintainability: 2 warnings
+Performance: 2 errors, 2 warnings
+Bugs: 1 warning
+
+⚠ React function has high control-flow complexity
+  react-doctor/no-high-complexity-react-function
+  src/components/personnel-file/payslip-batch-workspace.tsx:107
+⚠ Large component is hard to read and change
+  react-doctor/no-giant-component
+  src/components/personnel-file/payslip-batch-workspace.tsx:107
+⚠ React Compiler can't optimize this ×2
+  react-hooks-js/set-state-in-effect
+  src/components/personnel-file/payslip-batch-workspace.tsx:131
+  src/components/personnel-file/payslip-batch-workspace.tsx:494
+✖ React Compiler doesn't support this syntax ×2
+  react-hooks-js/todo
+  src/components/personnel-file/payslip-batch-workspace.tsx:164
+  src/components/personnel-file/payslip-batch-workspace.tsx:195
+⚠ Parent kept in sync with a callback effect
+  react-doctor/no-prop-callback-in-effect
+  src/components/personnel-file/payslip-batch-workspace.tsx:500
+  Full diagnostics written to C:\Users\KAIHEN~1\AppData\Local\Temp\react-doctor-05e184ad-1349-479d-9783-6f5561260c52
+
+React Doctor is not installed in this project.
+Ask the user if they would like to set it up, then run:
+
+  npx react-doctor install --yes
+
+This adds agent skill files, a `doctor` package script, and react-doctor as a dev dependency.

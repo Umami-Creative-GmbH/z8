@@ -1,0 +1,92 @@
+[
+  { id: 'email', type: 'email', name: 'email' },
+  { id: 'password', type: 'password', name: 'password' },
+  {
+    id: 'cf-chl-widget-iv5w1_response',
+    type: 'hidden',
+    name: 'cf-turnstile-response'
+  }
+]
+Normal UI login completed
+Skip to content
+Performance small
+Admin
+Search
+Ctrl+K
+WORKPLACE
+Dashboard
+Time Tracking
+Calendar
+Absences
+Travel Expenses
+Finance
+My Requests
+My Documents
+Personnel Files
+Reports
+Org Explorer
+TEAM & ORGANIZATION
+Team
+Team Absences
+Approvals
+Compliance
+Settings
+Get Help
+Feedback
+Person 0
+perf-small-0-8b04d0c3c930@example.test
+Toggle Sidebar
+Z8
+21:23
+UTC+01:00
+Clock In
+Toggle theme
+Personnel files
+Payslip batches
+Start a payslip batch
+Pick the pay period once for all payslips of the batch. Nothing is saved to personnel files until you confirm the matches.
+Pay period month
+*
+11
+Pay period year
+*
+Visibility
+*
+Shared
+
+Employees see their payslip under My Documents and get one notification for the batch.
+
+Start batch
+[
+  {
+    id: '_R_5minebn9erud5red9etb_-form-item',
+    type: 'button',
+    role: 'combobox',
+    text: '11'
+  },
+  {
+    id: 'base-ui-_R_2lminebn9erud5red9etb_-hidden-input',
+    type: 'text',
+    role: null,
+    text: ''
+  },
+  {
+    id: '_R_9minebn9erud5red9etb_-form-item',
+    type: 'text',
+    role: null,
+    text: ''
+  },
+  {
+    id: '_R_2minebn9erud5red9etb_-form-item',
+    type: 'button',
+    role: 'combobox',
+    text: 'Shared'
+  },
+  {
+    id: 'base-ui-_R_mminebn9erud5red9etb_-hidden-input',
+    type: 'text',
+    role: null,
+    text: ''
+  }
+]
+[]

@@ -1,0 +1,17 @@
+node:internal/child_process:1100
+      throw new ERR_INVALID_ARG_VALUE('stdio', stdio);
+            ^
+
+TypeError [ERR_INVALID_ARG_VALUE]: The argument 'stdio' is invalid. Received WriteStream {
+  fd: null,
+  path: 'C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-1733-fixture-6b1a7cc24c1b4a84ad096558df194aa0\\...
+    at node:internal/child_process:1100:13
+    at Array.reduce (<anonymous>)
+    at getValidStdio (node:internal/child_process:1027:11)
+    at ChildProcess.spawn (node:internal/child_process:363:11)
+    at spawn (node:child_process:813:9)
+    at file:///C:/Users/KAIHEN%7E1/AppData/Local/Temp/z8-1692-runtime-handoff-20f5aff4fccb4a268dca2a58cc7c3755/runtime-helper.mjs:25:17 {
+  code: 'ERR_INVALID_ARG_VALUE'
+}
+
+Node.js v26.9.0

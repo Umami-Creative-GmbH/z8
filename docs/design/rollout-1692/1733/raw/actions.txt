@@ -1,0 +1,20 @@
+[
+  { id: 'email', type: 'email', name: 'email' },
+  { id: 'password', type: 'password', name: 'password' },
+  {
+    id: 'cf-chl-widget-vjxw4_response',
+    type: 'hidden',
+    name: 'cf-turnstile-response'
+  }
+]
+Normal UI login completed
+file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/.tmp/1733/journey.mjs:70
+  await new Promise((resolve,reject)=>{let n=0;const timer=setInterval(()=>{if(held){clearInterval(timer);resolve();}else if(++n>100){clearInterval(timer);reject(Error('No confirmation command'));}},100);});
+                                                                                                                                                                  ^
+
+Error: No confirmation command
+    at Timeout.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/.tmp/1733/journey.mjs:70:163)
+    at listOnTimeout (node:internal/timers:685:17)
+    at process.processTimers (node:internal/timers:618:7)
+
+Node.js v26.9.0

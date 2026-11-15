@@ -1,0 +1,11 @@
+[
+  { id: 'email', type: 'email', name: 'email' },
+  { id: 'password', type: 'password', name: 'password' },
+  {
+    id: 'cf-chl-widget-fjylc_response',
+    type: 'hidden',
+    name: 'cf-turnstile-response'
+  }
+]
+Normal UI login completed
+{"mode":"actions","batchId":"febe7a4e-dad6-4974-8746-c1ca4b6f15cf","scope":"own small-admin / Performance small / same three staged PDFs","sourceHashes":{"apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx":"a90710da7670eb200e0e205727f99bc7b58fb971178816cb7e83302794f1b47d","apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts":"9d22fcac9d07044dddbec485572a116321a35bd5a82dc3e948d4d09bc446c8ef","apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx":"67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086","apps/webapp/src/lib/navigation/route-metadata.ts":"8d4e158f9a8d366b1a8041ef6e603ef4727668f57827a5a5283891171ce0e7d2"},"layouts":[{"name":"desktop","width":1600,"height":1000,"theme":"light","text":16,"scrollWidth":1600,"headings":["Payslip batch"],"files":3},{"name":"phone","width":390,"height":844,"theme":"light","text":16,"scrollWidth":390,"headings":["Payslip batch"],"files":3},{"name":"wide-dark","width":2200,"height":1100,"theme":"dark","text":16,"scrollWidth":2200,"headings":["Payslip batch"],"files":3},{"name":"large-text","width":1600,"height":1000,"theme":"light","text":20,"scrollWidth":1600,"headings":["Payslip batch"],"files":3}]}

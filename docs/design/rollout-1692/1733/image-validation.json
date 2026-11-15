@@ -1,0 +1,116 @@
+[
+  {
+    "name": "actions-desktop.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "actions-large-text.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "actions-phone.png",
+    "width": 390,
+    "height": 844,
+    "decoded": true
+  },
+  {
+    "name": "actions-wide-dark.png",
+    "width": 2200,
+    "height": 1100,
+    "decoded": true
+  },
+  {
+    "name": "after-desktop.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "after-large-text.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "after-phone.png",
+    "width": 390,
+    "height": 844,
+    "decoded": true
+  },
+  {
+    "name": "after-wide-dark.png",
+    "width": 2200,
+    "height": 1100,
+    "decoded": true
+  },
+  {
+    "name": "before-desktop.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "before-large-text.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "before-phone.png",
+    "width": 390,
+    "height": 844,
+    "decoded": true
+  },
+  {
+    "name": "before-wide-dark.png",
+    "width": 2200,
+    "height": 1100,
+    "decoded": true
+  },
+  {
+    "name": "intake-desktop.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "intake-large-text.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "intake-phone.png",
+    "width": 390,
+    "height": 844,
+    "decoded": true
+  },
+  {
+    "name": "intake-wide-dark.png",
+    "width": 2200,
+    "height": 1100,
+    "decoded": true
+  },
+  {
+    "name": "phone-record-tail.png",
+    "width": 390,
+    "height": 844,
+    "decoded": true
+  },
+  {
+    "name": "read-failure.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  },
+  {
+    "name": "results.png",
+    "width": 1600,
+    "height": 1000,
+    "decoded": true
+  }
+]
