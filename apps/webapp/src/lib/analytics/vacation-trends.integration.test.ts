@@ -11,8 +11,12 @@ vi.mock("next/headers", async () =>
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
-vi.mock("@/lib/auth", () => ({auth: {api: {getSession: async () => null}}}));
-vi.mock("@/db", async () => (await import("@/test/integration-database")).integrationDbModule());
+vi.mock("@/lib/auth", () => ({
+	auth: { api: { getSession: async () => null } },
+}));
+vi.mock("@/db", async () =>
+	(await import("@/test/integration-database")).integrationDbModule(),
+);
 const { db } = await import("@/db");
 const { AnalyticsService } = await import(
 	"@/lib/effect/services/analytics.service"
