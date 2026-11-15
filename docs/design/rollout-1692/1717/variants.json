@@ -1,0 +1,51 @@
+{
+  "checks": [
+    {
+      "name": "keyboard summary updates URL and view",
+      "actual": 1
+    },
+    {
+      "name": "keyboard sort announces ascending",
+      "actual": "Item"
+    },
+    {
+      "name": "no-match retains clear filters",
+      "actual": true
+    },
+    {
+      "name": "authority-loss submission keeps refused panel",
+      "actual": true
+    },
+    {
+      "name": "refused action creates no extra holding",
+      "actual": 2
+    },
+    {
+      "name": "streamed loading keeps one task heading",
+      "actual": [
+        "Equipment"
+      ]
+    },
+    {
+      "name": "switch during in-flight read removes old-scope records",
+      "actual": true
+    },
+    {
+      "name": "second organization has real setup action",
+      "actual": true
+    },
+    {
+      "name": "phone setup fits",
+      "actual": true
+    },
+    {
+      "name": "current equipment phone drawer closes on first Escape",
+      "actual": true
+    },
+    {
+      "name": "no browser exceptions",
+      "actual": []
+    }
+  ],
+  "errors": []
+}

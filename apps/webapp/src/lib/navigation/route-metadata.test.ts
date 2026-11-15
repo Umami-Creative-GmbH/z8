@@ -6,6 +6,12 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the equipment overview heading, keeping detail and settings ownership independent", () => {
+		expect(appPageOwnsHeading("/de/equipment")).toBe(true);
+		expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(false);
+		expect(appPageOwnsHeading("/en/equipment/employees/id")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);
+	});
 	it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {
 		expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
 		expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
