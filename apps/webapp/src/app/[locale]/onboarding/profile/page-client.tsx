@@ -57,6 +57,8 @@ const BIRTHDAY_START_MONTH = calendarDateFromPlainDate(Temporal.PlainDate.from("
 const BIRTHDAY_DEFAULT_MONTH = calendarDateFromPlainDate(Temporal.PlainDate.from("2000-01-01"));
 
 type ProfileValues = typeof defaultValues;
+type ProfileSubmitMeta = { generation: object | null };
+const defaultSubmitMeta: ProfileSubmitMeta = { generation: null };
 type ProfileForm = ReactFormExtendedApi<
 	ProfileValues,
 	FormValidateOrFn<ProfileValues> | undefined,
@@ -69,7 +71,7 @@ type ProfileForm = ReactFormExtendedApi<
 	FormValidateOrFn<ProfileValues> | undefined,
 	FormAsyncValidateOrFn<ProfileValues> | undefined,
 	FormAsyncValidateOrFn<ProfileValues> | undefined,
-	unknown
+	ProfileSubmitMeta
 >;
 type TranslationFunction = ReturnType<typeof useTranslate>["t"];
 type GenderOption = {
@@ -492,13 +494,15 @@ function ProfileStep({ scope, ready }: { scope: string | null; ready: boolean })
 
 	const form = useForm({
 		defaultValues,
+		onSubmitMeta: defaultSubmitMeta,
 		onSubmitInvalid: () => {
 			formElement.current?.querySelector<HTMLInputElement>('[aria-invalid="true"]')?.focus();
 		},
-		onSubmit: async ({ value }) => {
-			if (pending.current || !ready || !lifetime.current) return;
+		onSubmit: async ({ value, meta }) => {
+			if (pending.current || !ready || !meta.generation || lifetime.current !== meta.generation)
+				return;
 			pending.current = true;
-			const generation = lifetime.current;
+			const generation = meta.generation;
 			setFailure(null);
 			await runOnboardingAction({
 				action: () =>
@@ -610,8 +614,9 @@ function ProfileStep({ scope, ready }: { scope: string | null; ready: boolean })
 				<ProfileHeader t={t} />
 				<form
 					ref={formElement}
-					action={() => {
-						void form.handleSubmit();
+					onSubmit={(event) => {
+						event.preventDefault();
+						void form.handleSubmit({ generation: lifetime.current });
 					}}
 					className="space-y-8 pt-6"
 					noValidate
@@ -653,7 +658,9 @@ function ProfileStep({ scope, ready }: { scope: string | null; ready: boolean })
 								variant="outline"
 								disabled={loading}
 								onClick={() =>
-									failure.action === "skip" ? void handleSkip() : void form.handleSubmit()
+									failure.action === "skip"
+										? void handleSkip()
+										: void form.handleSubmit({ generation: lifetime.current })
 								}
 							>
 								{failure.action === "skip"

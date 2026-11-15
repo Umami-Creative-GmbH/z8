@@ -2,6 +2,7 @@
 
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { Activity } from "react";
+import { flushSync } from "react-dom";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -84,6 +85,48 @@ describe("ProfilePage", () => {
 	afterEach(() => {
 		vi.useRealTimers();
 	});
+
+	it.each(["organization", "organization-return", "session-reconnect", "Activity-return"])(
+		"discards Save queued before %s and permits a fresh submission",
+		async (boundary) => {
+			updateProfileOnboardingMock.mockResolvedValue({
+				success: true,
+				data: { nextStep: "/onboarding/wellness" },
+			});
+			const page = (mode: "visible" | "hidden" = "visible") => (
+				<Activity mode={mode}>
+					<ProfilePage />
+				</Activity>
+			);
+			const view = render(page());
+			fireEvent.change(screen.getByLabelText("First Name"), { target: { value: "Ada" } });
+			fireEvent.change(screen.getByLabelText("Last Name"), { target: { value: "Lovelace" } });
+			act(() => {
+				fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
+				flushSync(() => {
+					if (boundary === "session-reconnect") sessionState.isPending = true;
+					else if (boundary !== "Activity-return") {
+						sessionState.data.session.activeOrganizationId = "org-b";
+					}
+					view.rerender(page(boundary === "Activity-return" ? "hidden" : "visible"));
+				});
+				if (boundary !== "organization") {
+					flushSync(() => {
+						sessionState.data.session.activeOrganizationId = "org-a";
+						sessionState.isPending = false;
+						view.rerender(page());
+					});
+				}
+			});
+			await act(async () => {});
+			expect(updateProfileOnboardingMock).not.toHaveBeenCalled();
+			expect(pushMock).not.toHaveBeenCalled();
+			expect(screen.getByLabelText("First Name")).toHaveProperty("value", "Ada");
+			fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
+			await waitFor(() => expect(updateProfileOnboardingMock).toHaveBeenCalledOnce());
+			expect(pushMock).toHaveBeenCalledWith("/onboarding/wellness");
+		},
+	);
 
 	it("captures a fresh UTC calendar limit for each mounted page", () => {
 		vi.useFakeTimers({ toFake: ["Date"] });
