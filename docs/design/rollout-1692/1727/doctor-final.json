@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 3,
+  "sourceRevision": "7811dc718b4fe74a682b7467d27ace04fc5827a8",
+  "mode": "baseline",
+  "baseline": {
+    "baseRef": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+    "source": "base",
+    "matchedCount": 1,
+    "newCount": 1,
+    "fixedCount": 0,
+    "baseTotalCount": 1
+  },
+  "reactDetected": true,
+  "version": "0.9.22",
+  "ok": true,
+  "directory": "X:\\t3-code\\worktrees\\z8\\t3-3368b2f7-878f9513f4a73411\\apps\\webapp",
+  "diff": {
+    "baseBranch": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+    "currentBranch": "feature/1727-employee-work-balance",
+    "changedFileCount": 15,
+    "isCurrentChanges": false
+  },
+  "projects": [
+    {
+      "directory": "X:\\t3-code\\worktrees\\z8\\t3-3368b2f7-878f9513f4a73411\\apps\\webapp",
+      "packageRoot": "X:\\t3-code\\worktrees\\z8\\t3-3368b2f7-878f9513f4a73411\\apps\\webapp",
+      "sourceFilterConfigHash": "bccba9af786c396a5fb90c4b05d568dfa2361741e7b91c1c423877cbaa48bf12",
+      "framework": "nextjs",
+      "project": {
+        "rootDirectory": "X:\\t3-code\\worktrees\\z8\\t3-3368b2f7-878f9513f4a73411\\apps\\webapp",
+        "projectName": "webapp",
+        "reactVersion": "19.3.1",
+        "reactMajorVersion": 19,
+        "tailwindVersion": "^4.3.5",
+        "zodVersion": "^4.6.7",
+        "zodMajorVersion": 4,
+        "mobxVersion": null,
+        "mobxMajorVersion": null,
+        "hasMobxReact": false,
+        "mobxReactVersion": null,
+        "hasMobxReactLite": false,
+        "mobxReactLiteVersion": null,
+        "hasMobxStateTree": false,
+        "hasMobxReactObserver": false,
+        "zustandVersion": "^5.1.0",
+        "zustandMajorVersion": 5,
+        "framework": "nextjs",
+        "hasTypeScript": true,
+        "hasReactCompiler": true,
+        "hasReactCompilerLintPlugin": false,
+        "hasTanStackQuery": true,
+        "hasI18nLibrary": true,
+        "hasRadixUi": false,
+        "hasBaseUi": true,
+        "hasReactAriaComponents": false,
+        "hasTanstackTable": true,
+        "hasTanstackVirtual": true,
+        "hasTanstackForm": true,
+        "tanstackQueryVersion": "^5.107.1",
+        "styledComponentsVersion": null,
+        "valtioVersion": null,
+        "valtioMajorVersion": null,
+        "hasRemotion": false,
+        "remotionVersion": null,
+        "remotionMajorVersion": null,
+        "hasThree": false,
+        "threeVersion": null,
+        "threeRelease": null,
+        "hasReactThreeFiber": false,
+        "reactThreeFiberVersion": null,
+        "reactThreeFiberMajorVersion": null,
+        "hasSsrDependency": false,
+        "preactVersion": "11.2.0",
+        "preactMajorVersion": 11,
+        "hasReactNativeWorkspace": false,
+        "nextjsVersion": "16.4.6",
+        "nextjsMajorVersion": 16,
+        "reactRouterVersion": null,
+        "hasReactRouterFramework": false,
+        "expoVersion": null,
+        "shopifyFlashListVersion": null,
+        "shopifyFlashListMajorVersion": null,
+        "hasReanimated": false,
+        "reanimatedVersion": null,
+        "hasShadcnUi": true,
+        "isPreES2023Target": true,
+        "isStaticExport": false,
+        "sourceFileCount": 7027
+      },
+      "diagnostics": [
+        {
+          "filePath": "src/components/payroll/employee-balance-workspace.tsx",
+          "plugin": "react-doctor",
+          "rule": "no-high-complexity-react-function",
+          "severity": "warning",
+          "title": "React function has high control-flow complexity",
+          "message": "`EmployeeBalanceArrival` has cyclomatic complexity 14, cognitive complexity 16, and maximum nesting depth 2, so its React logic is hard to understand and change. Extract independent branches into components or hooks.",
+          "help": "Extract independent render branches and state logic into focused components or hooks until the control flow is easy to follow.",
+          "line": 81,
+          "column": 1,
+          "offset": 2947,
+          "length": 5020,
+          "endLine": 231,
+          "category": "Maintainability",
+          "fingerprint": "f6fa7bd1cd38ec9dd46421c9a02f3ecc07c0ced7154146bfe82c5734dc639454",
+          "id": "src/components/payroll/employee-balance-workspace.tsx::81:1::react-doctor/no-high-complexity-react-function::63b320bb6fe4e9e1438339400856ae1f05b76affd8bd7477a74445a40e68ccf4",
+          "normalizedFilePath": "src/components/payroll/employee-balance-workspace.tsx",
+          "tags": [
+            "react-jsx-only",
+            "test-noise"
+          ]
+        }
+      ],
+      "score": {
+        "score": 93,
+        "label": "Great",
+        "rules": {
+          "react-doctor/no-high-complexity-react-function": {
+            "priority": null,
+            "tier": "P3"
+          },
+          "react-doctor/no-giant-component": {
+            "priority": 30,
+            "tier": "P3"
+          }
+        }
+      },
+      "skippedChecks": [],
+      "analyzedFiles": [
+        "src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts",
+        "src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+        "src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.test.tsx",
+        "src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+        "src/components/payroll/employee-balance-projection.tsx",
+        "src/components/payroll/employee-balance-workspace.test.tsx",
+        "src/components/payroll/employee-balance-workspace.tsx",
+        "src/components/settings/work-balance/balance-form-panel.tsx",
+        "src/components/settings/work-balance/balance-form-surface.ts",
+        "src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+        "src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+        "src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+        "src/components/settings/work-balance/use-balance-form-request.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "analyzedFileCount": 15,
+      "complete": true,
+      "scannedFileCount": 15,
+      "elapsedMilliseconds": 20197.1677
+    }
+  ],
+  "diagnostics": [
+    {
+      "filePath": "src/components/payroll/employee-balance-workspace.tsx",
+      "plugin": "react-doctor",
+      "rule": "no-high-complexity-react-function",
+      "severity": "warning",
+      "title": "React function has high control-flow complexity",
+      "message": "`EmployeeBalanceArrival` has cyclomatic complexity 14, cognitive complexity 16, and maximum nesting depth 2, so its React logic is hard to understand and change. Extract independent branches into components or hooks.",
+      "help": "Extract independent render branches and state logic into focused components or hooks until the control flow is easy to follow.",
+      "line": 81,
+      "column": 1,
+      "offset": 2947,
+      "length": 5020,
+      "endLine": 231,
+      "category": "Maintainability",
+      "fingerprint": "f6fa7bd1cd38ec9dd46421c9a02f3ecc07c0ced7154146bfe82c5734dc639454",
+      "id": "src/components/payroll/employee-balance-workspace.tsx::81:1::react-doctor/no-high-complexity-react-function::63b320bb6fe4e9e1438339400856ae1f05b76affd8bd7477a74445a40e68ccf4",
+      "normalizedFilePath": "src/components/payroll/employee-balance-workspace.tsx",
+      "tags": [
+        "react-jsx-only",
+        "test-noise"
+      ]
+    }
+  ],
+  "summary": {
+    "errorCount": 0,
+    "warningCount": 1,
+    "affectedFileCount": 1,
+    "totalDiagnosticCount": 1,
+    "score": 93,
+    "scoreLabel": "Great"
+  },
+  "elapsedMilliseconds": 21542.9909,
+  "error": null
+}

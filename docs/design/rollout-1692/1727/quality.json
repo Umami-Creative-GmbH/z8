@@ -1,0 +1,159 @@
+{
+  "identity": {
+    "head": "6f0d1079cb950c694699d71afd41628514bda495",
+    "integration": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+    "files": [
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+        "raw": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+        "normalized": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+        "raw": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e",
+        "normalized": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e"
+      },
+      {
+        "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+        "raw": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4",
+        "normalized": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4"
+      },
+      {
+        "file": "apps/webapp/src/components/payroll/employee-balance-projection.tsx",
+        "raw": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0",
+        "normalized": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+        "raw": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9",
+        "normalized": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+        "raw": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2",
+        "normalized": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+        "raw": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c",
+        "normalized": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/balance-form-panel.tsx",
+        "raw": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16",
+        "normalized": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/balance-form-surface.ts",
+        "raw": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc",
+        "normalized": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/use-balance-form-request.ts",
+        "raw": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934",
+        "normalized": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+        "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+        "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/work-balance-actions.ts",
+        "raw": "5fe9d5bb482bb1f3320b353cda32db76aef78676199cdebd9b7eaca000227e6e",
+        "normalized": "f7dad3aebc63aa988ab13a5868e8dd8ca25e104407f34d47eac64965b5debdd2"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/coverage.ts",
+        "raw": "2059589415f4ea05cf091d1a49626318ee27ac9615e5c1154638adf1d02fe031",
+        "normalized": "b5656bca1ebe06356d212f00ef4b1cf49327c1a39e35e91ad7ac238137ed71fd"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/store.ts",
+        "raw": "c490ccc7d2434b497c9383bb15f2e6e1a2d42f7ae63c8d7c164027e733f17128",
+        "normalized": "75112e8a7957febd8d98a0fa3d555e7907e09dd88c27a4c1c5a8eb185fa5acf7"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/authorization.ts",
+        "raw": "a537764cc7efaa39984ecb9114a120b52ece2fc68fc86be1d7c439c4bfa741e1",
+        "normalized": "f0ec3ff94819c3e9bfefcbe12afb7fc8de465d6e7673b2e6096de6e6f7ef091e"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/rules.ts",
+        "raw": "ca899221459df11a6ef2a169b0a4d4ec78228bcd2dcc1a4ab9525e1d8115c4fe",
+        "normalized": "41bb468729109c197fd61abb847901c5076e5da84596ed0d4613a703cd1d1b88"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/service.ts",
+        "raw": "b86599fc2556c0805e890e22d91713cdbf7b65721158a013d6160d50d42ff66a",
+        "normalized": "38f369a260bca1e83d7b38d72d057235b678db0bb91eca1477339e1e0530cc07"
+      },
+      {
+        "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa",
+        "normalized": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa"
+      }
+    ]
+  },
+  "biome": {
+    "cwd": "checkout root; pnpm filter executes in apps/webapp",
+    "argv": [
+      "pnpm",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=biome.jsonc",
+      "src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts",
+      "src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+      "src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.test.tsx",
+      "src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+      "src/components/payroll/employee-balance-projection.tsx",
+      "src/components/payroll/employee-balance-workspace.test.tsx",
+      "src/components/payroll/employee-balance-workspace.tsx",
+      "src/components/settings/work-balance/balance-form-panel.tsx",
+      "src/components/settings/work-balance/balance-form-surface.ts",
+      "src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+      "src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+      "src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+      "src/components/settings/work-balance/use-balance-form-request.ts",
+      "src/lib/navigation/route-metadata.test.ts",
+      "src/lib/navigation/route-metadata.ts"
+    ],
+    "checkedFiles": 15,
+    "exitCode": 0,
+    "configRawSha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24"
+  },
+  "types": {
+    "command": "pnpm --filter webapp typecheck",
+    "exitCode": 0,
+    "projects": [
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ]
+  },
+  "review": {
+    "webGuidelines": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "performance": "Current route controls one query owner; no new polling, viewer-zone calculation, duplicate responsive forms or expanded server calculation payload.",
+    "composition": "Route presentation remains separate from coverage, ledger and projection owners; explicit panel/dialog wrappers preserve existing callers.",
+    "security": "Route grant rechecked on refresh; authoritative actions retain current-membership/org/target checks. No generated schema/catalog edits or payment integration.",
+    "remainingDoctor": "One reviewed route complexity advisory; zero compiler/security errors."
+  },
+  "artifacts": {
+    "unit-final4.json": "a6d7ead3b5ec8d8236e35f5327bb3e8562c93640469091b44e8c1784f5cabf2e",
+    "postgres-final.json": "ceaaa49c9b96067da4bdede47aee62a88e8f40469a45143ffc822a9edfab0f93",
+    "doctor-committed.json": "855f733f8bed8c88baec4d069cf122d0799f40304b64ba0e9e2543f4695446a9",
+    "types-committed.txt": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e",
+    "runtime.json": "9d281586f804ca22ef2ff7de1b534e5ef42a42b47ba25bd78914942f6bed9768",
+    "recovery.json": "4242989239ebc2f120028ead1c000af688c1b052ff9843f0b847174b34e8e371",
+    "next-final.json": "f857f9493148d19e6e7179ffce12cb37180dd5c34f6d5f8bfeecec6b21a459f1",
+    "native-final.json": "8948a40bb848ff53258f4791e0c0d0d5c2dd04579d1ed9f0fdfb8b09985c1823",
+    "native-final-inspect.json": "10188d726554ff7e20521f7e36a15ba268e4e7709b3268b28f71bad182174c4d",
+    "comparison-source.json": "14057cc6641cbb9ca9907bc130f6e03c287e7263b9ed41d7705fc35fc0fc3b2b",
+    "matched-before.json": "c0baa14f0ed1866094e0d22b41a9da3eedec2f3bb3fbea0583f0693a06fb89fe",
+    "matched-after.json": "8d35a120a4e0eb776974f404d5d29400506f6c017d5876023769c77619e07ade",
+    "evidence-verification.json": "9f88ad0647bf2d9350b76225fbf5f1d77a1656815b9100d1bdec4041e1bfe157"
+  }
+}

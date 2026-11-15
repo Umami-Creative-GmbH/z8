@@ -1,0 +1,13 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {createWriteStream} from 'node:fs';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {join,resolve} from 'node:path';
+const dir=resolve(process.argv[2]), repo=process.cwd();
+const runtime=JSON.parse(await readFile(join(dir,'runtime-private.json'),'utf8'));
+if(new URL(runtime.origin).hostname!=='localhost'||!/^approval_workflow_repository_test_perf_/.test(runtime.env.POSTGRES_DB))throw Error('Disposable fixture required');
+const log=createWriteStream(join(dir,'r044-next.log'),{flags:'a'});await once(log,'open');
+const inherited=Object.fromEntries(Object.entries(process.env).filter(([k])=>/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA|PNPM_HOME|NUMBER_OF_PROCESSORS|PROCESSOR_ARCHITECTURE)$/i.test(k)));
+const child=spawn(process.execPath,[join(repo,'apps/webapp/node_modules/next/dist/bin/next'),'dev','--turbopack','--port',new URL(runtime.origin).port],{cwd:join(repo,'apps/webapp'),env:{...inherited,...runtime.env,NODE_ENV:'development',NEXT_TELEMETRY_DISABLED:'1',pnpm_config_verify_deps_before_run:'false'},stdio:['ignore',log,log],windowsHide:true});
+await writeFile(join(dir,'r044-next-owner.json'),JSON.stringify({pid:child.pid,checkout:repo,port:Number(new URL(runtime.origin).port),origin:runtime.origin}));
+console.log('Owned Next pid',child.pid,'origin',runtime.origin);await once(child,'exit');

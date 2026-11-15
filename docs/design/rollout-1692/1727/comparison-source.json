@@ -1,0 +1,64 @@
+{
+  "head": "6f0d1079cb950c694699d71afd41628514bda495",
+  "integration": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+  "base": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+  "scope": "Only four R044 page/form sources from base; remove only R044 heading opt-in from current metadata. All other current integration sources, root opt-ins, data, catalogs, preferences and shell geometry stay current. New route modules stay on disk but the baseline page does not import them.",
+  "overlays": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+      "before": {
+        "raw": "6b36bd84bce720de2b049a39f000cd7ef110d719a114ff87491cd88ddf24d76c",
+        "normalized": "6b36bd84bce720de2b049a39f000cd7ef110d719a114ff87491cd88ddf24d76c"
+      },
+      "after": {
+        "raw": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+        "normalized": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a"
+      }
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+      "before": {
+        "raw": "d2148fa7b53b1a853f36c604a9d0edd8c006ece8d77e1295675b26abcfbc6ee5",
+        "normalized": "d2148fa7b53b1a853f36c604a9d0edd8c006ece8d77e1295675b26abcfbc6ee5"
+      },
+      "after": {
+        "raw": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9",
+        "normalized": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9"
+      }
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+      "before": {
+        "raw": "8b5fd0fba2647da4911650d2172d20b770aa43561520e9929b16d358f9958cbf",
+        "normalized": "8b5fd0fba2647da4911650d2172d20b770aa43561520e9929b16d358f9958cbf"
+      },
+      "after": {
+        "raw": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2",
+        "normalized": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2"
+      }
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+      "before": {
+        "raw": "a24e1d81aa744cd6ebb4e8d135bdcd5a74a53334dae740a167d8febeb63c6188",
+        "normalized": "a24e1d81aa744cd6ebb4e8d135bdcd5a74a53334dae740a167d8febeb63c6188"
+      },
+      "after": {
+        "raw": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c",
+        "normalized": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c"
+      }
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "before": {
+        "raw": "c83f441390901378018b0a59b45ae568bd83db0b9f897f1cf328c6263a742302",
+        "normalized": "edaa197bbc37ca6f980806ea426a0cf7f86ef2ec27a51603f9341254abe54d1d"
+      },
+      "after": {
+        "raw": "0805e45e76470d4920502e0223b95ea6376323563c2fbb8bf99517e6253ec3e7",
+        "normalized": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa"
+      }
+    }
+  ],
+  "restored": true
+}
