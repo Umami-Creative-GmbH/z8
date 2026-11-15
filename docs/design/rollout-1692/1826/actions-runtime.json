@@ -1,0 +1,228 @@
+{
+  "classification": "actual local auth requests and authoritative HTTP read-back; held/aborted transport explicitly classified",
+  "checks": [
+    {
+      "name": "enforced owner password-only session is denied, without admin bypass",
+      "passed": true
+    },
+    {
+      "name": "native invalid submit focuses authenticator and associates error",
+      "passed": true
+    },
+    {
+      "name": "actual invalid authenticator refuses without erasing input",
+      "passed": true
+    },
+    {
+      "name": "held actual verification disables duplicate and continuation",
+      "passed": true
+    },
+    {
+      "name": "native re-entry sends one transport request",
+      "passed": true
+    },
+    {
+      "name": "aborted real transport is retryable with retained code",
+      "passed": true
+    },
+    {
+      "name": "real password verification clears password but grants no organization access",
+      "passed": true
+    },
+    {
+      "name": "real enrollment alone does not establish session proof",
+      "passed": true
+    },
+    {
+      "name": "verified enrollment read-back admits selected organization",
+      "passed": true
+    },
+    {
+      "name": "reload reads saved enabled factor and management controls",
+      "passed": true
+    },
+    {
+      "name": "real backup recovery clears field, stays on MFA, and revokes organization proof",
+      "passed": true
+    },
+    {
+      "name": "recovery still requires renewed primary verification before authenticator proof",
+      "passed": true
+    },
+    {
+      "name": "actual authenticator verifies and sanitized callback reaches selected organization",
+      "passed": true
+    },
+    {
+      "name": "actual last-factor revocation immediately denies protected owner access",
+      "passed": true
+    },
+    {
+      "name": "same authoritative requirement renders grace and permits its enrollment window",
+      "passed": true
+    },
+    {
+      "name": "organization selection escape requests its real init destination",
+      "passed": true
+    },
+    {
+      "name": "employee receives the same scoped MFA task without admin controls",
+      "passed": true
+    },
+    {
+      "name": "late membership loss refuses protected organization read",
+      "passed": true
+    },
+    {
+      "name": "real sign-out clears session and reaches sign-in",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "filename": "state-verification-refused.png",
+      "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+      "dirtyDiffSha256": "994bc1e196d3850ca230b51bc5b0c1c0e52f5e6b6c34e40bff999916e67c99d4",
+      "files": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "cb0bc837234ebe202932abf5e28d48d7c9452d9d49d996b64f4dca4f0a3ea324",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+      },
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1682
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "inputFont": "14px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsStatus": "loaded"
+    },
+    {
+      "filename": "state-verification-pending.png",
+      "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+      "dirtyDiffSha256": "994bc1e196d3850ca230b51bc5b0c1c0e52f5e6b6c34e40bff999916e67c99d4",
+      "files": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "cb0bc837234ebe202932abf5e28d48d7c9452d9d49d996b64f4dca4f0a3ea324",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+      },
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1642
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "inputFont": "14px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsStatus": "loaded"
+    },
+    {
+      "filename": "state-enrolled-readback.png",
+      "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+      "dirtyDiffSha256": "994bc1e196d3850ca230b51bc5b0c1c0e52f5e6b6c34e40bff999916e67c99d4",
+      "files": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "cb0bc837234ebe202932abf5e28d48d7c9452d9d49d996b64f4dca4f0a3ea324",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+      },
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1642
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "inputFont": "14px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsStatus": "loaded"
+    },
+    {
+      "filename": "state-recovery-only.png",
+      "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+      "dirtyDiffSha256": "994bc1e196d3850ca230b51bc5b0c1c0e52f5e6b6c34e40bff999916e67c99d4",
+      "files": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "cb0bc837234ebe202932abf5e28d48d7c9452d9d49d996b64f4dca4f0a3ea324",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+      },
+      "pngDimensions": {
+        "width": 1600,
+        "height": 2052
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "inputFont": "14px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsStatus": "loaded"
+    },
+    {
+      "filename": "state-last-factor-revoked.png",
+      "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+      "dirtyDiffSha256": "994bc1e196d3850ca230b51bc5b0c1c0e52f5e6b6c34e40bff999916e67c99d4",
+      "files": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "cb0bc837234ebe202932abf5e28d48d7c9452d9d49d996b64f4dca4f0a3ea324",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+      },
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1642
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "inputFont": "14px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsStatus": "loaded"
+    },
+    {
+      "filename": "state-grace-window.png",
+      "head": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+      "dirtyDiffSha256": "994bc1e196d3850ca230b51bc5b0c1c0e52f5e6b6c34e40bff999916e67c99d4",
+      "files": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "41daeecded27697f73db2c90eee8a1b836d6bfcda263d550b59be1e41252b137",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "6154e86df4c9cbb5385676429b18b557b3631ac5394e1ec92b540ac9cbfa0def",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "cb0bc837234ebe202932abf5e28d48d7c9452d9d49d996b64f4dca4f0a3ea324",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "f0a2f7324f4e404f578d74321db3e0f5669d6219f7a90f9f47b1245dca8c7f90"
+      },
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1642
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "inputFont": "14px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsStatus": "loaded"
+    }
+  ],
+  "pageErrors": []
+}
