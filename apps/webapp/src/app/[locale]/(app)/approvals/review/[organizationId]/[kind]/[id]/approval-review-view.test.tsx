@@ -63,16 +63,29 @@ describe("ApprovalReviewOutcome", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("opens the exact authorized item in the inbox detail panel", () => {
-		render(<ApprovalReviewOutcome arrival={{ status: "ready", item }} reviewPath={reviewPath} />);
+		render(
+			<ApprovalReviewOutcome
+				arrival={{ status: "ready", item }}
+				reviewPath={reviewPath}
+			/>,
+		);
 		expect(screen.getByRole("dialog")).toBeTruthy();
 		expect(state.panel).toHaveBeenCalledWith(
 			expect.objectContaining({ approval: item, open: true }),
 		);
 		expect(screen.getByText("Vacation · 3 days")).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Approval review" }),
+		).toBeTruthy();
 	});
 
 	it("reopens the panel after closing and returns to the inbox after a decision", () => {
-		render(<ApprovalReviewOutcome arrival={{ status: "ready", item }} reviewPath={reviewPath} />);
+		render(
+			<ApprovalReviewOutcome
+				arrival={{ status: "ready", item }}
+				reviewPath={reviewPath}
+			/>,
+		);
 		fireEvent.click(screen.getByText("close"));
 		expect(screen.queryByRole("dialog")).toBeNull();
 		fireEvent.click(screen.getByText("Show details"));
@@ -97,16 +110,22 @@ describe("ApprovalReviewOutcome", () => {
 		expect(href.searchParams.get("organizationId")).toBe("org-1");
 		expect(href.searchParams.get("callbackUrl")).toBe(reviewPath);
 		expect(state.panel).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("link", { name: "Open Inbox" }).getAttribute("href"),
+		).toBe("/approvals/inbox");
 	});
 
 	it("explains an unavailable item without approval facts", () => {
 		const { container } = render(
-			<ApprovalReviewOutcome arrival={{ status: "unavailable" }} reviewPath={reviewPath} />,
+			<ApprovalReviewOutcome
+				arrival={{ status: "unavailable" }}
+				reviewPath={reviewPath}
+			/>,
 		);
 		expect(screen.getByText("This approval is not available")).toBeTruthy();
-		expect(screen.getByText("Open Inbox").closest("a")?.getAttribute("href")).toBe(
-			"/approvals/inbox",
-		);
+		expect(
+			screen.getByText("Open Inbox").closest("a")?.getAttribute("href"),
+		).toBe("/approvals/inbox");
 		expect(container.textContent).not.toContain(item.id);
 		expect(state.panel).not.toHaveBeenCalled();
 	});
