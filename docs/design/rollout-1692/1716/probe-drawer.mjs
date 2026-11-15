@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
 import {createRequire} from 'node:module';
+import {execFileSync} from 'node:child_process';
 import {join, resolve} from 'node:path';
 const [sourceInput, fixtureInput, outInput] = process.argv.slice(2);
 const source=resolve(sourceInput), fixture=resolve(fixtureInput), out=resolve(outInput);
@@ -60,7 +61,7 @@ try {
   if(!closed){await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('[role=dialog][data-sheet-open]'),{timeout:2500}).catch(()=>{});second=await state();}
   results.push({variant,before,immediate,closedAfterFirst:closed,after,second,events:await page.evaluate(()=>window.escapeEvents)});
   console.log(JSON.stringify({name:variant.name,closedAfterFirst:closed,beforeTooltip:before.tooltips,immediate,after,second}));
-  await writeFile(join(out,'probe.json'),JSON.stringify({sourceCommit:'6bce36400e094702e650d6c24c38fc79a49623b6',boundary:'Current employee-check consumer, including root Tooltip correction. Native trusted keyboard, real saved font menu, no fabricated state.',results,errors},null,2)+'\n');
+  await writeFile(join(out,'probe.json'),JSON.stringify({sourceCommit:execFileSync('git',['-C',source,'rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['-C',source,'status','--porcelain','--','apps/webapp'],{encoding:'utf8'}).trim(),boundary:'Current employee-check consumer, including root Tooltip correction. Native trusted keyboard, real saved font menu, no fabricated state.',results,errors},null,2)+'\n');
   await context.close();
  }
 } finally {await browser.close();}

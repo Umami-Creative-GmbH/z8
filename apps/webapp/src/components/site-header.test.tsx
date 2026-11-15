@@ -77,7 +77,7 @@ describe("SiteHeader", () => {
 			screen.getByRole("heading", { level: 1, name: "Billing & Subscription" }),
 		).toBeTruthy();
 	});
-	it("hands the main title to a converted report page while retaining Calendar's shell title", () => {
+	it("hands the main title to converted pages while retaining unknown descendant titles", () => {
 		pathname = "/de/reports";
 		const page = render(
 			<>
@@ -92,6 +92,19 @@ describe("SiteHeader", () => {
 		).toEqual(["Employee Reports"]);
 		page.unmount();
 		pathname = "/de/calendar/employee-1";
+		const calendar = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Calendar" />
+			</>,
+		);
+		expect(
+			screen
+				.getAllByRole("heading", { level: 1 })
+				.map((heading) => heading.textContent),
+		).toEqual(["Calendar"]);
+		calendar.unmount();
+		pathname = "/en/calendar/employee-1/detail";
 		render(<SiteHeader />);
 		expect(
 			screen.getByRole("heading", { level: 1, name: "Calendar" }),

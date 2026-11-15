@@ -32,6 +32,7 @@ describe("CalendarPageContent initial date", () => {
 		});
 		mockState.resolveAuthorizedCalendarEmployeeContext.mockResolvedValue({
 			employeeId: "employee-selected",
+			employeeName: "Ada Lovelace",
 			timezone: "America/New_York",
 			initialDateKey: "2026-06-01",
 		});
@@ -47,6 +48,7 @@ describe("CalendarPageContent initial date", () => {
 			mockState.resolveAuthorizedCalendarEmployeeContext,
 		).toHaveBeenCalledTimes(1);
 		expect(page.props.initialDateKey).toBe("2026-06-12");
+		expect(page.props.initialEmployeeName).toBe("Ada Lovelace");
 	});
 
 	it("renders with the employee-local fallback for an invalid requested date", async () => {

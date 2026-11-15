@@ -45,6 +45,7 @@ export async function CalendarPageContent({
 			organizationId={authContext.employee.organizationId}
 			currentEmployeeId={authContext.employee.id}
 			initialSelectedEmployeeId={calendarEmployeeContext.employeeId}
+			initialEmployeeName={calendarEmployeeContext.employeeName}
 			initialDateKey={resolveCalendarInitialDate(
 				requestedDate,
 				calendarEmployeeContext.initialDateKey,

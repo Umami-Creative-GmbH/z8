@@ -1,0 +1,62 @@
+{
+  "checks": [
+    {
+      "name": "direct selected arrival identifies target in page and real manual title",
+      "passed": true
+    },
+    {
+      "name": "genuine on-behalf submission returns in authorized calendar reader",
+      "passed": true
+    },
+    {
+      "name": "manual New York wall times preserve UTC instants and duration",
+      "passed": true
+    },
+    {
+      "name": "manual endpoints use target zone and captured offsets",
+      "passed": true
+    },
+    {
+      "name": "genuine entry survives route reload",
+      "passed": true
+    },
+    {
+      "name": "manual submit exposes real pending duplicate protection",
+      "passed": true
+    },
+    {
+      "name": "server action refuses authority lost after panel preparation",
+      "passed": true
+    },
+    {
+      "name": "refused manual entry retains reason in real form",
+      "passed": true
+    },
+    {
+      "name": "refused attempt created no calendar record",
+      "passed": true
+    },
+    {
+      "name": "target-local January includes real February UTC boundary entry",
+      "passed": true
+    },
+    {
+      "name": "target-local February excludes January wall-date entry",
+      "passed": true
+    },
+    {
+      "name": "manual submit exposes real pending duplicate protection",
+      "passed": true
+    },
+    {
+      "name": "prepared manual action refuses changed active organization",
+      "passed": true
+    },
+    {
+      "name": "changed-organization refusal retains the prepared reason",
+      "passed": true
+    }
+  ],
+  "error": "TypeError: Failed to execute 'fetch' on 'Window': Failed to parse URL from /api/calendar/events?year=2025&month=0&showWorkPeriods=true&showTimeEntries=true&showAbsences=false&showHolidays=false&organizationId=perf-small-5416ff782670&employeeId=5319d31a-0a15-4806-9c1a-3b804dd0e927",
+  "errors": []
+}
