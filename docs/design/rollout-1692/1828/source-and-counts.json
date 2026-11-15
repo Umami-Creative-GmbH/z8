@@ -1,0 +1,44 @@
+{
+  "head": "898e02935a740f4c47c9b10e28551498779f4eea",
+  "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "pins": {
+    "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": {
+      "sha256": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+      "gitBlob": "d1f95844fd0f8a0df1420a43e8f5ca49c742893d"
+    },
+    "apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx": {
+      "sha256": "1c271dd4fa97499cb54139a1b27eab86cfc162c0bfcea422b2a5cb24e4af9443",
+      "gitBlob": "848d98e8ca9147c649b4c901f3642fbe660aacae"
+    },
+    "apps/webapp/src/app/[locale]/onboarding/notifications/actions.integration.test.ts": {
+      "sha256": "d58607a5ab0200d0961e082cad76b1e179753818f8b7bacd8925315d661b2e53",
+      "gitBlob": "2653a246c20b25463d47eda07b76e26f4a425342"
+    }
+  },
+  "unit": {
+    "files": 7,
+    "tests": 83,
+    "passed": 83,
+    "failed": 0
+  },
+  "postgres": {
+    "files": 2,
+    "tests": 18,
+    "passed": 18,
+    "failed": 0
+  },
+  "runtime": {
+    "presentationAssertions": 11,
+    "actionAssertions": 15,
+    "actualPermissionRequest": {
+      "permission": "default",
+      "feedback": [
+        "Permission not granted",
+        "No permission was granted. You can request again or continue with your preferences."
+      ],
+      "pushPreference": "false"
+    },
+    "finalPageErrors": []
+  },
+  "sourceQualified": true
+}
