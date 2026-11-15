@@ -473,9 +473,12 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "e2d14e0bda12cb2920f7a38c8df935ae81da1b42"
+                        "status":  "integrated",
+                        "verifiedCommit":  "f15492e4bc5bee60293b22797d42eacdd8296190",
+                        "implementationCommit":  "e2d14e0bda12cb2920f7a38c8df935ae81da1b42",
+                        "integrationCommit":  "f15492e4bc5bee60293b22797d42eacdd8296190",
+                        "evidence":  "docs/design/rollout-1692/1723.md",
+                        "integrationVerification":  "Fresh independent native mergef15492e4,tree4379dbf3.41unique suites/495tests; exact24/314 wholly overlaps. Full next/app/workflow/smoke types,8-file Doctorzero,6notification/API normalCRLF plus2metadata explicitCRLF Biome and8-file lint pass; no broad8-file formatter pass.35prior verified ancestors/1720rollout/11946unaffected/65incoming paths and all91original1722artifacts/rootcorrection/rootproof/heading opt-ins preserved.32PNG fully decoded,19JSON/5scripts/23links/10pins/four accepted pairs validated; last-record PNG actually0unread/1visible Earlier Absence approved. Six archive/static validators incl1722 --current-source pass. No blocking source finding; selection/filter/latest100vsunread,retainedretry,scoped requests,keyed remount/late feedback and server authority unchanged or tested. PG1/13 and real tasks/held401+409/nativeReact/axe30pass0violations1incomplete/finalNextclean remain inspected inherited evidence. Earlier auth/Suspense warning,prompt-open excluded3rule audit,wrongfont/intermediate captures,no live two-authorized-org switch,cachedActivity/device/truezoom/provider/catalog/build/global limits retained. No merger source/report/raw corrections or services/PG/browser rerun."
                     },
                     {
                         "id":  "R032",
