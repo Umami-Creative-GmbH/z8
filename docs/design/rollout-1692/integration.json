@@ -577,9 +577,13 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "796f49b212ec9688a9d89186cb7c59d0c427c781"
+                        "status":  "integrated",
+                        "verifiedCommit":  "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+                        "implementationCommit":  "796f49b212ec9688a9d89186cb7c59d0c427c781",
+                        "integrationCommit":  "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+                        "correctionCommit":  "89c7f3816988b33496165e9ee63c839aede4a364",
+                        "evidence":  "docs/design/rollout-1692/1724.md",
+                        "integrationVerification":  "Organization view #1724 is verified at `8d3006a5`, including three root lifecycle regressions. Fresh 50 unique suites/576 tests, 18 PostgreSQL tests with migration recovery, full types, 11-file Doctor zero, normal CRLF Biome and lint pass. Alternate formatting profiles remain unpassed. Both read-loss defects reproduce with real server responses before and resolve after; cached phone Retry uses actual pointer input, while modal-blocked header Refresh uses disclosed synthetic DOM activation. Seven accepted/two failed captures decode with source pins; final connected Next arrays clear, historical overlays remain. Original artifacts and all 36 verified ancestors survive. Build/catalog/provider/device/zoom/global acceptance remains open. Independent tree 0b08d15c3caa555e4cfbc483bd02d87e3cb438db; 12042 prior paths and all 28 original ticket artifact blobs unchanged outside three corrected source/test files and appended report. Native 50/573 is superseded by root 50/576, not additive; root client37 includes three new cases. All owned browsers/verified Next60423/three containers cleaned. Worker native/axe/25 runtime observations inherited, separate from root live proof."
                     },
                     {
                         "id":  "R042",
@@ -588,8 +592,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "165681372d1950bdb846eb43774dd2d4b429f6f8"
                     },
                     {
                         "id":  "R043",
@@ -608,7 +613,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
