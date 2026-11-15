@@ -1,0 +1,181 @@
+{
+  "base": "37ce6a963b1103f0b17e436c43311523580863ed",
+  "incoming": "c024c7a0f8f2b799cd54b3906c48344b84509bf0",
+  "merged": "b42187081b43ec85e1a15a53bec9064e6f2da160",
+  "tree": "78660c0592e0b0bcc6c35825c7ee6b80d0ffd835",
+  "parents": [
+    "37ce6a963b1103f0b17e436c43311523580863ed",
+    "c024c7a0f8f2b799cd54b3906c48344b84509bf0"
+  ],
+  "pathsBefore": 11110,
+  "pathsAfter": 11150,
+  "changedPaths": 47,
+  "sourcePaths": [
+    "apps/webapp/src/app/[locale]/(app)/driving-licence/checks/[employee]/page.tsx",
+    "apps/webapp/src/components/driving-licence/check-panel.test.tsx",
+    "apps/webapp/src/components/driving-licence/check-panel.tsx",
+    "apps/webapp/src/components/driving-licence/history-panel.test.tsx",
+    "apps/webapp/src/components/driving-licence/history-panel.tsx",
+    "apps/webapp/src/components/driving-licence/original-check-form.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "existingPathsUnchanged": 11103,
+  "priorRolloutPathsUnchanged": 893,
+  "verifiedAncestors": 23,
+  "jsonFiles": 8,
+  "scripts": 7,
+  "links": 19,
+  "pngFiles": 23,
+  "pngs": [
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\after-desktop.png",
+      "width": 3200,
+      "height": 2000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\after-phone.png",
+      "width": 780,
+      "height": 1688,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\after-wide-dark.png",
+      "width": 4800,
+      "height": 2400,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\before-desktop.png",
+      "width": 3200,
+      "height": 2000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\before-phone.png",
+      "width": 780,
+      "height": 1688,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\before-wide-dark.png",
+      "width": 4800,
+      "height": 2400,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\drawer\\default-expanded-after-first.png",
+      "width": 390,
+      "height": 844,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\drawer\\default-expanded-before.png",
+      "width": 390,
+      "height": 844,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\drawer\\large-collapsed-after-first.png",
+      "width": 390,
+      "height": 844,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\drawer\\large-collapsed-before.png",
+      "width": 390,
+      "height": 844,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\drawer\\large-collapsed-reduced-after-first.png",
+      "width": 390,
+      "height": 844,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\drawer\\large-collapsed-reduced-before.png",
+      "width": 390,
+      "height": 844,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\explicit-reinstatement.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\former-ended.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\new-check-still-suspended.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\not-intended.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\organization-switch.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\original-refused.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\original-saved.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\read-failed.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\retry-current-denial.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\runtime-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1716\\supplement-original-retained.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 4
+    }
+  ],
+  "inheritedObservations": {
+    "action": 17,
+    "context": 8,
+    "drawer": 3,
+    "axe": {
+      "passes": 35,
+      "violations": 0,
+      "incomplete": 0
+    },
+    "provenance": "Pair actor/scope/record and final drawer source provenance are report-attested. Drawer sourceCommit is hard-coded starting base predating this ticket; it is not machine-captured provenance."
+  }
+}
