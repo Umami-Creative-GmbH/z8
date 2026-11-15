@@ -1,0 +1,86 @@
+{
+  "unit": {
+    "files": 40,
+    "tests": 491,
+    "failed": 0,
+    "paths": [
+      "src/hooks/use-offline-clock.test.tsx",
+      "src/components/time-tracking/billable-choice.test.ts",
+      "src/components/time-tracking/billable-work-switch.test.tsx",
+      "src/components/time-tracking/break-in-progress-notice.test.tsx",
+      "src/components/time-tracking/clock-command-error-toast.test.ts",
+      "src/components/time-tracking/clock-in-out-widget.test.tsx",
+      "src/components/time-tracking/clock-read-scope.test.tsx",
+      "src/components/time-tracking/clock-vehicle-use-draft.test.ts",
+      "src/components/time-tracking/clock-vehicle-use.test.tsx",
+      "src/components/time-tracking/driving-details-missing-notice.test.tsx",
+      "src/components/time-tracking/manual-command-recovery.test.ts",
+      "src/components/time-tracking/manual-time-entry-dialog.test.tsx",
+      "src/components/time-tracking/manual-time-entry-recovery.test.tsx",
+      "src/components/time-tracking/period-blocker-focus.test.tsx",
+      "src/components/time-tracking/period-submissions-card.test.tsx",
+      "src/components/time-tracking/personal-workday-timeline.test.tsx",
+      "src/components/time-tracking/quick-break-popover.test.tsx",
+      "src/components/time-tracking/session-reminder-panel.test.tsx",
+      "src/components/time-tracking/task-selector.test.tsx",
+      "src/components/time-tracking/time-clock-popover.test.tsx",
+      "src/components/time-tracking/time-clock-popover.transport.test.tsx",
+      "src/components/time-tracking/time-correction-dialog-utils.test.ts",
+      "src/components/time-tracking/time-correction-dialog.test.tsx",
+      "src/components/time-tracking/time-correction-i18n.test.ts",
+      "src/components/time-tracking/time-entries-table-columns.test.tsx",
+      "src/components/time-tracking/time-entries-table.test.tsx",
+      "src/components/time-tracking/time-entry-day-groups.test.ts",
+      "src/components/time-tracking/use-clock-in-out-widget.test.tsx",
+      "src/components/time-tracking/use-vehicle-use-warnings.test.tsx",
+      "src/components/time-tracking/vehicle-use-draft.test.ts",
+      "src/components/time-tracking/weekly-summary-cards.test.tsx",
+      "src/components/time-tracking/work-category-selector.test.tsx",
+      "src/components/time-tracking/workday-date-navigation.test.tsx",
+      "src/lib/query/use-time-clock.status-transport.test.tsx",
+      "src/lib/time-tracking/browser-clock-command.test.ts",
+      "src/lib/time-tracking/time-kpis.test.ts",
+      "src/lib/time-tracking/timezone-capture.test.ts",
+      "src/lib/time-tracking/timezone-utils.test.ts",
+      "src/app/[locale]/(app)/time-tracking/region-data.test.ts",
+      "src/app/[locale]/(app)/time-tracking/regions.test.tsx"
+    ]
+  },
+  "domain": {
+    "files": 3,
+    "tests": 83,
+    "failed": 0,
+    "paths": [
+      "src/lib/time-tracking/clocking/clock-in.integration.test.ts",
+      "src/lib/time-tracking/clocking/clock-out.integration.test.ts",
+      "src/lib/time-tracking/clocking/frozen.integration.test.ts"
+    ]
+  },
+  "regressions": {
+    "timezoneBefore": {
+      "tests": 1,
+      "symptom": "No Confirm Timezone for This Entry dialog; request submitted by actual header-to-query-to-transport path."
+    },
+    "hydrationBefore": {
+      "tests": 1,
+      "symptom": "Server loading button differed from client ready div when the shared clock query was already populated."
+    }
+  },
+  "types": "Full webapp/application/workflow-contract/smoke typecheck passed before integration; final integrated result in report.",
+  "biome": "Explicit webapp biome.jsonc; four changed TypeScript files passed.",
+  "doctor": {
+    "errors": 0,
+    "warnings": [
+      {
+        "rule": "no-high-complexity-react-function",
+        "file": "src/components/time-tracking/time-clock-popover.tsx",
+        "function": "useTimeClockPopoverController"
+      }
+    ],
+    "score": "disabled; no numeric score or supply-chain pass claimed"
+  },
+  "nativeReact": {
+    "result": "No React renderer attached - the page has not booted React yet",
+    "scope": "Actual protected tab, agent-browser 0.39.1 with React DevTools; no native React inspection/performance pass claimed."
+  }
+}

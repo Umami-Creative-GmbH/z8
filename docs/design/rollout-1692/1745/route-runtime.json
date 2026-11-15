@@ -1,0 +1,169 @@
+{
+  "roles": [
+    {
+      "actor": "small-admin",
+      "h1": [
+        "Time Tracking"
+      ],
+      "width": 1600,
+      "viewport": 1600,
+      "calendar": [
+        "/en/calendar"
+      ],
+      "edit": 0,
+      "offsets": true
+    },
+    {
+      "actor": "small-employee",
+      "h1": [
+        "Time Tracking"
+      ],
+      "width": 1600,
+      "viewport": 1600,
+      "calendar": [
+        "/en/calendar"
+      ],
+      "edit": 0,
+      "offsets": true
+    },
+    {
+      "actor": "small-restricted",
+      "h1": [
+        "Time Tracking"
+      ],
+      "width": 1600,
+      "viewport": 1600,
+      "calendar": [
+        "/en/calendar"
+      ],
+      "edit": 0,
+      "offsets": true
+    },
+    {
+      "actor": "small-manager",
+      "h1": [
+        "Time Tracking"
+      ],
+      "width": 1600,
+      "viewport": 1600,
+      "calendar": [
+        "/en/calendar"
+      ],
+      "edit": 0,
+      "offsets": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "small-admin admitted with one task heading",
+      "passed": true
+    },
+    {
+      "name": "small-admin calendar remains reachable",
+      "passed": true
+    },
+    {
+      "name": "small-admin desktop fits",
+      "passed": true
+    },
+    {
+      "name": "small-employee admitted with one task heading",
+      "passed": true
+    },
+    {
+      "name": "small-employee calendar remains reachable",
+      "passed": true
+    },
+    {
+      "name": "small-employee desktop fits",
+      "passed": true
+    },
+    {
+      "name": "small-restricted admitted with one task heading",
+      "passed": true
+    },
+    {
+      "name": "small-restricted calendar remains reachable",
+      "passed": true
+    },
+    {
+      "name": "small-restricted desktop fits",
+      "passed": true
+    },
+    {
+      "name": "small-manager admitted with one task heading",
+      "passed": true
+    },
+    {
+      "name": "small-manager calendar remains reachable",
+      "passed": true
+    },
+    {
+      "name": "small-manager desktop fits",
+      "passed": true
+    },
+    {
+      "name": "manual rejection keeps both times and reason",
+      "passed": true
+    },
+    {
+      "name": "global refresh retains manual draft element",
+      "passed": true
+    },
+    {
+      "name": "correction rejection retains changed time",
+      "passed": true
+    },
+    {
+      "name": "saved Large and Dark survive reload",
+      "passed": true
+    },
+    {
+      "name": "large dark 1600 fits",
+      "passed": true
+    },
+    {
+      "name": "large dark 390 fits",
+      "passed": true
+    },
+    {
+      "name": "large dark 2560 fits",
+      "passed": true
+    },
+    {
+      "name": "reconnect restores admitted page",
+      "passed": true
+    }
+  ],
+  "pageErrors": [],
+  "manual": {
+    "clockInTime": "09:00",
+    "clockOutTime": "08:00",
+    "reason": "R163 invalid manual entry retention"
+  },
+  "correction": {
+    "clockInDate": "2026-11-15",
+    "clockInTime": "23:00",
+    "clockOutDate": "2026-11-15",
+    "clockOutTime": "01:00",
+    "reason": "R163 correction failure retention"
+  },
+  "layouts": [
+    {
+      "width": 1600,
+      "document": 1600,
+      "font": "18px"
+    },
+    {
+      "width": 390,
+      "document": 390,
+      "font": "18px"
+    },
+    {
+      "width": 2560,
+      "document": 2560,
+      "font": "18px"
+    }
+  ],
+  "offline": "Skip to content\nPerformance small\nMember\nSearch\nCtrl+K\nWORKPLACE\nDashboard\nTime Tracking\nCalendar\nAbsences\nTravel Expenses\nMy Requests\nReports\nOrg Explorer\nTEAM & ORGANIZATION\nTeam\nTeam Absences\nApprovals\nSettings\nGet Help\nFeedback\nPerson 1\nperf-small-1-a2b3ea4ef156@example.test\nToggle Sidebar\nWorkplace/\n\nTime Tracking\n\n02:02\nUTC+01:00\nClock In\nToggle theme\nYou're offline\n\nPerson 1\n\nTime Tracking\nAdd Manual Time Entry\nNot clocked in\n\nPerson 1\n\nToday\n\n0h 03m\n\nNo required time today\n\nWork location\nOffice\nHome\nRemote\nOther\nClock In\nWorking time summary\nThis Week\n\n0h 03m\n\n0h 03m vs last week\nNow: 0h 03m worked of 40h 00m required so far. Then: 0h 00m worked of 40h 00m required.\n\n0h 03m of 40h 00m · 39h 57m behind\n\nThis Month\n\n0h 03m\n\n0h 03m vs last month\nNow: 0h 03m worked of 80h 00m required so far. Then: 0h 00m worked of 80h 41m required.\n\n0h 03m of 168h 00m · 79h 57m behind\n\nAll-time balance\n\nNot calculated yet\n\nThe worker will calculate this balance soon.\n\nToday\n\n0h 03m\n\nNo required time today\n\nWorkday timeline\nNovember 15, 2026\nPrevious day\nToday\nNext day\nMon\n9\nTue\n10\nWed\n11\nThu\n12\nFri\n13\nSat\n14\nSun\n15\n\nRecorded work\n\nApproved\n\n01:38 - 01:39\n\n1m\n\nRecorded work\n\nApproved\n\n01:40 - 01:40\n\n0m\n\nRecorded work\n\nApproved\n\n01:41 - 01:43\n\n1m\n\nRecorded work\n\nApproved\n\n01:44 - 01:44\n\n0m\n\nRecorded work\n\nApproved\n\n01:45 - 01:45\n\n0m\n\nRecorded work\n\nApproved\n\n01:46 - 01:46\n\n0m\n\nRecorded work\n\nApproved\n\n01:46 - 01:47\n\n1m\n\nRecorded work\n\nApproved\n\n01:47 - 01:47\n\n0m\n\nRecorded work\n\nApproved\n\n01:47 - 01:47\n\n0m\n\nRecorded work\n\nApproved\n\n01:59 - 01:59\n\n0m\n\nRecorded work\n\nApproved\n\n02:00 - 02:00\n\n0m\n\nTime Entries\nGrouped by day\nView Calendar\nSunday, November 15\n11 entries\n0h 03m\nClock In\nRecorded local time\n\t\nClock Out\nRecorded local time\n\tDuration\tDescription\t\nTime entry actions\n\n\n20:00\nUTC-05:00\n\t\n20:00\nUTC-05:00\n\t\n-\n\t\n-\n\t\nEdit time entry\n\n\n01:59\nUTC+01:00\n\t\n19:59\nUTC-05:00\n\t\n-\n\t\n-\n\t\nEdit time entry\n\n\n19:47\nUTC-05:00\n\t\n19:47\nUTC-05:00\n\t\n-\n\t\n-\n\t\nEdit time entry\n\n\n01:47\nUTC+01:00\n\t\n19:47\nUTC-05:00\n\t\n-\n\t\n-\n\t\nEdit time entry\n\n\n19:46\nUTC-05:00\n\t\n19:47\nUTC-05:00\n\t\n0h 01m\n\t\n-\n\t\nEdit time entry\n\n\n01:46\nUTC+01:00\n\t\n19:46\nUTC-05:00\n\t\n-\n\t\n-\n\t\nEdit time entry\n\n\n01:45\nUTC+01:00\n\t\n19:45\nUTC-05:00\n\t\n-\n\t\n-\n\t\nEdit time entry\n\n\n01:44\nUTC+01:00\n\t\n19:44\nUTC-05:00\n\t\n-\n\t\n-\n\t\nEdit time entry\n\n\n01:41\nUTC+01:00\n\t\n01:43\nUTC+01:00\n\t\n0h 01m\n\t\n-\n\t\nEdit time entry\n\n\n01:40\nUTC+01:00\n\t\n19:40\nUTC-05:00\n\t\n-\n\t\n-\n\t\nEdit time entry\n\n\n01:38\nUTC+01:00\n\t\n01:39\nUTC+01:00\n\t\n0h 01m\n\t\n-\n\t\nEdit time entry\n\nEndpoint times use each entry's captured local UTC offset. Day headings follow your calendar timezone: Europe/Berlin.\n\nView Calendar\nToday\n\nNovember 2026\n\nM\nT\nW\nT\nF\nS\nS\n26\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n1\n2\n3\n4\n5\n6"
+}
