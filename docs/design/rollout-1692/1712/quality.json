@@ -1,0 +1,32 @@
+{
+    "integration":  "eaf8aa1ef97029cd4327ba7f2568383f63d2b40c",
+    "productionBuild":  "not run; root final-review requirement retained",
+    "catalogSync":  "not run; remote Tolgee configuration unavailable; static English defaults supplied",
+    "unitTests":  422,
+    "unitSuites":  45,
+    "testedHead":  "de8e69f892599c4273769d906b2a230030a53550",
+    "fullTypecheck":  "passed: Next route types + application + workflow-contracts + smoke",
+    "biome":  {
+                  "warnings":  7,
+                  "errors":  0,
+                  "files":  12,
+                  "warningsReviewed":  "Four pre-existing Schedule-X any adapters and three pre-existing range-preview non-null assertions; no new suppression."
+              },
+    "reactDoctor":  {
+                        "findings":  0,
+                        "numericScore":  "not requested",
+                        "files":  12
+                    },
+    "runtime":  {
+                    "fixtureFilesRemoved":  true,
+                    "contextPassed":  12,
+                    "nextConfigErrors":  0,
+                    "mainPassed":  28,
+                    "ownedServicesRemoved":  3,
+                    "nextCompilationIssues":  0,
+                    "ownedNextStopped":  true,
+                    "nextSessionErrors":  0,
+                    "unresolvedDrawerEscape":  true,
+                    "browserSessionsClosed":  true
+                }
+}
