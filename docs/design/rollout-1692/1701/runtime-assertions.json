@@ -1,0 +1,78 @@
+{
+  "scope": "small-employee own organization, real 2026 records; 2027 empty",
+  "results": [
+    {
+      "name": "one main Absences heading",
+      "passed": true
+    },
+    {
+      "name": "organization calendar year and timezone explicit",
+      "passed": true
+    },
+    {
+      "name": "full fetched history reachable on second page",
+      "passed": true
+    },
+    {
+      "name": "immediate search keeps matching real record",
+      "passed": true
+    },
+    {
+      "name": "no match is distinct from no requests",
+      "passed": true
+    },
+    {
+      "name": "phone record layout has no page overflow",
+      "passed": true
+    },
+    {
+      "name": "all twelve month headings remain accessible",
+      "passed": true
+    },
+    {
+      "name": "table identifies selected year",
+      "passed": true
+    },
+    {
+      "name": "empty year says no requests",
+      "passed": true
+    },
+    {
+      "name": "saved large text is applied at 18px",
+      "passed": true
+    },
+    {
+      "name": "saved dark theme is applied",
+      "passed": true
+    },
+    {
+      "name": "wide dark layout has no page overflow",
+      "passed": true
+    },
+    {
+      "name": "saved large text phone fits",
+      "passed": true
+    },
+    {
+      "name": "large text phone history fits without page overflow",
+      "passed": true
+    },
+    {
+      "name": "request cancel returns to records",
+      "passed": true
+    },
+    {
+      "name": "sidebar collapse persists through its existing localStorage owner",
+      "passed": true
+    },
+    {
+      "name": "collapsed sidebar retains page controls",
+      "passed": true
+    },
+    {
+      "name": "no uncaught browser exceptions",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

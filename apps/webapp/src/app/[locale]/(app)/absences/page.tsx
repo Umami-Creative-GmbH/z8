@@ -4,12 +4,14 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
-import { hasZeroWorkingDaysSchedule } from "@/lib/absences/types";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
+import { hasZeroWorkingDaysSchedule } from "@/lib/absences/types";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getAbsenceEntries,
@@ -27,7 +29,8 @@ async function AbsencesPageContent() {
 	]);
 	if (!employee) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6">
+			<div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+				<PageHeader title={t("absences.title", "Absences")} />
 				<NoEmployeeError
 					feature={t("absences.featureName", "manage absences")}
 				/>
@@ -37,7 +40,7 @@ async function AbsencesPageContent() {
 
 	const org = await db.query.organization.findFirst({
 		where: eq(organization.id, employee.organizationId),
-		columns: { timezone: true },
+		columns: { timezone: true, name: true },
 	});
 	const timezone = org?.timezone || "UTC";
 	// The employee's current local calendar year must be resolved per request.
@@ -74,12 +77,29 @@ async function AbsencesPageContent() {
 		getAbsenceCategories(employee.organizationId),
 	]);
 
-	// Missing or conflicting policy periods cannot produce a reliable balance.
-	if (!vacationBalance) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<div className="text-center">
-					<h2 className="text-2xl font-semibold mb-2">
+	return (
+		<div className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 lg:p-6">
+			<PageHeader
+				title={t("absences.title", "Absences")}
+				scope={
+					<>
+						{org?.name} · {calendarYear} · {timezone}
+					</>
+				}
+				description={t(
+					"absences.personalScope",
+					"Your absences and vacation balance for the organization calendar year.",
+				)}
+			/>
+			{vacationBalance ? (
+				<VacationBalanceCard
+					balance={vacationBalance}
+					now={nowIso}
+					timezone={timezone}
+				/>
+			) : (
+				<Alert>
+					<AlertTitle>
 						{hasZeroWorkingDaysSchedule(configuration)
 							? t(
 									"common:vacationBalance.zeroWorkingDays",
@@ -94,8 +114,8 @@ async function AbsencesPageContent() {
 										"common:vacationBalance.missingPolicy",
 										"Missing vacation policy",
 									)}
-					</h2>
-					<p className="text-muted-foreground">
+					</AlertTitle>
+					<AlertDescription>
 						{t(
 							"absences.errors.policyConfigurationMessage",
 							"Vacation policy configuration needs attention for {currentYear}.",
@@ -106,49 +126,24 @@ async function AbsencesPageContent() {
 							"absences.errors.contactAdmin",
 							"Please contact your administrator to configure vacation policies.",
 						)}
-					</p>
-				</div>
-			</div>
-		);
-	}
-
-	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			{/* Header with Vacation Balance */}
-			<div className="px-4 lg:px-6">
-				<div className="mb-4">
-					<div>
-						<h1 className="text-2xl font-semibold">
-							{t("absences.title", "Absences")}
-						</h1>
-						<p className="text-muted-foreground">
-							{t("absences.subtitle", "Manage your time off and vacation days")}
-						</p>
-					</div>
-				</div>
-				<VacationBalanceCard
-					balance={vacationBalance}
-					now={nowIso}
-					timezone={timezone}
-				/>
-			</div>
-
-			{/* Calendar/Table View Container with Toggle */}
-			<div className="px-4 lg:px-6">
-				<AbsencesViewContainer
-					absences={absences}
-					holidays={holidays}
-					categories={categories}
-					organizationId={employee.organizationId}
-					currentYear={calendarYear}
-					currentDate={currentDate}
-				/>
-			</div>
+					</AlertDescription>
+				</Alert>
+			)}
+			<AbsencesViewContainer
+				key={`${employee.organizationId}:${employee.id}`}
+				absences={absences}
+				holidays={holidays}
+				categories={categories}
+				organizationId={employee.organizationId}
+				currentYear={calendarYear}
+				currentDate={currentDate}
+			/>
 		</div>
 	);
 }
 
-function AbsencesPageLoading() {
+async function AbsencesPageLoading() {
+	const t = await getTranslate();
 	return (
 		<LoadingRegion
 			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
@@ -158,6 +153,9 @@ function AbsencesPageLoading() {
 				labelDefault: "Loading absences",
 			}}
 		>
+			<div className="px-4 lg:px-6">
+				<PageHeader title={t("absences.title", "Absences")} />
+			</div>
 			<div className="space-y-2 px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-8 w-44" />
 				<Skeleton aria-hidden="true" className="h-4 w-80 max-w-full" />

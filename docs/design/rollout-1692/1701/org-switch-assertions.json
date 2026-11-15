@@ -1,0 +1,17 @@
+{
+  "scope": "real employee session; approved synthetic membership without employee in second fixture organization; existing guard invalidates session; real Better Auth login restores original scope",
+  "results": [
+    {
+      "name": "organization switch during held year read does not present old personal data as current",
+      "passed": true
+    },
+    {
+      "name": "no-employee organization guard invalidates session",
+      "passed": true
+    },
+    {
+      "name": "real reauthentication and original organization activation recovers personal page",
+      "passed": true
+    }
+  ]
+}
