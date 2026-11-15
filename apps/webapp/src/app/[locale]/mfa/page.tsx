@@ -2,10 +2,14 @@ import { and, eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { MfaRequirements } from "@/components/organization-mfa/requirements";
 import { MfaSignOut } from "@/components/organization-mfa/sign-out";
 import { MfaVerification } from "@/components/organization-mfa/verification";
 import { PasskeyManagement } from "@/components/settings/auth/passkey-management";
 import { TwoFactorSetup } from "@/components/settings/auth/two-factor-setup";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
+import { pageSafeAreaPaddingClassName } from "@/components/ui/safe-area";
 import { db } from "@/db";
 import { account, user } from "@/db/auth-schema";
 import { env } from "@/env";
@@ -65,74 +69,68 @@ async function SecurityVerification({
 		socialProviders.push("linkedin");
 	const organizationId =
 		query.organizationId ?? requirements[0]?.organizationId ?? null;
+	const callbackUrl = sanitizeCallbackUrl(query.callbackUrl, "");
+	const selectedOrganization = requirements.find(
+		(requirement) => requirement.organizationId === organizationId,
+	);
 	return (
-		<main className="mx-auto max-w-2xl space-y-8 px-5 py-10">
-			<h1 className="text-2xl font-semibold">
-				{t("mfa.page.title", "Security verification")}
-			</h1>
-			<p>
-				{t(
-					"mfa.page.context",
-					"Personal enrollment, recovery and organization selection remain available while organization access needs verification.",
-				)}
-			</p>
-			<ul className="space-y-3">
-				{requirements.map((requirement) => (
-					<li
-						key={requirement.organizationId}
-						className="rounded-lg border p-3"
-					>
-						<strong>{requirement.organizationName}</strong>
-						<p>
-							{requirement.deadlineLabel ??
-								t("mfa.deadline.required", "Verification required now")}
-						</p>
-						<p>
-							{requirement.enforced
-								? t(
-										"mfa.deadline.enforced",
-										"An authenticator must be verified before organization access.",
-									)
-								: t(
-										"mfa.deadline.grace",
-										"Enrollment window in progress. Verify an authenticator before this deadline.",
-									)}
-						</p>
-					</li>
-				))}
-			</ul>
+		<main
+			className={`mx-auto min-h-svh max-w-3xl space-y-7 break-words bg-background px-5 py-10 sm:px-8 ${pageSafeAreaPaddingClassName}`}
+		>
+			<header className="space-y-5">
+				<p className="text-sm font-semibold text-primary" translate="no">
+					Z8
+				</p>
+				<PageHeader
+					title={t("mfa.page.title", "Security verification")}
+					scope={selectedOrganization?.organizationName}
+					description={t(
+						"mfa.page.context",
+						"Personal enrollment, recovery and organization selection remain available while organization access needs verification.",
+					)}
+				/>
+			</header>
+			<MfaRequirements
+				requirements={requirements}
+				organizationId={organizationId}
+				callbackUrl={callbackUrl}
+			/>
 			<MfaVerification
+				key={`${subject.user.id}:${organizationId}`}
 				organizationId={organizationId}
 				hasPassword={credentials.length > 0}
 				socialProviders={socialProviders}
-				callbackUrl={sanitizeCallbackUrl(query.callbackUrl, "")}
-			/>
-			<section className="space-y-4 border-t pt-6">
-				<h2 className="text-lg font-medium">
-					{t("mfa.enrollment.title", "Enroll or replace an authenticator")}
-				</h2>
-				<p>
-					{t(
-						"mfa.enrollment.warning",
-						"Adding or replacing a factor needs verification within five minutes. Verify the replacement before removing the old factor. Revoking your last factor is allowed and can block access to the organizations listed above; it does not grant a new enrollment window.",
+				callbackUrl={callbackUrl}
+			>
+				<section className="space-y-5" aria-labelledby="mfa-enrollment-title">
+					<h2 id="mfa-enrollment-title" className="text-lg font-semibold">
+						{t("mfa.enrollment.title", "Enroll or replace an authenticator")}
+					</h2>
+					<p className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+						{t(
+							"mfa.enrollment.warning",
+							"Adding or replacing a factor needs verification within five minutes. Verify the replacement before removing the old factor. Revoking your last factor is allowed and can block access to the organizations listed above; it does not grant a new enrollment window.",
+						)}
+					</p>
+					{credentials.length > 0 && (
+						<TwoFactorSetup
+							isEnabled={person?.twoFactorEnabled ?? false}
+							userEmail={subject.user.email}
+						/>
 					)}
-				</p>
-				{credentials.length > 0 && (
-					<TwoFactorSetup
-						isEnabled={person.twoFactorEnabled ?? false}
-						userEmail={subject.user.email}
-					/>
-				)}
-				<PasskeyManagement />
-			</section>
-			<p>
-				{t(
-					"mfa.recovery.lockout",
-					"If a sole administrator loses every authentication and recovery route, the organization stays locked. There is no administrator or support bypass.",
-				)}
-			</p>
-			<nav className="flex gap-4">
-				<Link href="/init">
+					<div className="min-w-0 border-t pt-5">
+						<PasskeyManagement />
+					</div>
+				</section>
+			</MfaVerification>
+			<nav
+				className="flex flex-wrap items-center justify-between gap-4 border-t pt-5"
+				aria-label={t("mfa.navigation", "Organization and account")}
+			>
+				<Link
+					href="/init"
+					className="rounded-sm text-sm font-medium underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+				>
 					{t("mfa.organization.select", "Select another organization")}
 				</Link>
 				<MfaSignOut />
@@ -149,7 +147,17 @@ export default function MfaPage({
 }) {
 	return (
 		<RouteTranslationBoundary route="/mfa" params={params}>
-			<Suspense fallback={null}>
+			<Suspense
+				fallback={
+					<LoadingRegion
+						label={{
+							labelKey: "mfa.loading",
+							labelDefault: "Loading security verification",
+						}}
+						className="mx-auto max-w-3xl px-5 py-10"
+					/>
+				}
+			>
 				<SecurityVerification searchParams={searchParams} />
 			</Suspense>
 		</RouteTranslationBoundary>
