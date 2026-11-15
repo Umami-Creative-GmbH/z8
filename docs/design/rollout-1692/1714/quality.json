@@ -42,5 +42,8 @@
     "Exhaustive translations/contrast and screen-reader certification",
     "Wholly healthy live audit configuration; all-clear verified at component/domain seam",
     "Exhaustive destination mutations, feature switches and former-employee variants"
-  ]
+  ],
+  "finalIntegration": "eaf8aa1ef97029cd4327ba7f2568383f63d2b40c",
+  "finalIntegrationMerge": "8739e051d7c7e33dc639b1cf8e43dbe4e5e6159e",
+  "finalSync": "docs only; app/package tree byte-identical to tested tree"
 }
