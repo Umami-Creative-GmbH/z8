@@ -1,0 +1,447 @@
+{
+  "sourceCommit": "78d8c4af9764d159ca8dc12e772af3c835b77b3c",
+  "boundary": "Real historical Calendar consumer at 78d8c4af9764d159ca8dc12e772af3c835b77b3c; shared Sidebar/Sheet/Tooltip matched current integration before correction. Only Sidebar production source differs between these runs. Four earlier shared-error handlers remain overlaid equally; no fabricated app response/state. This is a shared-shell consumer-source comparison, not final-current Calendar/page/domain acceptance.",
+  "results": [
+    {
+      "variant": {
+        "name": "large-collapsed",
+        "font": "Large",
+        "collapsed": true,
+        "reduce": false
+      },
+      "before": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 324,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [
+          {
+            "tag": "DIV",
+            "slot": "tooltip-content",
+            "role": null,
+            "text": "Calendar",
+            "hidden": true,
+            "ariaHidden": null,
+            "display": "none"
+          }
+        ],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "18px",
+        "notification": "denied"
+      },
+      "immediate": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 324,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "18px",
+        "notification": "denied"
+      },
+      "closedAfterFirst": false,
+      "after": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 324,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "18px",
+        "notification": "denied"
+      },
+      "second": {
+        "expanded": "false",
+        "sheet": null,
+        "focus": {
+          "tag": "BUTTON",
+          "slot": "sidebar-trigger",
+          "role": null,
+          "text": "Toggle Sidebar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [],
+        "font": "18px",
+        "notification": "denied"
+      },
+      "events": [
+        {
+          "capture": true,
+          "defaultPrevented": false,
+          "target": "sidebar-menu-button",
+          "trusted": true
+        },
+        {
+          "capture": true,
+          "defaultPrevented": false,
+          "target": "sidebar-menu-button",
+          "trusted": true
+        }
+      ]
+    },
+    {
+      "variant": {
+        "name": "large-collapsed-reduced",
+        "font": "Large",
+        "collapsed": true,
+        "reduce": true
+      },
+      "before": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 324,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [
+          {
+            "tag": "DIV",
+            "slot": "tooltip-content",
+            "role": null,
+            "text": "Calendar",
+            "hidden": true,
+            "ariaHidden": null,
+            "display": "none"
+          }
+        ],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "18px",
+        "notification": "denied"
+      },
+      "immediate": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 324,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "18px",
+        "notification": "denied"
+      },
+      "closedAfterFirst": false,
+      "after": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 324,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "18px",
+        "notification": "denied"
+      },
+      "second": {
+        "expanded": "false",
+        "sheet": null,
+        "focus": {
+          "tag": "BUTTON",
+          "slot": "sidebar-trigger",
+          "role": null,
+          "text": "Toggle Sidebar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [],
+        "font": "18px",
+        "notification": "denied"
+      },
+      "events": [
+        {
+          "capture": true,
+          "defaultPrevented": false,
+          "target": "sidebar-menu-button",
+          "trusted": true
+        },
+        {
+          "capture": true,
+          "defaultPrevented": false,
+          "target": "sidebar-menu-button",
+          "trusted": true
+        }
+      ]
+    },
+    {
+      "variant": {
+        "name": "default-expanded",
+        "font": "Default",
+        "collapsed": false,
+        "reduce": false
+      },
+      "before": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 288,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [
+          {
+            "tag": "DIV",
+            "slot": "tooltip-content",
+            "role": null,
+            "text": "Calendar",
+            "hidden": true,
+            "ariaHidden": null,
+            "display": "none"
+          }
+        ],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "16px",
+        "notification": "denied"
+      },
+      "immediate": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 288,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "16px",
+        "notification": "denied"
+      },
+      "closedAfterFirst": false,
+      "after": {
+        "expanded": "true",
+        "sheet": {
+          "visualOpen": "true",
+          "left": 0,
+          "right": 288,
+          "transform": "none"
+        },
+        "focus": {
+          "tag": "A",
+          "slot": "sidebar-menu-button",
+          "role": null,
+          "text": "Calendar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [
+          {
+            "tag": "DIV",
+            "slot": "sidebar",
+            "role": "dialog",
+            "text": "SidebarDisplays the mobile sidebar.Performance smallAdminSea",
+            "hidden": false,
+            "ariaHidden": null,
+            "display": "flex"
+          }
+        ],
+        "font": "16px",
+        "notification": "denied"
+      },
+      "second": {
+        "expanded": "false",
+        "sheet": null,
+        "focus": {
+          "tag": "BUTTON",
+          "slot": "sidebar-trigger",
+          "role": null,
+          "text": "Toggle Sidebar",
+          "hidden": false,
+          "ariaHidden": null,
+          "display": "flex"
+        },
+        "tooltips": [],
+        "dialogs": [],
+        "font": "16px",
+        "notification": "denied"
+      },
+      "events": [
+        {
+          "capture": true,
+          "defaultPrevented": false,
+          "target": "sidebar-menu-button",
+          "trusted": true
+        },
+        {
+          "capture": true,
+          "defaultPrevented": false,
+          "target": "sidebar-menu-button",
+          "trusted": true
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "sidebarBlob": "66e970deda5eb4a4db099608ecd224eb752bbd4b",
+  "phase": "before"
+}
