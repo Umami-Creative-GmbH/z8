@@ -1,0 +1,37 @@
+[
+  {
+    "text": "Person 1",
+    "role": "combobox",
+    "label": null,
+    "checked": null,
+    "disabled": false
+  },
+  {
+    "text": "All employees",
+    "role": "radio",
+    "label": "All employees",
+    "checked": "true",
+    "disabled": false
+  },
+  {
+    "text": "Specific teams or employees",
+    "role": "radio",
+    "label": "Specific teams or employees",
+    "checked": "false",
+    "disabled": false
+  },
+  {
+    "text": "Save personnel file officer",
+    "role": null,
+    "label": null,
+    "checked": null,
+    "disabled": false
+  },
+  {
+    "text": "Cancel",
+    "role": null,
+    "label": null,
+    "checked": null,
+    "disabled": false
+  }
+]
