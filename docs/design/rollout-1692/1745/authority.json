@@ -1,0 +1,23 @@
+{
+  "scope": "Real synthetic manager; held actual clock POST; leaving org, then actual membership refusal. Exact membership status restored.",
+  "results": [
+    {
+      "scenario": "active-organization-cleared",
+      "heldAction": "clock_in",
+      "status": 422,
+      "code": null,
+      "error": "Employee profile not found",
+      "entriesBefore": 544,
+      "entriesAfter": 544
+    },
+    {
+      "scenario": "membership-pending",
+      "heldAction": "clock_in",
+      "status": 422,
+      "code": null,
+      "error": "Not authenticated",
+      "entriesBefore": 544,
+      "entriesAfter": 544
+    }
+  ]
+}

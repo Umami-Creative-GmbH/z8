@@ -1,0 +1,15 @@
+{
+  "errors": [],
+  "h1": [
+    "Time Tracking"
+  ],
+  "records": {
+    "groupedRows": 11,
+    "allRows": 11
+  },
+  "sidebarPersisted": true,
+  "phoneDrawer": {
+    "outcome": "unverified",
+    "reason": "Two preliminary focused-link Escape probes timed out waiting for dialog removal; subsequent inspection showed no dialog and focus at Toggle Sidebar. No fresh drawer-close pass claimed."
+  }
+}

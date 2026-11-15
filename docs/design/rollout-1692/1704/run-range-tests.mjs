@@ -12,4 +12,3 @@ const executable=process.env.npm_execpath;
 const args=['exec','vitest','run','--project','integration','src/lib/analytics/overtime-range.integration.test.ts','src/lib/analytics/work-hours-range.integration.test.ts','src/lib/analytics/team-performance-range.integration.test.ts'];
 const result=spawnSync(executable.endsWith('.exe')?executable:process.execPath,executable.endsWith('.exe')?args:[executable,...args],{cwd:resolve('apps/webapp'),env:{...process.env,APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL:runtime.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL,APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL:runtime.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL},stdio:'inherit',windowsHide:true});
 process.exitCode=result.status??1;
-

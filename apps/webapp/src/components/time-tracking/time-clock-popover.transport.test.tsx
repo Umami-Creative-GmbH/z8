@@ -4,6 +4,8 @@ import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useTranslate } from "@tolgee/react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { BrowserClockCommandCapabilities } from "@/lib/time-tracking/browser-clock-command";
 
@@ -17,6 +19,8 @@ const boundary = vi.hoisted(() => ({
 	offline: false,
 	capabilities: null as BrowserClockCommandCapabilities | null,
 	driving: vi.fn(),
+	updateTimezone: vi.fn(),
+	browserTimezone: "Europe/Berlin",
 	subject: {
 		userId: "user-a",
 		organizationId: "org-a",
@@ -24,6 +28,13 @@ const boundary = vi.hoisted(() => ({
 		role: "employee",
 		isLoading: false,
 	},
+}));
+vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
+	updateTimezone: boundary.updateTimezone,
+}));
+vi.mock("@/lib/time-tracking/timezone-capture", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/timezone-capture")>()),
+	getBrowserTimezone: () => boundary.browserTimezone,
 }));
 vi.mock("@/lib/auth-client", () => ({
 	useSession: () => ({
@@ -34,7 +45,9 @@ vi.mock("@/lib/auth-client", () => ({
 		isPending: false,
 	}),
 }));
-vi.mock("@/hooks/use-organization", () => ({ useOrganization: () => boundary.subject }));
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => boundary.subject,
+}));
 vi.mock("@/hooks/use-offline-clock", () => ({
 	useOfflineClock: () => ({
 		isOnline: !boundary.offline,
@@ -47,7 +60,9 @@ vi.mock("@/hooks/use-offline-clock", () => ({
 		workerCommandVersions: [],
 	}),
 }));
-vi.mock("@/lib/time-tracking/web-clock-status-client",()=>({getWebClockStatus:boundary.status}));
+vi.mock("@/lib/time-tracking/web-clock-status-client", () => ({
+	getWebClockStatus: boundary.status,
+}));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	getTimeClockStatus: boundary.status,
 	getAssignedProjects: boundary.projects,
@@ -65,7 +80,10 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/clock-vehicle-use", () => ({
 	changeLiveVehicleUse: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/vehicle-use-warnings", () => ({
-	checkVehicleUseWarnings: async () => ({ success: true, data: { warnings: [] } }),
+	checkVehicleUseWarnings: async () => ({
+		success: true,
+		data: { warnings: [] },
+	}),
 }));
 vi.mock("@/app/[locale]/(app)/settings/position-stamps/actions", () => ({
 	getOwnPositionCaptureAction: async () => ({ success: false, error: "off" }),
@@ -111,6 +129,8 @@ const live = {
 beforeEach(() => {
 	vi.clearAllMocks();
 	boundary.offline = false;
+	boundary.browserTimezone = "Europe/Berlin";
+	boundary.updateTimezone.mockResolvedValue({ success: true });
 	boundary.capabilities = null;
 	boundary.subject.userId = "user-a";
 	boundary.subject.organizationId = "org-a";
@@ -120,7 +140,10 @@ beforeEach(() => {
 	boundary.status.mockResolvedValue(live);
 	boundary.projects.mockResolvedValue({ success: true, data: [] });
 	boundary.categories.mockResolvedValue({ success: true, data: [] });
-	boundary.vehicleStatus.mockResolvedValue({ success: true, data: { mode: "off", live: null } });
+	boundary.vehicleStatus.mockResolvedValue({
+		success: true,
+		data: { mode: "off", live: null },
+	});
 	boundary.vehicles.mockResolvedValue({
 		success: true,
 		data: { mode: "off", live: null, vehicles: [] },
@@ -149,6 +172,191 @@ function showClock(client = new QueryClient({ defaultOptions: { queries: { retry
 		</QueryClientProvider>,
 	);
 }
+it("hydrates the streamed header when another clock consumer has already populated the shared query", async () => {
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	const frame = () => (
+		<QueryClientProvider client={client}>
+			<TimeClockPopover />
+		</QueryClientProvider>
+	);
+	const container = document.createElement("div");
+	container.innerHTML = renderToString(frame());
+	document.body.append(container);
+	client.setQueryData(queryKeys.timeClock.status(), live);
+	const errors: unknown[] = [];
+	const root = hydrateRoot(container, frame(), {
+		onRecoverableError: (error) => errors.push(error),
+	});
+	try {
+		await screen.findByRole("button", { name: "Clock Out" });
+		expect(errors).toEqual([]);
+	} finally {
+		await act(async () => root.unmount());
+		container.remove();
+		client.clear();
+	}
+});
+
+it("asks before the assembled header sends a clock-out from New York with a saved Berlin timezone", async () => {
+	boundary.browserTimezone = "America/New_York";
+	const request = vi.fn(async () => Response.json({ success: true, data: { id: "entry-a" } }));
+	vi.stubGlobal("fetch", request);
+	showClock();
+	fireEvent.click(await screen.findByRole("button", { name: "Clock Out" }));
+	fireEvent.click(
+		within(screen.getByRole("dialog")).getByRole("button", {
+			name: "Clock Out",
+		}),
+	);
+	expect(
+		await screen.findByRole("dialog", {
+			name: "Confirm Timezone for This Entry",
+		}),
+	).toBeTruthy();
+	expect(request).not.toHaveBeenCalled();
+});
+
+async function openMismatchedClockOut() {
+	boundary.browserTimezone = "America/New_York";
+	fireEvent.click(await screen.findByRole("button", { name: "Clock Out" }));
+	fireEvent.click(
+		within(screen.getByRole("dialog")).getByRole("button", {
+			name: "Clock Out",
+		}),
+	);
+	return screen.findByRole("dialog", {
+		name: "Confirm Timezone for This Entry",
+	});
+}
+
+it("cancels a header timezone mismatch without a command or preference write", async () => {
+	showClock();
+	const prompt = await openMismatchedClockOut();
+	fireEvent.click(within(prompt).getByRole("button", { name: "Cancel" }));
+	await waitFor(() =>
+		expect(screen.queryByRole("dialog", { name: "Confirm Timezone for This Entry" })).toBeNull(),
+	);
+	expect(fetch).not.toHaveBeenCalled();
+	expect(boundary.updateTimezone).not.toHaveBeenCalled();
+	expect((screen.getByLabelText("Clock draft") as HTMLInputElement).value).toBe("Unsaved");
+});
+
+it("continues once with the confirmed event zone and prevents duplicate pending submissions", async () => {
+	let finish!: (response: Response) => void;
+	const request = vi.fn(
+		(_input: RequestInfo | URL, _init?: RequestInit) =>
+			new Promise<Response>((resolve) => {
+				finish = resolve;
+			}),
+	);
+	vi.stubGlobal("fetch", request);
+	showClock();
+	const prompt = await openMismatchedClockOut();
+	const continueOnce = within(prompt).getByRole("button", {
+		name: "Continue once",
+	});
+	fireEvent.click(continueOnce);
+	fireEvent.click(continueOnce);
+	await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
+	expect(continueOnce.hasAttribute("disabled")).toBe(true);
+	expect(within(prompt).getByRole("button", { name: "Cancel" }).hasAttribute("disabled")).toBe(
+		true,
+	);
+	expect(JSON.parse(String(request.mock.calls[0][1]?.body))).toMatchObject({
+		action: "clock_out",
+		browserTimezone: "America/New_York",
+	});
+	expect(boundary.updateTimezone).not.toHaveBeenCalled();
+	await act(async () => finish(Response.json({ success: true, data: { id: "entry-a" } })));
+	await screen.findByText("You've clocked out!");
+});
+
+it("retains a failed timezone save for retry and sends only after the saved preference succeeds", async () => {
+	boundary.updateTimezone.mockResolvedValueOnce({
+		success: false,
+		error: "Try saving again",
+	});
+	const request = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+		Response.json({ success: true, data: { id: "entry-a" } }),
+	);
+	vi.stubGlobal("fetch", request);
+	showClock();
+	const prompt = await openMismatchedClockOut();
+	fireEvent.click(
+		within(prompt).getByRole("button", {
+			name: "Update timezone and continue",
+		}),
+	);
+	await waitFor(() => expect(boundary.updateTimezone).toHaveBeenCalledTimes(1));
+	await waitFor(() =>
+		expect(
+			within(prompt).getByRole("button", { name: "Continue once" }).hasAttribute("disabled"),
+		).toBe(false),
+	);
+	expect(request).not.toHaveBeenCalled();
+	fireEvent.click(
+		within(prompt).getByRole("button", {
+			name: "Update timezone and continue",
+		}),
+	);
+	await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
+	expect(boundary.updateTimezone).toHaveBeenLastCalledWith("America/New_York");
+	expect(JSON.parse(String(request.mock.calls[0][1]?.body)).browserTimezone).toBe(
+		"America/New_York",
+	);
+});
+
+it.each([false, true])(
+	"does not resume after scope changes during preference saving (remount=%s)",
+	async (remount) => {
+		let finish!: (value: { success: true }) => void;
+		boundary.updateTimezone.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		);
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const view = showClock(client);
+		const prompt = await openMismatchedClockOut();
+		fireEvent.click(
+			within(prompt).getByRole("button", {
+				name: "Update timezone and continue",
+			}),
+		);
+		await waitFor(() => expect(boundary.updateTimezone).toHaveBeenCalledTimes(1));
+		expect(fetch).not.toHaveBeenCalled();
+		boundary.subject.organizationId = "org-b";
+		boundary.subject.employeeId = "employee-b";
+		await act(async () => {
+			client.setQueryData(queryKeys.timeClock.status(), {
+				...live,
+				employeeId: "employee-b",
+				activeWorkPeriod: { ...live.activeWorkPeriod, id: "work-b" },
+			});
+		});
+		view.rerender(
+			<QueryClientProvider client={client}>
+				{!remount && <input aria-label="Clock draft" defaultValue="Unsaved" />}
+				<TimeClockPopover timeFormat="12h" />
+			</QueryClientProvider>,
+		);
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", {
+					name: "Confirm Timezone for This Entry",
+				}),
+			).toBeNull(),
+		);
+		await act(async () => finish({ success: true }));
+		expect(fetch).not.toHaveBeenCalled();
+		expect(screen.queryByRole("dialog", { name: "Confirm Timezone for This Entry" })).toBeNull();
+	},
+);
 it("keeps closed clock status and open-break evidence eager without optional choice reads", async () => {
 	showClock();
 	await screen.findByRole("button", { name: "Clock Out" });
@@ -172,7 +380,9 @@ it("shows unknown status as loading rather than a clocked-out action", async () 
 it("keeps failed current status unavailable until explicit retry succeeds", async () => {
 	boundary.status.mockRejectedValueOnce(new Error("Status unavailable"));
 	showClock();
-	const retry = await screen.findByRole("button", { name: "Retry clock status" });
+	const retry = await screen.findByRole("button", {
+		name: "Retry clock status",
+	});
 	expect(screen.queryByRole("button", { name: "Clock In" })).toBeNull();
 	expect(screen.queryByRole("button", { name: "Clock Out" })).toBeNull();
 	fireEvent.click(retry);
@@ -227,7 +437,9 @@ it.each([false, true])(
 				: { ...live, isClockedIn: false, activeWorkPeriod: null },
 		);
 		showClock();
-		const trigger = await screen.findByRole("button", { name: onBreak ? "On break" : "Clock In" });
+		const trigger = await screen.findByRole("button", {
+			name: onBreak ? "On break" : "Clock In",
+		});
 		expect(boundary.projects).not.toHaveBeenCalled();
 		fireEvent.click(trigger);
 		expect(
@@ -244,7 +456,10 @@ it("keeps clock controls and driving advice usable while selectors are held, fai
 				finish = resolve;
 			}),
 	);
-	boundary.categories.mockResolvedValueOnce({ success: false, error: "Categories unavailable" });
+	boundary.categories.mockResolvedValueOnce({
+		success: false,
+		error: "Categories unavailable",
+	});
 	boundary.driving.mockResolvedValue({
 		success: true,
 		data: {
@@ -271,7 +486,11 @@ it("keeps clock controls and driving advice usable while selectors are held, fai
 	expect((screen.getByLabelText("Clock draft") as HTMLInputElement).value).toBe("Unsaved");
 });
 it("keeps vehicle expectations visible and permits a real clock command while optional vehicle choices are held", async () => {
-	boundary.status.mockResolvedValue({ ...live, isClockedIn: false, activeWorkPeriod: null });
+	boundary.status.mockResolvedValue({
+		...live,
+		isClockedIn: false,
+		activeWorkPeriod: null,
+	});
 	boundary.vehicleStatus.mockResolvedValue({
 		success: true,
 		data: { mode: "expected", live: null },
@@ -317,12 +536,17 @@ function FullClockChoices() {
 	);
 }
 it("shares in-flight and fresh choice requests with the full clock selectors", async () => {
-	boundary.vehicleStatus.mockResolvedValue({ success: true, data: { mode: "asked", live: null } });
+	boundary.vehicleStatus.mockResolvedValue({
+		success: true,
+		data: { mode: "asked", live: null },
+	});
 	boundary.vehicles.mockResolvedValue({
 		success: true,
 		data: { mode: "asked", live: null, vehicles: [] },
 	});
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
 	let finish: (value: unknown) => void = () => {};
 	boundary.projects.mockImplementationOnce(
 		() =>
@@ -347,6 +571,7 @@ it("shares in-flight and fresh choice requests with the full clock selectors", a
 });
 it("retains offline admission and device-only capture without fetching choice lists", async () => {
 	boundary.offline = true;
+	boundary.browserTimezone = "America/New_York";
 	boundary.capabilities = {
 		submit: "available",
 		commandVersions: [2],
@@ -358,7 +583,9 @@ it("retains offline admission and device-only capture without fetching choice li
 		},
 	};
 	boundary.queue.mockResolvedValue({ success: true });
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
 	client.setQueryData(queryKeys.timeClock.status(), live);
 	onlineManager.setOnline(false);
 	showClock(client);
@@ -368,6 +595,7 @@ it("retains offline admission and device-only capture without fetching choice li
 	expect(boundary.queue.mock.calls[0][0]).toMatchObject({
 		type: "clock_out",
 		organizationId: "org-a",
+		browserTimezone: "America/New_York",
 	});
 	expect(boundary.projects).not.toHaveBeenCalled();
 	expect(boundary.categories).not.toHaveBeenCalled();
@@ -377,7 +605,9 @@ it("retains offline admission and device-only capture without fetching choice li
 
 it("keeps a failed cached clocked-out status unavailable instead of enabling Clock In", async () => {
 	boundary.status.mockRejectedValue(new Error("Status unavailable"));
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
 	client.setQueryData(
 		queryKeys.timeClock.status(),
 		{ ...live, isClockedIn: false, activeWorkPeriod: null },
@@ -389,7 +619,9 @@ it("keeps a failed cached clocked-out status unavailable instead of enabling Clo
 });
 it("refuses offline capture in a non-adopted organization before storing or sending anything", async () => {
 	boundary.offline = true;
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
 	client.setQueryData(queryKeys.timeClock.status(), {
 		...live,
 		isClockedIn: false,
@@ -398,7 +630,11 @@ it("refuses offline capture in a non-adopted organization before storing or send
 	onlineManager.setOnline(false);
 	showClock(client);
 	fireEvent.click(await screen.findByRole("button", { name: "Clock In" }));
-	fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Clock In" }));
+	fireEvent.click(
+		within(screen.getByRole("dialog")).getByRole("button", {
+			name: "Clock In",
+		}),
+	);
 	expect(
 		await screen.findByText(
 			"Clocking needs a connection in this organization. Reconnect and try again.",
@@ -421,16 +657,25 @@ it("keeps a chosen project's task requirement through list failure and local ret
 		],
 	};
 	boundary.projects.mockResolvedValue(projects);
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
 	showClock(client);
 	fireEvent.click(await screen.findByRole("button", { name: "Clock Out" }));
 	await screen.findByText("Choose a task");
 	const clockOut = () =>
-		within(screen.getByRole("dialog")).getByRole("button", { name: "Clock Out" });
+		within(screen.getByRole("dialog")).getByRole("button", {
+			name: "Clock Out",
+		});
 	expect(clockOut().hasAttribute("disabled")).toBe(true);
-	boundary.projects.mockResolvedValueOnce({ success: false, error: "List unavailable" });
+	boundary.projects.mockResolvedValueOnce({
+		success: false,
+		error: "List unavailable",
+	});
 	await act(async () => {
-		await client.invalidateQueries({ queryKey: queryKeys.projects.assignable("org-a", "user-a") });
+		await client.invalidateQueries({
+			queryKey: queryKeys.projects.assignable("org-a", "user-a"),
+		});
 	});
 	const retry = await screen.findByRole("button", { name: "Retry Project" });
 	expect(clockOut().hasAttribute("disabled")).toBe(true);
@@ -441,7 +686,12 @@ it("keeps a chosen project's task requirement through list failure and local ret
 it("preserves an entered vehicle reading across choice-list failure and retry, then sends it with one refresh owner", async () => {
 	const vehicleLive = {
 		workPeriodId: "work-a",
-		vehicleUse: { vehicle: { kind: "own" }, startKm: 100, endKm: null, distanceKm: null },
+		vehicleUse: {
+			vehicle: { kind: "own" },
+			startKm: 100,
+			endKm: null,
+			distanceKm: null,
+		},
 	};
 	boundary.vehicleStatus.mockResolvedValue({
 		success: true,
@@ -459,12 +709,20 @@ it("preserves an entered vehicle reading across choice-list failure and retry, t
 	vi.stubGlobal("fetch", request);
 	showClock();
 	fireEvent.click(await screen.findByRole("button", { name: "Clock Out" }));
-	const retry = await screen.findByRole("button", { name: "Retry Vehicle choices" });
-	fireEvent.change(screen.getByLabelText("End reading (km)"), { target: { value: "120" } });
+	const retry = await screen.findByRole("button", {
+		name: "Retry Vehicle choices",
+	});
+	fireEvent.change(screen.getByLabelText("End reading (km)"), {
+		target: { value: "120" },
+	});
 	fireEvent.click(retry);
 	await waitFor(() => expect(boundary.vehicles).toHaveBeenCalledTimes(2));
 	expect((screen.getByLabelText("End reading (km)") as HTMLInputElement).value).toBe("120");
-	fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Clock Out" }));
+	fireEvent.click(
+		within(screen.getByRole("dialog")).getByRole("button", {
+			name: "Clock Out",
+		}),
+	);
 	await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
 	expect(JSON.parse(String(request.mock.calls[0][1]?.body)).vehicleUse).toEqual({ endKm: 120 });
 	await waitFor(() => expect(boundary.vehicles).toHaveBeenCalledTimes(3));
@@ -482,7 +740,9 @@ it("keeps optional choice caches scoped to the current account and organization"
 			},
 		],
 	}));
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
 	const frame = () => (
 		<QueryClientProvider client={client}>
 			<FullClockChoices />
