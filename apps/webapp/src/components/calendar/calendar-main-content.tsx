@@ -96,7 +96,7 @@ export function CalendarMainContent({
 							{selectedEmployeeName}
 						</h2>
 					) : null}
-					{!isManagerOrAbove ? (
+					{!isManagerOrAbove && selectedEmployeeId === currentEmployeeId ? (
 						<p className="text-sm font-medium">
 							{t("calendar.employeeSelector.myCalendar", "My Calendar")}
 						</p>

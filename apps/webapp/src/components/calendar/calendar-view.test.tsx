@@ -575,6 +575,22 @@ describe("CalendarView", () => {
 		).toBe("week");
 	});
 
+	it("does not label a selected colleague as My Calendar while management controls are unavailable", () => {
+		mockIsManagerOrAbove.mockReturnValue(false);
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+				initialEmployeeName="Ada Lovelace"
+			/>,
+		);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Ada Lovelace" }),
+		).toBeTruthy();
+		expect(screen.queryByText("My Calendar")).toBeNull();
+	});
+
 	it("retries a failed read beside retained records without resetting the view", () => {
 		mockCalendarData.error = new Error("Read unavailable");
 		render(
