@@ -3,6 +3,7 @@ import { IconFilterOff, IconPackage, IconSearch } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { type ReactNode, useId, useState } from "react";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { ShowFormerEmployeesSwitch } from "@/components/former-employees/former-employee-ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -128,96 +129,105 @@ function FilterBar({
 		...data.types.map((type) => ({ value: type.id, label: type.name })),
 	];
 	return (
-		<CardContent className="flex flex-wrap items-center gap-3 pb-4">
-			<div className="relative w-full min-w-48 sm:max-w-xs sm:flex-1">
-				<IconSearch
-					className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-					aria-hidden="true"
-				/>
-				<label htmlFor={searchId} className="sr-only">
-					{t("settings.equipment.list.search", "Search assignments")}
-				</label>
-				<Input
-					id={searchId}
-					type="search"
-					name="equipment-search"
-					autoComplete="off"
-					maxLength={100}
-					className="pl-8"
-					placeholder={t(
-						"settings.equipment.list.searchPlaceholder",
-						"Search identifier, type or holder",
-					)}
-					value={filters.search}
-					onChange={(event) =>
-						onFiltersChange({ ...filters, search: event.target.value })
-					}
-				/>
-			</div>
-			{showHolder ? (
-				<SearchableSelect
-					className="w-full sm:w-48"
-					aria-label={t("settings.equipment.filters.holder", "Holder")}
-					options={holderOptions}
-					value={filters.holderId ?? ""}
-					onValueChange={(value) =>
-						onFiltersChange({ ...filters, holderId: value || null })
-					}
-					placeholder={allHolders}
-					searchPlaceholder={t(
-						"settings.equipment.list.searchHolders",
-						"Search holders…",
-					)}
-					emptyText={t("settings.equipment.list.noHolder", "No holder found.")}
-					allowEmpty
-					emptyLabel={allHolders}
-				/>
-			) : null}
-			{data.types.length ? (
-				<div className="w-full sm:w-44">
-					<span id={typeId} className="sr-only">
-						{t("settings.equipment.filters.type", "Type")}
-					</span>
-					<Select
-						value={filters.typeId ?? ALL_TYPES}
-						items={typeItems}
-						onValueChange={(value) =>
-							onFiltersChange({
-								...filters,
-								typeId: !value || value === ALL_TYPES ? null : value,
-							})
-						}
-					>
-						<SelectTrigger aria-labelledby={typeId} className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{typeItems.map((item) => (
-								<SelectItem key={item.value} value={item.value}>
-									{item.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-			) : null}
-			{showHolder ? (
-				<ShowFormerEmployeesSwitch
-					checked={filters.former !== "hide"}
-					onCheckedChange={(checked) =>
-						onFiltersChange({
-							...filters,
-							former: checked ? "show" : "hide",
-						})
-					}
-				/>
-			) : null}
-			{filtered ? (
-				<Button variant="ghost" size="sm" onClick={onClear}>
-					<IconFilterOff className="size-4" aria-hidden="true" />
-					{t("settings.equipment.filters.clear", "Clear filters")}
-				</Button>
-			) : null}
+		<CardContent className="pb-4">
+			<DataTableToolbar
+				filterControls={
+					<>
+						<div className="relative w-full min-w-48 sm:max-w-xs sm:flex-1">
+							<IconSearch
+								className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+								aria-hidden="true"
+							/>
+							<label htmlFor={searchId} className="sr-only">
+								{t("settings.equipment.list.search", "Search assignments")}
+							</label>
+							<Input
+								id={searchId}
+								type="search"
+								name="equipment-search"
+								autoComplete="off"
+								maxLength={100}
+								className="pl-8"
+								placeholder={t(
+									"settings.equipment.list.searchPlaceholder",
+									"Search identifier, type or holder",
+								)}
+								value={filters.search}
+								onChange={(event) =>
+									onFiltersChange({ ...filters, search: event.target.value })
+								}
+							/>
+						</div>
+						{showHolder ? (
+							<SearchableSelect
+								className="w-full sm:w-48"
+								aria-label={t("settings.equipment.filters.holder", "Holder")}
+								options={holderOptions}
+								value={filters.holderId ?? ""}
+								onValueChange={(value) =>
+									onFiltersChange({ ...filters, holderId: value || null })
+								}
+								placeholder={allHolders}
+								searchPlaceholder={t(
+									"settings.equipment.list.searchHolders",
+									"Search holders…",
+								)}
+								emptyText={t(
+									"settings.equipment.list.noHolder",
+									"No holder found.",
+								)}
+								allowEmpty
+								emptyLabel={allHolders}
+							/>
+						) : null}
+						{data.types.length ? (
+							<div className="w-full sm:w-44">
+								<span id={typeId} className="sr-only">
+									{t("settings.equipment.filters.type", "Type")}
+								</span>
+								<Select
+									value={filters.typeId ?? ALL_TYPES}
+									items={typeItems}
+									onValueChange={(value) =>
+										onFiltersChange({
+											...filters,
+											typeId: !value || value === ALL_TYPES ? null : value,
+										})
+									}
+								>
+									<SelectTrigger aria-labelledby={typeId} className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{typeItems.map((item) => (
+											<SelectItem key={item.value} value={item.value}>
+												{item.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						) : null}
+						{showHolder ? (
+							<ShowFormerEmployeesSwitch
+								checked={filters.former !== "hide"}
+								onCheckedChange={(checked) =>
+									onFiltersChange({
+										...filters,
+										former: checked ? "show" : "hide",
+									})
+								}
+							/>
+						) : null}
+						{filtered ? (
+							<Button variant="ghost" size="sm" onClick={onClear}>
+								<IconFilterOff className="size-4" aria-hidden="true" />
+								{t("settings.equipment.filters.clear", "Clear filters")}
+							</Button>
+						) : null}
+					</>
+				}
+			/>
 		</CardContent>
 	);
 }

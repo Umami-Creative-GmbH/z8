@@ -1,6 +1,7 @@
 "use client";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EquipmentOverviewHeader } from "./equipment-overview-header";
 
 const SHELL = "@container/main flex flex-1 flex-col gap-6 py-4 md:py-6";
 
@@ -36,7 +37,11 @@ export function EquipmentLoading({
 					<Skeleton aria-hidden="true" className="h-8 w-40" />
 				</div>
 			) : null}
-			<HeaderSkeleton />
+			{variant === "overview" ? (
+				<EquipmentOverviewHeader />
+			) : (
+				<HeaderSkeleton />
+			)}
 			{variant === "overview" ? (
 				<div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
 					{[0, 1, 2, 3].map((key) => (
