@@ -1,4 +1,4 @@
-// pnpm node docs/design/rollout-1692/1701/compare-consumers.mjs
+// pnpm node docs/design/rollout-1692/1701/compare-consumers.mjs <owned-private-fixture>
 // Captures the same fixture twice. It replaces only this ticket's seven consumer files,
 // and restores exact bytes in finally. No database writes or app build/cache resets.
 import { readFile, writeFile } from "node:fs/promises";
