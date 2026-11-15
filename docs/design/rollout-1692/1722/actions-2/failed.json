@@ -1,0 +1,28 @@
+{
+  "message": "Waiting failed: 30000ms exceeded",
+  "checks": [
+    {
+      "name": "real own request list and original destinations",
+      "links": [
+        "/en/travel-expenses",
+        "/en/absences",
+        "/en/time-tracking"
+      ]
+    },
+    {
+      "name": "declined native confirmation keeps pending absence"
+    },
+    {
+      "name": "held cancellation exposes pending control"
+    },
+    {
+      "name": "late cancellation refused under current other account; original correction still pending"
+    },
+    {
+      "name": "other account reload has no original employee requests"
+    },
+    {
+      "name": "return to original account restores own requests"
+    }
+  ]
+}

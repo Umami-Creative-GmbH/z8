@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "actor": "small-manager",
+      "h1": 1,
+      "foreignFixture": false,
+      "decisionActions": false,
+      "records": 104
+    },
+    {
+      "actor": "small-admin",
+      "h1": 1,
+      "foreignFixture": false,
+      "decisionActions": false,
+      "records": 104
+    },
+    {
+      "actor": "small-restricted",
+      "h1": 1,
+      "foreignFixture": false,
+      "decisionActions": false,
+      "records": 104
+    }
+  ]
+}
