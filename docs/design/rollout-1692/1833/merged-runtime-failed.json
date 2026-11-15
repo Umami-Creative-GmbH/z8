@@ -1,0 +1,26 @@
+{
+  "kind": "real local Next / Better Auth / disposable PostgreSQL; transport interception only holds or aborts real requests, never substitutes data",
+  "checks": [],
+  "errors": [],
+  "pageSourceSHA256": "402bd3efc0758f4245ee046df7cdab8a937c78e37f473904a6e6f8a018e14bdb",
+  "bounds": {
+    "origin": "http://localhost:50761",
+    "next": "16.4.6 Turbopack, default local root/config/dependencies",
+    "viewportSizes": [
+      [
+        1600,
+        1000
+      ],
+      [
+        390,
+        844
+      ],
+      [
+        2400,
+        1200
+      ]
+    ],
+    "fixture": "own generated disposable 8/200-person organizations; small-admin and small-restricted actors"
+  },
+  "browser": "Chrome/157.0.8103.52"
+}
