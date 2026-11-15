@@ -6,6 +6,13 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts the licence role page while retaining independent check and settings headings", () => {
+		expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
+		expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
+			false,
+		);
+		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);
+	});
 	it("adopts only the independent legacy approvals page", () => {
 		expect(appPageOwnsHeading("/de/approvals")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);

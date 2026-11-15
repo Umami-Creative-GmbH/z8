@@ -3,7 +3,13 @@ import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useId } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -28,13 +34,18 @@ export function DrivingLicenceStatusSummary({
 	record,
 	audience = "employee",
 }: {
-	record: Pick<DrivingLicenceEmployeeRecord, "status" | "classes" | "personWideReason">;
+	record: Pick<
+		DrivingLicenceEmployeeRecord,
+		"status" | "classes" | "personWideReason"
+	>;
 	/** The verifier's check page (#1429) words the empty state for someone else's record. */
 	audience?: "employee" | "verifier";
 }) {
 	const { t } = useTranslate();
 	const titleId = useId();
-	const explained = record.classes.filter((entry) => entry.status !== "active" && entry.reason);
+	const explained = record.classes.filter(
+		(entry) => entry.status !== "active" && entry.reason,
+	);
 	return (
 		<Card role="region" aria-labelledby={titleId}>
 			<CardHeader>
@@ -65,10 +76,18 @@ export function DrivingLicenceStatusSummary({
 						{/* react-doctor-disable-next-line react-doctor/duplicate-jsx-subtree */}
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("drivingLicence.summary.class", "Class")}</TableHead>
-								<TableHead>{t("drivingLicence.summary.status", "Status")}</TableHead>
-								<TableHead>{t("drivingLicence.summary.validThrough", "Valid through")}</TableHead>
-								<TableHead>{t("drivingLicence.summary.restrictions", "Restrictions")}</TableHead>
+								<TableHead>
+									{t("drivingLicence.summary.class", "Class")}
+								</TableHead>
+								<TableHead>
+									{t("drivingLicence.summary.status", "Status")}
+								</TableHead>
+								<TableHead>
+									{t("drivingLicence.summary.validThrough", "Valid through")}
+								</TableHead>
+								<TableHead>
+									{t("drivingLicence.summary.restrictions", "Restrictions")}
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -86,7 +105,9 @@ export function DrivingLicenceStatusSummary({
 											timezone={entry.deadlineTimezone}
 										/>
 									</TableCell>
-									<TableCell className="break-words">{entry.restrictions || "—"}</TableCell>
+									<TableCell className="break-words">
+										{entry.restrictions || "—"}
+									</TableCell>
 								</TableRow>
 							))}
 						</TableBody>
@@ -94,7 +115,10 @@ export function DrivingLicenceStatusSummary({
 				) : (
 					<p className="text-sm text-muted-foreground">
 						{audience === "verifier"
-							? t("drivingLicence.summary.emptyForVerifier", "No class is authorized yet.")
+							? t(
+									"drivingLicence.summary.emptyForVerifier",
+									"No class is authorized yet.",
+								)
 							: t(
 									"drivingLicence.summary.empty",
 									"No class is authorized yet. A verifier records your first original check.",
@@ -156,10 +180,12 @@ export function MyDrivingLicence({
 					)}
 				</p>
 			) : null}
-			<DrivingLicenceStatusSummary record={record} />
+			<div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+				<DrivingLicenceStatusSummary record={record} />
+				{intendedDriver ? <ReportDrivingImpediment /> : null}
+			</div>
 			<DrivingLicenceCheckEvidence record={record} />
 			<DrivingLicenceHistoryPanel employeeId={employeeId} />
-			{intendedDriver ? <ReportDrivingImpediment /> : null}
 		</div>
 	);
 }

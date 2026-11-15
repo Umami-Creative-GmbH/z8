@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "name": "late check submission refused after actual grant revocation",
+      "value": "Corrective lenses"
+    },
+    {
+      "name": "successful new check alone retains suspension",
+      "value": true
+    },
+    {
+      "name": "explicit authorized reinstatement persists",
+      "value": true
+    },
+    {
+      "name": "retained ended record has evidence without check mutation",
+      "value": true
+    },
+    {
+      "name": "lifecycle browser errors",
+      "value": []
+    }
+  ],
+  "errors": []
+}
