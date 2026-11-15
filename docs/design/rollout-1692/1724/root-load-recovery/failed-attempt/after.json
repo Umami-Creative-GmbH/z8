@@ -1,0 +1,25 @@
+{
+  "phase": "after",
+  "classification": "Actual scoped read actions; one held request and one browser transport failure, no fabricated action result. Two manager-link edits are disposable fixture setup.",
+  "checks": [
+    {
+      "name": "held the manifest-identified getOrgExplorerPeople action for current-roster Person 199",
+      "passed": true
+    }
+  ],
+  "captures": [],
+  "pageErrors": [],
+  "requests": [
+    {
+      "functionName": "getOrgExplorerPeople",
+      "filename": "apps/webapp/src/app/[locale]/(app)/organization/actions.ts",
+      "phase": "hold"
+    },
+    {
+      "functionName": "getOrgExplorerPeople",
+      "filename": "apps/webapp/src/app/[locale]/(app)/organization/actions.ts",
+      "phase": "normal"
+    }
+  ],
+  "failure": "Waiting failed: 45000ms exceeded"
+}

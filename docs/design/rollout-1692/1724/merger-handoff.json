@@ -1,0 +1,516 @@
+{
+  "status": "MERGED_CONDITIONAL_NOT_VERIFIED_PENDING_ROOT_SOURCE_CORRECTIONS",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "09f751e39bdd0f5fb9b0338e2a819e0a50a069ef",
+  "incoming": "796f49b212ec9688a9d89186cb7c59d0c427c781",
+  "merge": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+  "parents": [
+    "09f751e39bdd0f5fb9b0338e2a819e0a50a069ef",
+    "796f49b212ec9688a9d89186cb7c59d0c427c781"
+  ],
+  "tree": "69056400988065e69a034d429d5c275c03e3d60e",
+  "independentTreeMatches": true,
+  "clean": true,
+  "exclusiveOwnership": "RELEASE",
+  "rootNext": "Root owns correction of the two independently reproduced lifecycle blockers, permanent regression tests, fresh correction checks and any guarded disposable PG/runtime scope. No verifiedCommit/ledger/readiness claim by merger.",
+  "tests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 19,
+        "cases": 235,
+        "passed": 235,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 50,
+        "cases": 573,
+        "passed": 573,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 19,
+        "overlapCases": 235
+      }
+    ],
+    "uniqueFiles": 50,
+    "uniqueCases": 573,
+    "method": "Normalized absolute file path plus fullName multiset, retaining parameterized duplicates. Every overlapping file has identical fullName multiplicity. Repeated runs do not add coverage.",
+    "additionalDiagnosticFailures": {
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "../../.tmp/merge1724-audit/source-contract.config.mjs",
+        "-t",
+        "root audit",
+        "--maxWorkers=1",
+        "--reporter=json",
+        "--outputFile",
+        "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1724-audit/source-contract.json"
+      ],
+      "failed": 2,
+      "passed": 0,
+      "nonSelectedCopiedCases": 34,
+      "reproduced": [
+        "merger source lifecycle contracts root audit refresh reissues a held selected-person read",
+        "merger source lifecycle contracts root audit retries a failed branch after Activity return"
+      ],
+      "acceptance": "Blocked; two failing diagnostic regressions are not counted as successful coverage."
+    }
+  },
+  "types": {
+    "passed": true,
+    "scope": "Full next typegen, application tsconfig.typecheck,workflow-contracts and smoke, fresh merged tree"
+  },
+  "doctor": {
+    "changedSourceFiles": 11,
+    "diagnostics": 0,
+    "remoteScore": false,
+    "supplyChain": false
+  },
+  "biome": {
+    "defaultAll11": false,
+    "normalCRLFAll11": true,
+    "explicitWebappCRLFAll11": false,
+    "organizationNormalCRLF10": true,
+    "metadataExplicitCRLF": false,
+    "lintImportAll11": true,
+    "sourceFormattingEdits": false
+  },
+  "preservation": {
+    "priorVerifiedAncestors": 36,
+    "priorRolloutPathsUnchanged": 1781,
+    "unaffectedPriorPathsUnchanged": 12006,
+    "incomingUnalteredPaths": 39,
+    "noDeletion": true,
+    "sourcePaths": [
+      "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/page.tsx",
+      "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "allOtherSourcesUnchanged": true,
+    "root1722CorrectionAnd1723HookAndAllArchivesPreserved": true,
+    "allPriorHeadingOptinsPreserved": true,
+    "metadataOnlySemanticAddition": "/organization"
+  },
+  "verifiedAncestors": [
+    {
+      "issue": 1693,
+      "verifiedCommit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5"
+    },
+    {
+      "issue": 1694,
+      "verifiedCommit": "382b8f5be837dad724d3a54274d3050b0104881f"
+    },
+    {
+      "issue": 1695,
+      "verifiedCommit": "bfacad421ffe77f50729ea5895c546698ef28383"
+    },
+    {
+      "issue": 1853,
+      "verifiedCommit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211"
+    },
+    {
+      "issue": 1700,
+      "verifiedCommit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde"
+    },
+    {
+      "issue": 1701,
+      "verifiedCommit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc"
+    },
+    {
+      "issue": 1820,
+      "verifiedCommit": "996074d9fcbbaeb956a1b7316f914052d8c24733"
+    },
+    {
+      "issue": 1702,
+      "verifiedCommit": "416c04fc1b65f798422ddeecb8413249b064f715"
+    },
+    {
+      "issue": 1703,
+      "verifiedCommit": "2bc30e88f63d9db3d547353f49077db0c0ee7805"
+    },
+    {
+      "issue": 1704,
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    },
+    {
+      "issue": 1705,
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    },
+    {
+      "issue": 1706,
+      "verifiedCommit": "62f92f0447a35b30b9806bca0a480f03a8f3c896"
+    },
+    {
+      "issue": 1707,
+      "verifiedCommit": "6fa8147fae492939056a76e83e327e520d921ae1"
+    },
+    {
+      "issue": 1708,
+      "verifiedCommit": "3f86b1d7e17025e89f314638a042aa1eed378ed1"
+    },
+    {
+      "issue": 1709,
+      "verifiedCommit": "97ecd83ca05ad1bab75fee84beed57f23e74c007"
+    },
+    {
+      "issue": 1710,
+      "verifiedCommit": "273320a9376b4deb60b57ba3882fc17b37ae308a"
+    },
+    {
+      "issue": 1711,
+      "verifiedCommit": "3a0274c800d218689dbe3f235184e40ab15ebbeb"
+    },
+    {
+      "issue": 1712,
+      "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+    },
+    {
+      "issue": 1713,
+      "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+    },
+    {
+      "issue": 1714,
+      "verifiedCommit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10"
+    },
+    {
+      "issue": 1715,
+      "verifiedCommit": "ad51efc8e2d39e062c8486b4ead15732c67acb30"
+    },
+    {
+      "issue": 1716,
+      "verifiedCommit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741"
+    },
+    {
+      "issue": 1717,
+      "verifiedCommit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784"
+    },
+    {
+      "issue": 1718,
+      "verifiedCommit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd"
+    },
+    {
+      "issue": 1719,
+      "verifiedCommit": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "issue": 1821,
+      "verifiedCommit": "f53de8d531fa49b70afe72a722ce3588a477d0d8"
+    },
+    {
+      "issue": 1822,
+      "verifiedCommit": "984436c44a2c44bbe99e22fb23c4dbb108534e83"
+    },
+    {
+      "issue": 1823,
+      "verifiedCommit": "65b74963b69e9536af5e862199fa43a8583473cc"
+    },
+    {
+      "issue": 1824,
+      "verifiedCommit": "fe2bed7cdcd268b59727f04fd8496730cdd21179"
+    },
+    {
+      "issue": 1825,
+      "verifiedCommit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c"
+    },
+    {
+      "issue": 1826,
+      "verifiedCommit": "40492f6233feecfac214813f28e2f1f26b3175b2"
+    },
+    {
+      "issue": 1720,
+      "verifiedCommit": "ced095089163e69b232c2bce96a40cba800186d8"
+    },
+    {
+      "issue": 1721,
+      "verifiedCommit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a"
+    },
+    {
+      "issue": 1722,
+      "verifiedCommit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27"
+    },
+    {
+      "issue": 1723,
+      "verifiedCommit": "f15492e4bc5bee60293b22797d42eacdd8296190"
+    },
+    {
+      "issue": 1745,
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    }
+  ],
+  "artifacts": {
+    "jsons": 8,
+    "scripts": 4,
+    "pngs": 11,
+    "links": 21,
+    "sourcePinChecks": 23,
+    "pairs": [
+      {
+        "name": "desktop-light",
+        "before": {
+          "width": 1600,
+          "height": 1000
+        },
+        "after": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scope": "Performance small / 8 current employees / unchanged fixture",
+        "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\""
+      },
+      {
+        "name": "wide-dark",
+        "before": {
+          "width": 2200,
+          "height": 1100
+        },
+        "after": {
+          "width": 2200,
+          "height": 1100
+        },
+        "scope": "Performance small / 8 current employees / unchanged fixture",
+        "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\""
+      },
+      {
+        "name": "phone-light",
+        "before": {
+          "width": 390,
+          "height": 844
+        },
+        "after": {
+          "width": 390,
+          "height": 844
+        },
+        "scope": "Performance small / 8 current employees / unchanged fixture",
+        "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\""
+      },
+      {
+        "name": "detail",
+        "before": {
+          "width": 1600,
+          "height": 1000
+        },
+        "after": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scope": "same fixture, manager selection",
+        "font": "detail inherits desktop; not independently measured in manifest"
+      }
+    ]
+  },
+  "whitespace": [
+    {
+      "name": "base",
+      "exitCode": 2,
+      "diagnosticLines": 453
+    },
+    {
+      "name": "incoming",
+      "exitCode": 0,
+      "diagnosticLines": 0
+    },
+    {
+      "name": "source",
+      "exitCode": 0,
+      "diagnosticLines": 0
+    }
+  ],
+  "sourceReview": {
+    "sourceRevision": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+    "scope": "Independent Standards and Spec reviews plus two ignored assembled OrgExplorerClient reproductions. No source changes by merger.",
+    "standards": [
+      {
+        "priority": "P2",
+        "file": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+        "line": 273,
+        "finding": "Refresh invalidates a pending selected-person request, reloads only already-present people and clears failures. If the selected object remains undefined, URL load dependencies do not change, leaving Loading person without recovery.",
+        "standard": "docs/refs/ux-language.md loading/error recovery and refresh contract"
+      }
+    ],
+    "spec": [
+      {
+        "priority": "P2",
+        "file": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+        "line": 273,
+        "finding": "Held selected-person read followed by shared Refresh never settles after the old response is discarded.",
+        "spec": "1724.md capability inventory: selected/deep-link failed loads gain explicit retry; refresh preserves previous shown people and invalidates stale responses.",
+        "reproduction": "partial roster excludes deb; open ?employee=deb; hold people read; refresh returns partial base roster; complete old people read successfully; actual sheet remains Loading person; expected Deb detail or usable retry"
+      },
+      {
+        "priority": "P2",
+        "file": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+        "line": 126,
+        "finding": "failedLoads stores readPeople's generation-capturing closure. React Activity cleanup increments generation but preserves failedLoads. Retry executes the old inner generation, ignores successful data and outer settleRead clears the failure.",
+        "spec": "1724.md large organization capability: retained partial-data notice and retry after failure.",
+        "reproduction": "expand missing deb branch; action fails; Activity hidden then visible; retry action succeeds; actual Deb remains absent and recovery disappears"
+      }
+    ],
+    "nonBlockingReview": [
+      "Current roster/session admission/actions/queries unchanged; every query organization scoped, current-manager/report/member roster predicates retained.",
+      "ADR0010 membership reads remain teamMembership only; lead remains separate and no invented graph relation added.",
+      "Admin settings links remain orgAdmin tier only; manager/employee/restricted reader behavior unchanged.",
+      "URL owner preserves repeated teams, employee/view state and unrelated query/hash; search retains sequence invalidation, no-match/error distinction and Escape dismissal.",
+      "Page owns one main heading in success/failure/streamed/missing-employee arrivals, shell opt-ins preserved; phone native outline and bottom-sheet primitives retained.",
+      "Tabler icons, semantic colors, shared toolbar/sheet composition and unchanged preferences respected."
+    ],
+    "artifactVisualReview": [
+      "Four primary before/after pairs show actual small8-person reporting records/phone outline and settled Person1 detail, not skeletons.",
+      "Computed font family remains the system fallback stack; CSS viewport and PNG dimensions match, default16px and supplemental saved18px readback retained. Actual installed font face not independently measured.",
+      "Primary developer overlays remain visible. Supplemental large-deep-link shows 2 Issues despite final Next empty diagnostics; later clean arrays do not erase that observed overlay.",
+      "Failed-branch image is scrolled below the recovery banner, so Retry proof comes from runtime assertion and assembled test rather than the PNG alone.",
+      "Saved18px dark phone shows settled roster but shell clock spinner; no full clock or provider acceptance claimed.",
+      "Shared shell clipping/wide dark canvas controls and other inherited build/catalog/device/zoom/transition/accessibility limits remain."
+    ],
+    "correctionOwner": "root",
+    "acceptance": "BLOCKED_PENDING_ROOT_SOURCE_CORRECTION"
+  },
+  "archivePreservation": {
+    "checks": [
+      {
+        "name": "approval-review-archive",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1710/verify-evidence.mjs"
+        ],
+        "startedAt": "2026-11-15T12:31:43.012Z",
+        "finishedAt": "2026-11-15T12:31:43.552Z"
+      },
+      {
+        "name": "equipment-recovery",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs"
+        ],
+        "startedAt": "2026-11-15T12:31:43.021Z",
+        "finishedAt": "2026-11-15T12:31:52.288Z"
+      },
+      {
+        "name": "calendar-route-arrivals",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1713/root-route-arrivals/verify-evidence.mjs"
+        ],
+        "startedAt": "2026-11-15T12:31:43.191Z",
+        "finishedAt": "2026-11-15T12:31:43.918Z"
+      },
+      {
+        "name": "mfa-continuations-preservation",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1826/root-continuations/verify-evidence.mjs",
+          "--current-source"
+        ],
+        "startedAt": "2026-11-15T12:31:43.199Z",
+        "finishedAt": "2026-11-15T12:31:47.475Z"
+      },
+      {
+        "name": "my-requests-root-correction",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1722/root-correction-listing/verify-evidence.mjs",
+          "--current-source"
+        ],
+        "startedAt": "2026-11-15T12:31:43.531Z",
+        "finishedAt": "2026-11-15T12:31:45.017Z"
+      },
+      {
+        "name": "route-inventory",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/verify-route-inventory.mjs",
+          ".",
+          "HEAD",
+          ".tmp/merge1724-audit/route-inventory.json"
+        ],
+        "startedAt": "2026-11-15T12:31:43.541Z",
+        "finishedAt": "2026-11-15T12:31:56.118Z"
+      }
+    ],
+    "classification": "Read-only archive/static current source preservation only. No fresh browser/PG/Next/nativeReact/services/provider/alias-behavior acceptance. Source-writing 1720/1721 and 1723 artifact/capture drivers deliberately not run; tracked bytes independently checked."
+  },
+  "freshness": {
+    "merger": "Native local noff merge, independent merge-tree, standards/spec source review, assembled diagnostic repros,50unique unit suites/573passed tests,fulltypes,11source Doctor,scoped formatter/lint,PNG/JSON/script/link/source pin audit, prior archive preservation.",
+    "inherited": "Worker18PG/25runtime observations/nativeReact/Next probes and all prior ticket evidence. No services/browser/PG/Next/native runtime rerun by merger.",
+    "postgres": "Root authorized narrow guarded disposable PG, explicitly deferred until root correction scope; worker18 retained as inherited.",
+    "countsNotAdded": {
+      "organizationPostgres": {
+        "suites": 1,
+        "cases": 18,
+        "freshByMerger": false
+      },
+      "workerRuntime": {
+        "observations": 25,
+        "freshByMerger": false
+      },
+      "prior1723Units": {
+        "suites": 41,
+        "cases": 495
+      },
+      "root1722Units": {
+        "suites": 48,
+        "cases": 1086
+      },
+      "root1722Postgres": {
+        "cases": 35
+      }
+    }
+  },
+  "limits": [
+    "Full build/static generation, Tolgee/catalog, provider/device, physical phone, true browser zoom, exhaustive screenreader/contrast, every locale, global transitions remain unverified.",
+    "Existing developer overlays and shared sidebar clipping retained in images; images not edited.",
+    "Prior1722 cancellation tombstone/deleted endpoint/formatting limits retained.",
+    "Prior1723 formatting/auth-Suspense warning/axe incomplete checkbox/no live two-authorized-org switch/runtime freshness distinctions retained.",
+    "Raw formatter output whitespace remains in full merge diff; source-only and incoming-relative diff checks pass.",
+    "Two source lifecycle blockers remain open; broad passing tests/Doctor do not establish explorer acceptance.",
+    "Computed system fallback font stack recorded; actual installed font face unprobed. Detail font/theme inherited rather than independently measured per capture.",
+    "Supplemental large-deep-link shows developer2Issues; failed-branch image does not show Retry at its scroll position; saved18px dark image has shell clock spinner. Settled record acceptance is limited to the explorer record/detail.",
+    "Full merge diff --check has453 diagnostic lines from raw preserved Biome output; source-only/incoming-relative checks pass.",
+    "No root source/report/ledger/README/raw evidence edits beyond authorized merge; no remote/tracker/push/PR/devmerge/deploy."
+  ],
+  "cleanup": {
+    "packageAndAuditProcesses": "All awaited pnpm/test/type/formatter/Doctor/audit/archive processes completed; no services/browser/fixtures started.",
+    "ownedRuntimeResources": 0,
+    "trackedSourceEditsByMerger": false
+  },
+  "files": {
+    "handoff": ".tmp/merge1724-audit/handoff.json",
+    "tests": ".tmp/merge1724-audit/test-summary.json",
+    "selection": ".tmp/merge1724-audit/compatibility-selection.txt",
+    "sourceReview": ".tmp/merge1724-audit/source-review.json",
+    "reproduction": ".tmp/merge1724-audit/source-contract.test.tsx",
+    "reproductionConfig": ".tmp/merge1724-audit/source-contract.config.mjs",
+    "reproductionResults": ".tmp/merge1724-audit/source-contract.json",
+    "artifactAudit": ".tmp/merge1724-audit/audit.json",
+    "archiveChecks": ".tmp/merge1724-audit/archive-checks.json"
+  }
+}

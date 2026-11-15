@@ -1,0 +1,4074 @@
+{
+  "revision": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+  "selections": [
+    {
+      "name": "exact",
+      "files": 19,
+      "cases": 235,
+      "passed": 235,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    },
+    {
+      "name": "compatibility",
+      "files": 50,
+      "cases": 573,
+      "passed": 573,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 19,
+      "overlapCases": 235
+    }
+  ],
+  "uniqueFiles": 50,
+  "uniqueCases": 573,
+  "method": "Normalized absolute file path plus fullName multiset, retaining parameterized duplicates. Every overlapping file has identical fullName multiplicity. Repeated runs do not add coverage.",
+  "workerSelection": {
+    "files": 19,
+    "cases": 234,
+    "latestMergedSelectionCases": 235,
+    "reason": "Same selection includes latest #1723 route metadata regression; no test removed."
+  },
+  "commands": {
+    "exact": [
+      {
+        "name": "exact",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/app/[locale]/(app)/organization",
+          "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/components/ui/page-header.test.tsx",
+          "src/components/ui/sheet.test.tsx",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/data-table-server/data-table-toolbar.test.tsx",
+          "src/lib/async/map-concurrently.test.ts",
+          "src/components/app-sidebar.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/components/ui/sidebar.test.tsx",
+          "src/components/font-size-preference.test.tsx",
+          "src/components/font-size-toggle.test.tsx",
+          "src/components/providers/view-refresh-provider.test.tsx",
+          "src/components/providers/view-refresh-migrated.test.tsx",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1724-audit/exact.json"
+        ],
+        "startedAt": "2026-11-15T12:25:27.809Z",
+        "finishedAt": "2026-11-15T12:25:36.592Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1724-audit/exact.log"
+      }
+    ],
+    "compatibility": [
+      {
+        "name": "compatibility",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/app/[locale]/(app)/organization",
+          "src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/components/ui/page-header.test.tsx",
+          "src/components/ui/sheet.test.tsx",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/data-table-server/data-table-toolbar.test.tsx",
+          "src/lib/async/map-concurrently.test.ts",
+          "src/components/app-sidebar.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/components/ui/sidebar.test.tsx",
+          "src/components/font-size-preference.test.tsx",
+          "src/components/font-size-toggle.test.tsx",
+          "src/components/providers/view-refresh-provider.test.tsx",
+          "src/components/providers/view-refresh-migrated.test.tsx",
+          "src/components/notifications",
+          "src/hooks/use-notifications.test.ts",
+          "src/app/api/notifications/route.test.ts",
+          "src/lib/notifications/localized-notification.test.ts",
+          "src/lib/notifications/recipient-locale.test.ts",
+          "src/lib/notifications/recipient-display-context.test.ts",
+          "src/lib/notifications/__tests__",
+          "src/components/data-table-server",
+          "src/components/personnel-file/my-documents.test.tsx",
+          "src/app/[locale]/(app)/my-requests/actions.test.ts",
+          "src/lib/self-service-requests",
+          "src/app/api/tenant-mutation-scope.test.ts",
+          "src/components/equipment/equipment-personal.test.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/components/organization-mfa/verification-lifetime.test.tsx",
+          "src/components/ui/sidebar-hydration.test.tsx",
+          "src/components/nav-main.test.tsx",
+          "src/components/sidebar-feedback.test.tsx",
+          "src/app/[locale]/(app)/app-layout-content.test.tsx",
+          "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+          "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+          "src/components/shared-pathname-boundaries-source.test.ts",
+          "src/components/theme-provider.test.tsx",
+          "src/tolgee/extracted-key-defaults.test.ts",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1724-audit/compatibility.json"
+        ],
+        "startedAt": "2026-11-15T12:25:58.150Z",
+        "finishedAt": "2026-11-15T12:26:21.180Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1724-audit/compatibility.log"
+      }
+    ],
+    "types": [
+      {
+        "name": "types",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "typecheck"
+        ],
+        "startedAt": "2026-11-15T12:25:29.168Z",
+        "finishedAt": "2026-11-15T12:26:08.767Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1724-audit/types.log"
+      }
+    ],
+    "biome": [
+      {
+        "name": "biome-default",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+          "src/app/[locale]/(app)/organization/page.tsx",
+          "src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T12:29:31.008Z",
+        "finishedAt": "2026-11-15T12:29:31.459Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1724-audit/biome-default.log"
+      },
+      {
+        "name": "biome-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+          "src/app/[locale]/(app)/organization/page.tsx",
+          "src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T12:29:31.460Z",
+        "finishedAt": "2026-11-15T12:29:32.073Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1724-audit/biome-crlf.log"
+      },
+      {
+        "name": "biome-explicit-webapp",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+          "src/app/[locale]/(app)/organization/page.tsx",
+          "src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T12:29:32.074Z",
+        "finishedAt": "2026-11-15T12:29:32.276Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1724-audit/biome-explicit-webapp.log"
+      },
+      {
+        "name": "biome-organization-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+          "src/app/[locale]/(app)/organization/page.tsx",
+          "src/app/[locale]/(app)/organization/use-org-explorer-people.ts"
+        ],
+        "startedAt": "2026-11-15T12:29:32.277Z",
+        "finishedAt": "2026-11-15T12:29:32.411Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1724-audit/biome-organization-crlf.log"
+      },
+      {
+        "name": "biome-metadata-explicit-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T12:29:32.412Z",
+        "finishedAt": "2026-11-15T12:29:32.711Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1724-audit/biome-metadata-explicit-crlf.log"
+      },
+      {
+        "name": "biome-lint-import",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "--formatter-enabled=false",
+          "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+          "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+          "src/app/[locale]/(app)/organization/page.tsx",
+          "src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T12:29:32.712Z",
+        "finishedAt": "2026-11-15T12:29:32.844Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1724-audit/biome-lint-import.log"
+      }
+    ],
+    "doctor": [
+      {
+        "name": "doctor",
+        "command": [
+          "pnpm",
+          "exec",
+          "react-doctor",
+          "--project",
+          "webapp",
+          "--scope",
+          "changed",
+          "--base",
+          "09f751e39bdd0f5fb9b0338e2a819e0a50a069ef",
+          "--verbose",
+          "--no-score",
+          "--no-supply-chain",
+          "--no-telemetry",
+          "--json",
+          "--json-out",
+          ".tmp/merge1724-audit/doctor.json"
+        ],
+        "startedAt": "2026-11-15T12:27:10.909Z",
+        "finishedAt": "2026-11-15T12:27:31.434Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1724-audit/doctor.log"
+      }
+    ]
+  },
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false",
+    "CI": "true",
+    "NODE_ENV": "test",
+    "packageInstall": false
+  },
+  "fullMultisets": [
+    {
+      "name": "exact",
+      "files": 19,
+      "cases": 235,
+      "passed": 235,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0,
+      "suites": [
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/app-sidebar.test.tsx",
+          "cases": 55,
+          "fullNameMultiset": [
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (feature off without records, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (feature off, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (former intended driver, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (intended driver, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (member without a role, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (planner, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (verifier, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation gives employees their own schedule after Calendar only while shifts are on (#977)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Finance navigation from the finance actor's read access (#753)",
+              2
+            ],
+            [
+              "app sidebar compliance navigation hides Payroll navigation by default",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides payroll navigation for admins without an active payroll grant",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Period Submissions navigation for role employee while collecting is true (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Period Submissions navigation for role manager while collecting is false (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Personnel Files navigation from the personnel file access resolver (flag false, #866)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Personnel Files navigation from the personnel file access resolver (flag true, #866)",
+              2
+            ],
+            [
+              "app sidebar compliance navigation hides platform admin navigation by default",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides scoped payroll navigation for employees without active grants",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides works council navigation when the organization feature flag is disabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation keeps Scheduling in the Team section for managers, not in their personal section (#977)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation orders personal navigation items",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes platform admin navigation from the authenticated platform role",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes scoped payroll navigation for active employees with payroll access grants",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes showComplianceNav from the org-admin settings tier at runtime",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes the approvals command action for managers",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes works council feature state from the active organization",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders help and feedback entries in secondary navigation",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders My Documents after My Requests only while personnel files are on (#865)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders My Requests as a primary personal navigation item",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Org Explorer as a primary personal navigation item",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Payroll navigation when payroll access is enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Period Submissions in the Team section only while the organization collects them (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Personnel Files after My Documents only with the capability (#866)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders platform admin navigation below feedback when enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders search with member-safe static results and employee-safe command actions for employees",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders surcharge settings search navigation when the organization feature flag is enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Team Absences after Team for managers only",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders the compliance entry in secondary nav only when enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders the Finance item after Travel Expenses, with its count, only when enabled (#753)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders the personal Driving licence item after Personnel Files only with the capability (#1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders works council navigation before settings only when enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for admin in org_1 with locations [{\"id\":\"loc_1\",\"name\":\"Office\"}]",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for employee in org_1 with locations [{\"id\":\"loc_1\",\"name\":\"Office\"}]",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for manager in null with locations [{\"id\":\"loc_1\",\"name\":\"Office\"}]",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for manager in org_1 with locations []",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for manager in org_1 with locations [{\"id\":\"loc_1\",\"name\":\"Office\"}]",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Finance navigation from the finance actor's read access (#753)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows payroll navigation for admins with an active payroll grant",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Period Submissions navigation for role admin while collecting is true (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Period Submissions navigation for role manager while collecting is true (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Personnel Files navigation from the personnel file access resolver (flag true, #866)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Who Is In for admin only while the active organization has active locations",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Who Is In for manager only while the active organization has active locations",
+              1
+            ],
+            [
+              "app sidebar compliance navigation uses the active organization for works council navigation when no employee exists",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/font-size-preference.test.tsx",
+          "cases": 13,
+          "fullNameMultiset": [
+            [
+              "font size preference helpers applies default by removing the html attribute",
+              1
+            ],
+            [
+              "font size preference helpers applies non-default values to html",
+              1
+            ],
+            [
+              "font size preference helpers does not throw when storage writes fail",
+              1
+            ],
+            [
+              "font size preference helpers falls back to default for invalid stored values",
+              1
+            ],
+            [
+              "font size preference helpers falls back to default when storage throws",
+              1
+            ],
+            [
+              "font size preference helpers reads valid stored values",
+              1
+            ],
+            [
+              "font size preference helpers writes values when storage is available",
+              1
+            ],
+            [
+              "FontSizeProvider ignores unrelated storage events while using the in-memory preference",
+              1
+            ],
+            [
+              "FontSizeProvider keeps the selected preference when storage writes throw",
+              1
+            ],
+            [
+              "FontSizeProvider keeps working when localStorage access throws",
+              1
+            ],
+            [
+              "FontSizeProvider loads stored preference and updates the document",
+              1
+            ],
+            [
+              "FontSizeProvider updates state, storage, and html when changed",
+              1
+            ],
+            [
+              "FontSizeProvider updates when the stored preference changes in another tab",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/font-size-toggle.test.tsx",
+          "cases": 2,
+          "fullNameMultiset": [
+            [
+              "FontSizeToggle renders an accessible icon trigger and all choices",
+              1
+            ],
+            [
+              "FontSizeToggle updates the preference when a choice is selected",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/site-header.test.tsx",
+          "cases": 11,
+          "fullNameMultiset": [
+            [
+              "SiteHeader clears the status bar when the app is drawn edge to edge (#846)",
+              1
+            ],
+            [
+              "SiteHeader does not remove the shell heading from unconverted report subpages",
+              1
+            ],
+            [
+              "SiteHeader does not show the dashboard customize trigger outside the dashboard route",
+              1
+            ],
+            [
+              "SiteHeader hands the main title to converted pages while retaining unknown descendant titles",
+              1
+            ],
+            [
+              "SiteHeader hands the personal equipment title to its page without adopting other destinations",
+              1
+            ],
+            [
+              "SiteHeader hands the suspended recovery title to the page without opting descendants into heading ownership",
+              1
+            ],
+            [
+              "SiteHeader keeps mobile overflow actions available outside the dashboard without customization",
+              1
+            ],
+            [
+              "SiteHeader keeps secondary dashboard controls available as labeled actions in the mobile overflow",
+              1
+            ],
+            [
+              "SiteHeader shows header actions in the requested order on the dashboard route",
+              1
+            ],
+            [
+              "SiteHeader shows the most specific route title instead of falling back to Dashboard",
+              1
+            ],
+            [
+              "SiteHeader truncates a long title so the header actions stay on a phone screen (#846)",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/data-table-server/data-table-toolbar.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "record toolbar names search and composes domain filters without executing a report before Generate",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/providers/view-refresh-migrated.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "migrated view refresh owners refreshes server groups once and only activated client regions while retaining employee drafts through a partial failure",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+          "cases": 8,
+          "fullNameMultiset": [
+            [
+              "View refresh accepts fresh saved data without replacing an open draft",
+              1
+            ],
+            [
+              "View refresh accepts newer server props after a local retry and cancels the older pending GET without losing drafts",
+              1
+            ],
+            [
+              "View refresh does not refresh a different route opened while data is pending",
+              1
+            ],
+            [
+              "View refresh refreshes server, active query, SWR and manual data without resetting view state or drafts",
+              1
+            ],
+            [
+              "View refresh reports failures while keeping existing content and permitting a retry",
+              1
+            ],
+            [
+              "View refresh shares an active client read instead of cancelling it and starting the same dataset again",
+              1
+            ],
+            [
+              "View refresh starts server refresh while independent custom data is still pending",
+              1
+            ],
+            [
+              "View refresh stays busy until manual data finishes and prevents duplicate refresh clicks",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/action-panel.test.tsx",
+          "cases": 8,
+          "fullNameMultiset": [
+            [
+              "ActionPanel always renders from the right side",
+              1
+            ],
+            [
+              "ActionPanel can hide the close button",
+              1
+            ],
+            [
+              "ActionPanel composes the Sheet primitive instead of Radix dialog internals",
+              1
+            ],
+            [
+              "ActionPanel renders an accessible right-side panel shell",
+              1
+            ],
+            [
+              "ActionPanel supports width variants",
+              1
+            ],
+            [
+              "ActionPanel uses animated sheet transitions",
+              1
+            ],
+            [
+              "ActionPanel uses mobile-safe width and stacked footer actions",
+              1
+            ],
+            [
+              "ActionPanel uses the muted sheet surface",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/page-header.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "keeps task, scope and a working action together without owning the page draft",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/sheet.test.tsx",
+          "cases": 9,
+          "fullNameMultiset": [
+            [
+              "Sheet keeps header, footer and close button clear of the status bar and home indicator (#846)",
+              1
+            ],
+            [
+              "Sheet keeps the sheet open when onPointerDownOutside prevents dismissal",
+              1
+            ],
+            [
+              "Sheet lets a bottom sheet clear only the home indicator (#846)",
+              1
+            ],
+            [
+              "Sheet opens an accessible right-side sheet from its trigger",
+              1
+            ],
+            [
+              "Sheet passes the safe-area insets of the screen edges a side sheet touches (#846)",
+              1
+            ],
+            [
+              "Sheet uses CSS keyframes for entry without requestAnimationFrame timing",
+              1
+            ],
+            [
+              "Sheet uses wrapper-owned CSS state for opening",
+              1
+            ],
+            [
+              "Sheet uses wrapper-owned CSS state instead of Web Animations for closing",
+              1
+            ],
+            [
+              "Sheet uses wrapper-owned lifecycle without Web Animations",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/sidebar.test.tsx",
+          "cases": 8,
+          "fullNameMultiset": [
+            [
+              "Sidebar collapse preferences keeps a named icon rail, expands by keyboard, and restores the saved desktop preference",
+              1
+            ],
+            [
+              "Sidebar collapse preferences keeps named tooltips available on the desktop icon rail",
+              1
+            ],
+            [
+              "Sidebar collapse preferences reports mobile drawer state separately without overwriting the desktop preference",
+              1
+            ],
+            [
+              "Sidebar dismisses the phone drawer with Escape",
+              1
+            ],
+            [
+              "Sidebar dismisses the phone drawer with one Escape after focusing a named navigation link",
+              1
+            ],
+            [
+              "Sidebar keeps the phone navigation clear of the status bar and home indicator with 44 px rows (#846)",
+              1
+            ],
+            [
+              "Sidebar uses CSS motion for synchronized offcanvas content expansion",
+              1
+            ],
+            [
+              "SidebarMenuButton closes the mobile sidebar when a sidebar link is clicked",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/async/map-concurrently.test.ts",
+          "cases": 3,
+          "fullNameMultiset": [
+            [
+              "mapConcurrently bounds active tasks and returns results in input order",
+              1
+            ],
+            [
+              "mapConcurrently handles empty input and rejects invalid concurrency",
+              1
+            ],
+            [
+              "mapConcurrently joins in-flight tasks before reporting a failure",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "cases": 37,
+          "fullNameMultiset": [
+            [
+              "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+              1
+            ],
+            [
+              "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+              1
+            ],
+            [
+              "route metadata adopts only the complete review arrival route",
+              1
+            ],
+            [
+              "route metadata adopts only the deputy history record, preserving other approval headings",
+              1
+            ],
+            [
+              "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+              1
+            ],
+            [
+              "route metadata adopts only the personal requests page heading",
+              1
+            ],
+            [
+              "route metadata adopts only the portfolio pilot title, leaving other reports and descendants with shell titles",
+              1
+            ],
+            [
+              "route metadata adopts refreshed analytics without adopting unconverted descendants",
+              1
+            ],
+            [
+              "route metadata adopts the employee equipment record heading without adopting its collection",
+              1
+            ],
+            [
+              "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+              1
+            ],
+            [
+              "route metadata adopts the exact vacation route while retaining staged descendants",
+              1
+            ],
+            [
+              "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+              1
+            ],
+            [
+              "route metadata adopts the personal documents heading without officer descendants",
+              1
+            ],
+            [
+              "route metadata matches route prefixes only at path-segment boundaries",
+              1
+            ],
+            [
+              "route metadata normalizes locale and trailing slash segments",
+              1
+            ],
+            [
+              "route metadata resolves /de/my-equipment",
+              1
+            ],
+            [
+              "route metadata resolves /de/my-requests",
+              1
+            ],
+            [
+              "route metadata resolves /en",
+              1
+            ],
+            [
+              "route metadata resolves /en/approvals/inbox",
+              1
+            ],
+            [
+              "route metadata resolves /en/compliance",
+              1
+            ],
+            [
+              "route metadata resolves /en/driving-licence",
+              1
+            ],
+            [
+              "route metadata resolves /en/driving-licence/checks/employee-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/equipment",
+              1
+            ],
+            [
+              "route metadata resolves /en/equipment/assignments/assignment-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/equipment/employees/employee-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/organization",
+              1
+            ],
+            [
+              "route metadata resolves /en/payroll",
+              1
+            ],
+            [
+              "route metadata resolves /en/reports/projects",
+              1
+            ],
+            [
+              "route metadata resolves /en/reports/vehicles",
+              1
+            ],
+            [
+              "route metadata resolves /en/scheduling",
+              1
+            ],
+            [
+              "route metadata resolves /en/settings/employees/employee-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/settings/equipment",
+              1
+            ],
+            [
+              "route metadata resolves /en/settings/locations/location-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/team/absences",
+              1
+            ],
+            [
+              "route metadata resolves /en/team/driving",
+              1
+            ],
+            [
+              "route metadata resolves /en/works-council",
+              1
+            ],
+            [
+              "route metadata retains independent approvals page headings",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+          "cases": 22,
+          "fullNameMultiset": [
+            [
+              "MyRequestsClient applies filters consistently to grouped sections and all-request history",
+              1
+            ],
+            [
+              "MyRequestsClient dispatches pending cancellation by source type with neutral copy",
+              1
+            ],
+            [
+              "MyRequestsClient distinguishes empty and filtered-empty states",
+              1
+            ],
+            [
+              "MyRequestsClient does not call a failed source an empty request history",
+              1
+            ],
+            [
+              "MyRequestsClient does not cancel when confirmation is declined",
+              1
+            ],
+            [
+              "MyRequestsClient does not dispatch cancellation for unsupported request source types",
+              1
+            ],
+            [
+              "MyRequestsClient does not render unsupported actions",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker does not take focus to the notice when the employee cancels the focused request here",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker explains a missing or cancelled request without disclosing anything and re-checks readiness",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker explains a request that is no longer pending without disclosing anything and re-checks readiness",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker explains another employee's or organization's request without disclosing anything and re-checks readiness",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker focuses the pending absence, with its existing cancel action",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker focuses the pending correction in review",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker ignores a malformed focus value",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker selects the filters needed to reveal the focused request",
+              1
+            ],
+            [
+              "MyRequestsClient formats request dates with the active locale",
+              1
+            ],
+            [
+              "MyRequestsClient renders requests in prioritized groups and all-request history",
+              1
+            ],
+            [
+              "MyRequestsClient retains the request and permits retry after a cancellation transport failure",
+              1
+            ],
+            [
+              "MyRequestsClient retries a partial source without losing the current filters or usable records",
+              1
+            ],
+            [
+              "MyRequestsClient shows cancellation errors returned by the action",
+              1
+            ],
+            [
+              "MyRequestsClient shows source error notices",
+              1
+            ],
+            [
+              "MyRequestsClient suppresses duplicate cancel actions in all-request history",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "cases": 34,
+          "fullNameMultiset": [
+            [
+              "OrgExplorerClient a large organization loads a subtree on demand when it is expanded",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization loads a team's members on request in the Teams view until all are loaded",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization loads the filtered teams' members, a team at a time",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization loads the path to a person chosen in search",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization loads the people without a reporting line on request, a page at a time",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization recovers a failed deep-linked person without losing the selected URL or showing a different person",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization retains the roster and recovers a failed expanded branch after a transport error",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization settles a lazy deep link when the mounted app replays effects",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel does not link the teams for other viewers",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel gives admins a link to the teams for someone without a team",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel gives admins links to edit the employee and manage each of their teams",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel marks no primary manager when the reporting line falls back to another manager",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel opens from ?employee= and jumps to a manager, opening the path to them",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel shows managers, direct reports, team memberships and email for the clicked person",
+              1
+            ],
+            [
+              "OrgExplorerClient on phones collapses and expands a subtree in the outline",
+              1
+            ],
+            [
+              "OrgExplorerClient on phones shows Reporting lines as an outline and the panel as a bottom sheet",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines dims people outside the filtered teams and their paths",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines draws one line per person, from their primary manager, and no team lines",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines highlights the filtered teams' members, dims the rest and keeps their path visible",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines lists people with no manager and no reports under No reporting line, not on top",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines marks people with more managers and places managers above their reports",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines opens two levels by default and toggles a subtree from the direct-report count",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines shows team chips with the primary team first and +N for the rest",
+              1
+            ],
+            [
+              "OrgExplorerClient search dismisses search with the first Escape and ignores the in-flight response",
+              1
+            ],
+            [
+              "OrgExplorerClient search ignores a stale search response",
+              1
+            ],
+            [
+              "OrgExplorerClient search opens the path to the chosen person, centres on them and selects them",
+              1
+            ],
+            [
+              "OrgExplorerClient shows an empty state when nobody is on the roster",
+              1
+            ],
+            [
+              "OrgExplorerClient team filter narrows the Teams grid",
+              1
+            ],
+            [
+              "OrgExplorerClient team filter writes the chosen teams to the URL",
+              1
+            ],
+            [
+              "OrgExplorerClient Teams collects people without a team membership on a No team card",
+              1
+            ],
+            [
+              "OrgExplorerClient Teams opens the detail panel for a member",
+              1
+            ],
+            [
+              "OrgExplorerClient Teams shows each team's lead, members and count, with multi-team members on each card",
+              1
+            ],
+            [
+              "OrgExplorerClient views opens the view named in ?view= and follows the back button",
+              1
+            ],
+            [
+              "OrgExplorerClient views shows Reporting lines by default and switches to Teams through the control",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-layout.test.ts",
+          "cases": 3,
+          "fullNameMultiset": [
+            [
+              "layoutReportingTree draws one line per person, from their primary manager",
+              1
+            ],
+            [
+              "layoutReportingTree lays out only the visible people",
+              1
+            ],
+            [
+              "layoutReportingTree places every manager above their reports",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-teams.test.ts",
+          "cases": 5,
+          "fullNameMultiset": [
+            [
+              "groupTeams collects people without a team membership for the No team card",
+              1
+            ],
+            [
+              "groupTeams narrows the cards to the filtered teams and drops the No team card",
+              1
+            ],
+            [
+              "groupTeams puts the team lead in the header even when they are not a member",
+              1
+            ],
+            [
+              "groupTeams says whether every member of a team is loaded",
+              1
+            ],
+            [
+              "groupTeams shows someone in several teams on each of their teams, marking their primary team",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-tree.test.ts",
+          "cases": 9,
+          "fullNameMultiset": [
+            [
+              "buildReportingTree breaks a loop of reporting lines at the first person by name, so nobody is lost",
+              1
+            ],
+            [
+              "buildReportingTree hangs each person under their primary manager only",
+              1
+            ],
+            [
+              "buildReportingTree lists the path from the top down to a person",
+              1
+            ],
+            [
+              "buildReportingTree orders roots, children and the No reporting line group by name",
+              1
+            ],
+            [
+              "buildReportingTree puts people with no manager and line reports on top, and the rest in No reporting line",
+              1
+            ],
+            [
+              "buildReportingTree puts someone with no manager whose reports all report along another line in No reporting line",
+              1
+            ],
+            [
+              "buildReportingTree shows a person whose primary manager is not loaded yet on top",
+              1
+            ],
+            [
+              "expanding the reporting lines hides the subtree of a collapsed person",
+              1
+            ],
+            [
+              "expanding the reporting lines opens two levels below the top by default",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-url.test.ts",
+          "cases": 5,
+          "fullNameMultiset": [
+            [
+              "Org Explorer URL state defaults to Reporting lines with no filter and nobody selected",
+              1
+            ],
+            [
+              "Org Explorer URL state falls back to Reporting lines for an unknown view and ignores empty values",
+              1
+            ],
+            [
+              "Org Explorer URL state reads the view, the team filter and the selected person",
+              1
+            ],
+            [
+              "Org Explorer URL state round-trips a state through the URL",
+              1
+            ],
+            [
+              "Org Explorer URL state writes only what differs from the default and keeps other parameters",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "compatibility",
+      "files": 50,
+      "cases": 573,
+      "passed": 573,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 19,
+      "overlapCases": 235,
+      "suites": [
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/app-sidebar.test.tsx",
+          "cases": 55,
+          "fullNameMultiset": [
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (feature off without records, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (feature off, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (former intended driver, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (intended driver, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (member without a role, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (planner, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation decides the Driving licence item and settings entry from the visibility reader (verifier, #1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation gives employees their own schedule after Calendar only while shifts are on (#977)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Finance navigation from the finance actor's read access (#753)",
+              2
+            ],
+            [
+              "app sidebar compliance navigation hides Payroll navigation by default",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides payroll navigation for admins without an active payroll grant",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Period Submissions navigation for role employee while collecting is true (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Period Submissions navigation for role manager while collecting is false (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Personnel Files navigation from the personnel file access resolver (flag false, #866)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides Personnel Files navigation from the personnel file access resolver (flag true, #866)",
+              2
+            ],
+            [
+              "app sidebar compliance navigation hides platform admin navigation by default",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides scoped payroll navigation for employees without active grants",
+              1
+            ],
+            [
+              "app sidebar compliance navigation hides works council navigation when the organization feature flag is disabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation keeps Scheduling in the Team section for managers, not in their personal section (#977)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation orders personal navigation items",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes platform admin navigation from the authenticated platform role",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes scoped payroll navigation for active employees with payroll access grants",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes showComplianceNav from the org-admin settings tier at runtime",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes the approvals command action for managers",
+              1
+            ],
+            [
+              "app sidebar compliance navigation passes works council feature state from the active organization",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders help and feedback entries in secondary navigation",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders My Documents after My Requests only while personnel files are on (#865)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders My Requests as a primary personal navigation item",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Org Explorer as a primary personal navigation item",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Payroll navigation when payroll access is enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Period Submissions in the Team section only while the organization collects them (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Personnel Files after My Documents only with the capability (#866)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders platform admin navigation below feedback when enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders search with member-safe static results and employee-safe command actions for employees",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders surcharge settings search navigation when the organization feature flag is enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders Team Absences after Team for managers only",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders the compliance entry in secondary nav only when enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders the Finance item after Travel Expenses, with its count, only when enabled (#753)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders the personal Driving licence item after Personnel Files only with the capability (#1420)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation renders works council navigation before settings only when enabled",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for admin in org_1 with locations [{\"id\":\"loc_1\",\"name\":\"Office\"}]",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for employee in org_1 with locations [{\"id\":\"loc_1\",\"name\":\"Office\"}]",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for manager in null with locations [{\"id\":\"loc_1\",\"name\":\"Office\"}]",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for manager in org_1 with locations []",
+              1
+            ],
+            [
+              "app sidebar compliance navigation resolves Who Is In visibility for manager in org_1 with locations [{\"id\":\"loc_1\",\"name\":\"Office\"}]",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Finance navigation from the finance actor's read access (#753)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows payroll navigation for admins with an active payroll grant",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Period Submissions navigation for role admin while collecting is true (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Period Submissions navigation for role manager while collecting is true (#1075)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Personnel Files navigation from the personnel file access resolver (flag true, #866)",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Who Is In for admin only while the active organization has active locations",
+              1
+            ],
+            [
+              "app sidebar compliance navigation shows Who Is In for manager only while the active organization has active locations",
+              1
+            ],
+            [
+              "app sidebar compliance navigation uses the active organization for works council navigation when no employee exists",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/font-size-preference.test.tsx",
+          "cases": 13,
+          "fullNameMultiset": [
+            [
+              "font size preference helpers applies default by removing the html attribute",
+              1
+            ],
+            [
+              "font size preference helpers applies non-default values to html",
+              1
+            ],
+            [
+              "font size preference helpers does not throw when storage writes fail",
+              1
+            ],
+            [
+              "font size preference helpers falls back to default for invalid stored values",
+              1
+            ],
+            [
+              "font size preference helpers falls back to default when storage throws",
+              1
+            ],
+            [
+              "font size preference helpers reads valid stored values",
+              1
+            ],
+            [
+              "font size preference helpers writes values when storage is available",
+              1
+            ],
+            [
+              "FontSizeProvider ignores unrelated storage events while using the in-memory preference",
+              1
+            ],
+            [
+              "FontSizeProvider keeps the selected preference when storage writes throw",
+              1
+            ],
+            [
+              "FontSizeProvider keeps working when localStorage access throws",
+              1
+            ],
+            [
+              "FontSizeProvider loads stored preference and updates the document",
+              1
+            ],
+            [
+              "FontSizeProvider updates state, storage, and html when changed",
+              1
+            ],
+            [
+              "FontSizeProvider updates when the stored preference changes in another tab",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/font-size-toggle.test.tsx",
+          "cases": 2,
+          "fullNameMultiset": [
+            [
+              "FontSizeToggle renders an accessible icon trigger and all choices",
+              1
+            ],
+            [
+              "FontSizeToggle updates the preference when a choice is selected",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/nav-main.test.tsx",
+          "cases": 3,
+          "fullNameMultiset": [
+            [
+              "NavMain marks nested route parent links as active",
+              1
+            ],
+            [
+              "NavMain marks only the most specific matching link active, and shows an item's badge (#753)",
+              1
+            ],
+            [
+              "NavMain marks the dashboard link active only on the exact root route",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/shared-pathname-boundaries-source.test.ts",
+          "cases": 2,
+          "fullNameMultiset": [
+            [
+              "shared pathname consumer boundaries isolates each sidebar navigation group with neutral menu skeletons",
+              1
+            ],
+            [
+              "shared pathname consumer boundaries keeps the resolved app frame visible while the site header resolves",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/sidebar-feedback.test.tsx",
+          "cases": 2,
+          "fullNameMultiset": [
+            [
+              "sidebar loading and local retry requests a server navigation refresh without replacing the current draft or clock",
+              1
+            ],
+            [
+              "sidebar loading and local retry uses the real inset sidebar frame with accessible neutral busy geometry",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/site-header.test.tsx",
+          "cases": 11,
+          "fullNameMultiset": [
+            [
+              "SiteHeader clears the status bar when the app is drawn edge to edge (#846)",
+              1
+            ],
+            [
+              "SiteHeader does not remove the shell heading from unconverted report subpages",
+              1
+            ],
+            [
+              "SiteHeader does not show the dashboard customize trigger outside the dashboard route",
+              1
+            ],
+            [
+              "SiteHeader hands the main title to converted pages while retaining unknown descendant titles",
+              1
+            ],
+            [
+              "SiteHeader hands the personal equipment title to its page without adopting other destinations",
+              1
+            ],
+            [
+              "SiteHeader hands the suspended recovery title to the page without opting descendants into heading ownership",
+              1
+            ],
+            [
+              "SiteHeader keeps mobile overflow actions available outside the dashboard without customization",
+              1
+            ],
+            [
+              "SiteHeader keeps secondary dashboard controls available as labeled actions in the mobile overflow",
+              1
+            ],
+            [
+              "SiteHeader shows header actions in the requested order on the dashboard route",
+              1
+            ],
+            [
+              "SiteHeader shows the most specific route title instead of falling back to Dashboard",
+              1
+            ],
+            [
+              "SiteHeader truncates a long title so the header actions stay on a phone screen (#846)",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/theme-provider.test.tsx",
+          "cases": 14,
+          "fullNameMultiset": [
+            [
+              "ThemeProvider does not render script tags during client navigation",
+              1
+            ],
+            [
+              "ThemeProvider enables time theme after geolocation succeeds",
+              1
+            ],
+            [
+              "ThemeProvider exposes the next time-based theme switch when location is available",
+              1
+            ],
+            [
+              "ThemeProvider falls back on the first polar day when the adjacent day had events",
+              1
+            ],
+            [
+              "ThemeProvider falls back to system theme when sunrise and sunset do not occur",
+              1
+            ],
+            [
+              "ThemeProvider ignores a stale time geolocation success after selecting another theme",
+              1
+            ],
+            [
+              "ThemeProvider keeps the previous theme when geolocation fails",
+              1
+            ],
+            [
+              "ThemeProvider loads stored time theme with stored coordinates without requesting location",
+              1
+            ],
+            [
+              "ThemeProvider loads the stored theme and updates html when changed",
+              1
+            ],
+            [
+              "ThemeProvider recalculates time theme at the next sun boundary",
+              1
+            ],
+            [
+              "ThemeProvider resolves dark before the first sunrise after polar night",
+              1
+            ],
+            [
+              "ThemeProvider skips adjacent boundaries that do not change the theme",
+              1
+            ],
+            [
+              "ThemeProvider uses the observer's solar day across a UTC date boundary",
+              1
+            ],
+            [
+              "ThemeProvider uses the surrounding boundaries near the western antimeridian",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/hooks/use-notifications.test.ts",
+          "cases": 4,
+          "fullNameMultiset": [
+            [
+              "useNotifications includes every list fetch option in the notification list query key",
+              1
+            ],
+            [
+              "useNotifications includes organization in the unread count query key",
+              1
+            ],
+            [
+              "useNotifications polls the notification list every 20 minutes and always refetches on focus",
+              1
+            ],
+            [
+              "useNotifications polls the unread count every 20 minutes and always refetches on focus",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "extracted translation keys all have a default English value",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/api/tenant-mutation-scope.test.ts",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "tenant-owned API mutations include organizationId in every final tenant-table update predicate",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/data-table-server/data-table-pagination.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "names page size and keeps first/last, next/previous controls available with local rows",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/data-table-server/data-table-toolbar.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "record toolbar names search and composes domain filters without executing a report before Generate",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/data-table-server/data-table.test.tsx",
+          "cases": 2,
+          "fullNameMultiset": [
+            [
+              "record table contract exposes sort direction and busy state while retaining the mounted draft and stable selected IDs across server pages",
+              1
+            ],
+            [
+              "record table contract sorts local rows by the actual column while keeping drafts attached to stable record IDs",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/equipment/equipment-personal.test.tsx",
+          "cases": 7,
+          "fullNameMultiset": [
+            [
+              "displays unknown historical dates separately from attributable entry time",
+              1
+            ],
+            [
+              "explains an empty record",
+              1
+            ],
+            [
+              "groups the employee's own equipment as to return, yours to keep, and returned and closed",
+              1
+            ],
+            [
+              "keeps all partial receipts visible on personal history",
+              1
+            ],
+            [
+              "keeps personal history read-only and shows returned condition separately from issuance evidence",
+              1
+            ],
+            [
+              "leads with the remaining partial return before opening its evidence",
+              1
+            ],
+            [
+              "shows original and amended evidence with attribution in personal read-only history",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/equipment/equipment-routes.test.tsx",
+          "cases": 12,
+          "fullNameMultiset": [
+            [
+              "assignment page opens one assignment through its own read and keeps a safe way back",
+              1
+            ],
+            [
+              "assignment page reads an invalid reference as not found",
+              1
+            ],
+            [
+              "assignment page reads another organization's or an out-of-scope assignment as not found",
+              1
+            ],
+            [
+              "assignment page reads equipment switched off as not found",
+              1
+            ],
+            [
+              "assignment page shows a load failure without pretending the assignment is missing",
+              1
+            ],
+            [
+              "keeps an unavailable overview distinct from zero holdings and offers a real read retry",
+              1
+            ],
+            [
+              "keeps personal read failure distinct from empty equipment and offers retry with a named streaming heading",
+              1
+            ],
+            [
+              "offers an employee read retry and keeps a named heading while streaming",
+              1
+            ],
+            [
+              "opens officer employee equipment through its independent read and refuses a revoked or out-of-scope direct route",
+              1
+            ],
+            [
+              "opens the overview on outstanding returns without parameters and refuses the staff route when its read denies access",
+              1
+            ],
+            [
+              "opens the personal route through self-history only and refuses departed access",
+              1
+            ],
+            [
+              "reads the whole scope for the overview and hands the URL filters to the list",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/notifications/notification-bell.test.tsx",
+          "cases": 14,
+          "fullNameMultiset": [
+            [
+              "NotificationBell caller announces loading while the opened list is pending",
+              1
+            ],
+            [
+              "NotificationBell caller clears the badge on sign-out without fetching an unauthenticated inbox",
+              1
+            ],
+            [
+              "NotificationBell caller hides the previous organization's badge while display context catches up to the active session",
+              1
+            ],
+            [
+              "NotificationBell caller keeps a completed previous-organization mutation from refreshing the new inbox",
+              1
+            ],
+            [
+              "NotificationBell caller keeps the opened list loading while the current session is pending",
+              1
+            ],
+            [
+              "NotificationBell caller loads the list only after the desktop control opens and reuses a fresh list",
+              1
+            ],
+            [
+              "NotificationBell caller loads the list only after the mobile control opens and reuses a fresh list",
+              1
+            ],
+            [
+              "NotificationBell caller refreshes the visible list and badge after Delete all without invalidating other query families",
+              1
+            ],
+            [
+              "NotificationBell caller refreshes the visible list and badge after Delete without invalidating other query families",
+              1
+            ],
+            [
+              "NotificationBell caller refreshes the visible list and badge after Mark all read without invalidating other query families",
+              1
+            ],
+            [
+              "NotificationBell caller refreshes the visible list and badge after Mark as read without invalidating other query families",
+              1
+            ],
+            [
+              "NotificationBell caller replaces a previous user's badge when identity changes in the same organization",
+              1
+            ],
+            [
+              "NotificationBell caller shows a failed list read with a working retry instead of an empty success",
+              1
+            ],
+            [
+              "NotificationBell caller shows the closed badge using only the unread-count request",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/notifications/notification-popover.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "NotificationPopover opens notifications in a top sheet from the mobile trigger",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/notifications/notification-settings.test.tsx",
+          "cases": 10,
+          "fullNameMultiset": [
+            [
+              "NotificationSettings always renders baseline channel switches",
+              1
+            ],
+            [
+              "NotificationSettings explains mandatory automatic clock-out inbox delivery without a disable switch",
+              1
+            ],
+            [
+              "NotificationSettings keeps push switch enabled when browser push is supported but not subscribed",
+              1
+            ],
+            [
+              "NotificationSettings lets a deputy switch the channels of each deputy notification (#1013)",
+              1
+            ],
+            [
+              "NotificationSettings lets an employee switch individual channels of clocking reminders",
+              1
+            ],
+            [
+              "NotificationSettings lets employees and managers switch the channels of skill expiry reminders (#1143)",
+              1
+            ],
+            [
+              "NotificationSettings offers optional equipment return reminders with independent available channel switches",
+              1
+            ],
+            [
+              "NotificationSettings offers separate channel switches for approved absence cancellations",
+              1
+            ],
+            [
+              "NotificationSettings renders configured third-party channel switches",
+              1
+            ],
+            [
+              "NotificationSettings renders controls only for available notification channels",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/notifications/notifications-inbox.contract.test.tsx",
+          "cases": 8,
+          "fullNameMultiset": [
+            [
+              "discards selected targets and late outcomes across a org round trip",
+              1
+            ],
+            [
+              "discards selected targets and late outcomes across a user round trip",
+              1
+            ],
+            [
+              "groups arrival instants in the explicit local zone across the DST boundary",
+              1
+            ],
+            [
+              "keeps failed loading distinct from all clear and recovers the actual reader",
+              1
+            ],
+            [
+              "marks only selected visible unread records and opens the stored destination",
+              1
+            ],
+            [
+              "reports partial visible deletion and retains failed items for retry",
+              1
+            ],
+            [
+              "retains the search and cached rows through failed refresh and Retry",
+              1
+            ],
+            [
+              "withdraws cached action targets when authority is refused on refresh",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/notifications/notifications-inbox.test.tsx",
+          "cases": 2,
+          "fullNameMultiset": [
+            [
+              "NotificationsInbox renders the empty inbox state with settings link",
+              1
+            ],
+            [
+              "NotificationsInbox shows the unread empty state when the unread filter is selected",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/organization-mfa/verification-lifetime.test.tsx",
+          "cases": 6,
+          "fullNameMultiset": [
+            [
+              "allows fresh verification on return and keeps it pending when an older response settles",
+              1
+            ],
+            [
+              "follows the social provider only for the requesting arrival (current=false)",
+              1
+            ],
+            [
+              "follows the social provider only for the requesting arrival (current=true)",
+              1
+            ],
+            [
+              "keeps the new organization after an earlier authenticator succeeds",
+              1
+            ],
+            [
+              "keeps the new organization when an earlier organization's SSO response arrives",
+              1
+            ],
+            [
+              "requires a new action after returning to a cached organization with an older verification pending",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/providers/view-refresh-migrated.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "migrated view refresh owners refreshes server groups once and only activated client regions while retaining employee drafts through a partial failure",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+          "cases": 8,
+          "fullNameMultiset": [
+            [
+              "View refresh accepts fresh saved data without replacing an open draft",
+              1
+            ],
+            [
+              "View refresh accepts newer server props after a local retry and cancels the older pending GET without losing drafts",
+              1
+            ],
+            [
+              "View refresh does not refresh a different route opened while data is pending",
+              1
+            ],
+            [
+              "View refresh refreshes server, active query, SWR and manual data without resetting view state or drafts",
+              1
+            ],
+            [
+              "View refresh reports failures while keeping existing content and permitting a retry",
+              1
+            ],
+            [
+              "View refresh shares an active client read instead of cancelling it and starting the same dataset again",
+              1
+            ],
+            [
+              "View refresh starts server refresh while independent custom data is still pending",
+              1
+            ],
+            [
+              "View refresh stays busy until manual data finishes and prevents duplicate refresh clicks",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+          "cases": 7,
+          "fullNameMultiset": [
+            [
+              "filters shared records without losing metadata or the access-checked destinations",
+              1
+            ],
+            [
+              "keeps upload reachable in the original empty shared-document state",
+              1
+            ],
+            [
+              "leads with employee work in deadline order and keeps completed requests accessible",
+              1
+            ],
+            [
+              "prevents native duplicate submissions and dismissal while the real command is pending",
+              1
+            ],
+            [
+              "removes stale records and open tasks when the displayed account or organization changes",
+              1
+            ],
+            [
+              "retains the submission note and shows a retryable failure inside the confirmation",
+              1
+            ],
+            [
+              "retries the real route data owner after a failed read",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/action-panel.test.tsx",
+          "cases": 8,
+          "fullNameMultiset": [
+            [
+              "ActionPanel always renders from the right side",
+              1
+            ],
+            [
+              "ActionPanel can hide the close button",
+              1
+            ],
+            [
+              "ActionPanel composes the Sheet primitive instead of Radix dialog internals",
+              1
+            ],
+            [
+              "ActionPanel renders an accessible right-side panel shell",
+              1
+            ],
+            [
+              "ActionPanel supports width variants",
+              1
+            ],
+            [
+              "ActionPanel uses animated sheet transitions",
+              1
+            ],
+            [
+              "ActionPanel uses mobile-safe width and stacked footer actions",
+              1
+            ],
+            [
+              "ActionPanel uses the muted sheet surface",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/page-header.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "keeps task, scope and a working action together without owning the page draft",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/sheet.test.tsx",
+          "cases": 9,
+          "fullNameMultiset": [
+            [
+              "Sheet keeps header, footer and close button clear of the status bar and home indicator (#846)",
+              1
+            ],
+            [
+              "Sheet keeps the sheet open when onPointerDownOutside prevents dismissal",
+              1
+            ],
+            [
+              "Sheet lets a bottom sheet clear only the home indicator (#846)",
+              1
+            ],
+            [
+              "Sheet opens an accessible right-side sheet from its trigger",
+              1
+            ],
+            [
+              "Sheet passes the safe-area insets of the screen edges a side sheet touches (#846)",
+              1
+            ],
+            [
+              "Sheet uses CSS keyframes for entry without requestAnimationFrame timing",
+              1
+            ],
+            [
+              "Sheet uses wrapper-owned CSS state for opening",
+              1
+            ],
+            [
+              "Sheet uses wrapper-owned CSS state instead of Web Animations for closing",
+              1
+            ],
+            [
+              "Sheet uses wrapper-owned lifecycle without Web Animations",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/sidebar-hydration.test.tsx",
+          "cases": 2,
+          "fullNameMultiset": [
+            [
+              "hydrates delayed navigation without resetting a mounted draft (phone: false)",
+              1
+            ],
+            [
+              "hydrates delayed navigation without resetting a mounted draft (phone: true)",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/sidebar.test.tsx",
+          "cases": 8,
+          "fullNameMultiset": [
+            [
+              "Sidebar collapse preferences keeps a named icon rail, expands by keyboard, and restores the saved desktop preference",
+              1
+            ],
+            [
+              "Sidebar collapse preferences keeps named tooltips available on the desktop icon rail",
+              1
+            ],
+            [
+              "Sidebar collapse preferences reports mobile drawer state separately without overwriting the desktop preference",
+              1
+            ],
+            [
+              "Sidebar dismisses the phone drawer with Escape",
+              1
+            ],
+            [
+              "Sidebar dismisses the phone drawer with one Escape after focusing a named navigation link",
+              1
+            ],
+            [
+              "Sidebar keeps the phone navigation clear of the status bar and home indicator with 44 px rows (#846)",
+              1
+            ],
+            [
+              "Sidebar uses CSS motion for synchronized offcanvas content expansion",
+              1
+            ],
+            [
+              "SidebarMenuButton closes the mobile sidebar when a sidebar link is clicked",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/async/map-concurrently.test.ts",
+          "cases": 3,
+          "fullNameMultiset": [
+            [
+              "mapConcurrently bounds active tasks and returns results in input order",
+              1
+            ],
+            [
+              "mapConcurrently handles empty input and rejects invalid concurrency",
+              1
+            ],
+            [
+              "mapConcurrently joins in-flight tasks before reporting a failure",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "cases": 37,
+          "fullNameMultiset": [
+            [
+              "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+              1
+            ],
+            [
+              "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+              1
+            ],
+            [
+              "route metadata adopts only the complete review arrival route",
+              1
+            ],
+            [
+              "route metadata adopts only the deputy history record, preserving other approval headings",
+              1
+            ],
+            [
+              "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+              1
+            ],
+            [
+              "route metadata adopts only the personal requests page heading",
+              1
+            ],
+            [
+              "route metadata adopts only the portfolio pilot title, leaving other reports and descendants with shell titles",
+              1
+            ],
+            [
+              "route metadata adopts refreshed analytics without adopting unconverted descendants",
+              1
+            ],
+            [
+              "route metadata adopts the employee equipment record heading without adopting its collection",
+              1
+            ],
+            [
+              "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+              1
+            ],
+            [
+              "route metadata adopts the exact vacation route while retaining staged descendants",
+              1
+            ],
+            [
+              "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+              1
+            ],
+            [
+              "route metadata adopts the personal documents heading without officer descendants",
+              1
+            ],
+            [
+              "route metadata matches route prefixes only at path-segment boundaries",
+              1
+            ],
+            [
+              "route metadata normalizes locale and trailing slash segments",
+              1
+            ],
+            [
+              "route metadata resolves /de/my-equipment",
+              1
+            ],
+            [
+              "route metadata resolves /de/my-requests",
+              1
+            ],
+            [
+              "route metadata resolves /en",
+              1
+            ],
+            [
+              "route metadata resolves /en/approvals/inbox",
+              1
+            ],
+            [
+              "route metadata resolves /en/compliance",
+              1
+            ],
+            [
+              "route metadata resolves /en/driving-licence",
+              1
+            ],
+            [
+              "route metadata resolves /en/driving-licence/checks/employee-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/equipment",
+              1
+            ],
+            [
+              "route metadata resolves /en/equipment/assignments/assignment-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/equipment/employees/employee-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/organization",
+              1
+            ],
+            [
+              "route metadata resolves /en/payroll",
+              1
+            ],
+            [
+              "route metadata resolves /en/reports/projects",
+              1
+            ],
+            [
+              "route metadata resolves /en/reports/vehicles",
+              1
+            ],
+            [
+              "route metadata resolves /en/scheduling",
+              1
+            ],
+            [
+              "route metadata resolves /en/settings/employees/employee-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/settings/equipment",
+              1
+            ],
+            [
+              "route metadata resolves /en/settings/locations/location-1",
+              1
+            ],
+            [
+              "route metadata resolves /en/team/absences",
+              1
+            ],
+            [
+              "route metadata resolves /en/team/driving",
+              1
+            ],
+            [
+              "route metadata resolves /en/works-council",
+              1
+            ],
+            [
+              "route metadata retains independent approvals page headings",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/notifications/localized-notification.test.ts",
+          "cases": 9,
+          "fullNameMultiset": [
+            [
+              "getLocalizedNotificationContent falls back to stored notification text when metadata is not structured",
+              1
+            ],
+            [
+              "getLocalizedNotificationContent formats a keyed manager-recorded absence from its typed params (#1153)",
+              1
+            ],
+            [
+              "getLocalizedNotificationContent formats typed params in the reader's locale at the time's own offset (#1149)",
+              1
+            ],
+            [
+              "getLocalizedNotificationContent has common catalog entries for emitted notification i18n keys",
+              1
+            ],
+            [
+              "getLocalizedNotificationContent localizes manager-recorded absence notification content from metadata",
+              1
+            ],
+            [
+              "getLocalizedNotificationContent localizes notification content from generic i18n metadata",
+              1
+            ],
+            [
+              "getLocalizedNotificationContent shows a sick note's absence dates in the reader's locale (#982)",
+              1
+            ],
+            [
+              "getLocalizedNotificationContent shows the day an administrator exported the reader's data in the reader's locale (#1166)",
+              1
+            ],
+            [
+              "getLocalizedNotificationContent shows the deputy reminder's last day in the reader's locale (#1013)",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/notifications/recipient-display-context.test.ts",
+          "cases": 6,
+          "fullNameMultiset": [
+            [
+              "resolveRecipientDisplayContext falls back to safe display defaults for missing or invalid recipient settings",
+              1
+            ],
+            [
+              "resolveRecipientDisplayContext keeps the recipient's saved language over the organization's default",
+              1
+            ],
+            [
+              "resolveRecipientDisplayContext never passes an invalid saved language on; it falls through to the organization's default",
+              1
+            ],
+            [
+              "resolveRecipientDisplayContext rejects a recipient without active membership in the requested organization",
+              1
+            ],
+            [
+              "resolveRecipientDisplayContext returns the recipient's saved display context after scoped membership verification",
+              1
+            ],
+            [
+              "resolveRecipientDisplayContext uses the organization's default language when the recipient saved none",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/notifications/recipient-locale.test.ts",
+          "cases": 14,
+          "fullNameMultiset": [
+            [
+              "resolveRecipientNotificationLocale falls back to English for missing or invalid values",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale falls back to English when the organization has no supported language",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale falls back to organization default language",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale ignores an invalid saved language and uses the organization's default",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale leaves the hour cycle to the language without a recipient's own setting",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale reads the recipient's hour cycle with their language in one lookup",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale resolves an organization's language without a recipient",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale uses English for a recipient without a user or an organization",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale uses only the organization's default for a recipient without a Z8 user",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale uses the recipient's persisted UI locale first",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale with the request's page language (verification and password reset) falls back to the org default, then English, without a page language",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale with the request's page language (verification and password reset) follows Accept-Language when there is no usable cookie",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale with the request's page language (verification and password reset) follows the NEXT_LOCALE cookie before Accept-Language and the org default",
+              1
+            ],
+            [
+              "resolveRecipientNotificationLocale with the request's page language (verification and password reset) keeps the saved language ahead of the page language",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/api/notifications/route.test.ts",
+          "cases": 20,
+          "fullNameMultiset": [
+            [
+              "notification authorization while mfaRequired denies COUNT before database access",
+              1
+            ],
+            [
+              "notification authorization while mfaRequired denies DELETE before database access",
+              1
+            ],
+            [
+              "notification authorization while mfaRequired denies GET before database access",
+              1
+            ],
+            [
+              "notification authorization while mfaRequired denies PATCH before database access",
+              1
+            ],
+            [
+              "notification authorization while ssoRequired denies COUNT before database access",
+              1
+            ],
+            [
+              "notification authorization while ssoRequired denies DELETE before database access",
+              1
+            ],
+            [
+              "notification authorization while ssoRequired denies GET before database access",
+              1
+            ],
+            [
+              "notification authorization while ssoRequired denies PATCH before database access",
+              1
+            ],
+            [
+              "notification request authorization requires a fresh session for COUNT even when expectation headers match",
+              1
+            ],
+            [
+              "notification request authorization requires a fresh session for DELETE even when expectation headers match",
+              1
+            ],
+            [
+              "notification request authorization requires a fresh session for GET even when expectation headers match",
+              1
+            ],
+            [
+              "notification request authorization requires a fresh session for PATCH even when expectation headers match",
+              1
+            ],
+            [
+              "notification request expectation user-current/org-previous rejects a COUNT request from the previous identity before database access",
+              1
+            ],
+            [
+              "notification request expectation user-current/org-previous rejects a DELETE request from the previous identity before database access",
+              1
+            ],
+            [
+              "notification request expectation user-current/org-previous rejects a GET request from the previous identity before database access",
+              1
+            ],
+            [
+              "notification request expectation user-current/org-previous rejects a PATCH request from the previous identity before database access",
+              1
+            ],
+            [
+              "notification request expectation user-previous/org-current rejects a COUNT request from the previous identity before database access",
+              1
+            ],
+            [
+              "notification request expectation user-previous/org-current rejects a DELETE request from the previous identity before database access",
+              1
+            ],
+            [
+              "notification request expectation user-previous/org-current rejects a GET request from the previous identity before database access",
+              1
+            ],
+            [
+              "notification request expectation user-previous/org-current rejects a PATCH request from the previous identity before database access",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/app-layout-composition.test.tsx",
+          "cases": 1,
+          "fullNameMultiset": [
+            [
+              "AppLayout composition executes the imported authenticated content inside Suspense with route props",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/app-layout-content.test.tsx",
+          "cases": 20,
+          "fullNameMultiset": [
+            [
+              "authenticated app layout gates does not invoke protected children or downstream loaders for an invalid session",
+              1
+            ],
+            [
+              "authenticated app layout gates does not invoke protected children when billing fails closed outside recovery routes",
+              1
+            ],
+            [
+              "authenticated app layout gates does not redirect saved locale \"\"",
+              1
+            ],
+            [
+              "authenticated app layout gates does not redirect saved locale \"en\"",
+              1
+            ],
+            [
+              "authenticated app layout gates does not redirect saved locale \"invalid\"",
+              1
+            ],
+            [
+              "authenticated app layout gates does not redirect saved locale null",
+              1
+            ],
+            [
+              "authenticated app layout gates keeps preference defaults and loads organization settings without an active organization",
+              1
+            ],
+            [
+              "authenticated app layout gates keeps the recovery route /en/billing/suspended accessible after a fresh billing denial",
+              1
+            ],
+            [
+              "authenticated app layout gates keeps the recovery route /en/settings/billing accessible after a fresh billing denial",
+              1
+            ],
+            [
+              "authenticated app layout gates pads the page end by the get-the-app banner's height while it shows",
+              1
+            ],
+            [
+              "authenticated app layout gates passes exact saved preferences and explicit false consent to providers",
+              1
+            ],
+            [
+              "authenticated app layout gates passes the configured store listings to the get-the-app banner",
+              1
+            ],
+            [
+              "authenticated app layout gates places the offline banner in flow below the header, not over it",
+              1
+            ],
+            [
+              "authenticated app layout gates redirects a supported saved locale de before checking billing",
+              1
+            ],
+            [
+              "authenticated app layout gates redirects a supported saved locale ro before checking billing",
+              1
+            ],
+            [
+              "authenticated app layout gates redirects a supported saved locale sv before checking billing",
+              1
+            ],
+            [
+              "authenticated app layout gates redirects a supported saved locale uk before checking billing",
+              1
+            ],
+            [
+              "authenticated app layout gates redirects an MFA-held identity before protected children or organization loaders",
+              1
+            ],
+            [
+              "authenticated app layout gates redirects an SSO-held identity to workspace initialization before protected children or loaders",
+              1
+            ],
+            [
+              "authenticated app layout gates renders protected children after all authorization gates succeed",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/app-layout-shell.test.tsx",
+          "cases": 2,
+          "fullNameMultiset": [
+            [
+              "AuthenticatedAppShell has no request, identity, tenant, or protected-child dependencies",
+              1
+            ],
+            [
+              "AuthenticatedAppShell renders neutral loading geometry without links or protected identity",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/notifications/__tests__/notification-service.test.ts",
+          "cases": 88,
+          "fullNameMultiset": [
+            [
+              "Notification Service a break_due_reminder arrives in-app and by push until the employee turns on another channel",
+              1
+            ],
+            [
+              "Notification Service a driving_details_missing_reminder arrives in-app and by push until the employee turns on another channel",
+              1
+            ],
+            [
+              "Notification Service a forgotten_clock_out_reminder arrives in-app and by push until the employee turns on another channel",
+              1
+            ],
+            [
+              "Notification Service a missed_clock_in_reminder arrives in-app and by push until the employee turns on another channel",
+              1
+            ],
+            [
+              "Notification Service a period_submission_decided arrives in-app and by push until the employee turns on another channel",
+              1
+            ],
+            [
+              "Notification Service a period_submission_reminder arrives in-app and by push until the employee turns on another channel",
+              1
+            ],
+            [
+              "Notification Service a period_submission_sent_back arrives in-app and by push until the employee turns on another channel",
+              1
+            ],
+            [
+              "Notification Service an expense officer's payroll run notice is in-app only, like the ready-for-reimbursement notice",
+              1
+            ],
+            [
+              "Notification Service an expense officer's ready-for-reimbursement notice is in-app only until they turn on another channel",
+              1
+            ],
+            [
+              "Notification Service automatic clock-out inbox remains mandatory when its stored preference is muted",
+              1
+            ],
+            [
+              "Notification Service cancellation email preferences are independent of approval email preferences",
+              1
+            ],
+            [
+              "Notification Service createNotification creates notification when in_app is enabled (default)",
+              1
+            ],
+            [
+              "Notification Service createNotification does not send push when push preference is disabled",
+              1
+            ],
+            [
+              "Notification Service createNotification hands web push the metadata it localizes the text from (#1155)",
+              1
+            ],
+            [
+              "Notification Service createNotification keeps a security alert's IP address and user agent out of the webhook payload (#1180)",
+              1
+            ],
+            [
+              "Notification Service createNotification publishes the webhook payload byte-for-byte as stored, translation keys and all",
+              1
+            ],
+            [
+              "Notification Service createNotification sends push notification when push is enabled and available",
+              1
+            ],
+            [
+              "Notification Service createNotification skips notification when in_app is disabled",
+              1
+            ],
+            [
+              "Notification Service deleteNotification requires organizationId",
+              1
+            ],
+            [
+              "Notification Service deleteNotification returns boolean when deleting notification",
+              1
+            ],
+            [
+              "Notification Service deleteNotification returns false on error",
+              1
+            ],
+            [
+              "Notification Service deleteNotification returns false when notification not found",
+              1
+            ],
+            [
+              "Notification Service deleteOldNotifications accepts optional days parameter",
+              1
+            ],
+            [
+              "Notification Service deleteOldNotifications handles custom days parameter",
+              1
+            ],
+            [
+              "Notification Service deleteOldNotifications returns a number representing deleted count",
+              1
+            ],
+            [
+              "Notification Service discord outcomes approval_request_approved delivers the outcome once to the correct organization and requester",
+              1
+            ],
+            [
+              "Notification Service discord outcomes approval_request_approved preserves the notification when provider delivery fails",
+              1
+            ],
+            [
+              "Notification Service discord outcomes approval_request_approved respects the requester's disabled channel preference",
+              1
+            ],
+            [
+              "Notification Service discord outcomes approval_request_approved skips delivery when the organization platform is unavailable",
+              1
+            ],
+            [
+              "Notification Service discord outcomes approval_request_rejected delivers the outcome once to the correct organization and requester",
+              1
+            ],
+            [
+              "Notification Service discord outcomes approval_request_rejected preserves the notification when provider delivery fails",
+              1
+            ],
+            [
+              "Notification Service discord outcomes approval_request_rejected respects the requester's disabled channel preference",
+              1
+            ],
+            [
+              "Notification Service discord outcomes approval_request_rejected skips delivery when the organization platform is unavailable",
+              1
+            ],
+            [
+              "Notification Service durable push retries failed subscriptions and identifies an unavailable recipient",
+              1
+            ],
+            [
+              "Notification Service durable web push carries the metadata it localizes the text from (#1155)",
+              1
+            ],
+            [
+              "Notification Service getUnreadCount handles errors gracefully and returns 0",
+              1
+            ],
+            [
+              "Notification Service getUnreadCount returns a number from the function",
+              1
+            ],
+            [
+              "Notification Service isChannelEnabled looks up preferences by user, type, and channel only",
+              1
+            ],
+            [
+              "Notification Service isChannelEnabled returns preference value when preference exists",
+              1
+            ],
+            [
+              "Notification Service isChannelEnabled returns true on error (fail open)",
+              1
+            ],
+            [
+              "Notification Service isChannelEnabled returns true when no preference exists (default enabled)",
+              1
+            ],
+            [
+              "Notification Service markAllAsRead marks all unread notifications in the scoped organization",
+              1
+            ],
+            [
+              "Notification Service markAllAsRead returns 0 on error",
+              1
+            ],
+            [
+              "Notification Service markAllAsRead returns count of updated notifications",
+              1
+            ],
+            [
+              "Notification Service markAsRead marks notification as read and returns updated notification",
+              1
+            ],
+            [
+              "Notification Service markAsRead requires organizationId and keeps updates scoped",
+              1
+            ],
+            [
+              "Notification Service markAsRead returns null when notification not found",
+              1
+            ],
+            [
+              "Notification Service Multi-org notification isolation createNotification includes organizationId in notification",
+              1
+            ],
+            [
+              "Notification Service Multi-org notification isolation createNotification reads user-level preferences without organization scope",
+              1
+            ],
+            [
+              "Notification Service Multi-org notification isolation deleteAllNotifications requires organizationId parameter",
+              1
+            ],
+            [
+              "Notification Service Multi-org notification isolation getUnreadCount requires organizationId parameter",
+              1
+            ],
+            [
+              "Notification Service Multi-org notification isolation getUserNotifications requires organizationId parameter",
+              1
+            ],
+            [
+              "Notification Service Multi-org notification isolation isChannelEnabled keeps organizationId in the signature for delivery context",
+              1
+            ],
+            [
+              "Notification Service Multi-org notification isolation markAllAsRead requires organizationId parameter",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers awaits the transport and propagates its failure",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers loads channel preferences with enabled defaults",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers reports a duplicate idempotent in-app insert instead of silently succeeding",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers retries discord availability resolution failures only for durable delivery",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers retries slack availability resolution failures only for durable delivery",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers retries teams availability resolution failures only for durable delivery",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers retries telegram availability resolution failures only for durable delivery",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers returns the created in-app row",
+              1
+            ],
+            [
+              "Notification Service single-channel delivery for durable callers separates an unavailable transport from a failed one",
+              1
+            ],
+            [
+              "Notification Service slack outcomes approval_request_approved delivers the outcome once to the correct organization and requester",
+              1
+            ],
+            [
+              "Notification Service slack outcomes approval_request_approved preserves the notification when provider delivery fails",
+              1
+            ],
+            [
+              "Notification Service slack outcomes approval_request_approved respects the requester's disabled channel preference",
+              1
+            ],
+            [
+              "Notification Service slack outcomes approval_request_approved skips delivery when the organization platform is unavailable",
+              1
+            ],
+            [
+              "Notification Service slack outcomes approval_request_rejected delivers the outcome once to the correct organization and requester",
+              1
+            ],
+            [
+              "Notification Service slack outcomes approval_request_rejected preserves the notification when provider delivery fails",
+              1
+            ],
+            [
+              "Notification Service slack outcomes approval_request_rejected respects the requester's disabled channel preference",
+              1
+            ],
+            [
+              "Notification Service slack outcomes approval_request_rejected skips delivery when the organization platform is unavailable",
+              1
+            ],
+            [
+              "Notification Service teams outcomes approval_request_approved delivers the outcome once to the correct organization and requester",
+              1
+            ],
+            [
+              "Notification Service teams outcomes approval_request_approved preserves the notification when provider delivery fails",
+              1
+            ],
+            [
+              "Notification Service teams outcomes approval_request_approved respects the requester's disabled channel preference",
+              1
+            ],
+            [
+              "Notification Service teams outcomes approval_request_approved skips delivery when the organization platform is unavailable",
+              1
+            ],
+            [
+              "Notification Service teams outcomes approval_request_rejected delivers the outcome once to the correct organization and requester",
+              1
+            ],
+            [
+              "Notification Service teams outcomes approval_request_rejected preserves the notification when provider delivery fails",
+              1
+            ],
+            [
+              "Notification Service teams outcomes approval_request_rejected respects the requester's disabled channel preference",
+              1
+            ],
+            [
+              "Notification Service teams outcomes approval_request_rejected skips delivery when the organization platform is unavailable",
+              1
+            ],
+            [
+              "Notification Service telegram outcomes approval_request_approved delivers the outcome once to the correct organization and requester",
+              1
+            ],
+            [
+              "Notification Service telegram outcomes approval_request_approved preserves the notification when provider delivery fails",
+              1
+            ],
+            [
+              "Notification Service telegram outcomes approval_request_approved respects the requester's disabled channel preference",
+              1
+            ],
+            [
+              "Notification Service telegram outcomes approval_request_approved skips delivery when the organization platform is unavailable",
+              1
+            ],
+            [
+              "Notification Service telegram outcomes approval_request_rejected delivers the outcome once to the correct organization and requester",
+              1
+            ],
+            [
+              "Notification Service telegram outcomes approval_request_rejected preserves the notification when provider delivery fails",
+              1
+            ],
+            [
+              "Notification Service telegram outcomes approval_request_rejected respects the requester's disabled channel preference",
+              1
+            ],
+            [
+              "Notification Service telegram outcomes approval_request_rejected skips delivery when the organization platform is unavailable",
+              1
+            ],
+            [
+              "Notification Service the approver's cover return summary is in-app only until they turn on another channel (#1018)",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/notifications/__tests__/notification-types.test.ts",
+          "cases": 19,
+          "fullNameMultiset": [
+            [
+              "Notification Types NOTIFICATION_CHANNELS contains discord channel",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_CHANNELS contains email channel",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_CHANNELS contains in_app channel",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_CHANNELS contains push channel",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_CHANNELS contains slack channel",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_CHANNELS contains teams channel",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_CHANNELS contains telegram channel",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_CHANNELS has expected total channels",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_CHANNELS is a readonly array",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_TYPES contains all expected absence types",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_TYPES contains all expected approval types",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_TYPES contains all expected reminder types",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_TYPES contains all expected security types",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_TYPES contains all expected team types",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_TYPES contains all expected time correction types",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_TYPES has expected total count of notification types",
+              1
+            ],
+            [
+              "Notification Types NOTIFICATION_TYPES is a readonly array",
+              1
+            ],
+            [
+              "Notification Types Type validation helpers can check if a string is a valid notification channel",
+              1
+            ],
+            [
+              "Notification Types Type validation helpers can check if a string is a valid notification type",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/notifications/__tests__/time-ago.test.ts",
+          "cases": 24,
+          "fullNameMultiset": [
+            [
+              "getTimeAgo days ago (1-6 days) returns '1 day ago' for 1 day ago (singular)",
+              1
+            ],
+            [
+              "getTimeAgo days ago (1-6 days) returns '2 days ago' for 2 days ago (plural)",
+              1
+            ],
+            [
+              "getTimeAgo days ago (1-6 days) returns '6 days ago' for 6 days ago",
+              1
+            ],
+            [
+              "getTimeAgo edge cases handles exactly 24 hours ago (transition to days)",
+              1
+            ],
+            [
+              "getTimeAgo edge cases handles exactly 60 minutes ago (transition to hours)",
+              1
+            ],
+            [
+              "getTimeAgo edge cases handles exactly 60 seconds ago (transition to minutes)",
+              1
+            ],
+            [
+              "getTimeAgo hours ago (1-23 hours) returns '1 hour ago' for 1 hour ago (singular)",
+              1
+            ],
+            [
+              "getTimeAgo hours ago (1-23 hours) returns '12 hours ago' for 12 hours ago",
+              1
+            ],
+            [
+              "getTimeAgo hours ago (1-23 hours) returns '2 hours ago' for 2 hours ago (plural)",
+              1
+            ],
+            [
+              "getTimeAgo hours ago (1-23 hours) returns '23 hours ago' for 23 hours ago",
+              1
+            ],
+            [
+              "getTimeAgo just now (< 60 seconds) returns 'just now' for 30 seconds ago",
+              1
+            ],
+            [
+              "getTimeAgo just now (< 60 seconds) returns 'just now' for 59 seconds ago",
+              1
+            ],
+            [
+              "getTimeAgo just now (< 60 seconds) returns 'just now' for current time",
+              1
+            ],
+            [
+              "getTimeAgo minutes ago (1-59 minutes) returns '1 minute ago' for 1 minute ago (singular)",
+              1
+            ],
+            [
+              "getTimeAgo minutes ago (1-59 minutes) returns '2 minutes ago' for 2 minutes ago (plural)",
+              1
+            ],
+            [
+              "getTimeAgo minutes ago (1-59 minutes) returns '30 minutes ago' for 30 minutes ago",
+              1
+            ],
+            [
+              "getTimeAgo minutes ago (1-59 minutes) returns '59 minutes ago' for 59 minutes ago",
+              1
+            ],
+            [
+              "getTimeAgo months ago (30+ days) returns '1 month ago' for 30 days ago (singular)",
+              1
+            ],
+            [
+              "getTimeAgo months ago (30+ days) returns '12 months ago' for 365 days ago",
+              1
+            ],
+            [
+              "getTimeAgo months ago (30+ days) returns '2 months ago' for 60 days ago (plural)",
+              1
+            ],
+            [
+              "getTimeAgo months ago (30+ days) returns '6 months ago' for 180 days ago",
+              1
+            ],
+            [
+              "getTimeAgo weeks ago (1-4 weeks) returns '1 week ago' for 7 days ago (singular)",
+              1
+            ],
+            [
+              "getTimeAgo weeks ago (1-4 weeks) returns '2 weeks ago' for 14 days ago (plural)",
+              1
+            ],
+            [
+              "getTimeAgo weeks ago (1-4 weeks) returns '4 weeks ago' for 28 days ago",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/self-service-requests/__tests__/get-self-service-requests.test.ts",
+          "cases": 32,
+          "fullNameMultiset": [
+            [
+              "getSelfServiceRequests continues past newer ordinary approvals to return older corrections",
+              1
+            ],
+            [
+              "getSelfServiceRequests does not expose cancellation for corrections bound to the wrong endpoint",
+              1
+            ],
+            [
+              "getSelfServiceRequests does not treat a manager-authored cancellation marker as requester cancellation",
+              1
+            ],
+            [
+              "getSelfServiceRequests excludes decisions outside the 30 day recent window from recent decision count",
+              1
+            ],
+            [
+              "getSelfServiceRequests excludes draft travel expenses from result items and counts",
+              1
+            ],
+            [
+              "getSelfServiceRequests excludes ordinary compatibility and canonical requester rows in canonical mode",
+              1
+            ],
+            [
+              "getSelfServiceRequests excludes ordinary compatibility and canonical requester rows in complete mode",
+              1
+            ],
+            [
+              "getSelfServiceRequests excludes ordinary compatibility and canonical requester rows in legacy mode",
+              1
+            ],
+            [
+              "getSelfServiceRequests excludes ordinary compatibility and canonical requester rows in ready mode",
+              1
+            ],
+            [
+              "getSelfServiceRequests excludes ordinary compatibility and canonical requester rows in shadow mode",
+              1
+            ],
+            [
+              "getSelfServiceRequests fails closed for a cancellation marker with an accessor field",
+              1
+            ],
+            [
+              "getSelfServiceRequests fails closed for a cancellation marker with an extra field",
+              1
+            ],
+            [
+              "getSelfServiceRequests fails closed for a cancellation marker with an inherited field",
+              1
+            ],
+            [
+              "getSelfServiceRequests fails closed for a chain marker without chain identity",
+              1
+            ],
+            [
+              "getSelfServiceRequests fails closed for a direct marker with chain identity",
+              1
+            ],
+            [
+              "getSelfServiceRequests fails closed for malformed canonical submission identity evidence",
+              1
+            ],
+            [
+              "getSelfServiceRequests fails closed when canonical display data contradicts correction evidence",
+              1
+            ],
+            [
+              "getSelfServiceRequests filters by status, source type, and search text",
+              1
+            ],
+            [
+              "getSelfServiceRequests filters extra, private, accessor, inherited, foreign, and oversized projections",
+              1
+            ],
+            [
+              "getSelfServiceRequests keeps owned correction IDs and excludes foreign correction IDs",
+              1
+            ],
+            [
+              "getSelfServiceRequests maps a malformed cancellation marker on a non-terminal row to rejected view-only",
+              1
+            ],
+            [
+              "getSelfServiceRequests maps an exact requester-cancelled legacy chain tombstone to cancelled",
+              1
+            ],
+            [
+              "getSelfServiceRequests maps an exact requester-cancelled legacy tombstone to cancelled",
+              1
+            ],
+            [
+              "getSelfServiceRequests maps complete-mode canonical lifecycle states without exposing private context",
+              1
+            ],
+            [
+              "getSelfServiceRequests maps mixed request sources into one employee-scoped result",
+              1
+            ],
+            [
+              "getSelfServiceRequests offers correction cancellation only while the exact correction request is pending",
+              1
+            ],
+            [
+              "getSelfServiceRequests prefers the legacy compatibility DTO for an exact canonical workflow duplicate",
+              1
+            ],
+            [
+              "getSelfServiceRequests returns partial data with a source error when one adapter fails",
+              1
+            ],
+            [
+              "getSelfServiceRequests serves valid canonical time corrections in complete mode",
+              1
+            ],
+            [
+              "getSelfServiceRequests strictly excludes manual, policy, and unclassified time approvals from corrections",
+              1
+            ],
+            [
+              "getSelfServiceRequests treats safe bounded search text as a non-authoritative index",
+              1
+            ],
+            [
+              "getSelfServiceRequests uses updatedAt as rejected absence resolvedAt when approvedAt is missing",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/my-requests/actions.test.ts",
+          "cases": 4,
+          "fullNameMultiset": [
+            [
+              "my requests action boundaries derives requester authority from the authenticated active organization",
+              1
+            ],
+            [
+              "my requests action boundaries rejects malformed IDs and mismatched session organizations without invoking the domain",
+              1
+            ],
+            [
+              "my requests action boundaries returns a stable generic error without exposing domain details",
+              1
+            ],
+            [
+              "my requests action boundaries uses the server-only authenticated cancellation service",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx",
+          "cases": 22,
+          "fullNameMultiset": [
+            [
+              "MyRequestsClient applies filters consistently to grouped sections and all-request history",
+              1
+            ],
+            [
+              "MyRequestsClient dispatches pending cancellation by source type with neutral copy",
+              1
+            ],
+            [
+              "MyRequestsClient distinguishes empty and filtered-empty states",
+              1
+            ],
+            [
+              "MyRequestsClient does not call a failed source an empty request history",
+              1
+            ],
+            [
+              "MyRequestsClient does not cancel when confirmation is declined",
+              1
+            ],
+            [
+              "MyRequestsClient does not dispatch cancellation for unsupported request source types",
+              1
+            ],
+            [
+              "MyRequestsClient does not render unsupported actions",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker does not take focus to the notice when the employee cancels the focused request here",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker explains a missing or cancelled request without disclosing anything and re-checks readiness",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker explains a request that is no longer pending without disclosing anything and re-checks readiness",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker explains another employee's or organization's request without disclosing anything and re-checks readiness",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker focuses the pending absence, with its existing cancel action",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker focuses the pending correction in review",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker ignores a malformed focus value",
+              1
+            ],
+            [
+              "MyRequestsClient focused request from a period blocker selects the filters needed to reveal the focused request",
+              1
+            ],
+            [
+              "MyRequestsClient formats request dates with the active locale",
+              1
+            ],
+            [
+              "MyRequestsClient renders requests in prioritized groups and all-request history",
+              1
+            ],
+            [
+              "MyRequestsClient retains the request and permits retry after a cancellation transport failure",
+              1
+            ],
+            [
+              "MyRequestsClient retries a partial source without losing the current filters or usable records",
+              1
+            ],
+            [
+              "MyRequestsClient shows cancellation errors returned by the action",
+              1
+            ],
+            [
+              "MyRequestsClient shows source error notices",
+              1
+            ],
+            [
+              "MyRequestsClient suppresses duplicate cancel actions in all-request history",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "cases": 34,
+          "fullNameMultiset": [
+            [
+              "OrgExplorerClient a large organization loads a subtree on demand when it is expanded",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization loads a team's members on request in the Teams view until all are loaded",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization loads the filtered teams' members, a team at a time",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization loads the path to a person chosen in search",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization loads the people without a reporting line on request, a page at a time",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization recovers a failed deep-linked person without losing the selected URL or showing a different person",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization retains the roster and recovers a failed expanded branch after a transport error",
+              1
+            ],
+            [
+              "OrgExplorerClient a large organization settles a lazy deep link when the mounted app replays effects",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel does not link the teams for other viewers",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel gives admins a link to the teams for someone without a team",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel gives admins links to edit the employee and manage each of their teams",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel marks no primary manager when the reporting line falls back to another manager",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel opens from ?employee= and jumps to a manager, opening the path to them",
+              1
+            ],
+            [
+              "OrgExplorerClient detail panel shows managers, direct reports, team memberships and email for the clicked person",
+              1
+            ],
+            [
+              "OrgExplorerClient on phones collapses and expands a subtree in the outline",
+              1
+            ],
+            [
+              "OrgExplorerClient on phones shows Reporting lines as an outline and the panel as a bottom sheet",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines dims people outside the filtered teams and their paths",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines draws one line per person, from their primary manager, and no team lines",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines highlights the filtered teams' members, dims the rest and keeps their path visible",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines lists people with no manager and no reports under No reporting line, not on top",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines marks people with more managers and places managers above their reports",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines opens two levels by default and toggles a subtree from the direct-report count",
+              1
+            ],
+            [
+              "OrgExplorerClient Reporting lines shows team chips with the primary team first and +N for the rest",
+              1
+            ],
+            [
+              "OrgExplorerClient search dismisses search with the first Escape and ignores the in-flight response",
+              1
+            ],
+            [
+              "OrgExplorerClient search ignores a stale search response",
+              1
+            ],
+            [
+              "OrgExplorerClient search opens the path to the chosen person, centres on them and selects them",
+              1
+            ],
+            [
+              "OrgExplorerClient shows an empty state when nobody is on the roster",
+              1
+            ],
+            [
+              "OrgExplorerClient team filter narrows the Teams grid",
+              1
+            ],
+            [
+              "OrgExplorerClient team filter writes the chosen teams to the URL",
+              1
+            ],
+            [
+              "OrgExplorerClient Teams collects people without a team membership on a No team card",
+              1
+            ],
+            [
+              "OrgExplorerClient Teams opens the detail panel for a member",
+              1
+            ],
+            [
+              "OrgExplorerClient Teams shows each team's lead, members and count, with multi-team members on each card",
+              1
+            ],
+            [
+              "OrgExplorerClient views opens the view named in ?view= and follows the back button",
+              1
+            ],
+            [
+              "OrgExplorerClient views shows Reporting lines by default and switches to Teams through the control",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-layout.test.ts",
+          "cases": 3,
+          "fullNameMultiset": [
+            [
+              "layoutReportingTree draws one line per person, from their primary manager",
+              1
+            ],
+            [
+              "layoutReportingTree lays out only the visible people",
+              1
+            ],
+            [
+              "layoutReportingTree places every manager above their reports",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-teams.test.ts",
+          "cases": 5,
+          "fullNameMultiset": [
+            [
+              "groupTeams collects people without a team membership for the No team card",
+              1
+            ],
+            [
+              "groupTeams narrows the cards to the filtered teams and drops the No team card",
+              1
+            ],
+            [
+              "groupTeams puts the team lead in the header even when they are not a member",
+              1
+            ],
+            [
+              "groupTeams says whether every member of a team is loaded",
+              1
+            ],
+            [
+              "groupTeams shows someone in several teams on each of their teams, marking their primary team",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-tree.test.ts",
+          "cases": 9,
+          "fullNameMultiset": [
+            [
+              "buildReportingTree breaks a loop of reporting lines at the first person by name, so nobody is lost",
+              1
+            ],
+            [
+              "buildReportingTree hangs each person under their primary manager only",
+              1
+            ],
+            [
+              "buildReportingTree lists the path from the top down to a person",
+              1
+            ],
+            [
+              "buildReportingTree orders roots, children and the No reporting line group by name",
+              1
+            ],
+            [
+              "buildReportingTree puts people with no manager and line reports on top, and the rest in No reporting line",
+              1
+            ],
+            [
+              "buildReportingTree puts someone with no manager whose reports all report along another line in No reporting line",
+              1
+            ],
+            [
+              "buildReportingTree shows a person whose primary manager is not loaded yet on top",
+              1
+            ],
+            [
+              "expanding the reporting lines hides the subtree of a collapsed person",
+              1
+            ],
+            [
+              "expanding the reporting lines opens two levels below the top by default",
+              1
+            ]
+          ]
+        },
+        {
+          "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-url.test.ts",
+          "cases": 5,
+          "fullNameMultiset": [
+            [
+              "Org Explorer URL state defaults to Reporting lines with no filter and nobody selected",
+              1
+            ],
+            [
+              "Org Explorer URL state falls back to Reporting lines for an unknown view and ignores empty values",
+              1
+            ],
+            [
+              "Org Explorer URL state reads the view, the team filter and the selected person",
+              1
+            ],
+            [
+              "Org Explorer URL state round-trips a state through the URL",
+              1
+            ],
+            [
+              "Org Explorer URL state writes only what differs from the default and keeps other parameters",
+              1
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "types": {
+    "passed": true,
+    "scope": "Full next typegen, application tsconfig.typecheck,workflow-contracts and smoke, fresh merged tree"
+  },
+  "doctor": {
+    "changedSourceFiles": 11,
+    "diagnostics": 0,
+    "remoteScore": false,
+    "supplyChain": false
+  },
+  "biome": {
+    "defaultAll11": false,
+    "normalCRLFAll11": true,
+    "explicitWebappCRLFAll11": false,
+    "organizationNormalCRLF10": true,
+    "metadataExplicitCRLF": false,
+    "lintImportAll11": true,
+    "sourceFormattingEdits": false
+  },
+  "sourceContracts": {
+    "command": [
+      "pnpm",
+      "--filter",
+      "webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--config",
+      "../../.tmp/merge1724-audit/source-contract.config.mjs",
+      "-t",
+      "root audit",
+      "--maxWorkers=1",
+      "--reporter=json",
+      "--outputFile",
+      "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1724-audit/source-contract.json"
+    ],
+    "failed": 2,
+    "passed": 0,
+    "nonSelectedCopiedCases": 34,
+    "reproduced": [
+      "merger source lifecycle contracts root audit refresh reissues a held selected-person read",
+      "merger source lifecycle contracts root audit retries a failed branch after Activity return"
+    ],
+    "acceptance": "Blocked; two failing diagnostic regressions are not counted as successful coverage."
+  },
+  "harnessFailures": [
+    {
+      "scope": "Initial native pnpm calls",
+      "result": "Sandbox denied engine store lock for exact/types; authorized escalation reran. No validation result from denied calls."
+    },
+    {
+      "scope": "Ignored assembled-source test harness",
+      "result": "Initial configroot/discovery and dependency resolution failures, then missing DOM cleanup; final aliases and globals cleanup reproduce both actual failures. Harness attempts retained separately and not counted as product findings."
+    },
+    {
+      "scope": "Metadata audit first attempt",
+      "result": "Whitespace-only normalization failed because formatter inserted semantically neutral trailing function-call commas; audit now normalizes those commas; no source edits."
+    }
+  ],
+  "inheritedCountsNotAdded": {
+    "organizationPostgres": {
+      "suites": 1,
+      "cases": 18,
+      "freshByMerger": false
+    },
+    "workerRuntime": {
+      "observations": 25,
+      "freshByMerger": false
+    },
+    "prior1723Units": {
+      "suites": 41,
+      "cases": 495
+    },
+    "root1722Units": {
+      "suites": 48,
+      "cases": 1086
+    },
+    "root1722Postgres": {
+      "cases": 35
+    }
+  }
+}
