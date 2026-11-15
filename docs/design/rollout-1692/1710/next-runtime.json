@@ -1,0 +1,17 @@
+{
+  "nextVersion": "16.4.6",
+  "bundler": "Turbopack",
+  "get_compilation_issues": { "issues": [] },
+  "get_errors": { "configErrors": [], "sessionErrors": [] },
+  "qualification": "Final connected native browser navigation after the temporary outage was restored. Expected outage and membership/session redirect diagnostics occurred earlier; this does not certify all earlier transitions or production prerendering.",
+  "nativeReact": {
+    "treeSucceeded": true,
+    "componentsObserved": ["ApprovalReviewOutcome", "ReviewArrival"],
+    "inspectSucceeded": true,
+    "arrivalStatus": "unavailable",
+    "renderCommandSucceeded": true,
+    "renderSample": "No renders captured; no performance claim",
+    "qualification": "Observed the removed request after actual decisions; successful ready panel behavior is separate Puppeteer and assembled-test evidence. A native notification prompt also affected DOM snapshots."
+  },
+  "previewFallback": "T3 preview navigation worked; two snapshots timed out after 15000ms each. Switched to isolated Chrome/Puppeteer under the guarded fixture workflow. The preview tab was closed."
+}

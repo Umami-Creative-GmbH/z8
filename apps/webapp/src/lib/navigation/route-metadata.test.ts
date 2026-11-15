@@ -6,11 +6,11 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
-	it("adopts only the independent legacy approvals page", () => {
+	it("retains independent approvals page headings", () => {
 		expect(appPageOwnsHeading("/de/approvals")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(
-			false,
+			true,
 		);
 	});
 	it("adopts only the deputy history record, preserving other approval headings", () => {
@@ -27,8 +27,19 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(
+			true,
+		);
+	});
+	it("adopts only the complete review arrival route", () => {
+		expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(
+			true,
+		);
+		expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(
 			false,
 		);
+		expect(
+			appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),
+		).toBe(false);
 	});
 	it("adopts the exact vacation route while retaining staged descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);
