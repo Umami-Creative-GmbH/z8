@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import { db } from "@/db";
@@ -13,7 +13,10 @@ import {
 } from "@/db/schema";
 import { readApprovalAuthoritySnapshot } from "@/lib/approvals/authority";
 import { parseRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
-import { normalizeTimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
+import {
+	normalizeTimeCorrectionOriginalWorkMetadata,
+	normalizeTimeCorrectionWorkflowPayload,
+} from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import { compareInstants, parseInstant } from "@/lib/datetime/temporal-core";
@@ -206,9 +209,9 @@ async function loadTimeCorrections(
 		if (rows.length < SOURCE_QUERY_LIMIT) break;
 	}
 
-	// Legacy requests hold every correction until canonical authority stops
-	// compatibility writing (`complete`).
-	if (rollout.authority === "legacy" || rollout.compatibilityWriting) {
+	// Compatibility rows represent current requests. Cancellation removes those
+	// rows, so its retained canonical workflow supplies the view-only history.
+	if (rollout.authority === "legacy") {
 		return legacyItems;
 	}
 
@@ -218,6 +221,7 @@ async function loadTimeCorrections(
 			eq(approvalWorkflow.requesterEmployeeId, input.employeeId),
 			eq(approvalWorkflow.workflowType, "time_correction"),
 			eq(approvalWorkflow.sourceType, "time_entry"),
+			rollout.compatibilityWriting ? eq(approvalWorkflow.status, "cancelled") : undefined,
 		),
 		orderBy: [desc(approvalWorkflow.createdAt)],
 		limit: SOURCE_QUERY_LIMIT,
@@ -379,7 +383,12 @@ async function loadVerifiedCorrectionEvidenceByPeriod(
 			eq(timeEntry.organizationId, input.organizationId),
 			eq(timeEntry.employeeId, input.employeeId),
 			eq(timeEntry.type, "correction"),
-			eq(timeEntry.isSuperseded, false),
+			// Pending (and retained cancelled) correction entries are inactive until
+			// approval. A superseding successor distinguishes replaced history.
+			or(
+				eq(timeEntry.isSuperseded, false),
+				and(eq(timeEntry.isSuperseded, true), isNull(timeEntry.supersededById)),
+			),
 			or(
 				inArray(timeEntry.id, endpointIds),
 				inArray(timeEntry.replacesEntryId, endpointIds),
@@ -510,11 +519,26 @@ function mapCanonicalTimeCorrection(
 	}
 
 	try {
+		const context = row.contextSnapshot;
+		if (
+			!record(context) ||
+			(Object.hasOwn(context, "organizationId") && context.organizationId !== row.organizationId) ||
+			(Object.hasOwn(context, "requesterEmployeeId") &&
+				context.requesterEmployeeId !== row.requesterEmployeeId) ||
+			(Object.hasOwn(context, "workflowType") && context.workflowType !== row.workflowType) ||
+			(Object.hasOwn(context, "source") &&
+				(!record(context.source) ||
+					context.source.id !== row.sourceId ||
+					context.source.type !== row.sourceType))
+		) {
+			throw new Error();
+		}
 		const correction = parseCanonicalTimeCorrectionContext(row.contextSnapshot);
 		const display = parseCanonicalTimeCorrectionDisplay(
 			row.displaySnapshot,
 			correction,
 			row.requesterEmployeeId,
+			context.timeCorrectionOriginalWorkMetadata,
 		);
 		const status = row.status as SelfServiceRequestStatus;
 		return [
@@ -586,16 +610,47 @@ function parseCanonicalTimeCorrectionDisplay(
 		typeof normalizeTimeCorrectionWorkflowPayload
 	>["timeCorrection"],
 	requesterEmployeeId: string,
+	originalWorkMetadata: unknown,
 ): { title: string; subtitle: string } {
 	const envelope = strictOwnDataRecord(value, ["displayPayload", "searchText"]);
-	const payload = strictOwnDataRecord(envelope.displayPayload, [
-		"requesterEmployeeId",
-		"requesterName",
-		"title",
-		"action",
-		"endpoints",
-	]);
-	const requesterName = safeDisplayString(payload.requesterName, 200, false);
+	if (!record(envelope.displayPayload)) throw new Error();
+	const namedProjection =
+		Object.hasOwn(envelope.displayPayload, "requesterEmployeeId") ||
+		Object.hasOwn(envelope.displayPayload, "requesterName");
+	const hasWorkMetadata = Object.hasOwn(correction, "workLocationType");
+	// Observed legacy workflows use the adapter's named projection; production
+	// canonical submissions use the submission owner's endpoint/work projection.
+	const payload = strictOwnDataRecord(
+		envelope.displayPayload,
+		namedProjection
+			? ["requesterEmployeeId", "requesterName", "title", "action", "endpoints"]
+			: ["title", "action", "endpoints", ...(hasWorkMetadata ? ["workMetadata"] : [])],
+	);
+	if (namedProjection) {
+		if (
+			payload.requesterEmployeeId !== requesterEmployeeId ||
+			safeDisplayString(payload.requesterName, 200, false).length === 0
+		) {
+			throw new Error();
+		}
+	} else if ("workLocationType" in correction) {
+		const work = strictOwnDataRecord(payload.workMetadata, ["original", "requested"]);
+		const original = normalizeTimeCorrectionOriginalWorkMetadata(
+			strictOwnDataRecord(work.original, ["workLocationType", "workCategoryId"]),
+		);
+		const requested = normalizeTimeCorrectionOriginalWorkMetadata(
+			strictOwnDataRecord(work.requested, ["workLocationType", "workCategoryId"]),
+		);
+		const recorded = normalizeTimeCorrectionOriginalWorkMetadata(originalWorkMetadata);
+		if (
+			original.workLocationType !== recorded.workLocationType ||
+			original.workCategoryId !== recorded.workCategoryId ||
+			requested.workLocationType !== correction.workLocationType ||
+			requested.workCategoryId !== correction.workCategoryId
+		) {
+			throw new Error();
+		}
+	}
 	const title = safeDisplayString(payload.title, 100, false);
 	safeDisplayString(envelope.searchText, 1000, true);
 	const expectedEndpoints = [
@@ -603,8 +658,6 @@ function parseCanonicalTimeCorrectionDisplay(
 		...(correction.clockOutCorrectionId ? ["Clock out"] : []),
 	];
 	if (
-		payload.requesterEmployeeId !== requesterEmployeeId ||
-		requesterName.length === 0 ||
 		title !== "Time correction" ||
 		payload.action !== correction.action ||
 		!strictStringArrayEquals(payload.endpoints, expectedEndpoints)

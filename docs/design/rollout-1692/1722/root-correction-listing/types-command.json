@@ -1,0 +1,9 @@
+{
+  "command": [
+    "pnpm",
+    "--filter",
+    "webapp",
+    "typecheck"
+  ],
+  "exitCode": 0
+}

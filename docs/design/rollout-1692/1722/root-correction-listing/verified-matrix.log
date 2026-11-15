@@ -1,0 +1,23 @@
+Started label-owned PostgreSQL 16 container: z8_approval_workflow_repository_test_1794743249367867000_1256
+PostgreSQL 16 is ready: z8_approval_workflow_repository_test_1794743249367867000_1256
+Created disposable database: approval_workflow_repository_test_1794743249367867000_1256
+Verifying approval migration incident recovery, retry, and fresh chain
+Migration recovery verification: probing custom schema refusal
+Migration recovery verification: recreating incident state
+Migration recovery verification: applying recovery migration
+Migration recovery verification: checking retry idempotency
+Migration recovery verification: checking anchor-present index recovery
+Migration recovery verification: checking fresh migration chain
+Migration recovery verification: passed
+Running the PostgreSQL integration project
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:48604) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{"level":30,"time":1794743280399,"pid":48604,"hostname":"be-kai-et","component":"ApprovalsActionsEffect","approverId":"e1675000-0000-4000-8000-000000000002","entityType":"time_entry","entityId":"b262ee4f-df03-43de-a140-74bad4b8283f","action":"approve","msg":"Processing approval action"}
+{"level":30,"time":1794743280430,"pid":48604,"hostname":"be-kai-et","component":"ApprovalsActionsEffect","approvalId":"a079df5b-afeb-42af-a535-6614b2bf02cd","entityType":"time_entry","entityId":"b262ee4f-df03-43de-a140-74bad4b8283f","action":"approve","msg":"Successfully approved time_entry"}
+JSON report written to X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1722-root-checks/verified-matrix.json
+Verified container ownership label: z8.agent-owned=approval-workflow-repository-test
+z8_approval_workflow_repository_test_1794743249367867000_1256
+Removed disposable PostgreSQL container: z8_approval_workflow_repository_test_1794743249367867000_1256

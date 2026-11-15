@@ -20,6 +20,7 @@ vi.mock("drizzle-orm", () => ({
 	eq: vi.fn((left: unknown, right: unknown) => ({ op: "eq", left, right })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ op: "gte", left, right })),
 	ne: vi.fn((left: unknown, right: unknown) => ({ op: "ne", left, right })),
+	isNull: vi.fn((column: unknown) => ({ op: "isNull", column })),
 	or: vi.fn((...conditions: unknown[]) => ({ type: "or", conditions })),
 	inArray: vi.fn((left: unknown, right: unknown) => ({
 		op: "inArray",
@@ -85,6 +86,7 @@ vi.mock("@/db/schema", () => ({
 	timeEntry: {
 		employeeId: "timeEntry.employeeId",
 		isSuperseded: "timeEntry.isSuperseded",
+		supersededById: "timeEntry.supersededById",
 		organizationId: "timeEntry.organizationId",
 		replacesEntryId: "timeEntry.replacesEntryId",
 		type: "timeEntry.type",
