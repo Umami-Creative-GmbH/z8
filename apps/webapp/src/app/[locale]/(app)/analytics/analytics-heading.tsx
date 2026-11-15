@@ -10,6 +10,23 @@ import { usePathname } from "@/navigation";
 export function AnalyticsHeading(props: ComponentProps<typeof PageHeader>) {
 	const pathname = usePathname();
 	const { t } = useTranslate();
+	if (normalizeAppPath(pathname) === "/analytics/team-performance") {
+		return (
+			<PageHeader
+				{...props}
+				scope={props.title}
+				title={t("analytics.layout.tabs.teamPerformance", "Team Performance")}
+				description={
+					props.description
+						? t(
+								"analytics.teamPerformance.comparison.description",
+								"Total work hours by team for the selected period",
+							)
+						: undefined
+				}
+			/>
+		);
+	}
 	if (normalizeAppPath(pathname) !== "/analytics/overtime-burn-down") {
 		return <PageHeader {...props} />;
 	}
