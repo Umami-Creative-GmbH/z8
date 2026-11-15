@@ -516,9 +516,13 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "301825c0bd096b5be74e7b545aee791da6bf418e"
+                        "status":  "integrated",
+                        "verifiedCommit":  "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+                        "implementationCommit":  "301825c0bd096b5be74e7b545aee791da6bf418e",
+                        "integrationCommit":  "9847f784dfcdca922fd41936493ea07d4b896675",
+                        "correctionCommit":  "511ecaaacf5a4d864f0968dec3537172023beb63",
+                        "evidence":  "docs/design/rollout-1692/1829.md",
+                        "integrationVerification":  "Onboarding organization #1829 is verified at `9f839b78` after reusing the existing task header during membership detection. Fresh171 unique files/1721 tests, full types,three-file ordinary CRLF/both lint profiles and Doctor zero pass. First parallel compatibility payroll-focus failure is retained; unchanged one-worker selection passes all1688. Public heading regression red before/green after. Actual one held summary POST per phase shows baseline0/fixed1 heading on desktop/phone; HTTP200 retains member auto-Skip→profile URL arrival, not settled-profile acceptance. Four accepted/two aliased failed PNG records, actual pending native owner with disclosed unchanged-response delivery hold, clean accepted Next/browser probes and exact credential exclusion recorded. All42 prior verified ancestors and original artifacts preserved. Historical/config pins, original3PG/78/browser evidence, loader annotations, formatting/raw whitespace and build/catalog/provider/device/zoom/global limits remain qualified; all root services62562/three fixtures/browsers cleaned. Independent tree b3c2aa2f972dfac76153051fe957f24558a4f9b0; 12993 prior paths unchanged outside two source/test paths and qualified report, 104 original raw artifact paths byte-preserved. Root new runtime is consumer-only/default-config with cold processes; no domain/authority/date/slug owner changes."
                     },
                     {
                         "id":  "R035",
@@ -582,8 +586,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "64b1d9aba8100607826e80ec6e3c4e6b1154fc69"
                     },
                     {
                         "id":  "R041",
@@ -652,8 +657,9 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "a146813a73b12c443f59c56727b7f5b33557b740"
                     },
                     {
                         "id":  "R046",
@@ -662,8 +668,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "8e14fcb945ccc6d0e5075407b00def0ed1050391"
                     },
                     {
                         "id":  "R047",
@@ -672,7 +679,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -682,7 +689,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
