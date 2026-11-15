@@ -1,0 +1,24 @@
+{
+  "authorityLoss": "Real employee-role revocation followed by shared refresh refused access and removed cached analytics",
+  "noEmployee": {
+    "path": "/en/sign-in",
+    "headings": [
+      "Login to your account"
+    ],
+    "profileRequired": false,
+    "limit": "Fixture employee reassociation invokes global session guard before analytics arrival; layout-specific no-employee panel is source-reviewed, not live-certified"
+  },
+  "organizationSwitch": {
+    "destination": {
+      "path": "/en/analytics",
+      "headings": [
+        "Analytics",
+        "Access Restricted"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n00:41\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nAccess Restricted\n\nAnalytics is only available to administrators and managers.",
+      "stale": false
+    },
+    "observation": "Real invite/accept added second membership; switch from large to small removed old 2025 data before its held result; full reload uses existing arrival guard"
+  },
+  "errors": []
+}

@@ -1,0 +1,83 @@
+{
+  "observations": [
+    {
+      "export": "CSV",
+      "status": 200,
+      "teams": [
+        {
+          "teamName": "Fixture team 0",
+          "totalHours": 8352,
+          "employeeCount": 4
+        },
+        {
+          "teamName": "Fixture team 1",
+          "totalHours": 8352,
+          "employeeCount": 4
+        }
+      ],
+      "bytes": 90
+    },
+    {
+      "export": "Excel",
+      "status": 200,
+      "teams": [
+        {
+          "teamName": "Fixture team 0",
+          "totalHours": 8352,
+          "employeeCount": 4
+        },
+        {
+          "teamName": "Fixture team 1",
+          "totalHours": 8352,
+          "employeeCount": 4
+        }
+      ],
+      "bytes": 6560
+    },
+    {
+      "refresh": "Held real manager read retained 2025 records; aborted transport exposed retry; retry read recovered"
+    },
+    {
+      "unavailable": "Aborted new-period approval read showed Unavailable; actual retry restored successful zero/all-clear"
+    },
+    {
+      "savedDarkLarge": {
+        "width": 390,
+        "documentWidth": 390,
+        "font": "18px"
+      }
+    },
+    {
+      "roles": [
+        {
+          "actor": "small-manager",
+          "h1": [
+            "Analytics"
+          ],
+          "restricted": false,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "actor": "small-employee",
+          "h1": [
+            "Analytics"
+          ],
+          "restricted": true,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "actor": "small-restricted",
+          "h1": [
+            "Analytics"
+          ],
+          "restricted": true,
+          "width": 390,
+          "documentWidth": 390
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

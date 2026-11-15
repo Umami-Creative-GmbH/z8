@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "selectedTree": [
+    "171 1198 1197 Forget(AnalyticsOverviewPage)",
+    "172 1199 1198 Forget(AnalyticsOverview) key=\"perf-small-c93ae3d12bb5\"",
+    "174 1201 1200 Forget(AnalyticsControls)",
+    "175 1202 1201 Forget(DataTableToolbar)",
+    "174 1350 1200 Forget(AnalyticsKpiCards)",
+    "174 1372 1200 Forget(AnalyticsCharts)",
+    "174 1418 1200 Forget(ApprovalBottlenecksCard)"
+  ],
+  "scope": "Native agent-browser JSON tree; whole tree kept private; current month small-admin fixture; this is component observation, not a benchmark",
+  "inspect": {
+    "success": true,
+    "text": "Forget(AnalyticsOverview) #1199\nkey: \"perf-small-c93ae3d12bb5\"\nhooks:\n  Translate: undefined (2 sub)\n  Shallow: undefined (1 sub)\n  OrganizationSettingsStore: undefined (2 sub)\n  [10] Ref: false\n  [11] State: {start: Sun Nov 01 2026 00:00:00 GMT+0100 (Mitteleuropäische Normalzeit), end: Mon Nov 30 2026 23:59:59 GMT+0100 (Mitteleuropäische Normalzeit), startDate: \"2026-11-01\", endDate: \"2026-11-30\", timezone: \"Europe/Berlin\"}\n  [12] Reducer: {loading: false, refreshing: false, range: {end: Mon Nov 30 2026 23:59:59 GMT+0100 (Mitteleuro…}, failed: false, teamData: {dateRange: {…}, organizationTotal: 0, teams: Array…}, absenceData: {byCategory: Array(0), byTeam: Array(0), byType: Ar…}, managerData: {approvalMetrics: {…}, byManager: Array(0), by"
+  }
+}
