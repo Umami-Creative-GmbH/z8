@@ -83,6 +83,26 @@ async function correct(
 }
 
 describe("Assignment page", () => {
+	it("identifies the holder and permitted operations before supporting history", () => {
+		detail({
+			...partialAssignment,
+			canCorrect: true,
+			canCloseException: true,
+		});
+		const history = screen.getByRole("heading", { name: "Handover history" });
+		for (const element of [
+			screen.getByRole("link", { name: "Alex Current" }),
+			screen.getByRole("button", { name: "Record receipt" }),
+			screen.getByRole("button", { name: "Close return" }),
+			screen.getByRole("button", { name: "Correct a record" }),
+		]) {
+			expect(
+				element.compareDocumentPosition(history) &
+					Node.DOCUMENT_POSITION_FOLLOWING,
+			).toBeTruthy();
+		}
+		expect(screen.getByText(/As of .*Europe\/Berlin/)).toBeTruthy();
+	});
 	it("heads the page with the item and its status, and leads back to the list it came from", () => {
 		detail(
 			{ ...heldAssignment, serialNumber: "C02XK1" },

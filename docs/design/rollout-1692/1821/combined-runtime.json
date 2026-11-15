@@ -1,0 +1,336 @@
+{
+  "source": {
+    "head": "670a6b1a762517393579651c96c0dc7098554b19",
+    "branch": "feat/1821-forgot-password",
+    "dirty": "M docs/design/rollout-1692/1821/quality.json",
+    "files": {
+      "apps/webapp/src/components/forgot-password-form.tsx": "601b425b564915a9b4634f0b11c26ebb161a80e82755292ecedb1ee75e2d7640",
+      "apps/webapp/src/components/auth-form-wrapper.tsx": "78be245be6ecc296b8012a41eb8a763c8d357250a6eabe0f90c9b5fedd735421"
+    }
+  },
+  "fixture": "owned synthetic performance small, signed out, local dev public dummy CAPTCHA",
+  "captures": [
+    {
+      "label": "desktop-light",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 1600,
+      "documentWidth": 1600,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "phone-light",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "wide-dark",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 2400,
+      "documentWidth": 2400,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "phone-dark-large",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": ""
+    },
+    {
+      "label": "branded-desktop",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "Performance small\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 1600,
+      "documentWidth": 1600,
+      "fontSize": "16px",
+      "brand": "#2563eb"
+    },
+    {
+      "label": "branded-phone",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "Performance small\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": "#2563eb"
+    },
+    {
+      "label": "saved-preferences",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "18px",
+      "brand": ""
+    },
+    {
+      "label": "keyboard-focus",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\n\nInvalid email address\n\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "",
+      "invalid": "true",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "18px",
+      "brand": ""
+    },
+    {
+      "label": "validation",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\n\nInvalid email address\n\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "invalid",
+      "invalid": "true",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "18px",
+      "brand": ""
+    },
+    {
+      "label": "pending",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nEmail\nSending reset link…\nSending reset link…\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "unknown-reset@example.test",
+      "invalid": "false",
+      "busy": "true",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "18px",
+      "brand": ""
+    },
+    {
+      "label": "transport-failure",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nFailed to fetch\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "unknown-reset@example.test",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "18px",
+      "brand": ""
+    },
+    {
+      "label": "unknown-neutral",
+      "heading": [
+        "Reset link sent"
+      ],
+      "text": "z8\n\nReset link sent\n\nIf an account exists with that email, we've sent a password reset link.\n\nBack to login\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Back to login",
+          "href": "/en/sign-in"
+        }
+      ],
+      "busy": null,
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "18px"
+    },
+    {
+      "label": "known-neutral-de",
+      "heading": [
+        "Link gesendet"
+      ],
+      "text": "z8\n\nLink gesendet\n\nWenn ein Konto mit dieser E-Mail existiert, haben wir einen Link zum Zurücksetzen des Passworts gesendet.\n\nZurück zur Anmeldung\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Zurück zur Anmeldung",
+          "href": "/de/sign-in"
+        }
+      ],
+      "busy": null,
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "18px"
+    },
+    {
+      "label": "server-captcha-failure",
+      "heading": [
+        "Reset your password"
+      ],
+      "text": "z8\n\nReset your password\n\nEnter your email address and we'll send you a link to reset your password.\n\nVerification failed. Please try again.\nEmail\nSend reset link\nRemember your password? Sign in\nVersion 670a6b1",
+      "links": [
+        {
+          "name": "Sign in",
+          "href": "/en/sign-in"
+        }
+      ],
+      "email": "unknown-policy@example.test",
+      "invalid": "false",
+      "busy": "false",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "brand": ""
+    }
+  ],
+  "actions": [
+    {
+      "label": "saved-font-theme-keyboard",
+      "reloaded": true,
+      "fontSize": "large",
+      "theme": "dark",
+      "keyboard": {
+        "name": "Send reset link",
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0 0 0 / 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px"
+      }
+    },
+    {
+      "label": "transport-failure-retry-unknown",
+      "pendingDuplicates": true,
+      "retainedEmail": true,
+      "requestStatus": 200,
+      "neutral": {
+        "status": true,
+        "message": "If this email exists in our system, check your email for the reset link"
+      }
+    },
+    {
+      "label": "return-link",
+      "destination": "/en/sign-in",
+      "actualNavigation": true
+    },
+    {
+      "label": "known-neutral-de",
+      "status": 200,
+      "sameNeutralResponse": true,
+      "request": {
+        "redirectPath": "/de/reset-password",
+        "sameOrigin": true,
+        "hasCaptcha": true
+      },
+      "newVerificationCount": 1,
+      "delivery": "Console fallback logs HTML length, without a retrievable reset link. No SMTP/Resend fixture transport configured; provider delivery and token-link journey unavailable."
+    },
+    {
+      "label": "actual-server-captcha-refusal-and-widget-retry",
+      "refusalStatus": 400,
+      "code": "TURNSTILE_FAILED",
+      "retryStatus": 200,
+      "retainedEmail": true,
+      "method": "Only the negative request header is made invalid; both responses are from the actual server."
+    }
+  ],
+  "errors": []
+}

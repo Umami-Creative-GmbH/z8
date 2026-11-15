@@ -319,9 +319,12 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "07d152106204c108639dfcc28590289f63f99268"
+                        "status":  "integrated",
+                        "verifiedCommit":  "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+                        "implementationCommit":  "07d152106204c108639dfcc28590289f63f99268",
+                        "integrationCommit":  "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+                        "evidence":  "docs/design/rollout-1692/1718.md",
+                        "integrationVerification":  "Fresh105 unique suites/851 tests includes exact35/278+21/211,fullycontained in compatibility;full-name parameterized multiplicity retained. Complete combinedtypes,seven-file actualCRLF Biome/explicitlint-import/Doctor zero. RawLFdefault and explicit100column formatting each retain7format-only failures,no rewrite. Independentresolvedtree/parents,all26 verified ancestors,1067priorrollout/11281unaffected paths and Calendar/root/employee/assignment headings preserved.30PNG fullydecoded,35JSON,5scripts,31links,120sourcehashes/three four-file consumer-source pairs validate;root archives/static172=153+19/whitespace pass. No source/provenance/EOFblocker. PG10/129 andactual browser/native/Next inherited,not rerun;invalid recovery-pending capture replaced by dedicatedlock evidence,readswitch notmutation,foreignorg-feature combined restriction qualified. Provider/build/catalog/device/zoom/performance/exhaustive andtransition limits retained."
                     },
                     {
                         "id":  "R021",
@@ -330,9 +333,12 @@
                         "blockedBy":  [
                                           1717
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "63d8a75d52a1c24dabfd8c2397b76fabf8310607"
+                        "status":  "integrated",
+                        "verifiedCommit":  "a9b472e5864f386d881604605d593cffc189d61a",
+                        "implementationCommit":  "63d8a75d52a1c24dabfd8c2397b76fabf8310607",
+                        "integrationCommit":  "a9b472e5864f386d881604605d593cffc189d61a",
+                        "evidence":  "docs/design/rollout-1692/1719.md",
+                        "integrationVerification":  "Fresh143 unique suites/1182 tests includes exact35/277 fullycontained;multisetparameterizedmultiplicity retained. Complete combined types,eight-file actualCRLF Biome,eight-file explicitlint/import,eight-fileDoctor zero. Additionalwebappformat remainsunpassed sevenformat-only files,no rewrite. Independenttree/parents,all25 verified ancestors,1011 priorrollout/11224 unaffected paths,59nonmetadata incoming exact;onlymetadata combines.29PNG fullydecoded,13JSON,10scripts,31links,five sourcepins;equipment/Calendar archives/static172=153+19/whitespace validate. No source/EOF/provenanceblocker. R019historicalpasses,currentmetadata diagnosticfailurequalified. PG6/47,browser28+6+8/runtime switch/native/Next inherited,not rerun. Keyboardmenu/Renderinglayer/transitions/build/catalog/provider/device/zoom/performance/exhaustive limits retained."
                     },
                     {
                         "id":  "R022",
@@ -374,7 +380,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

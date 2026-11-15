@@ -1,9 +1,9 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconLoader2, IconMail } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { useTurnstile } from "@/lib/auth/domain-auth-context";
+import { useBranding, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
@@ -22,36 +22,53 @@ import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
 import { type TurnstileRef, TurnstileWidget } from "./turnstile-widget";
 
-export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
+export function ForgotPasswordForm({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage();
+	const branding = useBranding();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
+	const emailRef = useRef<HTMLInputElement>(null);
+	const submittingRef = useRef(false);
+	const focusOutcome = useCallback(
+		(node: HTMLDivElement | null) => node?.focus(),
+		[],
+	);
 
 	// Turnstile state
 	const turnstileConfig = useTurnstile();
 	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+	const currentTurnstileToken = useRef<string | null>(null);
 	const turnstileRef = useRef<TurnstileRef>(null);
-
-	const handleTurnstileVerify = (token: string) => {
+	const updateTurnstileToken = (token: string | null) => {
+		currentTurnstileToken.current = token;
 		setTurnstileToken(token);
 	};
 
+	const handleTurnstileVerify = (token: string) => {
+		updateTurnstileToken(token);
+	};
+
 	const handleTurnstileError = () => {
-		setTurnstileToken(null);
-		setError(t("auth.turnstile-error", "Verification failed. Please try again."));
+		updateTurnstileToken(null);
+		setError(
+			t("auth.turnstile-error", "Verification failed. Please try again."),
+		);
 		turnstileRef.current?.reset();
 	};
 
 	const handleTurnstileExpire = () => {
-		setTurnstileToken(null);
+		updateTurnstileToken(null);
 		turnstileRef.current?.reset();
 	};
 
 	const handleTurnstileTimeout = () => {
-		setTurnstileToken(null);
+		updateTurnstileToken(null);
 		turnstileRef.current?.reset();
 	};
 
@@ -61,8 +78,10 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 			setError(null);
 			setSuccess(false);
 
-			if (turnstileConfig?.enabled && !turnstileToken) {
-				setError(t("auth.turnstile-required", "Please complete the verification."));
+			if (turnstileConfig?.enabled && !currentTurnstileToken.current) {
+				setError(
+					t("auth.turnstile-required", "Please complete the verification."),
+				);
 				return;
 			}
 
@@ -70,21 +89,38 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 			await runWithCleanup(
 				async () => {
 					const response = await loadAuthPageClient()
-						.then((authClient) =>
-							authClient.requestPasswordReset({
+						.then((authClient) => {
+							// Widget callbacks can refresh or expire the token during the lazy import.
+							const token = currentTurnstileToken.current;
+							if (turnstileConfig?.enabled && !token) {
+								throw new Error(
+									t(
+										"auth.turnstile-required",
+										"Please complete the verification.",
+									),
+								);
+							}
+							return authClient.requestPasswordReset({
 								email: value.email,
 								redirectTo: `${window.location.origin}/${locale}/reset-password`,
-								...(turnstileToken
-									? { fetchOptions: { headers: { "x-captcha-response": turnstileToken } } }
+								...(token
+									? {
+											fetchOptions: {
+												headers: { "x-captcha-response": token },
+											},
+										}
 									: {}),
-							}),
-						)
+							});
+						})
 						.catch((err) => ({
 							error: {
 								message:
 									err instanceof Error
 										? err.message
-										: t("auth.forgot-password-error", "An error occurred. Please try again."),
+										: t(
+												"auth.forgot-password-error",
+												"An error occurred. Please try again.",
+											),
 							},
 						}));
 
@@ -92,12 +128,15 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 						setError(
 							getAuthErrorMessage(
 								response.error,
-								t("auth.forgot-password-error", "Failed to send reset email. Please try again."),
+								t(
+									"auth.forgot-password-error",
+									"Failed to send reset email. Please try again.",
+								),
 							),
 						);
 						// Reset Turnstile for retry (tokens are single-use).
 						if (turnstileConfig?.enabled) {
-							setTurnstileToken(null);
+							updateTurnstileToken(null);
 							turnstileRef.current?.reset();
 						}
 						return;
@@ -116,24 +155,50 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		event.stopPropagation();
-		await form.handleSubmit();
+		// Native requestSubmit can re-enter before the disabled button renders.
+		if (submittingRef.current) return;
+		submittingRef.current = true;
+		await runWithCleanup(
+			async () => {
+				await form.handleSubmit();
+				if (!form.state.isValid) emailRef.current?.focus();
+			},
+			() => {
+				submittingRef.current = false;
+			},
+		);
 	};
 
 	if (success) {
 		return (
 			<AuthFormWrapper
+				branding={branding}
 				className={className}
 				title={t("auth.reset-password-sent", "Reset link sent")}
 				{...props}
 			>
-				<div role="status" className="rounded-md bg-green-500/15 p-3 text-green-600 dark:text-green-400 text-sm">
-					{t(
-						"auth.reset-password-sent-message",
-						"If an account exists with that email, we've sent a password reset link.",
-					)}
+				<div
+					role="status"
+					tabIndex={-1}
+					ref={focusOutcome}
+					className="flex items-start gap-3 rounded-lg border bg-muted/50 p-4 text-sm leading-relaxed outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+				>
+					<IconMail
+						aria-hidden="true"
+						className="mt-0.5 size-5 shrink-0 text-primary"
+					/>
+					<p>
+						{t(
+							"auth.reset-password-sent-message",
+							"If an account exists with that email, we've sent a password reset link.",
+						)}
+					</p>
 				</div>
 				<div className="text-center text-sm">
-					<Link className="underline underline-offset-4" href="/sign-in">
+					<Link
+						className="rounded-sm underline underline-offset-4 outline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+						href="/sign-in"
+					>
 						{t("info.back-to-login", "Back to login")}
 					</Link>
 				</div>
@@ -143,8 +208,13 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
 	return (
 		<AuthFormWrapper
+			branding={branding}
 			className={className}
-			formProps={{ onSubmit: handleSubmit }}
+			formProps={{
+				onSubmit: handleSubmit,
+				noValidate: true,
+				"aria-busy": isLoading,
+			}}
 			title={t("auth.reset-your-password", "Reset your password")}
 			{...props}
 		>
@@ -155,14 +225,30 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 				)}
 			</p>
 			{error ? (
-				<div role="alert" className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">{error}</div>
+				<div
+					role="alert"
+					className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm break-words"
+				>
+					{error}
+				</div>
 			) : null}
-			<form.Field name="email" validators={{ onBlur: validateEmail, onChange: validateEmail }}>
+			<form.Field
+				name="email"
+				validators={{
+					onBlur: validateEmail,
+					onChange: validateEmail,
+					onSubmit: validateEmail,
+				}}
+			>
 				{(field) => (
-					<TFormItem className="gap-3">
-						<TFormLabel hasError={fieldHasError(field)}>{t("auth.email", "Email")}</TFormLabel>
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("auth.email", "Email")}
+						</TFormLabel>
 						<TFormControl hasError={fieldHasError(field)}>
 							<Input
+								ref={emailRef}
+								disabled={isLoading}
 								name={field.name}
 								autoComplete="email"
 								spellCheck={false}
@@ -197,22 +283,33 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 			)}
 
 			<Button
-				className="w-full"
+				className="h-auto min-h-10 w-full whitespace-normal"
 				disabled={isLoading || (turnstileConfig?.enabled && !turnstileToken)}
 				type="submit"
 			>
 				{isLoading ? (
 					<>
-						<IconLoader2 className="mr-2 size-4 animate-spin" />
-						{t("common.loading", "Loading...")}
+						<IconLoader2
+							aria-hidden="true"
+							className="size-4 animate-spin motion-reduce:animate-none"
+						/>
+						{t("auth.forgot-password-sending", "Sending reset link…")}
 					</>
 				) : (
 					t("auth.send-reset-link", "Send reset link")
 				)}
 			</Button>
+			<div role="status" className="sr-only">
+				{isLoading
+					? t("auth.forgot-password-sending", "Sending reset link…")
+					: null}
+			</div>
 			<div className="text-center text-sm">
 				{t("auth.remember-password", "Remember your password?")}{" "}
-				<Link className="underline underline-offset-4" href="/sign-in">
+				<Link
+					className="rounded-sm underline underline-offset-4 outline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+					href="/sign-in"
+				>
 					{t("auth.sign-in", "Sign in")}
 				</Link>
 			</div>

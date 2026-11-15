@@ -1,0 +1,15 @@
+{
+  "ownedProcessIdentityVerified": true,
+  "removedContainers": 3,
+  "serviceLabelsVerifiedByFixtureCleanup": true,
+  "ownedContainersRemaining": 0,
+  "privateFilesRetainedOutsideGit": true,
+  "head": "670a6b1a762517393579651c96c0dc7098554b19",
+  "portClosed": true,
+  "stoppedProcesses": 2,
+  "browsersClosed": [
+    "next-dev-loop-277056cfdcdd",
+    "owned T3 preview tab",
+    "all per-run Puppeteer browsers"
+  ]
+}
