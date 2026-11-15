@@ -29,4 +29,3 @@ try{
  await writeFile(join(dir,'history-private.json'),JSON.stringify(ids,null,2),{mode:0o600});
  console.log('Prepared three decision records, genuine empty absence, cancelled history and old undated history in the owned disposable fixture.');
 }finally{await pool.end();}
-

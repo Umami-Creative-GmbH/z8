@@ -18,7 +18,6 @@ import {
 	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
-	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
@@ -31,7 +30,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
 import type {
 	ApprovalInboxBulkDecisionResult,
@@ -57,6 +55,7 @@ import { ApprovalDetailPanel } from "./components/approval-detail-panel";
 import { ApprovalFastLanes } from "./components/approval-fast-lanes";
 import { ApprovalInboxTable } from "./components/approval-inbox-table";
 import { ApprovalInboxToolbar } from "./components/approval-inbox-toolbar";
+import { ApprovalReasonForm } from "./components/approval-reason-form";
 import { ApprovalSprintPanel } from "./components/approval-sprint-panel";
 import {
 	getCoveringForDescription,
@@ -557,14 +556,14 @@ function ApprovalInboxRequestsCard({
 			<ApprovalInboxWarnings warnings={warnings} />
 			<Card>
 				<CardHeader className="pb-0">
-					<CardTitle className="flex items-center gap-2">
+					<CardTitle className="flex flex-wrap items-center gap-2">
 						<IconInbox className="size-5" aria-hidden="true" />
 						{t("approvals:approvals.pendingRequests", "Pending Requests")}
-						{totalCount > 0 && (
-							<span className="text-sm font-normal text-muted-foreground">
-								({totalCount})
+						{
+							<span className="rounded-md bg-primary/10 px-2 py-1 text-sm font-semibold tabular-nums text-primary">
+								{totalCount}
 							</span>
-						)}
+						}
 					</CardTitle>
 					<CardDescription>
 						{t(
@@ -574,13 +573,7 @@ function ApprovalInboxRequestsCard({
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="pt-4">
-					<ApprovalFastLanes
-						groups={fastLaneGroups}
-						isBusy={activityState.isBulkActionPending}
-						onBulkApprove={onBulkApprove}
-						onBulkReject={onBulkReject}
-					/>
-					<div className="mt-4">
+					<div className="border-b pb-4">
 						<ApprovalInboxToolbar
 							filters={filters}
 							onFiltersChange={onFiltersChange}
@@ -600,6 +593,7 @@ function ApprovalInboxRequestsCard({
 							onSelectItem={onSelectItem}
 							onRowClick={onRowClick}
 							isFetching={activityState.isFetching}
+							filtered={!!filters.search || !!filters.types?.length}
 						/>
 					</div>
 					{paginationState.hasNextPage && (
@@ -621,6 +615,12 @@ function ApprovalInboxRequestsCard({
 					)}
 				</CardContent>
 			</Card>
+			<ApprovalFastLanes
+				groups={fastLaneGroups}
+				isBusy={activityState.isBulkActionPending}
+				onBulkApprove={onBulkApprove}
+				onBulkReject={onBulkReject}
+			/>
 			{covering?.map((section) => (
 				<Card
 					key={section.approverId}
@@ -631,7 +631,7 @@ function ApprovalInboxRequestsCard({
 					data-testid="approval-covering-section"
 				>
 					<CardHeader className="pb-0">
-						<CardTitle className="flex items-center gap-2">
+						<CardTitle className="flex flex-wrap items-center gap-2">
 							<IconUserShare className="size-5" aria-hidden="true" />
 							{getCoveringForTitle(t, section.approverName)}
 							<span className="text-sm font-normal text-muted-foreground">
@@ -649,6 +649,7 @@ function ApprovalInboxRequestsCard({
 							onSelectItem={onSelectItem}
 							onRowClick={onRowClick}
 							isFetching={activityState.isFetching}
+							filtered={!!filters.search || !!filters.types?.length}
 						/>
 						{section.hasMore && (
 							<p className="mt-3 text-sm text-muted-foreground">
@@ -695,7 +696,12 @@ function BulkRejectPanel({
 	onReject: () => void;
 }) {
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel
+			open={open}
+			onOpenChange={(next) => {
+				if (!isPending) onOpenChange(next);
+			}}
+		>
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>
@@ -708,44 +714,18 @@ function BulkRejectPanel({
 						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
-				<ActionPanelBody className="space-y-2">
-					<label className="text-sm font-medium" htmlFor="bulk-reject-reason">
-						{t("approvals:approvals.rejectionReason", "Reason for rejection")}
-					</label>
-					<Textarea
-						id="bulk-reject-reason"
-						value={reason}
-						onChange={(event) => onReasonChange(event.target.value)}
-						placeholder={t(
-							"approvals:approvals.rejectionReasonPlaceholder",
-							"Please provide a reason for rejecting this request…",
-						)}
-						rows={4}
-					/>
+				<ActionPanelBody>
+					{open && (
+						<ApprovalReasonForm
+							reason={reason}
+							onReasonChange={onReasonChange}
+							onCancel={() => onOpenChange(false)}
+							onConfirm={onReject}
+							canReject={canBulkRejectSelection}
+							isPending={isPending}
+						/>
+					)}
 				</ActionPanelBody>
-				<ActionPanelFooter>
-					<Button
-						variant="outline"
-						onClick={() => onOpenChange(false)}
-						disabled={isPending}
-					>
-						{t("common.cancel", "Cancel")}
-					</Button>
-					<Button
-						variant="destructive"
-						onClick={onReject}
-						disabled={!reason.trim() || isPending || !canBulkRejectSelection}
-					>
-						{isPending && (
-							<IconLoader2
-								className="mr-2 size-4 animate-spin"
-								aria-hidden="true"
-							/>
-						)}
-						<IconX className="mr-2 size-4" aria-hidden="true" />
-						{t("approvals:approvals.confirmReject", "Confirm Rejection")}
-					</Button>
-				</ActionPanelFooter>
 			</ActionPanelContent>
 		</ActionPanel>
 	);
@@ -947,7 +927,20 @@ function ApprovalInboxContent({
 		...(firstPage?.covering ?? []).flatMap((section) => section.rows),
 	];
 	const totalCount = firstPage?.total ?? 0;
-	const warnings = dedupeWarnings(pages.flatMap((page) => page.warnings));
+	const warnings = dedupeWarnings([
+		...pages.flatMap((page) => page.warnings),
+		...(isError && data
+			? [
+					{
+						source: t("common.refresh", "Refresh"),
+						message: t(
+							"approvals:approvals.refreshFailedRetained",
+							"Refresh failed. Displayed requests may be outdated; retry before deciding.",
+						),
+					},
+				]
+			: []),
+	]);
 	const supportedTypes = firstPage?.supportedTypes ?? [];
 	const itemIdsKey = items.map((item) => item.id).join("\u001f");
 	const selectedIds =
@@ -1143,7 +1136,7 @@ function ApprovalInboxContent({
 		return <ApprovalInboxLoadingState />;
 	}
 
-	if (isError) {
+	if (isError && !data) {
 		return (
 			<ApprovalInboxErrorState
 				t={t}

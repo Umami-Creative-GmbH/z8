@@ -1,0 +1,78 @@
+{
+  "checks": [
+    {
+      "name": "one actual approved deletion is recorded",
+      "passed": true
+    },
+    {
+      "name": "three actual rejections retain exact reasons",
+      "passed": true
+    },
+    {
+      "name": "four refusal/evidence fixture requests remain pending",
+      "passed": true
+    },
+    {
+      "name": "authorized exact detail returns actual saved submitted reason",
+      "passed": true
+    }
+  ],
+  "records": [
+    {
+      "status": "rejected",
+      "reason": "R011 owned duplicate record 2025-01-13\nSubmitted deletion evidence.",
+      "rejection_reason": "R011 actual manager rejection",
+      "deleted": false,
+      "deletion_reason": null
+    },
+    {
+      "status": "approved",
+      "reason": "R011 owned duplicate record 2025-01-20\nSubmitted deletion evidence.",
+      "rejection_reason": null,
+      "deleted": true,
+      "deletion_reason": "R011 owned duplicate record 2025-01-20\nSubmitted deletion evidence."
+    },
+    {
+      "status": "rejected",
+      "reason": "R011 owned duplicate record 2025-01-27\nSubmitted deletion evidence.",
+      "rejection_reason": "R011 concurrent reviewer decision",
+      "deleted": false,
+      "deletion_reason": null
+    },
+    {
+      "status": "rejected",
+      "reason": "R011 owned duplicate record 2025-02-03\nSubmitted deletion evidence.",
+      "rejection_reason": "R011 actual partial bulk",
+      "deleted": false,
+      "deletion_reason": null
+    },
+    {
+      "status": "pending",
+      "reason": "R011 owned duplicate record 2025-02-10\nSubmitted deletion evidence.",
+      "rejection_reason": null,
+      "deleted": false,
+      "deletion_reason": null
+    },
+    {
+      "status": "pending",
+      "reason": "R011 owned duplicate record 2025-02-17\nSubmitted deletion evidence.",
+      "rejection_reason": null,
+      "deleted": false,
+      "deletion_reason": null
+    },
+    {
+      "status": "pending",
+      "reason": "R011 owned duplicate record 2025-02-24\nSubmitted deletion evidence.",
+      "rejection_reason": null,
+      "deleted": false,
+      "deletion_reason": null
+    },
+    {
+      "status": "pending",
+      "reason": "R011 owned duplicate record 2025-03-03\nSubmitted deletion evidence.",
+      "rejection_reason": null,
+      "deleted": false,
+      "deletion_reason": null
+    }
+  ]
+}
