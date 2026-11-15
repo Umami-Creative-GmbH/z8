@@ -531,9 +531,13 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "df375cecd17c6d28e2621ee630a8bc19edb91f09"
+                        "status":  "integrated",
+                        "verifiedCommit":  "63a5e6ff43e6541473a927da0a651686bfd33afe",
+                        "implementationCommit":  "df375cecd17c6d28e2621ee630a8bc19edb91f09",
+                        "integrationCommit":  "25865312d95c68ec1eaed75363e953745f168802",
+                        "correctionCommit":  "587e567ed78461dd3b587c30fd4d51b8a1c07a03",
+                        "evidence":  "docs/design/rollout-1692/1830.md",
+                        "integrationVerification":  "Onboarding profile #1830 is verified at `63a5e6ff` after binding Save and Retry to their requesting lifetime before TanStack validation. Four permanent queued-scope/reconnect/Activity regressions fail on the exact old client and pass after correction. Fresh 176 unique files / 1,775 tests, full types, four-file explicit CRLF/lint and Doctor zero pass. Actual normal Enter, retained transport failure, one pending Retry, duplicate refusal and canonical persisted profile/defaults/admin continuation pass nine checks per consumer phase. Four decoded default-text desktop/phone captures and a fresh loaded native ProfileStep target are source-pinned; no cookie/state transfer. Browser continuity is separate from component-seam race proof. All 43 prior verified ancestors and original incoming artifacts are preserved. Seven previously normalized worker logs are qualified, correcting the reported eight. Intermediate Doctor warning and failed launcher are retained; final source preserves the React form action. Original 3-suite/84-test PostgreSQL and broader role/calendar/theme evidence remain inherited. Formatting/raw whitespace, full build/catalog/provider/device/zoom/global limits remain open; root port 50542, browsers and three services are cleaned. Independent tree 7216c36d4837aabbe88c9a64394e6b842aab360a; 13152 prior paths unchanged outside two source/test paths and qualified report, 44 original incoming artifact paths byte-preserved. No root action/service/schema/authority/date/preference changes."
                     },
                     {
                         "id":  "R036",
@@ -690,8 +694,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "e9b0b6afe62da10ac7ced65cc48cc54ed40983cf"
                     },
                     {
                         "id":  "R049",
@@ -710,7 +715,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
