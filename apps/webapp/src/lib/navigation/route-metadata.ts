@@ -209,6 +209,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 	const path = normalizeAppPath(pathname);
 	return (
 		/^\/approvals\/deputy-decisions\/[^/]+$/.test(path) ||
+		/^\/calendar\/[^/]+$/.test(path) ||
 		path === "/" ||
 		path === "/time-tracking" ||
 		path === "/absences" ||

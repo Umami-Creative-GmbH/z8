@@ -344,6 +344,7 @@ vi.mock("./calendar-event-dialogs", () => ({
 		onConfirmClockOut,
 		pendingClockOut,
 		selectedEmployeeId,
+		selectedEmployeeName,
 		selectedEvent,
 		showDeleteDialog,
 		showSplitDialog,
@@ -361,6 +362,7 @@ vi.mock("./calendar-event-dialogs", () => ({
 		onConfirmClockOut: (choice?: { taskId?: string | null }) => void;
 		pendingClockOut: boolean;
 		selectedEmployeeId: string | null;
+		selectedEmployeeName: string | null;
 		selectedEvent: CalendarEvent | null;
 		showDeleteDialog: boolean;
 		showSplitDialog: boolean;
@@ -373,6 +375,7 @@ vi.mock("./calendar-event-dialogs", () => ({
 			<div
 				data-testid="manual-entry-dialog"
 				data-open={String(manualEntryOpen)}
+				data-target-employee-name={selectedEmployeeName}
 				data-default-date={manualEntryDefaults?.date}
 				data-clock-in={manualEntryDefaults?.clockInTime}
 				data-clock-out={manualEntryDefaults?.clockOutTime}
@@ -528,6 +531,34 @@ describe("CalendarView", () => {
 		vi.stubGlobal("fetch", vi.fn());
 		setMobileViewport(false);
 	});
+
+	it.each([
+		{ organizationId: "org-1", initialSelectedEmployeeId: "employee-3" },
+		{ organizationId: "org-2", initialSelectedEmployeeId: "employee-2" },
+	])(
+		"clears the previous record panel on a same-date same-zone scope arrival: %o",
+		(next) => {
+			const initial = {
+				organizationId: "org-1",
+				currentEmployeeId: "employee-1",
+				initialSelectedEmployeeId: "employee-2",
+				initialDateKey: "2025-01-06",
+				initialTimezone: "Europe/Berlin",
+			};
+			const page = render(<CalendarView {...initial} />);
+			fireEvent.click(
+				screen.getByRole("button", { name: "Select completed period" }),
+			);
+			expect(screen.getByTestId("work-period-edit")).toBeTruthy();
+			page.rerender(<CalendarView {...initial} {...next} />);
+			expect(screen.queryByTestId("work-period-edit")).toBeNull();
+			expect(
+				screen
+					.getByTestId("employee-selector")
+					.getAttribute("data-selected-employee-id"),
+			).toBe(next.initialSelectedEmployeeId);
+		},
+	);
 
 	it("defaults to week view on desktop", () => {
 		render(
@@ -993,6 +1024,28 @@ describe("CalendarView", () => {
 			"America/New_York",
 		);
 		expect(dialog.getAttribute("data-target-employee-id")).toBe("employee-2");
+	});
+
+	it("shows authorized direct-arrival identity above the calendar", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+				initialEmployeeName="Ada Lovelace"
+				initialDateKey="2025-01-06"
+				initialTimezone="America/New_York"
+			/>,
+		);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Ada Lovelace" }),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Select time range" }));
+		expect(
+			screen
+				.getByTestId("manual-entry-dialog")
+				.getAttribute("data-target-employee-name"),
+		).toBe("Ada Lovelace");
 	});
 
 	it("omits the target employee after switching from another employee back to self", () => {

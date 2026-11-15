@@ -51,7 +51,8 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);
 		expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/calendar")).toBe(true);
-		expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(false);
+		expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);
+		expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);
 	});
 	it("adopts only the portfolio pilot title, leaving other reports and descendants with shell titles", () => {
 		expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { CalendarPageHeader } from "@/components/calendar/calendar-page-header";
 import { LocalizedLoadingLabel } from "@/components/shells/localized-loading-label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarPageContent } from "../page";
@@ -31,9 +32,12 @@ type CalendarEmployeePageProps = {
 
 export default function CalendarEmployeePage(props: CalendarEmployeePageProps) {
 	return (
-		<Suspense fallback={<CalendarPageLoading />}>
-			<CalendarEmployeeContent {...props} />
-		</Suspense>
+		<>
+			<CalendarPageHeader />
+			<Suspense fallback={<CalendarPageLoading />}>
+				<CalendarEmployeeContent {...props} />
+			</Suspense>
+		</>
 	);
 }
 

@@ -22,6 +22,7 @@ interface CalendarMainContentProps {
 	onViewModeChange: Dispatch<SetStateAction<ViewMode>>;
 	currentEmployeeId?: string;
 	selectedEmployeeId: string | null;
+	selectedEmployeeName?: string | null;
 	onEmployeeChange: (
 		employeeId: string | null,
 		employee?: SelectableEmployee,
@@ -59,6 +60,7 @@ export function CalendarMainContent({
 	onViewModeChange,
 	currentEmployeeId,
 	selectedEmployeeId,
+	selectedEmployeeName,
 	onEmployeeChange,
 	isManagerOrAbove,
 	workBalance,
@@ -89,6 +91,11 @@ export function CalendarMainContent({
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
 			<div className="flex shrink-0 flex-wrap items-end justify-between gap-3 rounded-lg border bg-card p-4">
 				<div className="w-full min-w-0 sm:w-72">
+					{selectedEmployeeName ? (
+						<h2 className="mb-2 break-words text-base font-semibold">
+							{selectedEmployeeName}
+						</h2>
+					) : null}
 					{!isManagerOrAbove ? (
 						<p className="text-sm font-medium">
 							{t("calendar.employeeSelector.myCalendar", "My Calendar")}
