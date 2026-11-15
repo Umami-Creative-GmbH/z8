@@ -280,9 +280,13 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "c024c7a0f8f2b799cd54b3906c48344b84509bf0"
+                        "status":  "integrated",
+                        "verifiedCommit":  "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+                        "implementationCommit":  "c024c7a0f8f2b799cd54b3906c48344b84509bf0",
+                        "integrationCommit":  "b42187081b43ec85e1a15a53bec9064e6f2da160",
+                        "evidenceCorrectionCommit":  "53f7d92b710feb7f9a20128fb3d5384940aea92a",
+                        "evidence":  "docs/design/rollout-1692/1716.md",
+                        "integrationVerification":  "Fresh140 unique suites/1053 tests:exact33/249+compat138/1031 less31files/227cases with multiplicity retained. Complete combined types,eight-file Doctor zero,seven-file actual-checkoutCRLF Biome and eight-file explicit lint/import pass. Raw default reports sevenCRLF-only differences;prior explicit-config formatting remains unpassed. Independent tree and all23 verified ancestors,893 prior rollout paths,11103 unaffected existing paths preserved.23PNG fully decoded,eightJSON,seven scripts,19links,three matched pairs inspected;equipment pointer evidence/static172=153+19 inventory validate. Root removes blank EOF and qualifies drawer starting-base metadata as report-attested,not machine-pinned;raw retained and future driver reads actualGitHEAD/status. No app change in evidence correction. PG9/87,browser action/context/drawer/nativeReact/axe35-0-0 are inherited,not rerun;build/catalog/provider/device/zoom/transition/exhaustive limits retained."
                     },
                     {
                         "id":  "R019",
@@ -308,7 +312,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
