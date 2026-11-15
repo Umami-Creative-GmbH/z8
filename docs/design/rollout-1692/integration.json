@@ -487,8 +487,9 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "274170732c4bcd42a1ee48103f458f0d3722149b"
                     },
                     {
                         "id":  "R033",
@@ -497,7 +498,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -507,7 +508,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -592,9 +593,13 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "165681372d1950bdb846eb43774dd2d4b429f6f8"
+                        "status":  "integrated",
+                        "verifiedCommit":  "807fcc6311ec8f0511c9eea401c144b4da070da3",
+                        "implementationCommit":  "165681372d1950bdb846eb43774dd2d4b429f6f8",
+                        "integrationCommit":  "37e46ce8bea19e69e112d11186e0c271d77e9738",
+                        "correctionCommit":  "6bded15a8d0221b670d4957275aa738eae06202c",
+                        "evidence":  "docs/design/rollout-1692/1725.md",
+                        "integrationVerification":  "Payroll #1725 is verified at `807fcc63` after organization/actor/covered-roster lifetime correction. Fresh 94 unique suites/1,027 tests, full types and 11-file Doctor zero pass; accepted six-file explicit/two-file normal formatters and all-11 explicit lint pass, with remaining profiles/import findings retained. PostgreSQL combined49pass/1fail/1skip plus fresh isolated grant7/7 gives50 distinct passing cases/1skip, not a green combined run. Actual B props leave baseline A8 rows stale; correction shows B1 and returns A8, preserves draft through completed header Refresh and downloads PDF without a job. Late effects are assembled-only. Five accepted/five failed PNGs decode with pins; final Next clear, large-fixture legacy absence-backfill stack overflow remains. Original raw archives and all37 verified ancestors preserved; build/catalog/provider/device/zoom/global limits remain open. Independent tree6fe328d2016a35a97d4424c3165e6108fad6523a. 12213 prior paths and 128 original raw ticket artifact paths unchanged outside seven source/test edits and appended report. Root introduces required organizationId in the read projection only; no query/grant/calculation/UTC/delivery owner changed. Both PG containers, verified Next49196 and three browser-fixture containers cleaned. Automatic review rejected credential-output command; user approved private-file Chromium alternative, which passed without returning credentials."
                     },
                     {
                         "id":  "R043",
@@ -603,8 +608,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "28ea28fa4026d0798d218c6cf9de89317b99ed00"
                     },
                     {
                         "id":  "R044",
@@ -613,8 +619,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "67f5442ffe53990ea10b575a6fd5ab2389f9a5bf"
                     },
                     {
                         "id":  "R045",
